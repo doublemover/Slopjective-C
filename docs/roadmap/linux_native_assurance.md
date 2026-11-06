@@ -9,6 +9,17 @@ pending revision. Implementation pushes do not repeatedly discard a compiler
 build. Each result remains bound to its own exact head/base/tested SHA; a prior
 revision's success cannot satisfy the latest revision's gate.
 
+Run `42076026163` reached the hosted six-hour ceiling while compiling the
+fuzz-instrumented frontend, after ordinary native/SDK checks and the sanitizer
+foundation had completed. Source and periodic execution now partition the same
+canonical selection into `core`, `frontend-fuzz` and `source-coverage` jobs. Core
+retains package-before-sanitizer ordering and shares its ASan compiler build with
+runtime schedules; each other job builds only its own compiler profile. Sibling
+failures do not cancel the remaining jobs. The terminal gate requires every
+selected shard, exact source/plan identity, disjoint complete suite coverage and
+the original combined 256 MiB evidence budget. This changes execution layout,
+without adding a cadence or accepting an earlier revision's products.
+
 ## Source gate
 
 `Linux native assurance` runs for every pull request and push to `main`.
@@ -43,8 +54,11 @@ The stable source surface uses existing owners:
   ASan/UBSan and TSan O0/O2 runner, including paired detector controls and canonical
   runtime object/archive verification. This does not instrument the host compiler.
 - Packaging/installer changes additionally select the canonical SDK pipeline and
-  a shipped-archive install/relocation witness in the Linux job's distribution.
-  Debian/Ubuntu release qualification remains its separate workflow.
+  its already qualified content-addressed archive installation. The producer and
+  terminal verifier share one execution-record contract, including archive hash,
+  installed prefix and successful consumer-command count. The gate does not need
+  the SDK tree or another archive qualification. Fresh Debian/Ubuntu distribution
+  qualification remains in the release workflow.
 
 `Linux native assurance gate` always evaluates explicit plan/native job outcomes.
 Only an admitted prose-only plan permits a skipped native job. Missing artifacts,
@@ -71,9 +85,24 @@ JSON/XML/log set, with a 256 MiB budget; generated SDKs, build trees and passing
 executables are excluded. Failure receipts and compiler diagnostics are preserved. A separate startup
 receipt retains clean-host tool provisioning logs before native execution begins;
 the signature verifier uses its own pinned private libsodium dependency.
+Before upload, the publisher stages precisely the durable verifier inventory into
+a shard namespace. It retains each shared product blob once, avoiding directory
+symlink expansion and collisions between root receipts when artifacts merge.
+Instrumented foundation results and raw phase logs join operational measurements
+as well as the ordinary foundation and installer receipts.
 Receipts report elapsed time, descendant peak RSS and available disk. Tooling CI
 also exports actual selected/deselected pytest node IDs, collection failures,
 per-phase outcomes, explicit skips and expected failures, plus JUnit and `-ra`.
+
+Sanitizer product stores use a campaign-relative namespace. Extraction under a
+different checkout cannot invalidate a complete result merely because the
+producer's absolute output path no longer exists. The shared store retains each
+compressed replay payload once; owner receipts resolve it locally even when the
+artifact omits their private directory symlinks. Native replay uses that same
+resolver and checks complete blob metadata before reusing a verified record.
+Regression controls perform real ZIP relocation, remove the producer tree and
+private links, verify producer/gate inventory equality, and replay an actual
+sanitized executable from the relocated shared store.
 
 The jobs use existing ephemeral Linux runners, read-only contents, SHA-pinned
 actions and checkout without persisted credentials. PR source never executes
@@ -115,7 +144,25 @@ python3 -B -m scripts.objc3c_toolchain.development_graph \
 
 Implementation and boundary controls are prepared. A live exact-revision native
 CI run, cold/reuse/invalidation cost measurements and administrator confirmation
-that `Linux native assurance gate` is required remain outstanding. The six-hour
-native job timeout is a ceiling, not a measured timing claim. No repository
+that `Linux native assurance gate` is required remain outstanding. Each shard's
+six-hour timeout is a ceiling, not a measured timing claim. The split publisher,
+selection and aggregate pass 116 focused assurance/cost tests and 63 workflow
+policy controls; hosted completion of the new layout is still required. No repository
 protection setting or billing/private-schedule variable was changed. Keep #8283
 open until those acceptance conditions are established.
+
+
+Native checked commands now use bounded subprocess sessions. Timeout and
+interruption kill compiler descendants even when they start separate process
+groups. Fresh logs and CTest XML are required before execution, so a previous
+success cannot satisfy a current command. Real child-process controls defend
+both cancellation paths. Semantic selection includes the canonical shared-pool
+workloads and bounded source/PCH/interface/cache pilot described in the
+[benchmark owner](linux_semantic_benchmarks.md); required import evidence is
+revalidated from retained logs/build snapshots after relocation.
+
+The existing source gate also retains [operational build/install costs](linux_semantic_build_costs.md).
+Foundation and installer owners record actual phase timers and initial reuse
+state during their required execution. The aggregate checks the compact artifact
+and recomputes it from raw owner receipts/logs; timing remains advisory. This
+adds no archive build, qualification, schedule or paid runner.

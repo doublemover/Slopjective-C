@@ -51,10 +51,23 @@ reused only after checking its tool/source/header/object inputs; every test and
 profile collection runs anew. This is compiled-product reuse, not reused native
 execution. The earlier persistent-storage failure remains a failed attempt.
 
-The pilot does not instrument patched Clang/LLVM, establish changed-region
-baselines or enforce a PR percentage threshold. Its policy names unselected
-tests and upstream/system exclusions explicitly. Compiler-process coverage,
-runtime execution coverage, language conformance and fuzzer feedback are separate
-claims. Further work includes a bounded patched-Clang profile, complete helper
-and archive provenance, peak-resource/cost calibration, broader selection,
-denominator comparison and reviewed narrow CI gates. #8290 remains open.
+The integrated compiler owner now uses the isolated `compiler-source-coverage`
+foundation. It derives whole-file and changed-hunk denominators directly from
+the admitted patches, verifies every eligible implementation object's flags,
+hashes and coverage mappings, and executes the ObjC3 lit suite plus the selected
+native unit binaries. Actual ELF identities bind each profile to the executed
+main and allowed loaded modules; unrelated support-tool profiles remain separate.
+Exports retain zero-hit and missing-mapping files rather than silently reducing
+the denominator. Source/object/DSO identities are checked again after execution.
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.compiler_source_coverage \
+  --output out/compiler-source-coverage
+```
+
+The existing native assurance lane selects reader controls, first-party coverage
+and patched-compiler coverage together when required. Live integrated hosted
+acceptance, matching cost observations and reviewed changed-region baseline
+policy remain open under #8290/#8283. No automatic PR percentage threshold is
+introduced. Compiler-process coverage, runtime execution coverage, language
+conformance and fuzzer feedback remain separate claims.

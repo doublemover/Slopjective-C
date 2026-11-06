@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
 import types
 import uuid
 
@@ -81,12 +82,30 @@ export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
 
 
 def install(archive: Path, expected_sha256: str, root: Path) -> dict:
+    started = time.monotonic()
+    costs = {}
     if platform.system() != 'Linux' or platform.machine() != 'x86_64':
         raise ValueError('this SDK requires native Linux x86-64')
     archive = archive.resolve(strict=True)
     root = root.expanduser().resolve()
     if len(expected_sha256) != 64 or file_hash(archive) != expected_sha256.lower():
         raise ValueError('archive SHA-256 does not match the release receipt')
+    costs['archive_admission'] = time.monotonic()-started
+    archive_bytes = archive.stat().st_size
+    decoder_name = shutil.which('zstd')
+    if not decoder_name: raise ValueError('SDK installation requires zstd')
+    decoder_path = Path(decoder_name).resolve(strict=True)
+    decoder_sha256 = file_hash(decoder_path)
+    measurement_host = {'system': '-'.join((platform.system(), platform.release(), platform.version())), 'machine': platform.machine(),
+        'python_version': platform.python_version(),
+        'decoder': {'path': str(decoder_path), 'sha256': decoder_sha256},
+        'affinity': sorted(os.sched_getaffinity(0)),
+        'cpu_quota': Path('/sys/fs/cgroup/cpu.max').read_text().strip()
+            if Path('/sys/fs/cgroup/cpu.max').is_file() else None,
+        'memory_limit': Path('/sys/fs/cgroup/memory.max').read_text().strip()
+            if Path('/sys/fs/cgroup/memory.max').is_file() else None,
+        'cpu_model': next((line.split(':', 1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines()
+                           if line.startswith('model name')), None)}
     root.mkdir(parents=True, exist_ok=True)
     root.chmod(0o755)
     cleanup_warnings = []
@@ -96,7 +115,8 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
         committed = False
         try:
             destination = Path(temporary.name)
-            with subprocess.Popen(['zstd', '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
+            phase_started = time.monotonic()
+            with subprocess.Popen([str(decoder_path), '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
                 try:
                     with tarfile.open(fileobj=decoder.stdout, mode='r|') as tar:
                         tar.extractall(destination, filter='data')
@@ -104,6 +124,10 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
                     decoder.stdout.close()
                 if decoder.wait() != 0:
                     raise ValueError('SDK archive decompression failed')
+            costs['extraction'] = time.monotonic()-phase_started
+            phase_started = time.monotonic()
+            if file_hash(decoder_path) != decoder_sha256:
+                raise ValueError('SDK archive decoder changed during installation')
             if {path.name for path in destination.iterdir()} != {'objc3-sdk'}:
                 raise ValueError('SDK archive must contain exactly one objc3-sdk directory')
             candidate = destination / 'objc3-sdk'
@@ -117,6 +141,7 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             prefix = root / 'sdks' / data['seal_sha256']
             prefix.parent.mkdir(exist_ok=True)
             prefix.parent.chmod(0o755)
+            reused = prefix.exists()
             if prefix.exists():
                 # Cached contents, including their verifier, are inputs to
                 # verify with code admitted from the SHA-verified archive.
@@ -124,18 +149,28 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
                     raise ValueError('existing SDK prefix differs from the release seal')
             else:
                 os.replace(candidate, prefix)
+            costs['seal_verification_and_publication'] = time.monotonic()-phase_started
+            phase_started = time.monotonic()
             activate(root, prefix)
+            costs['activation'] = time.monotonic()-phase_started
             committed = True
         finally:
+            phase_started = time.monotonic()
             try:
                 temporary.cleanup()
             except OSError as error:
                 if not committed:
                     raise
                 cleanup_warnings.append({'path': temporary.name, 'error': str(error)})
+            costs['cleanup'] = time.monotonic()-phase_started
     return {'status': 'PASS', 'prefix': str(prefix), 'activation': str(root / 'activate.sh'),
             'seal_sha256': data['seal_sha256'], 'activated': True,
-            'cleanup_warnings': cleanup_warnings}
+            'cleanup_warnings': cleanup_warnings,
+            'cost': {'schema': 'objc3c.sdk-install-cost.v1', 'archive_sha256': expected_sha256.lower(),
+                'source_build_id': data['source_build_id'], 'seal_sha256': data['seal_sha256'],
+                'host': measurement_host,
+                'archive_bytes': archive_bytes, 'prefix_reused': reused,
+                'phases_seconds': costs, 'elapsed_seconds': time.monotonic()-started}}
 
 
 def main(argv=None) -> int:

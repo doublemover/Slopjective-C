@@ -13,6 +13,10 @@ add_library(objc3c_clang_foundation STATIC
   module_names.cpp
   interface_codec.cpp
   interface_emitter.cpp
+  interface_emission_templates.cpp
+  interface_emission_features.cpp
+  interface_emission_identity.cpp
+  interface_emission_dependencies.cpp
   runtime_interface_types.cpp
   interface_artifact_io.cpp
   interface_validation.cpp
@@ -54,15 +58,9 @@ endforeach()
 configure_file(runtime_interface_header.h.in runtime_interface_header.h @ONLY)
 target_include_directories(objc3c_clang_foundation PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 find_package(OpenSSL 3.5 REQUIRED COMPONENTS Crypto)
-if(OBJC3C_LINK_CLANG_CPP)
-  if(NOT TARGET clang-cpp)
-    message(FATAL_ERROR "The selected foundation does not provide clang-cpp")
-  endif()
-  target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto clang-cpp)
-else()
-  target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto
-    clangTooling clangFrontend clangCodeGen clangIndex)
-endif()
+target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto)
+objc3c_link_clang_components(objc3c_clang_foundation
+  clangTooling clangFrontend clangCodeGen clangIndex)
 if(LLVM_LINK_LLVM_DYLIB)
   # Match Clang's shared LLVM dependency. Mixing component archives with that
   # dylib can duplicate LLVM globals and command-line option registrations.
@@ -251,16 +249,16 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/interface_module_provenance_test.cpp)
   target_include_directories(objc3_interface_module_provenance_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-  target_link_libraries(objc3_interface_module_provenance_test PRIVATE
-    objc3c_clang_foundation clangTooling clangFrontend clangAST)
+  target_link_libraries(objc3_interface_module_provenance_test PRIVATE objc3c_clang_foundation)
+  objc3c_link_clang_components(objc3_interface_module_provenance_test clangTooling clangFrontend clangAST)
   add_test(NAME objc3_interface_module_provenance COMMAND objc3_interface_module_provenance_test)
 
   add_executable(objc3_interface_source_import_bridge_test
     ../../../../tests/clang_foundation/interface_source_import_bridge_test.cpp)
   target_include_directories(objc3_interface_source_import_bridge_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-  target_link_libraries(objc3_interface_source_import_bridge_test PRIVATE
-    objc3c_clang_foundation clangTooling clangFrontend clangAST)
+  target_link_libraries(objc3_interface_source_import_bridge_test PRIVATE objc3c_clang_foundation)
+  objc3c_link_clang_components(objc3_interface_source_import_bridge_test clangTooling clangFrontend clangAST)
   add_test(NAME objc3_interface_source_import_bridge
     COMMAND objc3_interface_source_import_bridge_test)
   add_executable(objc3_compile_session_test
@@ -271,7 +269,8 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/ownership_projection_test.cpp)
   target_include_directories(objc3_ownership_projection_test SYSTEM PRIVATE
     ${CLANG_INCLUDE_DIRS})
-  target_link_libraries(objc3_ownership_projection_test PRIVATE objc3c_clang_foundation clangTooling)
+  target_link_libraries(objc3_ownership_projection_test PRIVATE objc3c_clang_foundation)
+  objc3c_link_clang_components(objc3_ownership_projection_test clangTooling)
   add_test(NAME objc3_ownership_projection COMMAND objc3_ownership_projection_test)
   add_executable(objc3_module_method_names_test
     ../../../../tests/clang_foundation/module_method_names_test.cpp)
@@ -315,9 +314,7 @@ if (BUILD_TESTING)
   target_include_directories(objc3_interface_emitter_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_emitter_test PRIVATE objc3c_clang_foundation)
-  if(NOT OBJC3C_LINK_CLANG_CPP)
-    target_link_libraries(objc3_interface_emitter_test PRIVATE clangTooling)
-  endif()
+  objc3c_link_clang_components(objc3_interface_emitter_test clangTooling)
   target_compile_definitions(objc3_interface_emitter_test PRIVATE
     OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES="${_objc3_repo}/tests/clang_foundation/native_async_packages"
     OBJC3_INTERFACE_TEST_STDLIB_HEADERS="${_objc3_repo}/stdlib/include/objc3"
@@ -329,8 +326,8 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_compile_definitions(objc3_isolation_contracts_test PRIVATE
     OBJC3_ISOLATION_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
-  target_link_libraries(objc3_isolation_contracts_test PRIVATE
-    objc3c_clang_foundation clangTooling)
+  target_link_libraries(objc3_isolation_contracts_test PRIVATE objc3c_clang_foundation)
+  objc3c_link_clang_components(objc3_isolation_contracts_test clangTooling)
   add_test(NAME objc3_isolation_contracts COMMAND objc3_isolation_contracts_test)
   add_executable(objc3_explicit_capture_lists_test
     ../../../../tests/clang_foundation/explicit_capture_lists_test.cpp)
@@ -466,3 +463,5 @@ if(BUILD_TESTING)
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/custom-compile-records.json"
     CONTENT "[\n${_custom_compile_json}\n]\n")
 endif()
+
+objc3c_verify_clang_linkage()

@@ -4,6 +4,10 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
+import zipfile
+import sys
+import time
 
 import pytest
 
@@ -13,6 +17,54 @@ from scripts.objc3c_assurance.plan import from_checkout, select, validate
 from scripts.objc3c_assurance.runner import package_execution
 
 REV = dict(head='a'*40, base='b'*40, tested='c'*40)
+
+
+@pytest.mark.parametrize('interrupted', [False, True])
+def test_native_timeout_and_interruption_kill_compiler_descendant_sessions(tmp_path, monkeypatch, interrupted):
+    """A compiler can launch a child in a separate process group, as Ninja does."""
+    from scripts.objc3c_assurance import execution
+    from scripts.objc3c_toolchain.binary_packages import digest
+    marker = tmp_path / 'child.pid'
+    child = ('import os,time;os.setpgrp();'
+             'open('+repr(str(marker))+',"w").write(str(os.getpid()));time.sleep(60)')
+    parent = ('import subprocess,sys,time;'
+              'subprocess.Popen([sys.executable,"-c",'+repr(child)+']);time.sleep(60)')
+    original_wait, calls = subprocess.Popen.wait, []
+    if interrupted:
+        def interrupt_once(process, *args, **kwargs):
+            if not calls:
+                calls.append(process.pid)
+                deadline = time.monotonic()+5
+                while not marker.exists() and time.monotonic() < deadline:
+                    time.sleep(.01)
+                assert marker.exists(), 'descendant failed to start before interruption'
+                raise KeyboardInterrupt('controlled native interruption')
+            return original_wait(process, *args, **kwargs)
+        monkeypatch.setattr(subprocess.Popen, 'wait', interrupt_once)
+    records = []
+    with pytest.raises(KeyboardInterrupt if interrupted else ValueError):
+        execution.checked_command('bounded-native', [sys.executable, '-c', parent],
+            repo=tmp_path, environment=dict(os.environ), directory=tmp_path,
+            records=records, timeout=5 if interrupted else .5)
+    assert marker.exists()
+    pid = int(marker.read_text())
+    # Grandchildren may briefly remain zombies under a container's PID 1;
+    # no compiler work may survive in either process group.
+    stat = Path('/proc') / str(pid) / 'stat'
+    assert not stat.exists() or stat.read_text().split(') ', 1)[1].startswith('Z ')
+    row = records[0]
+    assert row['elapsed_seconds'] > 0 and row['error']
+    if not interrupted:
+        assert row['exit_code'] == 124 and row['timed_out']
+        assert row['log_sha256'] == digest(Path(row['log']))
+
+
+@pytest.mark.parametrize('filename', ['fresh.log', 'fresh.xml'])
+def test_native_commands_reject_previous_log_and_ctest_results(tmp_path, filename):
+    (tmp_path / filename).write_text('previous success')
+    with pytest.raises(ValueError, match='fresh log and CTest'):
+        checked_command('fresh', ['ctest'], repo=tmp_path, environment=dict(os.environ),
+                        directory=tmp_path, records=[])
 
 
 def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_archive():
@@ -28,7 +80,24 @@ def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_a
     assert "command('archive-install'" not in source
 
 
-@pytest.mark.parametrize('fault', ['status', 'digest', 'install', 'qualification', 'commands', 'command'])
+def test_package_terminal_inventory_matches_producer_after_artifact_relocation(tmp_path):
+    result = {'status': 'PASS', 'archive_sha256': 'a'*64,
+        'installed': {'prefix': '/original/runner/content-addressed/sdk'},
+        'installed_qualification': {'status': 'PASS', 'commands': [
+            {'name': 'compile', 'exit_code': 0}, {'name': 'execute', 'exit_code': 0}]}}
+    producer = tmp_path / 'producer/package';producer.mkdir(parents=True)
+    (producer / 'release.json').write_text(json.dumps(result))
+    archive = tmp_path / 'package.zip'
+    with zipfile.ZipFile(archive, 'w') as packed:
+        packed.write(producer / 'release.json', 'package/release.json')
+    shutil.rmtree(producer.parent)
+    destination = tmp_path / 'different-gate-checkout'
+    with zipfile.ZipFile(archive) as packed: packed.extractall(destination)
+    assert evidence.suite_results(destination, 'package') == package_execution(result)
+
+
+@pytest.mark.parametrize('fault', ['status', 'digest', 'malformed-digest', 'install', 'relative-prefix',
+    'qualification', 'commands', 'command', 'timeout', 'boolean-exit'])
 def test_native_package_rejects_incomplete_sdk_pipeline_evidence(fault):
     result = {'status': 'PASS', 'archive_sha256': 'a' * 64,
               'installed': {'prefix': '/content-addressed/sdk'},
@@ -36,10 +105,14 @@ def test_native_package_rejects_incomplete_sdk_pipeline_evidence(fault):
                   {'name': 'execute', 'exit_code': 0}]}}
     if fault == 'status': result['status'] = 'FAIL'
     elif fault == 'digest': result['archive_sha256'] = ''
+    elif fault == 'malformed-digest': result['archive_sha256'] = 'not-an-archive-digest'
     elif fault == 'install': result['installed'] = {}
+    elif fault == 'relative-prefix': result['installed']['prefix'] = 'unowned/sdk'
     elif fault == 'qualification': result['installed_qualification']['status'] = 'FAIL'
     elif fault == 'commands': result['installed_qualification']['commands'] = []
-    else: result['installed_qualification']['commands'][0]['exit_code'] = 1
+    elif fault == 'command': result['installed_qualification']['commands'][0]['exit_code'] = 1
+    elif fault == 'timeout': result['installed_qualification']['commands'][0]['timed_out'] = True
+    else: result['installed_qualification']['commands'][0]['exit_code'] = False
     with pytest.raises(ValueError, match='installed archive qualification'):
         package_execution(result)
 
@@ -101,13 +174,60 @@ def test_sanitizer_product_gate_requires_real_deduplicated_campaign_store(tmp_pa
         'expected_owners': list(expected), 'runtime_profiles': [{} for _ in range(6)],
         'product_evidence_store': {
             'schema': 'objc3c.product-evidence-shared-store.v1', 'owners': 13, 'references': 1,
-            'private_bytes': 2, 'stored_bytes': 1, 'deduplicated_bytes': 1, 'path': str(blobs)}}
+            'private_bytes': 2, 'stored_bytes': 1, 'deduplicated_bytes': 1, 'path': 'product-evidence-blobs'}}
     receipt = campaign / 'qualification.json';receipt.write_text(json.dumps(report))
     assert len(evidence.suite_results(tmp_path, 'sanitizer-products')) == 13
     report['product_evidence_store']['deduplicated_bytes'] = 0
     receipt.write_text(json.dumps(report))
     with pytest.raises(ValueError, match='owner/profile matrix'):
         evidence.suite_results(tmp_path, 'sanitizer-products')
+
+
+def test_actual_shared_product_store_survives_upload_without_private_symlinks(tmp_path):
+    from compression import zstd
+    import hashlib
+    from scripts.objc3c_toolchain.product_evidence import blob_bytes, consolidate_campaign_blobs
+    producer = tmp_path / 'original-runner/results'
+    campaign = producer / 'sanitizer-products/campaign'
+    names = ['structured', 'native-async', 'coroutines', 'c-frame-bridge', 'installed-ownership',
+        *(kind+'-'+sanitizer+'-'+optimization for kind in ('features', 'factories')
+          for sanitizer in ('address-undefined', 'thread') for optimization in ('O0', 'O2'))]
+    payload = b'exact retained replay source bytes'
+    signature = hashlib.sha256(payload).hexdigest();packed = zstd.compress(payload)
+    record = {'blob': 'blobs/'+signature+'.zst', 'sha256': signature, 'bytes': len(payload),
+        'encoding': 'zstd', 'stored_bytes': len(packed), 'stored_sha256': hashlib.sha256(packed).hexdigest()}
+    for name in names:
+        root = campaign / name / 'product-evidence';(root / 'blobs').mkdir(parents=True)
+        (root / record['blob']).write_bytes(packed)
+        (root / 'qualification.json').write_text(json.dumps({
+            'schema': 'objc3c.sanitizer-product-evidence.v1', 'status': 'PASS', 'records': [record]}))
+    store = consolidate_campaign_blobs(campaign)
+    assert store['path'] == 'product-evidence-blobs'
+    report = {'status': 'PASS', 'owners': [{'name': name, 'status': 'PASS'} for name in names],
+        'expected_owners': names, 'runtime_profiles': [{} for _ in range(6)], 'product_evidence_store': store}
+    (campaign / 'qualification.json').write_text(json.dumps(report))
+    assert len(evidence.suite_results(producer, 'sanitizer-products')) == 13
+    archive = tmp_path / 'native-results.zip'
+    with zipfile.ZipFile(archive, 'w') as output:
+        for path in evidence.native_files(producer / 'sanitizer-products'):
+            output.write(path, path.relative_to(producer))
+    shutil.rmtree(producer.parent)
+    gate = tmp_path / 'relocated-gate/evidence'
+    with zipfile.ZipFile(archive) as contents: contents.extractall(gate)
+    assert len(evidence.suite_results(gate, 'sanitizer-products')) == 13
+    for name in names:
+        root = gate / 'sanitizer-products/campaign' / name / 'product-evidence'
+        assert not (root / 'blobs').exists()
+        assert blob_bytes(root, record) == payload
+    # An invalid namespace cannot redirect the reader even with outer hashes
+    # recomputed. The only admitted store is the local campaign-owned directory.
+    receipt = gate / 'sanitizer-products/campaign/qualification.json'
+    for path in ('../unowned', '/original/runner/product-evidence-blobs',
+                 'product-evidence-blobs/../unowned'):
+        report['product_evidence_store']['path'] = path
+        receipt.write_text(json.dumps(report))
+        with pytest.raises(ValueError, match='owner/profile matrix'):
+            evidence.suite_results(gate, 'sanitizer-products')
 
 
 @pytest.mark.parametrize('paths', [[], None, ['native/objc3c/src/runtime/x.cpp'],
@@ -211,9 +331,20 @@ def passing_bundle(tmp_path):
         root.mkdir()
         if suite['id'] == 'foundation':
             (root / 'foundation-0.json').write_text(json.dumps({'tests': [{'name': 'parser rejection', 'code': 'PASS'}]}))
-            source = {'status': 'passed', 'phases': [dict(phase=name, exit_code=0, **(
-                {'test_results': '/producer/foundation-0.json'} if name == 'test' else {}))
-                for name in ('configure', 'build', 'test', 'stage')]}
+            source = {'status': 'passed', 'source_identity': 'fixture', 'elapsed_seconds': 4.1,
+                'cost_context': {'schema': 'objc3c.foundation-cost-context.v1', 'build_config_digest': 'fixture',
+                    'configuration_input_identity': 'e'*64,
+                    'instrumentation': None, 'host_environment': {'compiler': 'fixture'}, 'host': {'system': 'fixture'},
+                    'initial_state': 'cold-build-directory', 'initial_cache_files': {
+                        'CMakeCache.txt': None, 'build.ninja': None, '.ninja_log': None},
+                    'initial_entry_count': 0,
+                    'source_preparation': {'performed': True, 'seconds': .1}, 'cache_scope': 'shared caches'},
+                'phases': []}
+            for index, name in enumerate(('configure', 'build', 'test', 'stage')):
+                log = root / ('phase-'+str(index)+'.log');log.write_text('actual command fixture log')
+                source['phases'].append(dict(phase=name, exit_code=0, command=[name], plan_identity=name,
+                    log='/producer/'+name+'.log', log_sha256=evidence.digest(log), elapsed_seconds=1.0, **(
+                    {'test_results': '/producer/foundation-0.json'} if name == 'test' else {})))
             (root / 'foundation.json').write_text(json.dumps(source))
         elif suite['id'] == 'runtime':
             (root / 'runtime.json').write_text('{"status":"passed"}')
@@ -230,7 +361,11 @@ def passing_bundle(tmp_path):
                 'commands': [{'name': 'execute', 'exit_code': 0}]}))
         rows.append({'id': suite['id'], 'status': 'PASS', 'executions': evidence.suite_results(tmp_path, suite['id']),
                      'artifacts': [evidence.artifact(tmp_path, p) for p in sorted(root.rglob('*')) if p.is_file()]})
-    result = {'schema': evidence.SCHEMA, 'status': 'PASS', 'revision': plan['revision'],
+    from scripts.objc3c_toolchain.semantic_build_costs import snapshot
+    costs = tmp_path / 'operational-costs.json'
+    costs.write_text(json.dumps(snapshot(foundations=[tmp_path / 'foundation/foundation.json'])))
+    result = {'operational_costs': evidence.artifact(tmp_path, costs),
+              'schema': evidence.SCHEMA, 'status': 'PASS', 'revision': plan['revision'],
               'plan_sha256': plan['sha256'], 'suites': rows, 'commands': [{'exit_code': 0}]}
     (tmp_path / 'result.json').write_text(json.dumps(result))
     return plan, result
@@ -238,6 +373,98 @@ def passing_bundle(tmp_path):
 
 def verify(selected_plan, tmp_path, **outcomes):
     return evidence.aggregate(selected_plan, tmp_path, outcomes={'plan': 'success', 'native': 'success', **outcomes}, tested=REV['tested'])
+
+
+def test_execution_shards_partition_all_selected_suites_and_profile_builds(tmp_path):
+    from scripts.objc3c_assurance.plan import execution_shards, selected_suites, foundation_receipts
+    plan = select(None, **REV, periodic=True)
+    assert execution_shards(plan) == ['core', 'frontend-fuzz', 'source-coverage']
+    groups = {name: selected_suites(plan, name) for name in execution_shards(plan)}
+    names = [row['id'] for suites in groups.values() for row in suites]
+    assert len(names) == len(set(names)) == len(plan['suites'])
+    assert set(names) == {row['id'] for row in plan['suites']}
+    core = [row['id'] for row in groups['core']]
+    assert core.index('package') < core.index('sanitizer-products') < core.index('runtime-schedules')
+    receipts = foundation_receipts(tmp_path, groups['core'])
+    assert receipts == [tmp_path / 'foundation/foundation.json',
+        tmp_path / 'sanitizer-products/foundations/compiler-asan-ubsan/foundation.json']
+    assert foundation_receipts(tmp_path, groups['frontend-fuzz']) == [
+        tmp_path / 'frontend-fuzz/foundations/compiler-fuzz-asan-ubsan/foundation.json']
+    with pytest.raises(ValueError, match='shard'):
+        selected_suites(select(['tests/tooling/contract.py'], **REV), 'frontend-fuzz')
+    with pytest.raises(ValueError, match='shard'):
+        selected_suites(plan, 'unknown')
+    assert execution_shards(select(['docs/roadmap/prose.md'], **REV)) == []
+
+
+@pytest.mark.parametrize('path', ['scripts/objc3c_assurance/runner.py',
+    '.github/workflows/native-assurance.yml', '.github/workflows/adaptive-closeout.yml'])
+def test_orchestration_edits_select_every_affected_native_owner(path):
+    full = {row['id'] for row in select(None, **REV, periodic=True)['suites']} - {'upstream'}
+    assert {row['id'] for row in select([path], **REV)['suites']} == full
+
+
+def test_sharded_published_bundle_retains_exact_native_evidence(tmp_path):
+    from scripts.objc3c_assurance.plan import foundation_receipts, selected_suites
+    producer = tmp_path / 'producer';producer.mkdir()
+    plan, receipt = passing_bundle(producer)
+    receipt['shard'] = 'core'
+    (producer / 'result.json').write_text(json.dumps(receipt))
+    # Build outputs and unrelated files never enter the upload, even with a
+    # durable-looking extension. The actual evidence remains byte-for-byte bound.
+    ignored = producer / 'frontend/build/compile_commands.json'
+    ignored.parent.mkdir();ignored.write_text('large transient graph')
+    (producer / 'unselected').mkdir()
+    (producer / 'unselected/transient.log').write_text('not selected')
+    destination = tmp_path / 'published/core'
+    published = evidence.publish(plan, producer, destination, shard='core')
+    assert published['files'] > len(plan['suites'])
+    assert not (destination / 'frontend/build').exists()
+    assert not (destination / 'unselected').exists()
+    assert (destination / 'result.json').read_bytes() == (producer / 'result.json').read_bytes()
+    result = evidence.aggregate_shards(plan, destination.parent,
+        outcomes={'plan': 'success', 'native': 'success'}, tested=REV['tested'])
+    assert result['status'] == 'PASS' and result['shards'] == ['core']
+    assert set(result['suites']) == {row['id'] for row in plan['suites']}
+    assert foundation_receipts(destination, selected_suites(plan, 'core')) == [
+        destination / 'foundation/foundation.json']
+    with pytest.raises(ValueError, match='fresh'):
+        evidence.publish(plan, producer, destination, shard='core')
+
+
+@pytest.mark.parametrize('fault', ['missing', 'extra', 'linked', 'wrong-shard', 'wrong-revision',
+    'cancelled', 'missing-suite', 'changed-log', 'changed-cost'])
+def test_sharded_terminal_gate_rejects_incomplete_or_substituted_evidence(tmp_path, fault):
+    producer = tmp_path / 'producer';producer.mkdir()
+    plan, receipt = passing_bundle(producer)
+    receipt['shard'] = 'core'
+    (producer / 'result.json').write_text(json.dumps(receipt))
+    root = tmp_path / 'published'
+    evidence.publish(plan, producer, root / 'core', shard='core')
+    outcomes = {'plan': 'success', 'native': 'success'}
+    if fault == 'missing':
+        (root / 'core').rename(root / 'omitted')
+    elif fault == 'extra':
+        (root / 'foreign').mkdir()
+    elif fault == 'linked':
+        (root / 'core').rename(root / 'saved')
+        (root / 'core').symlink_to(root / 'saved', target_is_directory=True)
+    elif fault == 'wrong-shard':
+        receipt['shard'] = 'frontend-fuzz'
+    elif fault == 'wrong-revision':
+        receipt['revision'] = {**receipt['revision'], 'tested': 'd'*40}
+    elif fault == 'cancelled':
+        outcomes['native'] = 'cancelled'
+    elif fault == 'missing-suite':
+        receipt['suites'].pop()
+    elif fault == 'changed-log':
+        (root / 'core/foundation/phase-0.log').write_text('substituted')
+    elif fault == 'changed-cost':
+        (root / 'core/operational-costs.json').write_text('{}')
+    if (root / 'core').is_dir():
+        (root / 'core/result.json').write_text(json.dumps(receipt))
+    with pytest.raises(ValueError):
+        evidence.aggregate_shards(plan, root, outcomes=outcomes, tested=REV['tested'])
 
 
 def test_complete_bundle_survives_producer_path_relocation(tmp_path):
@@ -351,3 +578,20 @@ def test_real_native_commands_and_ctest_fail_closed(tmp_path, fault):
     else:
         with pytest.raises(ValueError):
             execute_ctest(build, 'actual', output, command)
+
+
+@pytest.mark.parametrize('fault', ['missing-cost', 'changed-cost', 'false-decision', 'false-timing'])
+def test_native_aggregate_recomputes_operational_costs_from_qualified_owner_receipts(tmp_path, fault):
+    plan, result = passing_bundle(tmp_path)
+    path = tmp_path / 'operational-costs.json'
+    if fault == 'missing-cost': path.unlink()
+    else:
+        cost = json.loads(path.read_text())
+        if fault == 'false-decision': cost['decision'] = 'performance-PASS'
+        elif fault == 'false-timing': cost['records'][0]['phases_seconds']['build'] = 0
+        else: cost['groups'] = []
+        path.write_text(json.dumps(cost))
+        if fault != 'changed-cost':
+            result['operational_costs'] = evidence.artifact(tmp_path, path)
+            (tmp_path / 'result.json').write_text(json.dumps(result))
+    with pytest.raises(ValueError): verify(plan, tmp_path)

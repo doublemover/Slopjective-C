@@ -3,8 +3,8 @@
 The acceptance review at `08e5b64bd` identified seven concrete requirements in
 the previously claimed fixes. This continuation repairs six, with the focused
 evidence below. The earlier review's complete acceptance/qualification boundaries
-remain distinct from these source repairs. Issue #8282's product-evidence
-contract is still open.
+remain distinct from these source repairs. Issue #8282's actual-product evidence contract has since been implemented
+and source-qualified; hosted aggregate acceptance remains open.
 
 ## Repaired requirements
 
@@ -53,10 +53,12 @@ passes its 112-build / 32-rejection matrix at its recorded checkpoint.
 
 ## Remaining acceptance work
 
-**#8282:** complete the original actual-product evidence contract across sanitizer
-owners: source/command identity, log digest and duration, and loaded execution
-route. Existing strict options and paired detector controls retain their credited
-scope; their receipts alone do not satisfy this outstanding requirement.
+**#8282:** actual-product records now bind source/command identity, log digests,
+duration and loaded routes across sanitizer owners. Campaign-relative shared
+blobs replay after ZIP relocation without private symlinks. Complete blob
+metadata is checked before verification is shared. Focused native replay and
+corruption controls pass; final exact-revision hosted acceptance is still
+accounted for under #8283.
 
 Live exact-revision CI, cost measurements and administrator-required checks
 remain under #8283. The ten independent assurance/platform issues stay in the

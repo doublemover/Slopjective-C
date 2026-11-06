@@ -1,10 +1,126 @@
 """Keep implementation analysis complete across flags, variants and headers."""
 import json
 import shlex
+import shutil
+import subprocess
 
 import pytest
 
-from scripts.objc3c_toolchain.implementation_analysis import dependencies, inventory, selected_variants, textual_pch
+from scripts.objc3c_toolchain.implementation_analysis import (
+    dependencies, dependency_arguments, inventory, matched_pch_arguments, owner_changes,
+    selected_variants, textual_pch,
+)
+
+
+def test_pending_window_publishes_native_results_before_preparing_more(tmp_path):
+    from concurrent.futures import ProcessPoolExecutor
+    import multiprocessing
+    import os
+    import sys
+    from scripts.objc3c_toolchain.analysis_checkpoint import run_unit
+    from scripts.objc3c_toolchain.analysis_scheduling import execute_jobs
+    completed = []
+
+    def jobs():
+        for index in range(6):
+            if index >= 2:
+                assert len(completed) >= index - 1
+            yield {'name': 'native-'+str(index), 'identity': str(index),
+                'directory': str(tmp_path / str(index)), 'environment': dict(os.environ),
+                'argv': [sys.executable, '-c', 'print("native action completed")'], 'timeout': 10}
+
+    with ProcessPoolExecutor(max_workers=2, mp_context=multiprocessing.get_context('spawn')) as workers:
+        execute_jobs(jobs(), submit=lambda job: workers.submit(run_unit, job),
+                     completed=completed.append, max_pending=2)
+    assert len(completed) == 6
+    assert all(result['status'] == 'PASS' and len(commands) == 1 for result, commands in completed)
+    for index in range(6):
+        receipt = json.loads((tmp_path / str(index) / 'qualification.json').read_text())
+        assert receipt['result']['identity'] == str(index)
+        assert receipt['result']['status'] == receipt['status'] == 'PASS'
+
+
+def test_preparation_failure_drains_running_native_proof_and_remains_failed(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    import os
+    import sys
+    import time
+    from scripts.objc3c_toolchain.analysis_checkpoint import run_unit
+    from scripts.objc3c_toolchain.analysis_scheduling import execute_jobs
+    started, release = tmp_path / 'started', tmp_path / 'release'
+    code = ('from pathlib import Path; import time; '
+        f'Path({str(started)!r}).write_text("started"); deadline=time.monotonic()+5\n'
+        f'while not Path({str(release)!r}).exists():\n'
+        ' if time.monotonic()>deadline: raise RuntimeError("release missing")\n'
+        ' time.sleep(.01)\n'
+        'print("running native action retained")')
+    completed = []
+
+    def jobs():
+        yield {'name': 'running-native', 'identity': 'running',
+            'directory': str(tmp_path / 'unit'), 'environment': dict(os.environ),
+            'argv': [sys.executable, '-c', code], 'timeout': 10}
+        deadline = time.monotonic()+5
+        while not started.exists():
+            if time.monotonic() > deadline:
+                raise RuntimeError('native action did not start')
+            time.sleep(.01)
+        release.write_text('complete')
+        raise ValueError('PCH preparation failed')
+
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        with pytest.raises(ValueError, match='PCH preparation failed'):
+            execute_jobs(jobs(), submit=lambda job: workers.submit(run_unit, job),
+                         completed=completed.append, max_pending=2)
+    assert len(completed) == 1 and completed[0][0]['status'] == 'PASS'
+    assert json.loads((tmp_path / 'unit/qualification.json').read_text())['result']['status'] == 'PASS'
+
+
+def test_native_finding_is_durable_and_does_not_discard_clean_sibling(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    import os
+    import sys
+    from scripts.objc3c_toolchain.analysis_checkpoint import run_unit
+    from scripts.objc3c_toolchain.analysis_scheduling import execute_jobs
+    scripts = ['print("clean sibling")',
+        'print("fixture.cpp:8:2: error: null access [clang-analyzer-core.NullDereference]")']
+    jobs = [{'name': 'unit-'+str(index), 'identity': str(index),
+        'directory': str(tmp_path / str(index)), 'environment': dict(os.environ),
+        'argv': [sys.executable, '-c', code], 'timeout': 10} for index, code in enumerate(scripts)]
+    completed = []
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        execute_jobs(jobs, submit=lambda job: workers.submit(run_unit, job),
+                     completed=completed.append, max_pending=2)
+    assert {row['status'] for row, _ in completed} == {'PASS', 'FAIL'}
+    failure = json.loads((tmp_path / '1/qualification.json').read_text())
+    assert failure['status'] == failure['result']['status'] == 'FAIL'
+    assert failure['result']['classification'] == 'finding'
+    assert failure['result']['diagnostics'][0]['check'] == 'clang-analyzer-core.NullDereference'
+
+
+def test_reviewed_large_clang_unit_timeout_never_widens_native_actions(tmp_path):
+    from scripts.objc3c_toolchain.implementation_analysis import (
+        translation_unit_timeout, validate_timeout_overrides)
+    unit = 'clang/lib/AST/ASTContext.cpp'
+    policy = {'translation_unit_timeout_seconds': 600,
+        'translation_unit_timeout_overrides_seconds': {unit: 1800}}
+    validate_timeout_overrides(policy, {unit})
+    row = {'owner': 'maintained-clang', 'file': str(tmp_path / unit)}
+    assert translation_unit_timeout(policy, row, tmp_path) == 1800
+    assert translation_unit_timeout(policy, {**row, 'owner': 'frontend'}, tmp_path) == 600
+    assert translation_unit_timeout(policy, {**row, 'file': str(tmp_path / 'clang/lib/AST/Other.cpp')},
+                                    tmp_path) == 600
+    with pytest.raises(ValueError, match='escaped'):
+        translation_unit_timeout(policy, {**row, 'file': str(tmp_path.parent / 'outside.cpp')}, tmp_path)
+
+
+@pytest.mark.parametrize('overrides', [None, [], {'native/objc3c/large.cpp': 1800}] + [
+    {'clang/lib/AST/ASTContext.cpp': value} for value in (True, 0, 600, 3601, float('inf'), '1800')])
+def test_unreviewed_or_unbounded_timeout_override_is_rejected(overrides):
+    from scripts.objc3c_toolchain.implementation_analysis import validate_timeout_overrides
+    with pytest.raises(ValueError, match='finite bounds'):
+        validate_timeout_overrides({'translation_unit_timeout_seconds': 600,
+            'translation_unit_timeout_overrides_seconds': overrides}, {'clang/lib/AST/ASTContext.cpp'})
 
 
 @pytest.fixture
@@ -66,6 +182,35 @@ def test_header_edit_selects_dependent_variants_without_a_changed_line_filter(da
     assert selected_variants(rows, headers, [path.parent / 'new-header.h']) == rows
 
 
+def test_changed_native_scopes_do_not_select_unaffected_implementation_owners(tmp_path):
+    repo = tmp_path / 'repo';repo.mkdir()
+    runtime = repo / 'native/objc3c/src/runtime/service.cpp'
+    frontend = repo / 'native/objc3c/src/clang_foundation/frontend.cpp'
+    cmake = repo / 'native/cmake/Objc3BuildWarnings.cmake'
+    assert owner_changes(repo, 'frontend', [runtime]) == (runtime,)
+    assert owner_changes(repo, 'standalone-runtime', [runtime]) == (runtime,)
+    assert owner_changes(repo, 'maintained-clang', [runtime]) is None
+    assert owner_changes(repo, 'frontend', [frontend]) == (frontend,)
+    assert owner_changes(repo, 'standalone-runtime', [frontend]) is None
+    assert owner_changes(repo, 'maintained-clang', [frontend]) is None
+    assert owner_changes(repo, 'frontend', [cmake]) == (cmake,)
+    assert owner_changes(repo, 'standalone-runtime', [cmake]) == (cmake,)
+
+
+@pytest.mark.parametrize('relative', [
+    'native/analysis/SelectedChecks.cpp',
+    'toolchains/llvm/implementation-analysis.json',
+    'scripts/objc3c_toolchain/implementation_analysis.py',
+    'scripts/objc3c_implementation_assurance/runner.py',
+    'unknown/build-owner.py',
+])
+def test_shared_or_unknown_analysis_changes_conservatively_select_every_owner(tmp_path, relative):
+    repo = tmp_path / 'repo';repo.mkdir()
+    changed = repo / relative
+    for owner in ('frontend', 'standalone-runtime', 'maintained-clang'):
+        assert owner_changes(repo, owner, [changed]) == ()
+
+
 def test_dependency_closure_is_required_and_stale_selected_records_fail(tmp_path):
     header = tmp_path / 'contract.h'
     header.touch()
@@ -74,6 +219,8 @@ def test_dependency_closure_is_required_and_stale_selected_records_fail(tmp_path
     assert dependencies(text, build=tmp_path) == expected
     with pytest.raises(ValueError, match='stale'):
         dependencies(text.replace('VALID', 'STALE'), build=tmp_path)
+    with pytest.raises(ValueError, match='truncated'):
+        dependencies(text.replace('#deps 1', '#deps 2'), build=tmp_path)
     assert dependencies(text.replace('VALID', 'STALE'), build=tmp_path, selected_outputs=set()) == {}
 
 
@@ -90,3 +237,133 @@ def test_bootstrap_pch_is_replaced_only_by_its_already_forced_exact_wrapper(tmp_
     row['arguments'] = row['arguments'][:-4]
     with pytest.raises(ValueError, match='textual include counterpart'):
         textual_pch(row)
+
+
+def test_bootstrap_pch_is_rebuilt_by_matched_fork_with_exact_semantic_flags(tmp_path):
+    bootstrap, matched = tmp_path / 'bootstrap-clang++', tmp_path / 'matched-clang++'
+    bootstrap.touch();matched.touch()
+    pch, wrapper = tmp_path / 'cmake_pch.hxx.pch', tmp_path / 'cmake_pch.hxx'
+    pch.write_bytes(b'bootstrap serialization');wrapper.write_text('#include "contract.h"\n')
+    source, obj, dep = tmp_path / 'source.mm', tmp_path / 'source.o', tmp_path / 'source.d'
+    source.write_text('int value;\n')
+    forced = ['-Xclang', '-include', '-Xclang', str(wrapper)]
+    row = {'file': str(source), 'directory': str(tmp_path), 'arguments': [str(bootstrap),
+        '-DREAL_FEATURE=1', '-Ireal/include', '-x', 'objective-c++', '-MD', '-MF', str(dep),
+        '-Xclang', '-include-pch', '-Xclang', str(pch), *forced,
+        '-o', str(obj), '-c', str(source)]}
+    target = tmp_path / 'matched.pch'
+    command = matched_pch_arguments(row, matched, target)
+    assert command[0] == str(matched)
+    assert '-DREAL_FEATURE=1' in command and '-Ireal/include' in command
+    assert command[-5:] == ['-x', 'objective-c++-header', str(wrapper), '-o', str(target)]
+    assert all(str(path) not in command for path in (bootstrap, pch, source, obj, dep))
+    target.write_bytes(b'fork matched serialization')
+    projected, proof = textual_pch(row, replacement=target)
+    assert str(target) in projected and str(pch) not in projected
+    assert forced == projected[projected.index(str(target))+1:projected.index(str(target))+5]
+    assert proof[0]['matched_pch_sha256'] and proof[0]['bootstrap_pch'] == str(pch)
+
+
+def test_dependency_discovery_expands_the_pch_wrapper_with_real_defines(tmp_path):
+    pch, wrapper = tmp_path / 'cmake_pch.hxx.pch', tmp_path / 'cmake_pch.hxx'
+    pch.write_bytes(b'serialized header');wrapper.write_text('#include "shared.h"\n')
+    row = {'directory': str(tmp_path), 'arguments': ['clang++', '-DREAL=1', '-x', 'objective-c++',
+        '-Xclang', '-include-pch', '-Xclang', str(pch),
+        '-Xclang', '-include', '-Xclang', str(wrapper),
+        '-MD', '-MF', 'old.d', '-c', 'source.cpp', '-o', 'source.o']}
+    argv = dependency_arguments(row, tmp_path / 'fresh.d')
+    assert str(pch) not in argv and '-include-pch' not in argv
+    assert argv[:4] == ['clang++', '-DREAL=1', '-x', 'objective-c++']
+    assert str(wrapper) in argv and 'source.cpp' in argv
+    assert '-c' not in argv and 'source.o' not in argv and 'old.d' not in argv
+    assert argv[-5:] == ['-M', '-MF', str(tmp_path / 'fresh.d'), '-MT', 'implementation-analysis']
+
+
+@pytest.mark.parametrize('fault', ['truncated', 'linked-bootstrap', 'linked-replacement', 'empty-replacement'])
+def test_pch_projection_rejects_missing_or_unowned_serializations(tmp_path, fault):
+    pch, wrapper, replacement = (tmp_path / name for name in
+                                 ('cmake_pch.hxx.pch', 'cmake_pch.hxx', 'matched.pch'))
+    pch.write_bytes(b'bootstrap');wrapper.write_text('header');replacement.write_bytes(b'matched')
+    row = {'directory': str(tmp_path), 'arguments': ['clang++',
+        '-Xclang', '-include-pch', '-Xclang', str(pch),
+        '-Xclang', '-include', '-Xclang', str(wrapper)]}
+    if fault == 'truncated': row['arguments'] = row['arguments'][:4]
+    elif fault == 'linked-bootstrap': pch.unlink();pch.symlink_to(replacement)
+    elif fault == 'linked-replacement': replacement.unlink();replacement.symlink_to(pch)
+    else: replacement.write_bytes(b'')
+    with pytest.raises(ValueError): textual_pch(row, replacement=replacement)
+
+
+def test_real_cmake_pch_dependency_discovery_keeps_shared_header_edits(tmp_path):
+    """Exercise the PCH mechanism with real tools; this is not fork qualification."""
+    compiler = shutil.which('clang++')
+    if not compiler: pytest.skip('Clang unavailable for native PCH mechanism control')
+    source = tmp_path / 'source';source.mkdir()
+    build = tmp_path / 'build'
+    header = source / 'shared.h';header.write_text('#pragma once\nconstexpr int shared = FEATURE;\n')
+    unit = source / 'unit.cpp';unit.write_text('int value() { return shared; }\n')
+    (source / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.24)\n'
+        'project(pch_dependency_control LANGUAGES CXX)\n'
+        'set(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n'
+        'add_library(control STATIC unit.cpp)\n'
+        'target_compile_definitions(control PRIVATE FEATURE=42)\n'
+        'target_precompile_headers(control PRIVATE shared.h)\n')
+    subprocess.run(['cmake', '-S', source, '-B', build, '-G', 'Ninja',
+                    '-DCMAKE_CXX_COMPILER='+compiler], check=True, capture_output=True)
+    subprocess.run(['cmake', '--build', build], check=True, capture_output=True)
+    rows = json.loads((build / 'compile_commands.json').read_text())
+    row = next(row for row in rows if row['file'] == str(unit))
+    row['arguments'] = shlex.split(row['command'])
+    from scripts.objc3c_toolchain.implementation_analysis import dependency_query
+    _, projections = textual_pch(row)
+    pch = projections[0]['bootstrap_pch']
+    query = dependency_query(shutil.which('ninja'), build, [pch])
+    recorded = subprocess.check_output(list(map(str, query)), text=True)
+    headers = dependencies(recorded, build=build, selected_outputs={pch})
+    assert str(header) in headers[pch]
+    assert selected_variants([{'file': str(unit), 'output': 'unit.o'}],
+        {'unit.o': headers[pch]}, [header]) == [{'file': str(unit), 'output': 'unit.o'}]
+    with pytest.raises(ValueError, match='escaped'):
+        dependency_query(shutil.which('ninja'), build, [unit])
+    depfile = tmp_path / 'expanded.d'
+    subprocess.run(dependency_arguments(row, depfile), cwd=build, check=True, capture_output=True)
+    from scripts.objc3c_toolchain.sdk_example import dependencies as header_dependencies
+    closure = [str(path) for path in header_dependencies(depfile, build)]
+    assert str(header) in closure and str(unit) in closure
+    assert selected_variants([{'file': str(unit), 'output': 'unit.o'}],
+        {'unit.o': closure}, [header]) == [{'file': str(unit), 'output': 'unit.o'}]
+
+
+def test_analysis_tool_configuration_uses_admitted_ninja_with_a_clean_path(tmp_path):
+    """Run real CMake/Ninja with the admitted Ninja outside the process PATH."""
+    import os
+    from pathlib import Path
+    from scripts.objc3c_toolchain.implementation_analysis import tool_configuration
+    compiler, cmake, ninja = map(shutil.which, ('clang++', 'cmake', 'ninja'))
+    if not all((compiler, cmake, ninja)):
+        pytest.skip('requires CMake, Clang and Ninja for clean-host tool control')
+    bootstrap = Path(compiler).resolve().parent.parent
+    if not (bootstrap / 'bin/clang++').exists(): pytest.skip('Clang installation root is unavailable')
+    owned = tmp_path / 'owned tools';owned.mkdir()
+    wrapper, observed = owned / 'ninja-owned', owned / 'observed'
+    wrapper.write_text('#!/bin/sh\nprintf "invoked\\n" >> '+shlex.quote(str(observed))+'\nexec '+
+                       shlex.quote(ninja)+' "$@"\n');wrapper.chmod(0o755)
+    source = tmp_path / 'repo/native/analysis';source.mkdir(parents=True)
+    (source / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.24)\n'
+        'project(clean_host_analysis CXX)\nadd_executable(control main.cpp)\n')
+    (source / 'main.cpp').write_text('int main() { return 0; }\n')
+    build = tmp_path / 'build'
+    plan = {'host_environment': {'bootstrap_root': str(bootstrap), 'cmake_path': cmake,
+                                'ninja_path': str(wrapper)},
+            'paths': {'stage': str(tmp_path / 'stage'), 'source': str(tmp_path / 'llvm')}}
+    arguments, environment = tool_configuration(tmp_path / 'repo', build, plan)
+    assert str(owned) in environment['PATH'].split(os.pathsep)
+    assert '-DCMAKE_MAKE_PROGRAM='+str(wrapper) in arguments
+    environment['PATH'] = str(bootstrap / 'bin')+os.pathsep+os.defpath
+    assert str(owned) not in environment['PATH'].split(os.pathsep)
+    subprocess.run(list(map(str, arguments)), check=True, capture_output=True, env=environment, timeout=60)
+    subprocess.run([cmake, '--build', build, '--parallel', '1'], check=True, capture_output=True,
+                   env=environment, timeout=60)
+    assert observed.read_text().count('invoked') >= 1
+    cache = (build / 'CMakeCache.txt').read_text().splitlines()
+    assert next(line for line in cache if line.startswith('CMAKE_MAKE_PROGRAM:')).endswith('='+str(wrapper))

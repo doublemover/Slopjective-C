@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import shutil
+import subprocess
 
 import pytest
 
@@ -12,6 +13,45 @@ ROOT = Path(__file__).resolve().parents[2]
 NAME = 'compiler-asan-ubsan'
 FUZZ_NAME = 'compiler-fuzz-asan-ubsan'
 COVERAGE_NAME = 'compiler-source-coverage'
+
+
+@pytest.mark.parametrize('shared', [True, False])
+def test_native_clang_link_selection_executes_exactly_the_selected_implementation(tmp_path, shared):
+    compiler = shutil.which('clang++')
+    if not compiler: pytest.skip('requires a native C++ compiler')
+    source = tmp_path / 'source';source.mkdir()
+    (source / 'shared.cpp').write_text('extern "C" int selected() { return 42; }\n')
+    (source / 'component.cpp').write_text('extern "C" int selected() { return 17; }\n')
+    (source / 'facade.cpp').write_text('extern "C" int selected(); int facade() { return selected(); }\n')
+    (source / 'main.cpp').write_text('int facade(); int main() { return facade() == '+
+                                    str(42 if shared else 17)+' ? 0 : 1; }\n')
+    policy = ROOT / 'native/objc3c/cmake/Objc3ClangLink.cmake'
+    cmake = ('cmake_minimum_required(VERSION 3.24)\nproject(link_control CXX)\n'
+        'include("'+policy.as_posix()+'")\n'
+        'add_library(clang-cpp SHARED shared.cpp)\n'
+        'set_target_properties(clang-cpp PROPERTIES OUTPUT_NAME objc3_link_control_clang)\n'
+        'add_library(clangTooling STATIC component.cpp)\n'
+        'add_library(objc3c_clang_foundation STATIC facade.cpp)\n'
+        'objc3c_link_clang_components(objc3c_clang_foundation clangTooling)\n'
+        'add_executable(consumer main.cpp)\n'
+        'target_link_libraries(consumer PRIVATE objc3c_clang_foundation)\n'
+        'objc3c_link_clang_components(consumer clangTooling)\n'
+        'objc3c_verify_clang_linkage()\n')
+    (source / 'CMakeLists.txt').write_text(cmake)
+    build = tmp_path / 'build'
+    configure = ['cmake', '-S', str(source), '-B', str(build), '-G', 'Ninja',
+                 '-DCMAKE_CXX_COMPILER='+compiler, '-DOBJC3C_LINK_CLANG_CPP='+('ON' if shared else 'OFF')]
+    subprocess.run(configure, check=True, capture_output=True, timeout=60)
+    subprocess.run(['cmake', '--build', build, '--target', 'consumer'],
+                   check=True, capture_output=True, timeout=60)
+    subprocess.run([build / 'consumer'], check=True, capture_output=True, timeout=10)
+    if shared:
+        # Reintroduce the actual mixed-link mistake. Reject it during configure,
+        # even when a non-sanitized link would otherwise silently choose a symbol.
+        (source / 'CMakeLists.txt').write_text(cmake.replace('objc3c_verify_clang_linkage()',
+            'target_link_libraries(consumer PRIVATE clangTooling)\nobjc3c_verify_clang_linkage()'))
+        rejected = subprocess.run(configure, capture_output=True, text=True, timeout=60)
+        assert rejected.returncode != 0 and 'mixes shared clang-cpp' in rejected.stderr
 
 
 @pytest.fixture

@@ -4,6 +4,11 @@ on:
 permissions:
   contents: read
 jobs:
+  implementation-analysis:
+    name: Fork-matched implementation release gate
+    uses: ./.github/workflows/implementation-analysis.yml
+    with:
+      source_sha: ${{ github.sha }}
   build:
     runs-on: ubuntu-26.04
     container: debian:13
@@ -48,7 +53,7 @@ jobs:
             out/native-validation/**/summary.json
             release.json.log
   install:
-    needs: build
+    needs: [build, implementation-analysis]
     runs-on: ubuntu-26.04
     strategy:
       fail-fast: false

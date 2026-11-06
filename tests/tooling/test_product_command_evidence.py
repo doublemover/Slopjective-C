@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from scripts.objc3c_toolchain.product_evidence import ProductCommands, blob_bytes, phase_of, replay
+from scripts.objc3c_toolchain.product_evidence import ProductCommands, blob_bytes, consolidate_campaign_blobs, phase_of, replay
 from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification
 
 
@@ -95,6 +95,34 @@ def test_actual_command_header_loader_and_binary_evidence_survives_workspace_rem
     shutil.rmtree(work)
     assert products.finalize() == receipt
     assert replay(products.receipt, 'client-execute', tmp_path / 'replay')['status'] == 'PASS'
+
+
+@pytest.mark.parametrize('corrupt_duplicate', [False, True])
+def test_real_native_replay_uses_relocated_shared_store_without_private_links(
+        native_product, tmp_path, corrupt_duplicate):
+    products, gate, _, _, _, _, work, binary, _, build = native_product
+    build();products.run(gate, 'client-execute', [binary], cwd=work);products.finalize()
+    campaign = tmp_path / 'original/campaign'
+    for name in ('one', 'two'):
+        shutil.copytree(products.output, campaign / name / 'product-evidence')
+    store = consolidate_campaign_blobs(campaign)
+    assert store['deduplicated_bytes'] > 0
+    for name in ('one', 'two'): (campaign / name / 'product-evidence/blobs').unlink()
+    relocated = tmp_path / 'downloaded/campaign';relocated.parent.mkdir()
+    campaign.rename(relocated)
+    shutil.rmtree(work)
+    receipt = relocated / 'one/product-evidence/qualification.json'
+    if corrupt_duplicate:
+        document = json.loads(receipt.read_text())
+        # The same filename with different metadata must not reuse a preceding
+        # successful blob check. Both records remain in the retained document.
+        record = dict(document['commands'][-1]['executable']);record['stored_sha256'] = '0'*64
+        document['conflicting_blob_record'] = record
+        receipt.write_text(json.dumps(document))
+        with pytest.raises(ValueError, match='input/artifact changed'):
+            replay(receipt, 'client-execute', tmp_path / 'replay')
+    else:
+        assert replay(receipt, 'client-execute', tmp_path / 'replay')['status'] == 'PASS'
 
 
 def test_same_path_wrong_runtime_is_rejected_before_product_execution(native_product):

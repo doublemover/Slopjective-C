@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import * as yaml from "js-yaml";
 import {
+  validateImplementationGate,
   validateNativeContainer,
   validateNativeGate,
   validateWorkflowContracts,
@@ -28,10 +29,40 @@ const native = await readFile(
   new URL("../workflows/native-assurance.yml", import.meta.url),
   "utf8",
 );
+const implementation = await readFile(
+  new URL("../workflows/implementation-analysis.yml", import.meta.url),
+  "utf8",
+);
+const release = await readFile(
+  new URL("../workflows/platform-host-evidence.yml", import.meta.url),
+  "utf8",
+);
 
 test("native PR workflow has a guaranteed receipt-verifying aggregate", () => {
   validateNativeGate(native);
 });
+
+test("implementation analysis has exact PR, periodic and release gates", () => {
+  validateImplementationGate(implementation, release);
+});
+
+for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of [
+  ["cancelled cold build", "  cancel-in-progress: false", "  cancel-in-progress: true"],
+  ["missing aggregate", "  gate:", "  renamed:"],
+  ["conditional aggregate", "    if: always()\n    needs:", "    if: success()\n    needs:"],
+  ["path-filtered PR", "  pull_request:", '  pull_request:\n    paths: ["native/**"]'],
+  ["missing release source", "      source_sha:\n        required: true", "      source_sha:\n        required: false"],
+  ["missing evidence", "if-no-files-found: error", "if-no-files-found: ignore"],
+  ["floating action", "@3d3c42e5aac5ba805825da76410c181273ba90b1", "@main"],
+  ["release dependency", "", "", "    needs: [build, implementation-analysis]", "    needs: build"],
+]) {
+  test(`implementation workflow rejects ${name}`, () => {
+    assert.throws(() => validateImplementationGate(
+      implementation.replace(workflowBefore ?? "", workflowAfter ?? ""),
+      release.replace(releaseBefore ?? "", releaseAfter ?? ""),
+    ));
+  });
+}
 
 test("native containers admit TSan personality and debugger process controls", async () => {
   const llvm = await readFile(new URL("../workflows/llvm-assurance.yml", import.meta.url), "utf8");
@@ -64,6 +95,10 @@ for (const [name, before, after] of [
     'git config --global --add safe.directory "$GITHUB_WORKSPACE"',
     "echo missing-checkout-trust",
   ],
+  ["cancelled sibling shard", "      fail-fast: false", "      fail-fast: true"],
+  ["unsharded verification", "verify --sharded", "verify"],
+  ["unpartitioned execution", '--shard "$NATIVE_SHARD"', ""],
+  ["overwriting merged receipts", "merge-multiple: true", "merge-multiple: false"],
   ["floating action", "@3d3c42e5aac5ba805825da76410c181273ba90b1", "@main"],
 ]) {
   test(`native workflow rejects ${name}`, () => {
@@ -141,6 +176,30 @@ for (const [name, mutate] of [
       files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
         "scripts.objc3c_assurance verify",
         "echo pretending-to-verify",
+      );
+    },
+  ],
+  [
+    "missing coverage shard",
+    (files) => {
+      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
+        "shard: [core, frontend-fuzz, source-coverage]", "shard: [core, frontend-fuzz]",
+      );
+    },
+  ],
+  [
+    "duplicate matrix names",
+    (files) => {
+      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
+        "shard: [core, frontend-fuzz, source-coverage]", "shard: [core, core, source-coverage]",
+      );
+    },
+  ],
+  [
+    "periodic aggregate without prerequisites",
+    (files) => {
+      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
+        "needs: compiler-closeout", "needs: nonexistent",
       );
     },
   ],

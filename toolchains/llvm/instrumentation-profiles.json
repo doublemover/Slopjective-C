@@ -21,16 +21,23 @@
       "build_target_groups": [
         {"name": "instrumented_compiler", "targets": ["clang", "clang-cpp", "LLVM", "lld"]},
         {"name": "instrumented_tools", "targets": ["FileCheck", "count", "not", "llvm-config", "llvm-nm", "clang-resource-headers", "llc", "llvm-ar", "llvm-ranlib", "llvm-readobj", "llvm-objdump", "llvm-dwarfdump", "c-index-test"]},
-        {"name": "instrumented_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests"]}
+        {"name": "instrumented_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests", "LexTests"]}
       ],
       "test_binaries": [
         "tools/clang/unittests/AST/ObjC3TypeContractsTests",
         "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
-        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests"
+        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests",
+        "tools/clang/unittests/Lex/LexTests"
       ],
       "additional_test_suites": [
         "clang/test/Index/objc3-condition-cursors.mm",
-        "clang/test/Index/objc3-native-expression-cursors.mm"
+        "clang/test/Index/objc3-native-expression-cursors.mm",
+        "clang/test/AST/ast-dump-template-name.cpp",
+        "clang/test/CodeGenCXX/mangle-concept.cpp",
+        "clang/test/Parser/lambda-attr.cu",
+        "clang/test/Parser/cxx1z-init-statement.cpp",
+        "clang/test/Parser/cxx2a-init-statement.cpp",
+        "clang/test/Parser/cxx2b-init-statement.cpp"
       ],
       "excluded_distribution_components": ["clangd", "clang-format", "lldb", "lldb-server", "liblldb"],
       "additional_distribution_components": ["LLVM", "clang-cpp"],
@@ -65,16 +72,23 @@
       "build_target_groups": [
         {"name": "feedback_compiler", "targets": ["clang", "clang-cpp", "LLVM", "lld"]},
         {"name": "feedback_tools", "targets": ["FileCheck", "count", "not", "llvm-config", "llvm-nm", "clang-resource-headers", "c-index-test"]},
-        {"name": "feedback_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests"]}
+        {"name": "feedback_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests", "LexTests"]}
       ],
       "test_binaries": [
         "tools/clang/unittests/AST/ObjC3TypeContractsTests",
         "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
-        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests"
+        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests",
+        "tools/clang/unittests/Lex/LexTests"
       ],
       "additional_test_suites": [
         "clang/test/Index/objc3-condition-cursors.mm",
-        "clang/test/Index/objc3-native-expression-cursors.mm"
+        "clang/test/Index/objc3-native-expression-cursors.mm",
+        "clang/test/AST/ast-dump-template-name.cpp",
+        "clang/test/CodeGenCXX/mangle-concept.cpp",
+        "clang/test/Parser/lambda-attr.cu",
+        "clang/test/Parser/cxx1z-init-statement.cpp",
+        "clang/test/Parser/cxx2a-init-statement.cpp",
+        "clang/test/Parser/cxx2b-init-statement.cpp"
       ],
       "excluded_distribution_components": ["clangd", "clang-format", "lldb", "lldb-server", "liblldb"],
       "additional_distribution_components": ["LLVM", "clang-cpp", "llvm-nm"],
@@ -106,16 +120,23 @@
       "build_target_groups": [
         {"name": "covered_compiler", "targets": ["clang", "clang-cpp", "LLVM", "lld"]},
         {"name": "coverage_tools", "targets": ["llvm-cov", "llvm-profdata", "llvm-readobj", "llvm-nm", "llvm-config", "FileCheck", "count", "not", "clang-resource-headers", "c-index-test"]},
-        {"name": "covered_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests"]}
+        {"name": "covered_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests", "LexTests"]}
       ],
       "test_binaries": [
         "tools/clang/unittests/AST/ObjC3TypeContractsTests",
         "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
-        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests"
+        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests",
+        "tools/clang/unittests/Lex/LexTests"
       ],
       "additional_test_suites": [
         "clang/test/Index/objc3-condition-cursors.mm",
-        "clang/test/Index/objc3-native-expression-cursors.mm"
+        "clang/test/Index/objc3-native-expression-cursors.mm",
+        "clang/test/AST/ast-dump-template-name.cpp",
+        "clang/test/CodeGenCXX/mangle-concept.cpp",
+        "clang/test/Parser/lambda-attr.cu",
+        "clang/test/Parser/cxx1z-init-statement.cpp",
+        "clang/test/Parser/cxx2a-init-statement.cpp",
+        "clang/test/Parser/cxx2b-init-statement.cpp"
       ],
       "excluded_distribution_components": ["clangd", "clang-format", "lldb", "lldb-server", "liblldb"],
       "additional_distribution_components": ["LLVM", "clang-cpp", "llvm-cov", "llvm-profdata", "llvm-nm", "llvm-config"],

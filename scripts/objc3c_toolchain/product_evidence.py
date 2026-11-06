@@ -91,7 +91,7 @@ def consolidate_campaign_blobs(campaign: Path) -> dict:
             'owners': len(receipts), 'references': len(references),
             'private_bytes': private_bytes, 'stored_bytes': stored_bytes,
             'deduplicated_bytes': private_bytes - stored_bytes,
-            'path': str(store)}
+            'path': store.name}
 
 
 def phase_of(name, argv):
@@ -447,10 +447,13 @@ def replay(receipt: Path, name: str, output: Path):
     def verify_blobs(value):
         if isinstance(value, dict):
             if 'blob' in value and 'sha256' in value:
-                blob = (root / value['blob']).resolve(strict=True)
-                if str(blob) not in checked:
+                # Only blob_bytes owns private/shared-store resolution. Uploads
+                # can omit the private directory symlink after consolidation.
+                # Cache the complete record so conflicting metadata is checked.
+                key = json.dumps(value, sort_keys=True, separators=(',', ':'))
+                if key not in checked:
                     blob_bytes(root, value)
-                    checked.add(str(blob))
+                    checked.add(key)
             for item in value.values():
                 verify_blobs(item)
         elif isinstance(value, list):

@@ -42,6 +42,7 @@ jobs:
           tests/tooling/test_compiler_archive_evidence.py
           tests/tooling/test_compiler_scan_graph.py
           tests/tooling/test_implementation_analysis.py
+          tests/tooling/test_implementation_assurance.py
           tests/tooling/test_analysis_checkpoint.py
           tests/tooling/test_source_coverage.py
           tests/tooling/test_codec_fuzz.py
@@ -49,6 +50,11 @@ jobs:
           tests/tooling/test_llvm_ir_assurance.py
           tests/tooling/test_semantic_oracles.py
           tests/tooling/test_semantic_benchmarks.py
+          tests/tooling/test_semantic_runtime_workloads.py
+          tests/tooling/test_semantic_ownership_workloads.py
+          tests/tooling/test_semantic_task_frame_workloads.py
+          tests/tooling/test_semantic_build_costs.py
+          tests/tooling/test_semantic_import_benchmarks.py
           tests/tooling/test_swift_consumer.py
           tests/tooling/test_native_sanitizer_policy.py
           tests/tooling/test_product_command_evidence.py

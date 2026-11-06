@@ -6,7 +6,8 @@ import sys
 
 import pytest
 
-from scripts.objc3c_toolchain.analysis_checkpoint import run_unit, successful_action
+from scripts.objc3c_toolchain.analysis_checkpoint import (
+    load_checkpoints, reusable_action, run_unit, successful_action, tidy_diagnostics)
 from scripts.objc3c_toolchain.binary_packages import digest
 
 
@@ -29,7 +30,7 @@ def checkpoint(tmp_path):
         {'file': str(source), 'directory': str(tmp_path), 'arguments': args}]))
     logs = root / 'logs';logs.mkdir();log = logs / (name+'.log');log.write_text('')
     command = {'name': name, 'argv': [str(tool), '-p', str(directory), str(source), '--config-file='+str(config),
-        '--warnings-as-errors=*', '--extra-arg=-resource-dir=/matched/resources',
+        '--warnings-as-errors=*', '--enable-check-profile', '--extra-arg=-resource-dir=/matched/resources',
         '--export-fixes='+str(directory / 'diagnostics.yaml')], 'exit_code': 0, 'expected_exit_code': 0,
         'timed_out': False, 'status': 'PASS', 'log': str(log), 'log_sha256': digest(log)}
     previous = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'FAIL', 'policy': {'checks': ['reviewed-check']},
@@ -48,6 +49,55 @@ def test_failed_campaign_reuses_only_its_completed_identical_native_action(check
     assert result['status'] == 'PASS' and result['execution_reused'] is True
     assert result['checkpoint_sha256'] == digest(receipt)
     assert previous['status'] == 'FAIL'
+
+
+def test_complementary_terminal_attempts_reuse_only_verified_matching_actions(checkpoint, tmp_path):
+    receipt, previous, current, row, args, _, _ = checkpoint
+    missing = copy.deepcopy(previous);missing['results'] = []
+    first = tmp_path / 'missing.json';first.write_text(json.dumps(missing))
+    result = reusable_action([(first, missing, digest(first)), (receipt, previous, digest(receipt))],
+                             current, row, arguments=args)
+    assert result['checkpoint'] == str(receipt) and result['execution_reused'] is True
+    assert previous['status'] == missing['status'] == 'FAIL'
+    assert reusable_action([(first, missing, digest(first))], current, row, arguments=args) is None
+
+
+def test_corrupt_earlier_action_is_rejected_before_trying_a_later_good_checkpoint(checkpoint):
+    receipt, previous, current, row, args, _, _ = checkpoint
+    corrupt = copy.deepcopy(previous);corrupt['commands'][0]['timed_out'] = True
+    with pytest.raises(ValueError, match='proof changed'):
+        reusable_action([(receipt, corrupt, digest(receipt)), (receipt, previous, digest(receipt))],
+                        current, row, arguments=args)
+
+
+@pytest.mark.parametrize('fault', ['running', 'outside', 'linked', 'duplicate', 'excessive', 'not-object'])
+def test_checkpoint_collection_rejects_mutable_unowned_duplicate_or_unbounded_inputs(tmp_path, fault):
+    root = tmp_path / 'out';root.mkdir()
+    receipt = root / 'qualification.json'
+    receipt.write_text(json.dumps({'schema': 'objc3c.implementation-analysis.v1', 'status': 'FAIL'}))
+    paths = [receipt]
+    if fault == 'running': receipt.write_text(receipt.read_text().replace('FAIL', 'running'))
+    elif fault == 'outside':
+        outside = tmp_path / 'outside.json';outside.write_bytes(receipt.read_bytes());paths = [outside]
+    elif fault == 'linked':
+        link = root / 'linked.json';link.symlink_to(receipt);paths = [link]
+    elif fault == 'duplicate': paths *= 2
+    elif fault == 'excessive': paths *= 9
+    else: receipt.write_text('[]')
+    with pytest.raises(ValueError): load_checkpoints(tmp_path, paths)
+
+
+def test_multiple_terminal_checkpoint_selection_retains_requested_order(tmp_path):
+    root = tmp_path / 'out';root.mkdir()
+    paths = [root / (str(index)+'.json') for index in range(2)]
+    for path, status in zip(paths, ('FAIL', 'PASS')):
+        path.write_text(json.dumps({'schema': 'objc3c.implementation-analysis.v1', 'status': status}))
+    admitted = load_checkpoints(tmp_path, paths)
+    assert [path for path, _, _ in admitted] == paths
+    assert [signature for path, _, signature in admitted] == list(map(digest, paths))
+    paths[0].write_text('{}')
+    with pytest.raises(ValueError, match='changed after admission'):
+        reusable_action(admitted, {}, {}, arguments=[])
 
 
 @pytest.mark.parametrize('mutation', ['header', 'flags', 'checker', 'tool', 'failed', 'missing-result'])
@@ -80,4 +130,66 @@ def test_spawned_unit_process_retains_actual_command_failure(tmp_path):
     result, commands = run_unit({'directory': str(tmp_path), 'environment': {}, 'identity': 'unit',
         'name': 'native-control', 'timeout': 10, 'argv': [sys.executable, '-c', 'print("forced failure");raise SystemExit(1)']})
     assert result['status'] == 'FAIL' and commands[0]['exit_code'] == 1
+    assert result['diagnostics'] == []
     assert json.loads((tmp_path / 'qualification.json').read_text())['status'] == 'FAIL'
+
+
+def test_spawned_unit_process_rejects_zero_exit_blocker_diagnostic(tmp_path):
+    diagnostic = '/source/Lexer.cpp:9:2: warning: preprocessor may be null [clang-analyzer-core.CallAndMessage]'
+    result, commands = run_unit({'directory': str(tmp_path), 'environment': {}, 'identity': 'unit',
+        'name': 'native-control', 'timeout': 10,
+        'argv': [sys.executable, '-c', 'print('+repr(diagnostic)+')']})
+    assert commands[0]['exit_code'] == 0
+    assert result['status'] == 'FAIL' and result['classification'] == 'finding'
+    assert result['diagnostics'][0]['path'] == '/source/Lexer.cpp'
+    assert json.loads((tmp_path / 'qualification.json').read_text())['status'] == 'FAIL'
+
+
+def test_checkpoint_cannot_reuse_zero_exit_blocker_diagnostic(checkpoint):
+    receipt, previous, current, row, args, _, log = checkpoint
+    log.write_text('/source/Lexer.cpp:9:2: warning: null state [clang-analyzer-core.CallAndMessage]\n')
+    previous['commands'][0]['log_sha256'] = digest(log)
+    with pytest.raises(ValueError, match='blocker diagnostics'):
+        successful_action(receipt, previous, current, row, arguments=args)
+
+
+def test_blocker_diagnostics_retain_exact_checker_and_source_location():
+    text = ('/source/interface_emitter.cpp:73:9: error: moved-from attribute owner '
+            '[bugprone-use-after-move]\n'
+            '/source/Lexer.cpp:3868:3: warning: preprocessor may be null '
+            '[clang-analyzer-core.CallAndMessage]\n')
+    assert tidy_diagnostics(text) == [
+        {'path': '/source/interface_emitter.cpp', 'line': 73, 'column': 9, 'severity': 'error',
+         'message': 'moved-from attribute owner', 'check': 'bugprone-use-after-move'},
+        {'path': '/source/Lexer.cpp', 'line': 3868, 'column': 3, 'severity': 'warning',
+         'message': 'preprocessor may be null', 'check': 'clang-analyzer-core.CallAndMessage'},
+    ]
+
+
+@pytest.mark.parametrize('suffix,expected', [
+    (' [bugprone-use-after-move,-warnings-as-errors]', 'bugprone-use-after-move'),
+    (' [clang-diagnostic-error]', 'clang-diagnostic-error'),
+    ('', 'clang-diagnostic-error'),
+])
+def test_diagnostics_keep_promoted_and_plain_compiler_errors(suffix, expected):
+    diagnostic = '\x1b[1m/source/with:colon.cpp:5:3: \x1b[31merror: invalid argument'+suffix+'\x1b[0m\n'
+    assert tidy_diagnostics(diagnostic) == [{'path': '/source/with:colon.cpp', 'line': 5,
+        'column': 3, 'severity': 'error', 'message': 'invalid argument', 'check': expected}]
+
+
+@pytest.mark.parametrize('mutation', ['bootstrap', 'wrapper', 'matched', 'projection'])
+def test_checkpoint_cannot_reuse_changed_pch_bytes_or_projection(checkpoint, mutation):
+    receipt, previous, current, row, args, _, _ = checkpoint
+    projection = {}
+    for name in ('bootstrap_pch', 'textual_wrapper', 'matched_pch'):
+        path = receipt.parent / (name+'.pch')
+        path.write_bytes(name.encode())
+        projection[name] = str(path)
+        previous['inputs'][str(path)] = digest(path)
+    previous['inventory'][0]['pch_projection'] = [copy.deepcopy(projection)]
+    row['pch_projection'] = [projection]
+    if mutation == 'projection': previous['inventory'][0]['pch_projection'][0]['reason'] = 'changed recipe'
+    else:
+        field = {'bootstrap': 'bootstrap_pch', 'wrapper': 'textual_wrapper', 'matched': 'matched_pch'}[mutation]
+        Path(projection[field]).write_bytes(b'new serialization or header')
+    assert successful_action(receipt, previous, current, row, arguments=args) is None

@@ -15,8 +15,8 @@ from scripts.objc3c_toolchain.build import build_foundation
 from scripts.objc3c_toolchain.core import build_plans
 from scripts.objc3c_toolchain.frontend_tests import qualify as frontend_tests
 from scripts.objc3c_toolchain.qualify_installed import qualify_installed
-from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, native_files
-from .plan import from_checkout, validate
+from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, native_files, package_execution
+from .plan import foundation_receipts, from_checkout, selected_suites, validate
 from .execution import checked_command, execute_ctest
 
 # Existing Clang lit taxonomy, confined to touched compiler subsystems. Whole
@@ -26,33 +26,10 @@ UPSTREAM = ('clang/test/AST', 'clang/test/SemaObjC', 'clang/test/SemaObjCXX',
             'clang/test/Modules', 'clang/test/Driver')
 
 
-def package_execution(result: dict) -> list[dict]:
-    """Admit the archive installation already performed by the SDK pipeline.
-
-    ``build_sdk`` qualifies the candidate through installed consumers, seals it,
-    installs that exact archive into the content-addressed SDK store and verifies
-    the installed bytes. Re-running the full distribution qualification here
-    repeated every installed/source consumer and could consume more than thirty
-    minutes without exercising a different product. Fresh-distribution archive
-    qualification remains owned by the release workflow.
-    """
-    qualification = result.get('installed_qualification')
-    installed = result.get('installed')
-    commands = qualification.get('commands') if isinstance(qualification, dict) else None
-    if (result.get('status') != 'PASS' or not result.get('archive_sha256') or
-            not isinstance(installed, dict) or not installed.get('prefix') or
-            not isinstance(commands, list) or not commands or
-            qualification.get('status') != 'PASS' or
-            any(row.get('exit_code') != 0 for row in commands)):
-        raise ValueError('SDK pipeline omitted its passing installed archive qualification')
-    return [{'status': 'PASS', 'archive_sha256': result['archive_sha256'],
-             'installed_prefix': installed['prefix'],
-             'installed_consumer_commands': len(commands)}]
-
-
-def run(repo: Path, plan: dict, output: Path) -> dict:
+def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> dict:
     validate(plan)
-    if not plan['suites']:
+    suites = selected_suites(plan, shard)
+    if not suites:
         raise ValueError('native execution requires a nonempty suite selection')
     output = output.resolve()
     # Stale receipts must never be overwritten into a new apparent success.
@@ -61,6 +38,8 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
     report = {'schema': SCHEMA, 'status': 'running', 'revision': plan['revision'],
               'plan_sha256': plan['sha256'], 'suites': [], 'commands': [],
               'cache': {'restored_build_products': False, 'reason': plan['cache_policy']}}
+    if shard is not None:
+        report['shard'] = shard
     environment = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'CCACHE_COMPILERCHECK': 'content'}
     bootstrap = Path(environment['OBJC3C_BOOTSTRAP_LLVM_ROOT']).resolve(strict=True)
     sdk = repo / 'out/toolchains/objc3-development/stage-linux-x86_64'
@@ -88,8 +67,18 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
 
     def profile_foundation(profile):
         if profile not in shared:
-            shared[profile] = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
-                                               instrumentation_profile=profile)
+            evidence = directory / 'foundations' / profile
+            try:
+                shared[profile] = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+                    instrumentation_profile=profile, test_results=evidence)
+            finally:
+                receipt = (repo / 'out/toolchains/objc3-development' /
+                    ('build-linux-x86_64-'+profile) / 'foundation-build-report.json')
+                if receipt.is_file():
+                    saved = json.loads(receipt.read_text())
+                    write_json(evidence / 'foundation.json', saved)
+                    for index, phase in enumerate(saved['phases']):
+                        shutil.copyfile(phase['log'], evidence / ('phase-'+str(index)+'.log'))
         plan = build_plans(repo, host='linux-x86_64', instrumentation_profile=profile)['configure']
         return Path(plan['paths']['stage'])
 
@@ -216,13 +205,16 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             return result['cases']
         if name == 'semantic-workloads':
             from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix, measure
+            from scripts.objc3c_toolchain.semantic_import_benchmarks import measure as measure_imports
             prefix = directory / 'build/compiler-prefix'
             prepare_prefix(sdk, prefix, source_build_id=report['product']['source_build_id'],
-                           target=report['product']['host_environment']['target_triple'])
-            result = measure(repo, directory / 'measurement', sdk=prefix, repetitions=3)
+                           target=report['product']['host_environment']['target_triple'], imports=True)
+            result = measure(repo, directory / 'measurement', sdk=prefix, repetitions=3, extended_runtime=True)
+            imports = measure_imports(repo, directory / 'imports', sdk=prefix, repetitions=3,
+                                      scales=(32,), source_graph=True)
             # Correctness/completeness block the native gate. Timings have no
             # calibrated baseline here and cannot claim a performance pass.
-            return result['summaries']
+            return result['summaries'] + imports['summaries']
         if name == 'package':
             from scripts.objc3c_toolchain.linux_sdk import build_sdk
             from .package_evidence import preserve, snapshot
@@ -283,7 +275,7 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
 
     try:
         save()
-        for suite in plan['suites']:
+        for suite in suites:
             directory = output / suite['id']
             directory.mkdir()
             row = {'id': suite['id'], 'status': 'running', 'executions': [], 'artifacts': []}
@@ -307,7 +299,14 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
                 save()
         if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
             raise ValueError('source revision or selection changed during native execution')
+        from scripts.objc3c_toolchain.semantic_build_costs import snapshot
+        costs = snapshot(foundations=foundation_receipts(output, suites),
+            installations=[output / 'package/release.json'] if (output / 'package/release.json').is_file() else [])
+        cost_file = output / 'operational-costs.json'
+        write_json(cost_file, costs)
+        report['operational_costs'] = artifact(output, cost_file)
         size = sum(value['bytes'] for row in report['suites'] for value in row['artifacts'])
+        size += report['operational_costs']['bytes']
         if size > MAX_BYTES:
             raise ValueError('native evidence exceeds the 256 MiB artifact budget')
         report['status'] = 'PASS'

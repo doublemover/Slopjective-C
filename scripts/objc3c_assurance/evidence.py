@@ -4,12 +4,38 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
+import os
+import shutil
 import xml.etree.ElementTree as ET
 
-from .plan import validate
+from .plan import execution_shards, foundation_receipts, selected_suites, validate
 
 SCHEMA = 'objc3c.native-assurance.result.v1'
 MAX_BYTES = 256 * 1024 * 1024
+
+
+def package_execution(result: dict) -> list[dict]:
+    """One producer/verifier contract for the SDK pipeline's installed archive.
+
+    build_sdk already seals and installs the exact archive and qualifies its
+    installed consumers. The terminal gate verifies that retained owner result;
+    it does not need the SDK tree or another archive qualification.
+    """
+    qualification = result.get('installed_qualification')
+    installed = result.get('installed')
+    commands = qualification.get('commands') if isinstance(qualification, dict) else None
+    signature = result.get('archive_sha256')
+    prefix = installed.get('prefix') if isinstance(installed, dict) else None
+    if (result.get('status') != 'PASS' or not isinstance(signature, str) or
+            not re.fullmatch(r'[0-9a-f]{64}', signature) or not isinstance(prefix, str) or
+            not Path(prefix).is_absolute() or not isinstance(commands, list) or not commands or
+            qualification.get('status') != 'PASS' or
+            any(not isinstance(row, dict) or type(row.get('exit_code')) is not int or
+                row['exit_code'] != 0 or row.get('timed_out') for row in commands)):
+        raise ValueError('SDK pipeline omitted its passing installed archive qualification')
+    return [{'status': 'PASS', 'archive_sha256': signature,
+             'installed_prefix': prefix, 'installed_consumer_commands': len(commands)}]
 
 
 def digest(path: Path) -> str:
@@ -163,11 +189,14 @@ def suite_results(root: Path, name: str) -> list[dict]:
             execution_result(json.dumps(row.get('result')))
         return cases
     if name == 'semantic-workloads':
-        from scripts.objc3c_toolchain.semantic_benchmarks import SCALES, runtime_result
+        from scripts.objc3c_toolchain.semantic_benchmarks import semantic_result, summarize, workload_inventory, workload_names
+        from scripts.objc3c_toolchain.semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION,
+            completed_task_count, validate_delay_controls, validate_task_frame_controls)
         result = read('measurement/qualification.json')
-        expected = {phase+'-'+str(scale) for phase in ('syntax', 'object', 'runtime') for scale in SCALES}
+        expected = workload_names(CURRENT_WORKLOAD_VERSION)
         summaries, samples = result.get('summaries', []), result.get('samples', [])
-        if (result.get('correctness') != 'PASS' or result.get('workload_version') != 1 or
+        if (result.get('correctness') != 'PASS' or result.get('workload_version') != CURRENT_WORKLOAD_VERSION or
+                result.get('workloads') != workload_inventory(CURRENT_WORKLOAD_VERSION) or
                 result.get('repetitions') != 3 or result.get('timing_decision') != 'advisory-inconclusive-uncalibrated' or
                 len(result.get('sdks', [])) != 1 or len(summaries) != len(expected) or
                 {row['workload'] for row in summaries} != expected or
@@ -176,16 +205,40 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 not result['delay_control'].get('semantic_output_unchanged') or
                 any(row.get('exit_code') != 0 or row.get('timed_out') for row in samples)):
             raise ValueError('semantic workload correctness/sample/control inventory is incomplete')
+        validate_delay_controls(result)
+        validate_task_frame_controls(result)
         for workload in expected:
             rows = [row for row in samples if row.get('workload') == workload]
             if len(rows) != 4 or len([row for row in rows if row.get('warmup') is False]) != 3:
                 raise ValueError('semantic workload omitted its actual warmup/repetition set')
+            measured = [row for row in rows if row.get('warmup') is False]
+            summary = next(row for row in summaries if row['workload'] == workload)
+            if summary['wall'] != summarize(measured):
+                raise ValueError('semantic workload summary differs from its actual samples')
             if workload.startswith('runtime-'):
-                for row in rows: runtime_result(json.dumps(row.get('semantic_result')), int(workload.split('-')[1]))
-        return summaries
+                for row in rows:
+                    semantic = semantic_result(json.dumps(row.get('semantic_result')), workload)
+                    if row.get('work_seconds') != semantic['nanoseconds']/1e9:
+                        raise ValueError('semantic workload timer differs from its native result')
+                    if completed_task_count(semantic) and row.get('task_completions_per_second') != (
+                            completed_task_count(semantic)/row['work_seconds']):
+                        raise ValueError('semantic workload throughput differs from completed work')
+                if summary.get('work') != summarize(measured, 'work_seconds'):
+                    raise ValueError('semantic workload execution summary differs from native work')
+                if workload.startswith(('runtime-task-', 'runtime-worker-', 'runtime-shared-')) and summary.get(
+                        'task_completions_per_second') != summarize(measured, 'task_completions_per_second'):
+                    raise ValueError('semantic workload throughput summary differs from native work')
+        from scripts.objc3c_toolchain.semantic_import_benchmarks import verify_report
+        imports = read('imports/qualification.json')
+        if (imports.get('scales') != [32] or imports.get('repetitions') != 3 or
+                imports.get('source_graph') is not True or imports.get('budget_seconds') != 600):
+            raise ValueError('native semantic imports require the bounded source/PCH/interface and reuse pilot')
+        if imports.get('sdk', {}).get('seal_sha256') != result['sdks'][0].get('seal_sha256'):
+            raise ValueError('native semantic imports used another SDK')
+        return summaries + verify_report(imports, directory / 'imports')
     if name == 'package':
         result = read('release.json')
-        return [{'archive_sha256': result['archive_sha256'], 'status': 'PASS'}]
+        return package_execution(result)
     if name == 'sanitizer-products':
         result = read('campaign/qualification.json')
         rows = result.get('owners', [])
@@ -204,9 +257,9 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 store.get('owners') != len(expected) or not store.get('references') or
                 store.get('references') != len(store_files) or
                 store.get('stored_bytes') != sum(path.stat().st_size for path in store_files) or
-                store.get('private_bytes', 0) <= store.get('stored_bytes', 0) or
+                store.get('private_bytes', 0) < store.get('stored_bytes', 0) or
                 store.get('deduplicated_bytes') != store['private_bytes'] - store['stored_bytes'] or
-                Path(store.get('path', '')).resolve() != store_path.resolve() or
+                store.get('path') != 'product-evidence-blobs' or
                 any(not path.is_file() or path.is_symlink() or
                     not path.name.endswith('.zst') or len(path.stem) != 64 or
                     any(char not in '0123456789abcdef' for char in path.stem)
@@ -262,11 +315,13 @@ def suite_results(root: Path, name: str) -> list[dict]:
     raise ValueError('unrecognized native assurance suite')
 
 
-def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
+def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
+              shard: str | None = None) -> dict:
     validate(plan)
     if plan['revision']['tested'] != tested or outcomes.get('plan') != 'success':
         raise ValueError('selection failed or selected the wrong tested revision')
-    expected = {suite['id'] for suite in plan['suites']}
+    suites = selected_suites(plan, shard)
+    expected = {suite['id'] for suite in suites}
     if not expected:
         if plan['classification'] != 'prose-only' or outcomes.get('native') != 'skipped':
             raise ValueError('only justified prose-only changes may skip native execution')
@@ -277,6 +332,8 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     if (receipt.get('schema') != SCHEMA or receipt.get('status') != 'PASS' or
             receipt.get('revision') != plan['revision'] or receipt.get('plan_sha256') != plan['sha256']):
         raise ValueError('native result is incomplete, stale, failed or belongs to another revision')
+    if receipt.get('shard') != shard:
+        raise ValueError('native result belongs to a different execution shard')
     records = receipt.get('suites', [])
     if len(records) != len(expected) or {row['id'] for row in records} != expected:
         raise ValueError('native result differs from the exact required suite set')
@@ -299,7 +356,74 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     commands = receipt.get('commands', [])
     if any(row.get('exit_code') != 0 for row in commands):
         raise ValueError('native command evidence contains a failed execution')
+    from scripts.objc3c_toolchain.semantic_build_costs import snapshot
+    cost_file = root / 'operational-costs.json'
+    saved_costs = receipt.get('operational_costs', {})
+    if saved_costs.get('path') != 'operational-costs.json' or artifact(root, cost_file) != saved_costs:
+        raise ValueError('native operational measurements are missing or changed')
+    observed = json.loads(cost_file.read_text())
+    expected_costs = snapshot(foundations=foundation_receipts(root, suites),
+        installations=[root / 'package/release.json'] if 'package' in expected else [])
+    if observed != expected_costs:
+        raise ValueError('native operational measurements differ from actual owner receipts')
+    total += saved_costs['bytes']
     if total > MAX_BYTES:
         raise ValueError('native evidence exceeds the 256 MiB artifact budget')
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
             'suites': sorted(expected), 'artifact_bytes': total}
+
+
+def aggregate_shards(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
+    shards = execution_shards(plan)
+    if not shards:
+        return aggregate(plan, root, outcomes=outcomes, tested=tested)
+    if (not root.is_dir() or root.is_symlink() or
+            {path.name for path in root.iterdir()} != set(shards) or
+            any(not (root / name).is_dir() or (root / name).is_symlink() for name in shards)):
+        raise ValueError('native evidence has missing, extra or linked execution shards')
+    results = [aggregate(plan, root / shard, outcomes=outcomes, tested=tested, shard=shard)
+               for shard in shards]
+    suites = [name for result in results for name in result['suites']]
+    if (len(suites) != len(set(suites)) or
+            set(suites) != {row['id'] for row in plan['suites']}):
+        raise ValueError('native execution shards overlap or omit selected suites')
+    total = sum(row['artifact_bytes'] for row in results)
+    if total > MAX_BYTES:
+        raise ValueError('native evidence exceeds the 256 MiB artifact budget')
+    return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
+            'suites': sorted(suites), 'shards': shards, 'artifact_bytes': total}
+
+
+def publish(plan: dict, root: Path, destination: Path, *, shard: str | None = None) -> dict:
+    """Stage only durable evidence, preserving diagnostics from a failed job too.
+
+    Upload a directory containing the shard name so artifact merging cannot
+    overwrite another shard's root receipt. Never upload complete build trees or
+    follow the per-owner links to the deduplicated product stores.
+    """
+    suites = selected_suites(plan, shard)
+    root = root.resolve(strict=True)
+    destination = destination.absolute()
+    if destination.exists() or destination.is_symlink() or destination.is_relative_to(root):
+        raise ValueError('native evidence publication requires a fresh separate directory')
+    files = [root / name for name in ('result.json', 'operational-costs.json')
+             if (root / name).exists()]
+    for suite in suites:
+        files.extend(native_files(root / suite['id']))
+    if not files:
+        raise ValueError('native job produced no durable evidence to publish')
+    destination.mkdir(parents=True)
+    total = 0
+    for source in files:
+        saved = artifact(root, source)
+        target = destination / saved['path']
+        target.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.link(source, target)
+        except OSError:
+            shutil.copyfile(source, target)
+        if artifact(destination, target) != saved:
+            raise ValueError('native evidence changed during publication')
+        total += saved['bytes']
+    return {'files': len(files), 'bytes': total, 'shard': shard,
+            'scope': 'durable native receipts, logs and content-addressed replay inputs'}

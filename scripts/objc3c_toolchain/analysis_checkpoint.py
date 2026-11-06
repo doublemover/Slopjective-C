@@ -2,11 +2,73 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
+import re
 
 from .binary_packages import digest
 from .llvm_ir_execution import Execution, StageFailure
 from .sanitizer_policy import require_clean_diagnostic
+
+
+def load_checkpoints(repo, paths):
+    paths = list(paths)
+    if len(paths) > 8:
+        raise ValueError('implementation analysis accepts at most eight checkpoints')
+    result, seen = [], set()
+    for candidate in paths:
+        candidate = Path(candidate).absolute()
+        if candidate.is_symlink():
+            raise ValueError('implementation analysis checkpoint must be an owned regular receipt')
+        path = candidate.resolve(strict=True)
+        if (not path.is_relative_to(repo / 'out') or not path.is_file() or
+                path.stat().st_size > 64*1024**2 or path in seen):
+            raise ValueError('implementation analysis checkpoint is duplicated or outside bounded owned output')
+        raw = path.read_bytes()
+        if len(raw) > 64*1024**2:
+            raise ValueError('implementation analysis checkpoint exceeded its byte bound')
+        previous = json.loads(raw)
+        if (not isinstance(previous, dict) or previous.get('schema') != 'objc3c.implementation-analysis.v1' or
+                previous.get('status') not in ('PASS', 'FAIL')):
+            raise ValueError('analysis checkpoint has no terminal source-owned attempt')
+        result.append((path, previous, hashlib.sha256(raw).hexdigest()));seen.add(path)
+    return result
+
+
+def reusable_action(checkpoints, current, row, *, arguments):
+    for path, previous, signature in checkpoints:
+        if digest(path) != signature:
+            raise ValueError('implementation analysis checkpoint changed after admission')
+        result = successful_action(path, previous, current, row, arguments=arguments)
+        if result is not None:
+            return result
+    return None
+
+
+def analysis_argv(tool, directory, source, configuration, resource_directory):
+    directory = Path(directory)
+    return list(map(str, [tool, '-p', directory, source, '--config-file='+str(configuration),
+        '--warnings-as-errors=*', '--enable-check-profile',
+        '--extra-arg=-resource-dir='+str(resource_directory),
+        '--export-fixes='+str(directory / 'diagnostics.yaml')]))
+
+
+def tidy_diagnostics(text):
+    """Retain blocker locations/checkers without treating tool prose as data."""
+    text = re.sub(r'\x1b\[[0-9;]*m', '', text)
+    pattern = re.compile(
+        r'^(?P<path>[^\n]+?):(?P<line>\d+):(?P<column>\d+): '
+        r'(?P<severity>fatal error|warning|error): (?P<message>.*?)'
+        r'(?: \[(?P<checks>[A-Za-z0-9_., -]+)\])?$', re.M)
+    diagnostics = []
+    for match in pattern.finditer(text):
+        checks = [check.strip() for check in (match['checks'] or '').split(',')
+                  if check.strip() and check.strip() != '-warnings-as-errors']
+        for check in checks or ['clang-diagnostic-'+match['severity'].replace(' ', '-')]:
+            diagnostics.append({'path': match['path'], 'line': int(match['line']),
+                'column': int(match['column']), 'severity': match['severity'],
+                'message': match['message'], 'check': check})
+    return diagnostics
 
 
 def run_unit(job):
@@ -14,7 +76,8 @@ def run_unit(job):
     root = Path(job['directory'])
     report = {'schema': 'objc3c.implementation-analysis-unit.v1', 'status': 'running', 'commands': []}
     executor = Execution(root, job['environment'], report, timeout=job['timeout'])
-    result = {'identity': job['identity'], 'status': 'PASS', 'execution_reused': False}
+    result = {'identity': job['identity'], 'status': 'PASS', 'execution_reused': False,
+              'timeout_seconds': job['timeout']}
     try:
         executor.run(job['name'], job['argv'])
         report['status'] = 'PASS'
@@ -23,6 +86,15 @@ def run_unit(job):
         result.update(status='FAIL', classification=error.classification, error=str(error))
     finally:
         executor.save()
+    commands = report['commands']
+    diagnostics = tidy_diagnostics(Path(commands[-1]['log']).read_text(errors='replace')) if commands else []
+    result['diagnostics'] = diagnostics
+    if diagnostics:
+        result.update(status='FAIL', classification='finding',
+                      error='implementation analysis reported blocker diagnostics')
+        report.update(status='FAIL', error=result['error'])
+    report['result'] = result
+    executor.save()
     return result, report['commands']
 
 
@@ -54,8 +126,11 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
     for key in ('file', 'directory', 'arguments', 'output', 'response_files', 'build_launcher', 'dependencies'):
         if old.get(key) != row.get(key): return None
     if old.get('analysis_arguments') != arguments: return None
+    if old.get('pch_projection', []) != row.get('pch_projection', []): return None
     dependencies = [*row['dependencies'], *row['response_files'], *row['build_launcher'],
                     current['tool']['path'], *current['tool_graph']['libraries']]
+    for projection in row.get('pch_projection', []):
+        dependencies += [projection[key] for key in ('bootstrap_pch', 'textual_wrapper', 'matched_pch')]
     for path in dependencies:
         if previous.get('inputs', {}).get(path) != digest(Path(path)): return None
     name = row['owner']+'-'+row['identity'][:16]
@@ -72,16 +147,18 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
     if (config.is_symlink() or previous['inputs'].get(str(config)) != digest(config) or
             config.read_bytes() != current_config.read_bytes()):
         raise ValueError('analysis checkpoint checker configuration changed')
-    expected = [current['tool']['path'], '-p', str(directory), row['file'], '--config-file='+str(config),
-        '--warnings-as-errors=*', '--extra-arg=-resource-dir='+current['resource_directory'],
-        '--export-fixes='+str(directory / 'diagnostics.yaml')]
+    expected = analysis_argv(current['tool']['path'], directory, row['file'], config,
+                             current['resource_directory'])
     log = Path(command['log'])
     if (command.get('argv') != expected or command.get('exit_code') != 0 or command.get('timed_out') or
             command.get('expected_exit_code') != 0 or command.get('status') != 'PASS' or
             log.is_symlink() or not log.resolve(strict=True).is_relative_to(root) or
             digest(log) != command.get('log_sha256')):
         raise ValueError('analysis checkpoint command/log proof changed or did not complete')
-    require_clean_diagnostic(log.read_text(errors='replace'))
+    text = log.read_text(errors='replace')
+    require_clean_diagnostic(text)
+    if tidy_diagnostics(text):
+        raise ValueError('analysis checkpoint retained blocker diagnostics as a successful action')
     return {'identity': row['identity'], 'status': 'PASS', 'execution_reused': True,
         'checkpoint': str(checkpoint), 'checkpoint_sha256': digest(checkpoint),
         'native_command': command, 'database_sha256': digest(database), 'checker_sha256': digest(config)}
