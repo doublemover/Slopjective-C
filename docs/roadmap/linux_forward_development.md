@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [System 2.27 stored-owner span](linux_borrowed_stored_owners.md) admits
+borrowed acquisitions through tracked fields/elements and preserves field-specific
+future owner requirements across aliases, copies and nested/initialized captures.
+Binding changes and later argument effects expire the appropriate loans without
+retargeting value captures. Eighteen new source/PCH commands, all thirty borrowed compiler regressions
+and three affected frontend groups pass; wider ownership and SDK consolidation
+remain open.
+
 The [System 2.26 binding span](linux_borrowed_reference_bindings.md) separates
 reference lvalue bindings from stored pointer/byte/owner values. Conditional
 references track later writes and current values; copied reference records,

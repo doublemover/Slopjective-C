@@ -537,6 +537,12 @@ void TestBorrowedMemoryAliasReplay() {
         void published_memory_use(const char *pointer __attribute__((noescape)));
         struct PublishedMemoryHolder {const char *pointer;};
         struct PublishedMemoryPair {struct PublishedMemoryHolder first,second;};
+        struct PublishedMemoryOwner {void *pointer;};
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_stored_owner(void *owner) {
+          struct PublishedMemoryOwner box={owner};
+          return published_memory_bytes(box.pointer);
+        }
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline MemoryLoan published_memory_copy(void *owner,int choose) {
           struct PublishedMemoryHolder one={published_memory_bytes(owner)},two={0},target={0};
@@ -581,6 +587,11 @@ void TestBorrowedMemoryAliasReplay() {
           return target.second.pointer;
         }
         #ifdef __cplusplus
+        inline void published_memory_field_closure(void *owner) {
+          PublishedMemoryOwner box{owner};
+          auto work=[box]{void *alias=box.pointer;published_memory_use(published_memory_bytes(alias));};
+          work();
+        }
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline MemoryLoan published_memory_joined_reference(void *owner,int choose) {
           const char *one=0,*two=0;
@@ -636,7 +647,9 @@ void TestBorrowedMemoryAliasReplay() {
           published_memory_use(published_memory_cursor(owner));
           published_memory_use(published_memory_walk(owner));
           published_memory_use(published_memory_byte_typed_store(owner));
+          published_memory_use(published_memory_stored_owner(owner));
           #ifdef __cplusplus
+          published_memory_field_closure(owner);
           published_memory_immediate_reference(owner);
           published_memory_use(published_memory_reference_cell(owner));
           published_memory_use(published_memory_joined_reference(owner,choose));
@@ -686,6 +699,15 @@ void TestBorrowedMemoryAliasReplay() {
           }
         )","memory-joined-reference-consumer.mm");
         assert(joined && joined->getDiagnostics().hasErrorOccurred());
+        auto fields=parse(first.source_bytes+R"(
+          void published_memory_consume(void *owner __attribute__((cf_consumed)));
+          void published_bad_captured_owner_field(void *owner) {
+            PublishedMemoryOwner box{owner};
+            auto work=[box]{void *alias=box.pointer;published_memory_use(published_memory_bytes(alias));};
+            published_memory_consume(owner);work();
+          }
+        )","memory-captured-owner-field-consumer.mm");
+        assert(fields && fields->getDiagnostics().hasErrorOccurred());
       }
     }
   }

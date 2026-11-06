@@ -40,3 +40,8 @@ publication/reparse of a concrete local borrowing closure.
 The [combined ownership receipt](../support/linux_closure_family_ownership_progress.json)
 records this span with the other System 2.7–2.9 spans, including complete native/frontend checks
 and focused source-free package execution. SDK 2.33 remains the accepted archive.
+
+The [System 2.27 stored-owner span](linux_borrowed_stored_owners.md) extends these
+summaries to tracked plain owner fields and concrete array elements, including
+local aliases and nested/copy/init captures. Open positions and independent
+managed-field/lazy ownership remain in the completion ledger.

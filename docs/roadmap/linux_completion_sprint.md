@@ -600,3 +600,14 @@ writes are bounded at 64 alternatives while all possible escape targets remain.
 Eighteen new C++20/C++23 ARC/MRC source/PCH commands, all twenty-nine borrowed
 compiler regressions and three affected source-free frontend groups pass. ABI 24
 and SDK 2.62 are unchanged. General ownership and SDK consolidation remain open.
+
+## Stored owners and field-sensitive closure requirements
+
+The [System 2.27 implementation](linux_borrowed_stored_owners.md) admits stable
+tracked field/element owners, independent record-input identities and precise
+binding invalidation. Cached borrowed/consumed capture paths survive local
+aliases, overwrites, record copies, nested closures and aggregate/conditional
+initializers. Field operand snapshots preserve later argument expiry. Eighteen new
+C17/C++20/C++23 ARC/MRC source/PCH commands, all thirty borrowed compiler
+regressions and three affected source-free frontend groups pass. Unknown positions, indirect/global mutation, managed-field ownership,
+lazy/exceptional analysis and SDK consolidation remain open.
