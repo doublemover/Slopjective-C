@@ -100,3 +100,16 @@ exact object/CF destruction and nil body/argument counters remain mandatory.
 Normal/direct/actor nil calls cover scalar, object, Block, record, floating and
 void logical values plus consumed object, Block and CF operands. A direct method
 is defined before any call so its nil hook must be prepared during definition.
+
+Source 2.103 compiles `integrated-cf.mm` under ARC and MRC and checks 1,084
+NSObject/CF ownership scenarios per configuration. CF and NS claims remain
+independent from strong/weak/unsafe slots. Weak frame pins and MRC handoffs must
+use weak loads without overwriting the runtime slot representation.
+
+Source 2.105 compiles `explicit-cxx-storage.mm` independently in both modes. Its
+C++ union and aggregate types have distinct ARC/MRC identities so linker ODR
+coalescing cannot mix their lifetime operations or counters. All 296 scenarios
+per configuration check exact wrapper/object destruction across synchronous,
+frame, task and static member entries, three caller routes, cancellation and
+unused-entry disposal. User-provided C++ lifetimes own the active union arm;
+these witnesses do not infer an implicit C/resource union cleanup policy.

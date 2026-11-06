@@ -187,6 +187,22 @@ bool HasDeclarationBorrowedCallableOwner(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNativeDependentAwait(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Awaits : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitCoawaitExpr(clang::CoawaitExpr *expression) override {
+        found |= expression->isTypeDependent() && !expression->getReadyExpr() &&
+                 !expression->getSuspendExpr() && !expression->getResumeExpr() &&
+                 clang::getObjC3AwaitSourceExpression(expression);
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return visitor.found;
+  });
+}
+
 bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
     struct Ownership : clang::DynamicRecursiveASTVisitor {

@@ -30918,3 +30918,138 @@ index 000000000..fc7e844ff
 +#ifdef __cplusplus
 +}
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-explicit-cxx-storage.h b/clang/test/ObjC3/CodeGen/Inputs/native-explicit-cxx-storage.h
+new file mode 100644
+index 000000000..5567ddeb6
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-explicit-cxx-storage.h
+@@ -0,0 +1,47 @@
++#ifndef NATIVE_EXPLICIT_CXX_STORAGE_H
++#define NATIVE_EXPLICIT_CXX_STORAGE_H
++#include "native-async-task.h"
++// Compile-only hooks enforce the same admission as the installed runtime.
++// The maintained native fixture executes the real operations and lifetimes.
++template<class T> void __objc3_async_frame_capture(void *,void *) {
++  static_assert(__is_constructible(T,T&&) && __is_nothrow_destructible(T));
++}
++template<class T> const void *__objc3_async_frame_value_ops() {
++  static_assert(__is_constructible(T,const T&) && __is_nothrow_destructible(T));
++  return nullptr;
++}
++union __attribute__((objc_unsafe_sendable)) ExplicitUnion {
++  id object;long integer;
++  explicit ExplicitUnion(id);
++  ExplicitUnion(const ExplicitUnion &);
++  ExplicitUnion(ExplicitUnion &&);
++  ~ExplicitUnion() noexcept;
++  int value() const;
++};
++struct __attribute__((objc_unsafe_sendable)) ExplicitWrapper {
++  ExplicitUnion storage;
++  explicit ExplicitWrapper(id);
++  ExplicitWrapper(const ExplicitWrapper &);
++  ExplicitWrapper(ExplicitWrapper &&);
++  ~ExplicitWrapper() noexcept;
++  int value() const;
++};
++ExplicitUnion explicit_union_entry(ExplicitUnion) noexcept __attribute__((objc_executor(main)));
++ExplicitWrapper explicit_wrapper_entry(ExplicitWrapper) noexcept __attribute__((objc_executor(main)));
++struct ExplicitStaticEntries {
++  static ExplicitUnion run(ExplicitUnion) noexcept __attribute__((objc_executor(main)));
++};
++static int explicit_storage_native(void) __objc3_async_frame {
++  ExplicitUnion value((id)0);
++  ExplicitUnion first=__objc3_await explicit_union_entry(static_cast<ExplicitUnion &&>(value));
++  ExplicitUnion second=__objc3_await ExplicitStaticEntries::run(static_cast<ExplicitUnion &&>(first));
++  ExplicitWrapper wrapper((id)0);
++  ExplicitWrapper result=__objc3_await explicit_wrapper_entry(static_cast<ExplicitWrapper &&>(wrapper));
++  return second.value()+result.value();
++}
++static int explicit_storage_task(void) __objc3_async {
++  ExplicitUnion value((id)0);
++  ExplicitUnion result=__objc3_await ExplicitStaticEntries::run(static_cast<ExplicitUnion &&>(value));
++  return result.value();
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-explicit-cxx-storage.mm b/clang/test/ObjC3/CodeGen/native-explicit-cxx-storage.mm
+new file mode 100644
+index 000000000..5609a21bd
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-explicit-cxx-storage.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch %S/Inputs/native-explicit-cxx-storage.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-explicit-cxx-storage.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch %S/Inputs/native-explicit-cxx-storage.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-explicit-cxx-storage.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-explicit-cxx-storage.h"
++#endif
++objc3_async_frame explicit_storage_export(void){return explicit_storage_native();}
++objc3::task<int> explicit_task_export(void){return explicit_storage_task();}
++// CHECK-DAG: __objc3_async_frame_capture
++// CHECK-DAG: __objc3_async_frame_value_ops
++// CHECK-DAG: @objc3_task_hop
++// CHECK-DAG: @objc3_task_copy_result
++// CHECK-DAG: ExplicitStaticEntries
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-dependent-frame-await.h b/clang/test/ObjC3/CodeGen/Inputs/native-dependent-frame-await.h
+new file mode 100644
+index 000000000..c4a46e98d
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-dependent-frame-await.h
+@@ -0,0 +1,19 @@
++#ifndef NATIVE_DEPENDENT_FRAME_AWAIT_H
++#define NATIVE_DEPENDENT_FRAME_AWAIT_H
++#include "native-async-task.h"
++template<class T> objc3_async_frame __objc3_async_to_frame(objc3::task<T>);
++template<class T> static T dependent_frame_leaf(T value) __objc3_async_frame {return value;}
++template<class T> static T dependent_task_leaf(T value) __objc3_async {return value;}
++template<class T> struct DependentFrameEntries {
++  static T run(T value) noexcept __attribute__((objc_executor(main))) {return value;}
++};
++template<class T> static T dependent_frame_parent(T value) __objc3_async_frame {
++  T isolated=__objc3_await DependentFrameEntries<T>::run(value);
++  T framed=__objc3_await dependent_frame_leaf(isolated);
++  return __objc3_await dependent_task_leaf(framed);
++}
++template<class Work> static int dependent_frame_callback(Work work) __objc3_async_frame {
++  return __objc3_await work(42);
++}
++static int dependent_plain_leaf(int value) noexcept {return value;}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-dependent-frame-await.mm b/clang/test/ObjC3/CodeGen/native-dependent-frame-await.mm
+new file mode 100644
+index 000000000..e66f22809
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-dependent-frame-await.mm
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch %S/Inputs/native-dependent-frame-await.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-dependent-frame-await.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch %S/Inputs/native-dependent-frame-await.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-dependent-frame-await.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-dependent-frame-await.h"
++#endif
++objc3_async_frame dependent_parent_export(int n){return dependent_frame_parent(n);}
++objc3_async_frame dependent_callback_export(void){return dependent_frame_callback(&dependent_frame_leaf<int>);}
++objc3_async_frame dependent_plain_export(void){return dependent_frame_callback(&dependent_plain_leaf);}
++// CHECK-DAG: @objc3_task_hop
++// CHECK-DAG: @objc3_async_frame_start_child
++// CHECK-DAG: @objc3_task_copy_result
++// CHECK-DAG: dependent_frame_parent
++// CHECK-DAG: dependent_frame_callback

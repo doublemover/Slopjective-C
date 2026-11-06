@@ -37,6 +37,7 @@ const auto kSupportedSemantics = std::to_array<llvm::StringRef>({
     kCheckedKeyPathReadSemantic,
     kDependentKeyPathLiteralSemantic,
     kAsyncConsumedOwnershipSemantic,
+    kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,

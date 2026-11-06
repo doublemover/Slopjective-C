@@ -971,6 +971,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (collector.UsesKeyPathSubscripts())
     sidecar.required_semantics.push_back("objc3.keypath-subscripts.v1");
   for (const auto &declaration : sidecar.declarations) {
+    if (HasNativeDependentAwaitIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeDependentAwaitSemantic);
     if (HasNSObjectStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kNSObjectStorageSemantic);
     if (HasBorrowedCallableOwnerIdentity(declaration))
@@ -1182,6 +1184,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCheckedKeyPathReadSemantic,
     kDependentKeyPathLiteralSemantic,
     kAsyncConsumedOwnershipSemantic,
+    kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
@@ -1366,6 +1369,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCheckedKeyPathReadSemantic,
     kDependentKeyPathLiteralSemantic,
     kAsyncConsumedOwnershipSemantic,
+    kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,

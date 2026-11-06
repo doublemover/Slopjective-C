@@ -364,7 +364,8 @@
     "NativeCustomCoroutines",
     "NativeDeclarationAttributes",
     "NativeStandardCoroutines",
-    "NativeUnnamedTemplateProjections"
+    "NativeUnnamedTemplateProjections",
+    "NativeExplicitStorage"
   ],
   "dependencies": []
 }

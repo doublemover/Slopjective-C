@@ -101,6 +101,85 @@ static int class_roundtrip(int kind, objc3_executor_t *destination)
   assert(objc3_executor_is_current(destination));
   return result;
 }
+static void check_explicit_storage(objc3_executor_t *caller,objc3_executor_t *main_destination) {
+  for(int ownership=0;ownership!=2;++ownership) {
+    for(int route=0;route!=3;++route) {
+      for(int kind=0;kind!=8;++kind) {
+        for(int outcome=0;outcome!=6;++outcome) {
+          int before=hop_destroyed();
+          if(ownership)hop_arc_explicit_storage_reset();else hop_explicit_storage_reset();
+          @autoreleasepool {
+            uint32_t count=0;int result=-1;
+            objc3_executor_t *destination=route==2?main_destination:caller;
+            objc3_async_frame frame=ownership?hop_arc_explicit_storage_roundtrip(kind,destination,route!=0):
+                                             hop_explicit_storage_roundtrip(kind,destination,route!=0);
+            const objc3_async_result_type *type=frame.result_type;
+            objc3_task_t *task=0;
+            assert(objc3_async_frame_start(&frame,destination,0,&task)==OBJC3_SERVICE_OK);
+            if(outcome==1)objc3_task_request_cancel(task);
+            if(outcome==5) {
+              assert(objc3_executor_pump(destination,1,&count)==OBJC3_SERVICE_OK && count==1);
+              assert((ownership?hop_arc_explicit_storage_entries():hop_explicit_storage_entries())==0);
+              objc3_task_request_cancel(task);
+            }
+            if(outcome>=2 && outcome<=4) {
+              for(unsigned step=0;step!=10000;++step) {
+                int progress=outcome==2?
+                    (ownership?hop_arc_explicit_storage_entries():hop_explicit_storage_entries()):
+                    (ownership?hop_arc_explicit_storage_completed():hop_explicit_storage_completed());
+                if(progress)break;
+                assert(objc3_executor_pump(caller,1,&count)==OBJC3_SERVICE_OK);
+                assert(objc3_executor_pump(main_destination,1,&count)==OBJC3_SERVICE_OK);
+              }
+              assert((outcome==2?
+                  (ownership?hop_arc_explicit_storage_entries():hop_explicit_storage_entries()):
+                  (ownership?hop_arc_explicit_storage_completed():hop_explicit_storage_completed()))==1);
+              if(outcome!=4)objc3_task_request_cancel(task);
+            }
+            objc3_completion completion=finish(task);
+            if(outcome==0 || outcome==4) {
+              assert(completion.kind==OBJC3_COMPLETION_SUCCESS);
+              assert(objc3_task_copy_result(task,type,&int_ops,&result)==OBJC3_SERVICE_OK && result==42);
+            } else assert(completion.kind==OBJC3_COMPLETION_CANCELLED);
+            int entered=ownership?hop_arc_explicit_storage_entries():hop_explicit_storage_entries();
+            int done=ownership?hop_arc_explicit_storage_completed():hop_explicit_storage_completed();
+            int objects=ownership?hop_arc_explicit_storage_created():hop_explicit_storage_created();
+            assert(entered==(outcome!=1 && outcome!=5));
+            assert(done==(outcome==0 || outcome==3 || outcome==4 ||
+                (outcome==2 && (kind%4==0 || kind%4==3))));
+            if(outcome==1)assert(objects==0);
+            else if(outcome==5)assert(objects>=0 && objects<=1);
+            else {
+              if(objects!=1)fprintf(stderr,"explicit storage ownership=%d route=%d kind=%d outcome=%d objects=%d live=%d\n",ownership,route,kind,outcome,objects,ownership?hop_arc_explicit_storage_live():hop_explicit_storage_live());
+              assert(objects==1);
+            }
+            objc3_task_release(task);
+          }
+          assert((ownership?hop_arc_explicit_storage_live():hop_explicit_storage_live())==0);
+          int objects=ownership?hop_arc_explicit_storage_created():hop_explicit_storage_created();
+          for(unsigned step=0;step!=1000000 && hop_destroyed()!=before+objects;++step)sched_yield();
+          assert(hop_destroyed()==before+objects);
+        }
+      }
+    }
+    for(int aggregate=0;aggregate!=2;++aggregate) {
+      for(int task_entry=0;task_entry!=2;++task_entry) {
+        int before=hop_destroyed();
+        if(ownership)hop_arc_explicit_storage_reset();else hop_explicit_storage_reset();
+        @autoreleasepool {
+          objc3_async_frame frame=ownership?hop_arc_explicit_storage_unstarted(aggregate,task_entry):
+                                           hop_explicit_storage_unstarted(aggregate,task_entry);
+          assert((ownership?hop_arc_explicit_storage_entries():hop_explicit_storage_entries())==0);
+          assert((ownership?hop_arc_explicit_storage_created():hop_explicit_storage_created())==1);
+          assert(objc3_async_frame_dispose(&frame)==OBJC3_SERVICE_OK);
+        }
+        assert((ownership?hop_arc_explicit_storage_live():hop_explicit_storage_live())==0);
+        assert(hop_destroyed()==before+1);
+      }
+    }
+  }
+}
+
 int main(void) {
   hop_automatic_association_checks();
   @autoreleasepool {
@@ -538,6 +617,8 @@ int main(void) {
       }
     }
 
+
+    check_explicit_storage(caller,main_destination);
 
     // NSObject-backed CF values have independent manual CF and ARC owners.
     // Exercise normal/cancelled/unused entries and drop borrowed producers

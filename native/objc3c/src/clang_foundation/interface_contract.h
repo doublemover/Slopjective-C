@@ -177,6 +177,10 @@ inline constexpr const char *kCxxUnionValueSemantic = "objc3.cxx-union-values.v1
 inline bool HasCxxUnionValueIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-union-values:v1;") != std::string::npos;
 }
+inline constexpr const char *kNativeDependentAwaitSemantic = "objc3.native-dependent-await.v1";
+inline bool HasNativeDependentAwaitIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-dependent-await:v1;") != std::string::npos;
+}
 inline constexpr const char *kNSObjectStorageSemantic = "objc3.nsobject-storage.v1";
 inline bool HasNSObjectStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";nsobject-storage:v1;") != std::string::npos ||

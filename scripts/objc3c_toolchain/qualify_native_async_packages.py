@@ -335,6 +335,11 @@ def check_cpp_metadata(metadata):
                        if ';cxx-effectful-template-members:v1;' in row.get('canonical_type_identity','')]
     if not ('objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']):
         raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']")
+    dependent_awaits={row['qualified_name'] for row in metadata['declarations']
+        if ';native-dependent-await:v1;' in row.get('canonical_type_identity','')}
+    if ('objc3.native-dependent-await.v1' not in metadata.get('required_semantics',[]) or
+        not {'NativeExplicitStorage::generic'}<=dependent_awaits):
+        raise ValueError('C++ package lost native dependent await identity')
     check_factory_metadata(metadata)
     local_factory_results={row['qualified_name'] for row in metadata['declarations']
                        if ';cxx-local-factory-results:v1;' in row.get('canonical_type_identity','')}

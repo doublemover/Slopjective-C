@@ -366,6 +366,15 @@ int block_application(objc3_actor_t *actor) __objc3_async {
   return 0;
 }
 
+static int explicit_storage_package_check(void) __objc3_async {
+  int result=__objc3_await NativeExplicitStorage::roundtrip(42);
+  NativeExplicitStorage::Counts counts;
+  {
+    NativeExplicitStorage::Value source(&counts,42);
+    if(__objc3_await NativeExplicitStorage::generic(static_cast<NativeExplicitStorage::Value &&>(source))!=42)return 0;
+  }
+  return counts.live==0 && counts.copies>0 && counts.destroyed>0?result:0;
+}
 int main() {
   {
     char small=2;float promoted=2.0f;
@@ -915,6 +924,23 @@ int main() {
       native_local_lambda(40)!=42) return 98;
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
+  {
+    objc3_executor_t *main_executor=nullptr;
+    if(objc3_executor_get_main(&main_executor)!=OBJC3_SERVICE_OK)return 256;
+    auto checked=explicit_storage_package_check().start(executor);
+    bool complete=false;
+    for(unsigned step=0;step!=10000;++step) {
+      if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+         objc3_executor_pump(main_executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK)return 257;
+      objc3_completion completion{};
+      if(objc3_task_get_completion(checked.native_handle(),&completion)==OBJC3_SERVICE_OK) {
+        complete=true;break;
+      }
+    }
+    objc3_executor_release(main_executor);
+    if(!complete || checked.result()!=42)return 258;
+  }
+
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||
       executed != 2 || pending.result() != 42)
     return 2;

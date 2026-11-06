@@ -433,6 +433,10 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool native_dependent_await = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeDependentAwaitIdentity);
+  const bool native_dependent_await_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeDependentAwaitSemantic) != sidecar.required_semantics.end();
+  if (native_dependent_await != native_dependent_await_capability)
+    Add(result,"O3IFC107","native dependent await identity and required capability must agree",expected.canonical_name);
   const bool nsobject_storage = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNSObjectStorageIdentity);
   const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
   if (nsobject_storage != nsobject_storage_capability)

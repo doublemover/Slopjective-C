@@ -23,7 +23,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                                             |
 | Isolation          | Plain opaque CF consumed arguments across synchronous, native-frame and C++ task entries                                    | Source authored; focused native execution passes                                             |
 | Isolation          | Ordinary C++ coroutine function, Objective-C++ method and Block consumed ownership                                          | Source authored; focused source/PCH and native execution pass                                |
-| Isolation          | NSObject-backed CF/NS storage, strong/weak/unsafe captures and result ownership                                                | Source authored; focused native checks in progress                                            |
+| Isolation          | NSObject-backed CF/NS storage, strong/weak/unsafe captures and result ownership                                                | Source authored; three focused native configurations pass                                     |
+| Isolation          | Explicit C++ aggregate/union lifetimes, static member entries and dependent native-frame awaits                               | Source authored; focused source/PCH/native execution passes                                   |
 | Isolation          | Remaining crossings and managed values                                                                                      | Open                                                                                         |
 | Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | Task-ABI initializer/object/CF results and typed nil entries                                                                | Source authored; focused native execution passes                                             |
@@ -384,3 +385,15 @@ unsafe admissions emit transfer notes. Block aliases follow only immutable local
 initializers, and Block C++ `this` checking uses the actual pointee contract.
 Thirty new source/PCH commands and the existing transfer-note regression pass.
 Frontend replay/consumer controls are authored; consolidation remains pending.
+
+## Explicit C++ values and dependent native awaits
+
+The [2.105 value span](linux_explicit_cxx_storage.md) uses native typed lifetime
+hooks for explicit C++ aggregate/union ownership and admits static member
+crossings. Materialized argument snapshots preserve constructors through PCH.
+Recovered or undefined storage hooks diagnose without crashing. Dependent native
+awaits rebuild their isolation and task/frame contracts after substitution, with
+an explicit source-free capability. Thirty-two new compiler commands and 296
+native scenarios pass; the complete focused isolation configuration passes 25
+commands. Optimized/instrumented and frontend/package consolidation remain
+pending. Implicit C/resource union cleanup and other crossing forms stay open.

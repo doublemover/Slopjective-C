@@ -2340,6 +2340,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-effectful-lambdas:v1;";
   if (HasDeclarationTemplateTemplateParameters(representative))
     identity.canonical_type_identity+=";cxx-template-template-parameters:v1;";
+  if (HasDeclarationNativeDependentAwait(representative))
+    identity.canonical_type_identity+=";native-dependent-await:v1;";
   if (HasDeclarationNSObjectStorage(representative))
     identity.canonical_type_identity+=";nsobject-storage:v1;";
   if (HasDeclarationBorrowedCallableOwner(representative))

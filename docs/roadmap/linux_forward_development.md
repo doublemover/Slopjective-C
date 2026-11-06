@@ -39,6 +39,12 @@ lambdas and preserves literal proofs through immutable local Block aliases.
 Thirty source/PCH commands pass; frontend replay and SDK consolidation remain
 pending.
 
+The [Concurrency 2.105 value span](linux_explicit_cxx_storage.md) adds explicit
+C++ aggregate/union ownership and static member crossings, materialized PCH
+arguments and dependent native-frame await substitution. Thirty-two new compiler
+commands and a 25-command native configuration pass, including 296 new lifetime
+scenarios. Frontend/package and final SDK consolidation remain pending.
+
 The [combined implementation sprint](linux_implementation_sprint.md) is
 source-validated through **2.87**, System **2.15** and keypath **2.5**. Its
 [receipt](../support/linux_implementation_sprint_progress.json) records the

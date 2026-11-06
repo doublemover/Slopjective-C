@@ -3439,6 +3439,59 @@ void TestClosureFactories() {
   }
 }
 
+void TestNativeDependentAwaitReplay() {
+  std::ifstream input(std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/explicit_cxx_storage.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    for(bool arc:{false,true}) {
+      std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
+          "-fobjc-runtime=gnustep-2.2","-fobjc3-strict-concurrency",
+          "--target=x86_64-unknown-linux-gnu","-fcoro-aligned-allocation",
+          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      if(arc)args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                     "fixture.native_dependent_await","test",{}));
+        return EmitSemanticInterface(ast->getASTContext(),"fixture.native_dependent_await","test",{},{},{},
+                                     {"NativeExplicitStorage"});
+      };
+      auto first=emit(source,"native-dependent-await.mm");assert(first.success);
+      auto replay=emit(first.source_bytes,"replayed-native-dependent-await.mm");
+      assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-native-dependent-await.mm");
+      assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> semantics;
+      for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+      assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),HasNativeDependentAwaitIdentity));
+      auto missing=*decoded;std::erase(missing.required_semantics,kNativeDependentAwaitSemantic);
+      auto absent=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!absent);llvm::consumeError(absent.takeError());
+      auto old=semantics;std::erase(old,llvm::StringRef(kNativeDependentAwaitSemantic));
+      auto old_reader=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+      assert(!old_reader);llvm::consumeError(old_reader.takeError());
+      auto plain=emit("namespace NativeExplicitStorage{inline int plain(){return 1;}}","plain-native-await.mm");
+      assert(plain.success);
+      auto control=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,semantics);assert(control);
+      control->required_semantics.push_back(kNativeDependentAwaitSemantic);
+      auto invented=EncodeSemanticInterfaceSidecar(*control,semantics);assert(!invented);llvm::consumeError(invented.takeError());
+      auto valid=parse(first.source_bytes+R"(
+        objc3_async_frame use_native_dependent_await(NativeExplicitStorage::Counts *counts) {
+          return NativeExplicitStorage::generic(NativeExplicitStorage::Value(counts,42));
+        }
+      )","native-dependent-await-consumer.mm");
+      assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+    }
+  }
+}
+
 void TestConcurrentCallableCaptureReplay() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     for (bool arc : {false, true}) {
@@ -6533,6 +6586,7 @@ int main() {
   TestFactoryTypeProjections();
   TestLocalFactoryResults();
   TestClosureFactories();
+  TestNativeDependentAwaitReplay();
   TestConcurrentCallableCaptureReplay();
   TestEffectfulLambdas();
   TestAddressTemplateArguments();

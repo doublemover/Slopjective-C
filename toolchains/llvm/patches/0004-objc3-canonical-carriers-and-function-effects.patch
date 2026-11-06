@@ -14899,7 +14899,7 @@ index 3f0a7304d..4badce1e2 100644
        return true;
  
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..c73764fbe 100644
+index 11cd159c0..6b621cee4 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,8 @@
@@ -15130,7 +15130,7 @@ index 11cd159c0..c73764fbe 100644
  }
  
  template<typename Derived>
-@@ -8976,6 +9155,18 @@ TreeTransform<Derived>::TransformCoreturnStmt(CoreturnStmt *S) {
+@@ -8976,6 +9155,20 @@ TreeTransform<Derived>::TransformCoreturnStmt(CoreturnStmt *S) {
  
  template <typename Derived>
  ExprResult TreeTransform<Derived>::TransformCoawaitExpr(CoawaitExpr *E) {
@@ -15144,12 +15144,14 @@ index 11cd159c0..c73764fbe 100644
 +      ExprResult Operand = getDerived().TransformInitializer(
 +          const_cast<Expr *>(Source), /*NotCopyInit=*/false);
 +      if (Operand.isInvalid()) return ExprError();
++      Operand = getSema().BuildObjC3IsolationAwaitOperand(E->getKeywordLoc(), Operand.get());
++      if (Operand.isInvalid()) return ExprError();
 +      return getSema().ActOnObjC3CAwaitExpr(E->getKeywordLoc(), Operand.get());
 +    }
    ExprResult Operand = getDerived().TransformInitializer(E->getOperand(),
                                                           /*NotCopyInit*/ false);
    if (Operand.isInvalid())
-@@ -13699,6 +13890,19 @@ ExprResult TreeTransform<Derived>::TransformRecoveryExpr(RecoveryExpr *E) {
+@@ -13699,6 +13892,19 @@ ExprResult TreeTransform<Derived>::TransformRecoveryExpr(RecoveryExpr *E) {
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformPseudoObjectExpr(PseudoObjectExpr *E) {
@@ -15169,7 +15171,7 @@ index 11cd159c0..c73764fbe 100644
    // Rebuild the syntactic form.  The original syntactic form has
    // opaque-value expressions in it, so strip those away and rebuild
    // the result.  This is a really awful way of doing this, but the
-@@ -13965,6 +14169,30 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
+@@ -13965,6 +14171,30 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
@@ -15200,7 +15202,7 @@ index 11cd159c0..c73764fbe 100644
    // Transform the callee.
    ExprResult Callee = getDerived().TransformExpr(E->getCallee());
    if (Callee.isInvalid())
-@@ -14566,6 +14794,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14566,6 +14796,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -15357,7 +15359,7 @@ index 11cd159c0..c73764fbe 100644
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformChooseExpr(ChooseExpr *E) {
-@@ -17686,6 +18064,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
+@@ -17686,6 +18066,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
      blockScope->ReturnType = exprResultType;
    }
  
@@ -42805,10 +42807,10 @@ index 9adba1943..76286b3f9 100644
          // is significant.  Allow non-dependent code to contain inappropriate
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..7f83be1d1
+index 000000000..b24802796
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,340 @@
+@@ -0,0 +1,350 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -42879,7 +42881,9 @@ index 000000000..7f83be1d1
 +  Expr *Args[] = {new (S.Context) ImplicitValueInitExpr(Frame)};
 +  ExprResult Call = S.BuildCallExpr(nullptr, Callee.get(), Loc, Args, Loc);
 +  if (Call.isInvalid()) return true;
-+  auto *Function = cast<CallExpr>(Call.get()->IgnoreImplicit())->getDirectCallee();
++  auto *Invocation = dyn_cast<CallExpr>(Call.get()->IgnoreImplicit());
++  auto *Function = Invocation ? Invocation->getDirectCallee() : nullptr;
++  if (!Function) return true;
 +  QualType Task = S.Context.getObjC3AsyncReturnType(Type);
 +  const auto *HookType = Function->getType()->castAs<FunctionProtoType>();
 +  if (Function->getNumParams() != 1 || HookType->isVariadic() ||
@@ -42943,6 +42947,15 @@ index 000000000..7f83be1d1
 +    Diag(Loc, diag::err_objc3_await_context);
 +    return ExprError();
 +  }
++  if (llvm::is_contained(ObjC3DeferOwnerStack,
++                         getCurrentObjC3CallableContext(*this))) {
++    Diag(Loc, diag::err_objc3_async_defer_suspend);
++    return ExprError();
++  }
++  if (getLangOpts().CPlusPlus && Operand->isTypeDependent())
++    // Native frame templates have no C++ promise. Preserve the written await
++    // until substitution resolves its callee and isolation/value contracts.
++    return new (Context) CoawaitExpr(Loc, Context.DependentTy, Operand, Operand);
 +  // Keep the source call and its logical function type. The call expression's
 +  // evaluated result is the common ABI carrier, not the logical await result.
 +  const auto *Function = getObjC3AsyncAwaitFunctionType(*this, Operand);
@@ -42955,11 +42968,6 @@ index 000000000..7f83be1d1
 +    if (isObjC3NonSuspendingAwait(Operand))
 +      return ActOnObjC3NonSuspendingAwait(Loc, Operand);
 +    Diag(Loc, diag::err_objc3_async_c_await_operand);
-+    return ExprError();
-+  }
-+  if (llvm::is_contained(ObjC3DeferOwnerStack,
-+                         getCurrentObjC3CallableContext(*this))) {
-+    Diag(Loc, diag::err_objc3_async_defer_suspend);
 +    return ExprError();
 +  }
 +  if (BuildObjC3AsyncTaskType(Function, Loc).isNull())
@@ -43029,14 +43037,18 @@ index 000000000..7f83be1d1
 +      Args.push_back(new (S.Context) ImplicitValueInitExpr(S.Context.VoidPtrTy));
 +  ExprResult Call = S.BuildCallExpr(nullptr, Callee.get(), Loc, Args, Loc);
 +  if (Call.isInvalid()) return true;
-+  auto *Function = cast<CallExpr>(Call.get()->IgnoreImplicit())->getDirectCallee();
++  auto *Invocation = dyn_cast<CallExpr>(Call.get()->IgnoreImplicit());
++  auto *Function = Invocation ? Invocation->getDirectCallee() : nullptr;
++  // Failed template selection can return a RecoveryExpr after a previous hook
++  // diagnostic. It is not an invocable specialization and must not be cast.
++  if (!Function) return true;
 +  if (Capture ? !Function->getReturnType()->isVoidType()
 +              : !Function->getReturnType()->isPointerType()) {
 +    S.Diag(Loc, diag::err_objc3_async_frame_cpp_hook) << Name;
 +    return true;
 +  }
 +  S.InstantiateFunctionDefinition(Loc, Function, true, true);
-+  return Function->isInvalidDecl();
++  return Function->isInvalidDecl() || !Function->hasBody();
 +}
 +
 +bool requireCxxFrameStorage(Sema &S, QualType T, SourceLocation Loc,
@@ -46951,10 +46963,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..027f55796
+index 000000000..d80bd1446
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1293 @@
+@@ -0,0 +1,1313 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47779,8 +47791,19 @@ index 000000000..027f55796
 +    if (const auto *Record = Value->getAs<RecordType>()) {
 +      const auto *Definition = Record->getDecl()->getDefinition();
 +      if (!Definition) return false;
-+      // Plain unions have native object-representation copy semantics. Managed
-+      // union arms need an active-arm ownership contract and remain rejected.
++      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition);
++          Class && !Value.isTriviallyCopyableType(S.Context)) {
++        const auto *Destructor = Class->getDestructor();
++        if (Destructor && Destructor->isUserProvided() && !Destructor->isDeleted())
++          // An explicit C++ lifetime owns its active arm and MRC fields through
++          // the ordinary typed copy/move/destruction hooks. Do not synthesize
++          // field-wise ownership for it. Hook instantiation still checks access,
++          // deleted operations, result copying and nonthrowing destruction;
++          // Sendable checking independently forbids borrowed leaves.
++          return !containsObjC3BorrowedType(S.Context, Value);
++      }
++      // C unions and implicit/deleted C++ union lifetimes cannot infer which
++      // managed arm is active. They still need a separate ownership contract.
 +      if (Definition->isUnion() && !Value.isTriviallyCopyableType(S.Context))return false;
 +      UnionArm |= Definition->isUnion();
 +      for (const auto *Field : Definition->fields())
@@ -48135,7 +48158,8 @@ index 000000000..027f55796
 +  for (QualType T : FT->param_types())
 +    Shape &= isolationFrameValue(*this, T, false);
 +  if (Call) {
-+    Shape &= !isa<CXXMethodDecl>(Target) &&
++    const auto *Method = dyn_cast<CXXMethodDecl>(Target);
++    Shape &= (!Method || Method->isStatic()) &&
 +             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts());
 +  } else {
 +    const bool Instance =
@@ -48197,6 +48221,14 @@ index 000000000..027f55796
 +    ExprResult Loaded = DefaultFunctionArrayLvalueConversion(Value);
 +    if (Loaded.isInvalid()) return false;
 +    Value = Loaded.get();
++    if (getLangOpts().CPlusPlus && Value->getType()->isRecordType() &&
++        !Value->getType().isTriviallyCopyableType(Context) && Value->isPRValue()) {
++      // The original call has already constructed this argument. Materialize
++      // its snapshot and move into the thunk's independent value parameter;
++      // an aggregate prvalue OVE would otherwise request a raw byte copy.
++      Value = CreateMaterializeTemporaryExpr(Value->getType(), Value, false);
++      Cleanup.setExprNeedsCleanups(true);
++    }
 +    if (Value->getType()->isObjCRetainableType())
 +      Cleanup.setExprNeedsCleanups(true);
 +    auto *Opaque = new (Context)
@@ -56243,4 +56275,62 @@ index 000000000..eb1ecd6bf
 +  AliasAsyncWork mutable_work=^void(void) __objc3_async_frame {};
 +  AliasAsyncWork const second=mutable_work;
 +  (void)alias_spawn(second); // expected-error {{cannot prove Sendable captures}}
++}
+diff --git a/clang/test/ObjC3/Sema/native-frame-hook-recovery.mm b/clang/test/ObjC3/Sema/native-frame-hook-recovery.mm
+new file mode 100644
+index 000000000..a4843012b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-frame-hook-recovery.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++template<class T> const void *__objc3_async_frame_value_ops();
++struct __attribute__((objc_unsafe_sendable)) HookRecoveryValue {
++  HookRecoveryValue(const HookRecoveryValue &);
++  ~HookRecoveryValue() noexcept;
++};
++HookRecoveryValue first_hook(void) noexcept __attribute__((objc_executor(main)));
++HookRecoveryValue second_hook(void) noexcept __attribute__((objc_executor(main)));
++int hook_recovery(void) __objc3_async_frame {
++  (void)__objc3_await first_hook(); // expected-error {{explicit instantiation of undefined function template}}
++  (void)__objc3_await second_hook(); // expected-error {{no matching function for call}}
++  return 0;
++}
+diff --git a/clang/test/ObjC3/Sema/native-explicit-storage-rejections.mm b/clang/test/ObjC3/Sema/native-explicit-storage-rejections.mm
+new file mode 100644
+index 000000000..5140052cc
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-explicit-storage-rejections.mm
+@@ -0,0 +1,29 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++union __attribute__((objc_unsafe_sendable)) ImplicitManagedUnion {id value;long other;};
++ImplicitManagedUnion implicit_union(void) noexcept __attribute__((objc_executor(main)));
++struct ExplicitUnsendable {id value;~ExplicitUnsendable() noexcept;};
++ExplicitUnsendable explicit_unsendable(void) noexcept __attribute__((objc_executor(main)));
++union __attribute__((objc_unsafe_sendable)) ExplicitBorrowedUnion {
++  borrowed const char *value;long other;
++  ExplicitBorrowedUnion(const ExplicitBorrowedUnion &);
++  ~ExplicitBorrowedUnion() noexcept;
++};
++ExplicitBorrowedUnion borrowed_union(void) noexcept __attribute__((objc_executor(main)));
++int invalid_storage(void) __objc3_async_frame {
++#if __has_feature(objc_arc)
++  (void)__objc3_await implicit_union(); // expected-error {{attempt to use a deleted function}}
++#else
++  (void)__objc3_await implicit_union(); // expected-error {{awaited isolated entry requires}}
++#endif
++  (void)__objc3_await explicit_unsendable(); // expected-error {{non-Sendable type}}
++  (void)__objc3_await borrowed_union(); // expected-error {{awaited isolated entry requires}}
++  return 0;
++}
++template<class T> int invalid_deferred_await(T value) __objc3_async_frame {
++  defer {(void)__objc3_await value();} // expected-error {{cannot suspend from a defer statement}}
++  return 0;
 +}

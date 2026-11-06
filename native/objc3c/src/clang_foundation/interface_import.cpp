@@ -59,6 +59,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCheckedKeyPathReadSemantic,
     kDependentKeyPathLiteralSemantic,
     kAsyncConsumedOwnershipSemantic,
+    kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,

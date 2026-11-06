@@ -198,6 +198,7 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration);
 bool HasDeclarationCheckedKeyPathRead(const clang::NamedDecl *declaration);
 bool HasDeclarationDependentKeyPathLiteral(const clang::NamedDecl *declaration);
 bool HasDeclarationDependentKeyPathTypeBody(const clang::NamedDecl *declaration);
+bool HasDeclarationNativeDependentAwait(const clang::NamedDecl *);
 bool HasDeclarationNSObjectStorage(const clang::NamedDecl *);
 bool HasDeclarationBorrowedCallableOwner(const clang::NamedDecl *declaration);
 bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration);
