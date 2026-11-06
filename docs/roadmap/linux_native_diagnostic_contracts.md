@@ -1,5 +1,10 @@
 # Native allocator and diagnostic publication contracts
 
+Current execution checkpoint: the maintained native frontend replay, identity and
+consumer controls pass in the ABI 24 development embedding. See the
+[2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package
+execution, wider matrices and installed SDK qualification remain pending.
+
 The current source span extends published native declaration contracts to
 `ownership_returns`, `ownership_takes`, `ownership_holds`,
 `argument_with_type_tag`, `pointer_with_type_tag`, `type_tag_for_datatype`,

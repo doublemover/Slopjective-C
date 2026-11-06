@@ -1,5 +1,10 @@
 # Borrowed provenance through aliased memory operations
 
+Current execution checkpoint: the maintained native frontend replay, identity and
+consumer controls pass in the ABI 24 development embedding. See the
+[2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package
+execution, wider matrices and installed SDK qualification remain pending.
+
 System source 2.21 extends builtin fills and representation copies to finite
 local aliases, conditional source/destination sets, nested fields and arrays.
 Exact single-target copies with matching types and complete object sizes preserve

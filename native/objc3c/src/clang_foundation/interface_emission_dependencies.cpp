@@ -286,7 +286,14 @@ class TypeDependencyVisitor final
   }
   void CheckCxxCoroutine(const clang::FunctionDecl *function) {
     if (const auto *body=PublishedCxxCoroutine(function)) {
-      if (!body->hasDependentPromiseType()) TraverseType(context_.getCanonicalType(body->getPromiseDecl()->getType()));
+      if (!body->hasDependentPromiseType()) {
+        const auto *promise=body->getPromiseDecl()->getType()->getAsCXXRecordDecl();
+        const auto *owner=promise?llvm::dyn_cast<clang::NamedDecl>(promise->getDeclContext()):nullptr;
+        // The canonical SDK task owns its promise layout and protocol members.
+        // A custom promise still needs the ordinary public dependency contract.
+        if (!owner || !IsQualifiedRuntimeTaskDeclaration(owner,context_))
+          TraverseType(context_.getCanonicalType(body->getPromiseDecl()->getType()));
+      }
       for (const auto *reference:CxxCoroutineReferences(function)) CheckExpressionReference(reference);
     }
   }
@@ -1186,22 +1193,21 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
 bool IsBoundedClassMemberAlias(const clang::TypeAliasTemplateDecl *pattern) {
   if (!IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   for (const auto *attribute : pattern->getTemplatedDecl()->attrs())
-    if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   return true;
 }
 
 bool IsBoundedClassMemberTemplate(const clang::FunctionTemplateDecl *pattern) {
   const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(pattern->getTemplatedDecl());
-  if (!method || (!method->doesThisDeclarationHaveABody() &&
-                  !IsDetachedCallableTemplateDefinition(method->getDefinition()))) return false;
+  if (!method) return false;
   if (!IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   for (const auto *attribute : method->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
           ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
-    } else if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   for (const auto *parameter : method->parameters())
-    for (const auto *attribute : parameter->attrs()) if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    for (const auto *attribute : parameter->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   return true;
 }
 
@@ -1209,7 +1215,7 @@ bool IsBoundedNestedTemplateParameters(const clang::TemplateParameterList *param
                                         unsigned depth) {
   if (depth>64) return false;
   for (const auto *parameter:*parameters) {
-    for (const auto *attribute:parameter->attrs()) if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    for (const auto *attribute:parameter->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
     if (const auto *nested=llvm::dyn_cast<clang::TemplateTemplateParmDecl>(parameter)) {
       if (nested->templateParameterKind()!=clang::TNK_Type_template ||
           !IsBoundedNestedTemplateParameters(nested->getTemplateParameters(),depth+1)) return false;
@@ -1227,21 +1233,19 @@ bool IsBoundedVariablePartial(const clang::VarTemplatePartialSpecializationDecl 
   for (const auto *attribute:partial->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if(tag->tags_size()!=1 || ReadNativeSymbolName(partial)!=*tag->tags_begin()) return false;
-    } else if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   return true;
 }
 
 bool IsBoundedClassMemberVariable(const clang::VarTemplateDecl *pattern) {
   const auto *variable=pattern->getTemplatedDecl();
   if (!IsBoundedNestedTemplateParameters(pattern->getTemplateParameters()) ||
-      !variable->isStaticDataMember() ||
-      (((!variable->isInline() && !variable->isConstexpr()) || !variable->hasInit()) &&
-       !IsDetachedStaticDataTemplateDefinition(variable->getDefinition()))) return false;
+      !variable->isStaticDataMember()) return false;
   for (const auto *attribute:variable->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
           ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
-    } else if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   return true;
 }
 
@@ -1261,7 +1265,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (!pattern || tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
           ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
-    } else if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute) && !llvm::isa<clang::FinalAttr>(attribute)) return false;
+    } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute) && !llvm::isa<clang::FinalAttr>(attribute)) return false;
   }
   for (const auto *member : body->decls()) {
     if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member)) continue;
@@ -1292,25 +1296,18 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
     } else if (const auto *value=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
       const auto *variable=value->getTemplatedDecl();
       if (!IsBoundedNestedTemplateParameters(value->getTemplateParameters()) ||
-          !variable->isStaticDataMember() ||
-          (((!variable->isInline() && !variable->isConstexpr()) || !variable->hasInit()) &&
-           !IsDetachedStaticDataTemplateDefinition(variable->getDefinition()))) return false;
-      for (const auto *attribute : variable->attrs()) if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+          !variable->isStaticDataMember()) return false;
+      for (const auto *attribute : variable->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
       for (const auto *partial:PublishedVariablePartials(value))
         if (!IsBoundedVariablePartial(partial)) return false;
     } else if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
       if (IsClosedParentMemberSpecialization(method)) continue;
-      if (method->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization ||
-          (!method->doesThisDeclarationHaveABody() &&
-           !IsDetachedCallableTemplateDefinition(method->getDefinition()) && !method->isDefaulted() &&
-           !method->isDeleted() && !method->isPureVirtual())) return false;
+      if (method->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization) return false;
     } else if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(member)) {
-      if (!variable->isStaticDataMember() ||
-          (!variable->isInline() && !variable->isConstexpr() &&
-           !IsDetachedStaticDataTemplateDefinition(variable->getDefinition()))) return false;
+      if (!variable->isStaticDataMember()) return false;
     } else if (!llvm::isa<clang::FieldDecl,clang::TypedefNameDecl,clang::EnumDecl,clang::BaseUsingDecl>(member)) return false;
     for (const auto *attribute : member->attrs())
-      if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute) && !llvm::isa<clang::OverrideAttr,clang::FinalAttr>(attribute)) return false;
+      if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute) && !llvm::isa<clang::OverrideAttr,clang::FinalAttr>(attribute)) return false;
   }
   return true;
 }
@@ -1334,9 +1331,9 @@ bool IsBoundedConcreteMemberFunctionSpecialization(const clang::FunctionDecl *fu
   for (const auto *attribute:function->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (tag->tags_size()!=1 || ReadNativeSymbolName(function->getPrimaryTemplate())!=*tag->tags_begin()) return false;
-    } else if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   for (const auto *parameter:function->parameters())
-    for (const auto *attribute:parameter->attrs()) if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    for (const auto *attribute:parameter->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   std::string key;
   for (const auto &argument:function->getTemplateSpecializationArgs()->asArray())
     if (!GenericArgumentKey(argument,function->getASTContext(),key)) return false;
@@ -1351,7 +1348,7 @@ bool IsBoundedConcreteMemberVariableSpecialization(const clang::VarTemplateSpeci
   for (const auto *attribute:variable->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (tag->tags_size()!=1 || ReadNativeSymbolName(variable->getSpecializedTemplate())!=*tag->tags_begin()) return false;
-    } else if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   std::string key;
   for (const auto &argument:variable->getTemplateArgs().asArray())
     if (!GenericArgumentKey(argument,variable->getASTContext(),key)) return false;
@@ -1368,12 +1365,12 @@ bool IsBoundedClosedParentMembers(const clang::NamedDecl *owner) {
           !ClassSpecializationArgumentKey(record,record->getASTContext(),arguments)) return false;
     } else if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(specialization)) {
       if (function->isInlined() && !function->getDefinition()) return false;
-      for (const auto *attribute:function->attrs()) if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+      for (const auto *attribute:function->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
       for (const auto &argument:function->getTemplateSpecializationArgs()->asArray())
         if (!GenericArgumentKey(argument,function->getASTContext(),arguments)) return false;
     } else if (const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(specialization)) {
       if (variable->getType()->isDependentType()) return false;
-      for (const auto *attribute:variable->attrs()) if (!attribute->isImplicit() && !IsPublishedNativeAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+      for (const auto *attribute:variable->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
       for (const auto &argument:variable->getTemplateArgs().asArray())
         if (!GenericArgumentKey(argument,variable->getASTContext(),arguments)) return false;
     }
@@ -1538,7 +1535,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute))
           supported &= tag->tags_size()==1 && tag->tags_begin()->starts_with("__objc3_m_") &&
               ReadNativeSymbolName(pattern)==*tag->tags_begin();
-        else supported &= (attribute->isImplicit() || IsPublishedNativeAttribute(attribute) || IsForeignImportAttribute(attribute));
+        else supported &= (attribute->isImplicit() || IsPublishedSemanticAttribute(attribute) || IsForeignImportAttribute(attribute));
     }
     if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
       const auto *alias = pattern->getTemplatedDecl();
@@ -1547,12 +1544,13 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
             annotation && annotation->getAnnotation().starts_with("objc3.alias-owner:"))
           supported &= annotation->args_size()==0 &&
               annotation->getAnnotation().drop_front(sizeof("objc3.alias-owner:")-1)==ReadNativeSymbolName(pattern);
-        else supported &= (attribute->isImplicit() || IsPublishedNativeAttribute(attribute) || IsForeignImportAttribute(attribute));
+        else supported &= (attribute->isImplicit() || IsPublishedSemanticAttribute(attribute) || IsForeignImportAttribute(attribute));
     }
     if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
       const auto *function = pattern->getTemplatedDecl();
-      supported &= function->getDefinition() != nullptr &&
-          !llvm::isa<clang::CXXMethodDecl>(function) && !function->isDeleted() &&
+      // A public function-template declaration is a complete signature
+      // contract. Its definition can be supplied by a later redeclaration.
+      supported &= !llvm::isa<clang::CXXMethodDecl>(function) && !function->isDeleted() &&
           !function->isDefaulted();
       for (const auto *attribute : function->attrs()) {
         if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute))
@@ -1560,12 +1558,12 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
               tag->tags_begin()->starts_with("__objc3_m_") &&
               ReadNativeSymbolName(pattern) == *tag->tags_begin();
         else
-          supported &= (attribute->isImplicit() || IsPublishedNativeAttribute(attribute) || IsForeignImportAttribute(attribute)) ||
+          supported &= (attribute->isImplicit() || IsPublishedSemanticAttribute(attribute) || IsForeignImportAttribute(attribute)) ||
               llvm::isa<clang::DeprecatedAttr, clang::UnavailableAttr,
                         clang::AvailabilityAttr>(attribute);
       }
       for (const auto *parameter : function->parameters())
-        for (const auto *attribute : parameter->attrs()) supported &= (attribute->isImplicit() || IsPublishedNativeAttribute(attribute) || IsForeignImportAttribute(attribute));
+        for (const auto *attribute : parameter->attrs()) supported &= (attribute->isImplicit() || IsPublishedSemanticAttribute(attribute) || IsForeignImportAttribute(attribute));
     }
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration)) {
       const auto original = NamespaceAttributes(space);

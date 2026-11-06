@@ -1,5 +1,10 @@
 # Borrowed results backed by immutable program storage
 
+Current execution checkpoint: the maintained native frontend replay, identity and
+consumer controls pass in the ABI 24 development embedding. See the
+[2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package
+execution, wider matrices and installed SDK qualification remain pending.
+
 System source 2.20 accepts owner-contracted borrowed results whose addresses are
 proven to refer to immutable program storage. The native constant evaluator
 resolves readonly arrays, external readonly storage, stable record subobjects,

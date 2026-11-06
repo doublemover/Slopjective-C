@@ -10,17 +10,19 @@ compiler campaigns remain selectable and are required for final acceptance.
 
 | Area               | Concrete remaining contract                                                                                                 | Current state                                                                                |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Native publication | C/Objective-C C17 `overloadable` declarations, conditional overload identities, canonical attributes and source-free replay | Source authored; native replay and SDK verification pending                                  |
-| Native publication | Native allocator ownership, typed tags, expected formats and builtin diagnostic mappings                                    | Source authored; six source modes and focused syntax checks pass; frontend execution pending |
+| Native publication | C/Objective-C C17 `overloadable` declarations, conditional overload identities, canonical attributes and source-free replay | Source authored; native frontend replay/identity controls pass; SDK verification pending                                  |
+| Native publication | Native allocator ownership, typed tags, expected formats and builtin diagnostic mappings                                    | Source authored; six source modes and focused syntax checks pass; native frontend replay passes; SDK consolidation pending |
+| Native publication | Declaration-only template functions/members/static data, semantic attributes, C inline bodies and SDK task promise projection  | Source authored; twelve development frontend groups and focused compiler controls pass; SDK consolidation pending |
 | Native publication | Remaining dependent lookup, declaration/predicate forms and standard-library publication                                    | Open                                                                                         |
 | Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | Type-carried borrowed callback results/owner indices, deduction, native identity, PCH and published interfaces              | Source authored; focused source/PCH/native identity checks pass                              |
 | Ownership/System   | Borrowed results from proven immutable program storage, aliases, subobjects and constexpr calls                             | Source authored; eighteen source/PCH commands and all twenty borrowed regressions pass         |
 | Ownership/System   | Aliased memory fills/copies, conditional payloads, returned destinations and partial-write target invalidation              | Source authored; eighteen new source/PCH commands and all twenty-one borrowed regressions pass |
+| Ownership/System   | Constant byte-range memory operations on fields/arrays, aliases, returned destinations and callable effects                    | Source authored; eighteen new source/PCH commands, all twenty-two borrowed regressions and frontend controls pass |
 | Ownership/System   | Remaining indirect writes/aliases, mutable/reference/generic/lazy captures and exceptional cleanup                          | Open                                                                                         |
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
-| Concurrency        | Persistent native await syntax and instantiation through ordinary C++ task templates                                        | Source authored; compiler/source-PCH/AST checks and 944-case storage witness pass; frontend/package execution pending |
+| Concurrency        | Persistent native await syntax and instantiation through ordinary C++ task templates                                        | Source authored; compiler/source-PCH/AST checks and 944-case storage witness pass; native frontend replay passes; package execution pending |
 | Concurrency        | Manual raw-frame factories, ordinary task function pointers and MRC Block environment ownership across spawn/group calls       | Source authored; source/PCH, two focused native configurations and four package-source modes pass |
 | Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                                                         |
 | Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native source/PCH/runtime execution passes                          |
@@ -33,7 +35,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | Remaining crossings and managed values                                                                                      | Open                                                                                         |
 | Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | Task-ABI initializer/object/CF results and typed nil entries                                                                | Source authored; focused native execution passes                                             |
-| Isolation          | Concurrent C++ callable capture policy and immutable local Block alias proofs                                               | Source authored; thirty source/PCH commands pass; frontend replay execution pending            |
+| Isolation          | Concurrent C++ callable capture policy and immutable local Block alias proofs                                               | Source authored; thirty source/PCH commands pass; native frontend replay passes; package execution pending            |
 | Isolation          | Conditional/nested concurrent Block proofs, bounded alias graphs and explicit owned snapshots                                | Source authored; fifty-four focused compiler commands and two spawn runtime configurations pass |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                                                         |
 | Isolation          | Typed nil native-frame messages and consumed argument cleanup                                                               | Source authored; focused source/PCH/runtime execution passes                                 |
@@ -510,3 +512,31 @@ source/PCH commands, pass. Two native configurations pass thirty focused ownersh
 and failure scenarios each, and four package-source modes pass. Two complete C++20/MRC/O0/source and C++23/ARC/O2/PCH spawn configurations
 also pass eleven commands. Matching frontend execution is in progress; source-free
 packages, wider instrumentation and SDK consolidation remain pending.
+
+## Publication completion and exact byte ranges
+
+The [Concurrency 2.110 / System 2.22 span](linux_publication_and_byte_ranges.md)
+closes the failures exposed by the postponed native frontend controls. Namespace
+and member function-template signatures, ordinary/template static-data members
+and existing lifetime/isolation attributes retain their publication contracts
+without requiring unrelated definitions. Canonical task-header promises stay SDK
+implementation dependencies; custom promises retain ordinary public checks.
+Native printers retain type-tag identifier flags, one-based builtin mappings and
+explicit empty parameter lists before Block effects. Zero builtin indices
+diagnose before indexing parameter storage.
+
+ISO C inline bodies now publish with `objc3.c-inline-definitions.v1`, distinct
+from the C++ definition contract. Source/identity, capability and owner checks
+reject missing/invented claims. C external inline definitions still need their
+single-provider definition projection and remain explicit implementation work.
+
+Exact memory byte ranges recover tracked fields and array elements from native
+layout, complete local bases and constant offsets. Full copies preserve loans,
+callable effects and returned destination identities; partial, padding, dynamic,
+incomplete, dependent and unsupported union/base paths cannot establish a proof.
+Twenty-five native compiler regressions pass, including 105 new source/PCH/print
+and reparse commands. All twelve selected frontend control groups pass against
+the current ABI 24 development headers/DSO and current runtime header identities.
+This is development execution, not a resealed SDK qualification. Source-free
+package execution, wider native/instrumented matrices and final delivery remain
+pending.

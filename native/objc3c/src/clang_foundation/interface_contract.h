@@ -111,6 +111,10 @@ inline bool HasCxxDeclarationExpressionIdentity(const InterfaceDeclarationIdenti
   return d.canonical_type_identity.find(";cxx-declaration-expressions:v1;") !=
          std::string::npos;
 }
+inline constexpr const char *kCInlineDefinitionSemantic = "objc3.c-inline-definitions.v1";
+inline bool HasCInlineDefinitionIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";c-inline-definitions:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxDefinitionSemantic = "objc3.cxx-definitions.v1";
 inline bool HasCxxDefinitionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-definitions:v1;") != std::string::npos;

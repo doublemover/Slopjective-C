@@ -320,6 +320,7 @@ bool IsPublicContainer(const clang::DeclContext *context,
 bool IsPublishedDeducedFactory(const clang::FunctionDecl *function);
 
 bool IsPublishedNativeAttribute(const clang::Attr *attribute);
+bool IsPublishedSemanticAttribute(const clang::Attr *attribute);
 
 bool IsPublishedType(const clang::NamedDecl *declaration);
 

@@ -1,5 +1,10 @@
 # C++ instance executor entries and virtual contracts
 
+Current execution checkpoint: the maintained native frontend replay, identity and
+consumer controls pass in the ABI 24 development embedding. See the
+[2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package
+execution, wider matrices and installed SDK qualification remain pending.
+
 Concurrency source 2.107 admits awaited C++ instance executor entries through
 private native-frame thunks. The thunk borrows the exact source object and keeps
 its const/reference category, resolved specialization, private/protected access,

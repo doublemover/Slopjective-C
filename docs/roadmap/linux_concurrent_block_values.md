@@ -1,5 +1,10 @@
 # Concurrent Block expressions and owned snapshots
 
+Current execution checkpoint: the maintained native frontend replay, identity and
+consumer controls pass in the ABI 24 development embedding. See the
+[2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package
+execution, wider matrices and installed SDK qualification remain pending.
+
 Concurrency source 2.106 preserves concurrent capture proofs through conditional
 Block values, immutable local alias graphs, comma and assignment results, GNU
 conditional/statement expressions and null alternatives. The checker validates

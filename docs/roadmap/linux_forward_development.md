@@ -16,6 +16,16 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.110 / System 2.22 publication span](linux_publication_and_byte_ranges.md)
+adds exact constant byte-range loan/callable propagation, complete public
+template declaration signatures and ISO C inline bodies with an explicit checked
+capability. It repairs native diagnostic/Block printing and SDK task-promise
+dependencies. All twenty-five focused compiler regressions and twelve current
+development frontend control groups pass. The latter now execute previously
+authored overload, storage, borrowed-result, key-path, capture and native-await
+replay/consumer controls. Source-free package, wider matrix and SDK consolidation
+remain pending; external C inline definitions retain their own provider obligation.
+
 The [Concurrency 2.109 manual-factory span](linux_manual_frame_factories.md)
 admits physical-frame factories and ordinary C++ task function pointers without
 erasing capture checks. Spawn and lazy group adapters own copied Block

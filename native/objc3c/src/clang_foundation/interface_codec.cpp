@@ -384,6 +384,14 @@ llvm::Error ValidateForEncoding(
       kCxxDeclarationExpressionSemantic) != sidecar.required_semantics.end();
   if (has_expressions != expression_capability)
     return Invalid("C++ declaration expression identity and required capability must agree");
+  const bool c_inline_definitions=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCInlineDefinitionIdentity);
+  const bool c_inline_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCInlineDefinitionSemantic)!=sidecar.required_semantics.end();
+  const bool c_inline_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &declaration){return !HasCInlineDefinitionIdentity(declaration) || declaration.kind=="Function";});
+  if(c_inline_definitions!=c_inline_capability || !c_inline_owners)
+    return Invalid("C inline definition identity and capability must agree on a function owner");
   const bool has_definitions = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxDefinitionIdentity);
   const bool definition_capability = std::find(

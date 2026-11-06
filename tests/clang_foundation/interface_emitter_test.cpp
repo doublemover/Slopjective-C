@@ -528,6 +528,7 @@ void TestBorrowedMemoryAliasReplay() {
         assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                      "fixture.borrowed_memory_aliases","test",{}));
         auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.borrowed_memory_aliases","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
         assert(result.success);return result;
       };
       const std::string source=R"(
@@ -535,6 +536,7 @@ void TestBorrowedMemoryAliasReplay() {
         MemoryLoan published_memory_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
         void published_memory_use(const char *pointer __attribute__((noescape)));
         struct PublishedMemoryHolder {const char *pointer;};
+        struct PublishedMemoryPair {struct PublishedMemoryHolder first,second;};
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline MemoryLoan published_memory_copy(void *owner,int choose) {
           struct PublishedMemoryHolder one={published_memory_bytes(owner)},two={0},target={0};
@@ -546,6 +548,19 @@ void TestBorrowedMemoryAliasReplay() {
           struct PublishedMemoryHolder *alias=&target;
           __builtin_memset(alias,0,sizeof target);
           return target.pointer;
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_byte_copy(void *owner) {
+          struct PublishedMemoryPair source={{0},{published_memory_bytes(owner)}},target={{0},{0}};
+          __builtin_memcpy((char *)&target+sizeof target.first,
+              (const char *)&source+sizeof source.first,sizeof target.second);
+          return target.second.pointer;
+        }
+        inline const char *published_memory_byte_clear(void *owner) {
+          struct PublishedMemoryPair target={{0},{published_memory_bytes(owner)}};
+          __builtin_memset((char *)&target+__builtin_offsetof(struct PublishedMemoryPair,second),
+              0,sizeof target.second);
+          return target.second.pointer;
         }
       )";
       auto first=emit(source,"memory-alias-provider.m");
@@ -561,6 +576,8 @@ void TestBorrowedMemoryAliasReplay() {
         MemoryLoan published_memory_forward(void *owner,int choose) {
           published_memory_use(published_memory_copy(owner,choose));
           published_memory_use(published_memory_clear(owner));
+          published_memory_use(published_memory_byte_copy(owner));
+          published_memory_use(published_memory_byte_clear(owner));
           return published_memory_copy(owner,choose);
         }
       )","memory-alias-consumer.m");
@@ -589,6 +606,7 @@ void TestBorrowedStaticStorageReplay() {
         assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                      "fixture.borrowed_static_storage","test",{}));
         auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.borrowed_static_storage","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
         assert(result.success);return result;
       };
       const std::string source=R"(
@@ -2493,6 +2511,96 @@ namespace NativeAddressArguments {
 }
 
 
+void TestCInlineDefinitionContract() {
+  const std::vector<std::string> args={"-x","objective-c","-std=c17",
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+  auto emit=[&](const std::string &source) {
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"c-inline-provider.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+        "fixture.c_inline","test",{}));
+    return EmitSemanticInterface(ast->getASTContext(),"fixture.c_inline","test");
+  };
+  auto first=emit("inline int c_inline_value(int value){return value+1;}");
+  for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(first.success && first.source_bytes.find("return value + 1")!=std::string::npos);
+  auto replay=emit(first.source_bytes);assert(replay.success);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.source_bytes==replay.source_bytes);
+  assert(first.identity.semantic_fingerprint!=emit("inline int c_inline_value(int value){return value+2;}").identity.semantic_fingerprint);
+  auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+  std::vector<llvm::StringRef> semantics;
+  for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+  assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),HasCInlineDefinitionIdentity));
+  assert(std::none_of(decoded->declarations.begin(),decoded->declarations.end(),HasCxxDefinitionIdentity));
+  auto missing=*decoded;std::erase(missing.required_semantics,kCInlineDefinitionSemantic);
+  auto missing_cap=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!missing_cap);llvm::consumeError(missing_cap.takeError());
+  auto old=semantics;std::erase(old,llvm::StringRef(kCInlineDefinitionSemantic));
+  auto old_reader=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!old_reader);llvm::consumeError(old_reader.takeError());
+  auto invalid_owner=*decoded;
+  for(auto &declaration:invalid_owner.declarations)if(HasCInlineDefinitionIdentity(declaration))declaration.kind="Var";
+  auto forged=EncodeSemanticInterfaceSidecar(invalid_owner,semantics);assert(!forged);llvm::consumeError(forged.takeError());
+  auto plain=emit("int c_inline_declaration(int);");assert(plain.success);
+  auto control=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,semantics);assert(control);
+  control->required_semantics.push_back(kCInlineDefinitionSemantic);
+  auto invented=EncodeSemanticInterfaceSidecar(*control,semantics);assert(!invented);llvm::consumeError(invented.takeError());
+  auto external=emit("extern inline int c_inline_external(int value){return value;}");
+  assert(!external.success && std::any_of(external.diagnostics.begin(),external.diagnostics.end(),
+      [](const auto &d){return d.code=="O3IFC115";}));
+}
+
+void TestDeclarationOnlyFunctionTemplates() {
+  const std::string source=R"(
+    namespace DeclarationTemplates {
+      template<class T> T convert(T value);
+      template<class T> T convert(T value);
+      template<class T> struct Box {
+        T get() const;
+        template<class U> U map(U value) const;
+        static T value;
+        template<class U> static U shared;
+      };
+    }
+  )";
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},
+          "declaration-only-templates.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+          "fixture.declaration_templates","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.declaration_templates","test",{},{},{},
+          {"DeclarationTemplates"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.source_bytes==replay.source_bytes);
+    assert(first.identity.semantic_fingerprint==emit("\n\n"+source).identity.semantic_fingerprint);
+    auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+      namespace DeclarationTemplates {
+        template<class T> T convert(T value){return value;}
+        template<class T> T Box<T>::get() const {return T{42};}
+        template<class T> template<class U> U Box<T>::map(U value) const {return value;}
+        template<class T> T Box<T>::value=T{42};
+        template<class T> template<class U> U Box<T>::shared=U{42};
+      }
+      int declaration_template_consumer(){
+        DeclarationTemplates::Box<int> box;
+        return DeclarationTemplates::convert(box.get())+box.map(42)+
+            DeclarationTemplates::Box<int>::value+DeclarationTemplates::Box<int>::shared<int>;
+      }
+    )",{"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},"declaration-only-consumer.mm");
+    assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+    auto changed=source;auto at=changed.find("T convert(T value)");assert(at!=std::string::npos);
+    while(at!=std::string::npos){changed.replace(at,18,"T convert(const T &value)");at=changed.find("T convert(T value)",at+1);}
+    assert(first.identity.semantic_fingerprint!=emit(changed).identity.semantic_fingerprint);
+  }
+}
+
 void TestNativeAllocatorAndDiagnosticContracts() {
   for(const char *standard:{"c17","c++20","c++23"}) {
     const bool cxx=std::string(standard)!="c17";
@@ -3576,8 +3684,10 @@ void TestNativeDependentAwaitReplay() {
         auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
         assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                      "fixture.native_dependent_await","test",{}));
-        return EmitSemanticInterface(ast->getASTContext(),"fixture.native_dependent_await","test",{},{},{},
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_dependent_await","test",{},{},{},
                                      {"NativeExplicitStorage"});
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        return result;
       };
       auto first=emit(source,"native-dependent-await.mm");assert(first.success);
       auto replay=emit(first.source_bytes,"replayed-native-dependent-await.mm");
@@ -3674,6 +3784,7 @@ void TestConcurrentBlockValueReplay() {
         assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                      "fixture.concurrent_block_values","test",{}));
         auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.concurrent_block_values","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
         assert(result.success);return result;
       };
       const std::string source=R"(
@@ -3729,7 +3840,7 @@ void TestConcurrentBlockValueReplay() {
 void TestConcurrentCallableCaptureReplay() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     for (bool arc : {false, true}) {
-      std::vector<std::string> args={"-x","objective-c++",standard,
+      std::vector<std::string> args={"-x","objective-c++",standard,"-fblocks",
           "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-weak",
           "-fobjc3-strict-concurrency","--target=x86_64-unknown-linux-gnu",
           "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
@@ -3753,7 +3864,7 @@ void TestConcurrentCallableCaptureReplay() {
         __attribute__((objc_root_class)) @interface ConcurrentCaptureRoot @end
         @interface ConcurrentCaptureSafe:ConcurrentCaptureRoot<Sendable> @end
         namespace ConcurrentCaptures {
-          template<class Work> int start(Work) __attribute__((objc_task_spawn));
+          template<class Work> int start(Work) __attribute__((objc_task_spawn)) {return 1;}
           template<class Work> inline int launch(Work work) {return start(work);}
           inline int object(ConcurrentCaptureSafe *value) {
             return launch([value]()->int __objc3_async_frame {return value!=0;});
@@ -6806,6 +6917,8 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestCInlineDefinitionContract();
+  TestDeclarationOnlyFunctionTemplates();
   TestNativeAllocatorAndDiagnosticContracts();
   TestNativeDeclarationAttributes();
   TestCOverloadableInterfaces();

@@ -256,8 +256,9 @@ class InterfaceCollector final
       }
     }
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
-        function && !context_.getLangOpts().CPlusPlus && function->isInlineSpecified()) {
-      AddDiagnostic(result_, "O3IFC115", "C inline function linkage requires a dedicated definition contract",
+        function && !context_.getLangOpts().CPlusPlus && function->isInlineSpecified() &&
+        function->getDefinition() && function->getDefinition()->isInlineDefinitionExternallyVisible()) {
+      AddDiagnostic(result_, "O3IFC115", "C external inline definitions require a single provider definition contract",
                     function->getQualifiedNameAsString());
       return true;
     }
@@ -996,6 +997,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxUsingSemantic);
     if (HasCxxDeclarationExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxDeclarationExpressionSemantic);
+    if (HasCInlineDefinitionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCInlineDefinitionSemantic);
     if (HasCxxDefinitionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxDefinitionSemantic);
     if (HasCxxDefaultedComparisonIdentity(declaration))
@@ -1199,6 +1202,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxNestedTypeSemantic,
     kCxxUsingSemantic,
     kCxxDeclarationExpressionSemantic,
+    kCInlineDefinitionSemantic,
     kCxxDefinitionSemantic,
     kCxxDefaultedComparisonSemantic,
     kCxxOutOfLineDefaultingSemantic,
@@ -1384,6 +1388,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxNestedTypeSemantic,
     kCxxUsingSemantic,
     kCxxDeclarationExpressionSemantic,
+    kCInlineDefinitionSemantic,
     kCxxDefinitionSemantic,
     kCxxDefaultedComparisonSemantic,
     kCxxOutOfLineDefaultingSemantic,

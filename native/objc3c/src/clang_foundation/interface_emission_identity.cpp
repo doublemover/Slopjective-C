@@ -1807,7 +1807,10 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                 : DeclarationExpressionContract(parameter->getDefaultArg(), context)) + ";";
       ++index;
     }
-    if (PublishesFunctionBody(function))
+    if (PublishesFunctionBody(function) && !context.getLangOpts().CPlusPlus)
+      identity += ";c-inline-definitions:v1;linkage=iso-inline;body=" +
+          FunctionDefinitionContract(function, context) + ";";
+    if (PublishesFunctionBody(function) && context.getLangOpts().CPlusPlus)
       identity += ";cxx-definitions:v1;inline=1;constexpr=" +
           std::to_string(function->isConstexpr()) + ";consteval=" +
           std::to_string(function->isConsteval()) + ";body=" +

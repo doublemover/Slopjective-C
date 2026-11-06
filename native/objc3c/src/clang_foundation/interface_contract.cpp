@@ -345,6 +345,14 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxDeclarationExpressionSemantic) != sidecar.required_semantics.end();
   if (has_expressions != expression_capability)
     Add(result, "O3IFC032", "C++ declaration expression identity and required capability must agree", expected.canonical_name);
+  const bool c_inline_definitions=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCInlineDefinitionIdentity);
+  const bool c_inline_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCInlineDefinitionSemantic)!=sidecar.required_semantics.end();
+  const bool c_inline_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &declaration){return !HasCInlineDefinitionIdentity(declaration) || declaration.kind=="Function";});
+  if(c_inline_definitions!=c_inline_capability || !c_inline_owners)
+    Add(result,"O3IFC033","C inline definition identity and capability must agree on a function owner",expected.canonical_name);
   const bool has_definitions = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxDefinitionIdentity);
   const bool definition_capability = std::find(

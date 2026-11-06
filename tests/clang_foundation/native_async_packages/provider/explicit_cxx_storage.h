@@ -79,7 +79,7 @@ template<class T> inline int raw_factory_group(T value) __objc3_async
   auto child=group.spawn<int>(ManualFactory<T>{static_cast<T&&>(value)});
   return __objc3_await child;
 }
-inline objc3::task<int> ordinary_task_factory(){co_return 42;}
+inline objc3::task<int> ordinary_task_factory(){co_await objc3::task_yield;co_return 42;}
 inline int function_factory_group() __objc3_async __attribute__((objc_task_group)) {
   auto group=objc3::task_group_handle::current_scope();
   auto child=group.spawn(ordinary_task_factory);

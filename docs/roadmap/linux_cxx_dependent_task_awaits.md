@@ -1,5 +1,10 @@
 # Native awaits in ordinary C++ task templates
 
+Current execution checkpoint: the maintained native frontend replay, identity and
+consumer controls pass in the ABI 24 development embedding. See the
+[2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package
+execution, wider matrices and installed SDK qualification remain pending.
+
 Concurrency source 2.108 gives dependent native awaits a persistent AST syntax
 bit. PCH serialization, AST import, printing and native/ODR expression identity
 retain it. Instantiation rebuilds isolation entries, native-frame/task adapters

@@ -68,11 +68,27 @@ bool IsForeignImportAttribute(const clang::Attr *attribute) {
 }
 
 bool IsPublishedNativeAttribute(const clang::Attr *attribute) {
-  return llvm::isa<clang::OwnershipAttr,clang::ArgumentWithTypeTagAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::DiagnoseAsBuiltinAttr,clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::EnableIfAttr,clang::OverloadableAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
+  return llvm::isa<clang::CFReturnsRetainedAttr,clang::CFReturnsNotRetainedAttr,clang::OwnershipAttr,clang::ArgumentWithTypeTagAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::DiagnoseAsBuiltinAttr,clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::EnableIfAttr,clang::OverloadableAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
       clang::VisibilityAttr,clang::TypeVisibilityAttr,clang::NoInlineAttr,
       clang::AlwaysInlineAttr,clang::FlattenAttr,clang::ColdAttr,clang::HotAttr,
       clang::ConstAttr,clang::PureAttr,clang::WarnUnusedResultAttr,clang::UnusedAttr,
       clang::NoReturnAttr,clang::CXX11NoReturnAttr>(attribute);
+}
+
+
+// These attributes already have dedicated lifetime, borrowed-result, task or
+// isolation identities. Template admission must retain those contracts just as
+// it retains their ordinary declaration counterparts.
+bool IsPublishedSemanticAttribute(const clang::Attr *attribute) {
+  return IsPublishedNativeAttribute(attribute) ||
+      llvm::isa<clang::NSReturnsRetainedAttr,clang::NSReturnsNotRetainedAttr,
+          clang::NSReturnsAutoreleasedAttr,clang::NSConsumedAttr,clang::CFConsumedAttr,
+          clang::NSConsumesSelfAttr,clang::ObjCReturnsBorrowedAttr,
+          clang::ObjCExecutorAttr,clang::ObjCNonisolatedAttr,
+          clang::ObjCUnsafeSendableAttr,clang::ObjCTaskSpawnAttr,
+          clang::ObjCTaskDetachedAttr,clang::ObjCTaskGroupAttr,
+          clang::ObjCFamilyRetainAttr,clang::ObjCFamilyReleaseAttr,
+          clang::ObjCFamilyAutoreleaseAttr>(attribute);
 }
 
 
@@ -818,10 +834,12 @@ bool IsDefinition(const clang::NamedDecl *declaration) {
 }
 
 bool PublishesFunctionBody(const clang::FunctionDecl *function) {
-  return function && function->getASTContext().getLangOpts().CPlusPlus &&
-         (function->isInlined() || function->getDescribedFunctionTemplate() ||
-          IsDetachedCallableTemplateDefinition(function->getDefinition())) &&
-         !function->isDefaulted() && !function->isDeleted();
+  if (!function || function->isDefaulted() || function->isDeleted()) return false;
+  if (!function->getASTContext().getLangOpts().CPlusPlus)
+    return function->isInlineSpecified() && function->getDefinition() &&
+        !function->getDefinition()->isInlineDefinitionExternallyVisible();
+  return function->isInlined() || function->getDescribedFunctionTemplate() ||
+      IsDetachedCallableTemplateDefinition(function->getDefinition());
 }
 bool PublishesVariableInitializer(const clang::VarDecl *variable) {
   return variable && variable->getASTContext().getLangOpts().CPlusPlus &&
@@ -930,6 +948,8 @@ std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::Functi
           (record->getName()=="coroutine_handle" || record->getName()=="suspend_always" ||
            record->getName()=="suspend_never");
       for (auto *scope=declaration->getDeclContext();scope;scope=scope->getParent()) {
+        if (const auto *owner=llvm::dyn_cast<clang::NamedDecl>(scope);
+            owner && IsQualifiedRuntimeTaskDeclaration(owner,context)) return;
         if (scope->isFunctionOrMethod()) return;
         if (const auto *space=llvm::dyn_cast<clang::NamespaceDecl>(scope))
           if (space->isStdNamespace() && protocol_member &&

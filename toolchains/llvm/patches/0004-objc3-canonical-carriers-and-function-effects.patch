@@ -5620,7 +5620,7 @@ index e0b62591a..2ad8208b6 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..586754755 100644
+index 4be3e977b..7f7fca510 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,141 @@
@@ -5959,7 +5959,7 @@ index 4be3e977b..586754755 100644
 +         !(Policy.PolishForDeclaration &&
 +           isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
-+               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
 +               ObjCFamilyAutoreleaseAttr, SwiftNameAttr, SwiftAsyncNameAttr,
 +               SwiftAsyncAttr, SwiftErrorAttr, SwiftAsyncErrorAttr,
@@ -5976,7 +5976,7 @@ index 4be3e977b..586754755 100644
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
 +        !isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
-+               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
 +             ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCUnsafeSendableAttr,
 +             ObjCTaskSpawnAttr, ObjCTaskDetachedAttr, ObjCTaskGroupAttr,
@@ -6041,7 +6041,7 @@ index 4be3e977b..586754755 100644
      switch (A->getKind()) {
  #define ATTR(X)
  #define PRAGMA_SPELLING_ATTR(X) case attr::X:
-@@ -278,11 +387,135 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -278,11 +387,151 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -6054,7 +6054,7 @@ index 4be3e977b..586754755 100644
 +      if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) && isa<FunctionDecl>(D) &&
 +          isa<SentinelAttr, CallbackAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr,
 +              NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
-+               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +              ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr,
 +              CXX11NoReturnAttr, VisibilityAttr>(A))
 +        APos = AttrPosAsWritten::Left;
@@ -6077,6 +6077,22 @@ index 4be3e977b..586754755 100644
 +          const bool ImplicitThis=Method && Method->isImplicitObjectMemberFunction();
 +          AOut << "__attribute__((callback(";llvm::ListSeparator Comma;
 +          for(int Index:Callback->encoding())AOut << Comma << (Index>=0 && !ImplicitThis?Index+1:Index);
++          AOut << ")))";
++        } else if (const auto *Tag = dyn_cast<TypeTagForDatatypeAttr>(A)) {
++          // These optional source arguments are identifier flags, not the
++          // stored booleans emitted by the generic attribute printer.
++          AOut << "__attribute__((type_tag_for_datatype("
++               << Tag->getArgumentKind()->getName() << ", ";
++          Tag->getMatchingCType().print(AOut, Policy);
++          if (Tag->getLayoutCompatible()) AOut << ", layout_compatible";
++          if (Tag->getMustBeNull()) AOut << ", must_be_null";
++          AOut << ")))";
++        } else if (const auto *Builtin = dyn_cast<DiagnoseAsBuiltinAttr>(A)) {
++          AOut << "__attribute__((diagnose_as_builtin("
++               << Builtin->getFunction()->getName();
++          // The AST stores zero-based parameter indices. Source syntax is
++          // one-based even when a wrapper permutes the builtin arguments.
++          for (unsigned Index : Builtin->argIndices()) AOut << ", " << Index + 1;
 +          AOut << ")))";
 +        } else if (const auto *Result = dyn_cast<WarnUnusedResultAttr>(A);
 +            Result && Result->IsCXX11NoDiscard()) {
@@ -6178,7 +6194,7 @@ index 4be3e977b..586754755 100644
        }
        break;
      }
-@@ -348,12 +581,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
+@@ -348,12 +597,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -6192,7 +6208,7 @@ index 4be3e977b..586754755 100644
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -451,7 +683,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -451,7 +699,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -6201,7 +6217,7 @@ index 4be3e977b..586754755 100644
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +703,15 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -471,6 +719,15 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -6217,7 +6233,7 @@ index 4be3e977b..586754755 100644
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +795,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -554,9 +811,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -6232,7 +6248,7 @@ index 4be3e977b..586754755 100644
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +913,127 @@ static void printExplicitSpecifier(ExplicitSpecifier ES, llvm::raw_ostream &Out,
+@@ -669,45 +929,127 @@ static void printExplicitSpecifier(ExplicitSpecifier ES, llvm::raw_ostream &Out,
    Out << Proto;
  }
  
@@ -6375,7 +6391,7 @@ index 4be3e977b..586754755 100644
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +1047,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -721,12 +1063,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -6402,7 +6418,7 @@ index 4be3e977b..586754755 100644
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +1091,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -753,12 +1107,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -6419,7 +6435,7 @@ index 4be3e977b..586754755 100644
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1147,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -807,7 +1163,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -6431,7 +6447,7 @@ index 4be3e977b..586754755 100644
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1161,35 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,17 +1177,35 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -6472,7 +6488,7 @@ index 4be3e977b..586754755 100644
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1211,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -850,7 +1227,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -6486,7 +6502,7 @@ index 4be3e977b..586754755 100644
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -878,8 +1244,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -878,8 +1260,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
  
        if (D->getBody())
@@ -6497,7 +6513,7 @@ index 4be3e977b..586754755 100644
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1260,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+@@ -894,19 +1276,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -6522,7 +6538,7 @@ index 4be3e977b..586754755 100644
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -923,8 +1285,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1301,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -6535,7 +6551,7 @@ index 4be3e977b..586754755 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,12 +1308,52 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,12 +1324,52 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -6590,7 +6606,7 @@ index 4be3e977b..586754755 100644
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1363,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -959,9 +1379,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -6604,7 +6620,7 @@ index 4be3e977b..586754755 100644
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1390,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -985,22 +1406,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -6652,7 +6668,7 @@ index 4be3e977b..586754755 100644
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1448,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1022,6 +1464,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -6661,7 +6677,7 @@ index 4be3e977b..586754755 100644
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1457,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1029,9 +1473,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
    }
  }
  
@@ -6672,7 +6688,7 @@ index 4be3e977b..586754755 100644
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1472,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+@@ -1046,8 +1488,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -6682,7 +6698,7 @@ index 4be3e977b..586754755 100644
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1494,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -1069,6 +1510,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
      Out << "inline ";
  
    Out << "namespace ";
@@ -6691,7 +6707,7 @@ index 4be3e977b..586754755 100644
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +1522,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
+@@ -1095,6 +1538,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -6701,7 +6717,7 @@ index 4be3e977b..586754755 100644
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +1561,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+@@ -1131,7 +1577,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -6711,7 +6727,7 @@ index 4be3e977b..586754755 100644
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1693,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1262,7 +1709,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -6720,7 +6736,7 @@ index 4be3e977b..586754755 100644
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +1713,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1282,12 +1729,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -6743,7 +6759,7 @@ index 4be3e977b..586754755 100644
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +1742,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1302,7 +1758,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -6756,7 +6772,7 @@ index 4be3e977b..586754755 100644
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +1764,14 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1320,6 +1780,14 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -6771,7 +6787,7 @@ index 4be3e977b..586754755 100644
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +1829,17 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+@@ -1377,13 +1845,17 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -6792,7 +6808,7 @@ index 4be3e977b..586754755 100644
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +1854,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+@@ -1398,9 +1870,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -6813,7 +6829,7 @@ index 4be3e977b..586754755 100644
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +1937,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1472,9 +1953,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -6825,7 +6841,7 @@ index 4be3e977b..586754755 100644
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +1947,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1483,8 +1963,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << name;
  
    if (OMD->isVariadic())
@@ -6850,7 +6866,7 @@ index 4be3e977b..586754755 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +1970,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1492,8 +1986,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -6860,7 +6876,7 @@ index 4be3e977b..586754755 100644
      Out << ';';
  }
  
-@@ -1512,8 +1989,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +2005,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -6871,7 +6887,7 @@ index 4be3e977b..586754755 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2022,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +2038,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -6880,7 +6896,7 @@ index 4be3e977b..586754755 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2035,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +2051,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -6890,7 +6906,7 @@ index 4be3e977b..586754755 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2046,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +2062,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -6902,7 +6918,7 @@ index 4be3e977b..586754755 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2064,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +2080,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -6911,7 +6927,7 @@ index 4be3e977b..586754755 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2075,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+@@ -1596,7 +2091,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -6921,7 +6937,7 @@ index 4be3e977b..586754755 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2099,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +2115,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -6930,7 +6946,7 @@ index 4be3e977b..586754755 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2109,26 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1627,13 +2125,26 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -6961,7 +6977,7 @@ index 4be3e977b..586754755 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2140,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +2156,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -6972,7 +6988,7 @@ index 4be3e977b..586754755 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2248,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +2264,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
        }
      }
  
@@ -6994,7 +7010,7 @@ index 4be3e977b..586754755 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2291,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +2307,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -7012,7 +7028,7 @@ index 4be3e977b..586754755 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2320,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2336,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -36397,7 +36413,7 @@ index d5085ca6d..8fd8cc34a 100644
    case '[':
      Kind = tok::l_square;
 diff --git a/clang/lib/Sema/SemaDeclAttr.cpp b/clang/lib/Sema/SemaDeclAttr.cpp
-index 1b272b541..94d671c1b 100644
+index 1b272b541..c6155e5cf 100644
 --- a/clang/lib/Sema/SemaDeclAttr.cpp
 +++ b/clang/lib/Sema/SemaDeclAttr.cpp
 @@ -43,6 +43,9 @@
@@ -36410,6 +36426,15 @@ index 1b272b541..94d671c1b 100644
  #include "clang/Sema/SemaAMDGPU.h"
  #include "clang/Sema/SemaARM.h"
  #include "clang/Sema/SemaAVR.h"
+@@ -877,7 +880,7 @@ static void handleDiagnoseAsBuiltinAttr(Sema &S, Decl *D,
+     if (!S.checkUInt32Argument(AL, IndexExpr, Index, I + 1, false))
+       return;
+ 
+-    if (Index > DeclFD->getNumParams()) {
++    if (!Index || Index > DeclFD->getNumParams()) {
+       S.Diag(AL.getLoc(), diag::err_attribute_bounds_for_function)
+           << AL << Index << DeclFD << DeclFD->getNumParams();
+       return;
 @@ -3839,6 +3842,10 @@ static void handleMinVectorWidthAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
  }
  
@@ -43301,15 +43326,17 @@ index 000000000..d3ae31385
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..7db283ee6
+index 000000000..0c210c4b2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3940 @@
+@@ -0,0 +1,4062 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclTemplate.h"
++#include "clang/AST/RecordLayout.h"
++#include "llvm/Support/MathExtras.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/StmtCXX.h"
@@ -43865,10 +43892,15 @@ index 000000000..7db283ee6
 +      if (Offset->getOpcode() == BO_Comma || Offset->isAssignmentOp())
 +        return referent(Offset->getRHS(), State, Depth + 1);
 +    }
-+    if (const auto *Call = dyn_cast<CallExpr>(E))
-+      if (Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
-+        return State ? singleMemoryTarget(Call->getArg(0), *State)
-+                     : directFillDestination(Call->getArg(0));
++    if (const auto *Call = dyn_cast<CallExpr>(E)) {
++      if (Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs()) {
++        if (State) {
++          auto [Targets, Complete] = memoryAccessTargets(Call, 0, *State);
++          return Complete && Targets.count() == 1 ? location(Targets.find_first()) : Storage{};
++        }
++        return directFillDestination(Call->getArg(0));
++      }
++    }
 +    Storage Source = storage(E, State);
 +    if (E->getType()->isArrayType() && Source.first)
 +      return indexedStorage(Source, 0);
@@ -44892,7 +44924,7 @@ index 000000000..7db283ee6
 +    }
 +    if (const auto *Call = dyn_cast<CallExpr>(E);
 +        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
-+      return memoryTargets(Call->getArg(0), State);
++      return memoryAccessTargets(Call, 0, State).first;
 +    Storage Target = referent(E, &State);
 +    if (auto Found = Slots.find(Target); Found != Slots.end()) {
 +      Targets.set(Found->second);
@@ -44965,7 +44997,7 @@ index 000000000..7db283ee6
 +    }
 +    if (const auto *Call = dyn_cast<CallExpr>(E);
 +        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
-+      return completeMemoryTargets(Call->getArg(0), State);
++      return memoryAccessTargets(Call, 0, State).second;
 +    Storage Source = storage(E, &State);
 +    if (E->getType()->isArrayType())
 +      return Source.first && Source.first->hasLocalStorage() &&
@@ -45804,14 +45836,135 @@ index 000000000..7db283ee6
 +  bool completeMemoryTargets(const Expr *Pointer, const Facts &State) const {
 +    return closedTargets(memoryPointerArgument(Pointer), State);
 +  }
-+  Storage singleMemoryTarget(const Expr *Pointer, const Facts &State) const {
-+    if (!completeMemoryTargets(Pointer, State)) return {};
++  std::optional<int64_t> storageByteOffset(Storage Location, unsigned Depth = 0) const {
++    if (!Location.first || Depth > 32 || hasUnknownIndex(Location) || Location.BaseRecord)
++      return std::nullopt;
++    if (!path(Location)) return 0;
++    Storage Parent = parentStorage(Location);
++    auto Offset = storageByteOffset(Parent, Depth + 1);
++    QualType ParentType = storageType(Parent);
++    if (!Offset || ParentType.isNull() || ParentType->isDependentType()) return std::nullopt;
++    int64_t Delta = 0;
++    if (Location.second) {
++      const auto *Field = dyn_cast<FieldDecl>(Location.second);
++      const auto *Record = ParentType->getAsRecordDecl();
++      if (!Field || Field->isBitField() || !Record || Record->isUnion() ||
++          !Record->getDefinition() ||
++          Field->getParent()->getCanonicalDecl() != Record->getCanonicalDecl())
++        return std::nullopt;
++      uint64_t Bits = Context.getASTRecordLayout(Record->getDefinition()).getFieldOffset(Field->getFieldIndex());
++      if (Bits % Context.getCharWidth() || Bits / Context.getCharWidth() > INT64_MAX)
++        return std::nullopt;
++      Delta = Bits / Context.getCharWidth();
++    } else if (Location.Index >= 0) {
++      const auto *Array = Context.getAsConstantArrayType(ParentType);
++      if (!Array || Array->getSize().getLimitedValue() <= uint64_t(Location.Index))
++        return std::nullopt;
++      QualType Element = Array->getElementType();
++      if (Element->isDependentType() || Element->isIncompleteType() || Element->isVariablyModifiedType()) return std::nullopt;
++      int64_t Size = Context.getTypeSizeInChars(Element).getQuantity();
++      if (llvm::MulOverflow(Location.Index, Size, Delta)) return std::nullopt;
++    } else return std::nullopt;
++    int64_t Result;
++    if (llvm::AddOverflow(*Offset, Delta, Result)) return std::nullopt;
++    return Result;
++  }
++  struct BytePosition { Storage Base; int64_t Offset; };
++  bool memoryBytePositions(const Expr *Expression, const Facts &State,
++                           SmallVectorImpl<BytePosition> &Positions,
++                           unsigned Depth = 0) const {
++    if (!Expression || Depth > 32 || Positions.size() > 64) return false;
++    Expression = Expression->IgnoreParens();
++    if (const auto *Cast = dyn_cast<CastExpr>(Expression))
++      if ((Cast->getCastKind() == CK_NoOp || Cast->getCastKind() == CK_BitCast) &&
++          Cast->getType()->isPointerType() && Cast->getSubExpr()->getType()->isPointerType())
++        return memoryBytePositions(Cast->getSubExpr(), State, Positions, Depth + 1);
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Expression))
++      return memoryBytePositions(Cleanups->getSubExpr(), State, Positions, Depth + 1);
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Expression)) {
++      bool Truth;
++      if (!Conditional->getCond()->HasSideEffects(Context) &&
++          Conditional->getCond()->EvaluateAsBooleanCondition(Truth, Context))
++        return memoryBytePositions(Truth ? Conditional->getTrueExpr() :
++            Conditional->getFalseExpr(), State, Positions, Depth + 1);
++      return memoryBytePositions(Conditional->getTrueExpr(), State, Positions, Depth + 1) &&
++             memoryBytePositions(Conditional->getFalseExpr(), State, Positions, Depth + 1);
++    }
++    if (const auto *Binary = dyn_cast<BinaryOperator>(Expression)) {
++      if (Binary->getOpcode() == BO_Comma || Binary->getOpcode() == BO_Assign)
++        return memoryBytePositions(Binary->getRHS(), State, Positions, Depth + 1);
++      if (Binary->getOpcode() == BO_Add || Binary->getOpcode() == BO_Sub) {
++        const Expr *Pointer = Binary->getLHS(), *Amount = Binary->getRHS();
++        if (Binary->getOpcode() == BO_Add && !Pointer->getType()->isPointerType())
++          std::swap(Pointer, Amount);
++        const auto *Type = Pointer->getType()->getAs<PointerType>();
++        auto Integer = Amount->getIntegerConstantExpr(Context);
++        if (!Type || !Integer || Integer->getSignificantBits() > 63) return false;
++        QualType Element = Type->getPointeeType();
++        if (Element->isVoidType() || Element->isFunctionType() || Element->isDependentType() ||
++            Element->isIncompleteType() || Element->isVariablyModifiedType()) return false;
++        int64_t Count = Integer->getSExtValue();
++        if (Binary->getOpcode() == BO_Sub) Count = -Count;
++        int64_t Bytes;
++        if (llvm::MulOverflow(Count, Context.getTypeSizeInChars(Element).getQuantity(), Bytes)) return false;
++        unsigned Begin = Positions.size();
++        if (!memoryBytePositions(Pointer, State, Positions, Depth + 1)) return false;
++        for (unsigned I = Begin; I != Positions.size(); ++I)
++          if (llvm::AddOverflow(Positions[I].Offset, Bytes, Positions[I].Offset)) return false;
++        return true;
++      }
++    }
++    if (!closedTargets(Expression, State)) return false;
++    Value Targets = possibleTargets(Expression, State);
++    for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
++      Storage Target = location(I);
++      if (!Target.first || !Target.first->hasLocalStorage() || !storageByteOffset(Target)) return false;
++      Positions.push_back({Target, 0});
++      if (Positions.size() > 64) return false;
++    }
++    return true;
++  }
++  std::pair<Value, bool> memoryAccessTargets(const CallExpr *Call, unsigned Argument,
++                                             const Facts &State) const {
++    const Expr *Pointer = Call->getArg(Argument);
 +    Value Targets = memoryTargets(Pointer, State);
-+    return Targets.count() == 1 ? location(Targets.find_first()) : Storage{};
++    if (completeMemoryTargets(Pointer, State)) return {Targets, true};
++    StringRef Name = Call->getDirectCallee()->getName();Name.consume_front("__builtin_");
++    unsigned Length = Name == "bzero" ? 1 : 2;
++    if (Call->getNumArgs() <= Length) return {Targets, false};
++    auto Amount = Call->getArg(Length)->getIntegerConstantExpr(Context);
++    if (!Amount || Amount->isNegative() || Amount->getActiveBits() > 63 || Amount->isZero())
++      return {Targets, false};
++    uint64_t Bytes = Amount->getZExtValue();
++    SmallVector<BytePosition, 8> Positions;
++    if (!memoryBytePositions(memoryPointerArgument(Pointer), State, Positions) || Positions.empty())
++      return {Targets, false};
++    Value Exact(Slots.size());
++    for (const auto &Position : Positions) {
++      auto Base = storageByteOffset(Position.Base);
++      int64_t Offset;
++      if (!Base || llvm::AddOverflow(*Base, Position.Offset, Offset) || Offset < 0)
++        return {Targets, false};
++      QualType Root = Position.Base.first->getType();
++      if (Root->isDependentType() || Root->isIncompleteType() || Root->isVariablyModifiedType()) return {Targets, false};
++      uint64_t Size = Context.getTypeSizeInChars(Root).getQuantity();
++      if (uint64_t(Offset) > Size || Bytes > Size - uint64_t(Offset)) return {Targets, false};
++      Storage Selected;
++      for (auto [Candidate, Index] : Slots) {
++        if (Candidate.first != Position.Base.first || !memoryObjectSize(Candidate, Bytes)) continue;
++        auto Start = storageByteOffset(Candidate);
++        if (!Start || *Start != Offset) continue;
++        if (!Selected.first || within(Selected, Candidate)) Selected = Candidate;
++        else if (!within(Candidate, Selected)) return {Targets, false};
++      }
++      if (!Selected.first) return {Targets, false};
++      Exact.set(Slots.lookup(Selected));
++    }
++    return {Exact, true};
 +  }
 +  bool memoryObjectSize(Storage Location, uint64_t Bytes) const {
 +    QualType Type = storageType(Location);
-+    return !Type.isNull() && !Type->isIncompleteType() && !Type->isVariablyModifiedType() &&
++    return !Type.isNull() && !Type->isDependentType() && !Type->isIncompleteType() && !Type->isVariablyModifiedType() &&
 +           Bytes == uint64_t(Context.getTypeSizeInChars(Type).getQuantity());
 +  }
 +  Storage memoryObject(Storage Location, uint64_t Bytes) const {
@@ -45839,8 +45992,7 @@ index 000000000..7db283ee6
 +    if (Call->getNumArgs() <= AmountIndex) return;
 +    auto Amount = Call->getArg(AmountIndex)->getIntegerConstantExpr(Context);
 +    if (Amount && Amount->isZero()) return;
-+    Value Targets = memoryTargets(Call->getArg(0), State);
-+    const bool Complete = completeMemoryTargets(Call->getArg(0), State);
++    auto [Targets, Complete] = memoryAccessTargets(Call, 0, State);
 +    const bool KnownSize = Amount && !Amount->isNegative() && Amount->getActiveBits() <= 64;
 +    Facts Joined;bool First = true;
 +    for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
@@ -45878,8 +46030,8 @@ index 000000000..7db283ee6
 +    }
 +  }
 +  Value memoryWriteResult(const CallExpr *Call, const Facts &State) const {
-+    Value Targets = memoryTargets(Call->getArg(0), State), Result = empty();
-+    const bool Complete = completeMemoryTargets(Call->getArg(0), State);
++    auto [Targets, Complete] = memoryAccessTargets(Call, 0, State);
++    Value Result = empty();
 +    for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
 +      Storage Target = location(I);
 +      if (!Complete) Target = {Target.first, nullptr};
@@ -45898,10 +46050,8 @@ index 000000000..7db283ee6
 +  void copyRepresentation(const CallExpr *Call, Facts &State, bool Emit) {
 +    auto Amount = Call->getArg(2)->getIntegerConstantExpr(Context);
 +    if (Amount && Amount->isZero()) return;
-+    Value Sources = memoryTargets(Call->getArg(1), State);
-+    Value Destinations = memoryTargets(Call->getArg(0), State);
-+    const bool SourceComplete = completeMemoryTargets(Call->getArg(1), State);
-+    const bool DestinationComplete = completeMemoryTargets(Call->getArg(0), State);
++    auto [Sources, SourceComplete] = memoryAccessTargets(Call, 1, State);
++    auto [Destinations, DestinationComplete] = memoryAccessTargets(Call, 0, State);
 +    const bool KnownSize = Amount && !Amount->isNegative() && Amount->getActiveBits() <= 64;
 +    Value Payload = empty(), EffectPayload = empty(), Aliases(Slots.size());
 +    for (int I = Sources.find_first(); I >= 0; I = Sources.find_next(I)) {
@@ -46605,12 +46755,10 @@ index 000000000..7db283ee6
 +          }
 +          if (Emit) {
 +            Decl *NestedCallable = nullptr;
-+            Stmt *NestedBody = nullptr;
 +            const auto *Lambda = dyn_cast<LambdaExpr>(Invocation);
 +            if (const auto *Block = dyn_cast<BlockExpr>(Invocation)) {
 +              auto *Declaration = const_cast<BlockDecl *>(Block->getBlockDecl());
 +              NestedCallable = Declaration;
-+              NestedBody = Declaration->getBody();
 +              if (auto Summary = OwnerSummaries->find(Block); Summary != OwnerSummaries->end())
 +                for (const auto &Capture : Declaration->captures()) {
 +                  QualType Type = Capture.getVariable()->getType();
@@ -46621,7 +46769,6 @@ index 000000000..7db283ee6
 +                }
 +            } else {
 +              NestedCallable = Lambda->getCallOperator();
-+              NestedBody = Lambda->getBody();
 +              auto Initializer = Lambda->capture_init_begin();
 +              for (const auto &Capture : Lambda->captures()) {
 +                const Expr *Init = *Initializer++;
@@ -57696,3 +57843,300 @@ index 000000000..fe663f661
 +  (void)manual_callable_spawn([] {return 42;}); // expected-error {{requires an async}}
 +}
 +#endif
+diff --git a/clang/test/ObjC3/AST/Inputs/native-diagnostic-attributes.h b/clang/test/ObjC3/AST/Inputs/native-diagnostic-attributes.h
+new file mode 100644
+index 000000000..960d387ba
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/native-diagnostic-attributes.h
+@@ -0,0 +1,17 @@
++#ifndef NATIVE_DIAGNOSTIC_ATTRIBUTES_H
++#define NATIVE_DIAGNOSTIC_ATTRIBUTES_H
++typedef __SIZE_TYPE__ DiagnosticSize;
++extern const int TagExact __attribute__((type_tag_for_datatype(example,int)));
++extern const int TagLayout __attribute__((type_tag_for_datatype(example,int,layout_compatible)));
++extern const int TagNull __attribute__((type_tag_for_datatype(example,int,must_be_null)));
++extern const int TagBoth __attribute__((type_tag_for_datatype(example,int,layout_compatible,must_be_null)));
++void *reordered_copy(const void *source,DiagnosticSize size,void *destination)
++    __attribute__((diagnose_as_builtin(__builtin_memcpy,3,1,2)));
++#ifdef __cplusplus
++template<class T> struct DiagnosticTags {
++  static const int tag __attribute__((type_tag_for_datatype(example,T,layout_compatible)));
++  static void *copy(const void *source,DiagnosticSize size,void *destination)
++      __attribute__((diagnose_as_builtin(__builtin_memcpy,3,1,2)));
++};
++#endif
++#endif
+diff --git a/clang/test/ObjC3/AST/native-diagnostic-attributes.m b/clang/test/ObjC3/AST/native-diagnostic-attributes.m
+new file mode 100644
+index 000000000..23c28a31d
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-diagnostic-attributes.m
+@@ -0,0 +1,48 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c17-False.m
++// RUN: FileCheck %s < %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17-False.pch -ast-print %s > %t-c17-False-pch.m
++// RUN: FileCheck %s < %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c17-True.m
++// RUN: FileCheck %s < %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17-True.pch -ast-print %s > %t-c17-True-pch.m
++// RUN: FileCheck %s < %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c++20-False.m
++// RUN: FileCheck %s < %t-c++20-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++20-False.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20-False.pch -ast-print %s > %t-c++20-False-pch.m
++// RUN: FileCheck %s < %t-c++20-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++20-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c++20-True.m
++// RUN: FileCheck %s < %t-c++20-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++20-True.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++20-True.pch -ast-print %s > %t-c++20-True-pch.m
++// RUN: FileCheck %s < %t-c++20-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++20-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c++23-False.m
++// RUN: FileCheck %s < %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23-False.pch -ast-print %s > %t-c++23-False-pch.m
++// RUN: FileCheck %s < %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c++23-True.m
++// RUN: FileCheck %s < %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-diagnostic-attributes.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23-True.pch -ast-print %s > %t-c++23-True-pch.m
++// RUN: FileCheck %s < %t-c++23-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True-pch.m
++#include "Inputs/native-diagnostic-attributes.h"
++// CHECK: type_tag_for_datatype(example, int)))
++// CHECK: type_tag_for_datatype(example, int, layout_compatible)))
++// CHECK: type_tag_for_datatype(example, int, must_be_null)))
++// CHECK: type_tag_for_datatype(example, int, layout_compatible, must_be_null)))
++// CHECK: diagnose_as_builtin(__builtin_memcpy, 3, 1, 2)))
+diff --git a/clang/test/ObjC3/Sema/native-diagnostic-builtin-indices.m b/clang/test/ObjC3/Sema/native-diagnostic-builtin-indices.m
+new file mode 100644
+index 000000000..0ede6de18
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-diagnostic-builtin-indices.m
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fsyntax-only -verify %s
++typedef __SIZE_TYPE__ DiagnosticSize;
++void *zero_destination(void *to,const void *from,DiagnosticSize size)
++  __attribute__((diagnose_as_builtin(__builtin_memcpy,0,2,3))); // expected-error {{references parameter 0}}
++void *zero_source(void *to,const void *from,DiagnosticSize size)
++  __attribute__((diagnose_as_builtin(__builtin_memcpy,1,0,3))); // expected-error {{references parameter 0}}
++void *zero_size(void *to,const void *from,DiagnosticSize size)
++  __attribute__((diagnose_as_builtin(__builtin_memcpy,1,2,0))); // expected-error {{references parameter 0}}
++void *excess(void *to,const void *from,DiagnosticSize size)
++  __attribute__((diagnose_as_builtin(__builtin_memcpy,1,2,4))); // expected-error {{references parameter 4}}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-byte-offset-memory.h b/clang/test/ObjC3/Sema/Inputs/borrowed-byte-offset-memory.h
+new file mode 100644
+index 000000000..07341684a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-byte-offset-memory.h
+@@ -0,0 +1,6 @@
++#ifndef OBJC3_BYTE_OFFSET_MEMORY_H
++#define OBJC3_BYTE_OFFSET_MEMORY_H
++#include "borrowed-memory-aliases.h"
++struct MemoryPadded { char prefix; struct MemoryHolder holder; int suffix; };
++struct MemoryCallbackPair {struct MemoryCallback first,second;};
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-byte-offset-memory.m b/clang/test/ObjC3/Sema/borrowed-byte-offset-memory.m
+new file mode 100644
+index 000000000..333709b96
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-byte-offset-memory.m
+@@ -0,0 +1,119 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-byte-offset-memory.h"
++#endif
++void byte_fill_second(void *owner) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  __builtin_memset((char *)&pair+__builtin_offsetof(struct MemoryPair,second),0,sizeof pair.second);
++  memory_escape(pair.second.pointer);
++  memory_escape(pair.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_fill_nested_alias(void *owner) {
++  struct MemoryPadded object={0,{memory_bytes(owner)},0};
++  struct MemoryPadded *alias=&object;
++  __builtin_bzero((char *)alias+__builtin_offsetof(struct MemoryPadded,holder),sizeof object.holder);
++  memory_escape(object.holder.pointer);
++}
++void byte_fill_array(void *owner) {
++  struct MemoryHolder array[2]={{memory_bytes(owner)},{memory_bytes(owner)}};
++  __builtin_memset((char *)&array+sizeof array[0],0,sizeof array[1]);
++  memory_escape(array[1].pointer);
++  memory_escape(array[0].pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_fill_commuted(void *owner) {
++  struct MemoryPair pair={{0},{memory_bytes(owner)}};
++  __builtin_memset(sizeof pair.first+(char *)&pair,0,sizeof pair.second);
++  memory_escape(pair.second.pointer);
++}
++void byte_fill_balanced(void *owner) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  __builtin_memset((char *)&pair+sizeof pair.first-sizeof pair.first,0,sizeof pair.first);
++  memory_escape(pair.first.pointer);
++  memory_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_copy_propagates(void *owner) {
++  struct MemoryPair source={{0},{memory_bytes(owner)}},target={{0},{0}};
++  __builtin_memcpy((char *)&target+sizeof target.first,(const char *)&source+sizeof source.first,sizeof target.second);
++  memory_escape(target.first.pointer);
++  memory_escape(target.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_copy_clears_selected(void *owner) {
++  struct MemoryPair target={{memory_bytes(owner)},{memory_bytes(owner)}},empty={{0},{0}};
++  __builtin_memmove((char *)&target+sizeof target.first,(const char *)&empty+sizeof empty.first,sizeof target.second);
++  memory_escape(target.second.pointer);
++  memory_escape(target.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_partial_retains(void *owner) {
++  struct MemoryPair pair={{0},{memory_bytes(owner)}};
++  __builtin_memset((char *)&pair+sizeof pair.first,0,sizeof pair.second-1);
++  memory_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_padding_retains(void *owner) {
++  struct MemoryPadded object={0,{memory_bytes(owner)},0};
++  __builtin_memset((char *)&object+1,0,sizeof object.holder);
++  memory_escape(object.holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_dynamic_retains(void *owner,unsigned offset) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  __builtin_memset((char *)&pair+offset,0,sizeof pair.second);
++  memory_escape(pair.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_conditional_target(void *owner,int choose) {
++  struct MemoryPair one={{0},{memory_bytes(owner)}},two={{0},{memory_bytes(owner)}};
++  __builtin_memset((char *)(choose?&one:&two)+sizeof one.first,0,sizeof one.second);
++  memory_escape(one.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(two.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_callback_copy(void *owner) {
++  const char *loan=memory_bytes(owner);
++  struct MemoryCallbackPair source={{0},{^{memory_consume(owner);}}},target={{0},{0}};
++  __builtin_memcpy((char *)&target+sizeof target.first,(char *)&source+sizeof source.first,sizeof target.second);
++  memory_use(loan);
++  target.second.work();
++  memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++
++void byte_returned_destination(void *owner) {
++  struct MemoryPair source={{0},{memory_bytes(owner)}},target={{0},{0}};
++  struct MemoryHolder *result=(struct MemoryHolder *)__builtin_memcpy(
++      (char *)&target+sizeof target.first,(char *)&source+sizeof source.first,sizeof target.second);
++  memory_escape(result->pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  result->pointer=0;
++  memory_escape(target.second.pointer);
++}
++void byte_returned_clear_and_write(void *owner) {
++  struct MemoryPair target={{0},{memory_bytes(owner)}};
++  struct MemoryHolder *result=(struct MemoryHolder *)__builtin_memset(
++      (char *)&target+sizeof target.first,0,sizeof target.second);
++  memory_escape(result->pointer);
++  result->pointer=memory_bytes(owner);
++  memory_escape(target.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++
++#ifdef __cplusplus
++template<class T> struct ByteDependent {T prefix;struct MemoryHolder holder;};
++template<class T> void byte_dependent_layout(void *owner) {
++  ByteDependent<T> target={T{},{memory_bytes(owner)}};
++  __builtin_memset((char *)&target+__builtin_offsetof(ByteDependent<T>,holder),0,sizeof target.holder);
++  memory_escape(target.holder.pointer);
++}
++void byte_instantiate_layout(void *owner){byte_dependent_layout<int>(owner);}
++#endif
+diff --git a/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h b/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h
+new file mode 100644
+index 000000000..0968922d3
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h
+@@ -0,0 +1,9 @@
++#ifndef OBJC3_EFFECTFUL_BLOCK_SPELLING_H
++#define OBJC3_EFFECTFUL_BLOCK_SPELLING_H
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++typedef void (^SpelledFrame)(void) __objc3_async_frame;
++SpelledFrame zero_frame=^void(void) __objc3_async_frame {};
++#ifdef __cplusplus
++void (^zero_noexcept)(void) noexcept=^void(void) noexcept {};
++#endif
++#endif
+diff --git a/clang/test/ObjC3/AST/native-effectful-block-spelling.m b/clang/test/ObjC3/AST/native-effectful-block-spelling.m
+new file mode 100644
+index 000000000..0f3026927
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-effectful-block-spelling.m
+@@ -0,0 +1,44 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c17-False.m
++// RUN: FileCheck %s < %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17-False.pch -ast-print %s > %t-c17-False-pch.m
++// RUN: FileCheck %s < %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c17-True.m
++// RUN: FileCheck %s < %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17-True.pch -ast-print %s > %t-c17-True-pch.m
++// RUN: FileCheck %s < %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c++20-False.m
++// RUN: FileCheck %s < %t-c++20-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++20-False.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20-False.pch -ast-print %s > %t-c++20-False-pch.m
++// RUN: FileCheck %s < %t-c++20-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++20-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c++20-True.m
++// RUN: FileCheck %s < %t-c++20-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++20-True.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++20-True.pch -ast-print %s > %t-c++20-True-pch.m
++// RUN: FileCheck %s < %t-c++20-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++20-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c++23-False.m
++// RUN: FileCheck %s < %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23-False.pch -ast-print %s > %t-c++23-False-pch.m
++// RUN: FileCheck %s < %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t-c++23-True.m
++// RUN: FileCheck %s < %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-effectful-block-spelling.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23-True.pch -ast-print %s > %t-c++23-True-pch.m
++// RUN: FileCheck %s < %t-c++23-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True-pch.m
++#include "Inputs/native-effectful-block-spelling.h"
++// CHECK: ^void(void) __objc3_async_frame

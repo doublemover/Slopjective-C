@@ -1,5 +1,10 @@
 # Concurrent callable capture contracts
 
+Current execution checkpoint: the maintained native frontend replay, identity and
+consumer controls pass in the ABI 24 development embedding. See the
+[2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package
+execution, wider matrices and installed SDK qualification remain pending.
+
 Concurrency source 2.104 applies Part 7 §§7.8.3–7.8.5 to C++ callable storage and
 immutable local Block aliases. C++ lambdas preserve the distinction between a
 shared `this` pointer and an independent `[*this]` value. Shared `this`, explicit

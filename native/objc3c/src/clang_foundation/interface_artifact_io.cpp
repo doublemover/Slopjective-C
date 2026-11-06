@@ -52,6 +52,7 @@ const auto kSupportedSemantics = std::to_array<llvm::StringRef>({
     "objc3.cxx-nested-types.v1",
     "objc3.cxx-using.v1",
     "objc3.cxx-declaration-expressions.v1",
+    "objc3.c-inline-definitions.v1",
     "objc3.cxx-definitions.v1",
     "objc3.cxx-defaulted-comparisons.v1",
     "objc3.cxx-out-of-line-defaulting.v1",

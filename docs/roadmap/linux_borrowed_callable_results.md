@@ -1,5 +1,10 @@
 # Borrowed callable results and owner contracts
 
+Current execution checkpoint: the maintained native frontend replay, identity and
+consumer controls pass in the ABI 24 development embedding. See the
+[2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package
+execution, wider matrices and installed SDK qualification remain pending.
+
 System 2.19 makes a borrowed result an obligation of the
 native function type. A separate owner index records which argument supplies its
 lifetime. `objc_returns_borrowed(owner_index=N)` applies to function types,
