@@ -167,6 +167,16 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeTypeContracts(out, array->getElementType(), context,
                               position + ".element", depth + 1);
   } else if (const auto *function = type->getAs<clang::FunctionType>()) {
+    if (function->hasObjC3BorrowedResult()) {
+      AppendNativeContractField(out, position + ":borrowed-result");
+      AppendNativeContractField(out, ";borrowed-callable-owners:v1;");
+    }
+    if (const auto *prototype = llvm::dyn_cast<clang::FunctionProtoType>(function))
+      if (unsigned owner = prototype->getObjC3BorrowedOwner()) {
+        AppendNativeContractField(out, position + ":returns-borrowed-owner");
+        AppendNativeContractField(out, std::to_string(owner - 1));
+        AppendNativeContractField(out, ";borrowed-callable-owners:v1;");
+      }
     if (!skip_retained_result && function->getExtInfo().getProducesResult())
       AppendNativeContractField(out, position + ":ns-returns-retained");
     if (const auto *prototype = llvm::dyn_cast<clang::FunctionProtoType>(function);
@@ -237,10 +247,10 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
     AppendNativeContractField(ownership, std::to_string(static_cast<unsigned>(variable->getStorageDuration())));
     AppendNativeContractField(ownership, std::to_string(static_cast<unsigned>(variable->getTLSKind())));
   }
-  if (const auto *borrow = clang::getObjC3BorrowedReturnContract(declaration)) {
+  if (auto owner = clang::getObjC3BorrowedReturnOwner(declaration)) {
     AppendNativeContractField(ownership, "returns-borrowed");
     AppendNativeContractField(ownership,
-                              std::to_string(borrow->getOwnerIndex()));
+                              std::to_string(*owner));
   }
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     if (const auto *operation = clang::getObjC3FamilyOperation(function)) {

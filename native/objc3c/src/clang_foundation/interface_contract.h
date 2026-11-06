@@ -177,6 +177,11 @@ inline constexpr const char *kCxxUnionValueSemantic = "objc3.cxx-union-values.v1
 inline bool HasCxxUnionValueIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-union-values:v1;") != std::string::npos;
 }
+inline constexpr const char *kBorrowedCallableOwnerSemantic = "objc3.borrowed-callable-owners.v1";
+inline bool HasBorrowedCallableOwnerIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";borrowed-callable-owners:v1;") != std::string::npos ||
+         d.effects.ownership_identity.find(";borrowed-callable-owners:v1;") != std::string::npos;
+}
 inline constexpr const char *kAsyncConsumedOwnershipSemantic = "objc3.async-consuming-ownership.v3";
 inline bool HasAsyncConsumedOwnershipIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";async-consuming-ownership:v3;") != std::string::npos ||

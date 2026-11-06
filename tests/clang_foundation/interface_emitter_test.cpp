@@ -447,6 +447,75 @@ void TestDependentKeyPathLiteralBodies() {
   }
 }
 
+void TestBorrowedCallableOwnerCapability() {
+  for (const char *standard : {"c17", "c++20", "c++23"}) {
+    const bool cxx = std::string(standard) != "c17";
+    for (bool arc : {false, true}) {
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if (arc) args.push_back("-fobjc-arc");
+      const std::string source=R"(
+        typedef borrowed const char *CallbackBytes;
+        typedef CallbackBytes (*Getter)(void *) __attribute__((objc_returns_borrowed(owner_index=0)));
+        typedef CallbackBytes (*GetterFirst)(void *,void *) __attribute__((objc_returns_borrowed(owner_index=0)));
+        typedef CallbackBytes (*GetterSecond)(void *,void *) __attribute__((objc_returns_borrowed(owner_index=1)));
+        CallbackBytes get_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
+        void plain(void *);
+        #ifdef __cplusplus
+        inline int body_only(void *owner) {
+          using Local=CallbackBytes(*)(void*) __attribute__((objc_returns_borrowed(owner_index=0)));
+          Local getter=nullptr;(void)getter;(void)owner;return 1;
+        }
+        template<class G> __attribute__((objc_returns_borrowed(owner_index=1)))
+        CallbackBytes callback_forward(G getter,void *owner) {return getter(owner);}
+        #endif
+      )";
+      auto emit=[&](llvm::StringRef text,llvm::StringRef file,const std::vector<std::string>&exports) {
+        auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,file);
+        assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        auto emitted=EmitSemanticInterface(ast->getASTContext(),"fixture.borrowed.callback","test",{},{},{},exports);
+        for(const auto&d:emitted.diagnostics) std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());
+        assert(emitted.success);return emitted;
+      };
+      auto plain=emit(source,"plain-callback.m",{"plain"});
+      assert(plain.sidecar_json.find(kBorrowedCallableOwnerSemantic)==std::string::npos);
+      std::vector<std::string> names={"Getter","GetterFirst","GetterSecond","get_bytes"};
+      if(cxx) {names.push_back("body_only");names.push_back("callback_forward");}
+      for(const auto&name:names) {
+        const std::vector<std::string> exports={"CallbackBytes",name};
+        auto emitted=emit(source,"callback-provider.m",exports);
+        assert(emitted.sidecar_json.find(kBorrowedCallableOwnerSemantic)!=std::string::npos);
+        auto parsed=llvm::json::parse(emitted.sidecar_json);assert(parsed&&parsed->getAsObject());
+        const auto*required=parsed->getAsObject()->getArray("required_semantics");assert(required);
+        std::vector<llvm::StringRef> supported;
+        for(const auto&item:*required) {assert(item.getAsString());supported.push_back(*item.getAsString());}
+        auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,supported);assert(decoded);
+        auto replayed=emit(emitted.source_bytes,"relocated/callback-consumer.m",exports);
+        assert(replayed.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
+        auto older=supported;std::erase(older,llvm::StringRef(kBorrowedCallableOwnerSemantic));
+        auto rejected=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,older);
+        assert(!rejected);llvm::consumeError(rejected.takeError());
+        auto missing=*decoded;std::erase(missing.required_semantics,kBorrowedCallableOwnerSemantic);
+        auto encoded=EncodeSemanticInterfaceSidecar(missing,supported);assert(!encoded);
+        assert(llvm::StringRef(llvm::toString(encoded.takeError())).contains("borrowed callable owner identity"));
+        auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+        invented->required_semantics.push_back(kBorrowedCallableOwnerSemantic);
+        auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);
+        llvm::consumeError(invalid.takeError());
+      }
+      auto first=emit(source,"first-owner.m",{"CallbackBytes","GetterFirst"});
+      const auto position=source.find("(*GetterFirst)(void *,void *) __attribute__((objc_returns_borrowed(owner_index=0)))");
+      assert(position!=std::string::npos);
+      std::string changed=source;
+      auto index=changed.find("owner_index=0",position);assert(index!=std::string::npos);
+      changed.replace(index,std::string("owner_index=0").size(),"owner_index=1");
+      auto second=emit(changed,"second-owner.m",{"CallbackBytes","GetterFirst"});
+      assert(first.identity.semantic_fingerprint!=second.identity.semantic_fingerprint);
+    }
+  }
+}
+
 void TestAsyncConsumedOwnershipCapability() {
   for (const char *standard : {"c17", "c++20", "c++23"}) {
     for (bool arc : {false, true}) {
@@ -6181,6 +6250,7 @@ int main() {
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
   TestDependentKeyPathLiteralBodies();
+  TestBorrowedCallableOwnerCapability();
   TestAsyncConsumedOwnershipCapability();
   TestConsumedAndMethodOwnershipRoundTrips();
   TestUnmodeledAttributesFailClosed();

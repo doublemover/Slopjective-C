@@ -2318,6 +2318,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-effectful-lambdas:v1;";
   if (HasDeclarationTemplateTemplateParameters(representative))
     identity.canonical_type_identity+=";cxx-template-template-parameters:v1;";
+  if (HasDeclarationBorrowedCallableOwner(representative))
+    identity.canonical_type_identity += ";borrowed-callable-owners:v1;";
   if (HasDeclarationAsyncConsumedOwnership(representative))
     identity.canonical_type_identity += ";async-consuming-ownership:v3;";
   if (HasDeclarationDependentKeyPathTypeBody(representative))

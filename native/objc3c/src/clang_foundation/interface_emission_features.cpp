@@ -133,6 +133,36 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationBorrowedCallableOwner(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Ownership : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      void NoteType(clang::QualType type) {
+        for (unsigned depth = 0; !type.isNull() && depth != 64; ++depth) {
+          if (const auto *function = type->getAs<clang::FunctionType>()) {
+            found |= function->hasObjC3BorrowedResult();
+            return;
+          }
+          if (type->isPointerType() || type->isBlockPointerType() || type->isReferenceType())
+            type = type->getPointeeType();
+          else if (const auto *member = type->getAs<clang::MemberPointerType>()) type = member->getPointeeType();
+          else return;
+        }
+      }
+      bool VisitType(clang::Type *type) override {NoteType(clang::QualType(type, 0)); return true;}
+      bool VisitDeclRefExpr(clang::DeclRefExpr *reference) override {NoteType(reference->getDecl()->getType()); return true;}
+      bool VisitMemberExpr(clang::MemberExpr *member) override {NoteType(member->getMemberDecl()->getType()); return true;}
+      bool VisitCallExpr(clang::CallExpr *call) override {
+        NoteType(call->getCallee()->getType());
+        if (const auto *function = call->getDirectCallee()) NoteType(function->getType());
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return visitor.found;
+  });
+}
+
 bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
     struct Ownership : clang::DynamicRecursiveASTVisitor {

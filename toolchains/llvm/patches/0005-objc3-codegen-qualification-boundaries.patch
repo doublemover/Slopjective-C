@@ -30624,3 +30624,23 @@ index 000000000..620e811c5
 +// CHECK-DAG: @llvm.objc.release
 +// CHECK-DAG: @llvm.coro.begin
 +void *aligned_alloc(__SIZE_TYPE__ alignment, __SIZE_TYPE__ size) {return 0;}
+diff --git a/clang/test/ObjC3/CodeGen/borrowed-callable-owners.mm b/clang/test/ObjC3/CodeGen/borrowed-callable-owners.mm
+new file mode 100644
+index 000000000..4a9f1aa84
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/borrowed-callable-owners.mm
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/../Sema/Inputs/borrowed-callable-owners.h -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -DFROM_PCH -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "../Sema/Inputs/borrowed-callable-owners.h"
++#endif
++void owner_overload(CallbackFirst) {}
++void owner_overload(CallbackSecond) {}
++void opaque_overload(OpaqueGetter) {}
++void opaque_overload(const char*(*)(id)) {}
++// CHECK-DAG: define{{.*}} @_Z14owner_overloadPU20objc3_borrowed_ownerILj1EEF
++// CHECK-DAG: define{{.*}} @_Z14owner_overloadPU20objc3_borrowed_ownerILj2EEF
++// CHECK-DAG: define{{.*}} @_Z15opaque_overloadPU21objc3_borrowed_resultF
++// CHECK-DAG: define{{.*}} @_Z15opaque_overloadPFPKcP11objc_objectE

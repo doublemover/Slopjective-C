@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..d2047cc0f
+index 000000000..ac969f2ad
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,893 @@
+@@ -0,0 +1,961 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -792,6 +792,7 @@ index 000000000..d2047cc0f
 +#include "clang/Frontend/ASTUnit.h"
 +#include "clang/Sema/MultiplexExternalSemaSource.h"
 +#include "clang/Tooling/Tooling.h"
++#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 +#include "gtest/gtest.h"
 +
 +#include <memory>
@@ -1662,6 +1663,73 @@ index 000000000..d2047cc0f
 +      EXPECT_FALSE(carriesObjC3BorrowedValue(Context, Callable));
 +    }
 +  }
++}
++
++TEST(ObjC3TypeContracts, BorrowedCallableOwnersAreNativeTypeIdentity) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    const std::vector<std::string> Args={"-x","objective-c++",Standard,
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    const std::string Header="typedef borrowed const char *Bytes;";
++    auto First=parse(Header+"typedef Bytes (*Getter)(id,id) __attribute__((objc_returns_borrowed(owner_index=0)));void use(Getter);",Args);
++    ASSERT_TRUE(First);ASSERT_FALSE(First->getDiagnostics().hasErrorOccurred());
++    auto *Function=const_cast<FunctionDecl *>(findFunction(First->getASTContext(),"use"));
++    ASSERT_TRUE(Function);
++    auto Type=Function->getParamDecl(0)->getType();
++    const auto *Prototype=Type->getPointeeType()->castAs<FunctionProtoType>();
++    EXPECT_TRUE(Prototype->hasObjC3BorrowedResult());
++    EXPECT_EQ(Prototype->getObjC3BorrowedOwner(),1u);
++    EXPECT_TRUE(containsObjC3BorrowedType(First->getASTContext(),Type.getCanonicalType()));
++    EXPECT_FALSE(carriesObjC3BorrowedValue(First->getASTContext(),Type));
++    EXPECT_TRUE(isObjC3BorrowedType(First->getASTContext(),Prototype->getCallResultType(First->getASTContext())));
++    llvm::SmallString<128> FirstUSR;
++    ASSERT_FALSE(index::generateUSRForType(Type.getCanonicalType(),First->getASTContext(),FirstUSR));
++    for(const std::string &Declaration:{
++        "typedef Bytes (*Getter)(id,id) __attribute__((objc_returns_borrowed(owner_index=1)));void use(Getter);",
++        "typedef Bytes (*Getter)(id,id);void use(Getter);",
++        "typedef const char *(*Getter)(id,id);void use(Getter);"}) {
++      auto Other=parse(Header+Declaration,Args);
++      ASSERT_TRUE(Other);ASSERT_FALSE(Other->getDiagnostics().hasErrorOccurred());
++      auto *OtherFunction=const_cast<FunctionDecl *>(findFunction(Other->getASTContext(),"use"));
++      ASSERT_TRUE(OtherFunction);
++      const auto OtherType=OtherFunction->getParamDecl(0)->getType();
++      StructuralEquivalenceContext::NonEquivalentDeclSet Different;
++      StructuralEquivalenceContext Equivalent(Other->getASTContext().getLangOpts(),
++          First->getASTContext(),Other->getASTContext(),Different,
++          StructuralEquivalenceKind::Default,false,false);
++      EXPECT_FALSE(Equivalent.IsEquivalent(Function,OtherFunction));
++      ODRHash FirstHash,OtherHash;
++      FirstHash.AddQualType(Type.getCanonicalType());OtherHash.AddQualType(OtherType.getCanonicalType());
++      EXPECT_NE(FirstHash.CalculateHash(),OtherHash.CalculateHash());
++      llvm::SmallString<128> OtherUSR;
++      ASSERT_FALSE(index::generateUSRForType(OtherType.getCanonicalType(),Other->getASTContext(),OtherUSR));
++      EXPECT_NE(FirstUSR.str(),OtherUSR.str());
++    }
++    auto Target=parse("",Args);ASSERT_TRUE(Target);
++    ASTImporter Importer(Target->getASTContext(),Target->getFileManager(),
++        First->getASTContext(),First->getFileManager(),false);
++    auto Imported=Importer.Import(Function);ASSERT_TRUE(bool(Imported));
++    const auto *ImportedFunction=cast<FunctionDecl>(*Imported);
++    const auto ImportedType=ImportedFunction->getParamDecl(0)->getType();
++    const auto *ImportedPrototype=ImportedType->getPointeeType()->castAs<FunctionProtoType>();
++    EXPECT_TRUE(ImportedPrototype->hasObjC3BorrowedResult());
++    EXPECT_EQ(ImportedPrototype->getObjC3BorrowedOwner(),1u);
++    llvm::SmallString<128> ImportedUSR;
++    ASSERT_FALSE(index::generateUSRForType(ImportedType.getCanonicalType(),Target->getASTContext(),ImportedUSR));
++    EXPECT_EQ(FirstUSR.str(),ImportedUSR.str());
++  }
++}
++
++TEST(ObjC3TypeContracts, NativeTaskAndFrameCallbacksHaveDistinctUSRs) {
++  auto AST=parse("",{"-x","objective-c++","-std=c++23","-fobjc-version=3"});
++  ASSERT_TRUE(AST);auto &Context=AST->getASTContext();
++  FunctionProtoType::ExtProtoInfo Info;Info.ObjC3Effects.Async=true;
++  QualType Task=Context.getPointerType(Context.getFunctionType(Context.IntTy,{},Info));
++  Info.ObjC3Effects.AsyncFrame=true;
++  QualType Frame=Context.getPointerType(Context.getFunctionType(Context.IntTy,{},Info));
++  llvm::SmallString<128> TaskUSR,FrameUSR;
++  ASSERT_FALSE(index::generateUSRForType(Task,Context,TaskUSR));
++  ASSERT_FALSE(index::generateUSRForType(Frame,Context,FrameUSR));
++  EXPECT_NE(TaskUSR.str(),FrameUSR.str());
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644

@@ -37,6 +37,7 @@ const auto kSupportedSemantics = std::to_array<llvm::StringRef>({
     kCheckedKeyPathReadSemantic,
     kDependentKeyPathLiteralSemantic,
     kAsyncConsumedOwnershipSemantic,
+    kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
     "objc3.async-entry-abi.v3",
     "objc3.direct-dispatch.v1",

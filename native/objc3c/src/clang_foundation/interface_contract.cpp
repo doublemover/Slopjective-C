@@ -433,6 +433,10 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool borrowed_callables = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedCallableOwnerIdentity);
+  const bool borrowed_callable_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedCallableOwnerSemantic) != sidecar.required_semantics.end();
+  if (borrowed_callables != borrowed_callable_capability)
+    Add(result,"O3IFC104","borrowed callable owner identity and required capability must agree",expected.canonical_name);
   const bool consuming = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasAsyncConsumedOwnershipIdentity);
   const bool consuming_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAsyncConsumedOwnershipSemantic) != sidecar.required_semantics.end();
   if (consuming != consuming_capability)

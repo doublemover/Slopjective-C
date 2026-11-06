@@ -544,7 +544,12 @@ void PersistenceCases(const fs::path &Root) {
       "typedef void (*ConsumedOwnerCallback)(id owner __attribute__((ns_consumed)));\n"
       "typedef id (*RetainedOwnerFactory)(void) __attribute__((ns_returns_retained));\n"
       "using RetainedOwnerAlias = id (__attribute__((ns_returns_retained)) *)(void);\n"
-      "typedef id (__attribute__((ns_returns_retained)) *(*HigherOwnerFactory)(void))(void);\n";
+      "typedef id (__attribute__((ns_returns_retained)) *(*HigherOwnerFactory)(void))(void);\n"
+      "typedef BorrowedBytes (*ImportedGetter)(id,id) __attribute__((objc_returns_borrowed(owner_index=1)));\n"
+      "typedef BorrowedBytes (*ImportedFirstGetter)(id,id) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
+      "typedef BorrowedBytes (*ImportedOpaqueGetter)(id,id);\n"
+      "template<class T> T imported_callback_identity(T value){return value;}\n"
+      "template<class G> __attribute__((objc_returns_borrowed(owner_index=2))) BorrowedBytes imported_callback_forward(G getter,id a,id owner){return getter(a,owner);}\n";
   const auto HeaderPath = Root / "provider.h";
   { std::ofstream Out(HeaderPath); Out << Provider; }
   auto From = Parse(Provider, HeaderPath.string());
@@ -611,6 +616,24 @@ void PersistenceCases(const fs::path &Root) {
   InterfaceClient.source_text =
       "void imported_preserved(RetainedOwnerFactory factory,RetainedOwnerAlias alias,HigherOwnerFactory higher){RetainedOwnerFactory copy=(RetainedOwnerFactory)factory;copy=alias;copy=higher();(void)copy;}";
   Expect(InterfaceClient,true);
+  InterfaceClient.source_text =
+      "BorrowedBytes imported_indirect(ImportedGetter getter,id a,id owner) __attribute__((objc_returns_borrowed(owner_index=2))) {noescape_api(getter(a,owner));return getter(a,owner);}";
+  Expect(InterfaceClient,true);
+  InterfaceClient.source_text =
+      "BorrowedBytes imported_generic(ImportedGetter getter,id a,id owner) __attribute__((objc_returns_borrowed(owner_index=2))) {return imported_callback_forward(getter,a,owner);}";
+  Expect(InterfaceClient,true);
+  InterfaceClient.source_text =
+      "void imported_indirect_escape(ImportedGetter getter,id a,id owner){noescape_api(getter(a,owner));const char*p=getter(a,owner);extern void escape(const char*);escape(p);}";
+  Expect(InterfaceClient,false,"argument without a non-escaping lifetime contract");
+  InterfaceClient.source_text =
+      "void imported_opaque_escape(ImportedOpaqueGetter getter,id a,id owner){extern void escape(const char*);escape(imported_callback_identity(getter)(a,owner));}";
+  Expect(InterfaceClient,false,"argument without a non-escaping lifetime contract");
+  InterfaceClient.source_text =
+      "void imported_owner_cast(ImportedGetter getter){(void)(ImportedFirstGetter)getter;}";
+  Expect(InterfaceClient,false,"callable cast changes an ownership");
+  InterfaceClient.source_text =
+      "void imported_owner_erasure(ImportedGetter getter){(void)(ImportedOpaqueGetter)getter;}";
+  Expect(InterfaceClient,false,"callable cast changes an ownership");
   auto OtherOwner = Parse(
       "typedef borrowed const char *BorrowedBytes; BorrowedBytes exported(id a,id b) __attribute__((objc_returns_borrowed(owner_index=0)));",
       (Root / "other.mm").string());
