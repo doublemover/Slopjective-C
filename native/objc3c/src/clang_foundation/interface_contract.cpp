@@ -433,6 +433,10 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool nsobject_storage = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNSObjectStorageIdentity);
+  const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
+  if (nsobject_storage != nsobject_storage_capability)
+    Add(result,"O3IFC106","NSObject storage identity and required capability must agree",expected.canonical_name);
   const bool borrowed_callables = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedCallableOwnerIdentity);
   const bool borrowed_callable_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedCallableOwnerSemantic) != sidecar.required_semantics.end();
   if (borrowed_callables != borrowed_callable_capability)

@@ -7996,7 +7996,7 @@ index 9799c8651..bb746a735 100644
 +                          : " withLifetime scope=body");
 +}
 diff --git a/clang/lib/AST/Type.cpp b/clang/lib/AST/Type.cpp
-index 42d148715..e8ba22674 100644
+index 42d148715..2201a3dfd 100644
 --- a/clang/lib/AST/Type.cpp
 +++ b/clang/lib/AST/Type.cpp
 @@ -13,6 +13,8 @@
@@ -8211,27 +8211,22 @@ index 42d148715..e8ba22674 100644
    case Type::Complex:
    case Type::LValueReference:
    case Type::RValueReference:
-@@ -5421,8 +5509,17 @@ bool Type::isObjCARCImplicitlyUnretainedType() const {
+@@ -5421,8 +5509,12 @@ bool Type::isObjCARCImplicitlyUnretainedType() const {
  }
  
  bool Type::isObjCNSObjectType() const {
 -  if (const auto *typedefType = getAs<TypedefType>())
 -    return typedefType->getDecl()->hasAttr<ObjCNSObjectAttr>();
 +  const Type *Current = this;
-+  bool Family = false, NSObject = false;
 +  while (const auto *Alias = Current->getAs<TypedefType>()) {
 +    const auto *Declaration = Alias->getDecl();
-+    // Preserve the baseline behavior of an explicitly attributed outer alias.
-+    if (Current == this && Declaration->hasAttr<ObjCNSObjectAttr>()) return true;
-+    Family |= Declaration->hasAttr<ObjCRetainableFamilyAttr>();
-+    NSObject |= Declaration->hasAttr<ObjCNSObjectAttr>();
-+    if (Family && NSObject) return true;
++    if (Declaration->hasAttr<ObjCNSObjectAttr>()) return true;
 +    Current = Declaration->getUnderlyingType().getTypePtr();
 +  }
    return false;
  }
  
-@@ -5558,6 +5655,11 @@ bool Type::isHLSLStandardLayoutRecordOrArrayOf() const {
+@@ -5558,6 +5650,11 @@ bool Type::isHLSLStandardLayoutRecordOrArrayOf() const {
  }
  
  QualType::DestructionKind QualType::isDestructedTypeImpl(QualType type) {
@@ -12934,10 +12929,10 @@ index 000000000..80bc420b7
 +} // namespace clang
 diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
 new file mode 100644
-index 000000000..3572e6682
+index 000000000..dd1d14938
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.cpp
-@@ -0,0 +1,198 @@
+@@ -0,0 +1,195 @@
 +//===--- SemaObjC3Effects.cpp - ObjC3 callable effects -------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -13082,9 +13077,6 @@ index 000000000..3572e6682
 +      Function->getCallConv() != CC_C ||
 +      Function->getReturnType()->isReferenceType() ||
 +      Function->getReturnType().isVolatileQualified() ||
-+      (Function->getReturnType()->isObjCRetainableType() &&
-+       !Function->getReturnType()->isObjCObjectPointerType() &&
-+       !Function->getReturnType()->isBlockPointerType()) ||
 +      Function->getReturnType()->isUndeducedType())
 +    return Unsupported();
 +  QualType Result = Function->getReturnType();
@@ -14656,7 +14648,7 @@ index 3c45806c4..f17d66714 100644
      if (!OnlyDeduced)
        MarkUsedTemplateParameters(Ctx,
 diff --git a/clang/lib/Sema/SemaType.cpp b/clang/lib/Sema/SemaType.cpp
-index 3f0a7304d..6d46b512c 100644
+index 3f0a7304d..4badce1e2 100644
 --- a/clang/lib/Sema/SemaType.cpp
 +++ b/clang/lib/Sema/SemaType.cpp
 @@ -13,6 +13,7 @@
@@ -14837,7 +14829,17 @@ index 3f0a7304d..6d46b512c 100644
      }
      void VisitParenTypeLoc(ParenTypeLoc TL) {
        assert(Chunk.Kind == DeclaratorChunk::Paren);
-@@ -8094,6 +8185,37 @@ static bool handleFunctionTypeAttr(TypeProcessingState &state, ParsedAttr &attr,
+@@ -6817,7 +6908,8 @@ static bool handleObjCOwnershipTypeAttr(TypeProcessingState &state,
+   bool NonObjCPointer = false;
+ 
+   if (!type->isDependentType() && !type->isUndeducedType()) {
+-    if (const PointerType *ptr = type->getAs<PointerType>()) {
++    if (const PointerType *ptr = type->getAs<PointerType>();
++        ptr && !type->isObjCNSObjectType() && !type.hasNonTrivialObjCLifetime()) {
+       QualType pointee = ptr->getPointeeType();
+       if (pointee->isObjCRetainableType() || pointee->isPointerType())
+         return false;
+@@ -8094,6 +8186,37 @@ static bool handleFunctionTypeAttr(TypeProcessingState &state, ParsedAttr &attr,
      return true;
    }
  
@@ -14875,7 +14877,7 @@ index 3f0a7304d..6d46b512c 100644
    // ns_returns_retained is not always a type attribute, but if we got
    // here, we're treating it as one right now.
    if (attr.getKind() == ParsedAttr::AT_NSReturnsRetained) {
-@@ -8108,9 +8230,10 @@ static bool handleFunctionTypeAttr(TypeProcessingState &state, ParsedAttr &attr,
+@@ -8108,9 +8231,10 @@ static bool handleFunctionTypeAttr(TypeProcessingState &state, ParsedAttr &attr,
              attr.getLoc(), unwrapped.get()->getReturnType()))
        return true;
  
@@ -14888,7 +14890,7 @@ index 3f0a7304d..6d46b512c 100644
        FunctionType::ExtInfo EI
          = unwrapped.get()->getExtInfo().withProducesResult(true);
        type = unwrapped.wrap(S, S.Context.adjustFunctionType(unwrapped.get(), EI));
-@@ -9743,6 +9866,7 @@ bool Sema::RequireCompleteTypeImpl(SourceLocation Loc, QualType T,
+@@ -9743,6 +9867,7 @@ bool Sema::RequireCompleteTypeImpl(SourceLocation Loc, QualType T,
    // unless it's actually needed.
    if (Tag || IFace) {
      // Avoid diagnosing invalid decls as incomplete.
@@ -24103,7 +24105,7 @@ index 80f247347..087a35d93 100644
        return asDerived().visitStruct(FT, std::forward<Ts>(Args)...);
      case QualType::PCK_Trivial:
 diff --git a/clang/lib/AST/DeclCXX.cpp b/clang/lib/AST/DeclCXX.cpp
-index 0573cdf95..e51931da4 100644
+index 0573cdf95..df50d093f 100644
 --- a/clang/lib/AST/DeclCXX.cpp
 +++ b/clang/lib/AST/DeclCXX.cpp
 @@ -12,6 +12,7 @@
@@ -24114,10 +24116,11 @@ index 0573cdf95..e51931da4 100644
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/ASTMutationListener.h"
  #include "clang/AST/ASTUnresolvedSet.h"
-@@ -1066,6 +1067,58 @@ void CXXRecordDecl::addedMember(Decl *D) {
+@@ -1066,7 +1067,60 @@ void CXXRecordDecl::addedMember(Decl *D) {
      // Automatic Reference Counting: the presence of a member of Objective-C pointer type
      // that does not explicitly have no lifetime makes the class a non-POD.
      QualType T = Context.getBaseElementType(Field->getType());
+-    if (T->isObjCRetainableType() || T.isObjCGCStrong()) {
 +    if (hasObjC3CarrierManagedPayload(T)) {
 +      setHasObjectMember(true);
 +      auto &Data = data();
@@ -24170,9 +24173,11 @@ index 0573cdf95..e51931da4 100644
 +        Data.DefaultedDestructorIsDeleted = true;
 +      }
 +    }
-     if (T->isObjCRetainableType() || T.isObjCGCStrong()) {
++    if (T->isObjCRetainableType() || T.hasNonTrivialObjCLifetime() ||
++        T.isObjCGCStrong()) {
        if (T.hasNonTrivialObjCLifetime()) {
          // Objective-C Automatic Reference Counting:
+         //   If a class has a non-static data member of Objective-C pointer
 diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
 index 2a8395e26..eb72f650d 100644
 --- a/clang/lib/Sema/SemaChecking.cpp
@@ -25050,7 +25055,7 @@ index 76c51b8d9..2fe982a87 100644
      if (includeCategoryNamespace) {
        if (auto category = MD->getCategory())
 diff --git a/clang/lib/Sema/SemaCoroutine.cpp b/clang/lib/Sema/SemaCoroutine.cpp
-index 4b99e4454..b7dd32c51 100644
+index 4b99e4454..d47b934aa 100644
 --- a/clang/lib/Sema/SemaCoroutine.cpp
 +++ b/clang/lib/Sema/SemaCoroutine.cpp
 @@ -14,11 +14,14 @@
@@ -25478,7 +25483,7 @@ index 4b99e4454..b7dd32c51 100644
                                             sema::FunctionScopeInfo &Fn,
                                             Stmt *Body)
      : S(S), FD(FD), Fn(Fn), Loc(FD.getLocation()),
-@@ -1282,7 +1481,51 @@ bool CoroutineStmtBuilder::buildDependentStatements() {
+@@ -1282,7 +1481,52 @@ bool CoroutineStmtBuilder::buildDependentStatements() {
    return this->IsValid;
  }
  
@@ -25486,7 +25491,8 @@ index 4b99e4454..b7dd32c51 100644
 +                                        SourceLocation Loc) {
 +  const auto *Type = getObjC3CallableFunctionType(&Callable);
 +  if (!Type || !Type->getObjC3FunctionEffects().Async ||
-+      Type->getObjC3FunctionEffects().AsyncFrame || !hasObjC3CFResultOwnership(&Callable) ||
++      Type->getObjC3FunctionEffects().AsyncFrame ||
++      (!hasObjC3CFResultOwnership(&Callable) && !hasObjC3NSObjectResult(&Callable)) ||
 +      Promise->getType()->isDependentType()) return false;
 +  LookupResult Hook(S, &S.Context.Idents.get("__objc3_async_cf_result_ops"), Loc,
 +                    Sema::LookupOrdinaryName);
@@ -25530,7 +25536,7 @@ index 4b99e4454..b7dd32c51 100644
    // Form a declaration statement for the promise declaration, so that AST
    // visitors can more easily find it.
    StmtResult PromiseStmt =
-@@ -1375,7 +1618,7 @@ bool CoroutineStmtBuilder::makeReturnOnAllocFailure() {
+@@ -1375,7 +1619,7 @@ bool CoroutineStmtBuilder::makeReturnOnAllocFailure() {
  // Collect placement arguments for allocation function of coroutine FD.
  // Return true if we collect placement arguments succesfully. Return false,
  // otherwise.
@@ -25539,7 +25545,7 @@ index 4b99e4454..b7dd32c51 100644
                                   SmallVectorImpl<Expr *> &PlacementArgs) {
    if (auto *MD = dyn_cast<CXXMethodDecl>(&FD)) {
      if (MD->isImplicitObjectMemberFunction() && !isLambdaCallOperator(MD)) {
-@@ -1389,7 +1632,7 @@ static bool collectPlacementArgs(Sema &S, FunctionDecl &FD, SourceLocation Loc,
+@@ -1389,7 +1633,7 @@ static bool collectPlacementArgs(Sema &S, FunctionDecl &FD, SourceLocation Loc,
      }
    }
  
@@ -25548,7 +25554,7 @@ index 4b99e4454..b7dd32c51 100644
      if (PD->getType()->isDependentType())
        continue;
  
-@@ -1589,18 +1832,25 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+@@ -1589,18 +1833,25 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
    if (FoundNonAlignedInPromise) {
      S.Diag(OperatorNew->getLocation(),
             diag::warn_non_aligned_allocation_function)
@@ -25577,7 +25583,7 @@ index 4b99e4454..b7dd32c51 100644
  
      return false;
    }
-@@ -1648,10 +1898,12 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+@@ -1648,10 +1899,12 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
      if (!AlignValTy)
        return false;
  
@@ -25594,7 +25600,7 @@ index 4b99e4454..b7dd32c51 100644
    }
  
    // Make new call.
-@@ -1868,7 +2120,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1868,7 +2121,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
    assert(!GroType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
@@ -25606,7 +25612,7 @@ index 4b99e4454..b7dd32c51 100644
    assert(!FnRetType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
-@@ -1906,8 +2161,8 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1906,8 +2162,8 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
      ReturnStmt = S.BuildReturnStmt(Loc, ReturnValue);
    } else {
      GroDecl = VarDecl::Create(
@@ -25617,7 +25623,7 @@ index 4b99e4454..b7dd32c51 100644
          S.BuildDecltypeType(ReturnValue).getCanonicalType(),
          S.Context.getTrivialTypeSourceInfo(GroType, Loc), SC_None);
      GroDecl->setImplicit();
-@@ -1989,8 +2244,9 @@ static VarDecl *buildVarDecl(Sema &S, SourceLocation Loc, QualType Type,
+@@ -1989,8 +2245,9 @@ static VarDecl *buildVarDecl(Sema &S, SourceLocation Loc, QualType Type,
  // Build statements that move coroutine function parameters to the coroutine
  // frame, and store them on the function scope info.
  bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
@@ -25629,7 +25635,7 @@ index 4b99e4454..b7dd32c51 100644
  
    auto *ScopeInfo = getCurFunction();
    if (!ScopeInfo->CoroutineParameterMoves.empty())
-@@ -2002,7 +2258,7 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
+@@ -2002,7 +2259,7 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
    //   parameter of type cv T, the copy is a variable of type cv T with
    //   automatic storage duration that is direct-initialized from an xvalue of
    //   type T referring to the parameter.
@@ -46945,10 +46951,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..805fa0c95
+index 000000000..c7ae5e678
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1238 @@
+@@ -0,0 +1,1236 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47961,13 +47967,11 @@ index 000000000..805fa0c95
 +bool unsupportedIsolatedConsumption(const Sema &S, QualType Type,
 +                                    const ParmVarDecl *Parameter,
 +                                    FunctionProtoType::ExtParameterInfo Info) {
-+  const bool ARC = S.getLangOpts().ObjCAutoRefCount;
-+  const bool ConsumedValue = ARC ? Type->isObjCRetainableType()
-+      : (Type->isObjCObjectPointerType() || Type->isBlockPointerType());
++  const bool ConsumedValue = Type->isObjCRetainableType() || isObjC3NSObjectStorageType(Type);
 +  const bool Foreign = Info.isCFConsumed() ||
 +      (Parameter && Parameter->hasAttr<CFConsumedAttr>());
 +  const bool ForeignValue = Type->isPointerType() &&
-+      !Type->isObjCRetainableType() && !Type->getPointeeType()->isFunctionType() &&
++      !Type->getPointeeType()->isFunctionType() &&
 +      Type.getAddressSpace() == LangAS::Default &&
 +      Type->getPointeeType().getAddressSpace() == LangAS::Default;
 +  return ((Info.isConsumed() ||
@@ -55270,10 +55274,10 @@ index a179016d4..dbd6f2e4a 100644
  public:
 diff --git a/clang/test/ObjC3/Sema/native-cf-isolation-errors.m b/clang/test/ObjC3/Sema/native-cf-isolation-errors.m
 new file mode 100644
-index 000000000..2785bde70
+index 000000000..16250ea15
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-cf-isolation-errors.m
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,33 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2  -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2  -fsyntax-only -verify %s
@@ -55294,9 +55298,18 @@ index 000000000..2785bde70
 +}
 +typedef const struct __CFBridged *BridgedCFRef __attribute__((NSObject));
 +int bridged_foreign(__attribute__((cf_consumed)) BridgedCFRef)
-+    __attribute__((nothrow,objc_executor(main))); // expected-note@-1 {{concurrency boundary is declared here}}
++    __attribute__((nothrow,objc_executor(main)));
 +int reject_bridged_foreign(BridgedCFRef value) __objc3_async_frame {
-+  return __objc3_await bridged_foreign(value); // expected-error {{awaited isolated entry requires}}
++  return __objc3_await bridged_foreign(value);
++}
++
++// NSObject-backed pointers are admitted; function-pointer CF contracts remain
++// outside the native value/ownership contract.
++typedef void (*CodePointer)(void);
++int invalid_foreign_code(__attribute__((cf_consumed)) CodePointer)
++    __attribute__((nothrow,objc_executor(main))); // expected-note@-1 {{concurrency boundary is declared here}}
++int reject_foreign_code(CodePointer value) __objc3_async_frame {
++  return __objc3_await invalid_foreign_code(value); // expected-error {{awaited isolated entry requires}}
 +}
 diff --git a/clang/test/ObjC3/Sema/ordinary-coroutine-effect-errors.mm b/clang/test/ObjC3/Sema/ordinary-coroutine-effect-errors.mm
 new file mode 100644
@@ -55971,3 +55984,31 @@ index 000000000..3f95fcc14
 +  callback_escape(loan); // expected-error {{argument without a non-escaping lifetime contract}}
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Sema/nsobject-canonical-cxx-storage.mm b/clang/test/ObjC3/Sema/nsobject-canonical-cxx-storage.mm
+new file mode 100644
+index 000000000..d53732597
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/nsobject-canonical-cxx-storage.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// expected-no-diagnostics
++typedef void *NativeObject __attribute__((NSObject));
++template<class T> struct Payload {
++  using Stored=T;
++  union Storage {
++    char empty;
++    Stored value;
++    Storage():empty(){}
++    ~Storage(){}
++  } storage;
++};
++template<class T> struct PointerBox:Payload<T> {
++  PointerBox()=default;
++  PointerBox(const PointerBox&)=default;
++  PointerBox(PointerBox&&)=default;
++};
++static_assert(!__is_constructible(PointerBox<NativeObject>,const PointerBox<NativeObject>&));
++using BorrowedObject=__unsafe_unretained NativeObject;
++static_assert(__is_constructible(PointerBox<BorrowedObject>,const PointerBox<BorrowedObject>&));
++void use_storage() {PointerBox<NativeObject> owning;PointerBox<BorrowedObject> borrowed;}

@@ -246,6 +246,12 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     arc_task_results = compile_source(case, work / "task-results.mm", work,
                         language="objective-c++", standard="c++20", ownership="arc",
                         output_name="arc-task-results.o")
+                    mrc_integrated_cf = compile_source(case, work / "integrated-cf.mm", work,
+                        language="objective-c++", standard="c++20", ownership="mrc",
+                        output_name="mrc-integrated-cf.o", extra=("-fobjc-weak",))
+                    arc_integrated_cf = compile_source(case, work / "integrated-cf.mm", work,
+                        language="objective-c++", standard="c++20", ownership="arc",
+                        output_name="arc-integrated-cf.o", extra=("-fobjc-weak",))
                     cf_runtime = compile_source(case, work / "cf-runtime.m", work,
                         language="objective-c", standard="c17", ownership="mrc",
                         output_name="cf-runtime.o")
@@ -276,6 +282,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     (work / "initializing.m").unlink()
                     (work / "task-consuming.mm").unlink()
                     (work / "task-results.mm").unlink()
+                    (work / "integrated-cf.mm").unlink()
                     (work / "cf-runtime.m").unlink()
                     (work / "cf-consuming.mm").unlink()
                     (work / "cf-results.m").unlink()
@@ -283,6 +290,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     client = compile_source(case, work / "client.m", work, extra=extra)
                     execute(case, [provider, owned_packet, cxx_packet, consuming, mrc_consuming,
                                    mrc_task_consuming, arc_task_consuming, mrc_task_results, arc_task_results,
+                                   mrc_integrated_cf, arc_integrated_cf,
                                    mrc_initializing, arc_initializing,
                                    cf_runtime, cf_consuming, cf_arc_consuming, cf_results, cf_arc_results,
                                    snapshots, automatic, client], work)

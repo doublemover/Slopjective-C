@@ -86,6 +86,25 @@ template <class T, class = void> struct result_traits {
     return *static_cast<const storage *>(value);
   }
 };
+#ifdef __OBJC__
+// A pointer result's operation table owns its claim. Keep ARC out of the
+// physical slot even when a source NSObject typedef survives substitution.
+// The qualifier is intentionally inert for ordinary C pointer instantiations.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wignored-attributes"
+template<class T>
+struct result_traits<T, std::enable_if_t<__is_pointer(T) &&
+    !__objc3_is_object_pointer(T) && !__objc3_is_block_pointer(T)>> {
+  using abi_type = __unsafe_unretained T;
+  using storage = __unsafe_unretained T;
+  static constexpr auto kind = OBJC3_ASYNC_VALUE;
+  static constexpr size_t storage_size = sizeof(storage);
+  static constexpr size_t storage_alignment = alignof(storage);
+  static const void *address(const storage &value) {return &value;}
+  static T read(const void *value) {return *static_cast<const storage *>(value);}
+};
+#pragma clang diagnostic pop
+#endif
 template <> struct result_traits<void> {
   using abi_type = void;
   static constexpr auto kind = OBJC3_ASYNC_VOID;
@@ -261,8 +280,8 @@ template <class T, class Promise> struct result_storage {
   result_storage(const result_storage &) = delete;
   result_storage &operator=(const result_storage &) = delete;
   void __objc3_set_cf_result_ops(const objc3_value_ops *ops, bool adopt) noexcept {
-    static_assert(std::is_pointer_v<stored_type>,
-                  "native CF task results require plain pointer storage");
+    static_assert(__is_pointer(stored_type),
+                  "native CF/NSObject task results require pointer storage");
     __objc3_foreign_ops = ops;
     __objc3_foreign_adopt = adopt;
   }
@@ -271,7 +290,7 @@ template <class T, class Promise> struct result_storage {
       __objc3_foreign_ops->destroy(&*value);
   }
   template <class U> void return_value(U &&result) {
-    if constexpr (std::is_pointer_v<stored_type>) {
+    if constexpr (__is_pointer(stored_type)) {
       if (__objc3_foreign_ops) {
         stored_type incoming(std::forward<U>(result));
         stored_type replacement{};
@@ -1018,7 +1037,7 @@ inline task<void> finish_task_group(task_group_handle group) {
 // result type; evaluated native async calls return this lazy runtime carrier.
 template <class T> using __objc3_async_task = objc3::task<T>;
 
-// Sema resolves this hook for a native CF-result promise. The compiler emits
+// Sema resolves this hook for CF/NSObject pointer-result promises. The compiler emits
 // the declaration-specific copy/move/destroy table without inferring ownership
 // from the raw pointer type or changing the public task carrier layout.
 template<class Promise>

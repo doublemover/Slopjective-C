@@ -23,7 +23,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                                             |
 | Isolation          | Plain opaque CF consumed arguments across synchronous, native-frame and C++ task entries                                    | Source authored; focused native execution passes                                             |
 | Isolation          | Ordinary C++ coroutine function, Objective-C++ method and Block consumed ownership                                          | Source authored; focused source/PCH and native execution pass                                |
-| Isolation          | Remaining crossings, NSObject-backed CF storage and managed values                                                          | Open                                                                                         |
+| Isolation          | NSObject-backed CF/NS storage, strong/weak/unsafe captures and result ownership                                                | Source authored; focused native checks in progress                                            |
+| Isolation          | Remaining crossings and managed values                                                                                      | Open                                                                                         |
 | Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | Task-ABI initializer/object/CF results and typed nil entries                                                                | Source authored; focused native execution passes                                             |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                                                         |
@@ -356,3 +357,18 @@ and ordered builtin diagnostic mappings to canonical publication. Matching types
 and expressions undergo dependency checks. Native declaration attribute capability
 v2 is a hard cutover. Six source modes and focused syntax checks pass; native
 frontend/package execution remains in the consolidation batch.
+
+## NSObject-backed pointer storage
+
+The [2.103 storage span](linux_nsobject_cf_storage.md) supplies independent CF/NS
+entry claims and lazy pins for NSObject pointer aliases, strong/weak/unsafe slots
+and ordinary/retained/borrowed results in synchronous isolation, native frames and
+C++ tasks. Weak pins and MRC body handoffs load the object through its weak
+operation, preserving the runtime slot representation. Canonical C++ ownership
+qualifiers retain consistent union/optional lifetime facts. Interfaces require
+`objc3.nsobject-storage.v1` and reject missing/invented or unsupported claims.
+
+Focused source/PCH and native AST checks pass. The final 1,084-case native configuration
+passes at C17/MRC/O0/source; two optimized configurations and frontend/package
+consolidation remain pending. Managed unions, other crossings, full profiles and SDK delivery
+remain separate obligations.

@@ -108,6 +108,10 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     out += "!unmodeled";
     return;
   }
+  if (clang::isObjC3NSObjectStorageType(type)) {
+    AppendNativeContractField(out, position + ":nsobject-storage");
+    AppendNativeContractField(out, ";nsobject-storage:v1;");
+  }
   if (const auto nullability = type->getNullability()) {
     AppendNativeContractField(out, position + ":nullability");
     AppendNativeContractField(out, std::to_string(static_cast<unsigned>(*nullability)));

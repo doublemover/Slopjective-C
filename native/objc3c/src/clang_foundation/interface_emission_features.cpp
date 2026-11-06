@@ -133,6 +133,30 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNSObjectStorage(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [declaration](const clang::Stmt *statement) {
+    struct Storage : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      void NoteType(clang::QualType type) {
+        if (type.isNull() || found) return;
+        std::string contracts;
+        AppendNativeTypeContracts(contracts,type,*context,"body");
+        found |= contracts.find(";nsobject-storage:v1;")!=std::string::npos;
+      }
+      const clang::ASTContext *context=nullptr;
+      bool VisitType(clang::Type *type) override {NoteType(clang::QualType(type,0));return true;}
+      bool VisitVarDecl(clang::VarDecl *variable) override {NoteType(variable->getType());return true;}
+      bool VisitDeclRefExpr(clang::DeclRefExpr *reference) override {NoteType(reference->getDecl()->getType());return true;}
+      bool VisitCallExpr(clang::CallExpr *call) override {
+        if(const auto *function=call->getDirectCallee()) {NoteType(function->getType());}
+        return true;
+      }
+    } visitor;
+    visitor.context=&declaration->getASTContext();
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationBorrowedCallableOwner(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
     struct Ownership : clang::DynamicRecursiveASTVisitor {

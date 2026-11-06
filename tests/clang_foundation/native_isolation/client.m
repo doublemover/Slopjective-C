@@ -538,6 +538,104 @@ int main(void) {
       }
     }
 
+
+    // NSObject-backed CF values have independent manual CF and ARC owners.
+    // Exercise normal/cancelled/unused entries and drop borrowed producers
+    // after publication, before their native/task callers read the result.
+    for (int ownership = 0; ownership != 2; ++ownership) {
+      for (int task_caller = 0; task_caller != 3; ++task_caller) {
+        for (int kind = 0; kind != 30; ++kind) {
+          for (int outcome = 0; outcome != 6; ++outcome) {
+#ifdef OBJC3_INTEGRATED_CF_TRACE
+            fprintf(stderr,"integrated CF: ownership=%d caller=%d kind=%d outcome=%d\n",ownership,task_caller,kind,outcome);
+#endif
+            int before = hop_destroyed();
+            if (ownership) hop_arc_integrated_cf_reset(); else hop_integrated_cf_reset();
+            @autoreleasepool {
+              objc3_executor_t *destination = task_caller == 2 ? main_destination : caller;
+              if (task_caller)
+                frame = ownership ? hop_arc_integrated_cf_task_roundtrip(kind, destination) :
+                                    hop_integrated_cf_task_roundtrip(kind, destination);
+              else
+                frame = ownership ? hop_arc_integrated_cf_roundtrip(kind, destination) :
+                                    hop_integrated_cf_roundtrip(kind, destination);
+              type = frame.result_type;
+              task = 0;
+              assert(objc3_async_frame_start(&frame, destination, 0, &task) == OBJC3_SERVICE_OK);
+              if (outcome == 1) objc3_task_request_cancel(task);
+              if (outcome == 5) {
+                assert(objc3_executor_pump(destination, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+                assert((ownership ? hop_arc_integrated_cf_entries() : hop_integrated_cf_entries()) == 0);
+                objc3_task_request_cancel(task);
+              }
+              if (outcome >= 2 && outcome <= 4) {
+                for (unsigned step = 0; step != 10000; ++step) {
+                  int progress = outcome == 2 ?
+                      (ownership ? hop_arc_integrated_cf_entries() : hop_integrated_cf_entries()) :
+                      (ownership ? hop_arc_integrated_cf_completed() : hop_integrated_cf_completed());
+                  if (progress) break;
+                  assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+                  assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK);
+                }
+                assert((outcome == 2 ?
+                    (ownership ? hop_arc_integrated_cf_entries() : hop_integrated_cf_entries()) :
+                    (ownership ? hop_arc_integrated_cf_completed() : hop_integrated_cf_completed())) == 1);
+                if (outcome >= 3) {
+                  if (ownership) hop_arc_integrated_cf_release_owner(); else hop_integrated_cf_release_owner();
+                }
+                if (outcome != 4) objc3_task_request_cancel(task);
+              }
+              objc3_completion completion = finish(task);
+              if (outcome == 0 || outcome == 4) {
+                if (completion.kind != OBJC3_COMPLETION_SUCCESS) {
+                  objc3_service_status failure = OBJC3_SERVICE_OK;
+                  (void)objc3_async_error_get_service(completion.error, &failure);
+                  fprintf(stderr, "integrated CF ownership=%d caller=%d kind=%d outcome=%d completion=%u service=%d\n",
+                          ownership, task_caller, kind, outcome, completion.kind, failure);
+                }
+                assert(completion.kind == OBJC3_COMPLETION_SUCCESS);
+                result = -1;
+                assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+                assert(result == (kind == 6 || kind == 9 ? 0 : 42));
+              } else assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+              int entered = ownership ? hop_arc_integrated_cf_entries() : hop_integrated_cf_entries();
+              int done = ownership ? hop_arc_integrated_cf_completed() : hop_integrated_cf_completed();
+              int objects = ownership ? hop_arc_integrated_cf_created() : hop_integrated_cf_created();
+              assert(entered == (outcome != 1 && outcome != 5));
+              assert(done == (outcome == 0 || outcome == 3 || outcome == 4 ||
+                  (outcome == 2 && ((kind >= 12 && kind <= 16) || kind == 19))));
+              if (outcome == 1) assert(objects == 0);
+              else if (outcome == 5) assert(objects >= 0 && objects <= (kind < 4 || kind == 5 || kind == 8 || kind == 10 || kind == 11 || kind == 12 || kind == 14 || kind == 15 || kind >= 19));
+              else {
+                int expected = kind < 4 ? 1 + ((kind == 2 || kind == 3) && entered) :
+                    kind == 12 || kind >= 19 ? 1 : kind == 5 || kind == 8 || kind == 10 || kind == 11 || kind == 14 || kind == 15 ? 1 :
+                    kind == 4 || kind == 7 || kind == 13 || kind >= 16 ? done : 0;
+                assert(objects == expected);
+              }
+              if (ownership) hop_arc_integrated_cf_release_owner(); else hop_integrated_cf_release_owner();
+              objc3_task_release(task);
+            }
+            int objects = ownership ? hop_arc_integrated_cf_created() : hop_integrated_cf_created();
+            for (unsigned step = 0; step != 1000000 && hop_destroyed() != before + objects; ++step)
+              sched_yield();
+            assert(hop_destroyed() == before + objects);
+          }
+        }
+      }
+      for (int task_entry = 0; task_entry != 2; ++task_entry) {
+        int before = hop_destroyed();
+        if (ownership) hop_arc_integrated_cf_reset(); else hop_integrated_cf_reset();
+        @autoreleasepool {
+          frame = ownership ? hop_arc_integrated_cf_unstarted(task_entry) :
+                              hop_integrated_cf_unstarted(task_entry);
+          assert((ownership ? hop_arc_integrated_cf_created() : hop_integrated_cf_created()) == 1);
+          assert((ownership ? hop_arc_integrated_cf_entries() : hop_integrated_cf_entries()) == 0);
+          assert(objc3_async_frame_dispose(&frame) == OBJC3_SERVICE_OK);
+        }
+        assert(hop_destroyed() == before + 1);
+      }
+    }
+
     for (int ownership = 0; ownership != 2; ++ownership) {
       for (int task_caller = 0; task_caller != 3; ++task_caller) {
         for (int kind = 0; kind != 15; ++kind) {

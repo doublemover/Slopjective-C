@@ -447,6 +447,71 @@ void TestDependentKeyPathLiteralBodies() {
   }
 }
 
+
+void TestNSObjectStorageCapability() {
+  for(const char *standard:{"c17","c++20","c++23"}) {
+    const bool cxx=std::string(standard)!="c17";
+    for(bool arc:{false,true}) {
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+      if(arc)args.push_back("-fobjc-arc");
+      const std::string source=R"(
+        typedef void *NativeObject __attribute__((NSObject));
+        typedef NativeObject NativeAlias;
+        void native_value(NativeObject);
+        void native_consume(NativeObject __attribute__((cf_consumed)));
+        NativeObject native_create(void) __attribute__((cf_returns_retained));
+        void plain_value(void *);
+        #ifdef __cplusplus
+        inline int body_only(void *input) {
+          typedef void *LocalObject __attribute__((NSObject));
+          LocalObject local=(LocalObject)input;return local!=0;
+        }
+        template<class T> NativeObject native_identity(T input){return (NativeObject)input;}
+        #endif
+      )";
+      auto emit=[&](const std::string &text,const char *file,const std::vector<std::string>&exports) {
+        auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,file);
+        assert(ast&&!ast->getDiagnostics().hasErrorOccurred());
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.nsobject_storage","test",{},{},{},exports);
+        for(const auto&d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);return result;
+      };
+      auto plain=emit(source,"plain-storage.m",{"plain_value"});
+      assert(plain.sidecar_json.find(kNSObjectStorageSemantic)==std::string::npos);
+      std::vector<std::string> names={"NativeObject","NativeAlias","native_value","native_consume","native_create"};
+      if(cxx){names.push_back("body_only");names.push_back("native_identity");}
+      for(const auto&name:names) {
+        const std::vector<std::string> exports=name=="NativeObject" || name=="body_only"
+            ? std::vector<std::string>{name} : std::vector<std::string>{"NativeObject",name};
+        auto first=emit(source,"nsobject-provider.m",exports);
+        assert(first.sidecar_json.find(kNSObjectStorageSemantic)!=std::string::npos);
+        auto replayed=emit(first.source_bytes,"relocated/nsobject-consumer.m",exports);
+        assert(first.identity.semantic_fingerprint==replayed.identity.semantic_fingerprint);
+        auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+        std::vector<llvm::StringRef> supported;
+        for(const auto&item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+        auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+        auto older=supported;std::erase(older,llvm::StringRef(kNSObjectStorageSemantic));
+        auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+        assert(!rejected);llvm::consumeError(rejected.takeError());
+        auto missing=*decoded;std::erase(missing.required_semantics,kNSObjectStorageSemantic);
+        auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);
+        llvm::consumeError(invalid.takeError());
+        auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+        invented->required_semantics.push_back(kNSObjectStorageSemantic);
+        auto fabricated=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!fabricated);
+        llvm::consumeError(fabricated.takeError());
+      }
+      auto first=emit(source,"integrated-storage.m",{"NativeObject"});
+      auto changed=source;const std::string attribute=" __attribute__((NSObject))";
+      const auto at=changed.find(attribute);assert(at!=std::string::npos);changed.erase(at,attribute.size());
+      auto erased=emit(changed,"erased-storage.m",{"NativeObject"});
+      assert(first.identity.semantic_fingerprint!=erased.identity.semantic_fingerprint);
+    }
+  }
+}
+
 void TestBorrowedCallableOwnerCapability() {
   for (const char *standard : {"c17", "c++20", "c++23"}) {
     const bool cxx = std::string(standard) != "c17";
@@ -6339,6 +6404,7 @@ int main() {
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
   TestDependentKeyPathLiteralBodies();
+  TestNSObjectStorageCapability();
   TestBorrowedCallableOwnerCapability();
   TestAsyncConsumedOwnershipCapability();
   TestConsumedAndMethodOwnershipRoundTrips();

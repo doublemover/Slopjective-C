@@ -2,7 +2,16 @@
 #include <assert.h>
 #include <stdatomic.h>
 #include <stdlib.h>
-struct HopCFObject { _Atomic unsigned claims; int value; };
+#include <stdint.h>
+#include <objc/runtime.h>
+#include <objc/objc-arc.h>
+#define HOP_CF_MAGIC UINT64_C(0x4f3343465f4d414e)
+struct HopCFObject { uintptr_t magic; _Atomic unsigned claims; int value; };
+static int is_plain_cf(const void *opaque) {
+  uintptr_t tag;
+  __builtin_memcpy(&tag, opaque, sizeof(tag));
+  return tag == HOP_CF_MAGIC;
+}
 static _Atomic int arguments, entries, destroyed, live;
 static _Thread_local int fail_allocation;
 extern void hop_fail_second_frame_allocation(void);
@@ -20,6 +29,7 @@ HopCFRef hop_cf_source(objc3_executor_t *caller) {
   assert(objc3_executor_is_current(caller));
   struct HopCFObject *value = calloc(1, sizeof(*value));
   assert(value);
+  value->magic = HOP_CF_MAGIC;
   atomic_init(&value->claims, 1);
   value->value = 42;
   atomic_fetch_add(&arguments, 1);
@@ -34,6 +44,7 @@ HopCFRef hop_cf_source(objc3_executor_t *caller) {
 }
 const void *CFRetain(const void *opaque) {
   assert(opaque); // Compiler-owned optional slots must skip null.
+  if (!is_plain_cf(opaque)) return (__bridge const void *)objc_retain((__bridge id)opaque);
   struct HopCFObject *value = (struct HopCFObject *)opaque;
   unsigned before = atomic_fetch_add(&value->claims, 1);
   assert(before > 0);
@@ -41,6 +52,7 @@ const void *CFRetain(const void *opaque) {
 }
 void CFRelease(const void *opaque) {
   assert(opaque);
+  if (!is_plain_cf(opaque)) {objc_release((__bridge id)opaque);return;}
   struct HopCFObject *value = (struct HopCFObject *)opaque;
   unsigned before = atomic_fetch_sub(&value->claims, 1);
   assert(before > 0);

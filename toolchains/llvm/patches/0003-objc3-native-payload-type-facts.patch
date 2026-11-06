@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..ac969f2ad
+index 000000000..6fc826f57
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,961 @@
+@@ -0,0 +1,981 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -1731,12 +1731,32 @@ index 000000000..ac969f2ad
 +  ASSERT_FALSE(index::generateUSRForType(Frame,Context,FrameUSR));
 +  EXPECT_NE(TaskUSR.str(),FrameUSR.str());
 +}
++
++TEST(ObjC3TypeContracts, NSObjectStorageSurvivesOrdinaryTypedefChains) {
++  for (bool ARC : {false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++","-std=c++23",
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=parse("typedef void *Original __attribute__((NSObject));typedef Original Alias;typedef Alias Final;void object_value(Final);void raw_value(void*);",Args);
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    auto Object=findFunction(AST->getASTContext(),"object_value")->getParamDecl(0)->getType();
++    auto Raw=findFunction(AST->getASTContext(),"raw_value")->getParamDecl(0)->getType();
++    EXPECT_TRUE(Object->isObjCNSObjectType());EXPECT_TRUE(Object->isObjCRetainableType());
++    EXPECT_FALSE(Raw->isObjCNSObjectType());EXPECT_FALSE(Raw->isObjCRetainableType());
++    auto Target=parse("",Args);ASSERT_TRUE(Target);
++    ASTImporter Importer(Target->getASTContext(),Target->getFileManager(),AST->getASTContext(),AST->getFileManager(),false);
++    auto Imported=Importer.Import(const_cast<FunctionDecl *>(findFunction(AST->getASTContext(),"object_value")));
++    ASSERT_TRUE(bool(Imported));
++    auto ImportedType=cast<FunctionDecl>(*Imported)->getParamDecl(0)->getType();
++    EXPECT_TRUE(ImportedType->isObjCNSObjectType());EXPECT_TRUE(ImportedType->isObjCRetainableType());
++  }
++}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..65e911c9d
+index 000000000..f18a58dbd
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,273 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1799,12 +1819,18 @@ index 000000000..65e911c9d
 +
 +/// Whether an async entry must preserve a manually consumed object claim.
 +/// This predicate describes the ownership contract, independently of ARC mode.
++/// Canonical C++ substitutions can retain an ownership qualifier after the
++/// NSObject typedef sugar disappears. Those C pointers still have ObjC slots.
++inline bool isObjC3NSObjectStorageType(QualType Type) {
++  return !Type.isNull() && (Type->isObjCNSObjectType() ||
++      (Type->isPointerType() && Type.getObjCLifetime() != Qualifiers::OCL_None));
++}
++
 +inline bool isObjC3ConsumedAsyncParameter(const Decl *Callable,
 +                                        const VarDecl *Parameter) {
 +  if (!isObjC3OwningAsyncEntry(Callable)) return false;
 +  QualType Type = Parameter->getType();
-+  if (!Type->isObjCObjectPointerType() && !Type->isBlockPointerType())
-+    return false;
++  if (!Type->isObjCRetainableType() && !isObjC3NSObjectStorageType(Type)) return false;
 +  if (Parameter->hasAttr<NSConsumedAttr>() ||
 +      getObjC3AsyncParameterInfo(Callable, Parameter).isConsumed()) return true;
 +  const auto *Method = dyn_cast<ObjCMethodDecl>(Callable);
@@ -1819,7 +1845,9 @@ index 000000000..65e911c9d
 +       !getObjC3AsyncParameterInfo(Callable, Parameter).isCFConsumed()))
 +    return false;
 +  QualType T = Parameter->getType();
-+  return T->isPointerType() && !T->isObjCRetainableType() &&
++  // NSObject-backed C pointers keep their manual CF contract independently
++  // of any ARC-managed parameter storage.
++  return T->isPointerType() &&
 +         !T->getPointeeType()->isFunctionType() &&
 +         T.getAddressSpace() == LangAS::Default &&
 +         T->getPointeeType().getAddressSpace() == LangAS::Default;
@@ -1830,7 +1858,10 @@ index 000000000..65e911c9d
 +inline bool isObjC3OwnedAsyncResult(const Decl *Callable) {
 +  const auto *Type = getObjC3CallableFunctionType(Callable);
 +  if (!Type || !Type->getObjC3FunctionEffects().Async ||
-+      !Type->getReturnType()->isObjCRetainableType()) return false;
++      (!Type->getReturnType()->isObjCRetainableType() &&
++       !isObjC3NSObjectStorageType(Type->getReturnType()))) return false;
++  if (Callable->hasAttr<CFReturnsRetainedAttr>() ||
++      Callable->hasAttr<CFReturnsNotRetainedAttr>()) return false;
 +  if (Callable->hasAttr<NSReturnsNotRetainedAttr>() ||
 +      Callable->hasAttr<NSReturnsAutoreleasedAttr>()) return false;
 +  if (Callable->hasAttr<NSReturnsRetainedAttr>() ||
@@ -1849,6 +1880,16 @@ index 000000000..65e911c9d
 +  return Type && Type->getObjC3FunctionEffects().AsyncFrame && isObjC3OwnedAsyncResult(Callable);
 +}
 +
++inline bool hasObjC3NSObjectResult(const Decl *Callable) {
++  if (!Callable || Callable->hasAttr<CFReturnsRetainedAttr>() ||
++      Callable->hasAttr<CFReturnsNotRetainedAttr>()) return false;
++  if (const auto *Type = getObjC3CallableFunctionType(Callable))
++    return isObjC3NSObjectStorageType(Type->getReturnType());
++  if (const auto *Method = dyn_cast<ObjCMethodDecl>(Callable))
++    return isObjC3NSObjectStorageType(Method->getReturnType());
++  return false;
++}
++
 +inline bool hasObjC3CFResultOwnership(const Decl *Callable) {
 +  if (!Callable || (!Callable->hasAttr<CFReturnsRetainedAttr>() &&
 +                    !Callable->hasAttr<CFReturnsNotRetainedAttr>())) return false;
@@ -1856,7 +1897,7 @@ index 000000000..65e911c9d
 +  if (const auto *Type = getObjC3CallableFunctionType(Callable)) Result = Type->getReturnType();
 +  else if (const auto *Method = dyn_cast<ObjCMethodDecl>(Callable)) Result = Method->getReturnType();
 +  if (Result.isNull()) return false;
-+  return Result->isPointerType() && !Result->isObjCRetainableType() &&
++  return Result->isPointerType() &&
 +         !Result->getPointeeType()->isFunctionType() &&
 +         Result.getAddressSpace() == LangAS::Default &&
 +         Result->getPointeeType().getAddressSpace() == LangAS::Default;

@@ -4176,7 +4176,7 @@ index 7421733ef..fc98b6929 100644
      }
      fields.push_back(fieldType);
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..df3a54158 100644
+index e84e05e8e..e20dc81a1 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,22 @@
@@ -4892,12 +4892,12 @@ index e84e05e8e..df3a54158 100644
    llvm::Value *ArgVal = (DoStore ? Arg.getDirectValue() : nullptr);
  
    LValue lv = MakeAddrLValue(DeclPtr, Ty);
-+  if (IsScalar && isObjC3CFConsumedAsyncParameter(CurCodeDecl, &D)) {
++  if (IsScalar && !CurFuncIsThunk && isObjC3CFConsumedAsyncParameter(CurCodeDecl, &D)) {
 +    if (!ArgVal) ArgVal = Builder.CreateLoad(DeclPtr);
 +    pushObjC3CFParameterCleanup(*this, ArgVal);
 +  }
-+  if (IsScalar && !getLangOpts().ObjCAutoRefCount &&
-+      isObjC3ConsumedAsyncParameter(CurCodeDecl, &D)) {
++  if (IsScalar && !CurFuncIsThunk && !getLangOpts().ObjCAutoRefCount &&
++      !Ty.getObjCLifetime() && isObjC3ConsumedAsyncParameter(CurCodeDecl, &D)) {
 +    // The MRC caller transfers one claim when the entry ramp is invoked.
 +    // This cleanup belongs to the ramp, outside the lazy frame scope, and
 +    // balances failed frame allocation as well as normal/EH ramp exits.
@@ -4908,6 +4908,16 @@ index e84e05e8e..df3a54158 100644
    // If this is a thunk, don't bother with ARC lifetime management.
    // The true implementation will take care of that.
    if (IsScalar && !CurFuncIsThunk) {
+@@ -2789,7 +3249,8 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+       // For __strong, it's handled by just skipping the initial retain;
+       // otherwise we have to balance out the initial +1 with an extra
+       // cleanup to do the release at the end of the function.
+-      bool isConsumed = D.hasAttr<NSConsumedAttr>();
++      bool isConsumed = D.hasAttr<NSConsumedAttr>() ||
++          isObjC3ConsumedAsyncParameter(CurCodeDecl, &D);
+ 
+       // If a parameter is pseudo-strong then we can omit the implicit retain.
+       if (D.isARCPseudoStrong()) {
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
 index 6a0d127fb..afc5af401 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
@@ -12569,7 +12579,7 @@ index e7c24f1f3..78b411bc1 100644
    }
  
 diff --git a/clang/lib/CodeGen/CodeGenModule.cpp b/clang/lib/CodeGen/CodeGenModule.cpp
-index 313a364e8..38789c90e 100644
+index 313a364e8..8cd08c4de 100644
 --- a/clang/lib/CodeGen/CodeGenModule.cpp
 +++ b/clang/lib/CodeGen/CodeGenModule.cpp
 @@ -11,6 +11,8 @@
@@ -12653,7 +12663,7 @@ index 313a364e8..38789c90e 100644
    // Compute the function info and LLVM type.
    const CGFunctionInfo &FI = getTypes().arrangeGlobalDeclaration(GD);
    llvm::FunctionType *Ty = getTypes().GetFunctionType(FI);
-@@ -7944,10 +7982,38 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
+@@ -7944,10 +7982,45 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
    if (D->isTemplated())
      return;
  
@@ -12688,6 +12698,13 @@ index 313a364e8..38789c90e 100644
 +  if (const auto *VD = dyn_cast<VarDecl>(D))
 +    if (getTypes().diagnoseUnsupportedObjC3Effects(VD->getType(), VD))
 +      return;
++
++  // Recovery bodies may contain placeholders with no IR type. Continue
++  // walking scopes and native containers for their diagnostics, while refusing
++  // to lower recovered function bodies and global initializers after errors.
++  if (getDiags().hasErrorOccurred() &&
++      isa<FunctionDecl, ObjCMethodDecl, VarDecl>(D))
++    return;
 +
    switch (D->getKind()) {
    case Decl::CXXConversion:
@@ -21759,7 +21776,7 @@ index 000000000..40774b374
 +ObjectCallback callback = object;
 +auto indirect(ObjectCallback call, Object *value) { return call(value); }
 diff --git a/clang/lib/CodeGen/CGCoroutine.cpp b/clang/lib/CodeGen/CGCoroutine.cpp
-index bf896f133..f2cb5e5a7 100644
+index bf896f133..7130b079c 100644
 --- a/clang/lib/CodeGen/CGCoroutine.cpp
 +++ b/clang/lib/CodeGen/CGCoroutine.cpp
 @@ -1,3 +1,4 @@
@@ -21928,7 +21945,7 @@ index bf896f133..f2cb5e5a7 100644
      }
  
      ~ParamReferenceReplacerRAII() {
-@@ -898,6 +974,32 @@ struct GetReturnObjectManager {
+@@ -898,6 +974,35 @@ struct GetReturnObjectManager {
  
  static void emitBodyAndFallthrough(CodeGenFunction &CGF,
                                     const CoroutineBodyStmt &S, Stmt *Body) {
@@ -21939,11 +21956,14 @@ index bf896f133..f2cb5e5a7 100644
 +          !isObjC3ConsumedAsyncParameter(CGF.CurCodeDecl, Original))) return;
 +      QualType T = Original->getType();
 +      LValue Slot = CGF.MakeAddrLValue(CGF.GetAddrOfLocalVar(Original), T);
-+      llvm::Value *Value = CGF.EmitLoadOfScalar(Slot, Original->getLocation());
++      const bool Weak = T.getObjCLifetime() == Qualifiers::OCL_Weak;
++      llvm::Value *Value = Weak ? CGF.EmitARCLoadWeakRetained(Slot.getAddress())
++          : CGF.EmitLoadOfScalar(Slot, Original->getLocation());
 +      llvm::Value *Owned = Foreign ? emitObjC3CFRetain(CGF, Value)
-+          : T->isBlockPointerType() ? CGF.EmitARCRetainBlock(Value, true)
-+                                    : CGF.EmitARCRetainNonBlock(Value);
-+      CGF.EmitStoreOfScalar(Owned, Slot, true);
++          : Weak ? Value : T->isBlockPointerType() ? CGF.EmitARCRetainBlock(Value, true)
++                                                  : CGF.EmitARCRetainNonBlock(Value);
++      if (Weak && Foreign) CGF.EmitARCRelease(Value, ARCPreciseLifetime);
++      if (!Weak) CGF.EmitStoreOfScalar(Owned, Slot, true);
 +    };
 +    // This path is reached only after initial await_resume succeeds and its
 +    // resume-exception guard admits the body. Cancellation before entry must
@@ -21961,7 +21981,7 @@ index bf896f133..f2cb5e5a7 100644
    CGF.EmitStmt(Body);
    const bool CanFallthrough = CGF.Builder.GetInsertBlock();
    if (CanFallthrough)
-@@ -922,6 +1024,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -922,6 +1027,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
        {Builder.getInt32(NewAlign), NullPtr, NullPtr, NullPtr});
    createCoroData(*this, CurCoro, CoroId);
  
@@ -21979,25 +21999,29 @@ index bf896f133..f2cb5e5a7 100644
    GetReturnObjectManager GroManager(*this, S);
    CurCoro.Data->SuspendBB =
        GroManager.DirectEmit ? RetBB : createBasicBlock("pre.gvo.conv");
-@@ -1002,16 +1115,92 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -1002,16 +1118,96 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
      }
      for (auto *PM : S.getParamMoves()) {
        EmitStmt(PM);
 -      ParamReplacer.addCopy(cast<DeclStmt>(PM));
 +      const VarDecl *Original = ParamReplacer.addCopy(cast<DeclStmt>(PM));
 +      const bool Foreign = isObjC3CFConsumedAsyncParameter(CurCodeDecl, Original);
-+      if (Foreign || (!getLangOpts().ObjCAutoRefCount &&
-+          isObjC3ConsumedAsyncParameter(CurCodeDecl, Original))) {
++      if (Foreign || (isObjC3ConsumedAsyncParameter(CurCodeDecl, Original) &&
++          (!getLangOpts().ObjCAutoRefCount ||
++           Original->getType().getObjCLifetime() != Qualifiers::OCL_Strong))) {
 +        // A plain MRC parameter copy has no C++ destructor. Give the lazy
 +        // coroutine an independent pin before promise construction can throw.
 +        // The adopting entry parameter's cleanup stays outside this frame.
 +        QualType T = Original->getType();
 +        LValue Slot = MakeAddrLValue(GetAddrOfLocalVar(Original), T);
-+        llvm::Value *Value = EmitLoadOfScalar(Slot, Original->getLocation());
++        const bool Weak = T.getObjCLifetime() == Qualifiers::OCL_Weak;
++        llvm::Value *Value = Weak ? EmitARCLoadWeakRetained(Slot.getAddress())
++            : EmitLoadOfScalar(Slot, Original->getLocation());
 +        llvm::Value *Owned = Foreign ? emitObjC3CFRetain(*this, Value)
-+            : T->isBlockPointerType() ? EmitARCRetainBlock(Value, true)
-+                                      : EmitARCRetainNonBlock(Value);
-+        EmitStoreOfScalar(Owned, Slot, true);
++            : Weak ? Value : T->isBlockPointerType() ? EmitARCRetainBlock(Value, true)
++                                                    : EmitARCRetainNonBlock(Value);
++        if (Weak && Foreign) EmitARCRelease(Value, ARCPreciseLifetime);
++        if (!Weak) EmitStoreOfScalar(Owned, Slot, true);
 +        struct ReleaseManualParameter final : EHScopeStack::Cleanup {
 +          llvm::Value *Owner;
 +          bool Foreign;
@@ -22065,11 +22089,11 @@ index bf896f133..f2cb5e5a7 100644
      EmitStmt(S.getPromiseDeclStmt());
  
      Address PromiseAddr = GetAddrOfLocalVar(S.getPromiseDecl());
-+    if (hasObjC3CFResultOwnership(CurCodeDecl))
++    if (hasObjC3CFResultOwnership(CurCodeDecl) || hasObjC3NSObjectResult(CurCodeDecl))
 +      if (const auto *Type = getObjC3CallableFunctionType(CurCodeDecl);
 +          Type && Type->getObjC3FunctionEffects().Async)
 +        initializeObjC3CFTaskResult(*this, S.getPromiseDecl(), Type->getReturnType(),
-+                                   CurCodeDecl->hasAttr<CFReturnsRetainedAttr>());
++            CurCodeDecl->hasAttr<CFReturnsRetainedAttr>(), hasObjC3CFResultOwnership(CurCodeDecl));
      // Update CoroId to refer to the promise. We could not do it earlier because
      // promise local variable was not emitted yet.
      CoroId->setArgOperand(1, PromiseAddr.emitRawPointer(*this));
@@ -25670,10 +25694,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..045495e0c
+index 000000000..2a48ffa8f
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1498 @@
+@@ -0,0 +1,1536 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25889,7 +25913,11 @@ index 000000000..045495e0c
 +  llvm_unreachable("Sema did not instantiate explicit C++ frame storage hook");
 +}
 +
-+llvm::Value *valueOps(CodeGenFunction &CGF, QualType T, bool Foreign = false) {
++llvm::Value *valueOps(CodeGenFunction &CGF, QualType T, bool Foreign = false,
++                      bool NSObject = false) {
++  if (NSObject)
++    return call(CGF, "objc3_async_reference_ops", CGF.Int8PtrTy,
++                {CGF.Builder.getInt32(1)});
 +  unsigned Kind = resultKind(T);
 +  if (Kind == 3) return nullPtr(CGF);
 +  if (Kind == 1 || Kind == 2)
@@ -26299,7 +26327,7 @@ index 000000000..045495e0c
 +} // namespace
 +
 +void clang::CodeGen::initializeObjC3CFTaskResult(CodeGenFunction &CGF, const VarDecl *Promise,
-+                                                QualType Result, bool Adopt) {
++                                                QualType Result, bool Adopt, bool Foreign) {
 +  auto &Ctx = CGF.getContext();
 +  for (NamedDecl *D : Ctx.getTranslationUnitDecl()->lookup(&Ctx.Idents.get("__objc3_async_cf_result_ops"))) {
 +    const auto *Template = dyn_cast<FunctionTemplateDecl>(D);
@@ -26309,7 +26337,7 @@ index 000000000..045495e0c
 +      if (!Args || Args->size() != 1 || !Ctx.hasSameType(Args->get(0).getAsType(), Promise->getType())) continue;
 +      CallArgList Arguments;
 +      Arguments.add(RValue::get(CGF.GetAddrOfLocalVar(Promise).emitRawPointer(CGF)), Function->getParamDecl(0)->getType());
-+      Arguments.add(RValue::get(valueOps(CGF, Result, true)), Function->getParamDecl(1)->getType());
++      Arguments.add(RValue::get(valueOps(CGF, Result, Foreign, !Foreign)), Function->getParamDecl(1)->getType());
 +      Arguments.add(RValue::get(CGF.Builder.getInt1(Adopt)), Function->getParamDecl(2)->getType());
 +      CGF.EmitCall(CGF.CGM.getTypes().arrangeFunctionDeclaration(Function),
 +          CGCallee::forDirect(CGF.CGM.GetAddrOfFunction(Function), CGCalleeInfo(GlobalDecl(Function))),
@@ -26606,7 +26634,8 @@ index 000000000..045495e0c
 +    Data.AwaitOwnerInitialization = Builder.CreateStore(Builder.getFalse(), Data.ResultLive);
 +    if (Data.ScopeEntered.isValid())
 +      Builder.CreateStore(Builder.getFalse(), Data.ScopeEntered);
-+    Data.ResultOps = valueOps(*this, Data.LogicalResult, hasObjC3CFResultOwnership(&Callable));
++    Data.ResultOps = valueOps(*this, Data.LogicalResult,
++        hasObjC3CFResultOwnership(&Callable), hasObjC3NSObjectResult(&Callable));
 +    EHStack.pushCleanup<DestroyResult>(NormalAndEHCleanup, Data.Result,
 +        Data.ResultLive, Data.Error, Data.ResultOps);
 +
@@ -26678,30 +26707,50 @@ index 000000000..045495e0c
 +        Initializer = ImplicitCastExpr::Create(getContext(), T,
 +            CK_LValueToRValue, Reference, nullptr, VK_PRValue, FPOptionsOverride());
 +      bool Receiver = Method && P == Method->getSelfDecl();
++      const bool ConsumedReference = isObjC3ConsumedFrameParameter(&Callable, P);
 +      bool TransferredReference =
 +          (Callable.hasAttr<ObjC3IsolationThunkAttr>() &&
-+           (T->isObjCObjectPointerType() || T->isBlockPointerType())) ||
-+          (!getLangOpts().ObjCAutoRefCount &&
-+           isObjC3ConsumedFrameParameter(&Callable, P));
++           (T->isObjCRetainableType() || isObjC3NSObjectStorageType(T))) ||
++          (ConsumedReference && (!getLangOpts().ObjCAutoRefCount ||
++              T.getObjCLifetime() != Qualifiers::OCL_Strong));
++      const bool ManagedReferenceSlot = TransferredReference && ConsumedReference &&
++          T.getObjCLifetime() != Qualifiers::OCL_Strong &&
++          (getLangOpts().ObjCAutoRefCount || T.getObjCLifetime() == Qualifiers::OCL_Weak);
 +      const bool ForeignConsumed = isObjC3CFConsumedAsyncParameter(&Callable, P);
 +      const bool ARCOwningSelf = Receiver &&
 +          getLangOpts().ObjCAutoRefCount && !P->isARCPseudoStrong();
 +      if (ForeignConsumed) {
-+        auto *Value = EmitLoadOfScalar(MakeAddrLValue(Original, T), P->getLocation());
++        const bool Weak = T.getObjCLifetime() == Qualifiers::OCL_Weak;
++        auto *Value = Weak ? EmitARCLoadWeakRetained(Original)
++            : EmitLoadOfScalar(MakeAddrLValue(Original, T), P->getLocation());
 +        auto *Owned = emitObjC3CFRetain(*this, Value);
-+        EmitStoreOfScalar(Owned, MakeAddrLValue(Copy, T), true);
++        if (Weak) EmitARCRelease(Value, ARCPreciseLifetime);
 +        pushObjC3CFParameterCleanup(*this, Owned);
++        if ((getLangOpts().ObjCAutoRefCount || T.getObjCLifetime() == Qualifiers::OCL_Weak) &&
++            (T->isObjCRetainableType() || isObjC3NSObjectStorageType(T)))
++          // The ARC slot is independent of the CF pin. Reassignment must
++          // release its current strong value, never the pin's original SSA.
++          EmitExprAsInit(Initializer, Synthetic, MakeAddrLValue(Copy, T), false);
++        else
++          EmitStoreOfScalar(Owned, MakeAddrLValue(Copy, T), true);
 +      } else if (ARCOwningSelf) {
 +        // Consuming self is a mutable strong local. Its cleanup must follow
 +        // the slot after reassignment rather than releasing the original SSA
 +        // pointer a second time. The ramp's adopted self remains independent.
 +        EmitExprAsInit(Initializer, Synthetic, MakeAddrLValue(Copy, T), false);
 +      } else if (Receiver || TransferredReference) {
-+        auto *Value = EmitLoadOfScalar(MakeAddrLValue(Original, T), P->getLocation());
-+        auto *Owned = T->isBlockPointerType() ? EmitARCRetainBlock(Value, true)
-+                                             : EmitARCRetainNonBlock(Value);
-+        EmitStoreOfScalar(Owned, MakeAddrLValue(Copy, T), true);
++        const bool Weak = T.getObjCLifetime() == Qualifiers::OCL_Weak;
++        auto *Value = Weak ? EmitARCLoadWeakRetained(Original)
++            : EmitLoadOfScalar(MakeAddrLValue(Original, T), P->getLocation());
++        // A weak slot can contain a runtime control pointer. Only its weak
++        // load operation yields the object that this independent pin owns.
++        auto *Owned = Weak ? Value : T->isBlockPointerType()
++            ? EmitARCRetainBlock(Value, true) : EmitARCRetainNonBlock(Value);
 +        EHStack.pushCleanup<ReleaseCapture>(NormalAndEHCleanup, Owned);
++        if (ManagedReferenceSlot)
++          EmitExprAsInit(Initializer, Synthetic, MakeAddrLValue(Copy, T), false);
++        else
++          EmitStoreOfScalar(Owned, MakeAddrLValue(Copy, T), true);
 +      } else if (hasCxxFrameStorage(*this, T)) {
 +        // Construct an independent owner from the ABI value parameter. Native
 +        // construction failure unwinds the ramp and already-built captures;
@@ -26714,12 +26763,18 @@ index 000000000..045495e0c
 +      LocalDeclMap.find(P)->second = Copy;
 +      BindCaptureDebugInfo(P, Copy);
 +      if (ForeignConsumed) {
-+        // The foreign pin above owns this raw pointer slot in both ARC modes.
++        // Integrated NSObject storage also has ordinary ARC slot ownership.
++        // The independently registered CF pin covers lazy entry/cancellation.
++        if (getLangOpts().ObjCAutoRefCount || T.getObjCLifetime() == Qualifiers::OCL_Weak)
++          if (auto DK = T.isDestructedType(); DK != QualType::DK_none)
++            pushDestroy(NormalAndEHCleanup, Copy, T, getDestroyer(DK), false);
 +      } else if (ARCOwningSelf) {
 +        pushDestroy(NormalAndEHCleanup, Copy, T,
 +                    destroyARCStrongPrecise, false);
 +      } else if (Receiver || TransferredReference) {
-+        // Dedicated owners cover MRC transfers and pseudo-strong self, too.
++        if (ManagedReferenceSlot)
++          if (auto DK = T.isDestructedType(); DK != QualType::DK_none)
++            pushDestroy(NormalAndEHCleanup, Copy, T, getDestroyer(DK), false);
 +      } else if (containsObjC3CarrierManagedStorage(T))
 +        pushDestroy(NormalAndEHCleanup, Copy, T, destroyObjC3ManagedStorage, false);
 +      else if (auto DK = T.isDestructedType(); DK != QualType::DK_none)
@@ -26772,11 +26827,16 @@ index 000000000..045495e0c
 +            !isObjC3ConsumedFrameParameter(&Callable, P))) continue;
 +        QualType T = P->getType();
 +        LValue Slot = MakeAddrLValue(GetAddrOfLocalVar(P), T);
-+        llvm::Value *Value = EmitLoadOfScalar(Slot, P->getLocation());
++        const bool Weak = T.getObjCLifetime() == Qualifiers::OCL_Weak;
++        llvm::Value *Value = Weak ? EmitARCLoadWeakRetained(Slot.getAddress())
++            : EmitLoadOfScalar(Slot, P->getLocation());
 +        llvm::Value *Owned = Foreign ? emitObjC3CFRetain(*this, Value)
-+            : T->isBlockPointerType() ? EmitARCRetainBlock(Value, true)
-+                                      : EmitARCRetainNonBlock(Value);
-+        EmitStoreOfScalar(Owned, Slot, true);
++            : Weak ? Value : T->isBlockPointerType() ? EmitARCRetainBlock(Value, true)
++                                                    : EmitARCRetainNonBlock(Value);
++        if (Weak && Foreign) EmitARCRelease(Value, ARCPreciseLifetime);
++        // Handoff creates a body claim, not a replacement weak slot. A raw
++        // store would overwrite the runtime's weak-reference representation.
++        if (!Weak) EmitStoreOfScalar(Owned, Slot, true);
 +      }
 +    }
 +
@@ -26970,7 +27030,8 @@ index 000000000..045495e0c
 +  } else if (E) {
 +    Address Source = CreateMemTemp(Data.LogicalResult, "objc3.return.source");
 +    const auto *Thunk = CurCodeDecl->getAttr<ObjC3IsolationThunkAttr>();
-+    bool OwnedReference = Data.LogicalResult->isObjCRetainableType() &&
++    bool OwnedReference = (Data.LogicalResult->isObjCRetainableType() ||
++        hasObjC3NSObjectResult(CurCodeDecl)) &&
 +        (getLangOpts().ObjCAutoRefCount || (Thunk && Thunk->getOwnedResult()) ||
 +         isObjC3OwnedFrameResult(CurCodeDecl));
 +    if (hasObjC3CFResultOwnership(CurCodeDecl) && CurCodeDecl->hasAttr<CFReturnsRetainedAttr>()) {
@@ -27097,7 +27158,8 @@ index 000000000..045495e0c
 +    Producer = Function->getReturnType();
 +  llvm::Value *Descriptor = frameResultDescriptor(*this, Producer);
 +  const bool Foreign = hasObjC3CFResultOwnership(getObjC3AsyncResultOwner(E.getOperand()));
-+  llvm::Value *Ops = valueOps(*this, T, Foreign);
++  const bool NSObject = hasObjC3NSObjectResult(getObjC3AsyncResultOwner(E.getOperand()));
++  llvm::Value *Ops = valueOps(*this, T, Foreign, NSObject);
 +  bool Temporary = T->isVoidType() || Slot.isIgnored();
 +  Address Result = T->isVoidType() ? Address::invalid()
 +      : Temporary ? Address(CreateMemTemp(T, "objc3.await.result"))
@@ -27117,7 +27179,7 @@ index 000000000..045495e0c
 +  // runtime cleanup destination selector. Result ownership outlives the child.
 +  AwaitScope.ForceCleanup();
 +  RValue Value = RValue::getIgnored();
-+  if (T->isObjCRetainableType()) {
++  if (T->isObjCRetainableType() || NSObject) {
 +    auto *Pointer = Builder.CreateLoad(Result);
 +    Value = RValue::get(EmitARCAutorelease(Pointer));
 +  } else if (!T->isVoidType()) {
@@ -27174,7 +27236,7 @@ index 000000000..045495e0c
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3Async.h b/clang/lib/CodeGen/CGObjC3Async.h
 new file mode 100644
-index 000000000..86116c025
+index 000000000..7a29052cd
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.h
 @@ -0,0 +1,47 @@
@@ -27198,7 +27260,7 @@ index 000000000..86116c025
 +class CodeGenFunction;
 +class Address;
 +bool emitObjC3NilAsyncFrame(CodeGenFunction &, Address, const ObjCMethodDecl *);
-+void initializeObjC3CFTaskResult(CodeGenFunction &, const VarDecl *, QualType, bool);
++void initializeObjC3CFTaskResult(CodeGenFunction &, const VarDecl *, QualType, bool, bool);
 +// Standard CF ownership operations skip null, which is valid optional storage
 +// but is not a valid operand for the foreign runtime's CFRetain/CFRelease.
 +llvm::Value *emitObjC3CFRetain(CodeGenFunction &, llvm::Value *);
@@ -30644,3 +30706,215 @@ index 000000000..0725b03f0
 +// CHECK-DAG: define{{.*}} @_Z14owner_overloadPU20objc3_borrowed_ownerILj1EEF
 +// CHECK-DAG: define{{.*}} @_Z15opaque_overloadPU21objc3_borrowed_resultF
 +// CHECK-DAG: define{{.*}} @_Z15opaque_overloadPFPKcP11objc_objectE
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-integrated-cf.h b/clang/test/ObjC3/CodeGen/Inputs/native-integrated-cf.h
+new file mode 100644
+index 000000000..1dad11759
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-integrated-cf.h
+@@ -0,0 +1,146 @@
++#ifndef NATIVE_INTEGRATED_CF_H
++#define NATIVE_INTEGRATED_CF_H
++#include "native-c-async-frame.h"
++#ifdef __cplusplus
++#include "native-async-task.h"
++template<class T> objc3_async_frame __objc3_async_to_frame(objc3::task<T>) noexcept;
++#define INTEGRATED_CF_NOEXCEPT noexcept
++extern "C" {
++#else
++#define INTEGRATED_CF_NOEXCEPT
++#endif
++typedef const struct IntegratedCFObject *IntegratedCFRef __attribute__((NSObject));
++typedef IntegratedCFRef IntegratedAlias;
++const void *CFRetain(const void *) __attribute__((nothrow,cf_returns_retained));
++void CFRelease(const void *) __attribute__((nothrow));
++IntegratedCFRef integrated_source(void) __attribute__((nothrow,cf_returns_retained));
++IntegratedCFRef integrated_borrowed(void) __attribute__((nothrow,cf_returns_not_retained,objc_executor(main)));
++int integrated_sync(__attribute__((cf_consumed)) IntegratedCFRef) __attribute__((nothrow,objc_executor(main)));
++#ifdef __cplusplus
++}
++#endif
++static int integrated_frame(__attribute__((cf_consumed)) IntegratedAlias value) INTEGRATED_CF_NOEXCEPT
++    __objc3_async_frame __attribute__((nothrow,objc_executor(main)));
++static int integrated_frame(__attribute__((cf_consumed)) IntegratedAlias value) INTEGRATED_CF_NOEXCEPT __objc3_async_frame {
++  int result=value!=0;
++  if(value) CFRelease(value);
++  value=0;
++  return result;
++}
++static IntegratedCFRef integrated_result(void) INTEGRATED_CF_NOEXCEPT __objc3_async_frame
++    __attribute__((nothrow,cf_returns_retained,objc_executor(main)));
++static IntegratedCFRef integrated_result(void) INTEGRATED_CF_NOEXCEPT __objc3_async_frame {return integrated_source();}
++#ifdef __cplusplus
++static int integrated_task(__attribute__((cf_consumed)) IntegratedCFRef value) noexcept __objc3_async __attribute__((objc_executor(main)));
++static int integrated_task(__attribute__((cf_consumed)) IntegratedCFRef value) noexcept __objc3_async {
++  int result=value!=0;if(value)CFRelease(value);value=0;return result;
++}
++static IntegratedCFRef integrated_task_result(void) noexcept __objc3_async __attribute__((cf_returns_retained,objc_executor(main)));
++static IntegratedCFRef integrated_task_result(void) noexcept __objc3_async {return integrated_source();}
++#endif
++static IntegratedCFRef integrated_object_result(void) INTEGRATED_CF_NOEXCEPT __objc3_async_frame
++    __attribute__((nothrow,objc_executor(main)));
++static IntegratedCFRef integrated_object_result(void) INTEGRATED_CF_NOEXCEPT __objc3_async_frame {return integrated_borrowed();}
++#ifdef __cplusplus
++static IntegratedCFRef integrated_object_task_result(void) noexcept __objc3_async __attribute__((objc_executor(main)));
++static IntegratedCFRef integrated_object_task_result(void) noexcept __objc3_async {return integrated_borrowed();}
++#endif
++IntegratedCFRef integrated_ns_source(void) __attribute__((nothrow,ns_returns_retained));
++static int integrated_ns_strong_frame(IntegratedCFRef value __attribute__((ns_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async_frame {
++  int result=value!=0;
++#if !__has_feature(objc_arc)
++  if(value)CFRelease(value);
++#endif
++  return result;
++}
++#ifdef __cplusplus
++static int integrated_ns_strong_task(IntegratedCFRef value __attribute__((ns_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async {
++  int result=value!=0;
++#if !__has_feature(objc_arc)
++  if(value)CFRelease(value);
++#endif
++  return result;
++}
++#endif
++static int integrated_ns_unsafe_frame(__unsafe_unretained IntegratedCFRef value __attribute__((ns_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async_frame {
++  int result=value!=0;
++#if !__has_feature(objc_arc)
++  if(value)CFRelease(value);
++#endif
++  return result;
++}
++#ifdef __cplusplus
++static int integrated_ns_unsafe_task(__unsafe_unretained IntegratedCFRef value __attribute__((ns_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async {
++  int result=value!=0;
++#if !__has_feature(objc_arc)
++  if(value)CFRelease(value);
++#endif
++  return result;
++}
++#endif
++static int integrated_ns_weak_frame(__weak IntegratedCFRef value __attribute__((ns_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async_frame {
++  int result=value!=0;
++#if !__has_feature(objc_arc)
++  if(value)CFRelease(value);
++#endif
++  return result;
++}
++#ifdef __cplusplus
++static int integrated_ns_weak_task(__weak IntegratedCFRef value __attribute__((ns_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async {
++  int result=value!=0;
++#if !__has_feature(objc_arc)
++  if(value)CFRelease(value);
++#endif
++  return result;
++}
++#endif
++static int integrated_cf_weak_frame(__weak IntegratedCFRef value __attribute__((cf_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async_frame {
++  int result=value!=0;if(value)CFRelease(value);return result;
++}
++#ifdef __cplusplus
++static int integrated_cf_weak_task(__weak IntegratedCFRef value __attribute__((cf_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async {
++  int result=value!=0;if(value)CFRelease(value);return result;
++}
++#endif
++static int integrated_cf_unsafe_frame(__unsafe_unretained IntegratedCFRef value __attribute__((cf_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async_frame {
++  int result=value!=0;if(value)CFRelease(value);return result;
++}
++#ifdef __cplusplus
++static int integrated_cf_unsafe_task(__unsafe_unretained IntegratedCFRef value __attribute__((cf_consumed))) INTEGRATED_CF_NOEXCEPT __objc3_async {
++  int result=value!=0;if(value)CFRelease(value);return result;
++}
++#endif
++static int integrated_parent(void) __objc3_async_frame {
++  int count=__objc3_await integrated_sync(integrated_source());
++  count+=__objc3_await integrated_frame(integrated_source());
++  count+=(__objc3_await integrated_result())!=0;
++  count+=(__objc3_await integrated_borrowed())!=0;
++  count+=(__objc3_await integrated_object_result())!=0;
++#ifdef __cplusplus
++  count+=__objc3_await integrated_task(integrated_source());
++  count+=(__objc3_await integrated_task_result())!=0;
++  count+=(__objc3_await integrated_object_task_result())!=0;
++#endif
++  count+=__objc3_await integrated_ns_strong_frame(integrated_ns_source());
++#ifdef __cplusplus
++  count+=__objc3_await integrated_ns_strong_task(integrated_ns_source());
++#endif
++  count+=__objc3_await integrated_ns_unsafe_frame(integrated_ns_source());
++#ifdef __cplusplus
++  count+=__objc3_await integrated_ns_unsafe_task(integrated_ns_source());
++#endif
++  count+=__objc3_await integrated_ns_weak_frame(integrated_ns_source());
++#ifdef __cplusplus
++  count+=__objc3_await integrated_ns_weak_task(integrated_ns_source());
++#endif
++  count+=__objc3_await integrated_cf_weak_frame(integrated_source());
++#ifdef __cplusplus
++  count+=__objc3_await integrated_cf_weak_task(integrated_source());
++#endif
++  count+=__objc3_await integrated_cf_unsafe_frame(integrated_source());
++#ifdef __cplusplus
++  count+=__objc3_await integrated_cf_unsafe_task(integrated_source());
++#endif
++  return count;
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-integrated-cf.m b/clang/test/ObjC3/CodeGen/native-integrated-cf.m
+new file mode 100644
+index 000000000..18f478ae0
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-integrated-cf.m
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -emit-pch %S/Inputs/native-integrated-cf.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -include-pch %t-c17-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fobjc-arc -emit-pch %S/Inputs/native-integrated-cf.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -emit-pch %S/Inputs/native-integrated-cf.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -include-pch %t-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -fobjc-arc -emit-pch %S/Inputs/native-integrated-cf.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -emit-pch %S/Inputs/native-integrated-cf.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -include-pch %t-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -fobjc-arc -emit-pch %S/Inputs/native-integrated-cf.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-weak -fcxx-exceptions -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-integrated-cf.h"
++#endif
++objc3_async_frame integrated_entries(void){return integrated_parent();}
++// CHECK-DAG: @CFRetain
++// CHECK-DAG: @CFRelease
++// CHECK-DAG: @integrated_sync
++// CHECK-DAG: @objc3_task_hop
++// CHECK-DAG: @llvm.coro.begin
++// Weak frame pins must load the object through its weak operation. A raw
++// weak-slot load can be a runtime control pointer, never a retainable object.
++// CHECK-DAG: @llvm.objc.loadWeakRetained
++// CHECK-DAG: @llvm.objc.copyWeak
++// CHECK-DAG: @llvm.objc.destroyWeak
+diff --git a/clang/test/ObjC3/CodeGen/recovered-invalid-nsobject-bridge.m b/clang/test/ObjC3/CodeGen/recovered-invalid-nsobject-bridge.m
+new file mode 100644
+index 000000000..fc7e844ff
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/recovered-invalid-nsobject-bridge.m
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o /dev/null -verify %s
++typedef const struct RecoveredObject *RecoveredRef __attribute__((NSObject));
++extern RecoveredRef recovered_object;
++void consume_raw(const void *);
++#ifdef __cplusplus
++extern "C" {
++#endif
++void invalid_bridge(void) {
++  if (recovered_object)
++    consume_raw((__bridge const void *)recovered_object); // expected-error {{incompatible types casting 'RecoveredRef'}}
++}
++#ifdef __cplusplus
++}
++#endif
