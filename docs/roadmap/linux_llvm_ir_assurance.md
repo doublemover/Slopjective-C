@@ -93,7 +93,7 @@ python3 -B -m scripts.objc3c_toolchain.llvm_campaign \
 `--prepared` admits a previously built/tested/staged matching foundation; it
 still rebuilds required development targets and executes every selected witness.
 The [CI workflow](../../.github/workflows/llvm-assurance.yml) runs this campaign
-for relevant PR changes and supports manual execution. It retains receipts,
+on explicit manual dispatch; routine PR checks do not launch a cold LLVM build. It retains receipts,
 diagnostics, source bundles and IR on success or failure. The campaign reconciles
 the inner case/stage/control inventories before reporting success. First cold
 hosted execution and measured runner cost remain under #8283.

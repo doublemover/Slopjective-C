@@ -28,18 +28,21 @@ export function validateNativeGate(text) {
   const workflow = yaml.load(text);
   const events = workflow.on ?? {};
   if (
-    !Object.hasOwn(events, "pull_request") ||
-    !Object.hasOwn(events, "push") ||
+    !Object.hasOwn(events, "workflow_dispatch") ||
+    !Object.hasOwn(events, "schedule") ||
+    Object.hasOwn(events, "pull_request") ||
+    Object.hasOwn(events, "push") ||
+    Object.keys(events).some((name) => !["workflow_dispatch", "schedule"].includes(name)) ||
     Object.hasOwn(events, "pull_request_target") ||
     events.pull_request?.paths ||
     events.pull_request?.["paths-ignore"] ||
     workflow.permissions?.contents !== "read"
   ) {
-    throw new Error("Native gate must cover every unprivileged PR with read-only contents");
+    throw new Error("Extended native qualification must remain manual/periodic with read-only contents");
   }
   const gate = workflow.jobs?.gate;
   if (
-    gate?.name !== "Linux native assurance gate" ||
+    gate?.name !== "Extended Linux native assurance gate" ||
     gate.if !== "always()" ||
     JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["native", "plan"]) ||
     gate["continue-on-error"]
@@ -101,8 +104,9 @@ export function validateImplementationGate(text, releaseText) {
   }
   const events = workflow.on ?? {};
   if (
-    !Object.hasOwn(events, "pull_request") ||
-    !Object.hasOwn(events, "push") ||
+    Object.hasOwn(events, "pull_request") ||
+    Object.hasOwn(events, "push") ||
+    Object.keys(events).some((name) => !["workflow_dispatch", "schedule", "workflow_call"].includes(name)) ||
     !Object.hasOwn(events, "schedule") ||
     !Object.hasOwn(events, "workflow_dispatch") ||
     !events.workflow_call?.inputs?.source_sha?.required ||
@@ -112,11 +116,11 @@ export function validateImplementationGate(text, releaseText) {
     events.pull_request?.["paths-ignore"] ||
     workflow.permissions?.contents !== "read"
   ) {
-    throw new Error("Implementation analysis must cover unprivileged PR, periodic and exact release sources");
+    throw new Error("Extended analysis must remain manual/periodic with exact release sources");
   }
   const gate = workflow.jobs?.gate;
   if (
-    gate?.name !== "Linux implementation analysis gate" ||
+    gate?.name !== "Extended Linux implementation analysis gate" ||
     gate.if !== "always()" ||
     JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["analysis", "plan"]) ||
     gate["continue-on-error"] ||
@@ -166,6 +170,37 @@ export function validateImplementationGate(text, releaseText) {
     JSON.stringify(installNeeds.toSorted()) !== JSON.stringify(["build", "implementation-analysis"])
   ) {
     throw new Error("Linux SDK installation must depend on exact-SHA implementation analysis");
+  }
+}
+
+export function validateOptionalLLVM(text) {
+  const workflow = yaml.load(text);
+  if (JSON.stringify(Object.keys(workflow.on ?? {})) !== JSON.stringify(["workflow_dispatch"]) ||
+      workflow.permissions?.contents !== "read")
+    throw new Error("Extended LLVM campaigns must be explicitly requested");
+  const job = workflow.jobs?.["llvm-assurance"];
+  validateNativeContainer(job ?? {});
+  if (!Number.isInteger(job?.["timeout-minutes"]) || job["timeout-minutes"] > 360 ||
+      job["timeout-minutes"] <= 0 || job["continue-on-error"] ||
+      !(job.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_toolchain.llvm_campaign")) ||
+      !(job.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_toolchain.semantic_oracles")))
+    throw new Error("Optional LLVM campaigns must retain their bounded real owners");
+}
+
+export function validateQuickChecks(toolingText, documentationText) {
+  for (const [text, id] of [[toolingText, "tooling"], [documentationText, "documentation"]]) {
+    const workflow = yaml.load(text);
+    const events = workflow.on ?? {};
+    const job = workflow.jobs?.[id];
+    if (!Object.hasOwn(events, "pull_request") || !Object.hasOwn(events, "push") ||
+        events.pull_request?.paths || events.pull_request?.["paths-ignore"] ||
+        workflow.permissions?.contents !== "read" ||
+        workflow.concurrency?.["cancel-in-progress"] !== true ||
+        !Number.isInteger(job?.["timeout-minutes"]) || job["timeout-minutes"] <= 0 ||
+        job["timeout-minutes"] > 15 || job.if || job["continue-on-error"] ||
+        (job.steps ?? []).some((step) => step["continue-on-error"] ||
+          /scripts\.objc3c_(assurance run|implementation_assurance run|toolchain\.(llvm_campaign|codec_fuzz|compiler_source_coverage))/.test(step.run ?? "")))
+      throw new Error("Quick PR checks must be automatic, bounded and independent of extended compiler builds");
   }
 }
 
@@ -272,4 +307,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     await readFile(join(root, "implementation-analysis.yml"), "utf8"),
     await readFile(join(root, "platform-host-evidence.yml"), "utf8"),
   );
+  validateOptionalLLVM(await readFile(join(root, "llvm-assurance.yml"), "utf8"));
+  validateQuickChecks(await readFile(join(root, "task-hygiene.yml"), "utf8"),
+                      await readFile(join(root, "spec-quality.yml"), "utf8"));
 }

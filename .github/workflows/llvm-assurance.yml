@@ -1,20 +1,5 @@
-name: Linux LLVM IR and optimized debugger assurance
+name: Extended LLVM IR and optimized debugger assurance
 on:
-  pull_request:
-    paths:
-      - .github/workflows/llvm-assurance.yml
-      - scripts/objc3c_toolchain/llvm_*.py
-      - scripts/objc3c_toolchain/compiler_instrumentation.py
-      - scripts/objc3c_toolchain/sanitizer_policy.py
-      - scripts/objc3c_toolchain/semantic_*.py
-      - tests/tooling/test_semantic_oracles.py
-      - toolchains/llvm/**
-      - native/objc3c/**
-      - stdlib/**
-      - tests/clang_foundation/**
-      - tests/tooling/fixtures/llvm_assurance/**
-      - tests/tooling/fixtures/native_sanitizer_controls/**
-      - tests/tooling/fixtures/native_container/**
   workflow_dispatch:
 permissions:
   contents: read

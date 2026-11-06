@@ -95,15 +95,14 @@ python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
   --output out/implementation-analysis/evidence
 ```
 
-The `Linux implementation analysis` workflow owns the durable gate. Its
-concurrency policy finishes the active cold build and queues the newest
-revision; newer pushes do not repeatedly discard an in-progress fork build. Pull
-requests run it only when the analyzer/toolchain, native implementation or
-compilation graph changes, and pass those exact changed paths to the dependency
-selector. Native source scopes independently select the integrated frontend and
-standalone runtime; they do not reanalyze maintained Clang TUs unless a shared
-fork/tool/checker input changed. Weekly, manually dispatched and Linux SDK
-release runs select the complete owned-TU inventory at one immutable SHA. The
+The `Extended Linux implementation analysis` workflow owns the durable gate.
+It runs on manual dispatch, the existing weekly schedule and exact-SHA SDK release
+calls. Routine PR feedback uses the independent quick checks and does not rebuild
+LLVM or run full static analysis. Manual/local dependency selection still scopes
+native edits independently to the frontend and standalone runtime; shared
+fork/tool/checker changes select maintained Clang units as well. Complete extended
+runs use one immutable SHA. Active long builds finish before a newer queued
+explicit run. The
 workflow builds the admitted `compiler-asan-ubsan` foundation,
 separate integrated-frontend and standalone-runtime databases, and the matched
 analysis tool in its own six-hour job so the already broad native qualification

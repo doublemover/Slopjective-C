@@ -11,7 +11,7 @@ revision's success cannot satisfy the latest revision's gate.
 
 Run `42076026163` reached the hosted six-hour ceiling while compiling the
 fuzz-instrumented frontend, after ordinary native/SDK checks and the sanitizer
-foundation had completed. Source and periodic execution now partition the same
+foundation had completed. Extended manual and periodic execution partition the same
 canonical selection into `core`, `frontend-fuzz` and `source-coverage` jobs. Core
 retains package-before-sanitizer ordering and shares its ASan compiler build with
 runtime schedules; each other job builds only its own compiler profile. Sibling
@@ -20,11 +20,30 @@ selected shard, exact source/plan identity, disjoint complete suite coverage and
 the original combined 256 MiB evidence budget. This changes execution layout,
 without adding a cadence or accepting an earlier revision's products.
 
-## Source gate
+## Fast PR feedback and optional native qualification
 
-`Linux native assurance` runs for every pull request and push to `main`.
-Classification happens inside the guaranteed workflow. The plan records the
-PR head, base and tested merge commit; a push records its before/after commits.
+Routine pull requests run the existing tooling, documentation/capability and
+workflow-policy checks. Tooling and documentation have 15- and 10-minute ceilings;
+newer revisions cancel obsolete quick runs. These checks provide fast contract,
+configuration and regression feedback. They do not qualify a rebuilt compiler,
+sanitizer profile, fuzz campaign, source coverage or SDK archive.
+
+`Extended Linux native assurance` is explicitly dispatched or runs on its existing
+weekly schedule. `Extended Linux implementation analysis` is dispatched, weekly,
+or called by SDK release qualification. The extended LLVM IR/debugger campaign
+is manual. Full native results remain required inside their own aggregate and
+release owners, while ordinary PR feedback does not wait for cold LLVM builds.
+
+Run a long campaign for the desired branch when needed:
+
+```sh
+gh workflow run native-assurance.yml --ref linux-native-guard-bindings
+gh workflow run implementation-analysis.yml --ref linux-native-guard-bindings
+gh workflow run llvm-assurance.yml --ref linux-native-guard-bindings
+```
+
+Classification stays inside the extended workflow. The plan records immutable
+head/base/tested identities; dispatched and periodic runs select one exact SHA.
 The executor and terminal verifier independently reconstruct that plan from the
 checked-out commit and Git comparison. Tracked modifications, mutable references,
 changed plans and stale receipts fail admission. Deleted paths participate in
@@ -60,7 +79,7 @@ The stable source surface uses existing owners:
   the SDK tree or another archive qualification. Fresh Debian/Ubuntu distribution
   qualification remains in the release workflow.
 
-`Linux native assurance gate` always evaluates explicit plan/native job outcomes.
+`Extended Linux native assurance gate` always evaluates explicit plan/native job outcomes.
 Only an admitted prose-only plan permits a skipped native job. Missing artifacts,
 failed/cancelled/skipped prerequisites, nonzero commands, incomplete suite or test
 inventories, changed artifact bytes and wrong revisions fail the aggregate.
@@ -143,8 +162,10 @@ python3 -B -m scripts.objc3c_toolchain.development_graph \
 ## Acceptance still required
 
 Implementation and boundary controls are prepared. A live exact-revision native
-CI run, cold/reuse/invalidation cost measurements and administrator confirmation
-that `Linux native assurance gate` is required remain outstanding. Each shard's
+CI run, cold/reuse/invalidation cost measurements and repository check-policy review remain outstanding. Required PR checks should
+refer to automatic quick checks; optional extended checks must not be required
+for every PR. Repository protection settings were not changed by this workflow
+cutover. Each shard's
 six-hour timeout is a ceiling, not a measured timing claim. The split publisher,
 selection and aggregate pass 116 focused assurance/cost tests and 63 workflow
 policy controls; hosted completion of the new layout is still required. No repository

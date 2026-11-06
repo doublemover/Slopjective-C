@@ -1,8 +1,5 @@
-name: Linux native assurance
+name: Extended Linux native assurance
 on:
-  pull_request:
-  push:
-    branches: [main]
   schedule:
     - cron: '37 5 * * 0'
   workflow_dispatch:
@@ -110,7 +107,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   gate:
-    name: Linux native assurance gate
+    name: Extended Linux native assurance gate
     if: always()
     needs: [plan, native]
     runs-on: ubuntu-26.04

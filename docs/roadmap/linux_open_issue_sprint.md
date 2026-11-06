@@ -218,8 +218,8 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 | Issue | Remaining scope |
 | ----- | --------------- |
 
-| [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Native PR/periodic execution, revision-bound receipts and fail-closed aggregate implemented; live CI/cost and administrator acceptance pending ([details](linux_native_assurance.md)) |
-| [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Matched analyzer, PCH dependency handling and PR/periodic/release owners implemented; full scan and findings acceptance pending ([details](linux_checked_executor_locks.md)) |
+| [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Quick PR checks plus optional manual/periodic native execution, revision-bound receipts and fail-closed aggregate implemented; live CI/cost and administrator acceptance pending ([details](linux_native_assurance.md)) |
+| [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Matched analyzer, PCH dependency handling and manual/periodic/release owners implemented; full scan and findings acceptance pending ([details](linux_checked_executor_locks.md)) |
 | [#8287](https://github.com/doublemover/Slopjective-C/issues/8287) | Frontend/paired-sidecar fuzzing, exact replay and controlled discovery implemented; live integrated CI acceptance pending |
 | [#8289](https://github.com/doublemover/Slopjective-C/issues/8289) | Generated histories plus maintained concurrency/failure scenarios and five semantic mutants implemented; expanded hosted execution pending |
 | [#8290](https://github.com/doublemover/Slopjective-C/issues/8290) | First-party and patched-compiler coverage owners implemented with instrumented pilots; live integrated CI acceptance pending |

@@ -5,8 +5,12 @@ on:
     branches: [main]
 permissions:
   contents: read
+concurrency:
+  group: linux-tooling-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   tooling:
+    timeout-minutes: 15
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -94,6 +98,20 @@ jobs:
           tests/tooling/test_native_validation_plan.py
           tests/tooling/test_native_validation_artifacts.py
           tests/tooling/test_native_validation_cli.py
+      - name: Describe quick-check scope
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as summary:
+              summary.write('## Quick Linux checks\n\n'
+                  'Automatic PR feedback covers tooling contracts and focused regression controls. '
+                  'The artifact records the actual tests and explicit capability skips.\n\n'
+                  'Full matched-compiler rebuilds, sanitizers, fuzzing, coverage and implementation '
+                  'analysis run through the optional extended workflows and existing periodic/release owners. '
+                  'A passing quick job does not qualify an SDK archive or a full compiler profile.\n')
+          PY
       - name: Preserve actual tooling inventory and skip reasons
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
