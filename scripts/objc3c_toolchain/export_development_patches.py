@@ -214,6 +214,7 @@ PACKETS = {
         "clang/unittests/AST/DeclTest.cpp",
         "clang/lib/AST/Mangle.cpp",
         "clang/lib/AST/TextNodeDumper.cpp",
+        "clang/test/AST/ast-dump-template-name.cpp",
         "clang/lib/AST/JSONNodeDumper.cpp",
         "clang/lib/AST/Type.cpp",
         "clang/lib/AST/TypeLoc.cpp",

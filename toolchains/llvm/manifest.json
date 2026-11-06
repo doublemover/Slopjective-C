@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "1e7c23ae4e73eb218d9dd07fac7713b04c93dda6896beb39714fa63e2a57b453"
+      "sha256": "c55b2f2696d53f69e367878f10fb31dbebbffae7e45371ce50ca1c6adfd8cad3"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
@@ -283,7 +283,8 @@
       "clang/test/Parser/cxx1z-init-statement.cpp",
       "clang/test/Parser/cxx2a-init-statement.cpp",
       "clang/test/Parser/cxx2b-init-statement.cpp",
-      "clang/test/CodeGenCXX/mangle-concept.cpp"
+      "clang/test/CodeGenCXX/mangle-concept.cpp",
+      "clang/test/AST/ast-dump-template-name.cpp"
     ]
   },
   "host_tools": {

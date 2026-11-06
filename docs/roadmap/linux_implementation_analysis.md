@@ -46,6 +46,11 @@ template invariant, with the upstream concept-mangling regression selected in
 ordinary and instrumented profiles. These changes have passed patch admission
 and test-source compilation; the corrected compiler build and native execution
 remain pending while the earlier full scan collects the rest of its findings.
+The external-field regression reproduces the exact `DeclBase.cpp` null-member
+access under UBSan on the preceding compiler. Its four companion cases pass on
+that compiler. The template-name dumper now asserts the using-shadow invariant;
+the extended upstream AST-dump regression checks both the shadow and its target
+and passes native `FileCheck` before the pending compiler rebuild.
 
 The matched analyzer cannot deserialize the foundation's bootstrap-produced
 CMake PCH. Analysis validates the exact PCH/wrapper pair and rebuilds the wrapper

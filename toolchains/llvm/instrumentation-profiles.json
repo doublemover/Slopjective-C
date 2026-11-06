@@ -32,6 +32,7 @@
       "additional_test_suites": [
         "clang/test/Index/objc3-condition-cursors.mm",
         "clang/test/Index/objc3-native-expression-cursors.mm",
+        "clang/test/AST/ast-dump-template-name.cpp",
         "clang/test/CodeGenCXX/mangle-concept.cpp",
         "clang/test/Parser/lambda-attr.cu",
         "clang/test/Parser/cxx1z-init-statement.cpp",
@@ -82,6 +83,7 @@
       "additional_test_suites": [
         "clang/test/Index/objc3-condition-cursors.mm",
         "clang/test/Index/objc3-native-expression-cursors.mm",
+        "clang/test/AST/ast-dump-template-name.cpp",
         "clang/test/CodeGenCXX/mangle-concept.cpp",
         "clang/test/Parser/lambda-attr.cu",
         "clang/test/Parser/cxx1z-init-statement.cpp",
@@ -129,6 +131,7 @@
       "additional_test_suites": [
         "clang/test/Index/objc3-condition-cursors.mm",
         "clang/test/Index/objc3-native-expression-cursors.mm",
+        "clang/test/AST/ast-dump-template-name.cpp",
         "clang/test/CodeGenCXX/mangle-concept.cpp",
         "clang/test/Parser/lambda-attr.cu",
         "clang/test/Parser/cxx1z-init-statement.cpp",

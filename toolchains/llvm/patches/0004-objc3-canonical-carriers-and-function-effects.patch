@@ -7501,7 +7501,7 @@ index 000000000..ee728c92d
 +  return Node;
 +}
 diff --git a/clang/lib/AST/TextNodeDumper.cpp b/clang/lib/AST/TextNodeDumper.cpp
-index 9799c8651..13c447afe 100644
+index 9799c8651..bb746a735 100644
 --- a/clang/lib/AST/TextNodeDumper.cpp
 +++ b/clang/lib/AST/TextNodeDumper.cpp
 @@ -354,6 +354,14 @@ void TextNodeDumper::Visit(const CXXCtorInitializer *Init) {
@@ -7519,7 +7519,15 @@ index 9799c8651..13c447afe 100644
    if (C.isByRef())
      OS << " byref";
    if (C.isNested())
-@@ -1532,6 +1540,49 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
+@@ -1320,6 +1328,7 @@ void TextNodeDumper::dumpBareTemplateName(TemplateName TN) {
+     return;
+   case TemplateName::UsingTemplate: {
+     const UsingShadowDecl *USD = TN.getAsUsingShadowDecl();
++    assert(USD && "A using-template name must have a shadow declaration");
+     AddChild([=] { Visit(USD); });
+     AddChild("target", [=] { Visit(USD->getTargetDecl()); });
+     return;
+@@ -1532,6 +1541,49 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
      OS << " implicit";
  }
  
@@ -7569,7 +7577,7 @@ index 9799c8651..13c447afe 100644
  void clang::TextNodeDumper::VisitCoreturnStmt(const CoreturnStmt *Node) {
    if (Node->isImplicit())
      OS << " implicit";
-@@ -2199,6 +2250,24 @@ void TextNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -2199,6 +2251,24 @@ void TextNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
    dumpDeclRef(EPI.ExceptionSpec.SourceDecl, "ExceptionSourceDecl");
    dumpDeclRef(EPI.ExceptionSpec.SourceTemplate, "ExceptionSourceTemplate");
  
@@ -7594,7 +7602,7 @@ index 9799c8651..13c447afe 100644
    // FIXME: Consumed parameters.
    VisitFunctionType(T);
  }
-@@ -3073,6 +3142,8 @@ void TextNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
+@@ -3073,6 +3143,8 @@ void TextNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
      OS << " +";
    dumpName(D);
    dumpType(D->getReturnType());
@@ -7603,7 +7611,7 @@ index 9799c8651..13c447afe 100644
  
    if (D->isVariadic())
      OS << " variadic";
-@@ -3194,6 +3265,10 @@ void TextNodeDumper::VisitObjCPropertyImplDecl(const ObjCPropertyImplDecl *D) {
+@@ -3194,6 +3266,10 @@ void TextNodeDumper::VisitObjCPropertyImplDecl(const ObjCPropertyImplDecl *D) {
  }
  
  void TextNodeDumper::VisitBlockDecl(const BlockDecl *D) {
@@ -7614,7 +7622,7 @@ index 9799c8651..13c447afe 100644
    if (D->isVariadic())
      OS << " variadic";
  
-@@ -3356,3 +3431,8 @@ void TextNodeDumper::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -3356,3 +3432,8 @@ void TextNodeDumper::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    if (S->hasStoredFPFeatures())
      printFPOptions(S->getStoredFPFeatures());
  }
@@ -52563,10 +52571,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..6550d631d
+index 000000000..1502375c4
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,171 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -52655,14 +52663,15 @@ index 000000000..6550d631d
 +}
 +
 +TEST(ObjC3ASTInfrastructure, StoredDeclarationTailSurvivesEveryEraseShape) {
-+  auto AST = tooling::buildASTFromCode("int first, second, third, fourth;");
++  auto AST = tooling::buildASTFromCode(
++      "void pick(int); void pick(double); void pick(char); void pick(long);");
 +  ASSERT_TRUE(AST);
 +  ASTContext &Ctx = AST->getASTContext();
-+  auto Lookup = [&](StringRef Name) {
-+    return Ctx.getTranslationUnitDecl()->lookup(&Ctx.Idents.get(Name)).front();
-+  };
-+  NamedDecl *First = Lookup("first"), *Second = Lookup("second");
-+  NamedDecl *Third = Lookup("third"), *Fourth = Lookup("fourth");
++  auto Lookup = Ctx.getTranslationUnitDecl()->lookup(&Ctx.Idents.get("pick"));
++  SmallVector<NamedDecl *, 4> Declarations(Lookup.begin(), Lookup.end());
++  ASSERT_EQ(4u, Declarations.size());
++  NamedDecl *First = Declarations[0], *Second = Declarations[1];
++  NamedDecl *Third = Declarations[2], *Fourth = Declarations[3];
 +  StoredDeclsList List;
 +  List.addOrReplaceDecl(First);
 +  List.setHasExternalDecls();
@@ -52724,8 +52733,8 @@ index 000000000..6550d631d
 +TEST(ObjC3ASTInfrastructure, ParentMapRebuildOwnsNonPointerParents) {
 +  auto AST = tooling::buildASTFromCode(
 +      "namespace n { struct T {}; } void f(n::T);"
-+      "template<class T> struct C { void g() { n::T value; } };"
-+      "void h() { C<int> c; c.g(); }");
++      "template<class T> struct C { void g() { n::T value; } void shared() {} };"
++      "void h() { C<int> c; c.g(); c.shared(); }");
 +  ASSERT_TRUE(AST);
 +  ASTContext &Ctx = AST->getASTContext();
 +  for (unsigned Round = 0; Round != 8; ++Round) {
@@ -52737,3 +52746,26 @@ index 000000000..6550d631d
 +    Ctx.getParentMapContext().clear();
 +  }
 +}
+diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
+index b0a99cf27..ce6cc5587 100644
+--- a/clang/test/AST/ast-dump-template-name.cpp
++++ b/clang/test/AST/ast-dump-template-name.cpp
+@@ -55,3 +55,18 @@ namespace subst {
+ // CHECK-NEXT:     | |-associated ClassTemplateSpecialization {{.+}} 'B'{{$}}
+ // CHECK-NEXT:     | `-replacement:
+ // CHECK-NEXT:     |   `-ClassTemplateDecl {{.+}} A external-linkage{{$}}
++
++namespace using_name {
++  namespace definition { template <class> struct A; }
++  using definition::A;
++  using TestUsing = N<A>;
++} // namespace using_name
++
++// CHECK:      Dumping using_name::TestUsing:
++// CHECK-NEXT: TypeAliasDecl
++// CHECK-NEXT: `-TemplateSpecializationType
++// CHECK-NEXT:   |-name: 'N' qualified
++// CHECK-NEXT:   | `-TypeAliasTemplateDecl
++// CHECK-NEXT:   |-TemplateArgument template 'A':'using_name::definition::A' qualified
++// CHECK-NEXT:   | |-UsingShadowDecl {{.+}} 'A'
++// CHECK-NEXT:   | `-target: ClassTemplateDecl {{.+}} A external-linkage
