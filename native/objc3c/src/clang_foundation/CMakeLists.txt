@@ -292,9 +292,16 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_c_inline_provider_test PRIVATE objc3c_clang_foundation)
   find_library(_c_inline_objc_runtime NAMES objc
     PATHS "${OBJC3C_CLANG_FOUNDATION_ROOT}/lib" NO_DEFAULT_PATH NO_CACHE REQUIRED)
+  set(_c_inline_link_flags "${CMAKE_CXX_FLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
+  string(REPLACE "\\" "\\\\" _c_inline_link_flags "${_c_inline_link_flags}")
+  string(REPLACE "\"" "\\\"" _c_inline_link_flags "${_c_inline_link_flags}")
+  string(REPLACE "\n" "\\n" _c_inline_link_flags "${_c_inline_link_flags}")
   target_compile_definitions(objc3_c_inline_provider_test PRIVATE
     OBJC3_C_INLINE_TEST_LINKER="${CMAKE_CXX_COMPILER}"
-    OBJC3_C_INLINE_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}")
+    OBJC3_C_INLINE_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}"
+    OBJC3_C_INLINE_TEST_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>"
+    OBJC3_C_INLINE_TEST_LINK_FLAGS="${_c_inline_link_flags}")
+  add_dependencies(objc3_c_inline_provider_test objc3_runtime_services)
   add_test(NAME objc3_c_inline_provider COMMAND objc3_c_inline_provider_test)
   set_tests_properties(objc3_c_inline_provider PROPERTIES TIMEOUT 90)
   add_executable(objc3_borrowed_pointers_test

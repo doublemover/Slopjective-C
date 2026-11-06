@@ -39,3 +39,13 @@ Block frontend groups also pass after the projection change. These are current
 development-driver/header/DSO controls, not installed SDK qualification. Broader
 package integration, remaining implementation, wider instrumentation and final
 SDK delivery remain pending.
+
+The native provider test also passes four Objective-C ARC/MRC O0/O2 configurations
+with four inline native-frame functions: ordinary, external, later external and
+an awaiting chain. Each source-free consumer builds factories whose frames start
+and complete with the expected result; unused frames dispose before start. The
+runtime witness checks 32 completions, 16 unused-frame disposals, common function
+addresses and eight strong provider symbols per Objective-C configuration. The
+plain-C configurations retain their four-symbol controls. Subprocess linkage
+uses the current runtime archive and configured instrumentation flags. This is
+focused development execution; matched SDK/package qualification remains pending.
