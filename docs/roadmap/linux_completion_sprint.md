@@ -16,7 +16,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                               |
 | Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                               |
 | Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native verification in progress           |
-| Isolation          | Remaining executor/actor crossings, CF/task consumption, async init-family forms and managed values                         | Open                                                               |
+| Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                   |
+| Isolation          | Remaining executor/actor crossings, CF consumption, async init-family forms and managed values                              | Open                                                               |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                               |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending    |
 | Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending    |
@@ -128,8 +129,19 @@ allocation failure, consumed blocks and combined receiver/argument ownership.
 Initializer witnesses distinguish self, nil and replacement results. All twelve new C17/C++23 ARC/MRC source/PCH CodeGen commands pass. One
 C17/MRC/O0 source runtime configuration passes all synchronous/native-frame
 consumption scenarios and the ARC self-reassignment controls; consolidated
-matrices remain pending. CF consumption, C++ task-ABI MRC
-consumption and async initializers remain separate open contracts.
+matrices remain pending. CF consumption and async initializers remain separate
+open contracts.
+
+Source 2.96 extends adoption, frame pins and post-resume manual handoff to C++
+task parameters and consuming receivers. ARC consuming task self has its own
+mutable strong slot, independent of the adopting ramp. Native witnesses now
+compile the same task provider under ARC and MRC and defend cancellation both
+before entry and during a yielding body, unused task destruction, and failure
+of a coroutine parameter move before promise construction. All twelve added
+C++20/C++23 ARC/MRC source/PCH CodeGen commands pass. Three focused runtime
+configurations pass 37 commands: C17/MRC/O0/source, C++20/MRC/O2/source and
+C++23/ARC/O2/PCH, each compiling independent ARC and MRC task providers. Frontend execution and complete matrices remain
+pending.
 
 ## Authored nullable key-path result policy
 

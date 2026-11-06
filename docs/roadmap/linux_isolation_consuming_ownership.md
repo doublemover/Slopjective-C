@@ -34,9 +34,9 @@ Objective-C 3 mode. Earlier Block witnesses exercised captured ownership; the
 new span also verifies the consumed annotation and native copying convention.
 The [MRC and initializer source span](linux_isolation_mrc_consumption.md) now adds
 MRC synchronous/native-frame consumed boundaries, ARC consuming native-frame
-receivers and synchronous init-family entry. Core Foundation consumption,
-MRC task-ABI consumption and async initializers remain open. This source milestone does not
-change the runtime ABI or claim full actor/profile conformance. The
+receivers and synchronous init-family entry. Source 2.96 adds MRC task-ABI
+consumption and ARC consuming task receivers. Core Foundation consumption and
+async initializers remain open. This source milestone does not change the runtime ABI or claim full actor/profile conformance. The
 [2.33.0 SDK acceptance](../support/linux_source_batch_2_33_acceptance.json) delivers
 this boundary with combined source and fresh native-feature validation.
 

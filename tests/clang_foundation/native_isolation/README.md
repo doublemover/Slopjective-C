@@ -69,3 +69,12 @@ allocations, require exact destruction without target execution. Synchronous
 initializers return self, nil or a replacement object. Additional ARC frame
 receivers in `consuming.m` include self reassignment and combined consumption;
 the client checks the replacement's independent lifetime.
+
+The 2.96 source additions compile `task-consuming.mm` twice, independently under
+ARC and MRC. It supplies C++ task targets with consumed object/Block parameters,
+class/instance receivers and combined consumption. ARC consuming self can be
+replaced while suspended. Manual bodies use RAII to balance their incoming claim
+when a later await cancels. The client separately cancels before body entry and
+during its yield, destroys a task without starting it, and catches a throwing
+parameter move before promise construction. Every case checks exact body-entry,
+source-evaluation and object-destruction counts.

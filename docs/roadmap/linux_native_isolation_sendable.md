@@ -111,7 +111,7 @@ storage, unqualified nested leaves and MRC managed aggregates remain rejected.
 The [2.31.0 source milestone](linux_isolation_consuming_ownership.md) adds ARC
 consumed object/Block parameters and consuming instance receivers, with
 cancellation/allocation-failure adoption and owning message-operand snapshots.
-The [MRC and initializer span](linux_isolation_mrc_consumption.md) adds synchronous/native-frame MRC consumption, ARC consuming native-frame receivers and synchronous initializer entry. CF and MRC task-ABI consumption plus async initializers remain gated. C++ targets must have a nonthrowing
+The [MRC and initializer span](linux_isolation_mrc_consumption.md) adds synchronous/native-frame MRC consumption, ARC consuming native-frame receivers and synchronous initializer entry. Source 2.96 also admits MRC task-ABI consumption and ARC consuming task receivers. CF consumption and async initializers remain gated. C++ targets must have a nonthrowing
 native exception contract, including `nothrow` on Objective-C 3.0 methods; arbitrary C++ exception transport is not silently
 synthesized. Nested isolated argument expressions require their own await.
 The [2.32.0 source milestone](linux_isolation_class_entries.md) adds named class

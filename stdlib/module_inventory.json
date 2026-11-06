@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 95,
+        "minor": 96,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -226,7 +226,8 @@
         "Native hidden static/dynamic object-size parameters, lifetimebound/noescape metadata, callback/sentinel contracts, typed diagnostic predicates and Linux callable optimizer/control attributes (source).",
         "Native enable-if overload conditions retain canonical lexical/type/declaration identities, ordered predicate priority, diagnostic payloads, dependency ownership, named/unnamed definition bindings, replay/import and source-free calling ABI (source).",
         "C17/Objective-C overloadable function publication with ordered conditional overload identity, canonical inherited attributes and module-owned symbols (source authored; native verification pending)",
-        "MRC synchronous/native-frame consumed object and Block parameters, consuming native-frame receivers under ARC/MRC, mutable ARC self cleanup and concrete synchronous init-family isolation results (source authored; focused native verification in progress)"
+        "MRC synchronous/native-frame consumed object and Block parameters, consuming native-frame receivers under ARC/MRC, mutable ARC self cleanup and concrete synchronous init-family isolation results (source authored; focused native verification in progress)",
+        "MRC consumed C++ task parameters/receivers with adopting entry cleanup, pre-promise frame pins and post-initial-resume body handoff; ARC consuming task receivers use independent mutable strong storage; unused tasks, throwing parameter moves and cancellation during yielding bodies have exact lifetime witnesses (source authored; focused native execution passes)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

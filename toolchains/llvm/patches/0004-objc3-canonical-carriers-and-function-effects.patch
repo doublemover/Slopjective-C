@@ -46106,10 +46106,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..c77739ab7
+index 000000000..52e0f3d16
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1208 @@
+@@ -0,0 +1,1201 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47097,15 +47097,13 @@ index 000000000..c77739ab7
 +  return Reference && Reference->getDecl() == Method->getSelfDecl();
 +}
 +
-+bool unsupportedIsolatedConsumption(const Sema &S, const ParmVarDecl *Parameter,
-+                                    const FunctionProtoType *Target) {
++bool unsupportedIsolatedConsumption(const Sema &S, const ParmVarDecl *Parameter) {
 +  QualType Type = Parameter->getType();
 +  const bool ARC = S.getLangOpts().ObjCAutoRefCount;
 +  const bool ConsumedValue = ARC ? Type->isObjCRetainableType()
 +      : (Type->isObjCObjectPointerType() || Type->isBlockPointerType());
 +  return (Parameter->hasAttr<NSConsumedAttr>() &&
-+          (!ConsumedValue || (!ARC && Target->getObjC3FunctionEffects().Async &&
-+                             !Target->getObjC3FunctionEffects().AsyncFrame))) ||
++          !ConsumedValue) ||
 +         Parameter->hasAttr<CFConsumedAttr>() ||
 +         Parameter->hasAttr<ObjCResourceAttr>() ||
 +         Parameter->getType()->isReferenceType();
@@ -47205,8 +47203,7 @@ index 000000000..c77739ab7
 +    Shape &= !isa<CXXMethodDecl>(Target) &&
 +             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts());
 +    for (const auto *Parameter : cast<FunctionDecl>(Target)->parameters())
-+      Shape &= !unsupportedIsolatedConsumption(
-+          *this, Parameter, FT);
++      Shape &= !unsupportedIsolatedConsumption(*this, Parameter);
 +  } else {
 +    const bool Instance =
 +        Message->getReceiverKind() == ObjCMessageExpr::Instance ||
@@ -47218,14 +47215,10 @@ index 000000000..c77739ab7
 +        ((Instance &&
 +          SourceReceiver->getType()->isObjCObjectPointerType()) ||
 +         (NamedClass && !isolationConsumesReceiver(Target))) &&
-+        (!isolationConsumesReceiver(Target) || getLangOpts().ObjCAutoRefCount ||
-+         !FT->getObjC3FunctionEffects().Async ||
-+         FT->getObjC3FunctionEffects().AsyncFrame) &&
 +        (cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init ||
 +         !FT->getObjC3FunctionEffects().Async);
 +    for (const auto *Parameter : cast<ObjCMethodDecl>(Target)->parameters())
-+      Shape &= !unsupportedIsolatedConsumption(
-+          *this, Parameter, FT);
++      Shape &= !unsupportedIsolatedConsumption(*this, Parameter);
 +  }
 +  if (!Shape) {
 +    Diag(Loc, diag::err_objc3_isolation_hop_shape);

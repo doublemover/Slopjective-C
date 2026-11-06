@@ -4169,7 +4169,7 @@ index 7421733ef..fc98b6929 100644
      }
      fields.push_back(fieldType);
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..5892a4268 100644
+index e84e05e8e..b3d6be5cf 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,22 @@
@@ -4886,7 +4886,7 @@ index e84e05e8e..5892a4268 100644
  
    LValue lv = MakeAddrLValue(DeclPtr, Ty);
 +  if (IsScalar && !getLangOpts().ObjCAutoRefCount &&
-+      isObjC3ConsumedFrameParameter(CurCodeDecl, &D)) {
++      isObjC3ConsumedAsyncParameter(CurCodeDecl, &D)) {
 +    // The MRC caller transfers one claim when the entry ramp is invoked.
 +    // This cleanup belongs to the ramp, outside the lazy frame scope, and
 +    // balances failed frame allocation as well as normal/EH ramp exits.
@@ -6141,10 +6141,10 @@ index c724a063b..72c4a5478 100644
      DI->EmitLexicalBlockEnd(Builder, S.getRBracLoc());
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
-index 000000000..cf942d967
+index 000000000..8ad424a51
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,237 @@
+@@ -0,0 +1,235 @@
 +//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries
 +//----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -6306,8 +6306,6 @@ index 000000000..cf942d967
 +                       (!CGM.getLangOpts().CPlusPlus || CGM.getLangOpts().CPlusPlus20) &&
 +                       Method->getMethodFamily() == OMF_None &&
 +                       !Method->hasRelatedResultType() &&
-+                       (!Method->hasAttr<NSConsumesSelfAttr>() ||
-+                        Effects.AsyncFrame) &&
 +                       !Method->hasAttr<NSReturnsRetainedAttr>() &&
 +                       !Method->hasAttr<NSReturnsNotRetainedAttr>() &&
 +                       !Method->hasAttr<NSReturnsAutoreleasedAttr>() &&
@@ -21648,7 +21646,7 @@ index 000000000..40774b374
 +ObjectCallback callback = object;
 +auto indirect(ObjectCallback call, Object *value) { return call(value); }
 diff --git a/clang/lib/CodeGen/CGCoroutine.cpp b/clang/lib/CodeGen/CGCoroutine.cpp
-index bf896f133..d01079434 100644
+index bf896f133..9833df8db 100644
 --- a/clang/lib/CodeGen/CGCoroutine.cpp
 +++ b/clang/lib/CodeGen/CGCoroutine.cpp
 @@ -1,3 +1,4 @@
@@ -21793,7 +21791,61 @@ index bf896f133..d01079434 100644
  void CodeGenFunction::EmitCoreturnStmt(CoreturnStmt const &S) {
    ++CurCoro.Data->CoreturnCount;
    const Expr *RV = S.getOperand();
-@@ -922,6 +990,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -526,7 +594,7 @@ namespace {
+     ParamReferenceReplacerRAII(CodeGenFunction::DeclMapTy &LocalDeclMap)
+         : LocalDeclMap(LocalDeclMap) {}
+ 
+-    void addCopy(DeclStmt const *PM) {
++    const VarDecl *addCopy(DeclStmt const *PM) {
+       // Figure out what param it refers to.
+ 
+       assert(PM->isSingleDecl());
+@@ -545,6 +613,14 @@ namespace {
+       auto copyIt = LocalDeclMap.find(VD);
+       assert(copyIt != LocalDeclMap.end() && "parameter copy is not found");
+       it->second = copyIt->getSecond();
++      return cast<VarDecl>(PD);
++    }
++
++    void replaceAddress(const VarDecl *Original, Address Copy) {
++      auto Existing = LocalDeclMap.find(Original);
++      assert(Existing != LocalDeclMap.end() && "Receiver parameter is missing");
++      SavedLocals.insert({Original, Existing->second});
++      Existing->second = Copy;
+     }
+ 
+     ~ParamReferenceReplacerRAII() {
+@@ -898,6 +974,29 @@ struct GetReturnObjectManager {
+ 
+ static void emitBodyAndFallthrough(CodeGenFunction &CGF,
+                                    const CoroutineBodyStmt &S, Stmt *Body) {
++  if (!CGF.getLangOpts().ObjCAutoRefCount) {
++    auto Handoff = [&](const VarDecl *Original) {
++      if (!isObjC3ConsumedAsyncParameter(CGF.CurCodeDecl, Original)) return;
++      QualType T = Original->getType();
++      LValue Slot = CGF.MakeAddrLValue(CGF.GetAddrOfLocalVar(Original), T);
++      llvm::Value *Value = CGF.EmitLoadOfScalar(Slot, Original->getLocation());
++      llvm::Value *Owned = T->isBlockPointerType()
++          ? CGF.EmitARCRetainBlock(Value, true) : CGF.EmitARCRetainNonBlock(Value);
++      CGF.EmitStoreOfScalar(Owned, Slot, true);
++    };
++    // This path is reached only after initial await_resume succeeds and its
++    // resume-exception guard admits the body. Cancellation before entry must
++    // destroy the frame pin without creating a manual body claim.
++    for (const Stmt *Move : S.getParamMoves()) {
++      const auto *Copy = cast<VarDecl>(cast<DeclStmt>(Move)->getSingleDecl());
++      GetParamRef Reference;
++      Reference.Visit(const_cast<Expr *>(Copy->getInit()));
++      assert(Reference.Expr && "A parameter copy must name its source");
++      Handoff(cast<VarDecl>(Reference.Expr->getDecl()));
++    }
++    if (const auto *Method = dyn_cast_or_null<ObjCMethodDecl>(CGF.CurCodeDecl))
++      Handoff(Method->getSelfDecl());
++  }
+   CGF.EmitStmt(Body);
+   const bool CanFallthrough = CGF.Builder.GetInsertBlock();
+   if (CanFallthrough)
+@@ -922,6 +1021,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
        {Builder.getInt32(NewAlign), NullPtr, NullPtr, NullPtr});
    createCoroData(*this, CurCoro, CoroId);
  
@@ -21811,24 +21863,63 @@ index bf896f133..d01079434 100644
    GetReturnObjectManager GroManager(*this, S);
    CurCoro.Data->SuspendBB =
        GroManager.DirectEmit ? RetBB : createBasicBlock("pre.gvo.conv");
-@@ -1008,6 +1087,40 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -1002,12 +1112,78 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+     }
+     for (auto *PM : S.getParamMoves()) {
+       EmitStmt(PM);
+-      ParamReplacer.addCopy(cast<DeclStmt>(PM));
++      const VarDecl *Original = ParamReplacer.addCopy(cast<DeclStmt>(PM));
++      if (!getLangOpts().ObjCAutoRefCount &&
++          isObjC3ConsumedAsyncParameter(CurCodeDecl, Original)) {
++        // A plain MRC parameter copy has no C++ destructor. Give the lazy
++        // coroutine an independent pin before promise construction can throw.
++        // The adopting entry parameter's cleanup stays outside this frame.
++        QualType T = Original->getType();
++        LValue Slot = MakeAddrLValue(GetAddrOfLocalVar(Original), T);
++        llvm::Value *Value = EmitLoadOfScalar(Slot, Original->getLocation());
++        llvm::Value *Owned = T->isBlockPointerType()
++            ? EmitARCRetainBlock(Value, true) : EmitARCRetainNonBlock(Value);
++        EmitStoreOfScalar(Owned, Slot, true);
++        struct ReleaseManualParameter final : EHScopeStack::Cleanup {
++          llvm::Value *Owner;
++          explicit ReleaseManualParameter(llvm::Value *Owner) : Owner(Owner) {}
++          void Emit(CodeGenFunction &CGF, Flags) override {
++            CGF.EmitARCRelease(Owner, ARCPreciseLifetime);
++          }
++        };
++        EHStack.pushCleanup<ReleaseManualParameter>(NormalAndEHCleanup, Owned);
++      }
+       // TODO: if(CoroParam(...)) need to surround ctor and dtor
+       // for the copy, so that llvm can elide it if the copy is
        // not needed.
      }
  
 +    // A lazy Objective-C method owns its receiver before initial suspension,
 +    // independently of ARC/MRC source ownership. Balance on every frame exit.
 +    if (const auto *MD = dyn_cast_or_null<ObjCMethodDecl>(CurCodeDecl)) {
-+      llvm::Value *Receiver = EmitARCRetainNonBlock(LoadObjCSelf());
-+      struct ReleaseAsyncReceiver final : EHScopeStack::Cleanup {
-+        llvm::Value *Receiver;
-+        explicit ReleaseAsyncReceiver(llvm::Value *Receiver)
-+            : Receiver(Receiver) {}
-+        void Emit(CodeGenFunction &CGF, Flags) override {
-+          CGF.EmitARCRelease(Receiver, ARCPreciseLifetime);
-+        }
-+      };
-+      EHStack.pushCleanup<ReleaseAsyncReceiver>(NormalAndEHCleanup, Receiver);
-+      (void)MD;
++      if (getLangOpts().ObjCAutoRefCount &&
++          MD->hasAttr<NSConsumesSelfAttr>()) {
++        const auto *Self = MD->getSelfDecl();
++        QualType T = Self->getType();
++        Address Copy = CreateMemTemp(T, "self.async.capture");
++        llvm::Value *Receiver = EmitARCRetainNonBlock(LoadObjCSelf());
++        EmitStoreOfScalar(Receiver, MakeAddrLValue(Copy, T), true);
++        ParamReplacer.replaceAddress(Self, Copy);
++        // The adopting entry slot stays in the ramp. The mutable strong copy
++        // belongs to the coroutine and follows reassignment through suspension.
++        pushDestroy(NormalAndEHCleanup, Copy, T, destroyARCStrongPrecise, false);
++      } else {
++        llvm::Value *Receiver = EmitARCRetainNonBlock(LoadObjCSelf());
++        struct ReleaseAsyncReceiver final : EHScopeStack::Cleanup {
++          llvm::Value *Receiver;
++          explicit ReleaseAsyncReceiver(llvm::Value *Receiver)
++              : Receiver(Receiver) {}
++          void Emit(CodeGenFunction &CGF, Flags) override {
++            CGF.EmitARCRelease(Receiver, ARCPreciseLifetime);
++          }
++        };
++        EHStack.pushCleanup<ReleaseAsyncReceiver>(NormalAndEHCleanup, Receiver);
++      }
 +    }
 +
 +    // The caller may discard its stack Block immediately after this ramp
@@ -25449,7 +25540,7 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..edb2532cb
+index 000000000..98a69e921
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
 @@ -0,0 +1,1302 @@
@@ -26239,7 +26330,7 @@ index 000000000..edb2532cb
 +    // A separate copy belongs to the lazy frame. Original ABI parameter slots
 +    // and their ARC cleanups stay in the ramp. Isolation thunks own transferred
 +    // retainable arguments in both memory modes before the first suspension;
-+    // ordinary MRC async parameter borrowing keeps its source contract.
++    // unconsumed MRC async parameter borrowing keeps its source contract.
 +    SmallVector<const VarDecl *, 8> Parameters;
 +    const auto *Method = dyn_cast<ObjCMethodDecl>(&Callable);
 +    if (const auto *FD = dyn_cast<FunctionDecl>(&Callable))
@@ -29616,3 +29707,72 @@ index 000000000..77fc53063
 +// CHECK-DAG: call i32 @objc3_executor_get_main
 +// CHECK-DAG: call i32 @objc3_task_hop
 +// CHECK-DAG: call i32 @objc3_async_frame_start_child
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-mrc-task-consumption.h b/clang/test/ObjC3/CodeGen/Inputs/native-mrc-task-consumption.h
+new file mode 100644
+index 000000000..3c8928725
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-mrc-task-consumption.h
+@@ -0,0 +1,37 @@
++#ifndef NATIVE_MRC_TASK_CONSUMPTION_H
++#define NATIVE_MRC_TASK_CONSUMPTION_H
++#include "native-async-task.h"
++#include "native-c-async-frame.h"
++template<class T> objc3_async_frame __objc3_async_to_frame(objc3::task<T>) noexcept;
++@protocol Sendable @end
++extern "C" void task_manual_release(id) __asm__("objc_release");
++__attribute__((objc_root_class)) @interface ManualTaskRoot <Sendable>
++- (int)consumeTask __objc3_async __attribute__((nothrow,ns_consumes_self,objc_executor(main)));
++@end
++extern ManualTaskRoot *manual_task_source() __attribute__((ns_returns_retained));
++static int manual_task_entry(__attribute__((ns_consumed)) ManualTaskRoot *value)
++    noexcept __objc3_async __attribute__((objc_executor(main)));
++static int manual_task_entry(__attribute__((ns_consumed)) ManualTaskRoot *value)
++    noexcept __objc3_async {
++  int result = value != 0;
++#if !__has_feature(objc_arc)
++  task_manual_release(value);
++#endif
++  return result;
++}
++@implementation ManualTaskRoot
++- (int)consumeTask __objc3_async {
++  int result = self != 0;
++#if __has_feature(objc_arc)
++  self = manual_task_source();
++#else
++  task_manual_release(self);
++#endif
++  return result;
++}
++@end
++static int manual_task_parent() __objc3_async_frame {
++  int result = __objc3_await manual_task_entry(manual_task_source());
++  return result + __objc3_await [manual_task_source() consumeTask];
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-mrc-task-consumption.mm b/clang/test/ObjC3/CodeGen/native-mrc-task-consumption.mm
+new file mode 100644
+index 000000000..dfe4caddd
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-mrc-task-consumption.mm
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -x objective-c++-header -emit-pch -o %t.mrc.c++20 %S/Inputs/native-mrc-task-consumption.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -x objective-c++-header -emit-pch -o %t.arc.c++20 %S/Inputs/native-mrc-task-consumption.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -include-pch %t.mrc.c++20 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -include-pch %t.arc.c++20 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -x objective-c++-header -emit-pch -o %t.mrc.c++23 %S/Inputs/native-mrc-task-consumption.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -x objective-c++-header -emit-pch -o %t.arc.c++23 %S/Inputs/native-mrc-task-consumption.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -include-pch %t.mrc.c++23 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -include-pch %t.arc.c++23 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-mrc-task-consumption.h"
++objc3_async_frame use_manual_tasks() {return manual_task_parent();}
++// CHECK-DAG: __objc3_async_to_frame
++// CHECK-DAG: __objc3_isolation_entry_
++// CHECK-DAG: @llvm.objc.retain
++// CHECK-DAG: @llvm.objc.release
++// CHECK-DAG: call i32 @objc3_executor_get_main
++// CHECK-DAG: call i32 @objc3_task_hop

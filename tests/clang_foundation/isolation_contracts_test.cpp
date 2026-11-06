@@ -543,11 +543,11 @@ int class_cross(int value) { return [Counter classValue:value]; }
                 "int mrc_frame_cross(void) __objc3_async_frame {"
                 "return __objc3_await mrc_frame_consume(mrc_frame_source());}")));
     if (Cxx)
-      Reject(Make("int mrc_task_consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
+      Success(Compile(Make("int mrc_task_consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
                   " __objc3_async __attribute__((objc_executor(main)));\n"
-                  "int mrc_task_cross(SafeMessage *value) __objc3_async {"
-                  "return __objc3_await mrc_task_consume(value);}"),
-             "awaited isolated entry requires");
+                  "SafeMessage *mrc_task_source(void) __attribute__((ns_returns_retained));\n"
+                  "int mrc_task_cross(void) __objc3_async {"
+                  "return __objc3_await mrc_task_consume(mrc_task_source());}")));
   }
   Reject(Make("typedef const struct __CFToken *CFTokenRef;\n"
               "int cf_consume(__attribute__((cf_consumed)) CFTokenRef value)" + NoThrow +

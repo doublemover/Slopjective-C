@@ -456,6 +456,84 @@ int main(void) {
       }
     }
 
+    for (int ownership = 0; ownership != 2; ++ownership) {
+      for (int kind = 0; kind != (ownership ? 6 : 5); ++kind) {
+        for (int outcome = 0; outcome != 5; ++outcome) {
+          int before = hop_destroyed();
+          int expected_arguments = kind == 4 ? 2 : 1;
+          int expected_destroyed = expected_arguments + (kind == 5 && (outcome == 0 || outcome == 4));
+          hop_mrc_reset(outcome == 2);
+          frame = ownership ? hop_arc_task_roundtrip(kind, caller) :
+                              hop_mrc_task_roundtrip(kind, caller);
+          type = frame.result_type;
+          task = start(&frame);
+          if (outcome == 1 || outcome == 3) {
+            assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+            assert(hop_mrc_arguments() == expected_arguments);
+            if (outcome == 3) {
+              assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+              assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+              assert(hop_mrc_entries() == 0);
+            }
+            objc3_task_request_cancel(task);
+          } else if (outcome == 4) {
+            for (unsigned step = 0; step != 1000 && hop_mrc_entries() == 0; ++step) {
+              assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+              assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK);
+            }
+            assert(hop_mrc_entries() == 1);
+            objc3_task_request_cancel(task);
+          }
+          objc3_completion completion = finish(task);
+          if (outcome == 0) {
+            assert(completion.kind == OBJC3_COMPLETION_SUCCESS);
+            result = 0;
+            assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+            assert(result == 42);
+          } else if (outcome == 2) {
+            objc3_service_status service = OBJC3_SERVICE_OK;
+            assert(completion.kind == OBJC3_COMPLETION_ERROR);
+            assert(objc3_async_error_get_service(completion.error, &service) == OBJC3_SERVICE_OK &&
+                   service == OBJC3_SERVICE_OUT_OF_MEMORY);
+          } else {
+            assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+          }
+          assert(hop_mrc_arguments() == expected_arguments);
+          assert(hop_mrc_entries() == (outcome == 0 || outcome == 4));
+          objc3_task_release(task);
+          for (unsigned step = 0; step != 1000000 &&
+               hop_destroyed() != before + expected_destroyed; ++step) sched_yield();
+          assert(hop_destroyed() == before + expected_destroyed);
+        }
+      }
+      {
+        int before = hop_destroyed();
+        hop_mrc_reset(0);
+        frame = ownership ? hop_arc_unstarted_roundtrip(caller) :
+                            hop_mrc_unstarted_roundtrip(caller);
+        task = start(&frame);
+        assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+        assert(hop_mrc_arguments() == 1 && hop_mrc_entries() == 0);
+        objc3_task_release(task);
+        for (unsigned step = 0; step != 1000000 && hop_destroyed() != before + 1; ++step)
+          sched_yield();
+        assert(hop_destroyed() == before + 1);
+      }
+      {
+        int before = hop_destroyed();
+        hop_mrc_reset(0);
+        frame = ownership ? hop_arc_failed_copy_roundtrip(caller) :
+                            hop_mrc_failed_copy_roundtrip(caller);
+        task = start(&frame);
+        assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+        assert(hop_mrc_arguments() == 1 && hop_mrc_entries() == 0);
+        objc3_task_release(task);
+        for (unsigned step = 0; step != 1000000 && hop_destroyed() != before + 1; ++step)
+          sched_yield();
+        assert(hop_destroyed() == before + 1);
+      }
+    }
+
     for (int kind = 0; kind != 16; ++kind) {
       if (kind == 12) continue; // Separate throwing-argument control below.
       int expected_objects = (kind == 4 || kind == 8 || kind == 14) ? 2 : 1;
