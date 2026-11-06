@@ -29991,13 +29991,16 @@ index 000000000..dcc76e673
 +// ALIGNED-DAG: store ptr {{.*}}, ptr {{.*}}, align 1
 diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-checked-traversal.m b/clang/test/ObjC3/CodeGen/typed-keypath-checked-traversal.m
 new file mode 100644
-index 000000000..e4a06a631
+index 000000000..333518925
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-keypath-checked-traversal.m
-@@ -0,0 +1,33 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -DCASE_SCALAR -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -DCASE_RECORD -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -DCASE_OBJECT -emit-llvm -o - %s | FileCheck %s
+@@ -0,0 +1,42 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=legacy -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -DCASE_SCALAR -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,LOOKUP
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -DCASE_SCALAR -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,SEND
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=legacy -fblocks -fexceptions -fobjc-exceptions -DCASE_RECORD -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,LOOKUP
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -fblocks -fexceptions -fobjc-exceptions -DCASE_RECORD -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,SEND
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=legacy -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -DCASE_OBJECT -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,LOOKUP
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -DCASE_OBJECT -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,SEND
 +#include "../Inputs/keypath-abi.h"
 +typedef struct CheckedPathPair { long first, second; } CheckedPathPair;
 +__attribute__((objc_root_class))
@@ -30022,12 +30025,18 @@ index 000000000..e4a06a631
 +#endif
 +// A missing route fails before the final read and never returns a fabricated
 +// Value. The same native branch protects scalar, aggregate and nonnull values.
-+// CHECK: define internal {{.*}}@__objc3_keypath_get_
-+// CHECK: {{call|invoke}} {{.*}}@objc_msgSend
-+// CHECK: icmp ne ptr {{.*}}, null
-+// CHECK: br i1
-+// CHECK: call void @llvm.trap()
-+// CHECK-NEXT: unreachable
++// CHECK: define internal {{.*}}@{{.*}}__objc3_keypath_get_
++// SEND: {{call|invoke}} {{.*}}@objc_msgSend
++// LOOKUP: {{call|invoke}} {{.*}}@objc_msg_lookup_sender
++// CHECK: [[HAS:%.*]] = icmp ne ptr {{.*}}, null
++// CHECK-NEXT: br i1 [[HAS]], label %[[PRESENT:[a-zA-Z0-9._]+]], label %[[ABSENT:[a-zA-Z0-9._]+]]
++// CHECK: [[ABSENT]]:
++// CHECK-NEXT: call void @llvm.trap()
++// CHECK: [[PRESENT]]:
++// SEND: {{call|invoke}} {{.*}}@objc_msgSend
++// LOOKUP: {{call|invoke}} {{.*}}@objc_msg_lookup_sender
++// CHECK: declare void @llvm.trap() #[[TRAP_ATTR:[0-9]+]]
++// CHECK: attributes #[[TRAP_ATTR]] = { {{.*}}noreturn{{.*}} }
 diff --git a/clang/test/ObjC3/CodeGen/native-bitint-sanitizer-descriptor.c b/clang/test/ObjC3/CodeGen/native-bitint-sanitizer-descriptor.c
 new file mode 100644
 index 000000000..aa355edf7
