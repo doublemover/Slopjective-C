@@ -42878,10 +42878,10 @@ index 000000000..7f83be1d1
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..c0bde3e08
+index 000000000..ce8b2d0fd
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3659 @@
+@@ -0,0 +1,3728 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43093,6 +43093,9 @@ index 000000000..c0bde3e08
 +    SmallVector<Value, 16> Values;
 +    SmallVector<Value, 16> Effects;
 +    SmallVector<Value, 16> OwnerIdentities;
++    // Lower bounds on explicit manual/family retains in addition to the
++    // original lifetime claim. Saturation is conservative; joins take min.
++    SmallVector<unsigned, 16> ExtraOwnerClaims;
 +    SmallVector<Storage, 16> LocalTargets;
 +    SmallVector<Value, 16> MayTargets;
 +    // Every non-null target is represented in MayTargets. A partial may set
@@ -44043,6 +44046,14 @@ index 000000000..c0bde3e08
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(E))
 +      if (Binary->getOpcode() == BO_Comma || Binary->isAssignmentOp())
 +        return ownerIdentity(Binary->getRHS(), State);
++    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(E)))
++      if (const auto *Operation = getObjC3FamilyOperation(Function);
++          Operation && isa<ObjCFamilyRetainAttr>(Operation))
++        return evaluatedOwnerIdentity(argument(E, 0), State);
++    if (const auto *Message = dyn_cast<ObjCMessageExpr>(E);
++        Message && Message->getMethodFamily() == OMF_retain &&
++        Message->getReceiverKind() == ObjCMessageExpr::Instance)
++      return evaluatedOwnerIdentity(Message->getInstanceReceiver(), State);
 +    if (const VarDecl *Variable = variable(E)) {
 +      auto Found = Slots.find({Variable, nullptr});
 +      if (Found != Slots.end())
@@ -44794,6 +44805,8 @@ index 000000000..c0bde3e08
 +    Invalid = true;
 +  }
 +  void expire(const VarDecl *Owner, Facts &State) const {
++    if (auto Root = OwnerRoots.find(Owner); Root != OwnerRoots.end())
++      State.ExtraOwnerClaims[Root->second] = 0;
 +    auto ExpireValue = [&](Value &V) {
 +      for (unsigned I = 0; I != Origins.size(); ++I) {
 +        const Origin &O = Origins[I];
@@ -44879,28 +44892,63 @@ index 000000000..c0bde3e08
 +  }
 +  bool observeOwnerConsumption(const Expr *Invocation, Facts &State) const {
 +    const bool ARC = Actions.getLangOpts().ObjCAutoRefCount;
-+    Value Identity(OwnerRoots.size());
++    Value Identity(OwnerRoots.size()), Unbounded(OwnerRoots.size());
++    llvm::DenseMap<unsigned, unsigned> ConsumedClaims;
++    auto Consume = [&](const Value &Owners) {
++      Identity |= Owners;
++      for (int I = Owners.find_first(); I >= 0; I = Owners.find_next(I))
++        ++ConsumedClaims[I];
++    };
++    const Expr *RetainedOwner = nullptr;
++    const Expr *DeferredOwner = nullptr;
++    bool FamilyRelease = false;
++    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(Invocation)))
++      if (const auto *Operation = getObjC3FamilyOperation(Function)) {
++        if (isa<ObjCFamilyRetainAttr>(Operation)) RetainedOwner = argument(Invocation, 0);
++        else if (isa<ObjCFamilyAutoreleaseAttr>(Operation)) DeferredOwner = argument(Invocation, 0);
++        else if (isa<ObjCFamilyReleaseAttr>(Operation)) FamilyRelease = true;
++      }
 +    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation); Message && !ARC) {
++      if (Message->getReceiverKind() == ObjCMessageExpr::Instance) {
++        if (Message->getMethodFamily() == OMF_retain) RetainedOwner = Message->getInstanceReceiver();
++        else if (Message->getMethodFamily() == OMF_autorelease) DeferredOwner = Message->getInstanceReceiver();
++      }
 +      const auto *Method = Message->getMethodDecl();
 +      if ((!Method || !Method->isClassMethod()) &&
 +          (Message->getMethodFamily() == OMF_release ||
 +           (Method && Method->hasAttr<NSConsumesSelfAttr>()))) {
-+        Identity |= evaluatedOwnerIdentity(Message->getInstanceReceiver(), State);
++        Consume(evaluatedOwnerIdentity(Message->getInstanceReceiver(), State));
 +        if (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance)
 +          for (const Decl *Scope = Callable; Scope;
 +               Scope = Scope->getDeclContext()
 +                           ? Decl::castFromDeclContext(Scope->getDeclContext()) : nullptr)
 +            if (const auto *Current = dyn_cast<ObjCMethodDecl>(Scope)) {
 +              if (auto Slot = Slots.find({Current->getSelfDecl(), nullptr}); Slot != Slots.end())
-+                Identity |= State.OwnerIdentities[Slot->second];
++                Consume(State.OwnerIdentities[Slot->second]);
 +              break;
 +            }
 +      }
 +    }
-+    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(Invocation)))
-+      if (const auto *Operation = getObjC3FamilyOperation(Function);
-+          Operation && isa<ObjCFamilyReleaseAttr>(Operation))
-+        Identity |= evaluatedOwnerIdentity(argument(Invocation, 0), State);
++    if (RetainedOwner && !ownerIsUnowned(RetainedOwner, State)) {
++      Value Owners = evaluatedOwnerIdentity(RetainedOwner, State);
++      // A may set cannot establish a retain for every possible object. Only
++      // one proven identity gains a definite additional lifetime claim.
++      if (Owners.count() == 1) {
++        unsigned Root = Owners.find_first();
++        // A source-sized cap keeps loops finite without truncating an
++        // arbitrarily long straight-line sequence of explicit retains.
++        if (State.ExtraOwnerClaims[Root] < ExpressionSlots.size())
++          ++State.ExtraOwnerClaims[Root];
++      }
++    }
++    if (DeferredOwner) {
++      // Pool/deferred release ordering is a separate proof. Stop using these
++      // extra counts rather than pretending that a scheduled release vanished.
++      Value Owners = evaluatedOwnerIdentity(DeferredOwner, State);
++      for (int I = Owners.find_first(); I >= 0; I = Owners.find_next(I))
++        State.ExtraOwnerClaims[I] = 0;
++    }
++    if (FamilyRelease) Consume(evaluatedOwnerIdentity(argument(Invocation, 0), State));
 +    const auto Formals = formalParameters(callee(Invocation));
 +    unsigned Count = 0;
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) Count = Call->getNumArgs();
@@ -44920,7 +44968,10 @@ index 000000000..c0bde3e08
 +        Consumed |= Prototype->getExtParameterInfo(Formal).isCFConsumed() ||
 +            (!ARC && Prototype->isParamConsumed(Formal) &&
 +             Prototype->getParamType(Formal)->isObjCRetainableType());
-+      if (Consumed) Identity |= evaluatedOwnerIdentity(argument(Invocation, I), State);
++      // A family release and cf_consumed on its first parameter describe the
++      // same handoff. Different consumed parameters each spend their own claim.
++      if (Consumed && !(FamilyRelease && I == 0))
++        Consume(evaluatedOwnerIdentity(argument(Invocation, I), State));
 +    }
 +    auto AddEffects = [&](const Value &Effects) {
 +      for (int Bit = Effects.find_first(); Bit >= 0; Bit = Effects.find_next(Bit)) {
@@ -44930,7 +44981,7 @@ index 000000000..c0bde3e08
 +          if (!llvm::is_contained(InvokedCallableTokens, unsigned(Bit / 2)))
 +            InvokedCallableTokens.push_back(Bit / 2);
 +        } else if (O.Identity && OwnerRoots.count(O.Identity)) {
-+          Identity.set(OwnerRoots.lookup(O.Identity));
++          Unbounded.set(OwnerRoots.lookup(O.Identity));
 +        }
 +      }
 +    };
@@ -44944,6 +44995,18 @@ index 000000000..c0bde3e08
 +        !fillingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))))
 +      for (unsigned I = 0; I != Count; ++I)
 +        if (safeParameter(Invocation, I)) AddEffects(effects(argument(Invocation, I), State));
++    for (int I = Identity.find_first(); I >= 0; I = Identity.find_next(I)) {
++      const unsigned Spent = ConsumedClaims.lookup(I);
++      if (State.ExtraOwnerClaims[I] >= Spent) {
++        State.ExtraOwnerClaims[I] -= Spent;
++        Identity.reset(I);
++      } else State.ExtraOwnerClaims[I] = 0;
++    }
++    // A captured callable's consumption summary does not bound release count.
++    // It must retire the owner's proof even if explicit extra retains exist.
++    Identity |= Unbounded;
++    for (int I = Unbounded.find_first(); I >= 0; I = Unbounded.find_next(I))
++      State.ExtraOwnerClaims[I] = 0;
 +    if (IsOwnerSummary)
 +      for (const auto &[Root, Index] : OwnerRoots)
 +        if (Root && Identity.test(Index)) ConsumedOwnerRoots.insert(Root);
@@ -46164,6 +46227,11 @@ index 000000000..c0bde3e08
 +    Unowned |= Source.UnownedOwners;
 +    Changed |= Unowned != Destination.UnownedOwners;
 +    Destination.UnownedOwners = std::move(Unowned);
++    for (unsigned I = 0; I != Destination.ExtraOwnerClaims.size(); ++I) {
++      unsigned Claims = std::min(Destination.ExtraOwnerClaims[I], Source.ExtraOwnerClaims[I]);
++      Changed |= Claims != Destination.ExtraOwnerClaims[I];
++      Destination.ExtraOwnerClaims[I] = Claims;
++    }
 +    for (unsigned I = 0; I != Destination.Values.size(); ++I) {
 +      Value Effects = Destination.Effects[I]; Effects |= Source.Effects[I];
 +      Changed |= Effects != Destination.Effects[I]; Destination.Effects[I] = std::move(Effects);
@@ -46318,6 +46386,7 @@ index 000000000..c0bde3e08
 +    Initial.Values.assign(Slots.size(), empty());
 +    Initial.Effects.assign(Slots.size(), empty());
 +    Initial.OwnerIdentities.assign(Slots.size(), Value(OwnerRoots.size()));
++    Initial.ExtraOwnerClaims.assign(OwnerRoots.size(), 0);
 +    Initial.UnownedOwners.resize(Slots.size());
 +    for (const VarDecl *Owner : InheritedUnownedOwners)
 +      if (auto Slot = Slots.find({Owner, nullptr}); Slot != Slots.end())
@@ -55164,3 +55233,282 @@ index 000000000..9a4fcdc60
 +#endif
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-manual-claims.h b/clang/test/ObjC3/Sema/Inputs/borrowed-manual-claims.h
+new file mode 100644
+index 000000000..1c0570d19
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-manual-claims.h
+@@ -0,0 +1,25 @@
++#ifndef OBJC3_BORROWED_MANUAL_CLAIMS_H
++#define OBJC3_BORROWED_MANUAL_CLAIMS_H
++typedef struct ClaimObject *ClaimRef __attribute__((objc_retainable_family(ClaimFamily)));
++ClaimRef ClaimHold(ClaimRef owner) __attribute__((objc_family_retain(ClaimFamily)));
++void ClaimDrop(ClaimRef owner) __attribute__((objc_family_release(ClaimFamily)));
++void ClaimDropConsumed(ClaimRef owner __attribute__((cf_consumed))) __attribute__((objc_family_release(ClaimFamily)));
++ClaimRef ClaimAutorelease(ClaimRef owner) __attribute__((objc_family_autorelease(ClaimFamily)));
++typedef borrowed const char *ClaimBytes;
++ClaimBytes claim_bytes(ClaimRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void claim_use(const char *value __attribute__((noescape)));
++void claim_take(ClaimRef owner __attribute__((cf_consumed)));
++void claim_take_two(ClaimRef first __attribute__((cf_consumed)),ClaimRef second __attribute__((cf_consumed)));
++void claim_overlap(ClaimRef owner __attribute__((cf_consumed)), const char *value __attribute__((noescape)));
++void claim_invoke(void (^work)(void) __attribute__((noescape)));
++#if !__has_feature(objc_arc)
++__attribute__((objc_root_class)) @interface ManualClaimOwner
++- (id)retain;
++- (oneway void)release;
++- (id)autorelease;
++- (void)consume __attribute__((ns_consumes_self));
++@end
++ClaimBytes object_claim_bytes(ManualClaimOwner *_Nonnull owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void object_claim_take(ManualClaimOwner *_Nonnull owner __attribute__((ns_consumed)));
++#endif
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-manual-claims.m b/clang/test/ObjC3/Sema/borrowed-manual-claims.m
+new file mode 100644
+index 000000000..e2d61f3f7
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-manual-claims.m
+@@ -0,0 +1,242 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-manual-claims.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-manual-claims.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-manual-claims.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-manual-claims.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-manual-claims.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-manual-claims.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -Wno-nullability-completeness -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-manual-claims.h"
++#endif
++void balanced_claim(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); ClaimDrop(owner);
++  claim_use(loan); claim_use(claim_bytes(owner));
++}
++void retained_alias(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimRef alias=ClaimHold(owner);
++  ClaimDrop(owner);
++  claim_use(loan); claim_use(claim_bytes(alias));
++  ClaimDrop(alias);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void nested_retained_call(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimDrop(ClaimHold(owner));
++  claim_use(loan);
++}
++void exact_claim_count(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); ClaimHold(owner);
++  ClaimDrop(owner); ClaimDrop(owner);
++  claim_use(loan);
++  ClaimDrop(owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void both_branches_retain(ClaimRef _Nonnull owner,int choose) {
++  const char *loan=claim_bytes(owner);
++  if (choose) ClaimHold(owner); else ClaimHold(owner);
++  ClaimDrop(owner); claim_use(loan);
++}
++void only_one_branch_retains(ClaimRef _Nonnull owner,int choose) {
++  const char *loan=claim_bytes(owner);
++  if (choose) ClaimHold(owner);
++  ClaimDrop(owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void joined_releases(ClaimRef _Nonnull owner,int choose) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner);
++  if (choose) ClaimDrop(owner);
++  claim_use(loan);
++  ClaimDrop(owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void uncertain_retain(ClaimRef _Nonnull first,ClaimRef _Nonnull second,int choose) {
++  const char *loan=claim_bytes(first);
++  ClaimRef chosen=choose?first:second;
++  ClaimHold(chosen); ClaimDrop(first);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void consumed_handoff(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); claim_take(owner); claim_use(loan);
++  claim_take(owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void two_consumed_claims(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); ClaimHold(owner);
++  claim_take_two(owner,owner); claim_use(loan);
++  ClaimDrop(owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void insufficient_consumed_claims(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); claim_take_two(owner,owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void one_family_handoff(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); ClaimDropConsumed(owner);
++  claim_use(loan);
++}
++void retained_overlap(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); claim_overlap(owner,loan);
++  claim_use(loan);
++  claim_overlap(owner,loan); // expected-error {{borrowed argument overlapping a consumed owner claim}}
++}
++void balanced_closure(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  claim_invoke(^{ClaimHold(owner);ClaimDrop(owner);});
++  claim_use(loan);
++}
++void unknown_count_closure(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner);
++  claim_invoke(^{ClaimDrop(owner);ClaimDrop(owner);}); // expected-error {{borrowed argument overlapping a consumed owner claim}}
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void balanced_loop(ClaimRef _Nonnull owner,int count) {
++  const char *loan=claim_bytes(owner);
++  while (count--) {ClaimHold(owner);ClaimDrop(owner);claim_use(loan);}
++  claim_use(loan);
++}
++void possible_repeated_release(ClaimRef _Nonnull owner,int count) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner);
++  while (count--) ClaimDrop(owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void deferred_claim_boundary(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); ClaimAutorelease(owner); ClaimDrop(owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++ClaimBytes returned_claim(ClaimRef _Nonnull owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++__attribute__((objc_returns_borrowed(owner_index=0))) ClaimBytes returned_claim(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner); ClaimDrop(owner);
++  return loan;
++}
++#if !__has_feature(objc_arc)
++void object_retained_alias(ManualClaimOwner *_Nonnull owner) {
++  const char *loan=object_claim_bytes(owner);
++  ManualClaimOwner *alias=[owner retain];
++  [owner release]; claim_use(loan); claim_use(object_claim_bytes(alias));
++  [alias release];
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void object_consuming_receiver(ManualClaimOwner *_Nonnull owner) {
++  const char *loan=object_claim_bytes(owner);
++  [owner retain]; [owner consume]; claim_use(loan);
++  [owner release];
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void object_consuming_argument(ManualClaimOwner *_Nonnull owner) {
++  const char *loan=object_claim_bytes(owner);
++  [owner retain]; object_claim_take(owner); claim_use(loan);
++  [owner release];
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++#endif
++
++void many_explicit_claims(ClaimRef _Nonnull owner) {
++  const char *loan=claim_bytes(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimHold(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  ClaimDrop(owner);
++  claim_use(loan);
++  ClaimDrop(owner);
++  claim_use(loan); // expected-error {{after its owner lifetime ended}}
++}

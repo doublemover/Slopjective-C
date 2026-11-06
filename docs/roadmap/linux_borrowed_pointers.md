@@ -104,7 +104,9 @@ Remaining boundaries to keep explicit while development continues:
   sets never prove a local store; unknown indirect stores fail closed. Unknown array writes preserve may-alias
   facts, and union field reads conservatively preserve overlapping loans.
 - Independent precise strong aliases preserve loans through owner rebinding.
-  Broader MRC/foreign count effects, mutable/reference/generic lambda precision,
+  Explicit known MRC/family retained claims are modeled in System 2.18. Deferred
+  release ordering, ambiguous identities and broader foreign count effects,
+  mutable/reference/generic lambda precision,
   arbitrary constructor/operator effects, dynamic allocation provenance and
   interprocedural callback mutation effects need more work.
 - Indirect borrowed-result calls preserve their type obligation but cannot
@@ -169,3 +171,30 @@ branch-specific writes join their resulting facts. Mutable foreign calls and
 union representation writes invalidate stale definite-target proofs. Eighteen
 C17/C++20/C++23 ARC/MRC source/PCH checks pass; imported getter/record/callback
 controls compile and await native frontend consolidation.
+
+## Explicit manual retained claims
+
+System 2.18 tracks a conservative lower bound on explicit MRC instance retains
+and annotated retainable-family operations. A retain of one known identity adds
+an independent claim; a release or consumed parameter spends one before the
+original borrowed lifetime ends. Retain results preserve the argument identity,
+so releasing through a returned alias affects the same object. Different
+consumed parameters spend distinct claims, including two aliases of one owner.
+A family release and its `cf_consumed` parameter describe one handoff.
+
+CFG joins keep the minimum proven claim count. A retain through ambiguous
+identities cannot credit every candidate. A source-sized bound keeps loops
+finite while preserving arbitrary straight-line sequences. Binding invalidation
+clears stale count proofs. Opaque callable consumption retires the proof rather
+than assuming one release; deferred/autorelease operations stop using extra
+counts until a separate pool-order proof exists. These rules do not reconstruct
+unknown interprocedural counts or claim that borrowed owners can be resurrected
+by retaining a released pointer.
+
+The source/PCH compiler controls cover all six C17/C++20/C++23 ARC/MRC modes,
+retained aliases, branch minima, multiple consumed parameters, overlap,
+closures, loops, return contracts, forty explicit claims, deferred effects and
+MRC consuming receivers. Native frontend and source-free family fixtures add
+balanced published bodies and imported alias/consumption controls. All eighteen new source/PCH commands and all seventeen borrowed compiler
+regressions pass. Expanded frontend and source-free regression sources compile;
+their execution and full SDK acceptance remain in consolidation.

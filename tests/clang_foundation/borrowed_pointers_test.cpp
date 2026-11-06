@@ -105,6 +105,25 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
   Expect(Request(Root,CallableHeader+
       "void f(ConsumedCallback p,NoEscapeCallback n){ConsumedCallback same=(ConsumedCallback)p;PlainCallback weaker=(PlainCallback)n;(void)same;(void)weaker;}",
       Language,Standard,ARC),true);
+  const std::string ClaimHeader =
+      "typedef struct ClaimObject *ClaimRef __attribute__((objc_retainable_family(Claims)));\n"
+      "ClaimRef claim_hold(ClaimRef) __attribute__((objc_family_retain(Claims)));\n"
+      "void claim_drop(ClaimRef) __attribute__((objc_family_release(Claims)));\n"
+      "void claim_take_two(ClaimRef __attribute__((cf_consumed)),ClaimRef __attribute__((cf_consumed)));\n"
+      "typedef borrowed const char *ClaimBytes;\n"
+      "ClaimBytes claim_bytes(ClaimRef) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
+      "void claim_use(const char* __attribute__((noescape)));\n";
+  for (const char *source : {
+      "void f(ClaimRef o){const char*p=claim_bytes(o);claim_hold(o);claim_drop(o);claim_use(p);}",
+      "void f(ClaimRef o){const char*p=claim_bytes(o);ClaimRef a=claim_hold(o);claim_drop(o);claim_use(p);claim_use(claim_bytes(a));}",
+      "void f(ClaimRef o,int c){const char*p=claim_bytes(o);if(c)claim_hold(o);else claim_hold(o);claim_drop(o);claim_use(p);}",
+      "void f(ClaimRef o){const char*p=claim_bytes(o);claim_hold(o);claim_hold(o);claim_take_two(o,o);claim_use(p);}"})
+    Expect(Request(Root,ClaimHeader+source,Language,Standard,ARC),true);
+  for (const char *source : {
+      "void f(ClaimRef o){const char*p=claim_bytes(o);claim_hold(o);claim_drop(o);claim_drop(o);claim_use(p);}",
+      "void f(ClaimRef o,int c){const char*p=claim_bytes(o);if(c)claim_hold(o);claim_drop(o);claim_use(p);}",
+      "void f(ClaimRef o){const char*p=claim_bytes(o);claim_hold(o);claim_take_two(o,o);claim_use(p);}"})
+    Expect(Request(Root,ClaimHeader+source,Language,Standard,ARC),false,"after its owner lifetime ended");
   const std::string ForeignHeader =
       "typedef struct ForeignOwner *ForeignRef;\n"
       "typedef borrowed const char *ForeignBytes;\n"
@@ -611,6 +630,8 @@ void RetainablePersistenceCases(const fs::path &Root) {
       "typedef borrowed const char *FamilyBytes;\n"
       "FamilyBytes family_bytes(FamilyRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
       "void family_use(const char *pointer __attribute__((noescape)));\n"
+      "void family_take_two(FamilyRef __attribute__((cf_consumed)),FamilyRef __attribute__((cf_consumed)));\n"
+      "inline void family_balanced(FamilyRef owner){const char*p=family_bytes(owner);family_hold(owner);family_drop(owner);family_use(p);}\n"
       "typedef struct IntegratedObject{int marker;} *IntegratedRef __attribute__((NSObject,objc_retainable_family(Integrated)));\n"
       "void integrated_drop(IntegratedRef) __attribute__((objc_family_release(Integrated)));\n";
   for(bool ARC:{false,true}) {
@@ -636,6 +657,19 @@ void RetainablePersistenceCases(const fs::path &Root) {
         BaseLanguage::ObjectiveCxx,"c++23",ARC);
     Client.imported_interfaces={Input};
     Expect(Client,true);
+    for (const char *source : {
+        "void balanced(FamilyRef o){const char*p=family_bytes(o);family_hold(o);family_drop(o);family_use(p);family_balanced(o);}",
+        "void aliases(FamilyRef o){const char*p=family_bytes(o);FamilyRef a=family_hold(o);family_drop(o);family_use(p);family_use(family_bytes(a));}",
+        "void two(FamilyRef o){const char*p=family_bytes(o);family_hold(o);family_hold(o);family_take_two(o,o);family_use(p);}"}) {
+      Client.source_text=source;
+      Expect(Client,true);
+    }
+    for (const char *source : {
+        "void expired(FamilyRef o){const char*p=family_bytes(o);family_hold(o);family_drop(o);family_drop(o);family_use(p);}",
+        "void spent(FamilyRef o){const char*p=family_bytes(o);family_hold(o);family_take_two(o,o);family_use(p);}"}) {
+      Client.source_text=source;
+      Expect(Client,false,"after its owner lifetime ended");
+    }
     Client.source_text="void expired(FamilyRef owner){const char*p=family_bytes(owner);family_drop(owner);family_use(p);}";
     Expect(Client,false,"after its owner lifetime ended");
     Client.source_text="void integrated(IntegratedRef owner){integrated_drop(owner);}";
