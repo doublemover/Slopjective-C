@@ -48955,10 +48955,20 @@ index 000000000..a90418213
 +  return ^{ return 1; };
 +}
 diff --git a/clang/lib/AST/DeclBase.cpp b/clang/lib/AST/DeclBase.cpp
-index 70f61fa57..2221804cc 100644
+index 70f61fa57..0db7d0f82 100644
 --- a/clang/lib/AST/DeclBase.cpp
 +++ b/clang/lib/AST/DeclBase.cpp
-@@ -1641,6 +1641,13 @@ DeclContext::LoadLexicalDeclsFromExternalStorage() const {
+@@ -1586,7 +1586,8 @@ DeclContext::BuildDeclChain(ArrayRef<Decl *> Decls,
+   Decl *FirstNewDecl = nullptr;
+   Decl *PrevDecl = nullptr;
+   for (auto *D : Decls) {
+-    if (FieldsAlreadyLoaded && isa<FieldDecl>(D))
++    if (FieldsAlreadyLoaded &&
++        (isa<FieldDecl>(D) || isa<IndirectFieldDecl>(D)))
+       continue;
+ 
+     if (PrevDecl)
+@@ -1641,6 +1642,13 @@ DeclContext::LoadLexicalDeclsFromExternalStorage() const {
    Decl *ExternalFirst, *ExternalLast;
    std::tie(ExternalFirst, ExternalLast) =
        BuildDeclChain(Decls, FieldsAlreadyLoaded);
@@ -48972,7 +48982,7 @@ index 70f61fa57..2221804cc 100644
    ExternalLast->NextInContextAndBits.setPointer(FirstDecl);
    FirstDecl = ExternalFirst;
    if (!LastDecl)
-@@ -2202,6 +2209,11 @@ void DeclContext::makeDeclVisibleInContextImpl(NamedDecl *D, bool Internal) {
+@@ -2202,6 +2210,11 @@ void DeclContext::makeDeclVisibleInContextImpl(NamedDecl *D, bool Internal) {
      return;
    }
  
@@ -48984,7 +48994,7 @@ index 70f61fa57..2221804cc 100644
    DeclNameEntries.addOrReplaceDecl(D);
  }
  
-@@ -2276,8 +2288,12 @@ DependentDiagnostic *DependentDiagnostic::Create(ASTContext &C,
+@@ -2276,8 +2289,12 @@ DependentDiagnostic *DependentDiagnostic::Create(ASTContext &C,
    // Allocate the copy of the PartialDiagnostic via the ASTContext's
    // BumpPtrAllocator, rather than the ASTContext itself.
    DiagnosticStorage *DiagStorage = nullptr;
@@ -52571,10 +52581,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..b2e678c10
+index 000000000..c9dc737a3
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,242 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -52784,6 +52794,38 @@ index 000000000..b2e678c10
 +  EXPECT_EQ(&Constant, &Refs->Constant);
 +  Refs->Mutable = 11;
 +  EXPECT_EQ(11, Mutable);
++}
++
++TEST(ObjC3ASTInfrastructure, AlreadyLoadedIndirectFieldsCannotCreateADeclCycle) {
++  auto AST = tooling::buildASTFromCode("struct R { union { int member; }; };");
++  ASSERT_TRUE(AST);
++  ASTContext &Ctx = AST->getASTContext();
++  auto *Record = const_cast<CXXRecordDecl *>(selectFirst<CXXRecordDecl>(
++      "record", match(cxxRecordDecl(isDefinition(), hasName("R")).bind("record"),
++                      Ctx)));
++  ASSERT_TRUE(Record);
++  SmallVector<Decl *, 4> Before(Record->noload_decls());
++  auto Source = llvm::makeIntrusiveRefCnt<PreloadedFieldsSource>();
++  for (Decl *D : Before)
++    if (isa<FieldDecl>(D) || isa<IndirectFieldDecl>(D))
++      Source->Declarations.push_back(D);
++  ASSERT_EQ(2u, Source->Declarations.size());
++  Ctx.setExternalSource(Source);
++  Record->setHasLoadedFieldsFromExternalStorage(true);
++  Record->setHasExternalLexicalStorage(true);
++
++  // An old chain containing an already-loaded indirect field can become cyclic.
++  // Bound the witness itself so that this regression fails rather than hangs.
++  auto Declarations = Record->decls();
++  auto Position = Declarations.begin();
++  SmallVector<Decl *, 4> After;
++  for (unsigned Step = 0; Step <= Before.size() && Position != Declarations.end();
++       ++Step, ++Position)
++    After.push_back(*Position);
++  EXPECT_EQ(Declarations.end(), Position);
++  EXPECT_EQ(Before, After);
++  EXPECT_EQ(1u, Source->Calls);
++  EXPECT_FALSE(Record->hasExternalLexicalStorage());
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
