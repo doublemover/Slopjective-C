@@ -30,7 +30,14 @@ The [Concurrency 2.103 storage span](linux_nsobject_cf_storage.md) adds NSObject
 pointer CF/NS ownership across synchronous isolation, native frames and C++ tasks,
 including weak/unsafe slots and canonical C++ lifetime qualifiers. Focused
 compiler/native AST checks and the final 1,084-case C17/MRC/O0/source configuration pass;
-optimized runtime and frontend/package consolidation remain pending.
+both optimized source/PCH configurations also pass, totaling 3,252 new scenarios
+and 70 isolation-suite commands. Frontend/package consolidation remains pending.
+
+The [Concurrency 2.104 callable span](linux_concurrent_callable_captures.md)
+applies unsafe/weak/reference/cleanup and shared-this capture policy to C++
+lambdas and preserves literal proofs through immutable local Block aliases.
+Thirty source/PCH commands pass; frontend replay and SDK consolidation remain
+pending.
 
 The [combined implementation sprint](linux_implementation_sprint.md) is
 source-validated through **2.87**, System **2.15** and keypath **2.5**. Its

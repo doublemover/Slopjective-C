@@ -43,8 +43,8 @@ explicit lifetime/union checks and invalid-bridge recovery. An initial native
 configuration passes its original 436 scenarios; the expanded synchronous and
 retained-result configuration also passes. All 940 initial scenarios pass after repairing weak-slot pin/handoff lowering.
 The final 1,084-case expansion also passes at C17/MRC/O0/source; it adds
-CF-consumed weak/unsafe slots. Two optimized source/PCH configurations remain
-in progress. Four native AST type/import/identity controls pass. Compiler/frontend syntax checks pass; final
+CF-consumed weak/unsafe slots. C++20/MRC/O2/source and C++23/ARC/O2/PCH also pass: 3,252 new
+scenarios across three configurations, with 70 complete isolation-suite commands. Four native AST type/import/identity controls pass. Compiler/frontend syntax checks pass; final
 frontend/package and SDK acceptance remain pending. SDK 2.62 is unchanged.
 This does not complete unrelated managed-union storage, unmodeled foreign-family
 operations, implicit template erasure of arbitrary ownership typedefs or full

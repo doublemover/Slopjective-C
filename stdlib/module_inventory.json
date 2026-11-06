@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 103,
+        "minor": 104,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -238,7 +238,8 @@
         "Native task initializer and retained object result ownership, concrete instancetype projection and balanced MRC source claims (source authored; focused source/PCH/native execution passes)",
         "Declaration-specific retained/borrowed/null CF task results with promise-installed value operations and full-expression forwarding lifetimes (source authored; focused source/PCH/native execution passes)",
         "Typed lazy nil task results through the common frame constructor hook, consumed argument disposal and source-free entry/consuming semantic v3 hard cutovers (source authored; focused source/PCH/native execution passes)",
-        "NSObject-backed pointer storage across synchronous isolation, native frames and C++ tasks, with separate CF/NS claims, strong/weak/unsafe slots, ordinary typedef and canonical C++ lifetime identity, borrowed/retained/null result operations and required source-free storage semantics (source authored; focused native checks in progress)"
+        "NSObject-backed pointer storage across synchronous isolation, native frames and C++ tasks, with separate CF/NS claims, strong/weak/unsafe slots, ordinary typedef and canonical C++ lifetime identity, borrowed/retained/null result operations and required source-free storage semantics (source authored; focused source/PCH/native checks pass; frontend consolidation pending)",
+        "Concurrent C++ lambda unsafe/weak/reference/cleanup captures, shared-this versus copied-this, nested/init/mutable/generic captures and ARC/MRC unsafe admission, plus immutable local Block alias proofs with conservative mutable/external rejection (source authored; thirty source/PCH commands pass; frontend replay controls pending)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

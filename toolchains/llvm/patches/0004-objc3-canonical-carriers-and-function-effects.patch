@@ -46951,10 +46951,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..c7ae5e678
+index 000000000..027f55796
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1236 @@
+@@ -0,0 +1,1293 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -46967,6 +46967,7 @@ index 000000000..c7ae5e678
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/DeclTemplate.h"
++#include "clang/AST/LambdaCapture.h"
 +#include "clang/AST/StmtCXX.h"
 +#include "clang/AST/ObjC3Async.h"
 +#include "clang/AST/ObjC3Borrowed.h"
@@ -47089,12 +47090,58 @@ index 000000000..c7ae5e678
 +      if (!Active.insert(Record).second)
 +        return {};
 +      bool Safe = true, ReliesOnPromise = Resource;
-+      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
++      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition)) {
 +        // An implicit ARC destructor only releases the fields checked below.
 +        // User-provided destruction still needs explicit unsafe admission.
 +        Safe = (Class->isAggregate() || Class->isLambda()) &&
 +               (!Class->hasNonTrivialDestructor() ||
 +                !Class->hasUserDeclaredDestructor());
++        if (Class->isLambda()) {
++          llvm::DenseMap<const ValueDecl *, FieldDecl *> CaptureFields;
++          FieldDecl *ThisField = nullptr;
++          Class->getCaptureFields(CaptureFields, ThisField);
++          for (const auto &Capture : Class->captures()) {
++            if (Capture.capturesThis()) {
++              if (Capture.getCaptureKind() == LCK_This) {
++                // A copied this pointer shares the original object. Scalar
++                // pointer sendability cannot attest the pointee's safety.
++                bool Admitted = ThisField &&
++                    unsafeAdmission(C, ThisField->getType()->getPointeeType());
++                Safe &= Admitted;
++                ReliesOnPromise |= Admitted;
++              }
++              // [*this] is an independent value, classified by its field.
++              continue;
++            }
++            if (!Capture.capturesVariable()) continue;
++            const ValueDecl *Variable = Capture.getCapturedVar();
++            auto Found = CaptureFields.find(Variable);
++            QualType CaptureType = Found == CaptureFields.end()
++                ? Variable->getType() : Found->second->getType();
++            bool Unowned = CaptureType.getObjCLifetime() ==
++                Qualifiers::OCL_ExplicitNone ||
++                CaptureType->isObjCInertUnsafeUnretainedType() ||
++                Variable->getType()->isObjCInertUnsafeUnretainedType();
++            auto ManagedVariable = [](const ValueDecl *Value) {
++              return Value->hasAttr<CleanupAttr>() ||
++                  Value->hasAttr<ObjCCleanupAttr>() ||
++                  Value->hasAttr<ObjCResourceAttr>();
++            };
++            bool Managed = ManagedVariable(Variable);
++            if (const auto *InitCapture = dyn_cast<VarDecl>(Variable);
++                InitCapture && InitCapture->isInitCapture() && InitCapture->hasInit()) {
++              const Expr *Init = InitCapture->getInit()->IgnoreParenImpCasts();
++              if (const auto *Reference = dyn_cast<DeclRefExpr>(Init))
++                Managed |= ManagedVariable(Reference->getDecl());
++            }
++            if (Unowned || Managed) {
++              bool Admitted = unsafeAdmission(C, CaptureType);
++              Safe &= Admitted;
++              ReliesOnPromise |= Admitted;
++            }
++          }
++        }
++      }
 +      for (const auto *Field : Definition->fields()) {
 +        if (isObjC3BorrowedType(C, Field->getType())) {
 +          Active.erase(Record);
@@ -47172,16 +47219,18 @@ index 000000000..c7ae5e678
 +  }
 +}
 +const BlockExpr *knownBlockLiteral(const Expr *E) {
-+  if (!E)
-+    return nullptr;
-+  E = transferSource(E);
-+  if (const auto *B = dyn_cast<BlockExpr>(E))
-+    return B;
-+  if (const auto *Reference = dyn_cast<DeclRefExpr>(E))
-+    if (const auto *V = dyn_cast<VarDecl>(Reference->getDecl()))
-+      if (V->isLocalVarDecl() && V->getType().isConstQualified() &&
-+          V->hasInit())
-+        return dyn_cast<BlockExpr>(V->getInit()->IgnoreParenImpCasts());
++  llvm::SmallPtrSet<const VarDecl *, 8> Seen;
++  while (E) {
++    E = transferSource(E);
++    if (const auto *B = dyn_cast<BlockExpr>(E)) return B;
++    const auto *Reference = dyn_cast<DeclRefExpr>(E);
++    const auto *V = Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
++    if (!V || !V->isLocalVarDecl() || !V->getType().isConstQualified() ||
++        !V->hasInit() || !Seen.insert(V).second) return nullptr;
++    // Immutable local aliases preserve the literal's capture environment.
++    // Mutable or external storage never supplies this proof.
++    E = V->getInit();
++  }
 +  return nullptr;
 +}
 +
@@ -47497,7 +47546,9 @@ index 000000000..c7ae5e678
 +    bool Unsafe =
 +        Capture.getObjC3CaptureKind() == BlockDecl::ObjC3CaptureKind::Unowned ||
 +        Capture.getCaptureType().getObjCLifetime() ==
-+            Qualifiers::OCL_ExplicitNone;
++            Qualifiers::OCL_ExplicitNone ||
++        Capture.getCaptureType()->isObjCInertUnsafeUnretainedType() ||
++        V->getType()->isObjCInertUnsafeUnretainedType();
 +    bool Managed = V->hasAttr<CleanupAttr>() || V->hasAttr<ObjCCleanupAttr>() ||
 +                   V->hasAttr<ObjCResourceAttr>();
 +    bool Failed = false;
@@ -47523,10 +47574,16 @@ index 000000000..c7ae5e678
 +    Invalid |= Failed;
 +  }
 +  if (D->capturesCXXThis()) {
-+    S.Diag(Site, strictConcurrency(S) ? diag::err_objc3_sendable_transfer
-+                                      : diag::warn_objc3_sendable_transfer)
-+        << S.Context.VoidPtrTy << "implicit C++ this capture";
-+    Invalid |= strictConcurrency(S);
++    class CapturedThisType : public ConstEvaluatedExprVisitor<CapturedThisType> {
++    public:
++      QualType Type;
++      explicit CapturedThisType(ASTContext &C) : ConstEvaluatedExprVisitor(C) {}
++      void VisitCXXThisExpr(const CXXThisExpr *E) {Type = E->getType()->getPointeeType();}
++      void VisitBlockExpr(const BlockExpr *E) {Visit(E->getBody());}
++    } Finder(S.Context);
++    Finder.Visit(B->getBody());
++    Invalid |= checkTransfer(S, Finder.Type.isNull() ? S.Context.VoidPtrTy : Finder.Type,
++                             Site, "shared C++ this capture", nullptr, true);
 +  }
 +  Active.erase(D);
 +  return Invalid;
@@ -56012,3 +56069,178 @@ index 000000000..d53732597
 +using BorrowedObject=__unsafe_unretained NativeObject;
 +static_assert(__is_constructible(PointerBox<BorrowedObject>,const PointerBox<BorrowedObject>&));
 +void use_storage() {PointerBox<NativeObject> owning;PointerBox<BorrowedObject> borrowed;}
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-concurrent-captures.h b/clang/test/ObjC3/Sema/Inputs/native-concurrent-captures.h
+new file mode 100644
+index 000000000..da28232ea
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-concurrent-captures.h
+@@ -0,0 +1,18 @@
++#ifndef NATIVE_CONCURRENT_CAPTURES_H
++#define NATIVE_CONCURRENT_CAPTURES_H
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface CaptureRoot @end
++@interface CaptureSafe : CaptureRoot <Sendable> @end
++__attribute__((objc_unsafe_sendable)) @interface CaptureAdmitted : CaptureRoot @end
++@interface CaptureMutable : CaptureRoot @end
++void capture_cleanup(int *);
++typedef int CaptureAdmittedHandle __attribute__((objc_unsafe_sendable));
++void capture_admitted_cleanup(CaptureAdmittedHandle *);
++template<class Work> int capture_spawn(Work) __attribute__((objc_task_spawn));
++template<class Work> int capture_detach(Work) __attribute__((objc_task_detached));
++struct CaptureHolder {int number;void shared();void independent();};
++struct __attribute__((objc_unsafe_sendable)) CaptureAdmittedHolder {int number;void shared();};
++typedef void (^CaptureAsyncBlock)(void) __objc3_async_frame;
++int capture_block_spawn(CaptureAsyncBlock) __attribute__((objc_task_spawn));
++#endif
+diff --git a/clang/test/ObjC3/Sema/native-concurrent-captures.mm b/clang/test/ObjC3/Sema/native-concurrent-captures.mm
+new file mode 100644
+index 000000000..272407eac
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-concurrent-captures.mm
+@@ -0,0 +1,68 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -emit-pch %S/Inputs/native-concurrent-captures.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -fobjc-arc -emit-pch %S/Inputs/native-concurrent-captures.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -emit-pch %S/Inputs/native-concurrent-captures.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -fobjc-arc -emit-pch %S/Inputs/native-concurrent-captures.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -Wno-deprecated-this-capture -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#ifndef FROM_PCH
++#include "Inputs/native-concurrent-captures.h"
++#endif
++void capture_values(CaptureSafe *safe, CaptureMutable *mutable_object, CaptureAdmitted *admitted) {
++  int number=1;
++  (void)capture_spawn([number]() __objc3_async_frame {return number;});
++  (void)capture_spawn([safe]() __objc3_async_frame {return safe != 0;});
++  (void)capture_spawn([mutable_object]() __objc3_async_frame {return mutable_object != 0;}); // expected-error {{non-Sendable type}}
++  (void)capture_spawn([admitted]() __objc3_async_frame {return admitted != 0;}); // expected-note {{relies on objc_unsafe_sendable}}
++  __weak CaptureSafe *weak_safe=safe;
++  (void)capture_spawn([weak_safe]() __objc3_async_frame {return weak_safe != 0;});
++  __weak CaptureMutable *weak_mutable=mutable_object;
++  (void)capture_spawn([weak_mutable]() __objc3_async_frame {return weak_mutable != 0;}); // expected-error {{non-Sendable type}}
++  __unsafe_unretained CaptureSafe *unsafe_safe=safe;
++  (void)capture_detach([unsafe_safe]() __objc3_async_frame {return unsafe_safe != 0;}); // expected-error {{non-Sendable type}}
++  __unsafe_unretained CaptureAdmitted *unsafe_admitted=admitted;
++  (void)capture_detach([unsafe_admitted]() __objc3_async_frame {return unsafe_admitted != 0;}); // expected-note {{relies on objc_unsafe_sendable}}
++  int handle __attribute__((cleanup(capture_cleanup)))=1;
++  (void)capture_spawn([handle]() __objc3_async_frame {return handle;}); // expected-error {{non-Sendable type}}
++  (void)capture_spawn([saved=handle]() __objc3_async_frame {return saved;}); // expected-error {{non-Sendable type}}
++  (void)capture_detach([handle]() mutable __objc3_async_frame {return ++handle;}); // expected-error {{non-Sendable type}}
++  (void)capture_spawn([handle](auto... args) __objc3_async_frame {return handle;}); // expected-error {{non-Sendable type}}
++  CaptureAdmittedHandle unchecked __attribute__((cleanup(capture_admitted_cleanup)))=1;
++  (void)capture_spawn([unchecked]() __objc3_async_frame {return unchecked;}); // expected-note {{relies on objc_unsafe_sendable}}
++  (void)capture_spawn([&number]() __objc3_async_frame {return number;}); // expected-error {{non-Sendable type}}
++  auto nested=[unsafe_safe]() __objc3_async_frame {return unsafe_safe != 0;};
++  auto alias=nested;
++  (void)capture_spawn([alias]() __objc3_async_frame {(void)alias;return 1;}); // expected-error {{non-Sendable type}}
++}
++void CaptureHolder::shared() {
++  (void)capture_spawn([this]() __objc3_async_frame {return number;}); // expected-error {{non-Sendable type}}
++  (void)capture_detach([=]() __objc3_async_frame {return number;}); // expected-error {{non-Sendable type}}
++  (void)capture_block_spawn(^void(void) __objc3_async_frame {(void)number;}); // expected-error {{non-Sendable type}}
++}
++void CaptureHolder::independent() {
++  (void)capture_spawn([*this]() __objc3_async_frame {return number;});
++}
++void CaptureAdmittedHolder::shared() {
++  (void)capture_spawn([this]() __objc3_async_frame {return number;}); // expected-note {{relies on objc_unsafe_sendable}}
++  (void)capture_block_spawn(^void(void) __objc3_async_frame {(void)number;}); // expected-note {{relies on objc_unsafe_sendable}}
++}
++void immutable_block_aliases(CaptureSafe *safe) {
++  CaptureAsyncBlock const original=^void(void) __objc3_async_frame {(void)safe;};
++  CaptureAsyncBlock const second=original;
++  CaptureAsyncBlock const third=second;
++  (void)capture_block_spawn(third);
++}
++void unsafe_block_aliases(CaptureMutable *object) {
++  CaptureAsyncBlock const original=^void(void) __objc3_async_frame {(void)object;};
++  CaptureAsyncBlock const second=original;
++  (void)capture_block_spawn(second); // expected-error {{non-Sendable type}}
++}
++void mutable_block_not_proven(CaptureAsyncBlock original) {
++  CaptureAsyncBlock const alias=original;
++  (void)capture_block_spawn(alias); // expected-error {{cannot prove Sendable captures}}
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-concurrent-block-aliases.h b/clang/test/ObjC3/Sema/Inputs/native-concurrent-block-aliases.h
+new file mode 100644
+index 000000000..15da1eacc
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-concurrent-block-aliases.h
+@@ -0,0 +1,12 @@
++#ifndef NATIVE_CONCURRENT_BLOCK_ALIASES_H
++#define NATIVE_CONCURRENT_BLOCK_ALIASES_H
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface BlockCaptureRoot @end
++@interface BlockCaptureSafe : BlockCaptureRoot <Sendable> @end
++__attribute__((objc_unsafe_sendable)) @interface BlockCaptureAdmitted : BlockCaptureRoot @end
++@interface BlockCaptureMutable : BlockCaptureRoot @end
++typedef void (^AliasAsyncWork)(void) __objc3_async_frame;
++int alias_spawn(AliasAsyncWork) __attribute__((objc_task_spawn));
++int alias_detach(AliasAsyncWork) __attribute__((objc_task_detached));
++#endif
+diff --git a/clang/test/ObjC3/Sema/native-concurrent-block-aliases.m b/clang/test/ObjC3/Sema/native-concurrent-block-aliases.m
+new file mode 100644
+index 000000000..eb1ecd6bf
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-concurrent-block-aliases.m
+@@ -0,0 +1,53 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-concurrent-block-aliases.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-concurrent-block-aliases.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-concurrent-block-aliases.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-concurrent-block-aliases.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-concurrent-block-aliases.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-concurrent-block-aliases.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#ifndef FROM_PCH
++#include "Inputs/native-concurrent-block-aliases.h"
++#endif
++void alias_safe(BlockCaptureSafe *safe) {
++  AliasAsyncWork const original=^void(void) __objc3_async_frame {(void)safe;};
++  AliasAsyncWork const second=original;
++  AliasAsyncWork const third=second;
++  (void)alias_spawn(third);
++  (void)alias_detach(^void(void) __objc3_async_frame {(void)third;});
++  __weak BlockCaptureSafe *weak=safe;
++  (void)alias_spawn(^void(void) __objc3_async_frame {(void)weak;});
++}
++void alias_unsafe(BlockCaptureSafe *safe, BlockCaptureAdmitted *admitted) {
++  __unsafe_unretained BlockCaptureSafe *unsafe=safe;
++  AliasAsyncWork const original=^void(void) __objc3_async_frame {(void)unsafe;};
++  AliasAsyncWork const second=original;
++  (void)alias_spawn(second); // expected-error {{non-Sendable type}}
++  (void)alias_detach(^void(void) __objc3_async_frame {(void)second;}); // expected-error {{non-Sendable type}}
++  __unsafe_unretained BlockCaptureAdmitted *unchecked=admitted;
++  AliasAsyncWork const allowed=^void(void) __objc3_async_frame {(void)unchecked;};
++  (void)alias_spawn(allowed); // expected-note {{relies on objc_unsafe_sendable}}
++}
++void alias_mutable(BlockCaptureMutable *object) {
++  __weak BlockCaptureMutable *weak=object;
++  AliasAsyncWork const original=^void(void) __objc3_async_frame {(void)weak;};
++  AliasAsyncWork const second=original;
++  (void)alias_spawn(second); // expected-error {{non-Sendable type}}
++}
++void alias_unknown(AliasAsyncWork work) {
++  AliasAsyncWork const first=work;
++  (void)alias_spawn(first); // expected-error {{cannot prove Sendable captures}}
++  AliasAsyncWork mutable_work=^void(void) __objc3_async_frame {};
++  AliasAsyncWork const second=mutable_work;
++  (void)alias_spawn(second); // expected-error {{cannot prove Sendable captures}}
++}

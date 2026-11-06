@@ -27,6 +27,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | Remaining crossings and managed values                                                                                      | Open                                                                                         |
 | Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | Task-ABI initializer/object/CF results and typed nil entries                                                                | Source authored; focused native execution passes                                             |
+| Isolation          | Concurrent C++ callable capture policy and immutable local Block alias proofs                                               | Source authored; thirty source/PCH commands pass; frontend replay execution pending            |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                                                         |
 | Isolation          | Typed nil native-frame messages and consumed argument cleanup                                                               | Source authored; focused source/PCH/runtime execution passes                                 |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending                              |
@@ -369,6 +370,17 @@ qualifiers retain consistent union/optional lifetime facts. Interfaces require
 `objc3.nsobject-storage.v1` and reject missing/invented or unsupported claims.
 
 Focused source/PCH and native AST checks pass. The final 1,084-case native configuration
-passes at C17/MRC/O0/source; two optimized configurations and frontend/package
-consolidation remain pending. Managed unions, other crossings, full profiles and SDK delivery
+passes at C17/MRC/O0/source; both optimized configurations pass too, completing 3,252 new scenarios and 70
+isolation-suite commands. Frontend/package consolidation remains pending. Managed unions, other crossings, full profiles and SDK delivery
 remain separate obligations.
+
+## Concurrent callable capture policy
+
+The [2.104 callable span](linux_concurrent_callable_captures.md) closes shared
+`this`, explicit unsafe and cleanup-managed capture admission gaps for C++
+lambdas. Weak, reference, nested/init, mutable and generic captures retain their
+native restrictions. ARC qualifiers and MRC inert unsafe markers both count;
+unsafe admissions emit transfer notes. Block aliases follow only immutable local
+initializers, and Block C++ `this` checking uses the actual pointee contract.
+Thirty new source/PCH commands and the existing transfer-note regression pass.
+Frontend replay/consumer controls are authored; consolidation remains pending.

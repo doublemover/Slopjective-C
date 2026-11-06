@@ -3439,6 +3439,69 @@ void TestClosureFactories() {
   }
 }
 
+void TestConcurrentCallableCaptureReplay() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    for (bool arc : {false, true}) {
+      std::vector<std::string> args={"-x","objective-c++",standard,
+          "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-weak",
+          "-fobjc3-strict-concurrency","--target=x86_64-unknown-linux-gnu",
+          "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      if (arc) args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
+      auto parse=[&](const std::string &source,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(source,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto emit=[&](const std::string &source,const char *name) {
+        auto ast=parse(source,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                     "fixture.concurrent_captures","test",{}));
+        return EmitSemanticInterface(ast->getASTContext(),"fixture.concurrent_captures","test",{},{},{},
+                                     {"ConcurrentCaptures","ConcurrentCaptureRoot","ConcurrentCaptureSafe","Sendable"});
+      };
+      const std::string source=R"(
+        #include <objc3c/runtime/objc3_task.hpp>
+        @protocol Sendable @end
+        __attribute__((objc_root_class)) @interface ConcurrentCaptureRoot @end
+        @interface ConcurrentCaptureSafe:ConcurrentCaptureRoot<Sendable> @end
+        namespace ConcurrentCaptures {
+          template<class Work> int start(Work) __attribute__((objc_task_spawn));
+          template<class Work> inline int launch(Work work) {return start(work);}
+          inline int object(ConcurrentCaptureSafe *value) {
+            return launch([value]()->int __objc3_async_frame {return value!=0;});
+          }
+          typedef void (^Work)(void) __objc3_async_frame;
+          int start_block(Work) __attribute__((objc_task_spawn));
+          inline int aliases(ConcurrentCaptureSafe *value) {
+            Work const first=^void(void) __objc3_async_frame {(void)value;};
+            Work const second=first;
+            Work const third=second;
+            return start_block(third);
+          }
+        }
+      )";
+      auto first=emit(source,"concurrent-captures.mm");assert(first.success);
+      auto replay=emit(first.source_bytes,"replayed-concurrent-captures.mm");
+      assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-concurrent-captures.mm");
+      assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto valid=parse(first.source_bytes+R"(
+        int valid_capture(int n) {
+          return ConcurrentCaptures::launch([n]()->int __objc3_async_frame {return n;});
+        }
+      )","valid-concurrent-consumer.mm");
+      assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+      auto invalid=parse(first.source_bytes+R"(
+        int invalid_capture(__unsafe_unretained ConcurrentCaptureSafe *value) {
+          return ConcurrentCaptures::launch([value]()->int __objc3_async_frame {return value!=0;});
+        }
+      )","invalid-concurrent-consumer.mm");
+      assert(invalid && invalid->getDiagnostics().hasErrorOccurred());
+    }
+  }
+}
+
 void TestEffectfulLambdas() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
@@ -6470,6 +6533,7 @@ int main() {
   TestFactoryTypeProjections();
   TestLocalFactoryResults();
   TestClosureFactories();
+  TestConcurrentCallableCaptureReplay();
   TestEffectfulLambdas();
   TestAddressTemplateArguments();
   TestTemplateCallableProjections();
