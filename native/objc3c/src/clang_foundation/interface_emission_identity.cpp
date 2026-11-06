@@ -1445,6 +1445,28 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     add(diagnostic?diagnostic->getMessage():enabled->getMessage());
     if(diagnostic) {add(std::to_string(diagnostic->getDefaultSeverity()));add(diagnostic->getWarningGroup());}
   }
+  if (const auto *ownership=llvm::dyn_cast<clang::OwnershipAttr>(attribute)) {
+    add(ownership->isReturns()?"returns":ownership->isTakes()?"takes":"holds");
+    add(ownership->getModule()->getName());
+    std::set<unsigned> indices;
+    for(auto index:ownership->args())indices.insert(index.getASTIndex());
+    for(auto index:indices)add(std::to_string(index));
+  } else if (const auto *tag=llvm::dyn_cast<clang::ArgumentWithTypeTagAttr>(attribute)) {
+    add(tag->getArgumentKind()->getName());parameter(tag->getArgumentIdx());
+    parameter(tag->getTypeTagIdx());add(tag->getIsPointer()?"pointer":"value");
+  } else if (const auto *tag=llvm::dyn_cast<clang::TypeTagForDatatypeAttr>(attribute)) {
+    add(tag->getArgumentKind()->getName());
+    add(CanonicalType(tag->getMatchingCType(),declaration->getASTContext()));
+    add(tag->getLayoutCompatible()?"layout-compatible":"exact-type");
+    add(tag->getMustBeNull()?"null":"nonnull-permitted");
+  } else if (const auto *format=llvm::dyn_cast<clang::FormatMatchesAttr>(attribute)) {
+    add(format->getType()->getName());add(std::to_string(format->getFormatIdx()));
+    DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
+    add(identity.Get(format->getExpectedFormat()));
+  } else if (const auto *builtin=llvm::dyn_cast<clang::DiagnoseAsBuiltinAttr>(attribute)) {
+    add(builtin->getFunction()->getName());
+    for(unsigned index:builtin->argIndices())add(std::to_string(index));
+  }
   if (const auto *allocator=llvm::dyn_cast<clang::RestrictAttr>(attribute)) {
     if (auto *deallocator=allocator->getDeallocator()) {
       DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
@@ -2493,7 +2515,7 @@ bool ReadInterfaceDeclarationIdentity(
   ReadNativeDeclarationContracts(representative, context, identity.effects);
   const auto native_attributes=DeclarationAttributeKey(representative,true);
   if(!native_attributes.empty())
-    identity.canonical_type_identity+=";native-declaration-attributes:v1;contracts="+
+    identity.canonical_type_identity+=";native-declaration-attributes:v2;contracts="+
         ComputeInterfaceSourceSha256(native_attributes)+";";
   const auto foreign_attributes=DeclarationAttributeKey(representative);
   if(!foreign_attributes.empty())

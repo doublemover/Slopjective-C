@@ -287,12 +287,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 18,
+        "minor": 19,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Type-carried borrowed callback results and owner indices through indirect function/Block/member calls, aliases, auto/templates, native type/ODR/USR/overload identity and AST/PCH/interface persistence (source authored; focused native source/PCH/identity checks pass; frontend consolidation pending)",
         "Explicit MRC and retainable-family claim lower bounds through known aliases and CFG joins, retained-result alias identity, exact consumed-parameter multiplicity and conservative callable/deferred effects (source authored; focused source/PCH diagnostics pass)",
         "Closed finite pointer-target proofs across CFG joins, scalar/aggregate aliases and captures; indirect local field/array writes, constant offsets and conservative mutation invalidation (source)",
         "Finite conditional local writes, signed tracked-array offsets and independent precise strong-alias loan lifetimes (source)",

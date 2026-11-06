@@ -67,7 +67,7 @@ class TypeDependencyVisitor final
    void CheckDeclarationAttributes(const clang::NamedDecl *declaration) {
      if (!declaration) return;
      for (const auto *attribute:declaration->attrs())
-       if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr>(attribute))
+       if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr>(attribute))
          TraverseAttr(const_cast<clang::Attr *>(attribute));
        else if(llvm::isa<clang::DiagnoseIfAttr,clang::EnableIfAttr>(attribute)) {
          const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute);

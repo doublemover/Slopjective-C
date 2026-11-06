@@ -30626,7 +30626,7 @@ index 000000000..620e811c5
 +void *aligned_alloc(__SIZE_TYPE__ alignment, __SIZE_TYPE__ size) {return 0;}
 diff --git a/clang/test/ObjC3/CodeGen/borrowed-callable-owners.mm b/clang/test/ObjC3/CodeGen/borrowed-callable-owners.mm
 new file mode 100644
-index 000000000..4a9f1aa84
+index 000000000..0725b03f0
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/borrowed-callable-owners.mm
 @@ -0,0 +1,14 @@
@@ -30640,7 +30640,7 @@ index 000000000..4a9f1aa84
 +void owner_overload(CallbackSecond) {}
 +void opaque_overload(OpaqueGetter) {}
 +void opaque_overload(const char*(*)(id)) {}
++// CHECK-DAG: define{{.*}} @_Z14owner_overloadPU20objc3_borrowed_ownerILj0EEF
 +// CHECK-DAG: define{{.*}} @_Z14owner_overloadPU20objc3_borrowed_ownerILj1EEF
-+// CHECK-DAG: define{{.*}} @_Z14owner_overloadPU20objc3_borrowed_ownerILj2EEF
 +// CHECK-DAG: define{{.*}} @_Z15opaque_overloadPU21objc3_borrowed_resultF
 +// CHECK-DAG: define{{.*}} @_Z15opaque_overloadPFPKcP11objc_objectE

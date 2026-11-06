@@ -5606,7 +5606,7 @@ index e0b62591a..2ad8208b6 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..64ca7c642 100644
+index 4be3e977b..586754755 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,141 @@
@@ -5945,7 +5945,7 @@ index 4be3e977b..64ca7c642 100644
 +         !(Policy.PolishForDeclaration &&
 +           isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
-+               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
 +               ObjCFamilyAutoreleaseAttr, SwiftNameAttr, SwiftAsyncNameAttr,
 +               SwiftAsyncAttr, SwiftErrorAttr, SwiftAsyncErrorAttr,
@@ -5962,7 +5962,7 @@ index 4be3e977b..64ca7c642 100644
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
 +        !isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
-+               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
 +             ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCUnsafeSendableAttr,
 +             ObjCTaskSpawnAttr, ObjCTaskDetachedAttr, ObjCTaskGroupAttr,
@@ -6040,7 +6040,7 @@ index 4be3e977b..64ca7c642 100644
 +      if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) && isa<FunctionDecl>(D) &&
 +          isa<SentinelAttr, CallbackAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr,
 +              NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
-+               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +              ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr,
 +              CXX11NoReturnAttr, VisibilityAttr>(A))
 +        APos = AttrPosAsWritten::Left;
@@ -8284,7 +8284,7 @@ index 7e72a8513..2078da4d1 100644
  
  //===----------------------------------------------------------------------===//
 diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
-index e8fbffb9f..85fdb2242 100644
+index e8fbffb9f..15c24af0c 100644
 --- a/clang/lib/AST/TypePrinter.cpp
 +++ b/clang/lib/AST/TypePrinter.cpp
 @@ -19,6 +19,8 @@
@@ -8349,7 +8349,7 @@ index e8fbffb9f..85fdb2242 100644
  void TypePrinter::printPointerBefore(const PointerType *T, raw_ostream &OS) {
    IncludeStrongLifetimeRAII Strong(Policy);
    SaveAndRestore NonEmptyPH(HasEmptyPlaceHolder, false);
-@@ -987,10 +1028,13 @@ void TypePrinter::printFunctionProtoBefore(const FunctionProtoType *T,
+@@ -987,10 +1028,15 @@ void TypePrinter::printFunctionProtoBefore(const FunctionProtoType *T,
    } else {
      // If needed for precedence reasons, wrap the inner part in grouping parens.
      SaveAndRestore PrevPHIsEmpty(HasEmptyPlaceHolder, false);
@@ -8360,10 +8360,12 @@ index e8fbffb9f..85fdb2242 100644
    }
 +  if (T->getExtInfo().getProducesResult())
 +    OS << "__attribute__((ns_returns_retained)) ";
++  if (unsigned Owner = T->getObjC3BorrowedOwner())
++    OS << "__attribute__((objc_returns_borrowed(owner_index=" << (Owner - 1) << "))) ";
  }
  
  StringRef clang::getParameterABISpelling(ParameterABI ABI) {
-@@ -1028,6 +1072,7 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
+@@ -1028,6 +1074,7 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
  
        auto EPI = T->getExtParameterInfo(i);
        if (EPI.isConsumed()) OS << "__attribute__((ns_consumed)) ";
@@ -8371,7 +8373,7 @@ index e8fbffb9f..85fdb2242 100644
        if (EPI.isNoEscape())
          OS << "__attribute__((noescape)) ";
        auto ABI = EPI.getABI();
-@@ -1115,11 +1160,35 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
+@@ -1115,11 +1162,33 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
      OS << "))";
    }
  
@@ -8379,8 +8381,6 @@ index e8fbffb9f..85fdb2242 100644
 +  // ordering accepted by Sema. Declaration output must use reparsable keyword
 +  // spellings, including effects nested inside typedefs and callback types.
 +  // Diagnostic/canonical type strings retain their concise spelling.
-+  if (unsigned Owner = T->getObjC3BorrowedOwner())
-+    OS << " __attribute__((objc_returns_borrowed(owner_index=" << (Owner - 1) << ")))";
 +  ObjC3FunctionEffectInfo ObjC3 = T->getObjC3FunctionEffects();
 +  if (ObjC3.Async)
 +    OS << (ObjC3.AsyncFrame ? " __objc3_async_frame"
@@ -8507,10 +8507,12 @@ index e8fbffb9f..85fdb2242 100644
      return;
  
    if (T->getAttrKind() == attr::LifetimeBound) {
-@@ -2030,6 +2115,7 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
+@@ -2030,6 +2115,9 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
      // AttributedType nodes for them.
      break;
  
++  case attr::ObjCReturnsBorrowed:
++    llvm_unreachable("borrowed owner contracts are stored on FunctionProtoType");
 +  case attr::ObjC3Borrowed:
    case attr::CountedBy:
    case attr::CountedByOrNull:
@@ -55816,7 +55818,7 @@ index 000000000..e2d61f3f7
 +}
 diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-callable-owners.h b/clang/test/ObjC3/Sema/Inputs/borrowed-callable-owners.h
 new file mode 100644
-index 000000000..c658e796c
+index 000000000..cfb789a21
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/borrowed-callable-owners.h
 @@ -0,0 +1,31 @@
@@ -55837,7 +55839,7 @@ index 000000000..c658e796c
 +void callback_consume(id value __attribute__((ns_consumed)));
 +#ifdef __cplusplus
 +using CallbackAlias=CallbackFunction *;
-+template<class T> using CallbackResult=CallbackBytes(*)(T*) __attribute__((objc_returns_borrowed(owner_index=0)));
++template<class T> using CallbackResult=CallbackBytes(__attribute__((objc_returns_borrowed(owner_index=0))) *)(T*);
 +template<class T> T callback_identity(T value) {return value;}
 +template<class Getter>
 +__attribute__((objc_returns_borrowed(owner_index=1)))
@@ -55846,17 +55848,17 @@ index 000000000..c658e796c
 +  CallbackBytes get(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
 +};
 +template<class> struct CallbackOwner {static constexpr int value=0;};
-+template<class T> struct CallbackOwner<CallbackBytes(*)(id,T) __attribute__((objc_returns_borrowed(owner_index=0)))> {static constexpr int value=1;};
-+template<class T> struct CallbackOwner<CallbackBytes(*)(id,T) __attribute__((objc_returns_borrowed(owner_index=1)))> {static constexpr int value=2;};
-+using CallbackMember=CallbackBytes(CallbackWorker::*)(id) __attribute__((objc_returns_borrowed(owner_index=0)));
++template<class T> struct CallbackOwner<CallbackBytes(__attribute__((objc_returns_borrowed(owner_index=0))) *)(id,T)> {static constexpr int value=1;};
++template<class T> struct CallbackOwner<CallbackBytes(__attribute__((objc_returns_borrowed(owner_index=1))) *)(id,T)> {static constexpr int value=2;};
++using CallbackMember=CallbackBytes(__attribute__((objc_returns_borrowed(owner_index=0))) CallbackWorker::*)(id);
 +#endif
 +#endif
 diff --git a/clang/test/ObjC3/Sema/borrowed-callable-owners.m b/clang/test/ObjC3/Sema/borrowed-callable-owners.m
 new file mode 100644
-index 000000000..fe18a29e5
+index 000000000..3f95fcc14
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-callable-owners.m
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,112 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-callable-owners.h -o %t-c17-False.pch
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
@@ -55956,7 +55958,11 @@ index 000000000..fe18a29e5
 +typedef CallbackBytes (*BadCallbackOwner)(int) __attribute__((objc_returns_borrowed(owner_index=0))); // expected-error {{owner parameter must be an owning object, reference, or non-borrowed pointer}}
 +typedef CallbackBytes (*BadBorrowedCallbackOwner)(CallbackBytes) __attribute__((objc_returns_borrowed(owner_index=0))); // expected-error {{owner parameter must be an owning object, reference, or non-borrowed pointer}}
 +void implicit_erasure(CallbackGetter getter) {
-+  OpaqueGetter erased=getter; // expected-error {{}}
++#ifdef __cplusplus
++  OpaqueGetter erased=getter; // expected-error {{cannot initialize a variable of type 'OpaqueGetter'}}
++#else
++  OpaqueGetter erased=getter; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
++#endif
 +  (void)erased;
 +}
 +#ifdef __cplusplus

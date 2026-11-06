@@ -1,6 +1,6 @@
 # Borrowed callable results and owner contracts
 
-The current implementation span makes a borrowed result an obligation of the
+System 2.19 makes a borrowed result an obligation of the
 native function type. A separate owner index records which argument supplies its
 lifetime. `objc_returns_borrowed(owner_index=N)` applies to function types,
 including function pointers, Block pointers, member pointers and aliases. An
@@ -33,7 +33,10 @@ rejects older PCH/AST products before reading the changed type properties.
 Maintained controls cover C17/C++20/C++23 under ARC and MRC, direct source and
 PCH, generic forwarding and automatic deduction, wrong-owner returns, consumed
 owners, Block/member calls, erased/forged casts, canonical native identities and
-source-free consumers. Compiler/frontend syntax checks pass; development
-compiler execution and coordinated frontend/SDK acceptance are still pending.
+source-free consumers. All nineteen borrowed compiler regressions pass, including the new eighteen
+C17/C++20/C++23 ARC/MRC source/PCH commands and three C++ overload CodeGen
+commands. Three native AST identity tests also pass, and the ABI 23 compiler
+rejects an ABI 22 PCH before AST loading. Compiler/frontend syntax checks pass;
+coordinated frontend/package execution and SDK acceptance remain pending.
 The accepted SDK remains 2.62. This span does not infer arbitrary foreign/global
 mutation effects or unknown interprocedural lifetime contracts.

@@ -154,7 +154,7 @@ def check_factory_metadata(metadata):
             'NativeUnnamedTemplateProjections::provider_first','NativeUnnamedTemplateProjections::provider_read'}<=projections):
         raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeUnnamedTemplateProjections::First','NativeUnnamedTemplateProjections::Second',")
     native_contracts={row['qualified_name'] for row in metadata['declarations']
-                      if ';native-declaration-attributes:v1;' in row.get('canonical_type_identity','')}
+                      if ';native-declaration-attributes:v2;' in row.get('canonical_type_identity','')}
     if not ({'NativeDeclarationAttributes::provider_object_size','NativeDeclarationAttributes::provider_dynamic_size',
             'NativeDeclarationAttributes::lifetime','NativeDeclarationAttributes::noescape',
             'NativeDeclarationAttributes::provider_callback','NativeDeclarationAttributes::provider_sentinel',
@@ -179,9 +179,9 @@ def check_factory_metadata(metadata):
     if not (all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)):
         raise ValueError("qualify_native_async_packages: required semantic check failed: all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)")
     native_attributes={row['qualified_name'] for row in metadata['declarations']
-                       if ';native-declaration-attributes:v1;' in row.get('canonical_type_identity','')}
-    if not ('objc3.native-declaration-attributes.v1' in metadata['required_semantics']):
-        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.native-declaration-attributes.v1' in metadata['required_semantics']")
+                       if ';native-declaration-attributes:v2;' in row.get('canonical_type_identity','')}
+    if not ('objc3.native-declaration-attributes.v2' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.native-declaration-attributes.v2' in metadata['required_semantics']")
     if not ({'NativeDeclarationAttributes::Packet','NativeDeclarationAttributes::Aligned',
             'NativeDeclarationAttributes::Slot','NativeDeclarationAttributes::TypeAligned',
             'NativeDeclarationAttributes::Special','NativeDeclarationAttributes::partial',

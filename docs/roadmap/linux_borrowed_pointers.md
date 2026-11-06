@@ -109,8 +109,8 @@ Remaining boundaries to keep explicit while development continues:
   mutable/reference/generic lambda precision,
   arbitrary constructor/operator effects, dynamic allocation provenance and
   interprocedural callback mutation effects need more work.
-- Indirect borrowed-result calls preserve their type obligation but cannot
-  reconstruct a declaration-only owner-index relationship. No whole-program
+- System 2.19 carries borrowed results and owner-index relationships in native
+  callable types, including indirect calls and deduced/template callbacks. No whole-program
   analyzer is required or substituted for the mandatory frontend pass.
 
 AST import preserves the owner/type contracts in the target AST. Native CFG
@@ -198,3 +198,10 @@ MRC consuming receivers. Native frontend and source-free family fixtures add
 balanced published bodies and imported alias/consumption controls. All eighteen new source/PCH commands and all seventeen borrowed compiler
 regressions pass. Expanded frontend and source-free regression sources compile;
 their execution and full SDK acceptance remain in consolidation.
+
+The [System 2.19 callback result span](linux_borrowed_callable_results.md) carries
+borrowed result obligations and owner indices through indirect function, Block
+and member calls. Generic/automatic deduction, template specialization, native
+symbols, AST import, PCH and source-free metadata preserve the contract. Nineteen
+borrowed compiler regressions and three focused native AST identity tests pass;
+frontend/package consolidation and SDK delivery remain pending.

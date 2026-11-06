@@ -35,3 +35,8 @@ the accepted archive. Public standard coroutine types and traits are added in th
 [2.90 source span](linux_cxx_standard_coroutines.md). Other unmodeled declaration
 attributes, dependent lookup projections and full language/profile conformance
 remain open.
+
+The [current allocator and diagnostic span](linux_native_diagnostic_contracts.md)
+extends the contract to ownership families, typed argument tags, expected format
+strings and builtin argument mappings. Its v2 capability replaces v1 for current
+source products; the v1 acceptance results above retain their historical scope.

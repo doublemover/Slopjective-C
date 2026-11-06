@@ -16,6 +16,16 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The current [System 2.19 callback-result span](linux_borrowed_callable_results.md)
+preserves borrowed result/owner contracts through indirect calls, automatic and
+template deduction, native type/symbol identity and AST/PCH/interface persistence.
+Nineteen compiler regressions and three focused native AST identity tests pass;
+frontend/package and SDK consolidation remain pending. The
+[native allocator/diagnostic span](linux_native_diagnostic_contracts.md) also
+preserves ownership families, typed tags, expected formats and builtin argument
+mappings under native declaration attribute capability v2. Its six source modes
+and focused syntax checks pass; frontend execution remains pending.
+
 The [combined implementation sprint](linux_implementation_sprint.md) is
 source-validated through **2.87**, System **2.15** and keypath **2.5**. Its
 [receipt](../support/linux_implementation_sprint_progress.json) records the

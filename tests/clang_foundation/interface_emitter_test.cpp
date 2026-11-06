@@ -464,7 +464,7 @@ void TestBorrowedCallableOwnerCapability() {
         void plain(void *);
         #ifdef __cplusplus
         inline int body_only(void *owner) {
-          using Local=CallbackBytes(*)(void*) __attribute__((objc_returns_borrowed(owner_index=0)));
+          using Local=CallbackBytes(__attribute__((objc_returns_borrowed(owner_index=0))) *)(void*);
           Local getter=nullptr;(void)getter;(void)owner;return 1;
         }
         template<class G> __attribute__((objc_returns_borrowed(owner_index=1)))
@@ -2307,6 +2307,95 @@ namespace NativeAddressArguments {
         [](const auto &d){return d.code=="O3IFC156";}));
     auto private_object=emit("static int hidden=42;template<int* P>struct Box{};using Public=Box<&hidden>;");
     assert(!private_object.success);
+  }
+}
+
+
+void TestNativeAllocatorAndDiagnosticContracts() {
+  for(const char *standard:{"c17","c++20","c++23"}) {
+    const bool cxx=std::string(standard)!="c17";
+    for(bool arc:{false,true}) {
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+      if(arc)args.push_back("-fobjc-arc");
+      const std::string source=R"(
+        typedef unsigned long Size;
+        void *allocate(Size size) __attribute__((ownership_returns(example,1)));
+        void *allocate(Size size);
+        void dispose(void *first,void *second) __attribute__((ownership_takes(example,1,2)));
+        void hold(void *pointer) __attribute__((ownership_holds(example,1)));
+        void typed(const void *payload,int tag) __attribute__((pointer_with_type_tag(example,1,2)));
+        extern const int IntTag __attribute__((type_tag_for_datatype(example,int,layout_compatible)));
+        void expected_format(const char *format) __attribute__((format_matches(printf,1,"%d %s")));
+        void *copy(const void *source,Size size,void *destination)
+            __attribute__((diagnose_as_builtin(__builtin_memcpy,3,1,2)));
+        #ifdef __cplusplus
+        template<class T> T *allocate_for(Size size) __attribute__((ownership_returns(example,1)));
+        template<class T> struct TagInfo {
+          static const int tag __attribute__((type_tag_for_datatype(example,T)));
+          void check(const char *format) __attribute__((format_matches(printf,2,"%d")));
+        };
+        #endif
+      )";
+      auto emit=[&](const std::string &text,const char *file,
+                    const std::vector<std::string>&exports=std::vector<std::string>{}) {
+        auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,file);
+        assert(ast&&!ast->getDiagnostics().hasErrorOccurred());
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_diagnostics","test",{},{},{},exports);
+        for(const auto&d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        return result;
+      };
+      auto first=emit(source,"native-diagnostics.m");assert(first.success);
+      assert(first.source_bytes.find("ownership_returns")!=std::string::npos);
+      assert(first.source_bytes.find("type_tag_for_datatype")!=std::string::npos);
+      assert(first.source_bytes.find("diagnose_as_builtin")!=std::string::npos);
+      assert(first.source_bytes.find("format_matches")!=std::string::npos);
+      auto repeated=emit(first.source_bytes,"replayed/native-diagnostics.m");assert(repeated.success);
+      assert(first.identity.semantic_fingerprint==repeated.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated/native-diagnostics.m");assert(relocated.success);
+      assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+
+      auto consumer_args=args;consumer_args.push_back("-Werror=format");consumer_args.push_back("-Werror=type-safety");
+      auto valid=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+
+          "\nvoid client(void){typed((const int*)0,IntTag);expected_format(\"%d %s\");}",consumer_args,"source-free-valid.m");
+      assert(valid&&!valid->getDiagnostics().hasErrorOccurred());
+      for(const char *body:{
+          "void client(void){typed(\"bad\",IntTag);}",
+          "void client(void){expected_format(\"%s %s\");}"}) {
+        auto invalid=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+"\n"+body,consumer_args,"source-free-invalid.m");
+        assert(invalid&&invalid->getDiagnostics().hasErrorOccurred());
+      }
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> supported;
+      for(const auto&item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+      assert(std::find(supported.begin(),supported.end(),llvm::StringRef("objc3.native-declaration-attributes.v2"))!=supported.end());
+      auto older=supported;std::erase(older,llvm::StringRef(kNativeDeclarationAttributeSemantic));
+      older.push_back("objc3.native-declaration-attributes.v1");
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      for(const auto&change:std::vector<std::pair<std::string,std::string>>{
+          {"ownership_returns(example,1)","ownership_returns(other,1)"},
+          {"ownership_takes(example,1,2)","ownership_holds(example,1,2)"},
+          {"pointer_with_type_tag(example,1,2)","argument_with_type_tag(example,1,2)"},
+          {"type_tag_for_datatype(example,int,layout_compatible)","type_tag_for_datatype(example,long,layout_compatible)"},
+          {"type_tag_for_datatype(example,int,layout_compatible)","type_tag_for_datatype(example,int)"},
+          {"\"%d %s\"","\"%ld %s\""},
+          {"diagnose_as_builtin(__builtin_memcpy,3,1,2)","diagnose_as_builtin(__builtin_memmove,3,1,2)"}}) {
+        auto changed=source;const auto position=changed.find(change.first);assert(position!=std::string::npos);
+        changed.replace(position,change.first.size(),change.second);
+        // Change matching declarations together when the family occurs in a
+        // template declaration as well as its ordinary counterpart.
+        if(change.first=="ownership_returns(example,1)") {
+          for(auto at=changed.find(change.first);at!=std::string::npos;at=changed.find(change.first))
+            changed.replace(at,change.first.size(),change.second);
+        }
+        auto altered=emit(changed,"changed/native-diagnostics.m");assert(altered.success);
+        assert(first.identity.semantic_fingerprint!=altered.identity.semantic_fingerprint);
+      }
+      auto hidden=emit("struct Hidden{int value;};extern const int Tag __attribute__((type_tag_for_datatype(example,struct Hidden)));",
+          "hidden-native-type.m",{"Tag"});
+      assert(!hidden.success);
+    }
   }
 }
 
@@ -6299,6 +6388,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestNativeAllocatorAndDiagnosticContracts();
   TestNativeDeclarationAttributes();
   TestCOverloadableInterfaces();
   TestUnnamedTemplateProjections();

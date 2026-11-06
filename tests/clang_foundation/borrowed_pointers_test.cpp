@@ -623,6 +623,9 @@ void PersistenceCases(const fs::path &Root) {
       "BorrowedBytes imported_generic(ImportedGetter getter,id a,id owner) __attribute__((objc_returns_borrowed(owner_index=2))) {return imported_callback_forward(getter,a,owner);}";
   Expect(InterfaceClient,true);
   InterfaceClient.source_text =
+      "BorrowedBytes imported_unknown_forward(ImportedOpaqueGetter getter,id a,id owner) __attribute__((objc_returns_borrowed(owner_index=2))) {return imported_callback_forward(getter,a,owner);}";
+  Expect(InterfaceClient,false,"return without a matching borrowed return and owner parameter contract");
+  InterfaceClient.source_text =
       "void imported_indirect_escape(ImportedGetter getter,id a,id owner){noescape_api(getter(a,owner));const char*p=getter(a,owner);extern void escape(const char*);escape(p);}";
   Expect(InterfaceClient,false,"argument without a non-escaping lifetime contract");
   InterfaceClient.source_text =
