@@ -43326,10 +43326,10 @@ index 000000000..d3ae31385
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..82161f394
+index 000000000..ffcf21316
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,4514 @@
+@@ -0,0 +1,4655 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43638,6 +43638,8 @@ index 000000000..82161f394
 +  mutable llvm::SmallPtrSet<const VarDecl *, 16> MutatedCaptures;
 +  bool IsOwnerSummary = false;
 +  llvm::DenseMap<const Expr *, unsigned> ClosureSlots;
++  mutable llvm::DenseMap<const LambdaExpr *, bool> ImmediateReadOnlyLambdas;
++  llvm::SmallPtrSet<const LambdaExpr *, 8> ImmediateLambdaCalls;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
 +  llvm::DenseMap<const Expr *, SmallVector<const Expr *, 2>> OwnerEvaluations;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedReferenceCaptures;
@@ -43826,6 +43828,18 @@ index 000000000..82161f394
 +    return Object;
 +  }
 +
++  bool unresolvedReference(Storage Location) const {
++    for (unsigned Depth = 0; Location.first && Depth != 32; ++Depth) {
++      QualType Type = storageType(Location);
++      if (Type.isNull() || Type->isReferenceType()) return true;
++      if (!path(Location)) return false;
++      Location = parentStorage(Location);
++    }
++    return true;
++  }
++  bool localObject(Storage Location) const {
++    return Location.first && Location.first->hasLocalStorage() && !unresolvedReference(Location);
++  }
 +  Storage storage(const Expr *E, const Facts *State = nullptr) const {
 +    if (!E)
 +      return {};
@@ -43857,7 +43871,14 @@ index 000000000..82161f394
 +      Storage Base = Member->isArrow()
 +                         ? referent(Member->getBase(), State)
 +                         : storage(Member->getBase(), State);
-+      return fieldStorage(Base, Member->getMemberDecl());
++      Storage Object = fieldStorage(Base, Member->getMemberDecl());
++      if (State && Member->getMemberDecl()->getType()->isReferenceType())
++        if (auto Found = Slots.find(Object); Found != Slots.end()) {
++          if (State->LocalTargets[Found->second].first) return State->LocalTargets[Found->second];
++          if (State->ClosedTargets.test(Found->second) && State->MayTargets[Found->second].count() == 1)
++            return location(State->MayTargets[Found->second].find_first());
++        }
++      return Object;
 +    }
 +    if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(E)) {
 +      Storage Base = referent(Subscript->getBase(), State);
@@ -44137,6 +44158,10 @@ index 000000000..82161f394
 +        if (const auto *V = dyn_cast<VarDecl>(D))
 +          addVariable(V);
 +    if (const auto *E = dyn_cast<Expr>(Node)) {
++      if (const auto *Call = dyn_cast<CXXOperatorCallExpr>(E);
++          Call && Call->getOperator() == OO_Call && Call->getNumArgs() == 1)
++        if (const auto *Lambda = immediateLambdaReceiver(Call->getArg(0)))
++          ImmediateLambdaCalls.insert(Lambda);
 +      MightBorrow |= carriesBorrowedValue(E->getType());
 +      if (const auto *Function = callFunctionType(E)) MightBorrow |= Function->hasObjC3BorrowedResult();
 +      if (!isa<BlockExpr, LambdaExpr>(E) && !ExpressionSlots.count(E))
@@ -44408,6 +44433,97 @@ index 000000000..82161f394
 +    return true;
 +  }
 +
++  const LambdaExpr *immediateLambdaReceiver(const Expr *Receiver) const {
++    for (unsigned Depth = 0; Receiver && Depth != 32; ++Depth) {
++      Receiver = Receiver->IgnoreParenImpCasts();
++      if (const auto *Lambda = dyn_cast<LambdaExpr>(Receiver)) return Lambda;
++      if (const auto *Temporary = dyn_cast<MaterializeTemporaryExpr>(Receiver)) Receiver = Temporary->getSubExpr();
++      else if (const auto *Temporary = dyn_cast<CXXBindTemporaryExpr>(Receiver)) Receiver = Temporary->getSubExpr();
++      else if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Receiver)) Receiver = Cleanups->getSubExpr();
++      else return nullptr;
++    }
++    return nullptr;
++  }
++  bool immediateReadOnlyLambda(const LambdaExpr *Lambda) const {
++    if (auto Found = ImmediateReadOnlyLambdas.find(Lambda); Found != ImmediateReadOnlyLambdas.end()) return Found->second;
++    // Publish the conservative result before walking parents/children. A proof
++    // never depends on reentering itself through an enclosing lambda body.
++    ImmediateReadOnlyLambdas[Lambda] = false;
++    const auto *Function = Lambda->getCallOperator();
++    const auto *Prototype = Function->getType()->getAs<FunctionProtoType>();
++    if (!Prototype || Prototype->getObjC3FunctionEffects().Async ||
++        isa<CoroutineBodyStmt>(Lambda->getBody()) || Lambda->isGenericLambda()) return false;
++    QualType Result = Function->getReturnType();
++    if (!Result->isVoidType() && !Result->isIntegralOrEnumerationType() &&
++        !Result->isRealFloatingType() && !Result->isAnyComplexType()) return false;
++    for (const auto &Capture : Lambda->captures())
++      if (!Capture.capturesVariable()) return false;
++    // Function-body checking can run before its declaration is attached to the
++    // translation unit. Use the collected expression graph, not AST parents.
++    if (!ImmediateLambdaCalls.contains(Lambda)) return false;
++    auto LocalOrScalarWrite = [&](const Expr *Written, auto &&Self, unsigned Depth = 0) -> bool {
++      if (!Written || Depth > 32) return false;
++      Written = Written->IgnoreParenImpCasts();
++      if (const auto *Reference = dyn_cast<DeclRefExpr>(Written)) {
++        const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl());
++        if (!Variable) return false;
++        if (Variable->getDeclContext() == Function && Variable->hasLocalStorage() &&
++            !Variable->getType()->isReferenceType()) return true;
++        QualType Type = Written->getType();
++        // Scalar updates do not rebind an owner/address. If an integer carries
++        // loan provenance, ordinary nested store checks still protect it.
++        return Type->isIntegralOrEnumerationType() || Type->isRealFloatingType() || Type->isAnyComplexType();
++      }
++      if (const auto *Member = dyn_cast<MemberExpr>(Written); Member && !Member->isArrow()) {
++        if (const auto *Field = dyn_cast<FieldDecl>(Member->getMemberDecl());
++            Field && Field->getType()->isReferenceType()) return false;
++        return Self(Member->getBase(), Self, Depth + 1);
++      }
++      if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(Written))
++        return Subscript->getBase()->IgnoreParenImpCasts()->getType()->isArrayType() &&
++               Self(Subscript->getBase(), Self, Depth + 1);
++      return false;
++    };
++    SmallVector<const Stmt *, 16> Pending{Lambda->getBody()};
++    unsigned Budget = 4096;
++    while (!Pending.empty()) {
++      const Stmt *Node = Pending.pop_back_val();
++      if (!Node) continue;
++      if (!Budget--) return false;
++      if (isa<LambdaExpr, BlockExpr, ObjCMessageExpr, CXXConstructExpr,
++              CXXMemberCallExpr, CXXOperatorCallExpr, AsmStmt, VAArgExpr,
++              CXXNewExpr, CXXDeleteExpr>(Node)) return false;
++      if (const auto *Binary = dyn_cast<BinaryOperator>(Node); Binary && Binary->isAssignmentOp())
++        if (!LocalOrScalarWrite(Binary->getLHS(), LocalOrScalarWrite)) return false;
++      if (const auto *Unary = dyn_cast<UnaryOperator>(Node)) {
++        if (Unary->getOpcode() == UO_AddrOf) return false;
++        if (Unary->isIncrementDecrementOp() && !LocalOrScalarWrite(Unary->getSubExpr(), LocalOrScalarWrite)) return false;
++      }
++      if (const auto *Call = dyn_cast<CallExpr>(Node)) {
++        const auto *Callee = Call->getDirectCallee();
++        const auto *Type = callPrototype(Call);
++        if (!Callee || !Type || Type->isVariadic()) return false;
++        auto ReturnOwner = getObjC3BorrowedReturnOwner(Callee);
++        for (unsigned I = 0; I != Call->getNumArgs(); ++I) {
++          if (I >= Type->getNumParams()) return false;
++          QualType Parameter = Type->getParamType(I);
++          if (Parameter->isReferenceType()) {
++            QualType Object = Parameter->getPointeeType();
++            if (!Object.isConstQualified() || Object->isRecordType()) return false;
++          } else if (Parameter->isPointerType()) {
++            const bool Owner = ReturnOwner && *ReturnOwner == I;
++            const auto *Formal = I < Callee->getNumParams() ? Callee->getParamDecl(I) : nullptr;
++            const bool Consumed = Formal && Formal->hasAttr<CFConsumedAttr>();
++            QualType Object = Parameter->getPointeeType();
++            if (!Owner && !Consumed && (!Object.isConstQualified() || Object->isRecordType())) return false;
++          } else if (Parameter->isRecordType()) return false;
++        }
++      }
++      for (const Stmt *Child : Node->children()) Pending.push_back(Child);
++    }
++    ImmediateReadOnlyLambdas[Lambda] = true;
++    return true;
++  }
 +  OwnerSummary futureOwnerRequirements(const Expr *Closure) {
 +    if (auto Found = OwnerSummaries->find(Closure); Found != OwnerSummaries->end())
 +      return Found->second;
@@ -45068,16 +45184,14 @@ index 000000000..82161f394
 +    if (const auto *Address = dyn_cast<UnaryOperator>(E);
 +        Address && Address->getOpcode() == UO_AddrOf) {
 +      Storage Target = storage(Address->getSubExpr(), &State);
-+      return Target.first && Target.first->hasLocalStorage() &&
-+             Slots.count(Target) && !hasUnknownIndex(Target);
++      return localObject(Target) && Slots.count(Target) && !hasUnknownIndex(Target);
 +    }
 +    if (const auto *Call = dyn_cast<CallExpr>(E);
 +        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
 +      return memoryAccessTargets(Call, 0, State).second;
 +    Storage Source = storage(E, &State);
 +    if (E->getType()->isArrayType())
-+      return Source.first && Source.first->hasLocalStorage() &&
-+             Slots.count(indexedStorage(Source, 0)) && !hasUnknownIndex(Source);
++      return localObject(Source) && Slots.count(indexedStorage(Source, 0)) && !hasUnknownIndex(Source);
 +    if (auto Found = Slots.find(Source); Found != Slots.end())
 +      return State.ClosedTargets.test(Found->second);
 +    return false;
@@ -45137,8 +45251,7 @@ index 000000000..82161f394
 +    Value Possible = possibleTargets(E, State);
 +    for (int I = Possible.find_first(); I >= 0; I = Possible.find_next(I)) {
 +      Storage Target = location(I);
-+      if (!Target.first || !Target.first->hasLocalStorage() ||
-+          hasUnknownIndex(Target)) return false;
++      if (!localObject(Target) || hasUnknownIndex(Target)) return false;
 +      Targets.push_back(Target);
 +    }
 +    return !Targets.empty();
@@ -45689,9 +45802,14 @@ index 000000000..82161f394
 +          ReferenceCaptured |= location(Target).first == Destination.first;
 +      if (ReferenceCaptured)
 +        diagnose(Operation, "mutation of storage captured by reference by a C++ lambda");
-+      if (!Destination.first || !Destination.first->hasLocalStorage())
-+        diagnose(Operation, Destination.first ? "global/static/thread-local storage"
-+                                               : "heap, ivar, property, or indirect storage");
++      QualType DestinationType = storageType(Destination);
++      bool ReferenceBinding = false;
++      if (!DestinationType.isNull() && DestinationType->isReferenceType())
++        if (const auto *Declaration = dyn_cast<DeclStmt>(Operation))
++          for (const Decl *D : Declaration->decls()) ReferenceBinding |= D == Destination.first;
++      if (!localObject(Destination) && !ReferenceBinding)
++        diagnose(Operation, Destination.first && !Destination.first->hasLocalStorage()
++            ? "global/static/thread-local storage" : "heap, ivar, property, or indirect storage");
 +      else if (hasExpired(V))
 +        diagnose(Operation, "storage of a value whose owner lifetime has ended");
 +    }
@@ -45790,11 +45908,13 @@ index 000000000..82161f394
 +      Value Targets = possibleTargets(Initializer, State);
 +      bool Complete = closedTargets(Initializer, State);
 +      ByteFacts Bytes = byteFacts(Initializer, State);
-+      if (Type->isReferenceType())
++      if (Type->isReferenceType()) {
++        Targets.reset();Complete = false;
 +        if (auto Found = Slots.find(Target); Found != Slots.end()) {
-+          Targets.reset(); Targets.set(Found->second);
++          Targets.set(Found->second);
 +          Complete = !hasUnknownIndex(Target);
 +        }
++      }
 +      const bool LocalAddress = (Complete && Targets.any()) || (Bytes.Complete && !Bytes.Positions.empty());
 +      if (LocalAddress && !hasUnknownIndex(Destination) &&
 +          !isObjC3BorrowedType(Context, Type))
@@ -46042,8 +46162,9 @@ index 000000000..82161f394
 +  void setByteFacts(Storage Destination, const ByteFacts &Bytes, Facts &State) const {
 +    if (auto Found = Slots.find(Destination); Found != Slots.end()) {
 +      unsigned I = Found->second;
-+      State.ByteTargets[I] = hasUnknownIndex(Destination) ? ByteFacts{} : Bytes;
-+      if (Bytes.Complete && !Bytes.Positions.empty() && !State.ClosedTargets.test(I))
++      QualType Type = storageType(Destination);
++      State.ByteTargets[I] = hasUnknownIndex(Destination) || (!Type.isNull() && Type->isReferenceType()) ? ByteFacts{} : Bytes;
++      if (State.ByteTargets[I].Complete && !Bytes.Positions.empty() && !State.ClosedTargets.test(I))
 +        State.MayTargets[I] |= byteMayTargets(Bytes);
 +    }
 +  }
@@ -46120,7 +46241,7 @@ index 000000000..82161f394
 +    Value Targets = possibleTargets(Expression, State);
 +    for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
 +      Storage Target = location(I);
-+      if (!Target.first || !Target.first->hasLocalStorage() || !storageByteOffset(Target)) return false;
++      if (!localObject(Target) || !storageByteOffset(Target)) return false;
 +      Positions.push_back({Target, 0});
 +      if (Positions.size() > 64) return false;
 +    }
@@ -46515,7 +46636,7 @@ index 000000000..82161f394
 +        Known = {Known.first, nullptr};
 +      }
 +      if (RequireComplete &&
-+          (!Known.first->hasLocalStorage() || hasUnknownIndex(Known))) return false;
++          (!localObject(Known) || hasUnknownIndex(Known))) return false;
 +      Targets.push_back(Known);
 +      return true;
 +    }
@@ -46604,7 +46725,7 @@ index 000000000..82161f394
 +                  : std::nullopt, State)
 +              : byteFacts(Assignment->getRHS(), State);
 +          const bool LocalAddress = (Complete && Targets.any()) || (Bytes.Complete && !Bytes.Positions.empty());
-+          if (LocalAddress && Target.first && Target.first->hasLocalStorage() &&
++          if (LocalAddress && localObject(Target) &&
 +              !hasUnknownIndex(Target) &&
 +              !isObjC3BorrowedType(Context, Assignment->getLHS()->getType()))
 +            V = empty();
@@ -46620,10 +46741,12 @@ index 000000000..82161f394
 +            if (Unowned) State.UnownedOwners.set(Slot);
 +            else State.UnownedOwners.reset(Slot);
 +          }
-+          setTargetFacts(Target, Address, Targets, Complete, State, true, NonNull);
++          if (storageType(Target)->isReferenceType())
++            setTargetFacts(Target, {}, Value(Slots.size()), false, State);
++          else setTargetFacts(Target, Address, Targets, Complete, State, true, NonNull);
 +          setByteFacts(Target, Bytes, State);
 +          Value Effects = effects(Assignment->getRHS(), State);
-+          if (LocalAddress && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
++          if (LocalAddress && localObject(Target) && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
 +          store(Assignment, Target, V, State, Emit, false, &Effects);
 +          if (Target.first && Slots.count(Target) &&
 +              (Assignment->getLHS()->getType()->isRecordType() ||
@@ -46651,6 +46774,12 @@ index 000000000..82161f394
 +      return offsetByteFacts(Subscript->getBase(), pointerDelta(Subscript->getIdx(), false), State);
 +    if (const auto *Member = dyn_cast<MemberExpr>(E)) {
 +      const auto *Field = dyn_cast<FieldDecl>(Member->getMemberDecl());
++      if (Field && Field->getType()->isReferenceType()) {
++        Storage Target = storage(Member, &State);
++        if (localObject(Target) && Slots.count(Target) && storageByteOffset(Target))
++          return {{{Target, 0}}, true};
++        return {};
++      }
 +      if (!Field || Field->isBitField() || Field->getParent()->isUnion() ||
 +          !Field->getParent()->getDefinition() || Field->getParent()->isDependentContext()) return {};
 +      uint64_t Bits = Context.getASTRecordLayout(Field->getParent()->getDefinition()).getFieldOffset(Field->getFieldIndex());
@@ -46662,7 +46791,7 @@ index 000000000..82161f394
 +      return Bases;
 +    }
 +    Storage Target = storage(E, &State);
-+    if (Target.first && Target.first->hasLocalStorage() && Slots.count(Target) && storageByteOffset(Target))
++    if (localObject(Target) && Slots.count(Target) && storageByteOffset(Target))
 +      return {{{Target, 0}}, true};
 +    return {};
 +  }
@@ -46714,7 +46843,7 @@ index 000000000..82161f394
 +        if (Location.first != Root.first) continue;
 +        Value Contents = State.Values[Index];Contents |= V;
 +        Value StoredEffects = State.Effects[Index];StoredEffects |= Effects;
-+        store(Operation, Location, Contents, State, Emit, false, &StoredEffects);
++        store(Operation, Location, Contents, State, false, false, &StoredEffects);
 +        State.MayTargets[Index] |= Aliases;
 +      }
 +    }
@@ -46735,13 +46864,15 @@ index 000000000..82161f394
 +    Value V = value(Operand, State), Effects = effects(Operand, State);
 +    ByteFacts Bytes = offsetByteFacts(Operand, Unary->isIncrementOp() ? 1 : -1, State);
 +    const bool LocalAddress = (Step.second && Step.first.any()) || (Bytes.Complete && !Bytes.Positions.empty());
-+    if (LocalAddress && !isObjC3BorrowedType(Context, Operand->getType())) {
++    if (LocalAddress && localObject(Target) && !isObjC3BorrowedType(Context, Operand->getType())) {
 +      V = empty();Effects = empty();
 +    }
 +    Storage Address = Step.second && Step.first.count() == 1 ? location(Step.first.find_first()) : Storage{};
 +    const bool NonNull = nonNullAddress(Operand, State);
 +    invalidateMemoryOwner(Target, State);
-+    setTargetFacts(Target, Address, Step.first, Step.second, State, true, NonNull);
++    if (storageType(Target)->isReferenceType())
++      setTargetFacts(Target, {}, Value(Slots.size()), false, State);
++    else setTargetFacts(Target, Address, Step.first, Step.second, State, true, NonNull);
 +    setByteFacts(Target, Bytes, State);
 +    store(Unary, Target, V, State, Emit, false, &Effects);
 +  }
@@ -47035,11 +47166,13 @@ index 000000000..82161f394
 +            Value Targets = possibleTargets(Variable->getInit(), State);
 +            bool Complete = closedTargets(Variable->getInit(), State);
 +            ByteFacts Bytes = byteFacts(Variable->getInit(), State);
-+            if (Reference)
++            if (Reference) {
++              Targets.reset();Complete = false;
 +              if (auto Found = Slots.find(Target); Found != Slots.end()) {
-+                Targets.reset();Targets.set(Found->second);
++                Targets.set(Found->second);
 +                Complete = !hasUnknownIndex(Target);
 +              }
++            }
 +            const bool LocalAddress = (Complete && Targets.any()) || (Bytes.Complete && !Bytes.Positions.empty());
 +            if (LocalAddress && Variable->hasLocalStorage() &&
 +                !isObjC3BorrowedType(Context, Variable->getType()))
@@ -47159,7 +47292,8 @@ index 000000000..82161f394
 +                    (Type->isPointerType() || Type->isObjCObjectPointerType() ||
 +                     Type->isBlockPointerType() ||
 +                     (Type->getAsCXXRecordDecl() && Type->getAsCXXRecordDecl()->isLambda()));
-+                if ((Capture.getCaptureKind() == LCK_ByRef || capturedTargets(Init, State).any()) &&
++                if (!immediateReadOnlyLambda(Lambda) &&
++                    (Capture.getCaptureKind() == LCK_ByRef || capturedTargets(Init, State).any()) &&
 +                    (MutableOwnerReference || value(Init, State).any() ||
 +                     (Capture.capturesVariable() &&
 +                      llvm::is_contained(FutureBorrowCaptures.lookup(Lambda), Capture.getCapturedVar()))))
@@ -47304,6 +47438,13 @@ index 000000000..82161f394
 +          checkCall(Invocation, State, Emit);
 +          observeCallbackWriteback(Invocation, State);
 +          invalidateCallTargetProofs(Invocation, State);
++          if (const auto *Call = dyn_cast<CXXOperatorCallExpr>(Invocation);
++              Call && Call->getNumArgs() == 1)
++            if (const auto *Lambda = immediateLambdaReceiver(Call->getArg(0));
++                Lambda && immediateReadOnlyLambda(Lambda))
++              // The literal cannot escape and its synchronous invocation has
++              // returned. It no longer protects a future reference mutation.
++              State.CapturedReferenceTargets[ClosureSlots.lookup(Lambda)].reset();
 +        }
 +        if (Emit)
 +          if (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(Invocation)) {
@@ -59241,4 +59382,293 @@ index 000000000..704126b02
 +  default:break;
 +  }
 +  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
++}
+diff --git a/clang/test/ObjC3/Sema/borrowed-immediate-reference-captures.mm b/clang/test/ObjC3/Sema/borrowed-immediate-reference-captures.mm
+new file mode 100644
+index 000000000..e1cd1268b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-immediate-reference-captures.mm
+@@ -0,0 +1,148 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-memory-aliases.h"
++#endif
++void immediate_reference(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{memory_use(pointer);}();
++  pointer=memory_bytes(owner);
++  memory_use(pointer);
++}
++void immediate_parenthesized(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  (([&pointer]{memory_use(pointer);}))();
++  pointer=memory_bytes(owner);
++}
++void immediate_owner(void *owner) {
++  [&owner]{memory_use(memory_bytes(owner));}();
++}
++void immediate_consumption(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&owner]{memory_consume(owner);}();
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void immediate_expired(void *owner) {
++  const char *pointer=memory_bytes(owner);owner=0;
++  [&pointer]{memory_use(pointer);}(); // expected-error 2 {{after its owner lifetime ended}}
++}
++char immediate_scalar_result(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  return [&pointer]{return *pointer;}();
++}
++void immediate_record_reference(void *owner) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  [&holder]{memory_use(holder.pointer);}();
++  holder.pointer=memory_bytes(owner);
++}
++void immediate_address_capture(void *owner) {
++  const char *pointer=memory_bytes(owner);const char **address=&pointer;
++  [address]{memory_use(*address);}();
++  pointer=memory_bytes(owner);
++}
++void immediate_conditional(void *owner,int choose) {
++  const char *pointer=memory_bytes(owner);
++  if(choose)[&pointer]{memory_use(pointer);}();
++  pointer=memory_bytes(owner);
++}
++void immediate_repeated(void *owner,int count) {
++  const char *pointer=memory_bytes(owner);
++  while(count--)[&pointer]{memory_use(pointer);}();
++  pointer=memory_bytes(owner);
++}
++void immediate_owned_snapshot(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [pointer]{memory_use(pointer);}();
++}
++void named_reference_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  work();
++}
++void immediate_argument_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer](int){memory_use(pointer);}(0); // expected-error {{C++ lambda reference capture}}
++}
++void immediate_default_argument_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer](int=0){memory_use(pointer);}(); // expected-error {{C++ lambda reference capture}}
++}
++void immediate_binding_write_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{pointer=0;}(); // expected-error {{C++ lambda reference capture}}
++}
++void immediate_asm_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{asm volatile("" : "+m"(pointer));memory_use(pointer);}(); // expected-error {{C++ lambda reference capture}}
++}
++void immediate_representation_write_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{__builtin_memset(&pointer,0,sizeof pointer);}(); // expected-error {{C++ lambda reference capture}}
++}
++void mutable_pointer_reference(const char **pointer __attribute__((noescape)));
++void immediate_output_reference_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{mutable_pointer_reference(&pointer);}(); // expected-error {{C++ lambda reference capture}}
++}
++void immediate_return_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{return pointer;}(); // expected-error {{C++ lambda reference capture}} expected-error {{return without a matching borrowed return}}
++}
++struct ImmediateReader {ImmediateReader(const char *pointer __attribute__((noescape)));};
++void immediate_constructor_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{ImmediateReader reader(pointer);}(); // expected-error {{C++ lambda reference capture}}
++}
++void immediate_escape_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{memory_escape(pointer);}(); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++
++void immediate_local_cursor(void *owner,int count) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer,count]{
++    const char *cursor=pointer;
++    for(int i=0;i!=count;++i)memory_use(cursor++);
++  }();
++  pointer=memory_bytes(owner);
++}
++void immediate_scalar_counter(void *owner,int &count) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer,&count]{++count;memory_use(pointer);}();
++  pointer=memory_bytes(owner);
++}
++void immediate_local_record(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{
++    struct MemoryHolder local={0};local.pointer=pointer;
++    memory_use(local.pointer);
++  }();
++}
++void immediate_indirect_write_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);const char **address=&pointer;
++  [&pointer,address]{*address=0;memory_use(pointer);}(); // expected-error {{C++ lambda reference capture}}
++}
++void immediate_scalar_loan_store_stays_checked(void *owner,unsigned long &bits) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer,&bits]{bits=(unsigned long)pointer;}(); // expected-error {{borrowed pointer escapes}}
++}
++
++void immediate_local_reference_alias_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{auto &alias=pointer;alias=0;memory_use(pointer);}(); // expected-error {{C++ lambda reference capture}}
++}
++void immediate_local_reference_field_stays_checked(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer]{struct Ref{const char *&value;};Ref local{pointer};local.value=0;memory_use(pointer);}(); // expected-error {{C++ lambda reference capture}}
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-reference-storage.h b/clang/test/ObjC3/Sema/Inputs/borrowed-reference-storage.h
+new file mode 100644
+index 000000000..9144a8714
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-reference-storage.h
+@@ -0,0 +1,8 @@
++#ifndef BORROWED_REFERENCE_STORAGE_H
++#define BORROWED_REFERENCE_STORAGE_H
++#include "borrowed-memory-aliases.h"
++struct MemoryReference {const char *&pointer;};
++struct MemoryRecordReference {MemoryHolder &holder;};
++struct MemoryArrayReference {const char *(&array)[2];};
++struct MemoryCopySink {void operator=(const char *pointer __attribute__((noescape))) {memory_use(pointer);}};
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-reference-storage.mm b/clang/test/ObjC3/Sema/borrowed-reference-storage.mm
+new file mode 100644
+index 000000000..56dd1776d
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-reference-storage.mm
+@@ -0,0 +1,115 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-reference-storage.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-reference-storage.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-reference-storage.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-reference-storage.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-reference-storage.h"
++#endif
++void reference_scalar_output(void *owner,const char *&output) {
++  output=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void reference_record_output(void *owner,MemoryHolder &output) {
++  output.pointer=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void reference_array_output(void *owner,const char *(&output)[2]) {
++  output[1]=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void reference_memory_output(void *owner,const char *&output) {
++  const char *loan=memory_bytes(owner);
++  __builtin_memcpy(&output,&loan,sizeof output); // expected-error {{indirect storage}}
++}
++void reference_record_copy_output(void *owner,MemoryHolder &output) {
++  MemoryHolder source={memory_bytes(owner)};
++  output=source; // expected-error {{indirect storage}}
++}
++void reference_member_output(void *owner,MemoryReference output) {
++  output.pointer=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void reference_local_scalar(void *owner) {
++  const char *pointer=0;const char *&reference=pointer;
++  reference=memory_bytes(owner);
++  memory_escape(pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  reference=0;memory_escape(pointer);
++}
++void reference_local_member(void *owner) {
++  const char *pointer=0;MemoryReference reference{pointer};
++  reference.pointer=memory_bytes(owner);
++  memory_escape(pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  reference.pointer=0;memory_escape(pointer);
++}
++void reference_local_member_copy(void *owner) {
++  const char *pointer=0;MemoryReference source{pointer};auto copy=source;
++  copy.pointer=memory_bytes(owner);
++  memory_escape(pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void reference_local_record(void *owner) {
++  MemoryHolder holder={0};MemoryRecordReference reference{holder};
++  reference.holder.pointer=memory_bytes(owner);
++  memory_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  reference.holder.pointer=0;memory_escape(holder.pointer);
++}
++void reference_local_array(void *owner) {
++  const char *array[2]={0,0};MemoryArrayReference reference{array};
++  reference.array[1]=memory_bytes(owner);
++  memory_escape(array[0]);
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void reference_local_memory(void *owner) {
++  const char *pointer=memory_bytes(owner);const char *&reference=pointer;
++  __builtin_memset(&reference,0,sizeof reference);
++  memory_escape(pointer);
++}
++void reference_local_byte_cursor(void *owner) {
++  MemoryHolder holder={memory_bytes(owner)};
++  char *pointer=(char *)&holder;char *&reference=pointer;
++  __builtin_bzero(reference,sizeof holder);
++  memory_escape(holder.pointer);
++}
++void reference_parameter_alias(void *owner,const char *&output) {
++  const char *&alias=output;
++  alias=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void reference_conditional_binding_value(void *owner,int choose) {
++  const char *loan=memory_bytes(owner);
++  char storage[sizeof loan];
++  __builtin_memcpy(storage,&loan,sizeof loan);
++  char *first=storage,*second=storage;
++  char *&reference=choose?first:second;
++  // A reference's binding address is not the previous pointer value in it.
++  __builtin_memset(&reference,0,sizeof reference);
++  const char *extracted=0;
++  __builtin_memcpy(&extracted,storage,sizeof extracted);
++  memory_escape(extracted); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++template<class T> void reference_generic_output(T &output,void *owner) {
++  output=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void reference_generic_copy_sink(void *owner) {
++  MemoryCopySink sink;reference_generic_output(sink,owner);
++}
++void reference_generic_pointer_output(void *owner,const char *&output) {
++  reference_generic_output(output,owner); // expected-note {{in instantiation of function template specialization}}
++}
++
++struct ReferenceOuter {MemoryPair &pair;const char *neighbor;};
++void reference_nested_output(void *owner,ReferenceOuter output) {
++  output.pair.second.pointer=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void reference_nested_copy_output(void *owner,ReferenceOuter output) {
++  const char *loan=memory_bytes(owner);
++  __builtin_memcpy(&output.pair.second.pointer,&loan,sizeof loan); // expected-error {{indirect storage}}
++}
++void reference_binding_offset_cannot_clear_neighbor(void *owner,MemoryPair &external) {
++  ReferenceOuter object{external,memory_bytes(owner)};
++  object.pair.second.pointer=0;
++  memory_escape(object.neighbor); // expected-error {{argument without a non-escaping lifetime contract}}
 +}

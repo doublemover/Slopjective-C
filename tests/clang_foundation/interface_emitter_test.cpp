@@ -580,6 +580,22 @@ void TestBorrowedMemoryAliasReplay() {
           *(const char **)bytes=published_memory_bytes(owner);
           return target.second.pointer;
         }
+        #ifdef __cplusplus
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_reference_cell(void *owner) {
+          const char *pointer=0;
+          struct LocalReference {const char *&pointer;};
+          LocalReference reference{pointer};
+          reference.pointer=published_memory_bytes(owner);
+          return pointer;
+        }
+        inline void published_memory_immediate_reference(void *owner) {
+          const char *pointer=published_memory_bytes(owner);
+          [&pointer]{published_memory_use(pointer);}();
+          pointer=published_memory_bytes(owner);
+          published_memory_use(pointer);
+        }
+        #endif
         inline const char *published_memory_byte_clear(void *owner) {
           struct PublishedMemoryPair target={{0},{published_memory_bytes(owner)}};
           char *bytes=(char *)&target;
@@ -606,6 +622,10 @@ void TestBorrowedMemoryAliasReplay() {
           published_memory_use(published_memory_cursor(owner));
           published_memory_use(published_memory_walk(owner));
           published_memory_use(published_memory_byte_typed_store(owner));
+          #ifdef __cplusplus
+          published_memory_immediate_reference(owner);
+          published_memory_use(published_memory_reference_cell(owner));
+          #endif
           published_memory_use(published_memory_postfix_clear(owner));
           return published_memory_copy(owner,choose);
         }
@@ -630,6 +650,14 @@ void TestBorrowedMemoryAliasReplay() {
         const char *published_byte_cursor_escape(void *owner) {return published_memory_byte_typed_store(owner);}
       )","memory-byte-cursor-escaping-consumer.m");
       assert(bytes && bytes->getDiagnostics().hasErrorOccurred());
+      if(cxx) {
+        auto reference=parse(first.source_bytes+R"(
+          void published_bad_reference(void *owner,const char *&output) {
+            output=published_memory_bytes(owner);
+          }
+        )","memory-caller-reference-consumer.mm");
+        assert(reference && reference->getDiagnostics().hasErrorOccurred());
+      }
     }
   }
 }

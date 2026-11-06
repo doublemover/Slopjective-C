@@ -22,6 +22,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | Constant byte-range memory operations on fields/arrays, aliases, returned destinations and callable effects                    | Source authored; eighteen new source/PCH commands, all twenty-two borrowed regressions and frontend controls pass |
 | Ownership/System   | Built-in pointer mutations, expression snapshots, bounded array cursor loops and partial direct representation writes | Source authored; eighteen new source/PCH commands and all twenty-two existing borrowed regressions and frontend replay/consumer controls pass; SDK consolidation pending |
 | Ownership/System   | Stored byte cursors, exact typed representation lvalues and bounded position sets | Source authored; source/PCH matrices and six native frontend replay/consumer modes pass; SDK consolidation pending |
+| Ownership/System   | Immediate C++ reference captures, local reference members and nonlocal reference-output permissions | Source authored; twenty-four new source/PCH commands and affected native frontend controls pass; SDK consolidation pending |
 | Ownership/System   | Remaining indirect writes/aliases, mutable/reference/generic/lazy captures and exceptional cleanup                          | Open                                                                                         |
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
@@ -577,3 +578,12 @@ checks support typed loads/stores, subscripts and members while unknown/partial
 writes preserve obligations. Bounded proofs reject loss of alternatives at 65
 positions; current storage exposure avoids stale payload snapshots. General
 union/interprocedural, callable and exceptional ownership contracts remain open.
+
+## Immediate captures and reference output storage
+
+The [System 2.25 implementation](linux_borrowed_reference_storage.md) admits
+bounded immediate synchronous reference readers with local algorithms/scalar
+updates, rejects loan exports through caller references, and resolves known local
+reference fields/copies to actual storage. Binding identity, local ownership and
+pointer-value facts stay distinct. General joins/output summaries and broader
+callable/exceptional ownership remain open.
