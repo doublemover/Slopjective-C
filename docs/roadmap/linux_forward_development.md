@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [System 2.30 field-pin span](linux_borrowed_field_pins.md) connects field,
+array, alias and NSObject snapshots to lifetime proofs, including equivalent
+nested pins and inherited closure state. Primitive ARC record/array cleanup now
+matches native release ordering; trivial MRC stack Blocks use the ordinary graph.
+Eighteen new source/PCH commands, all thirty-eight selected compiler/lifetime/
+cleanup regressions and three frontend groups pass. Four instrumented native
+source/PCH configurations pass fourteen commands. SDK consolidation follows.
+
 The [System 2.29 owner-alias span](linux_borrowed_owner_aliases.md) admits
 closed pointer, record, scalar, reference and exact byte-view owner selectors.
 Acquisitions retain their selected bindings and argument snapshots; unknown or

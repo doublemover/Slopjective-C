@@ -635,3 +635,17 @@ owner paths. Unknown/open selectors and exceeded candidate budgets diagnose.
 Twenty-four new source/PCH commands, nine focused compiler regressions and three
 affected source-free frontend groups pass. Wider lifetime/global/indirect
 contracts and SDK consolidation remain open.
+
+## Expression pins and primitive ARC cleanup
+
+The [System 2.30 implementation](linux_borrowed_field_pins.md) proves field/
+element/alias/NSObject pins, unchanged-source restoration, equivalent nested
+snapshots and inherited closure pin state. Released pin inputs diagnose without
+requiring another borrowed operation. The cleanup CFG follows native primitive
+ARC record/array release ordering, nonthrowing conditional initialization and
+trivial MRC stack-Block assignments. Throwing partial storage and broader
+ownership actions remain guarded. Eighteen new source/PCH commands, all thirty-eight
+selected borrowed/lifetime/cleanup regressions and three source-free frontend
+groups pass. Four instrumented ARC C17 O0/C++23 O2 source/PCH configurations pass
+fourteen commands, including exact destruction checks for field and nested pins.
+SDK delivery remains in consolidation.

@@ -43326,10 +43326,10 @@ index 000000000..d3ae31385
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..a16ec5c2d
+index 000000000..fc08050d3
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5328 @@
+@@ -0,0 +1,5390 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43607,6 +43607,8 @@ index 000000000..a16ec5c2d
 +    // An active pin is an owning snapshot. Same additionally proves that the
 +    // source variable has not been reassigned since that snapshot was taken.
 +    Value ActivePins, SamePins;
++    SmallVector<Storage, 8> PinLocations;
++    SmallVector<Value, 8> EquivalentPins;
 +    bool Reachable = false;
 +  };
 +  Sema &Actions;
@@ -43697,6 +43699,10 @@ index 000000000..a16ec5c2d
 +  llvm::DenseMap<const Stmt *, SmallVector<unsigned, 2>> Acquisitions;
 +  llvm::DenseMap<const VarDecl *, unsigned> Pins;
 +  llvm::DenseMap<const VarDecl *, const VarDecl *> PinSources;
++  llvm::DenseMap<const VarDecl *, const Expr *> PinOperands;
++  Value InheritedActivePins, InheritedSamePins;
++  SmallVector<Storage, 8> InheritedPinLocations;
++  SmallVector<Value, 8> InheritedEquivalentPins;
 +  // Opaque runtime payload initializers deliberately have no SourceExpr.
 +  // Their native condition/match owners retain the snapshot association.
 +  llvm::DenseMap<const VarDecl *, const VarDecl *> BindingSnapshots;
@@ -44255,6 +44261,8 @@ index 000000000..a16ec5c2d
 +      if (!Pins.count(Binding))
 +        Pins[Binding] = Pins.size();
 +      PinSources[Binding] = variable(Lifetime->getOperand());
++      PinOperands[Binding] = Lifetime->getOperand();
++      MightBorrow = true;
 +    }
 +    if (const auto *Declaration = dyn_cast<DeclStmt>(Node))
 +      for (const Decl *D : Declaration->decls())
@@ -44285,6 +44293,8 @@ index 000000000..a16ec5c2d
 +      if (!Pins.count(Binding))
 +        Pins[Binding] = Pins.size();
 +      PinSources[Binding] = variable(Lifetime->getOperand());
++      PinOperands[Binding] = Lifetime->getOperand();
++      MightBorrow = true;
 +    }
 +    if (const auto *Declaration = dyn_cast<DeclStmt>(Node))
 +      for (const Decl *D : Declaration->decls())
@@ -44347,14 +44357,14 @@ index 000000000..a16ec5c2d
 +                for (const auto &Key : Keys) {
 +                  const VarDecl *Root = Key.first;const unsigned Index = Key.second;
 +                  auto Add = [&](const VarDecl *Pin) {
-+                    addOrigin(E, Candidate.first, Unsafe, Pin, Root, true);
++                    addOrigin(E, Candidate.first, Pin ? false : Unsafe, Pin, Root, true);
 +                    unsigned Token = Origins.size() - 1;
 +                    if (Index != OwnerRoots.lookup(Root)) Origins.back().StorageIdentity = Index;
 +                    OriginOwnerStorage[Token] = Candidate;
 +                    OriginOwnerSelectors[Token] = SourceOwner;
 +                  };
 +                  Add(nullptr);
-+                  for (const auto &[Binding, Source] : PinSources) if (Source) Add(Binding);
++                  for (const auto &[Binding, Source] : PinSources) {(void)Source;Add(Binding);}
 +                }
 +              }
 +            addOrigin(E, nullptr, true);
@@ -44365,12 +44375,12 @@ index 000000000..a16ec5c2d
 +            for (const auto &Key : ownerKeys()) {
 +              const VarDecl *Root = Key.first;const unsigned Index = Key.second;
 +              auto Add = [&](const VarDecl *Pin) {
-+                addOrigin(E, Owner ? Owner : OwnerStorage.first, Unstable, Pin, Root, true);
++                addOrigin(E, Owner ? Owner : OwnerStorage.first, Pin ? false : Unstable, Pin, Root, true);
 +                if (Index != OwnerRoots.lookup(Root)) Origins.back().StorageIdentity = Index;
 +                if (OwnerStorage.first) OriginOwnerStorage[Origins.size() - 1] = OwnerStorage;
 +              };
 +              Add(nullptr);
-+              for (auto [Binding, Source] : PinSources) if (Source) Add(Binding);
++              for (const auto &Entry : PinSources) Add(Entry.first);
 +            }
 +          }
 +          if (Owner && Owner->hasLocalStorage() &&
@@ -44898,7 +44908,7 @@ index 000000000..a16ec5c2d
 +                [&](const auto &Other) {return sameCapturePath(Path, Other);});
 +          };
 +          Add(nullptr);
-+          for (const auto &[Binding, Source] : PinSources) if (Source) Add(Binding);
++          for (const auto &[Binding, Source] : PinSources) {(void)Source;Add(Binding);}
 +        }
 +        if (!llvm::is_contained(FutureBorrowCaptures[Closure], Path.Variable))
 +          FutureBorrowCaptures[Closure].push_back(Path.Variable);
@@ -44925,8 +44935,7 @@ index 000000000..a16ec5c2d
 +              Origins.back().ConsumedByClosure = llvm::is_contained(Summary.Consumed, Capture.Variable);
 +            };
 +            Add(nullptr);
-+            for (const auto &[Binding, PinSource] : PinSources)
-+              if (PinSource) Add(Binding);
++            for (const auto &Entry : PinSources) Add(Entry.first);
 +          }
 +        }
 +      }
@@ -45100,8 +45109,17 @@ index 000000000..a16ec5c2d
 +    if (auto Slot = Slots.find(storage(E, &State)); Slot != Slots.end()) return State.UnownedOwners.test(Slot->second);
 +    return false;
 +  }
++  bool originOwnerFacts(unsigned Token, const Facts &State, Value &Identities,
++                          bool &Unowned) const {
++    if (auto Source = OriginOwnerStorage.find(Token); Source != OriginOwnerStorage.end())
++      return storageOwnerFacts(Source->second, State, Identities, Unowned);
++    const Origin &O = Origins[Token];
++    if (!O.Owner || !Slots.count({O.Owner, nullptr})) return false;
++    Identities |= referenceOwnerIdentity(O.Owner, State);
++    Unowned |= referenceOwnerUnowned(O.Owner, State);return true;
++  }
 +  bool matchesPin(const Origin &O, const VarDecl *Binding,
-+                   const Facts &State) const {
++                   const Facts &State, unsigned Token) const {
 +    unsigned P = Pins.lookup(Binding);
 +    if (!State.ActivePins.test(P))
 +      return false;
@@ -45109,11 +45127,14 @@ index 000000000..a16ec5c2d
 +    if (Slot == Slots.end())
 +      return false;
 +    const Value &Identities = State.OwnerIdentities[Slot->second];
-+    if (!Identities.test(ownerIndex(O)))
-+      return false;
++    if (!Identities.test(ownerIndex(O))) return false;
++    if (O.Pin && State.EquivalentPins[P].test(Pins.lookup(O.Pin))) return true;
 +    // A direct unchanged snapshot proves equality even when a branch joined
 +    // multiple possible identities. Different variables need one known root.
-+    return (PinSources.lookup(Binding) == O.Owner && State.SamePins.test(P)) ||
++    bool SameStorage = false;
++    if (auto Source = OriginOwnerStorage.find(Token); Source != OriginOwnerStorage.end())
++      SameStorage = State.PinLocations[P].first && State.PinLocations[P] == Source->second;
++    return (((O.Owner && PinSources.lookup(Binding) == O.Owner) || SameStorage) && State.SamePins.test(P)) ||
 +           (O.Identity && Identities.count() == 1);
 +  }
 +  Value acquired(const Stmt *Node, const Facts &State,
@@ -45181,7 +45202,7 @@ index 000000000..a16ec5c2d
 +        if (!PinnedOrigin.Pin || ownerIndex(PinnedOrigin) != ownerIndex(O) ||
 +            PinnedOrigin.Owner != O.Owner)
 +          continue;
-+        if (matchesPin(O, PinnedOrigin.Pin, State)) {
++        if (matchesPin(O, PinnedOrigin.Pin, State, I)) {
 +          Result.set(PinnedIndex * 2);
 +          Pinned = true;
 +        }
@@ -46073,20 +46094,22 @@ index 000000000..a16ec5c2d
 +              }
 +              if (ownerIndex(Alternative) != ownerIndex(O) || Alternative.Owner != O.Owner)
 +                continue;
-+              if (!O.Pin && Alternative.Pin && Alternative.Pin != Owner &&
-+                  matchesPin(O, Alternative.Pin, State)) {
++              if (Alternative.Pin && Alternative.Pin != Owner &&
++                  matchesPin(O, Alternative.Pin, State, I)) {
 +                Replacement = Candidate;
 +                break;
 +              }
 +              if (O.Pin && !Alternative.Pin && !Alternative.Unstable &&
 +                  Alternative.Owner && Alternative.Owner != Owner) {
-+                auto Source = Slots.find({Alternative.Owner, nullptr});
-+                if (Source == Slots.end() || State.UnownedOwners.test(Source->second))
-+                  continue;
-+                const Value &Identities = State.OwnerIdentities[Source->second];
++                Value Identities(OwnerCount);bool Unowned = false;
++                if (!originOwnerFacts(Candidate, State, Identities, Unowned) || Unowned) continue;
++                bool SameStorage = false;
++                if (auto Source = OriginOwnerStorage.find(Candidate); Source != OriginOwnerStorage.end())
++                  SameStorage = State.PinLocations[Pins.lookup(O.Pin)].first &&
++                      State.PinLocations[Pins.lookup(O.Pin)] == Source->second;
 +                if (Identities.test(ownerIndex(O)) &&
 +                    ((O.Identity && Identities.count() == 1) ||
-+                     (PinSources.lookup(O.Pin) == O.Owner &&
++                     (((O.Owner && PinSources.lookup(O.Pin) == O.Owner) || SameStorage) &&
 +                      State.SamePins.test(Pins.lookup(O.Pin))))) {
 +                  Replacement = Candidate;
 +                  break;
@@ -46112,7 +46135,7 @@ index 000000000..a16ec5c2d
 +    if (auto Slot = Slots.find({Owner, nullptr}); Slot != Slots.end())
 +      State.OwnerIdentities[Slot->second].reset();
 +    for (auto [Pin, Source] : PinSources)
-+      if (Source == Owner)
++      if (Source == Owner || State.PinLocations[Pins.lookup(Pin)].first == Owner)
 +        State.SamePins.reset(Pins.lookup(Pin));
 +    if (auto Found = Pins.find(Owner); Found != Pins.end()) {
 +      State.ActivePins.reset(Found->second);
@@ -46856,7 +46879,7 @@ index 000000000..a16ec5c2d
 +        if (auto Found = Acquisitions.find(O.Acquisition); Found != Acquisitions.end())
 +          for (unsigned Candidate : Found->second) {
 +            const Origin &Pinned = Origins[Candidate];
-+            if (Pinned.Pin && ownerIndex(Pinned) == ownerIndex(O) && matchesPin(O, Pinned.Pin, State)) {
++            if (Pinned.Pin && ownerIndex(Pinned) == ownerIndex(O) && matchesPin(O, Pinned.Pin, State, Index)) {
 +              Replacement = Candidate;break;
 +            }
 +          }
@@ -46869,6 +46892,8 @@ index 000000000..a16ec5c2d
 +    for (Value &V : State.EvaluatedAcquisitions) Expire(V);
 +    for (const auto &[Source, Index] : StorageOwnerRoots)
 +      if (Touches(Source, Touches, 0)) State.ExtraOwnerClaims[Index] = 0;
++    for (unsigned P = 0; P != State.PinLocations.size(); ++P)
++      if (State.PinLocations[P].first && Touches(State.PinLocations[P], Touches, 0)) State.SamePins.reset(P);
 +    for (const auto &[Variable, Root] : OwnerRoots) {
 +      (void)Root;
 +      if (!Variable || Variable == Destination.first) continue;
@@ -47829,10 +47854,33 @@ index 000000000..a16ec5c2d
 +            initializeRecord(Node, Variable, Variable->getInit(), State, Emit);
 +            initializeArray(Node, Variable, Variable->getInit(), State, Emit);
 +            if (auto Found = Pins.find(Variable); Found != Pins.end()) {
++              State.PinLocations[Found->second] = {};
++              if (auto Operand = PinOperands.find(Variable); Operand != PinOperands.end()) {
++                SmallVector<Storage, 2> Objects;
++                if (localLValueAlternatives(Operand->second, State, Objects, true, 0, false) && Objects.size() == 1)
++                  State.PinLocations[Found->second] = Objects.front();
++              }
 +              bool Released = Unowned;
++              if (auto Operand = PinOperands.find(Variable); Operand != PinOperands.end())
++                Released |= ownerIsUnowned(Operand->second, State);
 +              if (const VarDecl *Source = PinSources.lookup(Variable))
 +                if (auto Slot = Slots.find({Source, nullptr}); Slot != Slots.end())
 +                  Released |= State.UnownedOwners.test(Slot->second);
++              const unsigned P = Found->second;
++              State.EquivalentPins[P].reset();
++              for (Value &Equivalents : State.EquivalentPins) Equivalents.reset(P);
++              if (!Released) {
++                State.EquivalentPins[P].set(P);
++                const auto &Identities = State.OwnerIdentities[Slots.lookup({Variable, nullptr})];
++                for (const auto &[Other, Q] : Pins) {
++                  if (P == Q || !State.ActivePins.test(Q)) continue;
++                  auto Slot = Slots.find({Other, nullptr});
++                  if (Slot == Slots.end() || Identities.none() || Identities != State.OwnerIdentities[Slot->second]) continue;
++                  const bool SameObject = Identities.count() == 1 ||
++                      (State.PinLocations[P].first && State.PinLocations[P] == State.PinLocations[Q] && State.SamePins.test(Q));
++                  if (SameObject) {State.EquivalentPins[P].set(Q);State.EquivalentPins[Q].set(P);}
++                }
++              }
 +              if (Released && Emit)
 +                diagnose(Node, "a lifetime pin created after manual owner release");
 +              if (Released) {
@@ -47956,6 +48004,10 @@ index 000000000..a16ec5c2d
 +              Nested.OwnerRoots = OwnerRoots;
 +              Nested.StorageOwnerRoots = StorageOwnerRoots;
 +              Nested.OwnerCount = OwnerCount;
++              Nested.Pins = Pins;Nested.PinSources = PinSources;Nested.PinOperands = PinOperands;
++              Nested.InheritedActivePins = State.ActivePins;Nested.InheritedSamePins = State.SamePins;
++              Nested.InheritedPinLocations = State.PinLocations;
++              Nested.InheritedEquivalentPins = State.EquivalentPins;
 +              Nested.OriginOwnerStorage = OriginOwnerStorage;
 +              Nested.OriginOwnerSelectors = OriginOwnerSelectors;
 +              Nested.UnprovenOwnerSelectors = UnprovenOwnerSelectors;
@@ -48332,6 +48384,13 @@ index 000000000..a16ec5c2d
 +    Changed |= Active != Destination.ActivePins || Same != Destination.SamePins;
 +    Destination.ActivePins = std::move(Active);
 +    Destination.SamePins = std::move(Same);
++    for (unsigned P = 0; P != Destination.PinLocations.size(); ++P) {
++      if (!(Destination.PinLocations[P] == Source.PinLocations[P]) && Destination.PinLocations[P].first) {
++        Destination.PinLocations[P] = {};Changed = true;
++      }
++      Value Equivalents = Destination.EquivalentPins[P];Equivalents &= Source.EquivalentPins[P];
++      Changed |= Equivalents != Destination.EquivalentPins[P];Destination.EquivalentPins[P] = std::move(Equivalents);
++    }
 +    return Changed;
 +  }
 +public:
@@ -48482,8 +48541,11 @@ index 000000000..a16ec5c2d
 +      Identity.resize(OwnerCount);
 +      Initial.OwnerIdentities[Slots.lookup({Variable, nullptr})] = std::move(Identity);
 +    }
-+    Initial.ActivePins.resize(Pins.size());
-+    Initial.SamePins.resize(Pins.size());
++    Initial.ActivePins = InheritedActivePins;Initial.ActivePins.resize(Pins.size());
++    Initial.SamePins = InheritedSamePins;Initial.SamePins.resize(Pins.size());
++    Initial.PinLocations = InheritedPinLocations;Initial.PinLocations.resize(Pins.size());
++    Initial.EquivalentPins = InheritedEquivalentPins;Initial.EquivalentPins.resize(Pins.size());
++    for (Value &Equivalents : Initial.EquivalentPins) Equivalents.resize(Pins.size());
 +    for (auto [Location, Index] : Slots) {
 +      if (!Location.first)
 +        continue;
@@ -61086,3 +61148,216 @@ index 000000000..d3237861a
 +  memory_use(memory_bytes(alias->pointer)); // expected-error {{derived from a non-stable owner}}
 +  void *stable=alias->pointer;memory_use(memory_bytes(stable));
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-field-pins.h b/clang/test/ObjC3/Sema/Inputs/borrowed-field-pins.h
+new file mode 100644
+index 000000000..3a79cace1
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-field-pins.h
+@@ -0,0 +1,12 @@
++#ifndef OBJC3_FIELD_PIN_INPUTS_H
++#define OBJC3_FIELD_PIN_INPUTS_H
++#include "borrowed-memory-aliases.h"
++__attribute__((objc_root_class)) @interface MemoryPinObject
++- (void)release;
++@end
++MemoryBytes memory_pin_bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++struct MemoryPinBox {MemoryPinObject *owner;};
++struct MemoryUnsafePinBox {__unsafe_unretained MemoryPinObject *owner;};
++typedef struct MemoryPinForeign *MemoryPinForeignRef __attribute__((NSObject));
++MemoryBytes memory_foreign_pin_bytes(MemoryPinForeignRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-field-pins.mm b/clang/test/ObjC3/Sema/borrowed-field-pins.mm
+new file mode 100644
+index 000000000..ea280965d
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-field-pins.mm
+@@ -0,0 +1,189 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-field-pins.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-field-pins.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-field-pins.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-field-pins.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-field-pins.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-field-pins.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-field-pins.h"
++#endif
++void pinned_owner_field(MemoryPinObject *_Nonnull owner) {
++  struct MemoryPinBox box={owner};const char *loan=0;
++  withLifetime(box.owner) {
++    loan=memory_pin_bytes(box.owner);
++#if !__has_feature(objc_arc)
++    [owner release];
++#endif
++    owner=0;box.owner=0;memory_use(loan);
++  }
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void kept_owner_field(MemoryPinObject *_Nonnull owner) {
++  struct MemoryPinBox box={owner};keepAlive(box.owner);
++  const char *loan=memory_pin_bytes(box.owner);
++#if !__has_feature(objc_arc)
++  [owner release];
++#endif
++  owner=0;box.owner=0;memory_use(loan);
++}
++void unchanged_owner_field(MemoryPinObject *owner) {
++  struct MemoryPinBox box={owner};const char *loan=0;
++  withLifetime(box.owner) {loan=memory_pin_bytes(box.owner);}
++  memory_use(loan);
++}
++void aliased_owner_field_pin(MemoryPinObject *owner) {
++  struct MemoryPinBox box={owner};struct MemoryPinBox *alias=&box;
++  const char *loan=0;
++  withLifetime(alias->owner) {
++    loan=memory_pin_bytes(alias->owner);owner=0;box.owner=0;memory_use(loan);
++  }
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void array_owner_field_pin(MemoryPinObject *owner) {
++  struct MemoryPinBox box[2]={{0},{owner}};const char *loan=0;
++  withLifetime(box[1].owner) {
++    loan=memory_pin_bytes(box[1].owner);owner=0;box[1].owner=0;memory_use(loan);
++  }
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void joined_value_field_pin(MemoryPinObject *_Nonnull one,MemoryPinObject *_Nonnull two,int choose) {
++  struct MemoryPinBox box={choose?one:two};const char *loan=0;
++  withLifetime(box.owner) {
++    loan=memory_pin_bytes(box.owner);
++#if !__has_feature(objc_arc)
++    [one release];[two release];
++#endif
++    one=0;two=0;box.owner=0;memory_use(loan);
++  }
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void overwritten_field_does_not_match_pin(MemoryPinObject *one,MemoryPinObject *two) {
++  struct MemoryPinBox box={one};
++  withLifetime(box.owner) {
++    box.owner=two;const char *loan=memory_pin_bytes(box.owner);
++    two=0;box.owner=0;
++    memory_use(loan); // expected-error {{lifetime ended}}
++  }
++}
++void overwritten_joined_field_pin(MemoryPinObject *_Nonnull one,MemoryPinObject *_Nonnull two,int choose) {
++  struct MemoryPinBox box={choose?one:two};
++  withLifetime(box.owner) {
++    box.owner=one;const char *loan=memory_pin_bytes(box.owner);
++#if !__has_feature(objc_arc)
++    [one release];
++#endif
++    one=0;box.owner=0;
++    memory_use(loan); // expected-error {{lifetime ended}}
++  }
++}
++void nested_pin_expiry(MemoryPinObject *owner) {
++  struct MemoryPinBox box={owner};const char *loan=0;
++  withLifetime(box.owner) {
++    withLifetime(box.owner) {loan=memory_pin_bytes(box.owner);}
++    owner=0;box.owner=0;memory_use(loan);
++  }
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void different_fields_same_owner_pin(MemoryPinObject *owner) {
++  struct MemoryPinBox one={owner},two={owner};
++  withLifetime(one.owner) {
++    const char *loan=memory_pin_bytes(two.owner);owner=0;one.owner=0;two.owner=0;memory_use(loan);
++  }
++}
++void bypassed_field_pin(MemoryPinObject *owner,int choose) {
++  struct MemoryPinBox box={owner};if(choose)keepAlive(box.owner);
++  const char *loan=memory_pin_bytes(box.owner);owner=0;box.owner=0;
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void unsafe_field_pin(MemoryPinObject *owner) {
++  struct MemoryUnsafePinBox box={owner};const char *loan=0;
++  withLifetime(box.owner) {loan=memory_pin_bytes(box.owner);owner=0;box.owner=0;memory_use(loan);}
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++#if __has_feature(objc_arc)
++void weak_field_pin(MemoryPinObject *owner) {
++  struct WeakBox {__weak MemoryPinObject *owner;};struct WeakBox box={owner};const char *loan=0;
++  withLifetime(box.owner) {loan=memory_pin_bytes(box.owner);owner=0;memory_use(loan);}
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++#endif
++#if !__has_feature(objc_arc)
++void released_field_pin(MemoryPinObject *_Nonnull owner) {
++  struct MemoryPinBox box={owner};[owner release];
++  keepAlive(box.owner); // expected-error {{lifetime pin created after manual owner release}}
++}
++void nested_block_pin(MemoryPinObject *_Nonnull owner) {
++  struct MemoryPinBox box={owner};void (^work)(void)=0;
++  withLifetime(box.owner) {
++    [owner release];work=^{memory_use(memory_pin_bytes(box.owner));};work();
++  }
++  work(); // expected-error {{lifetime ended}}
++}
++#ifdef __cplusplus
++void nested_lambda_field_pin(MemoryPinObject *_Nonnull owner) {
++  MemoryPinBox box{owner};
++  withLifetime(box.owner) {
++    [owner release];auto work=[box]{memory_use(memory_pin_bytes(box.owner));};work();
++  }
++}
++#endif
++#endif
++
++void nested_ended_source_pins(MemoryPinObject *_Nonnull one,MemoryPinObject *_Nonnull two,int choose) {
++  struct MemoryPinBox box={choose?one:two};const char *loan=0;
++  withLifetime(box.owner) {
++    withLifetime(box.owner) {
++      loan=memory_pin_bytes(box.owner);
++#if !__has_feature(objc_arc)
++      [one release];[two release];
++#endif
++      one=0;two=0;box.owner=0;memory_use(loan);
++    }
++    memory_use(loan);
++  }
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++#if defined(__cplusplus) && !__has_feature(objc_arc)
++struct ThrowingPinCopy {
++  MemoryPinObject *owner;
++  ThrowingPinCopy(MemoryPinObject *value):owner(value) {}
++  ThrowingPinCopy(const ThrowingPinCopy &);
++  ~ThrowingPinCopy();
++};
++void unsupported_pin_block_copy(MemoryPinObject *owner) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++  ThrowingPinCopy value(owner);
++  withLifetime(owner) {void (^work)(void)=^{memory_use(memory_pin_bytes(value.owner));};work();}
++}
++#endif
++
++void nsobject_owner_field_pin(MemoryPinForeignRef owner) {
++  struct ForeignPinBox {MemoryPinForeignRef owner;};struct ForeignPinBox box={owner};
++  const char *loan=0;
++  withLifetime(box.owner) {loan=memory_foreign_pin_bytes(box.owner);owner=0;box.owner=0;memory_use(loan);}
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++#if __has_feature(objc_arc)
++id make_unknown_pin_owner(void);
++void unqualified_partial_arc_record(id owner,int choose) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++  struct PartialPinBox {id first,second;};
++  struct PartialPinBox box={owner,choose?owner:make_unknown_pin_owner()};
++  withLifetime(box.first) {memory_use(memory_pin_bytes(box.first));}
++}
++void unqualified_partial_arc_array(id owner,int choose) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++  id values[2]={owner,choose?owner:make_unknown_pin_owner()};
++  withLifetime(values[0]) {memory_use(memory_pin_bytes(values[0]));}
++}
++#endif

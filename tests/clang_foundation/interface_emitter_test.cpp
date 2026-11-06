@@ -643,6 +643,13 @@ void TestBorrowedMemoryAliasReplay() {
           __builtin_memset(bytes,0,sizeof target.second);
           return target.second.pointer;
         }
+        inline void published_memory_field_pin(id owner) {
+          struct PublishedPinRecord {id owner;};struct PublishedPinRecord record={owner};
+          withLifetime(record.owner) {
+            const char *loan=published_memory_object_bytes(record.owner);
+            owner=0;record.owner=0;published_memory_use(loan);
+          }
+        }
       )";
       auto first=emit(source,"memory-alias-provider.m");
       auto replay=emit(first.source_bytes,"memory-alias-replay.m");
@@ -664,6 +671,7 @@ void TestBorrowedMemoryAliasReplay() {
           published_memory_use(published_memory_byte_typed_store(owner));
           published_memory_use(published_memory_stored_owner(owner));
           published_memory_use(published_memory_owner_alias(owner,choose));
+          published_memory_field_pin((id)0);
           #ifdef __cplusplus
           published_memory_field_closure(owner);
           #if __has_feature(objc_arc)

@@ -940,6 +940,50 @@ static borrowed const char *capture_record_bytes(CaptureObject *owner) {
   CAPTURE_CHECK(owner && owner->value == 42);
   return bytes;
 }
+static void capture_field_pin_suite(void) {
+  struct CapturePinRecord {CaptureObject *owner;};
+  int before = capture_destroyed;
+  {
+    CaptureObject *owner = [CaptureObject make:42];
+    struct CapturePinRecord record = {owner};
+    withLifetime(record.owner) {
+      const char *loan = capture_record_bytes(record.owner);
+      owner = (id)0;
+      record.owner = (id)0;
+      CAPTURE_CHECK(loan[0] == 'o' && capture_destroyed == before);
+    }
+    CAPTURE_CHECK(capture_destroyed == before + 1);
+  }
+  ++before;
+  for (int choose = 0; choose != 2; ++choose) {
+    CaptureObject *one = [CaptureObject make:42];
+    CaptureObject *two = [CaptureObject make:42];
+    struct CapturePinRecord record = {choose ? one : two};
+    const char *loan = (const char *)0;
+    withLifetime(record.owner) {
+      withLifetime(record.owner) {
+        loan = capture_record_bytes(record.owner);
+        one = (id)0;
+        two = (id)0;
+        record.owner = (id)0;
+        CAPTURE_CHECK(loan[0] == 'o' && capture_destroyed == before + 1);
+      }
+      CAPTURE_CHECK(loan[0] == 'o' && capture_destroyed == before + 1);
+    }
+    CAPTURE_CHECK(capture_destroyed == before + 2);
+    before += 2;
+  }
+  {
+    CaptureObject *owner = [CaptureObject make:42];
+    struct CapturePinRecord record = {owner};
+    keepAlive(record.owner);
+    const char *loan = capture_record_bytes(record.owner);
+    owner = (id)0;
+    record.owner = (id)0;
+    CAPTURE_CHECK(loan[0] == 'o' && capture_destroyed == before);
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 1);
+}
 static void capture_owned_record_suite(void) {
   struct CaptureOwnerRecord { CaptureObject *owner; };
   int before = capture_destroyed;
@@ -985,6 +1029,7 @@ static void capture_suite(void) {
 #if __has_feature(objc_arc)
   capture_carrier_move_suite();
   capture_owned_record_suite();
+  capture_field_pin_suite();
 #endif
   capture_resource_suite();
   capture_resource_operations_suite();

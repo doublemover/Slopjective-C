@@ -7,6 +7,7 @@ in the [integration receipt](../../../docs/support/linux_native_feature_integrat
 
 - `runtime.h` / `main.m`: independent ARC record-field owners and interior loans
   through heap Block copies and C++ closure copies, with exact object destruction;
+  field withLifetime/keepAlive and nested equivalent pin owners after source clears;
   creation snapshots, unused/contextual captures,
   explicit `__block` snapshots, ARC/MRC ownership, weak zeroing and nested
   weak-to-strong promotion, resource heap

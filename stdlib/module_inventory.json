@@ -297,12 +297,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 29,
+        "minor": 30,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Field/expression/NSObject lifetime pins retain exact source bindings, equivalent nested snapshot claims and inherited closure pin state; native CFG release ordering covers primitive ARC records/arrays and trivial MRC stack-block slots, while throwing partial storage remains guarded (source authored; eighteen new source/PCH commands, all thirty-eight selected borrowed/lifetime/cleanup regressions and three native frontend groups pass; four instrumented native source/PCH configurations pass fourteen commands; SDK consolidation pending)",
         "Contracted owner acquisitions through closed pointer/record/scalar/reference selectors and exact byte views retain actual source bindings and argument snapshots; cached field-owner requirements survive local aliases, while open selectors and exceeded admission budgets diagnose explicitly (source authored; twenty-four new source/PCH commands, nine focused borrowed compiler regressions and three affected native frontend groups pass; SDK consolidation pending)",
         "Independently copied ARC strong record/array fields own future borrowing requirements and protect existing interior loans with a proven matching identity; native Block/C++ capture paths distinguish raw, weak, reference and MRC fields, with symbolic reference-field inputs (source authored; eighteen new source/PCH commands, all thirty-one borrowed compiler regressions and three affected native frontend groups pass; four instrumented native source/PCH configurations pass; SDK consolidation pending)",
         "Tracked field/element owner provenance with one append-only identity namespace, stable field-load acquisition snapshots, binding-specific invalidation and cached field-sensitive borrowed/consumed closure requirements through aliases, copies, nested and initialized captures (source authored; eighteen new source/PCH commands, all thirty borrowed compiler regressions and three affected native frontend groups pass; SDK consolidation pending)",
