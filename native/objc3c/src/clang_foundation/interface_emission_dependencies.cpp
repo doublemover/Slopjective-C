@@ -715,6 +715,11 @@ class TypeDependencyVisitor final
   }
   bool TraverseCallExpr(clang::CallExpr *expression,
                          DataRecursionQueue * = nullptr) {
+    clang::ObjC3DependentKeyPathLiteralInfo literal;
+    if (clang::getObjC3DependentKeyPathLiteral(expression, literal)) {
+      UsesTypedKeyPaths = true;
+      return TraverseType(literal.Root->getType());
+    }
     clang::ObjC3KeyPathApplicationInfo application;
     if (clang::getObjC3KeyPathApplication(expression, application)) {
       UsesTypedKeyPaths = true;

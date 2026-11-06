@@ -694,7 +694,7 @@ index 120af89a9..52edceb63 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index fdefb6d6b..3c9ffddd4 100644
+index fdefb6d6b..e3e7ef6c1 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
 @@ -19,8 +19,10 @@
@@ -783,10 +783,19 @@ index fdefb6d6b..3c9ffddd4 100644
    class StmtProfilerWithoutPointers : public StmtProfiler {
      ODRHash &Hash;
    public:
-@@ -1583,6 +1635,16 @@ void StmtProfiler::VisitOMPIteratorExpr(const OMPIteratorExpr *S) {
+@@ -1583,6 +1635,25 @@ void StmtProfiler::VisitOMPIteratorExpr(const OMPIteratorExpr *S) {
  }
  
  void StmtProfiler::VisitCallExpr(const CallExpr *S) {
++  ObjC3DependentKeyPathLiteralInfo Literal;
++  if (getObjC3DependentKeyPathLiteral(S, Literal)) {
++    VisitStmtNoChildren(S);
++    ID.AddString("objc3.keypath.dependent-literal.v2");
++    VisitType(Literal.Root->getType());
++    for (unsigned I = 1; I < S->getNumArgs(); ++I)
++      ID.AddString(cast<StringLiteral>(S->getArg(I)->IgnoreParenImpCasts())->getString());
++    return;
++  }
 +  ObjC3KeyPathApplicationInfo Application;
 +  if (getObjC3KeyPathApplication(S, Application)) {
 +    VisitStmtNoChildren(S);
@@ -800,7 +809,7 @@ index fdefb6d6b..3c9ffddd4 100644
    VisitExpr(S);
  }
  
-@@ -1653,6 +1715,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -1653,6 +1724,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    VisitExpr(S);
  }
  
@@ -909,7 +918,7 @@ index fdefb6d6b..3c9ffddd4 100644
  void StmtProfiler::VisitChooseExpr(const ChooseExpr *S) {
    VisitExpr(S);
  }
-@@ -1730,7 +1894,29 @@ void StmtProfiler::VisitMatrixElementExpr(const MatrixElementExpr *S) {
+@@ -1730,7 +1903,29 @@ void StmtProfiler::VisitMatrixElementExpr(const MatrixElementExpr *S) {
  
  void StmtProfiler::VisitBlockExpr(const BlockExpr *S) {
    VisitExpr(S);
@@ -940,7 +949,7 @@ index fdefb6d6b..3c9ffddd4 100644
  }
  
  void StmtProfiler::VisitGenericSelectionExpr(const GenericSelectionExpr *S) {
-@@ -3013,3 +3199,19 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
+@@ -3013,3 +3208,19 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
    StmtProfilerWithoutPointers Profiler(ID, Hash);
    Profiler.Visit(this);
  }

@@ -133,6 +133,21 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationDependentKeyPathLiteral(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Literals : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitCallExpr(clang::CallExpr *call) override {
+        clang::ObjC3DependentKeyPathLiteralInfo literal;
+        found |= clang::getObjC3DependentKeyPathLiteral(call, literal);
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return visitor.found;
+  });
+}
+
 bool HasDeclarationCheckedKeyPathRead(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
     struct Literals : clang::DynamicRecursiveASTVisitor {

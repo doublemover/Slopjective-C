@@ -14344,7 +14344,7 @@ index 3f0a7304d..a83fe66ae 100644
        return true;
  
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..a72084af4 100644
+index 11cd159c0..77b7d102b 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,8 @@
@@ -14594,10 +14594,26 @@ index 11cd159c0..a72084af4 100644
    // Rebuild the syntactic form.  The original syntactic form has
    // opaque-value expressions in it, so strip those away and rebuild
    // the result.  This is a really awful way of doing this, but the
-@@ -13965,6 +14149,14 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
+@@ -13965,6 +14149,30 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
++  ObjC3DependentKeyPathLiteralInfo Literal;
++  if (getObjC3DependentKeyPathLiteral(E, Literal)) {
++    TypeSourceInfo *Root = getDerived().TransformType(Literal.Root);
++    if (!Root)
++      return ExprError();
++    SmallVector<IdentifierInfo *, 4> Members;
++    SmallVector<SourceLocation, 4> MemberLocs;
++    for (unsigned I = 1; I < E->getNumArgs(); ++I) {
++      const auto *Name = cast<StringLiteral>(E->getArg(I)->IgnoreParenImpCasts());
++      Members.push_back(&SemaRef.Context.Idents.get(Name->getString()));
++      MemberLocs.push_back(Name->getBeginLoc());
++    }
++    return SemaRef.ActOnObjC3KeyPathLiteral(
++        SemaRef.CreateParsedType(Root->getType(), Root), false, Members,
++        MemberLocs, E->getBeginLoc(), E->getEndLoc());
++  }
 +  ObjC3KeyPathApplicationInfo KeyPath;
 +  if (getObjC3KeyPathApplication(E, KeyPath)) {
 +    SmallVector<Expr *, 3> Args;
@@ -14609,7 +14625,7 @@ index 11cd159c0..a72084af4 100644
    // Transform the callee.
    ExprResult Callee = getDerived().TransformExpr(E->getCallee());
    if (Callee.isInvalid())
-@@ -14566,6 +14758,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14566,6 +14774,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -14766,7 +14782,7 @@ index 11cd159c0..a72084af4 100644
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformChooseExpr(ChooseExpr *E) {
-@@ -17686,6 +18028,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
+@@ -17686,6 +18044,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
      blockScope->ReturnType = exprResultType;
    }
  
@@ -41510,10 +41526,10 @@ index 000000000..1e0226ed1
 +#endif
 diff --git a/clang/include/clang/AST/ObjC3KeyPath.h b/clang/include/clang/AST/ObjC3KeyPath.h
 new file mode 100644
-index 000000000..8332f63d9
+index 000000000..4000b9977
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3KeyPath.h
-@@ -0,0 +1,233 @@
+@@ -0,0 +1,268 @@
 +//===--- ObjC3KeyPath.h - Native key-path record identity ---------*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -41609,6 +41625,41 @@ index 000000000..8332f63d9
 +  unsigned Operation = 0; // Get, Set, Metadata, AsReadOnly, KVCString, in that order.
 +  const CallExpr *Syntax = nullptr;
 +};
++
++struct ObjC3DependentKeyPathLiteralInfo {
++  TypeSourceInfo *Root = nullptr;
++  const CallExpr *Syntax = nullptr;
++};
++
++inline bool getObjC3DependentKeyPathLiteral(
++    const CallExpr *Expression, ObjC3DependentKeyPathLiteralInfo &Info) {
++  if (Expression->getNumArgs() < 2)
++    return false;
++  const auto *Reference = dyn_cast<DeclRefExpr>(
++      Expression->getCallee()->IgnoreParenImpCasts());
++  const auto *Function = Reference
++      ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
++  if (!Function || !Function->isImplicit())
++    return false;
++  bool Marked = false;
++  for (const auto *Attribute : Function->specific_attrs<AnnotateAttr>())
++    Marked |= Attribute->getAnnotation() == "objc3.keypath.dependent-literal.v2";
++  if (!Marked)
++    return false;
++  const auto *Root = dyn_cast<CXXScalarValueInitExpr>(
++      Expression->getArg(0)->IgnoreParenImpCasts());
++  if (!Root || !Root->getType()->isDependentType())
++    return false;
++  for (unsigned I = 1; I < Expression->getNumArgs(); ++I) {
++    const auto *Name = dyn_cast<StringLiteral>(
++        Expression->getArg(I)->IgnoreParenImpCasts());
++    if (!Name || Name->getString().empty())
++      return false;
++  }
++  Info.Root = Root->getTypeSourceInfo();
++  Info.Syntax = Expression;
++  return Info.Root != nullptr;
++}
 +
 +inline StringRef getObjC3KeyPathOperationName(unsigned Operation) {
 +  switch (Operation) {
@@ -46892,10 +46943,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..132a37fc1
+index 000000000..82aa3ba35
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1545 @@
+@@ -0,0 +1,1589 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47980,6 +48031,7 @@ index 000000000..132a37fc1
 +    ArrayRef<SourceLocation> MemberLocs, SourceLocation Loc,
 +    SourceLocation RParenLoc) {
 +  QualType Root;
++  TypeSourceInfo *RootInfo = nullptr;
 +  if (SelfRoot) {
 +    ObjCMethodDecl *Method = getCurMethodDecl();
 +    if (!Method || !Method->isInstanceMethod()) {
@@ -47988,7 +48040,50 @@ index 000000000..132a37fc1
 +    }
 +    Root = Context.getObjCInterfaceType(Method->getClassInterface());
 +  } else {
-+    Root = GetTypeFromParser(ParsedRoot);
++    Root = GetTypeFromParser(ParsedRoot, &RootInfo);
++  }
++  if (getLangOpts().CPlusPlus && !Root.isNull() && Root->isDependentType()) {
++    // A literal owns a written type and ordered member tokens, not a native
++    // accessor until substitution has supplied the actual Objective-C class.
++    // Keep those operands in ordinary serialized AST nodes and rebuild through
++    // this entry point at instantiation, including every admission check.
++    if (Members.empty() || Members.size() != MemberLocs.size())
++      return ExprError();
++    if (!RootInfo)
++      RootInfo = Context.getTrivialTypeSourceInfo(Root, Loc);
++    SmallVector<Expr *, 5> Args;
++    Args.push_back(new (Context) CXXScalarValueInitExpr(Root, RootInfo, RParenLoc));
++    for (unsigned I = 0; I < Members.size(); ++I) {
++      Expr *Name = text(*this, Members[I]->getName(), MemberLocs[I]);
++      if (!Name)
++        return ExprError();
++      Args.push_back(Name);
++    }
++    SmallVector<QualType, 5> Types(Args.size(), Context.DependentTy);
++    QualType Type = Context.getFunctionType(Context.DependentTy, Types,
++                                            FunctionProtoType::ExtProtoInfo());
++    auto *Function = FunctionDecl::Create(
++        Context, Context.getTranslationUnitDecl(), Loc, Loc,
++        &Context.Idents.get("__objc3_dependent_keypath_literal"), Type,
++        Context.getTrivialTypeSourceInfo(Type, Loc), SC_Extern);
++    Function->setImplicit();
++    Function->addAttr(AnnotateAttr::CreateImplicit(
++        Context, "objc3.keypath.dependent-literal.v2", nullptr, 0));
++    SmallVector<ParmVarDecl *, 5> Parameters;
++    for (QualType ParameterType : Types) {
++      auto *Parameter = ParmVarDecl::Create(
++          Context, Function, Loc, Loc, nullptr, ParameterType,
++          Context.getTrivialTypeSourceInfo(ParameterType, Loc), SC_None, nullptr);
++      Parameter->setImplicit();
++      Function->addDecl(Parameter);
++      Parameters.push_back(Parameter);
++    }
++    Function->setParams(Parameters);
++    auto *Reference = new (Context) DeclRefExpr(
++        Context, Function, false, Type, VK_LValue, Loc,
++        DeclarationNameLoc(), NOUR_Unevaluated);
++    return CallExpr::Create(Context, Reference, Args, Context.DependentTy,
++                            VK_PRValue, RParenLoc, FPOptionsOverride());
 +  }
 +  Root = normalizeRoot(*this, Root, Loc);
 +  QualType Descriptor = importedType(*this, "objc3_keypath_descriptor_v2", Loc);
@@ -53422,10 +53517,10 @@ index cb12d10d6..cfdb408f1 100644
  /// Default type lists for ArgumentAdaptingMatcher matchers.
 diff --git a/clang/test/ObjC3/Sema/Inputs/typed-keypath-dependent-applications.h b/clang/test/ObjC3/Sema/Inputs/typed-keypath-dependent-applications.h
 new file mode 100644
-index 000000000..901472bfc
+index 000000000..22cfd2f17
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/typed-keypath-dependent-applications.h
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,56 @@
 +#ifndef OBJC3_DEPENDENT_KEYPATH_APPLICATIONS_H
 +#define OBJC3_DEPENDENT_KEYPATH_APPLICATIONS_H
 +#include "../../Inputs/keypath-abi.h"
@@ -53465,13 +53560,29 @@ index 000000000..901472bfc
 +template<class Path, class Root> void dependent_path_braced(Path path, Root root) {
 +  KeyPathSet(path, {root}, {7, 9});
 +}
++template<class Root> auto dependent_literal_path() {
++  return @keypath(Root, value);
++}
++template<class Root> auto dependent_literal_read(Root root) {
++  return KeyPathGet(@keypath(Root, value), root);
++}
++template<class Root> struct DependentLiteralRoot { using type = Root; };
++template<class Root> auto dependent_qualified_literal_path() {
++  return @keypath(typename DependentLiteralRoot<Root>::type, pair.first);
++}
++template<class... Paths> unsigned count_literal_paths(Paths...) {
++  return sizeof...(Paths);
++}
++template<class... Roots> unsigned dependent_literal_pack() {
++  return count_literal_paths(@keypath(Roots, value)...);
++}
 +#endif
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-dependent-application-errors.mm b/clang/test/ObjC3/Sema/typed-keypath-dependent-application-errors.mm
 new file mode 100644
-index 000000000..5b4ddb897
+index 000000000..982561ce5
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-dependent-application-errors.mm
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,44 @@
 +// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +#include "../Inputs/keypath-abi.h"
@@ -53505,12 +53616,23 @@ index 000000000..5b4ddb897
 +  (void)invalid_pack(path); // expected-note {{in instantiation of function template specialization}}
 +  (void)invalid_pack(path, root, root); // expected-note {{in instantiation of function template specialization}}
 +}
++
++template<class Root> auto invalid_literal_root() {
++  return @keypath(Root, value); // expected-error {{key-path root must name a concrete Objective-C class}}
++}
++template<class Root> auto invalid_literal_member() {
++  return @keypath(Root, missing); // expected-error {{key-path component must name a visible declared instance property}}
++}
++void reject_dependent_literals() {
++  (void)invalid_literal_root<int>(); // expected-note {{in instantiation of function template specialization}}
++  (void)invalid_literal_member<InvalidDependentPathRoot *>(); // expected-note {{in instantiation of function template specialization}}
++}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-dependent-applications.mm b/clang/test/ObjC3/Sema/typed-keypath-dependent-applications.mm
 new file mode 100644
-index 000000000..87743515d
+index 000000000..3767c294f
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-dependent-applications.mm
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,41 @@
 +// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
@@ -53541,6 +53663,16 @@ index 000000000..87743515d
 +  (void)dependent_path_get(path, root);
 +  (void)dependent_path_pack(path, root);
 +  (void)dependent_path_get(dependent_path_readonly(path), root);
++}
++
++void use_dependent_literals(DependentPathRoot *root) {
++  auto path = dependent_literal_path<DependentPathRoot *>();
++  static_assert(__is_same(decltype(path), Write));
++  static_assert(__is_same(decltype(dependent_literal_read(root)), int));
++  auto field = dependent_qualified_literal_path<DependentPathRoot *>();
++  static_assert(__is_same(decltype(field), WritableKeyPath<DependentPathRoot *, long>));
++  (void)dependent_literal_pack<DependentPathRoot *, DependentPathRoot *>();
++  KeyPathSet(path, root, 31);
 +}
 diff --git a/clang/test/ObjC3/Sema/native-object-conversion-contracts.cpp b/clang/test/ObjC3/Sema/native-object-conversion-contracts.cpp
 new file mode 100644

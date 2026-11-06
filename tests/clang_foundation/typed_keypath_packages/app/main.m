@@ -45,6 +45,16 @@ int main(void) {
     assert(KeyPathGet(path, root) == 42);
 #ifdef __cplusplus
     assert(PackageDependentPaths::read(path, root) == 42);
+    auto literal = PackageDependentPaths::literal_count_path<PackagePathRoot *>();
+    assert(PackageDependentPaths::read(literal, root) == 42);
+    assert(PackageDependentPaths::literal_read_count(root) == 42);
+    auto literal_checked = PackageDependentPaths::literal_checked_path<PackagePathRoot *>();
+    const objc3_keypath_descriptor_v2 *literal_metadata = KeyPathMetadata(literal_checked);
+    assert(objc3_keypath_validate_v2(literal_metadata) == 0);
+    assert(literal_metadata->flags & OBJC3_KEYPATH_CHECKED_MISSING_READ);
+    KeyPathSet(literal_checked, root, 99); // next is nil: no update.
+    assert(PackageDependentPaths::literal_read_count(root) == 42);
+
     PackageDependentPaths::write(path, root, 71);
     auto dependent_read = PackageDependentPaths::readonly(path);
     assert(PackageDependentPaths::read(dependent_read, root) == 71);

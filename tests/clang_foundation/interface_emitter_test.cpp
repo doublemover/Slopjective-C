@@ -350,6 +350,83 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestDependentKeyPathLiteralBodies() {
+  for (const char *standard : {"c++20", "c++23"}) {
+    for (bool arc : {false, true}) {
+      std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+          "-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "--target=x86_64-unknown-linux-gnu"};
+      if (arc) args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;
+      AddRuntimeInterfaceFiles(files,args);
+      args.push_back("-include");args.push_back("objc3c/runtime/objc3_keypath.h");
+      auto parse=[&](llvm::StringRef source,llvm::StringRef file) {
+        return clang::tooling::buildASTFromCodeWithArgs(source,args,file,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      const std::string source=R"(
+        __attribute__((objc_root_class)) @interface DependentRoot
+        @property(nonatomic) int count;
+        @property(nonatomic) long alternative;
+        @end
+        template<class Root> auto make_path() {return @keypath(Root,count);}
+        template<class Root> auto read_path(Root root) {
+          return KeyPathGet(@keypath(Root,count),root);
+        }
+      )";
+      const std::vector<std::string> exports={"DependentRoot","make_path","read_path"};
+      auto emit=[&](llvm::StringRef text,llvm::StringRef file) {
+        auto ast=parse(text,file);
+        assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.dependent.paths",
+            "test",{},{},{},exports);
+        for (const auto &d:result.diagnostics)
+          std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);
+        return result;
+      };
+      auto emitted=emit(source,"dependent-path-provider.mm");
+      assert(emitted.source_bytes.find("@keypath(")!=std::string::npos);
+      assert(emitted.source_bytes.find("__objc3_dependent_keypath_literal")==std::string::npos);
+      assert(emitted.sidecar_json.find("objc3.keypath-dependent-literals.v1")!=std::string::npos);
+      auto json=llvm::json::parse(emitted.sidecar_json);
+      assert(json && json->getAsObject());
+      const auto *required=json->getAsObject()->getArray("required_semantics");
+      assert(required);
+      std::vector<llvm::StringRef> supported;
+      for (const auto &item:*required) {assert(item.getAsString());supported.push_back(*item.getAsString());}
+      auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,supported);
+      if (!decoded) {llvm::errs()<<llvm::toString(decoded.takeError())<<"\n";assert(false);}
+      auto repeated=emit(emitted.source_bytes,"dependent-path-consumer.mm");
+      assert(repeated.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
+      auto relocated=emit(source,"relocated/dependent-path-provider.mm");
+      assert(relocated.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
+      auto old=supported;
+      std::erase(old,llvm::StringRef("objc3.keypath-dependent-literals.v1"));
+      auto unsupported=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,old);
+      assert(!unsupported);llvm::consumeError(unsupported.takeError());
+      auto missing=*decoded;
+      std::erase(missing.required_semantics,"objc3.keypath-dependent-literals.v1");
+      auto rejected=EncodeSemanticInterfaceSidecar(missing,supported);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto changed=source;
+      auto member=changed.find("@keypath(Root,count)");assert(member!=std::string::npos);
+      changed.replace(member,std::string("@keypath(Root,count)").size(),"@keypath(Root,alternative)");
+      auto different=emit(changed,"dependent-path-changed.mm");
+      assert(different.identity.semantic_fingerprint!=emitted.identity.semantic_fingerprint);
+      auto consumer=parse(emitted.source_bytes+R"(
+        int instantiate_dependent_paths(DependentRoot *_Nonnull root) {
+          auto path=make_path<DependentRoot *>();
+          KeyPathSet(path,root,37);
+          return read_path(root)+KeyPathGet(path,root);
+        }
+      )","dependent-path-instantiation.mm");
+      assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+    }
+  }
+}
+
 void TestKeyPathSubscriptBodies() {
   for (const char *standard : {"c++20", "c++23"}) {
     for (bool arc : {false, true}) {
@@ -5960,6 +6037,7 @@ int main() {
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
+  TestDependentKeyPathLiteralBodies();
   TestConsumedAndMethodOwnershipRoundTrips();
   TestUnmodeledAttributesFailClosed();
   TestCAsyncPhysicalABIRoundTrips();

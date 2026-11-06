@@ -472,6 +472,11 @@ llvm::Error ValidateForEncoding(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     return Invalid("C++ async definition identity and required capability must agree");
+  const bool dependent_literals = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathLiteralIdentity);
+  const bool dependent_literal_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathLiteralSemantic) != sidecar.required_semantics.end();
+  const bool dependent_literal_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
+  if (dependent_literals != dependent_literal_capability || (dependent_literal_capability && !dependent_literal_paths))
+    return Invalid("dependent key-path literal identity and required literal/key-path capabilities must agree");
   const bool checked_reads = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasCheckedKeyPathReadIdentity);
   const bool checked_read_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kCheckedKeyPathReadSemantic) != sidecar.required_semantics.end();
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();

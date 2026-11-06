@@ -107,6 +107,12 @@ template<class Path, class Root>
 static void dependent_path_braced_pair(Path path, Root root) {
   KeyPathSet(path, {root}, {23, 29});
 }
+template<class Root> static auto dependent_literal_nested_path() {
+  return @keypath(Root, child.count);
+}
+template<class Root> static auto dependent_literal_nested_read(Root root) {
+  return KeyPathGet(@keypath(Root, child.count), root);
+}
 static void check_dependent_applications(void) {
   const int destroyed = path_destroyed;
   @autoreleasepool {
@@ -126,6 +132,13 @@ static void check_dependent_applications(void) {
     dependent_path_all_set(path, root, 67);
     assert(dependent_path_all_get(path, root) == 67);
     assert(dependent_path_descriptor(path) == KeyPathMetadata(path));
+    auto literal = dependent_literal_nested_path<RuntimePathNode *>();
+    assert(dependent_literal_nested_read(root) == 67);
+    assert(dependent_path_read(literal, root) == 67);
+    int equal_literal = 0;
+    assert(objc3_keypath_equal_v2(KeyPathMetadata(literal), KeyPathMetadata(path),
+        &equal_literal) == 0 && equal_literal);
+
     PathPair pair = {7, 9};
     auto pair_path = runtime_pair_path();
     dependent_path_write(pair_path, root, pair);

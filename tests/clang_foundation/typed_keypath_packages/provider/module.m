@@ -62,6 +62,16 @@ WritableKeyPath<PackagePathRoot *, PackagePathRoot * _Nullable> package_nullable
 
 #ifdef __cplusplus
 namespace PackageDependentPaths {
+template<class Root> auto literal_count_path() {
+  return @keypath(Root, count);
+}
+template<class Root> auto literal_read_count(Root root) {
+  return KeyPathGet(@keypath(Root, count), root);
+}
+template<class Root> auto literal_checked_path() {
+  return @keypath(Root, next.count);
+}
+
 template<class Path, class Root> auto read(Path path, Root root) {
   return KeyPathGet(path, root);
 }

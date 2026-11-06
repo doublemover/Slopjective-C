@@ -18,7 +18,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | Remaining executor/actor crossings, MRC/CF/init-family forms and managed values                                             | Open                                                               |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                               |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending    |
-| Key paths          | Dependent type/literal construction; effectful/isolated and ownership-bearing paths                                         | Open                                                               |
+| Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending    |
+| Key paths          | Dependent type constructors; effectful/isolated and ownership-bearing paths                                                 | Open                                                               |
 | Key paths          | Nonnull/scalar/aggregate nullable-chain result policy and implementation                                                    | Source authored; compiler/runtime/PCH/package verification pending |
 | Language/library   | Remaining specified generic, property, reflection/metaprogramming and interoperability contracts                            | Open                                                               |
 | Profiles           | Core, Strict, Strict Concurrency and Strict System conformance                                                              | Open                                                               |
@@ -61,6 +62,24 @@ generic helper forms after provider-source removal; qualification now requires
 those template declarations in C++ metadata. These cases are authored and remain
 pending the rebuilt compiler. Dependent type constructors/literals and the other
 key-path rows remain open.
+
+## Authored dependent key-path literals
+
+Keypath source 2.9 retains a dependent literal's written root type and ordered
+member names until substitution. Instantiation rebuilds through the ordinary
+literal entry, preserving complete-class, property/field, writability, ownership
+and nullable-route admission. Qualified roots and pack expansion use native
+Clang type substitution. Printing and profiles retain public `@keypath` syntax;
+interface dependencies and identities exclude the private syntax marker.
+Published dependent bodies require `objc3.keypath-dependent-literals.v1`.
+
+Compiler/PCH cases cover construction, nested applications, qualified lookup,
+packs, and invalid roots/members. Runtime and source-free package fixtures check
+concrete access, descriptor equality and checked nullable paths, with eleven
+published generic helper forms. Frontend cases cover relocation/replay, changed
+members, consumer instantiation and capability removal. These witnesses are
+source authored and await native execution. Dependent type constructors remain
+open; literal support does not supply that separate deduction/type contract.
 
 ## Authored nullable key-path result policy
 

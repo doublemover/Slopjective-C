@@ -1167,6 +1167,15 @@ public:
   }
   bool TraverseCallExpr(clang::CallExpr *expression,
                          DataRecursionQueue * = nullptr) {
+    clang::ObjC3DependentKeyPathLiteralInfo literal;
+    if (clang::getObjC3DependentKeyPathLiteral(expression, literal)) {
+      Add("keypath-dependent-literal:v2");
+      Add(ExpressionType(literal.Root->getType()));
+      for (unsigned I = 1; I < expression->getNumArgs(); ++I)
+        Add(llvm::cast<clang::StringLiteral>(
+            expression->getArg(I)->IgnoreParenImpCasts())->getString().str());
+      return true;
+    }
     clang::ObjC3KeyPathApplicationInfo application;
     if (clang::getObjC3KeyPathApplication(expression, application)) {
       Add("keypath-application:"+std::to_string(application.Operation));
@@ -2309,6 +2318,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-effectful-lambdas:v1;";
   if (HasDeclarationTemplateTemplateParameters(representative))
     identity.canonical_type_identity+=";cxx-template-template-parameters:v1;";
+  if (HasDeclarationDependentKeyPathLiteral(representative))
+    identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
   if (HasDeclarationNullableKeyPathWrite(representative))
