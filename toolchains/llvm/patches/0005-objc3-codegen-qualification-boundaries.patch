@@ -31159,3 +31159,92 @@ index 000000000..b5407cada
 +// CHECK-DAG: member_receiver
 +// CHECK-DAG: member_argument
 +// CHECK-DAG: private_entry
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-dependent-task-await.h b/clang/test/ObjC3/CodeGen/Inputs/native-dependent-task-await.h
+new file mode 100644
+index 000000000..bec05b629
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-dependent-task-await.h
+@@ -0,0 +1,45 @@
++#ifndef NATIVE_DEPENDENT_TASK_AWAIT_H
++#define NATIVE_DEPENDENT_TASK_AWAIT_H
++#include "native-dependent-frame-await.h"
++template<class T> struct __attribute__((objc_unsafe_sendable)) DependentTaskEntries {
++  T sync(T value) noexcept __attribute__((objc_executor(main))) {return value;}
++  T frame(T value) noexcept __objc3_async_frame __attribute__((objc_executor(main))) {return value;}
++  T task(T value) noexcept __objc3_async __attribute__((objc_executor(main))) {return value;}
++  int scalar(T value) noexcept __attribute__((objc_executor(main))) {return (int)value;}
++  T forward(T value) __objc3_async {return __objc3_await sync(value);}
++};
++template<class T> static T dependent_task_parent(T value) __objc3_async {
++  DependentTaskEntries<T> receiver;
++  T first=__objc3_await receiver.sync(value);
++  T second=__objc3_await receiver.frame(first);
++  return __objc3_await receiver.task(second);
++}
++template<class T> static int dependent_task_known_result(T value) __objc3_async {
++  DependentTaskEntries<T> receiver;
++  return __objc3_await receiver.scalar(value);
++}
++template<class Work> static int dependent_task_callback(Work work) __objc3_async {
++  return __objc3_await work(42);
++}
++template<class Awaiter> static int dependent_task_awaiter(Awaiter value) __objc3_async {
++  return __objc3_await value;
++}
++static int dependent_task_plain(int value) noexcept {return value;}
++static int dependent_task_frame(int value) __objc3_async_frame {return value;}
++static int dependent_task_task(int value) __objc3_async {return value;}
++template<int Bias> static int dependent_task_value_only(int value) __objc3_async {
++  return __objc3_await dependent_task_plain(value+Bias);
++}
++namespace DependentTaskADL {
++struct Token {};
++struct Ready {
++  bool await_ready() noexcept {return true;}
++  void await_suspend(std::coroutine_handle<>) noexcept {}
++  int await_resume() noexcept {return 42;}
++};
++Ready operator co_await(Token) noexcept;
++}
++template<class Work> static objc3::task<int> ordinary_task_awaiter(Work work) {
++  co_return co_await work;
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-dependent-task-await.mm b/clang/test/ObjC3/CodeGen/native-dependent-task-await.mm
+new file mode 100644
+index 000000000..49c7c4964
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-dependent-task-await.mm
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch %S/Inputs/native-dependent-task-await.h -o %t-c++20-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++20-0.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-dependent-task-await.h -o %t-c++20-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c++20-1.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch %S/Inputs/native-dependent-task-await.h -o %t-c++23-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++23-0.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-dependent-task-await.h -o %t-c++23-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c++23-1.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-dependent-task-await.h"
++#endif
++objc3::task<int> native_task_template_export(int value) {return dependent_task_parent(value);}
++objc3::task<int> native_task_known_result_export(int value) {return dependent_task_known_result(value);}
++objc3::task<int> native_task_member_export(DependentTaskEntries<int> &value) {return value.forward(42);}
++objc3::task<int> native_task_frame_callback_export() {return dependent_task_callback(dependent_task_frame);}
++objc3::task<int> native_task_task_callback_export() {return dependent_task_callback(dependent_task_task);}
++objc3::task<int> native_task_plain_callback_export() {return dependent_task_callback(dependent_task_plain);}
++objc3::task<int> native_task_value_only_export(int value) {return dependent_task_value_only<2>(value);}
++objc3::task<int> native_task_custom_awaiter_export() {return dependent_task_awaiter(DependentTaskADL::Ready{});}
++objc3::task<int> native_task_adl_awaiter_export() {return dependent_task_awaiter(DependentTaskADL::Token{});}
++objc3::task<int> ordinary_task_awaiter_export() {return ordinary_task_awaiter(DependentTaskADL::Token{});}
++// CHECK-DAG: @objc3_task_hop
++// CHECK-DAG: DependentTaskEntries
++// CHECK-DAG: dependent_task_frame
++// CHECK-DAG: dependent_task_task
++// CHECK-DAG: dependent_task_plain
++// CHECK-DAG: dependent_task_value_only
++// CHECK-DAG: DependentTaskADL

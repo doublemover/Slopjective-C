@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..6fc826f57
+index 000000000..deb808903
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,981 @@
+@@ -0,0 +1,1044 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -794,6 +794,7 @@ index 000000000..6fc826f57
 +#include "clang/Tooling/Tooling.h"
 +#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 +#include "gtest/gtest.h"
++#include "llvm/ADT/FoldingSet.h"
 +
 +#include <memory>
 +#include <string>
@@ -1750,6 +1751,68 @@ index 000000000..6fc826f57
 +    auto ImportedType=cast<FunctionDecl>(*Imported)->getParamDecl(0)->getType();
 +    EXPECT_TRUE(ImportedType->isObjCNSObjectType());EXPECT_TRUE(ImportedType->isObjCRetainableType());
 +  }
++}
++
++TEST(ObjC3TypeContracts, NativeDependentTaskAwaitIdentityAndImport) {
++  const char *Source=R"(
++    namespace std {
++      template<class R,class... Args> struct coroutine_traits {using promise_type=typename R::promise_type;};
++      template<class P=void> struct coroutine_handle {
++        static coroutine_handle from_address(void*) noexcept;
++      };
++      struct suspend_always {
++        bool await_ready() noexcept;
++        void await_suspend(coroutine_handle<>) noexcept;
++        void await_resume() noexcept;
++      };
++    }
++    template<class T> struct NativeTask {
++      struct promise_type {
++        NativeTask get_return_object();
++        std::suspend_always initial_suspend() noexcept;
++        std::suspend_always final_suspend() noexcept;
++        void return_value(T);
++        void unhandled_exception();
++      };
++    };
++    template<class T> using __objc3_async_task=NativeTask<T>;
++    template<class Work> int native_task(Work work) __objc3_async {
++      return __objc3_await work;
++    }
++    template<class Work> NativeTask<int> ordinary_task(Work work) {
++      co_return co_await work;
++    }
++  )";
++  std::vector<std::string> Args={"-x","objective-c++","-std=c++23",
++      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++  auto AST=parse(Source,Args);ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  struct Find : RecursiveASTVisitor<Find> {
++    DependentCoawaitExpr *Native=nullptr,*Ordinary=nullptr;
++    bool VisitDependentCoawaitExpr(DependentCoawaitExpr *Expression) {
++      (Expression->isObjC3Await()?Native:Ordinary)=Expression;return true;
++    }
++  } Visitor;
++  Visitor.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
++  ASSERT_TRUE(Visitor.Native);ASSERT_TRUE(Visitor.Ordinary);
++  auto &Context=AST->getASTContext();
++  auto *Marked=new(Context) DependentCoawaitExpr(Visitor.Ordinary->getKeywordLoc(),
++      Visitor.Ordinary->getType(),Visitor.Ordinary->getOperand(),
++      Visitor.Ordinary->getOperatorCoawaitLookup());
++  Marked->setObjC3Await();
++  llvm::FoldingSetNodeID OrdinaryProfile,NativeProfile;
++  Visitor.Ordinary->Profile(OrdinaryProfile,Context,true);
++  Marked->Profile(NativeProfile,Context,true);
++  EXPECT_FALSE(OrdinaryProfile==NativeProfile);
++  ODRHash OrdinaryHash,NativeHash;
++  OrdinaryHash.AddStmt(Visitor.Ordinary);NativeHash.AddStmt(Marked);
++  EXPECT_NE(OrdinaryHash.CalculateHash(),NativeHash.CalculateHash());
++  auto Target=parse("",Args);ASSERT_TRUE(Target);
++  ASTImporter Importer(Target->getASTContext(),Target->getFileManager(),
++      Context,AST->getFileManager(),false);
++  auto Imported=Importer.Import(static_cast<Stmt *>(Marked));ASSERT_TRUE(bool(Imported));
++  auto *ImportedAwait=dyn_cast<DependentCoawaitExpr>(*Imported);ASSERT_TRUE(ImportedAwait);
++  EXPECT_TRUE(ImportedAwait->isObjC3Await());
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644

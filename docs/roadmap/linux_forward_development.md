@@ -16,14 +16,22 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.108 task-template span](linux_cxx_dependent_task_awaits.md)
+preserves native await identity and substitution through ordinary C++ task
+templates, including value-dependent scalar results and callback/custom/ADL
+awaiters. Extension ABI 24 is a hard cutover. The compiler rebuild, sixty-six
+focused compiler commands, five AST controls, four package-source modes and the
+944-case ARC/MRC storage witness pass. Frontend syntax checks pass; frontend and
+source-free package execution, wider matrices and SDK consolidation remain pending.
+
 The [Concurrency 2.107 instance-entry span](linux_cxx_instance_entries.md) preserves
 C++ receiver categories, borrowing/temporary lifetime, virtual/qualified dispatch,
 private access and source-order evaluation across executor hops. Virtual contracts
 inherit consistently across bases; native-frame member templates defer dependent
 checks. Twenty-four new source/PCH commands, four package-source modes and a
 complete isolation configuration pass, including 944 storage/lifetime cases.
-Frontend/package execution and SDK consolidation remain pending. Ordinary C++
-task-template dependent awaits remain the next implementation item.
+Frontend/package execution and SDK consolidation remain pending. The 2.108 span
+implements ordinary C++ task-template dependent awaits.
 
 Dependent key-path types, applications/packs and literals plus checked nullable
 traversal now pass all twenty-seven native key-path regressions and two complete

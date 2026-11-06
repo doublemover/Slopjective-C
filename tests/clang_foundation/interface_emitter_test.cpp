@@ -3608,6 +3608,25 @@ void TestNativeDependentAwaitReplay() {
       )","ordinary-dependent-await.mm");
       assert(ordinary.success && ordinary.sidecar_json.find(kNativeDependentAwaitSemantic)==std::string::npos);
       assert(ordinary.source_bytes.find("co_await work")!=std::string::npos);
+      const std::string task_only_source=R"(
+        #include <objc3c/runtime/objc3_task.hpp>
+        namespace NativeExplicitStorage {
+          template<class Work> int task_only(Work work) __objc3_async {
+            return __objc3_await work;
+          }
+        }
+      )";
+      auto task_only=emit(task_only_source,"native-task-only-await.mm");
+      assert(task_only.success && task_only.sidecar_json.find(kNativeDependentAwaitSemantic)!=std::string::npos);
+      auto task_replay=emit(task_only.source_bytes,"native-task-only-await-replay.mm");
+      assert(task_replay.success && task_replay.identity.semantic_fingerprint==task_only.identity.semantic_fingerprint);
+      assert(task_only.source_bytes.find("__objc3_await work")!=std::string::npos);
+      auto ordinary_task_source=task_only_source;
+      auto native_keyword=ordinary_task_source.find("__objc3_await");assert(native_keyword!=std::string::npos);
+      ordinary_task_source.replace(native_keyword,std::string("__objc3_await").size(),"co_await");
+      auto ordinary_task=emit(ordinary_task_source,"ordinary-task-only-await.mm");
+      assert(ordinary_task.success && ordinary_task.sidecar_json.find(kNativeDependentAwaitSemantic)==std::string::npos);
+      assert(ordinary_task.identity.semantic_fingerprint!=task_only.identity.semantic_fingerprint);
       auto plain=emit("namespace NativeExplicitStorage{inline int plain(){return 1;}}","plain-native-await.mm");
       assert(plain.success);
       auto control=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,semantics);assert(control);
@@ -3619,6 +3638,9 @@ void TestNativeDependentAwaitReplay() {
         }
         objc3_async_frame use_native_member_entries(NativeExplicitStorage::Counts *counts) {
           return NativeExplicitStorage::member_generic(NativeExplicitStorage::Value(counts,42));
+        }
+        objc3::task<int> use_dependent_task_await(NativeExplicitStorage::Counts *counts) {
+          return NativeExplicitStorage::task_generic(NativeExplicitStorage::Value(counts,42));
         }
       )","native-dependent-await-consumer.mm");
       assert(valid && !valid->getDiagnostics().hasErrorOccurred());

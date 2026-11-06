@@ -218,7 +218,7 @@ index 15d0e6435..74e772342 100644
 +  return cast<VarDecl>(getBindingStatement()->getSingleDecl());
 +}
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..dc1189fe0 100644
+index 9a97d52fd..432c4ec91 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -25,6 +25,7 @@
@@ -703,7 +703,7 @@ index 9a97d52fd..dc1189fe0 100644
    NestedNameSpecifierLoc NNS = E->getNestedNameSpecifierLoc();
    NNS.getNestedNameSpecifier().print(OS, Policy);
    if (E->getTemplateKWLoc().isValid())
-@@ -2828,6 +3167,11 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
+@@ -2828,18 +3167,30 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
  }
  
  void StmtPrinter::VisitCoawaitExpr(CoawaitExpr *S) {
@@ -715,7 +715,20 @@ index 9a97d52fd..dc1189fe0 100644
    OS << "co_await ";
    PrintExpr(S->getOperand());
  }
-@@ -2839,7 +3183,7 @@ void StmtPrinter::VisitDependentCoawaitExpr(DependentCoawaitExpr *S) {
+ 
+ void StmtPrinter::VisitDependentCoawaitExpr(DependentCoawaitExpr *S) {
+-  OS << "co_await ";
+-  PrintExpr(S->getOperand());
++  OS << (S->isObjC3Await() ? "__objc3_await " : "co_await ");
++  const Expr *Operand = S->getOperand();
++  if (S->isObjC3Await()) {
++    if (const auto *Checked = getObjC3CheckedAsyncAdapterCall(Operand))
++      Operand = Checked->getArg(0);
++    Operand = getObjC3FrameAdapterSource(Operand);
++    if (const Expr *Source = getObjC3IsolationSourceSyntax(Operand)) Operand = Source;
++  }
++  PrintExpr(const_cast<Expr *>(Operand));
+ }
  
  void StmtPrinter::VisitCoyieldExpr(CoyieldExpr *S) {
    OS << "co_yield ";
@@ -724,7 +737,7 @@ index 9a97d52fd..dc1189fe0 100644
  }
  
  // Obj-C
-@@ -2955,8 +3299,24 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
+@@ -2955,8 +3306,24 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
  void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
    BlockDecl *BD = Node->getBlockDecl();
    OS << "^";
@@ -749,7 +762,7 @@ index 9a97d52fd..dc1189fe0 100644
  
    if (isa<FunctionNoProtoType>(AFT)) {
      OS << "()";
-@@ -2976,7 +3336,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
+@@ -2976,7 +3343,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
      }
      OS << ')';
    }
@@ -777,7 +790,7 @@ index 9a97d52fd..dc1189fe0 100644
  }
  
  void StmtPrinter::VisitOpaqueValueExpr(OpaqueValueExpr *Node) {
-@@ -3045,3 +3424,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
+@@ -3045,3 +3431,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
  
  // Implement virtual destructor.
  PrinterHelper::~PrinterHelper() = default;
@@ -1445,7 +1458,7 @@ index 44b51a985..0be5a6d31 100644
  
    ExprResult R;
 diff --git a/clang/lib/Serialization/ASTReaderStmt.cpp b/clang/lib/Serialization/ASTReaderStmt.cpp
-index 87cec16a7..f84912a1f 100644
+index 87cec16a7..25757cda1 100644
 --- a/clang/lib/Serialization/ASTReaderStmt.cpp
 +++ b/clang/lib/Serialization/ASTReaderStmt.cpp
 @@ -342,9 +342,111 @@ void ASTStmtReader::VisitBreakStmt(BreakStmt *S) { VisitLoopControlStmt(S); }
@@ -1560,7 +1573,15 @@ index 87cec16a7..f84912a1f 100644
  void ASTStmtReader::VisitReturnStmt(ReturnStmt *S) {
    VisitStmt(S);
  
-@@ -1414,6 +1516,87 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
+@@ -509,6 +611,7 @@ void ASTStmtReader::VisitCoyieldExpr(CoyieldExpr *E) {
+ void ASTStmtReader::VisitDependentCoawaitExpr(DependentCoawaitExpr *E) {
+   VisitExpr(E);
+   E->KeywordLoc = readSourceLocation();
++  E->setObjC3Await(Record.readInt());
+   for (auto &SubExpr: E->SubExprs)
+     SubExpr = Record.readSubStmt();
+ }
+@@ -1414,6 +1517,87 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
    E->StmtExprBits.TemplateDepth = Record.readInt();
  }
  
@@ -1648,7 +1669,7 @@ index 87cec16a7..f84912a1f 100644
  void ASTStmtReader::VisitChooseExpr(ChooseExpr *E) {
    VisitExpr(E);
    E->setCond(Record.readSubExpr());
-@@ -3234,6 +3417,47 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+@@ -3234,6 +3418,47 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
        S = DeferStmt::CreateEmpty(Context, Empty);
        break;
  
@@ -1696,7 +1717,7 @@ index 87cec16a7..f84912a1f 100644
      case STMT_RETURN:
        S = ReturnStmt::CreateEmpty(
            Context, /* HasNRVOCandidate=*/Record[ASTStmtReader::NumStmtFields]);
-@@ -3505,6 +3729,31 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+@@ -3505,6 +3730,31 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
        S = new (Context) StmtExpr(Empty);
        break;
  
@@ -1728,7 +1749,7 @@ index 87cec16a7..f84912a1f 100644
      case EXPR_CHOOSE:
        S = new (Context) ChooseExpr(Empty);
        break;
-@@ -4671,3 +4920,12 @@ Done:
+@@ -4671,3 +4921,12 @@ Done:
    assert(StmtStack.size() == PrevNumStmts + 1 && "Extra expressions on stack!");
    return StmtStack.pop_back_val();
  }
@@ -1742,7 +1763,7 @@ index 87cec16a7..f84912a1f 100644
 +  S->SemiLoc = readSourceLocation();
 +}
 diff --git a/clang/lib/Serialization/ASTWriterStmt.cpp b/clang/lib/Serialization/ASTWriterStmt.cpp
-index 70477f4cf..4a4359649 100644
+index 70477f4cf..ce251b408 100644
 --- a/clang/lib/Serialization/ASTWriterStmt.cpp
 +++ b/clang/lib/Serialization/ASTWriterStmt.cpp
 @@ -334,10 +334,112 @@ void ASTStmtWriter::VisitBreakStmt(BreakStmt *S) {
@@ -1858,7 +1879,15 @@ index 70477f4cf..4a4359649 100644
  void ASTStmtWriter::VisitReturnStmt(ReturnStmt *S) {
    VisitStmt(S);
  
-@@ -1363,6 +1465,94 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
+@@ -482,6 +584,7 @@ void ASTStmtWriter::VisitCXXReflectExpr(CXXReflectExpr *E) {
+ void ASTStmtWriter::VisitDependentCoawaitExpr(DependentCoawaitExpr *E) {
+   VisitExpr(E);
+   Record.AddSourceLocation(E->getKeywordLoc());
++  Record.push_back(E->isObjC3Await());
+   for (Stmt *S : E->children())
+     Record.AddStmt(S);
+   Code = serialization::EXPR_DEPENDENT_COAWAIT;
+@@ -1363,6 +1466,94 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
    Code = serialization::EXPR_STMT;
  }
  
@@ -1953,7 +1982,7 @@ index 70477f4cf..4a4359649 100644
  void ASTStmtWriter::VisitChooseExpr(ChooseExpr *E) {
    VisitExpr(E);
    Record.AddStmt(E->getCond());
-@@ -3262,3 +3452,13 @@ void ASTRecordWriter::FlushSubStmts() {
+@@ -3262,3 +3453,13 @@ void ASTRecordWriter::FlushSubStmts() {
  
    StmtsToEmit.clear();
  }

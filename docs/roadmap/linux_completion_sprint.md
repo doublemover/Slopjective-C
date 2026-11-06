@@ -20,7 +20,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | Remaining indirect writes/aliases, mutable/reference/generic/lazy captures and exceptional cleanup                          | Open                                                                                         |
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
-| Concurrency        | Persistent native await syntax and instantiation through ordinary C++ task templates                                        | Open; native-frame templates are delivered separately |
+| Concurrency        | Persistent native await syntax and instantiation through ordinary C++ task templates                                        | Source authored; compiler/source-PCH/AST checks and 944-case storage witness pass; frontend/package execution pending |
 | Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                                                         |
 | Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                                             |
@@ -466,5 +466,28 @@ Twenty-four new source/PCH commands, existing dependent-await controls, four
 package-source modes and a complete twenty-five-command isolation suite pass.
 Its explicit storage matrix now covers 944 cases, including 648 added member-entry
 cases. Frontend/package execution, optimized/instrumented matrices and coordinated
-SDK delivery remain pending; ordinary C++ task-template dependent await syntax is
-the next active implementation item.
+SDK delivery remain pending. Ordinary C++ task-template dependent awaits are
+implemented in the following span.
+
+## Ordinary task-template native awaits
+
+Concurrency source 2.108 gives dependent C++ task awaits a persistent native
+syntax bit, preserved through AST import, PCH, printing and native/ODR expression
+identity. Substitution rebuilds isolation, frame/task adapters and optional checked
+error bindings while retaining ordinary operator lookup and ADL. Known scalar
+results with instantiation-dependent operands defer as native awaits; ordinary
+C++ co_await keeps its own rules. Native-frame templates retain their separate
+opaque continuation protocol.
+
+This statement-record cutover advances the compiler extension ABI and task bridge
+to 24. SDK 2.62 remains the accepted historical archive. Implementation and
+source/PCH/AST identity-import, callback/awaiter/ADL, package and direct task-template
+ownership witnesses are implemented. The ABI 24 compiler rebuild completes; six
+compiler regressions pass sixty-six commands, five native AST controls and four
+package-source modes pass. The focused ARC/MRC native storage witness passes five
+compile/link/execution commands and all 944 cases. Production-task execution
+covers indirect plain/frame/task callbacks and value-dependent scalar awaits;
+custom awaiter and ADL controls use the compiler fixture's custom promise. Three
+frontend units pass syntax checks. Frontend/source-free package execution, wider
+runtime/sanitizer consolidation and SDK delivery remain pending. See the
+[2.108 contract](linux_cxx_dependent_task_awaits.md).

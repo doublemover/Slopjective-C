@@ -1958,7 +1958,7 @@ index f98b0f358..e1611058b 100644
    /// source.
    ///
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index 11550340a..dd81eaf6a 100644
+index 11550340a..7e4df88b4 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
 @@ -15,6 +15,8 @@
@@ -1978,16 +1978,28 @@ index 11550340a..dd81eaf6a 100644
  class SemaPPC;
  class SemaPseudoObject;
  class SemaRISCV;
-@@ -3207,6 +3210,8 @@ public:
+@@ -3206,7 +3209,10 @@ public:
+ 
    bool ActOnCoroutineBodyStart(Scope *S, SourceLocation KwLoc,
                                 StringRef Keyword);
-   ExprResult ActOnCoawaitExpr(Scope *S, SourceLocation KwLoc, Expr *E);
+-  ExprResult ActOnCoawaitExpr(Scope *S, SourceLocation KwLoc, Expr *E);
++  ExprResult ActOnCoawaitExpr(Scope *S, SourceLocation KwLoc, Expr *E,
++                              bool ObjC3Await = false);
 +  ExprResult ActOnObjC3CAwaitExpr(SourceLocation KwLoc, Expr *E);
 +  ExprResult BuildObjC3CxxFrameAwaitOperand(SourceLocation KwLoc, Expr *E);
    ExprResult ActOnCoyieldExpr(Scope *S, SourceLocation KwLoc, Expr *E);
    StmtResult ActOnCoreturnStmt(Scope *S, SourceLocation KwLoc, Expr *E);
  
-@@ -3223,7 +3228,7 @@ public:
+@@ -3216,14 +3222,15 @@ public:
+   ExprResult BuildResolvedCoawaitExpr(SourceLocation KwLoc, Expr *Operand,
+                                       Expr *Awaiter, bool IsImplicit = false);
+   ExprResult BuildUnresolvedCoawaitExpr(SourceLocation KwLoc, Expr *Operand,
+-                                        UnresolvedLookupExpr *Lookup);
++                                        UnresolvedLookupExpr *Lookup,
++                                        bool ObjC3Await = false);
+   ExprResult BuildCoyieldExpr(SourceLocation KwLoc, Expr *E);
+   StmtResult BuildCoreturnStmt(SourceLocation KwLoc, Expr *E,
+                                bool IsImplicit = false);
    StmtResult BuildCoroutineBodyStmt(CoroutineBodyStmt::CtorArgs);
    bool buildCoroutineParameterMoves(SourceLocation Loc);
    VarDecl *buildCoroutinePromise(SourceLocation Loc);
@@ -1996,7 +2008,7 @@ index 11550340a..dd81eaf6a 100644
  
    // As a clang extension, enforces that a non-coroutine function must be marked
    // with [[clang::coro_wrapper]] if it returns a type marked with
-@@ -4823,6 +4828,9 @@ public:
+@@ -4823,6 +4830,9 @@ public:
    llvm::SmallSetVector<Decl *, 4> DeclsToCheckForDeferredDiags;
  
  private:
@@ -2006,7 +2018,7 @@ index 11550340a..dd81eaf6a 100644
    /// Map of current shadowing declarations to shadowed declarations. Warn if
    /// it looks like the user is trying to modify the shadowing declaration.
    llvm::DenseMap<const NamedDecl *, const NamedDecl *> ShadowingDecls;
-@@ -5582,6 +5590,14 @@ public:
+@@ -5582,6 +5592,14 @@ public:
      /// The set of exceptions in the exception specification.
      const QualType *data() const { return Exceptions.data(); }
  
@@ -2021,7 +2033,7 @@ index 11550340a..dd81eaf6a 100644
      /// Integrate another called method into the collected data.
      void CalledDecl(SourceLocation CallLoc, const CXXMethodDecl *Method);
  
-@@ -7698,6 +7714,14 @@ public:
+@@ -7698,6 +7716,14 @@ public:
    /// started.
    void ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope);
  
@@ -2036,7 +2048,7 @@ index 11550340a..dd81eaf6a 100644
    /// ActOnBlockArguments - This callback allows processing of block arguments.
    /// If there are no arguments, this is still invoked.
    void ActOnBlockArguments(SourceLocation CaretLoc, Declarator &ParamInfo,
-@@ -10017,7 +10041,8 @@ public:
+@@ -10017,7 +10043,8 @@ public:
    DeclResult ActOnModuleImport(SourceLocation StartLoc,
                                 SourceLocation ExportLoc,
                                 SourceLocation ImportLoc, ModuleIdPath Path,
@@ -2046,7 +2058,7 @@ index 11550340a..dd81eaf6a 100644
    DeclResult ActOnModuleImport(SourceLocation StartLoc,
                                 SourceLocation ExportLoc,
                                 SourceLocation ImportLoc, Module *M,
-@@ -11247,6 +11272,134 @@ public:
+@@ -11247,6 +11274,134 @@ public:
                              LabelDecl *Label, SourceLocation LabelLoc);
  
    void ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope);
@@ -2181,7 +2193,7 @@ index 11550340a..dd81eaf6a 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15357,6 +15510,13 @@ public:
+@@ -15357,6 +15512,13 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
@@ -2870,7 +2882,7 @@ index 222881154..e4cf515e7 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..4aad2c0d1 100644
+index d743717ad..e0ed6a37a 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -4207,7 +4219,7 @@ index d743717ad..4aad2c0d1 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +8180,91 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
+@@ -7485,6 +8180,93 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -4259,8 +4271,10 @@ index d743717ad..4aad2c0d1 100644
 +  auto Operand = importChecked(Err, E->getOperand());
 +  auto Lookup = importChecked(Err, E->getOperatorCoawaitLookup());
 +  if (Err) return std::move(Err);
-+  return new (Importer.getToContext()) DependentCoawaitExpr(
++  auto *Result = new (Importer.getToContext()) DependentCoawaitExpr(
 +      Loc, Type, Operand, Lookup);
++  Result->setObjC3Await(E->isObjC3Await());
++  return Result;
 +}
 +
 +ExpectedStmt ASTNodeImporter::VisitCoreturnStmt(CoreturnStmt *S) {
@@ -4299,7 +4313,7 @@ index d743717ad..4aad2c0d1 100644
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8555,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8557,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -4478,7 +4492,7 @@ index d743717ad..4aad2c0d1 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +9036,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +9038,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -4495,7 +4509,7 @@ index d743717ad..4aad2c0d1 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8835,6 +9797,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +9799,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
                                     E->getFPFeatures());
  }
  
@@ -4549,7 +4563,7 @@ index d743717ad..4aad2c0d1 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9163,6 +10172,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
+@@ -9163,6 +10174,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -4566,7 +4580,7 @@ index d743717ad..4aad2c0d1 100644
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10471,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
+@@ -9452,6 +10473,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -4581,7 +4595,7 @@ index d743717ad..4aad2c0d1 100644
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10524,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+@@ -9497,6 +10526,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
        E->getIndex(), E->getFinal());
  }
  
@@ -4603,7 +4617,7 @@ index d743717ad..4aad2c0d1 100644
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10706,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10708,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -4618,7 +4632,7 @@ index d743717ad..4aad2c0d1 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10761,125 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10763,125 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -4745,7 +4759,7 @@ index d743717ad..4aad2c0d1 100644
  }
  
  namespace {
-@@ -9857,6 +11021,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +11023,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -4805,7 +4819,7 @@ index d743717ad..4aad2c0d1 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -9880,6 +11097,14 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9880,6 +11099,14 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
      break;
    }
  
@@ -4820,7 +4834,7 @@ index d743717ad..4aad2c0d1 100644
    case attr::EnableIf: {
      const auto *From = cast<EnableIfAttr>(FromAttr);
      AI.importAttr(From, AI.importArg(From->getCond()).value(),
-@@ -10123,12 +11348,62 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,12 +11350,62 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -4887,7 +4901,7 @@ index d743717ad..4aad2c0d1 100644
          return ToAttrOrErr.takeError();
      }
  
-@@ -10571,6 +11846,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +11848,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -4900,7 +4914,7 @@ index d743717ad..4aad2c0d1 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11862,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11864,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -4912,7 +4926,7 @@ index d743717ad..4aad2c0d1 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11874,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11876,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4924,7 +4938,7 @@ index d743717ad..4aad2c0d1 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11886,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11888,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4946,7 +4960,7 @@ index d743717ad..4aad2c0d1 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -10823,6 +12104,8 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10823,6 +12106,8 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
      ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
                 ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
                 FromValue.getArrayInitializedElts());
@@ -4955,7 +4969,7 @@ index d743717ad..4aad2c0d1 100644
      break;
    case APValue::Struct:
      Result.MakeStruct(FromValue.getStructNumBases(),
-@@ -10838,7 +12121,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10838,7 +12123,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
      APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
      if (Err)
        return std::move(Err);
@@ -4964,7 +4978,7 @@ index d743717ad..4aad2c0d1 100644
      break;
    }
    case APValue::AddrLabelDiff: {
-@@ -10858,10 +12141,10 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10858,10 +12143,10 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
        return std::move(Err);
      MutableArrayRef<const CXXRecordDecl *> ToPath =
          Result.setMemberPointerUninit(
@@ -4977,7 +4991,7 @@ index d743717ad..4aad2c0d1 100644
      for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
           Idx++) {
        const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
-@@ -10912,7 +12195,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10912,7 +12197,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
        }
      }
      CharUnits Offset = FromValue.getLValueOffset();
@@ -4986,7 +5000,7 @@ index d743717ad..4aad2c0d1 100644
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11006,6 +12289,11 @@ Decl *ASTImporter::MapImported(Decl *From, Decl *To) {
+@@ -11006,6 +12291,11 @@ Decl *ASTImporter::MapImported(Decl *From, Decl *To) {
    // This mapping should be maintained only in this function. Therefore do not
    // check for additional consistency.
    ImportedFromDecls[To] = From;
@@ -4998,7 +5012,7 @@ index d743717ad..4aad2c0d1 100644
    // In the case of TypedefNameDecl we create the Decl first and only then we
    // import and set its DeclContext. So, the DC is still not set when we reach
    // here from GetImportedOrCreateDecl.
-@@ -11049,3 +12337,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +12339,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -14917,7 +14931,7 @@ index 3f0a7304d..4badce1e2 100644
        return true;
  
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..6b621cee4 100644
+index 11cd159c0..9c37debdd 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,8 @@
@@ -14937,7 +14951,19 @@ index 11cd159c0..6b621cee4 100644
  #include "llvm/ADT/ArrayRef.h"
  #include "llvm/Support/ErrorHandling.h"
  #include <algorithm>
-@@ -5690,6 +5693,62 @@ QualType TreeTransform<Derived>::TransformComplexType(TypeLocBuilder &TLB,
+@@ -1599,8 +1602,9 @@ public:
+   /// Subclasses may override this routine to provide different behavior.
+   ExprResult RebuildDependentCoawaitExpr(SourceLocation CoawaitLoc,
+                                          Expr *Result,
+-                                         UnresolvedLookupExpr *Lookup) {
+-    return getSema().BuildUnresolvedCoawaitExpr(CoawaitLoc, Result, Lookup);
++                                         UnresolvedLookupExpr *Lookup,
++                                         bool ObjC3Await = false) {
++    return getSema().BuildUnresolvedCoawaitExpr(CoawaitLoc, Result, Lookup, ObjC3Await);
+   }
+ 
+   /// Build a new co_yield expression.
+@@ -5690,6 +5694,62 @@ QualType TreeTransform<Derived>::TransformComplexType(TypeLocBuilder &TLB,
    return TransformTypeSpecType(TLB, T);
  }
  
@@ -15000,7 +15026,7 @@ index 11cd159c0..6b621cee4 100644
  template <typename Derived>
  QualType TreeTransform<Derived>::TransformAdjustedType(TypeLocBuilder &TLB,
                                                         AdjustedTypeLoc TL) {
-@@ -6744,6 +6803,34 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
+@@ -6744,6 +6804,34 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
      EPIChanged = true;
    }
  
@@ -15035,7 +15061,7 @@ index 11cd159c0..6b621cee4 100644
    QualType Result = TL.getType();
    if (getDerived().AlwaysRebuild() || ResultType != T->getReturnType() ||
        T->getParamTypes() != llvm::ArrayRef(ParamTypes) || EPIChanged) {
-@@ -6757,6 +6844,10 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
+@@ -6757,6 +6845,10 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
    NewTL.setLParenLoc(TL.getLParenLoc());
    NewTL.setRParenLoc(TL.getRParenLoc());
    NewTL.setExceptionSpecRange(TL.getExceptionSpecRange());
@@ -15046,7 +15072,7 @@ index 11cd159c0..6b621cee4 100644
    NewTL.setLocalRangeEnd(TL.getLocalRangeEnd());
    for (unsigned i = 0, e = NewTL.getNumParams(); i != e; ++i)
      NewTL.setParam(i, ParamDecls[i]);
-@@ -8642,12 +8733,100 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
+@@ -8642,12 +8734,100 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
        BreakStmt(S->getKwLoc(), S->getLabelLoc(), cast<LabelDecl>(LD));
  }
  
@@ -15148,7 +15174,7 @@ index 11cd159c0..6b621cee4 100644
  }
  
  template<typename Derived>
-@@ -8976,6 +9155,20 @@ TreeTransform<Derived>::TransformCoreturnStmt(CoreturnStmt *S) {
+@@ -8976,6 +9156,20 @@ TreeTransform<Derived>::TransformCoreturnStmt(CoreturnStmt *S) {
  
  template <typename Derived>
  ExprResult TreeTransform<Derived>::TransformCoawaitExpr(CoawaitExpr *E) {
@@ -15169,7 +15195,50 @@ index 11cd159c0..6b621cee4 100644
    ExprResult Operand = getDerived().TransformInitializer(E->getOperand(),
                                                           /*NotCopyInit*/ false);
    if (Operand.isInvalid())
-@@ -13699,6 +13892,19 @@ ExprResult TreeTransform<Derived>::TransformRecoveryExpr(RecoveryExpr *E) {
+@@ -9005,6 +9199,26 @@ TreeTransform<Derived>::TransformDependentCoawaitExpr(DependentCoawaitExpr *E) {
+   if (OperandResult.isInvalid())
+     return ExprError();
+ 
++  if (E->isObjC3Await()) {
++    // Rebuild the source boundary, not the old physical frame adapter. A
++    // checked adapter keeps its original error-out binding and callable type.
++    const auto *Checked = getObjC3CheckedAsyncAdapterCall(OperandResult.get());
++    Expr *Source = const_cast<Expr *>(getObjC3FrameAdapterSource(
++        Checked ? Checked->getArg(0) : OperandResult.get()));
++    OperandResult = getSema().BuildObjC3IsolationAwaitOperand(E->getKeywordLoc(), Source);
++    if (OperandResult.isInvalid()) return ExprError();
++    if (!Checked && getSema().isObjC3NonSuspendingAwait(OperandResult.get()))
++      return getSema().ActOnObjC3NonSuspendingAwait(E->getKeywordLoc(), OperandResult.get());
++    OperandResult = getSema().BuildObjC3CxxFrameAwaitOperand(E->getKeywordLoc(), OperandResult.get());
++    if (OperandResult.isInvalid()) return ExprError();
++    if (Checked) {
++      Expr *Arguments[] = {OperandResult.get(), const_cast<Expr *>(Checked->getArg(1))};
++      OperandResult = getSema().BuildCallExpr(nullptr, const_cast<Expr *>(Checked->getCallee()),
++          E->getKeywordLoc(), Arguments, E->getKeywordLoc());
++      if (OperandResult.isInvalid()) return ExprError();
++    }
++  }
++
+   ExprResult LookupResult = getDerived().TransformUnresolvedLookupExpr(
+           E->getOperatorCoawaitLookup());
+ 
+@@ -9013,9 +9227,13 @@ TreeTransform<Derived>::TransformDependentCoawaitExpr(DependentCoawaitExpr *E) {
+ 
+   // Always rebuild; we don't know if this needs to be injected into a new
+   // context or if the promise type has changed.
+-  return getDerived().RebuildDependentCoawaitExpr(
++  ExprResult Result = getDerived().RebuildDependentCoawaitExpr(
+       E->getKeywordLoc(), OperandResult.get(),
+-      cast<UnresolvedLookupExpr>(LookupResult.get()));
++      cast<UnresolvedLookupExpr>(LookupResult.get()), E->isObjC3Await());
++  if (Result.isUsable() && E->isObjC3Await())
++    if (auto *Dependent = dyn_cast<DependentCoawaitExpr>(Result.get()))
++      Dependent->setObjC3Await();
++  return Result;
+ }
+ 
+ template<typename Derived>
+@@ -13699,6 +13917,19 @@ ExprResult TreeTransform<Derived>::TransformRecoveryExpr(RecoveryExpr *E) {
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformPseudoObjectExpr(PseudoObjectExpr *E) {
@@ -15189,7 +15258,7 @@ index 11cd159c0..6b621cee4 100644
    // Rebuild the syntactic form.  The original syntactic form has
    // opaque-value expressions in it, so strip those away and rebuild
    // the result.  This is a really awful way of doing this, but the
-@@ -13965,6 +14171,30 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
+@@ -13965,6 +14196,30 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
@@ -15220,7 +15289,7 @@ index 11cd159c0..6b621cee4 100644
    // Transform the callee.
    ExprResult Callee = getDerived().TransformExpr(E->getCallee());
    if (Callee.isInvalid())
-@@ -14566,6 +14796,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14566,6 +14821,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -15377,7 +15446,7 @@ index 11cd159c0..6b621cee4 100644
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformChooseExpr(ChooseExpr *E) {
-@@ -17686,6 +18066,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
+@@ -17686,6 +18091,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
      blockScope->ReturnType = exprResultType;
    }
  
@@ -25075,7 +25144,7 @@ index 76c51b8d9..2fe982a87 100644
      if (includeCategoryNamespace) {
        if (auto category = MD->getCategory())
 diff --git a/clang/lib/Sema/SemaCoroutine.cpp b/clang/lib/Sema/SemaCoroutine.cpp
-index 4b99e4454..d47b934aa 100644
+index 4b99e4454..7e7a47729 100644
 --- a/clang/lib/Sema/SemaCoroutine.cpp
 +++ b/clang/lib/Sema/SemaCoroutine.cpp
 @@ -14,11 +14,14 @@
@@ -25350,10 +25419,46 @@ index 4b99e4454..d47b934aa 100644
      if (Operand.isInvalid())
        return StmtError();
      ExprResult Suspend =
-@@ -902,6 +1022,14 @@ ExprResult Sema::BuildUnresolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
+@@ -815,7 +935,8 @@ static bool checkSuspensionContext(Sema &S, SourceLocation Loc,
+   return true;
+ }
+ 
+-ExprResult Sema::ActOnCoawaitExpr(Scope *S, SourceLocation Loc, Expr *E) {
++ExprResult Sema::ActOnCoawaitExpr(Scope *S, SourceLocation Loc, Expr *E,
++                                  bool ObjC3Await) {
+   if (!checkSuspensionContext(*this, Loc, "co_await"))
+     return ExprError();
+ 
+@@ -833,7 +954,7 @@ ExprResult Sema::ActOnCoawaitExpr(Scope *S, SourceLocation Loc, Expr *E) {
+   if (Lookup.isInvalid())
+     return ExprError();
+   return BuildUnresolvedCoawaitExpr(Loc, E,
+-                                   cast<UnresolvedLookupExpr>(Lookup.get()));
++                                   cast<UnresolvedLookupExpr>(Lookup.get()), ObjC3Await);
+ }
+ 
+ ExprResult Sema::BuildOperatorCoawaitLookupExpr(Scope *S, SourceLocation Loc) {
+@@ -890,7 +1011,8 @@ static void applySafeElideContext(Expr *Operand) {
+ // Attempts to resolve and build a CoawaitExpr from "raw" inputs, bailing out to
+ // DependentCoawaitExpr if needed.
+ ExprResult Sema::BuildUnresolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
+-                                            UnresolvedLookupExpr *Lookup) {
++                                            UnresolvedLookupExpr *Lookup,
++                                            bool ObjC3Await) {
+   auto *FSI = checkCoroutineContext(*this, Loc, "co_await");
+   if (!FSI)
+     return ExprError();
+@@ -902,17 +1024,33 @@ ExprResult Sema::BuildUnresolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
      Operand = R.get();
    }
  
++  if (ObjC3Await && Operand->isInstantiationDependent()) {
++    auto *Result = new (Context) DependentCoawaitExpr(
++        Loc, Context.DependentTy, Operand, Lookup);
++    Result->setObjC3Await();
++    return Result;
++  }
++
 +  // Re-run frame entry adaptation when a dependent await is instantiated.
 +  // Its callable type may become known only after template substitution.
 +  if (getLangOpts().ObjC3) {
@@ -25364,8 +25469,13 @@ index 4b99e4454..d47b934aa 100644
 +
    auto *Promise = FSI->CoroutinePromise;
    if (Promise->getType()->isDependentType()) {
-     Expr *Res = new (Context)
-@@ -912,7 +1040,7 @@ ExprResult Sema::BuildUnresolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
+-    Expr *Res = new (Context)
++    auto *Res = new (Context)
+         DependentCoawaitExpr(Loc, Context.DependentTy, Operand, Lookup);
++    Res->setObjC3Await(ObjC3Await);
+     return Res;
+   }
+ 
    auto *RD = Promise->getType()->getAsCXXRecordDecl();
  
    bool CurFnAwaitElidable = isAttributedCoroAwaitElidable(
@@ -25374,7 +25484,7 @@ index 4b99e4454..d47b934aa 100644
  
    if (CurFnAwaitElidable)
      applySafeElideContext(Operand);
-@@ -967,9 +1095,25 @@ ExprResult Sema::BuildResolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
+@@ -967,9 +1105,25 @@ ExprResult Sema::BuildResolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
    // Build the await_ready, await_suspend, await_resume calls.
    ReadySuspendResumeResult RSS =
        buildCoawaitCalls(*this, Coroutine->CoroutinePromise, CallLoc, Awaiter);
@@ -25401,7 +25511,7 @@ index 4b99e4454..d47b934aa 100644
    Expr *Res = new (Context)
        CoawaitExpr(Loc, Operand, Awaiter, RSS.Results[0], RSS.Results[1],
                    RSS.Results[2], RSS.OpaqueValue, IsImplicit);
-@@ -1024,7 +1168,7 @@ ExprResult Sema::BuildCoyieldExpr(SourceLocation Loc, Expr *E) {
+@@ -1024,7 +1178,7 @@ ExprResult Sema::BuildCoyieldExpr(SourceLocation Loc, Expr *E) {
    // Build the await_ready, await_suspend, await_resume calls.
    ReadySuspendResumeResult RSS = buildCoawaitCalls(
        *this, Coroutine->CoroutinePromise, Loc, E);
@@ -25410,7 +25520,7 @@ index 4b99e4454..d47b934aa 100644
      return ExprError();
  
    Expr *Res =
-@@ -1054,6 +1198,61 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
+@@ -1054,6 +1208,61 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
      E = R.get();
    }
  
@@ -25472,17 +25582,22 @@ index 4b99e4454..d47b934aa 100644
    VarDecl *Promise = FSI->CoroutinePromise;
    ExprResult PC;
    if (E && (isa<InitListExpr>(E) || !E->getType()->isVoidType())) {
-@@ -1183,8 +1382,7 @@ static bool findDeleteForPromise(Sema &S, SourceLocation Loc, QualType PromiseTy
+@@ -1183,8 +1392,12 @@ static bool findDeleteForPromise(Sema &S, SourceLocation Loc, QualType PromiseTy
    return true;
  }
  
 -
 -void Sema::CheckCompletedCoroutineBody(FunctionDecl *FD, Stmt *&Body) {
 +void Sema::CheckCompletedCoroutineBody(Decl *FD, Stmt *&Body) {
++  // A function template with a concrete promise is completed before any
++  // specialization exists. Coroutine storage/effects belong to its callable
++  // declaration, not to the enclosing template wrapper.
++  if (auto *Template = dyn_cast<FunctionTemplateDecl>(FD))
++    FD = Template->getTemplatedDecl();
    FunctionScopeInfo *Fn = getCurFunction();
    assert(Fn && Fn->isCoroutine() && "not a coroutine");
    if (!Body) {
-@@ -1221,8 +1419,9 @@ void Sema::CheckCompletedCoroutineBody(FunctionDecl *FD, Stmt *&Body) {
+@@ -1221,8 +1434,9 @@ void Sema::CheckCompletedCoroutineBody(FunctionDecl *FD, Stmt *&Body) {
      Diag(ALE->getBeginLoc(), diag::err_coro_invalid_addr_of_label);
  
    // Coroutines always return a handle, so they can't be [[noreturn]].
@@ -25494,7 +25609,7 @@ index 4b99e4454..d47b934aa 100644
  
    CoroutineStmtBuilder Builder(*this, *FD, *Fn, Body);
    if (Builder.isInvalid() || !Builder.buildStatements())
-@@ -1244,7 +1443,7 @@ static CompoundStmt *buildCoroutineBody(Stmt *Body, ASTContext &Context) {
+@@ -1244,7 +1458,7 @@ static CompoundStmt *buildCoroutineBody(Stmt *Body, ASTContext &Context) {
                                SourceLocation(), SourceLocation());
  }
  
@@ -25503,7 +25618,7 @@ index 4b99e4454..d47b934aa 100644
                                             sema::FunctionScopeInfo &Fn,
                                             Stmt *Body)
      : S(S), FD(FD), Fn(Fn), Loc(FD.getLocation()),
-@@ -1282,7 +1481,52 @@ bool CoroutineStmtBuilder::buildDependentStatements() {
+@@ -1282,7 +1496,52 @@ bool CoroutineStmtBuilder::buildDependentStatements() {
    return this->IsValid;
  }
  
@@ -25556,7 +25671,7 @@ index 4b99e4454..d47b934aa 100644
    // Form a declaration statement for the promise declaration, so that AST
    // visitors can more easily find it.
    StmtResult PromiseStmt =
-@@ -1375,7 +1619,7 @@ bool CoroutineStmtBuilder::makeReturnOnAllocFailure() {
+@@ -1375,7 +1634,7 @@ bool CoroutineStmtBuilder::makeReturnOnAllocFailure() {
  // Collect placement arguments for allocation function of coroutine FD.
  // Return true if we collect placement arguments succesfully. Return false,
  // otherwise.
@@ -25565,7 +25680,7 @@ index 4b99e4454..d47b934aa 100644
                                   SmallVectorImpl<Expr *> &PlacementArgs) {
    if (auto *MD = dyn_cast<CXXMethodDecl>(&FD)) {
      if (MD->isImplicitObjectMemberFunction() && !isLambdaCallOperator(MD)) {
-@@ -1389,7 +1633,7 @@ static bool collectPlacementArgs(Sema &S, FunctionDecl &FD, SourceLocation Loc,
+@@ -1389,7 +1648,7 @@ static bool collectPlacementArgs(Sema &S, FunctionDecl &FD, SourceLocation Loc,
      }
    }
  
@@ -25574,7 +25689,7 @@ index 4b99e4454..d47b934aa 100644
      if (PD->getType()->isDependentType())
        continue;
  
-@@ -1589,18 +1833,25 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+@@ -1589,18 +1848,25 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
    if (FoundNonAlignedInPromise) {
      S.Diag(OperatorNew->getLocation(),
             diag::warn_non_aligned_allocation_function)
@@ -25603,7 +25718,7 @@ index 4b99e4454..d47b934aa 100644
  
      return false;
    }
-@@ -1648,10 +1899,12 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+@@ -1648,10 +1914,12 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
      if (!AlignValTy)
        return false;
  
@@ -25620,7 +25735,7 @@ index 4b99e4454..d47b934aa 100644
    }
  
    // Make new call.
-@@ -1868,7 +2121,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1868,7 +2136,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
    assert(!GroType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
@@ -25632,7 +25747,7 @@ index 4b99e4454..d47b934aa 100644
    assert(!FnRetType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
-@@ -1906,8 +2162,8 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1906,8 +2177,8 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
      ReturnStmt = S.BuildReturnStmt(Loc, ReturnValue);
    } else {
      GroDecl = VarDecl::Create(
@@ -25643,7 +25758,7 @@ index 4b99e4454..d47b934aa 100644
          S.BuildDecltypeType(ReturnValue).getCanonicalType(),
          S.Context.getTrivialTypeSourceInfo(GroType, Loc), SC_None);
      GroDecl->setImplicit();
-@@ -1989,8 +2245,9 @@ static VarDecl *buildVarDecl(Sema &S, SourceLocation Loc, QualType Type,
+@@ -1989,8 +2260,9 @@ static VarDecl *buildVarDecl(Sema &S, SourceLocation Loc, QualType Type,
  // Build statements that move coroutine function parameters to the coroutine
  // frame, and store them on the function scope info.
  bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
@@ -25655,7 +25770,7 @@ index 4b99e4454..d47b934aa 100644
  
    auto *ScopeInfo = getCurFunction();
    if (!ScopeInfo->CoroutineParameterMoves.empty())
-@@ -2002,7 +2259,7 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
+@@ -2002,7 +2274,7 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
    //   parameter of type cv T, the copy is a variable of type cv T with
    //   automatic storage duration that is direct-initialized from an xvalue of
    //   type T referring to the parameter.
@@ -54437,10 +54552,28 @@ index 000000000..040059ae3
 +  return plain(error);
 +}
 diff --git a/clang/include/clang/AST/ExprCXX.h b/clang/include/clang/AST/ExprCXX.h
-index ae69d152c..cd3a55fd4 100644
+index ae69d152c..f03518457 100644
 --- a/clang/include/clang/AST/ExprCXX.h
 +++ b/clang/include/clang/AST/ExprCXX.h
-@@ -5463,6 +5463,10 @@ public:
+@@ -5402,6 +5402,7 @@ class DependentCoawaitExpr : public Expr {
+   friend class ASTStmtReader;
+ 
+   SourceLocation KeywordLoc;
++  bool ObjC3Await = false;
+   Stmt *SubExprs[2];
+ 
+ public:
+@@ -5427,6 +5428,9 @@ public:
+     return cast<UnresolvedLookupExpr>(SubExprs[1]);
+   }
+ 
++  bool isObjC3Await() const { return ObjC3Await; }
++  void setObjC3Await(bool Native = true) { ObjC3Await = Native; }
++
+   SourceLocation getKeywordLoc() const { return KeywordLoc; }
+ 
+   SourceLocation getBeginLoc() const LLVM_READONLY { return KeywordLoc; }
+@@ -5463,6 +5467,10 @@ public:
    CoyieldExpr(EmptyShell Empty)
        : CoroutineSuspendExpr(CoyieldExprClass, Empty) {}
  
@@ -56743,10 +56876,10 @@ index 000000000..65ab32c27
 +#endif
 diff --git a/clang/test/ObjC3/AST/native-dependent-await-spelling.mm b/clang/test/ObjC3/AST/native-dependent-await-spelling.mm
 new file mode 100644
-index 000000000..0d3c1c35b
+index 000000000..8b74e6f6d
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/native-dependent-await-spelling.mm
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,30 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ast-print %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch %s -o %t-c++20.pch
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t-c++20.pch -ast-print -x objective-c++ /dev/null | FileCheck %s
@@ -56765,6 +56898,18 @@ index 000000000..0d3c1c35b
 +// CHECK-NOT: __objc3_await
 +// CHECK-LABEL: native_dependent(Work work)
 +// CHECK: __objc3_await work()
++
++template<class Work> int native_task_dependent(Work work) __objc3_async {
++  return __objc3_await work();
++}
++#define TASK_NATIVE_AWAIT __objc3_await
++template<int Bias> int native_task_value_spelling(int value) __objc3_async {
++  return TASK_NATIVE_AWAIT (value+Bias);
++}
++// CHECK-LABEL: native_task_dependent(Work work)
++// CHECK: __objc3_await work()
++// CHECK-LABEL: native_task_value_spelling(int value)
++// CHECK: __objc3_await (value + Bias)
 diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-memory-aliases.h b/clang/test/ObjC3/Sema/Inputs/borrowed-memory-aliases.h
 new file mode 100644
 index 000000000..c22ac50e6
@@ -57410,3 +57555,35 @@ index 000000000..7c61985c2
 +struct ConflictingVirtualEntries : MainVirtualEntry, GlobalVirtualEntry {
 +  int run() noexcept override; // expected-error {{does not match the previous declaration}}
 +};
+diff --git a/clang/test/ObjC3/Sema/native-dependent-task-await-errors.mm b/clang/test/ObjC3/Sema/native-dependent-task-await-errors.mm
+new file mode 100644
+index 000000000..7c14f3441
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-dependent-task-await-errors.mm
+@@ -0,0 +1,26 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -emit-pch %S/../CodeGen/Inputs/native-dependent-task-await.h -o %t-c++20-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -include-pch %t-c++20-0.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-strict-concurrency -emit-pch %S/../CodeGen/Inputs/native-dependent-task-await.h -o %t-c++20-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-strict-concurrency -include-pch %t-c++20-1.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -emit-pch %S/../CodeGen/Inputs/native-dependent-task-await.h -o %t-c++23-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -include-pch %t-c++23-0.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-strict-concurrency -emit-pch %S/../CodeGen/Inputs/native-dependent-task-await.h -o %t-c++23-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-strict-concurrency -include-pch %t-c++23-1.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/native-dependent-task-await.h"
++__attribute__((objc_root_class)) @interface DependentTaskMutable @end
++template<class T> int dependent_task_isolated_value(T) noexcept __attribute__((objc_executor(main)));
++template<class T> int rejected_task_transfer(T value) __objc3_async {
++  return __objc3_await dependent_task_isolated_value(value); // expected-error {{non-Sendable type}}
++}
++objc3::task<int> reject_actual_mutable(DependentTaskMutable *value) {return rejected_task_transfer(value);}
++template<int Bias> objc3::task<int> rejected_ordinary_scalar(int value) {
++  co_return co_await (value+Bias); // expected-error {{member reference base type 'int'}}
++}
++template<class Work> int rejected_task_defer(Work work) __objc3_async {
++  defer {(void)__objc3_await work();} // expected-error {{cannot suspend from a defer}}
++  return 42;
++}

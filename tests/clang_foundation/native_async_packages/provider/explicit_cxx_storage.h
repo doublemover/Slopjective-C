@@ -55,6 +55,17 @@ template<class T> inline int member_generic(T value) __objc3_async_frame {
   }
   return receivers.live==0 && receivers.destroyed==2?number:0;
 }
+template<class T> inline int task_generic(T value) __objc3_async {
+  Counts receivers;int number=0;
+  {
+    MemberEntries<T> receiver(&receivers);
+    T first=__objc3_await receiver.run(static_cast<T&&>(value));
+    T second=__objc3_await receiver.frame(static_cast<T&&>(first));
+    T result=__objc3_await static_cast<MemberEntries<T>&&>(receiver).task(static_cast<T&&>(second));
+    number=result.number();
+  }
+  return receivers.live==0 && receivers.destroyed==1?number:0;
+}
 template<class T> inline int generic(T value) __objc3_async_frame {
   T result=__objc3_await Entries<T>::run(static_cast<T &&>(value));
   return result.number();

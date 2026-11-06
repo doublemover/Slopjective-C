@@ -694,7 +694,7 @@ index 120af89a9..52edceb63 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index fdefb6d6b..e3e7ef6c1 100644
+index fdefb6d6b..20e2109c1 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
 @@ -19,8 +19,10 @@
@@ -949,7 +949,15 @@ index fdefb6d6b..e3e7ef6c1 100644
  }
  
  void StmtProfiler::VisitGenericSelectionExpr(const GenericSelectionExpr *S) {
-@@ -3013,3 +3208,19 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
+@@ -2469,6 +2664,7 @@ void StmtProfiler::VisitCoawaitExpr(const CoawaitExpr *S) {
+ 
+ void StmtProfiler::VisitDependentCoawaitExpr(const DependentCoawaitExpr *S) {
+   VisitExpr(S);
++  ID.AddBoolean(S->isObjC3Await());
+ }
+ 
+ void StmtProfiler::VisitCoyieldExpr(const CoyieldExpr *S) {
+@@ -3013,3 +3209,19 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
    StmtProfilerWithoutPointers Profiler(ID, Hash);
    Profiler.Visit(this);
  }
@@ -970,7 +978,7 @@ index fdefb6d6b..e3e7ef6c1 100644
 +  Profiler.Visit(Expression);
 +}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..239c51941 100644
+index 74209f579..fc6f591aa 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -24,6 +24,8 @@
@@ -1018,7 +1026,7 @@ index 74209f579..239c51941 100644
        } else if (TernaryMiddle.isInvalid()) {
          // If we're using '>>' as an operator within a template
          // argument list (in C++98), suggest the addition of
-@@ -890,6 +900,95 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +900,98 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -1056,8 +1064,11 @@ index 74209f579..239c51941 100644
 +      if (!Res.isInvalid())
 +        Res = getLangOpts().CPlusPlus &&
 +                      !FT->getObjC3FunctionEffects().AsyncFrame
-+                  ? Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get())
++                  ? Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get(), true)
 +                  : Actions.ActOnObjC3CAwaitExpr(AwaitLoc, Res.get());
++      if (Res.isUsable())
++        if (auto *Dependent = dyn_cast<DependentCoawaitExpr>(Res.get()))
++          Dependent->setObjC3Await();
 +      return Res;
 +    }
 +    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
@@ -1114,7 +1125,7 @@ index 74209f579..239c51941 100644
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
-@@ -1632,6 +1731,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -1632,6 +1734,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
  
        [[fallthrough]];
      case tok::period:
@@ -1122,7 +1133,7 @@ index 74209f579..239c51941 100644
      case tok::arrow:
        break;
  
-@@ -1934,6 +2034,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+@@ -1934,6 +2037,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
  
        break;
      }
@@ -1144,7 +1155,7 @@ index 74209f579..239c51941 100644
      case tok::arrow:
      case tok::period: {
        // postfix-expression: p-e '->' template[opt] id-expression
-@@ -3330,6 +3445,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
+@@ -3330,6 +3448,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
    // Inform sema that we are starting a block.
    Actions.ActOnBlockStart(CaretLoc, getCurScope());
  
