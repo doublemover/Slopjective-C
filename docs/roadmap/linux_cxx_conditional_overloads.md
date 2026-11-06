@@ -24,7 +24,10 @@ messages bind public dependency owners; private predicate dependencies remain
 rejected. Source-free witnesses exercise provider overload dispatch, template and
 member calls, ordered priority, renamed/unnamed bindings and disabled calls or
 address-taking. Single C entry predicates have a C17 replay witness; C overloadable
-package publication is outside this batch.
+package publication was outside the 2.94 batch. The current
+[completion sprint](linux_completion_sprint.md) authors that extension, including
+C17 predicate identity and inherited attribute printing; verification remains
+pending.
 
 All 33 frontend suites, 239 native unit tests, 412 compiler regressions and 27
 focused tooling tests pass. Three platform compiler cases remain unsupported.

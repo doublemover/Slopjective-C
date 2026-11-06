@@ -514,6 +514,76 @@ void TestConsumedAndMethodOwnershipRoundTrips() {
   assert(repeated.success && repeated.identity.semantic_fingerprint==accepted.identity.semantic_fingerprint);
 }
 
+void TestCOverloadableInterfaces() {
+  const std::string source = R"(
+    int choose(int value) __attribute__((overloadable));
+    int choose(double value) __attribute__((overloadable));
+    int bounded(int value) __attribute__((overloadable, enable_if(value>=0,"nonnegative")));
+    int bounded(int value) __attribute__((overloadable, enable_if(value<0,"negative")));
+    int redeclared(int value) __attribute__((overloadable));
+    int redeclared(int value) __attribute__((overloadable));
+  )";
+  for (bool objc : {false, true}) {
+    std::vector<std::string> flags = {"-x", objc ? "objective-c" : "c", "-std=c17",
+                                    "--target=x86_64-unknown-linux-gnu"};
+    if (objc) {
+      flags.push_back("-fobjc-version=3");
+      flags.push_back("-fobjc-runtime=gnustep-2.2");
+    }
+    auto emit = [&](const std::string &text, const char *file) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(text, flags, file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),
+          ast->getASTContext().getTranslationUnitDecl(), "fixture.overloadable", "test", {}));
+      auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.overloadable", "test");
+      for (const auto &diagnostic : result.diagnostics)
+        std::fprintf(stderr, "C OVERLOAD %s: %s (%s)\n", diagnostic.code.c_str(),
+                     diagnostic.message.c_str(), diagnostic.subject.c_str());
+      assert(result.success);
+      return result;
+    };
+    const auto first = emit(source, "overloadable.c");
+    assert(first.source_bytes.find("overloadable") != std::string::npos);
+    assert(first.source_bytes.find("enable_if") != std::string::npos);
+    auto replay = emit(first.source_bytes, "replayed-overloadable.c");
+    assert(first.identity.semantic_fingerprint == replay.identity.semantic_fingerprint);
+    assert(first.source_bytes == replay.source_bytes);
+    auto relocated = emit("\n\n" + source, "relocated-overloadable.c");
+    assert(first.identity.semantic_fingerprint == relocated.identity.semantic_fingerprint);
+    auto renamed = source;
+    for (std::size_t position = 0; (position = renamed.find("value", position)) != std::string::npos;) {
+      renamed.replace(position, 5, "argument");
+      position += 8;
+    }
+    assert(first.identity.semantic_fingerprint ==
+           emit(renamed, "renamed-overloadable.c").identity.semantic_fingerprint);
+    auto changed = source;
+    const auto predicate = changed.find("value>=0");
+    assert(predicate != std::string::npos);
+    changed.replace(predicate, 8, "value>0");
+    assert(first.identity.semantic_fingerprint !=
+           emit(changed, "changed-overloadable.c").identity.semantic_fingerprint);
+    auto metadata = llvm::json::parse(first.sidecar_json);
+    assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for (const auto &value : *metadata->getAsObject()->getArray("required_semantics"))
+      semantics.push_back(*value.getAsString());
+    auto decoded = DecodeSemanticInterfaceSidecar(first.sidecar_json, first.source_bytes, semantics);
+    assert(decoded);
+    std::set<std::string> identities, symbols;
+    unsigned functions = 0;
+    for (const auto &declaration : decoded->declarations) {
+      if (declaration.kind != "Function") continue;
+      ++functions;
+      assert(HasNativeDeclarationAttributeIdentity(declaration));
+      assert(identities.insert(declaration.stable_id).second);
+      assert(!declaration.native_symbol_name.empty());
+      assert(symbols.insert(declaration.native_symbol_name).second);
+    }
+    assert(functions == 5);
+  }
+}
+
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       "__attribute__((no_profile_instrument_function)) void *old_api(void);\n",
@@ -5926,6 +5996,7 @@ int main() {
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
   TestNativeDeclarationAttributes();
+  TestCOverloadableInterfaces();
   TestUnnamedTemplateProjections();
   TestStandardCoroutineTypesAndTraits();
   TestCustomCoroutineBodies();

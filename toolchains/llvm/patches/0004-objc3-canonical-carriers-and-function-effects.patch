@@ -4700,7 +4700,7 @@ index d743717ad..648b72d34 100644
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..1246914c4 100644
+index e0b62591a..14ad9829d 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -59,7 +59,12 @@
@@ -4961,7 +4961,7 @@ index e0b62591a..1246914c4 100644
        Method1->isDeleted() == Method2->isDeleted();
    if (!PropertiesEqual)
      return false;
-+  if(Context.LangOpts.ObjC3 && !sameEnableIfPredicates(Context,Method1,Method2))return false;
++  if(!sameEnableIfPredicates(Context,Method1,Method2))return false;
    // FIXME: Check for 'final'.
  
    if (auto *Constructor1 = dyn_cast<CXXConstructorDecl>(Method1)) {
@@ -5111,7 +5111,7 @@ index e0b62591a..1246914c4 100644
 +          D1->getTemplatedDecl()->getTrailingRequiresClause().ConstraintExpr,
 +          D2->getTemplatedDecl()->getTrailingRequiresClause().ConstraintExpr))
 +    return false;
-+  if(Context.LangOpts.ObjC3 && !sameEnableIfPredicates(Context,D1->getTemplatedDecl(),D2->getTemplatedDecl()))return false;
++  if(!sameEnableIfPredicates(Context,D1->getTemplatedDecl(),D2->getTemplatedDecl()))return false;
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
@@ -5210,7 +5210,7 @@ index e0b62591a..1246914c4 100644
 +      !IsStructurallyEquivalent(Context, D1->getTrailingRequiresClause().ConstraintExpr,
 +                               D2->getTrailingRequiresClause().ConstraintExpr))
 +    return false;
-+  if(Context.LangOpts.ObjC3 && !sameEnableIfPredicates(Context,D1,D2))return false;
++  if(!sameEnableIfPredicates(Context,D1,D2))return false;
 +  const Attr *FirstOperation = getObjC3FamilyOperation(D1);
 +  const Attr *SecondOperation = getObjC3FamilyOperation(D2);
 +  if (bool(FirstOperation) != bool(SecondOperation) ||
@@ -5281,7 +5281,7 @@ index e0b62591a..1246914c4 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..a29cced55 100644
+index 4be3e977b..64ca7c642 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,141 @@
@@ -5618,7 +5618,7 @@ index 4be3e977b..a29cced55 100644
 +    if (A->isImplicit() ||
 +        (A->isInherited() &&
 +         !(Policy.PolishForDeclaration &&
-+           isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
++           isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
@@ -5635,7 +5635,7 @@ index 4be3e977b..a29cced55 100644
 +    // native attributes when printing a reusable declaration contract.
 +    const auto *SPI = dyn_cast<AnnotateAttr>(A);
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
-+        !isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
++        !isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
@@ -15191,7 +15191,7 @@ index 6b598d26c..2a59bc5d7 100644
    }
  
 diff --git a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
-index 5f689ad32..6e33fa5ec 100644
+index 5f689ad32..6388abcfd 100644
 --- a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
 +++ b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
 @@ -13,6 +13,12 @@
@@ -15270,7 +15270,7 @@ index 5f689ad32..6e33fa5ec 100644
      Out << '#';
      VisitType(D->getReturnType());
    }
-+  if(LangOpts.ObjC3 && D->hasAttr<EnableIfAttr>() && ActivePredicates.insert(D->getCanonicalDecl()).second) {
++  if(D->hasAttr<EnableIfAttr>() && ActivePredicates.insert(D->getCanonicalDecl()).second) {
 +    auto Restore=llvm::scope_exit([&]{ActivePredicates.erase(D->getCanonicalDecl());});
 +    Out << ":objc3.enable-if<";
 +    for(const auto *Attribute:D->specific_attrs<EnableIfAttr>()) {

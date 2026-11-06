@@ -7,7 +7,9 @@ compatibility with retired frontends and rollback variants are outside this plan
 
 The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
-records implemented and remaining module contracts. Source implementation,
+records implemented and remaining module contracts. The current
+[completion sprint](linux_completion_sprint.md) tracks active feature gaps,
+authored changes and the consolidated SDK delivery sequence. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
 The current **2.62.0 SDK** delivers source milestones through 2.62, System 2.14
 and keypath 2.4, including the ten template-publication milestones below.

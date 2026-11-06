@@ -224,7 +224,8 @@
         "Unnamed member records under complete class-template owners and partial specializations, with lexical identities, nested template projections and native source-free ABI (source)",
         "Public unnamed template member aliases, signatures, callbacks, arrays/member pointers, storage and generic/template-template argument graphs with ordered nominal origins and native value lifetimes (source)",
         "Native hidden static/dynamic object-size parameters, lifetimebound/noescape metadata, callback/sentinel contracts, typed diagnostic predicates and Linux callable optimizer/control attributes (source).",
-        "Native enable-if overload conditions retain canonical lexical/type/declaration identities, ordered predicate priority, diagnostic payloads, dependency ownership, named/unnamed definition bindings, replay/import and source-free calling ABI (source)."
+        "Native enable-if overload conditions retain canonical lexical/type/declaration identities, ordered predicate priority, diagnostic payloads, dependency ownership, named/unnamed definition bindings, replay/import and source-free calling ABI (source).",
+        "C17/Objective-C overloadable function publication with ordered conditional overload identity, canonical inherited attributes and module-owned symbols (source authored; native verification pending)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
