@@ -18,6 +18,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native verification in progress           |
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                   |
 | Isolation          | Plain opaque CF consumed arguments across synchronous, native-frame and C++ task entries                                    | Source authored; focused native execution passes                   |
+| Isolation          | Ordinary C++ coroutine function, Objective-C++ method and Block consumed ownership                                          | Source authored; focused source/PCH and native execution pass      |
 | Isolation          | Remaining crossings, CF result/NSObject-backed storage, async init-family forms and managed values                          | Open                                                               |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                               |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending    |
@@ -166,6 +167,27 @@ that requirement; codec and contract checks reject missing/invented claims.
 Signature/body-only, private-body and replay controls are authored. All eight
 affected frontend units and expanded test sources pass syntax checks; frontend
 execution and complete instrumented/package matrices remain pending.
+
+## Authored ordinary coroutine ownership
+
+Concurrency source 2.98 extends independent entry adoption, lazy-frame pins and
+post-resume handoff to ordinary C++20/23 coroutines, including Objective-C++
+methods and Blocks. These use their written return types and the standard C++
+promise protocol. Consuming method receivers, captured Block objects, opaque CF
+arguments and object/Block parameters retain separate lifetimes under ARC/MRC.
+An outer synchronous checked-error contract is rejected because its entry error
+slot cannot transport errors raised after suspension; native async contracts keep
+their existing promise transport.
+
+All twelve source/PCH CodeGen commands and four checked-error controls pass.
+Three focused native configurations pass 46 commands, including 142 CF and sixteen
+ordinary object/Block scenarios per configuration. They distinguish unused frame
+destruction, failure before promise construction, successful suspension, body
+cancellation and ARC self replacement. Providers compile separately under ARC
+and MRC. Published consuming ordinary coroutine bodies and direct calls require
+the existing ownership capability; frontend replay controls are authored and
+pass compile checks. Full frontend/package/instrumented consolidation and the
+replacement SDK remain pending.
 
 ## Authored nullable key-path result policy
 

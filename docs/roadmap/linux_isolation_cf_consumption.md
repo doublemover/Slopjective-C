@@ -44,3 +44,11 @@ remains rejected at isolated entries. NSObject-backed CF parameter types also
 remain gated until their overlapping ARC/CF storage ownership is modeled.
 Extension ABI 22 and runtime service/frame layouts are unchanged. SDK 2.62
 remains the accepted archive until final consolidated delivery.
+
+Source 2.98 also owns CF arguments in ordinary C++20/23 coroutines without a
+native async effect. Objective-C++ methods and Blocks use the standard promise
+protocol with their written return types. A consuming receiver and captured Block
+object receive independent frame pins. Native witnesses release the original
+Block before resumption and check unused frames, throwing parameter copies,
+body cancellation, completion and ARC self replacement. The three focused native
+configurations pass 142 CF scenarios each; final consolidation remains pending.

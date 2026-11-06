@@ -12,6 +12,7 @@
 #define hop_mrc_task_roundtrip hop_arc_task_roundtrip
 #define hop_mrc_unstarted_roundtrip hop_arc_unstarted_roundtrip
 #define hop_mrc_failed_copy_roundtrip hop_arc_failed_copy_roundtrip
+#define hop_mrc_ordinary_roundtrip hop_arc_ordinary_roundtrip
 #endif
 
 // The native callee owns its handoff claim. RAII balances it if cancellation
@@ -67,6 +68,72 @@ static int manual_failed_copy_task(__attribute__((ns_consumed)) HopObject *value
   (void)failure;
   assert(!"A failed parameter copy must not enter its manual body");
   return [value number];
+}
+static objc3::task<int> ordinary_unstarted(__attribute__((ns_consumed)) HopObject *value) {
+#if !__has_feature(objc_arc)
+  ManualObjectClaim claim{value};
+#endif
+  assert(!"An unstarted ordinary coroutine must not enter its body");
+  co_return [value number];
+}
+static objc3::task<int> ordinary_failed_copy(__attribute__((ns_consumed)) HopObject *value,
+                                           TaskParameterCopyFailure failure) {
+  (void)failure;
+  assert(!"A failed ordinary coroutine copy must not enter its body");
+  co_return [value number];
+}
+static objc3::task<int> ordinary_body(__attribute__((ns_consumed)) HopObject *value,
+                                    objc3_executor_t *caller) {
+#if !__has_feature(objc_arc)
+  ManualObjectClaim claim{value};
+#endif
+  hop_mrc_enter_on(caller);
+  co_await objc3::task_yield;
+  assert(objc3_executor_is_current(caller));
+  co_return [value number];
+}
+static ManualTaskWork ordinary_block_source(objc3_executor_t *caller)
+    __attribute__((ns_returns_retained));
+static ManualTaskWork ordinary_block_source(objc3_executor_t *caller) {
+  HopObject *object = hop_mrc_source(caller);
+#if __has_feature(objc_arc)
+  return ^{return [object number];};
+#else
+  ManualTaskWork work = (ManualTaskWork)_Block_copy(^{return [object number];});
+  objc_release(object);
+  return work;
+#endif
+}
+static objc3::task<int> ordinary_unstarted_block(__attribute__((ns_consumed)) ManualTaskWork work) {
+#if !__has_feature(objc_arc)
+  ManualBlockClaim claim{work};
+#endif
+  assert(!"An unstarted ordinary Block coroutine must not enter its body");
+  co_return work();
+}
+static objc3::task<int> ordinary_failed_block_copy(__attribute__((ns_consumed)) ManualTaskWork work,
+                                                 TaskParameterCopyFailure failure) {
+  (void)failure;
+  assert(!"A failed ordinary Block coroutine copy must not enter its body");
+  co_return work();
+}
+static objc3::task<int> ordinary_block_body(__attribute__((ns_consumed)) ManualTaskWork work,
+                                          objc3_executor_t *caller) {
+#if !__has_feature(objc_arc)
+  ManualBlockClaim claim{work};
+#endif
+  hop_mrc_enter_on(caller);
+  co_await objc3::task_yield;
+  assert(objc3_executor_is_current(caller));
+  co_return work();
+}
+static int run_ordinary(objc3_executor_t *caller, bool block) __objc3_async {
+  if (block) {
+    int result = co_await ordinary_block_body(ordinary_block_source(caller), caller);
+    return result;
+  }
+  int result = co_await ordinary_body(hop_mrc_source(caller), caller);
+  return result;
 }
 
 @interface HopObject (ManualTaskConsumption)
@@ -167,5 +234,33 @@ extern "C" int hop_mrc_failed_copy_roundtrip(objc3_executor_t *caller)
     caught = true;
   }
   assert(caught && objc3_executor_is_current(caller));
+  return 42;
+}
+extern "C" int hop_mrc_ordinary_roundtrip(int kind, objc3_executor_t *caller)
+    __objc3_async_frame {
+  if (kind % 4 == 0) {
+    if (kind < 4) {
+      auto unused = ordinary_unstarted(hop_mrc_source(caller));
+      (void)unused;
+    } else {
+      auto unused = ordinary_unstarted_block(ordinary_block_source(caller));
+      (void)unused;
+    }
+  } else if (kind % 4 == 1) {
+    bool caught = false;
+    try {
+      if (kind < 4) {
+        auto failed = ordinary_failed_copy(hop_mrc_source(caller), TaskParameterCopyFailure{});
+        (void)failed;
+      } else {
+        auto failed = ordinary_failed_block_copy(ordinary_block_source(caller), TaskParameterCopyFailure{});
+        (void)failed;
+      }
+    } catch (int value) {assert(value == 77); caught = true;}
+    assert(caught);
+  } else {
+    return __objc3_await run_ordinary(caller, kind >= 4);
+  }
+  assert(objc3_executor_is_current(caller));
   return 42;
 }

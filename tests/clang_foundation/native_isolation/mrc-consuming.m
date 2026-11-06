@@ -21,8 +21,11 @@ int hop_mrc_entries(void) {return __atomic_load_n(&mrc_entries, __ATOMIC_ACQUIRE
 void hop_mrc_enter(void) {
   objc3_executor_t *main = 0;
   assert(objc3_executor_get_main(&main) == OBJC3_SERVICE_OK);
-  assert(objc3_executor_is_current(main));
+  hop_mrc_enter_on(main);
   objc3_executor_release(main);
+}
+void hop_mrc_enter_on(objc3_executor_t *destination) {
+  assert(objc3_executor_is_current(destination));
   __atomic_fetch_add(&mrc_entries, 1, __ATOMIC_RELEASE);
 }
 HopObject *hop_mrc_source(objc3_executor_t *caller)

@@ -58,7 +58,10 @@ int hop_cf_value(HopCFRef value) {
 void hop_cf_enter(void) {
   objc3_executor_t *main = 0;
   assert(objc3_executor_get_main(&main) == OBJC3_SERVICE_OK);
-  assert(objc3_executor_is_current(main));
+  hop_cf_enter_on(main);
   objc3_executor_release(main);
+}
+void hop_cf_enter_on(objc3_executor_t *destination) {
+  assert(objc3_executor_is_current(destination));
   atomic_fetch_add(&entries, 1);
 }

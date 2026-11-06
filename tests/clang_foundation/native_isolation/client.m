@@ -458,16 +458,29 @@ int main(void) {
     }
 
     for (int ownership = 0; ownership != 2; ++ownership) {
-      for (int kind = 0; kind != 2; ++kind) {
-        int before = hop_cf_destroyed();
+      for (int kind = 0; kind != 14; ++kind) {
+        if (!ownership && (kind == 8 || kind == 9)) continue;
+        int before = hop_cf_destroyed(), objects_before = hop_destroyed();
+        int object_count = (kind >= 6) + (kind == 8 || kind == 9);
+        int entered = kind >= 4 && kind != 10 && kind != 11;
+        int cancelled = entered && kind % 2 == 1;
+        hop_mrc_reset(0);
         hop_cf_reset(0);
         frame = ownership ? hop_cf_arc_aux_roundtrip(kind, caller) : hop_cf_aux_roundtrip(kind, caller);
         task = start(&frame);
-        assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
-        assert(hop_cf_arguments() == 1 && hop_cf_entries() == 0);
+        if (cancelled) {
+          for (unsigned step = 0; step != 1000 && hop_cf_entries() == 0; ++step)
+            assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+          assert(hop_cf_entries() == 1);
+          objc3_task_request_cancel(task);
+        }
+        assert(finish(task).kind == (cancelled ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS));
+        assert(hop_cf_arguments() == 1 && hop_cf_entries() == entered);
         objc3_task_release(task);
-        for (unsigned step = 0; step != 1000000 && hop_cf_live(); ++step) sched_yield();
+        for (unsigned step = 0; step != 1000000 &&
+             (hop_cf_live() || hop_destroyed() != objects_before + object_count); ++step) sched_yield();
         assert(hop_cf_live() == 0 && hop_cf_destroyed() == before + 1);
+        assert(hop_destroyed() == objects_before + object_count);
       }
       for (int kind = 0; kind != 13; ++kind) {
         int representation = kind >= 10 ? kind - 10 : kind % 3;
@@ -525,6 +538,25 @@ int main(void) {
     }
 
     for (int ownership = 0; ownership != 2; ++ownership) {
+      for (int kind = 0; kind != 8; ++kind) {
+        int before = hop_destroyed();
+        hop_mrc_reset(0);
+        frame = ownership ? hop_arc_ordinary_roundtrip(kind, caller) :
+                            hop_mrc_ordinary_roundtrip(kind, caller);
+        task = start(&frame);
+        if (kind % 4 == 3) {
+          for (unsigned step = 0; step != 1000 && hop_mrc_entries() == 0; ++step)
+            assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+          assert(hop_mrc_entries() == 1);
+          objc3_task_request_cancel(task);
+        }
+        assert(finish(task).kind == (kind % 4 == 3 ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS));
+        assert(hop_mrc_arguments() == 1 && hop_mrc_entries() == (kind % 4 >= 2));
+        objc3_task_release(task);
+        for (unsigned step = 0; step != 1000000 && hop_destroyed() != before + 1; ++step)
+          sched_yield();
+        assert(hop_destroyed() == before + 1);
+      }
       for (int kind = 0; kind != (ownership ? 6 : 5); ++kind) {
         for (int outcome = 0; outcome != 5; ++outcome) {
           int before = hop_destroyed();

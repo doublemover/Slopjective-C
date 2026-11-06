@@ -48,8 +48,7 @@ inline bool HasNativeConsumedCallable(const clang::Decl *declaration) {
 }
 
 inline bool HasNativeAsyncConsumedCallable(const clang::Decl *declaration) {
-  const auto *type = clang::getObjC3CallableFunctionType(declaration);
-  return type && type->getObjC3FunctionEffects().Async && HasNativeConsumedCallable(declaration);
+  return clang::isObjC3OwningAsyncEntry(declaration) && HasNativeConsumedCallable(declaration);
 }
 
 // Values, not source expressions or AST addresses, participate in contract

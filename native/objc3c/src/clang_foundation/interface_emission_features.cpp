@@ -148,6 +148,12 @@ bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration) {
       bool VisitFunctionDecl(clang::FunctionDecl *function) override {
         found |= HasNativeAsyncConsumedCallable(function); return true;
       }
+      bool VisitCallExpr(clang::CallExpr *call) override {
+        found |= HasNativeAsyncConsumedCallable(call->getDirectCallee()); return true;
+      }
+      bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+        found |= HasNativeAsyncConsumedCallable(message->getMethodDecl()); return true;
+      }
       bool VisitBlockDecl(clang::BlockDecl *block) override {
         found |= HasNativeAsyncConsumedCallable(block); return true;
       }

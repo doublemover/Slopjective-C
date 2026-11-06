@@ -452,7 +452,7 @@ void TestAsyncConsumedOwnershipCapability() {
     for (bool arc : {false, true}) {
       std::vector<std::string> args = {"-x", std::string(standard) == "c17" ? "objective-c" : "objective-c++",
           std::string("-std=") + standard, "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=x86_64-unknown-linux-gnu", "-fblocks"};
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;
       AddRuntimeInterfaceFiles(files, args);
@@ -469,6 +469,20 @@ void TestAsyncConsumedOwnershipCapability() {
           return __objc3_await sync_entry(body_source());
         }
         int plain(void);
+        #ifdef __cplusplus
+        #include "objc3c/runtime/objc3_task.hpp"
+        extern "C" void CFRelease(const void *) __attribute__((nothrow));
+        static inline objc3::task<int> ordinary_body(__attribute__((cf_consumed)) CFRef value) {
+          if (value) CFRelease(value);
+          co_return 0;
+        }
+        static inline auto ordinary_block_factory(void) {
+          return ^objc3::task<int>(__attribute__((cf_consumed)) CFRef value) {
+            if (value) CFRelease(value);
+            co_return 0;
+          };
+        }
+        #endif
       )";
       auto emit = [&](llvm::StringRef text, llvm::StringRef file, const std::vector<std::string> &exports) {
         auto ast = clang::tooling::buildASTFromCodeWithArgs(text, args, file, "clang-tool",
@@ -484,8 +498,14 @@ void TestAsyncConsumedOwnershipCapability() {
       const std::vector<std::string> base = {"CFRef", "body_source", "sync_entry", "plain"};
       auto plain = emit(source, "ownership-private.m", base);
       assert(plain.sidecar_json.find(kAsyncConsumedOwnershipSemantic) == std::string::npos);
-      for (const std::string exported : {"consume_signature", "consume_body"}) {
+      std::vector<std::string> consuming_exports = {"consume_signature", "consume_body"};
+      if (std::string(standard) != "c17") {
+        consuming_exports.push_back("ordinary_body");
+        consuming_exports.push_back("ordinary_block_factory");
+      }
+      for (const std::string &exported : consuming_exports) {
         auto exports = base; exports.push_back(exported);
+        if (exported == "ordinary_body" || exported == "ordinary_block_factory") exports.push_back("CFRelease");
         auto result = emit(source, "ownership-provider.m", exports);
         assert(result.sidecar_json.find(kAsyncConsumedOwnershipSemantic) != std::string::npos);
         auto parsed = llvm::json::parse(result.sidecar_json);

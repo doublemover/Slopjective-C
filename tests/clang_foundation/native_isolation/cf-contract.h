@@ -10,6 +10,7 @@ void CFRelease(const void *) __attribute__((nothrow));
 HopCFRef hop_cf_source(objc3_executor_t *) __attribute__((nothrow, cf_returns_retained));
 int hop_cf_value(HopCFRef) __attribute__((nothrow));
 void hop_cf_enter(void) __attribute__((nothrow));
+void hop_cf_enter_on(objc3_executor_t *) __attribute__((nothrow));
 void hop_cf_reset(int);
 int hop_cf_arguments(void);
 int hop_cf_entries(void);

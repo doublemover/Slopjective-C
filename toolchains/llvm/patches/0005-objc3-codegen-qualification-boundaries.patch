@@ -21659,7 +21659,7 @@ index 000000000..40774b374
 +ObjectCallback callback = object;
 +auto indirect(ObjectCallback call, Object *value) { return call(value); }
 diff --git a/clang/lib/CodeGen/CGCoroutine.cpp b/clang/lib/CodeGen/CGCoroutine.cpp
-index bf896f133..f9f33abfd 100644
+index bf896f133..f12a0f9ee 100644
 --- a/clang/lib/CodeGen/CGCoroutine.cpp
 +++ b/clang/lib/CodeGen/CGCoroutine.cpp
 @@ -1,3 +1,4 @@
@@ -21828,12 +21828,11 @@ index bf896f133..f9f33abfd 100644
      }
  
      ~ParamReferenceReplacerRAII() {
-@@ -898,6 +974,33 @@ struct GetReturnObjectManager {
+@@ -898,6 +974,32 @@ struct GetReturnObjectManager {
  
  static void emitBodyAndFallthrough(CodeGenFunction &CGF,
                                     const CoroutineBodyStmt &S, Stmt *Body) {
-+  if (const auto *Signature = getObjC3CallableFunctionType(CGF.CurCodeDecl);
-+      Signature && Signature->getObjC3FunctionEffects().Async) {
++  if (isObjC3OwningAsyncEntry(CGF.CurCodeDecl)) {
 +    auto Handoff = [&](const VarDecl *Original) {
 +      const bool Foreign = isObjC3CFConsumedAsyncParameter(CGF.CurCodeDecl, Original);
 +      if (!Foreign && (CGF.getLangOpts().ObjCAutoRefCount ||
@@ -21862,7 +21861,7 @@ index bf896f133..f9f33abfd 100644
    CGF.EmitStmt(Body);
    const bool CanFallthrough = CGF.Builder.GetInsertBlock();
    if (CanFallthrough)
-@@ -922,6 +1025,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -922,6 +1024,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
        {Builder.getInt32(NewAlign), NullPtr, NullPtr, NullPtr});
    createCoroData(*this, CurCoro, CoroId);
  
@@ -21880,7 +21879,7 @@ index bf896f133..f9f33abfd 100644
    GetReturnObjectManager GroManager(*this, S);
    CurCoro.Data->SuspendBB =
        GroManager.DirectEmit ? RetBB : createBasicBlock("pre.gvo.conv");
-@@ -1002,12 +1116,83 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -1002,12 +1115,83 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
      }
      for (auto *PM : S.getParamMoves()) {
        EmitStmt(PM);
@@ -29983,3 +29982,75 @@ index 000000000..d6a7bd078
 +// CHECK-DAG: call {{.*}}i32 @cf_sync
 +// CHECK-DAG: call i32 @objc3_executor_get_main
 +// CHECK-DAG: call i32 @objc3_task_hop
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-ordinary-consumption.h b/clang/test/ObjC3/CodeGen/Inputs/native-ordinary-consumption.h
+new file mode 100644
+index 000000000..0cebe9d85
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-ordinary-consumption.h
+@@ -0,0 +1,40 @@
++#ifndef NATIVE_ORDINARY_CONSUMPTION_H
++#define NATIVE_ORDINARY_CONSUMPTION_H
++#include "native-async-task.h"
++typedef const void *OrdinaryCFRef;
++extern "C" const void *CFRetain(const void *) __attribute__((nothrow));
++extern "C" void CFRelease(const void *) __attribute__((nothrow));
++extern "C" void ordinary_release(id) __asm__("objc_release");
++static objc3::task<int> ordinary_cf(__attribute__((cf_consumed)) OrdinaryCFRef value) {
++  int result = value != 0;
++  if (value) CFRelease(value);
++  co_return result;
++}
++static objc3::task<int> ordinary_object(__attribute__((ns_consumed)) id value) {
++  int result = value != 0;
++#if !__has_feature(objc_arc)
++  ordinary_release(value);
++#endif
++  co_return result;
++}
++__attribute__((objc_root_class)) @interface OrdinaryReceiver
++- (objc3::task<int>)ordinaryConsume:(__attribute__((cf_consumed)) OrdinaryCFRef)value
++    __attribute__((ns_consumes_self));
++@end
++@implementation OrdinaryReceiver
++- (objc3::task<int>)ordinaryConsume:(__attribute__((cf_consumed)) OrdinaryCFRef)value {
++  int result = value != 0;
++  if (value) CFRelease(value);
++#if !__has_feature(objc_arc)
++  ordinary_release(self);
++#endif
++  co_return result;
++}
++@end
++typedef objc3::task<int> (^OrdinaryWork)(__attribute__((cf_consumed)) OrdinaryCFRef);
++static OrdinaryWork ordinary_work = ^objc3::task<int>(__attribute__((cf_consumed)) OrdinaryCFRef value) {
++  int result = value != 0;
++  if (value) CFRelease(value);
++  co_return result;
++};
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-ordinary-consumption.mm b/clang/test/ObjC3/CodeGen/native-ordinary-consumption.mm
+new file mode 100644
+index 000000000..a0be24f7d
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-ordinary-consumption.mm
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -x objective-c++-header -emit-pch -o %t.c++20.mrc %S/Inputs/native-ordinary-consumption.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -include-pch %t.c++20.mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -x objective-c++-header -emit-pch -o %t.c++20.arc %S/Inputs/native-ordinary-consumption.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -include-pch %t.c++20.arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -x objective-c++-header -emit-pch -o %t.c++23.mrc %S/Inputs/native-ordinary-consumption.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -include-pch %t.c++23.mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -x objective-c++-header -emit-pch -o %t.c++23.arc %S/Inputs/native-ordinary-consumption.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -include-pch %t.c++23.arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-ordinary-consumption.h"
++objc3::task<int> use_ordinary_cf(OrdinaryCFRef value) {return ordinary_cf(value);}
++objc3::task<int> use_ordinary_object(id value) {return ordinary_object(value);}
++objc3::task<int> use_ordinary_block(OrdinaryCFRef value) {return ordinary_work(value);}
++// CHECK-DAG: @CFRetain
++// CHECK-DAG: @CFRelease
++// CHECK-DAG: @llvm.objc.retain
++// CHECK-DAG: @llvm.objc.release
