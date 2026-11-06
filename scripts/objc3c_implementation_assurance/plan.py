@@ -24,6 +24,7 @@ OWNERS = (
 )
 TOOLCHAIN_OWNERS = {
     'scripts/objc3c_toolchain/analysis_checkpoint.py',
+    'scripts/objc3c_toolchain/analysis_scheduling.py',
     'scripts/objc3c_toolchain/binary_packages.py',
     'scripts/objc3c_toolchain/build.py',
     'scripts/objc3c_toolchain/compiler_instrumentation.py',

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 import json
 import multiprocessing
 import os
@@ -17,6 +17,7 @@ from .llvm_tools import foundation, identity, verify_installation
 from .sanitizer_policy import strict_environment
 from .sdk_example import dependencies as header_dependencies
 from .analysis_checkpoint import analysis_argv, load_checkpoints, reusable_action, run_unit
+from .analysis_scheduling import execute_jobs
 
 SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
 
@@ -166,7 +167,7 @@ def owner_changes(repo, owner, changed):
         'scripts/objc3c_implementation_assurance/',
         'tests/tooling/fixtures/implementation_analysis/', 'toolchains/llvm/')
     global_files = {'scripts/objc3c_toolchain/'+name+'.py' for name in (
-        'analysis_checkpoint', 'binary_packages', 'build', 'compiler_instrumentation', 'core',
+        'analysis_checkpoint', 'analysis_scheduling', 'binary_packages', 'build', 'compiler_instrumentation', 'core',
         'host', 'implementation_analysis', 'instrumentation_profiles', 'llvm_ir_execution',
         'llvm_tools', 'sanitizer_policy', 'sdk_example')}
     if any(path in global_files or path.startswith(global_prefixes) for path in relatives):
@@ -319,6 +320,8 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         'changed_paths': [str(Path(path).resolve()) for path in changed],
         'parallel_workers': jobs,
         'inputs': {str(path): digest(path) for path in (Path(__file__), policy_path,
+            Path(__file__).with_name('analysis_scheduling.py'),
+            Path(__file__).with_name('analysis_checkpoint.py'),
             repo / 'native/analysis/CMakeLists.txt', repo / 'native/analysis/SelectedChecks.cpp',
             repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp')}}
     report['inputs'].update({str(path): signature for path, _, signature in checkpoints})
@@ -504,22 +507,27 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                            'are omitted only by source ownership plus explicit dependency closure.')})
             executor.timeout = policy['translation_unit_timeout_seconds']
             with ProcessPoolExecutor(max_workers=jobs, mp_context=multiprocessing.get_context('spawn')) as workers:
-                futures = []
-                for row in chosen:
-                    name = label+'-'+row['identity'][:16]
-                    argv = prepare_analysis(name, row)
-                    cached = reusable_action(checkpoints, report, row,
-                        arguments=row['analysis_arguments'])
-                    if cached:
-                        report['results'].append(cached)
-                    else:
-                        futures.append(workers.submit(run_unit, {'name': name, 'identity': row['identity'],
-                            'directory': str(output / name), 'environment': environment, 'argv': argv,
-                            'timeout': policy['translation_unit_timeout_seconds']}))
-                    executor.save()
-                for future in as_completed(futures):
-                    result, commands = future.result()
+                def prepared_jobs():
+                    for row in chosen:
+                        name = label+'-'+row['identity'][:16]
+                        argv = prepare_analysis(name, row)
+                        cached = reusable_action(checkpoints, report, row,
+                            arguments=row['analysis_arguments'])
+                        if cached:
+                            report['results'].append(cached)
+                            executor.save()
+                        else:
+                            executor.save()
+                            yield {'name': name, 'identity': row['identity'],
+                                'directory': str(output / name), 'environment': environment, 'argv': argv,
+                                'timeout': policy['translation_unit_timeout_seconds']}
+
+                def completed(value):
+                    result, commands = value
                     report['results'].append(result);report['commands'].extend(commands);executor.save()
+
+                execute_jobs(prepared_jobs(), submit=lambda job: workers.submit(run_unit, job),
+                             completed=completed, max_pending=2*jobs)
         selected = [row['identity'] for row in report['inventory'] if row['selected']]
         completed = [row['identity'] for row in report['results']]
         if (len(set(completed)) != len(completed) or set(selected) != set(completed) or
@@ -530,7 +538,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         report.update(status='PASS', analyzed_variants=len(report['results']), inventory_variants=len(report['inventory']))
         report['fresh_native_executions'] = sum(not row.get('execution_reused', False) for row in report['results'])
         report['verified_checkpoint_actions'] = sum(row.get('execution_reused', False) for row in report['results'])
-    except (OSError, ValueError) as error:
+    except BaseException as error:
         report.update(status='FAIL', error=str(error))
         raise
     finally:

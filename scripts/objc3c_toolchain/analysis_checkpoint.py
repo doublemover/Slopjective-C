@@ -92,7 +92,8 @@ def run_unit(job):
         result.update(status='FAIL', classification='finding',
                       error='implementation analysis reported blocker diagnostics')
         report.update(status='FAIL', error=result['error'])
-        executor.save()
+    report['result'] = result
+    executor.save()
     return result, report['commands']
 
 

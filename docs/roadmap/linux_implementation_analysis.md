@@ -24,6 +24,16 @@ frontend/runtime variants, standalone runtime variants and all maintained
 patch-touched Clang implementation TUs; test/vendor/generated-only exclusions
 are reported explicitly.
 
+The preparation queue now holds at most twice the worker count and harvests
+completed native actions before preparing more PCH/TU work. Each unit persists
+its result, diagnostics and raw command independently; preparation or worker
+failure drains already-running proof and preserves the original exception.
+Unexpected infrastructure errors also leave a terminal failed campaign. Real
+spawned actions, a failing producer and a clean sibling beside a blocker
+diagnostic defend checkpoint durability. The focused analysis/checkpoint/gate
+selection passes 97 tooling tests. A reset can still interrupt running actions;
+only independently verified completed actions qualify for manual reuse.
+
 The current full scan has exposed additional AST infrastructure paths. The
 canonical patch stack now handles an external lexical load containing only
 previously loaded fields, returns a persistent declaration-list tail after

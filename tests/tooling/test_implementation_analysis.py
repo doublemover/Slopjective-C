@@ -12,6 +12,92 @@ from scripts.objc3c_toolchain.implementation_analysis import (
 )
 
 
+def test_pending_window_publishes_native_results_before_preparing_more(tmp_path):
+    from concurrent.futures import ProcessPoolExecutor
+    import multiprocessing
+    import os
+    import sys
+    from scripts.objc3c_toolchain.analysis_checkpoint import run_unit
+    from scripts.objc3c_toolchain.analysis_scheduling import execute_jobs
+    completed = []
+
+    def jobs():
+        for index in range(6):
+            if index >= 2:
+                assert len(completed) >= index - 1
+            yield {'name': 'native-'+str(index), 'identity': str(index),
+                'directory': str(tmp_path / str(index)), 'environment': dict(os.environ),
+                'argv': [sys.executable, '-c', 'print("native action completed")'], 'timeout': 10}
+
+    with ProcessPoolExecutor(max_workers=2, mp_context=multiprocessing.get_context('spawn')) as workers:
+        execute_jobs(jobs(), submit=lambda job: workers.submit(run_unit, job),
+                     completed=completed.append, max_pending=2)
+    assert len(completed) == 6
+    assert all(result['status'] == 'PASS' and len(commands) == 1 for result, commands in completed)
+    for index in range(6):
+        receipt = json.loads((tmp_path / str(index) / 'qualification.json').read_text())
+        assert receipt['result']['identity'] == str(index)
+        assert receipt['result']['status'] == receipt['status'] == 'PASS'
+
+
+def test_preparation_failure_drains_running_native_proof_and_remains_failed(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    import os
+    import sys
+    import time
+    from scripts.objc3c_toolchain.analysis_checkpoint import run_unit
+    from scripts.objc3c_toolchain.analysis_scheduling import execute_jobs
+    started, release = tmp_path / 'started', tmp_path / 'release'
+    code = ('from pathlib import Path; import time; '
+        f'Path({str(started)!r}).write_text("started"); deadline=time.monotonic()+5\n'
+        f'while not Path({str(release)!r}).exists():\n'
+        ' if time.monotonic()>deadline: raise RuntimeError("release missing")\n'
+        ' time.sleep(.01)\n'
+        'print("running native action retained")')
+    completed = []
+
+    def jobs():
+        yield {'name': 'running-native', 'identity': 'running',
+            'directory': str(tmp_path / 'unit'), 'environment': dict(os.environ),
+            'argv': [sys.executable, '-c', code], 'timeout': 10}
+        deadline = time.monotonic()+5
+        while not started.exists():
+            if time.monotonic() > deadline:
+                raise RuntimeError('native action did not start')
+            time.sleep(.01)
+        release.write_text('complete')
+        raise ValueError('PCH preparation failed')
+
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        with pytest.raises(ValueError, match='PCH preparation failed'):
+            execute_jobs(jobs(), submit=lambda job: workers.submit(run_unit, job),
+                         completed=completed.append, max_pending=2)
+    assert len(completed) == 1 and completed[0][0]['status'] == 'PASS'
+    assert json.loads((tmp_path / 'unit/qualification.json').read_text())['result']['status'] == 'PASS'
+
+
+def test_native_finding_is_durable_and_does_not_discard_clean_sibling(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    import os
+    import sys
+    from scripts.objc3c_toolchain.analysis_checkpoint import run_unit
+    from scripts.objc3c_toolchain.analysis_scheduling import execute_jobs
+    scripts = ['print("clean sibling")',
+        'print("fixture.cpp:8:2: error: null access [clang-analyzer-core.NullDereference]")']
+    jobs = [{'name': 'unit-'+str(index), 'identity': str(index),
+        'directory': str(tmp_path / str(index)), 'environment': dict(os.environ),
+        'argv': [sys.executable, '-c', code], 'timeout': 10} for index, code in enumerate(scripts)]
+    completed = []
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        execute_jobs(jobs, submit=lambda job: workers.submit(run_unit, job),
+                     completed=completed.append, max_pending=2)
+    assert {row['status'] for row, _ in completed} == {'PASS', 'FAIL'}
+    failure = json.loads((tmp_path / '1/qualification.json').read_text())
+    assert failure['status'] == failure['result']['status'] == 'FAIL'
+    assert failure['result']['classification'] == 'finding'
+    assert failure['result']['diagnostics'][0]['check'] == 'clang-analyzer-core.NullDereference'
+
+
 @pytest.fixture
 def database(tmp_path):
     source = tmp_path / 'service.cpp'
