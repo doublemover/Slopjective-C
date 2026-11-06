@@ -6683,7 +6683,7 @@ index 4be3e977b..a29cced55 100644
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
-index 172a19f8f..16a4a23c8 100644
+index 172a19f8f..115b106b0 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
 +++ b/clang/lib/AST/ItaniumMangle.cpp
 @@ -298,6 +298,10 @@ class CXXNameMangler {
@@ -6907,6 +6907,14 @@ index 172a19f8f..16a4a23c8 100644
    case Expr::OpenACCAsteriskSizeExprClass: {
      // We shouldn't ever be able to get here, but diagnose anyway.
      DiagnosticsEngine &Diags = Context.getDiags();
+@@ -6290,6 +6449,7 @@ struct CXXNameMangler::TemplateArgManglingInfo {
+   const Expr *getTrailingRequiresClauseToMangle() {
+     if (!isOverloadable())
+       return nullptr;
++    assert(ResolvedTemplate && "An overloadable template must be resolved");
+     return ResolvedTemplate->getTemplateParameters()->getRequiresClause();
+   }
+ };
 diff --git a/clang/lib/AST/JSONNodeDumper.cpp b/clang/lib/AST/JSONNodeDumper.cpp
 index 8373dd8e3..c4aa150ff 100644
 --- a/clang/lib/AST/JSONNodeDumper.cpp
@@ -18452,10 +18460,10 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..dbc7882df 100644
+index 81010e046..e13ce4db5 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,42 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,43 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -18464,6 +18472,7 @@ index 81010e046..dbc7882df 100644
 +add_distinct_clang_unittest(ObjC3TypeContractsTests
 +  PARTIAL_SOURCES_INTENDED
 +  ObjC3TypeContractsTest.cpp
++  ObjC3ASTInfrastructureTest.cpp
 +  ObjC3DiagnosticStorageTest.cpp
 +  ObjC3CarrierTypeTest.cpp
 +  ObjC3FunctionEffectTest.cpp
@@ -33916,10 +33925,54 @@ index 8108ee559..9e48fd1e9 100644
    return (Else != nullptr && InnerMatcher.matches(*Else, Finder, Builder));
  }
 diff --git a/clang/lib/AST/ParentMapContext.cpp b/clang/lib/AST/ParentMapContext.cpp
-index 7138dffb4..331dc54d4 100644
+index 7138dffb4..a1928ea6e 100644
 --- a/clang/lib/AST/ParentMapContext.cpp
 +++ b/clang/lib/AST/ParentMapContext.cpp
-@@ -154,7 +154,17 @@ public:
+@@ -17,6 +17,7 @@
+ #include "clang/AST/RecursiveASTVisitor.h"
+ #include "clang/AST/TemplateBase.h"
+ #include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/Support/Allocator.h"
+ 
+ using namespace clang;
+ 
+@@ -73,6 +74,10 @@ class ParentMapContext::ParentMap {
+                      llvm::PointerUnion<const Decl *, const Stmt *,
+                                         DynTypedNode *, ParentVector *>>;
+ 
++  // Non-pointer parents have the same lifetime as this map. Arena ownership
++  // avoids a separate heap allocation for each such parent and keeps promotion
++  // to a ParentVector independent of a tagged pointer's ownership semantics.
++  llvm::SpecificBumpPtrAllocator<DynTypedNode> OtherParentStorage;
+   ParentMapPointers PointerParents;
+   ParentMapOtherNodes OtherParents;
+   class ASTVisitor;
+@@ -102,20 +107,12 @@ class ParentMapContext::ParentMap {
+ public:
+   ParentMap(ASTContext &Ctx);
+   ~ParentMap() {
+-    for (const auto &Entry : PointerParents) {
+-      if (auto *DTN = dyn_cast<DynTypedNode *>(Entry.second)) {
+-        delete DTN;
+-      } else if (auto *PV = dyn_cast<ParentVector *>(Entry.second)) {
++    for (const auto &Entry : PointerParents)
++      if (auto *PV = dyn_cast<ParentVector *>(Entry.second))
+         delete PV;
+-      }
+-    }
+-    for (const auto &Entry : OtherParents) {
+-      if (auto *DTN = dyn_cast<DynTypedNode *>(Entry.second)) {
+-        delete DTN;
+-      } else if (auto *PV = dyn_cast<ParentVector *>(Entry.second)) {
++    for (const auto &Entry : OtherParents)
++      if (auto *PV = dyn_cast<ParentVector *>(Entry.second))
+         delete PV;
+-      }
+-    }
+   }
+ 
+   DynTypedNodeList getParents(TraversalKind TK, const DynTypedNode &Node) {
+@@ -154,7 +151,17 @@ public:
  
          const auto *ParentExpr = ParentList[0].get<Expr>();
          if (ParentExpr && ChildExpr)
@@ -33938,7 +33991,7 @@ index 7138dffb4..331dc54d4 100644
  
          {
            auto AncestorNodes =
-@@ -194,6 +204,40 @@ public:
+@@ -194,6 +201,40 @@ public:
      return getDynNodeFromMap(Node, OtherParents);
    }
  
@@ -33978,6 +34031,21 @@ index 7138dffb4..331dc54d4 100644
 +
    DynTypedNodeList AscendIgnoreUnlessSpelledInSource(const Expr *E,
                                                       const Expr *Child) {
+ 
+@@ -396,12 +437,12 @@ private:
+       else if (const auto *S = ParentStack.back().get<Stmt>())
+         NodeOrVector = S;
+       else
+-        NodeOrVector = new DynTypedNode(ParentStack.back());
++        NodeOrVector = new (Map.OtherParentStorage.Allocate())
++            DynTypedNode(ParentStack.back());
+     } else {
+       if (!isa<ParentVector *>(NodeOrVector)) {
+         auto *Vector = new ParentVector(
+             1, getSingleDynTypedNodeFromParentMap(NodeOrVector));
+-        delete dyn_cast<DynTypedNode *>(NodeOrVector);
+         NodeOrVector = Vector;
+       }
  
 diff --git a/clang/lib/ASTMatchers/ASTMatchFinder.cpp b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
 index 004a02c27..0dd11d636 100644
@@ -48879,10 +48947,24 @@ index 000000000..a90418213
 +  return ^{ return 1; };
 +}
 diff --git a/clang/lib/AST/DeclBase.cpp b/clang/lib/AST/DeclBase.cpp
-index 70f61fa57..4c9468fa0 100644
+index 70f61fa57..2221804cc 100644
 --- a/clang/lib/AST/DeclBase.cpp
 +++ b/clang/lib/AST/DeclBase.cpp
-@@ -2202,6 +2202,11 @@ void DeclContext::makeDeclVisibleInContextImpl(NamedDecl *D, bool Internal) {
+@@ -1641,6 +1641,13 @@ DeclContext::LoadLexicalDeclsFromExternalStorage() const {
+   Decl *ExternalFirst, *ExternalLast;
+   std::tie(ExternalFirst, ExternalLast) =
+       BuildDeclChain(Decls, FieldsAlreadyLoaded);
++  // The source may return only fields that were loaded separately. In that
++  // case there is no new chain to splice into the existing declarations.
++  if (!ExternalFirst) {
++    assert(!ExternalLast && "Inconsistent external declaration chain");
++    return false;
++  }
++  assert(ExternalLast && "External declaration chain has no tail");
+   ExternalLast->NextInContextAndBits.setPointer(FirstDecl);
+   FirstDecl = ExternalFirst;
+   if (!LastDecl)
+@@ -2202,6 +2209,11 @@ void DeclContext::makeDeclVisibleInContextImpl(NamedDecl *D, bool Internal) {
      return;
    }
  
@@ -48894,7 +48976,7 @@ index 70f61fa57..4c9468fa0 100644
    DeclNameEntries.addOrReplaceDecl(D);
  }
  
-@@ -2276,8 +2281,12 @@ DependentDiagnostic *DependentDiagnostic::Create(ASTContext &C,
+@@ -2276,8 +2288,12 @@ DependentDiagnostic *DependentDiagnostic::Create(ASTContext &C,
    // Allocate the copy of the PartialDiagnostic via the ASTContext's
    // BumpPtrAllocator, rather than the ASTContext itself.
    DiagnosticStorage *DiagStorage = nullptr;
@@ -52436,3 +52518,222 @@ index eaac861fa..402c0b17c 100644
  TEST_F(LexerTest, GetRawTokenOnEscapedNewLineChecksWhitespace) {
    const llvm::StringLiteral Source = R"cc(
    #define ONE \
+diff --git a/clang/include/clang/AST/DeclContextInternals.h b/clang/include/clang/AST/DeclContextInternals.h
+index d87d8e8a6..be3dd3865 100644
+--- a/clang/include/clang/AST/DeclContextInternals.h
++++ b/clang/include/clang/AST/DeclContextInternals.h
+@@ -84,10 +84,12 @@ class StoredDeclsList {
+     if (!Data.getPointer())
+       // All declarations are erased.
+       return nullptr;
+-    else if (isa<NamedDecl *>(NewHead))
+-      // The list only contains a declaration, the header itself.
++    else if (NewLast == &NewHead) {
++      // A retained singleton lives in Data after publication. Never return
++      // the temporary link used while rebuilding the list.
++      assert(isa<NamedDecl *>(NewHead) && "Not a singleton?");
+       return (DeclListNode::Decls *)&Data;
+-    else {
++    } else {
+       assert(NewLast && isa<NamedDecl *>(*NewLast) && "Not the tail?");
+       return NewLast;
+     }
+diff --git a/clang/include/clang/AST/IgnoreExpr.h b/clang/include/clang/AST/IgnoreExpr.h
+index 3b50b8115..6bf8ee9c4 100644
+--- a/clang/include/clang/AST/IgnoreExpr.h
++++ b/clang/include/clang/AST/IgnoreExpr.h
+@@ -22,10 +22,17 @@ namespace clang {
+ /// Recursively apply each of the functions to E until reaching a fixed point.
+ /// Note that a null E is valid; in this case nothing is done.
+ template <typename... FnTys> Expr *IgnoreExprNodes(Expr *E, FnTys &&... Fns) {
++  // A round invokes the same callback objects without moving them. Preserve
++  // ref-qualified call operators, including rvalue-only callbacks, on every
++  // round of the fixed-point iteration.
++  auto ApplyRound = [&](Expr *Current) {
++    ((Current = std::forward<FnTys>(Fns)(Current)), ...);
++    return Current;
++  };
+   Expr *LastE = nullptr;
+   while (E != LastE) {
+     LastE = E;
+-    ((E = std::forward<FnTys>(Fns)(E)), ...);
++    E = ApplyRound(E);
+   }
+   return E;
+ }
+diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
+new file mode 100644
+index 000000000..6550d631d
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
+@@ -0,0 +1,170 @@
++//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclContextInternals.h"
++#include "clang/AST/ExternalASTSource.h"
++#include "clang/AST/IgnoreExpr.h"
++#include "clang/AST/ParentMapContext.h"
++#include "clang/ASTMatchers/ASTMatchFinder.h"
++#include "clang/ASTMatchers/ASTMatchers.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++using namespace clang;
++using namespace clang::ast_matchers;
++
++namespace {
++class PreloadedFieldsSource final : public ExternalASTSource {
++public:
++  SmallVector<Decl *, 4> Declarations;
++  unsigned Calls = 0;
++
++  void FindExternalLexicalDecls(const DeclContext *,
++                               llvm::function_ref<bool(Decl::Kind)> Include,
++                               SmallVectorImpl<Decl *> &Result) override {
++    ++Calls;
++    for (Decl *D : Declarations)
++      if (Include(D->getKind()))
++        Result.push_back(D);
++  }
++};
++} // namespace
++
++TEST(ObjC3ASTInfrastructure, AlreadyLoadedExternalFieldsPreserveExistingChain) {
++  auto AST = tooling::buildASTFromCode("struct R { int value; };");
++  ASSERT_TRUE(AST);
++  ASTContext &Ctx = AST->getASTContext();
++  auto *Record = const_cast<CXXRecordDecl *>(selectFirst<CXXRecordDecl>(
++      "record", match(cxxRecordDecl(isDefinition(), hasName("R")).bind("record"),
++                      Ctx)));
++  ASSERT_TRUE(Record);
++  FieldDecl *Field = *Record->field_begin();
++  auto Source = llvm::makeIntrusiveRefCnt<PreloadedFieldsSource>();
++  Source->Declarations.push_back(Field);
++  Ctx.setExternalSource(Source);
++  Record->setHasLoadedFieldsFromExternalStorage(true);
++  Record->setHasExternalLexicalStorage(true);
++
++  SmallVector<Decl *, 4> Before(Record->noload_decls());
++  SmallVector<Decl *, 4> After(Record->decls());
++  EXPECT_EQ(Before, After);
++  EXPECT_EQ(1u, Source->Calls);
++  EXPECT_FALSE(Record->hasExternalLexicalStorage());
++  EXPECT_EQ(Field, *Record->field_begin());
++  EXPECT_EQ(1u, Source->Calls);
++}
++
++TEST(ObjC3ASTInfrastructure, NewExternalMembersSpliceAheadOfLoadedFields) {
++  auto AST = tooling::buildASTFromCode("struct R { int value; void member(); };");
++  ASSERT_TRUE(AST);
++  ASTContext &Ctx = AST->getASTContext();
++  auto *Record = const_cast<CXXRecordDecl *>(selectFirst<CXXRecordDecl>(
++      "record", match(cxxRecordDecl(isDefinition(), hasName("R")).bind("record"),
++                      Ctx)));
++  ASSERT_TRUE(Record);
++  FieldDecl *Field = *Record->field_begin();
++  CXXMethodDecl *Method = *Record->method_begin();
++  Record->removeDecl(Method);
++  auto Source = llvm::makeIntrusiveRefCnt<PreloadedFieldsSource>();
++  Source->Declarations = {Field, Method};
++  Ctx.setExternalSource(Source);
++  Record->setHasLoadedFieldsFromExternalStorage(true);
++  Record->setHasExternalLexicalStorage(true);
++
++  SmallVector<Decl *, 4> Before(Record->noload_decls());
++  SmallVector<Decl *, 4> After(Record->decls());
++  ASSERT_EQ(Before.size() + 1, After.size());
++  EXPECT_EQ(Method, After.front());
++  EXPECT_TRUE(std::equal(Before.begin(), Before.end(), After.begin() + 1));
++  EXPECT_EQ(1u, Source->Calls);
++}
++
++TEST(ObjC3ASTInfrastructure, StoredDeclarationTailSurvivesEveryEraseShape) {
++  auto AST = tooling::buildASTFromCode("int first, second, third, fourth;");
++  ASSERT_TRUE(AST);
++  ASTContext &Ctx = AST->getASTContext();
++  auto Lookup = [&](StringRef Name) {
++    return Ctx.getTranslationUnitDecl()->lookup(&Ctx.Idents.get(Name)).front();
++  };
++  NamedDecl *First = Lookup("first"), *Second = Lookup("second");
++  NamedDecl *Third = Lookup("third"), *Fourth = Lookup("fourth");
++  StoredDeclsList List;
++  List.addOrReplaceDecl(First);
++  List.setHasExternalDecls();
++  List.replaceExternalDecls({Second});
++  EXPECT_FALSE(List.hasExternalDecls());
++  EXPECT_EQ((SmallVector<NamedDecl *, 4>{First, Second}),
++            (SmallVector<NamedDecl *, 4>(List.getLookupResult().begin(),
++                                        List.getLookupResult().end())));
++  List.addOrReplaceDecl(Third);
++  List.remove(Second);
++  List.replaceExternalDecls({Fourth});
++  EXPECT_EQ((SmallVector<NamedDecl *, 4>{First, Third, Fourth}),
++            (SmallVector<NamedDecl *, 4>(List.getLookupResult().begin(),
++                                        List.getLookupResult().end())));
++  List.remove(Fourth);
++  List.remove(First);
++  List.replaceExternalDecls({Second});
++  EXPECT_EQ((SmallVector<NamedDecl *, 4>{Third, Second}),
++            (SmallVector<NamedDecl *, 4>(List.getLookupResult().begin(),
++                                        List.getLookupResult().end())));
++  List.remove(Third);
++  List.remove(Second);
++  EXPECT_TRUE(List.isNull());
++  List.replaceExternalDecls({Fourth});
++  EXPECT_EQ(Fourth, List.getAsDecl());
++}
++
++TEST(ObjC3ASTInfrastructure, FixedPointCallbacksKeepTheirIdentityAndValueCategory) {
++  auto AST = tooling::buildASTFromCode("");
++  ASSERT_TRUE(AST);
++  ASTContext &Ctx = AST->getASTContext();
++  auto *Value = IntegerLiteral::Create(Ctx, llvm::APInt(32, 7), Ctx.IntTy, {});
++  auto *Inner = new (Ctx) ParenExpr({}, {}, Value);
++  auto *Outer = new (Ctx) ParenExpr({}, {}, Inner);
++  struct StripOneParen {
++    unsigned &Calls;
++    explicit StripOneParen(unsigned &Calls) : Calls(Calls) {}
++    StripOneParen(const StripOneParen &) = delete;
++    StripOneParen(StripOneParen &&) = delete;
++    Expr *operator()(Expr *E) && {
++      ++Calls;
++      if (auto *Paren = dyn_cast<ParenExpr>(E))
++        return Paren->getSubExpr();
++      return E;
++    }
++    Expr *operator()(Expr *) & = delete;
++  };
++  unsigned Calls = 0;
++  EXPECT_EQ(Value, IgnoreExprNodes(Outer, StripOneParen(Calls)));
++  EXPECT_EQ(3u, Calls);
++  const Expr *ConstOuter = Outer;
++  EXPECT_EQ(Value, IgnoreExprNodes(ConstOuter, StripOneParen(Calls)));
++  EXPECT_EQ(6u, Calls);
++  EXPECT_EQ(nullptr, IgnoreExprNodes(static_cast<Expr *>(nullptr),
++                                     StripOneParen(Calls)));
++  EXPECT_EQ(6u, Calls);
++}
++
++TEST(ObjC3ASTInfrastructure, ParentMapRebuildOwnsNonPointerParents) {
++  auto AST = tooling::buildASTFromCode(
++      "namespace n { struct T {}; } void f(n::T);"
++      "template<class T> struct C { void g() { n::T value; } };"
++      "void h() { C<int> c; c.g(); }");
++  ASSERT_TRUE(AST);
++  ASTContext &Ctx = AST->getASTContext();
++  for (unsigned Round = 0; Round != 8; ++Round) {
++    EXPECT_FALSE(match(nestedNameSpecifierLoc(hasParent(typeLoc())), Ctx).empty());
++    EXPECT_FALSE(match(compoundStmt(allOf(
++        hasAncestor(cxxRecordDecl(isTemplateInstantiation())),
++        hasAncestor(cxxRecordDecl(unless(isTemplateInstantiation()))))), Ctx)
++                     .empty());
++    Ctx.getParentMapContext().clear();
++  }
++}

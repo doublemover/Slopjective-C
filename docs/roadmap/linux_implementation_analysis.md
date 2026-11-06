@@ -24,6 +24,19 @@ frontend/runtime variants, standalone runtime variants and all maintained
 patch-touched Clang implementation TUs; test/vendor/generated-only exclusions
 are reported explicitly.
 
+The current full scan has exposed additional AST infrastructure paths. The
+canonical patch stack now handles an external lexical load containing only
+previously loaded fields, returns a persistent declaration-list tail after
+singleton rebuilding, gives non-pointer parent nodes map-lifetime arena ownership,
+and separates one callback round from fixed-point iteration while preserving
+ref-qualified call operators. A focused native test source covers empty and mixed
+external chains, declaration-list erase shapes, noncopyable callback reuse and
+repeated parent-map clearing. The requires-clause mangler also asserts the resolved
+template invariant, with the upstream concept-mangling regression selected in
+ordinary and instrumented profiles. These changes have passed patch admission
+and test-source compilation; the corrected compiler build and native execution
+remain pending while the earlier full scan collects the rest of its findings.
+
 The matched analyzer cannot deserialize the foundation's bootstrap-produced
 CMake PCH. Analysis validates the exact PCH/wrapper pair and rebuilds the wrapper
 with the admitted fork using the real TU's definitions, include order, target,
