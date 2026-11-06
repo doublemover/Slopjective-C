@@ -149,6 +149,7 @@ PACKETS = {
         "clang/lib/ASTMatchers/Dynamic/Registry.cpp",
         "clang/lib/ASTMatchers/ASTMatchFinder.cpp",
         "clang/lib/ASTMatchers/ASTMatchersInternal.cpp",
+        "clang/include/clang/ASTMatchers/ASTMatchersInternal.h",
         "clang/include/clang/ASTMatchers/ASTMatchers.h",
         "clang/test/Index/objc3-native-expression-cursors.mm",
         "clang/test/Index/objc3-condition-cursors.mm",

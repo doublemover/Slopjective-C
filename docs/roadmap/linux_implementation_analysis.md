@@ -51,6 +51,13 @@ access under UBSan on the preceding compiler. Its four companion cases pass on
 that compiler. The template-name dumper now asserts the using-shadow invariant;
 the extended upstream AST-dump regression checks both the shadow and its target
 and passes native `FileCheck` before the pending compiler rebuild.
+Matcher construction now forwards its tuple once through `std::make_from_tuple`,
+using guaranteed copy elision for nonmovable matcher objects. The new regression
+checks distinct move-only elements and mutable/const reference preservation.
+Five companion cases pass against the changed header overlay and matched preceding
+compiler libraries. The non-pointer parent arena and external-load implementation
+still require the pending rebuilt compiler; these controls do not imply that the
+entire fork-fix batch has passed.
 
 The matched analyzer cannot deserialize the foundation's bootstrap-produced
 CMake PCH. Analysis validates the exact PCH/wrapper pair and rebuilds the wrapper

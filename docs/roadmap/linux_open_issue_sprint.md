@@ -184,7 +184,9 @@ The five-case sealed local source-graph witness proves cold/warm reuse and
 external-header creation/removal invalidation. Its SDK-shaped directory is an
 integration fixture, not a qualified release archive.
 
-**12 issues remain** in the queue below. Compiler implementation instrumentation
+**10 issues retain implementation or acceptance work** in the queue below.
+All 51 GitHub issues remain open until the corresponding changes are accepted
+and land. Compiler implementation instrumentation
 is [source-qualified](linux_compiler_instrumentation.md); the independent assurance and
 platform lanes remain open.
 

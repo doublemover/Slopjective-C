@@ -52571,10 +52571,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..1502375c4
+index 000000000..b2e678c10
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,210 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -52746,6 +52746,45 @@ index 000000000..1502375c4
 +    Ctx.getParentMapContext().clear();
 +  }
 +}
++
++TEST(ObjC3ASTInfrastructure, TupleConstructionForwardsDistinctElementsOnce) {
++  struct OwnedPair {
++    std::unique_ptr<int> First, Second;
++    OwnedPair(std::unique_ptr<int> First, std::unique_ptr<int> Second)
++        : First(std::move(First)), Second(std::move(Second)) {}
++    OwnedPair(const OwnedPair &) = delete;
++    OwnedPair(OwnedPair &&) = delete;
++  };
++  auto Arguments = std::make_tuple(std::make_unique<int>(17),
++                                   std::make_unique<int>(29));
++  std::unique_ptr<OwnedPair> Owned(
++      clang::ast_matchers::internal::new_from_tuple<OwnedPair>(
++          std::move(Arguments)));
++  ASSERT_TRUE(Owned->First);
++  ASSERT_TRUE(Owned->Second);
++  EXPECT_EQ(17, *Owned->First);
++  EXPECT_EQ(29, *Owned->Second);
++  EXPECT_FALSE(std::get<0>(Arguments));
++  EXPECT_FALSE(std::get<1>(Arguments));
++
++  struct References {
++    int &Mutable;
++    const int &Constant;
++    References(int &Mutable, const int &Constant)
++        : Mutable(Mutable), Constant(Constant) {}
++    References(const References &) = delete;
++    References(References &&) = delete;
++  };
++  int Mutable = 3;
++  const int Constant = 5;
++  auto ReferenceArguments = std::forward_as_tuple(Mutable, Constant);
++  std::unique_ptr<References> Refs(
++      clang::ast_matchers::internal::new_from_tuple<References>(ReferenceArguments));
++  EXPECT_EQ(&Mutable, &Refs->Mutable);
++  EXPECT_EQ(&Constant, &Refs->Constant);
++  Refs->Mutable = 11;
++  EXPECT_EQ(11, Mutable);
++}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
 --- a/clang/test/AST/ast-dump-template-name.cpp
@@ -52769,3 +52808,28 @@ index b0a99cf27..ce6cc5587 100644
 +// CHECK-NEXT:   |-TemplateArgument template 'A':'using_name::definition::A' qualified
 +// CHECK-NEXT:   | |-UsingShadowDecl {{.+}} 'A'
 +// CHECK-NEXT:   | `-target: ClassTemplateDecl {{.+}} A external-linkage
+diff --git a/clang/include/clang/ASTMatchers/ASTMatchersInternal.h b/clang/include/clang/ASTMatchers/ASTMatchersInternal.h
+index cb12d10d6..cfdb408f1 100644
+--- a/clang/include/clang/ASTMatchers/ASTMatchersInternal.h
++++ b/clang/include/clang/ASTMatchers/ASTMatchersInternal.h
+@@ -1184,16 +1184,11 @@ template <class T> struct ExtractFunctionArgMeta<void(T)> {
+   using type = T;
+ };
+ 
+-template <class T, class Tuple, std::size_t... I>
+-constexpr T *new_from_tuple_impl(Tuple &&t, std::index_sequence<I...>) {
+-  return new T(std::get<I>(std::forward<Tuple>(t))...);
+-}
+-
+ template <class T, class Tuple> constexpr T *new_from_tuple(Tuple &&t) {
+-  return new_from_tuple_impl<T>(
+-      std::forward<Tuple>(t),
+-      std::make_index_sequence<
+-          std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
++  // Forward the tuple once; make_from_tuple forwards each distinct element.
++  // C++17 guaranteed copy elision constructs even nonmovable matcher objects
++  // directly in their final heap storage.
++  return new T(std::make_from_tuple<T>(std::forward<Tuple>(t)));
+ }
+ 
+ /// Default type lists for ArgumentAdaptingMatcher matchers.
