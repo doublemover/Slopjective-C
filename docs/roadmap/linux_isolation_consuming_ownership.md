@@ -32,8 +32,10 @@ Class/super entry is implemented in sources 2.32–2.33. The
 targets and makes `ns_consumed` a supported Block parameter attribute in
 Objective-C 3 mode. Earlier Block witnesses exercised captured ownership; the
 new span also verifies the consumed annotation and native copying convention.
-MRC consumed boundaries, Core Foundation consumption, init-family entry and
-automatic actor association remain separate implementation work. This source milestone does not
+The [MRC and initializer source span](linux_isolation_mrc_consumption.md) now adds
+MRC synchronous/native-frame consumed boundaries, ARC consuming native-frame
+receivers and synchronous init-family entry. Core Foundation consumption,
+MRC task-ABI consumption and async initializers remain open. This source milestone does not
 change the runtime ABI or claim full actor/profile conformance. The
 [2.33.0 SDK acceptance](../support/linux_source_batch_2_33_acceptance.json) delivers
 this boundary with combined source and fresh native-feature validation.

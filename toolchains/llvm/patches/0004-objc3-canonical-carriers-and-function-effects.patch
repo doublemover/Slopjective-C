@@ -7870,7 +7870,7 @@ index 9799c8651..bb746a735 100644
 +                          : " withLifetime scope=body");
 +}
 diff --git a/clang/lib/AST/Type.cpp b/clang/lib/AST/Type.cpp
-index 42d148715..ab259dd8e 100644
+index 42d148715..c78e0665c 100644
 --- a/clang/lib/AST/Type.cpp
 +++ b/clang/lib/AST/Type.cpp
 @@ -13,6 +13,7 @@
@@ -8057,16 +8057,17 @@ index 42d148715..ab259dd8e 100644
      return LV;
    }
    case Type::ObjCInterface:
-@@ -5284,6 +5358,8 @@ bool Type::canHaveNullability(bool ResultIfUnknown) const {
+@@ -5284,6 +5358,9 @@ bool Type::canHaveNullability(bool ResultIfUnknown) const {
    }
  
    // Non-pointer types.
 +  case Type::ObjC3Optional:
 +  case Type::ObjC3Result:
++  case Type::ObjC3DependentKeyPath:
    case Type::Complex:
    case Type::LValueReference:
    case Type::RValueReference:
-@@ -5421,8 +5497,17 @@ bool Type::isObjCARCImplicitlyUnretainedType() const {
+@@ -5421,8 +5498,17 @@ bool Type::isObjCARCImplicitlyUnretainedType() const {
  }
  
  bool Type::isObjCNSObjectType() const {
@@ -8086,7 +8087,7 @@ index 42d148715..ab259dd8e 100644
    return false;
  }
  
-@@ -5558,6 +5643,11 @@ bool Type::isHLSLStandardLayoutRecordOrArrayOf() const {
+@@ -5558,6 +5644,11 @@ bool Type::isHLSLStandardLayoutRecordOrArrayOf() const {
  }
  
  QualType::DestructionKind QualType::isDestructedTypeImpl(QualType type) {
@@ -14250,7 +14251,7 @@ index 4d12b6c72..d661ba450 100644
  
      if (RetValExp) {
 diff --git a/clang/lib/Sema/SemaTemplate.cpp b/clang/lib/Sema/SemaTemplate.cpp
-index 7286a0c2f..6e16688f6 100644
+index 7286a0c2f..69608d9b5 100644
 --- a/clang/lib/Sema/SemaTemplate.cpp
 +++ b/clang/lib/Sema/SemaTemplate.cpp
 @@ -6372,7 +6372,17 @@ bool UnnamedLocalNoLinkageFinder::VisitFunctionProtoType(
@@ -14272,13 +14273,18 @@ index 7286a0c2f..6e16688f6 100644
  }
  
  bool UnnamedLocalNoLinkageFinder::VisitFunctionNoProtoType(
-@@ -6490,6 +6500,16 @@ bool UnnamedLocalNoLinkageFinder::VisitBitIntType(const BitIntType *T) {
+@@ -6490,6 +6500,21 @@ bool UnnamedLocalNoLinkageFinder::VisitBitIntType(const BitIntType *T) {
    return false;
  }
  
 +bool UnnamedLocalNoLinkageFinder::VisitObjC3OptionalType(
 +    const ObjC3OptionalType *T) {
 +  return Visit(T->getElementType());
++}
++
++bool UnnamedLocalNoLinkageFinder::VisitObjC3DependentKeyPathType(
++    const ObjC3DependentKeyPathType *T) {
++  return Visit(T->getRootType()) || Visit(T->getValueType());
 +}
 +
 +bool UnnamedLocalNoLinkageFinder::VisitObjC3ResultType(
@@ -14289,7 +14295,7 @@ index 7286a0c2f..6e16688f6 100644
  bool UnnamedLocalNoLinkageFinder::VisitArrayParameterType(
      const ArrayParameterType *T) {
    return VisitConstantArrayType(T);
-@@ -9914,12 +9934,11 @@ Sema::CheckMemberSpecialization(NamedDecl *Member, LookupResult &Previous) {
+@@ -9914,12 +9939,11 @@ Sema::CheckMemberSpecialization(NamedDecl *Member, LookupResult &Previous) {
      // Find the function that is more constrained than every other function it
      // has been compared to.
      UnresolvedSetIterator Best = Candidates.begin();
@@ -14306,7 +14312,7 @@ index 7286a0c2f..6e16688f6 100644
          BestMethod = Method;
        }
 diff --git a/clang/lib/Sema/SemaTemplateDeduction.cpp b/clang/lib/Sema/SemaTemplateDeduction.cpp
-index 3c45806c4..03e6e70d9 100644
+index 3c45806c4..eca80f317 100644
 --- a/clang/lib/Sema/SemaTemplateDeduction.cpp
 +++ b/clang/lib/Sema/SemaTemplateDeduction.cpp
 @@ -13,6 +13,7 @@
@@ -14412,7 +14418,30 @@ index 3c45806c4..03e6e70d9 100644
        // Check return types.
        if (auto Result = DeduceTemplateArgumentsByTypeMatch(
                S, TemplateParams, FPP->getReturnType(), FPA->getReturnType(),
-@@ -6940,6 +7022,9 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
+@@ -3810,6 +3892,22 @@ CheckOriginalCallArgDeduction(Sema &S, TemplateDeductionInfo &Info,
+        S.IsFunctionConversion(A, DeducedA)))
+     return TemplateDeductionResult::Success;
+ 
++  // A language key-path pattern also admits the readonly view of a writable
++  // value. Keep this restricted to a constructor pattern with identical
++  // operands; ordinary T deduction and pointers do not gain a conversion.
++  // A mutable lvalue reference still cannot bind the converted temporary.
++  if (S.getLangOpts().ObjC3 &&
++      OriginalParamType->getAs<ObjC3DependentKeyPathType>() &&
++      (!OriginalArg.OriginalParamType->isLValueReferenceType() ||
++       DeducedA.isConstQualified())) {
++    ObjC3KeyPathInfo Argument, Deduced;
++    if (getObjC3KeyPathInfo(A, Argument) &&
++        getObjC3KeyPathInfo(DeducedA, Deduced) && Argument.Writable &&
++        !Deduced.Writable && Context.hasSameType(Argument.Root, Deduced.Root) &&
++        Context.hasSameType(Argument.Value, Deduced.Value))
++      return TemplateDeductionResult::Success;
++  }
++
+   //    - If P is a class and P has the form simple-template-id, then the
+   //      transformed A can be a derived class of the deduced A. [...]
+   //     [...] Likewise, if P is a pointer to a class of the form
+@@ -6940,6 +7038,9 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
      const FunctionProtoType *Proto = cast<FunctionProtoType>(T);
      MarkUsedTemplateParameters(Ctx, Proto->getReturnType(), OnlyDeduced, Depth,
                                 Used);
@@ -14422,7 +14451,7 @@ index 3c45806c4..03e6e70d9 100644
      for (unsigned I = 0, N = Proto->getNumParams(); I != N; ++I) {
        // C++17 [temp.deduct.type]p5:
        //   The non-deduced contexts are: [...]
-@@ -7014,6 +7099,26 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
+@@ -7014,6 +7115,26 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
      break;
    }
  
@@ -46077,10 +46106,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..08db66ed4
+index 000000000..c77739ab7
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1174 @@
+@@ -0,0 +1,1208 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -46864,6 +46893,12 @@ index 000000000..08db66ed4
 +  return Check(Check, T, 0);
 +}
 +
++bool isolationConsumesReceiver(const Decl *Target) {
++  if (Target->hasAttr<NSConsumesSelfAttr>()) return true;
++  const auto *Method = dyn_cast<ObjCMethodDecl>(Target);
++  return Method && Method->isInstanceMethod() && Method->getMethodFamily() == OMF_init;
++}
++
 +bool isolationResultIsOwned(const Decl *Target) {
 +  if (Target->hasAttr<NSReturnsRetainedAttr>())
 +    return true;
@@ -46915,19 +46950,20 @@ index 000000000..08db66ed4
 +  SmallVector<FunctionProtoType::ExtParameterInfo, 4> ParameterInfos(Types.size());
 +  bool HasConsumed = false;
 +  for (unsigned I = 0; I != Types.size(); ++I) {
-+    const bool Consumed = S.getLangOpts().ObjCAutoRefCount &&
-+        (HasReceiver && I == 0 ? Target->hasAttr<NSConsumesSelfAttr>()
-+                              : SourceParameters[I - (HasReceiver ? 1 : 0)]
-+                                ->hasAttr<NSConsumedAttr>());
++    const bool Consumed =
++        HasReceiver && I == 0 ? isolationConsumesReceiver(Target)
++                             : SourceParameters[I - (HasReceiver ? 1 : 0)]
++                                 ->hasAttr<NSConsumedAttr>();
 +    if (!Consumed) continue;
 +    HasConsumed = true;
 +    ParameterInfos[I] = ParameterInfos[I].withIsConsumed(true);
-+    // The ramp adopts the caller's +1 and owns it independently of the frame
-+    // copy. Its ordinary ARC parameter cleanup also runs if frame creation
-+    // fails. A weak/unowned source expression does not change this ownership.
++    // The ramp adopts the caller's +1 independently of the frame copy.
++    // ARC uses ordinary strong-parameter cleanup. MRC ramps have an explicit
++    // normal/EH cleanup so failed allocation or copying balances adoption too.
 +    auto Quals = Types[I].getQualifiers();
 +    Quals.removeObjCLifetime();
-+    Quals.addObjCLifetime(Qualifiers::OCL_Strong);
++    if (S.getLangOpts().ObjCAutoRefCount)
++      Quals.addObjCLifetime(Qualifiers::OCL_Strong);
 +    Types[I] = S.Context.getQualifiedType(Types[I].getUnqualifiedType(), Quals);
 +  }
 +  if (HasConsumed) Info.ExtParameterInfos = ParameterInfos.data();
@@ -46970,7 +47006,8 @@ index 000000000..08db66ed4
 +  {
 +    Sema::SynthesizedFunctionScope Scope(S, Thunk);
 +    SmallVector<Expr *, 4> Arguments;
-+    for (auto *Param : Params) {
++    for (unsigned I = 0; I < Params.size(); ++I) {
++      auto *Param = Params[I];
 +      Expr *Argument = S.BuildDeclRefExpr(Param, Param->getType(), VK_LValue, Loc);
 +      // The frame already owns an independent value parameter. Move that
 +      // value into the target call rather than requiring another C++ copy.
@@ -46978,6 +47015,15 @@ index 000000000..08db66ed4
 +        Argument = ImplicitCastExpr::Create(
 +            S.Context, Param->getType(), CK_NoOp, Argument, nullptr,
 +            VK_XValue, FPOptionsOverride());
++      if (!S.getLangOpts().ObjCAutoRefCount && ParameterInfos[I].isConsumed()) {
++        ExprResult Loaded = S.DefaultLvalueConversion(Argument);
++        if (Loaded.isInvalid()) return nullptr;
++        // An MRC callee consumes its incoming +1 manually. Keep the frame's
++        // own pin independent by producing a separate handoff claim.
++        Argument = ImplicitCastExpr::Create(
++            S.Context, Loaded.get()->getType(), CK_ARCProduceObject, Loaded.get(),
++            nullptr, VK_PRValue, FPOptionsOverride());
++      }
 +      Arguments.push_back(Argument);
 +    }
 +    ExprResult Value;
@@ -47051,10 +47097,15 @@ index 000000000..08db66ed4
 +  return Reference && Reference->getDecl() == Method->getSelfDecl();
 +}
 +
-+bool unsupportedIsolatedConsumption(const Sema &S, const ParmVarDecl *Parameter) {
-+  const bool ARCConsumed = S.getLangOpts().ObjCAutoRefCount &&
-+      Parameter->getType()->isObjCRetainableType();
-+  return (Parameter->hasAttr<NSConsumedAttr>() && !ARCConsumed) ||
++bool unsupportedIsolatedConsumption(const Sema &S, const ParmVarDecl *Parameter,
++                                    const FunctionProtoType *Target) {
++  QualType Type = Parameter->getType();
++  const bool ARC = S.getLangOpts().ObjCAutoRefCount;
++  const bool ConsumedValue = ARC ? Type->isObjCRetainableType()
++      : (Type->isObjCObjectPointerType() || Type->isBlockPointerType());
++  return (Parameter->hasAttr<NSConsumedAttr>() &&
++          (!ConsumedValue || (!ARC && Target->getObjC3FunctionEffects().Async &&
++                             !Target->getObjC3FunctionEffects().AsyncFrame))) ||
 +         Parameter->hasAttr<CFConsumedAttr>() ||
 +         Parameter->hasAttr<ObjCResourceAttr>() ||
 +         Parameter->getType()->isReferenceType();
@@ -47106,6 +47157,13 @@ index 000000000..08db66ed4
 +                  (Executor && (!Current || Current->getExecutor() !=
 +                                                Executor->getExecutor()));
 +  const auto *FT = isolationCalleeFunctionType(*this, Target);
++  if (Message && FT && !FT->getObjC3FunctionEffects().Async &&
++      cast<ObjCMethodDecl>(Target)->hasRelatedResultType()) {
++    // Preserve the source send's instantiated class/generic result rather than
++    // erasing instancetype to the method declaration's logical id spelling.
++    FT = Context.getFunctionType(Message->getType(), FT->param_types(),
++                                  FT->getExtProtoInfo())->castAs<FunctionProtoType>();
++  }
 +  if (!Crossing || !FT ||
 +      (!getLangOpts().CPlusPlus && FT->getObjC3FunctionEffects().Async &&
 +       !FT->getObjC3FunctionEffects().AsyncFrame)) {
@@ -47147,7 +47205,8 @@ index 000000000..08db66ed4
 +    Shape &= !isa<CXXMethodDecl>(Target) &&
 +             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts());
 +    for (const auto *Parameter : cast<FunctionDecl>(Target)->parameters())
-+      Shape &= !unsupportedIsolatedConsumption(*this, Parameter);
++      Shape &= !unsupportedIsolatedConsumption(
++          *this, Parameter, FT);
 +  } else {
 +    const bool Instance =
 +        Message->getReceiverKind() == ObjCMessageExpr::Instance ||
@@ -47158,11 +47217,15 @@ index 000000000..08db66ed4
 +    Shape &=
 +        ((Instance &&
 +          SourceReceiver->getType()->isObjCObjectPointerType()) ||
-+         (NamedClass && !Target->hasAttr<NSConsumesSelfAttr>())) &&
-+        (!Target->hasAttr<NSConsumesSelfAttr>() || getLangOpts().ObjCAutoRefCount) &&
-+        cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init;
++         (NamedClass && !isolationConsumesReceiver(Target))) &&
++        (!isolationConsumesReceiver(Target) || getLangOpts().ObjCAutoRefCount ||
++         !FT->getObjC3FunctionEffects().Async ||
++         FT->getObjC3FunctionEffects().AsyncFrame) &&
++        (cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init ||
++         !FT->getObjC3FunctionEffects().Async);
 +    for (const auto *Parameter : cast<ObjCMethodDecl>(Target)->parameters())
-+      Shape &= !unsupportedIsolatedConsumption(*this, Parameter);
++      Shape &= !unsupportedIsolatedConsumption(
++          *this, Parameter, FT);
 +  }
 +  if (!Shape) {
 +    Diag(Loc, diag::err_objc3_isolation_hop_shape);
@@ -47217,7 +47280,7 @@ index 000000000..08db66ed4
 +    return true;
 +  };
 +  if (SourceReceiver &&
-+      !Capture(Target->hasAttr<NSConsumesSelfAttr>()
++      !Capture(isolationConsumesReceiver(Target)
 +                   ? uninitializeConsumedArgument(SourceReceiver)
 +                   : SourceReceiver))
 +    return ExprError();
@@ -53004,10 +53067,26 @@ index 000000000..d96c20185
 +// CHECK: template <int N> __attribute__((abi_tag("owner"))) int count()
 +// CHECK: template <class ...T> __attribute__((abi_tag("owner"))) constexpr int sum(T ...n)
 diff --git a/clang/lib/Parse/ParseExprCXX.cpp b/clang/lib/Parse/ParseExprCXX.cpp
-index 6b8ab6ce8..9695670c5 100644
+index 6b8ab6ce8..9bb8965bf 100644
 --- a/clang/lib/Parse/ParseExprCXX.cpp
 +++ b/clang/lib/Parse/ParseExprCXX.cpp
-@@ -1345,7 +1345,12 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+@@ -482,6 +482,15 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
+       continue;
+     }
+ 
++    // These unqualified Objective-C 3 type constructors are language syntax,
++    // including inside a class partial specialization's template arguments.
++    // Do not turn them into assumed C++ template names while looking for a
++    // nested-name-specifier; the type-id parser owns their operand list.
++    if (getLangOpts().ObjC3 && SS.isEmpty() && !ObjectType &&
++        Next.is(tok::less) &&
++        (II.isStr("KeyPath") || II.isStr("WritableKeyPath")))
++      break;
++
+     CheckForTemplateAndDigraph(Next, ObjectType, EnteringContext, II, SS);
+ 
+     // nested-name-specifier:
+@@ -1345,7 +1354,12 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
                    tok::kw___constant, tok::kw___generic, tok::kw_groupshared,
                    tok::kw_requires, tok::kw_noexcept) ||
        Tok.isRegularKeywordAttribute() ||
@@ -53021,7 +53100,7 @@ index 6b8ab6ce8..9695670c5 100644
  
    if (HasSpecifiers && !HasParentheses && !getLangOpts().CPlusPlus23) {
      // It's common to forget that one needs '()' before 'mutable', an
-@@ -1426,6 +1431,17 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+@@ -1426,6 +1440,17 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
          DeclEndLoc = Range.getEnd();
      }
  
@@ -53039,7 +53118,7 @@ index 6b8ab6ce8..9695670c5 100644
      SourceLocation NoLoc;
      D.AddTypeInfo(DeclaratorChunk::getFunction(
                        /*HasProto=*/true,
-@@ -1438,7 +1454,10 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+@@ -1438,7 +1463,10 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
                        NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
                        /*ExceptionSpecTokens*/ nullptr,
                        /*DeclsInPrototype=*/{}, LParenLoc, FunLocalRangeEnd, D,
@@ -53051,7 +53130,7 @@ index 6b8ab6ce8..9695670c5 100644
                    std::move(Attributes), DeclEndLoc);
  
      if (HasParentheses && Tok.is(tok::kw_requires))
-@@ -1447,8 +1466,10 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+@@ -1447,8 +1475,10 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
  
    // Emit a warning if we see a CUDA host/device/global attribute
    // after '(...)'. nvcc doesn't accept this.
@@ -53064,7 +53143,7 @@ index 6b8ab6ce8..9695670c5 100644
        if (A.getKind() == ParsedAttr::AT_CUDADevice ||
            A.getKind() == ParsedAttr::AT_CUDAHost ||
            A.getKind() == ParsedAttr::AT_CUDAGlobal)
-@@ -1933,6 +1954,7 @@ Sema::ConditionResult Parser::ParseCXXCondition(StmtResult *InitStmt,
+@@ -1933,6 +1963,7 @@ Sema::ConditionResult Parser::ParseCXXCondition(StmtResult *InitStmt,
    }
  
    case ConditionOrInitStatement::InitStmtDecl: {
@@ -54159,10 +54238,10 @@ index 000000000..393cac8cf
 +static_assert(ConstrainedMember<int>{}.value() == 11);
 diff --git a/clang/test/ObjC3/Sema/Inputs/typed-keypath-dependent-types.h b/clang/test/ObjC3/Sema/Inputs/typed-keypath-dependent-types.h
 new file mode 100644
-index 000000000..8b2dd253d
+index 000000000..0e8bd19fa
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/typed-keypath-dependent-types.h
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,51 @@
 +#ifndef OBJC3_DEPENDENT_KEYPATH_TYPES_H
 +#define OBJC3_DEPENDENT_KEYPATH_TYPES_H
 +#include "../../Inputs/keypath-abi.h"
@@ -54210,13 +54289,16 @@ index 000000000..8b2dd253d
 +template<class Root> WritableKeyPath<Root, int> make_typed_path() {
 +  return @keypath(Root, count);
 +}
++template<class Root,class Value> int typed_read_ref(const KeyPath<Root,Value>& path) {return 1;}
++template<class Root,class Value> int typed_read_mutable_ref(KeyPath<Root,Value>& path) {return 1;}
++template<class Root,class Value> int typed_read_pointer(KeyPath<Root,Value>* path) {return 1;}
 +#endif
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-dependent-type-errors.mm b/clang/test/ObjC3/Sema/typed-keypath-dependent-type-errors.mm
 new file mode 100644
-index 000000000..8c25dc991
+index 000000000..629d1d6e8
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-dependent-type-errors.mm
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,21 @@
 +// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +#include "Inputs/typed-keypath-dependent-types.h"
@@ -54233,15 +54315,17 @@ index 000000000..8c25dc991
 +void reject_type_deduction(DependentTypeRoot *root) {
 +  auto write = make_typed_path<DependentTypeRoot *>();
 +  auto read = KeyPathAsReadOnly(write);
++  typed_read_mutable_ref(write); // expected-error {{no matching function for call to 'typed_read_mutable_ref'}}
++  typed_read_pointer(&write); // expected-error {{no matching function for call to 'typed_read_pointer'}}
 +  write_typed_path(read, root, 17); // expected-error {{no matching function for call to 'write_typed_path'}}
 +  write_typed_path(write, root, 17L); // expected-error {{no matching function for call to 'write_typed_path'}}
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-dependent-types.mm b/clang/test/ObjC3/Sema/typed-keypath-dependent-types.mm
 new file mode 100644
-index 000000000..78babe9fe
+index 000000000..6d437680a
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-dependent-types.mm
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,37 @@
 +// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
@@ -54275,6 +54359,9 @@ index 000000000..78babe9fe
 +  write_typed_path(pair, root, value);
 +  static_assert(__is_same(decltype(read_typed_path(KeyPathAsReadOnly(pair), root)), DependentTypePair));
 +  (void)typed_path_pack(write, write);
++  (void)typed_read_ref(write);
++  (void)typed_read_ref(read);
++  (void)typed_read_mutable_ref(read);
 +}
 diff --git a/clang/lib/Serialization/MultiOnDiskHashTable.h b/clang/lib/Serialization/MultiOnDiskHashTable.h
 index a179016d4..dbd6f2e4a 100644

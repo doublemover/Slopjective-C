@@ -9,14 +9,14 @@ static int consumed_arguments, consumed_entries;
 static _Thread_local int fail_after_source, fail_frame_allocation;
 extern int posix_memalign(void **, size_t, size_t);
 void *aligned_alloc(size_t alignment, size_t size) {
-  if (fail_frame_allocation) {
-    fail_frame_allocation=0;
+  if (fail_frame_allocation && --fail_frame_allocation == 0) {
     return 0;
   }
   void *memory=0;
   return posix_memalign(&memory,alignment,size)==0 ? memory : 0;
 }
 void hop_fail_next_frame_allocation(void) { fail_frame_allocation=1; }
+void hop_fail_second_frame_allocation(void) { fail_frame_allocation=2; }
 void hop_consumed_reset(int fail_factory) {
   __atomic_store_n(&consumed_arguments,0,__ATOMIC_RELEASE);
   __atomic_store_n(&consumed_entries,0,__ATOMIC_RELEASE);
@@ -94,6 +94,12 @@ static int drop_sender(HopObject *__strong *slot) {
     __attribute__((ns_consumes_self, nothrow, objc_executor(main)));
 - (HopObject *)consumeAndReturn
     __attribute__((ns_consumes_self, ns_returns_retained, nothrow, objc_executor(main)));
+- (int)consumeSelfFrame __objc3_async_frame
+    __attribute__((ns_consumes_self, nothrow, objc_executor(main)));
+- (int)consumeBothFrame:(__attribute__((ns_consumed)) HopObject *)value
+    __objc3_async_frame __attribute__((ns_consumes_self, nothrow, objc_executor(main)));
+- (int)consumeReplacingSelfFrame __objc3_async_frame
+    __attribute__((ns_consumes_self, nothrow, objc_executor(main)));
 @end
 @implementation HopObject (Consumption)
 + (int)consumeClassObject:(__attribute__((ns_consumed)) HopObject *)value {
@@ -127,6 +133,20 @@ static int drop_sender(HopObject *__strong *slot) {
 - (HopObject *)consumeAndReturn {
   consumed_on_main();
   return self;
+}
+- (int)consumeSelfFrame __objc3_async_frame {
+  consumed_on_main();
+  return [self number];
+}
+- (int)consumeBothFrame:(__attribute__((ns_consumed)) HopObject *)value
+    __objc3_async_frame {
+  consumed_on_main();
+  return [self number]+[value number]-42;
+}
+- (int)consumeReplacingSelfFrame __objc3_async_frame {
+  consumed_on_main();
+  self = [HopObject new];
+  return [self number];
 }
 @end
 
@@ -188,6 +208,11 @@ int hop_consumed_roundtrip(int kind, objc3_executor_t *caller)
     result=__objc3_await [receiver consumeAfter:hop_throwing_argument()];
     break;
   }
+  case 13: result=__objc3_await [consumed_source(caller) consumeSelfFrame]; break;
+  case 14:
+    result=__objc3_await [consumed_source(caller) consumeBothFrame:consumed_source(caller)];
+    break;
+  case 15: result=__objc3_await [consumed_source(caller) consumeReplacingSelfFrame]; break;
   default: assert(!"unknown consuming isolation case");
   }
   assert(objc3_executor_is_current(caller));

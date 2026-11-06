@@ -15,7 +15,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | Indirect writes/aliases, borrowed results, mixed/generic/lazy captures and exceptional cleanup                              | Open                                                               |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                               |
 | Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                               |
-| Isolation          | Remaining executor/actor crossings, MRC/CF/init-family forms and managed values                                             | Open                                                               |
+| Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native verification in progress           |
+| Isolation          | Remaining executor/actor crossings, CF/task consumption, async init-family forms and managed values                         | Open                                                               |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                               |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending    |
 | Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending    |
@@ -104,6 +105,31 @@ await native execution; affected compiler/frontend units pass syntax checks.
 Extension ABI 22 is a hard compiler/PCH/interface cutover. The physical key-path
 layout stays at 2. The task bridge and generated capability authority require the
 matching compiler. SDK 2.62 is historical accepted delivery and is not relabeled.
+
+The rebuilt development compiler now passes the four positive/negative key-path
+syntax cases. Integration repairs cover non-pointer nullability classification,
+unnamed/local linkage traversal, nested class partial-specialization parsing and
+writable-to-readonly deduction. Reference/pointer controls prevent widening
+ordinary C++ deduction or binding mutable references to readonly conversions.
+
+## Authored MRC isolation and initializer ownership
+
+The [MRC isolation span](linux_isolation_mrc_consumption.md) admits synchronous
+consumed object/Block arguments and consuming receivers under manual reference
+counting. It also admits consumed native-frame parameters and receivers, with
+separate ramp adoption, frame lifetime pins and body handoff after cancellation
+and executor-entry checks. ARC consuming native-frame receivers use a mutable
+strong slot whose cleanup follows self reassignment. Synchronous init-family
+crossings preserve the source send's concrete `instancetype` result.
+
+Compiler source/PCH controls cover C17/C++23 under ARC/MRC; runtime fixtures add
+successful entry, pre-entry and inter-frame cancellation, first/second frame
+allocation failure, consumed blocks and combined receiver/argument ownership.
+Initializer witnesses distinguish self, nil and replacement results. All twelve new C17/C++23 ARC/MRC source/PCH CodeGen commands pass. One
+C17/MRC/O0 source runtime configuration passes all synchronous/native-frame
+consumption scenarios and the ARC self-reassignment controls; consolidated
+matrices remain pending. CF consumption, C++ task-ABI MRC
+consumption and async initializers remain separate open contracts.
 
 ## Authored nullable key-path result policy
 

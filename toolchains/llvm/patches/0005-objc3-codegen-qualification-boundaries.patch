@@ -4169,10 +4169,10 @@ index 7421733ef..fc98b6929 100644
      }
      fields.push_back(fieldType);
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..8fd1f6dc1 100644
+index e84e05e8e..5892a4268 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
-@@ -11,12 +11,21 @@
+@@ -11,12 +11,22 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGBlocks.h"
@@ -4191,10 +4191,11 @@ index e84e05e8e..8fd1f6dc1 100644
  #include "CodeGenFunction.h"
 +#include "CGObjC3BlockCaptures.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3Async.h"
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
  #include "ConstantEmitter.h"
-@@ -30,6 +39,7 @@
+@@ -30,6 +40,7 @@
  #include "clang/AST/DeclObjC.h"
  #include "clang/AST/DeclOpenACC.h"
  #include "clang/AST/DeclOpenMP.h"
@@ -4202,7 +4203,7 @@ index e84e05e8e..8fd1f6dc1 100644
  #include "clang/Basic/CodeGenOptions.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/CodeGen/CGFunctionInfo.h"
-@@ -492,6 +502,101 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
+@@ -492,6 +503,101 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
  }
  
  namespace {
@@ -4304,7 +4305,7 @@ index e84e05e8e..8fd1f6dc1 100644
    struct DestroyObject final : EHScopeStack::Cleanup {
      DestroyObject(Address addr, QualType type,
                    CodeGenFunction::Destroyer *destroyer,
-@@ -527,19 +632,30 @@ namespace {
+@@ -527,19 +633,30 @@ namespace {
        bool NRVO = flags.isForNormalCleanup() && NRVOFlag;
  
        llvm::BasicBlock *SkipDtorBB = nullptr;
@@ -4338,7 +4339,7 @@ index e84e05e8e..8fd1f6dc1 100644
      }
  
      virtual ~DestroyNRVOVariable() = default;
-@@ -816,6 +932,7 @@ void CodeGenFunction::EmitScalarInit(const Expr *init, const ValueDecl *D,
+@@ -816,6 +933,7 @@ void CodeGenFunction::EmitScalarInit(const Expr *init, const ValueDecl *D,
    // If we're emitting a value with lifetime, we have to do the
    // initialization *before* we leave the cleanup scopes.
    if (auto *EWC = dyn_cast<ExprWithCleanups>(init)) {
@@ -4346,7 +4347,7 @@ index e84e05e8e..8fd1f6dc1 100644
      CodeGenFunction::RunCleanupsScope Scope(*this);
      return EmitScalarInit(EWC->getSubExpr(), D, lvalue, capturedByInit);
    }
-@@ -1354,9 +1471,115 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -1354,9 +1472,115 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
@@ -4465,7 +4466,7 @@ index e84e05e8e..8fd1f6dc1 100644
  }
  
  /// Emit a lifetime.begin marker if some criteria are satisfied.
-@@ -1487,7 +1710,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
+@@ -1487,7 +1711,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
  /// EmitAutoVarAlloca - Emit the alloca and debug information for a
  /// local variable.  Does not emit initialization or destruction.
  CodeGenFunction::AutoVarEmission
@@ -4475,7 +4476,7 @@ index e84e05e8e..8fd1f6dc1 100644
    QualType Ty = D.getType();
    assert(
        Ty.getAddressSpace() == LangAS::Default ||
-@@ -1505,7 +1729,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1505,7 +1730,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      EmitVariablyModifiedType(Ty);
  
    auto *DI = getDebugInfo();
@@ -4485,7 +4486,7 @@ index e84e05e8e..8fd1f6dc1 100644
  
    Address address = Address::invalid();
    RawAddress AllocaAddr = RawAddress::invalid();
-@@ -1518,7 +1743,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1518,7 +1744,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
              ? CGM.getOpenMPRuntime().getAddressOfLocalVariable(*this, &D)
              : Address::invalid();
  
@@ -4498,7 +4499,7 @@ index e84e05e8e..8fd1f6dc1 100644
  
    if (getLangOpts().OpenMP && OpenMPLocalAddr.isValid()) {
      address = OpenMPLocalAddr;
-@@ -1532,7 +1761,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1532,7 +1762,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      // isConstantInitializer produces wrong answers for structs with
      // reference or bitfield members, and a few other cases, and checking
      // for POD-ness protects us from some of these.
@@ -4508,7 +4509,7 @@ index e84e05e8e..8fd1f6dc1 100644
          (D.isConstexpr() ||
           ((Ty.isPODType(getContext()) ||
             getContext().getBaseElementType(Ty)->isObjCObjectPointerType()) &&
-@@ -1545,7 +1775,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1545,7 +1776,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        // in OpenCL.
        bool NeedsDtor =
            D.needsDestruction(getContext()) == QualType::DK_cxx_destructor;
@@ -4518,7 +4519,7 @@ index e84e05e8e..8fd1f6dc1 100644
             Ty.getAddressSpace() == LangAS::opencl_constant) &&
            (CGM.getCodeGenOpts().MergeAllConstants && !NRVO &&
             !isEscapingByRef &&
-@@ -1690,6 +1921,18 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1690,6 +1922,18 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        }
      }
  
@@ -4537,7 +4538,7 @@ index e84e05e8e..8fd1f6dc1 100644
      if (!VarAllocated) {
        if (!DidCallStackSave) {
          // Save the stack.
-@@ -1704,7 +1947,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1704,7 +1948,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
  
          // Push a cleanup block and restore the stack there.
          // FIXME: in general circumstances, this should be an EH cleanup.
@@ -4555,7 +4556,7 @@ index e84e05e8e..8fd1f6dc1 100644
        }
  
        auto VlaSize = getVLASize(Ty);
-@@ -1743,10 +1995,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1743,10 +1996,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    if (D.hasAttr<AnnotateAttr>() && HaveInsertPoint())
      EmitVarAnnotations(&D, address.emitRawPointer(*this));
  
@@ -4591,7 +4592,7 @@ index e84e05e8e..8fd1f6dc1 100644
  
    // Analogous to lifetime markers, we use a 'cleanup' to emit fake.use
    // calls for local variables. We are exempting volatile variables and
-@@ -1755,12 +2029,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1755,12 +2030,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    // overhead.
    if (CGM.getCodeGenOpts().getExtendVariableLiveness() ==
        CodeGenOptions::ExtendVariableLivenessKind::All) {
@@ -4617,7 +4618,7 @@ index e84e05e8e..8fd1f6dc1 100644
  }
  
  static bool isCapturedBy(const VarDecl &, const Expr *);
-@@ -1949,7 +2232,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
+@@ -1949,7 +2233,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
    }
  }
  
@@ -4627,7 +4628,7 @@ index e84e05e8e..8fd1f6dc1 100644
    assert(emission.Variable && "emission was not valid!");
  
    // If this was emitted as a global constant, we're done.
-@@ -1961,7 +2245,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -1961,7 +2246,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
    QualType type = D.getType();
  
    // If this local has an initializer, emit it now.
@@ -4645,7 +4646,7 @@ index e84e05e8e..8fd1f6dc1 100644
  
    // If we are at an unreachable point, we don't need to emit the initializer
    // unless it contains a label.
-@@ -2023,6 +2316,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -2023,6 +2317,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
      return emitZeroOrPatternForAutoVarInit(type, D, Loc);
    };
  
@@ -4665,7 +4666,7 @@ index e84e05e8e..8fd1f6dc1 100644
    if (isTrivialInitializer(Init))
      return initializeWhatIsTechnicallyUninitialized(Loc);
  
-@@ -2191,7 +2497,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2191,7 +2498,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      if (var->isARCPseudoStrong()) return;
  
      // Otherwise, consider whether to use an EH cleanup or not.
@@ -4675,7 +4676,7 @@ index e84e05e8e..8fd1f6dc1 100644
  
      // Use the imprecise destroyer by default.
      if (!var->hasAttr<ObjCPreciseLifetimeAttr>())
-@@ -2199,6 +2506,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2199,6 +2507,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -4683,7 +4684,7 @@ index e84e05e8e..8fd1f6dc1 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2218,8 +2526,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2218,8 +2527,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
    // Use an EH cleanup in array destructors iff the destructor itself
    // is being pushed as an EH cleanup.
    bool useEHCleanup = (cleanupKind & EHCleanup);
@@ -4708,7 +4709,7 @@ index e84e05e8e..8fd1f6dc1 100644
  }
  
  void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
-@@ -2234,8 +2556,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2557,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -4817,7 +4818,7 @@ index e84e05e8e..8fd1f6dc1 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2243,6 +2663,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2243,6 +2664,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
      emitAutoVarTypeCleanup(emission, dtorKind);
    }
  
@@ -4837,7 +4838,7 @@ index e84e05e8e..8fd1f6dc1 100644
    // In GC mode, honor objc_precise_lifetime.
    if (getLangOpts().getGC() != LangOptions::NonGC &&
        D.hasAttr<ObjCPreciseLifetimeAttr>()) {
-@@ -2271,8 +2704,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2271,8 +2705,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
        Flags |= BLOCK_FIELD_IS_WEAK;
      enterByrefCleanup(NormalAndEHCleanup, emission.Addr, Flags,
                        /*LoadBlockVarAddr*/ false,
@@ -4857,7 +4858,7 @@ index e84e05e8e..8fd1f6dc1 100644
  }
  
  CodeGenFunction::Destroyer *
-@@ -2285,6 +2728,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+@@ -2285,6 +2729,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -4866,7 +4867,7 @@ index e84e05e8e..8fd1f6dc1 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +3141,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +3142,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -4880,6 +4881,22 @@ index e84e05e8e..8fd1f6dc1 100644
        llvm::Value *V = Arg.isIndirect()
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
+@@ -2780,6 +3227,15 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+   llvm::Value *ArgVal = (DoStore ? Arg.getDirectValue() : nullptr);
+ 
+   LValue lv = MakeAddrLValue(DeclPtr, Ty);
++  if (IsScalar && !getLangOpts().ObjCAutoRefCount &&
++      isObjC3ConsumedFrameParameter(CurCodeDecl, &D)) {
++    // The MRC caller transfers one claim when the entry ramp is invoked.
++    // This cleanup belongs to the ramp, outside the lazy frame scope, and
++    // balances failed frame allocation as well as normal/EH ramp exits.
++    if (!ArgVal) ArgVal = Builder.CreateLoad(DeclPtr);
++    EHStack.pushCleanup<ConsumeARCParameter>(NormalAndEHCleanup, ArgVal,
++                                             ARCPreciseLifetime);
++  }
+   // If this is a thunk, don't bother with ARC lifetime management.
+   // The true implementation will take care of that.
+   if (IsScalar && !CurFuncIsThunk) {
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
 index 6a0d127fb..56b09cc1f 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
@@ -6124,10 +6141,10 @@ index c724a063b..72c4a5478 100644
      DI->EmitLexicalBlockEnd(Builder, S.getRBracLoc());
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
-index 000000000..7975d386f
+index 000000000..cf942d967
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,237 @@
 +//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries
 +//----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -6289,7 +6306,8 @@ index 000000000..7975d386f
 +                       (!CGM.getLangOpts().CPlusPlus || CGM.getLangOpts().CPlusPlus20) &&
 +                       Method->getMethodFamily() == OMF_None &&
 +                       !Method->hasRelatedResultType() &&
-+                       !Method->hasAttr<NSConsumesSelfAttr>() &&
++                       (!Method->hasAttr<NSConsumesSelfAttr>() ||
++                        Effects.AsyncFrame) &&
 +                       !Method->hasAttr<NSReturnsRetainedAttr>() &&
 +                       !Method->hasAttr<NSReturnsNotRetainedAttr>() &&
 +                       !Method->hasAttr<NSReturnsAutoreleasedAttr>() &&
@@ -25431,10 +25449,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..73b6a685f
+index 000000000..edb2532cb
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1272 @@
+@@ -0,0 +1,1302 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -26286,9 +26304,19 @@ index 000000000..73b6a685f
 +        Initializer = ImplicitCastExpr::Create(getContext(), T,
 +            CK_LValueToRValue, Reference, nullptr, VK_PRValue, FPOptionsOverride());
 +      bool Receiver = Method && P == Method->getSelfDecl();
-+      bool TransferredReference = Callable.hasAttr<ObjC3IsolationThunkAttr>() &&
-+          (T->isObjCObjectPointerType() || T->isBlockPointerType());
-+      if (Receiver || TransferredReference) {
++      bool TransferredReference =
++          (Callable.hasAttr<ObjC3IsolationThunkAttr>() &&
++           (T->isObjCObjectPointerType() || T->isBlockPointerType())) ||
++          (!getLangOpts().ObjCAutoRefCount &&
++           isObjC3ConsumedFrameParameter(&Callable, P));
++      const bool ARCOwningSelf = Receiver &&
++          getLangOpts().ObjCAutoRefCount && !P->isARCPseudoStrong();
++      if (ARCOwningSelf) {
++        // Consuming self is a mutable strong local. Its cleanup must follow
++        // the slot after reassignment rather than releasing the original SSA
++        // pointer a second time. The ramp's adopted self remains independent.
++        EmitExprAsInit(Initializer, Synthetic, MakeAddrLValue(Copy, T), false);
++      } else if (Receiver || TransferredReference) {
 +        auto *Value = EmitLoadOfScalar(MakeAddrLValue(Original, T), P->getLocation());
 +        auto *Owned = T->isBlockPointerType() ? EmitARCRetainBlock(Value, true)
 +                                             : EmitARCRetainNonBlock(Value);
@@ -26305,7 +26333,10 @@ index 000000000..73b6a685f
 +      }
 +      LocalDeclMap.find(P)->second = Copy;
 +      BindCaptureDebugInfo(P, Copy);
-+      if (Receiver || TransferredReference) {
++      if (ARCOwningSelf) {
++        pushDestroy(NormalAndEHCleanup, Copy, T,
++                    destroyARCStrongPrecise, false);
++      } else if (Receiver || TransferredReference) {
 +        // Dedicated owners cover MRC transfers and pseudo-strong self, too.
 +      } else if (containsObjC3CarrierManagedStorage(T))
 +        pushDestroy(NormalAndEHCleanup, Copy, T, destroyObjC3ManagedStorage, false);
@@ -26345,6 +26376,23 @@ index 000000000..73b6a685f
 +      checkCancelled(*this, Data);
 +      EmitBranch(Entered);
 +      EmitBlock(Entered);
++    }
++
++    if (!getLangOpts().ObjCAutoRefCount &&
++        !Callable.hasAttr<ObjC3IsolationThunkAttr>()) {
++      // An MRC body balances its consumed arguments manually. Do not create
++      // those handoff claims until the lazy body is actually entered: pre-entry
++      // cancellation or destruction owns only the independently pinned frame.
++      // The adopting ramp has already balanced the caller's original +1.
++      for (const VarDecl *P : Parameters) {
++        if (!isObjC3ConsumedFrameParameter(&Callable, P)) continue;
++        QualType T = P->getType();
++        LValue Slot = MakeAddrLValue(GetAddrOfLocalVar(P), T);
++        llvm::Value *Value = EmitLoadOfScalar(Slot, P->getLocation());
++        llvm::Value *Owned = T->isBlockPointerType()
++            ? EmitARCRetainBlock(Value, true) : EmitARCRetainNonBlock(Value);
++        EmitStoreOfScalar(Owned, Slot, true);
++      }
 +    }
 +
 +    // A native exception may be handled by a source @catch. An exception that
@@ -29488,3 +29536,83 @@ index 000000000..aa355edf7
 +}
 +// LE: c"'_BitInt(31)'\00\1F\00\00\00\00\00"
 +// BE: c"'_BitInt(31)'\00\00\00\00\1F\00\00"
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-isolation-consumption.h b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-consumption.h
+new file mode 100644
+index 000000000..e8ea8b07d
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-consumption.h
+@@ -0,0 +1,43 @@
++#ifndef OBJC3_ISOLATION_CONSUMPTION_H
++#define OBJC3_ISOLATION_CONSUMPTION_H
++#include "native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class))
++@interface ConsumptionRoot <Sendable>
++- (int)consumeSelf __attribute__((nothrow,ns_consumes_self,objc_executor(main)));
++- (instancetype)initOnMain __attribute__((nothrow,objc_executor(main)));
++@end
++extern ConsumptionRoot *consumption_source(void) __attribute__((ns_returns_retained));
++extern int consumption_entry(__attribute__((ns_consumed)) ConsumptionRoot *)
++    __attribute__((nothrow,objc_executor(main)));
++static inline int consumption_parent(void) __objc3_async_frame {
++  return __objc3_await consumption_entry(consumption_source());
++}
++static inline int consumption_receiver_parent(void) __objc3_async_frame {
++  return __objc3_await [consumption_source() consumeSelf];
++}
++static inline int consumption_init_parent(void) __objc3_async_frame {
++#ifdef __cplusplus
++  auto value = __objc3_await [consumption_source() initOnMain];
++  static_assert(__is_same(__typeof__(*value),ConsumptionRoot));
++#else
++  __auto_type value = __objc3_await [consumption_source() initOnMain];
++  _Static_assert(__builtin_types_compatible_p(__typeof__(*value),ConsumptionRoot), "instancetype");
++#endif
++  return value != 0;
++}
++extern void consumption_release(id) __asm__("objc_release");
++static inline int consumption_frame(__attribute__((ns_consumed)) ConsumptionRoot *object)
++    __objc3_async_frame __attribute__((nothrow,objc_executor(main)));
++static inline int consumption_frame(__attribute__((ns_consumed)) ConsumptionRoot *object)
++    __objc3_async_frame {
++  int result = object != 0;
++#if !__has_feature(objc_arc)
++  consumption_release(object);
++#endif
++  return result;
++}
++static inline int consumption_frame_parent(void) __objc3_async_frame {
++  return __objc3_await consumption_frame(consumption_source());
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-isolation-consumption.m b/clang/test/ObjC3/CodeGen/native-isolation-consumption.m
+new file mode 100644
+index 000000000..77fc53063
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-isolation-consumption.m
+@@ -0,0 +1,25 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -emit-pch -o %t.objective-c.mrc %S/Inputs/native-isolation-consumption.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -include-pch %t.objective-c.mrc -DCONSUMPTION_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t.objective-c.arc %S/Inputs/native-isolation-consumption.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -include-pch %t.objective-c.arc -DCONSUMPTION_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -emit-pch -o %t.objective-c++.mrc %S/Inputs/native-isolation-consumption.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -include-pch %t.objective-c++.mrc -DCONSUMPTION_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t.objective-c++.arc %S/Inputs/native-isolation-consumption.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -include-pch %t.objective-c++.arc -DCONSUMPTION_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef CONSUMPTION_PCH
++#include "Inputs/native-isolation-consumption.h"
++#endif
++objc3_async_frame use_consuming_argument(void) { return consumption_parent(); }
++objc3_async_frame use_consuming_receiver(void) { return consumption_receiver_parent(); }
++objc3_async_frame use_consuming_frame(void) { return consumption_frame_parent(); }
++objc3_async_frame use_consuming_init(void) { return consumption_init_parent(); }
++// CHECK-DAG: call {{.*}}i32 @{{.*}}consumption_entry
++// CHECK-DAG: @llvm.objc.retain
++// CHECK-DAG: @llvm.objc.release
++// CHECK-DAG: call i32 @objc3_executor_get_main
++// CHECK-DAG: call i32 @objc3_task_hop
++// CHECK-DAG: call i32 @objc3_async_frame_start_child

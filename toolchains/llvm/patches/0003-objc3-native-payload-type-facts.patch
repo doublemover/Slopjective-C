@@ -1665,10 +1665,10 @@ index 000000000..d2047cc0f
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..9029a5b9c
+index 000000000..6033eb35b
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,151 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1691,6 +1691,22 @@ index 000000000..9029a5b9c
 +    if (const auto *Signature = BD->getSignatureAsWritten())
 +      return Signature->getType()->getAs<FunctionProtoType>();
 +  return nullptr;
++}
++
++/// Whether a native frame must preserve a manually consumed object claim.
++/// This predicate describes the ownership contract, independently of ARC mode.
++inline bool isObjC3ConsumedFrameParameter(const Decl *Callable,
++                                        const VarDecl *Parameter) {
++  const auto *Signature = getObjC3CallableFunctionType(Callable);
++  if (!Signature || !Signature->getObjC3FunctionEffects().AsyncFrame)
++    return false;
++  QualType Type = Parameter->getType();
++  if (!Type->isObjCObjectPointerType() && !Type->isBlockPointerType())
++    return false;
++  if (Parameter->hasAttr<NSConsumedAttr>()) return true;
++  const auto *Method = dyn_cast<ObjCMethodDecl>(Callable);
++  return Method && Parameter == Method->getSelfDecl() &&
++         Method->hasAttr<NSConsumesSelfAttr>();
 +}
 +
 +/// BlockDecl retains its ordinary CompoundStmt body contract. The single

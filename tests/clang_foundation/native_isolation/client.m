@@ -412,8 +412,54 @@ int main(void) {
       }
     }
 
-    for (int kind = 0; kind != 12; ++kind) {
-      int expected_objects = (kind == 4 || kind == 8) ? 2 : 1;
+    for (int kind = 0; kind != 13; ++kind) {
+      for (int outcome = 0; outcome != (kind >= 8 ? 5 : 3); ++outcome) {
+        int before = hop_destroyed();
+        int expected_arguments = kind == 7 || kind == 12 ? 2 : 1;
+        int expected_destroyed = expected_arguments + (kind == 6 && outcome == 0);
+        hop_mrc_reset(outcome == 3 ? 2 : outcome == 2);
+        frame = hop_mrc_roundtrip(kind, caller);
+        type = frame.result_type;
+        task = start(&frame);
+        if (outcome == 1 || outcome == 4) {
+          assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+          assert(hop_mrc_arguments() == expected_arguments);
+          if (outcome == 4) {
+            // The first caller callback creates the entry child; its own
+            // first resume performs the hop before main constructs the target.
+            assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+            assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+            assert(hop_mrc_entries() == 0);
+          }
+          objc3_task_request_cancel(task);
+        }
+        objc3_completion completion = finish(task);
+        if (outcome == 0) {
+          assert(completion.kind == OBJC3_COMPLETION_SUCCESS);
+          result = -1;
+          assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+          assert(result == (kind == 5 ? 0 : 42));
+        } else if (outcome == 1 || outcome == 4) {
+          assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+        } else {
+          objc3_service_status service = OBJC3_SERVICE_OK;
+          assert(completion.kind == OBJC3_COMPLETION_ERROR);
+          assert(objc3_async_error_get_service(completion.error, &service) == OBJC3_SERVICE_OK &&
+                 service == OBJC3_SERVICE_OUT_OF_MEMORY);
+        }
+        assert(hop_mrc_arguments() == expected_arguments);
+        assert(hop_mrc_entries() == (outcome == 0));
+        objc3_task_release(task);
+        for (unsigned step = 0; step != 1000000 &&
+             hop_destroyed() != before + expected_destroyed; ++step) sched_yield();
+        assert(hop_destroyed() == before + expected_destroyed);
+      }
+    }
+
+    for (int kind = 0; kind != 16; ++kind) {
+      if (kind == 12) continue; // Separate throwing-argument control below.
+      int expected_objects = (kind == 4 || kind == 8 || kind == 14) ? 2 : 1;
+      int successful_objects = expected_objects + (kind == 15);
       int destroyed_before = hop_destroyed();
       hop_consumed_reset(0);
       frame = hop_consumed_roundtrip(kind, caller);
@@ -426,9 +472,9 @@ int main(void) {
              hop_consumed_entries() == 1);
       objc3_task_release(task);
       for (unsigned step = 0; step != 1000000 &&
-           hop_destroyed() != destroyed_before + expected_objects; ++step)
+           hop_destroyed() != destroyed_before + successful_objects; ++step)
         sched_yield();
-      assert(hop_destroyed() == destroyed_before + expected_objects);
+      assert(hop_destroyed() == destroyed_before + successful_objects);
 
       destroyed_before = hop_destroyed();
       hop_consumed_reset(0);

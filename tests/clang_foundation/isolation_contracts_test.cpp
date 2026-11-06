@@ -510,8 +510,45 @@ int class_cross(int value) { return [Counter classValue:value]; }
         "int clear_counter(Counter *__strong *value) {*value=0;return 0;}\n"
         "int consume_snapshot(Counter *counter) __objc3_async {"
         "return __objc3_await [counter finishAfter:clear_counter(&counter)];}")));
-  } else
-    Reject(Make(Consuming), "awaited isolated entry requires");
+  } else {
+    // MRC transfers an existing +1 for each consumed operand. Use independent
+    // factories so the acceptance witness does not reuse an adopted claim.
+    Success(Compile(Make(
+        "SafeMessage *mrc_message(void) __attribute__((ns_returns_retained));\n"
+        "Counter *mrc_counter(void) __attribute__((ns_returns_retained));\n"
+        "int consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
+        " __attribute__((objc_executor(main)));\n"
+        "@interface Counter (MRCConsumption)\n"
+        "- (int)take:(__attribute__((ns_consumed)) SafeMessage *)value "
+        "__attribute__((nothrow,ns_consumes_self));\n@end\n"
+        "int consume_cross(void) __objc3_async_frame {"
+        "int first=__objc3_await consume(mrc_message());"
+        "return first+__objc3_await [mrc_counter() take:mrc_message()];}")));
+  }
+  Success(Compile(Make(
+      "@interface Counter (Initializing)\n"
+      "- (instancetype)initOnMain __attribute__((nothrow,objc_executor(main)));\n"
+      "@end\n"
+      "Counter *init_source(void) __attribute__((ns_returns_retained));\n"
+      "int init_cross(void) __objc3_async_frame {" +
+      std::string(Cxx ? "auto" : "__auto_type") +
+      " value=__objc3_await [init_source() initOnMain];" +
+      (Cxx ? "static_assert(__is_same(__typeof__(*value),Counter));"
+           : "_Static_assert(__builtin_types_compatible_p(__typeof__(*value),Counter),\"instancetype\");") +
+      "return value!=0;}")));
+  if (!Arc) {
+    Success(Compile(Make("int mrc_frame_consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
+                " __objc3_async_frame __attribute__((objc_executor(main)));\n"
+                "SafeMessage *mrc_frame_source(void) __attribute__((ns_returns_retained));\n"
+                "int mrc_frame_cross(void) __objc3_async_frame {"
+                "return __objc3_await mrc_frame_consume(mrc_frame_source());}")));
+    if (Cxx)
+      Reject(Make("int mrc_task_consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
+                  " __objc3_async __attribute__((objc_executor(main)));\n"
+                  "int mrc_task_cross(SafeMessage *value) __objc3_async {"
+                  "return __objc3_await mrc_task_consume(value);}"),
+             "awaited isolated entry requires");
+  }
   Reject(Make("typedef const struct __CFToken *CFTokenRef;\n"
               "int cf_consume(__attribute__((cf_consumed)) CFTokenRef value)" + NoThrow +
               " __attribute__((objc_executor(main)));\n"

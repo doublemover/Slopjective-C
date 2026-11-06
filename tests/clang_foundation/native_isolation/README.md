@@ -60,3 +60,12 @@ released or replaced by a later argument before frame creation. Sixteen runtime
 scenarios per configuration cover success, cancellation before entry, allocation
 failure and throwing later arguments, with exact destruction and entry counts.
 The witnesses detect premature destruction without dereferencing freed storage.
+
+The MRC consumption source span always compiles `mrc-consuming.m` without ARC.
+It covers consumed object/Block arguments, consuming self and class methods,
+combined receiver/argument consumption, and native-frame targets. Cancellation
+before entry and between lazy frames, plus failure of the first and second frame
+allocations, require exact destruction without target execution. Synchronous
+initializers return self, nil or a replacement object. Additional ARC frame
+receivers in `consuming.m` include self reassignment and combined consumption;
+the client checks the replacement's independent lifetime.
