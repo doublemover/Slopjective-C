@@ -1,4 +1,10 @@
 #include "standard_coroutine_types.h"
+#include "standard_library_headers.h"
+#include "interface_reparse_options.h"
+#include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/PreprocessorOptions.h"
+#include "clang/Lex/HeaderSearch.h"
+#include "clang/Lex/DirectoryLookup.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/native_contract_identity.h"
@@ -685,7 +691,8 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
   }
 }
 
-std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
+std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
+                                             const clang::Preprocessor *preprocessor=nullptr) {
   const auto &lang = context.getLangOpts();
   const auto &standard = clang::LangStandard::getLangStandardForKind(lang.LangStd);
   std::vector<std::string> args = {
@@ -713,6 +720,13 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
       break;
     }
   }
+  // Reparse against the producer's effective search order, including a
+  // relocated SDK or another native standard library. These physical paths
+  // are transient compiler inputs and never become interface identities.
+  if(preprocessor)AppendInterfaceHeaderSearchArguments(*preprocessor,args);
+  if(lang.CPlusPlus && !lang.CXXExceptions)args.push_back("-fno-exceptions");
+  if(lang.CPlusPlus && !lang.RTTI)args.push_back("-fno-rtti");
+  if(lang.CPlusPlus && !lang.ThreadsafeStatics)args.push_back("-fno-threadsafe-statics");
   if (lang.CoroAlignedAllocation) args.push_back("-fcoro-aligned-allocation");
   if (lang.Blocks) args.push_back("-fblocks");
   if (lang.ShortEnums) args.push_back("-fshort-enums");
@@ -840,7 +854,8 @@ std::vector<clang::VarTemplateSpecializationDecl *> ReadConcreteMemberVariableSp
 namespace {
 bool ValidateOwnershipProjection(clang::ASTContext &context,
                                  llvm::StringRef producer_sidecar,
-                                 InterfaceEmissionArtifact &result);
+                                 InterfaceEmissionArtifact &result,
+                                 const clang::Preprocessor *preprocessor);
 }
 
 InterfaceEmissionArtifact EmitSemanticInterface(
@@ -849,7 +864,9 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     const std::vector<InterfaceDependency> &resolved_dependencies,
     const std::vector<InterfaceSourceArtifact> &dependency_sources,
     llvm::StringRef ownership_projection,
-    const std::vector<std::string> &exports, const std::string &source_root) {
+    const std::vector<std::string> &exports, const std::string &source_root,
+    const clang::Preprocessor *preprocessor) {
+  StandardLibraryHeaderCache standard_header_cache(&context,preprocessor);
   InterfaceEmissionArtifact result;
   if (canonical_module_name.empty() || package_identity.empty()) {
     AddDiagnostic(result, "O3IFC100",
@@ -913,6 +930,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   result.source_bytes = "/* Generated canonical Clang interface. */\n#pragma once\n";
   llvm::raw_string_ostream source(result.source_bytes);
+  std::set<std::string> standard_headers;
+  for(auto *root:collector.RootDeclarations())
+    for(const auto &header:NeededStandardLibraryHeaders(root,context))standard_headers.insert(header);
+  for(const auto &header:standard_headers)source << "#include <" << header << ">\n";
   for (auto *root:collector.RootDeclarations()) {
     if (NeedsStandardCoroutineInclude(root, context)) {source << "#include <coroutine>\n";break;}
   }
@@ -950,7 +971,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   if (!ownership_projection.empty() &&
       (!resolved_dependencies.empty() ||
-       !ValidateOwnershipProjection(context, ownership_projection, result))) {
+       !ValidateOwnershipProjection(context, ownership_projection, result, preprocessor))) {
     if (result.diagnostics.empty())
       AddDiagnostic(result, "O3IFC150",
                     "ownership projections cannot have dependencies");
@@ -1053,6 +1074,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxUnnamedTemplateProjectionSemantic);
     if (HasCxxStandardCoroutineIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxStandardCoroutineSemantic);
+    if (HasCxxStandardLibraryIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxStandardLibrarySemantic);
     if (HasCxxCoroutineBodyIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxCoroutineBodySemantic);
     if (HasForeignImportAttributeIdentity(declaration))
@@ -1272,6 +1295,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxCoroutineBodySemantic,
     kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
+    kCxxStandardLibrarySemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -1309,9 +1333,12 @@ InterfaceEmissionArtifact EmitSemanticInterface(
             ? BuildInterfaceIncludePath(entry.first)
             : entry.second->virtual_include_path,
         entry.second->source_bytes);
-  auto roundtrip_arguments = RoundTripArguments(context);
+  auto roundtrip_arguments = RoundTripArguments(context, preprocessor);
+  bool complete_standard_headers=!standard_headers.empty();
+  for(const auto &entry:sources_by_name)
+    complete_standard_headers |= std::any_of(entry.second->declarations.begin(),entry.second->declarations.end(),HasCxxStandardLibraryIdentity);
   AddRuntimeInterfaceFiles(virtual_files, roundtrip_arguments,
-                           collector.UsesCxxAsyncBodies());
+                           collector.UsesCxxAsyncBodies(),complete_standard_headers);
   // Nested canonical dependencies use the same root-relative include spelling.
   roundtrip_arguments.insert(roundtrip_arguments.end(), {"-iquote", "."});
   auto roundtrip = clang::tooling::buildASTFromCodeWithArgs(
@@ -1326,6 +1353,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     result.source_bytes.clear();
     return result;
   }
+  standard_header_cache.preprocessors.emplace(&roundtrip->getASTContext(),&roundtrip->getPreprocessor());
   InterfaceEmissionArtifact roundtrip_result;
   InterfaceCollector roundtrip_collector(roundtrip->getASTContext(),
                                          roundtrip_result, resolved_declaration_ids);
@@ -1458,6 +1486,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxCoroutineBodySemantic,
     kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
+    kCxxStandardLibrarySemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -1571,8 +1600,9 @@ bool ProjectionAPI(clang::ASTContext &context,
 }
 
 std::vector<std::string> ProjectionArguments(const clang::ASTContext &context,
-                                             bool arc) {
-  auto args = RoundTripArguments(context);
+                                             bool arc,
+                                             const clang::Preprocessor *preprocessor) {
+  auto args = RoundTripArguments(context, preprocessor);
   args.erase(std::remove(args.begin(), args.end(), "-fobjc-arc"), args.end());
   args.push_back(arc ? "-fobjc-arc" : "-fno-objc-arc");
   return args;
@@ -1580,7 +1610,8 @@ std::vector<std::string> ProjectionArguments(const clang::ASTContext &context,
 
 bool ValidateOwnershipProjection(clang::ASTContext &context,
                                  llvm::StringRef producer_sidecar,
-                                 InterfaceEmissionArtifact &result) {
+                                 InterfaceEmissionArtifact &result,
+                                 const clang::Preprocessor *preprocessor) {
   if (!ProjectionAPI(context, result))
     return false;
   auto original = DecodeSemanticInterfaceSidecar(
@@ -1602,10 +1633,11 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
     return false;
   }
   auto arguments =
-      ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount);
+      ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount, preprocessor);
   clang::tooling::FileContentMappings files;
   AddRuntimeInterfaceFiles(files, arguments, result.source_bytes.find(
-      "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos);
+      "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos,
+      std::find(original->required_semantics.begin(),original->required_semantics.end(),kCxxStandardLibrarySemantic)!=original->required_semantics.end());
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       result.source_bytes, arguments,
       context.getLangOpts().CPlusPlus ? "ownership-producer.mm"
@@ -1621,7 +1653,7 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
   }
   auto regenerated = EmitSemanticInterface(ast->getASTContext(),
                                            original->module.canonical_name,
-                                           original->module.package_identity);
+                                           original->module.package_identity, {}, {}, {}, {}, {}, &ast->getPreprocessor());
   if (!regenerated.success || regenerated.source_bytes != result.source_bytes ||
       regenerated.sidecar_json != producer_sidecar) {
     AddDiagnostic(result, "O3IFC154",
@@ -1637,7 +1669,8 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
     clang::ASTContext &producer, llvm::StringRef canonical_module_name,
     llvm::StringRef package_identity, bool consumer_arc,
     const std::vector<InterfaceDependency> &dependencies,
-    const std::vector<std::string> &exports, const std::string &source_root) {
+    const std::vector<std::string> &exports, const std::string &source_root,
+    const clang::Preprocessor *preprocessor) {
   InterfaceEmissionArtifact result;
   if (producer.getLangOpts().ObjCAutoRefCount == consumer_arc ||
       !dependencies.empty()) {
@@ -1650,13 +1683,18 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
     return result;
   auto original = EmitSemanticInterface(
       producer, canonical_module_name.str() + ".__ownership_producer",
-      package_identity, {}, {}, {}, exports, source_root);
+      package_identity, {}, {}, {}, exports, source_root, preprocessor);
   if (!original.success)
     return original;
-  auto arguments = ProjectionArguments(producer, consumer_arc);
+  auto arguments = ProjectionArguments(producer, consumer_arc, preprocessor);
   clang::tooling::FileContentMappings files;
+  auto original_contract=DecodeSemanticInterfaceSidecar(original.sidecar_json,original.source_bytes,kProjectionSemantics);
+  if(!original_contract) {
+    AddDiagnostic(result,"O3IFC152",llvm::toString(original_contract.takeError()));return result;
+  }
   AddRuntimeInterfaceFiles(files, arguments, original.source_bytes.find(
-      "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos);
+      "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos,
+      std::find(original_contract->required_semantics.begin(),original_contract->required_semantics.end(),kCxxStandardLibrarySemantic)!=original_contract->required_semantics.end());
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       original.source_bytes, arguments,
       producer.getLangOpts().CPlusPlus ? "ownership-consumer.mm"
@@ -1670,7 +1708,7 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
   }
   result =
       EmitSemanticInterface(ast->getASTContext(), canonical_module_name,
-                            package_identity, {}, {}, original.sidecar_json);
+                            package_identity, {}, {}, original.sidecar_json, {}, {}, &ast->getPreprocessor());
   if (result.success && result.source_bytes != original.source_bytes) {
     result.success = false;
     result.source_bytes.clear();

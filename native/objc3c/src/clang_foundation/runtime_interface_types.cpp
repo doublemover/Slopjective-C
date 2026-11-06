@@ -275,7 +275,8 @@ bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
 
 void AddRuntimeInterfaceFiles(
     std::vector<std::pair<std::string, std::string>> &files,
-    std::vector<std::string> &arguments, bool cxx_task_definitions) {
+    std::vector<std::string> &arguments, bool cxx_task_definitions,
+    bool complete_standard_headers) {
   constexpr const char *root = "/__objc3_canonical_runtime";
   files.emplace_back(std::string(root) +
                          "/objc3c/runtime/objc3_runtime_services.h",
@@ -288,8 +289,10 @@ void AddRuntimeInterfaceFiles(
   if (cxx_task_definitions) {
     files.emplace_back(std::string(root) + "/objc3c/runtime/objc3_task.hpp",
                        runtime_interface::kTaskHeaderSource);
-    // The complete C++ bridge needs its standard-library headers, rather than
-    // the minimal C-only integer/size typedef projection below.
+  }
+  // A native C++ library declaration must see the compiler's complete headers.
+  // The C runtime's minimal typedef projection cannot shadow <cstddef>/<cstdint>.
+  if(cxx_task_definitions || complete_standard_headers) {
     arguments.insert(arguments.end(), {"-I", root});
     return;
   }

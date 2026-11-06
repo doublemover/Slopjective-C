@@ -156,6 +156,7 @@ private:
   clang::Sema *sema_ = nullptr;
   clang::ASTContext *import_context_ = nullptr;
   std::shared_ptr<clang::ASTImporterSharedState> importer_state_;
+  std::shared_ptr<const StandardLibraryHeaderManifest> native_header_prelude_;
   std::vector<std::unique_ptr<InterfaceImportSession>> sessions_;
   std::vector<InterfaceModuleIdentity> visible_identities_;
   std::vector<InterfaceDeclarationIdentity> imported_identities_;

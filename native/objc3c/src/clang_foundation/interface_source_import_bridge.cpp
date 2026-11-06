@@ -1,5 +1,6 @@
 #include "clang_foundation/interface_validation.h"
 #include "clang_foundation/interface_emitter.h"
+#include "standard_library_headers.h"
 
 #include "clang_foundation/interface_source_import_bridge.h"
 
@@ -142,6 +143,7 @@ void InterfaceSourceImportBridge::Reset() {
   sema_ = nullptr;
   import_context_ = nullptr;
   importer_state_.reset();
+  native_header_prelude_.reset();
   on_demand_ = false;
   valid_ = false;
 }
@@ -174,6 +176,7 @@ void InterfaceSourceImportBridge::InitializeSema(clang::Sema &sema) {
     visible_.clear();
     initially_visible_declarations_.clear();
     importer_state_.reset();
+    native_header_prelude_.reset();
   }
   sema_ = &sema;
 }
@@ -588,8 +591,18 @@ SourceModuleImportStatus InterfaceSourceImportBridge::ImportObjC3Module(
       importer_state_ = std::make_shared<clang::ASTImporterSharedState>(
           *import_context_->getTranslationUnitDecl());
     }
+    // All registered native headers were parsed before source directives.
+    // Capture that immutable prelude once. Importing another provider can
+    // materialize template nodes and resolve implicit exception specifications;
+    // those AST mutations do not change the native header configuration.
+    if(!native_header_prelude_ && sema_->getLangOpts().CPlusPlus) {
+      StandardLibraryHeaderCache cache(&sema_->getASTContext(),&sema_->getPreprocessor());
+      auto prelude=ReadStandardLibraryHeaderManifest(sema_->getASTContext());
+      if(prelude.valid && !prelude.headers.empty())
+        native_header_prelude_=std::make_shared<const StandardLibraryHeaderManifest>(std::move(prelude));
+    }
     auto imported = session->ImportInto(sema_->getASTContext(), *file_manager_,
-        /*source_scoped_visibility=*/true, importer_state_);
+        /*source_scoped_visibility=*/true, importer_state_,native_header_prelude_.get());
     if (!imported.success) {
       // ASTImporter can already have inserted part of the module. Keep the
       // provider session alive and stop further AST mutations after failure.

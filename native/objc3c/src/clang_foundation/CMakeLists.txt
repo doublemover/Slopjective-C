@@ -304,6 +304,18 @@ if (BUILD_TESTING)
   add_dependencies(objc3_c_inline_provider_test objc3_runtime_services)
   add_test(NAME objc3_c_inline_provider COMMAND objc3_c_inline_provider_test)
   set_tests_properties(objc3_c_inline_provider PROPERTIES TIMEOUT 90)
+  add_executable(objc3_standard_library_provider_test
+    ../../../../tests/clang_foundation/standard_library_provider_test.cpp)
+  target_include_directories(objc3_standard_library_provider_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_standard_library_provider_test PRIVATE objc3c_clang_foundation)
+  target_compile_definitions(objc3_standard_library_provider_test PRIVATE
+    OBJC3_STANDARD_LIBRARY_TEST_LINKER="${CMAKE_CXX_COMPILER}"
+    OBJC3_STANDARD_LIBRARY_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}"
+    OBJC3_STANDARD_LIBRARY_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}"
+    OBJC3_STANDARD_LIBRARY_TEST_LINK_FLAGS="${_c_inline_link_flags}")
+  add_test(NAME objc3_standard_library_provider COMMAND objc3_standard_library_provider_test)
+  set_tests_properties(objc3_standard_library_provider PROPERTIES TIMEOUT 300)
   add_executable(objc3_borrowed_pointers_test
     ../../../../tests/clang_foundation/borrowed_pointers_test.cpp)
   target_include_directories(objc3_borrowed_pointers_test SYSTEM PRIVATE

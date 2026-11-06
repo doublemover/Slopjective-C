@@ -106,6 +106,7 @@ const auto kSupportedSemantics = std::to_array<llvm::StringRef>({
     kCxxCoroutineBodySemantic,
     kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
+    kCxxStandardLibrarySemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,

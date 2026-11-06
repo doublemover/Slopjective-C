@@ -1,3 +1,4 @@
+#include "standard_library_headers.h"
 #include "standard_coroutine_types.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/ast_effect_identity.h"
@@ -114,7 +115,7 @@ class TypeDependencyVisitor final
    }
 
    bool IsResolved(const clang::NamedDecl *declaration) {
-     if (IsStandardCoroutineDeclaration(declaration,context_)) return true;
+     if (IsStandardCoroutineDeclaration(declaration,context_) || IsStandardLibraryDeclaration(declaration,context_)) return true;
      if (IsQualifiedRuntimeFrameType(declaration, context_)) {
        UsesRuntimeFrame = true;
        return true;
@@ -148,6 +149,15 @@ class TypeDependencyVisitor final
     if (!target) return;
     target = target->getUnderlyingDecl();
     if (IsStandardCoroutineDeclaration(target,context_)) return;
+    if (IsStandardLibraryDeclaration(target,context_)) {
+      CheckEnclosingClassArguments(target);
+      if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(target))
+        if(const auto *arguments=function->getTemplateSpecializationArgs())
+          for(const auto &argument:arguments->asArray())if(!CheckGenericArgument(argument))UnsupportedExpression();
+      if(const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(target))
+        for(const auto &argument:variable->getTemplateArgs().asArray())if(!CheckGenericArgument(argument))UnsupportedExpression();
+      return;
+    }
     if (IsStandardCoroutineTraitsSpecialization(target)) {
       CheckVisibility(target);
       if (!IsInMainFile(context_,target->getLocation()) && !IsResolved(target))
@@ -858,7 +868,13 @@ class TypeDependencyVisitor final
 
   bool VisitTagType(clang::TagType *type) {
     const auto *declaration = type->getDecl();
-    if (IsStandardCoroutineDeclaration(declaration,context_)) {
+    if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration);
+        specialization && IsStandardLibraryDeclaration(specialization->getSpecializedTemplate(),context_) &&
+        !IsStandardLibraryDeclaration(declaration,context_) &&
+        (llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization) ||
+         specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization))
+      return UnsupportedExpression("user standard-library specializations require a published specialization contract");
+    if (IsStandardCoroutineDeclaration(declaration,context_) || IsStandardLibraryDeclaration(declaration,context_)) {
       if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))
         for (const auto &argument:record->getTemplateArgs().asArray())
           if (!CheckPatternArgument(argument)) UnsupportedExpression();
@@ -903,7 +919,10 @@ class TypeDependencyVisitor final
 
   bool VisitTypedefType(clang::TypedefType *type) {
     const auto *declaration = type->getDecl();
-    if (IsStandardCoroutineDeclaration(declaration,context_)) return true;
+    if (IsStandardCoroutineDeclaration(declaration,context_) || IsStandardLibraryDeclaration(declaration,context_)) {
+      CheckEnclosingClassArguments(declaration);
+      return true;
+    }
     if (const auto *owner=TemplatePublicationOwner(declaration);IsStandardCoroutineTraitsSpecialization(owner)) {
       CheckExpressionReference(owner);CheckEnclosingClassArguments(declaration);
       TraverseType(declaration->getUnderlyingType());return true;
@@ -1050,6 +1069,14 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     check(value->getType());
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
+  // Qualified typedef/member sugar can erase its template arguments from the
+  // semantic type (for example vector<Private>::size_type becomes size_t).
+  // Its written qualifiers remain publication dependencies.
+  if(const auto *alias=llvm::dyn_cast<clang::TypedefNameDecl>(declaration)) {
+    if(const auto *source=alias->getTypeSourceInfo())visitor.TraverseTypeLoc(source->getTypeLoc());
+  } else if(const auto *declarator=llvm::dyn_cast<clang::DeclaratorDecl>(declaration)) {
+    if(const auto *source=declarator->getTypeSourceInfo())visitor.TraverseTypeLoc(source->getTypeLoc());
+  }
   if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
     visitor.CheckConcept(concept_decl);
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))

@@ -105,6 +105,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxCoroutineBodySemantic,
     kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
+    kCxxStandardLibrarySemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -420,6 +421,13 @@ InterfaceModuleResolution ResolveInterfaceModules(
     result.requires_coroutine_header |= std::find(decoded->required_semantics.begin(),
         decoded->required_semantics.end(), kCxxCoroutineBodySemantic) != decoded->required_semantics.end() ||
         std::find(decoded->required_semantics.begin(), decoded->required_semantics.end(), kCxxStandardCoroutineSemantic) != decoded->required_semantics.end();
+    for(const auto &declaration:decoded->declarations) {
+      std::vector<std::string> headers;
+      if(ReadCxxStandardLibraryHeaders(declaration,headers))
+        for(const auto &header:headers)if(std::find(result.standard_library_headers.begin(),result.standard_library_headers.end(),header)==result.standard_library_headers.end())
+          result.standard_library_headers.push_back(header);
+    }
+    std::sort(result.standard_library_headers.begin(),result.standard_library_headers.end());
     selected.emplace(identity.canonical_name, std::move(*decoded));
     return true;
   };

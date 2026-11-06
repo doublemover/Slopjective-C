@@ -1,3 +1,4 @@
+#include "standard_library_headers.h"
 #include "standard_coroutine_types.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/ast_effect_identity.h"
@@ -59,7 +60,19 @@ public:
       : context_(context) {}
   bool HasCxxCoroutines=false;
   std::set<std::string> StandardCoroutineHeaders;
+  bool HasStandardLibraryReferences=false;
+  StandardLibraryHeaderManifest StandardHeaders;
+  void StandardLibraryReference(const clang::NamedDecl *declaration) {
+    if (const auto *record=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(declaration))
+      StandardLibraryReference(record->getSpecializedTemplate());
+    if (const auto *variable=llvm::dyn_cast_or_null<clang::VarTemplateSpecializationDecl>(declaration))
+      StandardLibraryReference(variable->getSpecializedTemplate());
+    if(!IsStandardLibraryDeclaration(declaration,context_))return;
+    if(!HasStandardLibraryReferences)StandardHeaders=ReadStandardLibraryHeaderManifest(context_);
+    HasStandardLibraryReferences=true;
+  }
   void StandardCoroutineReference(const clang::NamedDecl *declaration) {
+    StandardLibraryReference(declaration);
     if (const auto *owner=StandardCoroutineHeaderOwner(declaration,context_)) {
       const auto &source=context_.getSourceManager();bool invalid=false;
       const auto bytes=source.getBufferData(source.getFileID(source.getSpellingLoc(owner->getLocation())),&invalid);
@@ -89,6 +102,8 @@ public:
   }
   bool VisitTypeLoc(clang::TypeLoc location) {InspectType(location.getType());return true;}
   bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+    if(argument.getKind()==clang::TemplateArgument::Template || argument.getKind()==clang::TemplateArgument::TemplateExpansion)
+      Reference(argument.getAsTemplateOrTemplatePattern().getAsTemplateDecl());
     ReadFactoryArgumentFeatures(argument,context_,FactoryTypes);
     HasFactoryValueArguments |= HasFactoryValueArgument(argument,context_);
     HasAddressArguments |= HasAddressTemplateArgument(argument,context_);
@@ -96,6 +111,8 @@ public:
     return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseTemplateArgument(argument);
   }
   bool TraverseTemplateArgumentLoc(const clang::TemplateArgumentLoc &argument) {
+    if(argument.getArgument().getKind()==clang::TemplateArgument::Template || argument.getArgument().getKind()==clang::TemplateArgument::TemplateExpansion)
+      Reference(argument.getArgument().getAsTemplateOrTemplatePattern().getAsTemplateDecl());
     ReadFactoryArgumentFeatures(argument.getArgument(),context_,FactoryTypes);
     HasFactoryValueArguments |= HasFactoryValueArgument(argument.getArgument(),context_);
     HasAddressArguments |= HasAddressTemplateArgument(argument.getArgument(),context_);
@@ -129,6 +146,10 @@ public:
   bool VisitTypedefType(clang::TypedefType *type) { Reference(type->getDecl()); return true; }
   bool VisitExpr(clang::Expr *expr) { TraverseType(expr->getType()); return true; }
   bool VisitDeclRefExpr(clang::DeclRefExpr *expr) { Reference(expr->getDecl()); return true; }
+  bool VisitOverloadExpr(clang::OverloadExpr *expr) {
+    for(auto *declaration:expr->decls())Reference(declaration);
+    return true;
+  }
   bool VisitMemberExpr(clang::MemberExpr *expr) { Reference(expr->getMemberDecl()); return true; }
   bool VisitCXXConstructExpr(clang::CXXConstructExpr *expr) { Reference(expr->getConstructor()); return true; }
   bool TraverseLambdaExpr(clang::LambdaExpr *expression,DataRecursionQueue * = nullptr) {
@@ -1538,6 +1559,12 @@ bool NeedsStandardCoroutineInclude(const clang::NamedDecl *declaration, const cl
   return finder.HasCxxCoroutines || !finder.StandardCoroutineHeaders.empty();
 }
 
+std::vector<std::string> NeededStandardLibraryHeaders(const clang::NamedDecl *declaration,
+                                                       const clang::ASTContext &context) {
+  RuntimeDeclarationFinder finder(context);VisitPublishedRuntimeContracts(declaration,finder);
+  return finder.HasStandardLibraryReferences ? finder.StandardHeaders.headers : std::vector<std::string>{};
+}
+
 struct ClassTemplatePublication {
   bool deduced=false, functions=false, aliases=false, variables=false;
   bool nested=false, thread_local_storage=false, variadic=false, nested_classes=false, effectful=false;
@@ -2128,6 +2155,18 @@ bool ReadInterfaceDeclarationIdentity(
     RuntimeDeclarationFinder arguments(context);VisitPublishedRuntimeContracts(representative,arguments);
     if (arguments.HasCxxCoroutines)
       identity.canonical_type_identity+=";cxx-coroutine-bodies:v1;";
+    if(arguments.HasStandardLibraryReferences) {
+      if(!arguments.StandardHeaders.valid)return false;
+      std::string contents;for(const auto &entry:arguments.StandardHeaders.contents)
+        contents+=std::to_string(entry.size())+":"+entry;
+      const auto digest=ComputeInterfaceSourceSha256(contents);
+      identity.canonical_type_identity+=std::string(kCxxStandardLibraryMarker)+"headers[";
+      bool first=true;for(const auto &header:arguments.StandardHeaders.headers) {
+        if(!first)identity.canonical_type_identity+=",";first=false;
+        identity.canonical_type_identity+=header+"="+digest;
+      }
+      identity.canonical_type_identity+="];";
+    }
     if (!arguments.StandardCoroutineHeaders.empty()) {
       std::string headers;for (const auto &header:arguments.StandardCoroutineHeaders) headers+=header;
       identity.canonical_type_identity+=";cxx-standard-coroutines:v1;headers="+ComputeInterfaceSourceSha256(headers)+";";

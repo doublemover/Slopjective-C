@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.112 standard-header span](linux_cxx_standard_library_headers.md)
+adds native C++ library publication/import contracts, independent provider header
+checks and native header declaration reuse. Twelve existing frontend groups and
+two instrumented source-free GCC-library provider/two-consumer executables pass,
+alongside the direct C++20/23 overloaded-member AST import regression. Six-profile
+header controls and libc++ coverage are in progress.
+The replacement SDK and broader profile/implementation obligations remain open.
+
 The [System 2.30 field-pin span](linux_borrowed_field_pins.md) connects field,
 array, alias and NSObject snapshots to lifetime proofs, including equivalent
 nested pins and inherited closure state. Primitive ARC record/array cleanup now

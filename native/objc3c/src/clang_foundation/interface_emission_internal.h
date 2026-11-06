@@ -417,6 +417,9 @@ std::string VariablePartialArgumentKey(const clang::VarTemplatePartialSpecializa
 
 const clang::Expr *WrittenDefaultArgument(const clang::ParmVarDecl *parameter);
 
+std::vector<std::string> NeededStandardLibraryHeaders(const clang::NamedDecl *declaration,
+                                                       const clang::ASTContext &context);
+
 bool NeedsStandardCoroutineInclude(const clang::NamedDecl *declaration,
                                    const clang::ASTContext &context);
 

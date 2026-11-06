@@ -1,4 +1,5 @@
 #include "clang_foundation/compile_session.h"
+#include "interface_reparse_options.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/sdk_identity.h"
 #include "clang_foundation/source_identity.h"
@@ -124,7 +125,7 @@ public:
   void Initialize(clang::ASTContext &context) override {
     const auto &language = context.getLangOpts();
     const auto &predefines = compiler_.getPreprocessorOpts();
-    if (session_ && (session_->RequiresRuntimeHeader() || session_->RequiresKeyPathHeader() || session_->RequiresCoroutineHeader())) {
+    if (session_ && (session_->RequiresRuntimeHeader() || session_->RequiresKeyPathHeader() || session_->RequiresCoroutineHeader() || !session_->StandardLibraryHeaders().empty())) {
       deferred_context_ = &context;
       waiting_for_runtime_ = true;
       return;
@@ -173,7 +174,7 @@ public:
       return;
     }
     auto imported = session_->ImportInto(context, compiler_.getFileManager(),
-                                        request_.source_directed_imports);
+                                        request_.source_directed_imports,{},nullptr,&compiler_.getPreprocessor());
     result_.interface_import_diagnostics = imported.diagnostics;
     if (!imported.success) {
       std::string message;
@@ -347,7 +348,7 @@ class ContractAction final : public NativeAction {
     if (imports_ || request_.source_directed_imports)
       consumers.push_back(std::make_unique<InterfaceImportConsumer>(
           imports_, compiler, lookup_source_, request_, result_));
-    consumers.push_back(MakeContractConsumer(request_, result_));
+    consumers.push_back(MakeContractConsumer(request_, result_, &compiler.getPreprocessor()));
     std::shared_ptr<CInlineProviderState> c_inline;
     if(request_.module_owned_names && request_.emit!=EmitKind::Syntax &&
         (request_.language==BaseLanguage::C || request_.language==BaseLanguage::ObjectiveC)) {
@@ -447,6 +448,12 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           : (language.CPlusPlus ? "c++" : "c");
       target.ast_arguments = BuildInterfaceASTArguments(
           result_.driver_arguments, import_language, standard.getName(), target);
+      // Driver configuration files can supply SDK header roots without those
+      // flags appearing in the caller's argv. Reparse against the completed
+      // invocation's effective lookup configuration, including its macros.
+      target_instance.createSourceManager();
+      target_instance.createPreprocessor(clang::TU_Complete);
+      AppendInterfaceHeaderSearchArguments(target_instance.getPreprocessor(),target.ast_arguments);
       auto working_directory = files->getVirtualFileSystem().getCurrentWorkingDirectory();
       if (!working_directory) {
         result_.failure = "Cannot determine interface import working directory: " +
@@ -525,16 +532,17 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           // invalid registry entries deferred until their source directive.
           auto headers=ResolveInterfaceModules(search_paths,declared,target);
           bool needs_coroutine=headers.success && headers.requires_coroutine_header;
-          if (!headers.success)
-            for (const auto &module:declared) {
-              auto selected=ResolveInterfaceModules(search_paths,{module},target);
-              if (selected.success && selected.requires_coroutine_header) {
-                needs_coroutine=true;break;
-              }
+          std::set<std::string> standard_headers(headers.standard_library_headers.begin(),headers.standard_library_headers.end());
+          if(!headers.success)for(const auto &module:declared) {
+            auto selected=ResolveInterfaceModules(search_paths,{module},target);
+            if(selected.success) {
+              needs_coroutine |= selected.requires_coroutine_header;
+              standard_headers.insert(selected.standard_library_headers.begin(),selected.standard_library_headers.end());
             }
-          if (needs_coroutine)
-            invocation->getPreprocessorOpts().Includes.insert(
-                invocation->getPreprocessorOpts().Includes.begin(),"coroutine");
+          }
+          if(needs_coroutine)standard_headers.insert("coroutine");
+          auto &includes=invocation->getPreprocessorOpts().Includes;
+          includes.insert(includes.begin(),standard_headers.begin(),standard_headers.end());
           return FrontendActionFactory::runInvocation(std::move(invocation), files,
               std::move(containers), diagnostics);
         }
@@ -577,9 +585,10 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       }
     }
     if (import_session_ && (import_session_->RequiresRuntimeHeader() ||
-                            import_session_->RequiresKeyPathHeader() || import_session_->RequiresCoroutineHeader())) {
+                            import_session_->RequiresKeyPathHeader() || import_session_->RequiresCoroutineHeader() || !import_session_->StandardLibraryHeaders().empty())) {
       auto &preprocessor = invocation->getPreprocessorOpts();
       std::string prelude;
+      for(const auto &header:import_session_->StandardLibraryHeaders())prelude+="#include <"+header+">\n";
       if (import_session_->RequiresCoroutineHeader()) prelude+="#include <coroutine>\n";
       if (import_session_->RequiresRuntimeHeader()) {
         preprocessor.addRemappedFile(kEagerRuntimeHeader,
@@ -743,6 +752,8 @@ CompileResult Compile(const CompileRequest &request) {
     result.failure = "Linked Clang libraries differ from the sealed compiler SDK";
     return result;
   }
+  if(!VerifyNativeHeaderConfiguration(result.compiler_driver_path,result.resource_directory,result.failure))
+    return result;
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
   if (request.module_owned_names &&

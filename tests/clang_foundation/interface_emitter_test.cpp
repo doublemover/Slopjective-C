@@ -1,3 +1,5 @@
+#include "clang_foundation/compile_session.h"
+#include "llvm/ADT/ScopeExit.h"
 #include "clang_foundation/module_names.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
@@ -2998,6 +3000,183 @@ void TestUnnamedTemplateProjections() {
     auto denied=emit("namespace Private {template<class T>struct Family {struct {T value;} first;};}"
         "namespace NativeUnnamedTemplateProjections {using Hidden=decltype(Private::Family<int>{}.first);}");
     assert(!denied.success && std::any_of(denied.diagnostics.begin(),denied.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+}
+
+void TestStandardLibraryHeaderContracts() {
+  const std::string includes=R"(#include <algorithm>
+#include <any>
+#include <array>
+#include <chrono>
+#include <functional>
+#include <memory>
+#include <numeric>
+#include <optional>
+#include <span>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+#include <variant>
+#include <vector>
+)";
+  const std::string declarations=R"(
+namespace NativeStandard {
+  std::string message();
+  std::vector<int> numbers();
+  std::array<int,2> bounds();
+  std::any arbitrary();
+  std::function<int(int)> callback();
+  std::shared_ptr<int> owner();
+  std::optional<int> value();
+  std::span<const int> view();
+  std::tuple<int,double> entry();
+  std::variant<int,double> choice();
+  std::chrono::milliseconds duration();
+  using Word=std::string;
+  using Index=std::vector<int>::size_type;
+  template<class T> requires std::is_integral_v<T>
+  inline constexpr T bump(T value) {return std::move(value)+1;}
+  inline int sum() {auto values=numbers();return std::accumulate(values.begin(),values.end(),0);}
+}
+)";
+  llvm::SmallString<256> directory;
+  assert(!llvm::sys::fs::createUniqueDirectory("objc3-standard-library-headers",directory));
+  const auto test_root=std::filesystem::path(directory.c_str());
+  auto cleanup=llvm::scope_exit([&]{std::filesystem::remove_all(test_root);});
+  for(const char *standard:{"c++20","c++23"})for(int mode=0;mode!=3;++mode) {
+    const auto root=test_root/(std::string(standard)+"-"+std::to_string(mode));
+    std::filesystem::create_directory(root);
+    std::fprintf(stderr,"STDLIB MODE %s %d\n",standard,mode);
+    const bool objc=mode!=0,arc=mode==2;
+    std::vector<std::string> args={"-x",objc?"objective-c++":"c++",std::string("-std=")+standard,
+        "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    if(objc){args.push_back("-fobjc-version=3");args.push_back("-fobjc-runtime=gnustep-2.2");}
+    if(arc)args.push_back("-fobjc-arc");
+    std::string traits_bytes;
+    auto emit=[&](const std::string &text,const char *file="standard-library-provider.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      if(traits_bytes.empty()) {
+        const auto &source=ast->getSourceManager();
+        for(auto it=source.fileinfo_begin();it!=source.fileinfo_end();++it)
+          if(it->second->OrigEntry && llvm::sys::path::filename(it->second->OrigEntry->getName())=="type_traits") {
+            bool invalid=false;auto bytes=source.getBufferData(source.translateFile(*it->second->OrigEntry),&invalid);
+            assert(!invalid);traits_bytes=bytes.str();break;
+          }
+      }
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.standard_headers","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.standard_headers","test",{},{},{},{"NativeStandard"},{},&ast->getPreprocessor());
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"STDLIB %s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      return result;
+    };
+    auto first=emit(includes+declarations);assert(first.success);
+    assert(first.source_bytes.find("#include <string>")!=std::string::npos);
+    assert(first.source_bytes.find("#include <vector>")!=std::string::npos);
+    auto replay=emit(first.source_bytes,"standard-library-replay.mm");
+    assert(replay.success && replay.source_bytes==first.source_bytes && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    if(mode==0 && std::string(standard)=="c++20") {
+    auto relocated=emit("\n\n"+includes+declarations,"relocated-standard-library.mm");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    std::string reverse_includes;
+    for(std::size_t end=includes.size();end;) {
+      const auto previous=includes.rfind('\n',end-2);
+      const auto begin=previous==std::string::npos?0:previous+1;
+      reverse_includes+=includes.substr(begin,end-begin);end=begin;
+    }
+    auto reordered=emit(reverse_includes+declarations);
+    assert(reordered.success && reordered.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    }
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto owner=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxStandardLibraryIdentity);
+    assert(owner!=decoded->declarations.end());
+    std::vector<std::string> headers;assert(ReadCxxStandardLibraryHeaders(*owner,headers));
+    assert(std::find(headers.begin(),headers.end(),"string")!=headers.end());
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxStandardLibrarySemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    for(int corruption=0;corruption!=3;++corruption) {
+      auto bad=*decoded;auto row=std::find_if(bad.declarations.begin(),bad.declarations.end(),HasCxxStandardLibraryIdentity);
+      const auto begin=row->canonical_type_identity.find(std::string(kCxxStandardLibraryMarker)+"headers[");assert(begin!=std::string::npos);
+      const auto name=begin+std::string(kCxxStandardLibraryMarker).size()+8;
+      if(corruption==0)row->kind="Namespace";
+      else if(corruption==1)row->canonical_type_identity.insert(name,"../");
+      else {const auto equals=row->canonical_type_identity.find('=',name);row->canonical_type_identity[equals+1]='g';}
+      auto rejected=EncodeSemanticInterfaceSidecar(bad,semantics);assert(!rejected);llvm::consumeError(rejected.takeError());
+    }
+    if(mode==0 && std::string(standard)=="c++20") {
+    auto private_type=emit("#include <vector>\nnamespace Hidden {struct Value{int value;};}\nnamespace NativeStandard {std::vector<Hidden::Value> hidden();}");
+    assert(!private_type.success);
+    auto spoofed=emit("namespace std {template<class T>struct vector{T value;};} namespace NativeStandard {std::vector<int> hidden();}");
+    assert(!spoofed.success);
+    auto private_alias=emit("#include <vector>\nnamespace Hidden {struct Value{int value;};}\nnamespace NativeStandard {using HiddenIndex=std::vector<Hidden::Value>::size_type;}");
+    assert(!private_alias.success);
+    auto customization=emit("#include <functional>\nnamespace NativeStandard {struct Key{int value;};}\n"
+        "namespace std {template<>struct hash<NativeStandard::Key>{unsigned long operator()(NativeStandard::Key v)const{return v.value;}};}\n"
+        "namespace NativeStandard {std::hash<Key> policy();}");
+    assert(!customization.success);
+    }
+    const auto suffix=std::string(standard)+"-"+std::to_string(mode);
+    const auto interface=root/(suffix+".objc3i");
+    {std::ofstream file(interface);file<<first.source_bytes;}
+    {std::ofstream file(interface.string()+".json");file<<first.sidecar_json;}
+    InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=first.identity;
+    CompileRequest request;request.input_path=(root/(suffix+(objc?".mm":".cpp"))).string();
+    request.source_text="static_assert(NativeStandard::bump(41)==42);int standard_client(){return NativeStandard::sum()+static_cast<int>(NativeStandard::message().size());}";
+    request.language=objc?BaseLanguage::ObjectiveCxx:BaseLanguage::Cxx;request.objc3=objc;request.arc=arc;
+    request.target_triple="x86_64-unknown-linux-gnu";if(objc)request.objc_runtime="gnustep-2.2";
+    request.arguments={std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    request.imported_interfaces={imported};request.emit=EmitKind::Object;request.output_path=(root/(suffix+".o")).string();
+    auto consumer=Compile(request);
+    if(!consumer.success){std::fprintf(stderr,"STDLIB IMPORT %s\n",consumer.failure.c_str());for(const auto &d:consumer.interface_import_diagnostics)std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());for(const auto &d:consumer.diagnostics)std::fprintf(stderr,"%s:%u: %s\n",d.spelling.file.c_str(),d.spelling.line,d.message.c_str());}
+    assert(consumer.success && std::filesystem::exists(request.output_path));
+    // The registry prepares both header closures, while provider declarations
+    // become visible only at their matching source-level import directive.
+    auto other_ast=clang::tooling::buildASTFromCodeWithArgs(
+        "#include <bitset>\nnamespace NativeOther {std::bitset<8> flags();}",args,"standard-library-other.mm");
+    assert(other_ast && !other_ast->getDiagnostics().hasErrorOccurred());
+    assert(ApplyModuleOwnedNames(other_ast->getASTContext(),other_ast->getASTContext().getTranslationUnitDecl(),"fixture.standard_other","test",{}));
+    auto other=EmitSemanticInterface(other_ast->getASTContext(),"fixture.standard_other","test",{},{},{},{"NativeOther"},{},&other_ast->getPreprocessor());
+    assert(other.success);
+    const auto other_interface=root/(suffix+"-other.objc3i");
+    {std::ofstream file(other_interface);file<<other.source_bytes;}
+    {std::ofstream file(other_interface.string()+".json");file<<other.sidecar_json;}
+    InterfaceImportInput other_import;other_import.source_path=other_interface.string();other_import.locked_identity=other.identity;
+    request.imported_interfaces.push_back(other_import);
+    request.output_path=(root/(suffix+"-combined.o")).string();
+    auto combined=Compile(request);
+    if(!combined.success){std::fprintf(stderr,"STDLIB COMBINED %s\n",combined.failure.c_str());for(const auto &d:combined.interface_import_diagnostics)std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());}
+    assert(combined.success && std::filesystem::exists(request.output_path));
+    if(objc) {
+      auto directed=request;directed.imported_interfaces.clear();directed.source_directed_imports=true;
+      directed.interface_search_paths={root.string()};
+      InterfaceModuleRequest primary;primary.canonical_name=first.identity.canonical_name;primary.locked_identity=first.identity;primary.initially_visible=false;
+      InterfaceModuleRequest secondary;secondary.canonical_name=other.identity.canonical_name;secondary.locked_identity=other.identity;secondary.initially_visible=false;
+      directed.module_imports={primary,secondary};
+      directed.source_text="@import fixture.standard_headers;\n@import fixture.standard_other;\n"+*request.source_text;
+      directed.output_path=(root/(suffix+"-directed.o")).string();
+      auto result=Compile(directed);
+      if(!result.success){std::fprintf(stderr,"STDLIB DIRECTED %s\n",result.failure.c_str());for(const auto &d:result.interface_import_diagnostics)std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());}
+      assert(result.success && std::filesystem::exists(directed.output_path));
+    }
+    if(mode==0 && std::string(standard)=="c++20") {
+      assert(!traits_bytes.empty());
+      const auto changed_headers=root/"changed-headers";std::filesystem::create_directory(changed_headers);
+      {std::ofstream file(changed_headers/"type_traits");file<<traits_bytes<<"\n// Different native standard-header content.\n";}
+      auto changed=request;changed.arguments.insert(changed.arguments.end(),{"-isystem",changed_headers.string()});
+      changed.output_path=(root/"rejected-headers.o").string();
+      auto rejected=Compile(changed);assert(!rejected.success && !std::filesystem::exists(changed.output_path));
+      assert(std::any_of(rejected.interface_import_diagnostics.begin(),rejected.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139" || d.code=="O3IFC183";}));
+      auto abi=request;abi.arguments.push_back("-D_GLIBCXX_USE_CXX11_ABI=0");abi.output_path=(root/"rejected-abi.o").string();
+      auto incompatible=Compile(abi);assert(!incompatible.success && !std::filesystem::exists(abi.output_path));
+      auto configuration=request;configuration.arguments.push_back("-D_GLIBCXX_ASSERTIONS=1");
+      configuration.output_path=(root/"rejected-configuration.o").string();
+      auto different_configuration=Compile(configuration);
+      assert(!different_configuration.success && !std::filesystem::exists(configuration.output_path));
+      assert(std::any_of(different_configuration.interface_import_diagnostics.begin(),different_configuration.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139" || d.code=="O3IFC183";}));
+    }
   }
 }
 
@@ -7091,6 +7270,7 @@ int main() {
   TestNativeDeclarationAttributes();
   TestCOverloadableInterfaces();
   TestUnnamedTemplateProjections();
+  TestStandardLibraryHeaderContracts();
   TestStandardCoroutineTypesAndTraits();
   TestCustomCoroutineBodies();
   TestForeignImportAttributes();

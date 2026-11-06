@@ -19,9 +19,12 @@ class ASTImporterSharedState;
 class DiagnosticsEngine;
 class FileManager;
 class NamedDecl;
+class Preprocessor;
 }
 
 namespace objc3::clang_foundation {
+
+struct StandardLibraryHeaderManifest;
 
 // The lock identity is supplied by the build/package resolver. Artifact paths
 // locate bytes but never stand in for this canonical provider identity.
@@ -100,13 +103,16 @@ public:
       clang::ASTContext &target_context,
       clang::FileManager &target_file_manager,
       bool source_scoped_visibility = false,
-      std::shared_ptr<clang::ASTImporterSharedState> shared_state = {});
+      std::shared_ptr<clang::ASTImporterSharedState> shared_state = {},
+      const StandardLibraryHeaderManifest *native_header_prelude = nullptr,
+      const clang::Preprocessor *native_preprocessor = nullptr);
 
   [[nodiscard]] std::vector<InterfaceSourceArtifact>
   GetSourceArtifacts() const;
   [[nodiscard]] bool RequiresRuntimeHeader() const;
   [[nodiscard]] bool RequiresTaskHeader() const;
   [[nodiscard]] bool RequiresCoroutineHeader() const;
+  [[nodiscard]] std::vector<std::string> StandardLibraryHeaders() const;
   [[nodiscard]] bool RequiresKeyPathHeader() const;
 
 private:

@@ -228,6 +228,41 @@ inline constexpr const char *kCxxUnnamedTemplateProjectionSemantic = "objc3.cxx-
 inline bool HasCxxUnnamedTemplateProjectionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-unnamed-template-projections:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxStandardLibrarySemantic = "objc3.cxx-standard-library-headers.v1";
+inline constexpr const char *kCxxStandardLibraryMarker = ";cxx-standard-library-headers:v1;";
+inline bool IsStandardLibraryHeaderName(const std::string &name) {
+  static const std::string names = "|algorithm|any|array|atomic|barrier|bit|bitset|cassert|cctype|cerrno|cfenv|cfloat|charconv|chrono|cinttypes|climits|clocale|cmath|codecvt|compare|complex|concepts|condition_variable|coroutine|csetjmp|csignal|cstdarg|cstddef|cstdint|cstdio|cstdlib|cstring|ctime|cuchar|cwchar|cwctype|deque|exception|execution|expected|filesystem|flat_map|flat_set|format|forward_list|fstream|functional|future|generator|initializer_list|iomanip|ios|iosfwd|iostream|istream|iterator|latch|limits|list|map|mdspan|memory|memory_resource|mutex|new|numbers|numeric|optional|ostream|print|queue|random|ranges|ratio|regex|scope|scoped_allocator|semaphore|set|shared_mutex|source_location|span|spanstream|sstream|stack|stacktrace|stdexcept|stdfloat|stop_token|streambuf|string|string_view|strstream|syncstream|system_error|thread|tuple|type_traits|typeindex|typeinfo|unordered_map|unordered_set|utility|valarray|variant|vector|version|";
+  return !name.empty() && name.find('|') == std::string::npos && names.find("|" + name + "|") != std::string::npos;
+}
+inline bool HasCxxStandardLibraryIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(kCxxStandardLibraryMarker) != std::string::npos;
+}
+// Header names are data-only, bounded and closed. Never turn arbitrary metadata
+// text into a preprocessor include or accept a capability without its contract.
+inline bool ReadCxxStandardLibraryHeaders(const InterfaceDeclarationIdentity &d,
+                                          std::vector<std::string> &headers) {
+  const auto &text=d.canonical_type_identity;
+  const auto begin=text.find(kCxxStandardLibraryMarker);
+  if(begin==std::string::npos) return true;
+  const std::string prefix=std::string(kCxxStandardLibraryMarker)+"headers[";
+  if(text.compare(begin,prefix.size(),prefix)!=0 ||
+      text.find(kCxxStandardLibraryMarker,begin+prefix.size())!=std::string::npos) return false;
+  auto start=begin+prefix.size();const auto end=text.find("];",start);
+  if(end==std::string::npos || end==start) return false;
+  std::string previous;unsigned count=0;
+  while(start<end) {
+    auto stop=text.find(',',start);if(stop==std::string::npos || stop>end)stop=end;
+    const auto equals=text.find('=',start);
+    if(equals==std::string::npos || equals>=stop || stop-equals-1!=64) return false;
+    auto name=text.substr(start,equals-start);
+    if(!IsStandardLibraryHeaderName(name) || (!previous.empty() && name<=previous) || ++count>128)return false;
+    for(auto i=equals+1;i<stop;++i)if(!((text[i]>='0'&&text[i]<='9')||(text[i]>='a'&&text[i]<='f')))return false;
+    headers.push_back(name);previous=std::move(name);
+    if(stop==end)return true;
+    start=stop+1;if(start==end)return false;
+  }
+  return false;
+}
 inline constexpr const char *kCxxStandardCoroutineSemantic = "objc3.cxx-standard-coroutines.v1";
 inline bool HasCxxStandardCoroutineIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-standard-coroutines:v1;") != std::string::npos;

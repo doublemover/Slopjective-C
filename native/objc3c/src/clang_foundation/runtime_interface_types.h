@@ -39,6 +39,7 @@ bool IsQualifiedStandardLibraryImport(const clang::ImportDecl *declaration,
 // target compiler's builtin types, rather than the host libc's headers.
 void AddRuntimeInterfaceFiles(
     std::vector<std::pair<std::string, std::string>> &files,
-    std::vector<std::string> &arguments, bool cxx_task_definitions = false);
+    std::vector<std::string> &arguments, bool cxx_task_definitions = false,
+    bool complete_standard_headers = false);
 
 } // namespace objc3::clang_foundation

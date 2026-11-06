@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 111,
+        "minor": 112,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native C++ standard-library publication binds a closed public-header list, actual include-closure bytes and per-header preprocessing configuration, preserves template-argument visibility, prepares eager/source-directed native header preludes and checks each provider independently; matched native declarations are reused (source authored; twelve existing frontend groups, direct C++20/23 overloaded-member AST import and two instrumented GCC-library source-free provider/two-consumer link/execute configurations pass; six-profile header controls and libc++ implementation coverage in progress; native header distribution is implemented, SDK consolidation pending)",
         "ISO C inline native-frame publication integrates ordinary/external/redeclared factories and awaited chains with one provider symbol, source-free consumers and stable addresses (four ARC/MRC O0/O2 configurations, 32 completions and 16 unused-frame disposals pass; SDK consolidation pending)",
         "ISO C inline and external-inline functions have one module-owned provider definition and normalized inline consumer bodies, including later external declarations and inherited inline specifiers; scoped backend storage changes preserve source identity, while GNU inline semantics and mutable local static/thread storage reject (source authored; six C/Objective-C ARC/MRC O0/O2 provider/two-consumer link configurations with source removal and stable function addresses, GNU rejection/rollback and four frontend replay groups pass; matched SDK consolidation pending)",
         "Native source publication preserves declaration-only function/member/static-data templates and existing lifetime/isolation attributes, canonical SDK task-promise dependencies, valid builtin/type-tag attribute spelling and empty effectful Block parameter lists; ISO C inline bodies carry a dedicated checked capability (source authored; twelve development frontend control groups and twenty-five focused compiler regressions pass; source-free package and SDK consolidation pending)",

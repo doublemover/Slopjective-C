@@ -14,6 +14,7 @@
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/interface_validation.h"
 #include "clang_foundation/runtime_interface_types.h"
+#include "standard_library_headers.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/ASTImporter.h"
@@ -127,6 +128,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxCoroutineBodySemantic,
     kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
+    kCxxStandardLibrarySemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -339,6 +341,74 @@ void MapAdmittedDependencyDeclaration(clang::ASTImporter &importer,
     }
   };
   parameters(parameters,source->getTemplateParameters(),target->getTemplateParameters());
+}
+
+// The checked native headers have already been parsed in the consumer. Match
+// their written declarations by immutable file bytes, spelling offset and
+// native identity, then verify the AST's printed declaration too. Reuse those
+// declarations instead of cloning a second standard library into the same TU.
+// The AST check also prevents matching different macro-selected definitions
+// merely because they came from the same physical header bytes.
+class StandardHeaderDeclarations final {
+  clang::ASTContext &context;
+  std::map<clang::FileID,std::string> digests;
+public:
+  using Key=std::tuple<unsigned,std::string,unsigned,std::string>;
+  std::map<Key,clang::NamedDecl *> declarations;
+  explicit StandardHeaderDeclarations(clang::ASTContext &context):context(context) {}
+  bool VisitNamedDecl(clang::NamedDecl *declaration) {
+    if(declaration->isImplicit() || !IsStandardLibraryDeclaration(declaration,context))return true;
+    const auto &source=context.getSourceManager();
+    const auto [file,offset]=source.getDecomposedLoc(source.getSpellingLoc(declaration->getLocation()));
+    auto [entry,inserted]=digests.try_emplace(file);
+    if(inserted){bool invalid=false;auto bytes=source.getBufferData(file,&invalid);if(invalid)return true;entry->second=ComputeInterfaceSourceSha256(bytes);}
+    if(entry->second.empty())return true;
+    llvm::SmallString<128> usr;
+    if(clang::index::generateUSRForDecl(declaration,usr))return true;
+    auto [found,added]=declarations.emplace(Key{unsigned(declaration->getKind()),entry->second,offset,usr.str().str()},declaration);
+    if(!added && found->second && found->second->getCanonicalDecl()!=declaration->getCanonicalDecl())found->second=nullptr;
+    return true;
+  }
+  void TraverseDecl(clang::Decl *declaration) {
+    if(!declaration || declaration->isImplicit())return;
+    if(auto *named=llvm::dyn_cast<clang::NamedDecl>(declaration))VisitNamedDecl(named);
+    if(auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration)) {
+      TraverseDecl(pattern->getTemplatedDecl());
+      for(auto *parameter:*pattern->getTemplateParameters())TraverseDecl(parameter);
+    }
+    if(auto *context=llvm::dyn_cast<clang::DeclContext>(declaration))
+      for(auto *child:context->decls())TraverseDecl(child);
+    if(auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+      for(auto *parameter:function->parameters())TraverseDecl(parameter);
+  }
+};
+
+void SeedStandardHeaderDeclarations(clang::ASTImporter &importer,
+    clang::ASTContext &source,clang::ASTContext &target,
+    const StandardHeaderDeclarations &target_declarations) {
+  StandardHeaderDeclarations from(source);from.TraverseDecl(source.getTranslationUnitDecl());
+  auto printed=[](const clang::NamedDecl *declaration,const clang::ASTContext &context) {
+    std::string result;llvm::raw_string_ostream out(result);
+    clang::PrintingPolicy policy(context.getLangOpts());
+    declaration->print(out,policy);return StandardHeaderTokenIdentity(result,context.getLangOpts());
+  };
+  std::vector<std::pair<clang::NamedDecl *,clang::NamedDecl *>> matched;
+  {
+  StandardHeaderWrittenExceptionSpecs source_exceptions(source),target_exceptions(target);
+  for(const auto &[key,left]:from.declarations) {
+    auto found=target_declarations.declarations.find(key);
+    if(!left || found==target_declarations.declarations.end() || !found->second)continue;
+    auto *right=found->second;
+    if(!llvm::isa<clang::NamespaceDecl>(left) && printed(left,source)!=printed(right,target))continue;
+    matched.emplace_back(left,right);
+  }
+  }
+  for(auto [left,right]:matched) {
+    MapAdmittedDependencyDeclaration(importer,left,right);
+    auto *a=llvm::dyn_cast<clang::FunctionDecl>(left);auto *b=llvm::dyn_cast<clang::FunctionDecl>(right);
+    if(a && b && a->getNumParams()==b->getNumParams())
+      for(unsigned i=0;i<a->getNumParams();++i)importer.MapImported(a->getParamDecl(i),b->getParamDecl(i));
+  }
 }
 
 class DefinitionTrackingImporter final : public clang::ASTImporter {
@@ -672,9 +742,12 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     if (!diagnostics.empty()) return nullptr;
     auto ast_arguments = target.ast_arguments;
     const auto mappings_before_runtime = virtual_files.size();
+    bool complete_standard_headers=std::any_of(module.sidecar.declarations.begin(),module.sidecar.declarations.end(),HasCxxStandardLibraryIdentity);
+    for(const auto &dependency:dependency_sources)
+      complete_standard_headers |= std::any_of(dependency.declarations.begin(),dependency.declarations.end(),HasCxxStandardLibraryIdentity);
     AddRuntimeInterfaceFiles(virtual_files, ast_arguments,
         module.source_bytes.find("#include <objc3c/runtime/objc3_task.hpp>") !=
-            std::string::npos);
+            std::string::npos,complete_standard_headers);
     for (std::size_t i = mappings_before_runtime; i < virtual_files.size(); ++i)
       if (!charge(usage.parser_input_bytes, virtual_files[i].second.size(), limits.parser_input_bytes, "parser runtime mapping byte"))
         return nullptr;
@@ -699,7 +772,7 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     auto regenerated = EmitSemanticInterface(
         module.ast->getASTContext(), module.sidecar.module.canonical_name,
         module.sidecar.module.package_identity, module.sidecar.dependencies,
-        dependency_sources, module.sidecar.ownership_projection);
+        dependency_sources, module.sidecar.ownership_projection, {}, {}, &module.ast->getPreprocessor());
     if (!regenerated.success || regenerated.source_bytes != module.source_bytes) {
       Add(diagnostics, regenerated.diagnostics.empty()
               ? "O3IFC138" : regenerated.diagnostics.front().code,
@@ -789,12 +862,19 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
 InterfaceImportReport InterfaceImportSession::ImportInto(
     clang::ASTContext &target_context, clang::FileManager &target_file_manager,
     bool source_scoped_visibility,
-    std::shared_ptr<clang::ASTImporterSharedState> shared_state) {
+    std::shared_ptr<clang::ASTImporterSharedState> shared_state,
+    const StandardLibraryHeaderManifest *native_header_prelude,
+    const clang::Preprocessor *native_preprocessor) {
+  StandardLibraryHeaderCache standard_header_cache(&target_context,native_preprocessor);
+  if(native_header_prelude)
+    standard_header_cache.manifests.emplace(&target_context,*native_header_prelude);
   InterfaceImportReport report;
   if (!impl_) {
     Add(report.diagnostics, "O3IFC141", "import session was not prepared");
     return report;
   }
+  for(const auto &module:impl_->modules)
+    standard_header_cache.preprocessors.emplace(&module.ast->getASTContext(),&module.ast->getPreprocessor());
   const auto &language = target_context.getLangOpts();
   const auto runtime =
       (language.ObjC ? language.ObjCRuntime.getAsString() : "no-objc-runtime") +
@@ -811,6 +891,61 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     return report;
   }
   report.direct_dependencies = impl_->direct_dependencies;
+  // Providers are checked in separate translation units. A consumer may load
+  // several independently checked header sets, so its include closure can be
+  // larger than any one provider's. Check every provider's actual header bytes
+  // before importing declarations; never compare union-sized closure hashes as
+  // though an additional standard include changed an existing declaration.
+  std::map<const clang::ASTContext *, StandardLibraryHeaderManifest> standard_manifests;
+  if(native_header_prelude)standard_manifests.emplace(&target_context,*native_header_prelude);
+  auto manifest = [&](const clang::ASTContext &context) -> const StandardLibraryHeaderManifest & {
+    auto [entry, inserted] = standard_manifests.try_emplace(&context);
+    if (inserted) entry->second = ReadStandardLibraryHeaderManifest(context);
+    return entry->second;
+  };
+  auto matching_headers = [&](const clang::ASTContext &provider,
+                              const clang::ASTContext &consumer) {
+    const auto &expected = manifest(provider);
+    const auto &actual = manifest(consumer);
+    const bool matches=expected.valid && actual.valid &&
+        std::includes(actual.headers.begin(), actual.headers.end(),
+                      expected.headers.begin(), expected.headers.end()) &&
+        std::includes(actual.contents.begin(), actual.contents.end(),
+                      expected.contents.begin(), expected.contents.end());
+    return matches;
+  };
+  for (const auto &module : impl_->modules)
+    if (std::any_of(module.sidecar.declarations.begin(), module.sidecar.declarations.end(),
+                    HasCxxStandardLibraryIdentity) &&
+        !matching_headers(module.ast->getASTContext(), target_context)) {
+      Add(report.diagnostics, "O3IFC183",
+          "consumer standard-library headers differ from the checked provider headers",
+          module.sidecar.module.canonical_name);
+      return report;
+    }
+  auto same_checked_declaration = [&](const InterfaceDeclarationIdentity &expected,
+                                      InterfaceDeclarationIdentity &actual,
+                                      const clang::ASTContext &provider,
+                                      const clang::ASTContext &consumer) {
+    if (HasCxxStandardLibraryIdentity(expected)) {
+      std::vector<std::string> expected_headers, actual_headers;
+      if (!HasCxxStandardLibraryIdentity(actual) ||
+          !ReadCxxStandardLibraryHeaders(expected, expected_headers) ||
+          !ReadCxxStandardLibraryHeaders(actual, actual_headers) ||
+          !matching_headers(provider, consumer)) return false;
+      auto contract = [](const std::string &text) {
+        const auto begin = text.find(kCxxStandardLibraryMarker);
+        return std::pair(begin, text.find("];", begin) + 2);
+      };
+      const auto [expected_begin, expected_end] = contract(expected.canonical_type_identity);
+      const auto [actual_begin, actual_end] = contract(actual.canonical_type_identity);
+      actual.canonical_type_identity.replace(actual_begin, actual_end - actual_begin,
+          expected.canonical_type_identity, expected_begin, expected_end - expected_begin);
+    }
+    return SameInterfaceDeclarationIdentity(expected, actual);
+  };
+  StandardHeaderDeclarations native_headers(target_context);
+  if(!standard_manifests.empty())native_headers.TraverseDecl(target_context.getTranslationUnitDecl());
   report.visible_module_names.assign(impl_->visible_modules.begin(),
                                      impl_->visible_modules.end());
   for (auto index : impl_->import_order)
@@ -862,9 +997,11 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         target_context, target_file_manager,
         module.ast->getASTContext(), module.ast->getFileManager(),
         /*MinimalImport=*/false, shared_state);
-    SeedCompilerBuiltinDeclarations(*importer,module.ast->getASTContext(),target_context);
     importer->Existing=&existing_definitions.Definitions;
     importer->ExistingVariables=&existing_definitions.Variables;
+    SeedCompilerBuiltinDeclarations(*importer,module.ast->getASTContext(),target_context);
+    if(std::any_of(module.sidecar.declarations.begin(),module.sidecar.declarations.end(),HasCxxStandardLibraryIdentity))
+      SeedStandardHeaderDeclarations(*importer,module.ast->getASTContext(),target_context,native_headers);
     auto *from_tu = module.ast->getASTContext().getTranslationUnitDecl();
     // Use the importer's actual source-to-target mappings. A matching USR in
     // another module or in the consumer does not prove this export imported.
@@ -900,7 +1037,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         if(target==admitted->second.end() || source==included.Declarations.end())continue;
         InterfaceDeclarationIdentity actual;
         if(!ReadInterfaceDeclarationIdentity(source->second,module.ast->getASTContext(),actual) ||
-            !SameInterfaceDeclarationIdentity(expected,actual)) {
+            !same_checked_declaration(expected, actual, provider->ast->getASTContext(), module.ast->getASTContext())) {
           Add(report.diagnostics,"O3IFC144",
               "included dependency differs from its admitted declaration identity",expected.stable_id);
           return report;
@@ -1050,7 +1187,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       }
       InterfaceDeclarationIdentity actual;
       if (!ReadInterfaceDeclarationIdentity(named, target_context, actual) ||
-          !SameInterfaceDeclarationIdentity(expected, actual)) {
+          !same_checked_declaration(expected, actual, module.ast->getASTContext(), target_context)) {
         Add(report.diagnostics, "O3IFC144",
             "ASTImporter changed an exported declaration's canonical type, "
             "layout, or effects: " +
@@ -1205,6 +1342,15 @@ bool InterfaceImportSession::RequiresCoroutineHeader() const {
         std::find(module.sidecar.required_semantics.begin(),module.sidecar.required_semantics.end(),
                      kCxxStandardCoroutineSemantic)!=module.sidecar.required_semantics.end();
   });
+}
+
+std::vector<std::string> InterfaceImportSession::StandardLibraryHeaders() const {
+  std::set<std::string> result;
+  if(impl_)for(const auto &module:impl_->modules)for(const auto &declaration:module.sidecar.declarations) {
+    std::vector<std::string> headers;
+    if(ReadCxxStandardLibraryHeaders(declaration,headers))result.insert(headers.begin(),headers.end());
+  }
+  return {result.begin(),result.end()};
 }
 
 bool InterfaceImportSession::RequiresTaskHeader() const {

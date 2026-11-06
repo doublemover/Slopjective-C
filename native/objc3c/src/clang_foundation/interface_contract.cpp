@@ -491,6 +491,12 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasCxxUnnamedTemplateProjectionIdentity(d) || d.kind!="Namespace";});
   if (unnamed_projections!=unnamed_projection_capability || !unnamed_projection_owners)
     Add(result,"O3IFC181","unnamed template projection identities and required capability must agree",expected.canonical_name);
+  const bool standard_library=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardLibraryIdentity);
+  const bool standard_library_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardLibrarySemantic)!=sidecar.required_semantics.end();
+  const bool standard_library_contracts=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){
+    std::vector<std::string> headers;return (!HasCxxStandardLibraryIdentity(d) || d.kind!="Namespace") && ReadCxxStandardLibraryHeaders(d,headers);});
+  if(standard_library!=standard_library_capability || !standard_library_contracts)
+    Add(result,"O3IFC183","standard library header identities and required capability must agree",expected.canonical_name);
   const bool standard_coroutines=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardCoroutineIdentity);
   const bool standard_coroutine_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardCoroutineSemantic)!=sidecar.required_semantics.end();
   const bool standard_coroutine_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){

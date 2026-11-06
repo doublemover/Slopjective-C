@@ -3,6 +3,7 @@
 #include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/module_names.h"
+#include "standard_library_headers.h"
 
 #include <algorithm>
 #include "clang/AST/ASTContext.h"
@@ -19,8 +20,9 @@ namespace {
 class ContractConsumer final : public clang::ASTConsumer,
                                public clang::RecursiveASTVisitor<ContractConsumer> {
  public:
-  ContractConsumer(const CompileRequest &request, CompileResult &result)
-      : request_(request), result_(result) {}
+  ContractConsumer(const CompileRequest &request, CompileResult &result,
+                   const clang::Preprocessor *preprocessor)
+      : request_(request), result_(result), preprocessor_(preprocessor) {}
 
   void Initialize(clang::ASTContext &context) override {
     context_ = &context;
@@ -121,6 +123,7 @@ class ContractConsumer final : public clang::ASTConsumer,
   }
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
+    StandardLibraryHeaderCache standard_header_cache(&context,preprocessor_);
     if (context.getDiagnostics().hasErrorOccurred()) return;
     context_ = &context;
     if (request_.emit_semantic_interface && context.getLangOpts().CPlusPlus &&
@@ -142,25 +145,27 @@ class ContractConsumer final : public clang::ASTConsumer,
       result_.interface_artifact = EmitOwnershipProjection(
           context, request_.module_name, request_.package_identity,
           *request_.projected_arc, result_.resolved_interface_dependencies,
-          request_.interface_exports, source_root_);
+          request_.interface_exports, source_root_, preprocessor_);
     else if (request_.emit_semantic_interface)
       result_.interface_artifact = EmitSemanticInterface(
           context, request_.module_name, request_.package_identity,
           result_.resolved_interface_dependencies,
           result_.resolved_interface_sources, {}, request_.interface_exports,
-          source_root_);
+          source_root_, preprocessor_);
   }
 
  private:
   const CompileRequest &request_;
   CompileResult &result_;
   clang::ASTContext *context_ = nullptr;
+  const clang::Preprocessor *preprocessor_;
   std::string source_root_;
 };
 }  // namespace
 
 std::unique_ptr<clang::ASTConsumer> MakeContractConsumer(
-    const CompileRequest &request, CompileResult &result) {
-  return std::make_unique<ContractConsumer>(request, result);
+    const CompileRequest &request, CompileResult &result,
+    const clang::Preprocessor *preprocessor) {
+  return std::make_unique<ContractConsumer>(request, result, preprocessor);
 }
 }  // namespace objc3::clang_foundation

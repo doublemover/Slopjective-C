@@ -24,6 +24,7 @@ struct InterfaceModuleRequest {
 struct InterfaceModuleResolution {
   bool success = false;
   bool requires_coroutine_header = false;
+  std::vector<std::string> standard_library_headers;
   std::vector<InterfaceImportInput> artifacts;
   std::vector<std::string> dependency_order;
   std::vector<std::string> visible_module_names;
