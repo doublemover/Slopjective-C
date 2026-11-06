@@ -82,6 +82,8 @@ int hop_consumed_roundtrip(int, objc3_executor_t *) __objc3_async_frame;
 void hop_consumed_reset(int);
 int hop_consumed_arguments(void);
 int hop_consumed_entries(void);
+int hop_initializing_nil_roundtrip(int, objc3_executor_t *) __objc3_async_frame;
+int hop_arc_initializing_nil_roundtrip(int, objc3_executor_t *) __objc3_async_frame;
 int hop_initializing_roundtrip(int, objc3_executor_t *) __objc3_async_frame;
 int hop_arc_initializing_roundtrip(int, objc3_executor_t *) __objc3_async_frame;
 void hop_initializing_reset(int);

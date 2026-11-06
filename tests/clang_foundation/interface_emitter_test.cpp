@@ -849,6 +849,13 @@ void TestCAsyncPhysicalABIRoundTrips() {
         found = true;
       }
     assert(found);
+    const std::vector<llvm::StringRef> old_supported = {
+        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v1",
+        RuntimeInterfaceSemantic()};
+    auto old_reader = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, old_supported);
+    assert(!old_reader);
+    llvm::consumeError(old_reader.takeError());
     auto stripped = *decoded;
     std::erase(stripped.required_semantics,
                std::string(kAsyncEntryABISemantic));
@@ -884,7 +891,7 @@ inline int published_entry(int value) __objc3_async_frame {
   assert(emitted.source_bytes.find("__objc3_await isolated_entry")!=std::string::npos);
   const std::vector<llvm::StringRef> supported={
       "objc3.cxx-data-interfaces.v1", "objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v1",
+      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v2",
       kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,RuntimeInterfaceSemantic()};
   auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
                                               emitted.source_bytes,supported);
@@ -1014,7 +1021,7 @@ inline int actor_request(objc3_actor_t *actor) __objc3_async {
   assert(emitted.source_bytes.find("promise_type")==std::string::npos);
   const std::vector<llvm::StringRef> supported={
       "objc3.cxx-data-interfaces.v1","objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v1",
+      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v2",
       kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,
       kSdkRuntimeDeclarationSemantic,RuntimeInterfaceSemantic(),
       "objc3.module-owned-names.v1"};
@@ -5983,7 +5990,7 @@ void TestBoundedCxxSemanticInterfaces() {
   {
     const std::vector<llvm::StringRef> semantics = {
         "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v1"};
+        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v2"};
     std::string previous;
     for (const char *signature :
          {"int get() const __objc3_async __objc3_throws(id<First>);",

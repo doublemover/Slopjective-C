@@ -11053,19 +11053,21 @@ index 000000000..73f1baa4f
 +
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index 9742b496c..18eba1fca 100644
+index 9742b496c..3f7ebce99 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
-@@ -15,6 +15,8 @@
+@@ -15,6 +15,10 @@
  
  #include "CGCXXABI.h"
  #include "CGCleanup.h"
++#include "CGObjC3Async.h"
++#include "clang/AST/ObjC3Async.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
  #include "CGObjCRuntime.h"
  #include "CodeGenFunction.h"
  #include "CodeGenModule.h"
-@@ -24,6 +26,7 @@
+@@ -24,6 +28,7 @@
  #include "clang/AST/Attr.h"
  #include "clang/AST/Decl.h"
  #include "clang/AST/DeclObjC.h"
@@ -11073,7 +11075,7 @@ index 9742b496c..18eba1fca 100644
  #include "clang/AST/RecordLayout.h"
  #include "clang/AST/StmtObjC.h"
  #include "clang/Basic/SourceManager.h"
-@@ -514,8 +517,9 @@ protected:
+@@ -514,8 +519,9 @@ protected:
    /// encoding as well.
    virtual std::string GetIVarOffsetVariableName(const ObjCInterfaceDecl *ID,
                                                  const ObjCIvarDecl *Ivar) {
@@ -11085,7 +11087,7 @@ index 9742b496c..18eba1fca 100644
      return Name;
    }
    /// Returns the variable used to store the offset of an instance variable.
-@@ -1346,7 +1350,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1346,7 +1352,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
  
    llvm::Value *GenerateProtocolRef(CodeGenFunction &CGF,
                                     const ObjCProtocolDecl *PD) override {
@@ -11094,7 +11096,7 @@ index 9742b496c..18eba1fca 100644
      auto *&Ref = ExistingProtocolRefs[Name];
      if (!Ref) {
        auto *&Protocol = ExistingProtocols[Name];
-@@ -1386,7 +1390,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1386,7 +1392,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      // Do nothing - we only emit referenced protocols.
    }
    llvm::Constant *GenerateProtocolRef(const ObjCProtocolDecl *PD) override {
@@ -11103,7 +11105,7 @@ index 9742b496c..18eba1fca 100644
      auto *&Protocol = ExistingProtocols[ProtocolName];
      if (Protocol)
        return Protocol;
-@@ -1559,6 +1563,30 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1559,6 +1565,30 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      return CGM.getCXXABI().getCatchAllTypeInfo();
    }
    llvm::Function *ModuleInitFunction() override {
@@ -11134,7 +11136,7 @@ index 9742b496c..18eba1fca 100644
      llvm::Function *LoadFunction = llvm::Function::Create(
        llvm::FunctionType::get(llvm::Type::getVoidTy(VMContext), false),
        llvm::GlobalValue::LinkOnceODRLinkage, ".objcv2_load_function",
-@@ -1708,8 +1736,9 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1708,8 +1738,9 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      std::string TypeEncoding;
      CGM.getContext().getObjCEncodingForType(Ivar->getType(), TypeEncoding);
      TypeEncoding = GetSymbolNameForTypeEncoding(TypeEncoding);
@@ -11146,7 +11148,7 @@ index 9742b496c..18eba1fca 100644
      return Name;
    }
    llvm::Value *EmitIvarOffset(CodeGenFunction &CGF,
-@@ -1741,7 +1770,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1741,7 +1772,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      // Get the class name
      ObjCInterfaceDecl *classDecl =
          const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
@@ -11155,7 +11157,7 @@ index 9742b496c..18eba1fca 100644
      auto *classNameConstant = MakeConstantString(className);
  
      ConstantInitBuilder builder(CGM);
-@@ -1807,7 +1836,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1807,7 +1838,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
        OID->getClassInterface()->getSuperClass();
      llvm::Constant *SuperClass = nullptr;
      if (SuperClassDecl) {
@@ -11165,7 +11167,7 @@ index 9742b496c..18eba1fca 100644
        SuperClass = TheModule.getNamedGlobal(SuperClassName);
        if (!SuperClass)
        {
-@@ -1995,8 +2025,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1995,8 +2027,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
  
        if (SuperClass) {
          std::pair<llvm::GlobalVariable*, int> v{classStruct, 1};
@@ -11176,7 +11178,7 @@ index 9742b496c..18eba1fca 100644
        }
  
      }
-@@ -2102,7 +2132,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2102,10 +2134,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
          CGF.EmitBlock(SelfIsNilBlock);
  
          //   return (ReturnType){ };
@@ -11184,8 +11186,13 @@ index 9742b496c..18eba1fca 100644
 +        auto retTy = CGF.FnRetTy;
          Builder.SetInsertPoint(SelfIsNilBlock);
          if (!retTy->isVoidType()) {
-           CGF.EmitNullInitialization(CGF.ReturnValue, retTy);
-@@ -2309,7 +2339,7 @@ protected:
+-          CGF.EmitNullInitialization(CGF.ReturnValue, retTy);
++          if (!emitObjC3NilAsyncFrame(CGF, CGF.ReturnValue, OMD))
++            CGF.EmitNullInitialization(CGF.ReturnValue, retTy);
+         }
+         CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
+         // }
+@@ -2309,10 +2342,11 @@ protected:
        CGF.EmitBlock(SelfIsNilBlock);
  
        //   return (ReturnType){ };
@@ -11193,8 +11200,13 @@ index 9742b496c..18eba1fca 100644
 +      auto retTy = CGF.FnRetTy;
        Builder.SetInsertPoint(SelfIsNilBlock);
        if (!retTy->isVoidType()) {
-         CGF.EmitNullInitialization(CGF.ReturnValue, retTy);
-@@ -2547,8 +2577,8 @@ llvm::Value *CGObjCGNU::GetClassNamed(CodeGenFunction &CGF,
+-        CGF.EmitNullInitialization(CGF.ReturnValue, retTy);
++        if (!emitObjC3NilAsyncFrame(CGF, CGF.ReturnValue, OMD))
++            CGF.EmitNullInitialization(CGF.ReturnValue, retTy);
+       }
+       CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
+       // }
+@@ -2547,8 +2581,8 @@ llvm::Value *CGObjCGNU::GetClassNamed(CodeGenFunction &CGF,
  // techniques can modify the name -> class mapping.
  llvm::Value *CGObjCGNU::GetClass(CodeGenFunction &CGF,
                                   const ObjCInterfaceDecl *OID) {
@@ -11205,7 +11217,7 @@ index 9742b496c..18eba1fca 100644
    if (auto *ClassSymbol = dyn_cast<llvm::GlobalVariable>(Value))
      CGM.setGVProperties(ClassSymbol, OID);
    return Value;
-@@ -2634,7 +2664,7 @@ llvm::Constant *CGObjCGNU::GetEHType(QualType T) {
+@@ -2634,7 +2668,7 @@ llvm::Constant *CGObjCGNU::GetEHType(QualType T) {
    assert(OPT && "Invalid @catch type.");
    const ObjCInterfaceDecl *IDecl = OPT->getObjectType()->getInterface();
    assert(IDecl && "Invalid @catch type.");
@@ -11214,7 +11226,7 @@ index 9742b496c..18eba1fca 100644
  }
  
  llvm::Constant *CGObjCGNUstep::GetEHType(QualType T) {
-@@ -2666,8 +2696,7 @@ llvm::Constant *CGObjCGNUstep::GetEHType(QualType T) {
+@@ -2666,8 +2700,7 @@ llvm::Constant *CGObjCGNUstep::GetEHType(QualType T) {
    assert(PT && "Invalid @catch type.");
    const ObjCInterfaceType *IT = PT->getInterfaceType();
    assert(IT && "Invalid @catch type.");
@@ -11224,7 +11236,7 @@ index 9742b496c..18eba1fca 100644
  
    std::string typeinfoName = "__objc_eh_typeinfo_" + className;
  
-@@ -2810,8 +2839,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2810,8 +2843,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
    llvm::Value *ReceiverClass = nullptr;
    bool isV2ABI = isRuntime(ObjCRuntime::GNUstep, 2);
    if (isV2ABI) {
@@ -11236,7 +11248,7 @@ index 9742b496c..18eba1fca 100644
      if (IsClassMessage)  {
        // Load the isa pointer of the superclass is this is a class method.
        ReceiverClass =
-@@ -2828,8 +2858,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2828,8 +2862,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
          classLookupFunction = CGM.CreateRuntimeFunction(llvm::FunctionType::get(
                IdTy, PtrTy, true), "objc_get_class");
        }
@@ -11248,7 +11260,7 @@ index 9742b496c..18eba1fca 100644
      } else {
        // Set up global aliases for the metaclass or class pointer if they do not
        // already exist.  These will are forward-references which will be set to
-@@ -2840,14 +2871,16 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2840,14 +2875,16 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
          if (!MetaClassPtrAlias) {
            MetaClassPtrAlias = llvm::GlobalAlias::create(
                IdElemTy, 0, llvm::GlobalValue::InternalLinkage,
@@ -11267,7 +11279,7 @@ index 9742b496c..18eba1fca 100644
          }
          ReceiverClass = ClassPtrAlias;
        }
-@@ -2876,7 +2909,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2876,7 +2913,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
  
    llvm::Metadata *impMD[] = {
        llvm::MDString::get(VMContext, Sel.getAsString()),
@@ -11278,7 +11290,7 @@ index 9742b496c..18eba1fca 100644
        llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(
            llvm::Type::getInt1Ty(VMContext), IsClassMessage))};
    llvm::MDNode *node = llvm::MDNode::get(VMContext, impMD);
-@@ -2928,7 +2963,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -2928,7 +2967,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
  
    llvm::Metadata *impMD[] = {
        llvm::MDString::get(VMContext, Sel.getAsString()),
@@ -11288,7 +11300,24 @@ index 9742b496c..18eba1fca 100644
        llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(
            llvm::Type::getInt1Ty(VMContext), Class != nullptr))};
    llvm::MDNode *node = llvm::MDNode::get(VMContext, impMD);
-@@ -2976,7 +3012,10 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -2969,14 +3009,25 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+       return false;
+ 
+     // If there's a consumed argument, we need a nil check.
+-    if (Method && Method->hasParamDestroyedInCallee()) {
+-      hasParamDestroyedInCallee = true;
++    if (Method) {
++      hasParamDestroyedInCallee = Method->hasParamDestroyedInCallee();
++      if (CGF.getLangOpts().ObjC3) {
++        for (const ParmVarDecl *P : Method->parameters())
++          hasParamDestroyedInCallee |= P->hasAttr<NSConsumedAttr>() || P->hasAttr<CFConsumedAttr>();
++        if (const auto *Type = getObjC3CallableFunctionType(Method))
++          for (unsigned I = 0; I != Type->getNumParams(); ++I)
++            hasParamDestroyedInCallee |= Type->isParamConsumed(I) ||
++                                        Type->getExtParameterInfo(I).isCFConsumed();
++      }
+     }
+ 
      // If the return value isn't flagged as unused, and the result
      // type isn't in our narrow set where we assume compatibility,
      // we need a nil check to ensure a nil value.
@@ -11300,7 +11329,17 @@ index 9742b496c..18eba1fca 100644
        if (ResultType->isVoidType()) {
          // void results are definitely okay.
        } else if (ResultType->hasPointerRepresentation() &&
-@@ -3141,6 +3180,15 @@ GenerateMethodList(StringRef ClassName,
+@@ -3099,7 +3150,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+       if (requiresExplicitAggZeroing) {
+         assert(msgRet.isAggregate());
+         Address addr = msgRet.getAggregateAddress();
+-        CGF.EmitNullInitialization(addr, ResultType);
++        if (!emitObjC3NilAsyncFrame(CGF, addr, Method))
++          CGF.EmitNullInitialization(addr, ResultType);
+       }
+ 
+       nilPathBB = CGF.Builder.GetInsertBlock();
+@@ -3141,6 +3193,15 @@ GenerateMethodList(StringRef ClassName,
                     StringRef CategoryName,
                     ArrayRef<const ObjCMethodDecl*> Methods,
                     bool isClassMethodList) {
@@ -11316,7 +11355,7 @@ index 9742b496c..18eba1fca 100644
    if (Methods.empty())
      return NULLPtr;
  
-@@ -3403,7 +3451,8 @@ llvm::Value *CGObjCGNU::GenerateProtocolRef(CodeGenFunction &CGF,
+@@ -3403,7 +3464,8 @@ llvm::Value *CGObjCGNU::GenerateProtocolRef(CodeGenFunction &CGF,
  }
  
  llvm::Constant *CGObjCGNU::GenerateProtocolRef(const ObjCProtocolDecl *PD) {
@@ -11326,7 +11365,7 @@ index 9742b496c..18eba1fca 100644
    if (!protocol)
      GenerateProtocol(PD);
    assert(protocol && "Unknown protocol");
-@@ -3440,7 +3489,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
+@@ -3440,7 +3502,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
    if (PD->isNonRuntimeProtocol())
      return;
  
@@ -11335,7 +11374,7 @@ index 9742b496c..18eba1fca 100644
  
    // Use the protocol definition, if there is one.
    if (const ObjCProtocolDecl *Def = PD->getDefinition())
-@@ -3448,7 +3497,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
+@@ -3448,7 +3510,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
  
    SmallVector<std::string, 16> Protocols;
    for (const auto *PI : PD->protocols())
@@ -11344,7 +11383,7 @@ index 9742b496c..18eba1fca 100644
    SmallVector<const ObjCMethodDecl*, 16> InstanceMethods;
    SmallVector<const ObjCMethodDecl*, 16> OptionalInstanceMethods;
    for (const auto *I : PD->instance_methods())
-@@ -3590,14 +3639,15 @@ llvm::Constant *CGObjCGNU::GenerateCategoryProtocolList(const
+@@ -3590,14 +3652,15 @@ llvm::Constant *CGObjCGNU::GenerateCategoryProtocolList(const
        GetRuntimeProtocolList(RefPro.begin(), RefPro.end());
    SmallVector<std::string, 16> Protocols;
    for (const auto *PD : RuntimeProtos)
@@ -11363,7 +11402,7 @@ index 9742b496c..18eba1fca 100644
  
    // Collect the names of referenced protocols
    const ObjCCategoryDecl *CatDecl = OCD->getCategoryDecl();
-@@ -3734,7 +3784,7 @@ void CGObjCGNU::RegisterAlias(const ObjCCompatibleAliasDecl *OAD) {
+@@ -3734,7 +3797,7 @@ void CGObjCGNU::RegisterAlias(const ObjCCompatibleAliasDecl *OAD) {
    // Get the class declaration for which the alias is specified.
    ObjCInterfaceDecl *ClassDecl =
      const_cast<ObjCInterfaceDecl *>(OAD->getClassInterface());
@@ -11372,7 +11411,7 @@ index 9742b496c..18eba1fca 100644
                              OAD->getNameAsString());
  }
  
-@@ -3746,14 +3796,14 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
+@@ -3746,14 +3809,14 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
      OID->getClassInterface()->getSuperClass();
    std::string SuperClassName;
    if (SuperClassDecl) {
@@ -11389,7 +11428,7 @@ index 9742b496c..18eba1fca 100644
  
    // Emit the symbol that is used to generate linker errors if this class is
    // referenced in other modules but not declared.
-@@ -3865,7 +3915,7 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
+@@ -3865,7 +3928,7 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
        GetRuntimeProtocolList(RefProtocols.begin(), RefProtocols.end());
    SmallVector<std::string, 16> Protocols;
    for (const auto *I : RuntimeProtocols)
@@ -11398,7 +11437,7 @@ index 9742b496c..18eba1fca 100644
  
    // Get the superclass pointer.
    llvm::Constant *SuperClass;
-@@ -4468,7 +4518,8 @@ llvm::Value *CGObjCGNU::EmitIvarOffset(CodeGenFunction &CGF,
+@@ -4468,7 +4531,8 @@ llvm::Value *CGObjCGNU::EmitIvarOffset(CodeGenFunction &CGF,
                CharUnits::fromQuantity(4)),
            PtrDiffTy);
      std::string name = "__objc_ivar_offset_value_" +
@@ -21218,23 +21257,25 @@ index 000000000..bd22a8a23
 +} // namespace clang::CodeGen
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjCRuntime.cpp b/clang/lib/CodeGen/CGObjCRuntime.cpp
-index 2b8bd170b..0df3194d5 100644
+index 2b8bd170b..418600989 100644
 --- a/clang/lib/CodeGen/CGObjCRuntime.cpp
 +++ b/clang/lib/CodeGen/CGObjCRuntime.cpp
-@@ -13,10 +13,12 @@
+@@ -13,10 +13,14 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGObjCRuntime.h"
 +#include "CGObjC3ArcCarriers.h"
  #include "CGCXXABI.h"
  #include "CGCleanup.h"
++#include "CGObjC3Async.h"
++#include "clang/AST/ObjC3Async.h"
  #include "CGRecordLayout.h"
  #include "CodeGenFunction.h"
 +#include "CGObjC3BlockCaptures.h"
  #include "CodeGenModule.h"
  #include "clang/AST/RecordLayout.h"
  #include "clang/AST/StmtObjC.h"
-@@ -262,6 +264,7 @@ void CGObjCRuntime::EmitTryCatchStmt(CodeGenFunction &CGF,
+@@ -262,6 +266,7 @@ void CGObjCRuntime::EmitTryCatchStmt(CodeGenFunction &CGF,
        EmitInitOfCatchParam(CGF, CastExn, CatchParam);
      }
  
@@ -21242,7 +21283,29 @@ index 2b8bd170b..0df3194d5 100644
      CGF.ObjCEHValueStack.push_back(Exn);
      CGF.EmitStmt(Handler.Body);
      CGF.ObjCEHValueStack.pop_back();
-@@ -451,6 +454,9 @@ void CGObjCRuntime::destroyCalleeDestroyedArguments(CodeGenFunction &CGF,
+@@ -433,10 +438,19 @@ void CGObjCRuntime::destroyCalleeDestroyedArguments(CodeGenFunction &CGF,
+                                               const ObjCMethodDecl *method,
+                                               const CallArgList &callArgs) {
+   CallArgList::const_iterator I = callArgs.begin();
++  const auto *Type = getObjC3CallableFunctionType(method);
++  unsigned Index = 0;
+   for (auto i = method->param_begin(), e = method->param_end();
+-         i != e; ++i, ++I) {
++         i != e; ++i, ++I, ++Index) {
+     const ParmVarDecl *param = (*i);
+-    if (param->hasAttr<NSConsumedAttr>()) {
++    const auto Info = Type && Index < Type->getNumParams() ? Type->getExtParameterInfo(Index)
++        : FunctionProtoType::ExtParameterInfo();
++    if (CGF.getLangOpts().ObjC3 && (param->hasAttr<CFConsumedAttr>() || Info.isCFConsumed())) {
++      RValue RV = I->getRValue(CGF);
++      assert(RV.isScalar() && "CF consumed argument must have scalar storage");
++      emitObjC3CFRelease(CGF, RV.getScalarVal());
++    } else if (param->hasAttr<NSConsumedAttr>() ||
++               (CGF.getLangOpts().ObjC3 && Info.isConsumed())) {
+       RValue RV = I->getRValue(CGF);
+       assert(RV.isScalar() &&
+              "NullReturnState::complete - arg not on object");
+@@ -451,6 +465,9 @@ void CGObjCRuntime::destroyCalleeDestroyedArguments(CodeGenFunction &CGF,
          case QualType::DK_cxx_destructor:
            CGF.destroyCXXObject(CGF, RV.getAggregateAddress(), QT);
            break;
@@ -25578,10 +25641,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..3adba7496
+index 000000000..466caca34
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1402 @@
+@@ -0,0 +1,1448 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25606,6 +25669,7 @@ index 000000000..3adba7496
 +#include "clang/AST/Mangle.h"
 +#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ObjC3Async.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/StmtObjC.h"
 +#include "llvm/ADT/STLExtras.h"
@@ -26203,6 +26267,51 @@ index 000000000..3adba7496
 +  return F;
 +}
 +} // namespace
++
++bool clang::CodeGen::emitObjC3NilAsyncFrame(CodeGenFunction &Parent, Address Result,
++                                           const ObjCMethodDecl *Method) {
++  if (!Method || !Method->getObjC3FunctionEffects().AsyncFrame) return false;
++  auto &CGM = Parent.CGM;
++  auto &Ctx = CGM.getContext();
++  const auto *Original = getObjC3CallableFunctionType(Method);
++  QualType Logical = Original->getReturnType();
++  // Ordinary Objective-C nil returns have no C++ constructor or active-arm
++  // semantics. Do not fabricate a nontrivial C++ object or resource owner.
++  if ((Logical->isRecordType() && !Logical.isTriviallyCopyableType(Ctx)) ||
++      getObjC3ResourceTypeContract(Ctx, Logical).Cleanup) return false;
++  FunctionProtoType::ExtProtoInfo Info;
++  Info.ObjC3Effects.Async = true;
++  Info.ObjC3Effects.AsyncFrame = true;
++  QualType Type = Ctx.getFunctionType(Logical, {}, Info);
++  auto *Function = FunctionDecl::Create(Ctx, Ctx.getTranslationUnitDecl(),
++      SourceLocation(), SourceLocation(), &Ctx.Idents.get("__objc3_nil_frame_entry"),
++      Type, Ctx.getTrivialTypeSourceInfo(Type), SC_Static);
++  Function->setImplicit();
++  if (hasObjC3CFResultOwnership(Method))
++    Function->addAttr(CFReturnsNotRetainedAttr::CreateImplicit(Ctx));
++  Expr *Zero = Logical->isVoidType() ? nullptr : new (Ctx) ImplicitValueInitExpr(Logical);
++  Stmt *Return = ReturnStmt::Create(Ctx, SourceLocation(), Zero, nullptr);
++  auto *Body = CompoundStmt::Create(Ctx, {Return}, FPOptionsOverride(),
++                                     SourceLocation(), SourceLocation());
++  Function->setBody(Body);
++  QualType Frame = Ctx.getObjC3AsyncReturnType(Original);
++  Ctx.setObjC3AsyncFrameType(Logical, Frame);
++  const auto &FI = CGM.getTypes().arrangeFunctionDeclaration(Function);
++  auto *Entry = llvm::Function::Create(CGM.getTypes().GetFunctionType(FI),
++      llvm::GlobalValue::InternalLinkage, "__objc3_nil_frame_entry", &CGM.getModule());
++  CGM.SetInternalFunctionAttributes(GlobalDecl(Function), Entry, FI);
++  {
++    CodeGenFunction Nil(CGM);
++    FunctionArgList Parameters;
++    Nil.StartFunction(GlobalDecl(Function), Frame, Entry, FI, Parameters);
++    auto Debug = ApplyDebugLocation::CreateArtificial(Nil);
++    Nil.EmitObjC3CAsyncBody(*Function, *Body);
++    Nil.FinishFunction();
++  }
++  CallArgList Arguments;
++  Parent.EmitCall(FI, CGCallee::forDirect(Entry), ReturnValueSlot(Result, false), Arguments);
++  return true;
++}
 +
 +llvm::Value *clang::CodeGen::emitObjC3CFRetain(CodeGenFunction &CGF,
 +                                              llvm::Value *Value) {
@@ -26986,10 +27095,10 @@ index 000000000..3adba7496
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3Async.h b/clang/lib/CodeGen/CGObjC3Async.h
 new file mode 100644
-index 000000000..a919ac350
+index 000000000..40dedd2c0
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.h
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,45 @@
 +//===--- CGObjC3Async.h - Native C async checked continuation ----*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ASYNC_H
@@ -27004,9 +27113,11 @@ index 000000000..a919ac350
 +class CallExpr;
 +class CharUnits;
 +class VarDecl;
++class ObjCMethodDecl;
 +namespace CodeGen {
 +class CodeGenFunction;
 +class Address;
++bool emitObjC3NilAsyncFrame(CodeGenFunction &, Address, const ObjCMethodDecl *);
 +// Standard CF ownership operations skip null, which is valid optional storage
 +// but is not a valid operand for the foreign runtime's CFRetain/CFRelease.
 +llvm::Value *emitObjC3CFRetain(CodeGenFunction &, llvm::Value *);
@@ -30268,3 +30379,70 @@ index 000000000..35e537b3e
 +// CHECK-DAG: @CFRelease
 +// CHECK-DAG: @llvm.coro.begin
 +// CHECK-DAG: @objc3_task_copy_result
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-nil-frames.h b/clang/test/ObjC3/CodeGen/Inputs/native-nil-frames.h
+new file mode 100644
+index 000000000..2fec32966
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-nil-frames.h
+@@ -0,0 +1,26 @@
++#ifndef OBJC3_NATIVE_NIL_FRAMES_H
++#define OBJC3_NATIVE_NIL_FRAMES_H
++#include "native-c-async-frame.h"
++@protocol Sendable @end
++typedef const struct NilOpaque *NilCFRef;
++struct NilRecord {int value;double weight;};
++__attribute__((objc_root_class)) @interface NilRoot <Sendable>
++- (instancetype)initNative __objc3_async_frame __attribute__((nothrow,objc_executor(main)));
++- (instancetype)initDirectNative __objc3_async_frame __attribute__((objc_direct,nothrow,objc_executor(main)));
++- (int)scalar:(__attribute__((ns_consumed)) id)value __objc3_async_frame __attribute__((nothrow,objc_executor(main)));
++- (struct NilRecord)record __objc3_async_frame __attribute__((nothrow,objc_executor(main)));
++- (NilCFRef)foreign:(__attribute__((cf_consumed)) NilCFRef)value __objc3_async_frame __attribute__((cf_returns_retained,nothrow,objc_executor(main)));
++@end
++@implementation NilRoot
++- (instancetype)initDirectNative __objc3_async_frame {return self;}
++@end
++static inline int nil_frame_parent(NilRoot *receiver, __attribute__((ns_consumed)) id value,
++                                  __attribute__((cf_consumed)) NilCFRef foreign) __objc3_async_frame {
++  int result=__objc3_await [receiver scalar:value];
++  result+=(__objc3_await [receiver initNative])!=0;
++  result+=(__objc3_await [receiver initDirectNative])!=0;
++  result+=(__objc3_await [receiver foreign:foreign])!=0;
++  struct NilRecord record=__objc3_await [receiver record];
++  return result+record.value;
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-nil-frames.m b/clang/test/ObjC3/CodeGen/native-nil-frames.m
+new file mode 100644
+index 000000000..d2253da2c
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-nil-frames.m
+@@ -0,0 +1,29 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -emit-pch %S/Inputs/native-nil-frames.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -include-pch %t-c17-False.pch -DFROM_PCH -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -emit-pch %S/Inputs/native-nil-frames.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -emit-pch %S/Inputs/native-nil-frames.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -include-pch %t-c++20-False.pch -DFROM_PCH -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -emit-pch %S/Inputs/native-nil-frames.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -emit-pch %S/Inputs/native-nil-frames.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -include-pch %t-c++23-False.pch -DFROM_PCH -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -emit-pch %S/Inputs/native-nil-frames.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-incomplete-implementation -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-nil-frames.h"
++#endif
++objc3_async_frame use_nil_frames(NilRoot *receiver, id object, NilCFRef foreign) {
++  return nil_frame_parent(receiver, object, foreign);
++}
++// CHECK-DAG: @__objc3_nil_frame_entry
++// CHECK-DAG: @CFRelease
++// CHECK-DAG: @llvm.objc.release
++// CHECK-DAG: @llvm.coro.begin
++void *aligned_alloc(__SIZE_TYPE__ alignment, __SIZE_TYPE__ size) {return 0;}

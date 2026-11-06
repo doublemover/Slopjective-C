@@ -280,6 +280,11 @@ static int related_initializer_task(__attribute__((ns_consumed)) HopObject *rece
     noexcept __objc3_async __attribute__((objc_executor(main)));
 static int related_initializer_task(__attribute__((ns_consumed)) HopObject *receiver, int kind)
     noexcept __objc3_async {
+  if (kind == 5) {
+    auto value = __objc3_await [(HopObject *)0 relatedInit:0];
+    static_assert(__is_same(__typeof__(*value), HopObject));
+    return value == 0 ? 42 : 0;
+  }
   if (kind == 4) {
     auto unused = __objc3_async_related_frame<HopObject *, id>([receiver relatedInit:0]);
     (void)unused;
@@ -291,5 +296,5 @@ static int related_initializer_task(__attribute__((ns_consumed)) HopObject *rece
 }
 extern "C" int hop_mrc_initializer_task_roundtrip(int kind, objc3_executor_t *caller)
     __objc3_async_frame {
-  return __objc3_await related_initializer_task(hop_mrc_source(caller), kind);
+  return __objc3_await related_initializer_task(kind == 5 ? nullptr : hop_mrc_source(caller), kind);
 }

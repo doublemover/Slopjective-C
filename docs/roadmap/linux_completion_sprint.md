@@ -8,28 +8,29 @@ compiler campaigns remain selectable and are required for final acceptance.
 
 ## Implementation ledger
 
-| Area               | Concrete remaining contract                                                                                                 | Current state                                                      |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Native publication | C/Objective-C C17 `overloadable` declarations, conditional overload identities, canonical attributes and source-free replay | Source authored; native replay and SDK verification pending        |
-| Native publication | Remaining dependent lookup, declaration/predicate forms and standard-library publication                                    | Open                                                               |
-| Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass               |
-| Ownership/System   | Indirect writes/aliases, borrowed results, mixed/generic/lazy captures and exceptional cleanup                              | Open                                                               |
-| Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                               |
-| Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                               |
-| Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native verification in progress           |
-| Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                   |
-| Isolation          | Plain opaque CF consumed arguments across synchronous, native-frame and C++ task entries                                    | Source authored; focused native execution passes                   |
-| Isolation          | Ordinary C++ coroutine function, Objective-C++ method and Block consumed ownership                                          | Source authored; focused source/PCH and native execution pass      |
-| Isolation          | Remaining crossings, task-ABI initializer/CF results, NSObject-backed storage and managed values                            | Open                                                               |
-| Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native verification in progress           |
-| Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                               |
-| Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending    |
-| Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending    |
-| Key paths          | Dependent type constructors, deduction, partial ordering and typed generic package APIs                                     | Source authored; native compiler/PCH/package verification pending  |
-| Key paths          | Effectful/isolated and ownership-bearing paths                                                                              | Open                                                               |
-| Key paths          | Nonnull/scalar/aggregate nullable-chain result policy and implementation                                                    | Source authored; compiler/runtime/PCH/package verification pending |
-| Language/library   | Remaining specified generic, property, reflection/metaprogramming and interoperability contracts                            | Open                                                               |
-| Profiles           | Core, Strict, Strict Concurrency and Strict System conformance                                                              | Open                                                               |
+| Area               | Concrete remaining contract                                                                                                 | Current state                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Native publication | C/Objective-C C17 `overloadable` declarations, conditional overload identities, canonical attributes and source-free replay | Source authored; native replay and SDK verification pending         |
+| Native publication | Remaining dependent lookup, declaration/predicate forms and standard-library publication                                    | Open                                                                |
+| Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass                |
+| Ownership/System   | Indirect writes/aliases, borrowed results, mixed/generic/lazy captures and exceptional cleanup                              | Open                                                                |
+| Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                |
+| Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                                |
+| Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native source/PCH/runtime execution passes |
+| Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                    |
+| Isolation          | Plain opaque CF consumed arguments across synchronous, native-frame and C++ task entries                                    | Source authored; focused native execution passes                    |
+| Isolation          | Ordinary C++ coroutine function, Objective-C++ method and Block consumed ownership                                          | Source authored; focused source/PCH and native execution pass       |
+| Isolation          | Remaining crossings, task-ABI initializer/CF results, NSObject-backed storage and managed values                            | Open                                                                |
+| Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native source/PCH/runtime execution passes |
+| Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                                |
+| Isolation          | Typed nil native-frame messages and consumed argument cleanup                                                               | Source authored; focused source/PCH/runtime execution passes        |
+| Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending     |
+| Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending     |
+| Key paths          | Dependent type constructors, deduction, partial ordering and typed generic package APIs                                     | Source authored; native compiler/PCH/package verification pending   |
+| Key paths          | Effectful/isolated and ownership-bearing paths                                                                              | Open                                                                |
+| Key paths          | Nonnull/scalar/aggregate nullable-chain result policy and implementation                                                    | Source authored; compiler/runtime/PCH/package verification pending  |
+| Language/library   | Remaining specified generic, property, reflection/metaprogramming and interoperability contracts                            | Open                                                                |
+| Profiles           | Core, Strict, Strict Concurrency and Strict System conformance                                                              | Open                                                                |
 
 The normative Part 8 resource-union capability boundary remains explicit. A
 feature without defined semantics cannot be marked complete by accepting an
@@ -231,8 +232,27 @@ successive cancellation stages. All 36 new source/PCH CodeGen commands, six CF a
 compiler regressions pass. Three native configurations pass 58 commands, with
 232 CF and 118 initializer/result scenarios each. All eight affected frontend
 units and expanded test sources compile; frontend execution, complete matrices
-and SDK delivery remain pending. Task-ABI initializer/CF results, nil receiver
-synthesis, NSObject-backed CF storage and managed unions remain explicit work.
+and SDK delivery remain pending. Task-ABI initializer/CF results and nil entries, NSObject-backed CF storage and managed unions remain explicit work.
+
+## Authored nil native-frame messages
+
+The [2.101 nil span](linux_native_nil_frames.md) replaces invalid zero carriers
+with typed lazy zero results for eligible native-frame messages. Direct-method
+nil prologues use the same owner, and actor nil entries need no mailbox.
+Consumed object/Block/CF arguments are disposed without invoking the source
+method, including synchronous methods whose facts live on parameter attributes.
+Artificial helper debug locations preserve LLVM verification with a same-module
+allocator definition.
+
+All eighteen C17/C++20/C++23 ARC/MRC source/PCH/debug CodeGen commands pass.
+The native controls now include 68 nil scenarios per configuration. Source-free
+entry semantics cut over to `objc3.async-entry-abi.v2`; old-reader rejection,
+reader registries and codec fuzz vocabulary are updated. Three focused native
+configurations pass 58 commands with 68 nil scenarios each. All 45 affected
+compiler regressions, seventeen feature-authority/codec policy controls and
+compile checks for eight frontend units and expanded tests pass. Task-ABI entries
+and nontrivial/resource zero-result policies remain
+separate work; full frontend, instrumented/package and SDK acceptance is pending.
 
 ## Authored nullable key-path result policy
 

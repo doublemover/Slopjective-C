@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 100,
+        "minor": 101,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -232,7 +232,9 @@
         "Required async-consuming-ownership semantic identity for published signatures/bodies, with codec/contract and source-free reader rejection of missing or invented capability claims (source authored; frontend execution pending)",
         "Native-frame initializer receiver/result ownership, concrete instancetype await results and retained object result adoption under ARC/MRC (source)",
         "Plain opaque CF retained/borrowed isolated and native-frame result storage, independent copy/move/destruction and full-expression await owners (source)",
-        "Source-free async entry ownership semantic v2 hard cutover for consumed arguments/receivers and object/CF native-frame results (source)"
+        "Source-free async entry ownership semantic v2 hard cutover for consumed arguments/receivers and object/CF native-frame results (source)",
+        "Typed lazy nil results for eligible native-frame messages and direct-method nil prologues, with normal native allocation/cancellation/destruction and artificial debug locations (source)",
+        "Nil receiver NS/Block/CF consumed-argument disposal from declaration and function-type facts, including synchronous methods and source-free async entry semantic v2 (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

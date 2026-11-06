@@ -71,10 +71,13 @@ destruction. CF controls also drop the borrowed producer's original owner
 before consumer resumption. Frontend controls check concrete logical result
 types and source-free ownership requirements.
 
-Initializer declarations using the task ABI, task-ABI CF results, native async
-nil receiver synthesis, NSObject-backed CF storage and general
+Initializer declarations using the task ABI, task-ABI CF results, task-ABI nil receiver forms, NSObject-backed CF storage and general
 foreign ownership families retain separate implementation work. Managed union
 frames still require an active-arm ownership contract.
 
 All eight affected frontend units and the expanded emitter/isolation regression
 sources pass compile checks. Their execution remains part of consolidation.
+
+[Source 2.101](linux_native_nil_frames.md) adds typed nil native-frame messages
+and consumed-argument cleanup. Its entry semantic v2 accompanies the separate
+consuming-ownership semantic v2.
