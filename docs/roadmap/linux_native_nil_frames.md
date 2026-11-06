@@ -37,5 +37,7 @@ and seventeen feature-authority/codec policy controls pass. All eight affected
 frontend units and expanded emitter/isolation tests compile. Frontend source-free execution, complete
 instrumented/package matrices and SDK acceptance remain in consolidation.
 
-Task-ABI method entries, nontrivial/resource result policies and other unqualified
-value forms retain their separate implementation work.
+[Source 2.102](linux_task_result_ownership.md) adds the task-ABI nil counterparts
+and cuts entry semantics over to v3. Focused native execution passes.
+Nontrivial/resource result policies and other unqualified value forms retain
+their separate implementation work.

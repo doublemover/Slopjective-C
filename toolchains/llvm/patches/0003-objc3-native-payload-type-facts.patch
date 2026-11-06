@@ -1665,10 +1665,10 @@ index 000000000..d2047cc0f
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..b40cc4ef5
+index 000000000..65e911c9d
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,246 @@
+@@ -0,0 +1,252 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1757,11 +1757,11 @@ index 000000000..b40cc4ef5
 +         T->getPointeeType().getAddressSpace() == LangAS::Default;
 +}
 +
-+/// Native-frame retained results transfer a manual +1 into result storage.
++/// Retained async results transfer a manual +1 into promise/frame storage.
 +/// This is distinct from the frame's own independent copy-out owner.
-+inline bool isObjC3OwnedFrameResult(const Decl *Callable) {
++inline bool isObjC3OwnedAsyncResult(const Decl *Callable) {
 +  const auto *Type = getObjC3CallableFunctionType(Callable);
-+  if (!Type || !Type->getObjC3FunctionEffects().AsyncFrame ||
++  if (!Type || !Type->getObjC3FunctionEffects().Async ||
 +      !Type->getReturnType()->isObjCRetainableType()) return false;
 +  if (Callable->hasAttr<NSReturnsNotRetainedAttr>() ||
 +      Callable->hasAttr<NSReturnsAutoreleasedAttr>()) return false;
@@ -1774,6 +1774,11 @@ index 000000000..b40cc4ef5
 +    default: break;
 +    }
 +  return false;
++}
++
++inline bool isObjC3OwnedFrameResult(const Decl *Callable) {
++  const auto *Type = getObjC3CallableFunctionType(Callable);
++  return Type && Type->getObjC3FunctionEffects().AsyncFrame && isObjC3OwnedAsyncResult(Callable);
 +}
 +
 +inline bool hasObjC3CFResultOwnership(const Decl *Callable) {
@@ -1830,6 +1835,7 @@ index 000000000..b40cc4ef5
 +  if (FD && FD->getIdentifier() &&
 +      (FD->getIdentifier()->isStr("__objc3_async_from_frame") ||
 +       FD->getIdentifier()->isStr("__objc3_async_related_frame") ||
++       FD->getIdentifier()->isStr("__objc3_async_related_task") ||
 +       FD->getIdentifier()->isStr("__objc3_async_to_frame")) &&
 +      Call->getNumArgs() == 1)
 +    return Call->getArg(0)->IgnoreImplicit()->IgnoreParenImpCasts();

@@ -51,10 +51,10 @@ inline bool HasNativeConsumedCallable(const clang::Decl *declaration) {
 
 inline bool HasNativeAsyncConsumedCallable(const clang::Decl *declaration) {
   const auto *type = clang::getObjC3CallableFunctionType(declaration);
-  const bool foreign_result = type && type->getObjC3FunctionEffects().AsyncFrame &&
+  const bool foreign_result = type && type->getObjC3FunctionEffects().Async &&
       clang::hasObjC3CFResultOwnership(declaration);
   return clang::isObjC3OwningAsyncEntry(declaration) &&
-      (HasNativeConsumedCallable(declaration) || clang::isObjC3OwnedFrameResult(declaration) || foreign_result);
+      (HasNativeConsumedCallable(declaration) || clang::isObjC3OwnedAsyncResult(declaration) || foreign_result);
 }
 
 // Values, not source expressions or AST addresses, participate in contract
@@ -170,9 +170,9 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     if (!skip_retained_result && function->getExtInfo().getProducesResult())
       AppendNativeContractField(out, position + ":ns-returns-retained");
     if (const auto *prototype = llvm::dyn_cast<clang::FunctionProtoType>(function);
-        prototype && prototype->getObjC3FunctionEffects().AsyncFrame &&
+        prototype && prototype->getObjC3FunctionEffects().Async &&
         prototype->getExtInfo().getProducesResult())
-      AppendNativeContractField(out, ";async-consuming-ownership:v2;");
+      AppendNativeContractField(out, ";async-consuming-ownership:v3;");
     AppendNativeTypeContracts(out, function->getReturnType(), context,
                               position + ".return", depth + 1);
     if (const auto *prototype =
@@ -183,7 +183,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
         if (prototype->getObjC3FunctionEffects().Async &&
             (prototype->isParamConsumed(index) ||
              prototype->getExtParameterInfo(index).isCFConsumed()))
-          AppendNativeContractField(out, ";async-consuming-ownership:v2;");
+          AppendNativeContractField(out, ";async-consuming-ownership:v3;");
         AppendNativeTypeContracts(out, prototype->getParamType(index), context,
                                   parameter, depth + 1);
         if (prototype->getExtParameterInfo(index).isNoEscape())
@@ -274,7 +274,7 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
     for (unsigned i = 0; i < method->param_size(); ++i)
       parameter(method->getParamDecl(i), i);
   if (HasNativeAsyncConsumedCallable(declaration))
-    AppendNativeContractField(ownership, ";async-consuming-ownership:v2;");
+    AppendNativeContractField(ownership, ";async-consuming-ownership:v3;");
   if (!ownership.empty()) {
     if (!effects.ownership_identity.empty())
       effects.ownership_identity += ";";

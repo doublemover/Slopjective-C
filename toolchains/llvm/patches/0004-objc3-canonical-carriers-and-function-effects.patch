@@ -14113,7 +14113,7 @@ index eafda3219..e1a35e3d4 100644
    ResultTy = ResultTy.getNonLValueExprType(Context);
  
 diff --git a/clang/lib/Sema/SemaStmt.cpp b/clang/lib/Sema/SemaStmt.cpp
-index 4d12b6c72..d661ba450 100644
+index 4d12b6c72..d4969de4f 100644
 --- a/clang/lib/Sema/SemaStmt.cpp
 +++ b/clang/lib/Sema/SemaStmt.cpp
 @@ -1,3 +1,5 @@
@@ -14205,7 +14205,7 @@ index 4d12b6c72..d661ba450 100644
      if (FD->hasAttrs())
        Attrs = &FD->getAttrs();
      if (FD->isNoReturn() && !getCurFunction()->isCoroutine())
-@@ -4104,7 +4133,11 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4104,10 +4133,14 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
      }
    } else if (ObjCMethodDecl *MD = getCurMethodDecl()) {
      FnRetType = MD->getReturnType();
@@ -14217,7 +14217,11 @@ index 4d12b6c72..d661ba450 100644
 +    isObjCMethod = !Async;
      if (MD->hasAttrs())
        Attrs = &MD->getAttrs();
-     if (MD->hasRelatedResultType() && MD->getClassInterface()) {
+-    if (MD->hasRelatedResultType() && MD->getClassInterface()) {
++    if (!Async && MD->hasRelatedResultType() && MD->getClassInterface()) {
+       // In the implementation of a method with a related return type, the
+       // type used to type-check the validity of return statements within the
+       // method body is a pointer to the type of the class being implemented.
 @@ -4293,8 +4326,16 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
      // the C version of which boils down to CheckSingleAssignmentConstraints.
      if (!HasDependentReturnType && !RetValExp->isTypeDependent()) {
@@ -24796,13 +24800,14 @@ index 76c51b8d9..2fe982a87 100644
      if (includeCategoryNamespace) {
        if (auto category = MD->getCategory())
 diff --git a/clang/lib/Sema/SemaCoroutine.cpp b/clang/lib/Sema/SemaCoroutine.cpp
-index 4b99e4454..ca2474e12 100644
+index 4b99e4454..b7dd32c51 100644
 --- a/clang/lib/Sema/SemaCoroutine.cpp
 +++ b/clang/lib/Sema/SemaCoroutine.cpp
-@@ -14,11 +14,13 @@
+@@ -14,11 +14,14 @@
  //===----------------------------------------------------------------------===//
  
  #include "CoroutineStmtBuilder.h"
++#include "SemaObjC3Effects.h"
 +#include "SemaObjC3ErrorContext.h"
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/Decl.h"
@@ -24813,7 +24818,7 @@ index 4b99e4454..ca2474e12 100644
  #include "clang/AST/StmtCXX.h"
  #include "clang/Basic/Builtins.h"
  #include "clang/Basic/TargetInfo.h"
-@@ -31,6 +33,44 @@
+@@ -31,6 +34,44 @@
  using namespace clang;
  using namespace sema;
  
@@ -24858,7 +24863,7 @@ index 4b99e4454..ca2474e12 100644
  static LookupResult lookupMember(Sema &S, const char *Name, CXXRecordDecl *RD,
                                   SourceLocation Loc, bool &Res) {
    DeclarationName DN = S.PP.getIdentifierInfo(Name);
-@@ -51,11 +91,17 @@ static bool lookupMember(Sema &S, const char *Name, CXXRecordDecl *RD,
+@@ -51,11 +92,17 @@ static bool lookupMember(Sema &S, const char *Name, CXXRecordDecl *RD,
  
  /// Look up the std::coroutine_traits<...>::promise_type for the given
  /// function type.
@@ -24878,7 +24883,7 @@ index 4b99e4454..ca2474e12 100644
    ClassTemplateDecl *CoroTraits =
        S.lookupCoroutineTraits(KwLoc, FuncLoc);
    if (!CoroTraits)
-@@ -68,7 +114,7 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
+@@ -68,7 +115,7 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
      Args.addArgument(TemplateArgumentLoc(
          TemplateArgument(T), S.Context.getTrivialTypeSourceInfo(T, KwLoc)));
    };
@@ -24887,7 +24892,7 @@ index 4b99e4454..ca2474e12 100644
    // If the function is a non-static member function, add the type
    // of the implicit object parameter before the formal parameters.
    if (auto *MD = dyn_cast<CXXMethodDecl>(FD)) {
-@@ -185,8 +231,41 @@ static bool isValidCoroutineContext(Sema &S, SourceLocation Loc,
+@@ -185,8 +232,41 @@ static bool isValidCoroutineContext(Sema &S, SourceLocation Loc,
    // appear in a default argument." But the diagnostic QoI here could be
    // improved to inform the user that default arguments specifically are not
    // allowed.
@@ -24929,7 +24934,7 @@ index 4b99e4454..ca2474e12 100644
      S.Diag(Loc, isa<ObjCMethodDecl>(S.CurContext)
                      ? diag::err_coroutine_objc_method
                      : diag::err_coroutine_outside_function) << Keyword;
-@@ -293,6 +372,11 @@ struct ReadySuspendResumeResult {
+@@ -293,6 +373,11 @@ struct ReadySuspendResumeResult {
    Expr *Results[3];
    OpaqueValueExpr *OpaqueValue;
    bool IsInvalid;
@@ -24941,7 +24946,7 @@ index 4b99e4454..ca2474e12 100644
  };
  
  static ExprResult buildMemberCall(Sema &S, Expr *Base, SourceLocation Loc,
-@@ -462,15 +546,16 @@ static ExprResult buildPromiseCall(Sema &S, VarDecl *Promise,
+@@ -462,15 +547,16 @@ static ExprResult buildPromiseCall(Sema &S, VarDecl *Promise,
    return buildMemberCall(S, PromiseRef.get(), Loc, Name, Args);
  }
  
@@ -24962,7 +24967,7 @@ index 4b99e4454..ca2474e12 100644
    bool IsThisDependentType = [&] {
      if (const auto *MD = dyn_cast_if_present<CXXMethodDecl>(FD))
        return MD->isImplicitObjectMemberFunction() &&
-@@ -478,13 +563,15 @@ VarDecl *Sema::buildCoroutinePromise(SourceLocation Loc) {
+@@ -478,13 +564,20 @@ VarDecl *Sema::buildCoroutinePromise(SourceLocation Loc) {
      return false;
    }();
  
@@ -24973,6 +24978,11 @@ index 4b99e4454..ca2474e12 100644
                     : lookupPromiseType(*this, FD, Loc);
    if (T.isNull())
      return nullptr;
++  // Direct methods emit their nil prologue with the definition, potentially
++  // before any message expression has prepared the typed nil constructor.
++  if (auto *Method = dyn_cast<ObjCMethodDecl>(FD);
++      Method && prepareObjC3NilTaskMessage(*this, Method, Loc))
++    return nullptr;
  
 -  auto *VD = VarDecl::Create(Context, FD, FD->getLocation(), FD->getLocation(),
 +  auto *VD = VarDecl::Create(Context, Decl::castToDeclContext(FD),
@@ -24980,7 +24990,7 @@ index 4b99e4454..ca2474e12 100644
                               &PP.getIdentifierTable().get("__promise"), T,
                               Context.getTrivialTypeSourceInfo(T, Loc), SC_None);
    VD->setImplicit();
-@@ -513,7 +600,7 @@ VarDecl *Sema::buildCoroutinePromise(SourceLocation Loc) {
+@@ -513,7 +606,7 @@ VarDecl *Sema::buildCoroutinePromise(SourceLocation Loc) {
  
    // Add the coroutine function's parameters.
    auto &Moves = ScopeInfo->CoroutineParameterMoves;
@@ -24989,7 +24999,7 @@ index 4b99e4454..ca2474e12 100644
      if (PD->getType()->isDependentType())
        continue;
  
-@@ -571,7 +658,7 @@ VarDecl *Sema::buildCoroutinePromise(SourceLocation Loc) {
+@@ -571,7 +664,7 @@ VarDecl *Sema::buildCoroutinePromise(SourceLocation Loc) {
    } else
      ActOnUninitializedDecl(VD);
  
@@ -24998,7 +25008,7 @@ index 4b99e4454..ca2474e12 100644
    return VD;
  }
  
-@@ -582,7 +669,8 @@ static FunctionScopeInfo *checkCoroutineContext(Sema &S, SourceLocation Loc,
+@@ -582,7 +675,8 @@ static FunctionScopeInfo *checkCoroutineContext(Sema &S, SourceLocation Loc,
    if (!isValidCoroutineContext(S, Loc, Keyword))
      return nullptr;
  
@@ -25008,7 +25018,7 @@ index 4b99e4454..ca2474e12 100644
  
    auto *ScopeInfo = S.getCurFunction();
    assert(ScopeInfo && "missing function scope for function");
-@@ -629,7 +717,7 @@ static void checkNoThrow(Sema &S, const Stmt *E,
+@@ -629,7 +723,7 @@ static void checkNoThrow(Sema &S, const Stmt *E,
          //   potentially-throwing ([except.spec]).
          //
          // First time seeing an error, emit the error message.
@@ -25017,7 +25027,7 @@ index 4b99e4454..ca2474e12 100644
                 diag::err_coroutine_promise_final_suspend_requires_nothrow);
        }
        ThrowingDecls.insert(D);
-@@ -697,6 +785,20 @@ static void checkReturnStmtInCoroutine(Sema &S, FunctionScopeInfo *FSI) {
+@@ -697,6 +791,20 @@ static void checkReturnStmtInCoroutine(Sema &S, FunctionScopeInfo *FSI) {
  
  bool Sema::ActOnCoroutineBodyStart(Scope *SC, SourceLocation KWLoc,
                                     StringRef Keyword) {
@@ -25038,7 +25048,7 @@ index 4b99e4454..ca2474e12 100644
    // Ignore previous expr evaluation contexts.
    EnterExpressionEvaluationContextForFunction PotentiallyEvaluated(
        *this, Sema::ExpressionEvaluationContext::PotentiallyEvaluated,
-@@ -725,12 +827,24 @@ bool Sema::ActOnCoroutineBodyStart(Scope *SC, SourceLocation KWLoc,
+@@ -725,12 +833,24 @@ bool Sema::ActOnCoroutineBodyStart(Scope *SC, SourceLocation KWLoc,
  
    ScopeInfo->setNeedsCoroutineSuspends(false);
  
@@ -25065,7 +25075,7 @@ index 4b99e4454..ca2474e12 100644
      if (Operand.isInvalid())
        return StmtError();
      ExprResult Suspend =
-@@ -902,6 +1016,14 @@ ExprResult Sema::BuildUnresolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
+@@ -902,6 +1022,14 @@ ExprResult Sema::BuildUnresolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
      Operand = R.get();
    }
  
@@ -25080,7 +25090,7 @@ index 4b99e4454..ca2474e12 100644
    auto *Promise = FSI->CoroutinePromise;
    if (Promise->getType()->isDependentType()) {
      Expr *Res = new (Context)
-@@ -912,7 +1034,7 @@ ExprResult Sema::BuildUnresolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
+@@ -912,7 +1040,7 @@ ExprResult Sema::BuildUnresolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
    auto *RD = Promise->getType()->getAsCXXRecordDecl();
  
    bool CurFnAwaitElidable = isAttributedCoroAwaitElidable(
@@ -25089,7 +25099,7 @@ index 4b99e4454..ca2474e12 100644
  
    if (CurFnAwaitElidable)
      applySafeElideContext(Operand);
-@@ -967,9 +1089,25 @@ ExprResult Sema::BuildResolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
+@@ -967,9 +1095,25 @@ ExprResult Sema::BuildResolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
    // Build the await_ready, await_suspend, await_resume calls.
    ReadySuspendResumeResult RSS =
        buildCoawaitCalls(*this, Coroutine->CoroutinePromise, CallLoc, Awaiter);
@@ -25116,7 +25126,7 @@ index 4b99e4454..ca2474e12 100644
    Expr *Res = new (Context)
        CoawaitExpr(Loc, Operand, Awaiter, RSS.Results[0], RSS.Results[1],
                    RSS.Results[2], RSS.OpaqueValue, IsImplicit);
-@@ -1024,7 +1162,7 @@ ExprResult Sema::BuildCoyieldExpr(SourceLocation Loc, Expr *E) {
+@@ -1024,7 +1168,7 @@ ExprResult Sema::BuildCoyieldExpr(SourceLocation Loc, Expr *E) {
    // Build the await_ready, await_suspend, await_resume calls.
    ReadySuspendResumeResult RSS = buildCoawaitCalls(
        *this, Coroutine->CoroutinePromise, Loc, E);
@@ -25125,7 +25135,7 @@ index 4b99e4454..ca2474e12 100644
      return ExprError();
  
    Expr *Res =
-@@ -1054,6 +1192,51 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
+@@ -1054,6 +1198,61 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
      E = R.get();
    }
  
@@ -25174,10 +25184,20 @@ index 4b99e4454..ca2474e12 100644
 +    }
 +  }
 +
++  const auto *Callable = Decl::castFromDeclContext(CurContext);
++  if (E && !getLangOpts().ObjCAutoRefCount && isObjC3OwnedAsyncResult(Callable)) {
++    // The promise creates its independent object/Block result owner. Adopt and
++    // dispose the MRC logical +1 after return_value, including native unwind.
++    ExprResult Loaded = DefaultLvalueConversion(E);
++    if (Loaded.isInvalid()) return StmtError();
++    E = ImplicitCastExpr::Create(Context, Loaded.get()->getType(), CK_ARCConsumeObject,
++        Loaded.get(), nullptr, VK_PRValue, FPOptionsOverride());
++    Cleanup.setExprNeedsCleanups(true);
++  }
    VarDecl *Promise = FSI->CoroutinePromise;
    ExprResult PC;
    if (E && (isa<InitListExpr>(E) || !E->getType()->isVoidType())) {
-@@ -1183,8 +1366,7 @@ static bool findDeleteForPromise(Sema &S, SourceLocation Loc, QualType PromiseTy
+@@ -1183,8 +1382,7 @@ static bool findDeleteForPromise(Sema &S, SourceLocation Loc, QualType PromiseTy
    return true;
  }
  
@@ -25187,7 +25207,7 @@ index 4b99e4454..ca2474e12 100644
    FunctionScopeInfo *Fn = getCurFunction();
    assert(Fn && Fn->isCoroutine() && "not a coroutine");
    if (!Body) {
-@@ -1221,8 +1403,9 @@ void Sema::CheckCompletedCoroutineBody(FunctionDecl *FD, Stmt *&Body) {
+@@ -1221,8 +1419,9 @@ void Sema::CheckCompletedCoroutineBody(FunctionDecl *FD, Stmt *&Body) {
      Diag(ALE->getBeginLoc(), diag::err_coro_invalid_addr_of_label);
  
    // Coroutines always return a handle, so they can't be [[noreturn]].
@@ -25199,7 +25219,7 @@ index 4b99e4454..ca2474e12 100644
  
    CoroutineStmtBuilder Builder(*this, *FD, *Fn, Body);
    if (Builder.isInvalid() || !Builder.buildStatements())
-@@ -1244,7 +1427,7 @@ static CompoundStmt *buildCoroutineBody(Stmt *Body, ASTContext &Context) {
+@@ -1244,7 +1443,7 @@ static CompoundStmt *buildCoroutineBody(Stmt *Body, ASTContext &Context) {
                                SourceLocation(), SourceLocation());
  }
  
@@ -25208,7 +25228,59 @@ index 4b99e4454..ca2474e12 100644
                                             sema::FunctionScopeInfo &Fn,
                                             Stmt *Body)
      : S(S), FD(FD), Fn(Fn), Loc(FD.getLocation()),
-@@ -1375,7 +1558,7 @@ bool CoroutineStmtBuilder::makeReturnOnAllocFailure() {
+@@ -1282,7 +1481,51 @@ bool CoroutineStmtBuilder::buildDependentStatements() {
+   return this->IsValid;
+ }
+ 
++static bool prepareObjC3CFResultPromise(Sema &S, Decl &Callable, VarDecl *Promise,
++                                        SourceLocation Loc) {
++  const auto *Type = getObjC3CallableFunctionType(&Callable);
++  if (!Type || !Type->getObjC3FunctionEffects().Async ||
++      Type->getObjC3FunctionEffects().AsyncFrame || !hasObjC3CFResultOwnership(&Callable) ||
++      Promise->getType()->isDependentType()) return false;
++  LookupResult Hook(S, &S.Context.Idents.get("__objc3_async_cf_result_ops"), Loc,
++                    Sema::LookupOrdinaryName);
++  Hook.suppressDiagnostics();
++  S.LookupQualifiedName(Hook, S.Context.getTranslationUnitDecl());
++  if (Hook.isAmbiguous() || !llvm::any_of(Hook, [](NamedDecl *D) {return isa<FunctionTemplateDecl>(D);})) {
++    S.Diag(Loc, S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "native CF async results require the installed __objc3_async_cf_result_ops promise hook"));
++    return true;
++  }
++  TemplateArgumentListInfo Arguments(Loc, Loc);
++  Arguments.addArgument(TemplateArgumentLoc(TemplateArgument(Promise->getType()),
++      S.Context.getTrivialTypeSourceInfo(Promise->getType(), Loc)));
++  CXXScopeSpec Scope;
++  ExprResult Callee = S.BuildTemplateIdExpr(Scope, SourceLocation(), Hook, false, &Arguments);
++  if (Callee.isInvalid()) return true;
++  Expr *Args[] = {
++    new (S.Context) ImplicitValueInitExpr(S.Context.getPointerType(Promise->getType())),
++    new (S.Context) ImplicitValueInitExpr(S.Context.VoidPtrTy),
++    new (S.Context) CXXBoolLiteralExpr(Callable.hasAttr<CFReturnsRetainedAttr>(), S.Context.BoolTy, Loc)};
++  ExprResult Call = S.BuildCallExpr(nullptr, Callee.get(), Loc, Args, Loc);
++  if (Call.isInvalid()) return true;
++  auto *Function = cast<CallExpr>(Call.get()->IgnoreImplicit())->getDirectCallee();
++  const auto *HookType = Function->getType()->castAs<FunctionProtoType>();
++  if (Function->getNumParams() != 3 || HookType->isVariadic() || !HookType->isNothrow() ||
++      HookType->getObjC3FunctionEffects().Async ||
++      !Function->getReturnType()->isVoidType() ||
++      !S.Context.hasSameType(Function->getParamDecl(0)->getType(), S.Context.getPointerType(Promise->getType())) ||
++      !S.Context.hasSameType(Function->getParamDecl(1)->getType(), S.Context.getPointerType(S.Context.VoidTy.withConst())) ||
++      !S.Context.hasSameType(Function->getParamDecl(2)->getType(), S.Context.BoolTy)) {
++    S.Diag(Loc, S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "native CF async result hook must have signature void(Promise *, const void *, bool) noexcept"));
++    return true;
++  }
++  S.InstantiateFunctionDefinition(Loc, Function, true, true);
++  return Function->isInvalidDecl();
++}
++
+ bool CoroutineStmtBuilder::makePromiseStmt() {
++  if (prepareObjC3CFResultPromise(S, FD, Fn.CoroutinePromise, Loc)) return false;
+   // Form a declaration statement for the promise declaration, so that AST
+   // visitors can more easily find it.
+   StmtResult PromiseStmt =
+@@ -1375,7 +1618,7 @@ bool CoroutineStmtBuilder::makeReturnOnAllocFailure() {
  // Collect placement arguments for allocation function of coroutine FD.
  // Return true if we collect placement arguments succesfully. Return false,
  // otherwise.
@@ -25217,7 +25289,7 @@ index 4b99e4454..ca2474e12 100644
                                   SmallVectorImpl<Expr *> &PlacementArgs) {
    if (auto *MD = dyn_cast<CXXMethodDecl>(&FD)) {
      if (MD->isImplicitObjectMemberFunction() && !isLambdaCallOperator(MD)) {
-@@ -1389,7 +1572,7 @@ static bool collectPlacementArgs(Sema &S, FunctionDecl &FD, SourceLocation Loc,
+@@ -1389,7 +1632,7 @@ static bool collectPlacementArgs(Sema &S, FunctionDecl &FD, SourceLocation Loc,
      }
    }
  
@@ -25226,7 +25298,7 @@ index 4b99e4454..ca2474e12 100644
      if (PD->getType()->isDependentType())
        continue;
  
-@@ -1589,18 +1772,25 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+@@ -1589,18 +1832,25 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
    if (FoundNonAlignedInPromise) {
      S.Diag(OperatorNew->getLocation(),
             diag::warn_non_aligned_allocation_function)
@@ -25255,7 +25327,7 @@ index 4b99e4454..ca2474e12 100644
  
      return false;
    }
-@@ -1648,10 +1838,12 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+@@ -1648,10 +1898,12 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
      if (!AlignValTy)
        return false;
  
@@ -25272,7 +25344,7 @@ index 4b99e4454..ca2474e12 100644
    }
  
    // Make new call.
-@@ -1868,7 +2060,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1868,7 +2120,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
    assert(!GroType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
@@ -25284,7 +25356,7 @@ index 4b99e4454..ca2474e12 100644
    assert(!FnRetType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
-@@ -1906,8 +2101,8 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1906,8 +2161,8 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
      ReturnStmt = S.BuildReturnStmt(Loc, ReturnValue);
    } else {
      GroDecl = VarDecl::Create(
@@ -25295,7 +25367,7 @@ index 4b99e4454..ca2474e12 100644
          S.BuildDecltypeType(ReturnValue).getCanonicalType(),
          S.Context.getTrivialTypeSourceInfo(GroType, Loc), SC_None);
      GroDecl->setImplicit();
-@@ -1989,8 +2184,9 @@ static VarDecl *buildVarDecl(Sema &S, SourceLocation Loc, QualType Type,
+@@ -1989,8 +2244,9 @@ static VarDecl *buildVarDecl(Sema &S, SourceLocation Loc, QualType Type,
  // Build statements that move coroutine function parameters to the coroutine
  // frame, and store them on the function scope info.
  bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
@@ -25307,7 +25379,7 @@ index 4b99e4454..ca2474e12 100644
  
    auto *ScopeInfo = getCurFunction();
    if (!ScopeInfo->CoroutineParameterMoves.empty())
-@@ -2002,7 +2198,7 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
+@@ -2002,7 +2258,7 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
    //   parameter of type cv T, the copy is a variable of type cv T with
    //   automatic storage duration that is direct-initialized from an xvalue of
    //   type T referring to the parameter.
@@ -25663,10 +25735,18 @@ index 42499a32f..0b2296967 100644
  
    /// Build the coroutine body statements, including the
 diff --git a/clang/lib/Sema/SemaExprObjC.cpp b/clang/lib/Sema/SemaExprObjC.cpp
-index c166e0c9e..3e5283ad6 100644
+index c166e0c9e..5d9fcbfa2 100644
 --- a/clang/lib/Sema/SemaExprObjC.cpp
 +++ b/clang/lib/Sema/SemaExprObjC.cpp
-@@ -1915,6 +1915,14 @@ bool SemaObjC::CheckMessageArgumentTypes(
+@@ -10,6 +10,7 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "SemaObjC3Effects.h"
+ #include "clang/AST/ASTContext.h"
+ #include "clang/AST/Availability.h"
+ #include "clang/AST/DeclObjC.h"
+@@ -1915,6 +1916,14 @@ bool SemaObjC::CheckMessageArgumentTypes(
    ReturnType = getMessageSendResultType(Receiver, ReceiverType, Method,
                                          isClassMessage, isSuperMessage);
    VK = Expr::getValueKindForType(Method->getReturnType());
@@ -25674,14 +25754,14 @@ index c166e0c9e..3e5283ad6 100644
 +      (!getLangOpts().CPlusPlus || getLangOpts().CPlusPlus20)) {
 +    ReturnType = SemaRef.BuildObjC3AsyncTaskType(
 +        Method->getObjC3FunctionType()->castAs<FunctionProtoType>(), lbrac);
-+    if (ReturnType.isNull())
++    if (ReturnType.isNull() || prepareObjC3NilTaskMessage(SemaRef, Method, lbrac))
 +      return true;
 +    VK = VK_PRValue;
 +  }
  
    unsigned NumNamedArgs = Sel.getNumArgs();
    // Method might have more arguments than selector indicates. This is due
-@@ -1948,7 +1956,11 @@ bool SemaObjC::CheckMessageArgumentTypes(
+@@ -1948,7 +1957,11 @@ bool SemaObjC::CheckMessageArgumentTypes(
          param->getType()->isBlockPointerType())
        if (auto *BE = dyn_cast<BlockExpr>(
                argExpr->IgnoreParenNoopCasts(Context)))
@@ -25694,7 +25774,7 @@ index c166e0c9e..3e5283ad6 100644
  
      // Strip the unbridged-cast placeholder expression off unless it's
      // a consumed argument.
-@@ -2731,8 +2743,12 @@ ExprResult SemaObjC::BuildClassMessage(
+@@ -2731,8 +2744,12 @@ ExprResult SemaObjC::BuildClassMessage(
      SourceLocation LBracLoc, ArrayRef<SourceLocation> SelectorLocs,
      SourceLocation RBracLoc, MultiExprArg ArgsIn, bool isImplicit) {
    ASTContext &Context = getASTContext();
@@ -38843,10 +38923,10 @@ index 1979117d4..ee6b0880c 100644
      if (C->capturesThis() || C->capturesVLAType())
 diff --git a/clang/lib/Sema/SemaObjC3Effects.h b/clang/lib/Sema/SemaObjC3Effects.h
 new file mode 100644
-index 000000000..7233a373d
+index 000000000..22fc75f05
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.h
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,24 @@
 +//===--- SemaObjC3Effects.h - ObjC3 callable effect boundaries ----*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3EFFECTS_H
@@ -38857,9 +38937,12 @@ index 000000000..7233a373d
 +class FunctionProtoType;
 +class Sema;
 +class Expr;
++class ObjCMethodDecl;
++class SourceLocation;
 +/// Project the logical result of a native-frame message through its actual
 +/// receiver, retaining the ordinary Objective-C instancetype/nullability rules.
 +const FunctionProtoType *getObjC3AsyncAwaitFunctionType(Sema &S, const Expr *E);
++bool prepareObjC3NilTaskMessage(Sema &, ObjCMethodDecl *, SourceLocation);
 +class Stmt;
 +/// Validate the explicit native-C frame-entry boundary. Function effects retain
 +/// their logical result; only calls use the physical runtime frame carrier.
@@ -42449,10 +42532,10 @@ index 9adba1943..76286b3f9 100644
          // is significant.  Allow non-dependent code to contain inappropriate
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..276fba0cb
+index 000000000..7f83be1d1
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,291 @@
+@@ -0,0 +1,340 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -42466,6 +42549,7 @@ index 000000000..276fba0cb
 +#include "clang/AST/StmtObjC.h"
 +#include "llvm/ADT/SmallPtrSet.h"
 +#include "clang/AST/ObjC3Async.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Basic/Builtins.h"
 +#include "clang/Basic/DiagnosticSema.h"
@@ -42479,7 +42563,7 @@ index 000000000..276fba0cb
 +const FunctionProtoType *clang::getObjC3AsyncAwaitFunctionType(Sema &S, const Expr *E) {
 +  const auto *Type = getObjC3AsyncCalleeFunctionType(E);
 +  const auto *Message = dyn_cast<ObjCMessageExpr>(getObjC3AsyncSourceCall(E));
-+  if (!Type || !Type->getObjC3FunctionEffects().AsyncFrame || !Message ||
++  if (!Type || !Type->getObjC3FunctionEffects().Async || !Message ||
 +      !Message->getMethodDecl()->hasRelatedResultType()) return Type;
 +  bool Class = Message->getReceiverKind() == ObjCMessageExpr::Class ||
 +               Message->getReceiverKind() == ObjCMessageExpr::SuperClass;
@@ -42491,16 +42575,64 @@ index 000000000..276fba0cb
 +                                  Type->getExtProtoInfo())->castAs<FunctionProtoType>();
 +}
 +
++bool clang::prepareObjC3NilTaskMessage(Sema &S, ObjCMethodDecl *Method,
++                                      SourceLocation Loc) {
++  const auto *Type = getObjC3CallableFunctionType(Method);
++  if (!Type || !Type->getObjC3FunctionEffects().Async ||
++      Type->getObjC3FunctionEffects().AsyncFrame || !S.getLangOpts().CPlusPlus20) return false;
++  QualType Logical = Type->getReturnType();
++  if (Logical->isDependentType() || (Logical->isIncompleteType() && !Logical->isVoidType()) ||
++      (Logical->isRecordType() && !Logical.isTriviallyCopyableType(S.Context)) ||
++      getObjC3ResourceTypeContract(S.Context, Logical).Cleanup) return false;
++  FunctionProtoType::ExtProtoInfo Info;
++  Info.ObjC3Effects.Async = true;
++  Info.ObjC3Effects.AsyncFrame = true;
++  auto *FrameType = S.Context.getFunctionType(Logical, {}, Info)->castAs<FunctionProtoType>();
++  QualType Frame = S.BuildObjC3AsyncTaskType(FrameType, Loc);
++  if (Frame.isNull()) return true;
++  LookupResult Hook(S, &S.Context.Idents.get("__objc3_async_from_frame"), Loc, Sema::LookupOrdinaryName);
++  Hook.suppressDiagnostics();
++  S.LookupQualifiedName(Hook, S.Context.getTranslationUnitDecl());
++  if (Hook.isAmbiguous() || !llvm::any_of(Hook, [](NamedDecl *D) {return isa<FunctionTemplateDecl>(D);})) {
++    S.Diag(Loc, S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "native async messages require the installed __objc3_async_from_frame nil-result hook"));
++    return true;
++  }
++  TemplateArgumentListInfo Arguments(Loc, Loc);
++  Arguments.addArgument(TemplateArgumentLoc(TemplateArgument(Logical), S.Context.getTrivialTypeSourceInfo(Logical, Loc)));
++  CXXScopeSpec Scope;
++  ExprResult Callee = S.BuildTemplateIdExpr(Scope, SourceLocation(), Hook, false, &Arguments);
++  if (Callee.isInvalid()) return true;
++  Expr *Args[] = {new (S.Context) ImplicitValueInitExpr(Frame)};
++  ExprResult Call = S.BuildCallExpr(nullptr, Callee.get(), Loc, Args, Loc);
++  if (Call.isInvalid()) return true;
++  auto *Function = cast<CallExpr>(Call.get()->IgnoreImplicit())->getDirectCallee();
++  QualType Task = S.Context.getObjC3AsyncReturnType(Type);
++  const auto *HookType = Function->getType()->castAs<FunctionProtoType>();
++  if (Function->getNumParams() != 1 || HookType->isVariadic() ||
++      HookType->getObjC3FunctionEffects().Async ||
++      !S.Context.hasSameType(Function->getParamDecl(0)->getType(), Frame) ||
++      !S.Context.hasSameType(Function->getReturnType(), Task)) {
++    S.Diag(Loc, S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "native async nil-result hook must take its native frame by value and return the declared task carrier"));
++    return true;
++  }
++  S.InstantiateFunctionDefinition(Loc, Function, true, true);
++  return Function->isInvalidDecl();
++}
++
 +ExprResult Sema::BuildObjC3CxxFrameAwaitOperand(SourceLocation Loc,
 +                                               Expr *Operand) {
 +  if (getObjC3FrameAdapterSource(Operand) != Operand->IgnoreImplicit())
 +    return Operand;
 +  const auto *Declared = getObjC3AsyncCalleeFunctionType(Operand);
 +  const auto *Function = getObjC3AsyncAwaitFunctionType(*this, Operand);
-+  if (!Function || !Function->getObjC3FunctionEffects().AsyncFrame)
-+    return Operand;
++  if (!Function || !Function->getObjC3FunctionEffects().Async) return Operand;
++  bool Frame = Function->getObjC3FunctionEffects().AsyncFrame;
 +  bool Related = Declared && !Context.hasSameType(Function->getReturnType(), Declared->getReturnType());
-+  StringRef Name = Related ? "__objc3_async_related_frame" : "__objc3_async_from_frame";
++  if (!Frame && !Related) return Operand;
++  StringRef Name = !Frame ? "__objc3_async_related_task" :
++      Related ? "__objc3_async_related_frame" : "__objc3_async_from_frame";
 +  if (BuildObjC3AsyncTaskType(Function, Loc).isNull())
 +    return ExprError();
 +  LookupResult Hook(*this, &Context.Idents.get(Name),
@@ -42574,7 +42706,7 @@ index 000000000..276fba0cb
 +      return ExprError();
 +    }
 +    TemplateArgumentListInfo Arguments(Loc, Loc);
-+    QualType Result = Function->getReturnType();
++    QualType Result = getObjC3AsyncCalleeFunctionType(Operand)->getReturnType();
 +    Arguments.addArgument(TemplateArgumentLoc(
 +        TemplateArgument(Result), Context.getTrivialTypeSourceInfo(Result, Loc)));
 +    CXXScopeSpec SS;
@@ -42624,7 +42756,7 @@ index 000000000..276fba0cb
 +      Args.push_back(new (S.Context) ImplicitValueInitExpr(S.Context.VoidPtrTy));
 +  ExprResult Call = S.BuildCallExpr(nullptr, Callee.get(), Loc, Args, Loc);
 +  if (Call.isInvalid()) return true;
-+  auto *Function = cast<CallExpr>(Call.get())->getDirectCallee();
++  auto *Function = cast<CallExpr>(Call.get()->IgnoreImplicit())->getDirectCallee();
 +  if (Capture ? !Function->getReturnType()->isVoidType()
 +              : !Function->getReturnType()->isPointerType()) {
 +    S.Diag(Loc, diag::err_objc3_async_frame_cpp_hook) << Name;
@@ -46440,10 +46572,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..e8b30e17f
+index 000000000..805fa0c95
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1242 @@
+@@ -0,0 +1,1238 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47519,12 +47651,11 @@ index 000000000..e8b30e17f
 +                  (Executor && (!Current || Current->getExecutor() !=
 +                                                Executor->getExecutor()));
 +  const auto *FT = isolationCalleeFunctionType(*this, Target);
-+  if (Message && FT && cast<ObjCMethodDecl>(Target)->hasRelatedResultType() &&
-+      (!FT->getObjC3FunctionEffects().Async || FT->getObjC3FunctionEffects().AsyncFrame)) {
++  if (Message && FT && cast<ObjCMethodDecl>(Target)->hasRelatedResultType()) {
 +    // Preserve the source send's instantiated class/generic result rather than
 +    // erasing instancetype to the method declaration's logical id spelling.
 +    QualType Logical = Message->getType();
-+    if (FT->getObjC3FunctionEffects().AsyncFrame)
++    if (FT->getObjC3FunctionEffects().Async)
 +      Logical = getObjC3AsyncAwaitFunctionType(*this, Message)->getReturnType();
 +    FT = Context.getFunctionType(Logical, FT->param_types(),
 +                                  FT->getExtProtoInfo())->castAs<FunctionProtoType>();
@@ -47582,9 +47713,7 @@ index 000000000..e8b30e17f
 +    Shape &=
 +        ((Instance &&
 +          SourceReceiver->getType()->isObjCObjectPointerType()) ||
-+         (NamedClass && !isolationConsumesReceiver(Target))) &&
-+        (cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init ||
-+         !FT->getObjC3FunctionEffects().Async || FT->getObjC3FunctionEffects().AsyncFrame);
++         (NamedClass && !isolationConsumesReceiver(Target)));
 +  }
 +  for (unsigned I = 0; I != FT->getNumParams(); ++I)
 +    Shape &= !unsupportedIsolatedConsumption(
@@ -47592,8 +47721,7 @@ index 000000000..e8b30e17f
 +        I < TargetParameters.size() ? TargetParameters[I] : nullptr,
 +        FT->getExtParameterInfo(I));
 +  if (Target->hasAttr<CFReturnsRetainedAttr>() || Target->hasAttr<CFReturnsNotRetainedAttr>())
-+    Shape &= hasObjC3CFResultOwnership(Target) &&
-+        (!FT->getObjC3FunctionEffects().Async || FT->getObjC3FunctionEffects().AsyncFrame);
++    Shape &= hasObjC3CFResultOwnership(Target);
 +  if (!Shape) {
 +    Diag(Loc, diag::err_objc3_isolation_hop_shape);
 +    Diag(Target->getLocation(), diag::note_objc3_sendable_boundary);
@@ -54978,3 +55106,61 @@ index 000000000..fe7933b92
 +  const char **cursor = choose ? &loan : external;
 +  finite_escape(*cursor); // expected-error {{argument without a non-escaping lifetime contract}}
 +}
+diff --git a/clang/test/ObjC3/Sema/native-task-result-hooks.mm b/clang/test/ObjC3/Sema/native-task-result-hooks.mm
+new file mode 100644
+index 000000000..9a4fcdc60
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-task-result-hooks.mm
+@@ -0,0 +1,52 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DMISSING_CF -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DMISSING_NIL -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMISSING_CF -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMISSING_NIL -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DMISSING_CF -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DMISSING_NIL -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMISSING_CF -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMISSING_NIL -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DMALFORMED_CF -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DMALFORMED_NIL -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMALFORMED_CF -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMALFORMED_NIL -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DMALFORMED_CF -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DMALFORMED_NIL -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMALFORMED_CF -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMALFORMED_NIL -verify %s
++#if defined(MISSING_CF) || defined(MALFORMED_CF)
++#define OBJC3_TEST_NO_CF_RESULT_HOOK
++#else
++#define OBJC3_TEST_NO_NIL_RESULT_HOOK
++#endif
++#include "../CodeGen/Inputs/native-async-task.h"
++#ifdef MALFORMED_CF
++template<class Promise> int __objc3_async_cf_result_ops(Promise *, const void *, long) noexcept {return 0;}
++#endif
++#ifdef MALFORMED_NIL
++template<class T> int __objc3_async_from_frame(objc3_async_frame) {return 0;}
++#endif
++#if defined(MISSING_CF) || defined(MALFORMED_CF)
++typedef const struct Foreign *CFRef;
++CFRef missing_promise_hook(void) __objc3_async __attribute__((cf_returns_retained));
++CFRef missing_promise_hook(void) __objc3_async
++#ifdef MALFORMED_CF
++// expected-error@-2 {{native CF async result hook must have signature}}
++#else
++// expected-error@-4 {{native CF async results require the installed __objc3_async_cf_result_ops promise hook}}
++#endif
++{
++  return 0;
++}
++#else
++__attribute__((objc_root_class)) @interface NilTaskRoot
++- (int)number __objc3_async;
++@end
++objc3::task<int> missing_nil_hook(NilTaskRoot *object) {
++#ifdef MALFORMED_NIL
++  return [object number]; // expected-error {{native async nil-result hook must take its native frame by value and return the declared task carrier}}
++#else
++  return [object number]; // expected-error {{native async messages require the installed __objc3_async_from_frame nil-result hook}}
++#endif
++}
++#endif

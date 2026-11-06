@@ -37,7 +37,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kDependentKeyPathLiteralSemantic,
     kAsyncConsumedOwnershipSemantic,
     kDependentKeyPathTypeSemantic,
-    "objc3.async-entry-abi.v2",
+    "objc3.async-entry-abi.v3",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",

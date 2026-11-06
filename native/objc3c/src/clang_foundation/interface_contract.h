@@ -38,7 +38,7 @@ struct InterfaceEffectIdentity {
 };
 
 inline constexpr const char *kAsyncEntryABISemantic =
-    "objc3.async-entry-abi.v2";
+    "objc3.async-entry-abi.v3";
 
 [[nodiscard]] bool
 IsValidAsyncABIIdentity(const InterfaceEffectIdentity &effects);
@@ -177,10 +177,10 @@ inline constexpr const char *kCxxUnionValueSemantic = "objc3.cxx-union-values.v1
 inline bool HasCxxUnionValueIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-union-values:v1;") != std::string::npos;
 }
-inline constexpr const char *kAsyncConsumedOwnershipSemantic = "objc3.async-consuming-ownership.v2";
+inline constexpr const char *kAsyncConsumedOwnershipSemantic = "objc3.async-consuming-ownership.v3";
 inline bool HasAsyncConsumedOwnershipIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";async-consuming-ownership:v2;") != std::string::npos ||
-         d.effects.ownership_identity.find(";async-consuming-ownership:v2;") != std::string::npos;
+  return d.canonical_type_identity.find(";async-consuming-ownership:v3;") != std::string::npos ||
+         d.effects.ownership_identity.find(";async-consuming-ownership:v3;") != std::string::npos;
 }
 inline constexpr const char *kDependentKeyPathTypeSemantic = "objc3.keypath-dependent-types.v1";
 inline bool HasDependentKeyPathTypeIdentity(const InterfaceDeclarationIdentity &d) {

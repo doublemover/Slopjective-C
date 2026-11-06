@@ -539,6 +539,110 @@ int main(void) {
     }
 
     for (int ownership = 0; ownership != 2; ++ownership) {
+      for (int task_caller = 0; task_caller != 3; ++task_caller) {
+        for (int kind = 0; kind != 15; ++kind) {
+          for (int outcome = 0; outcome != 6; ++outcome) {
+            int before = hop_destroyed(), foreign_before = hop_cf_destroyed();
+            hop_cf_reset(0);
+            if (ownership) hop_arc_task_result_reset(); else hop_task_result_reset();
+            @autoreleasepool {
+              frame = ownership ? hop_arc_task_result_roundtrip(kind, task_caller, caller) :
+                                  hop_task_result_roundtrip(kind, task_caller, caller);
+              type = frame.result_type;
+              task = start(&frame);
+              if (outcome == 1) objc3_task_request_cancel(task);
+              if (outcome == 5) {
+                // Dispatch all caller-side adapters without running the main
+                // executor: task parameters exist, but its body has not entered.
+                for (unsigned step = 0; step != 32; ++step) {
+                  assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+                  if (!count) break;
+                }
+                assert((ownership ? hop_arc_task_result_entries() : hop_task_result_entries()) == 0);
+                objc3_task_request_cancel(task);
+              }
+              if (outcome >= 2 && outcome <= 4) {
+                for (unsigned step = 0; step != 10000; ++step) {
+                  int progress = outcome == 2 ?
+                      (ownership ? hop_arc_task_result_entries() : hop_task_result_entries()) :
+                      (ownership ? hop_arc_task_result_completed() : hop_task_result_completed());
+                  if (progress) break;
+                  assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+                  assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK);
+                }
+                assert((outcome == 2 ?
+                    (ownership ? hop_arc_task_result_entries() : hop_task_result_entries()) :
+                    (ownership ? hop_arc_task_result_completed() : hop_task_result_completed())) == 1);
+                if (outcome >= 3 && kind != 13) {
+                  if (ownership) hop_arc_task_result_release_owner(); else hop_task_result_release_owner();
+                  if (kind == 8 || kind == 11) assert(hop_cf_live() == 1);
+                }
+                if (outcome != 4) objc3_task_request_cancel(task);
+              }
+              objc3_completion completion = finish(task);
+              if (completion.kind != (outcome == 0 || outcome == 4 ? OBJC3_COMPLETION_SUCCESS : OBJC3_COMPLETION_CANCELLED))
+                fprintf(stderr, "task-result ownership=%d caller=%d kind=%d outcome=%d completion=%u\n",
+                        ownership, task_caller, kind, outcome, completion.kind);
+              assert(completion.kind == (outcome == 0 || outcome == 4 ? OBJC3_COMPLETION_SUCCESS : OBJC3_COMPLETION_CANCELLED));
+              if (outcome == 0 || outcome == 4) {
+                result = -1;
+                assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+                assert(result == (kind == 1 || kind == 9 ? 0 : 42));
+              }
+              assert((ownership ? hop_arc_task_result_entries() : hop_task_result_entries()) == (outcome != 1 && outcome != 5));
+              assert((ownership ? hop_arc_task_result_completed() : hop_task_result_completed()) == (outcome == 0 || outcome == 3 || outcome == 4));
+              if (ownership) hop_arc_task_result_release_owner(); else hop_task_result_release_owner();
+              objc3_task_release(task);
+            }
+            int objects = ownership ? hop_arc_task_result_created() : hop_task_result_created();
+            int foreign = hop_cf_arguments();
+            for (unsigned step = 0; step != 1000000 &&
+                 (hop_destroyed() != before + objects || hop_cf_live()); ++step) sched_yield();
+            assert(hop_destroyed() == before + objects);
+            assert(hop_cf_live() == 0 && hop_cf_destroyed() == foreign_before + foreign);
+          }
+        }
+        for (int kind = 0; kind != 11; ++kind) {
+          for (int outcome = 0; outcome != 2; ++outcome) {
+            int before = hop_destroyed(), foreign_before = hop_cf_destroyed();
+            hop_cf_reset(0);
+            if (ownership) hop_arc_task_result_reset(); else hop_task_result_reset();
+            @autoreleasepool {
+              frame = ownership ? hop_arc_task_result_nil_roundtrip(kind, task_caller, caller) :
+                                  hop_task_result_nil_roundtrip(kind, task_caller, caller);
+              type = frame.result_type;
+              task = start(&frame);
+              if (outcome) {
+                assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+                objc3_task_request_cancel(task);
+              }
+              objc3_completion completion = finish(task);
+              if (completion.kind != (outcome ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS)) {
+                objc3_service_status service = OBJC3_SERVICE_OK;
+                (void)objc3_async_error_get_service(completion.error, &service);
+                fprintf(stderr, "nil-task ownership=%d caller=%d kind=%d outcome=%d completion=%u service=%d\n",
+                        ownership, task_caller, kind, outcome, completion.kind, service);
+              }
+              assert(completion.kind == (outcome ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS));
+              if (!outcome) {
+                result = 0;
+                assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK && result == 42);
+              }
+              assert((ownership ? hop_arc_task_result_entries() : hop_task_result_entries()) == 0);
+              assert((ownership ? hop_arc_task_result_completed() : hop_task_result_completed()) == 0);
+              objc3_task_release(task);
+            }
+            int objects = ownership ? hop_arc_task_result_created() : hop_task_result_created();
+            for (unsigned step = 0; step != 1000000 &&
+                 (hop_destroyed() != before + objects || hop_cf_live()); ++step) sched_yield();
+            assert(hop_destroyed() == before + objects);
+            assert(hop_cf_live() == 0 && hop_cf_destroyed() == foreign_before + hop_cf_arguments());
+          }
+        }
+      }
+    }
+
+    for (int ownership = 0; ownership != 2; ++ownership) {
       for (int kind = 0; kind != 16; ++kind) {
         for (int outcome = 0; outcome != 2; ++outcome) {
           int before = hop_destroyed(), foreign_before = hop_cf_destroyed();

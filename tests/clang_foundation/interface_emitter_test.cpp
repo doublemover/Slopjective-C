@@ -482,6 +482,14 @@ void TestAsyncConsumedOwnershipCapability() {
         #ifdef __cplusplus
         #include "objc3c/runtime/objc3_task.hpp"
         extern "C" void CFRelease(const void *) __attribute__((nothrow));
+        __attribute__((objc_root_class)) @interface TaskOwnershipInitializer
+        - (instancetype)initTask __objc3_async;
+        @end
+        id retained_task_signature(void) __objc3_async __attribute__((ns_returns_retained));
+        CFRef retained_foreign_task_signature(void) __objc3_async __attribute__((cf_returns_retained));
+        CFRef borrowed_foreign_task_signature(void) __objc3_async __attribute__((cf_returns_not_retained));
+        static inline id retained_task_body(void) __objc3_async {return __objc3_await retained_task_signature();}
+        static inline CFRef retained_foreign_task_body(void) __objc3_async {return __objc3_await retained_foreign_task_signature();}
         static inline objc3::task<int> ordinary_body(__attribute__((cf_consumed)) CFRef value) {
           if (value) CFRelease(value);
           co_return 0;
@@ -512,10 +520,15 @@ void TestAsyncConsumedOwnershipCapability() {
       if (std::string(standard) != "c17") {
         consuming_exports.push_back("ordinary_body");
         consuming_exports.push_back("ordinary_block_factory");
+        for (const char *name : {"TaskOwnershipInitializer", "retained_task_signature", "retained_foreign_task_signature",
+                                 "borrowed_foreign_task_signature", "retained_task_body", "retained_foreign_task_body"})
+          consuming_exports.push_back(name);
       }
       for (const std::string &exported : consuming_exports) {
         auto exports = base; exports.push_back(exported);
         if (exported == "ordinary_body" || exported == "ordinary_block_factory") exports.push_back("CFRelease");
+        if (exported == "retained_task_body") exports.push_back("retained_task_signature");
+        if (exported == "retained_foreign_task_body") exports.push_back("retained_foreign_task_signature");
         if (exported == "retained_body") exports.push_back("retained_signature");
         if (exported == "retained_foreign_body") exports.push_back("retained_foreign_signature");
         auto result = emit(source, "ownership-provider.m", exports);
@@ -531,6 +544,7 @@ void TestAsyncConsumedOwnershipCapability() {
         assert(replayed.identity.semantic_fingerprint == result.identity.semantic_fingerprint);
         auto old = supported; std::erase(old, llvm::StringRef(kAsyncConsumedOwnershipSemantic));
         old.push_back("objc3.async-consuming-ownership.v1");
+        old.push_back("objc3.async-consuming-ownership.v2");
         auto unsupported = DecodeSemanticInterfaceSidecar(result.sidecar_json, result.source_bytes, old);
         assert(!unsupported); llvm::consumeError(unsupported.takeError());
         auto missing = *decoded; std::erase(missing.required_semantics, kAsyncConsumedOwnershipSemantic);
@@ -851,7 +865,7 @@ void TestCAsyncPhysicalABIRoundTrips() {
     assert(found);
     const std::vector<llvm::StringRef> old_supported = {
         "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v1",
-        RuntimeInterfaceSemantic()};
+        "objc3.async-entry-abi.v2", RuntimeInterfaceSemantic()};
     auto old_reader = DecodeSemanticInterfaceSidecar(
         emitted.sidecar_json, emitted.source_bytes, old_supported);
     assert(!old_reader);
@@ -891,7 +905,7 @@ inline int published_entry(int value) __objc3_async_frame {
   assert(emitted.source_bytes.find("__objc3_await isolated_entry")!=std::string::npos);
   const std::vector<llvm::StringRef> supported={
       "objc3.cxx-data-interfaces.v1", "objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v2",
+      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v3",
       kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,RuntimeInterfaceSemantic()};
   auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
                                               emitted.source_bytes,supported);
@@ -1021,7 +1035,7 @@ inline int actor_request(objc3_actor_t *actor) __objc3_async {
   assert(emitted.source_bytes.find("promise_type")==std::string::npos);
   const std::vector<llvm::StringRef> supported={
       "objc3.cxx-data-interfaces.v1","objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v2",
+      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v3",
       kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,
       kSdkRuntimeDeclarationSemantic,RuntimeInterfaceSemantic(),
       "objc3.module-owned-names.v1"};
@@ -5990,7 +6004,7 @@ void TestBoundedCxxSemanticInterfaces() {
   {
     const std::vector<llvm::StringRef> semantics = {
         "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v2"};
+        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v3"};
     std::string previous;
     for (const char *signature :
          {"int get() const __objc3_async __objc3_throws(id<First>);",

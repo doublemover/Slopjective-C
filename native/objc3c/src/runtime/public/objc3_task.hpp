@@ -255,14 +255,42 @@ inline void rethrow_completion(const objc3_completion &completion) {
 template <class T, class Promise> struct result_storage {
   using stored_type = typename result_traits<T>::storage;
   std::optional<stored_type> value;
+  const objc3_value_ops *__objc3_foreign_ops = nullptr;
+  bool __objc3_foreign_adopt = false;
+  result_storage() = default;
+  result_storage(const result_storage &) = delete;
+  result_storage &operator=(const result_storage &) = delete;
+  void __objc3_set_cf_result_ops(const objc3_value_ops *ops, bool adopt) noexcept {
+    static_assert(std::is_pointer_v<stored_type>,
+                  "native CF task results require plain pointer storage");
+    __objc3_foreign_ops = ops;
+    __objc3_foreign_adopt = adopt;
+  }
+  ~result_storage() {
+    if (__objc3_foreign_ops && value)
+      __objc3_foreign_ops->destroy(&*value);
+  }
   template <class U> void return_value(U &&result) {
+    if constexpr (std::is_pointer_v<stored_type>) {
+      if (__objc3_foreign_ops) {
+        stored_type incoming(std::forward<U>(result));
+        stored_type replacement{};
+        if (__objc3_foreign_adopt) replacement = incoming;
+        else check(__objc3_foreign_ops->copy_init(&replacement, &incoming));
+        // Establish the new claim before retiring a possibly aliased old one.
+        if (value) __objc3_foreign_ops->destroy(&*value);
+        value.emplace(replacement);
+        static_cast<Promise *>(this)->__objc3_clear_error();
+        return;
+      }
+    }
     value.emplace(std::forward<U>(result));
     static_cast<Promise *>(this)->__objc3_clear_error();
   }
   void set_completion(objc3_completion &completion) {
     completion.has_payload = 1;
     completion.payload = result_traits<T>::address(*value);
-    completion.payload_ops = result_ops<T>();
+    completion.payload_ops = __objc3_foreign_ops ? __objc3_foreign_ops : result_ops<T>();
     completion.result_type = result_type<T>();
   }
 };
@@ -990,6 +1018,14 @@ inline task<void> finish_task_group(task_group_handle group) {
 // result type; evaluated native async calls return this lazy runtime carrier.
 template <class T> using __objc3_async_task = objc3::task<T>;
 
+// Sema resolves this hook for a native CF-result promise. The compiler emits
+// the declaration-specific copy/move/destroy table without inferring ownership
+// from the raw pointer type or changing the public task carrier layout.
+template<class Promise>
+void __objc3_async_cf_result_ops(Promise *promise, const void *ops, bool adopt) noexcept {
+  promise->__objc3_set_cf_result_ops(static_cast<const objc3_value_ops *>(ops), adopt);
+}
+
 // Reserved explicit-frame storage hooks. Sema instantiates these ordinary C++
 // functions, so overload resolution, access, deleted members, constraints and
 // implicit special-member definitions follow the source language and persist
@@ -1052,6 +1088,10 @@ objc3::task<To> project_related_result(objc3::task<From> source) {
 template<class To, class From>
 __objc3_async_task<To> __objc3_async_related_frame(objc3_async_frame frame) {
   return objc3::task_detail::project_related_result<To, From>(__objc3_async_from_frame<From>(frame));
+}
+template<class To, class From>
+__objc3_async_task<To> __objc3_async_related_task(__objc3_async_task<From> source) {
+  return objc3::task_detail::project_related_result<To, From>(std::move(source));
 }
 #endif
 

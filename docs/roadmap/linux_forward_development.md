@@ -1413,7 +1413,7 @@ when later operands clear their original owners, with balanced exceptional
 cleanup. Source 2.35.0 adds task-ABI targets and preserves the actual consumed
 Block parameter annotation. The [MRC and initializer source span](linux_isolation_mrc_consumption.md) adds
 MRC synchronous/native-frame consumption and synchronous initializer crossings.
-Source 2.96 adds MRC task-ABI consumption and ARC consuming task receivers; the [2.97 CF span](linux_isolation_cf_consumption.md) adds consumed opaque CF arguments. Source 2.98 adds consumed ownership to ordinary C++ coroutines, Objective-C++ methods and Blocks. [Source 2.99/2.100](linux_isolation_result_ownership.md) adds native-frame initializers and object/CF result ownership; task-ABI initializer/CF results and NSObject-backed CF storage remain open. SDK 2.33.0 delivers the preceding object ownership boundary.
+Source 2.96 adds MRC task-ABI consumption and ARC consuming task receivers; the [2.97 CF span](linux_isolation_cf_consumption.md) adds consumed opaque CF arguments. Source 2.98 adds consumed ownership to ordinary C++ coroutines, Objective-C++ methods and Blocks. [Source 2.99/2.100](linux_isolation_result_ownership.md) adds native-frame initializers and object/CF result ownership; [Source 2.102](linux_task_result_ownership.md) adds the task-ABI initializer/object/CF result and nil counterparts; NSObject-backed CF storage remains open. SDK 2.33.0 delivers the preceding object ownership boundary.
 
 The [2.32.0 source milestone](linux_isolation_class_entries.md) adds named class
 messages at qualified executor entries, preserving inherited class dispatch,

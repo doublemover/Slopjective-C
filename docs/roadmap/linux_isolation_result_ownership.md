@@ -71,8 +71,9 @@ destruction. CF controls also drop the borrowed producer's original owner
 before consumer resumption. Frontend controls check concrete logical result
 types and source-free ownership requirements.
 
-Initializer declarations using the task ABI, task-ABI CF results, task-ABI nil receiver forms, NSObject-backed CF storage and general
-foreign ownership families retain separate implementation work. Managed union
+[Source 2.102](linux_task_result_ownership.md) implements the task-ABI initializer,
+object/CF result and nil-entry counterparts. Focused native execution passes. NSObject-backed CF storage and general foreign ownership families
+retain separate implementation work. Managed union
 frames still require an active-arm ownership contract.
 
 All eight affected frontend units and the expanded emitter/isolation regression

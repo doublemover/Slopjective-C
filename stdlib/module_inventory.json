@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 101,
+        "minor": 102,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -234,7 +234,10 @@
         "Plain opaque CF retained/borrowed isolated and native-frame result storage, independent copy/move/destruction and full-expression await owners (source)",
         "Source-free async entry ownership semantic v2 hard cutover for consumed arguments/receivers and object/CF native-frame results (source)",
         "Typed lazy nil results for eligible native-frame messages and direct-method nil prologues, with normal native allocation/cancellation/destruction and artificial debug locations (source)",
-        "Nil receiver NS/Block/CF consumed-argument disposal from declaration and function-type facts, including synchronous methods and source-free async entry semantic v2 (source)"
+        "Nil receiver NS/Block/CF consumed-argument disposal from declaration and function-type facts, including synchronous methods and source-free async entry semantic v2 (source)",
+        "Native task initializer and retained object result ownership, concrete instancetype projection and balanced MRC source claims (source authored; focused source/PCH/native execution passes)",
+        "Declaration-specific retained/borrowed/null CF task results with promise-installed value operations and full-expression forwarding lifetimes (source authored; focused source/PCH/native execution passes)",
+        "Typed lazy nil task results through the common frame constructor hook, consumed argument disposal and source-free entry/consuming semantic v3 hard cutovers (source authored; focused source/PCH/native execution passes)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

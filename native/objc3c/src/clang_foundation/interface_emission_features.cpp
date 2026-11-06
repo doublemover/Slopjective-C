@@ -140,8 +140,7 @@ bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration) {
       bool VisitType(clang::Type *type) override {
         if (const auto *function = llvm::dyn_cast<clang::FunctionProtoType>(type);
             function && function->getObjC3FunctionEffects().Async) {
-          found |= function->getObjC3FunctionEffects().AsyncFrame &&
-                   function->getExtInfo().getProducesResult();
+          found |= function->getExtInfo().getProducesResult();
           for (unsigned i = 0; i != function->getNumParams(); ++i)
             found |= function->isParamConsumed(i) ||
                      function->getExtParameterInfo(i).isCFConsumed();

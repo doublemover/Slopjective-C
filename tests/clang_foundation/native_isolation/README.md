@@ -88,3 +88,15 @@ Null inputs must skip generated CF retain/release operations. Unused tasks and
 throwing parameter moves add independent prologue cleanup checks. Other cases
 cancel before or between frames, cancel a suspended body, or fail either native
 allocation. These compiler ownership witnesses do not qualify a CF framework.
+
+The 2.102 source additions compile `task-results.mm` independently under ARC and
+MRC. Each client configuration runs 672 new scenarios across native-frame,
+crossing task and same-executor task callers. Initializers return self, nil or
+replacements before/after suspension. Retained object/Block and retained,
+borrowed, null and unannotated CF-pointer results keep distinct ownership.
+Cancellation runs before entry, after argument setup, during the producer yield
+and after publication. Borrowed source owners disappear before consumer resume;
+exact object/CF destruction and nil body/argument counters remain mandatory.
+Normal/direct/actor nil calls cover scalar, object, Block, record, floating and
+void logical values plus consumed object, Block and CF operands. A direct method
+is defined before any call so its nil hook must be prepared during definition.

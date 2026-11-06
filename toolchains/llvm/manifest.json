@@ -19,15 +19,15 @@
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
-      "sha256": "d228a97ff788cfc7ba38b365b02e14cf4f6be208a21ec9a373a4a99e8f0ed1e3"
+      "sha256": "24d2233aa34f2166828d54b4fd15110048e790cb978531fffeb971124c20a1d8"
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "c2d7d7dcc0da611269d2755694009d43492ea09ccd8e28ec376f9898cce17e3d"
+      "sha256": "6c364f4394ef7111fed694e3c932644a6873c5b134c15048b6f355d88fdf823f"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "f2d249d2db4c937e6379badd95b2a430853b8787e7a54cd0a9105bc76b15e610"
+      "sha256": "04a9274d597774c2182c8d8662ccd7eca3cd466613f472c5758fb4c1b8022bf4"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
@@ -49,15 +49,8 @@
     "assertions": true,
     "rtti": true,
     "eh": true,
-    "targets": [
-      "X86"
-    ],
-    "projects": [
-      "clang",
-      "lld",
-      "clang-tools-extra",
-      "lldb"
-    ],
+    "targets": ["X86"],
+    "projects": ["clang", "lld", "clang-tools-extra", "lldb"],
     "build_targets": [
       "clang",
       "FileCheck",
@@ -111,13 +104,7 @@
       },
       {
         "name": "objc3_facade_libraries",
-        "targets": [
-          "clangTooling",
-          "clangIndex",
-          "clangCodeGen",
-          "clangFrontend",
-          "clangDriver"
-        ]
+        "targets": ["clangTooling", "clangIndex", "clangCodeGen", "clangFrontend", "clangDriver"]
       },
       {
         "name": "native_type_contract_tests",
@@ -131,20 +118,11 @@
       },
       {
         "name": "native_editor_tools",
-        "targets": [
-          "clangd",
-          "clang-format",
-          "clang-query",
-          "c-index-test"
-        ]
+        "targets": ["clangd", "clang-format", "clang-query", "c-index-test"]
       },
       {
         "name": "native_debugger_tools",
-        "targets": [
-          "lldb",
-          "lldb-server",
-          "llvm-dwarfdump"
-        ]
+        "targets": ["lldb", "lldb-server", "llvm-dwarfdump"]
       }
     ],
     "distribution_components": [

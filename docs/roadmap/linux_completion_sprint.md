@@ -20,8 +20,9 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                    |
 | Isolation          | Plain opaque CF consumed arguments across synchronous, native-frame and C++ task entries                                    | Source authored; focused native execution passes                    |
 | Isolation          | Ordinary C++ coroutine function, Objective-C++ method and Block consumed ownership                                          | Source authored; focused source/PCH and native execution pass       |
-| Isolation          | Remaining crossings, task-ABI initializer/CF results, NSObject-backed storage and managed values                            | Open                                                                |
+| Isolation          | Remaining crossings, NSObject-backed CF storage and managed values                                                          | Open                                                                |
 | Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native source/PCH/runtime execution passes |
+| Isolation          | Task-ABI initializer/object/CF results and typed nil entries                                                                | Source authored; focused native execution passes                    |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                                |
 | Isolation          | Typed nil native-frame messages and consumed argument cleanup                                                               | Source authored; focused source/PCH/runtime execution passes        |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending     |
@@ -232,7 +233,7 @@ successive cancellation stages. All 36 new source/PCH CodeGen commands, six CF a
 compiler regressions pass. Three native configurations pass 58 commands, with
 232 CF and 118 initializer/result scenarios each. All eight affected frontend
 units and expanded test sources compile; frontend execution, complete matrices
-and SDK delivery remain pending. Task-ABI initializer/CF results and nil entries, NSObject-backed CF storage and managed unions remain explicit work.
+and SDK delivery remain pending. The following task-result span supplies the task-ABI counterparts. NSObject-backed CF storage and managed unions remain explicit work.
 
 ## Authored nil native-frame messages
 
@@ -302,6 +303,18 @@ checks; these cases still require the rebuilt compiler and full native campaign.
 measured ten-minute timeout failures now have exact source-scoped, finite
 one-hour allowances; earlier failures remain evidence and no timeout is accepted
 as a passing analysis result.
+
+## Authored task result parity
+
+The [2.102 task result span](linux_task_result_ownership.md) adds task-ABI
+initializer and retained object results, declaration-specific CF promise
+ownership, concrete related-result projection and typed nil task entries.
+Native-frame forwarding preserves source full-expression owners until result
+storage has acquired its claim. Source-free entry and consuming semantics cut
+over to v3. The maintained fixture covers three caller routes and ARC/MRC,
+including suspended/completed cancellation and disappearing borrowed owners.
+Focused source/PCH and native execution pass; these source changes do not close the
+remaining NSObject storage, managed-value, Strict Concurrency or SDK rows.
 
 ## Consolidated verification and delivery
 
