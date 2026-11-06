@@ -19,6 +19,7 @@ from .install_sdk import install
 from .package import inventory, package_sdk, verify_sdk
 from .qualify_installed import qualify_installed
 from .sdk_example import write_json
+from .native_headers import discover as discover_native_headers, materialize as materialize_native_headers
 
 
 # FileCheck is added by project packaging, with its bytes bound separately in
@@ -29,7 +30,9 @@ PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'bin/FileCheck', 'li
 
 
 def is_project_sdk_path(name: str) -> bool:
-    return name == 'objc3-sdk.json' or any(
+    parts = Path(name).parts
+    native_headers = len(parts) >= 4 and parts[:2] == ('lib', 'clang') and parts[3] == 'objc3-native-headers'
+    return native_headers or name in ('objc3-sdk.json', 'bin/clang.cfg', 'bin/clang++.cfg') or any(
         name == prefix.rstrip('/') or name.startswith(prefix)
         for prefix in PROJECT_SDK_PREFIXES)
 
@@ -94,7 +97,9 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     foundation_inputs = {key: value for key, value in configure.items()
                          if key not in ('identity', 'sdk_consumers')}
     foundation_plan = hashlib.sha256(json.dumps(foundation_inputs, sort_keys=True).encode()).hexdigest()
+    native_headers = discover_native_headers(sdk / 'bin/clang')
     payload = {'foundation_contents': foundation_identity(sdk), 'foundation_plan': foundation_plan,
+               'native_headers': {'sha256': native_headers['sha256']},
                'frontend': facade_identity(repo)['sha256'], 'inputs': inputs}
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
 
@@ -216,6 +221,10 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     try:
         report['candidate_foundation'] = adopt_candidate_foundation(
             repo, foundation_source, prefix, expected_contents=identity['foundation_contents'])
+        headers = discover_native_headers(prefix / 'bin/clang')
+        if headers['sha256'] != identity['native_headers']['sha256']:
+            raise ValueError('native standard headers changed before SDK assembly')
+        report['native_standard_headers'] = materialize_native_headers(prefix, headers)
         runtime = repo / 'out/toolchains/libobjc2-v2.3'
         run('runtime', [sys.executable, '-B', '-m', 'scripts.objc3c_toolchain_runtime.build_linux',
             '--repo', repo, '--compiler-root', sdk, '--report-file', directory / 'runtime-report.json',

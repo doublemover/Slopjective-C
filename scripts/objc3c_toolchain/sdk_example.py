@@ -87,7 +87,7 @@ def write_json(path: Path, value: dict) -> None:
         temporary.unlink(missing_ok=True)
 
 
-def dependencies(path: Path, cwd: Path) -> list[Path]:
+def dependencies(path: Path, cwd: Path, *, preserve_spelling: bool = False) -> list[Path]:
     # Decode Clang's DependencyFile.cpp spelling, rather than shell quoting.
     # Quotes are literal; ordinary backslashes remain literal, while runs
     # before spaces are doubled. Before # Clang escapes only the # character.
@@ -121,6 +121,8 @@ def dependencies(path: Path, cwd: Path) -> list[Path]:
             i += 1
     if current:
         names.append(''.join(current))
+    if preserve_spelling:
+        return [Path(os.path.abspath(cwd / name)) for name in names]
     return [(cwd / name).resolve() for name in names]
 
 

@@ -27,6 +27,23 @@ def test_project_updates_reuse_the_same_llvm_foundation(tmp_path):
     assert foundation_identity(prefix) == before
 
 
+def test_native_header_bundle_is_reinstalled_without_invalidating_llvm_foundation(tmp_path):
+    prefix = sdk(tmp_path / 'cached')
+    before = foundation_identity(prefix)
+    files = ('bin/clang.cfg', 'bin/clang++.cfg',
+             'lib/clang/23/objc3-native-headers/roots/00/string',
+             'lib/clang/23/objc3-native-headers/manifest.json')
+    for name in files:
+        path = prefix / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('current native headers')
+    assert foundation_identity(prefix) == before
+    destination = tmp_path / 'candidate'
+    copy_foundation(prefix, destination)
+    assert all(not (destination / name).exists() for name in files)
+    assert (destination / 'bin/clang').read_text() == 'compiler'
+
+
 def test_llvm_library_change_invalidates_reuse_even_with_preserved_timestamp(tmp_path):
     prefix = sdk(tmp_path)
     before = foundation_identity(prefix)
@@ -71,6 +88,7 @@ def test_editor_qualification_changes_invalidate_release_reuse(tmp_path, monkeyp
         path.write_text('initial contents')
     monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {'configure': {'identity': 'foundation'}})
     monkeypatch.setattr(linux_sdk, 'facade_identity', lambda *a: {'sha256': 'frontend'})
+    monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
     monkeypatch.setattr(plan, 'build_plan', lambda *a, **kw: {
         'selected_nodes': [{'identity_inputs': [fixture]}]})
     prefix = sdk(tmp_path / 'sdk')
@@ -91,6 +109,7 @@ def identity_project(tmp_path, monkeypatch, configure):
         path.write_text('qualified input')
     monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {'configure': configure})
     monkeypatch.setattr(linux_sdk, 'facade_identity', lambda *a: {'sha256': 'frontend'})
+    monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
     monkeypatch.setattr(plan, 'build_plan', lambda *a, **kw: {'selected_nodes': []})
     return repo, sdk(tmp_path / 'sdk')
 
@@ -105,9 +124,24 @@ def test_reclaiming_foundation_outputs_preserves_release_reuse(tmp_path, monkeyp
     configure['identity'] = 'without-stage'
     configure['sdk_consumers']['resource_dir']['sha256'] = None
     assert linux_sdk.input_identity(repo, prefix)['sha256'] == before
+
     # A mutable build-tree inventory is also an output, not a release input.
     configure['sdk_consumers']['build_tree_resource_dir'] = {'path': '/build/resources', 'sha256': 'new-output'}
     assert linux_sdk.input_identity(repo, prefix)['sha256'] == before
+
+
+def test_native_header_bytes_change_release_inputs_independently_of_llvm(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import linux_sdk, native_headers
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'identity': 'foundation'})
+    header = tmp_path / 'native-header'
+    header.write_bytes(b'first header')
+    monkeypatch.setattr(linux_sdk, 'discover_native_headers',
+                        lambda *a: {'sha256': native_headers.digest(header)})
+    before = linux_sdk.input_identity(repo, prefix)['sha256']
+    timestamp = header.stat()
+    header.write_bytes(b'other header')
+    os.utime(header, ns=(timestamp.st_atime_ns, timestamp.st_mtime_ns))
+    assert linux_sdk.input_identity(repo, prefix)['sha256'] != before
 
 
 @pytest.mark.parametrize('field', ['command', 'source_tree', 'build_config_digest', 'host_environment'])
@@ -136,7 +170,10 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {'build_id': 'llvm-build'})
     changed = False
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *a: {
-        'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation'})
+        'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation',
+        'native_headers': {'sha256': 'native-headers'}})
+    monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
+    monkeypatch.setattr(linux_sdk, 'materialize_native_headers', lambda *a: {'files': 0})
     monkeypatch.setattr(linux_sdk, 'copy_foundation', lambda _, prefix: prefix.mkdir())
     monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {
         'configure': {'host_environment': {'resource_limits': {'compile_jobs': 1}}}})
