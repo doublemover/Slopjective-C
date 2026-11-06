@@ -26,7 +26,7 @@ MODULE = 'fixture.TypedKeyPaths'
 SEMANTIC = 'objc3.typed-keypaths.v1'
 
 
-def check_metadata(metadata: dict) -> None:
+def check_metadata(metadata: dict, *, dependent_applications=False) -> None:
     if SEMANTIC not in metadata['required_semantics']:
         raise ValueError('typed key-path interface lost its required semantic')
     declarations = {row['qualified_name']: row for row in metadata['declarations']}
@@ -43,6 +43,12 @@ def check_metadata(metadata: dict) -> None:
         if ('KeyPath<' not in identity or
                 ('WritableKeyPath<' in identity) != writable):
             raise ValueError('typed key-path interface lost root/value/writability: ' + name)
+    if dependent_applications:
+        for operation in ('read', 'write', 'readonly', 'metadata', 'packed_read', 'all_read', 'all_write',
+                          'braced_write'):
+            name = 'PackageDependentPaths::'+operation
+            if declarations.get(name, {}).get('kind') != 'FunctionTemplate':
+                raise ValueError('typed key-path interface lost dependent application: '+name)
 
 
 def configurations():
@@ -68,7 +74,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
             raise ValueError('typed key-path package failed complete compile reuse')
         metadata_path = built / 'modules' / MODULE / (MODULE + '.objc3i.json')
         metadata = json.loads(metadata_path.read_text())
-        check_metadata(metadata)
+        check_metadata(metadata, dependent_applications='++' in language)
         interface_sha = packages.digest(metadata_path)
         publication = packages.publish(sdk, built, root / 'publication')
         packages.install(Path(publication['package']), publication['content_sha256'],

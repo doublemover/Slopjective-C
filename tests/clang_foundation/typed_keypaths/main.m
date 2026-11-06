@@ -6,6 +6,74 @@
 
 static int path_evaluations, root_evaluations, value_evaluations;
 static int operand_sequence;
+#ifdef __cplusplus
+template<class Path, class Root>
+static auto dependent_path_read(Path path, Root root) {
+  return KeyPathGet(path, root);
+}
+template<class Path, class Root, class Value>
+static void dependent_path_write(Path path, Root root, Value value) {
+  KeyPathSet(path, root, value);
+}
+template<class Path>
+static auto dependent_path_narrow(Path path) {
+  return KeyPathAsReadOnly(path);
+}
+template<class Path>
+static auto dependent_path_descriptor(Path path) {
+  return KeyPathMetadata(path);
+}
+template<class Path, class... Roots>
+static auto dependent_path_pack(Path path, Roots... roots) {
+  return KeyPathGet(path, roots...);
+}
+template<class... Arguments>
+static auto dependent_path_all_get(Arguments... arguments) {
+  return KeyPathGet(arguments...);
+}
+template<class... Arguments>
+static void dependent_path_all_set(Arguments... arguments) {
+  KeyPathSet(arguments...);
+}
+template<class Path, class Root>
+static void dependent_path_braced_pair(Path path, Root root) {
+  KeyPathSet(path, {root}, {23, 29});
+}
+static void check_dependent_applications(void) {
+  const int destroyed = path_destroyed;
+  @autoreleasepool {
+    RuntimePathNode *root __attribute__((objc_precise_lifetime)) =
+        [RuntimePathNode newWithCount:11];
+    RuntimePathNode *child __attribute__((objc_precise_lifetime)) =
+        [RuntimePathNode newWithCount:19];
+    root.child = child;
+    auto path = runtime_nested_path();
+    const int reads = path_count_reads, sets = path_count_sets;
+    assert(dependent_path_read(path, root) == 19);
+    assert(path_count_reads == reads + 1 && path_count_sets == sets);
+    dependent_path_write(path, root, 53);
+    assert(path_count_sets == sets + 1);
+    assert(dependent_path_read(dependent_path_narrow(path), root) == 53);
+    assert(dependent_path_pack(path, root) == 53);
+    dependent_path_all_set(path, root, 67);
+    assert(dependent_path_all_get(path, root) == 67);
+    assert(dependent_path_descriptor(path) == KeyPathMetadata(path));
+    PathPair pair = {7, 9};
+    auto pair_path = runtime_pair_path();
+    dependent_path_write(pair_path, root, pair);
+    PathPair copied = dependent_path_read(pair_path, root);
+    assert(copied.first == 7 && copied.second == 9);
+    dependent_path_braced_pair(pair_path, root);
+    copied = dependent_path_read(pair_path, root);
+    assert(copied.first == 23 && copied.second == 29);
+#if !__has_feature(objc_arc)
+    objc_release(child);
+    objc_release(root);
+#endif
+  }
+  assert(path_destroyed == destroyed + 2);
+}
+#endif
 static WritableKeyPath<RuntimePathNode *, int> once_path(void) {
   ++path_evaluations;
   operand_sequence = operand_sequence * 10 + 1;
@@ -443,4 +511,7 @@ int main(void) {
   }
   assert(path_destroyed >= 3);
   check_subscripts();
+#ifdef __cplusplus
+  check_dependent_applications();
+#endif
 }

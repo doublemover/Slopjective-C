@@ -713,6 +713,18 @@ class TypeDependencyVisitor final
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
         TraverseCoawaitExpr(expression,nullptr);
   }
+  bool TraverseCallExpr(clang::CallExpr *expression,
+                         DataRecursionQueue * = nullptr) {
+    clang::ObjC3KeyPathApplicationInfo application;
+    if (clang::getObjC3KeyPathApplication(expression, application)) {
+      UsesTypedKeyPaths = true;
+      for (auto *argument : application.Syntax->arguments())
+        if (!TraverseStmt(const_cast<clang::Expr *>(argument))) return false;
+      return true;
+    }
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
+        TraverseCallExpr(expression, nullptr);
+  }
   bool TraversePseudoObjectExpr(clang::PseudoObjectExpr *expression,
                                 DataRecursionQueue * = nullptr) {
     if (const auto *source=clang::getObjC3IsolationSourceSyntax(expression))

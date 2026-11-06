@@ -17,7 +17,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Concurrency | Remaining child/detached/group spawn and capture forms, abstract group contracts | Open |
 | Isolation | Remaining executor/actor crossings, MRC/CF/init-family forms and managed values | Open |
 | Isolation | Complete Sendable and Strict Concurrency enforcement | Open |
-| Key paths | Dependent/effectful/isolated and ownership-bearing paths | Open |
+| Key paths | Dependent applications and packs in generic functions, including source-free templates | Source authored; native source/PCH/package verification pending |
+| Key paths | Dependent type/literal construction; effectful/isolated and ownership-bearing paths | Open |
 | Key paths | Nonnull/scalar/aggregate nullable-chain result policy and implementation | Policy and implementation open |
 | Language/library | Remaining specified generic, property, reflection/metaprogramming and interoperability contracts | Open |
 | Profiles | Core, Strict, Strict Concurrency and Strict System conformance | Open |
@@ -41,6 +42,25 @@ relocation and parameter renaming, changed predicates, and unique declaration an
 module-owned symbol identities. It is authored but has not run against the
 corrected compiler. This extends a declaration contract; it does not complete
 the broader native-publication or language/profile rows above.
+
+## Authored dependent key-path applications
+
+Keypath source 2.7 retains dependent get/set/metadata/readonly/KVC calls as public
+syntax and written operands. Template instantiation expands argument packs,
+checks the actual operand count and rebuilds the existing typed operation,
+including root/value admission, writability and precise native lifetime lowering.
+C++ parsing also accepts ordinary braced argument initialization. Stable profiles
+and interface visitors bind the public operation and arguments, without exporting
+the private syntax-marker declaration.
+
+Compiler cases cover C++20/23, ARC/MRC, PCH replay, ordinary and all-operand packs,
+invalid path types, readonly writes and zero/excess expanded operands. Runtime
+witnesses check scalar/record reads and writes, metadata, exact accessor work and
+object destruction. Source-free package fixtures publish and instantiate eight
+generic helper forms after provider-source removal; qualification now requires
+those template declarations in C++ metadata. These cases are authored and remain
+pending the rebuilt compiler. Dependent type constructors/literals and the other
+key-path rows remain open.
 
 ## Consolidated verification and delivery
 

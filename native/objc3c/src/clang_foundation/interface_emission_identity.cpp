@@ -1165,6 +1165,19 @@ public:
     return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::
         TraverseCoawaitExpr(expression,nullptr);
   }
+  bool TraverseCallExpr(clang::CallExpr *expression,
+                         DataRecursionQueue * = nullptr) {
+    clang::ObjC3KeyPathApplicationInfo application;
+    if (clang::getObjC3KeyPathApplication(expression, application)) {
+      Add("keypath-application:"+std::to_string(application.Operation));
+      Add(ExpressionType(expression->getType()));
+      for (auto *argument : application.Syntax->arguments())
+        if (!TraverseStmt(const_cast<clang::Expr *>(argument))) return false;
+      return true;
+    }
+    return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::
+        TraverseCallExpr(expression, nullptr);
+  }
   bool TraversePseudoObjectExpr(clang::PseudoObjectExpr *expression,
                                 DataRecursionQueue * = nullptr) {
     if (const auto *source=clang::getObjC3IsolationSourceSyntax(expression))

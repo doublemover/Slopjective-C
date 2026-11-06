@@ -31,6 +31,17 @@ int main(void) {
     WritableKeyPath<PackagePathRoot *, int> path = package_count_path();
     KeyPathSet(path, root, 42);
     assert(KeyPathGet(path, root) == 42);
+#ifdef __cplusplus
+    assert(PackageDependentPaths::read(path, root) == 42);
+    PackageDependentPaths::write(path, root, 71);
+    auto dependent_read = PackageDependentPaths::readonly(path);
+    assert(PackageDependentPaths::read(dependent_read, root) == 71);
+    assert(PackageDependentPaths::packed_read(path, root) == 71);
+    PackageDependentPaths::all_write(path, root, 83);
+    assert(PackageDependentPaths::all_read(path, root) == 83);
+    assert(PackageDependentPaths::metadata(path) == KeyPathMetadata(path));
+    PackageDependentPaths::write(path, root, 42);
+#endif
     KeyPath<PackagePathRoot *, int> read = path;
     assert(KeyPathGet(read, root) == 42);
     assert(KeyPathGet(package_narrowed_path(), root) == 42);
@@ -54,6 +65,13 @@ int main(void) {
     KeyPathSet(package_field_path(), root, 42L);
     pair = root.pair;
     assert(pair.first == 42L && pair.second == 17L);
+#ifdef __cplusplus
+    WritableKeyPath<PackagePathRoot *, PackagePathPair> dependent_pair =
+        @keypath(PackagePathRoot, pair);
+    PackageDependentPaths::braced_write(dependent_pair, root);
+    pair = PackageDependentPaths::all_read(dependent_pair, root);
+    assert(pair.first == 13L && pair.second == 17L);
+#endif
     PackagePathBits bits={1,-9,91};
     root.bits=bits;
     KeyPathSet(package_bits_path(),root,10U);

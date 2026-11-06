@@ -694,18 +694,21 @@ index 120af89a9..52edceb63 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index fdefb6d6b..5e554dbcb 100644
+index fdefb6d6b..3c9ffddd4 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
-@@ -21,6 +21,7 @@
+@@ -19,8 +19,10 @@
+ #include "clang/AST/ExprObjC.h"
+ #include "clang/AST/ExprOpenMP.h"
  #include "clang/AST/ODRHash.h"
++#include "clang/AST/ObjC3KeyPath.h"
  #include "clang/AST/OpenMPClause.h"
  #include "clang/AST/StmtVisitor.h"
 +#include "clang/AST/StableExpressionProfile.h"
  #include "llvm/ADT/FoldingSet.h"
  using namespace clang;
  
-@@ -80,7 +81,7 @@ namespace {
+@@ -80,7 +82,7 @@ namespace {
                                  unsigned NumArgs);
  
      /// Visit a single template argument.
@@ -714,7 +717,7 @@ index fdefb6d6b..5e554dbcb 100644
    };
  
    class StmtProfilerWithPointers : public StmtProfiler {
-@@ -92,7 +93,7 @@ namespace {
+@@ -92,7 +94,7 @@ namespace {
                               bool ProfileLambdaExpr)
          : StmtProfiler(ID, Canonical, ProfileLambdaExpr), Context(Context) {}
  
@@ -723,7 +726,7 @@ index fdefb6d6b..5e554dbcb 100644
      void HandleStmtClass(Stmt::StmtClass SC) override {
        ID.AddInteger(SC);
      }
-@@ -184,6 +185,56 @@ namespace {
+@@ -184,6 +186,56 @@ namespace {
      }
    };
  
@@ -780,7 +783,24 @@ index fdefb6d6b..5e554dbcb 100644
    class StmtProfilerWithoutPointers : public StmtProfiler {
      ODRHash &Hash;
    public:
-@@ -1653,6 +1704,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -1583,6 +1635,16 @@ void StmtProfiler::VisitOMPIteratorExpr(const OMPIteratorExpr *S) {
+ }
+ 
+ void StmtProfiler::VisitCallExpr(const CallExpr *S) {
++  ObjC3KeyPathApplicationInfo Application;
++  if (getObjC3KeyPathApplication(S, Application)) {
++    VisitStmtNoChildren(S);
++    ID.AddString("objc3.keypath.application.v2");
++    ID.AddInteger(Application.Operation);
++    VisitType(S->getType());
++    for (const Expr *Argument : S->arguments())
++      Visit(Argument);
++    return;
++  }
+   VisitExpr(S);
+ }
+ 
+@@ -1653,6 +1715,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    VisitExpr(S);
  }
  
@@ -889,7 +909,7 @@ index fdefb6d6b..5e554dbcb 100644
  void StmtProfiler::VisitChooseExpr(const ChooseExpr *S) {
    VisitExpr(S);
  }
-@@ -1730,7 +1883,29 @@ void StmtProfiler::VisitMatrixElementExpr(const MatrixElementExpr *S) {
+@@ -1730,7 +1894,29 @@ void StmtProfiler::VisitMatrixElementExpr(const MatrixElementExpr *S) {
  
  void StmtProfiler::VisitBlockExpr(const BlockExpr *S) {
    VisitExpr(S);
@@ -920,7 +940,7 @@ index fdefb6d6b..5e554dbcb 100644
  }
  
  void StmtProfiler::VisitGenericSelectionExpr(const GenericSelectionExpr *S) {
-@@ -3013,3 +3188,19 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
+@@ -3013,3 +3199,19 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
    StmtProfilerWithoutPointers Profiler(ID, Hash);
    Profiler.Visit(this);
  }

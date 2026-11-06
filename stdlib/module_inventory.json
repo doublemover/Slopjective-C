@@ -240,7 +240,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 6,
+        "minor": 7,
         "patch": 0
       },
       "header": "include/objc3/keypath.h",
@@ -257,11 +257,12 @@
         "Writable nullable object/Block chains with exact-once operands, nil no-op updates, receiver pinning, native cleanup and semantic capability admission (source)",
         "Named native bit-fields and unambiguous inherited C++ record fields with native access, base adjustment, signed/truncated values and exact-once property writeback (source)",
         "Typed root[path] reads, assignments, compound updates and increments with source-ordered root/key/value snapshots, shared native lifetime/EH cleanup and source-free published inline syntax (source)",
-        "Plain union field access/writeback and explicit checked KVC NSString boxing with strict safety-loss diagnostics (source)"
+        "Plain union field access/writeback and explicit checked KVC NSString boxing with strict safety-loss diagnostics (source)",
+        "Dependent C++ template applications for get/set/metadata/readonly/KVC operations, argument packs, typed instantiation and canonical source-free publication (source authored; native verification pending)"
       ],
       "remaining": [
         "nullable chains with nonnull/scalar/aggregate results",
-        "dependent, effectful and isolated paths",
+        "dependent key-path type/literal construction; effectful and isolated paths",
         "borrowed and owned-resource value semantics",
         "complete installed contract validation"
       ]

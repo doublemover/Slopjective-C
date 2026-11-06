@@ -59,3 +59,33 @@ int package_indexed_update(PackagePathRoot *_Nonnull root,
 WritableKeyPath<PackagePathRoot *, PackagePathRoot * _Nullable> package_nullable_path(void) {
   return @keypath(PackagePathRoot, next.value);
 }
+
+#ifdef __cplusplus
+namespace PackageDependentPaths {
+template<class Path, class Root> auto read(Path path, Root root) {
+  return KeyPathGet(path, root);
+}
+template<class Path, class Root, class Value>
+void write(Path path, Root root, Value value) {
+  KeyPathSet(path, root, value);
+}
+template<class Path> auto readonly(Path path) {
+  return KeyPathAsReadOnly(path);
+}
+template<class Path> auto metadata(Path path) {
+  return KeyPathMetadata(path);
+}
+template<class Path, class... Roots> auto packed_read(Path path, Roots... roots) {
+  return KeyPathGet(path, roots...);
+}
+template<class... Arguments> auto all_read(Arguments... arguments) {
+  return KeyPathGet(arguments...);
+}
+template<class... Arguments> void all_write(Arguments... arguments) {
+  KeyPathSet(arguments...);
+}
+template<class Path, class Root> void braced_write(Path path, Root root) {
+  KeyPathSet(path, {root}, {13, 17});
+}
+}
+#endif

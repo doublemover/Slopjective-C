@@ -5,7 +5,7 @@
 #include <objc3c/runtime/objc3_keypath.h>
 
 #define OBJC3_KEYPATH_MODULE_SEMVER_MAJOR 2u
-#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 5u
+#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 7u
 #define OBJC3_KEYPATH_MODULE_SEMVER_PATCH 0u
 
 /* KeyPath<Root, Value> and WritableKeyPath<Root, Value> are compiler-owned
@@ -22,7 +22,7 @@
  * and writes that snapshot through the original setter exactly once. The
  * receiver remains alive through that complete read/modify/write operation.
  *
- * Metadata is immutable and valid for the lifetime of its native image. No
+ * Metadata is immutable and valid for the lifetime of its native image. Native
  * literal construction uses no registry, reset generation, integer handle,
  * or captured root owner.
  * Nullable intermediates require a nullable Objective-C object or Block result.
@@ -44,5 +44,12 @@
  * nil; strict profiles diagnose the loss of typed root/value checking.
  * Plain union fields preserve native active-member access and writeback;
  * managed/resource/borrowed union storage retains its ownership boundary. */
+
+/* In Objective-C++, the five named key-path operations support dependent
+ * template operands and argument packs. Instantiation repeats native root/value,
+ * writability and lifetime checks and lowers the concrete typed operation.
+ * Pack expansions may supply all operands; their expanded arity is checked.
+ * This does not make dependent KeyPath type constructors or @keypath literals
+ * available, and does not enable effectful or isolated property paths. */
 
 #endif
