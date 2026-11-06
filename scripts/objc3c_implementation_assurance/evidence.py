@@ -7,7 +7,7 @@ from pathlib import Path
 
 from scripts.objc3c_toolchain.analysis_checkpoint import analysis_argv, tidy_diagnostics
 from scripts.objc3c_toolchain.implementation_analysis import (
-    checker_configuration, owner_changes, selected_variants)
+    checker_configuration, owner_changes, selected_variants, translation_unit_timeout)
 from scripts.objc3c_toolchain.sanitizer_policy import require_clean_diagnostic
 from scripts.objc3c_assurance.evidence import junit, lit
 
@@ -151,6 +151,12 @@ def verify_analysis_proof(root: Path, receipt: dict) -> None:
         if not row['selected']:
             continue
         name = row['owner']+'-'+row['identity'][:16]
+        timeout = translation_unit_timeout(receipt['policy'], row,
+            repo / 'out/toolchains/objc3-development/src')
+        result = next(value for value in receipt['results'] if value['identity'] == row['identity'])
+        if (row.get('analysis_timeout_seconds') != timeout or
+                result.get('timeout_seconds') != timeout):
+            raise ValueError('implementation action differs from its reviewed resource bound')
         command = by_name.get(name)
         expected = analysis_argv(receipt['tool']['path'], original_root / name,
                                   row['file'], configuration, receipt['resource_directory'])

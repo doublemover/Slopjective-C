@@ -55,9 +55,11 @@ def passing_bundle(tmp_path, *, periodic=False):
             'directory': '/producer/build/'+owner, 'output': '/producer/build/'+owner+'/source.o',
             'analysis_arguments': ['clang++', '-DREAL_FLAG=1', '-c', str(source)],
             'dependencies': [str(source)], 'selected': periodic or index < 2,
+            'analysis_timeout_seconds': policy['translation_unit_timeout_seconds'],
             'dependency_origin': 'actual-ninja-compilation'})
     results = [{'identity': row['identity'], 'status': 'PASS', 'diagnostics': [],
-                'execution_reused': False} for row in inventory if row['selected']]
+                'execution_reused': False, 'timeout_seconds': row['analysis_timeout_seconds']}
+               for row in inventory if row['selected']]
     controls = [
         {'name': 'control-corrected', 'status': 'PASS', 'exit_code': 0,
          'expected_exit_code': 0, 'timed_out': False},
@@ -168,7 +170,8 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
 
 @pytest.mark.parametrize('fault', ['missing-action', 'extra-action', 'wrong-selection', 'wrong-argv',
     'wrong-database', 'hidden-finding', 'missing-log', 'wrong-log-hash', 'reused-action',
-    'missing-control-diagnostic', 'missing-build', 'wrong-profile', 'wrong-foundation', 'symlink'])
+    'missing-control-diagnostic', 'missing-build', 'wrong-profile', 'wrong-foundation', 'symlink',
+    'wrong-resource-bound'])
 def test_rehashed_outer_bundle_cannot_hide_missing_native_proof(tmp_path, fault):
     plan, report = passing_bundle(tmp_path)
     path = tmp_path / 'analysis/qualification.json'
@@ -184,6 +187,9 @@ def test_rehashed_outer_bundle_cannot_hide_missing_native_proof(tmp_path, fault)
     elif fault == 'wrong-argv': inner['commands'][-1]['argv'].append('--checks=-*')
     elif fault == 'wrong-database':
         next((tmp_path / 'analysis').glob('frontend-*/compile_commands.json')).write_text('[]')
+    elif fault == 'wrong-resource-bound':
+        inner['inventory'][0]['analysis_timeout_seconds'] = 3600
+        inner['results'][0]['timeout_seconds'] = 3600
     elif fault == 'hidden-finding':
         command = inner['commands'][-1]
         log = tmp_path / 'analysis/logs' / Path(command['log']).name

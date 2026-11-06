@@ -76,7 +76,8 @@ def run_unit(job):
     root = Path(job['directory'])
     report = {'schema': 'objc3c.implementation-analysis-unit.v1', 'status': 'running', 'commands': []}
     executor = Execution(root, job['environment'], report, timeout=job['timeout'])
-    result = {'identity': job['identity'], 'status': 'PASS', 'execution_reused': False}
+    result = {'identity': job['identity'], 'status': 'PASS', 'execution_reused': False,
+              'timeout_seconds': job['timeout']}
     try:
         executor.run(job['name'], job['argv'])
         report['status'] = 'PASS'

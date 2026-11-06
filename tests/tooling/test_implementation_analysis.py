@@ -98,6 +98,31 @@ def test_native_finding_is_durable_and_does_not_discard_clean_sibling(tmp_path):
     assert failure['result']['diagnostics'][0]['check'] == 'clang-analyzer-core.NullDereference'
 
 
+def test_reviewed_large_clang_unit_timeout_never_widens_native_actions(tmp_path):
+    from scripts.objc3c_toolchain.implementation_analysis import (
+        translation_unit_timeout, validate_timeout_overrides)
+    unit = 'clang/lib/AST/ASTContext.cpp'
+    policy = {'translation_unit_timeout_seconds': 600,
+        'translation_unit_timeout_overrides_seconds': {unit: 1800}}
+    validate_timeout_overrides(policy, {unit})
+    row = {'owner': 'maintained-clang', 'file': str(tmp_path / unit)}
+    assert translation_unit_timeout(policy, row, tmp_path) == 1800
+    assert translation_unit_timeout(policy, {**row, 'owner': 'frontend'}, tmp_path) == 600
+    assert translation_unit_timeout(policy, {**row, 'file': str(tmp_path / 'clang/lib/AST/Other.cpp')},
+                                    tmp_path) == 600
+    with pytest.raises(ValueError, match='escaped'):
+        translation_unit_timeout(policy, {**row, 'file': str(tmp_path.parent / 'outside.cpp')}, tmp_path)
+
+
+@pytest.mark.parametrize('overrides', [None, [], {'native/objc3c/large.cpp': 1800}] + [
+    {'clang/lib/AST/ASTContext.cpp': value} for value in (True, 0, 600, 3601, float('inf'), '1800')])
+def test_unreviewed_or_unbounded_timeout_override_is_rejected(overrides):
+    from scripts.objc3c_toolchain.implementation_analysis import validate_timeout_overrides
+    with pytest.raises(ValueError, match='finite bounds'):
+        validate_timeout_overrides({'translation_unit_timeout_seconds': 600,
+            'translation_unit_timeout_overrides_seconds': overrides}, {'clang/lib/AST/ASTContext.cpp'})
+
+
 @pytest.fixture
 def database(tmp_path):
     source = tmp_path / 'service.cpp'

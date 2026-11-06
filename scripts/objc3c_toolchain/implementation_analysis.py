@@ -34,6 +34,26 @@ def patch_units(repo):
         for value in re.findall(r'^\+\+\+ b/(clang/lib/.*\.cpp)$', patch.read_text(), re.M)}
 
 
+def validate_timeout_overrides(policy, maintained_units):
+    overrides = policy.get('translation_unit_timeout_overrides_seconds', {})
+    if (not isinstance(overrides, dict) or len(overrides) > 16 or
+            any(path not in maintained_units or type(seconds) is not int or
+                not policy['translation_unit_timeout_seconds'] < seconds <= 3600
+                for path, seconds in overrides.items())):
+        raise ValueError('analysis timeout overrides require reviewed maintained Clang units and finite bounds')
+
+
+def translation_unit_timeout(policy, row, source):
+    default = policy['translation_unit_timeout_seconds']
+    if row['owner'] != 'maintained-clang':
+        return default
+    try:
+        relative = Path(row['file']).resolve().relative_to(Path(source).resolve()).as_posix()
+    except ValueError as error:
+        raise ValueError('maintained analysis timeout source escaped the admitted fork') from error
+    return policy.get('translation_unit_timeout_overrides_seconds', {}).get(relative, default)
+
+
 def arguments(row):
     result = row.get('arguments') or shlex.split(row['command'])
     if not isinstance(result, list) or not all(isinstance(arg, str) for arg in result):
@@ -310,6 +330,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             not policy.get('checks') or len(set(policy['checks'])) != len(policy['checks']) or
             any(not re.fullmatch(r'[a-zA-Z0-9_.-]+', check) for check in policy['checks'])):
         raise ValueError('unreviewed implementation analysis policy/baseline')
+    validate_timeout_overrides(policy, patch_units(repo))
     output.mkdir(parents=True)
     tool_arguments, environment = tool_configuration(repo, tool_build, plan)
     report = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'running',
@@ -494,7 +515,9 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                       selected_variants(rows, deps, scoped_changes))
             report['inputs'][str(database)] = digest(database)
             for row in rows:
-                row.update(owner=label, identity=identity({'owner': label, **row}), dependencies=deps[row['output']])
+                row['owner'] = label
+                row['analysis_timeout_seconds'] = translation_unit_timeout(policy, row, source)
+                row.update(identity=identity(row), dependencies=deps[row['output']])
                 row['selected'] = row in chosen
                 report['inputs'].update({path: digest(Path(path)) for path in row['dependencies']})
                 report['inputs'].update(row['response_files'])
@@ -520,7 +543,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                             executor.save()
                             yield {'name': name, 'identity': row['identity'],
                                 'directory': str(output / name), 'environment': environment, 'argv': argv,
-                                'timeout': policy['translation_unit_timeout_seconds']}
+                                'timeout': row['analysis_timeout_seconds']}
 
                 def completed(value):
                     result, commands = value

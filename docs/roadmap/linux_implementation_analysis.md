@@ -66,8 +66,17 @@ language and feature flags. Identical variants share a content-addressed matched
 PCH. The bootstrap serialization, wrapper, matched serialization, compiler and
 both original/projected commands and hashes are retained. The forced textual
 include remains in the projected command, and a missing or invalid matched PCH
-fails instead of disabling validation. Each TU has a bounded ten-minute analysis
-allowance; a timeout remains a failed TU.
+fails instead of disabling validation. Native units and ordinary maintained
+Clang units retain a ten-minute ceiling. Three upstream AST units exceed that
+limit in the full instrumented scan: `ASTContext.cpp`, `ASTImporter.cpp` and
+`ExprConstant.cpp`. The source-owned policy gives precisely those units a finite
+one-hour ceiling. The ASTContext progress probe has already recorded over 900
+seconds of completed function analysis with the complete checker set, establishing
+that ten minutes cannot cover that work. This is a resource allowance, not a
+passing result or performance target; the longer complete actions still need to
+finish without findings. Source/owner-scoped selection prevents the override from
+widening native actions. The row identity and terminal verifier bind the requested
+ceiling, reject unowned/unbounded overrides and retain earlier timeout failures.
 
 The interface emitter is partitioned by template publication, feature detection,
 AST/declaration identity, dependency admission and final publication. A private
