@@ -50,6 +50,15 @@ the consumer. The LLVM patch stack also fixes unresolved-member import to retain
 the base type instead of the overload-set type, with implicit-this, explicit-arrow
 and explicit-dot template-instantiation regressions in C++20 and C++23.
 
+The compiler also imports explicit-instantiation declarations, retaining their
+specialization links, lexical contexts, template arguments and context index.
+Native type-location import preserves template/tag qualifiers and arguments,
+function/array ranges, written builtin specifiers and function parameters.
+C++20/23 source/PCH regressions pass ten commands. The AST unit checks full and
+minimal imports, source text/ranges and repeated imports in four configurations;
+all twelve AST infrastructure tests and the twelve affected frontend groups pass.
+Libc++ execution and broader header/configuration checks continue separately.
+
 The maintained frontend controls cover strings, vectors, arrays, callable wrappers,
 shared ownership, optional values, spans, tuples, variants, durations, integral
 constraints and inline algorithms. They exercise C++20/23 and Objective-C++
