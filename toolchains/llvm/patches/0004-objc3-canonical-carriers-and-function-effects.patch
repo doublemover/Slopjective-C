@@ -43326,10 +43326,10 @@ index 000000000..d3ae31385
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..27d278d19
+index 000000000..a16ec5c2d
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5258 @@
+@@ -0,0 +1,5328 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43639,6 +43639,8 @@ index 000000000..27d278d19
 +    const Expr *Initializer = nullptr;
 +  };
 +  llvm::DenseMap<unsigned, Storage> OriginOwnerStorage;
++  llvm::DenseMap<unsigned, const Expr *> OriginOwnerSelectors;
++  llvm::DenseSet<unsigned> UnprovenOwnerSelectors, RejectedOwnerSelectors;
 +  llvm::DenseMap<unsigned, FutureStorageOwner> FutureStorageOwners;
 +  mutable llvm::DenseSet<unsigned> AcquiredStorageOwners, ConsumedStorageOwners;
 +  llvm::DenseMap<unsigned, CallableCapturePath> SymbolicCallablePaths;
@@ -44224,7 +44226,7 @@ index 000000000..27d278d19
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(Owner))
 +      if (Binary->getOpcode() == BO_Comma)
 +        return collectOwnerEvaluations(Binary->getRHS(), Invocation);
-+    if (isa<DeclRefExpr>(Owner) || (Owner->isGLValue() && storage(Owner).first))
++    if (isa<DeclRefExpr>(Owner) || Owner->isGLValue())
 +      OwnerEvaluations[Owner].push_back(Invocation);
 +  }
 +  void collectBindings(const Stmt *Node) {
@@ -44320,15 +44322,56 @@ index 000000000..27d278d19
 +          if (Owner)
 +            addVariable(Owner);
 +          // Identities are flow facts, independent of the source type's ABI.
-+          for (const auto &Key : ownerKeys()) {
-+            const VarDecl *Root = Key.first;const unsigned Index = Key.second;
-+            auto Add = [&](const VarDecl *Pin) {
-+              addOrigin(E, Owner ? Owner : OwnerStorage.first, Unstable, Pin, Root, true);
-+              if (Index != OwnerRoots.lookup(Root)) Origins.back().StorageIdentity = Index;
-+              if (OwnerStorage.first) OriginOwnerStorage[Origins.size() - 1] = OwnerStorage;
-+            };
-+            Add(nullptr);
-+            for (auto [Binding, Source] : PinSources) if (Source) Add(Binding);
++          const bool Select = !Owner && SourceOwner && SourceOwner->isGLValue() &&
++              (!OwnerStorage.first || hasUnknownIndex(OwnerStorage) || OwnerStorage.first->getType()->isReferenceType());
++          if (Select) {
++            SmallVector<Storage, 8> Candidates;
++            const auto *Member = dyn_cast<MemberExpr>(SourceOwner->IgnoreParenCasts());
++            const auto *Field = Member ? dyn_cast<FieldDecl>(Member->getMemberDecl()) : nullptr;
++            for (const auto &[Location, Slot] : Slots) {
++              (void)Slot;
++              if (!Location.first || hasUnknownIndex(Location)) continue;
++              if (Field && !Field->getType()->isReferenceType() && Location.second != Field) continue;
++              QualType Type = storageType(Location);
++              if (Type.isNull() || !Context.hasSameUnqualifiedType(Type.getNonReferenceType(), SourceOwner->getType())) continue;
++              Candidates.push_back(Location);
++            }
++            const auto Keys = ownerKeys();
++            // Admission remains bounded. An unproved selector diagnoses rather
++            // than silently turning a contracted getter into an unknown loan.
++            const bool Admitted = Origins.size() + Candidates.size() * Keys.size() * (PinSources.size() + 1) <= 4096;
++            if (Admitted)
++              for (Storage Candidate : Candidates) {
++                QualType Type = storageType(Candidate).getNonReferenceType();
++                const bool Unsafe = Type.getObjCLifetime() == Qualifiers::OCL_Weak || Type.getObjCLifetime() == Qualifiers::OCL_ExplicitNone;
++                for (const auto &Key : Keys) {
++                  const VarDecl *Root = Key.first;const unsigned Index = Key.second;
++                  auto Add = [&](const VarDecl *Pin) {
++                    addOrigin(E, Candidate.first, Unsafe, Pin, Root, true);
++                    unsigned Token = Origins.size() - 1;
++                    if (Index != OwnerRoots.lookup(Root)) Origins.back().StorageIdentity = Index;
++                    OriginOwnerStorage[Token] = Candidate;
++                    OriginOwnerSelectors[Token] = SourceOwner;
++                  };
++                  Add(nullptr);
++                  for (const auto &[Binding, Source] : PinSources) if (Source) Add(Binding);
++                }
++              }
++            addOrigin(E, nullptr, true);
++            unsigned Token = Origins.size() - 1;
++            OriginOwnerSelectors[Token] = SourceOwner;UnprovenOwnerSelectors.insert(Token);
++            if (!Admitted) RejectedOwnerSelectors.insert(Token);
++          } else {
++            for (const auto &Key : ownerKeys()) {
++              const VarDecl *Root = Key.first;const unsigned Index = Key.second;
++              auto Add = [&](const VarDecl *Pin) {
++                addOrigin(E, Owner ? Owner : OwnerStorage.first, Unstable, Pin, Root, true);
++                if (Index != OwnerRoots.lookup(Root)) Origins.back().StorageIdentity = Index;
++                if (OwnerStorage.first) OriginOwnerStorage[Origins.size() - 1] = OwnerStorage;
++              };
++              Add(nullptr);
++              for (auto [Binding, Source] : PinSources) if (Source) Add(Binding);
++            }
 +          }
 +          if (Owner && Owner->hasLocalStorage() &&
 +              Owner->getType().getObjCLifetime() == Qualifiers::OCL_Strong &&
@@ -45084,13 +45127,37 @@ index 000000000..27d278d19
 +    auto Found = Acquisitions.find(Node);
 +    if (Found == Acquisitions.end())
 +      return Result;
++    llvm::DenseMap<const Expr *, std::pair<Value, bool>> Selections;
 +    for (unsigned I : Found->second) {
 +      const Origin &O = Origins[I];
 +      if (O.IndependentAlias || O.Pin) continue;
 +      auto StorageOwner = OriginOwnerStorage.find(I);
 +      auto FutureOwner = FutureStorageOwners.find(I);
-+      if (SnapshotSource && (StorageOwner != OriginOwnerStorage.end()
-+            ? !(storage(SnapshotSource) == StorageOwner->second) : O.Owner != variable(SnapshotSource))) continue;
++      auto Selector = OriginOwnerSelectors.find(I);
++      if (SnapshotSource && (Selector != OriginOwnerSelectors.end()
++            ? SnapshotSource->IgnoreParenCasts() != Selector->second->IgnoreParenCasts()
++            : StorageOwner != OriginOwnerStorage.end()
++                ? !(storage(SnapshotSource) == StorageOwner->second) : O.Owner != variable(SnapshotSource))) continue;
++      if (Selector != OriginOwnerSelectors.end()) {
++        auto Selection = Selections.find(Selector->second);
++        if (Selection == Selections.end()) {
++          SmallVector<Storage, 4> Objects;
++          bool Complete = localLValueAlternatives(Selector->second, State, Objects, true, 0, false) && !Objects.empty() && Objects.size() <= 64;
++          Value Targets(Slots.size());
++          for (Storage Object : Objects) {
++            auto Slot = Slots.find(Object);
++            Complete &= Slot != Slots.end() && !hasUnknownIndex(Object) && typedWriteTarget(Object, Selector->second->getType());
++            if (Slot != Slots.end()) Targets.set(Slot->second);
++          }
++          Selection = Selections.insert({Selector->second, {std::move(Targets), Complete}}).first;
++        }
++        if (UnprovenOwnerSelectors.count(I)) {
++          if (!Selection->second.second || RejectedOwnerSelectors.count(I)) Result.set(I * 2);
++          continue;
++        }
++        if (!Selection->second.second || StorageOwner == OriginOwnerStorage.end() ||
++            !Selection->second.first.test(Slots.lookup(StorageOwner->second))) continue;
++      }
 +      bool StorageReleased = false;
 +      if (FutureOwner != FutureStorageOwners.end()) {
 +        Value Identity(OwnerCount);
@@ -47890,6 +47957,9 @@ index 000000000..27d278d19
 +              Nested.StorageOwnerRoots = StorageOwnerRoots;
 +              Nested.OwnerCount = OwnerCount;
 +              Nested.OriginOwnerStorage = OriginOwnerStorage;
++              Nested.OriginOwnerSelectors = OriginOwnerSelectors;
++              Nested.UnprovenOwnerSelectors = UnprovenOwnerSelectors;
++              Nested.RejectedOwnerSelectors = RejectedOwnerSelectors;
 +              Nested.FutureStorageOwners = FutureStorageOwners;
 +              Nested.Paths = Paths;
 +              Nested.FieldPaths = FieldPaths;
@@ -60891,3 +60961,128 @@ index 000000000..0154e8c22
 +}
 +#endif
 +#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-owner-aliases.mm b/clang/test/ObjC3/Sema/borrowed-owner-aliases.mm
+new file mode 100644
+index 000000000..f0667541a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-owner-aliases.mm
+@@ -0,0 +1,97 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-stored-owners.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-stored-owners.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-stored-owners.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-stored-owners.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-stored-owners.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-stored-owners.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-stored-owners.h"
++#endif
++void owner_through_pointer(void *owner) {
++  struct MemoryOwnerField box={owner};struct MemoryOwnerField *alias=&box;
++  const char *loan=memory_bytes(alias->pointer);memory_consume(owner);
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void replace_pointer_owner(void *owner,void *replacement) {
++  struct MemoryOwnerField box={owner};struct MemoryOwnerField *alias=&box;
++  const char *loan=memory_bytes(alias->pointer);box.pointer=replacement;
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void retarget_owner_alias(void *one,void *two) {
++  struct MemoryOwnerField first={one},second={two};struct MemoryOwnerField *alias=&first;
++  const char *loan=memory_bytes(alias->pointer);alias=&second;memory_use(loan);
++  first.pointer=two;
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void retarget_owner_consumed(void *one,void *two) {
++  struct MemoryOwnerField first={one},second={two};struct MemoryOwnerField *alias=&first;
++  const char *loan=memory_bytes(alias->pointer);alias=&second;memory_consume(two);memory_use(loan);
++  memory_consume(one);
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void joined_owner_alias(void *one,void *two,int choose) {
++  struct MemoryOwnerField first={one},second={two};struct MemoryOwnerField *alias=choose?&first:&second;
++  const char *loan=memory_bytes(alias->pointer);memory_consume(two);
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void scalar_owner_alias(void *owner) {
++  void **alias=&owner;const char *loan=memory_bytes(*alias);memory_consume(owner);
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void byte_owner_alias(void *owner) {
++  struct MemoryOwnerField box={owner};char *bytes=(char *)&box;
++  const char *loan=memory_bytes(*(void **)bytes);box.pointer=0;
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void unknown_owner_alias(struct MemoryOwnerField *input) {
++  memory_use(memory_bytes(input->pointer)); // expected-error {{derived from a non-stable owner}}
++}
++void unknown_owner_indirection(void **input) {
++  memory_use(memory_bytes(*input)); // expected-error {{derived from a non-stable owner}}
++}
++void dynamic_owner_index(void *owner,int index) {
++  struct MemoryOwnerField boxes[2]={{owner},{owner}};
++  memory_use(memory_bytes(boxes[index].pointer)); // expected-error {{derived from a non-stable owner}}
++}
++MemoryBytes owner_alias_snapshot(void *owner,int side) __attribute__((objc_returns_borrowed(owner_index=0)));
++void changed_owner_alias_snapshot(void *one,void *two) {
++  struct MemoryOwnerField first={one},second={two};struct MemoryOwnerField *alias=&first;
++  const char *loan=owner_alias_snapshot(alias->pointer,(alias=&second,0));memory_use(loan); // expected-warning {{unsequenced modification and access}}
++  memory_consume(one);
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void replaced_owner_alias_snapshot(void *owner) {
++  struct MemoryOwnerField box={owner};struct MemoryOwnerField *alias=&box;
++  const char *loan=owner_alias_snapshot(alias->pointer,(box.pointer=0,0)); // expected-error {{storage of a value whose owner lifetime has ended}}
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++#ifdef __cplusplus
++void captured_record_pointer_alias(void *owner) {
++  MemoryOwnerField box{owner};auto work=[box]{const auto *alias=&box;memory_use(memory_bytes(alias->pointer));};
++  work();memory_consume(owner);
++  work(); // expected-error {{lifetime ended}}
++}
++void aliased_reference_member(void *owner) {
++  struct ReferenceOwner {void *&pointer;};ReferenceOwner box{owner};ReferenceOwner *alias=&box;
++  const char *loan=memory_bytes(alias->pointer);owner=0;
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++void aliased_joined_reference(void *one,void *two,int choose) {
++  MemoryOwnerField first{one},second{two};MemoryOwnerField &reference=choose?first:second;
++  const char *loan=memory_bytes(reference.pointer);memory_consume(two);
++  memory_use(loan); // expected-error {{lifetime ended}}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-owner-selector-bounds.mm b/clang/test/ObjC3/Sema/borrowed-owner-selector-bounds.mm
+new file mode 100644
+index 000000000..d3237861a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-owner-selector-bounds.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-stored-owners.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-stored-owners.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-stored-owners.h"
++#endif
++void owner_selector_budget(void *owner) {
++  struct MemoryOwnerField box0={owner},box1={owner},box2={owner},box3={owner},box4={owner},box5={owner},box6={owner},box7={owner},box8={owner},box9={owner},box10={owner},box11={owner},box12={owner},box13={owner},box14={owner},box15={owner},box16={owner},box17={owner},box18={owner},box19={owner},box20={owner},box21={owner},box22={owner},box23={owner},box24={owner},box25={owner},box26={owner},box27={owner},box28={owner},box29={owner},box30={owner},box31={owner},box32={owner},box33={owner},box34={owner},box35={owner},box36={owner},box37={owner},box38={owner},box39={owner},box40={owner},box41={owner},box42={owner},box43={owner},box44={owner},box45={owner},box46={owner},box47={owner},box48={owner},box49={owner},box50={owner},box51={owner},box52={owner},box53={owner},box54={owner},box55={owner},box56={owner},box57={owner},box58={owner},box59={owner},box60={owner},box61={owner},box62={owner},box63={owner},box64={owner},box65={owner},box66={owner},box67={owner},box68={owner},box69={owner},box70={owner},box71={owner},box72={owner},box73={owner},box74={owner},box75={owner},box76={owner},box77={owner},box78={owner},box79={owner},box80={owner},box81={owner},box82={owner},box83={owner},box84={owner},box85={owner},box86={owner},box87={owner},box88={owner},box89={owner},box90={owner},box91={owner},box92={owner},box93={owner},box94={owner},box95={owner};
++  struct MemoryOwnerField *alias=&box0;
++  memory_use(memory_bytes(alias->pointer)); // expected-error {{derived from a non-stable owner}}
++  void *stable=alias->pointer;memory_use(memory_bytes(stable));
++}

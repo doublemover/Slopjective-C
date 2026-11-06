@@ -545,6 +545,12 @@ void TestBorrowedMemoryAliasReplay() {
           return published_memory_bytes(box.pointer);
         }
         __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_owner_alias(void *owner,int choose) {
+          struct PublishedMemoryOwner first={owner},second={owner};
+          const struct PublishedMemoryOwner *alias=choose?&first:&second;
+          return published_memory_bytes(alias->pointer);
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
         inline MemoryLoan published_memory_copy(void *owner,int choose) {
           struct PublishedMemoryHolder one={published_memory_bytes(owner)},two={0},target={0};
           __builtin_memcpy(&target,choose?&one:&two,sizeof target);
@@ -657,6 +663,7 @@ void TestBorrowedMemoryAliasReplay() {
           published_memory_use(published_memory_walk(owner));
           published_memory_use(published_memory_byte_typed_store(owner));
           published_memory_use(published_memory_stored_owner(owner));
+          published_memory_use(published_memory_owner_alias(owner,choose));
           #ifdef __cplusplus
           published_memory_field_closure(owner);
           #if __has_feature(objc_arc)
@@ -691,6 +698,12 @@ void TestBorrowedMemoryAliasReplay() {
         const char *published_byte_cursor_escape(void *owner) {return published_memory_byte_typed_store(owner);}
       )","memory-byte-cursor-escaping-consumer.m");
       assert(bytes && bytes->getDiagnostics().hasErrorOccurred());
+      auto owner_alias=parse(first.source_bytes+R"(
+        const char *published_bad_owner_alias(void *owner) {
+          return published_memory_owner_alias(owner,1);
+        }
+      )","memory-owner-alias-escaping-consumer.m");
+      assert(owner_alias && owner_alias->getDiagnostics().hasErrorOccurred());
       if(cxx) {
         auto reference=parse(first.source_bytes+R"(
           void published_bad_reference(void *owner,const char *&output) {

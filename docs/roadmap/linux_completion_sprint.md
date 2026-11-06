@@ -624,3 +624,14 @@ and three affected frontend groups pass.
 Four ARC C17 O0/C++23 O2 native source/PCH configurations pass fourteen commands,
 including ASan/UBSan execution and exact object destruction counts. SDK delivery
 and wider manual/mutable/lazy/exceptional ownership remain open.
+
+## Contracted owners through tracked aliases
+
+The [System 2.29 implementation](linux_borrowed_owner_aliases.md) acquires owners
+through closed record/pointer/scalar/reference and exact byte selectors. Selected
+storage bindings stay frozen across alias retargeting; native operand snapshots
+retain later argument expiry. Local aliases in captured records preserve cached
+owner paths. Unknown/open selectors and exceeded candidate budgets diagnose.
+Twenty-four new source/PCH commands, nine focused compiler regressions and three
+affected source-free frontend groups pass. Wider lifetime/global/indirect
+contracts and SDK consolidation remain open.
