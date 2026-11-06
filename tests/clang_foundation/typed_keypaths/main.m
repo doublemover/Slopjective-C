@@ -113,6 +113,18 @@ template<class Root> static auto dependent_literal_nested_path() {
 template<class Root> static auto dependent_literal_nested_read(Root root) {
   return KeyPathGet(@keypath(Root, child.count), root);
 }
+template<class Root, class Value>
+static Value dependent_type_get(KeyPath<Root, Value> path, Root root) {
+  return KeyPathGet(path, root);
+}
+template<class Root, class Value>
+static void dependent_type_set(WritableKeyPath<Root, Value> path, Root root, Value value) {
+  KeyPathSet(path, root, value);
+}
+template<class Root, class Value>
+static KeyPath<Root, Value> dependent_type_readonly(WritableKeyPath<Root, Value> path) {
+  return path;
+}
 static void check_dependent_applications(void) {
   const int destroyed = path_destroyed;
   @autoreleasepool {
@@ -147,6 +159,14 @@ static void check_dependent_applications(void) {
     dependent_path_braced_pair(pair_path, root);
     copied = dependent_path_read(pair_path, root);
     assert(copied.first == 23 && copied.second == 29);
+    auto typed_read = dependent_type_readonly(path);
+    assert(dependent_type_get(typed_read, root) == 67);
+    dependent_type_set(path, root, 101);
+    assert(dependent_type_get(typed_read, root) == 101);
+    dependent_type_set(pair_path, root, copied);
+    PathPair typed_pair = dependent_type_get(dependent_type_readonly(pair_path), root);
+    assert(typed_pair.first == 23 && typed_pair.second == 29);
+
 #if !__has_feature(objc_arc)
     objc_release(child);
     objc_release(root);

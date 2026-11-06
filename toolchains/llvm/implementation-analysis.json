@@ -30,6 +30,8 @@
     "clang/lib/Sema/SemaChecking.cpp": 3600,
     "clang/lib/Sema/SemaDecl.cpp": 3600,
     "clang/lib/Sema/SemaDeclCXX.cpp": 3600,
-    "clang/lib/Sema/SemaExpr.cpp": 3600
+    "clang/lib/Sema/SemaExpr.cpp": 3600,
+    "clang/lib/Serialization/ASTReader.cpp": 3600,
+    "clang/lib/Serialization/ASTReaderStmt.cpp": 3600
   }
 }

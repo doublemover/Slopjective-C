@@ -197,6 +197,7 @@ bool HasDeclarationLocalType(const clang::NamedDecl *declaration);
 bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration);
 bool HasDeclarationCheckedKeyPathRead(const clang::NamedDecl *declaration);
 bool HasDeclarationDependentKeyPathLiteral(const clang::NamedDecl *declaration);
+bool HasDeclarationDependentKeyPathTypeBody(const clang::NamedDecl *declaration);
 
 bool HasDeclarationTemplateTemplateParameters(const clang::NamedDecl *declaration);
 

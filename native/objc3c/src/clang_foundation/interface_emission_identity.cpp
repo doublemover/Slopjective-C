@@ -2318,6 +2318,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-effectful-lambdas:v1;";
   if (HasDeclarationTemplateTemplateParameters(representative))
     identity.canonical_type_identity+=";cxx-template-template-parameters:v1;";
+  if (HasDeclarationDependentKeyPathTypeBody(representative))
+    identity.canonical_type_identity += ";keypath-dependent-types:v1;";
   if (HasDeclarationDependentKeyPathLiteral(representative))
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))

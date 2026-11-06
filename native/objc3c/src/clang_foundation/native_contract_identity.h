@@ -82,7 +82,9 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
   clang::ObjC3KeyPathInfo keypath;
   if (clang::getObjC3KeyPathInfo(type, keypath)) {
     AppendNativeContractField(
-        out, position + (keypath.Set ? ":writable-keypath" : ":keypath"));
+        out, position + (keypath.Writable ? ":writable-keypath" : ":keypath"));
+    if (type->isDependentType())
+      AppendNativeContractField(out, ";keypath-dependent-types:v1;");
     AppendNativeTypeContracts(out, keypath.Root, context, position + ".root",
                               depth + 1);
     AppendNativeTypeContracts(out, keypath.Value, context, position + ".value",

@@ -433,6 +433,11 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool dependent_types = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathTypeIdentity);
+  const bool dependent_type_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathTypeSemantic) != sidecar.required_semantics.end();
+  const bool dependent_type_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
+  if (dependent_types != dependent_type_capability || (dependent_type_capability && !dependent_type_paths))
+    Add(result,"O3IFC104","dependent key-path type identity and required type/key-path capabilities must agree",expected.canonical_name);
   const bool dependent_literals = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathLiteralIdentity);
   const bool dependent_literal_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathLiteralSemantic) != sidecar.required_semantics.end();
   const bool dependent_literal_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();

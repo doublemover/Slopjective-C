@@ -82,7 +82,7 @@ index 000000000..f9c0321df
 +#endif
 diff --git a/clang/include/clang/Basic/ObjC3Foundation.h.in b/clang/include/clang/Basic/ObjC3Foundation.h.in
 new file mode 100644
-index 000000000..5b82f095e
+index 000000000..c12d6d0d7
 --- /dev/null
 +++ b/clang/include/clang/Basic/ObjC3Foundation.h.in
 @@ -0,0 +1,13 @@
@@ -90,7 +90,7 @@ index 000000000..5b82f095e
 +#define LLVM_CLANG_BASIC_OBJC3_FOUNDATION_H
 +#define CLANG_OBJC3_UPSTREAM_COMMIT "0d261d1ca552c95a8f007e061c787ac7132fbcbc"
 +#define CLANG_OBJC3_LANGUAGE_REVISION 202610
-+#define CLANG_OBJC3_EXTENSION_ABI_REVISION 21
++#define CLANG_OBJC3_EXTENSION_ABI_REVISION 22
 +#ifdef __cplusplus
 +#include "llvm/ADT/StringRef.h"
 +namespace clang {

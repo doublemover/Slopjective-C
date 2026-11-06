@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "authority": "schemas/objc3-language-capabilities.json",
-  "authority_sha256": "066505ff988ca63a88e9e0a829a2233aab0be7a9f8717e1f69ddbf172b92c393",
+  "authority_sha256": "11e8d4cdc6618bdb9a4b2ccc4b85bb99ace89bd7e623dbe9463a5c07feac5983",
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
-  "extension_abi_revision": 21,
+  "extension_abi_revision": 22,
   "features": [
     {
       "name": "defer",

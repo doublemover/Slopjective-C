@@ -46,10 +46,14 @@ def check_metadata(metadata: dict, *, dependent_applications=False) -> None:
                 ('WritableKeyPath<' in identity) != writable):
             raise ValueError('typed key-path interface lost root/value/writability: ' + name)
     if dependent_applications:
+        if 'objc3.keypath-dependent-types.v1' not in metadata['required_semantics']:
+            raise ValueError('typed key-path interface lost dependent type semantics')
+        if declarations.get('PackageDependentPaths::TypedHolder', {}).get('kind') != 'ClassTemplate':
+            raise ValueError('typed key-path interface lost generic field contracts')
         if 'objc3.keypath-dependent-literals.v1' not in metadata['required_semantics']:
             raise ValueError('typed key-path interface lost dependent literal semantics')
         for operation in ('read', 'write', 'readonly', 'metadata', 'packed_read', 'all_read', 'all_write',
-                          'braced_write', 'literal_count_path', 'literal_read_count', 'literal_checked_path'):
+                          'braced_write', 'literal_count_path', 'literal_read_count', 'literal_checked_path', 'typed_read', 'typed_write', 'typed_narrow', 'typed_make'):
             name = 'PackageDependentPaths::'+operation
             if declarations.get(name, {}).get('kind') != 'FunctionTemplate':
                 raise ValueError('typed key-path interface lost dependent application: '+name)

@@ -62,6 +62,25 @@ WritableKeyPath<PackagePathRoot *, PackagePathRoot * _Nullable> package_nullable
 
 #ifdef __cplusplus
 namespace PackageDependentPaths {
+template<class Root, class Value> Value typed_read(KeyPath<Root, Value> path, Root root) {
+  return KeyPathGet(path, root);
+}
+template<class Root, class Value>
+void typed_write(WritableKeyPath<Root, Value> path, Root root, Value value) {
+  KeyPathSet(path, root, value);
+}
+template<class Root, class Value>
+KeyPath<Root, Value> typed_narrow(WritableKeyPath<Root, Value> path) {return path;}
+template<class Root> WritableKeyPath<Root, int> typed_make() {
+  return @keypath(Root, count);
+}
+template<class Root, class Value> struct TypedHolder {
+  KeyPath<Root, Value> read;
+  WritableKeyPath<Root, Value> write;
+  Value get(Root root) const {return KeyPathGet(read, root);}
+  void set(Root root, Value value) const {KeyPathSet(write, root, value);}
+};
+
 template<class Root> auto literal_count_path() {
   return @keypath(Root, count);
 }

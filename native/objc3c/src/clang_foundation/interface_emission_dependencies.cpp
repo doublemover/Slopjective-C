@@ -132,6 +132,11 @@ class TypeDependencyVisitor final
      return !stable_id.empty() && resolved_ids_.count(stable_id);
    }
 
+  bool TraverseObjC3DependentKeyPathType(
+      clang::ObjC3DependentKeyPathType *type, bool) {
+    UsesTypedKeyPaths = true;
+    return TraverseType(type->getRootType()) && TraverseType(type->getValueType());
+  }
   bool TraverseRecordType(clang::RecordType *type, bool traverse_qualifier) {
     clang::ObjC3KeyPathInfo keypath;
     if (clang::getObjC3KeyPathInfo(clang::QualType(type, 0), keypath))

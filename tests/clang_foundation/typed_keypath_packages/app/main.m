@@ -45,6 +45,14 @@ int main(void) {
     assert(KeyPathGet(path, root) == 42);
 #ifdef __cplusplus
     assert(PackageDependentPaths::read(path, root) == 42);
+    auto typed = PackageDependentPaths::typed_make<PackagePathRoot *>();
+    auto typed_read = PackageDependentPaths::typed_narrow(typed);
+    assert(PackageDependentPaths::typed_read(typed_read, root) == 42);
+    PackageDependentPaths::TypedHolder<PackagePathRoot *, int> typed_holder{typed_read, typed};
+    typed_holder.set(root, 97);
+    assert(typed_holder.get(root) == 97);
+    PackageDependentPaths::typed_write(typed, root, 42);
+
     auto literal = PackageDependentPaths::literal_count_path<PackagePathRoot *>();
     assert(PackageDependentPaths::read(literal, root) == 42);
     assert(PackageDependentPaths::literal_read_count(root) == 42);

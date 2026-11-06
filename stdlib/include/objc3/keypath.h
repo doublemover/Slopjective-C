@@ -5,7 +5,7 @@
 #include <objc3c/runtime/objc3_keypath.h>
 
 #define OBJC3_KEYPATH_MODULE_SEMVER_MAJOR 2u
-#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 9u
+#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 10u
 #define OBJC3_KEYPATH_MODULE_SEMVER_PATCH 0u
 
 /* KeyPath<Root, Value> and WritableKeyPath<Root, Value> are compiler-owned
@@ -52,6 +52,9 @@
  * @keypath also accepts a dependent root type; substitution repeats property,
  * field, ownership and nullable-route checks and creates the concrete accessors.
  * Literals participate in packs and retain their public spelling in interfaces.
- * Dependent KeyPath type constructors and effectful/isolated paths remain open. */
+ * KeyPath<Root, Value> and WritableKeyPath<Root, Value> retain dependent type
+ * operands until substitution, then use the ordinary native record layout.
+ * Template deduction binds root/value and writability; readonly views support
+ * narrowing from writable arguments. Effectful/isolated paths remain open. */
 
 #endif

@@ -277,6 +277,7 @@ PACKETS = {
         "clang/lib/Serialization/ASTReader.cpp",
         "clang/lib/Serialization/ASTReaderDecl.cpp",
         "clang/lib/Serialization/ASTWriter.cpp",
+        "clang/lib/Serialization/MultiOnDiskHashTable.h",
         "clang/lib/Serialization/ASTWriterDecl.cpp",
         "clang/lib/Serialization/TemplateArgumentHasher.cpp",
         "clang/unittests/AST/CMakeLists.txt",

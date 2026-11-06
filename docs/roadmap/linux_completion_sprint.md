@@ -19,7 +19,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                               |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending    |
 | Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending    |
-| Key paths          | Dependent type constructors; effectful/isolated and ownership-bearing paths                                                 | Open                                                               |
+| Key paths          | Dependent type constructors, deduction, partial ordering and typed generic package APIs                                     | Source authored; native compiler/PCH/package verification pending  |
+| Key paths          | Effectful/isolated and ownership-bearing paths                                                                              | Open                                                               |
 | Key paths          | Nonnull/scalar/aggregate nullable-chain result policy and implementation                                                    | Source authored; compiler/runtime/PCH/package verification pending |
 | Language/library   | Remaining specified generic, property, reflection/metaprogramming and interoperability contracts                            | Open                                                               |
 | Profiles           | Core, Strict, Strict Concurrency and Strict System conformance                                                              | Open                                                               |
@@ -60,8 +61,8 @@ witnesses check scalar/record reads and writes, metadata, exact accessor work an
 object destruction. Source-free package fixtures publish and instantiate eight
 generic helper forms after provider-source removal; qualification now requires
 those template declarations in C++ metadata. These cases are authored and remain
-pending the rebuilt compiler. Dependent type constructors/literals and the other
-key-path rows remain open.
+pending the rebuilt compiler. Later spans below cover dependent literals and
+type constructors; the effect/ownership rows remain open.
 
 ## Authored dependent key-path literals
 
@@ -78,8 +79,31 @@ packs, and invalid roots/members. Runtime and source-free package fixtures check
 concrete access, descriptor equality and checked nullable paths, with eleven
 published generic helper forms. Frontend cases cover relocation/replay, changed
 members, consumer instantiation and capability removal. These witnesses are
-source authored and await native execution. Dependent type constructors remain
-open; literal support does not supply that separate deduction/type contract.
+source authored and await native execution. Dependent type constructors are implemented
+in the following span, which supplies their separate deduction/type contract.
+
+## Authored dependent key-path types
+
+Keypath source 2.10 introduces a real, always-dependent Clang type node for
+`KeyPath<Root, Value>` and `WritableKeyPath<Root, Value>` patterns. It retains
+root/value spelling and writability in canonical profiles, source locations,
+AST import, PCH, structural equivalence, native identities and template deduction.
+Substitution re-enters ordinary type admission and produces the existing native
+record layout. Known invalid operands diagnose at definition; dependent invalid
+operands diagnose after substitution. No proxy expression or synthetic class
+layout stands in for the type constructor.
+
+Compiler cases cover alias/class templates, readonly narrowing, root/value
+inference, partial ordering/specializations and packs, plus invalid root/value and
+writability/argument conflicts. Runtime fixtures use typed generic get/set APIs.
+Source-free package fixtures now publish fifteen generic helpers and a typed
+holder class. Frontend controls require the dependent-type capability for both
+published signatures and bodies and reject capability removal. These witnesses
+await native execution; affected compiler/frontend units pass syntax checks.
+
+Extension ABI 22 is a hard compiler/PCH/interface cutover. The physical key-path
+layout stays at 2. The task bridge and generated capability authority require the
+matching compiler. SDK 2.62 is historical accepted delivery and is not relabeled.
 
 ## Authored nullable key-path result policy
 
@@ -100,7 +124,10 @@ independent of that rebuild.
 
 ## Analysis findings under repair
 
-The full campaign remains bound to its original compiler source while it runs.
+The full baseline campaign finished against its frozen original compiler source:
+235 variants, 199 passed and 36 failed, including nine finite-timeout failures.
+The source-owned failed-attempt summary retains the report hash and every failed
+unit; none is counted as current-source acceptance.
 The next canonical source batch preserves address-target facts before their CFG
 transfer, guarantees address-space stripping initializes its type result, checks
 complete await/yield operands and aligned-allocation casts before use, and repairs
@@ -122,15 +149,15 @@ New address-space qualifier/array and reassigned finite-alias witnesses are
 source authored. Native C++ cases also exercise implicit/explicit object bindings,
 enum promotion and constrained member specialization; bit-integer cases bind
 little- and big-endian descriptor bytes. Affected compiler units pass syntax
-checks; these cases still require the rebuilt compiler and full native campaign. Seven
+checks; these cases still require the rebuilt compiler and full native campaign. Nine
 measured ten-minute timeout failures now have exact source-scoped, finite
 one-hour allowances; earlier failures remain evidence and no timeout is accepted
 as a passing analysis result.
 
 ## Consolidated verification and delivery
 
-1. Finish the existing full analysis inventory and resolve every finding and
-   resource-bound failure. Preserve failed attempts and their diagnostics.
+1. Re-run the completed full analysis inventory against the rebuilt fork and
+   verify every authored finding repair and source-scoped resource allowance. Preserve failed attempts and their diagnostics.
 2. Materialize the complete canonical fork patch stack, seal the source and
    incrementally rebuild the matching compiler and frontend once per completed
    implementation batch.

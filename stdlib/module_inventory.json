@@ -240,7 +240,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 9,
+        "minor": 10,
         "patch": 0
       },
       "header": "include/objc3/keypath.h",
@@ -260,10 +260,11 @@
         "Plain union field access/writeback and explicit checked KVC NSString boxing with strict safety-loss diagnostics (source)",
         "Dependent C++ template applications for get/set/metadata/readonly/KVC operations, argument packs, typed instantiation and canonical source-free publication (source authored; native verification pending)",
         "Nullable routing preserves Value: explicitly nullable results return null, other results trap on missing reads; writes skip missing routes, with exact descriptor/sidecar capability admission (source authored; native compiler verification pending)",
-        "Dependent-root C++ key-path literals, qualified root lookup and packs revalidate concrete property/field/ownership/nullable contracts at instantiation; public printing, structural profiles and required source-free semantics (source authored; native verification pending)"
+        "Dependent-root C++ key-path literals, qualified root lookup and packs revalidate concrete property/field/ownership/nullable contracts at instantiation; public printing, structural profiles and required source-free semantics (source authored; native verification pending)",
+        "Dependent KeyPath/WritableKeyPath type constructors with native root/value deduction, packs, alias/class templates, partial ordering, source locations, AST import/PCH and source-free capabilities; instantiation preserves concrete record ABI (source authored; native verification pending)"
       ],
       "remaining": [
-        "dependent key-path type constructors; effectful and isolated paths",
+        "effectful and isolated paths",
         "borrowed and owned-resource value semantics",
         "complete installed contract validation"
       ]

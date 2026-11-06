@@ -374,8 +374,17 @@ void TestDependentKeyPathLiteralBodies() {
         template<class Root> auto read_path(Root root) {
           return KeyPathGet(@keypath(Root,count),root);
         }
+        template<class Root, class Value>
+        Value typed_read(KeyPath<Root, Value> path, Root root) {
+          return KeyPathGet(path,root);
+        }
+        template<class Root, class Value>
+        void typed_write(WritableKeyPath<Root, Value> path, Root root, Value value) {
+          KeyPathSet(path,root,value);
+        }
+        template<class Root, class Value> void typed_signature_only(KeyPath<Root, Value>);
       )";
-      const std::vector<std::string> exports={"DependentRoot","make_path","read_path"};
+      const std::vector<std::string> exports={"DependentRoot","make_path","read_path","typed_read","typed_write","typed_signature_only"};
       auto emit=[&](llvm::StringRef text,llvm::StringRef file) {
         auto ast=parse(text,file);
         assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -402,6 +411,15 @@ void TestDependentKeyPathLiteralBodies() {
       assert(repeated.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
       auto relocated=emit(source,"relocated/dependent-path-provider.mm");
       assert(relocated.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
+      assert(emitted.sidecar_json.find("objc3.keypath-dependent-types.v1")!=std::string::npos);
+      auto old_types=supported;
+      std::erase(old_types,llvm::StringRef("objc3.keypath-dependent-types.v1"));
+      auto unsupported_types=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,old_types);
+      assert(!unsupported_types);llvm::consumeError(unsupported_types.takeError());
+      auto missing_type=*decoded;
+      std::erase(missing_type.required_semantics,"objc3.keypath-dependent-types.v1");
+      auto rejected_type=EncodeSemanticInterfaceSidecar(missing_type,supported);
+      assert(!rejected_type);llvm::consumeError(rejected_type.takeError());
       auto old=supported;
       std::erase(old,llvm::StringRef("objc3.keypath-dependent-literals.v1"));
       auto unsupported=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,old);
@@ -419,7 +437,9 @@ void TestDependentKeyPathLiteralBodies() {
         int instantiate_dependent_paths(DependentRoot *_Nonnull root) {
           auto path=make_path<DependentRoot *>();
           KeyPathSet(path,root,37);
-          return read_path(root)+KeyPathGet(path,root);
+          typed_write(path,root,41);
+          auto read=KeyPathAsReadOnly(path);
+          return typed_read(read,root)+read_path(root)+KeyPathGet(path,root);
         }
       )","dependent-path-instantiation.mm");
       assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
