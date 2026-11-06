@@ -556,6 +556,22 @@ void TestBorrowedMemoryAliasReplay() {
               (const char *)&source+sizeof source.first,sizeof target.second);
           return target.second.pointer;
         }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_cursor(void *owner) {
+          const char *array[2]={0,0};const char **cursor=array;
+          ++cursor;*cursor=published_memory_bytes(owner);
+          return array[1];
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_walk(void *owner) {
+          const char *array[3]={0,0,0};const char **cursor=array,**end=array+3;
+          while(cursor!=end)*cursor++=published_memory_bytes(owner);
+          return array[2];
+        }
+        inline const char *published_memory_postfix_clear(void *owner) {
+          const char *array[2]={published_memory_bytes(owner),0};const char **cursor=array;
+          *cursor++=0;return array[0];
+        }
         inline const char *published_memory_byte_clear(void *owner) {
           struct PublishedMemoryPair target={{0},{published_memory_bytes(owner)}};
           __builtin_memset((char *)&target+__builtin_offsetof(struct PublishedMemoryPair,second),
@@ -578,6 +594,9 @@ void TestBorrowedMemoryAliasReplay() {
           published_memory_use(published_memory_clear(owner));
           published_memory_use(published_memory_byte_copy(owner));
           published_memory_use(published_memory_byte_clear(owner));
+          published_memory_use(published_memory_cursor(owner));
+          published_memory_use(published_memory_walk(owner));
+          published_memory_use(published_memory_postfix_clear(owner));
           return published_memory_copy(owner,choose);
         }
       )","memory-alias-consumer.m");
@@ -586,6 +605,17 @@ void TestBorrowedMemoryAliasReplay() {
         const char *published_memory_escape(void *owner) {return published_memory_copy(owner,1);}
       )","memory-alias-escaping-consumer.m");
       assert(invalid && invalid->getDiagnostics().hasErrorOccurred());
+      auto partial=parse(first.source_bytes+R"(
+        const char *published_partial_escape(void *owner) {
+          const char *loan=published_memory_bytes(owner);
+          ((unsigned char *)&loan)[0]=0;return loan;
+        }
+      )","memory-partial-write-consumer.m");
+      assert(partial && partial->getDiagnostics().hasErrorOccurred());
+      auto cursor=parse(first.source_bytes+R"(
+        const char *published_cursor_escape(void *owner) {return published_memory_cursor(owner);}
+      )","memory-cursor-escaping-consumer.m");
+      assert(cursor && cursor->getDiagnostics().hasErrorOccurred());
     }
   }
 }

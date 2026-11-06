@@ -20,6 +20,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | Borrowed results from proven immutable program storage, aliases, subobjects and constexpr calls                             | Source authored; eighteen source/PCH commands and all twenty borrowed regressions pass         |
 | Ownership/System   | Aliased memory fills/copies, conditional payloads, returned destinations and partial-write target invalidation              | Source authored; eighteen new source/PCH commands and all twenty-one borrowed regressions pass |
 | Ownership/System   | Constant byte-range memory operations on fields/arrays, aliases, returned destinations and callable effects                    | Source authored; eighteen new source/PCH commands, all twenty-two borrowed regressions and frontend controls pass |
+| Ownership/System   | Built-in pointer mutations, expression snapshots, bounded array cursor loops and partial direct representation writes | Source authored; eighteen new source/PCH commands and all twenty-two existing borrowed regressions and frontend replay/consumer controls pass; SDK consolidation pending |
 | Ownership/System   | Remaining indirect writes/aliases, mutable/reference/generic/lazy captures and exceptional cleanup                          | Open                                                                                         |
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
@@ -558,3 +559,11 @@ links/runs their calls and verifies shared function addresses. GNU rejection
 preserves output rollback, and ordinary non-module inline behavior is unchanged.
 Four affected frontend replay groups pass. Source-free package integration beyond
 these native controls, wider matrices and coordinated SDK delivery remain pending.
+
+## Pointer mutations and bounded cursor loops
+
+The [System 2.23 implementation](linux_borrowed_pointer_mutations.md) preserves
+pre/post results and actual cursor targets, invalidates stale proofs after partial
+writes, and bounds same-array walks using separate nonnull facts. Unknown strides,
+nullable endpoints and overlapping union storage retain conservative behavior.
+Stored byte cursors and broader alias/capture/exceptional contracts remain open.

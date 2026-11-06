@@ -16,6 +16,13 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [System 2.23 pointer-mutation span](linux_borrowed_pointer_mutations.md)
+models pre/post cursor updates, compound/commuted offsets and bounded forward/reverse
+array loops. Partial representation writes preserve loans and callable effects,
+invalidate address proofs and expire owner claims. Eighteen new source/PCH commands
+and all twenty-two existing borrowed regressions plus source-free frontend replay
+and consumer controls pass. SDK consolidation follows.
+
 The [Concurrency 2.111 C-inline provider span](linux_c_inline_providers.md)
 completes external-inline projection with one provider-owned native definition
 and ISO inline consumer bodies. Six C/Objective-C ARC/MRC O0/O2 configurations

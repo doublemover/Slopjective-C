@@ -43326,10 +43326,10 @@ index 000000000..d3ae31385
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..0c210c4b2
+index 000000000..2ee892556
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,4062 @@
+@@ -0,0 +1,4333 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43562,6 +43562,7 @@ index 000000000..0c210c4b2
 +    // Every non-null target is represented in MayTargets. A partial may set
 +    // must never justify a definite referent or a finite local write.
 +    Value ClosedTargets;
++    Value NonNullTargets; // Complete address sets can still include null.
 +    SmallVector<Value, 4> CapturedValues;
 +    SmallVector<Value, 4> CapturedEffects;
 +    SmallVector<Value, 4> CapturedReferenceTargets;
@@ -43575,6 +43576,7 @@ index 000000000..0c210c4b2
 +    SmallVector<Storage, 16> EvaluatedTargets;
 +    SmallVector<Value, 16> EvaluatedMayTargets;
 +    Value EvaluatedClosedTargets;
++    Value EvaluatedNonNullTargets;
 +    Value EvaluatedReady;
 +    // An active pin is an owning snapshot. Same additionally proves that the
 +    // source variable has not been reassigned since that snapshot was taken.
@@ -43632,6 +43634,7 @@ index 000000000..0c210c4b2
 +  llvm::DenseMap<const VarDecl *, Value> InheritedOwners;
 +  llvm::DenseMap<Storage, Storage, StorageInfo> InheritedTargets;
 +  llvm::DenseMap<Storage, bool, StorageInfo> InheritedClosedTargets;
++  llvm::DenseMap<Storage, bool, StorageInfo> InheritedNonNullTargets;
 +  llvm::DenseMap<Storage, SmallVector<Storage, 2>, StorageInfo> InheritedMayTargets;
 +  SmallVector<Origin, 16> Origins;
 +  llvm::DenseMap<const Stmt *, SmallVector<unsigned, 2>> Acquisitions;
@@ -43814,6 +43817,14 @@ index 000000000..0c210c4b2
 +      return adjustBaseStorage(storage(Cast->getSubExpr(), State), Cast);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
 +      return storage(statementResult(Statement), State);
++    // Built-in prefix and assignment expressions designate the same object in
++    // C++. Their pointer value is separately snapshotted at evaluation time.
++    if (const auto *Unary = dyn_cast<UnaryOperator>(E);
++        Unary && Unary->isIncrementDecrementOp() && Unary->isPrefix() && E->isGLValue())
++      return storage(Unary->getSubExpr(), State);
++    if (const auto *Binary = dyn_cast<BinaryOperator>(E);
++        Binary && Binary->isAssignmentOp() && E->isGLValue())
++      return storage(Binary->getLHS(), State);
 +    if (const VarDecl *Variable = variable(E)) {
 +      Storage Object{Variable, nullptr};
 +      if (State && Variable->getType()->isReferenceType())
@@ -43873,23 +43884,26 @@ index 000000000..0c210c4b2
 +    if (const auto *Address = dyn_cast<UnaryOperator>(E))
 +      if (Address->getOpcode() == UO_AddrOf)
 +        return storage(Address->getSubExpr(), State);
-+    if (const auto *Offset = dyn_cast<BinaryOperator>(E)) {
-+      if (Offset->getOpcode() == BO_Add || Offset->getOpcode() == BO_Sub) {
-+        Storage Base = referent(Offset->getLHS(), State, Depth + 1);
-+        auto Amount = Offset->getRHS()->getIntegerConstantExpr(Context);
-+        if (Base.first && Amount && Amount->getSignificantBits() <= 63) {
-+          int64_t Delta = Amount->getSExtValue();
-+          if (Offset->getOpcode() == BO_Sub)
-+            Delta = -Delta;
-+          if (Base.Index >= 0 &&
-+              ((Delta >= 0 && Base.Index <= INT64_MAX-Delta) ||
-+               (Delta < 0 && Delta >= -Base.Index)))
-+            Base.Index += Delta;
-+          else Base.Index = -2;
-+          return Base;
-+        }
++    if (const auto *Unary = dyn_cast<UnaryOperator>(E);
++        Unary && Unary->isIncrementDecrementOp() && E->getType()->isPointerType()) {
++      if (Unary->isPostfix())
++        return referent(Unary->getSubExpr(), State, Depth + 1);
++      if (State) {
++        auto Step = offsetTargets(Unary->getSubExpr(), Unary->isIncrementOp() ? 1 : -1, *State);
++        return Step.second && Step.first.count() == 1 ? location(Step.first.find_first()) : Storage{};
 +      }
-+      if (Offset->getOpcode() == BO_Comma || Offset->isAssignmentOp())
++      return {};
++    }
++    if (const auto *Offset = dyn_cast<BinaryOperator>(E)) {
++      if (pointerOffset(Offset)) {
++        auto [Base, Amount, Subtract] = *pointerOffset(Offset);
++        if (State) {
++          auto Step = offsetTargets(Base, pointerDelta(Amount, Subtract), *State);
++          return Step.second && Step.first.count() == 1 ? location(Step.first.find_first()) : Storage{};
++        }
++        return constantTargetOffset(referent(Base, State, Depth + 1), Amount, Subtract);
++      }
++      if (Offset->getOpcode() == BO_Comma || Offset->getOpcode() == BO_Assign)
 +        return referent(Offset->getRHS(), State, Depth + 1);
 +    }
 +    if (const auto *Call = dyn_cast<CallExpr>(E)) {
@@ -43944,7 +43958,7 @@ index 000000000..0c210c4b2
 +      addStorage(indexedStorage(Location, 0), Array->getElementType(), Depth + 1);
 +      if (const auto *Constant = dyn_cast<ConstantArrayType>(Array))
 +        if (Constant->getSize().getActiveBits() <= 6)
-+          for (uint64_t I = 1; I < Constant->getSize().getZExtValue(); ++I)
++          for (uint64_t I = 1; I <= Constant->getSize().getZExtValue(); ++I)
 +            addStorage(indexedStorage(Location, I), Array->getElementType(), Depth + 1);
 +    }
 +  }
@@ -44761,7 +44775,13 @@ index 000000000..0c210c4b2
 +      return Result;
 +    }
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(E))
-+      if (Binary->getOpcode() == BO_Comma || Binary->isAssignmentOp()) return effects(Binary->getRHS(), State);
++      if (Binary->getOpcode() == BO_Comma || Binary->isAssignmentOp()) {
++        Value Result = effects(Binary->getRHS(), State);
++        if (Binary->isCompoundAssignmentOp()) Result |= effects(Binary->getLHS(), State);
++        return Result;
++      }
++    if (const auto *Unary = dyn_cast<UnaryOperator>(E);
++        Unary && Unary->isIncrementDecrementOp()) return effects(Unary->getSubExpr(), State);
 +    if (isa<BlockExpr, LambdaExpr>(E)) {
 +      unsigned Slot = ClosureSlots.lookup(E);
 +      if (State.CaptureReady.test(Slot)) return State.CapturedEffects[Slot];
@@ -44862,19 +44882,63 @@ index 000000000..0c210c4b2
 +    }
 +    return Result;
 +  }
-+  Storage constantTargetOffset(Storage Base, const Expr *Amount,
-+                               bool Subtract = false) const {
-+    if (!Base.first) return {};
++  std::optional<int64_t> pointerDelta(const Expr *Amount, bool Subtract) const {
 +    auto Integer = Amount->getIntegerConstantExpr(Context);
-+    if (!Integer || Integer->getSignificantBits() > 63) return {};
++    if (!Integer || Integer->getSignificantBits() > 63) return std::nullopt;
 +    int64_t Delta = Integer->getSExtValue();
-+    if (Subtract) Delta = -Delta;
++    return Subtract ? -Delta : Delta;
++  }
++  Storage constantTargetDelta(Storage Base, int64_t Delta) const {
++    if (!Base.first) return {};
 +    if (!Delta) return Base;
 +    if (Base.Index < 0 ||
 +        (Delta > 0 && Base.Index > INT64_MAX - Delta) ||
 +        (Delta < 0 && Delta < -Base.Index)) return {};
 +    Base.Index += Delta;
 +    return Slots.count(Base) ? Base : Storage{};
++  }
++  Storage constantTargetOffset(Storage Base, const Expr *Amount,
++                               bool Subtract = false) const {
++    auto Delta = pointerDelta(Amount, Subtract);
++    return Delta ? constantTargetDelta(Base, *Delta) : Storage{};
++  }
++  struct PointerOffset { const Expr *Base; const Expr *Amount; bool Subtract; };
++  std::optional<PointerOffset> pointerOffset(const BinaryOperator *Binary) const {
++    if (!Binary->getType()->isPointerType()) return std::nullopt;
++    switch (Binary->getOpcode()) {
++    case BO_Add: case BO_AddAssign:
++      if (Binary->getLHS()->getType()->isPointerType())
++        return PointerOffset{Binary->getLHS(), Binary->getRHS(), false};
++      return PointerOffset{Binary->getRHS(), Binary->getLHS(), false};
++    case BO_Sub: case BO_SubAssign:
++      return PointerOffset{Binary->getLHS(), Binary->getRHS(), true};
++    default: return std::nullopt;
++    }
++  }
++  std::pair<Value, bool> offsetTargets(const Expr *Base,
++                                       std::optional<int64_t> Delta,
++                                       const Facts &State) const {
++    Value Sources = possibleTargets(Base, State), Result(Slots.size());
++    bool Complete = closedTargets(Base, State) && Sources.any() && Delta.has_value();
++    QualType Pointee = Base->getType()->getPointeeType();
++    for (int I = Sources.find_first(); I >= 0; I = Sources.find_next(I)) {
++      Storage Source = location(I), Target;
++      QualType Type = storageType(Source);
++      // Character and reinterpret casts do not change the stride of the actual
++      // object. Only type-correct bounded element arithmetic is a full proof.
++      if (Delta && (!*Delta || (!Pointee.isNull() && !Type.isNull() &&
++          Context.hasSameUnqualifiedType(Pointee, Type))))
++        Target = constantTargetDelta(Source, *Delta);
++      if (auto Found = Slots.find(Target); Found != Slots.end())
++        Result.set(Found->second);
++      else {
++        Complete = false;
++        Storage Exposure = addressExposure(Source);
++        if (auto Found = Slots.find(Exposure); Found != Slots.end()) Result.set(Found->second);
++        else Result.set(I);
++      }
++    }
++    return {std::move(Result), Complete};
 +  }
 +  Value possibleTargets(const Expr *E, const Facts &State) const {
 +    Value Targets(Slots.size());
@@ -44909,18 +44973,15 @@ index 000000000..0c210c4b2
 +      Targets |= possibleTargets(Conditional->getFalseExpr(), State);
 +      return Targets;
 +    }
++    if (const auto *Unary = dyn_cast<UnaryOperator>(E);
++        Unary && Unary->isIncrementDecrementOp() && E->getType()->isPointerType())
++      return Unary->isPostfix() ? possibleTargets(Unary->getSubExpr(), State)
++          : offsetTargets(Unary->getSubExpr(), Unary->isIncrementOp() ? 1 : -1, State).first;
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(E)) {
-+      if (Binary->getOpcode() == BO_Comma || Binary->isAssignmentOp())
++      if (Binary->getOpcode() == BO_Comma || Binary->getOpcode() == BO_Assign)
 +        return possibleTargets(Binary->getRHS(), State);
-+      if (Binary->getOpcode() == BO_Add || Binary->getOpcode() == BO_Sub) {
-+        Value Bases = possibleTargets(Binary->getLHS(), State);
-+        for (int I = Bases.find_first(); I >= 0; I = Bases.find_next(I)) {
-+          Storage Target = constantTargetOffset(location(I), Binary->getRHS(), Binary->getOpcode() == BO_Sub);
-+          if (auto Found = Slots.find(Target); Found != Slots.end()) Targets.set(Found->second);
-+          else Targets.set(I); // A partial target set cannot prove a write.
-+        }
-+        return Targets;
-+      }
++      if (auto Offset = pointerOffset(Binary))
++        return offsetTargets(Offset->Base, pointerDelta(Offset->Amount, Offset->Subtract), State).first;
 +    }
 +    if (const auto *Call = dyn_cast<CallExpr>(E);
 +        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
@@ -44977,17 +45038,15 @@ index 000000000..0c210c4b2
 +      return closedTargets(Conditional->getTrueExpr(), State, Depth + 1) &&
 +             closedTargets(Conditional->getFalseExpr(), State, Depth + 1);
 +    }
++    if (const auto *Unary = dyn_cast<UnaryOperator>(E);
++        Unary && Unary->isIncrementDecrementOp() && E->getType()->isPointerType())
++      return Unary->isPostfix() ? closedTargets(Unary->getSubExpr(), State, Depth + 1)
++          : offsetTargets(Unary->getSubExpr(), Unary->isIncrementOp() ? 1 : -1, State).second;
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(E)) {
 +      if (Binary->getOpcode() == BO_Comma || Binary->getOpcode() == BO_Assign)
 +        return closedTargets(Binary->getRHS(), State, Depth + 1);
-+      if ((Binary->getOpcode() == BO_Add || Binary->getOpcode() == BO_Sub) &&
-+          closedTargets(Binary->getLHS(), State, Depth + 1)) {
-+        Value Bases = possibleTargets(Binary->getLHS(), State);
-+        for (int I = Bases.find_first(); I >= 0; I = Bases.find_next(I))
-+          if (!constantTargetOffset(location(I), Binary->getRHS(), Binary->getOpcode() == BO_Sub).first)
-+            return false;
-+        return Bases.any();
-+      }
++      if (auto Offset = pointerOffset(Binary))
++        return offsetTargets(Offset->Base, pointerDelta(Offset->Amount, Offset->Subtract), State).second;
 +    }
 +    if (const auto *Address = dyn_cast<UnaryOperator>(E);
 +        Address && Address->getOpcode() == UO_AddrOf) {
@@ -45004,6 +45063,55 @@ index 000000000..0c210c4b2
 +             Slots.count(indexedStorage(Source, 0)) && !hasUnknownIndex(Source);
 +    if (auto Found = Slots.find(Source); Found != Slots.end())
 +      return State.ClosedTargets.test(Found->second);
++    return false;
++  }
++  bool nonNullAddress(const Expr *E, const Facts &State, unsigned Depth = 0) const {
++    if (!E || Depth > 32) return false;
++    E = E->IgnoreParens();
++    if (auto Found = ExpressionSlots.find(E); Found != ExpressionSlots.end() &&
++        State.EvaluatedReady.test(Found->second))
++      return State.EvaluatedNonNullTargets.test(Found->second);
++    if (const auto *Cast = dyn_cast<CastExpr>(E))
++      return Cast->getType()->isPointerType() &&
++             (Cast->getSubExpr()->getType()->isPointerType() || Cast->getSubExpr()->getType()->isArrayType()) &&
++             nonNullAddress(Cast->getSubExpr(), State, Depth + 1);
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return nonNullAddress(statementResult(Statement), State, Depth + 1);
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
++      return nonNullAddress(Cleanups->getSubExpr(), State, Depth + 1);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
++      return nonNullAddress(Opaque->getSourceExpr(), State, Depth + 1);
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E))
++      return nonNullAddress(Conditional->getTrueExpr(), State, Depth + 1) &&
++             nonNullAddress(Conditional->getFalseExpr(), State, Depth + 1);
++    if (const auto *Binary = dyn_cast<BinaryOperator>(E)) {
++      if (auto Offset = pointerOffset(Binary))
++        return nonNullAddress(Offset->Base, State, Depth + 1);
++      if (Binary->getOpcode() == BO_Comma || Binary->getOpcode() == BO_Assign)
++        return nonNullAddress(Binary->getRHS(), State, Depth + 1);
++    }
++    if (const auto *Unary = dyn_cast<UnaryOperator>(E)) {
++      if (Unary->isIncrementDecrementOp())
++        return nonNullAddress(Unary->getSubExpr(), State, Depth + 1);
++      if (Unary->getOpcode() == UO_AddrOf) {
++        const Expr *Operand = Unary->getSubExpr()->IgnoreParenImpCasts();
++        // &*p is permitted even for a null p, so the syntactic address-of
++        // operator alone does not establish a nonnull object address.
++        if (const auto *Deref = dyn_cast<UnaryOperator>(Operand); Deref && Deref->getOpcode() == UO_Deref)
++          return nonNullAddress(Deref->getSubExpr(), State, Depth + 1);
++        if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(Operand))
++          return nonNullAddress(Subscript->getBase(), State, Depth + 1);
++        if (const auto *Member = dyn_cast<MemberExpr>(Operand); Member && Member->isArrow())
++          return nonNullAddress(Member->getBase(), State, Depth + 1);
++        return storage(Operand, &State).first != nullptr;
++      }
++    }
++    if (const auto *Call = dyn_cast<CallExpr>(E);
++        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
++      return nonNullAddress(Call->getArg(0), State, Depth + 1);
++    if (E->getType()->isArrayType()) return storage(E, &State).first != nullptr;
++    if (auto Found = Slots.find(storage(E, &State)); Found != Slots.end())
++      return State.NonNullTargets.test(Found->second);
 +    return false;
 +  }
 +  bool finiteLocalTargets(const Expr *E, const Facts &State,
@@ -45026,11 +45134,12 @@ index 000000000..0c210c4b2
 +          (pathsMayAlias(path(Other), path(Destination)) ||
 +           within(Other, Destination) || overlapsUnion(Other, Destination))) {
 +        State.LocalTargets[Index] = {};
-+        State.ClosedTargets.reset(Index);
++        State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
 +      }
 +  }
 +  void setTargetFacts(Storage Destination, Storage Target, const Value &Targets,
-+                      bool Complete, Facts &State, bool Invalidate = true) const {
++                      bool Complete, Facts &State, bool Invalidate = true,
++                      bool NonNull = false) const {
 +    if (Invalidate) invalidateTargetProofs(Destination, State);
 +    if (auto Found = Slots.find(Destination); Found != Slots.end()) {
 +      unsigned I = Found->second;
@@ -45041,6 +45150,7 @@ index 000000000..0c210c4b2
 +      State.LocalTargets[I] = Complete ? Target : Storage{};
 +      State.MayTargets[I] = Targets;
 +      State.ClosedTargets[I] = Complete;
++      State.NonNullTargets[I] = NonNull;
 +    }
 +  }
 +  Value capturedTargets(const Expr *Initializer, const Facts &State) const {
@@ -45155,7 +45265,12 @@ index 000000000..0c210c4b2
 +      return Result;
 +    }
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(E)) {
-+      if (Binary->isAssignmentOp() || Binary->getOpcode() == BO_Comma)
++      if (Binary->isCompoundAssignmentOp()) {
++        Value Result = value(Binary->getLHS(), State);
++        Result |= value(Binary->getRHS(), State);
++        return Result;
++      }
++      if (Binary->getOpcode() == BO_Assign || Binary->getOpcode() == BO_Comma)
 +        return value(Binary->getRHS(), State);
 +      if (Binary->getOpcode() == BO_Sub &&
 +          Binary->getLHS()->getType()->isPointerType() &&
@@ -45602,12 +45717,12 @@ index 000000000..0c210c4b2
 +  }
 +  void copyStorageShape(const Stmt *Operation, Storage Destination,
 +                         Storage Source, Facts &State, bool Emit) {
-+    struct Copy { Storage Destination; Value Contents; Storage Target; Value Targets; Value Effects; bool Complete; };
++    struct Copy { Storage Destination; Value Contents; Storage Target; Value Targets; Value Effects; bool Complete; bool NonNull; };
 +    SmallVector<Copy, 16> Copies;
 +    for (auto [Location, Index] : Slots) {
 +      Storage Target = rebase(Location, Source, Destination);
 +      if (Target.first && Slots.count(Target))
-+        Copies.push_back({Target, State.Values[Index], State.LocalTargets[Index], State.MayTargets[Index], State.Effects[Index], State.ClosedTargets.test(Index)});
++        Copies.push_back({Target, State.Values[Index], State.LocalTargets[Index], State.MayTargets[Index], State.Effects[Index], State.ClosedTargets.test(Index), State.NonNullTargets.test(Index)});
 +    }
 +    Value AncestorValue = empty(), AncestorEffects = empty();
 +    Value AncestorTargets(Slots.size());
@@ -45622,7 +45737,7 @@ index 000000000..0c210c4b2
 +      store(Operation, Entry.Destination, Entry.Contents, State, Emit,
 +            !hasUnknownIndex(Destination), &Entry.Effects);
 +      setTargetFacts(Entry.Destination, Entry.Target, Entry.Targets,
-+                     Entry.Complete, State, false);
++                     Entry.Complete, State, false, Entry.NonNull);
 +    }
 +    if (AncestorValue.any() || AncestorEffects.any() || AncestorTargets.any())
 +      if (auto Root = Slots.find(Destination); Root != Slots.end()) {
@@ -45631,7 +45746,7 @@ index 000000000..0c210c4b2
 +        store(Operation, Destination, AncestorValue, State, Emit, false, &AncestorEffects);
 +        State.MayTargets[Root->second] |= AncestorTargets;
 +        State.LocalTargets[Root->second] = {};
-+        State.ClosedTargets.reset(Root->second);
++        State.ClosedTargets.reset(Root->second);State.NonNullTargets.reset(Root->second);
 +      }
 +  }
 +  void initializeAggregate(const Stmt *Operation, Storage Destination,
@@ -45661,7 +45776,7 @@ index 000000000..0c210c4b2
 +      Value Effects = effects(Initializer, State);
 +      if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Type)) Effects = empty();
 +      store(Operation, Destination, V, State, Emit, false, &Effects);
-+      setTargetFacts(Destination, Target, Targets, Complete, State);
++      setTargetFacts(Destination, Target, Targets, Complete, State, true, Type->isReferenceType() || nonNullAddress(Initializer, State));
 +      return;
 +    }
 +    const Expr *Written = Initializer;
@@ -45731,7 +45846,7 @@ index 000000000..0c210c4b2
 +              Value Cleared = empty();
 +              store(Operation, Location, Cleared, State, Emit, true, &Cleared);
 +              State.LocalTargets[Index] = {};State.MayTargets[Index].reset();
-+              State.ClosedTargets[Index] = !hasUnknownIndex(Location);
++              State.ClosedTargets[Index] = !hasUnknownIndex(Location);State.NonNullTargets.reset(Index);
 +            }
 +      for (Storage Element : Elements) {
 +        if (List && Element.Index == -2) {
@@ -45753,7 +45868,7 @@ index 000000000..0c210c4b2
 +            unsigned Current = path(Location), Prefix = path(Element);
 +            while (Current && Current != Prefix) Current = Paths[Current].Parent;
 +            if (Current == Prefix) {
-+              State.LocalTargets[Index] = {}; State.ClosedTargets.reset(Index);
++              State.LocalTargets[Index] = {}; State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
 +            }
 +          }
 +          continue;
@@ -46016,7 +46131,7 @@ index 000000000..0c210c4b2
 +          if (Current != Prefix) continue;
 +          store(Call, Location, Cleared, Branch, Emit, true, &Cleared);
 +          Branch.LocalTargets[Index] = {};Branch.MayTargets[Index].reset();
-+          Branch.ClosedTargets[Index] = !hasUnknownIndex(Location);
++          Branch.ClosedTargets[Index] = !hasUnknownIndex(Location);Branch.NonNullTargets.reset(Index);
 +        }
 +      }
 +      invalidateMemoryOwner(Affected, Branch);
@@ -46298,8 +46413,12 @@ index 000000000..0c210c4b2
 +    if (!E || Depth > 32) return false;
 +    E = E->IgnoreParens();
 +    if (Storage Known = storage(E, &State); Known.first) {
-+      if (!Slots.count(Known) || (RequireComplete &&
-+          (!Known.first->hasLocalStorage() || hasUnknownIndex(Known)))) return false;
++      if (!Slots.count(Known)) {
++        if (RequireComplete) return false;
++        Known = {Known.first, nullptr};
++      }
++      if (RequireComplete &&
++          (!Known.first->hasLocalStorage() || hasUnknownIndex(Known))) return false;
 +      Targets.push_back(Known);
 +      return true;
 +    }
@@ -46332,7 +46451,7 @@ index 000000000..0c210c4b2
 +      if (!PointerTargets(Subscript->getBase(), Bases)) return false;
 +      for (Storage Base : Bases) {
 +        Storage Element = constantTargetOffset(Base, Subscript->getIdx());
-+        if (!Element.first && !RequireComplete) {Element = Base;Element.Index = -2;}
++        if (!Element.first && !RequireComplete) Element = {Base.first, nullptr};
 +        if (!Element.first || !Slots.count(Element) || (RequireComplete && hasUnknownIndex(Element))) {
 +          if (RequireComplete) return false;
 +          continue;
@@ -46368,7 +46487,20 @@ index 000000000..0c210c4b2
 +          Value Owner = ownerIdentity(Assignment->getRHS(), State);
 +          Storage Address = referent(Assignment->getRHS(), &State);
 +          Value Targets = possibleTargets(Assignment->getRHS(), State);
-+          const bool Complete = closedTargets(Assignment->getRHS(), State);
++          bool Complete = closedTargets(Assignment->getRHS(), State);
++          const bool NonNull = nonNullAddress(Assignment->isCompoundAssignmentOp()
++              ? Assignment->getLHS() : Assignment->getRHS(), State);
++          if (Assignment->isCompoundAssignmentOp()) {
++            if (auto Offset = pointerOffset(Assignment)) {
++              auto Step = offsetTargets(Offset->Base, pointerDelta(Offset->Amount, Offset->Subtract), State);
++              Targets = std::move(Step.first);Complete = Step.second;
++              Address = Complete && Targets.count() == 1 ? location(Targets.find_first()) : Storage{};
++              if (auto Delta = pointerDelta(Offset->Amount, Offset->Subtract); Delta && !*Delta)
++                Owner = evaluatedOwnerIdentity(Assignment->getLHS(), State);
++            } else {
++              Address = {};Targets.reset();Complete = false;
++            }
++          }
 +          const bool HasTargets = Targets.any();
 +          if (Complete && Targets.any() && Target.first && Target.first->hasLocalStorage() &&
 +              !hasUnknownIndex(Target) &&
@@ -46386,7 +46518,7 @@ index 000000000..0c210c4b2
 +            if (Unowned) State.UnownedOwners.set(Slot);
 +            else State.UnownedOwners.reset(Slot);
 +          }
-+          setTargetFacts(Target, Address, Targets, Complete, State);
++          setTargetFacts(Target, Address, Targets, Complete, State, true, NonNull);
 +          Value Effects = effects(Assignment->getRHS(), State);
 +          if (Complete && HasTargets && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
 +          store(Assignment, Target, V, State, Emit, false, &Effects);
@@ -46395,6 +46527,91 @@ index 000000000..0c210c4b2
 +               Assignment->getLHS()->getType()->isArrayType()))
 +            initializeAggregate(Assignment, Target, Assignment->getLHS()->getType(),
 +                                Assignment->getRHS(), State, Emit);
++  }
++  bool typedWriteTarget(Storage Target, QualType WrittenType) const {
++    QualType Type = storageType(Target);
++    return Target.first && Slots.count(Target) && !Type.isNull() &&
++           Context.hasSameUnqualifiedType(Type.getNonReferenceType(), WrittenType);
++  }
++  void weakRepresentationWrite(const Expr *Operation, const Expr *LValue,
++                                const Expr *Payload, Facts &State, bool Emit) {
++    Value V = value(Payload, State), Effects = effects(Payload, State);
++    if (V.any() && Emit)
++      diagnose(Operation, "heap, ivar, property, or indirect storage through a partial representation write");
++    SmallVector<Storage, 4> Alternatives;
++    localLValueAlternatives(LValue, State, Alternatives, false);
++    // Subscript/reinterpret strides can leave the modeled typed object. Every
++    // possible base root must lose its proof, even without an exact byte slot.
++    const Expr *Written = LValue->IgnoreParenCasts();
++    const Expr *Pointer = nullptr;
++    if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(Written)) Pointer = Subscript->getBase();
++    if (const auto *Unary = dyn_cast<UnaryOperator>(Written); Unary && Unary->getOpcode() == UO_Deref)
++      Pointer = Unary->getSubExpr();
++    if (Pointer) {
++      Value Bases = possibleTargets(Pointer, State);
++      for (int I = Bases.find_first(); I >= 0; I = Bases.find_next(I))
++        Alternatives.push_back(location(I));
++    }
++    Value Aliases = possibleTargets(Payload, State);
++    llvm::SmallPtrSet<const VarDecl *, 8> Seen;
++    for (Storage Target : Alternatives) {
++      if (!Target.first || !Seen.insert(Target.first).second) continue;
++      Storage Root{Target.first, nullptr};
++      invalidateTargetProofs(Root, State);
++      invalidateMemoryOwner(Root, State);
++      for (auto [Location, Index] : Slots) {
++        if (Location.first != Root.first) continue;
++        Value Contents = State.Values[Index];Contents |= V;
++        Value StoredEffects = State.Effects[Index];StoredEffects |= Effects;
++        store(Operation, Location, Contents, State, Emit, false, &StoredEffects);
++        State.MayTargets[Index] |= Aliases;
++      }
++    }
++  }
++  void incrementLocal(const UnaryOperator *Unary, Storage Target,
++                        Facts &State, bool Emit) {
++    const Expr *Operand = Unary->getSubExpr();
++    if (!Unary->getType()->isPointerType()) {
++      // A complete typed scalar update retains its integer provenance; a byte
++      // access to another representation goes through the weak path instead.
++      Value V = value(Operand, State), Effects = effects(Operand, State);
++      invalidateTargetProofs(Target, State);
++      invalidateMemoryOwner(Target, State);
++      store(Unary, Target, V, State, Emit, false, &Effects);
++      return;
++    }
++    auto Step = offsetTargets(Operand, Unary->isIncrementOp() ? 1 : -1, State);
++    Value V = value(Operand, State), Effects = effects(Operand, State);
++    if (Step.second && Step.first.any() && !isObjC3BorrowedType(Context, Operand->getType())) {
++      V = empty();Effects = empty();
++    }
++    Storage Address = Step.second && Step.first.count() == 1 ? location(Step.first.find_first()) : Storage{};
++    const bool NonNull = nonNullAddress(Operand, State);
++    invalidateMemoryOwner(Target, State);
++    setTargetFacts(Target, Address, Step.first, Step.second, State, true, NonNull);
++    store(Unary, Target, V, State, Emit, false, &Effects);
++  }
++  template <typename Apply>
++  void mutateLocal(const Expr *Operation, const Expr *LValue, const Expr *Payload,
++                     Facts &State, bool Emit, Apply ApplyWrite) {
++    SmallVector<Storage, 4> Alternatives;
++    const Storage Known = storage(LValue, &State);
++    bool Complete = Known.first ? typedWriteTarget(Known, LValue->getType())
++        : localLValueAlternatives(LValue, State, Alternatives);
++    if (Known.first && Complete) Alternatives.push_back(Known);
++    for (Storage Target : Alternatives)
++      Complete &= typedWriteTarget(Target, LValue->getType());
++    if (!Complete || Alternatives.empty()) {
++      weakRepresentationWrite(Operation, LValue, Payload, State, Emit);
++      return;
++    }
++    Facts Joined;bool First = true;
++    for (Storage Target : Alternatives) {
++      Facts Branch = State;ApplyWrite(Target, Branch);
++      if (First) {Joined = std::move(Branch);First = false;}
++      else join(Joined, Branch);
++    }
++    State = std::move(Joined);
 +  }
 +  void checkCall(const Expr *Invocation, Facts &State, bool Emit) {
 +    unsigned Count = 0;
@@ -46528,7 +46745,7 @@ index 000000000..0c210c4b2
 +      for (auto [Other, Index] : Slots)
 +        if (Other.first == Target.first && within(Other, Target)) {
 +          State.LocalTargets[Index] = {};
-+          State.ClosedTargets.reset(Index);
++          State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
 +        }
 +    };
 +    const auto Formals = formalParameters(callee(Invocation));
@@ -46623,6 +46840,7 @@ index 000000000..0c210c4b2
 +          State.EvaluatedOwners[Slot] = std::move(Owner);
 +          State.EvaluatedTargets[Slot] = Target;
 +          State.EvaluatedClosedTargets[Slot] = Complete;
++          State.EvaluatedNonNullTargets[Slot] = nonNullAddress(Expression, State);
 +          State.EvaluatedMayTargets[Slot] = std::move(Targets);
 +          State.EvaluatedReady.set(Slot);
 +        }
@@ -46666,7 +46884,7 @@ index 000000000..0c210c4b2
 +            Value Effects = effects(Variable->getInit(), State);
 +            if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Variable->getType())) Effects = empty();
 +            store(Node, {Variable, nullptr}, V, State, Emit, false, &Effects);
-+            setTargetFacts({Variable, nullptr}, Target, Targets, Complete, State);
++            setTargetFacts({Variable, nullptr}, Target, Targets, Complete, State, true, Variable->getType()->isReferenceType() || nonNullAddress(Variable->getInit(), State));
 +            State.OwnerIdentities[Slots.lookup({Variable, nullptr})] = std::move(Owner);
 +            const unsigned OwnerSlot = Slots.lookup({Variable, nullptr});
 +            if (Unowned) State.UnownedOwners.set(OwnerSlot);
@@ -46691,17 +46909,13 @@ index 000000000..0c210c4b2
 +          }
 +      } else if (const auto *Assignment = dyn_cast<BinaryOperator>(Node)) {
 +        if (Assignment->isAssignmentOp()) {
-+          Storage Target=storage(Assignment->getLHS(), &State);
-+          SmallVector<Storage,4> WrittenTargets;
-+          if (!Target.first && localLValueAlternatives(Assignment->getLHS(), State, WrittenTargets)) {
-+            Facts Joined;bool First=true;
-+            for (Storage Destination:WrittenTargets) {
-+              Facts Branch=State;assignLocal(Assignment,Destination,Branch,Emit);
-+              if (First) {Joined=std::move(Branch);First=false;} else join(Joined,Branch);
-+            }
-+            State=std::move(Joined);
-+          } else assignLocal(Assignment,Target,State,Emit);
++          mutateLocal(Assignment, Assignment->getLHS(), Assignment->getRHS(), State, Emit,
++              [&](Storage Target, Facts &Branch) {assignLocal(Assignment, Target, Branch, Emit);});
 +        }
++      } else if (const auto *Unary = dyn_cast<UnaryOperator>(Node);
++                 Unary && Unary->isIncrementDecrementOp()) {
++        mutateLocal(Unary, Unary->getSubExpr(), Unary->getSubExpr(), State, Emit,
++            [&](Storage Target, Facts &Branch) {incrementLocal(Unary, Target, Branch, Emit);});
 +      } else if (const auto *Return = dyn_cast<ReturnStmt>(Node)) {
 +        Value V = value(Return->getRetValue(), State);
 +        const Expr *Returned = Return->getRetValue();
@@ -46827,6 +47041,7 @@ index 000000000..0c210c4b2
 +                  Nested.InheritedMayTargets[Location].push_back(location(Target));
 +                Nested.InheritedTargets[Location] = State.LocalTargets[Index];
 +                Nested.InheritedClosedTargets[Location] = State.ClosedTargets.test(Index);
++                Nested.InheritedNonNullTargets[Location] = State.NonNullTargets.test(Index);
 +                if (!Location.second && !Location.BaseRecord && !Location.Parent && Location.Index == -1) {
 +                  Nested.InheritedOwners[Location.first] = State.OwnerIdentities[Index];
 +                  if (State.UnownedOwners.test(Index))
@@ -46845,6 +47060,7 @@ index 000000000..0c210c4b2
 +                    if (ownerIsUnowned(Init, State)) Nested.InheritedUnownedOwners.insert(Variable);
 +                    Nested.InheritedTargets[{Variable, nullptr}] = referent(Init, &State);
 +                    Nested.InheritedClosedTargets[{Variable, nullptr}] = closedTargets(Init, State);
++                    Nested.InheritedNonNullTargets[{Variable, nullptr}] = nonNullAddress(Init, State);
 +                    auto Targets = possibleTargets(Init, State);
 +                    for (int Target = Targets.find_first(); Target >= 0;
 +                         Target = Targets.find_next(Target))
@@ -46906,7 +47122,7 @@ index 000000000..0c210c4b2
 +                  State.Effects[Index] = empty();
 +                  State.LocalTargets[Index] = {};
 +                  State.MayTargets[Index].reset();
-+                  State.ClosedTargets.reset(Index);
++                  State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
 +                }
 +            }
 +        if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(Invocation))
@@ -46951,6 +47167,44 @@ index 000000000..0c210c4b2
 +      }
 +    }
 +  }
++  void refinePointerComparison(const BinaryOperator *Comparison, bool Truth,
++                                 Facts &State) const {
++    if ((Comparison->getOpcode() != BO_EQ && Comparison->getOpcode() != BO_NE) ||
++        Comparison->HasSideEffects(Context)) return;
++    const bool Equal = (Comparison->getOpcode() == BO_EQ) == Truth;
++    auto Refine = [&](const Expr *Candidate, const Expr *Other) {
++      auto Slot = Slots.find(storage(Candidate, &State));
++      if (Slot == Slots.end() || !Candidate->getType()->isPointerType() ||
++          !State.ClosedTargets.test(Slot->second) ||
++          State.Values[Slot->second].any() || State.Effects[Slot->second].any() ||
++          !closedTargets(Other, State) || !nonNullAddress(Other, State)) return;
++      Value Endpoint = possibleTargets(Other, State);
++      if (Endpoint.count() != 1) return;
++      Storage End = location(Endpoint.find_first());
++      if (End.Index < 0) return;
++      Storage Array = parentStorage(End);
++      QualType Type = storageType(Array);
++      const auto *Constant = Type.isNull() ? nullptr : Context.getAsConstantArrayType(Type);
++      if (!Constant || Constant->getElementType()->isDependentType() ||
++          Constant->getElementType()->isIncompleteType() ||
++          !Context.getTypeSizeInChars(Constant->getElementType()).getQuantity()) return;
++      Value Targets = State.MayTargets[Slot->second];
++      for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
++        Storage Target = location(I);
++        if (Target.Index < 0 || !StorageInfo::isEqual(parentStorage(Target), Array)) return;
++      }
++      if (Equal) {
++        Targets &= Endpoint;
++        State.NonNullTargets.set(Slot->second);
++      } else Targets.reset(Endpoint);
++      // Empty sets carry only a possible null value. Do not manufacture a
++      // referent or change reachability when the analysis lacks that proof.
++      State.MayTargets[Slot->second] = Targets;
++      State.LocalTargets[Slot->second] = Targets.count() == 1 ? location(Targets.find_first()) : Storage{};
++    };
++    Refine(Comparison->getLHS(), Comparison->getRHS());
++    Refine(Comparison->getRHS(), Comparison->getLHS());
++  }
 +  void refineNull(const Expr *Condition, bool Truth, Facts &State) const {
 +    if (!Condition)
 +      return;
@@ -46972,14 +47226,19 @@ index 000000000..0c210c4b2
 +      else if (Comparison->getLHS()->isNullPointerConstant(
 +                   Context, Expr::NPC_ValueDependentIsNotNull))
 +        Candidate = Comparison->getRHS();
-+      else
++      else {
++        refinePointerComparison(Comparison, Truth, State);
 +        return;
++      }
 +      IsNull = (Comparison->getOpcode() == BO_EQ) == Truth;
 +    }
-+    if (!IsNull)
-+      return;
 +    auto Found = Slots.find(storage(Candidate, &State));
 +    if (Found != Slots.end()) {
++      if (!IsNull) {
++        State.NonNullTargets.set(Found->second);
++        return;
++      }
++      State.NonNullTargets.reset(Found->second);
 +      State.Values[Found->second] = empty();
 +      State.Effects[Found->second] = empty();
 +      State.LocalTargets[Found->second] = {};
@@ -46993,6 +47252,14 @@ index 000000000..0c210c4b2
 +      return true;
 +    }
 +    bool Changed = false;
++    Value NonNull = Destination.NonNullTargets;
++    NonNull &= Source.NonNullTargets;
++    Changed |= NonNull != Destination.NonNullTargets;
++    Destination.NonNullTargets = std::move(NonNull);
++    Value EvaluatedNonNull = Destination.EvaluatedNonNullTargets;
++    EvaluatedNonNull &= Source.EvaluatedNonNullTargets;
++    Changed |= EvaluatedNonNull != Destination.EvaluatedNonNullTargets;
++    Destination.EvaluatedNonNullTargets = std::move(EvaluatedNonNull);
 +    Value Closed = Destination.ClosedTargets;
 +    Closed &= Source.ClosedTargets;
 +    Changed |= Closed != Destination.ClosedTargets;
@@ -47173,6 +47440,7 @@ index 000000000..0c210c4b2
 +    Initial.LocalTargets.resize(Slots.size());
 +    Initial.MayTargets.assign(Slots.size(), Value(Slots.size()));
 +    Initial.ClosedTargets.resize(Slots.size());
++    Initial.NonNullTargets.resize(Slots.size());
 +    Initial.CapturedValues.assign(ClosureSlots.size(), empty());
 +    Initial.CapturedEffects.assign(ClosureSlots.size(), empty());
 +    Initial.CapturedReferenceTargets.assign(ClosureSlots.size(), Value(Slots.size()));
@@ -47185,6 +47453,7 @@ index 000000000..0c210c4b2
 +    Initial.EvaluatedTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedMayTargets.assign(ExpressionSlots.size(), Value(Slots.size()));
 +    Initial.EvaluatedClosedTargets.resize(ExpressionSlots.size());
++    Initial.EvaluatedNonNullTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedReady.resize(ExpressionSlots.size());
 +    for (auto [Owner, Index] : OwnerRoots)
 +      if (auto Found = Slots.find({Owner, nullptr});
@@ -47207,6 +47476,8 @@ index 000000000..0c210c4b2
 +    }
 +    for (const auto &[Location, Complete] : InheritedClosedTargets)
 +      Initial.ClosedTargets[Slots.lookup(Location)] = Complete;
++    for (const auto &[Location, NonNull] : InheritedNonNullTargets)
++      Initial.NonNullTargets[Slots.lookup(Location)] = NonNull;
 +    for (const auto &[Location, Targets] : InheritedMayTargets)
 +      for (Storage Target : Targets)
 +        if (auto Found = Slots.find(Target); Found != Slots.end())
@@ -58140,3 +58411,228 @@ index 000000000..0f3026927
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True-pch.m
 +#include "Inputs/native-effectful-block-spelling.h"
 +// CHECK: ^void(void) __objc3_async_frame
+diff --git a/clang/test/ObjC3/Sema/borrowed-pointer-mutations.m b/clang/test/ObjC3/Sema/borrowed-pointer-mutations.m
+new file mode 100644
+index 000000000..803bc3459
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-pointer-mutations.m
+@@ -0,0 +1,219 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-memory-aliases.h"
++#endif
++void character_copy_invalidates(void *owner) {
++  const char *one=0,*two=0;
++  const char **cursor=&one,**replacement=&two;
++  unsigned char *bytes=(unsigned char *)&cursor;
++  const unsigned char *source=(const unsigned char *)&replacement;
++  for(unsigned i=0;i!=sizeof cursor;++i)bytes[i]=source[i];
++  *cursor=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void character_compound_invalidates(void *owner) {
++  const char *target=0; const char **cursor=&target;
++  unsigned char *bytes=(unsigned char *)&cursor;
++  bytes[0]^=1;
++  *cursor=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void character_increment_invalidates(void *owner) {
++  const char *target=0; const char **cursor=&target;
++  unsigned char *bytes=(unsigned char *)&cursor;
++  ++bytes[0];
++  *cursor=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void character_decrement_invalidates(void *owner) {
++  const char *target=0; const char **cursor=&target;
++  --*(unsigned char *)&cursor;
++  *cursor=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void partial_write_preserves_loan(void *owner) {
++  const char *loan=memory_bytes(owner);
++  *(unsigned char *)&loan=0;
++  memory_escape(loan); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void partial_compound_preserves_loan(void *owner) {
++  const char *loan=memory_bytes(owner);
++  ((unsigned char *)&loan)[0]^=1;
++  memory_escape(loan); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void partial_write_expires_owner(void *owner) {
++  const char *loan=memory_bytes(owner);
++  ((unsigned char *)&owner)[0]^=1;
++  memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void prefix_increment(void *owner) {
++  const char *array[2]={0,0}; const char **cursor=array;
++  ++cursor;*cursor=memory_bytes(owner);
++  memory_escape(array[0]);
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void postfix_increment(void *owner) {
++  const char *array[2]={0,0}; const char **cursor=array;
++  *cursor++=memory_bytes(owner);
++  memory_escape(array[1]);
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++  *cursor=0;
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void prefix_decrement(void *owner) {
++  const char *array[2]={0,0}; const char **cursor=array+1;
++  *--cursor=memory_bytes(owner);
++  memory_escape(array[1]);
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void postfix_decrement(void *owner) {
++  const char *array[2]={0,0}; const char **cursor=array+1;
++  *cursor--=memory_bytes(owner);
++  memory_escape(array[0]);
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  *cursor=0;
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void compound_offsets(void *owner) {
++  const char *array[3]={0,0,0};const char **cursor=array;
++  cursor+=2;*cursor=memory_bytes(owner);
++  cursor-=1;*cursor=memory_bytes(owner);
++  memory_escape(array[0]);
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(array[2]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void compound_expression(void *owner) {
++  const char *array[2]={0,0};const char **cursor=array;
++  *(cursor+=1)=memory_bytes(owner);
++  memory_escape(array[0]);
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void one_past_and_back(void *owner) {
++  const char *array[2]={0,0};const char **cursor=array;
++  cursor+=2;*--cursor=memory_bytes(owner);
++  memory_escape(array[0]);
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void commuted_offset(void *owner) {
++  const char *array[2]={0,0};const char **cursor=1+array;
++  *cursor=memory_bytes(owner);
++  memory_escape(array[0]);
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void conditional_increment(void *owner,int choose) {
++  const char *first[2]={0,0},*second[2]={0,0};
++  const char **cursor=choose?first:second;
++  ++cursor;*cursor=memory_bytes(owner);
++  memory_escape(first[0]);memory_escape(second[0]);
++  memory_escape(first[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(second[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void dynamic_offset(void *owner,int amount) {
++  const char *array[2]={memory_bytes(owner),0};const char **cursor=array;
++  cursor+=amount;
++  *cursor=memory_bytes(owner); // expected-error {{indirect storage}}
++  memory_escape(*cursor); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void wrong_stride(void *owner) {
++  const char *array[2]={0,0};unsigned char *bytes=(unsigned char *)array;
++  ++bytes;
++  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void zero_offset_owner(char *owner) {
++  const char *loan=memory_bytes(owner);
++  owner+=0;memory_use(loan);
++}
++void increment_owner(char *owner) {
++  const char *loan=memory_bytes(owner);
++  ++owner;memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void partial_callable_write(void *owner) {
++  struct MemoryCallback callback={^{memory_consume(owner);}};
++  ((unsigned char *)&callback)[0]^=1;
++  const char *loan=memory_bytes(owner);
++  callback.work();
++  memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++#ifdef __cplusplus
++void nested_prefix_lvalue(void *owner) {
++  const char *array[2]={0,0};const char **cursor=array;
++  *--++cursor=memory_bytes(owner);
++  memory_escape(array[1]);
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void nested_assignment_lvalue(void *owner) {
++  const char *array[2]={0,0};const char **cursor=array;
++  *((cursor+=1)-=1)=memory_bytes(owner);
++  memory_escape(array[1]);
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++#endif
++
++void bounded_forward_loop(void *owner) {
++  const char *array[3]={0,0,0};
++  const char **cursor=array,**end=array+3;
++  while(cursor!=end)*cursor++=memory_bytes(owner);
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(array[2]); // expected-error {{argument without a non-escaping lifetime contract}}
++  *--cursor=0;
++  memory_escape(array[2]); // The only loop exit position is the one-past slot.
++}
++void bounded_reverse_loop(void *owner) {
++  const char *array[3]={0,0,0};const char **cursor=array+3;
++  while(cursor!=array)*--cursor=memory_bytes(owner);
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(array[2]); // expected-error {{argument without a non-escaping lifetime contract}}
++  *cursor=0;
++  memory_escape(array[0]);
++}
++void same_array_branch_clear(void *owner,int choose) {
++  const char *array[2]={memory_bytes(owner),memory_bytes(owner)};
++  const char **cursor=choose?array:array+1;
++  if(cursor==array)*cursor=0;
++  else *cursor=0;
++  // Exactly one branch clears one field. Neither loan may be forgotten.
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void nullable_endpoint(void *owner,int choose) {
++  const char *array[2]={0,0};const char **cursor=array+1;
++  const char **end=choose?array+1:0;
++  if(cursor!=end) {
++    *cursor=memory_bytes(owner);
++    memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  }
++}
++void nullable_cursor(void *owner,int choose) {
++  const char *array[2]={0,0};const char **cursor=choose?array:0;
++  if(cursor==array)*cursor=memory_bytes(owner);
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void overlapping_union_comparison(void *owner,int choose) {
++  union {const char *first[2];const char *second[2];} object={{0,0}};
++  const char **cursor=choose?object.first:object.second;
++  // Different storage IDs do not prove different addresses for union arms.
++  if(cursor==object.first)*cursor=memory_bytes(owner);
++  memory_escape(object.first[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void zero_byte_offset_does_not_clear(void *owner) {
++  const char *loan=memory_bytes(owner);
++  unsigned char *bytes=(unsigned char *)&loan;
++  bytes+=0;bytes[0]=0;
++  memory_escape(loan); // expected-error {{argument without a non-escaping lifetime contract}}
++}
