@@ -74,6 +74,7 @@ PACKETS = {
         "clang/include/clang/Sema/ScopeInfo.h",
         "clang/lib/Parse/ParseObjC3KeyPath.cpp",
         "clang/lib/Sema/SemaObjC.cpp",
+        "clang/lib/Sema/CheckExprLifetime.cpp",
         "clang/lib/Sema/SemaObjC3Async.cpp",
         "clang/lib/Sema/SemaObjC3Borrowed.cpp",
         "clang/lib/Sema/SemaObjC3Borrowed.h",

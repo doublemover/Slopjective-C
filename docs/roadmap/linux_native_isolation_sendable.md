@@ -202,3 +202,9 @@ scope are described in the adjacent README.
 The regression sources are not execution evidence. Public actor/strict
 concurrency feature predicates remain subject to the repository capability
 matrix and its executable-evidence requirements.
+
+The [Concurrency 2.106 Block-value span](linux_concurrent_block_values.md) adds
+conditional/composed immutable capture proofs, shared bounded graph analysis and
+explicit strong/default snapshots of unsafe source bindings. Fifty-four focused
+compiler commands and two complete spawn runtime configurations pass. This extends
+transfer precision without promoting the full Strict Concurrency profile.

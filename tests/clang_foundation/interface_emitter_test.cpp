@@ -3619,6 +3619,78 @@ void TestNativeDependentAwaitReplay() {
   }
 }
 
+void TestConcurrentBlockValueReplay() {
+  for (const char *standard : {"c17", "c++20", "c++23"}) {
+    const bool cxx=std::string(standard)!="c17";
+    for (bool arc : {false,true}) {
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fblocks","-fobjc-version=3",
+          "-fobjc-runtime=gnustep-2.2","-fobjc3-strict-concurrency",
+          "--target=x86_64-unknown-linux-gnu"};
+      if (arc) args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args);
+      auto parse=[&](const std::string &source,const char *file) {
+        return clang::tooling::buildASTFromCodeWithArgs(source,args,file,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto emit=[&](const std::string &source,const char *file) {
+        auto ast=parse(source,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                     "fixture.concurrent_block_values","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.concurrent_block_values","test");
+        assert(result.success);return result;
+      };
+      const std::string source=R"(
+        #include <objc3c/runtime/objc3_runtime_services.h>
+        @protocol Sendable @end
+        __attribute__((objc_root_class)) @interface PublishedBlockRoot @end
+        @interface PublishedBlockSafe:PublishedBlockRoot<Sendable> @end
+        typedef void (^PublishedAsyncWork)(void) __objc3_async_frame;
+        int published_start(PublishedAsyncWork) __attribute__((objc_task_spawn));
+        inline int published_block_choice(PublishedBlockSafe *value,int choose) {
+          PublishedAsyncWork const first=^void(void) __objc3_async_frame {(void)value;};
+          PublishedAsyncWork const second=^void(void) __objc3_async_frame {};
+          PublishedAsyncWork const choice=choose?first:second;
+          return published_start(choose?choice:choice);
+        }
+        inline int published_nested_block(PublishedBlockSafe *value,int choose) {
+          void (^const first)(void)=^{(void)value;};
+          void (^const second)(void)=^{};
+          void (^const callback)(void)=choose?first:second;
+          return published_start(^void(void) __objc3_async_frame {callback();});
+        }
+        inline int published_strong_block(PublishedBlockSafe *value) {
+          __unsafe_unretained PublishedBlockSafe *source=value;
+          return published_start(^[strong source] void(void) __objc3_async_frame {(void)source;});
+        }
+      )";
+      auto first=emit(source,"block-value-provider.m");
+      auto replay=emit(first.source_bytes,"block-value-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-block-value-provider.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto changed=source;auto at=changed.find("choose?first:second");assert(at!=std::string::npos);
+      changed.replace(at,std::string("choose?first:second").size(),"choose?second:first");
+      assert(emit(changed,"changed-block-value-provider.m").identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+      auto valid=parse(first.source_bytes+R"(
+        int published_block_consumer(PublishedBlockSafe *value,int choose) {
+          return published_block_choice(value,choose)+published_nested_block(value,choose)+published_strong_block(value);
+        }
+      )","block-value-consumer.m");
+      assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+      auto invalid=parse(first.source_bytes+R"(
+        int published_block_bad(PublishedBlockRoot *value,int choose) {
+          PublishedAsyncWork const safe=^void(void) __objc3_async_frame {};
+          PublishedAsyncWork const bad=^void(void) __objc3_async_frame {(void)value;};
+          return published_start(choose?safe:bad);
+        }
+      )","block-value-invalid-consumer.m");
+      assert(invalid && invalid->getDiagnostics().hasErrorOccurred());
+    }
+  }
+}
+
 void TestConcurrentCallableCaptureReplay() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     for (bool arc : {false, true}) {
@@ -6716,6 +6788,7 @@ int main() {
   TestLocalFactoryResults();
   TestClosureFactories();
   TestNativeDependentAwaitReplay();
+  TestConcurrentBlockValueReplay();
   TestConcurrentCallableCaptureReplay();
   TestEffectfulLambdas();
   TestAddressTemplateArguments();

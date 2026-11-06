@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.106 Block-value span](linux_concurrent_block_values.md) proves
+conditional and nested immutable capture environments with bounded shared graph
+analysis. Explicit strong snapshots preserve their owned storage policy, and
+identical conditional lifetime sources no longer expand exponentially. Fifty-four
+focused compiler commands and two spawn runtime configurations pass, including
+sixty-four new lifetime/cancellation cases; frontend execution and SDK delivery
+remain pending.
+
 The [System 2.21 memory-alias span](linux_borrowed_memory_aliases.md) preserves
 loans and callable/address/owner facts through aliased fills and nested/conditional
 representation copies. Partial writes invalidate target proofs, incomplete local

@@ -31,6 +31,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | Task-ABI initializer/object/CF results and typed nil entries                                                                | Source authored; focused native execution passes                                             |
 | Isolation          | Concurrent C++ callable capture policy and immutable local Block alias proofs                                               | Source authored; thirty source/PCH commands pass; frontend replay execution pending            |
+| Isolation          | Conditional/nested concurrent Block proofs, bounded alias graphs and explicit owned snapshots                                | Source authored; fifty-four focused compiler commands and two spawn runtime configurations pass |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                                                         |
 | Isolation          | Typed nil native-frame messages and consumed argument cleanup                                                               | Source authored; focused source/PCH/runtime execution passes                                 |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending                              |
@@ -422,3 +423,14 @@ commands and all twenty-one borrowed native regressions pass. Frontend replay an
 consumer controls are authored and syntax-checked; execution and SDK consolidation
 remain pending. General byte offsets, union active members and interprocedural
 mutation remain open.
+
+## Concurrent Block values and explicit owned snapshots
+
+The [Concurrency 2.106 span](linux_concurrent_block_values.md) proves conditional,
+nested and composed immutable Block environments, with shared graph proofs, cycle
+and budget controls. Explicit strong snapshots preserve their actual owned storage
+even when the source binding is unsafe. A native lifetime-walker repair avoids
+repeated identical conditional origins before capture checking. Fifty-four
+focused compiler commands and two complete spawn runtime configurations pass,
+including sixty-four new exact-lifetime cases. Frontend controls are authored and
+syntax-checked; their execution and final SDK consolidation remain pending.

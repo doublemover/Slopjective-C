@@ -28,3 +28,9 @@ Frontend replay/relocation and positive/negative consumer controls are authored;
 frontend execution and final package/SDK consolidation remain pending. These
 checks do not claim complete Strict Concurrency or arbitrary dynamic capture
 provenance.
+
+The [Concurrency 2.106 span](linux_concurrent_block_values.md) extends these
+proofs to conditional/nested Block expressions and bounded shared alias graphs.
+It also restores explicit owned capture storage when the source binding is unsafe;
+implicit unsafe captures retain their restriction. Focused native compiler and
+exact-lifetime runtime controls pass.

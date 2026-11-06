@@ -47143,10 +47143,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..d80bd1446
+index 000000000..f54177c94
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1313 @@
+@@ -0,0 +1,1363 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47410,20 +47410,64 @@ index 000000000..d80bd1446
 +    return E;
 +  }
 +}
-+const BlockExpr *knownBlockLiteral(const Expr *E) {
-+  llvm::SmallPtrSet<const VarDecl *, 8> Seen;
-+  while (E) {
++// Prove every possible capture environment before diagnosing its transfers.
++// Completed expression nodes are shared across diamonds; active nodes reject
++// cycles. Both the syntax budget and recursion depth are bounded independently
++// of the number of source paths through conditional aliases.
++class ConcurrentBlockValues {
++  ASTContext &Context;
++  SmallVectorImpl<const BlockExpr *> &Blocks;
++  llvm::SmallPtrSet<const Expr *, 32> Complete, Active;
++  llvm::SmallPtrSet<const BlockDecl *, 16> Added;
++  unsigned Budget = 256;
++public:
++  ConcurrentBlockValues(ASTContext &C, SmallVectorImpl<const BlockExpr *> &B)
++      : Context(C), Blocks(B) {}
++  bool collect(const Expr *E, unsigned Depth = 0) {
++    if (!E || Depth > 64) return false;
 +    E = transferSource(E);
-+    if (const auto *B = dyn_cast<BlockExpr>(E)) return B;
-+    const auto *Reference = dyn_cast<DeclRefExpr>(E);
-+    const auto *V = Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
-+    if (!V || !V->isLocalVarDecl() || !V->getType().isConstQualified() ||
-+        !V->hasInit() || !Seen.insert(V).second) return nullptr;
-+    // Immutable local aliases preserve the literal's capture environment.
-+    // Mutable or external storage never supplies this proof.
-+    E = V->getInit();
++    if (Complete.contains(E)) return true;
++    if (!Budget || !Active.insert(E).second) return false;
++    --Budget;
++    bool Proven = [&]() {
++      if (E->IgnoreParenCasts()->isNullPointerConstant(Context, Expr::NPC_ValueDependentIsNotNull))
++        return true;
++      if (const auto *Block = dyn_cast<BlockExpr>(E)) {
++        if (Added.insert(Block->getBlockDecl()).second) Blocks.push_back(Block);
++        return true;
++      }
++      if (const auto *Cleanup = dyn_cast<ExprWithCleanups>(E))
++        return collect(Cleanup->getSubExpr(), Depth + 1);
++      if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
++        bool Truth;
++        if (!Conditional->getCond()->HasSideEffects(Context) &&
++            Conditional->getCond()->EvaluateAsBooleanCondition(Truth, Context))
++          return collect(Truth ? Conditional->getTrueExpr() : Conditional->getFalseExpr(), Depth + 1);
++        return collect(Conditional->getTrueExpr(), Depth + 1) &&
++               collect(Conditional->getFalseExpr(), Depth + 1);
++      }
++      if (const auto *Binary = dyn_cast<BinaryOperator>(E))
++        if (Binary->getOpcode() == BO_Comma || Binary->getOpcode() == BO_Assign)
++          return collect(Binary->getRHS(), Depth + 1);
++      if (const auto *Statement = dyn_cast<StmtExpr>(E)) {
++        const auto *Body = Statement->getSubStmt();
++        return !Body->body_empty() &&
++               collect(dyn_cast<Expr>(Body->body_back()), Depth + 1);
++      }
++      const auto *Reference = dyn_cast<DeclRefExpr>(E);
++      const auto *Variable = Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
++      return Variable && Variable->isLocalVarDecl() &&
++             Variable->getType().isConstQualified() && Variable->hasInit() &&
++             collect(Variable->getInit(), Depth + 1);
++    }();
++    Active.erase(E);
++    if (Proven) Complete.insert(E);
++    return Proven;
 +  }
-+  return nullptr;
++};
++bool knownConcurrentBlocks(ASTContext &C, const Expr *E,
++                            SmallVectorImpl<const BlockExpr *> &Blocks) {
++  return ConcurrentBlockValues(C, Blocks).collect(E);
 +}
 +
 +bool isAsyncBlockType(QualType T) {
@@ -47633,11 +47677,12 @@ index 000000000..d80bd1446
 +          ++Index;
 +          continue;
 +        }
-+        if (const auto *Block = knownBlockLiteral(Argument)) {
++        SmallVector<const BlockExpr *, 8> Blocks;
++        if (knownConcurrentBlocks(S.Context, Argument, Blocks)) {
 +          llvm::SmallPtrSet<const BlockDecl *, 8> Active;
-+          Invalid |= checkKnownConcurrentBlock(
-+              S, Block, Site->getExprLoc(), isAsyncWorkParameter(Target, Index),
-+              Active);
++          for (const auto *Block : Blocks)
++            Invalid |= checkKnownConcurrentBlock(
++                S, Block, Site->getExprLoc(), isAsyncWorkParameter(Target, Index), Active);
 +        } else if (unsafeAdmission(S.Context, TransferType)) {
 +          Invalid |= checkTransfer(S, TransferType, Argument->getExprLoc(),
 +                                   "unchecked concurrent block value", Target);
@@ -47737,10 +47782,10 @@ index 000000000..d80bd1446
 +                             : Site;
 +    bool Unsafe =
 +        Capture.getObjC3CaptureKind() == BlockDecl::ObjC3CaptureKind::Unowned ||
-+        Capture.getCaptureType().getObjCLifetime() ==
-+            Qualifiers::OCL_ExplicitNone ||
-+        Capture.getCaptureType()->isObjCInertUnsafeUnretainedType() ||
-+        V->getType()->isObjCInertUnsafeUnretainedType();
++        (!Capture.isObjC3Explicit() &&
++         (Capture.getCaptureType().getObjCLifetime() == Qualifiers::OCL_ExplicitNone ||
++          Capture.getCaptureType()->isObjCInertUnsafeUnretainedType() ||
++          V->getType()->isObjCInertUnsafeUnretainedType()));
 +    bool Managed = V->hasAttr<CleanupAttr>() || V->hasAttr<ObjCCleanupAttr>() ||
 +                   V->hasAttr<ObjCResourceAttr>();
 +    bool Failed = false;
@@ -47752,14 +47797,19 @@ index 000000000..d80bd1446
 +          << (Capture.isByRef() ? "shared __block capture"
 +                                : "cleanup-managed capture");
 +      Failed = strictConcurrency(S);
-+    } else if (!Unsafe && !Managed && V->getType()->isBlockPointerType() &&
-+               V->getType().isConstQualified() && V->hasInit() &&
-+               knownBlockLiteral(V->getInit())) {
-+      Failed = checkKnownConcurrentBlock(S, knownBlockLiteral(V->getInit()),
-+                                         Loc, false, Active);
 +    } else {
-+      Failed = checkTransfer(S, V->getType(), Loc, "concurrent capture",
-+                             nullptr, Unsafe || Managed);
++      SmallVector<const BlockExpr *, 8> Blocks;
++      const Expr *Initializer = Capture.getObjC3InitExpr();
++      if (!Initializer && V->getType().isConstQualified() && V->hasInit())
++        Initializer = V->getInit();
++      if (!Unsafe && !Managed && V->getType()->isBlockPointerType() && Initializer &&
++          knownConcurrentBlocks(S.Context, Initializer, Blocks)) {
++        for (const auto *Block : Blocks)
++          Failed |= checkKnownConcurrentBlock(S, Block, Loc, false, Active);
++      } else {
++        Failed = checkTransfer(S, V->getType(), Loc, "concurrent capture",
++                               nullptr, Unsafe || Managed);
++      }
 +    }
 +    if (Failed)
 +      S.Diag(V->getLocation(), diag::note_objc3_sendable_capture) << V;
@@ -56867,4 +56917,372 @@ index 000000000..9233468fd
 +  struct MemoryCallback source = {^{memory_consume(owner);}}, target = {0};
 +  __builtin_memcpy(&target, &source, sizeof target);
 +  memory_use(loan);
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-concurrent-block-values.h b/clang/test/ObjC3/Sema/Inputs/native-concurrent-block-values.h
+new file mode 100644
+index 000000000..481f62a45
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-concurrent-block-values.h
+@@ -0,0 +1,4 @@
++#ifndef NATIVE_CONCURRENT_BLOCK_VALUES_H
++#define NATIVE_CONCURRENT_BLOCK_VALUES_H
++#include "native-concurrent-block-aliases.h"
++#endif
+diff --git a/clang/test/ObjC3/Sema/native-concurrent-block-values.m b/clang/test/ObjC3/Sema/native-concurrent-block-values.m
+new file mode 100644
+index 000000000..d40947da4
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-concurrent-block-values.m
+@@ -0,0 +1,193 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-concurrent-block-values.h -o %t-c17-0.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c17-0.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-concurrent-block-values.h -o %t-c17-1.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c17-1.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-concurrent-block-values.h -o %t-c++20-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c++20-0.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-concurrent-block-values.h -o %t-c++20-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++20-1.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-concurrent-block-values.h -o %t-c++23-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c++23-0.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-concurrent-block-values.h -o %t-c++23-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++23-1.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#ifndef FROM_PCH
++#include "Inputs/native-concurrent-block-values.h"
++#endif
++void conditional_work_values(BlockCaptureSafe *safe, int choose) {
++  (void)alias_spawn(choose ? ^void(void) __objc3_async_frame {(void)safe;}
++                          : ^void(void) __objc3_async_frame {});
++  AliasAsyncWork const first = ^void(void) __objc3_async_frame {(void)safe;};
++  AliasAsyncWork const second = ^void(void) __objc3_async_frame {};
++  AliasAsyncWork const choice = choose ? first : second;
++  AliasAsyncWork const diamond = choose ? choice : choice;
++  (void)alias_detach(diamond);
++  (void)alias_spawn((choose++, first));
++  (void)alias_spawn(({choose++; ^void(void) __objc3_async_frame {};}));
++  AliasAsyncWork mutable_work = second;
++  (void)alias_spawn(mutable_work = first);
++  (void)alias_spawn(choose ? first : (AliasAsyncWork)0);
++  (void)alias_spawn(first ?: second);
++}
++void conditional_bad_capture(BlockCaptureMutable *object, int choose) {
++  AliasAsyncWork const safe = ^void(void) __objc3_async_frame {};
++  AliasAsyncWork const bad = ^void(void) __objc3_async_frame {(void)object;};
++  AliasAsyncWork const choice = choose ? safe : bad;
++  (void)alias_spawn(choice); // expected-error {{non-Sendable type}}
++  (void)alias_detach(choose ? safe : bad); // expected-error {{non-Sendable type}}
++  (void)alias_spawn((choose++, bad)); // expected-error {{non-Sendable type}}
++}
++void constant_condition_values(BlockCaptureMutable *object, AliasAsyncWork unknown) {
++  AliasAsyncWork const safe = ^void(void) __objc3_async_frame {};
++  AliasAsyncWork const bad = ^void(void) __objc3_async_frame {(void)object;};
++  (void)alias_spawn(1 ? safe : bad);
++  (void)alias_spawn(0 ? unknown : safe);
++  (void)alias_spawn(0 ? safe : bad); // expected-error {{non-Sendable type}}
++}
++void open_condition_values(AliasAsyncWork unknown, int choose) {
++  AliasAsyncWork const safe = ^void(void) __objc3_async_frame {};
++  (void)alias_spawn(choose ? safe : unknown); // expected-error {{cannot prove Sendable captures}}
++  AliasAsyncWork mutable_work = safe;
++  (void)alias_detach(choose ? safe : mutable_work); // expected-error {{cannot prove Sendable captures}}
++  AliasAsyncWork const choice = choose ? safe : unknown;
++  (void)alias_spawn(choice); // expected-error {{cannot prove Sendable captures}}
++}
++void nested_conditional_captures(BlockCaptureSafe *safe, int choose) {
++  void (^const one)(void) = ^{(void)safe;};
++  void (^const two)(void) = ^{};
++  void (^const choice)(void) = choose ? one : two;
++  (void)alias_spawn(^void(void) __objc3_async_frame {choice();});
++}
++void nested_conditional_bad_capture(BlockCaptureMutable *object, int choose) {
++  void (^const one)(void) = ^{(void)object;};
++  void (^const two)(void) = ^{};
++  void (^const choice)(void) = choose ? one : two;
++  (void)alias_spawn(^void(void) __objc3_async_frame {choice();}); // expected-error {{non-Sendable type}}
++}
++void nested_conditional_unknown(void (^unknown)(void), int choose) {
++  void (^const safe)(void) = ^{};
++  void (^const choice)(void) = choose ? safe : unknown;
++  (void)alias_spawn(^void(void) __objc3_async_frame {choice();}); // expected-error {{non-Sendable type}}
++}
++void deduplicated_diamond_capture(BlockCaptureMutable *object, int choose) {
++  AliasAsyncWork const bad = ^void(void) __objc3_async_frame {(void)object;};
++  AliasAsyncWork const first = choose ? bad : bad;
++  AliasAsyncWork const second = choose ? first : first;
++  AliasAsyncWork const third = choose ? second : second;
++  (void)alias_spawn(third); // expected-error {{non-Sendable type}}
++}
++void recursive_alias_value(void) {
++  AliasAsyncWork const recursive = recursive;
++  (void)alias_spawn(recursive); // expected-error {{cannot prove Sendable captures}}
++}
++
++void explicit_owned_snapshots(BlockCaptureSafe *safe) {
++  __unsafe_unretained BlockCaptureSafe *source=safe;
++  (void)alias_spawn(^[strong source] void(void) __objc3_async_frame {(void)source;});
++  (void)alias_spawn(^[source] void(void) __objc3_async_frame {(void)source;});
++#if __has_feature(objc_arc)
++  (void)alias_spawn(^[weak source] void(void) __objc3_async_frame {(void)source;});
++#endif
++  (void)alias_spawn(^[unowned source] void(void) __objc3_async_frame {(void)source;}); // expected-error {{non-Sendable type}}
++  (void)alias_spawn(^void(void) __objc3_async_frame {(void)source;}); // expected-error {{non-Sendable type}}
++}
++void explicit_snapshot_does_not_admit_mutable(BlockCaptureMutable *object) {
++  __unsafe_unretained BlockCaptureMutable *source=object;
++  (void)alias_spawn(^[strong source] void(void) __objc3_async_frame {(void)source;}); // expected-error {{non-Sendable type}}
++}
++void side_effect_condition_does_not_hide_capture(BlockCaptureMutable *object,int choose) {
++  AliasAsyncWork const safe=^void(void) __objc3_async_frame {};
++  AliasAsyncWork const bad=^void(void) __objc3_async_frame {(void)object;};
++  (void)alias_spawn((++choose,1)?safe:bad); // expected-error {{non-Sendable type}}
++}
++
++void bounded_block_value_graph(int choose) {
++  AliasAsyncWork const node0=^void(void) __objc3_async_frame {};
++  AliasAsyncWork const node1=choose?node0:node0;
++  AliasAsyncWork const node2=choose?node1:node1;
++  AliasAsyncWork const node3=choose?node2:node2;
++  AliasAsyncWork const node4=choose?node3:node3;
++  AliasAsyncWork const node5=choose?node4:node4;
++  AliasAsyncWork const node6=choose?node5:node5;
++  AliasAsyncWork const node7=choose?node6:node6;
++  AliasAsyncWork const node8=choose?node7:node7;
++  AliasAsyncWork const node9=choose?node8:node8;
++  AliasAsyncWork const node10=choose?node9:node9;
++  AliasAsyncWork const node11=choose?node10:node10;
++  AliasAsyncWork const node12=choose?node11:node11;
++  AliasAsyncWork const node13=choose?node12:node12;
++  AliasAsyncWork const node14=choose?node13:node13;
++  AliasAsyncWork const node15=choose?node14:node14;
++  AliasAsyncWork const node16=choose?node15:node15;
++  AliasAsyncWork const node17=choose?node16:node16;
++  AliasAsyncWork const node18=choose?node17:node17;
++  AliasAsyncWork const node19=choose?node18:node18;
++  AliasAsyncWork const node20=choose?node19:node19;
++  AliasAsyncWork const node21=choose?node20:node20;
++  AliasAsyncWork const node22=choose?node21:node21;
++  AliasAsyncWork const node23=choose?node22:node22;
++  AliasAsyncWork const node24=choose?node23:node23;
++  AliasAsyncWork const node25=choose?node24:node24;
++  AliasAsyncWork const node26=choose?node25:node25;
++  AliasAsyncWork const node27=choose?node26:node26;
++  AliasAsyncWork const node28=choose?node27:node27;
++  AliasAsyncWork const node29=choose?node28:node28;
++  AliasAsyncWork const node30=choose?node29:node29;
++  AliasAsyncWork const node31=choose?node30:node30;
++  AliasAsyncWork const node32=choose?node31:node31;
++  AliasAsyncWork const node33=choose?node32:node32;
++  AliasAsyncWork const node34=choose?node33:node33;
++  AliasAsyncWork const node35=choose?node34:node34;
++  AliasAsyncWork const node36=choose?node35:node35;
++  AliasAsyncWork const node37=choose?node36:node36;
++  AliasAsyncWork const node38=choose?node37:node37;
++  AliasAsyncWork const node39=choose?node38:node38;
++  AliasAsyncWork const node40=choose?node39:node39;
++  AliasAsyncWork const node41=choose?node40:node40;
++  AliasAsyncWork const node42=choose?node41:node41;
++  AliasAsyncWork const node43=choose?node42:node42;
++  AliasAsyncWork const node44=choose?node43:node43;
++  AliasAsyncWork const node45=choose?node44:node44;
++  AliasAsyncWork const node46=choose?node45:node45;
++  AliasAsyncWork const node47=choose?node46:node46;
++  AliasAsyncWork const node48=choose?node47:node47;
++  AliasAsyncWork const node49=choose?node48:node48;
++  AliasAsyncWork const node50=choose?node49:node49;
++  AliasAsyncWork const node51=choose?node50:node50;
++  AliasAsyncWork const node52=choose?node51:node51;
++  AliasAsyncWork const node53=choose?node52:node52;
++  AliasAsyncWork const node54=choose?node53:node53;
++  AliasAsyncWork const node55=choose?node54:node54;
++  AliasAsyncWork const node56=choose?node55:node55;
++  AliasAsyncWork const node57=choose?node56:node56;
++  AliasAsyncWork const node58=choose?node57:node57;
++  AliasAsyncWork const node59=choose?node58:node58;
++  AliasAsyncWork const node60=choose?node59:node59;
++  AliasAsyncWork const node61=choose?node60:node60;
++  AliasAsyncWork const node62=choose?node61:node61;
++  AliasAsyncWork const node63=choose?node62:node62;
++  AliasAsyncWork const node64=choose?node63:node63;
++  AliasAsyncWork const node65=choose?node64:node64;
++  AliasAsyncWork const node66=choose?node65:node65;
++  AliasAsyncWork const node67=choose?node66:node66;
++  AliasAsyncWork const node68=choose?node67:node67;
++  AliasAsyncWork const node69=choose?node68:node68;
++  AliasAsyncWork const node70=choose?node69:node69;
++  AliasAsyncWork const node71=choose?node70:node70;
++  AliasAsyncWork const node72=choose?node71:node71;
++  AliasAsyncWork const node73=choose?node72:node72;
++  AliasAsyncWork const node74=choose?node73:node73;
++  AliasAsyncWork const node75=choose?node74:node74;
++  AliasAsyncWork const node76=choose?node75:node75;
++  AliasAsyncWork const node77=choose?node76:node76;
++  AliasAsyncWork const node78=choose?node77:node77;
++  AliasAsyncWork const node79=choose?node78:node78;
++  AliasAsyncWork const node80=choose?node79:node79;
++  (void)alias_spawn(node20);
++  (void)alias_spawn(node80); // expected-error {{cannot prove Sendable captures}}
++}
+diff --git a/clang/lib/Sema/CheckExprLifetime.cpp b/clang/lib/Sema/CheckExprLifetime.cpp
+index fafee76ec..732a99e37 100644
+--- a/clang/lib/Sema/CheckExprLifetime.cpp
++++ b/clang/lib/Sema/CheckExprLifetime.cpp
+@@ -245,6 +245,17 @@ static bool isVarOnPath(const IndirectLocalPath &Path, VarDecl *VD) {
+   return false;
+ }
+ 
++static bool sameLifetimeSource(const Expr *Left, const Expr *Right) {
++  Left = Left->IgnoreParenImpCasts();
++  Right = Right->IgnoreParenImpCasts();
++  if (Left == Right) return true;
++  const auto *L = dyn_cast<DeclRefExpr>(Left);
++  const auto *R = dyn_cast<DeclRefExpr>(Right);
++  return L && R && !L->getType().isVolatileQualified() &&
++         L->getDecl()->getCanonicalDecl() == R->getDecl()->getCanonicalDecl() &&
++         L->getType() == R->getType() && L->getValueKind() == R->getValueKind();
++}
++
+ static bool pathContainsInit(const IndirectLocalPath &Path) {
+   return llvm::any_of(Path, [=](IndirectLocalPathEntry E) {
+     return E.Kind == IndirectLocalPathEntry::DefaultInit ||
+@@ -651,7 +662,8 @@ static void visitLocalsRetainedByReferenceBinding(IndirectLocalPath &Path,
+     auto *C = cast<AbstractConditionalOperator>(Init);
+     if (!C->getTrueExpr()->getType()->isVoidType())
+       visitLocalsRetainedByReferenceBinding(Path, C->getTrueExpr(), RK, Visit);
+-    if (!C->getFalseExpr()->getType()->isVoidType())
++    if (!C->getFalseExpr()->getType()->isVoidType() &&
++        !sameLifetimeSource(C->getTrueExpr(), C->getFalseExpr()))
+       visitLocalsRetainedByReferenceBinding(Path, C->getFalseExpr(), RK, Visit);
+     break;
+   }
+@@ -916,7 +928,8 @@ static void visitLocalsRetainedByInitializer(IndirectLocalPath &Path,
+     // and isn't interesting from a lifetime perspective.
+     if (!C->getTrueExpr()->getType()->isVoidType())
+       visitLocalsRetainedByInitializer(Path, C->getTrueExpr(), Visit, true);
+-    if (!C->getFalseExpr()->getType()->isVoidType())
++    if (!C->getFalseExpr()->getType()->isVoidType() &&
++        !sameLifetimeSource(C->getTrueExpr(), C->getFalseExpr()))
+       visitLocalsRetainedByInitializer(Path, C->getFalseExpr(), Visit, true);
+     break;
+   }
+diff --git a/clang/test/ObjC3/Sema/shared-conditional-lifetimes.m b/clang/test/ObjC3/Sema/shared-conditional-lifetimes.m
+new file mode 100644
+index 000000000..de8c59838
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/shared-conditional-lifetimes.m
+@@ -0,0 +1,111 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify=expected,mrc -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify=expected,arc -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify=expected,mrc -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify=expected,arc -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify=expected,mrc -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify=expected,arc -verify-ignore-unexpected=note %s
++// This lifetime walk also runs before Objective-C 3 capture checking. Repeated
++// references to one declaration represent one origin, while distinct branches
++// must retain their independent dangling diagnostics.
++typedef void (^LifetimeWork)(void);
++void shared_initializer_lifetimes(int choose) {
++  LifetimeWork const node0=^{};
++  LifetimeWork const node1=choose?node0:node0;
++  LifetimeWork const node2=choose?node1:node1;
++  LifetimeWork const node3=choose?node2:node2;
++  LifetimeWork const node4=choose?node3:node3;
++  LifetimeWork const node5=choose?node4:node4;
++  LifetimeWork const node6=choose?node5:node5;
++  LifetimeWork const node7=choose?node6:node6;
++  LifetimeWork const node8=choose?node7:node7;
++  LifetimeWork const node9=choose?node8:node8;
++  LifetimeWork const node10=choose?node9:node9;
++  LifetimeWork const node11=choose?node10:node10;
++  LifetimeWork const node12=choose?node11:node11;
++  LifetimeWork const node13=choose?node12:node12;
++  LifetimeWork const node14=choose?node13:node13;
++  LifetimeWork const node15=choose?node14:node14;
++  LifetimeWork const node16=choose?node15:node15;
++  LifetimeWork const node17=choose?node16:node16;
++  LifetimeWork const node18=choose?node17:node17;
++  LifetimeWork const node19=choose?node18:node18;
++  LifetimeWork const node20=choose?node19:node19;
++  LifetimeWork const node21=choose?node20:node20;
++  LifetimeWork const node22=choose?node21:node21;
++  LifetimeWork const node23=choose?node22:node22;
++  LifetimeWork const node24=choose?node23:node23;
++  LifetimeWork const node25=choose?node24:node24;
++  LifetimeWork const node26=choose?node25:node25;
++  LifetimeWork const node27=choose?node26:node26;
++  LifetimeWork const node28=choose?node27:node27;
++  LifetimeWork const node29=choose?node28:node28;
++  LifetimeWork const node30=choose?node29:node29;
++  LifetimeWork const node31=choose?node30:node30;
++  LifetimeWork const node32=choose?node31:node31;
++  LifetimeWork const node33=choose?node32:node32;
++  LifetimeWork const node34=choose?node33:node33;
++  LifetimeWork const node35=choose?node34:node34;
++  LifetimeWork const node36=choose?node35:node35;
++  LifetimeWork const node37=choose?node36:node36;
++  LifetimeWork const node38=choose?node37:node37;
++  LifetimeWork const node39=choose?node38:node38;
++  LifetimeWork const node40=choose?node39:node39;
++  LifetimeWork const node41=choose?node40:node40;
++  LifetimeWork const node42=choose?node41:node41;
++  LifetimeWork const node43=choose?node42:node42;
++  LifetimeWork const node44=choose?node43:node43;
++  LifetimeWork const node45=choose?node44:node44;
++  LifetimeWork const node46=choose?node45:node45;
++  LifetimeWork const node47=choose?node46:node46;
++  LifetimeWork const node48=choose?node47:node47;
++  LifetimeWork const node49=choose?node48:node48;
++  LifetimeWork const node50=choose?node49:node49;
++  LifetimeWork const node51=choose?node50:node50;
++  LifetimeWork const node52=choose?node51:node51;
++  LifetimeWork const node53=choose?node52:node52;
++  LifetimeWork const node54=choose?node53:node53;
++  LifetimeWork const node55=choose?node54:node54;
++  LifetimeWork const node56=choose?node55:node55;
++  LifetimeWork const node57=choose?node56:node56;
++  LifetimeWork const node58=choose?node57:node57;
++  LifetimeWork const node59=choose?node58:node58;
++  LifetimeWork const node60=choose?node59:node59;
++  LifetimeWork const node61=choose?node60:node60;
++  LifetimeWork const node62=choose?node61:node61;
++  LifetimeWork const node63=choose?node62:node62;
++  LifetimeWork const node64=choose?node63:node63;
++  LifetimeWork const node65=choose?node64:node64;
++  LifetimeWork const node66=choose?node65:node65;
++  LifetimeWork const node67=choose?node66:node66;
++  LifetimeWork const node68=choose?node67:node67;
++  LifetimeWork const node69=choose?node68:node68;
++  LifetimeWork const node70=choose?node69:node69;
++  LifetimeWork const node71=choose?node70:node70;
++  LifetimeWork const node72=choose?node71:node71;
++  LifetimeWork const node73=choose?node72:node72;
++  LifetimeWork const node74=choose?node73:node73;
++  LifetimeWork const node75=choose?node74:node74;
++  LifetimeWork const node76=choose?node75:node75;
++  LifetimeWork const node77=choose?node76:node76;
++  LifetimeWork const node78=choose?node77:node77;
++  LifetimeWork const node79=choose?node78:node78;
++  LifetimeWork const node80=choose?node79:node79;
++  node80();
++}
++LifetimeWork returning_distinct_environment(int choose,int value) {
++  LifetimeWork const global=^{};
++  LifetimeWork const local=^{(void)value;};
++  return choose?global:local; // mrc-error {{returning block that lives on the local stack}}
++}
++LifetimeWork returning_shared_environment(int choose,int value) {
++  LifetimeWork const local=^{(void)value;};
++  return choose?local:local; // mrc-error {{returning block that lives on the local stack}}
++}
++const int *returning_distinct_pointer(int choose,const int *external) {
++  const int local=3;
++  return choose?external:&local; // expected-warning {{address of stack memory associated with local variable 'local' returned}}
++}
++const int *returning_shared_pointer(int choose) {
++  const int local=3;
++  return choose?&local:&local; // expected-warning 2 {{address of stack memory associated with local variable 'local' returned}}
 +}

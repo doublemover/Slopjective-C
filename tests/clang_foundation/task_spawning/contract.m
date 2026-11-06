@@ -158,10 +158,13 @@ static void checked_spawn_error_ownership(unsigned *destroyed) {
 
 #include "dynamic_frame_storage.h"
 
+#include "conditional_block_values.h"
+
 int main(void) {
   objc3_executor_t *source = NULL, *global = NULL;
   objc3_actor_t *actor = NULL;
   assert(objc3_executor_create(1, &source) == OBJC3_SERVICE_OK);
+  conditional_block_values_contract(source);
   assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
   dynamic_frame_storage_contract(source);
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
