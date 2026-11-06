@@ -89,3 +89,13 @@ template<class Path, class Root> void braced_write(Path path, Root root) {
 }
 }
 #endif
+
+WritableKeyPath<PackagePathRoot *, int> package_checked_scalar_path(void) {
+  return @keypath(PackagePathRoot, next.count);
+}
+WritableKeyPath<PackagePathRoot *, PackagePathPair> package_checked_record_path(void) {
+  return @keypath(PackagePathRoot, next.pair);
+}
+inline int package_checked_read(PackagePathRoot *_Nonnull root) {
+  return KeyPathGet(@keypath(PackagePathRoot, next.count), root);
+}

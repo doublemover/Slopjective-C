@@ -15,6 +15,18 @@ int main(void) {
     assert((root[nullable_path] = root) == root);
     PackagePathRoot *child = [PackagePathRoot new];
     root.next = child;
+    WritableKeyPath<PackagePathRoot *, int> checked_scalar = package_checked_scalar_path();
+    WritableKeyPath<PackagePathRoot *, PackagePathPair> checked_record = package_checked_record_path();
+    KeyPathSet(checked_scalar, root, 29);
+    assert(KeyPathGet(checked_scalar, root) == 29 && package_checked_read(root) == 29);
+    PackagePathPair checked_pair = {31, 37};
+    KeyPathSet(checked_record, root, checked_pair);
+    checked_pair = KeyPathGet(checked_record, root);
+    assert(checked_pair.first == 31 && checked_pair.second == 37);
+    const objc3_keypath_descriptor_v2 *checked_metadata = KeyPathMetadata(checked_scalar);
+    assert(objc3_keypath_validate_v2(checked_metadata) == 0);
+    assert(checked_metadata->flags & OBJC3_KEYPATH_CHECKED_MISSING_READ);
+
     KeyPathSet(nullable_path, root, root);
     assert(child.value == root);
     const objc3_keypath_descriptor_v2 *nullable_metadata = KeyPathMetadata(nullable_path);

@@ -34,6 +34,7 @@ const auto kSupportedSemantics = std::to_array<llvm::StringRef>({
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
     kNullableKeyPathWriteSemantic,
+    kCheckedKeyPathReadSemantic,
     "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",

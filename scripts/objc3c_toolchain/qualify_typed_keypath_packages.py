@@ -35,6 +35,8 @@ def check_metadata(metadata: dict, *, dependent_applications=False) -> None:
             raise ValueError('typed key-path interface lost public type: ' + name)
     for name, writable in (('package_count_path', True),
                            ('package_nullable_path', True),
+                           ('package_checked_scalar_path', True),
+                           ('package_checked_record_path', True),
                            ('package_field_path', True),
                            ('package_bits_path', True),
                            ('package_identity_path', False),

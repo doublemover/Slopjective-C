@@ -2309,6 +2309,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-effectful-lambdas:v1;";
   if (HasDeclarationTemplateTemplateParameters(representative))
     identity.canonical_type_identity+=";cxx-template-template-parameters:v1;";
+  if (HasDeclarationCheckedKeyPathRead(representative))
+    identity.canonical_type_identity += ";keypath-checked-reads:v1;";
   if (HasDeclarationNullableKeyPathWrite(representative))
     identity.canonical_type_identity += ";keypath-nullable-writes:v1;";
   if (HasDeclarationConcept(representative) && !llvm::isa<clang::ConceptDecl>(representative))

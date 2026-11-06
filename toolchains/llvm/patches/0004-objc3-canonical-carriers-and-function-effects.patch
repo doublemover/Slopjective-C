@@ -41144,10 +41144,10 @@ index 000000000..1e0226ed1
 +#endif
 diff --git a/clang/include/clang/AST/ObjC3KeyPath.h b/clang/include/clang/AST/ObjC3KeyPath.h
 new file mode 100644
-index 000000000..a0b757d0c
+index 000000000..8332f63d9
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3KeyPath.h
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,233 @@
 +//===--- ObjC3KeyPath.h - Native key-path record identity ---------*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -41371,6 +41371,13 @@ index 000000000..a0b757d0c
 +                                Descriptor->getInit(1)->IgnoreParenImpCasts())
 +                          : nullptr;
 +  return Flags && (Flags->getValue().getZExtValue() & 8u);
++}
++inline bool hasObjC3CheckedKeyPathRead(const CompoundLiteralExpr *Literal) {
++  const auto *Descriptor = getObjC3KeyPathLiteralDescriptor(Literal);
++  const auto *Flags = Descriptor
++      ? dyn_cast<IntegerLiteral>(Descriptor->getInit(1)->IgnoreParenImpCasts())
++      : nullptr;
++  return Flags && (Flags->getValue().getZExtValue() & 16u);
 +}
 +} // namespace clang
 +#endif
@@ -46518,10 +46525,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..816391880
+index 000000000..132a37fc1
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1540 @@
+@@ -0,0 +1,1545 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -46540,6 +46547,7 @@ index 000000000..816391880
 +#include "clang/AST/ObjC3Isolation.h"
 +#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3ResourceTypes.h"
++#include "clang/Basic/Builtins.h"
 +#include "clang/Sema/Lookup.h"
 +#include "clang/Sema/DeclSpec.h"
 +#include "clang/Sema/Initialization.h"
@@ -47241,7 +47249,7 @@ index 000000000..816391880
 +
 +StmtResult nullableGetter(Sema &S, Expr *Receiver,
 +                           ArrayRef<Component> Components,
-+                           unsigned Index, SourceLocation Loc) {
++                           unsigned Index, SourceLocation Loc, bool CheckedMissing) {
 +  const Component &Part = Components[Index];
 +  ExprResult Read = readComponent(S, Receiver, Part);
 +  if (Read.isInvalid())
@@ -47264,18 +47272,31 @@ index 000000000..816391880
 +    if (nullable(Part.Value)) {
 +      ExprResult Missing = S.BuildUnaryOp(nullptr, Part.Loc, UO_LNot,
 +                                           Snapshot.get());
-+      ExprResult Nil = S.ActOnIntegerConstant(Part.Loc, 0);
-+      if (Missing.isInvalid() || Nil.isInvalid())
++      if (Missing.isInvalid())
 +        return StmtError();
-+      StmtResult ReturnNil = S.BuildReturnStmt(Part.Loc, Nil.get());
-+      if (ReturnNil.isInvalid())
++      StmtResult Absent;
++      if (CheckedMissing) {
++        Expr *Trap = S.BuildBuiltinCallExpr(Part.Loc, Builtin::BI__builtin_trap, {});
++        if (!Trap)
++          return StmtError();
++        ExprResult Finished = S.ActOnFinishFullExpr(Trap, Part.Loc, true);
++        if (Finished.isInvalid())
++          return StmtError();
++        Absent = Finished.get();
++      } else {
++        ExprResult Nil = S.ActOnIntegerConstant(Part.Loc, 0);
++        if (Nil.isInvalid())
++          return StmtError();
++        Absent = S.BuildReturnStmt(Part.Loc, Nil.get());
++      }
++      if (Absent.isInvalid())
 +        return StmtError();
 +      Body.push_back(IfStmt::Create(S.Context, Part.Loc,
 +          IfStatementKind::Ordinary, nullptr, nullptr, Missing.get(),
-+          Part.Loc, Part.Loc, ReturnNil.get()));
++          Part.Loc, Part.Loc, Absent.get()));
 +    }
 +    StmtResult Tail = nullableGetter(S, Snapshot.get(), Components,
-+                                     Index + 1, Loc);
++                                     Index + 1, Loc, CheckedMissing);
 +    if (Tail.isInvalid())
 +      return StmtError();
 +    Body.push_back(Tail.get());
@@ -47291,7 +47312,7 @@ index 000000000..816391880
 +  if (!Snapshot)
 +    return StmtError();
 +  StmtResult Tail = nullableGetter(S, reference(S, Snapshot, Part.Loc),
-+                                   Components, Index + 1, Loc);
++                                   Components, Index + 1, Loc, CheckedMissing);
 +  if (Tail.isInvalid())
 +    return StmtError();
 +  Stmt *Body[] = {Declaration, Tail.get()};
@@ -47416,7 +47437,6 @@ index 000000000..816391880
 +      return nullptr;
 +    SmallVector<Stmt *, 1> Body;
 +    if (NullableTraversal) {
-+      assert(nullable(Value) && Value->isObjCRetainableType());
 +      StmtResult Application;
 +      if (Setter) {
 +        unsigned LastNullable = 0;
@@ -47427,7 +47447,8 @@ index 000000000..816391880
 +            nullableSetter(S, Receiver.get(), reference(S, Params[1], Loc),
 +                           Components, 0, LastNullable, Loc);
 +      } else
-+        Application = nullableGetter(S, Receiver.get(), Components, 0, Loc);
++        Application = nullableGetter(S, Receiver.get(), Components, 0, Loc,
++                                     !nullable(Value));
 +      if (Application.isInvalid())
 +        return nullptr;
 +      Body.push_back(Application.get());
@@ -47613,12 +47634,9 @@ index 000000000..816391880
 +  bool Writable = true;
 +  bool HasFields = false;
 +  bool NullableTraversal = false;
-+  SourceLocation FirstNullableLoc;
 +  auto NoteNullable = [&](QualType Value, unsigned Index) {
 +    if (Index + 1 < Members.size() && nullable(Value)) {
 +      NullableTraversal = true;
-+      if (FirstNullableLoc.isInvalid())
-+        FirstNullableLoc = MemberLocs[Index];
 +    }
 +  };
 +  std::string Path;
@@ -47767,16 +47785,9 @@ index 000000000..816391880
 +    NoteNullable(Value, I);
 +    Current = Value;
 +  }
-+  if (NullableTraversal) {
-+    if (!nullable(Current) || !Current->isObjCRetainableType()) {
-+      reject(*this, FirstNullableLoc,
-+             "nullable intermediate key-path traversal requires a final "
-+             "nullable Objective-C object or Block value");
-+      return ExprError();
-+    }
-+    // Settable nullable chains retain writability. Their setter follows native
-+    // Objective-C nil messaging: a missing receiver short-circuits the update.
-+  }
++  // Nullable routes preserve the declared result type. A missing read can
++  // return null only when Value explicitly admits it; other values trap.
++  // Writes skip a missing route after evaluating the application's operands.
 +  QualType Type = keyPathType(*this, Root, Current, Writable, Descriptor, Loc);
 +  if (Type.isNull())
 +    return ExprError();
@@ -47839,7 +47850,8 @@ index 000000000..816391880
 +      integer(*this, 32, 2, Loc),
 +      integer(*this, 32, (Writable ? 1u : 0u) | (HasFields ? 0u : 2u) |
 +                            (NullableTraversal ? 4u : 0u) |
-+                            (NullableTraversal && Writable ? 8u : 0u), Loc),
++                            (NullableTraversal && Writable ? 8u : 0u) |
++                            (NullableTraversal && !nullable(Current) ? 16u : 0u), Loc),
 +      integer(*this, 64, Components.size(), Loc),
 +      text(*this, typeIdentity(Context, Root), Loc),
 +      text(*this, typeIdentity(Context, Current), Loc), text(*this, Path, Loc),
@@ -48411,7 +48423,7 @@ index 000000000..bed041dae
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypaths.m b/clang/test/ObjC3/Sema/typed-keypaths.m
 new file mode 100644
-index 000000000..2ab3c034f
+index 000000000..b5911cf0c
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypaths.m
 @@ -0,0 +1,53 @@
@@ -48455,7 +48467,7 @@ index 000000000..2ab3c034f
 +  KeyPathSet(@keypath(PathNode, child), root, maybe); // expected-error {{key-path setter requires a nonnull property value}}
 +  (void)@keypath(PathNode, absent); // expected-error {{key-path component must name a visible declared instance property}}
 +  (void)@keypath(PathNode, count.child); // expected-error {{key-path intermediate component must have a concrete object or supported record type}}
-+  (void)@keypath(PathNode, optionalChild.count); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
++  (void)@keypath(PathNode, optionalChild.count);
 +  (void)@keypath(int, count); // expected-error {{key-path root must name a concrete Objective-C class}}
 +  (void)@keypath(self, count); // expected-error {{@keypath(self, ...) requires an instance method}}
 +}
@@ -48969,10 +48981,10 @@ index 000000000..0bba2f948
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m b/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m
 new file mode 100644
-index 000000000..b358f00b4
+index 000000000..20cb6f778
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,52 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
@@ -49011,10 +49023,19 @@ index 000000000..b358f00b4
 +  KeyPathSet(read, root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
 +  KeyPathSet(@keypath(NullablePathNode, next.observed), root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
 +  KeyPathSet(@keypath(NullablePathNode, observed.value), root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
-+  (void)@keypath(NullablePathNode, next.required); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
-+  (void)@keypath(NullablePathNode, next.count); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
-+  (void)@keypath(NullablePathNode, next.pair); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
-+  (void)@keypath(NullablePathNode, next.pair.first); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
++  (void)@keypath(NullablePathNode, next.required);
++  (void)@keypath(NullablePathNode, next.count);
++  (void)@keypath(NullablePathNode, next.pair);
++  (void)@keypath(NullablePathNode, next.pair.first);
++}
++
++void valid_checked_results(NullablePathNode * _Nonnull root) {
++  long scalar = KeyPathGet(@keypath(NullablePathNode, next.count), root);
++  NullablePathPair pair = KeyPathGet(@keypath(NullablePathNode, next.pair), root);
++  NullablePathNode * _Nonnull object = KeyPathGet(@keypath(NullablePathNode, next.required), root);
++  KeyPathSet(@keypath(NullablePathNode, next.count), root, scalar);
++  KeyPathSet(@keypath(NullablePathNode, next.pair), root, pair);
++  KeyPathSet(@keypath(NullablePathNode, next.required), root, object);
 +}
 diff --git a/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm b/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm
 new file mode 100644

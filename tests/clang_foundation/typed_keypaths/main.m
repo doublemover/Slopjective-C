@@ -4,6 +4,74 @@
 #include <assert.h>
 #include <string.h>
 
+#include <errno.h>
+#include <signal.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+static void check_checked_missing_reads(void) {
+  const int destroyed = path_destroyed;
+  @autoreleasepool {
+    RuntimePathNode *root __attribute__((objc_precise_lifetime)) =
+        [RuntimePathNode newWithCount:11];
+    RuntimePathNode *child __attribute__((objc_precise_lifetime)) =
+        [RuntimePathNode newWithCount:19];
+    WritableKeyPath<RuntimePathNode *, int> scalar =
+        @keypath(RuntimePathNode, optionalNext.count);
+    WritableKeyPath<RuntimePathNode *, PathPair> record =
+        @keypath(RuntimePathNode, optionalNext.pair);
+    KeyPath<RuntimePathNode *, RuntimePathNode * _Nonnull> object =
+        @keypath(RuntimePathNode, optionalNext.child);
+    const objc3_keypath_descriptor_v2 *metadata = KeyPathMetadata(scalar);
+    assert(objc3_keypath_validate_v2(metadata) == 0);
+    assert(metadata->flags & OBJC3_KEYPATH_CHECKED_MISSING_READ);
+    assert(objc3_keypath_validate_v2(KeyPathMetadata(record)) == 0);
+    assert(objc3_keypath_validate_v2(KeyPathMetadata(object)) == 0);
+    // Missing writes evaluate operands but never dispatch the final accessor.
+    path_optional_reads = path_count_sets = path_pair_sets = 0;
+    KeyPathSet(scalar, root, 23);
+    PathPair pair = {7, 9};
+    KeyPathSet(record, root, pair);
+    assert(path_optional_reads == 2 && !path_count_sets && !path_pair_sets);
+    // Each missing read must terminate at its checked route, for all Value
+    // classes. A child isolates the deliberate trap from the runtime witness.
+    for (int kind = 0; kind != 3; ++kind) {
+      pid_t pid = fork();
+      assert(pid >= 0);
+      if (!pid) {
+        struct rlimit limit = {0, 0};
+        if (setrlimit(RLIMIT_CORE, &limit)) _exit(90);
+        if (kind == 0) (void)KeyPathGet(scalar, root);
+        else if (kind == 1) (void)KeyPathGet(record, root);
+        else (void)KeyPathGet(object, root);
+        _exit(91);
+      }
+      int status = 0;
+      pid_t waited;
+      do { waited = waitpid(pid, &status, 0); } while (waited < 0 && errno == EINTR);
+      assert(waited == pid && WIFSIGNALED(status) && WTERMSIG(status) == SIGILL);
+    }
+    root.optionalNext = child;
+    child.child = root;
+    path_optional_reads = path_count_reads = path_pair_reads = path_child_reads = 0;
+    assert(KeyPathGet(scalar, root) == 19);
+    KeyPathSet(record, root, pair);
+    PathPair copy = KeyPathGet(record, root);
+    assert(copy.first == 7 && copy.second == 9);
+    assert(KeyPathGet(object, root) == root);
+    assert(path_optional_reads == 4 && path_count_reads == 1 &&
+           path_pair_reads == 1 && path_child_reads == 1);
+    // Break the temporary cycle while both precise owners are still alive.
+    root.optionalNext = nil;
+#if !__has_feature(objc_arc)
+    objc_release(child);
+    objc_release(root);
+#endif
+  }
+  assert(path_destroyed == destroyed + 2);
+}
+
 static int path_evaluations, root_evaluations, value_evaluations;
 static int operand_sequence;
 #ifdef __cplusplus
@@ -511,6 +579,7 @@ int main(void) {
   }
   assert(path_destroyed >= 3);
   check_subscripts();
+  check_checked_missing_reads();
 #ifdef __cplusplus
   check_dependent_applications();
 #endif

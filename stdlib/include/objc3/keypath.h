@@ -5,7 +5,7 @@
 #include <objc3c/runtime/objc3_keypath.h>
 
 #define OBJC3_KEYPATH_MODULE_SEMVER_MAJOR 2u
-#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 7u
+#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 8u
 #define OBJC3_KEYPATH_MODULE_SEMVER_PATCH 0u
 
 /* KeyPath<Root, Value> and WritableKeyPath<Root, Value> are compiler-owned
@@ -25,11 +25,11 @@
  * Metadata is immutable and valid for the lifetime of its native image. Native
  * literal construction uses no registry, reset generation, integer handle,
  * or captured root owner.
- * Nullable intermediates require a nullable Objective-C object or Block result.
- * A missing intermediate returns nil on reads and skips updates on writes.
+ * A missing intermediate returns null for explicitly nullable pointer results;
+ * other declared result types trap before the final accessor is called.
+ * Missing receivers skip updates on writes.
  * Entirely settable chains remain writable; operands evaluate once before
  * traversal, including the value operand when a missing receiver skips a set.
- * Nonnull/scalar/aggregate results through nullable intermediates diagnose.
  * Named bit-fields preserve native value truncation and sibling storage. C++
  * inherited record fields use native lookup and base adjustment, with normal
  * access, hiding and ambiguity rules. Field setters update one property

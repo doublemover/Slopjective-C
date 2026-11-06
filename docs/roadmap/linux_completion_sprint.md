@@ -19,7 +19,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation | Complete Sendable and Strict Concurrency enforcement | Open |
 | Key paths | Dependent applications and packs in generic functions, including source-free templates | Source authored; native source/PCH/package verification pending |
 | Key paths | Dependent type/literal construction; effectful/isolated and ownership-bearing paths | Open |
-| Key paths | Nonnull/scalar/aggregate nullable-chain result policy and implementation | Policy and implementation open |
+| Key paths | Nonnull/scalar/aggregate nullable-chain result policy and implementation | Source authored; compiler/runtime/PCH/package verification pending |
 | Language/library | Remaining specified generic, property, reflection/metaprogramming and interoperability contracts | Open |
 | Profiles | Core, Strict, Strict Concurrency and Strict System conformance | Open |
 
@@ -61,6 +61,23 @@ generic helper forms after provider-source removal; qualification now requires
 those template declarations in C++ metadata. These cases are authored and remain
 pending the rebuilt compiler. Dependent type constructors/literals and the other
 key-path rows remain open.
+
+## Authored nullable key-path result policy
+
+Part 3 §3.6.4.1 now defines nullable routing without changing the final `Value`
+type. A missing intermediate returns null for an explicitly nullable pointer
+result. Other results, including unspecified/nonnull pointers, scalars and native
+records, trap before the remaining accessors. No fabricated zero or default
+object is produced. Writes still evaluate their operands and skip missing routes.
+
+Keypath source 2.8 emits a checked-read descriptor bit exactly when required.
+Runtime metadata validation rejects missing, stray or contradictory flags;
+source interfaces require the checked-read capability for published bodies.
+Source/PCH runtime witnesses cover present reads, skipped writes, exact accessor
+work and three isolated intentional-trap controls. Source-free package fixtures
+replay checked scalar/record paths and inline reads. These compiler-dependent
+witnesses await the rebuilt toolchain; the small metadata service regression is
+independent of that rebuild.
 
 ## Consolidated verification and delivery
 

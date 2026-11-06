@@ -92,13 +92,38 @@ int main() {
   stray_write.flags |= OBJC3_KEYPATH_NULLABLE_WRITES;
   assert(objc3_keypath_validate_v2(&stray_write) == OBJC3_KEYPATH_INVALID_METADATA);
   nullable_components[1].flags &= ~OBJC3_KEYPATH_COMPONENT_RETAINABLE;
-  assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_INVALID_METADATA);
+  // Null is also representable by an explicitly nullable native pointer.
+  nullable_components[1].value_type = "void *";
+  nullable_path.value_type = "void *";
+  assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_OK);
+  nullable_components[1].value_type = "Value *";
+  nullable_path.value_type = "Value *";
   nullable_components[1].flags |= OBJC3_KEYPATH_COMPONENT_RETAINABLE;
   nullable_components[1].flags &= ~OBJC3_KEYPATH_COMPONENT_NULLABLE;
   assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_INVALID_METADATA);
+  nullable_path.flags |= OBJC3_KEYPATH_CHECKED_MISSING_READ;
+  assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_OK);
+  // Scalar and aggregate paths use the same checked missing-route contract;
+  // the runtime never fabricates a zero/default object for them.
+  const char *checked_types[] = {"int", "struct Pair"};
+  for (const char *type : checked_types) {
+    nullable_components[1].flags = 0;
+    nullable_components[1].value_type = type;
+    nullable_path.value_type = type;
+    assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_OK);
+  }
+  nullable_components[1].value_type = "Value *";
+  nullable_path.value_type = "Value *";
+  nullable_components[1].flags = OBJC3_KEYPATH_COMPONENT_RETAINABLE;
+  nullable_components[1].flags |= OBJC3_KEYPATH_COMPONENT_NULLABLE;
+  assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_INVALID_METADATA);
+  nullable_path.flags &= ~OBJC3_KEYPATH_CHECKED_MISSING_READ;
   nullable_components[1].flags |= OBJC3_KEYPATH_COMPONENT_NULLABLE;
   nullable_path.flags &= ~OBJC3_KEYPATH_NULLABLE_TRAVERSAL;
   assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_INVALID_METADATA);
+  auto stray_checked = descriptor;
+  stray_checked.flags |= OBJC3_KEYPATH_CHECKED_MISSING_READ;
+  assert(objc3_keypath_validate_v2(&stray_checked) == OBJC3_KEYPATH_INVALID_METADATA);
 
   const objc3_keypath_component_v2 fields[] = {
       {"Root *", "Root", "pair", "struct Pair", "pair", "setPair:", 0, 0},

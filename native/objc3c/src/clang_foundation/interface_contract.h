@@ -177,6 +177,10 @@ inline constexpr const char *kCxxUnionValueSemantic = "objc3.cxx-union-values.v1
 inline bool HasCxxUnionValueIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-union-values:v1;") != std::string::npos;
 }
+inline constexpr const char *kCheckedKeyPathReadSemantic = "objc3.keypath-checked-reads.v1";
+inline bool HasCheckedKeyPathReadIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";keypath-checked-reads:v1;") != std::string::npos;
+}
 inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-nullable-writes.v1";
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;

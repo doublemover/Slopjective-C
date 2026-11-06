@@ -133,6 +133,18 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationCheckedKeyPathRead(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Literals : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitCompoundLiteralExpr(clang::CompoundLiteralExpr *literal) override {
+        found |= clang::hasObjC3CheckedKeyPathRead(literal);return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, ContainsLambda);
 }
