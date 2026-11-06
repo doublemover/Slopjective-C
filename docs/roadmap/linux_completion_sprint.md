@@ -587,3 +587,16 @@ updates, rejects loan exports through caller references, and resolves known loca
 reference fields/copies to actual storage. Binding identity, local ownership and
 pointer-value facts stay distinct. General joins/output summaries and broader
 callable/exceptional ownership remain open.
+
+## Reference bindings and current owner state
+
+The [System 2.26 implementation](linux_borrowed_reference_bindings.md) gives
+reference bindings an independent domain. Conditional lvalues, current stored
+pointer/byte values, copied reference records, exact representation rebinding,
+per-target pointer mutations and reference capture modes no longer conflate
+binding identities with pointer values. Known reference/field/integer aliases,
+mutable outputs and derived loans retain owner dependencies. Complete local
+writes are bounded at 64 alternatives while all possible escape targets remain.
+Eighteen new C++20/C++23 ARC/MRC source/PCH commands, all twenty-nine borrowed
+compiler regressions and three affected source-free frontend groups pass. ABI 24
+and SDK 2.62 are unchanged. General ownership and SDK consolidation remain open.

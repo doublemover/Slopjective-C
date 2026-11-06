@@ -582,6 +582,20 @@ void TestBorrowedMemoryAliasReplay() {
         }
         #ifdef __cplusplus
         __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_joined_reference(void *owner,int choose) {
+          const char *one=0,*two=0;
+          const char *&reference=choose?one:two;
+          reference=published_memory_bytes(owner);
+          return choose?one:two;
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_reference_read(void *owner,int choose) {
+          const char *one=0,*two=0;
+          const char *&reference=choose?one:two;
+          one=published_memory_bytes(owner);
+          return reference;
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
         inline MemoryLoan published_memory_reference_cell(void *owner) {
           const char *pointer=0;
           struct LocalReference {const char *&pointer;};
@@ -625,6 +639,8 @@ void TestBorrowedMemoryAliasReplay() {
           #ifdef __cplusplus
           published_memory_immediate_reference(owner);
           published_memory_use(published_memory_reference_cell(owner));
+          published_memory_use(published_memory_joined_reference(owner,choose));
+          published_memory_use(published_memory_reference_read(owner,choose));
           #endif
           published_memory_use(published_memory_postfix_clear(owner));
           return published_memory_copy(owner,choose);
@@ -657,6 +673,19 @@ void TestBorrowedMemoryAliasReplay() {
           }
         )","memory-caller-reference-consumer.mm");
         assert(reference && reference->getDiagnostics().hasErrorOccurred());
+        auto joined=parse(first.source_bytes+R"(
+          const char *published_bad_reference_join(void *owner,int choose) {
+            return published_memory_joined_reference(owner,choose);
+          }
+          void published_memory_escape_pointer(const char *pointer);
+          void published_bad_future_reference(void *owner,int choose) {
+            const char *one=0,*two=0;
+            const char *&reference=choose?one:two;
+            two=published_memory_bytes(owner);
+            published_memory_escape_pointer(reference);
+          }
+        )","memory-joined-reference-consumer.mm");
+        assert(joined && joined->getDiagnostics().hasErrorOccurred());
       }
     }
   }

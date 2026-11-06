@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [System 2.26 binding span](linux_borrowed_reference_bindings.md) separates
+reference lvalue bindings from stored pointer/byte/owner values. Conditional
+references track later writes and current values; copied reference records,
+representation rebinding and capture modes preserve their actual dependencies.
+Eighteen new source/PCH commands, all twenty-nine borrowed compiler regressions
+and three affected source-free frontend groups pass.
+General ownership contracts and SDK delivery remain open.
+
 The [System 2.25 reference span](linux_borrowed_reference_storage.md) admits
 immediate synchronous C++ reference captures with local cursor/record algorithms
 and scalar updates. Caller references cannot export borrowed payloads; known
