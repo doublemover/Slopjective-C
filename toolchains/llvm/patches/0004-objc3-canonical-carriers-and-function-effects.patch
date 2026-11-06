@@ -23455,7 +23455,7 @@ index 000000000..191eebdc7
 + done:;
 +}
 diff --git a/clang/include/clang/AST/NonTrivialTypeVisitor.h b/clang/include/clang/AST/NonTrivialTypeVisitor.h
-index 80f247347..cab777bfd 100644
+index 80f247347..087a35d93 100644
 --- a/clang/include/clang/AST/NonTrivialTypeVisitor.h
 +++ b/clang/include/clang/AST/NonTrivialTypeVisitor.h
 @@ -30,6 +30,8 @@ template <class Derived, class RetTy = void> struct DestructedTypeVisitor {
@@ -23476,7 +23476,18 @@ index 80f247347..cab777bfd 100644
      case QualType::PDIK_Struct:
        return asDerived().visitStruct(FT, std::forward<Ts>(Args)...);
      case QualType::PDIK_Trivial:
-@@ -95,6 +99,8 @@ struct CopiedTypeVisitor {
+@@ -86,7 +90,9 @@ struct CopiedTypeVisitor {
+   template <class... Ts>
+   RetTy visitWithKind(QualType::PrimitiveCopyKind PCK, QualType FT,
+                       Ts &&... Args) {
+-    asDerived().preVisit(PCK, FT, std::forward<Ts>(Args)...);
++    // The prepass observes operands that the selected visit still needs.
++    // Forward ownership exactly once, at the final dispatch below.
++    asDerived().preVisit(PCK, FT, Args...);
+ 
+     switch (PCK) {
+     case QualType::PCK_ARCStrong:
+@@ -95,6 +101,8 @@ struct CopiedTypeVisitor {
        return asDerived().visitARCWeak(FT, std::forward<Ts>(Args)...);
      case QualType::PCK_PtrAuth:
        return asDerived().visitPtrAuth(FT, std::forward<Ts>(Args)...);
@@ -53192,10 +53203,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..5da7a37c9
+index 000000000..d05e418b2
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,309 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -53208,6 +53219,8 @@ index 000000000..5da7a37c9
 +#include "clang/AST/DeclContextInternals.h"
 +#include "clang/AST/ExternalASTSource.h"
 +#include "clang/AST/IgnoreExpr.h"
++#include "clang/AST/NonTrivialTypeVisitor.h"
++#include <memory>
 +#include "clang/AST/ParentMapContext.h"
 +#include "clang/ASTMatchers/ASTMatchFinder.h"
 +#include "clang/ASTMatchers/ASTMatchers.h"
@@ -53466,6 +53479,42 @@ index 000000000..5da7a37c9
 +      EXPECT_EQ(4u, Array->getZExtSize());
 +    }
 +  }
++}
++
++namespace {
++struct ObservingCopyVisitor : CopiedTypeVisitor<ObservingCopyVisitor, false, int> {
++  int Observed = 0;
++  bool DestructivePrepass = false;
++  void preVisit(QualType::PrimitiveCopyKind, QualType,
++                const std::unique_ptr<int> &Value) {
++    EXPECT_TRUE(Value);
++    if (Value) Observed = *Value;
++  }
++  void preVisit(QualType::PrimitiveCopyKind, QualType,
++                std::unique_ptr<int> &&Value) {
++    DestructivePrepass = true;
++    auto Consumed = std::move(Value);
++  }
++  int visitTrivial(QualType, std::unique_ptr<int> Value) {
++    EXPECT_TRUE(Value);
++    return Value ? *Value : 0;
++  }
++  int visitARCStrong(QualType T, std::unique_ptr<int> V) {return visitTrivial(T, std::move(V));}
++  int visitARCWeak(QualType T, std::unique_ptr<int> V) {return visitTrivial(T, std::move(V));}
++  int visitPtrAuth(QualType T, std::unique_ptr<int> V) {return visitTrivial(T, std::move(V));}
++  int visitObjC3Carrier(QualType T, std::unique_ptr<int> V) {return visitTrivial(T, std::move(V));}
++  int visitStruct(QualType T, std::unique_ptr<int> V) {return visitTrivial(T, std::move(V));}
++  int visitVolatileTrivial(QualType T, std::unique_ptr<int> V) {return visitTrivial(T, std::move(V));}
++};
++} // namespace
++
++TEST(ObjC3ASTInfrastructure, CopyPrepassObservesBeforeOwnershipDispatch) {
++  auto AST = tooling::buildASTFromCode("");
++  ASSERT_TRUE(AST);
++  ObservingCopyVisitor Visitor;
++  EXPECT_EQ(17, Visitor.visit(AST->getASTContext().IntTy, std::make_unique<int>(17)));
++  EXPECT_EQ(17, Visitor.Observed);
++  EXPECT_FALSE(Visitor.DestructivePrepass);
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644

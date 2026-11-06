@@ -110,6 +110,13 @@ unrelated classes; constrained member specialization starts with a real candidat
 Narrow AST/source-location invariants are made explicit at their owners. CodeGen
 also preserves complete bit-integer sanitizer descriptor bytes, validates scalar
 indices and clears optional native-call outputs before coroutine exit handling.
+The next CodeGen findings use an explicit optional pseudo-object result, restore
+the enclosing generator context after nested helper creation and enforce emitted
+complex-component invariants. Nontrivial copy visitors now borrow their operands
+for the prepass and forward ownership only at final dispatch; a move-only visitor
+regression distinguishes observation from a destructive prepass. The three
+CodeGen units and the expanded AST test pass syntax checks; rebuilt native tests
+remain pending.
 
 New address-space qualifier/array and reassigned finite-alias witnesses are
 source authored. Native C++ cases also exercise implicit/explicit object bindings,

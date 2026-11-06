@@ -5600,7 +5600,7 @@ index bc35ffdaa..7452bf430 100644
    Address SrcPtr = Src.getAddress();
  
 diff --git a/clang/lib/CodeGen/CGExprComplex.cpp b/clang/lib/CodeGen/CGExprComplex.cpp
-index 4d98ee995..a0cb033ee 100644
+index 4d98ee995..634672732 100644
 --- a/clang/lib/CodeGen/CGExprComplex.cpp
 +++ b/clang/lib/CodeGen/CGExprComplex.cpp
 @@ -10,9 +10,14 @@
@@ -5661,6 +5661,24 @@ index 4d98ee995..a0cb033ee 100644
      LValue SourceLVal = CGF.EmitLValue(Op);
      Address Addr =
          SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
+@@ -691,6 +718,8 @@ ComplexPairTy ComplexExprEmitter::VisitMinus(const UnaryOperator *E,
+   else
+     Op = Visit(E->getSubExpr());
+ 
++  assert(Op.first && Op.second &&
++         "Complex unary minus requires both emitted components");
+   llvm::Value *ResR, *ResI;
+   if (Op.first->getType()->isFloatingPointTy()) {
+     ResR = Builder.CreateFNeg(Op.first, "neg.r");
+@@ -717,6 +746,8 @@ ComplexPairTy ComplexExprEmitter::VisitUnaryNot(const UnaryOperator *E) {
+ }
+ 
+ ComplexPairTy ComplexExprEmitter::EmitBinAdd(const BinOpInfo &Op) {
++  assert(Op.LHS.first && Op.RHS.first &&
++         "Complex addition requires both emitted real components");
+   llvm::Value *ResR, *ResI;
+ 
+   if (Op.LHS.first->getType()->isFloatingPointTy()) {
 diff --git a/clang/lib/CodeGen/CGExprScalar.cpp b/clang/lib/CodeGen/CGExprScalar.cpp
 index 6f7b7e7d6..0835d15e5 100644
 --- a/clang/lib/CodeGen/CGExprScalar.cpp
@@ -5751,7 +5769,7 @@ index 6f7b7e7d6..0835d15e5 100644
    Value *V = Visit(E->getSubExpr());
    // Defend against dominance problems caused by jumps out of expression
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..24e204910 100644
+index c724a063b..72c4a5478 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,7 +12,13 @@
@@ -6031,7 +6049,35 @@ index c724a063b..24e204910 100644
    llvm::Function *&fn = CGM.getObjCEntrypoints().objc_storeStrong;
    if (!fn)
      fn = getARCIntrinsic(llvm::Intrinsic::objc_storeStrong, CGM);
-@@ -3525,6 +3649,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -3211,7 +3335,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+   // Find the result expression.
+   const Expr *resultExpr = E->getResultExpr();
+   assert(resultExpr);
+-  Result result;
++  std::optional<Result> result;
+ 
+   for (PseudoObjectExpr::const_semantics_iterator
+          i = E->semantics_begin(), e = E->semantics_end(); i != e; ++i) {
+@@ -3229,7 +3353,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+         assert(!OVMA::shouldBindAsLValue(ov));
+         result = asImpl().visit(ov->getSourceExpr());
+         opaqueData = OVMA::bind(CGF, ov,
+-                            RValue::get(asImpl().getValueOfResult(result)));
++                            RValue::get(asImpl().getValueOfResult(*result)));
+ 
+       // Otherwise, just bind it.
+       } else {
+@@ -3252,7 +3376,8 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+   for (CodeGenFunction::OpaqueValueMappingData &opaque : opaques)
+     opaque.unbind(CGF);
+ 
+-  return result;
++  assert(result && "Pseudo-object did not evaluate its selected result");
++  return std::move(*result);
+ }
+ 
+ template <typename Impl, typename Result>
+@@ -3525,6 +3650,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCRetainScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -6039,7 +6085,7 @@ index c724a063b..24e204910 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainScalarExpr(cleanups->getSubExpr());
    }
-@@ -3540,6 +3665,7 @@ llvm::Value *
+@@ -3540,6 +3666,7 @@ llvm::Value *
  CodeGenFunction::EmitARCRetainAutoreleaseScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -6047,7 +6093,7 @@ index c724a063b..24e204910 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainAutoreleaseScalarExpr(cleanups->getSubExpr());
    }
-@@ -3650,6 +3776,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
+@@ -3650,6 +3777,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCUnsafeUnretainedScalarExpr(const Expr *e) {
    // Look through full-expressions.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -6055,7 +6101,7 @@ index c724a063b..24e204910 100644
      RunCleanupsScope scope(*this);
      return emitARCUnsafeUnretainedScalarExpr(*this, cleanups->getSubExpr());
    }
-@@ -3719,6 +3846,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
+@@ -3719,6 +3847,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
  
  void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
                                            const ObjCAutoreleasePoolStmt &ARPS) {
@@ -6066,7 +6112,7 @@ index c724a063b..24e204910 100644
    const Stmt *subStmt = ARPS.getSubStmt();
    const CompoundStmt &S = cast<CompoundStmt>(*subStmt);
  
-@@ -3736,8 +3867,7 @@ void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
+@@ -3736,8 +3868,7 @@ void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
      EHStack.pushCleanup<CallObjCMRRAutoreleasePoolObject>(NormalCleanup, token);
    }
  
@@ -20467,10 +20513,10 @@ index 57c6bad67..fe9c24a69 100644
      if (I == DelayedCXXInitPosition.end()) {
        CXXGlobalInits.push_back(Fn);
 diff --git a/clang/lib/CodeGen/CGNonTrivialStruct.cpp b/clang/lib/CodeGen/CGNonTrivialStruct.cpp
-index 0a383c8f9..0d306e2ac 100644
+index 0a383c8f9..f728ffdca 100644
 --- a/clang/lib/CodeGen/CGNonTrivialStruct.cpp
 +++ b/clang/lib/CodeGen/CGNonTrivialStruct.cpp
-@@ -12,6 +12,8 @@
+@@ -12,11 +12,14 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGDebugInfo.h"
@@ -20479,7 +20525,13 @@ index 0a383c8f9..0d306e2ac 100644
  #include "CodeGenFunction.h"
  #include "CodeGenModule.h"
  #include "clang/AST/NonTrivialTypeVisitor.h"
-@@ -51,6 +53,10 @@ template <class Derived> struct StructVisitor {
+ #include "clang/CodeGen/CodeGenABITypes.h"
+ #include "llvm/Support/ScopedPrinter.h"
++#include "llvm/Support/SaveAndRestore.h"
+ #include <array>
+ 
+ using namespace clang;
+@@ -51,6 +54,10 @@ template <class Derived> struct StructVisitor {
      asDerived().flushTrivialFields(Args...);
    }
  
@@ -20490,7 +20542,18 @@ index 0a383c8f9..0d306e2ac 100644
    template <class... Ts> void visitTrivial(Ts... Args) {}
  
    template <class... Ts> void visitCXXDestructor(Ts... Args) {
-@@ -863,6 +869,8 @@ getSpecialFunction(G &&Gen, StringRef FuncName, QualType QT, bool IsVolatile,
+@@ -483,7 +490,9 @@ template <class Derived> struct GenFuncBase {
+     CGM.SetLLVMFunctionAttributes(GlobalDecl(), FI, F, /*IsThunk=*/false);
+     CGM.SetLLVMFunctionAttributesForDefinition(nullptr, F);
+     CodeGenFunction NewCGF(CGM);
+-    setCGF(&NewCGF);
++    // The generator may outlive this nested function. Restore its previous
++    // context before NewCGF leaves scope, including recursive helper creation.
++    llvm::SaveAndRestore<CodeGenFunction *> CurrentFunction(CGF, &NewCGF);
+     CGF->StartFunction(GlobalDecl(), Ctx.VoidTy, F, FI, Args);
+     auto AL = ApplyDebugLocation::CreateArtificial(*CGF);
+     std::array<Address, N> Addrs =
+@@ -863,6 +872,8 @@ getSpecialFunction(G &&Gen, StringRef FuncName, QualType QT, bool IsVolatile,
  
  // Functions to emit calls to the special functions of a non-trivial C struct.
  void CodeGenFunction::callCStructDefaultConstructor(LValue Dst) {
@@ -20499,7 +20562,7 @@ index 0a383c8f9..0d306e2ac 100644
    bool IsVolatile = Dst.isVolatile();
    Address DstPtr = Dst.getAddress();
    QualType QT = Dst.getType();
-@@ -887,6 +895,8 @@ std::string CodeGenFunction::getNonTrivialDestructorStr(QualType QT,
+@@ -887,6 +898,8 @@ std::string CodeGenFunction::getNonTrivialDestructorStr(QualType QT,
  }
  
  void CodeGenFunction::callCStructDestructor(LValue Dst) {
@@ -20508,7 +20571,7 @@ index 0a383c8f9..0d306e2ac 100644
    bool IsVolatile = Dst.isVolatile();
    Address DstPtr = Dst.getAddress();
    QualType QT = Dst.getType();
-@@ -898,6 +908,8 @@ void CodeGenFunction::callCStructDestructor(LValue Dst) {
+@@ -898,6 +911,8 @@ void CodeGenFunction::callCStructDestructor(LValue Dst) {
  }
  
  void CodeGenFunction::callCStructCopyConstructor(LValue Dst, LValue Src) {
@@ -20517,7 +20580,7 @@ index 0a383c8f9..0d306e2ac 100644
    bool IsVolatile = Dst.isVolatile() || Src.isVolatile();
    Address DstPtr = Dst.getAddress(), SrcPtr = Src.getAddress();
    QualType QT = Dst.getType();
-@@ -912,6 +924,8 @@ void CodeGenFunction::callCStructCopyConstructor(LValue Dst, LValue Src) {
+@@ -912,6 +927,8 @@ void CodeGenFunction::callCStructCopyConstructor(LValue Dst, LValue Src) {
  void CodeGenFunction::callCStructCopyAssignmentOperator(LValue Dst, LValue Src
  
  ) {
@@ -20526,7 +20589,7 @@ index 0a383c8f9..0d306e2ac 100644
    bool IsVolatile = Dst.isVolatile() || Src.isVolatile();
    Address DstPtr = Dst.getAddress(), SrcPtr = Src.getAddress();
    QualType QT = Dst.getType();
-@@ -923,6 +937,8 @@ void CodeGenFunction::callCStructCopyAssignmentOperator(LValue Dst, LValue Src
+@@ -923,6 +940,8 @@ void CodeGenFunction::callCStructCopyAssignmentOperator(LValue Dst, LValue Src
  }
  
  void CodeGenFunction::callCStructMoveConstructor(LValue Dst, LValue Src) {
@@ -20535,7 +20598,7 @@ index 0a383c8f9..0d306e2ac 100644
    bool IsVolatile = Dst.isVolatile() || Src.isVolatile();
    Address DstPtr = Dst.getAddress(), SrcPtr = Src.getAddress();
    QualType QT = Dst.getType();
-@@ -937,6 +953,8 @@ void CodeGenFunction::callCStructMoveConstructor(LValue Dst, LValue Src) {
+@@ -937,6 +956,8 @@ void CodeGenFunction::callCStructMoveConstructor(LValue Dst, LValue Src) {
  void CodeGenFunction::callCStructMoveAssignmentOperator(LValue Dst, LValue Src
  
  ) {
@@ -20544,7 +20607,7 @@ index 0a383c8f9..0d306e2ac 100644
    bool IsVolatile = Dst.isVolatile() || Src.isVolatile();
    Address DstPtr = Dst.getAddress(), SrcPtr = Src.getAddress();
    QualType QT = Dst.getType();
-@@ -949,6 +967,9 @@ void CodeGenFunction::callCStructMoveAssignmentOperator(LValue Dst, LValue Src
+@@ -949,6 +970,9 @@ void CodeGenFunction::callCStructMoveAssignmentOperator(LValue Dst, LValue Src
  
  llvm::Function *clang::CodeGen::getNonTrivialCStructDefaultConstructor(
      CodeGenModule &CGM, CharUnits DstAlignment, bool IsVolatile, QualType QT) {
@@ -20554,7 +20617,7 @@ index 0a383c8f9..0d306e2ac 100644
    ASTContext &Ctx = CGM.getContext();
    GenDefaultInitializeFuncName GenName(DstAlignment, Ctx);
    std::string FuncName = GenName.getName(QT, IsVolatile);
-@@ -959,6 +980,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructDefaultConstructor(
+@@ -959,6 +983,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructDefaultConstructor(
  llvm::Function *clang::CodeGen::getNonTrivialCStructCopyConstructor(
      CodeGenModule &CGM, CharUnits DstAlignment, CharUnits SrcAlignment,
      bool IsVolatile, QualType QT) {
@@ -20564,7 +20627,7 @@ index 0a383c8f9..0d306e2ac 100644
    ASTContext &Ctx = CGM.getContext();
    GenBinaryFuncName<false> GenName("__copy_constructor_", DstAlignment,
                                     SrcAlignment, Ctx);
-@@ -971,6 +995,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructCopyConstructor(
+@@ -971,6 +998,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructCopyConstructor(
  llvm::Function *clang::CodeGen::getNonTrivialCStructMoveConstructor(
      CodeGenModule &CGM, CharUnits DstAlignment, CharUnits SrcAlignment,
      bool IsVolatile, QualType QT) {
@@ -20574,7 +20637,7 @@ index 0a383c8f9..0d306e2ac 100644
    ASTContext &Ctx = CGM.getContext();
    GenBinaryFuncName<true> GenName("__move_constructor_", DstAlignment,
                                    SrcAlignment, Ctx);
-@@ -983,6 +1010,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructMoveConstructor(
+@@ -983,6 +1013,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructMoveConstructor(
  llvm::Function *clang::CodeGen::getNonTrivialCStructCopyAssignmentOperator(
      CodeGenModule &CGM, CharUnits DstAlignment, CharUnits SrcAlignment,
      bool IsVolatile, QualType QT) {
@@ -20584,7 +20647,7 @@ index 0a383c8f9..0d306e2ac 100644
    ASTContext &Ctx = CGM.getContext();
    GenBinaryFuncName<false> GenName("__copy_assignment_", DstAlignment,
                                     SrcAlignment, Ctx);
-@@ -995,6 +1025,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructCopyAssignmentOperator(
+@@ -995,6 +1028,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructCopyAssignmentOperator(
  llvm::Function *clang::CodeGen::getNonTrivialCStructMoveAssignmentOperator(
      CodeGenModule &CGM, CharUnits DstAlignment, CharUnits SrcAlignment,
      bool IsVolatile, QualType QT) {
@@ -20594,7 +20657,7 @@ index 0a383c8f9..0d306e2ac 100644
    ASTContext &Ctx = CGM.getContext();
    GenBinaryFuncName<true> GenName("__move_assignment_", DstAlignment,
                                    SrcAlignment, Ctx);
-@@ -1006,6 +1039,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructMoveAssignmentOperator(
+@@ -1006,6 +1042,9 @@ llvm::Function *clang::CodeGen::getNonTrivialCStructMoveAssignmentOperator(
  
  llvm::Function *clang::CodeGen::getNonTrivialCStructDestructor(
      CodeGenModule &CGM, CharUnits DstAlignment, bool IsVolatile, QualType QT) {
