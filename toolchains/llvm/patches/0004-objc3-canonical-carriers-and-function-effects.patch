@@ -2882,7 +2882,7 @@ index 222881154..e4cf515e7 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..e0ed6a37a 100644
+index d743717ad..f4e9134a3 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -4563,7 +4563,18 @@ index d743717ad..e0ed6a37a 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9163,6 +10174,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
+@@ -9082,7 +10093,9 @@ ASTNodeImporter::VisitUnresolvedLookupExpr(UnresolvedLookupExpr *E) {
+ ExpectedStmt
+ ASTNodeImporter::VisitUnresolvedMemberExpr(UnresolvedMemberExpr *E) {
+   Error Err = Error::success();
+-  auto ToType = importChecked(Err, E->getType());
++  // Create() expects BaseType. OverloadTy cannot describe implicit this access
++  // and crashes getNamingClass() when the imported body is instantiated.
++  auto ToType = importChecked(Err, E->getBaseType());
+   auto ToOperatorLoc = importChecked(Err, E->getOperatorLoc());
+   auto ToQualifierLoc = importChecked(Err, E->getQualifierLoc());
+   auto ToTemplateKeywordLoc = importChecked(Err, E->getTemplateKeywordLoc());
+@@ -9163,6 +10176,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -4580,7 +4591,7 @@ index d743717ad..e0ed6a37a 100644
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10473,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
+@@ -9452,6 +10475,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -4595,7 +4606,7 @@ index d743717ad..e0ed6a37a 100644
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10526,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+@@ -9497,6 +10528,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
        E->getIndex(), E->getFinal());
  }
  
@@ -4617,7 +4628,7 @@ index d743717ad..e0ed6a37a 100644
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10708,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10710,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -4632,7 +4643,7 @@ index d743717ad..e0ed6a37a 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10763,125 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10765,125 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -4759,7 +4770,7 @@ index d743717ad..e0ed6a37a 100644
  }
  
  namespace {
-@@ -9857,6 +11023,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +11025,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -4819,7 +4830,7 @@ index d743717ad..e0ed6a37a 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -9880,6 +11099,14 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9880,6 +11101,14 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
      break;
    }
  
@@ -4834,7 +4845,7 @@ index d743717ad..e0ed6a37a 100644
    case attr::EnableIf: {
      const auto *From = cast<EnableIfAttr>(FromAttr);
      AI.importAttr(From, AI.importArg(From->getCond()).value(),
-@@ -10123,12 +11350,62 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,12 +11352,62 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -4901,7 +4912,7 @@ index d743717ad..e0ed6a37a 100644
          return ToAttrOrErr.takeError();
      }
  
-@@ -10571,6 +11848,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +11850,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -4914,7 +4925,7 @@ index d743717ad..e0ed6a37a 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11864,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11866,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -4926,7 +4937,7 @@ index d743717ad..e0ed6a37a 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11876,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11878,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4938,7 +4949,7 @@ index d743717ad..e0ed6a37a 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11888,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11890,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4960,7 +4971,7 @@ index d743717ad..e0ed6a37a 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -10823,6 +12106,8 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10823,6 +12108,8 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
      ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
                 ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
                 FromValue.getArrayInitializedElts());
@@ -4969,7 +4980,7 @@ index d743717ad..e0ed6a37a 100644
      break;
    case APValue::Struct:
      Result.MakeStruct(FromValue.getStructNumBases(),
-@@ -10838,7 +12123,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10838,7 +12125,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
      APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
      if (Err)
        return std::move(Err);
@@ -4978,7 +4989,7 @@ index d743717ad..e0ed6a37a 100644
      break;
    }
    case APValue::AddrLabelDiff: {
-@@ -10858,10 +12143,10 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10858,10 +12145,10 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
        return std::move(Err);
      MutableArrayRef<const CXXRecordDecl *> ToPath =
          Result.setMemberPointerUninit(
@@ -4991,7 +5002,7 @@ index d743717ad..e0ed6a37a 100644
      for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
           Idx++) {
        const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
-@@ -10912,7 +12197,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10912,7 +12199,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
        }
      }
      CharUnits Offset = FromValue.getLValueOffset();
@@ -5000,7 +5011,7 @@ index d743717ad..e0ed6a37a 100644
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11006,6 +12291,11 @@ Decl *ASTImporter::MapImported(Decl *From, Decl *To) {
+@@ -11006,6 +12293,11 @@ Decl *ASTImporter::MapImported(Decl *From, Decl *To) {
    // This mapping should be maintained only in this function. Therefore do not
    // check for additional consistency.
    ImportedFromDecls[To] = From;
@@ -5012,7 +5023,7 @@ index d743717ad..e0ed6a37a 100644
    // In the case of TypedefNameDecl we create the Decl first and only then we
    // import and set its DeclContext. So, the DC is still not set when we reach
    // here from GetImportedOrCreateDecl.
-@@ -11049,3 +12339,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +12341,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -61361,3 +61372,36 @@ index 000000000..ea280965d
 +  withLifetime(values[0]) {memory_use(memory_pin_bytes(values[0]));}
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/import-overloaded-members.h b/clang/test/ObjC3/Sema/Inputs/import-overloaded-members.h
+new file mode 100644
+index 000000000..fc4c27dfd
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/import-overloaded-members.h
+@@ -0,0 +1,10 @@
++
++struct ImportedOverloads {
++  constexpr int pick(int value) const { return value + 10; }
++  constexpr int pick(long value) const { return static_cast<int>(value) + 20; }
++  template<class T> constexpr int implicit(T value) const { return pick(value); }
++  template<class T> constexpr int explicit_arrow(T value) const { return this->pick(value); }
++  template<class T> constexpr int explicit_dot(const ImportedOverloads &object, T value) const {
++    return object.pick(value);
++  }
++};
+diff --git a/clang/test/ObjC3/Sema/import-overloaded-members.cpp b/clang/test/ObjC3/Sema/import-overloaded-members.cpp
+new file mode 100644
+index 000000000..c01df2bf2
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/import-overloaded-members.cpp
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x c++-header -std=c++20 -emit-pch %S/Inputs/import-overloaded-members.h -o %t.20.ast
++// RUN: %clang_cc1 -x c++ -std=c++20 -ast-merge %t.20.ast -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x c++-header -std=c++23 -emit-pch %S/Inputs/import-overloaded-members.h -o %t.23.ast
++// RUN: %clang_cc1 -x c++ -std=c++23 -ast-merge %t.23.ast -fsyntax-only -verify %s
++// expected-no-diagnostics
++static_assert(ImportedOverloads{}.implicit(1) == 11);
++static_assert(ImportedOverloads{}.implicit(2L) == 22);
++static_assert(ImportedOverloads{}.explicit_arrow(3) == 13);
++static_assert(ImportedOverloads{}.explicit_arrow(4L) == 24);
++static_assert(ImportedOverloads{}.explicit_dot(ImportedOverloads{}, 5) == 15);
++static_assert(ImportedOverloads{}.explicit_dot(ImportedOverloads{}, 6L) == 26);
