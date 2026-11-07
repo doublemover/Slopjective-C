@@ -84,8 +84,9 @@ A focused synthetic-header test covers inline-namespace USRs, instantiated frien
 source-free overload resolution and exact function redeclaration chains. The LLVM importer also preserves unnamed-field instantiation origins and reuses
 existing template records and anonymous fields. Thirteen AST infrastructure tests
 pass, including eight full/minimal C++20/23 imports into empty and prepopulated
-contexts. The reduced source-free anonymous-storage consumer passes; complete
-libc++ provider/two-consumer native execution is in progress.
+contexts. The reduced source-free anonymous-storage consumer and both complete
+libc++ provider/two-consumer executables pass: C++20 plain O0 and Objective-C++23
+ARC O2, instrumented with ASan/UBSan. Provider sources are removed before import.
 
 CTest maintains `objc3_standard_library_identity`,
 `objc3_standard_library_assertions` and `objc3_standard_library_no_rtti_exceptions`.

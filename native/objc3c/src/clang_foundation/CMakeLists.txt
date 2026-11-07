@@ -314,14 +314,23 @@ if (BUILD_TESTING)
   set_tests_properties(objc3_standard_library_identity PROPERTIES TIMEOUT 30)
   add_executable(objc3_standard_library_provider_test
     ../../../../tests/clang_foundation/standard_library_provider_test.cpp)
-  target_include_directories(objc3_standard_library_provider_test SYSTEM PRIVATE
-    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-  target_link_libraries(objc3_standard_library_provider_test PRIVATE objc3c_clang_foundation)
-  target_compile_definitions(objc3_standard_library_provider_test PRIVATE
-    OBJC3_STANDARD_LIBRARY_TEST_LINKER="${CMAKE_CXX_COMPILER}"
-    OBJC3_STANDARD_LIBRARY_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}"
-    OBJC3_STANDARD_LIBRARY_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}"
-    OBJC3_STANDARD_LIBRARY_TEST_LINK_FLAGS="${_c_inline_link_flags}")
+  add_executable(objc3_standard_library_customization_provider_test
+    ../../../../tests/clang_foundation/standard_library_customization_provider_test.cpp)
+  foreach(_standard_library_test IN ITEMS objc3_standard_library_provider_test
+      objc3_standard_library_customization_provider_test)
+    target_include_directories(${_standard_library_test} SYSTEM PRIVATE
+      ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+    target_link_libraries(${_standard_library_test} PRIVATE objc3c_clang_foundation)
+    target_compile_definitions(${_standard_library_test} PRIVATE
+      OBJC3_STANDARD_LIBRARY_TEST_LINKER="${CMAKE_CXX_COMPILER}"
+      OBJC3_STANDARD_LIBRARY_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}"
+      OBJC3_STANDARD_LIBRARY_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}"
+      OBJC3_STANDARD_LIBRARY_TEST_LINK_FLAGS="${_c_inline_link_flags}")
+  endforeach()
+  add_test(NAME objc3_standard_library_customization_provider
+    COMMAND objc3_standard_library_customization_provider_test)
+  set_tests_properties(objc3_standard_library_customization_provider PROPERTIES
+    LABELS "native;standard-library;extended" TIMEOUT 900)
   add_test(NAME objc3_standard_library_provider COMMAND objc3_standard_library_provider_test)
   set_tests_properties(objc3_standard_library_provider PROPERTIES TIMEOUT 300)
   add_test(NAME objc3_standard_library_no_rtti_exceptions
@@ -345,6 +354,12 @@ if (BUILD_TESTING)
         "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
     set_tests_properties(objc3_standard_library_libcxx PROPERTIES
       LABELS "native;standard-library;extended" TIMEOUT 600)
+    add_test(NAME objc3_standard_library_libcxx_customizations
+      COMMAND objc3_standard_library_customization_provider_test
+        -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
+        "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
+    set_tests_properties(objc3_standard_library_libcxx_customizations PROPERTIES
+      LABELS "native;standard-library;extended" TIMEOUT 900)
   endif()
   add_executable(objc3_borrowed_pointers_test
     ../../../../tests/clang_foundation/borrowed_pointers_test.cpp)

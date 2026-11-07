@@ -35,10 +35,15 @@ provider/two-consumer execution modes pass. Compiler configuration inputs and
 feature-query fingerprints receive matching replay checks. All six header-control
 profiles pass, as do both native modes with `_GLIBCXX_ASSERTIONS=1` and with
 exceptions/RTTI disabled. Native primary USRs retain their inline implementation
-namespace identity under every display policy. A later libc++ template-instantiation
-failure remains under repair. Accepted SDK 2.62 remains unchanged; consolidated delivery follows.
+namespace identity under every display policy. Both complete libc++ native modes
+now pass after explicit-instantiation, friend, function redeclaration and unnamed
+storage-origin importer repairs. Accepted SDK 2.62 remains unchanged; consolidated delivery follows.
 
 The substantial header and customization groups are separate CTest entries:
 `objc3_standard_library_headers` and `objc3_standard_library_specializations`.
 The native executable is `objc3_standard_library_provider`. Wider library/profile
 acceptance and the matched SDK remain tracked.
+
+The [formatter/iterator continuation](linux_cxx_formatter_and_virtual_imports.md)
+adds inherited native formatting state, iterator algorithms and dedicated
+instantiated-method/virtual-slot importer controls.

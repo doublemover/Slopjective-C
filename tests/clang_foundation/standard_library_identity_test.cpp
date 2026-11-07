@@ -29,6 +29,17 @@ int main() {
     header<<R"(
 namespace std {inline namespace __fixture {
 template<class T>struct class_probe {};
+template<class T>struct native_sink {
+  struct result {T value;};
+  virtual ~native_sink()=default;
+  result reserve(T value){return {value};}
+};
+template<class T>struct native_deduced {
+  native_sink<T> *sink;
+  auto read()const{return sink->reserve(42);}
+};
+inline native_sink<int> existing_sink;
+inline const native_deduced<int> existing_deduced{&existing_sink};
 template<class T>struct native_storage {
   struct {T value;};
   constexpr T read()const{return value;}
@@ -53,7 +64,8 @@ template<class T,unsigned long N=0>class span {
       "#include <functional>\nnamespace Public {template<class T>struct Box {};"
       "inline int read(std::native_iterator<int> value){return *value.ptr;}"
       "inline int read(int value){return value;}"
-      "inline std::native_storage<int> storage(){return {{42}};}}",
+      "inline std::native_storage<int> storage(){return {{42}};}"
+      "inline int deduced(){return std::existing_deduced.read().value;}}",
       {"-xc++","-std=c++23","-isystem",root.string()},"native-template-identity.cpp");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
   std::vector<clang::TemplateDecl *> native;
@@ -68,7 +80,7 @@ template<class T,unsigned long N=0>class span {
     }
   };
   auto &context=ast->getASTContext();collect(collect,context.getTranslationUnitDecl());
-  assert(native.size()==7 && user);
+  assert(native.size()==9 && user);
   const auto original_policy=context.getPrintingPolicy();
   for(auto *pattern:native) {
     llvm::SmallString<128> expected;
@@ -97,7 +109,7 @@ template<class T,unsigned long N=0>class span {
   {std::ofstream out(interface);out<<artifact.source_bytes;assert(out.good());}
   {std::ofstream out(interface.string()+".json");out<<artifact.sidecar_json;assert(out.good());}
   CompileRequest consumer;consumer.input_path=(root/"consumer.cpp").string();
-  consumer.source_text="int main(){int value=42;return Public::read(std::native_iterator<int>{&value})+Public::read(7)+Public::storage().read()-91;}";
+  consumer.source_text="int main(){int value=42;return Public::read(std::native_iterator<int>{&value})+Public::read(7)+Public::storage().read()+Public::deduced()-133;}";
   consumer.language=BaseLanguage::Cxx;consumer.objc3=false;consumer.arc=false;consumer.target_triple="x86_64-unknown-linux-gnu";
   consumer.arguments={"-std=c++23","-isystem",root.string()};
   consumer.emit=EmitKind::Object;consumer.output_path=(root/"consumer.o").string();
