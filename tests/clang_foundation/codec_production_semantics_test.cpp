@@ -56,6 +56,13 @@ int main() {
         };
         Value source(int) __objc3_throws(id<Error>);
         inline Value forward(int mode) __objc3_throws(id<Error>) {return __objc3_try(source(mode));}
+        inline int optional_result(int mode,bool selected) {
+          auto value=selected?__objc3_try_optional(source(0)):__objc3_try_optional(source(mode));
+          const auto &reference=__objc3_try_optional(source(mode));
+          auto copy=__objc3_copy(value);
+          __objc3_try_optional(source(mode));
+          return __objc3_has_value(value)+__objc3_has_value(reference)+__objc3_has_value(copy);
+        }
         int integer(int) __objc3_throws(id<Error>);
         struct Aggregate {Value first,second;int tail;};
         struct References {const Value &first;int tail;};

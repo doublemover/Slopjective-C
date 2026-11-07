@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 126,
+        "minor": 127,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native C++ tryOptional calls and native awaits construct only successful payloads, commit None without fabricated owners and guard discarded results through full-expression cleanup; fresh conditional/comma, Some/None, array/field and automatic-reference regions retain selected-arm ownership through typed/native exits; all 518 executable compiler cases (53 new commands, three unsupported), 49 AST controls, sixteen instrumented configurations / 56 commands, thirteen frontend groups, codec/isolation and 220 decoder replays pass; matched SDK pending",
         "Source-free resource-owning C++ keypath and whole nontrivial native-union signatures and published bodies bind resource-values v1, including scalar final values through owned records; dependency traversal preserves logical Root/Value types through type locations rather than private generated records; four source-free profiles, nine adjacent frontend groups, codec/isolation and 220 production decoder replays pass (source; matched SDK pending)",
         "Native checked-result guards cover enclosing conditional/comma/aggregate/base/constructor initialization, lifetime-extended reference handoff on typed and exceptional exits, matching dynamic-allocation cleanup and static/TLS retry; all 514 executable compiler cases (three unsupported), 48 AST controls, sixteen sanitizer configurations / 56 commands, eighteen frontend groups, codec/isolation and 180 exact production decoder replays pass; deferred virtual-thunk annotation names now retain AST-owned storage; public ABI contracts unchanged, matched SDK pending",
         "Native indirect C++ checked results and constructed synchronous property getters have no fabricated failure values, coordinated NRVO/return ownership, success-only result binding and provisional local/array/reference/native-await cleanup; direct/indirect/member/virtual/Block/template calls, move-only resources, partial construction and parameter/return cleanup faults pass 156 compiler cases (57 dedicated commands), 48 AST controls, sixteen instrumented native configurations / 56 commands, four new result profiles, twelve updated property profiles, nine adjacent frontend groups, codec/isolation and 180 exact decoder replays; existing public ABI contracts unchanged; matched SDK pending",
@@ -311,12 +312,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 52,
+        "minor": 53,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Static/TLS pure C++ carriers register active-arm destruction after successful initializer cleanup and retry failed initialization; const carrier storage classification preserves its native destructor; thread-exit/reuse, exact owner counts and comma-LHS reference rollback pass the complete sixteen-configuration sanitizer matrix and full compiler/frontend consolidation; matched SDK pending",
         "Completed C++ values remain provisionally owned across initializer temporary destruction; typed propagation retains matching new/delete cleanup and partially initialized reference/aggregate owners; static and TLS initializers can retry after destructor failure without retaining prior constructed owners (source; all 514 executable compiler cases, 48 AST controls, sixteen instrumented configurations / 56 commands and compiler/frontend controls pass; matched SDK pending)",
         "Native indirect C++ checked results and constructed synchronous property getters have no fabricated failure values, coordinated NRVO/return ownership, success-only result binding and provisional local/array/reference/native-await cleanup; direct/indirect/member/virtual/Block/template calls, move-only resources, partial construction and parameter/return cleanup faults pass 156 compiler cases (57 dedicated commands), 48 AST controls, sixteen instrumented native configurations / 56 commands, four new result profiles, twelve updated property profiles, nine adjacent frontend groups, codec/isolation and 180 exact decoder replays; existing public ABI contracts unchanged; matched SDK pending",
         "Direct native Block producer ownership transfer into strong locals, scalar/nested-array members, default member initializers, assignments and single consumed direct-call arguments, without invented caller copies; retained results stay guarded across address failure, with exact Block expression v3 admission (66 compiler cases, 48 AST controls, six new source-free profiles, eighteen adjacent groups, twelve ASan/UBSan native configurations / 42 commands, four provider/consumer executions, codec/isolation and 120 production decoder replays pass; matched SDK pending)",

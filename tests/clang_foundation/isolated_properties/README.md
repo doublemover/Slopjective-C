@@ -35,3 +35,9 @@ configurations.
 aggregate/base/constructor initialization, multiple lifetime-extended references,
 partial dynamic arrays, matching allocation cleanup, static/TLS retry and native
 await initialization. Typed and native failures preserve exact destruction counts.
+
+`checked_optional_results.h` covers native C++ `tryOptional`, exact Some/None
+ownership, copy/move, discarded values, conditional/comma initialization, arrays,
+fields, automatic references and native awaits under typed/native faults.
+`checked_optional_storage.h` verifies failed static/TLS initialization retry,
+storage reuse and destruction of const carrier payloads at thread exit.

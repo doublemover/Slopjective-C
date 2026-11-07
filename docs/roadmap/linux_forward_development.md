@@ -1,5 +1,16 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.127 / System 2.53 optional-result span](linux_checked_cpp_optionals.md)
+implements success-only native C++ `tryOptional` payloads, discarded-result
+ownership and native-await optionals. Fresh conditional/comma, Some/None, array,
+field and automatic-reference regions retain exact cleanup through temporary
+faults. Static/TLS values retry failed initialization and destroy their active
+payload at thread exit; const storage classification preserves that destructor.
+All 518 executable compiler cases (three unsupported), 49 AST controls, sixteen
+sanitizer configurations / 56 commands, thirteen frontend groups, codec/isolation
+and 220 exact decoder replays pass. Earlier comma-LHS temporary faults retain the
+reference owner. Static/TLS lifetime-extended carrier references remain separate.
+
 The [source 2.126 / keypath 2.11 resource-value span](linux_keypath_resource_values.md)
 admits explicit C++ resource owners, whole active native unions and composed
 values through native key-path

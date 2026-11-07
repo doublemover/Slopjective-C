@@ -6467,6 +6467,21 @@ void TestNativeCheckedCppResultReplay() {
           References value={__objc3_try(produce(0)),__objc3_try(produce_integer(mode))};
           return value.first.value+value.tail;
         }
+        typedef __objc3_optional(Value) OptionalValue;
+        struct OptionalFields {OptionalValue first,second;};
+        inline int optional_use(int mode,bool selected) {
+          OptionalValue value=__objc3_try_optional(produce(mode));
+          OptionalValue conditional=selected?__objc3_try_optional(produce(0)):__objc3_try_optional(produce(mode));
+          const OptionalValue &reference=__objc3_try_optional(produce(mode));
+          OptionalValue array[2]={__objc3_try_optional(produce(0)),__objc3_try_optional(produce(mode))};
+          OptionalFields fields={__objc3_try_optional(produce(0)),__objc3_try_optional(produce(mode))};
+          __objc3_try_optional(produce(mode));
+          return __objc3_has_value(value)+__objc3_has_value(conditional)+__objc3_has_value(reference)+__objc3_has_value(array[0])+__objc3_has_value(fields.second);
+        }
+        inline int optional_move(int mode) {
+          auto value=__objc3_try_optional(produce_move(mode));
+          auto moved=__objc3_move(value);return __objc3_has_value(moved);
+        }
         typedef Value (^Factory)(int) __objc3_throws(id<Error>);
         inline int block_use(int mode) __objc3_throws(id<Error>) {
           Factory factory=^Value(int value) __objc3_throws(id<Error>) {return __objc3_try(produce(value));};
