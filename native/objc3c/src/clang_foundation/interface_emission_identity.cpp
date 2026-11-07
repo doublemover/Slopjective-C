@@ -2500,7 +2500,7 @@ bool ReadInterfaceDeclarationIdentity(
     if (visitor.found) identity.canonical_type_identity += ";cxx-incomplete-template-declarations:v2;";
   }
   if (HasDeclarationNativeSubobject(representative))
-    identity.canonical_type_identity += ";native-subobject-cleanup:v4;";
+    identity.canonical_type_identity += ";native-subobject-cleanup:v5;";
   if (HasDeclarationNativeAllocation(representative))
     identity.canonical_type_identity += ";native-allocation-cleanup:v2;";
   if (HasDeclarationNativeDisposal(representative))
@@ -2597,7 +2597,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationLambda(representative))
     identity.canonical_type_identity += ";cxx-lambda-expressions:v1;";
   if (HasDeclarationLocalExpression(representative, true))
-    identity.canonical_type_identity += ";cxx-block-expressions:v1;";
+    identity.canonical_type_identity += ";cxx-block-expressions:v2;";
   if (HasDeclarationLocalExpression(representative, false))
     identity.canonical_type_identity += ";cxx-statement-expressions:v1;";
   if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(representative);

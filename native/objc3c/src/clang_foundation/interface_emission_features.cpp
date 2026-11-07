@@ -920,6 +920,11 @@ bool HasDeclarationGenericLambda(const clang::NamedDecl *declaration) {
 class LocalExpressionFinder final : public clang::DynamicRecursiveASTVisitor {
 public:
   bool VisitBlockExpr(clang::BlockExpr *) override { blocks = true; return true; }
+  bool VisitExpr(clang::Expr *expression) override {
+    // Heap-copy and stable member/index value recipes also occur without a
+    // literal BlockExpr, including source-free C bodies and consumed arguments.
+    blocks |= expression->getType()->isBlockPointerType();return true;
+  }
   bool VisitVarDecl(clang::VarDecl *variable) override {
     blocks |= variable->hasAttr<clang::BlocksAttr>(); return true;
   }

@@ -1027,6 +1027,96 @@ struct ScopeBlockArrayNullOwner {
     __objc3_defer {scope_use(view);}
   }
 };
+
+static int scope_computed_step_fault,scope_computed_step_mask,scope_computed_callbacks;
+__attribute__((noinline)) static int scope_computed_step(int step) {
+  scope_computed_step_mask|=1<<step;
+  if(scope_computed_step_fault==step)scope_ordinary_raise(0);
+  return 0;
+}
+struct ScopeComputedBlockArrayOwner {
+  int armed;
+  ScopeMemberCallback _Nullable callbacks[2][2];
+  ScopeComputedBlockArrayOwner(ScopeProbe *_Nonnull owner,ScopeMemberCallback source,int flag,int scalar,int copy)
+      :armed(scope_arm_array_copy(copy)),
+       callbacks{{(scope_computed_step(1),source),flag?source:^{scope_computed_callbacks+=scalar;}},
+                 {^{scope_computed_callbacks+=scalar;},(scope_computed_step(4),source)}} {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(190);}
+    for(int row=0;row!=2;++row)for(int col=0;col!=2;++col){assert(callbacks[row][col]);callbacks[row][col]();}
+    if(scope_member_body_failure)scope_ordinary_raise(0);
+  }
+  ~ScopeComputedBlockArrayOwner() noexcept(false) {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(191);}
+    if(scope_member_destroying_failure)scope_ordinary_raise(0);
+  }
+};
+struct ScopeNestedSparseBlockArrayOwner {
+  ScopeMemberCallback _Nullable callbacks[2][2];
+  ScopeNestedSparseBlockArrayOwner(ScopeProbe *_Nonnull owner,ScopeMemberCallback source):callbacks{{source},{}} {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);}
+    assert(callbacks[0][0]);assert(!callbacks[0][1] && !callbacks[1][0] && !callbacks[1][1]);callbacks[0][0]();
+  }
+};
+
+static int scope_computed_consumed_calls;
+__attribute__((noinline,nothrow)) static void scope_computed_consume(ScopeMemberCallback value __attribute__((ns_consumed))) {
+  ++scope_computed_consumed_calls;value();
+}
+static void scope_computed_block_local_unwind(void) {
+  for(int flag=0;flag!=2;++flag)for(int fault=0;fault!=3;++fault) {
+    int before=scope_destroyed,caught=0;scope_computed_consumed_calls=0;
+    {
+      ScopeProbe *_Nonnull owner __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+      ScopeMemberCallback source=^{scope_use(&owner->payload);};
+      @try {
+        ScopeNestedSparseBlockArrayOwner storage(owner,source);
+        const char *view=&owner->payload;__objc3_defer {scope_use(view);}
+        scope_fail_block_copy=fault;
+        ScopeMemberCallback local=(scope_computed_step(1),flag?storage.callbacks[0][0]:source);
+        scope_computed_consume(flag?local:storage.callbacks[0][0]);local();
+      } @catch(id exception) {assert(exception==scope_exception);++caught;}
+      assert(caught==(fault!=0) && scope_fail_block_copy==0);
+      assert(scope_computed_consumed_calls==(fault==0));assert(scope_destroyed==before);source();
+    }
+    assert(scope_destroyed==before+1);
+  }
+}
+
+static void scope_computed_block_array_unwind(void) {
+  // Copy failures cover every leaf, including a partial second row. Scalar
+  // evaluation faults occur before leaf 1 and leaf 4, independently of copying.
+  for(int flag=0;flag!=2;++flag)for(int fault=0;fault!=9;++fault) {
+    int before=scope_destroyed,caught=0;allocation_trace_count=0;scope_computed_step_mask=0;scope_computed_callbacks=0;
+    scope_computed_step_fault=fault==5?1:fault==6?4:0;
+    scope_member_body_failure=fault==7;scope_member_destroying_failure=fault==8;
+    {
+      ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+      ScopeMemberCallback source=^{scope_use(&local->payload);};
+      @try {ScopeComputedBlockArrayOwner value(local,source,flag,3,fault>=1 && fault<=4?fault:0);(void)value;}
+      @catch(id exception){assert(exception==scope_exception);++caught;}
+      assert(caught==(fault!=0) && scope_fail_block_copy==0);
+      assert(scope_destroyed==before+(fault==0 || fault==8));source();
+    }
+    assert(scope_destroyed==before+1+(fault==0 || fault==8));
+    const int reached_body=fault==0 || fault>=7;
+    assert(scope_computed_callbacks==(reached_body?(flag?3:6):0));
+    assert(scope_computed_step_mask==((fault>=1 && fault<=3) || fault==5?2:18));
+    assert(allocation_trace_count==(reached_body?(fault==7?1:2):0));
+    if(reached_body)assert(allocation_trace[0]==190);
+    if(fault==0 || fault==8)assert(allocation_trace[1]==191);
+  }
+  scope_computed_step_fault=0;scope_member_body_failure=0;scope_member_destroying_failure=0;
+  int before=scope_destroyed;
+  {
+    ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+    ScopeMemberCallback source=^{scope_use(&local->payload);};
+    {ScopeNestedSparseBlockArrayOwner value(local,source);(void)value;}
+    assert(scope_destroyed==before);source();
+  }
+  assert(scope_destroyed==before+1);
+}
+
 static void scope_block_array_member_unwind(void) {
   for(int fault=0;fault!=6;++fault) {
     int before=scope_destroyed,caught=0;allocation_trace_count=0;
@@ -1093,7 +1183,7 @@ static void scope_ordinary_record_block(void) {
 }
 static void scope_ordinary_owner_unwind(void) {
 #ifdef __cplusplus
-  scope_block_member_unwind();scope_block_array_member_unwind();
+  scope_block_member_unwind();scope_block_array_member_unwind();scope_computed_block_array_unwind();scope_computed_block_local_unwind();
 #endif
   int before=scope_destroyed;
   @try {

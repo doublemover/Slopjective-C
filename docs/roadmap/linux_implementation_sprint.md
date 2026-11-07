@@ -1,5 +1,14 @@
 # Linux implementation sprint
 
+The [System 2.48 computed/nested Block span](linux_computed_block_arrays.md)
+extends exact registration across nested rows, sequenced/conditional expressions,
+scalar captures, stable native member/index reads, strong local bindings and
+consumed arguments. Source-free admission cuts over to subobject v5. Focused
+66 compiler cases, 44 AST controls, twelve instrumented native configurations /
+42 commands, ten new source-free profiles, fourteen adjacent groups, codec/
+isolation and forty decoder replays pass. Standalone value bodies require Block
+expression v2 admission, including C17 without constructors or literal Blocks.
+
 The [System 2.47 Block-array span](linux_block_array_members.md) registers
 completed strong member-array elements before later copies, unwinds exact
 prefixes, preserves weak/null/filler behavior and emits counted release groups.

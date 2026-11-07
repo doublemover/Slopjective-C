@@ -67,7 +67,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.cxx-lambda-expressions.v1",
     "objc3.cxx-thread-local.v1",
     "objc3.cxx-friends.v1",
-    "objc3.cxx-block-expressions.v1",
+    kCxxBlockExpressionSemantic,
     "objc3.cxx-statement-expressions.v1",
     "objc3.cxx-local-types.v1",
     "objc3.cxx-unnamed-local-types.v1",

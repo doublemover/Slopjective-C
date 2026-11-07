@@ -1,5 +1,8 @@
 # ARC Block array member initialization and cleanup
 
+Historical System 2.47 receipt. The [System 2.48 span](linux_computed_block_arrays.md)
+extends nested/computed values and supersedes v4 admission with v5.
+
 System source 2.47 adds per-element copy registration for bounded one-dimensional
 ARC Block member arrays. Each successful strong-slot copy advances the initialized
 prefix; a failed copy cleans that prefix and preceding completed subobjects,

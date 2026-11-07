@@ -448,6 +448,14 @@ elements and completed earlier subobjects. A complete field is registered only
 after its elements initialize. Null/default elements perform no heap copy; weak
 storage retains its distinct nonowning initialization and cleanup semantics.
 
+Nested member arrays initialize scalar leaves in native row-major order. Value
+evaluation precedes a strong destination copy; failure in either operation shall
+not register that destination. Sequenced/conditional computations, scalar-only
+literal captures and stable native member/index reads preserve that separation,
+including strong local bindings and consumed arguments. Managed capture storage,
+weak-load temporaries and resource-bearing producers require their own cleanup
+regions; scalar-value admission shall not erase those obligations.
+
 A native catch handler observes owner state after protected-region cleanup,
 including catch-all and scalar/reference exception bindings. A successful strong
 Block binding owns its copied captures; a failed heap copy does not initialize

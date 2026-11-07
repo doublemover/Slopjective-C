@@ -151,9 +151,9 @@ inline constexpr const char *kCxxFriendSemantic = "objc3.cxx-friends.v1";
 inline bool HasCxxFriendIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-friends:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxBlockExpressionSemantic = "objc3.cxx-block-expressions.v1";
+inline constexpr const char *kCxxBlockExpressionSemantic = "objc3.cxx-block-expressions.v2";
 inline bool HasCxxBlockExpressionIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-block-expressions:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-block-expressions:v2;") != std::string::npos;
 }
 inline constexpr const char *kCxxStatementExpressionSemantic = "objc3.cxx-statement-expressions.v1";
 inline bool HasCxxStatementExpressionIdentity(const InterfaceDeclarationIdentity &d) {
@@ -202,9 +202,9 @@ inline constexpr const char *kCxxIncompleteTemplateSemantic = "objc3.cxx-incompl
 inline bool HasCxxIncompleteTemplateIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-incomplete-template-declarations:v2;") != std::string::npos;
 }
-inline constexpr const char *kNativeSubobjectSemantic = "objc3.native-subobject-cleanup.v4";
+inline constexpr const char *kNativeSubobjectSemantic = "objc3.native-subobject-cleanup.v5";
 inline bool HasNativeSubobjectIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-subobject-cleanup:v4;") != std::string::npos;
+  return d.canonical_type_identity.find(";native-subobject-cleanup:v5;") != std::string::npos;
 }
 inline constexpr const char *kNativeAllocationSemantic = "objc3.native-allocation-cleanup.v2";
 inline bool HasNativeAllocationIdentity(const InterfaceDeclarationIdentity &d) {
