@@ -38,6 +38,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kAsyncConsumedOwnershipSemantic,
     kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
+    kManagedRuntimeScopeSemantic,
     kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,

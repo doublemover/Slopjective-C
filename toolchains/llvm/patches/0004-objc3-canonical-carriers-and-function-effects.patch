@@ -28252,10 +28252,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..b28180124
+index 000000000..e537439a0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,956 @@
+@@ -0,0 +1,995 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -28277,6 +28277,7 @@ index 000000000..b28180124
 +#include "clang/Sema/ObjC3GuardExit.h"
 +#include "clang/Sema/Scope.h"
 +#include "clang/Sema/Sema.h"
++#include "clang/Sema/ScopeInfo.h"
 +#include "SemaObjC3Borrowed.h"
 +#include "SemaObjC3Resources.h"
 +#include "llvm/ADT/BitVector.h"
@@ -29071,6 +29072,35 @@ index 000000000..b28180124
 +}
 +// Direct local labels can be copied with the body. An address-taken label
 +// has one externally observable target and needs a distinct qualified model.
++static bool checkSynchronizedSuspension(Sema &Actions, const Stmt *Body) {
++  SmallVector<std::pair<const Stmt *, bool>, 16> Pending{{Body, false}};
++  llvm::SmallPtrSet<const Stmt *, 32> Seen[2];
++  bool Invalid = false;
++  while (!Pending.empty()) {
++    auto [Node, Locked] = Pending.pop_back_val();
++    if (!Node || !Seen[Locked ? 1 : 0].insert(Node).second) continue;
++    if (const auto *Sync = dyn_cast<ObjCAtSynchronizedStmt>(Node)) {
++      Pending.emplace_back(Sync->getSynchExpr(), Locked);
++      Pending.emplace_back(Sync->getSynchBody(), true);continue;
++    }
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++      for (const Expr *Init : Lambda->capture_inits()) Pending.emplace_back(Init, Locked);
++      continue;
++    }
++    if (isa<BlockExpr>(Node)) continue;
++    if (Locked)
++      if (const auto *Suspend = dyn_cast<CoroutineSuspendExpr>(Node)) {
++        bool Ready = false;
++        bool ProvenReady = Suspend->getReadyExpr()->EvaluateAsBooleanCondition(Ready, Actions.Context) && Ready;
++        if (!ProvenReady) {
++          Actions.Diag(Suspend->getBeginLoc(), diag::err_objc3_async_synchronized_suspend);
++          Invalid = true;
++        }
++      }
++    for (const Stmt *Child : Node->children()) Pending.emplace_back(Child, Locked);
++  }
++  return Invalid;
++}
 +bool checkDeferredLabelAddresses(Sema &Actions, Stmt *Body) {
 +  llvm::SmallPtrSet<const LabelDecl *, 8> DeferredLabels;
 +  SmallVector<const AddrLabelExpr *, 8> Addresses;
@@ -29124,6 +29154,13 @@ index 000000000..b28180124
 +    if (auto *Context = dyn_cast<DeclContext>(Callable))
 +      if (Context->isDependentContext())
 +        return false;
++  if (Callable && getCurFunction() && getCurFunction()->isCoroutine()) {
++    bool Marked = false;
++    for (const auto *Attribute : Callable->specific_attrs<AnnotateAttr>())
++      Marked |= Attribute->isImplicit() && Attribute->getAnnotation() == "objc3.cfg.coroutine-pools";
++    if (!Marked) Callable->addAttr(AnnotateAttr::CreateImplicit(Context,
++        "objc3.cfg.coroutine-pools", nullptr, 0));
++  }
 +  if (getLangOpts().ObjCAutoRefCount) {
 +    ObjC3SourceScopes Sources(Body);
 +    for (auto [Variable, Owner] : Sources.Variables)
@@ -29139,7 +29176,9 @@ index 000000000..b28180124
 +  bool Invalid = checkObjC3ResourceDeclarations(*this, Body);
 +  Invalid |= checkObjC3NonlocalJumps(*this, Body);
 +  if (!Invalid) Invalid |= checkObjC3ResourceFlow(*this, Callable, Body);
-+  Invalid |= checkObjC3BorrowedFlow(*this, Callable, Body);
++  bool SuspensionInvalid = checkSynchronizedSuspension(*this, Body);
++  Invalid |= SuspensionInvalid;
++  if (!SuspensionInvalid) Invalid |= checkObjC3BorrowedFlow(*this, Callable, Body);
 +  Invalid |= checkDeferredLabelAddresses(*this, Body);
 +  Invalid |= NullableReceiverFlow(*this).check(Callable, Body);
 +  // Nested guards get their own mandatory-exit diagnostic before an outer
@@ -43285,10 +43324,10 @@ index 9adba1943..9df5e3ad1 100644
  
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..98311e69e
+index 000000000..1122bbb29
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,376 @@
+@@ -0,0 +1,380 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -43572,6 +43611,10 @@ index 000000000..98311e69e
 +  llvm::SmallPtrSet<const Expr *, 8> Diagnosed;
 +  void check(Expr *E, SourceLocation Loc) {
 +    if (Monitors.empty() || !Diagnosed.insert(E).second) return;
++    if (const auto *Suspend = dyn_cast<CoroutineSuspendExpr>(E)) {
++      bool Ready = false;
++      if (Suspend->getReadyExpr()->EvaluateAsBooleanCondition(Ready, S.Context) && Ready) return;
++    }
 +    S.Diag(Loc, diag::err_objc3_async_synchronized_suspend);
 +    S.Diag(Monitors.back(), diag::note_objc3_async_synchronized_scope);
 +    Failed = true;
@@ -43667,10 +43710,10 @@ index 000000000..98311e69e
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..9189bfc8a
+index 000000000..b35541fa3
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5887 @@
+@@ -0,0 +1,6053 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43927,6 +43970,8 @@ index 000000000..9189bfc8a
 +    // Lower bounds on explicit manual/family retains in addition to the
 +    // original lifetime claim. Saturation is conservative; joins take min.
 +    SmallVector<unsigned, 16> ExtraOwnerClaims;
++    Value ActiveNativePools;
++    SmallVector<SmallVector<unsigned, 8>, 4> NativePoolClaims;
 +    SmallVector<Storage, 16> LocalTargets;
 +    SmallVector<Value, 16> MayTargets;
 +    SmallVector<ByteFacts, 16> ByteTargets;
@@ -44024,6 +44069,9 @@ index 000000000..9189bfc8a
 +  llvm::DenseMap<const VarDecl *, unsigned> OwnerRoots{{nullptr, 0}};
 +  llvm::DenseMap<Storage, unsigned, StorageInfo> StorageOwnerRoots;
 +  unsigned OwnerCount = 1;
++  llvm::DenseMap<const Stmt *, unsigned> NativePoolSources;
++  llvm::DenseMap<const VarDecl *, unsigned> NativePoolGuards;
++  SmallVector<unsigned, 8> NativePoolDepths;
 +  unsigned ownerIndex(const Origin &O) const {
 +    return O.StorageIdentity != ~0U ? O.StorageIdentity : OwnerRoots.lookup(O.Identity);
 +  }
@@ -44614,6 +44662,123 @@ index 000000000..9189bfc8a
 +      else if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) Pending.push_back(Cleanups->getSubExpr());
 +      else if (const auto *Comma = dyn_cast<BinaryOperator>(E); Comma && Comma->getOpcode() == BO_Comma) Pending.push_back(Comma->getRHS());
 +    }
++  }
++  static bool compilerRuntimeMarker(const Decl *Declaration, StringRef Marker) {
++    if (!Declaration || !Declaration->isImplicit()) return false;
++    for (const auto *Attribute : Declaration->specific_attrs<AnnotateAttr>())
++      if (Attribute->isImplicit() && Attribute->getAnnotation() == Marker) return true;
++    return false;
++  }
++  static bool compilerRuntimeHelper(const Decl *Declaration) {
++    return compilerRuntimeMarker(Declaration, "objc3.cfg.runtime-helper");
++  }
++  bool registerRuntimeScopes(const CFG &Graph) {
++    bool HasRuntimeScope = false;
++    for (const CFGBlock *Block : Graph)
++      for (const CFGElement &Element : *Block)
++        if (auto Begin = Element.getAs<CFGScopeBegin>())
++          HasRuntimeScope |= compilerRuntimeMarker(Begin->getVarDecl(), "objc3.cfg.pool") ||
++                             compilerRuntimeMarker(Begin->getVarDecl(), "objc3.cfg.sync");
++    if (!HasRuntimeScope) return true;
++    SmallVector<std::pair<const Stmt *, unsigned>, 16> Pending{{Body, 0}};
++    llvm::SmallPtrSet<const Stmt *, 32> Seen;
++    unsigned Budget = 8192;
++    while (!Pending.empty()) {
++      auto [Node, Depth] = Pending.pop_back_val();
++      if (!Node || !Seen.insert(Node).second) continue;
++      if (!Budget--) return false;
++      if (const auto *Pool = dyn_cast<ObjCAutoreleasePoolStmt>(Node)) {
++        if (NativePoolDepths.size() >= 64) return false;
++        unsigned Index = NativePoolDepths.size();
++        NativePoolSources[Pool] = Index;NativePoolDepths.push_back(++Depth);
++      }
++      if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++        for (const Expr *Init : Lambda->capture_inits()) Pending.emplace_back(Init, Depth);
++      } else if (!isa<BlockExpr>(Node))
++        for (const Stmt *Child : Node->children()) Pending.emplace_back(Child, Depth);
++    }
++    SmallVector<const VarDecl *, 8> NewPins;
++    llvm::SmallPtrSet<const VarDecl *, 16> Registered;
++    for (const CFGBlock *Block : Graph)
++      for (const CFGElement &Element : *Block) {
++        if (auto Begin = Element.getAs<CFGScopeBegin>()) {
++          const VarDecl *Variable = Begin->getVarDecl();
++          if (compilerRuntimeMarker(Variable, "objc3.cfg.pool")) {
++            auto Source = NativePoolSources.find(Begin->getTriggerStmt());
++            if (Source == NativePoolSources.end()) return false;
++            NativePoolGuards[Variable] = Source->second;
++          }
++        }
++        auto Statement = Element.getAs<CFGStmt>();
++        const auto *Declarations = Statement ? dyn_cast<DeclStmt>(Statement->getStmt()) : nullptr;
++        if (!Declarations) continue;
++        for (const Decl *Declaration : Declarations->decls()) {
++          const auto *Variable = dyn_cast<VarDecl>(Declaration);
++          if (!Variable || !Registered.insert(Variable).second) continue;
++          bool Pin = compilerRuntimeMarker(Variable, "objc3.cfg.sync-owner");
++          if (!Pin && !compilerRuntimeMarker(Variable, "objc3.cfg.sync-unowned") &&
++              !compilerRuntimeMarker(Variable, "objc3.cfg.pool") &&
++              !compilerRuntimeMarker(Variable, "objc3.cfg.sync")) continue;
++          addVariable(Variable);
++          if (Pin && !Pins.count(Variable)) {
++            Pins[Variable] = Pins.size();PinSources[Variable] = variable(Variable->getInit());
++            PinOperands[Variable] = Variable->getInit();NewPins.push_back(Variable);
++          }
++        }
++      }
++    if (NativePoolDepths.size() * OwnerCount > 4096) return false;
++    const unsigned OriginalOrigins = Origins.size();
++    if (OriginalOrigins * (NewPins.size() + 1) > 4096) return false;
++    for (const VarDecl *Pin : NewPins)
++      for (unsigned I = 1; I != OriginalOrigins; ++I) {
++        const Origin Original = Origins[I];
++        if (!Original.Acquisition || Original.Pin) continue;
++        unsigned Index = Origins.size();Origins.push_back(Original);
++        Origins.back().Pin = Pin;Origins.back().Unstable = false;
++        Acquisitions[Original.Acquisition].push_back(Index);
++        if (auto Storage = OriginOwnerStorage.find(I); Storage != OriginOwnerStorage.end())
++          OriginOwnerStorage[Index] = Storage->second;
++        if (auto Selector = OriginOwnerSelectors.find(I); Selector != OriginOwnerSelectors.end())
++          OriginOwnerSelectors[Index] = Selector->second;
++        if (UnprovenOwnerSelectors.contains(I)) UnprovenOwnerSelectors.insert(Index);
++        if (RejectedOwnerSelectors.contains(I)) RejectedOwnerSelectors.insert(Index);
++        if (auto Future = FutureStorageOwners.find(I); Future != FutureStorageOwners.end())
++          FutureStorageOwners[Index] = Future->second;
++      }
++    return true;
++  }
++  bool scheduleNativePoolRelease(const Value &Owners, Facts &State) const {
++    unsigned Depth = 0;
++    for (int I = State.ActiveNativePools.find_first(); I >= 0; I = State.ActiveNativePools.find_next(I))
++      Depth = std::max(Depth, NativePoolDepths[I]);
++    if (!Depth) return false;
++    // Counts are upper bounds. Overflow is unbounded, never a finite value
++    // which could cancel a saturated lower bound on explicit extra retains.
++    for (int I = State.ActiveNativePools.find_first(); I >= 0; I = State.ActiveNativePools.find_next(I))
++      if (NativePoolDepths[I] == Depth)
++        for (int Owner = Owners.find_first(); Owner >= 0; Owner = Owners.find_next(Owner)) {
++          auto &Count = State.NativePoolClaims[I][Owner];
++          if (Count != ~0U) Count = Count >= ExpressionSlots.size() ? ~0U : Count + 1;
++        }
++    return true;
++  }
++  void endNativePool(const VarDecl *Guard, Facts &State, bool Pop, bool Reopen = false) const {
++    auto Found = NativePoolGuards.find(Guard);
++    if (Found == NativePoolGuards.end()) return;
++    unsigned Index = Found->second;
++    if (!State.ActiveNativePools.test(Index)) return;
++    Value Retired(OwnerCount);
++    if (Pop)
++      for (unsigned I = 0; I != OwnerCount; ++I) {
++        unsigned Count = State.NativePoolClaims[Index][I];
++        if (!Count) continue;
++        if (Count != ~0U && State.ExtraOwnerClaims[I] >= Count)
++          State.ExtraOwnerClaims[I] -= Count;
++        else {State.ExtraOwnerClaims[I] = 0;Retired.set(I);}
++      }
++    if (!Reopen) State.ActiveNativePools.reset(Index);
++    std::fill(State.NativePoolClaims[Index].begin(), State.NativePoolClaims[Index].end(), 0);
++    retireOwnerIdentities(Retired, State);
 +  }
 +  static const VarDecl *exceptionBinding(const Stmt *Node) {
 +    if (const auto *Catch = dyn_cast<ObjCAtCatchStmt>(Node)) return Catch->getCatchParamDecl();
@@ -46832,7 +46997,7 @@ index 000000000..9189bfc8a
 +    return dyn_cast_or_null<FunctionProtoType>(callFunctionType(Invocation));
 +  }
 +  bool observeOwnerConsumption(const Expr *Invocation, Facts &State) const {
-+    if (addressBuiltin(callee(Invocation))) return false;
++    if (addressBuiltin(callee(Invocation)) || compilerRuntimeHelper(callee(Invocation))) return false;
 +    const bool ARC = Actions.getLangOpts().ObjCAutoRefCount;
 +    Value Identity(OwnerCount), Unbounded(OwnerCount);
 +    llvm::DenseMap<unsigned, unsigned> ConsumedClaims;
@@ -46887,8 +47052,20 @@ index 000000000..9189bfc8a
 +      // Pool/deferred release ordering is a separate proof. Stop using these
 +      // extra counts rather than pretending that a scheduled release vanished.
 +      Value Owners = evaluatedOwnerIdentity(DeferredOwner, State);
-+      for (int I = Owners.find_first(); I >= 0; I = Owners.find_next(I))
-+        State.ExtraOwnerClaims[I] = 0;
++      bool NativeMessage = isa<ObjCMessageExpr>(Invocation);
++      if (!NativeMessage || !scheduleNativePoolRelease(Owners, State)) {
++        for (int I = Owners.find_first(); I >= 0; I = Owners.find_next(I)) State.ExtraOwnerClaims[I] = 0;
++        // A captured callback can schedule a release in its caller's ambient
++        // pool. Until that queue is explicit in callable summaries, retain its
++        // possible lifetime effect rather than silently dropping the release.
++        if (IsOwnerSummary) {
++          for (const auto &[Root, Index] : OwnerRoots)
++            if (Root && Owners.test(Index)) ConsumedOwnerRoots.insert(Root);
++          for (const auto &[Location, Index] : StorageOwnerRoots) {
++            (void)Location;if (Owners.test(Index)) ConsumedStorageOwners.insert(Index);
++          }
++        }
++      }
 +    }
 +    if (FamilyRelease) Consume(evaluatedOwnerIdentity(argument(Invocation, 0), State));
 +    const auto Formals = formalParameters(callee(Invocation));
@@ -46949,6 +47126,9 @@ index 000000000..9189bfc8a
 +    Identity |= Unbounded;
 +    for (int I = Unbounded.find_first(); I >= 0; I = Unbounded.find_next(I))
 +      State.ExtraOwnerClaims[I] = 0;
++    return retireOwnerIdentities(Identity, State);
++  }
++  bool retireOwnerIdentities(const Value &Identity, Facts &State) const {
 +    if (IsOwnerSummary) {
 +      for (const auto &[Root, Index] : OwnerRoots)
 +        if (Root && Identity.test(Index)) ConsumedOwnerRoots.insert(Root);
@@ -48288,7 +48468,7 @@ index 000000000..9189bfc8a
 +    State = std::move(Joined);
 +  }
 +  void checkCall(const Expr *Invocation, Facts &State, bool Emit) {
-+    if (addressBuiltin(callee(Invocation))) return;
++    if (addressBuiltin(callee(Invocation)) || compilerRuntimeHelper(callee(Invocation))) return;
 +    unsigned Count = 0;
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation))
 +      Count = Call->getNumArgs();
@@ -48406,7 +48586,7 @@ index 000000000..9189bfc8a
 +      }
 +  }
 +  void invalidateCallTargetProofs(const Expr *Invocation, Facts &State) const {
-+    if (addressBuiltin(callee(Invocation)) || modeledRecordCopy(callee(Invocation)) ||
++    if (compilerRuntimeHelper(callee(Invocation)) || addressBuiltin(callee(Invocation)) || modeledRecordCopy(callee(Invocation)) ||
 +        copyingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))) ||
 +        fillingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation)))) return;
 +    unsigned Count = 0;
@@ -48521,7 +48701,23 @@ index 000000000..9189bfc8a
 +  }
 +  void transfer(const CFGBlock &Block, Facts &State, bool Emit) {
 +    for (const CFGElement &Element : Block) {
++      if (auto Drain = Element.getAs<CFGScopeEnd>()) {
++        if (isa<CoroutineSuspendExpr>(Drain->getTriggerStmt()))
++          endNativePool(Drain->getVarDecl(), State, true, true);
++        continue;
++      }
++      if (auto Begin = Element.getAs<CFGScopeBegin>()) {
++        if (auto Pool = NativePoolGuards.find(Begin->getVarDecl()); Pool != NativePoolGuards.end()) {
++          State.ActiveNativePools.set(Pool->second);
++          std::fill(State.NativePoolClaims[Pool->second].begin(), State.NativePoolClaims[Pool->second].end(), 0);
++        }
++        continue;
++      }
++      if (auto Cleanup = Element.getAs<CFGCleanupFunction>()) {
++        endNativePool(Cleanup->getVarDecl(), State, true);continue;
++      }
 +      if (auto End = Element.getAs<CFGLifetimeEnds>()) {
++        endNativePool(End->getVarDecl(), State, false);
 +        expire(End->getVarDecl(), State);
 +        continue;
 +      }
@@ -49107,6 +49303,13 @@ index 000000000..9189bfc8a
 +      return true;
 +    }
 +    bool Changed = false;
++    Value Pools = Destination.ActiveNativePools;Pools |= Source.ActiveNativePools;
++    Changed |= Pools != Destination.ActiveNativePools;Destination.ActiveNativePools = std::move(Pools);
++    for (unsigned P = 0; P != Destination.NativePoolClaims.size(); ++P)
++      for (unsigned I = 0; I != OwnerCount; ++I) {
++        unsigned Count = std::max(Destination.NativePoolClaims[P][I], Source.NativePoolClaims[P][I]);
++        Changed |= Count != Destination.NativePoolClaims[P][I];Destination.NativePoolClaims[P][I] = Count;
++      }
 +    Value NonNull = Destination.NonNullTargets;
 +    NonNull &= Source.NonNullTargets;
 +    Changed |= NonNull != Destination.NonNullTargets;
@@ -49297,7 +49500,13 @@ index 000000000..9189bfc8a
 +        diagnose(Body, "control flow whose borrowed owner lifetime cannot be proved");
 +      return Invalid;
 +    }
++    if (!registerRuntimeScopes(*Graph)) {
++      diagnose(Body, "managed runtime scopes whose bounded owner proof is exhausted");return Invalid;
++    }
 +    Facts Initial;
++    Initial.ActiveNativePools.resize(NativePoolDepths.size());
++    Initial.NativePoolClaims.resize(NativePoolDepths.size());
++    for (auto &Claims : Initial.NativePoolClaims) Claims.resize(OwnerCount);
 +    Initial.Reachable = true;
 +    Initial.Values.assign(Slots.size(), empty());
 +    Initial.Effects.assign(Slots.size(), empty());
@@ -64062,3 +64271,253 @@ index 000000000..d5a33cf44
 +void receiver_executor_property(ReceiverBoundaryExecutor *owner) __objc3_async_frame {
 +  (void)__objc3_await owner.view; // expected-error {{isolated entry cannot transfer a receiver-owned interior view}}
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-runtime-scopes.h b/clang/test/ObjC3/Sema/Inputs/borrowed-runtime-scopes.h
+new file mode 100644
+index 000000000..002b29ba8
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-runtime-scopes.h
+@@ -0,0 +1,13 @@
++#ifndef BORROWED_RUNTIME_SCOPES_H
++#define BORROWED_RUNTIME_SCOPES_H
++#include "borrowed-receiver-results.h"
++#pragma clang assume_nonnull begin
++@interface RuntimeScopeOwner:ReceiverOwner
++#if !__has_feature(objc_arc)
++- (instancetype)retain;
++- (instancetype)autorelease;
++#endif
++@end
++RuntimeScopeOwner *runtime_scope_factory(void);
++#pragma clang assume_nonnull end
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-runtime-scopes.m b/clang/test/ObjC3/Sema/borrowed-runtime-scopes.m
+new file mode 100644
+index 000000000..d7b71f316
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-runtime-scopes.m
+@@ -0,0 +1,128 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-runtime-scopes.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-runtime-scopes.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-runtime-scopes.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-runtime-scopes.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-runtime-scopes.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-runtime-scopes.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-runtime-scopes.h"
++#endif
++void pool_stable_owner(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @autoreleasepool {__objc3_defer {receiver_use(view);}receiver_use(view);}
++  receiver_use(view);
++}
++void pool_local_owner(void) {
++  const char *view=0;
++  @autoreleasepool {
++    RuntimeScopeOwner *_Nonnull owner=runtime_scope_factory();view=[owner bytes];
++    __objc3_defer {receiver_use(view);}receiver_use(view);
++  }
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void synchronized_owner(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @synchronized(owner) {
++    owner=(id)0;
++#if __has_feature(objc_arc)
++    receiver_use(view);
++#else
++    receiver_use(view); // expected-error {{after its owner lifetime ended}}
++#endif
++  }
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++#if __has_feature(objc_arc)
++void synchronized_nested_owner(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @synchronized(owner) {
++    @synchronized(owner) {owner=(id)0;receiver_use(view);}
++    receiver_use(view);
++  }
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++#endif
++void managed_scope_return(RuntimeScopeOwner *_Nonnull owner,int mode) {
++  @autoreleasepool {
++    @synchronized(owner) {
++      const char *view=[owner bytes];__objc3_defer {receiver_use(view);}
++      if(mode)return;
++    }
++  }
++}
++void managed_scope_goto(RuntimeScopeOwner *_Nonnull owner) {
++  @autoreleasepool {@synchronized(owner){const char *view=[owner bytes];__objc3_defer {receiver_use(view);}goto done;}}
++done:return;
++}
++void managed_scope_native_exception(RuntimeScopeOwner *_Nonnull owner) {
++  @try {@autoreleasepool {@synchronized(owner){const char *view=[owner bytes];__objc3_defer {receiver_use(view);}@throw owner;}}}
++  @catch(id exception){(void)exception;}
++}
++#if !__has_feature(objc_arc)
++void pool_scheduled_release(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @autoreleasepool {[owner autorelease];receiver_use(view);}
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void pool_independent_retain(RuntimeScopeOwner *_Nonnull owner) {
++  [owner retain];const char *view=[owner bytes];
++  @autoreleasepool {[owner autorelease];receiver_use(view);}
++  receiver_use(view);[owner release];
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void pool_conditional_release(RuntimeScopeOwner *_Nonnull owner,int choose) {
++  const char *view=[owner bytes];
++  @autoreleasepool {if(choose)[owner autorelease];}
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void pool_nested_release(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];[owner retain];
++  @autoreleasepool {
++    [owner autorelease];@autoreleasepool {[owner autorelease];}
++    receiver_use(view);
++  }
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void pool_scope_pin(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  withLifetime(owner) {@autoreleasepool {[owner autorelease];}receiver_use(view);}
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void pool_normal_only_exception(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {@autoreleasepool {[owner autorelease];@throw owner;}}
++  @catch(id exception){(void)exception;receiver_use(view);}
++  receiver_use(view);
++}
++void pool_callback_release(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @autoreleasepool {void (^schedule)(void)=^{[owner autorelease];};schedule();}
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++#endif
++
++#if !__has_feature(objc_arc)
++ReceiverBytes pool_return_expired_pin(RuntimeScopeOwner *_Nonnull owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  withLifetime(owner) {@autoreleasepool {
++    const char *view=[owner bytes];[owner autorelease];
++    return view; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++  }}
++}
++ReceiverBytes pool_return_independent_claim(RuntimeScopeOwner *_Nonnull owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  [owner retain];@autoreleasepool {[owner autorelease];return [owner bytes];}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-runtime-scopes-async.m b/clang/test/ObjC3/Sema/borrowed-runtime-scopes-async.m
+new file mode 100644
+index 000000000..b18ee42f6
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-runtime-scopes-async.m
+@@ -0,0 +1,91 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-system -DRUNTIME_STRICT_SYSTEM -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-system -DRUNTIME_STRICT_SYSTEM -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-system -DRUNTIME_STRICT_SYSTEM -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-system -DRUNTIME_STRICT_SYSTEM -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-system -DRUNTIME_STRICT_SYSTEM -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -Wno-objc3-unnecessary-await -fobjc3-profile=strict-system -DRUNTIME_STRICT_SYSTEM -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/isolated-properties.h"
++#include "Inputs/borrowed-runtime-scopes.h"
++@interface AsyncRuntimeScopeOwner:RuntimeScopeOwner <Sendable> @end
++int runtime_scope_wait(void) __objc3_async_frame;
++int runtime_scope_leaf(void);
++int synchronized_cannot_suspend(AsyncRuntimeScopeOwner *_Nonnull owner) __objc3_async_frame {
++  @synchronized(owner) {
++    return __objc3_await runtime_scope_wait(); // expected-error {{cannot suspend while holding an @synchronized monitor}}
++  }
++}
++int synchronized_non_suspending(AsyncRuntimeScopeOwner *_Nonnull owner) __objc3_async_frame {
++  @synchronized(owner) {return __objc3_await runtime_scope_leaf();}
++}
++int pool_async_stable_owner(AsyncRuntimeScopeOwner *_Nonnull owner) __objc3_async_frame {
++  const char *view=[owner bytes];
++  @autoreleasepool {int value=__objc3_await runtime_scope_wait();receiver_use(view);return value;}
++}
++#if !__has_feature(objc_arc)
++int pool_async_pin(AsyncRuntimeScopeOwner *_Nonnull owner) __objc3_async_frame {
++  const char *view=[owner bytes];
++  withLifetime(owner) {
++    @autoreleasepool {[owner autorelease];(void)__objc3_await runtime_scope_wait();receiver_use(view);}
++  }
++  return 0;
++}
++#ifdef RUNTIME_STRICT_SYSTEM
++int pool_async_expired(AsyncRuntimeScopeOwner *_Nonnull owner) __objc3_async_frame {
++  const char *view=[owner bytes];
++  @autoreleasepool {
++    [owner autorelease];(void)__objc3_await runtime_scope_wait();
++    receiver_use(view); // expected-error {{after its owner lifetime ended}}
++  }
++  return 0;
++}
++int pool_async_exception_cleanup(AsyncRuntimeScopeOwner *_Nonnull owner) __objc3_async_frame {
++  const char *view=[owner bytes];
++  @try {@autoreleasepool {[owner autorelease];@throw owner;}}
++  @catch(id exception){(void)exception;receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++  return 0;
++}
++#endif
++#endif
++
++#ifdef __cplusplus
++objc3::task<int> ordinary_coroutine_lock(AsyncRuntimeScopeOwner *_Nonnull owner) {
++  @synchronized(owner) {co_await std::suspend_always();} // expected-error {{cannot suspend while holding an @synchronized monitor}}
++  co_return 0;
++}
++struct RuntimeScopeReady {
++  constexpr bool await_ready() const noexcept {return true;}
++  void await_suspend(std::coroutine_handle<>) noexcept {}
++  void await_resume() noexcept {}
++};
++objc3::task<int> ordinary_coroutine_ready_lock(AsyncRuntimeScopeOwner *_Nonnull owner) {
++  @synchronized(owner) {co_await RuntimeScopeReady();}
++  co_return 0;
++}
++#endif
++
++#if !defined(__cplusplus) && !__has_feature(objc_arc) && defined(RUNTIME_STRICT_SYSTEM)
++int ordinary_async_pool_exception(AsyncRuntimeScopeOwner *_Nonnull owner) __objc3_async {
++  const char *view=[owner bytes];
++  @try {@autoreleasepool {[owner autorelease];@throw owner;}}
++  @catch(id exception){(void)exception;receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++  return 0;
++}
++#endif

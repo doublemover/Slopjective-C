@@ -1,5 +1,12 @@
 # Linux feature completion and SDK delivery
 
+The [System 2.37 managed-scope span](linux_managed_runtime_scopes.md) models
+native pool queues, normal-only synchronous pool exits, async drains and exceptional
+cleanup, plus exact synchronization snapshots and unlock ordering. Proven ready
+awaits remain usable inside monitors; actual suspension is diagnosed, including
+ordinary C++ task coroutines. Source-free replay carries exact semantic admission.
+The optional native feature includes observed runtime operations and exact destruction.
+
 The [System 2.36 receiver-result span](linux_borrowed_receiver_results.md)
 implements native getter pointer/reference loans, self/owner checks, messages,
 properties, superclass and stable Class bindings, with source-free identity and
@@ -13,8 +20,7 @@ inline ivar/array/record loans and separate C++ reference-address lifetimes,
 including copy/capture propagation, builtin address-taking and source-free
 capability admission. All thirty-nine borrowed compiler cases, six source-free
 profiles, three adjacent frontend groups, codec/isolation units and twelve
-instrumented native configurations pass. Native managed-cleanup CFG registration and the wider
-ownership/profile backlog remain open.
+instrumented native configurations pass. The wider exceptional cleanup and ownership/profile backlog remains open.
 
 
 The [System 2.34 handler span](linux_borrowed_catch_bindings.md) implements catch
@@ -53,6 +59,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Native publication | User standard-library class/constexpr-variable specializations, including partial patterns, argument packs and native primary ABI | Source authored; six frontend profiles and two instrumented source-free provider/two-consumer executables pass; wider profiles and SDK consolidation pending |
 | Native publication | Inherited formatter state, iterator traits, deduced member identity and unique native virtual slots | Source authored; fifteen AST infrastructure tests, twelve affected frontend groups and all four source-free libstdc++/libc++ native configurations pass; SDK consolidation pending |
 | Native publication | Remaining dependent lookup, declaration/predicate forms and wider standard-library configurations | Open |
+| Ownership/System   | Native pool release queues, async drains, synchronized receiver snapshots and suspension restrictions | Source authored; focused compiler, source-free and instrumented native controls pass; consolidation in progress |
 | Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | Type-carried borrowed callback results/owner indices, deduction, native identity, PCH and published interfaces              | Source authored; focused source/PCH/native identity checks pass                              |
 | Ownership/System   | Borrowed results from proven immutable program storage, aliases, subobjects and constexpr calls                             | Source authored; eighteen source/PCH commands and all twenty borrowed regressions pass         |

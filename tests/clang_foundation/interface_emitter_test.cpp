@@ -4169,6 +4169,115 @@ void TestClosureFactories() {
   }
 }
 
+void TestManagedRuntimeScopeReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})
+    for(bool arc:{false,true}) {
+      const bool cxx=std::string(standard)!="c17";
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
+      args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+      const std::string source=R"(
+        #ifdef __cplusplus
+        #include <objc3c/runtime/objc3_task.hpp>
+        #else
+        #include <objc3c/runtime/objc3_runtime_services.h>
+        #endif
+        @protocol Sendable @end
+        typedef borrowed const char *PublishedRuntimeBytes;
+        __attribute__((objc_root_class)) @interface PublishedRuntimeOwner <Sendable> {
+        @public char payload;
+        }
+        #if !__has_feature(objc_arc)
+        - (id)retain;
+        - (id)autorelease;
+        - (void)release;
+        #endif
+        @end
+        void published_runtime_use(const char *view __attribute__((noescape)));
+        inline PublishedRuntimeBytes published_runtime_bytes(PublishedRuntimeOwner *_Nonnull owner)
+            __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->payload;}
+        inline void published_runtime_body(PublishedRuntimeOwner *_Nonnull owner) {
+          const char *view=published_runtime_bytes(owner);
+          @autoreleasepool {@synchronized(owner) {
+            __objc3_defer {published_runtime_use(view);}
+            #if __has_feature(objc_arc)
+            owner=(id)0;
+            #endif
+            published_runtime_use(view);
+          }}
+        }
+        int published_runtime_wait(void) __objc3_async_frame;
+        inline int published_runtime_async(PublishedRuntimeOwner *_Nonnull owner) __objc3_async_frame {
+          withLifetime(owner) {
+            const char *view=published_runtime_bytes(owner);
+            @autoreleasepool {
+              #if !__has_feature(objc_arc)
+              [owner autorelease];
+              #endif
+              int value=__objc3_await published_runtime_wait();published_runtime_use(view);return value;
+            }
+          }
+        }
+      )";
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.managed_runtime_scopes","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.managed_runtime_scopes","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);return result;
+      };
+      auto first=emit(source,"runtime-provider.m");
+      auto replay=emit(first.source_bytes,"runtime-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-runtime.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> supported;
+      for(const auto &item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+      assert(llvm::is_contained(supported,llvm::StringRef(kManagedRuntimeScopeSemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      auto older=supported;std::erase(older,llvm::StringRef(kManagedRuntimeScopeSemantic));
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto missing=*decoded;std::erase(missing.required_semantics,kManagedRuntimeScopeSemantic);
+      auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);
+      assert(llvm::StringRef(llvm::toString(invalid.takeError())).contains("managed runtime scope identity"));
+      auto plain=emit("void plain_scope_contract(void);","plain-scope-contract.m");
+      auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+      invented->required_semantics.push_back(kManagedRuntimeScopeSemantic);
+      auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);
+      llvm::consumeError(unexpected.takeError());
+      auto good=parse(first.source_bytes+R"(
+        void runtime_consumer(PublishedRuntimeOwner *_Nonnull owner) {published_runtime_body(owner);}
+      )","runtime-consumer.m");
+      assert(good && !good->getDiagnostics().hasErrorOccurred());
+      const std::string expired=arc?R"(
+        void runtime_expired(PublishedRuntimeOwner *_Nonnull owner) {
+          const char *view=published_runtime_bytes(owner);
+          @synchronized(owner){owner=(id)0;published_runtime_use(view);}
+          published_runtime_use(view);
+        }
+      )":R"(
+        void runtime_expired(PublishedRuntimeOwner *_Nonnull owner) {
+          const char *view=published_runtime_bytes(owner);
+          @autoreleasepool {[owner autorelease];}published_runtime_use(view);
+        }
+      )";
+      auto bad=parse(first.source_bytes+expired,"expired-runtime-scope.m");
+      assert(bad && bad->getDiagnostics().hasErrorOccurred());
+    }
+}
+
 void TestBorrowedReceiverResultReplay() {
   for(const char *standard:{"c17","c++20","c++23"})
     for(bool arc:{false,true}) {
@@ -7960,6 +8069,7 @@ int main(int argc,char **argv) {
   TestBorrowedMemoryAliasReplay();
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
+  TestManagedRuntimeScopeReplay();
   TestBorrowedReceiverResultReplay();
   TestBorrowedInteriorStorageReplay();
   TestAsyncConsumedOwnershipCapability();

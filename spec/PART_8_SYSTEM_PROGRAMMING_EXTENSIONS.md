@@ -367,6 +367,21 @@ Strict-system conformance requires a front-end borrowed-pointer escape checker t
 
 Additional interprocedural/static-analyzer checks are recommended, but they are additive and shall not replace required front-end enforcement.
 
+#### 8.7.3.1 Managed native runtime scopes
+
+The lifetime proof shall account for native pool and synchronization cleanup in
+the order used by native lowering. A synchronization operand is evaluated once;
+an ARC receiver snapshot remains owned through unlock. MRC synchronization does
+not itself establish an extra ownership claim. Pending native autoreleases are
+consumed when their owning pool drains, preserving independently proved retains
+and lifetime pins. A synchronous native pool's normal-only cleanup shall not be
+treated as an exception cleanup. Native async pool drains and reopenings shall
+be represented at actual suspension, including their exceptional exits.
+
+Suspension while holding a synchronization monitor is ill-formed. An await
+proved not to suspend does not cross that boundary. Scope cleanup that can end
+an owner shall be included when checking a borrowed return or subsequent use.
+
 ### 8.7.4 Escaping-use trigger points and minimum diagnostics (normative) {#part-8-7-4}
 
 In strict-system mode, a borrowed pointer value is treated as **non-escaping** unless an explicit unsafe escape marker is used.

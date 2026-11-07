@@ -157,6 +157,17 @@ bool HasDeclarationNSObjectStorage(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationManagedRuntimeScope(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Scopes : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitObjCAutoreleasePoolStmt(clang::ObjCAutoreleasePoolStmt *) override {found = true;return true;}
+      bool VisitObjCAtSynchronizedStmt(clang::ObjCAtSynchronizedStmt *) override {found = true;return true;}
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationBorrowedReceiverResult(const clang::NamedDecl *declaration) {
   if(declaration->hasAttr<clang::ObjCReturnsInnerPointerAttr>())return true;
   if(const auto *container=llvm::dyn_cast<clang::ObjCContainerDecl>(declaration))

@@ -1,5 +1,12 @@
 # Linux implementation sprint
 
+The [System 2.37 managed-scope span](linux_managed_runtime_scopes.md) models
+native pool queues, normal-only synchronous pool exits, async drains and exceptional
+cleanup, plus exact synchronization snapshots and unlock ordering. Proven ready
+awaits remain usable inside monitors; actual suspension is diagnosed, including
+ordinary C++ task coroutines. Source-free replay carries exact semantic admission.
+The optional native feature includes observed runtime operations and exact destruction.
+
 The [System 2.36 receiver-result span](linux_borrowed_receiver_results.md)
 implements native getter pointer/reference loans, self/owner checks, messages,
 properties, superclass and stable Class bindings, with source-free identity and
@@ -13,8 +20,7 @@ inline ivar/array/record loans and separate C++ reference-address lifetimes,
 including copy/capture propagation, builtin address-taking and source-free
 capability admission. All thirty-nine borrowed compiler cases, six source-free
 profiles, three adjacent frontend groups, codec/isolation units and twelve
-instrumented native configurations pass. Native managed-cleanup CFG registration and the wider
-ownership/profile backlog remain open.
+instrumented native configurations pass. The wider exceptional cleanup and ownership/profile backlog remains open.
 
 
 The [System 2.34 handler span](linux_borrowed_catch_bindings.md) implements catch
