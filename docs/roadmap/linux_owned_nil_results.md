@@ -43,7 +43,9 @@ compile/PCH/link/execution commands. The optional `--feature nil-results` matrix
 maintains the complete 24-case O0/O2 cross-product for final consolidation.
 
 All eighteen new compiler commands pass, including source/PCH lowering and
-shared structural graphs. All sixteen AST infrastructure tests pass, including
+shared structural graphs. All fifty-two affected nil/isolation/carrier regressions
+pass after splitting the variadic control: the ordinary C++ diagnostic and the
+independent ABI rejection with that diagnostic disabled are both enforced. All sixteen AST infrastructure tests pass, including
 plain/shared graphs and a real managed payload after those shared fields.
 Frontend controls cover six language/ownership profiles, source replay,
 relocation, consumer parsing, old-reader rejection and stripped capabilities for
