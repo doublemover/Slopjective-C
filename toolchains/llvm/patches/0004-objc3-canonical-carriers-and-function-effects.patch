@@ -64521,3 +64521,152 @@ index 000000000..b18ee42f6
 +  return 0;
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-native-finally.h b/clang/test/ObjC3/Sema/Inputs/borrowed-native-finally.h
+new file mode 100644
+index 000000000..f97418ef7
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-native-finally.h
+@@ -0,0 +1,4 @@
++#ifndef BORROWED_NATIVE_FINALLY_H
++#define BORROWED_NATIVE_FINALLY_H
++#include "borrowed-runtime-scopes.h"
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-native-finally.m b/clang/test/ObjC3/Sema/borrowed-native-finally.m
+new file mode 100644
+index 000000000..4b54162fe
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-native-finally.m
+@@ -0,0 +1,133 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-native-finally.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-native-finally.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-native-finally.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-native-finally.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-native-finally.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-native-finally.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-native-finally.h"
++#endif
++void finally_live(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {receiver_use(view);} @finally {receiver_use(view);}
++  receiver_use(view);
++}
++void finally_deferred(RuntimeScopeOwner *_Nonnull owner,int mode) {
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    @try {
++      __objc3_defer {receiver_use(view);}
++      if(mode)return;
++      if(mode==2)@throw owner;
++    } @catch(id exception) {receiver_use(view);}
++      @finally {__objc3_defer {receiver_use(view);}receiver_use(view);}
++  }
++}
++void finally_expired(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {owner=(id)0;} @finally {
++    receiver_use(view); // expected-error {{after its owner lifetime ended}}
++  }
++}
++void finally_clears(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {receiver_use(view);} @finally {owner=(id)0;}
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void finally_handler_binding(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=0;
++  @try {@throw owner;} @catch(RuntimeScopeOwner *_Nonnull exception) {view=[exception bytes];receiver_use(view);}
++    @finally {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++void finally_pinned_snapshot(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  withLifetime(owner) {
++    @try {owner=(id)0;} @finally {receiver_use(view);}
++  }
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void finally_nested(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {@try {receiver_use(view);} @finally {owner=(id)0;}}
++  @finally {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++void finally_local_and_outward_labels(RuntimeScopeOwner *_Nonnull owner,int mode) {
++start:
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    @try {if(mode==1)return;if(mode==2)goto done;receiver_use(view);}
++    @finally {if(mode==3)goto local;if(mode==4)goto start;if(mode==5)goto done;
++local:receiver_use(view);}
++  }
++done:return;
++}
++void finally_overrides_exception(RuntimeScopeOwner *_Nonnull owner,RuntimeScopeOwner *_Nonnull other) {
++  const char *view=[owner bytes];
++  @try {
++    @try {@throw owner;}
++    @finally {receiver_use(view);@throw other;}
++  } @catch(RuntimeScopeOwner *_Nonnull exception) {receiver_use(view);}
++}
++ReceiverBytes finally_return_expired(RuntimeScopeOwner *_Nonnull owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  const char *view=[owner bytes];
++  @try {return view;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++  @finally {owner=(id)0;}
++}
++ReceiverBytes finally_replaces_return(RuntimeScopeOwner *_Nonnull owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  const char *view=[owner bytes];
++  @try {return view;} @finally {owner=(id)0;return "independent";}
++}
++void finally_managed_nesting(RuntimeScopeOwner *_Nonnull owner) {
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    @try {@synchronized(owner){__objc3_defer {receiver_use(view);}@throw owner;}}
++    @catch(id exception){receiver_use(view);}
++    @finally {@autoreleasepool {receiver_use(view);}}
++  }
++}
++#if !__has_feature(objc_arc)
++void finally_native_release(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {receiver_use(view);} @finally {[owner release];}
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void finally_unwound_pool(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {
++    @try {@autoreleasepool {[owner autorelease];@throw owner;}}
++    @finally {receiver_use(view);}
++  } @catch(id exception){receiver_use(view);}
++}
++#endif
++#ifdef __cplusplus
++void finally_cpp_exception(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  try {@try {throw 7;} @finally {receiver_use(view);}}catch(int value){receiver_use(view);}
++}
++#endif
++
++void finally_break_and_continue(RuntimeScopeOwner *_Nonnull owner,int mode) {
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    for(int i=0;i!=2;++i) {
++      @try {if(mode==1)return;if(mode==2)goto done;receiver_use(view);}
++      @finally {receiver_use(view);if(mode==3)continue;if(mode==4)break;}
++    }
++  }
++done:return;
++}

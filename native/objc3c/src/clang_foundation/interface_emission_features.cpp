@@ -23,6 +23,7 @@
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclFriend.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/StmtObjC.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ObjC3Async.h"
 #include "clang/AST/PrettyPrinter.h"
@@ -153,6 +154,17 @@ bool HasDeclarationNSObjectStorage(const clang::NamedDecl *declaration) {
       }
     } visitor;
     visitor.context=&declaration->getASTContext();
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
+bool HasDeclarationNativeFinally(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Finally : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitObjCAtFinallyStmt(clang::ObjCAtFinallyStmt *) override {found = true;return true;}
+      bool VisitObjCAtThrowStmt(clang::ObjCAtThrowStmt *statement) override {found |= !statement->getThrowExpr();return true;}
+    } visitor;
     visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
   });
 }

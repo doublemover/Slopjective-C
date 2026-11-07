@@ -169,6 +169,97 @@ static void scope_normal_only_pool_exception(void) {
   objc_autoreleasePoolPop(token);
   assert(scope_captured_pops==1 && scope_destroyed==before+1);scope_captured_pool=0;
 }
+
+static int scope_finally_trace[32],scope_finally_trace_count;
+static void scope_finally_event(int value) {
+  assert(scope_finally_trace_count<32);scope_finally_trace[scope_finally_trace_count++]=value;
+}
+static int scope_finally_transfer(int mode) {
+  ScopeProbe *_Nonnull owner=[ScopeProbe new];
+#if !__has_feature(objc_arc)
+  __objc3_defer {[owner release];}
+#endif
+  const char *view=&owner->payload;
+  @try {
+    scope_finally_event(1);
+    __objc3_defer {scope_use(view);scope_finally_event(2);}
+    if(mode==0)return 17;
+    if(mode==1)goto finished;
+    if(mode==2)@throw scope_exception;
+  } @catch(id exception) {assert(exception==scope_exception);scope_finally_event(3);}
+    @finally {
+      scope_use(view);scope_finally_event(4);
+      __objc3_defer {scope_use(view);scope_finally_event(5);}
+    }
+  scope_finally_event(6);
+finished:scope_finally_event(7);return 19;
+}
+static int scope_finally_replaces_return(ScopeProbe *_Nonnull owner) {
+  const char *view=&owner->payload;
+  @try {scope_use(view);return 11;} @finally {scope_use(view);return 23;}
+}
+static void scope_finally_replaces_exception(ScopeProbe *_Nonnull owner) {
+  const char *view=&owner->payload;int caught=0;
+  @try {
+    @try {@throw scope_exception;}
+    @finally {scope_use(view);@throw owner;}
+  } @catch(id exception) {assert(exception==owner);scope_use(view);++caught;}
+  assert(caught==1);
+}
+static int scope_finally_suppresses_exception(ScopeProbe *_Nonnull owner) {
+  const char *view=&owner->payload;
+  @try {@throw scope_exception;} @finally {scope_use(view);return 29;}
+}
+static void scope_finally_outward_jump(ScopeProbe *_Nonnull owner) {
+  const char *view=&owner->payload;int visits=0;
+repeat:
+  if(visits){assert(visits==1);scope_use(view);return;}
+  @try {scope_use(view);return;}
+  @finally {++visits;scope_use(view);goto repeat;}
+}
+static void scope_finally_loop(ScopeProbe *_Nonnull owner) {
+  const char *view=&owner->payload;int finalized=0,iterations=0;
+  for(int i=0;i!=4;++i) {
+    ++iterations;
+    @try {scope_use(view);if(i==0)continue;if(i==2)break;}
+    @finally {scope_use(view);++finalized;}
+  }
+  assert(iterations==3 && finalized==3);
+}
+static int scope_finally_replaces_return_with_loop(ScopeProbe *_Nonnull owner) {
+  const char *view=&owner->payload;int finalized=0;
+  for(int i=0;i!=3;++i) {
+    @try {scope_use(view);return 11;}
+    @finally {scope_use(view);++finalized;if(i==0)continue;break;}
+  }
+  return finalized;
+}
+static void scope_finally_suite(void) {
+  for(int mode=0;mode!=4;++mode) {
+    int before=scope_destroyed;scope_finally_trace_count=0;
+    assert(scope_finally_transfer(mode)==(mode==0?17:19));
+    assert(scope_destroyed==before+1);
+    const int expected[4][7]={{1,2,4,5,0,0,0},{1,2,4,5,7,0,0},
+                            {1,2,3,4,5,6,7},{1,2,4,5,6,7,0}};
+    const int counts[4]={4,5,7,6};assert(scope_finally_trace_count==counts[mode]);
+    for(int i=0;i!=counts[mode];++i)assert(scope_finally_trace[i]==expected[mode][i]);
+  }
+  ScopeProbe *_Nonnull owner=[ScopeProbe new];
+#if !__has_feature(objc_arc)
+  __objc3_defer {[owner release];}
+#endif
+  assert(scope_finally_replaces_return(owner)==23);
+  assert(scope_finally_replaces_return_with_loop(owner)==2);
+  assert(scope_finally_suppresses_exception(owner)==29);
+  scope_finally_replaces_exception(owner);scope_finally_outward_jump(owner);scope_finally_loop(owner);
+#ifdef __cplusplus
+  const char *view=&owner->payload;int caught=0;
+  try {@try {throw 17;} @finally {scope_use(view);}}
+  catch(int value){assert(value==17);scope_use(view);++caught;}
+  assert(caught==1);
+#endif
+}
+
 static void runtime_scope_suite(void) {
   int initial_created=scope_created,initial_destroyed=scope_destroyed;
   @autoreleasepool {
@@ -188,7 +279,7 @@ static void runtime_scope_suite(void) {
       assert(scope_created==created+1 && scope_destroyed==destroyed+1 && scope_deferred==deferred+1);
       assert(scope_lock_evaluations==arguments+1);
     }
-    scope_normal_only_pool_exception();
+    scope_normal_only_pool_exception();scope_finally_suite();
 #if !__has_feature(objc_arc)
     scope_counted_pool();[scope_exception release];
 #endif

@@ -382,6 +382,13 @@ Suspension while holding a synchronization monitor is ill-formed. An await
 proved not to suspend does not cross that boundary. Scope cleanup that can end
 an owner shall be included when checking a borrowed return or subsequent use.
 
+A native `@finally` action surrounds both its protected body and handlers.
+The proof shall include finalizer effects before an outgoing borrowed result or
+subsequent use is admitted. A finalizer's own return, throw or outward jump
+replaces the pending transfer; it shall not be modeled as a defer destructor
+that terminates on a second exception. Handler binding cleanup precedes the
+finalizer, while enclosing independent owner claims retain their own scopes.
+
 ### 8.7.4 Escaping-use trigger points and minimum diagnostics (normative) {#part-8-7-4}
 
 In strict-system mode, a borrowed pointer value is treated as **non-escaping** unless an explicit unsafe escape marker is used.

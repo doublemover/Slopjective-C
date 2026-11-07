@@ -1,5 +1,13 @@
 # Linux implementation sprint
 
+The [System 2.38 finalizer span](linux_native_finally.md) models `@finally`
+registration around try/catch, cleanup order, native unwind and replacement
+return/throw/jump transfers. It also repairs GNUstep C++ rethrow ownership and
+adds source-free capability admission. All 76 affected compiler cases, six
+source-free profiles, four adjacent frontend groups, codec/isolation and 19 AST
+controls pass; both twelve-configuration native scope and frame-exception
+matrices pass under ASan/UBSan.
+
 The [System 2.37 managed-scope span](linux_managed_runtime_scopes.md) models
 native pool queues, normal-only synchronous pool exits, async drains and exceptional
 cleanup, plus exact synchronization snapshots and unlock ordering. Proven ready

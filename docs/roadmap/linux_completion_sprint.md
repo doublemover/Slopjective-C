@@ -1,5 +1,13 @@
 # Linux feature completion and SDK delivery
 
+The [System 2.38 finalizer span](linux_native_finally.md) models `@finally`
+registration around try/catch, cleanup order, native unwind and replacement
+return/throw/jump transfers. It also repairs GNUstep C++ rethrow ownership and
+adds source-free capability admission. All 76 affected compiler cases, six
+source-free profiles, four adjacent frontend groups, codec/isolation and 19 AST
+controls pass; both twelve-configuration native scope and frame-exception
+matrices pass under ASan/UBSan.
+
 The [System 2.37 managed-scope span](linux_managed_runtime_scopes.md) models
 native pool queues, normal-only synchronous pool exits, async drains and exceptional
 cleanup, plus exact synchronization snapshots and unlock ordering. Proven ready
@@ -59,6 +67,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Native publication | User standard-library class/constexpr-variable specializations, including partial patterns, argument packs and native primary ABI | Source authored; six frontend profiles and two instrumented source-free provider/two-consumer executables pass; wider profiles and SDK consolidation pending |
 | Native publication | Inherited formatter state, iterator traits, deduced member identity and unique native virtual slots | Source authored; fifteen AST infrastructure tests, twelve affected frontend groups and all four source-free libstdc++/libc++ native configurations pass; SDK consolidation pending |
 | Native publication | Remaining dependent lookup, declaration/predicate forms and wider standard-library configurations | Open |
+| Ownership/System   | Native finally cleanup, handler ordering, replacement transfers and C++ rethrow payload ownership | 76 compiler cases, six source-free profiles, four adjacent groups, codec/isolation, 19 AST controls and two 12-configuration instrumented native matrices pass; SDK pending |
 | Ownership/System   | Native pool release queues, async drains, synchronized receiver snapshots and suspension restrictions | 71 compiler cases, six source-free profiles, five adjacent groups, codec/isolation, 19 AST controls, 12 native scope configurations and four existing async configurations pass; SDK pending |
 | Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | Type-carried borrowed callback results/owner indices, deduction, native identity, PCH and published interfaces              | Source authored; focused source/PCH/native identity checks pass                              |

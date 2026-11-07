@@ -488,6 +488,10 @@ llvm::Error ValidateForEncoding(
   const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
   if (nsobject_storage != nsobject_storage_capability)
     return Invalid("NSObject storage identity and required capability must agree");
+  const bool native_finally = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeFinallyIdentity);
+  const bool native_finally_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeFinallySemantic) != sidecar.required_semantics.end();
+  if (native_finally != native_finally_capability)
+    return Invalid("native finally identity and required capability must agree");
   const bool managed_scopes = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasManagedRuntimeScopeIdentity);
   const bool managed_scope_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kManagedRuntimeScopeSemantic) != sidecar.required_semantics.end();
   if (managed_scopes != managed_scope_capability)

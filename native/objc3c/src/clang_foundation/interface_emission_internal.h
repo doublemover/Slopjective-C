@@ -200,6 +200,7 @@ bool HasDeclarationDependentKeyPathLiteral(const clang::NamedDecl *declaration);
 bool HasDeclarationDependentKeyPathTypeBody(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeDependentAwait(const clang::NamedDecl *);
 bool HasDeclarationNSObjectStorage(const clang::NamedDecl *);
+bool HasDeclarationNativeFinally(const clang::NamedDecl *declaration);
 bool HasDeclarationManagedRuntimeScope(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedReceiverResult(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedInteriorStorage(const clang::NamedDecl *declaration);

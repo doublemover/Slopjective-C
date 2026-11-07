@@ -20,3 +20,8 @@ Compiler controls separately check normal-only synchronous pool cleanup,
 async pool drains, suspended lock rejection, nested pins, pending release counts,
 callback effects and expiry. A native synchronous pool's exception semantics are
 not changed by the ownership CFG model.
+
+The finally witness checks exact defer/handler/finalizer order, return/goto and
+loop exits, finalizer return replacing an earlier return or exception, outward
+backward goto, replacement exception identity and mixed C++ unwinding. Each
+transfer checks borrowed payload access and exact object destruction.

@@ -1025,6 +1025,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeDependentAwaitSemantic);
     if (HasNSObjectStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kNSObjectStorageSemantic);
+    if (HasNativeFinallyIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeFinallySemantic);
     if (HasManagedRuntimeScopeIdentity(declaration))
       sidecar.required_semantics.push_back(kManagedRuntimeScopeSemantic);
     if (HasBorrowedReceiverResultIdentity(declaration))
@@ -1250,6 +1252,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
     kManagedRuntimeScopeSemantic,
+    kNativeFinallySemantic,
     kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,
@@ -1445,6 +1448,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
     kManagedRuntimeScopeSemantic,
+    kNativeFinallySemantic,
     kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,
