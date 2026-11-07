@@ -620,7 +620,17 @@ std::string FunctionTemplateConstraintKey(const clang::FunctionTemplateDecl *pat
 std::string UnnamedTemplateRecordKey(const clang::CXXRecordDecl *record,
                                      const clang::ASTContext &context) {
   const auto *owner=ClassTemplateOwner(record);
-  if (!owner) return {};
+  const clang::CXXRecordDecl *ordinary=nullptr;
+  if (!owner) {
+    bool saw_unnamed=false;
+    for (const auto *current=record;current;
+         current=llvm::dyn_cast<clang::CXXRecordDecl>(current->getDeclContext())) {
+      if (current->isLambda() || current->isLocalClass()) return {};
+      if (!current->getIdentifier() && !current->getTypedefNameForAnonDecl()) saw_unnamed=true;
+      else if (saw_unnamed) {ordinary=current;break;}
+    }
+    if (!ordinary) return {};
+  }
   std::vector<std::string> path;
   bool unnamed=false;
   for (unsigned depth=0;record && depth<64;++depth) {
@@ -629,9 +639,11 @@ std::string UnnamedTemplateRecordKey(const clang::CXXRecordDecl *record,
     const auto *pattern=specialization?specialization->getSpecializedTemplate():record->getDescribedClassTemplate();
     std::string arguments;
     if (specialization && !ClassSpecializationArgumentKey(specialization,context,arguments)) return {};
-    if (pattern && pattern->getCanonicalDecl()==owner->getCanonicalDecl()) {
+    if ((owner && pattern && pattern->getCanonicalDecl()==owner->getCanonicalDecl()) ||
+        (ordinary && record->getCanonicalDecl()==ordinary->getCanonicalDecl())) {
       if (!unnamed) return {};
-      std::string key=ReadInterfaceDeclarationStableId(owner)+":"+ReadNativeSymbolName(owner)+":"+arguments;
+      const clang::NamedDecl *publication=owner?static_cast<const clang::NamedDecl *>(owner):ordinary;
+      std::string key=ReadInterfaceDeclarationStableId(publication)+":"+ReadNativeSymbolName(publication)+":"+arguments;
       for (auto i=path.rbegin();i!=path.rend();++i)key+=";"+*i;
       return key;
     }
@@ -2049,6 +2061,23 @@ std::string ReadInterfaceLanguageProfile(const clang::ASTContext &context) {
   return ReadInterfaceLanguageProfile(context.getLangOpts(), context.getTargetInfo());
 }
 
+// An unnamed record's methods inherit its stable owner/path even when their
+// own signatures contain only scalar types. Native USRs for those methods
+// otherwise retain the anonymous parent's physical source coordinates.
+static std::string ProjectedCallableKey(const clang::FunctionDecl *function) {
+  const auto &context=function->getASTContext();
+  const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);
+  const auto parent=method?UnnamedTemplateRecordKey(method->getParent(),context):std::string();
+  if (parent.empty() && UnnamedTemplateTypeKey(function->getType(),context).empty()) return {};
+  std::string name=function->getQualifiedNameAsString();
+  if (!parent.empty()) {
+    name=parent+":"+function->clang::Decl::getDeclKindName();
+    if (!llvm::isa<clang::CXXConstructorDecl,clang::CXXDestructorDecl,clang::CXXConversionDecl>(function))
+      name+=":"+function->getNameAsString();
+  }
+  return name+"@"+ComputeInterfaceSourceSha256(CanonicalType(function->getType(),context));
+}
+
 std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration) {
   if (!declaration) return {};
@@ -2065,22 +2094,19 @@ std::string ReadInterfaceDeclarationStableId(
     if (const auto *pattern = alias->getDescribedAliasTemplate())
       return ReadInterfaceDeclarationStableId(pattern);
   if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) {
-    if (!UnnamedTemplateRecordKey(pattern->getTemplatedDecl(),pattern->getASTContext()).empty()) {
-      llvm::SmallString<128> usr;
-      if (clang::index::generateUSRForDecl(pattern,usr))return {};
-      return usr.str().str();
-    }
+    auto origin=UnnamedTemplateRecordKey(pattern->getTemplatedDecl(),pattern->getASTContext());
+    if (origin.empty())
+      if (const auto parent=UnnamedTemplateRecordKey(llvm::dyn_cast<clang::CXXRecordDecl>(pattern->getDeclContext()),pattern->getASTContext());!parent.empty())
+        origin=parent+";named-template:"+pattern->getNameAsString();
+    if (!origin.empty()) return "c:@RecordProjectedClassTemplate@"+ComputeInterfaceSourceSha256(origin);
     return "c:@ClassTemplate@" + pattern->getQualifiedNameAsString();
   }
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration))
     if (const auto *pattern = record->getDescribedClassTemplate())
       return ReadInterfaceDeclarationStableId(pattern);
   if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
-    if (!UnnamedTemplateRecordKey(llvm::dyn_cast<clang::CXXRecordDecl>(pattern->getDeclContext()),pattern->getASTContext()).empty()) {
-      llvm::SmallString<128> usr;
-      if (clang::index::generateUSRForDecl(pattern,usr))return {};
-      return usr.str().str();
-    }
+    if (const auto origin=UnnamedTemplateRecordKey(llvm::dyn_cast<clang::CXXRecordDecl>(pattern->getDeclContext()),pattern->getASTContext());!origin.empty())
+      return "c:@RecordProjectedAliasTemplate@"+ComputeInterfaceSourceSha256(origin)+"@"+pattern->getNameAsString();
     return "c:@AliasTemplate@" + pattern->getQualifiedNameAsString();
   }
   if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
@@ -2117,6 +2143,10 @@ std::string ReadInterfaceDeclarationStableId(
         ComputeInterfaceSourceSha256(key);
   }
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
+    const auto *function=pattern->getTemplatedDecl();
+    if (const auto projected=ProjectedCallableKey(function);!projected.empty())
+      return "c:@RecordProjectedFunctionTemplate@"+projected+
+          "@constraints@"+FunctionTemplateConstraintKey(pattern);
     llvm::SmallString<128> usr;
     if (clang::index::generateUSRForDecl(pattern, usr)) return {};
     return usr.str().str() + "@constraints@" + FunctionTemplateConstraintKey(pattern);
@@ -2131,6 +2161,12 @@ std::string ReadInterfaceDeclarationStableId(
     return "c:@UDirective@"+(owner?ReadInterfaceDeclarationStableId(owner):std::string("TU"))+
            "@"+ReadInterfaceDeclarationStableId(directive->getNominatedNamespaceAsWritten());
   }
+  if (const auto *tag=llvm::dyn_cast<clang::TagDecl>(declaration))
+    if (const auto origin=UnnamedTemplateTagKey(tag,tag->getASTContext());!origin.empty())
+      return "c:@RecordProjectedTag@"+std::to_string(tag->getKind())+"@"+ComputeInterfaceSourceSha256(origin);
+  if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if (const auto projected=ProjectedCallableKey(function);!projected.empty())
+      return "c:@RecordProjectedFunction@"+projected;
   llvm::SmallString<128> usr;
   if (clang::index::generateUSRForDecl(declaration, usr)) return {};
   // Native USRs encode filenames for C typedefs because those names have no
@@ -2411,7 +2447,7 @@ bool ReadInterfaceDeclarationIdentity(
         ComputeInterfaceSourceSha256(contract)+";";
   }
   if (const auto origins=UnnamedTemplateDeclarationTypeKey(representative);!origins.empty())
-    identity.canonical_type_identity+=";cxx-unnamed-template-projections:v1;origins="+ComputeInterfaceSourceSha256(origins)+";";
+    identity.canonical_type_identity+=";cxx-unnamed-record-projections:v2;origins="+ComputeInterfaceSourceSha256(origins)+";";
   if (HasDeclarationFactoryTypeProjection(representative))
     identity.canonical_type_identity+=";cxx-factory-type-projections:v1;";
   if (HasDeclarationLocalFactoryResult(representative))
@@ -2431,7 +2467,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationNativeArrayLifetime(representative))
     identity.canonical_type_identity += ";native-array-lifetimes:v1;";
   if (HasDeclarationNativeSubobject(representative))
-    identity.canonical_type_identity += ";native-subobject-cleanup:v2;";
+    identity.canonical_type_identity += ";native-subobject-cleanup:v3;";
   if (HasDeclarationNativeAllocation(representative))
     identity.canonical_type_identity += ";native-allocation-cleanup:v2;";
   if (HasDeclarationNativeDisposal(representative))

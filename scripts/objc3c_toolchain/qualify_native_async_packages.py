@@ -140,9 +140,9 @@ def qualify(sdk: Path, output: Path) -> dict:
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
     projections={row['qualified_name'] for row in metadata['declarations']
-                 if ';cxx-unnamed-template-projections:v1;' in row.get('canonical_type_identity','')}
-    if not ('objc3.cxx-unnamed-template-projections.v1' in metadata['required_semantics']):
-        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-unnamed-template-projections.v1' in metadata['required_semantics']")
+                 if ';cxx-unnamed-record-projections:v2;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-unnamed-record-projections.v2' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-unnamed-record-projections.v2' in metadata['required_semantics']")
     if not ({'NativeUnnamedTemplateProjections::First','NativeUnnamedTemplateProjections::Second',
             'NativeUnnamedTemplateProjections::Owned','NativeUnnamedTemplateProjections::Reader',
             'NativeUnnamedTemplateProjections::Wrapped','NativeUnnamedTemplateProjections::Ordered',
@@ -153,6 +153,13 @@ def check_factory_metadata(metadata):
             'NativeUnnamedTemplateProjections::Answer','NativeUnnamedTemplateProjections::Different',
             'NativeUnnamedTemplateProjections::provider_first','NativeUnnamedTemplateProjections::provider_read'}<=projections):
         raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeUnnamedTemplateProjections::First','NativeUnnamedTemplateProjections::Second',")
+    ordinary={'NativeUnnamedRecordProjections::First','NativeUnnamedRecordProjections::Second',
+              'NativeUnnamedRecordProjections::Reader','NativeUnnamedRecordProjections::ReverseReader',
+              'NativeUnnamedRecordProjections::NestedLeaf','NativeUnnamedRecordProjections::MemberExplicit',
+              'NativeUnnamedRecordProjections::EnumAnswer','NativeUnnamedRecordProjections::OtherEnumAnswer',
+              'NativeUnnamedRecordProjections::provider_read'}
+    if not ordinary <= projections:
+        raise ValueError('qualify_native_async_packages: ordinary unnamed-record projection metadata is incomplete')
     native_contracts={row['qualified_name'] for row in metadata['declarations']
                       if ';native-declaration-attributes:v2;' in row.get('canonical_type_identity','')}
     if not ({'NativeDeclarationAttributes::provider_object_size','NativeDeclarationAttributes::provider_dynamic_size',

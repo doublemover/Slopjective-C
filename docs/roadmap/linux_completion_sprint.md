@@ -1,5 +1,17 @@
 # Linux feature completion and SDK delivery
 
+The [System 2.46 virtual-subobject span](linux_virtual_subobjects.md)
+models complete/base-object construction and destruction as separate correlated
+paths, including virtual diamonds, delegation, function-try epilogues, abstract
+constructor initializer exclusion and anonymous-union active-member cleanup.
+Nullable receiver proofs use the same alternatives. ARC Block members separate
+implicit copy failure from slot release. Ordinary unnamed records publish stable
+owner/path identities. Source-free publication cuts over to subobject v3 and
+unnamed-record v2. All 65 affected compiler cases, six new source-free profiles, fourteen adjacent
+frontend groups, codec/isolation controls, 39 AST controls and twelve ASan/UBSan
+native configurations / 42 commands pass. Two final source/PCH fixture matrices
+also pass after adding the Block-array boundary control.
+
 The [System 2.45 delegation/function-try span](linux_delegation_function_try.md)
 adds whole-object cleanup after successful delegation, function-try initializer
 and destructor epilogue coverage, implicit rethrow/suppression and noexcept

@@ -198,9 +198,9 @@ inline constexpr const char *kNativeArrayLifetimeSemantic = "objc3.native-array-
 inline bool HasNativeArrayLifetimeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-array-lifetimes:v1;") != std::string::npos;
 }
-inline constexpr const char *kNativeSubobjectSemantic = "objc3.native-subobject-cleanup.v2";
+inline constexpr const char *kNativeSubobjectSemantic = "objc3.native-subobject-cleanup.v3";
 inline bool HasNativeSubobjectIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-subobject-cleanup:v2;") != std::string::npos;
+  return d.canonical_type_identity.find(";native-subobject-cleanup:v3;") != std::string::npos;
 }
 inline constexpr const char *kNativeAllocationSemantic = "objc3.native-allocation-cleanup.v2";
 inline bool HasNativeAllocationIdentity(const InterfaceDeclarationIdentity &d) {
@@ -265,9 +265,9 @@ inline bool HasNativeDeclarationAttributeIdentity(const InterfaceDeclarationIden
 inline bool HasCxxCoroutineTraitsSpecializationIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxUnnamedTemplateProjectionSemantic = "objc3.cxx-unnamed-template-projections.v1";
+inline constexpr const char *kCxxUnnamedTemplateProjectionSemantic = "objc3.cxx-unnamed-record-projections.v2";
 inline bool HasCxxUnnamedTemplateProjectionIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-unnamed-template-projections:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-unnamed-record-projections:v2;") != std::string::npos;
 }
 inline constexpr const char *kCxxStandardLibrarySpecializationSemantic = "objc3.cxx-standard-library-specializations.v1";
 inline bool HasCxxStandardLibrarySpecializationIdentity(const InterfaceDeclarationIdentity &d) {

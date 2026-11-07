@@ -1,5 +1,10 @@
 # Public unnamed template member projections on Linux
 
+The [System 2.46 publication span](linux_virtual_subobjects.md) extends this
+identity model to ordinary unnamed member records and anonymous unions. Current
+readers require `objc3.cxx-unnamed-record-projections.v2`; the v1 capability below
+records the historical template-only span.
+
 Source **2.92** implements public type graphs rooted in unnamed C++ member records
 of complete named class-template owners. SDK **2.62** remains the accepted archive;
 the [source receipt](../support/linux_cxx_unnamed_template_projections_progress.json)

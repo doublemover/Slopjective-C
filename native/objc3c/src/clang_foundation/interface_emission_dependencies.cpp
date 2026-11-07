@@ -1323,7 +1323,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
                             const clang::ClassTemplateDecl *pattern) {
   if (pattern && !IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   const auto *body=record->getDefinition();
-  if (!body || !body->isCompleteDefinition() || body->isUnion() ||
+  if (!body || !body->isCompleteDefinition() || (body->isUnion() && !body->isAnonymousStructOrUnion()) ||
       (!body->getIdentifier() && UnnamedTemplateRecordKey(body,body->getASTContext()).empty())) return false;
   if (record->getDeclContext()->isRecord() && !body->getLexicalDeclContext()->isRecord() &&
       !IsDetachedNestedTemplateDefinition(body) &&
@@ -1556,7 +1556,9 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       }
       if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member)) {
         if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(type))
-          supported &= (tag->getIdentifier() || tag->getTypedefNameForAnonDecl() || IsExpressionLocalTag(tag));
+          supported &= (tag->getIdentifier() || tag->getTypedefNameForAnonDecl() || IsExpressionLocalTag(tag) ||
+              (llvm::isa<clang::CXXRecordDecl>(tag) &&
+               !UnnamedTemplateRecordKey(llvm::cast<clang::CXXRecordDecl>(tag),tag->getASTContext()).empty()));
         supported &= IsBoundedCxxDeclaration(type, result, exports);
         continue;
       }

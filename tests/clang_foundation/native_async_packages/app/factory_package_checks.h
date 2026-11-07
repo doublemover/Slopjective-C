@@ -3,6 +3,21 @@
 
 int factory_package_checks() {
   {
+    namespace Project=NativeUnnamedRecordProjections;
+    static_assert(!__is_same(Project::First,Project::Second));
+    static_assert(!__is_same(Project::Kind,Project::OtherKind));
+    static_assert(!__is_same(Project::Reader,Project::ReverseReader));
+    static_assert(!__is_same(Project::Ordered,Project::Reversed));
+    static_assert(Project::EnumAnswer::number==42 && Project::OtherEnumAnswer::number==42);
+    static_assert(__is_same(Project::Nested,Project::Rebound));
+    static_assert(Project::Answer::number==42 && Project::Different::number==43);
+    Project::First first{17};Project::Second second{25};
+    if(Project::provider_read(first,second)!=42 || Project::provider_read(second,first)!=8)return 84;
+    if(Project::invoke(&Project::read,first,second)!=42 || first.*Project::member!=17)return 85;
+    Project::NestedLeaf nested{42};Project::Family family{};family.integer=42;
+    if(nested.value!=42 || family.integer!=42 || Project::MemberExplicit::read({42})!=42)return 86;
+  }
+  {
     namespace Contract=NativeDeclarationAttributes;
     if(Contract::enabled(40)!=42 || Contract::enabled(-40)!=42)return 221;
     if(Contract::inline_enabled(40)!=42 || Contract::enabled_template(40)!=42 || Contract::enabled_template(-40)!=42)return 222;

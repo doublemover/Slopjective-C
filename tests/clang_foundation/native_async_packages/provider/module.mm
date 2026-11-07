@@ -1,3 +1,4 @@
+#include "unnamed_record_projections.h"
 #include "unnamed_template_projections.h"
 #include "declaration_attributes.h"
 #include "custom_coroutines.h"
@@ -1983,6 +1984,11 @@ void NativeDeclarationAttributes::deallocate_other(void *value){delete static_ca
 int *NativeDeclarationAttributes::allocated_value(unsigned long value){return new int(static_cast<int>(value));}
 
 int NativeDeclarationAttributes::provider_nested(Family<int> value){return value.nested();}
+
+namespace NativeUnnamedRecordProjections {
+int provider_read(First a,Second b){return read(a,b);}
+int provider_read(Second a,First b){return read(a,b);}
+}
 
 namespace NativeUnnamedTemplateProjections {
 Kind provider_kind(Kind value){return value;}

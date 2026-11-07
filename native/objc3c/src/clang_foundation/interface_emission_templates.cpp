@@ -345,7 +345,9 @@ const clang::NamedDecl *TemplatePublicationOwner(const clang::NamedDecl *declara
       pattern |= variable->getDescribedVarTemplate()!=nullptr;
     if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(current)) {
       pattern |= record->getDescribedClassTemplate() ||
-          llvm::isa<clang::ClassTemplateSpecializationDecl>(record);
+          llvm::isa<clang::ClassTemplateSpecializationDecl>(record) ||
+          (!record->getIdentifier() && !record->getTypedefNameForAnonDecl() &&
+           !record->isLocalClass() && !record->isLambda());
       if (pattern && !record->isDependentContext() && !record->getDescribedClassTemplate() &&
           !llvm::isa<clang::ClassTemplateSpecializationDecl>(record)) return record;
     }

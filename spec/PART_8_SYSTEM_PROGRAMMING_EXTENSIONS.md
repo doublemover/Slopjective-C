@@ -435,6 +435,14 @@ Constructor/destructor function-try handlers observe completed subobject cleanup
 including implicit destructor epilogues. Falling off those handlers implicitly
 rethrows; a destructor handler may return without repeating subobject destruction.
 
+Complete-object and base-object constructor/destructor paths shall preserve
+virtual-base ownership. A base constructor does not evaluate ignored virtual
+initializers, including their argument side effects. Its cleanup shall not destroy
+virtual bases owned by the most-derived object. Abstract constructor bodies use
+that base-object rule. Indirect anonymous-union initialization registers only
+the successfully constructed active member; the parent destructor shall not add
+implicit whole-union destruction to user-authored active-arm cleanup.
+
 A native catch handler observes owner state after protected-region cleanup,
 including catch-all and scalar/reference exception bindings. A successful strong
 Block binding owns its copied captures; a failed heap copy does not initialize

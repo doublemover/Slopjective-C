@@ -2987,6 +2987,57 @@ void TestNativeDeclarationAttributes() {
   auto replay=emit_c(c.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==c.identity.semantic_fingerprint);
 }
 
+void TestUnnamedRecordProjections() {
+  std::ifstream input(std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/unnamed_record_projections.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for (const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &text,const char *file="unnamed-record-projections.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      ast->getDiagnostics().getClient()->BeginSourceFile(ast->getLangOpts(),&ast->getPreprocessor());
+      auto EndDiagnostics=llvm::scope_exit([&]{ast->getDiagnostics().getClient()->EndSourceFile();});
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.record_projections","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.record_projections","test",{},{},{},{"NativeUnnamedRecordProjections"});
+    };
+    auto first=emit(source);
+    for (const auto &d:first.diagnostics)std::fprintf(stderr,"PROJECT %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);
+    for (const auto &d:replay.diagnostics)std::fprintf(stderr,"PROJECT REPLAY %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    assert(replay.source_bytes==first.source_bytes);
+    auto moved=emit("\n\n"+source,"moved-projections.mm");
+    assert(moved.success && moved.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto type=[&](const char *name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=decoded->declarations.end());return *row;
+    };
+    assert(type("NativeUnnamedRecordProjections::First").canonical_type_identity!=type("NativeUnnamedRecordProjections::Second").canonical_type_identity);
+    assert(type("NativeUnnamedRecordProjections::Reader").canonical_type_identity!=type("NativeUnnamedRecordProjections::ReverseReader").canonical_type_identity);
+    assert(type("NativeUnnamedRecordProjections::Kind").canonical_type_identity!=type("NativeUnnamedRecordProjections::OtherKind").canonical_type_identity);
+    assert(type("NativeUnnamedRecordProjections::EnumAnswer").canonical_type_identity!=type("NativeUnnamedRecordProjections::OtherEnumAnswer").canonical_type_identity);
+    std::set<std::string> overloads;
+    for(const auto &row:decoded->declarations)if(row.qualified_name=="NativeUnnamedRecordProjections::provider_read")overloads.insert(row.native_symbol_name);
+    assert(overloads.size()==2 && !overloads.count(""));
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxUnnamedTemplateProjectionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxUnnamedTemplateProjectionIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto bad_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!bad_owner);llvm::consumeError(bad_owner.takeError());
+    auto changed=source;const auto at=changed.find("using Nominal=First;");assert(at!=std::string::npos);
+    changed.replace(at,std::string("using Nominal=First;").size(),"using Nominal=Second;");
+    auto different=emit(changed);assert(different.success && different.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto denied=emit("namespace Private {template<class T>struct Family {struct {T value;} first;};}"
+        "namespace NativeUnnamedRecordProjections {using Hidden=decltype(Private::Family<int>{}.first);}");
+    assert(!denied.success && std::any_of(denied.diagnostics.begin(),denied.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+}
+
 void TestUnnamedTemplateProjections() {
   std::ifstream input(std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/unnamed_template_projections.h");
   assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
@@ -4254,6 +4305,148 @@ void TestAutomaticOwnerUnwindReplay() {
             PublishedOrdinaryOwner *_Nonnull local=published_ordinary_factory();
             view=published_ordinary_bytes(local);published_ordinary_raise();
           } @catch(...) {published_ordinary_use(view);}
+        }
+      )";
+      auto bad=parse(first.source_bytes+expired,"expired-runtime-scope.m");
+      assert(bad && bad->getDiagnostics().hasErrorOccurred());
+
+    }
+}
+
+void TestNativeVirtualSubobjectReplay() {
+  for(const char *standard:{"c++20","c++23"})
+    for(bool arc:{false,true}) {
+      const bool cxx=std::string(standard)!="c17";
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
+      args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+      const std::string source=R"(
+        typedef borrowed const char *PublishedAllocationBytes;
+        __attribute__((objc_root_class)) @interface PublishedAllocationOwner {@public char payload;}
+        @end
+        void published_allocation_use(const char *view __attribute__((noescape)));
+        PublishedAllocationOwner *_Nonnull published_subobject_factory(void);
+        void published_subobject_raise(void);
+        struct PublishedSubobjectBase {explicit PublishedSubobjectBase(int);~PublishedSubobjectBase() noexcept(false);};
+        struct PublishedSubobjectMember {explicit PublishedSubobjectMember(int);~PublishedSubobjectMember() noexcept(false);};
+        inline PublishedAllocationBytes published_allocation_bytes(PublishedAllocationOwner *_Nonnull owner)
+            __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->payload;}
+        struct PublishedSubobjectValue:virtual PublishedSubobjectBase {
+          PublishedSubobjectMember first,second;
+          PublishedSubobjectValue(PublishedAllocationOwner *_Nonnull owner,int)
+              :PublishedSubobjectBase(0),first(1),second(2) {
+            const char *view=published_allocation_bytes(owner);
+            __objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          }
+          explicit PublishedSubobjectValue(PublishedAllocationOwner *_Nonnull owner) try
+              :PublishedSubobjectValue(owner,0) {
+            const char *view=published_allocation_bytes(owner);
+            __objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          } catch(...) {published_allocation_use(published_allocation_bytes(owner));}
+          ~PublishedSubobjectValue() noexcept(false) try {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();
+            const char *view=published_allocation_bytes(local);
+            __objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          } catch(...) {
+            PublishedAllocationOwner *_Nonnull handler=published_subobject_factory();
+            const char *view=published_allocation_bytes(handler);
+            __objc3_defer {published_allocation_use(view);}return;
+          }
+        };
+        struct PublishedVirtualMost:PublishedSubobjectValue {
+          explicit PublishedVirtualMost(PublishedAllocationOwner *_Nonnull owner)
+              :PublishedSubobjectBase(3),PublishedSubobjectValue(owner) {}
+          ~PublishedVirtualMost() noexcept(false) {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();
+            const char *view=published_allocation_bytes(local);__objc3_defer {published_allocation_use(view);}
+          }
+        };
+        struct PublishedAnonymousValue {
+          union {PublishedSubobjectMember active;int fallback;};
+          explicit PublishedAnonymousValue(PublishedAllocationOwner *_Nonnull owner):active(1) {
+            const char *view=published_allocation_bytes(owner);__objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          }
+          ~PublishedAnonymousValue() noexcept(false) {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();
+            const char *view=published_allocation_bytes(local);__objc3_defer {published_allocation_use(view);}
+            active.~PublishedSubobjectMember();
+          }
+        };
+        typedef void (^PublishedMemberCallback)(void);
+        struct PublishedBlockMembers {
+          PublishedMemberCallback first,second;
+          PublishedBlockMembers(PublishedAllocationOwner *_Nonnull owner,PublishedMemberCallback callback)
+              :first(callback),second(callback) {
+            const char *view=published_allocation_bytes(owner);__objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          }
+          ~PublishedBlockMembers() noexcept(false) {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();
+            const char *view=published_allocation_bytes(local);__objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          }
+        };
+        inline void published_allocation_body(PublishedAllocationOwner *_Nonnull owner,int mode) {
+          withLifetime(owner) {
+            const char *view=published_allocation_bytes(owner);
+            try {__objc3_defer {published_allocation_use(view);}PublishedVirtualMost value(owner);PublishedAnonymousValue active(owner);(void)value;(void)active;}
+            catch(...) {published_allocation_use(view);}
+          }
+        }
+      )";
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.native_virtual_subobject","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_virtual_subobject","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);return result;
+      };
+      auto first=emit(source,"finally-provider.m");
+      auto replay=emit(first.source_bytes,"finally-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-finally.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> supported;
+      for(const auto &item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+      assert(llvm::is_contained(supported,llvm::StringRef(kNativeSubobjectSemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      auto older=supported;std::erase(older,llvm::StringRef(kNativeSubobjectSemantic));
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto missing=*decoded;std::erase(missing.required_semantics,kNativeSubobjectSemantic);
+      auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);
+      assert(llvm::StringRef(llvm::toString(invalid.takeError())).contains("native subobject cleanup identity"));
+      auto plain=emit("void plain_scope_contract(void);","plain-scope-contract.m");
+      auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+      invented->required_semantics.push_back(kNativeSubobjectSemantic);
+      auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);
+      llvm::consumeError(unexpected.takeError());
+      auto good=parse(first.source_bytes+R"(
+        void finally_consumer(PublishedAllocationOwner *_Nonnull owner) {published_allocation_body(owner,0);}
+      )","runtime-consumer.m");
+      assert(good && !good->getDiagnostics().hasErrorOccurred());
+      const std::string expired=R"(
+        void subobject_expired(PublishedAllocationOwner *_Nonnull owner) {
+          const char *view=0;
+          try {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();view=published_allocation_bytes(local);
+            PublishedSubobjectValue value(owner);(void)value;
+          } catch(...) {published_allocation_use(view);}
         }
       )";
       auto bad=parse(first.source_bytes+expired,"expired-runtime-scope.m");
@@ -7757,12 +7950,21 @@ void TestPublicClassTemplates() {
     auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{int api(){return hidden();}};");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
-    for(const auto *gated:{"template<class T>struct Box;",
-                          "template<class T>struct Box{T api();};",
-                          "template<class T>struct Box{};template<class T>struct Box<T*>{Box();};",
-                          "template<class T>struct Box{};template<>struct Box<int>{Box();};",
-                          "template<class T>struct Box{template<class U> U api(U n);};"})
-      assert(!emit(gated).success);
+    assert(!emit("template<class T>struct Box;").success);
+    // Declaration-only members are supported contracts. Preserve their rows
+    // and replay identity instead of retaining the old definition-only gate.
+    for(const auto *admitted:{"template<class T>struct Box{T api();};",
+                             "template<class T>struct Box{};template<class T>struct Box<T*>{Box();};",
+                             "template<class T>struct Box{};template<>struct Box<int>{Box();};",
+                             "template<class T>struct Box{template<class U> U api(U n);};"}) {
+      auto declared=emit(admitted);assert(declared.success);
+      auto metadata=llvm::json::parse(declared.sidecar_json);assert(metadata);
+      assert(std::any_of(metadata->getAsObject()->getArray("declarations")->begin(),
+                        metadata->getAsObject()->getArray("declarations")->end(),
+                        [](const auto &row){return row.getAsObject()->getString("qualified_name")=="Box";}));
+      auto replay=emit(declared.source_bytes,"replayed-member-declarations.cpp");
+      assert(replay.success && replay.identity.semantic_fingerprint==declared.identity.semantic_fingerprint);
+    }
   }
 }
 
@@ -8852,6 +9054,7 @@ int main(int argc,char **argv) {
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
   TestAutomaticOwnerUnwindReplay();
+  TestNativeVirtualSubobjectReplay();
   TestNativeFunctionTryReplay();
   TestNativeSubobjectReplay();
   TestNativeArrayLifetimeReplay();
@@ -8915,6 +9118,7 @@ int main(int argc,char **argv) {
   TestNativeAllocatorAndDiagnosticContracts();
   TestNativeDeclarationAttributes();
   TestCOverloadableInterfaces();
+  TestUnnamedRecordProjections();
   TestUnnamedTemplateProjections();
   TestStandardCoroutineTypesAndTraits();
   TestCustomCoroutineBodies();

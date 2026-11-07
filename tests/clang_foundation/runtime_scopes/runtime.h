@@ -748,13 +748,176 @@ static void delegation_function_try_suite(ScopeProbe *_Nonnull owner) {
   }
   subobject_fail=-1;subobject_mask=0;subobject_check_local=0;
 }
+
+static int virtual_failure=-1,virtual_mask,virtual_returning;
+static int virtual_stage(int part) {
+  allocation_event(100+part);if(virtual_failure==part)throw part;return part;
+}
+struct ScopeVirtualPart {
+  int tag;
+  explicit ScopeVirtualPart(int value) noexcept:tag(value) {}
+  ~ScopeVirtualPart() noexcept(false) {allocation_event(120+tag);if(virtual_mask&(1<<tag))throw tag;}
+};
+struct ScopeVirtualRoot:ScopeVirtualPart {
+  explicit ScopeVirtualRoot(int value) noexcept:ScopeVirtualPart(value) {}
+  ~ScopeVirtualRoot() noexcept(false)=default;
+};
+struct ScopeVirtualOwner:virtual ScopeVirtualRoot {
+  ScopeVirtualPart member;
+  explicit ScopeVirtualOwner(ScopeProbe *_Nonnull owner) try
+      :ScopeVirtualRoot(virtual_stage(0)),member(virtual_stage(1)) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(130);}
+    if(virtual_returning)goto done;
+    if(virtual_failure==2)virtual_stage(2);
+  done:scope_use(view);
+  } catch(int value) {assert(value==virtual_failure);allocation_event(140);scope_use(&owner->payload);}
+  ~ScopeVirtualOwner() noexcept(false) try {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(131);
+#if !__has_feature(objc_arc)
+      [local release];
+#endif
+    }
+    if(virtual_returning)return;
+    if(virtual_failure==4)virtual_stage(4);
+  } catch(int value) {assert(value==(virtual_failure==4?4:1));allocation_event(141);}
+};
+struct ScopeVirtualMost:ScopeVirtualOwner {
+  explicit ScopeVirtualMost(ScopeProbe *_Nonnull owner)
+      :ScopeVirtualRoot(virtual_stage(3)),ScopeVirtualOwner(owner) {scope_use(&owner->payload);}
+  ~ScopeVirtualMost() noexcept(false) {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(132);
+#if !__has_feature(objc_arc)
+      [local release];
+#endif
+    }
+  }
+};
+struct ScopeVirtualRight:virtual ScopeVirtualRoot {
+  ScopeVirtualRight():ScopeVirtualRoot(virtual_stage(6)) {}
+  ~ScopeVirtualRight() noexcept(false) {allocation_event(136);}
+};
+struct ScopeVirtualDiamond:ScopeVirtualOwner,ScopeVirtualRight {
+  explicit ScopeVirtualDiamond(ScopeProbe *_Nonnull owner)
+      :ScopeVirtualRoot(virtual_stage(3)),ScopeVirtualOwner(owner),ScopeVirtualRight() {}
+  ~ScopeVirtualDiamond() noexcept(false) {allocation_event(137);}
+};
+struct ScopeVirtualDelegating:virtual ScopeVirtualRoot {
+  ScopeVirtualPart member;
+  ScopeVirtualDelegating(ScopeProbe *_Nonnull owner,int)
+      :ScopeVirtualRoot(virtual_stage(0)),member(virtual_stage(1)) {scope_use(&owner->payload);}
+  explicit ScopeVirtualDelegating(ScopeProbe *_Nonnull owner):ScopeVirtualDelegating(owner,0) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(133);}
+    virtual_stage(5);
+  }
+  ~ScopeVirtualDelegating() noexcept(false) {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(134);
+#if !__has_feature(objc_arc)
+      [local release];
+#endif
+    }
+  }
+};
+struct ScopeVirtualDelegatedMost:ScopeVirtualDelegating {
+  explicit ScopeVirtualDelegatedMost(ScopeProbe *_Nonnull owner)
+      :ScopeVirtualRoot(virtual_stage(3)),ScopeVirtualDelegating(owner) {}
+  ~ScopeVirtualDelegatedMost() noexcept(false)=default;
+};
+struct ScopeAnonymousOwner {
+  union {ScopeVirtualPart active;int fallback;};
+  explicit ScopeAnonymousOwner(ScopeProbe *_Nonnull owner):active(virtual_stage(1)) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(150);}
+    if(virtual_failure==2)virtual_stage(2);
+  }
+  ~ScopeAnonymousOwner() noexcept(false) {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(151);
+#if !__has_feature(objc_arc)
+      [local release];
+#endif
+    }
+    active.~ScopeVirtualPart();
+  }
+};
+static void virtual_expect(const int *expected,int count,int caught,int exception) {
+  assert(caught==exception);
+  if(allocation_trace_count!=count){fprintf(stderr,"virtual length %d != %d:",allocation_trace_count,count);for(int i=0;i<allocation_trace_count;++i)fprintf(stderr," %d",allocation_trace[i]);fprintf(stderr,"\n");}
+  assert(allocation_trace_count==count);
+  for(int i=0;i<count;++i)assert(allocation_trace[i]==expected[i]);
+}
+static void virtual_object_suite(ScopeProbe *_Nonnull owner) {
+  const bool variants[]={false,true};
+  for(int kind=0;kind!=3;++kind)for(int returning=0;returning!=2;++returning) {
+    virtual_failure=-1;virtual_mask=0;virtual_returning=returning;allocation_trace_count=0;
+    if(kind==0){ScopeVirtualOwner value(owner);(void)value;}
+    else if(kind==1){ScopeVirtualMost value(owner);(void)value;}
+    else {ScopeVirtualDiamond value(owner);(void)value;}
+    const int complete[]={100,101,130,131,121,120};
+    const int base[]={103,101,130,132,131,121,123};
+    const int diamond[]={103,101,130,137,136,131,121,123};
+    virtual_expect(kind==0?complete:kind==1?base:diamond,kind==0?6:kind==1?7:8,0,0);
+  }
+  for(bool base:variants)for(int failure=0;failure!=5;++failure) {
+    if(failure==3 || (base && failure==0))continue;
+    virtual_failure=failure;virtual_mask=0;virtual_returning=0;allocation_trace_count=0;int caught=0;
+    withLifetime(owner) {
+      const char *view=&owner->payload;
+      try {
+        __objc3_defer {scope_use(view);allocation_event(160);}
+        if(base){ScopeVirtualMost value(owner);(void)value;}else {ScopeVirtualOwner value(owner);(void)value;}
+      } catch(int value){assert(value==failure);scope_use(view);allocation_event(161);++caught;}
+    }
+    int expected[20],count=0;expected[count++]=base?103:100;
+    if(failure!=0)expected[count++]=101;
+    if(failure==2)expected[count++]=102;
+    if(failure>=2)expected[count++]=130;
+    if(failure==4) {
+      if(base)expected[count++]=132;
+      expected[count++]=104;expected[count++]=131;
+    }
+    if(failure>=2)expected[count++]=121;
+    if(!base && failure!=0)expected[count++]=120;
+    expected[count++]=failure==4?141:140;
+    if(base)expected[count++]=123;
+    expected[count++]=160;expected[count++]=161;
+    virtual_expect(expected,count,caught,1);
+  }
+  for(bool base:variants) {
+    virtual_failure=-1;virtual_mask=1<<1;virtual_returning=1;allocation_trace_count=0;int caught=0;
+    try {if(base){ScopeVirtualMost value(owner);(void)value;}else {ScopeVirtualOwner value(owner);(void)value;}}
+    catch(int value){assert(value==1);++caught;allocation_event(161);}
+    const int complete[]={100,101,130,131,121,120,141,161};
+    const int most[]={103,101,130,132,131,121,141,123,161};
+    virtual_expect(base?most:complete,base?9:8,caught,1);
+  }
+  for(bool base:variants) {
+    virtual_failure=5;virtual_mask=0;virtual_returning=0;allocation_trace_count=0;int caught=0;
+    try {if(base){ScopeVirtualDelegatedMost value(owner);(void)value;}else {ScopeVirtualDelegating value(owner);(void)value;}}
+    catch(int value){assert(value==5);++caught;}
+    const int complete[]={100,101,105,133,134,121,120};
+    const int most[]={103,101,105,133,134,121,123};
+    virtual_expect(base?most:complete,7,caught,1);
+  }
+  const int anonymous_failures[]={-1,1,2};
+  for(int failure:anonymous_failures) {
+    virtual_failure=failure;virtual_mask=0;allocation_trace_count=0;int caught=0;
+    try {ScopeAnonymousOwner value(owner);(void)value;}catch(int value){assert(value==failure);++caught;}
+    const int normal[]={101,150,121,151};
+    const int initial[]={101};const int body[]={101,102,150,121};
+    virtual_expect(failure<0?normal:failure==1?initial:body,failure==1?1:4,caught,failure>=0);
+  }
+  virtual_failure=-1;virtual_mask=0;virtual_returning=0;
+}
+
 static void allocation_array_suite(void) {
   ScopeProbe *_Nonnull owner=[ScopeProbe new];
 #if !__has_feature(objc_arc)
   __objc3_defer {[owner release];}
 #endif
   allocation_failure_path(owner,0);allocation_failure_path(owner,1);
-  array_failure_path(owner,0);array_failure_path(owner,1);construction_group_suite(owner);subobject_suite(owner);delegation_function_try_suite(owner);
+  array_failure_path(owner,0);array_failure_path(owner,1);construction_group_suite(owner);subobject_suite(owner);delegation_function_try_suite(owner);virtual_object_suite(owner);
   const char *view=&owner->payload;delete[] new ScopeNeverDisposal[0];scope_use(view);
   pid_t child=fork();assert(child>=0);
   if(child==0) {
@@ -784,7 +947,7 @@ static int scope_fail_block_copy;
 extern "C"
 #endif
 __attribute__((noinline)) void *_Nullable _Block_copy(const void *_Nullable source) {
-  if(scope_fail_block_copy){scope_fail_block_copy=0;@throw scope_exception;}
+  if(scope_fail_block_copy && --scope_fail_block_copy==0){@throw scope_exception;}
   if(!scope_real_block_copy)scope_real_block_copy=(void *(*)(const void *))dlsym(RTLD_NEXT,"_Block_copy");
   assert(scope_real_block_copy);return scope_real_block_copy(source);
 }
@@ -799,6 +962,50 @@ static void scope_ordinary_block_unwind(int fail_copy) {
   } @catch(...) {assert(scope_destroyed==before+1 && scope_fail_block_copy==0);}
   assert(scope_destroyed==before+1);
 }
+
+#ifdef __cplusplus
+typedef void (^ScopeMemberCallback)(void);
+static int scope_member_body_failure,scope_member_destroying_failure;
+__attribute__((noinline,nothrow)) static int scope_arm_member_copy(int fault) {
+  scope_fail_block_copy=fault==1?1:fault==4?2:0;return 0;
+}
+struct ScopeBlockMemberOwner {
+  int armed;
+  ScopeMemberCallback first,second;
+  __weak ScopeMemberCallback weak;
+  ScopeBlockMemberOwner(ScopeProbe *_Nonnull owner,ScopeMemberCallback source,int fault)
+      :armed(scope_arm_member_copy(fault)),first(source),second(source),weak(source) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(170);}
+    if(scope_member_body_failure)scope_ordinary_raise(0);
+  }
+  ~ScopeBlockMemberOwner() noexcept(false) {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(171);}
+    if(scope_member_destroying_failure)scope_ordinary_raise(0);
+  }
+};
+static void scope_block_member_unwind(void) {
+  for(int fault=0;fault!=5;++fault) {
+    int before=scope_destroyed,caught=0;allocation_trace_count=0;
+    scope_member_body_failure=fault==2;scope_member_destroying_failure=fault==3;
+    {
+      ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+      ScopeMemberCallback source=^{scope_use(&local->payload);};
+      @try {ScopeBlockMemberOwner value(local,source,fault);(void)value;}
+      @catch(id exception){assert(exception==scope_exception);++caught;}
+      assert(caught==(fault!=0) && scope_fail_block_copy==0);
+      assert(scope_destroyed==before+(fault==0 || fault==3));
+      source();
+    }
+    assert(scope_destroyed==before+1+(fault==0 || fault==3));
+    assert(allocation_trace_count==(fault==1 || fault==4?0:fault==2?1:2));
+    if(fault!=1 && fault!=4)assert(allocation_trace[0]==170);
+    if(fault==0 || fault==3)assert(allocation_trace[1]==171);
+  }
+  scope_member_body_failure=0;scope_member_destroying_failure=0;
+}
+#endif
+
 static void scope_ordinary_record_block(void) {
   int before=scope_destroyed;
   {
@@ -813,6 +1020,9 @@ static void scope_ordinary_record_block(void) {
   assert(scope_destroyed==before+1);
 }
 static void scope_ordinary_owner_unwind(void) {
+#ifdef __cplusplus
+  scope_block_member_unwind();
+#endif
   int before=scope_destroyed;
   @try {
     ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
