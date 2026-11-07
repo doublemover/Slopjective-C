@@ -15,12 +15,22 @@
 using namespace objc3::clang_foundation;
 
 int main() {
-  for (unsigned family=0;family!=16;++family) {
-    const bool registers=family==15,storage=family==14,messages=family==13,composition=family==12,carrier_calls=family==11;
+  for (unsigned family=0;family!=17;++family) {
+    const bool cpp_runtime=family==16,registers=family==15,storage=family==14,messages=family==13,composition=family==12,carrier_calls=family==11;
     const bool resource_paths=family==9,union_paths=family==10;
-    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results || union_paths || composition || messages || storage || registers;
+    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results || union_paths || composition || messages || storage || registers || cpp_runtime;
     const bool blocks=family>=2 && family<6,producers=family>=4 && family<6;
-    std::string source = registers ? R"(
+    std::string source = cpp_runtime ? R"(
+      namespace CatalogCppRuntime {
+        struct Value {int value;explicit Value(int);Value(const Value &);Value(Value &&);~Value() noexcept;};
+        typedef __objc3_optional(Value) Maybe;typedef Maybe (^Callback)(Maybe);
+        inline Maybe invoke(Callback _Nonnull callback){return callback(__objc3_some(Value,Value(7)));}
+      }
+      __attribute__((objc_root_class)) @interface CatalogCppRuntimeHost
+      - (CatalogCppRuntime::Maybe)echo:(CatalogCppRuntime::Maybe)value;
+      @end
+      inline int catalog_cpp_message(CatalogCppRuntimeHost *_Nonnull object){auto original=__objc3_some(CatalogCppRuntime::Value,CatalogCppRuntime::Value(7));auto value=[object echo:original];return __objc3_has_value(value);}
+    )" : registers ? R"(
       @protocol Error @end
       namespace CatalogCheckedRegister {
         struct Small {int value;};struct Large {long value,other[4];};
@@ -182,8 +192,8 @@ int main() {
         return __objc3_try(__objc3_await (object.value+=1));
       }
     )";
-    std::vector<std::string> args={cxx?(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers?"-xobjective-c++":"-xc++"):(blocks || properties?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
-    if(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
+    std::vector<std::string> args={cxx?(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime?"-xobjective-c++":"-xc++"):(blocks || properties?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
+    if(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
     clang::tooling::FileContentMappings files;
     if(properties || resource_paths || union_paths)AddRuntimeInterfaceFiles(files,args);
     if(resource_paths || union_paths)args.insert(args.end(),{"-include","objc3c/runtime/objc3_keypath.h"});
@@ -197,7 +207,7 @@ int main() {
     const auto capabilities=SupportedSemanticInterfaceCapabilities();
     auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);
     assert(decoded);
-    const std::string expected=registers?kCheckedCppRecordResultSemantic:storage?kCppCarrierStorageSemantic:messages?kCheckedCppMessageSemantic:composition?kCppCarrierCompositionSemantic:carrier_calls?kCppCarrierCallSemantic:resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
+    const std::string expected=cpp_runtime?kCppCarrierRuntimeSemantic:registers?kCheckedCppRecordResultSemantic:storage?kCppCarrierStorageSemantic:messages?kCheckedCppMessageSemantic:composition?kCppCarrierCompositionSemantic:carrier_calls?kCppCarrierCallSemantic:resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
     assert(std::find(decoded->required_semantics.begin(),decoded->required_semantics.end(),expected)!=decoded->required_semantics.end());
     auto bytes=objc3::fuzz::Pack(artifact.source_bytes,artifact.sidecar_json);assert(!bytes.empty());
     std::string first;

@@ -132,6 +132,27 @@ inline bool HasNativeCppCarrierCallType(clang::QualType type,unsigned depth=0) {
   return false;
 }
 
+inline bool HasNativeCppCarrierRuntimeType(clang::QualType type,unsigned depth=0) {
+  if(type.isNull())return false;
+  if(depth>64)return true;
+  type=type.getCanonicalType();
+  if(const auto *block=type->getAs<clang::BlockPointerType>()) {
+    auto function=block->getPointeeType();
+    if(HasNativeCppCarrierCallType(function))return true;
+    if(const auto *prototype=function->getAs<clang::FunctionProtoType>()) {
+      if(prototype->getReturnType()->isDependentType())return true;
+      for(auto parameter:prototype->param_types())if(parameter->isDependentType())return true;
+    }
+    return HasNativeCppCarrierRuntimeType(function,depth+1);
+  }
+  if(type->isPointerType() || type->isReferenceType())return HasNativeCppCarrierRuntimeType(type->getPointeeType(),depth+1);
+  if(const auto *member=type->getAs<clang::MemberPointerType>())return HasNativeCppCarrierRuntimeType(member->getPointeeType(),depth+1);
+  if(const auto *function=type->getAs<clang::FunctionProtoType>()) {
+    if(HasNativeCppCarrierRuntimeType(function->getReturnType(),depth+1))return true;
+    for(auto parameter:function->param_types())if(HasNativeCppCarrierRuntimeType(parameter,depth+1))return true;
+  }
+  return false;
+}
 inline bool RequiresNativeCppCarrierComposition(clang::QualType type,
                                                  const clang::ASTContext &context) {
   llvm::SmallPtrSet<const clang::Type *,32> seen;unsigned budget=256;
@@ -268,6 +289,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
                               position + ".error", depth + 1);
   } else if (type->isPointerType() || type->isBlockPointerType() ||
       type->isReferenceType()) {
+    if(type->isBlockPointerType() && HasNativeCppCarrierRuntimeType(type))
+      AppendNativeContractField(out,";cxx-carrier-runtime:v1;");
     AppendNativeTypeContracts(out, type->getPointeeType(), context,
                               position + ".pointee", depth + 1);
   } else if (const auto *member = type->getAs<clang::MemberPointerType>()) {
@@ -277,6 +300,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeTypeContracts(out, array->getElementType(), context,
                               position + ".element", depth + 1);
   } else if (const auto *function = type->getAs<clang::FunctionType>()) {
+    if(HasNativeCppCarrierRuntimeType(type))
+      AppendNativeContractField(out,";cxx-carrier-runtime:v1;");
     if(HasNativeCheckedCppRecordResultType(type))
       AppendNativeContractField(out,";checked-cxx-record-results:v1;");
     if(HasNativeCppCarrierCallType(type))

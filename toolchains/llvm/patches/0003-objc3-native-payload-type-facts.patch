@@ -192,10 +192,10 @@ index e3f74d73f..3609394b1 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..71548f84b
+index 000000000..5ba63b23c
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,574 @@
+@@ -0,0 +1,594 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -699,7 +699,9 @@ index 000000000..71548f84b
 +    } else {
 +      return false;
 +    }
-+    std::string Name = IsOptional ? "__objc3_v12_optional" : "__objc3_v12_result";
++    const bool Cpp=hasObjC3CarrierCppPayload(Type);
++    std::string Name = Cpp ? (IsOptional ? "__objc3_v13_optional" : "__objc3_v13_result") :
++        (IsOptional ? "__objc3_v12_optional" : "__objc3_v12_result");
 +    std::string Fields;
 +    for (QualType Leaf : Leaves) {
 +      if (Leaf.isVolatileQualified())
@@ -708,7 +710,25 @@ index 000000000..71548f84b
 +      std::string Field;
 +      const bool Nested = isa<ObjC3OptionalType, ObjC3ResultType>(
 +          Ctx.getCanonicalType(Leaf).getTypePtr());
-+      if (Nested) {
++      if(const auto *Record=Leaf->getAsCXXRecordDecl()) {
++        Record=Record->getDefinition();
++        const auto *Destructor=Record?Record->getDestructor():nullptr;
++        if(!Record || !Record->hasNonTrivialDestructor() || !Destructor ||
++            Destructor->isDeleted() || Destructor->getAccess()!=AS_public ||
++            !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow() ||
++            containsObjC3CarrierManagedStorage(Leaf))return false;
++        const auto Layout=Ctx.getTypeInfoInChars(Leaf);
++        const uint64_t Size=Layout.Width.getQuantity(),Align=Layout.Align.getQuantity();
++        char Unit=Align==1?'c':Align==2?'s':Align==4?'i':Align==8?'q':Align==16?'D':0;
++        if(!Unit || Size<Align || Size%Align)return false;
++        Ownership='C';
++        // Runtime reflection describes opaque native storage. Selected C++
++        // copy/move/destruction belongs to the static callable contract; no
++        // generic FFI/forwarding value operation is inferred from these bytes.
++        Field="{__objc3_cxx_storage_v1_s"+std::to_string(Size)+"_a"+std::to_string(Align)+"="+Unit;
++        if(Size>Align)Field+="["+std::to_string(Size-Align)+"c]";
++        Field+="}";
++      } else if (Nested) {
 +        Ownership = 'N';
 +        if (!Self(Self, Leaf, Field, Depth + 1))
 +          return false;

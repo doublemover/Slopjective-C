@@ -6424,6 +6424,63 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
   }
 }
 
+void TestCppCarrierRuntimeReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string prelude=R"(
+      @protocol Error @end
+      namespace PublishedCppRuntime {
+        struct Value {int value;explicit Value(int);Value(const Value &);Value(Value &&);~Value() noexcept;};
+        typedef __objc3_optional(Value) Maybe;
+        typedef Maybe (^Callback)(Maybe);
+      }
+      __attribute__((objc_root_class)) @interface PublishedCppRuntimeHost
+      - (PublishedCppRuntime::Maybe)echo:(PublishedCppRuntime::Maybe)value;
+      - (PublishedCppRuntime::Maybe)checked:(PublishedCppRuntime::Maybe)value __objc3_throws(id<Error>);
+      @end
+    )";
+    const auto source=prelude+R"(
+      namespace PublishedCppRuntime {
+        inline Maybe message(PublishedCppRuntimeHost *_Nonnull object){return [object echo:__objc3_some(Value,Value(7))];}
+        inline Maybe implicit_message(PublishedCppRuntimeHost *_Nonnull object,const Maybe &value){return [object echo:value];}
+        inline Maybe implicit_block(Callback _Nonnull callback,const Maybe &value){return callback(value);}
+        inline int checked(PublishedCppRuntimeHost *_Nonnull object){auto value=__objc3_try_optional([object checked:__objc3_some(Value,Value(7))]);return __objc3_has_value(value);}
+        inline Maybe invoke(Callback _Nonnull callback){return callback(__objc3_some(Value,Value(7)));}
+        inline int literal(){auto captured=__objc3_some(Value,Value(7));auto callback=^Maybe(Maybe value){return __objc3_has_value(value)?__objc3_copy(captured):__objc3_none(Value);};auto value=callback(__objc3_none(Value));return __objc3_has_value(value);}
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"cpp-carrier-runtime.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.cpp_carrier_runtime","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.cpp_carrier_runtime","test",{},{},{},{"PublishedCppRuntime","PublishedCppRuntimeHost","Error"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kCppCarrierRuntimeSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kCppCarrierRuntimeSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kCppCarrierRuntimeSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto declarations=emit(R"(
+      @protocol Error @end
+      namespace PublishedCppRuntime {struct Plain {int value;};}
+      __attribute__((objc_root_class)) @interface PublishedCppRuntimeHost @end
+    )");auto invented=DecodeSemanticInterfaceSidecar(declarations.sidecar_json,declarations.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kCppCarrierRuntimeSemantic)));
+    invented->required_semantics.push_back(kCppCarrierRuntimeSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestCheckedCppRecordResultReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10609,6 +10666,7 @@ int main(int argc,char **argv) {
   TestClosureFactories();
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
+  TestCppCarrierRuntimeReplay();
   TestCheckedCppRecordResultReplay();
   TestCppCarrierDefaultStorageReplay();
   TestCheckedCppMessageReplay();

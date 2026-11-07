@@ -1,5 +1,13 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.134 / System 2.60 runtime-call span](linux_cpp_carrier_runtime_calls.md)
+implements qualified C++ carrier messages and Block invocation with v13 native
+storage encodings, explicit nil failure, caller-owned snapshots and fresh results.
+Implicit parameter copies/moves retain Sema constructor recipes and full-expression
+cleanup. All 52 dedicated compiler commands, 55 AST controls, new source-free
+profiles, 340 decoder replays and four selected sanitizer configurations / fourteen
+commands pass; updated broad consolidation is running.
+
 The [source 2.133 / System 2.59 register-result span](linux_checked_cpp_register_results.md)
 implements checked trivial, empty, union, mixed-register and owning `trivial_abi`
 C++ results, with success-only binding and exact return cleanup. Publication

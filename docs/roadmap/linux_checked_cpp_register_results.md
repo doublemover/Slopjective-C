@@ -32,8 +32,9 @@ boundary.
 All 98 new positive compiler commands and the repaired prior boundary controls
 pass. The complete 530-case compiler suite passes all 527 executable cases (three
 unsupported). Three earlier stale expected rejections now verify the admitted
-behavior. All 54 AST controls, twenty-four updated frontend groups and the new
-source-free profiles pass. The record span also retains its 320 exact decoder
+behavior. The 53 preceding AST controls, twenty-four updated frontend groups and the new
+source-free profiles pass. The added dependent-Block AST control's MRC fixture
+was corrected in Source 2.134 and passes with its complete 55-control suite. The record span also retains its 320 exact decoder
 replays; expanded production replay follows the next runtime-call implementation. Four selected ASan/UBSan configurations / fourteen commands pass with the
 complete native record and dependent Block witness, including optimized MRC PCH
 without elision and both ownership modes with C++-only exceptions. Scalar,
