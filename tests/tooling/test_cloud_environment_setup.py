@@ -66,3 +66,21 @@ download_verified https://example.invalid/archive "$setup_root/archive" "$(print
 ''')
     assert result.returncode != 0
     assert "FAILED" in result.stdout
+
+
+def test_bootstrap_pruning_removes_unselected_independent_llvm_products(tmp_path: Path) -> None:
+    llvm = tmp_path / 'llvm'
+    removed = ('bin/flang-23', 'bin/mlir-opt', 'bin/llvm-bolt', 'lib/libFortranSemantics.a',
+               'lib/libMLIRIR.a', 'lib/libLLVMBOLTPasses.a', 'include/flang/header.h',
+               'include/mlir/header.h', 'lib/cmake/flang/FlangConfig.cmake',
+               'lib/cmake/mlir/MLIRConfig.cmake')
+    retained = ('bin/clang-23', 'bin/llc', 'bin/opt', 'bin/llvm-reduce', 'bin/lldb',
+                'lib/libclang-cpp.so.23.1', 'lib/libLLVM.so.23.1',
+                'lib/cmake/llvm/LLVMConfig.cmake', 'lib/cmake/clang/ClangConfig.cmake')
+    for relative in (*removed, *retained):
+        path = llvm / relative;path.parent.mkdir(parents=True, exist_ok=True);path.touch()
+    result = run_shell(tmp_path, f'''prune_llvm "{llvm}"''')
+    assert result.returncode == 0, result.stderr
+    assert not any((llvm / relative).exists() for relative in removed)
+    assert all((llvm / relative).exists() for relative in retained)
+    assert 'Flang, MLIR/FIR and BOLT removed' in (llvm / '.objc3c-pruned-components').read_text()

@@ -96,6 +96,16 @@ objc3_error_t *objc3_error_retain(objc3_error_t *error);
 void objc3_error_release(objc3_error_t *error);
 const void *objc3_error_payload(const objc3_error_t *error);
 const objc3_value_ops *objc3_error_payload_ops(const objc3_error_t *error);
+/* Async service-failure transport, distinct from cancellation and checked
+ * language errors. Creation returns an owned immutable shared error without
+ * allocating, including OUT_OF_MEMORY. Retain/release obey ordinary owned-error
+ * usage; the process retains the backing error. OK, CANCELLED, and unknown
+ * statuses are INVALID_ARGUMENT and clear out_error. get_service returns
+ * TYPE_MISMATCH for other errors without modifying out_status. */
+objc3_service_status objc3_async_error_create_service(
+    objc3_service_status status, objc3_error_t **out_error);
+objc3_service_status objc3_async_error_get_service(
+    const objc3_error_t *error, objc3_service_status *out_status);
 
 typedef enum objc3_completion_kind {
   OBJC3_COMPLETION_SUCCESS = 0,
@@ -152,13 +162,26 @@ typedef struct objc3_task_start_options {
 objc3_service_status objc3_task_start(const objc3_task_start_options *options,
                                      objc3_task_t **out_task);
 /* Start a private child from the parent's active resume, inheriting its current
- * destination. Both destination fields in options must be null. Ownership
- * transfers only on success, as for start. No parent-child ownership is implied. */
+ * destination and cancellation state before its first resume. Later parent
+ * cancellation reaches all live structured descendants, including through a
+ * completed/released intermediate child. Cancelling a child does not cancel
+ * its ancestors or siblings. Both destination fields in options must be null.
+ * Ownership transfers only on success, as for start. Cancellation ancestry
+ * does not retain task handles/frames or imply an automatic scope-exit join. */
 objc3_service_status objc3_task_start_child(
+    objc3_task_t *parent, const objc3_task_start_options *options,
+    objc3_task_t **out_task);
+/* The active parent's structured child on an explicit destination. Select
+ * exactly one executor/actor in options. Cancellation ancestry is inherited
+ * before queue publication; the parent's destination is unchanged. Start and
+ * frame-transfer failure rules match start_child. */
+objc3_service_status objc3_task_start_child_on(
     objc3_task_t *parent, const objc3_task_start_options *options,
     objc3_task_t **out_task);
 objc3_task_t *objc3_task_retain(objc3_task_t *task);
 void objc3_task_release(objc3_task_t *task);
+/* Monotonic, cooperative cancellation of this task and structured descendants.
+ * Independently started tasks have no inherited cancellation relationship. */
 void objc3_task_request_cancel(objc3_task_t *task);
 int objc3_task_is_cancel_requested(const objc3_task_t *task);
 /* Coalesce outstanding wake requests. A wake during an active resume queues
@@ -208,8 +231,9 @@ objc3_task_copy_result(objc3_task_t *task,
                        const objc3_async_result_type *expected_type,
                        const objc3_value_ops *consumer_ops, void *destination);
 /* wait blocks until terminal completion; it does not pump a manual executor.
- * A pending wait from the task itself or any runtime executor callback returns
- * NOT_READY so queued task work can continue. Completed waits remain valid. */
+ * A pending manual-task wait, or a pending wait from the task itself or any
+ * runtime executor callback, returns NOT_READY so queued task work can continue.
+ * Completed waits remain valid. */
 objc3_service_status objc3_task_wait(objc3_task_t *task);
 
 /* Move-only lazy frame carrier shared by C, Objective-C and C++. The frame
@@ -235,6 +259,81 @@ objc3_service_status objc3_async_frame_start(objc3_async_frame *frame,
 objc3_service_status objc3_async_frame_start_child(objc3_async_frame *frame,
                                                    objc3_task_t *parent,
                                                    objc3_task_t **out_task);
+/* Explicit-destination structured entry for an owned lazy C frame. */
+objc3_service_status objc3_async_frame_start_child_on(
+    objc3_async_frame *frame, objc3_task_t *parent, objc3_executor_t *executor,
+    objc3_actor_t *actor, objc3_task_t **out_task);
+/* Library spawn backing operations. spawn requires the current active task
+ * resume and inherits its dynamic actor/executor and cancellation ancestry.
+ * Outside task execution it returns NOT_READY. detach selects the canonical
+ * global executor and establishes no inherited cancellation relationship.
+ * Both clear out_task on failure and preserve the owned frame unless started.
+ * These carrier helpers do not replace compiler-recognized Block-taking APIs:
+ * the standard header performs capture checking at that source boundary. */
+objc3_service_status objc3_async_frame_spawn(objc3_async_frame *frame,
+                                             objc3_task_t **out_task);
+/* Structured child entry with group registration before its first resume can
+ * run. Inherits the current task's destination/cancellation ancestry. A failed
+ * start preserves the frame and clears out_task. Registration failure runs no
+ * body. Failed queue publication leaves a cancelled, frame-less group member
+ * whose observers remain joinable; frame disposal still belongs to the caller. */
+objc3_service_status objc3_async_frame_spawn_in_group(
+    objc3_async_frame *frame, objc3_task_group_t *group, objc3_task_t **out_task);
+/* Reserved scope-body entry for compiler/library callback scopes. group must be
+ * the current task's compiler-owned root. Joins the callback's quiescence while
+ * automatic sibling failure cancels member work without cancelling this body,
+ * so it can retrieve/handle the original error. Explicit cancellation and
+ * abandonment still cancel it. Startup ownership matches spawn_in_group. */
+objc3_service_status objc3_async_frame_spawn_scope_body(
+    objc3_async_frame *frame, objc3_task_group_t *group, objc3_task_t **out_task);
+objc3_service_status objc3_async_frame_detach(objc3_async_frame *frame,
+                                              objc3_task_t **out_task);
+
+/* Lazy nonblocking adapters for existing shared handles. Success writes one
+ * independently owned frame; failure leaves out_frame unchanged. The caller
+ * supplies empty/uninitialized output storage. Task adaptation requires a known
+ * canonical result type and retains the dependency until frame destruction.
+ * Cancellation/disposal of an adapter releases its lease without independently
+ * cancelling the shared dependency. Group adaptation retains the group, closes
+ * its complete tree on first resume, and awaits quiescence with a VOID result.
+ * Adapters reject joins of their direct structured parent, including group
+ * membership, to prevent hiding a self-cycle behind the additional frame.
+ * They do not create an implicit structured scope or shield caller unwind.
+ */
+objc3_service_status objc3_async_frame_from_task(objc3_task_t *dependency,
+                                                objc3_async_frame *out_frame);
+objc3_service_status objc3_async_frame_from_group(objc3_task_group_t *group,
+                                                 objc3_async_frame *out_frame);
+
+/* Compiler-owned Optional<T> construction plan. Version 1 uses a one-byte
+ * discriminant (0=None, 1=Some) and an AST-provided payload offset. Neither
+ * offset is reconstructed from T in the runtime. result_ops owns the complete
+ * Optional, including nested object/Block/carrier storage. Callback code must
+ * outlive all frames/results; factories copy descriptors, identity bytes and
+ * operation tables. Obtain this plan through the native compiler builtin. */
+typedef struct objc3_async_group_next_plan {
+  uint32_t struct_size;
+  uint32_t version;
+  const objc3_async_result_type *element_type;
+  const objc3_async_result_type *result_type;
+  const objc3_value_ops *result_ops;
+  uint64_t payload_offset;
+  uint64_t tag_offset;
+  uint32_t tag_size;
+  uint32_t reserved;
+} objc3_async_group_next_plan;
+
+/* Lazy typed completion-order iteration. First resume closes the group tree.
+ * Some owns an independent copy of the selected value; None means all direct
+ * children were consumed (nested groups are not flattened). Type mismatch
+ * consumes nothing. After reservation, cancellation/copy failure consumes that
+ * item and releases its owner during frame cleanup. Child errors/cancellation
+ * propagate unchanged. No caller output slot is borrowed across suspension.
+ * Disposal/cancellation does not independently cancel the shared group. Output
+ * storage follows the unchanged-on-failure factory convention above. */
+objc3_service_status objc3_async_frame_from_group_next(
+    objc3_task_group_t *group, const objc3_async_group_next_plan *plan,
+    objc3_async_frame *out_frame);
 
 /* A serial executor runs one callback at a time. Manual executors advance only
  * through pump, allowing explicit main-thread ownership. Worker executors own
@@ -243,7 +342,41 @@ objc3_service_status objc3_async_frame_start_child(objc3_async_frame *frame,
  * that drains after they return. Retain values needed after callback scope. */
 objc3_service_status objc3_executor_create(uint32_t manual,
                                          objc3_executor_t **out_executor);
+/* Canonical process-wide destinations. Each successful call returns a retained
+ * handle with a stable logical identity. Main is manual and may be pumped only
+ * by the process main thread; a pump from another thread returns NOT_READY and
+ * executes nothing. Global runs on a shared pool of four workers; independent
+ * callbacks can run concurrently, while actor jobs and each task's native
+ * resumes remain serialized. Releasing
+ * client handles does not close either destination. Initialization failure may
+ * be retried. Ordinary explicitly created manual executors remain pumpable by
+ * any one owner at a time. */
+objc3_service_status objc3_executor_get_main(objc3_executor_t **out_executor);
+objc3_service_status objc3_executor_get_global(objc3_executor_t **out_executor);
+/* Logical executor affinity only; actor isolation additionally needs matching
+ * actor instance identity. Null has identity zero and is never current. */
+uint64_t objc3_executor_identity(const objc3_executor_t *executor);
+int objc3_executor_is_current(const objc3_executor_t *executor);
+/* Bind a nonempty NUL-terminated byte name, copied by the runtime. Names match
+ * the exact ordinary-string bytes of objc_executor(named("...")); no case or
+ * Unicode normalization occurs. The named namespace is separate from canonical
+ * main/global. Registration retains executor; same active binding is idempotent
+ * OK, a conflicting binding is INVALID_ARGUMENT. Lookup returns one retained
+ * handle, NOT_READY if unregistered, or CLOSED after retirement. Output is null
+ * on failure. Retiring an active name drops registry ownership after unlocking,
+ * preserves existing clients/tasks, and is idempotent. A retired name cannot be
+ * registered again, preserving executor-equivalence proofs for old continuations.
+ * Hosts retire bindings explicitly; registry names/tombstones have process
+ * lifetime. Pending workers finish under their ordinary handle ownership rules. */
+objc3_service_status objc3_executor_register_named(const char *name,
+                                                   objc3_executor_t *executor);
+objc3_service_status objc3_executor_get_named(const char *name,
+                                              objc3_executor_t **out_executor);
+objc3_service_status objc3_executor_unregister_named(const char *name);
 objc3_executor_t *objc3_executor_retain(objc3_executor_t *executor);
+/* Last release closes admission and drains queued work. From a runtime
+ * callback, worker reclamation is nonblocking; worker-owned references keep
+ * the destination alive until drain completes. Ordinary host release waits. */
 void objc3_executor_release(objc3_executor_t *executor);
 objc3_service_status objc3_executor_enqueue(objc3_executor_t *executor,
                                             objc3_executor_callback callback,
@@ -252,7 +385,11 @@ objc3_service_status objc3_executor_pump(objc3_executor_t *executor,
                                          uint32_t limit,
                                          uint32_t *out_executed);
 
-/* A group owns its registered tasks and child groups. The parent association
+#define OBJC3_TASK_GROUP_MAX_DEPTH 64u
+/* A group owns its registered tasks and child groups. Root depth is one;
+ * child creation past OBJC3_TASK_GROUP_MAX_DEPTH returns INVALID_ARGUMENT with
+ * a null output and leaves the parent unchanged. Final-reference reclamation
+ * drains iteratively. The parent association
  * is optional. Close recursively prevents new registrations; cancel requests
  * cooperative cancellation without closing. The first failed task cancels its
  * siblings and propagates through the parent tree before publishing completion.
@@ -274,6 +411,75 @@ objc3_service_status objc3_task_group_next(objc3_task_group_t *group,
  * A wait that would block a runtime executor callback or a manual task returns
  * NOT_READY. The caller can pump a manual executor and retry. */
 objc3_service_status objc3_task_group_join(objc3_task_group_t *group);
+/* Register a nonblocking join from parent's active resume. The group must be
+ * closed, and parent must not belong to its task tree. Always suspend after
+ * success, including an empty group. The parent's selected destination is
+ * preserved. Completion callbacks and native frame cleanup finish before the
+ * continuation is queued. out_status points to a frame-resident slot retained
+ * until resumption. Before queueing, the runtime writes OK, CANCELLED, or
+ * NOT_READY for failed failure publication. Rejected registration leaves the
+ * slot unchanged. A successful join covers callbacks registered before its
+ * quiescence observation; later callbacks do not invalidate the stored result.
+ * Cancellation wakes the parent without cancelling this shared group. A late
+ * notification cannot revive a cancelled or abandoned await. No group results
+ * are consumed, and several independent parents may await the same group.
+ * This additive entrypoint requires a runtime exporting it; no fallback to a
+ * blocking join is provided. The ABI 4 data layouts are unchanged. */
+objc3_service_status objc3_task_group_await(objc3_task_group_t *group,
+                                           objc3_task_t *parent,
+                                           objc3_service_status *out_status);
+/* Scope-unwind cleanup join. Requires the same closed-tree/membership rules as
+ * await. The caller cancels unfinished scope work before registering. Only this
+ * dependency is shielded from parent cancellation; the task's monotonic bit is
+ * preserved. The runtime retains parent/group through cleanup dispatch and the
+ * selected continuation, including abandoned caller handles and actor discard.
+ * Manual schedule_resume or complete cannot bypass the pending cleanup join:
+ * both return NOT_READY until this dependency becomes ready. Forced runtime
+ * cancellation is deferred until the cleanup observation, then reclaims once.
+ * Success always queues after actual task/frame/callback quiescence. Failed
+ * completion publication reports NOT_READY only after that quiescence. Output
+ * remains untouched if registration fails. Close/cancel errors must be handled
+ * before using this join; it does not itself establish a structured scope. */
+objc3_service_status objc3_task_group_await_cleanup(
+    objc3_task_group_t *group, objc3_task_t *parent,
+    objc3_service_status *out_status);
+/* Native compiler-owned group scope. Enter creates a fresh open group and
+ * reserves all cleanup waiter storage before the body executes. One scope is
+ * admitted per task; enter/finish require that task's active resume. The current
+ * accessor returns a borrowed group only inside that task's callback. Retain it
+ * explicitly to keep a separate owner. Its tree admits only structured
+ * descendants of the scope task, including through released intermediates;
+ * independent tasks and ancestor cycles are rejected.
+ * Finish closes the tree, optionally cancels it, and always queues a shielded
+ * continuation after task/frame/callback quiescence. out_status remains in the
+ * native frame until resumption. Enter reserves the final waiter; scope close
+ * and cancellation do not allocate snapshots. Scheduling and completion/failure
+ * publication retain their ordinary allocation/error contracts. Completion
+ * cannot bypass a live scope; lost
+ * continuations and last-owner abandonment cancel and join before frame cleanup.
+ * These entrypoints do not turn arbitrary manual tasks into compiler scopes. */
+objc3_service_status objc3_task_group_scope_enter(objc3_task_t *parent);
+objc3_task_group_t *objc3_task_group_scope_current(void);
+objc3_service_status objc3_task_group_scope_finish(
+    objc3_task_t *parent, int cancel, objc3_service_status *out_status);
+/* Reserve the next direct child task from a closed group tree, from parent's
+ * active resume. Parent must not belong to the tree. Output slots must reside
+ * in the parent frame until resumption; *out_task must initially be null.
+ * Successful registration always suspends, including a ready task or drained
+ * group. FIFO waiters reserve tasks in completion order, including failed and
+ * cancelled tasks. OK transfers one retained task into *out_task; CLOSED means
+ * all direct tasks were consumed. Nested groups are not flattened. An optional
+ * expected_type is copied and checked before consumption. TYPE_MISMATCH leaves
+ * the task available. Rejected registration leaves both slots unchanged.
+ * Cancellation before reservation consumes nothing; after reservation the
+ * frame owns its task even if cancellation or dispatch failure prevents normal
+ * result access. Frame cleanup must release a nonnull result slot. Failed
+ * failure publication wakes pending consumers with NOT_READY. As for group
+ * await, dispatch preserves the parent's destination and never runs inline. */
+objc3_service_status objc3_task_group_await_next(
+    objc3_task_group_t *group, objc3_task_t *parent,
+    const objc3_async_result_type *expected_type,
+    objc3_service_status *out_status, objc3_task_t **out_task);
 
 #define OBJC3_ACTOR_SERVICE_VERSION 1u
 typedef void (*objc3_actor_job)(void *context);
@@ -306,6 +512,39 @@ objc3_actor_t *objc3_actor_retain(objc3_actor_t *actor);
 void objc3_actor_release(objc3_actor_t *actor);
 uint64_t objc3_actor_identity(const objc3_actor_t *actor);
 uint64_t objc3_actor_executor_identity(const objc3_actor_t *actor);
+/* Return one retained immutable backing destination, including for a closed
+ * actor. Its identity equals actor_executor_identity; this proves executor
+ * affinity only, never equivalence of distinct actor mailboxes. Clears output
+ * on failure. The caller keeps actor alive for this query and releases the
+ * returned executor independently. */
+objc3_service_status objc3_actor_get_executor(objc3_actor_t *actor,
+                                               objc3_executor_t **out_executor);
+/* Explicit Objective-C object association. Binding retains both the live object
+ * and actor; same active binding is idempotent, a conflicting actor is
+ * INVALID_ARGUMENT, and a closed new destination is CLOSED. Lookup returns one
+ * retained actor, NOT_READY if absent, CLOSED if retired, and null on failure.
+ * Unbind requires the old actor already closed and quiescent; otherwise it
+ * returns NOT_READY without changing the binding. Retirement drops both pins
+ * outside runtime locks and returns CLOSED on repeat for the same live object.
+ * An object-owned generation distinguishes later allocations at a reused
+ * address; its teardown cannot erase a newer binding. All object entrypoints
+ * require a live receiver. Rebinding after retirement
+ * is safe because the old actor cannot accept further isolated work. Pair every
+ * successful binding with explicit unbind; allocation/deallocation does not
+ * automatically establish or retire actor identity. These entrypoints require
+ * libobjc; ordinary value-only actor/task entrypoints do not. */
+objc3_service_status objc3_actor_bind_object(void *object, objc3_actor_t *actor);
+objc3_service_status objc3_actor_get_for_object(const void *object,
+                                                objc3_actor_t **out_actor);
+/* Native actor entry uses an object-owned automatic mailbox when no explicit
+ * binding exists. preferred is optional (global by default) and must match an
+ * existing binding. Returns one actor lease; the caller keeps object live during
+ * lookup. Concurrent first entries share one mailbox. The association does not
+ * retain object and cancels/retires its mailbox when the object is destroyed.
+ * Explicit bindings retain their existing bind/unbind ownership contract. */
+objc3_service_status objc3_actor_get_or_create_for_object(
+    void *object, objc3_executor_t *preferred, objc3_actor_t **out_actor);
+objc3_service_status objc3_actor_unbind_object(void *object);
 /* On success ownership of context transfers to the actor. destroy runs once
  * after job returns, or after cancellation discards the queued job. On failure
  * the caller keeps ownership and out_facts is unchanged. Jobs are serialized;
@@ -316,8 +555,9 @@ objc3_service_status objc3_actor_enqueue(objc3_actor_t *actor,
                                         objc3_actor_hop_facts *out_facts);
 objc3_service_status objc3_actor_close(objc3_actor_t *actor);
 objc3_service_status objc3_actor_cancel(objc3_actor_t *actor);
-/* join includes context cleanup. Active jobs finish cooperatively. Manual or
- * current-executor pending waits return NOT_READY; a callback cannot join its
+/* join includes context cleanup. Active jobs finish cooperatively. Pending
+ * manual waits or waits from any runtime executor callback return NOT_READY;
+ * a callback cannot join its
  * own actor. Last caller release cancels unexecuted mailbox jobs. */
 objc3_service_status objc3_actor_join(objc3_actor_t *actor);
 objc3_service_status objc3_actor_current_facts(objc3_current_actor_facts *out_facts);

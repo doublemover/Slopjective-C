@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-28",
+  "system_module_version": "2.14.0",
+  "keypath_module_version": "2.3.0",
+  "interface_schema": "2.2",
+  "extension_abi": 21,
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  },
+  "remaining": [
+    "Coordinated installed SDK delivery of post-2.33 source spans",
+    "Remaining native C++ package, ownership, isolation, runtime, language/library and profile implementation",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ],
+  "schema": "objc3c.linux-cxx-public-concepts-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "source_checkpoint": "b897ffe03ab5693336f0de2027464dc89847a2d9",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-239306d29e0f-00b75dc3",
+  "compiler_patch_digest": "239306d29e0fe255c4d3421b1bb72a9fd6338f0f30f31f8018ce1ff52c024d4c",
+  "frontend_input_sha256": "a877cb1ba88c863ff705e842ac1dcc76cec9c7f3b8edc3537f503ef49542f826",
+  "concurrency_module_version": "2.42.0",
+  "scope": [
+    "Public C++20/23 concepts with type, scalar non-type and pack parameters, composed constraints and requires-expressions",
+    "Module/package/declaration nominal owners preserved by native printing, PCH and structural equivalence",
+    "Typed constraint identities, lexical requirement parameters and private/export dependency checks",
+    "Exact concept/data capability admission and source-free constant evaluation and constrained overload subsumption"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/public-concepts-foundation-build.json",
+      "sha256": "7196ad69fdeaa743f3fa781e5298d2015adc3347c77b8e2c0fa1a6e1054f90fe",
+      "bytes": 6527
+    },
+    "source_verification": {
+      "path": "out/public-concepts-source-verification.json",
+      "sha256": "cb5d8e8079bffa270c1f830401226e35c810ba58e2b71f1b12d2dc5e259366fb",
+      "bytes": 7444
+    },
+    "compiler_regressions_passed": 409,
+    "platform_cases_unsupported": 3,
+    "native_unit_tests_passed": 195,
+    "native_report": {
+      "path": "out/public-concepts-native-batch.json",
+      "sha256": "f42d93222eb18d7af7afecd03b449755507b8fd58d1f82e31c980eab4ce222f4",
+      "bytes": 2001
+    },
+    "native_logs": [
+      {
+        "path": "out/public-concepts-native-0.log",
+        "sha256": "85f6125a79a86747898286eddb06e729ee4b6b13ad5397b2e48a7180758d6b89",
+        "bytes": 6699
+      },
+      {
+        "path": "out/public-concepts-native-1.log",
+        "sha256": "feb3a5dccbe9ce20f3a26978ee2306f7aadd5bc661e45312b345f4abc1d2086f",
+        "bytes": 33689
+      },
+      {
+        "path": "out/public-concepts-native-2.log",
+        "sha256": "3bab62148495f44a00a5e14fa91d91983008c05bcae6abacd02e854000e222c9",
+        "bytes": 1114
+      },
+      {
+        "path": "out/public-concepts-native-3.log",
+        "sha256": "142434c269e0fbecf7505ed794ac8d3b0641037bef9c9330038bcb2b2747b826",
+        "bytes": 4601
+      },
+      {
+        "path": "out/public-concepts-native-4.log",
+        "sha256": "2bbda3025b45dca397d95ee7460caf8525c40fef65cbb1b1ea1bd65d66577078",
+        "bytes": 5166
+      }
+    ],
+    "frontend_suites_passed": 33,
+    "tooling_tests_passed": 335,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "frontend_checkpoint": {
+      "path": "out/public-concepts-frontend-checkpoint.json",
+      "sha256": "4864d5d1f8fa04f1a2973e9c541bf3d21d9bdb726b179c9a14943c836a6ea0c5",
+      "bytes": 1138
+    },
+    "compiled_binaries": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "4de2c657df05a5230566cb2ddbb5d770cdf9ac49b82ed22abe048179e0262d5b",
+        "bytes": 205208280
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/public-concepts-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa",
+            "bytes": 4559
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/public-concepts-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9",
+            "bytes": 4549
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/public-concepts-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109",
+            "bytes": 4557
+          }
+        }
+      ]
+    }
+  }
+}

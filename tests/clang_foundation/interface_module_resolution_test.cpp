@@ -2,6 +2,7 @@
 #include "clang_foundation/frontend_api.h"
 #include "clang_foundation/interface_artifact_io.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <filesystem>
@@ -127,6 +128,55 @@ void WriteArtifact(const InterfaceEmissionArtifact &artifact,
   const auto written = WriteSemanticInterfaceArtifact(artifact, path.string());
   assert(written.success);
 }
+void TestCompactIndexBudgets(const std::filesystem::path &root,
+                             const InterfaceEmissionArtifact &artifact,
+                             const InterfaceImportTarget &target) {
+  const auto dir = root / "budgets";
+  const auto left = dir / "left", right = dir / "right";
+  std::filesystem::create_directories(left);
+  std::filesystem::create_directories(right);
+  for (unsigned i = 0; i != 12; ++i)
+    WriteArtifact(artifact, (i % 2 ? right : left) / ("copy-" + std::to_string(i) + ".objc3i"));
+  auto spare = Compile(Producer("unrequested.m", "fixture.Unrequested", "spare", "int spare(void);"));
+  assert(spare.success && spare.interface_artifact);
+  WriteArtifact(*spare.interface_artifact, right / "spare.objc3i");
+  auto resolve = [&](const InterfaceImportTarget &policy, bool reverse = false) {
+    return ResolveInterfaceModules(reverse ? std::vector<std::string>{right.string(), left.string()}
+                                          : std::vector<std::string>{left.string(), right.string()},
+                                   {Locked(artifact.identity)}, policy);
+  };
+  auto baseline = resolve(target);
+  assert(baseline.success && baseline.artifacts.size() == 1);
+  const auto &usage = baseline.resource_usage;
+  assert(usage.candidate_pairs == 13 && usage.coalesced_duplicates == 11);
+  assert(usage.index_modules == 2 && usage.selected_modules == 1);
+  assert(usage.read_bytes > usage.selected_bytes * 6);
+  assert(usage.selected_declarations > 0);
+  auto reversed = resolve(target, true);
+  assert(reversed.success && reversed.artifacts.front().source_path == baseline.artifacts.front().source_path);
+  using Field = std::uint64_t InterfaceResourceLimits::*;
+  for (auto [field, exact] : std::vector<std::pair<Field, std::uint64_t>>{
+      {&InterfaceResourceLimits::read_bytes, usage.read_bytes},
+      {&InterfaceResourceLimits::scan_path_bytes, usage.scan_path_bytes},
+      {&InterfaceResourceLimits::index_string_bytes, usage.index_string_bytes},
+      {&InterfaceResourceLimits::index_modules, usage.index_modules},
+      {&InterfaceResourceLimits::decoded_declarations, usage.decoded_declarations},
+      {&InterfaceResourceLimits::selected_bytes, usage.selected_bytes},
+      {&InterfaceResourceLimits::selected_declarations, usage.selected_declarations},
+      {&InterfaceResourceLimits::selected_modules, usage.selected_modules}}) {
+    assert(exact > 0);
+    auto policy = target;
+    policy.resource_limits.*field = exact;
+    assert(resolve(policy).success && resolve(policy, true).success);
+    policy.resource_limits.*field = exact - 1;
+    auto rejected = resolve(policy);
+    assert(!rejected.success && rejected.artifacts.empty());
+    assert(std::any_of(rejected.diagnostics.begin(), rejected.diagnostics.end(),
+        [](const auto &d) { return d.code == kInterfaceResourceDiagnostic; }));
+  }
+  std::filesystem::remove_all(dir);
+}
+
 void TestCxxSourceImports(const std::filesystem::path &root) {
   auto provider =
       Producer("cpp-provider.mm", "fixture.Cxx", "pkg-cxx",
@@ -207,6 +257,7 @@ int main() {
   target.extension_abi = a_identity.extension_abi;
   target.language_revision = a_identity.language_revision;
   target.language_profile = a_identity.language_profile;
+  TestCompactIndexBudgets(root, *a.interface_artifact, target);
   auto private_request = Locked(a_identity);
   private_request.public_import = false;
   auto private_resolution = ResolveInterfaceModules({root.string()}, {private_request}, target);

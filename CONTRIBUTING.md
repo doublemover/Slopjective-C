@@ -1,95 +1,75 @@
 # Contributing
 
-Keep changes small, explicit, and testable.
+Keep changes coherent, source-owned and reviewable. Implement Objective-C 3.0
+against the pinned native Clang toolchain; use hard cutovers when contracts change.
 
-## Contributor Surface
+## Current contributor routes
 
-Use these files as the live contributor-facing surface:
+Start with the [README](README.md), [tutorials](docs/tutorials/README.md) and
+[Linux roadmap](docs/roadmap/linux_forward_development.md). The
+[command appendix](docs/runbooks/objc3c_public_command_surface.md) describes the
+current repository CLI. The [maintainer guide](docs/runbooks/objc3c_maintainer_workflows.md)
+covers compiler patch export and coordinated SDK delivery.
 
-- `README.md`
-- `CONTRIBUTING.md`
-- `docs/tutorials/README.md`
-- `docs/tutorials/getting_started.md`
-- `docs/tutorials/build_run_verify.md`
-- `docs/tutorials/guided_walkthrough.md`
-- `docs/tutorials/objc2_to_objc3_migration.md`
-- `docs/tutorials/objc2_swift_cpp_comparison.md`
-- `docs/runbooks/objc3c_public_command_surface.md`
+## Source and output ownership
 
-Use `docs/runbooks/objc3c_maintainer_workflows.md` only when you need the
-maintainer-only workflow map.
+- Compiler, runtime and frontend integration: `native/objc3c/`, maintained LLVM
+  patches in `toolchains/llvm/`, scripts in `scripts/`, and fixtures in `tests/`.
+- Language requirements: `spec/`; current library contracts: `stdlib/`.
+- Contributor documentation: this file, `README.md`, `docs/tutorials/` and the two
+  linked command/maintainer guides. Feature implementation boundaries live in
+  `docs/roadmap/`.
+- Site source: `site/src/`; regenerate `site/index.md` with
+  `python -B scripts/build_pages.py` when its source changes.
+- `out/`, `tmp/`, `artifacts/` and build caches are machine-owned outputs. Keep
+  generated binaries, SDK archives, temporary reports and Python bytecode out of Git.
 
-## Repo Boundary
+The canonical LLVM development checkout is prepared under `out/toolchains/`.
+Export its actual source edits into the maintained patch stack before committing;
+that checkout is the compiler authoring tree, not a second tracked source copy.
 
-Treat these as the owner roots for normal contribution work:
+## Lightweight checks
 
-- implementation roots:
-  - `native/objc3c/`
-  - `scripts/`
-  - `tests/`
-- doc owner inputs:
-  - `README.md`
-  - `CONTRIBUTING.md`
-  - `docs/tutorials/README.md`
-  - `docs/tutorials/getting_started.md`
-  - `docs/tutorials/build_run_verify.md`
-  - `docs/tutorials/guided_walkthrough.md`
-  - `docs/tutorials/objc2_to_objc3_migration.md`
-  - `docs/tutorials/objc2_swift_cpp_comparison.md`
-  - `showcase/`
-  - `site/src/`
-  - `docs/objc3c-native/src/`
-  - `package.json`
-- generated checked-in outputs:
-  - `site/index.md`
-  - `docs/objc3c-native.md`
-  - `docs/runbooks/objc3c_public_command_surface.md`
-- machine-owned outputs:
-  - `tmp/`
-  - `artifacts/`
-
-Refresh generated checked-in outputs from their owner inputs. Do not treat
-`tmp/`, `artifacts/`, or archived redirect material as primary contributor
-guidance.
-
-## Branches and Commits
-
-- Use short descriptive branch names.
-- Keep one primary goal per branch.
-- Keep commits atomic.
-- Include the validation you actually ran.
-
-## Local Checks
-
-Run these before committing:
+Install the documented pinned development tools and Node dependencies first.
+Run CLI discovery and the reader-route guard for contributor-facing changes:
 
 ```sh
-npm run objc3c -- build-site
-npm run objc3c -- lint
-npm run objc3c -- check-markdown
-npm run objc3c -- test-smoke
+python -B -m scripts.objc3c_toolchain --help
+python -B -m scripts.objc3c_toolchain.check_onboarding
 ```
 
-## Core Maintainer Checks
+Format and lint the Markdown/JSON files you changed. For example, for this guide:
 
-- dependency boundaries: `npm run objc3c -- check-dependency-boundaries`
-- task hygiene: `npm run objc3c -- check-task-hygiene`
-- docs drift: `npm run objc3c -- check-native-docs`
-- repo superclean surface: `npm run objc3c -- check-repo-superclean-surface`
+```sh
+npx --no-install prettier --check CONTRIBUTING.md
+npx --no-install markdownlint-cli2 --no-globs CONTRIBUTING.md
+git diff --check
+```
 
-When a change widens package scripts, runbooks, schemas, checker surfaces, or
-publication helpers, also refresh the governance summaries:
+For onboarding or CLI guard changes, run the focused tooling tests:
 
-- governance validation: `npm run objc3c -- validate-governance-sustainability`
-- governance publication metadata: `npm run objc3c -- publish-governance-sustainability`
+```sh
+python -B -m pytest -q tests/tooling/test_current_onboarding.py
+```
 
-Direct helper paths under `scripts/` are implementation anchors for the action
-catalog at `scripts/objc3c_workflow/action_catalog.py`. Contributor-facing command examples should route through
-`npm run objc3c -- <action>`.
+For compiler/runtime changes, start with the affected syntax, type, compile and
+focused runtime checks. Record postponed validation and run it before delivery.
+A prose-only change does not require rebuilding or qualifying an SDK.
 
-## PR Expectations
+## Compiler and delivery work
 
-- describe what changed
-- describe the validation you ran
-- call out risks or non-obvious tradeoffs
-- do not hide follow-up work
+Use the [maintainer guide](docs/runbooks/objc3c_maintainer_workflows.md) to export
+and seal native edits, select the relevant frontend/native checks, and perform
+one coordinated SDK/archive qualification for a coherent implementation batch.
+Honor the configured CPU, memory, compile and link limits. Reuse verified build
+outputs and the configured temporary workspace; avoid duplicate SDK stages and
+unbounded caches.
+
+## Branches, commits and pull requests
+
+- Use descriptive branch names and keep each implementation span reviewable.
+- Commit and push completed work; preserve unrelated work in the shared tree.
+- Target the current integration branch when a PR depends on unmerged work.
+- Explain the resulting behavior, validation actually run, material limitations
+  and remaining implementation. Do not claim whole-profile conformance from a
+  bounded fixture or a successful compiler build.

@@ -4,10 +4,21 @@
 #include "service_internal.h"
 
 #include <cstdint>
+#include <mutex>
 
 namespace objc3::services {
 
 struct Actor;
+// Serializes explicit bindings with lazy object-owned association creation.
+std::recursive_mutex &actor_object_binding_mutex();
+using AutomaticActorLookup = objc3_actor_t *(*)(const void *);
+void register_automatic_actor_lookup(AutomaticActorLookup lookup);
+// Object-owned generation witness. Call while holding the binding mutex;
+// neither the witness nor its destructor retains the receiver or actor.
+objc3_service_status ensure_actor_object_lifetime(void *object, uint64_t *identity);
+uint64_t actor_object_lifetime(const void *object);
+void forget_retired_actor_object(const void *object, uint64_t identity) noexcept;
+
 
 using ActorJob = objc3_actor_job;
 using ActorContextDestroy = objc3_actor_context_destroy;
@@ -26,6 +37,8 @@ uint64_t actor_identity(const Actor *actor) noexcept;
 uint64_t actor_executor_identity(const Actor *actor) noexcept;
 // Borrowed while the caller keeps the actor alive.
 objc3_executor_t *actor_executor(Actor *actor) noexcept;
+bool actor_is_closed(Actor *actor) noexcept;
+bool actor_is_closed_and_quiescent(Actor *actor) noexcept;
 
 // On success the actor owns context and calls destroy exactly once, after the
 // job returns or when cancellation discards the queued job. On failure the

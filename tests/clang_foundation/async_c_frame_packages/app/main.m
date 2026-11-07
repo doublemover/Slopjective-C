@@ -49,6 +49,13 @@ int main(void) {
   assert(value == 42);
   objc3_task_release(task);
   assert(@fixture.CFrame.c_frame_destroyed() == 2);
+  objc3_async_frame scoped = @fixture.CFrame.c_frame_scoped(42);
+  assert(objc3_async_frame_start(&scoped, executor, 0, &task) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(executor, 100, &executed) == OBJC3_SERVICE_OK);
+  value = 0;
+  assert(objc3_task_copy_result(task, &expected, &consumer, &value) == OBJC3_SERVICE_OK);
+  assert(value == 42);
+  objc3_task_release(task);
   objc3_executor_release(executor);
   return 0;
 }

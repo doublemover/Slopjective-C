@@ -1,0 +1,76 @@
+{
+  "schema": "objc3c.linux-cxx-member-alias-templates-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "463e1811321b1fcecae997cbcc16b3a3b01e2d3e",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-0b97b678d104-00b75dc3",
+  "compiler_patch_digest": "0b97b678d104663634902968bee7f33c1193b7021aba4dfba1e1a2b700aea712",
+  "concurrency_module_version": "2.51.0",
+  "interface_schema": "2.2",
+  "scope": [
+    "Nested class-template alias heads/defaults/constraints, dependent member lookup, rebinding, arrays and callback packs",
+    "One enclosing class export/ABI owner and required member-alias/class/alias semantic capabilities",
+    "Native primary-class member order survives field-first import, including aliases before storage",
+    "Explicit member function specializations reject instead of silently falling back to the primary contract",
+    "Source-free consumer substitution and native nontrivial rebound value copy/destruction"
+  ],
+  "verification": {
+    "native_ast_contract_tests_passed": 138,
+    "optimized_frontend_suites_passed": 2,
+    "source_free_package_configurations_passed": 4,
+    "source_free_package_commands_passed": 16,
+    "source_free_package_selection": [
+      "c++20-arc-O0",
+      "c++23-mrc-O2"
+    ],
+    "source_free_package_modes": [
+      "normal",
+      "normal-eager"
+    ],
+    "reports": [
+      {
+        "path": "out/member-alias-templates-foundation-build.json",
+        "bytes": 6576,
+        "sha256": "24880afb8383601784167ecacf674a8b2998892cf9bd2c13f04ea2db5314a1dc"
+      },
+      {
+        "path": "out/member-alias-templates-verify.json",
+        "bytes": 7444,
+        "sha256": "e2a9786e36c3954facbef5e45e77c77e8d8077577c9704ee1bbed78ca3d2f522"
+      },
+      {
+        "path": "out/member-alias-templates-native-ast.log",
+        "bytes": 34651,
+        "sha256": "58ccfd47f737c1b00b45386fd605ad7432c34a769015c03dee46b1d565fd967d"
+      },
+      {
+        "path": "out/member-alias-templates-focused-frontend-tests.log",
+        "bytes": 82638,
+        "sha256": "e2eae89d1b36b6beaac259f29c7f9d0cf473f67b68dcf14f09f5cb41305a6045"
+      },
+      {
+        "path": "out/member-alias-templates-focused-exports.log",
+        "bytes": 33411,
+        "sha256": "4c4ace8c7a89659d015194ae988b47cf6a415741ecebba10b6594b9a3e8bcc81"
+      },
+      {
+        "path": "out/native-validation/member-alias-templates-packages-normal/qualification.json",
+        "bytes": 1229,
+        "sha256": "a1e8874741c389a4e82bb10fabd20b994ea25011ef339a4496aa97f950f30971"
+      },
+      {
+        "path": "out/native-validation/member-alias-templates-packages-normal-eager/qualification.json",
+        "bytes": 1219,
+        "sha256": "a8e9ec7d5265bb9671379b2de7aaed65c1a557c3de8588e128a376fa294a2977"
+      }
+    ]
+  },
+  "deferred": [
+    "Remaining source-free configurations and combined broader native/frontend/tooling/sanitizer checks",
+    "Coordinated SDK rebuild/archive and installed-host qualification"
+  ],
+  "accepted_sdk": "2.33.0",
+  "sdk_rebuilt": false,
+  "full_profile_conformance": false,
+  "native_aarch64_qualified": false
+}

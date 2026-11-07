@@ -1,0 +1,269 @@
+{
+  "schema": "objc3c.linux-cxx-generic-factory-projections-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-6adb5563f339-00b75dc3",
+  "compiler_patch_digest": "6adb5563f339fce4d36939b6939e35be66e2297f7745b39b57e1559df8db8b4f",
+  "frontend_input_sha256": "e0d85e9762168a00aa2150fe9907d7262bfbdc30147db7f49e6b72fbdd54427f",
+  "concurrency_module_version": "2.82.0",
+  "required_semantics": [
+    "objc3.cxx-generic-factory-projections.v1"
+  ],
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_artifact_io.cpp",
+      "sha256": "96cbe1a50fb008adad516347370625af9d422778a14638c3bd1d7983d8d31758"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_codec.cpp",
+      "sha256": "330de6da5156e623ef85fe1ccb7edd4ab03cd9dad3bc86624e8793709ae0b624"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.cpp",
+      "sha256": "353635b45c107a54d81171525af2161903d4bf4adce94751eb43b387133c4ca9"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.h",
+      "sha256": "02b3df4dc80c87a0b19b8e179b0fe93d2681f9e0c1bdfdd14b2fac4d42c3c10d"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "2eb9620a136f76a033f607b933c7fd7c191b2b389102d152814a197c33fcea95"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.cpp",
+      "sha256": "666135e1955fe0ee4a8bc87f99504a4b837cf9f60ef1e1db8705e71f6de5fff1"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.cpp",
+      "sha256": "8bfb7ac6170e02361afd508ceb967f8a02d7dd0d1e70ee3c68b52c026a3cc537"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "17126e061cf61df610753826564a43d6c90cc734bee08aaed4ae50b5d84ff014"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "f997eb1e0a76e9ef4bf54f1317b9e5ad643c91d474b341ae58a0f898a129fdd7"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "71e99dc3e10346319a83ad2d3d7b1d9c42d993e5d54dd2aa913caa999322a521"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory_package_checks.h",
+      "sha256": "07a21b71dc5b9d1a9e42aa016b9e07c4a79c01de7c1595bccb2247d855b15313"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "b7416e9ab62d5ba91d802be8a7b91bbe3b701da807583d4bc406bbbbd908e04c"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/package.json",
+      "sha256": "55e234554ecb51e3f916ad7cd4cb69e033ae7a8bedd13bf5900809002e19b1c8"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/generic_factory_projections.h",
+      "sha256": "943061127a5d84539f7b17825d30721c92937699462fdbcba0d7d57843e79bcd"
+    }
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "emitter_suite": "PASS",
+    "tooling_tests_passed": 84,
+    "source_free_runtime_configurations": 16,
+    "source_free_commands": 96,
+    "full_fixture_smoke_configurations": 1,
+    "full_fixture_smoke_commands": 6,
+    "representative_cases": [
+      {
+        "transport": "normal",
+        "name": "c++20-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal",
+        "name": "c++20-arc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal",
+        "name": "c++20-mrc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal",
+        "name": "c++20-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal",
+        "name": "c++23-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal",
+        "name": "c++23-arc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal",
+        "name": "c++23-mrc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal",
+        "name": "c++23-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++20-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++20-arc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++20-mrc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++20-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++23-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++23-arc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++23-mrc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++23-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      }
+    ],
+    "closed_namespace_and_member_generic_factory_projections": true,
+    "exact_function_and_enclosing_class_bindings": true,
+    "primary_published_definition_required": true,
+    "distinct_scalar_and_member_instantiations": true,
+    "aliases_fields_wrappers_and_shared_storage": true,
+    "closed_generic_lambda_arguments": true,
+    "nontrivial_cross_provider_copy_move_and_destruction": true,
+    "closure_origins_and_private_roots_remain_gated": true,
+    "relocation_and_replay_fingerprints_stable": true,
+    "capability_and_namespace_owner_mismatches_rejected": true,
+    "native_foundation": {
+      "status": "COMPILED_STAGED_FOCUSED_VALIDATED",
+      "checkpoint": "d88aead045229a53f5c332b215403663e0bb3134",
+      "native_import_family_tests_passed": 44,
+      "reports": [
+        {
+          "path": "out/generic-factory-projections-native-build.json",
+          "sha256": "6978f39f4bffdd04b093d1cc72bbde18e9426f57993365cb3b3a87badaefd5c1"
+        },
+        {
+          "path": "out/generic-factory-projections-native-import-family.log",
+          "sha256": "065bb6a1d78c5264d4152287fcb932ee4075234dfde6460d2cc4042a84a97e04"
+        }
+      ]
+    },
+    "reports": [
+      {
+        "path": "out/native-validation/generic-factory-projections-full-smoke-normal/qualification.json",
+        "sha256": "98bebf65b219796e5bb642565248ba493f0dd6fbe646d9b7d72ef8e407d89d59"
+      },
+      {
+        "path": "out/generic-factory-projections-facade-build.log",
+        "sha256": "a00879ec5a723bfcb4a8e432b9846bffd88e9d3b1402357a12e3d7c6c1e5abe4"
+      },
+      {
+        "path": "out/generic-factory-projections-facade-followup.log",
+        "sha256": "2f54e472b01d26ee1ed661f1f0f62dd68564608066fdd4a4e318ba46fdf45dc4"
+      },
+      {
+        "path": "out/generic-factory-projections-facade-final.log",
+        "sha256": "cd9982b2553a5b3f3707223a571991ded41d5480aabb6a715fd6b787fc343651"
+      },
+      {
+        "path": "out/generic-factory-projections-facade-diagnostic.log",
+        "sha256": "9b1af4b24db09417bcf5c81640fe25da2486b9c4bc32d63910d72fd535c81d02"
+      },
+      {
+        "path": "out/generic-factory-projections-emitter-ctest.log",
+        "sha256": "0521d43596ce3698d451ba74d1ba9e541c00b204c929f0d70cc4692221e1457c"
+      },
+      {
+        "path": "out/generic-factory-projections-tooling.log",
+        "sha256": "962891d5c484fc07413d57c36adaf0de61d4fe57515b0b12fd368c02957597a9"
+      },
+      {
+        "path": "out/native-validation/generic-factory-projections-packages-normal/qualification.json",
+        "sha256": "95af322e974c31e7392f5d5284a5f03762cbc98f5d80280430b248b01d9d3f20"
+      },
+      {
+        "path": "out/native-validation/generic-factory-projections-packages-normal-eager/qualification.json",
+        "sha256": "975acdc4dbacfd89c2c6472e6abdc816165b7a4cc159ffb1ad43fa1a870b157e"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Combined full-fixture and sanitizer matrices after further implementation",
+    "Coordinated SDK delivery of post-2.62 source milestones"
+  ],
+  "remaining": [
+    "Other public/dependent closure and unnamed-type projections, custom coroutine promises and dependent lookup/attribute contracts",
+    "Remaining ownership, structured concurrency, isolation, key-path, language/library and profile implementation",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

@@ -26,8 +26,10 @@ int native_object_error() __objc3_async;
 int native_actor_owned(objc3_actor_t *, objc3_actor_t *, bool) __objc3_async;
 int native_pool_slices(std::shared_ptr<std::atomic<unsigned>>, objc3_actor_t *,
                        objc3_actor_t *, objc3::task_handle<int>) __objc3_async;
+bool native_lexical_pool_witnesses();
 int native_exception_number(__unsafe_unretained id);
 unsigned native_object_destructions();
+unsigned native_actor_owned_creations();
 @class NativeAsyncResult;
 @protocol NativeAsyncResultProtocol
 - (int)number;
@@ -240,6 +242,7 @@ native_async_block native_block_factory(int) __objc3_async;
 objc3::task<int> native_block_hopped(objc3_actor_t *, std::shared_ptr<async_state>);
 bool native_block_copy_failure(std::shared_ptr<async_state>);
 objc3::task<int> native_block_noescape(std::shared_ptr<async_state>, bool);
+bool native_actor_object_association();
 #endif
 
 #endif // NATIVE_ASYNC_PROVIDER_H

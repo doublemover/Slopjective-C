@@ -5,4 +5,13 @@ inline constexpr char kHeaderSha256[] = "@_runtime_services_header_sha256@";
 inline constexpr char kSemantic[] =
     "objc3.sdk-runtime-frames.v4.@_runtime_services_header_sha256@";
 inline constexpr char kHeaderSource[] = R"objc3_runtime(@_runtime_services_header_source@)objc3_runtime";
+inline constexpr char kTaskHeaderSha256[] = "@_runtime_task_header_sha256@";
+inline constexpr char kTaskHeaderSource[] = R"objc3_task(@_runtime_task_header_source@)objc3_task";
+inline constexpr char kKeyPathHeaderSource[] = R"objc3_keypath(@_runtime_keypath_header_source@)objc3_keypath";
+struct StandardLibraryHeader {
+  const char *module;
+  const char *sha256;
+};
+inline constexpr StandardLibraryHeader kStandardLibraryHeaders[] = {
+@_stdlib_header_contracts@};
 } // namespace objc3::clang_foundation::runtime_interface

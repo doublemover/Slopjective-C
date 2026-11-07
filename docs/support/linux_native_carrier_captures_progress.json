@@ -1,0 +1,113 @@
+{
+  "schema": "objc3c.linux-native-carrier-captures-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "ce4631564239d7d2b4697773ff9d3a6714930f90",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-da2a9f68497e-00b75dc3",
+  "concurrency_module_version": "2.27.0",
+  "scope": [
+    "Shared AST qualification for plain native capture leaves independent of runtime callable encoding",
+    "Typed pointers, function/member pointers, complex values and recursively plain C aggregates/arrays",
+    "Shared Optional/Result complex copy recipes and native Result construction evaluation kinds",
+    "Implicit mixed ARC/C++ Block capture recipes, partitioned cleanup and full-expression rollback",
+    "Promoted installed mixed Block capture witness replaces the former rejection"
+  ],
+  "frontend": {
+    "suites_passed": ["explicit_capture_lists", "interface_emitter"],
+    "logs": [
+      {
+        "path": "out/native-carrier-captures-facade-test.log",
+        "sha256": "e6e5b0789c2b9db8f2ed50b00444d1e0aa086f18171f471b7507124742e0486b"
+      },
+      {
+        "path": "out/native-carrier-captures-emitter-test.log",
+        "sha256": "d8fcafd12f1f5554e42db2eb9462e5d37073d4e39dbf85881b8acdc9e2b0572a"
+      }
+    ]
+  },
+  "runtime_matrices": [
+    {
+      "mode": "normal",
+      "configurations": 24,
+      "commands": 126,
+      "report": {
+        "path": "out/native-validation/native-carrier-captures-final-normal/batch.json",
+        "sha256": "a204b11a59850438d7471784e952a2296920a71abebfcb264bcac94c53d9e0c6"
+      }
+    },
+    {
+      "mode": "asan",
+      "configurations": 24,
+      "commands": 126,
+      "report": {
+        "path": "out/native-validation/native-carrier-captures-final-asan/batch.json",
+        "sha256": "e58189b7a79fcf7c4547393d9b99bfb501d0f7993dde63bf3ff6ec2490c96dbd"
+      }
+    }
+  ],
+  "recursive_mixed_witness": {
+    "configurations": 4,
+    "commands": 8,
+    "report": {
+      "path": "out/native-validation/native-carrier-captures-recursive/qualification.json",
+      "sha256": "77387332cef9ecfaf4e87a572617a3da48c5e49c1dd9063b3dde198cf4091cf8"
+    }
+  },
+  "source_free_cpp_packages": {
+    "configurations": 8,
+    "commands": 32,
+    "axes": [
+      "C++20/C++23",
+      "ARC/MRC",
+      "O0/O2",
+      "provider source removed",
+      "consumer object linked first"
+    ],
+    "report": {
+      "path": "out/native-validation/plain-native-carrier-captures-package-normal/qualification.json",
+      "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+    }
+  },
+  "delivery": {
+    "accepted_sdk": "2.9.0",
+    "new_archive_built": false
+  },
+  "remaining": [
+    "C++ lambda mixed carrier capture and MRC mixed ownership",
+    "Unmodeled ownership-bearing leaf storage, throwing resource disposal and exceptional/profile ownership",
+    "Installed SDK/archive cutover and native AArch64 qualification"
+  ],
+  "source_inputs": [
+    {
+      "path": "toolchains/llvm/manifest.json",
+      "sha256": "6edb359657c07709139dda14c7ddc3c9d6cce8b6779a7aa318fb555ec38e81b5"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists/runtime.h",
+      "sha256": "16262f7827a60c2142bea1eb25963d293f5397faf92efbd66bde8fd4550cc06b"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists/exceptions.mm",
+      "sha256": "81b3253e8dbbe32e0467940ac161ceb21ee01dbae9e71465cbdc95cd12b11a27"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists_test.cpp",
+      "sha256": "914b7953102c471a431daf8b9bc35a5920e9b702ab0e7df8c1d4646c9823cbcd"
+    },
+    {
+      "path": "tests/clang_foundation/recursive_carriers/mixed-main.mm",
+      "sha256": "a150e57d4e68d886921d8ea56695f83f94df545e1dd3cc730e30c36cb0bda475"
+    },
+    {
+      "path": "tests/clang_foundation/recursive_carriers/rejections.mm",
+      "sha256": "f5fa20265a2161576dcfeb4cd4ae2c1d9df686eadbcdb39d636c5d66e329425f"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_recursive_carriers.py",
+      "sha256": "16c68c89c74bbe0a1872c9f5b0d1b54719a5cc7069c017de7041a49ea4cfe8d7"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "eefa856bacf341163662f57c457301e1ba976843f4566ab3d02c16586da9a57b"
+    }
+  ]
+}

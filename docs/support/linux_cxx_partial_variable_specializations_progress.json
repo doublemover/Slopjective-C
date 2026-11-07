@@ -1,0 +1,86 @@
+{
+  "schema": "objc3c.linux-cxx-partial-variable-specializations-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-8e38f2a3ca6c-00b75dc3",
+  "compiler_patch_digest": "8e38f2a3ca6c478730f966c47046561d181692f06d5b585265f11a9d7b3d7b3f",
+  "native_fix_checkpoint": "9c6f343d1bce5d656de39a5859ec179c35b97757",
+  "frontend_input_sha256": "fe621b48ba7fca0b8fee17d37a89b18549265eafd6903470376973d9feb5a904",
+  "concurrency_module_version": "2.61.0",
+  "required_semantics": [
+    "objc3.cxx-variable-partial-specializations.v1"
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "native_import_tests_passed": 8,
+    "native_import_dialects": [
+      "c++20",
+      "c++23"
+    ],
+    "partial_lookup_table_membership": "PASS",
+    "alias_abi_source_pch_regression": "PASS",
+    "emitter_suite": "PASS",
+    "tooling_tests_passed": 19,
+    "source_free_runtime_configurations": 16,
+    "source_free_commands": 96,
+    "transports": [
+      "source-directed",
+      "eager"
+    ],
+    "function_and_variable_lookup_rejections": 16,
+    "primary_abi_symbol_inspections": 16,
+    "provider_source_removed": true,
+    "partial_mutable_noninline_storage_and_worker_tls": true,
+    "consumer_created_deduced_and_constrained_instantiations": true,
+    "reports": [
+      {
+        "path": "out/partial-variable-native-build.json",
+        "sha256": "b514067371628285f3fcf96678c45da63bf2708e241b523449dba2a00ff7a38b"
+      },
+      {
+        "path": "out/partial-variable-native-focused-import.log",
+        "sha256": "8913cf4d9ce8dc40e005bbd95142655bb3ea27bfd87f437cfd72ee338ca33675"
+      },
+      {
+        "path": "out/partial-variable-native-focused-codegen.log",
+        "sha256": "2e66855c2c780d3671852890a7de091fc1fed097acbd1c4f22fd75dea9a8091a"
+      },
+      {
+        "path": "out/partial-variable-build.log",
+        "sha256": "dec1436afc43fabae46d3b452cbf2672f05409c4806467e813a48c84ca82872f"
+      },
+      {
+        "path": "out/partial-variable-final-build.log",
+        "sha256": "3aa9e3093d1fcb4806126f07ba12769caac0e59d1c05a3328372468fcf8062fa"
+      },
+      {
+        "path": "out/partial-variable-emitter-test.log",
+        "sha256": "c9f3873fe42b81e89ed6a6686c050bd1f1030584c8e8b70e25d4b39ad1fc7d02"
+      },
+      {
+        "path": "out/partial-variable-tooling.log",
+        "sha256": "8b0f179e7ad65e0494f0c5f9cfcc9ef626ae2b388010639d032aa42c279f7210"
+      },
+      {
+        "path": "out/native-validation/partial-variable-packages-normal/qualification.json",
+        "sha256": "95af322e974c31e7392f5d5284a5f03762cbc98f5d80280430b248b01d9d3f20"
+      },
+      {
+        "path": "out/native-validation/partial-variable-packages-normal-eager/qualification.json",
+        "sha256": "975acdc4dbacfd89c2c6472e6abdc816165b7a4cc159ffb1ad43fa1a870b157e"
+      },
+      {
+        "path": "out/partial-variable-docs-lint.log",
+        "sha256": "d324ff95a5af8309d4fa395691b4ddcbcb04a3af44097ed15f7b597c103d1eb9"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.52.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Combined compiler/frontend/tooling/sanitizer validation for source 2.53 and later",
+    "Coordinated SDK delivery after the implementation batch"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

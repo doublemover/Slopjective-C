@@ -43,7 +43,12 @@ objc3_generic_collection_status objc3_generic_map_create_empty(
     const objc3_generic_map_descriptor *descriptor,
     objc3_generic_map_t *out_map);
 /* Keys and values are separate contiguous spans, each using its own descriptor
- * stride. Creation applies insert semantics in source order. */
+ * stride. Creation applies insert semantics in source order and publishes only
+ * a complete record. Each distinct key is copied once; each input map value is
+ * copied once (last duplicate value wins in the first key slot). Set duplicates
+ * do not copy payloads. Strict hash-coherence diagnosis retains pairwise key
+ * equality work in the worst case; these are ownership-copy bounds, not a
+ * promise of linear total construction time. Callbacks run without runtime locks. */
 objc3_generic_collection_status objc3_generic_map_create(
     const objc3_generic_map_descriptor *descriptor, const void *keys,
     const void *values, uint64_t count, objc3_generic_map_t *out_map);

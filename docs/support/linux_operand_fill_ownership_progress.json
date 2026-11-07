@@ -1,0 +1,183 @@
+{
+  "schema": "objc3c.linux-operand-fill-ownership-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "fb5b5235a091937c9c00d3bf0e4886b9241a9f0c",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-699308a56e69-00b75dc3",
+  "compiler_patch_digest": "699308a56e693ba91dfd090288e4ac416aace6123746d622a51b236d44140ea5",
+  "concurrency_module_version": "2.37.0",
+  "system_module_version": "2.13.0",
+  "keypath_module_version": "2.2.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "service_abi": 4,
+  "frame_abi": 1,
+  "scope": [
+    "Concurrency 2.37: source-ordered isolated function/message operands with independent ARC/MRC object/Block snapshots, shared full-expression/EH ownership and temporary rollback",
+    "Sixteen operand replacement, pre-entry cancellation, allocation failure and throwing-argument runtime scenarios in each of 48 isolation configurations per mode",
+    "System 2.13: nonescaping write-only memory-fill destinations, exact direct-local overwrite kills, field/array and returned-alias provenance, owner expiry and preserved wildcard/partial/uncertain facts",
+    "Reserved compiler builtin dependencies in explicitly exported inline definitions, pinned native identity across implicit C linkage and rejection of libc or unknown lookalike dependencies",
+    "Source-free execution of complete fills and counted record-captured consumption forwarded through a stable mutable lambda; exact foreign destruction and retained/integrated-family results",
+    "Combined current capture, keypath, native async, isolation and spawn source/PCH runtime matrices under normal, ASan/UBSan and TSan execution",
+    "Retirement of seven checks for removed frontend/token-runtime sources and modernization of the native Linux reproducibility identity check"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/operand-fill-batch-foundation-build.json",
+      "sha256": "2ca3a6be7a7c2a8f5fcb0bdd9e1f6b1362fee9f12f2e54c4a8ee59905ba46af4"
+    },
+    "source_verification": {
+      "path": "out/operand-fill-batch-source-verification.json",
+      "sha256": "1c12555119143a3d98118aeb924e90a4ee3503dea6bd492d8da2c57bca562741"
+    },
+    "native": {
+      "compiler_regressions_passed": 400,
+      "platform_cases_unsupported": 3,
+      "native_unit_tests_passed": 190,
+      "report": {
+        "path": "out/operand-fill-batch-native-batch.json",
+        "sha256": "09b1a1f93f934c4c91ce1f081cd6894af68c1c528f8b5bf340e6dc67945df93e"
+      },
+      "logs": [
+        {
+          "path": "out/operand-fill-batch-native-0.log",
+          "sha256": "668cba91e22e84a70eedf7db59df7a0df5d3065485e90d13a6cceb6884b9335f"
+        },
+        {
+          "path": "out/operand-fill-batch-native-1.log",
+          "sha256": "9916db85ed3cf78171ef815519e1af5c0f095fc588b6c86316bf1314bae1e968"
+        },
+        {
+          "path": "out/operand-fill-batch-native-2.log",
+          "sha256": "8b2edf3153364d8411f706135e2a6dc96cbfa4d256e9e5f8f6e6c559f97dfed9"
+        },
+        {
+          "path": "out/operand-fill-batch-native-3.log",
+          "sha256": "a56f2d5fc356f5e1343791acdc76c92791b2fa2d861b53bd7220befdd5d6cb78"
+        },
+        {
+          "path": "out/operand-fill-batch-native-4.log",
+          "sha256": "92f983c3bf5e4ae2436230aff34f715e7e90b17e8549357a035f0d34889fb9ad"
+        }
+      ]
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "build": {
+        "path": "out/operand-fill-batch-all-frontend-build.log",
+        "sha256": "eebe0c67af2e38964567797550297709e7ef25c377dac0c98262c418e0e35be3"
+      },
+      "tests": {
+        "path": "out/operand-fill-batch-all-frontend-tests.log",
+        "sha256": "50a8882d70deb05f783278ffb882bc229da3ae1a3d3fe3439f69d5bf28c3aa47"
+      },
+      "builtin_export_tests": {
+        "path": "out/operand-fill-batch-builtin-export-tests.log",
+        "sha256": "4a3763fed546366191a0b93a177875a6fe09094ec91d795272ab143616e6a04a"
+      }
+    },
+    "tooling": {
+      "tests_passed": 331,
+      "tests_skipped": 3,
+      "skipped_scope": "Windows/PowerShell-only checks",
+      "subtests_passed": 33,
+      "selection": {
+        "path": "out/operand-fill-batch-tooling-selection.json",
+        "sha256": "257c97608437909f16b3adb4699580b1d3e2ffc65c15111ee5bc097a26224265"
+      },
+      "log": {
+        "path": "out/operand-fill-batch-tooling.log",
+        "sha256": "642e52eea6cc2d119ee2293dbe1de763db9a974b2e7d82fe7e4b5e431621c400"
+      }
+    },
+    "runtime_matrices": [
+      {
+        "mode": "normal",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/operand-fill-batch-features-normal/batch.json",
+          "sha256": "0437608dc2e3159b84a86784760e9fcc905c1bd00213f633b6ae3c7adb663621"
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/operand-fill-batch-features-asan/batch.json",
+          "sha256": "d6942a2318d31e78f7925a6babe024c7914a3ca0b6478afd94db87a2202e0627"
+        }
+      },
+      {
+        "mode": "tsan",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/operand-fill-batch-features-tsan/batch.json",
+          "sha256": "2fafdcb4e1e6a4ddfc28656730f6a3b23c8e2f9505c63d23fb61f21e2954e253"
+        }
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/operand-fill-batch-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/operand-fill-batch-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9"
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/operand-fill-batch-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109"
+          }
+        }
+      ]
+    },
+    "binaries": {
+      "build_clang": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/bin/clang",
+        "sha256": "59df6239e5be79b20dae7849d6c14a8f3ffe1fe814e4d9c798c3866c2f7b62eb"
+      },
+      "stage_clang": {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang",
+        "sha256": "4f20bba0ac869e88c9cb639dc1be7bf925a6a645a02b836ca1b5d443b13d77a4"
+      },
+      "facade": {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "ebd934c703fc40cf868c4a64dd4cb308095154c10471c90081ea663e92342236"
+      }
+    }
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "acceptance_receipt": "docs/support/linux_source_batch_2_33_acceptance.json",
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false,
+    "installed_delivery": "deferred until a larger implementation batch"
+  },
+  "remaining": [
+    "Remaining implementation recorded in the Linux roadmap and module inventory",
+    "Installed SDK delivery of the post-2.33 source spans",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ]
+}

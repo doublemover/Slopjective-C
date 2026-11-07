@@ -14,7 +14,7 @@ def test_failed_library_gate_replaces_success_and_reclaims_temporary_files(
     fixture = sdk / 'share/objc3c/examples/stdlib'
     fixture.mkdir(parents=True)
     (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'a' * 64}))
-    for name in ('provider.h', 'provider.m', 'client.m'):
+    for name in ('provider.h', 'provider.m', 'client.m', 'factory-contract.m', 'system-contract.m'):
         (fixture / name).write_text('fixture')
     output = tmp_path / 'evidence'
     output.mkdir()

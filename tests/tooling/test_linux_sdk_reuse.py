@@ -11,6 +11,7 @@ def sdk(tmp_path: Path) -> Path:
     for name, content in {'bin/clang': 'compiler', 'lib/libclangAST.a': 'native AST',
                           'include/clang/AST/Type.h': 'native types',
                           'bin/objc3c': 'frontend', 'bin/clang-scan-deps': 'scanner',
+                          'bin/FileCheck': 'qualification tool',
                           'lib/libobjc.so': 'runtime'}.items():
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -21,9 +22,26 @@ def sdk(tmp_path: Path) -> Path:
 def test_project_updates_reuse_the_same_llvm_foundation(tmp_path):
     prefix = sdk(tmp_path)
     before = foundation_identity(prefix)
-    for name in ('bin/objc3c', 'bin/clang-scan-deps', 'lib/libobjc.so'):
+    for name in ('bin/objc3c', 'bin/clang-scan-deps', 'bin/FileCheck', 'lib/libobjc.so'):
         (prefix / name).write_text('updated project component')
     assert foundation_identity(prefix) == before
+
+
+def test_native_header_bundle_is_reinstalled_without_invalidating_llvm_foundation(tmp_path):
+    prefix = sdk(tmp_path / 'cached')
+    before = foundation_identity(prefix)
+    files = ('bin/clang.cfg', 'bin/clang++.cfg',
+             'lib/clang/23/objc3-native-headers/roots/00/string',
+             'lib/clang/23/objc3-native-headers/manifest.json')
+    for name in files:
+        path = prefix / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('current native headers')
+    assert foundation_identity(prefix) == before
+    destination = tmp_path / 'candidate'
+    copy_foundation(prefix, destination)
+    assert all(not (destination / name).exists() for name in files)
+    assert (destination / 'bin/clang').read_text() == 'compiler'
 
 
 def test_llvm_library_change_invalidates_reuse_even_with_preserved_timestamp(tmp_path):
@@ -38,7 +56,7 @@ def test_llvm_library_change_invalidates_reuse_even_with_preserved_timestamp(tmp
 
 def test_cached_foundation_cannot_restore_removed_project_components(tmp_path):
     prefix = sdk(tmp_path / 'cached')
-    stale = ('bin/objc3c-clang', 'bin/objc3-managed-sample.o',
+    stale = ('bin/objc3c-clang', 'bin/objc3-managed-sample.o', 'bin/FileCheck',
              'lib/libobjc3c_removed.a', 'lib/cmake/objc3c/Removed.cmake',
              'include/objc/retired.h', 'include/objc3c/retired.h',
              'include/runtime/retired.h', 'include/objc3/retired.h', 'share/objc3c/examples/retired.m',
@@ -63,12 +81,14 @@ def test_editor_qualification_changes_invalidate_release_reuse(tmp_path, monkeyp
     repo = tmp_path / 'project'
     fixture = 'tests/tooling/fixtures/objc3_editor/qualification-cases.json'
     for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json',
-                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen', fixture):
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen',
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck', fixture):
         path = repo / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('initial contents')
     monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {'configure': {'identity': 'foundation'}})
     monkeypatch.setattr(linux_sdk, 'facade_identity', lambda *a: {'sha256': 'frontend'})
+    monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
     monkeypatch.setattr(plan, 'build_plan', lambda *a, **kw: {
         'selected_nodes': [{'identity_inputs': [fixture]}]})
     prefix = sdk(tmp_path / 'sdk')
@@ -82,12 +102,14 @@ def identity_project(tmp_path, monkeypatch, configure):
     from scripts.objc3c_native_validation import plan
     repo = tmp_path / 'project'
     for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json',
-                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen'):
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen',
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck'):
         path = repo / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('qualified input')
     monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {'configure': configure})
     monkeypatch.setattr(linux_sdk, 'facade_identity', lambda *a: {'sha256': 'frontend'})
+    monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
     monkeypatch.setattr(plan, 'build_plan', lambda *a, **kw: {'selected_nodes': []})
     return repo, sdk(tmp_path / 'sdk')
 
@@ -102,9 +124,24 @@ def test_reclaiming_foundation_outputs_preserves_release_reuse(tmp_path, monkeyp
     configure['identity'] = 'without-stage'
     configure['sdk_consumers']['resource_dir']['sha256'] = None
     assert linux_sdk.input_identity(repo, prefix)['sha256'] == before
+
     # A mutable build-tree inventory is also an output, not a release input.
     configure['sdk_consumers']['build_tree_resource_dir'] = {'path': '/build/resources', 'sha256': 'new-output'}
     assert linux_sdk.input_identity(repo, prefix)['sha256'] == before
+
+
+def test_native_header_bytes_change_release_inputs_independently_of_llvm(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import linux_sdk, native_headers
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'identity': 'foundation'})
+    header = tmp_path / 'native-header'
+    header.write_bytes(b'first header')
+    monkeypatch.setattr(linux_sdk, 'discover_native_headers',
+                        lambda *a: {'sha256': native_headers.digest(header)})
+    before = linux_sdk.input_identity(repo, prefix)['sha256']
+    timestamp = header.stat()
+    header.write_bytes(b'other header')
+    os.utime(header, ns=(timestamp.st_atime_ns, timestamp.st_mtime_ns))
+    assert linux_sdk.input_identity(repo, prefix)['sha256'] != before
 
 
 @pytest.mark.parametrize('field', ['command', 'source_tree', 'build_config_digest', 'host_environment'])
@@ -133,7 +170,10 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {'build_id': 'llvm-build'})
     changed = False
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *a: {
-        'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation'})
+        'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation',
+        'native_headers': {'sha256': 'native-headers'}})
+    monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
+    monkeypatch.setattr(linux_sdk, 'materialize_native_headers', lambda *a: {'files': 0})
     monkeypatch.setattr(linux_sdk, 'copy_foundation', lambda _, prefix: prefix.mkdir())
     monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {
         'configure': {'host_environment': {'resource_limits': {'compile_jobs': 1}}}})
@@ -206,8 +246,10 @@ def test_candidate_never_reclaims_an_installed_foundation(tmp_path):
     assert not result['duplicate_stage_reclaimed'] and installed.is_dir()
 
 
-@pytest.mark.parametrize('name', ['stdlib/include/objc3/text.h', 'stdlib/module_inventory.json'])
-def test_standard_library_edits_invalidate_sdk_reuse(tmp_path, monkeypatch, name):
+@pytest.mark.parametrize('name', [
+    'stdlib/include/objc3/text.h', 'stdlib/module_inventory.json',
+    'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck'])
+def test_library_and_qualification_tool_edits_invalidate_sdk_reuse(tmp_path, monkeypatch, name):
     from scripts.objc3c_toolchain import linux_sdk
     repo, prefix = identity_project(tmp_path, monkeypatch, {'command': ['cmake']})
     path = repo / name
@@ -216,3 +258,31 @@ def test_standard_library_edits_invalidate_sdk_reuse(tmp_path, monkeypatch, name
     before = linux_sdk.input_identity(repo, prefix)['sha256']
     path.write_text('after')
     assert linux_sdk.input_identity(repo, prefix)['sha256'] != before
+
+
+def test_packaged_filecheck_does_not_change_foundation_signature(tmp_path):
+    prefix = sdk(tmp_path)
+    (prefix / 'bin/FileCheck').unlink()
+    before = foundation_identity(prefix)
+    (prefix / 'bin/FileCheck').write_bytes(b'newly packaged qualification tool')
+    assert foundation_identity(prefix) == before
+
+
+@pytest.mark.parametrize('name', ['keypath_service_test.cpp', 'support/new_oracle.hpp'])
+def test_native_test_sources_invalidate_qualification_without_rebuilding_foundation(tmp_path, monkeypatch, name):
+    from scripts.objc3c_toolchain import linux_sdk
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
+    path = repo / 'native/objc3c/tests' / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('pass')
+    before = linux_sdk.input_identity(repo, prefix)
+    stamp = path.stat()
+    path.write_text('fail')
+    import os
+    os.utime(path, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    after = linux_sdk.input_identity(repo, prefix)
+    assert after['sha256'] != before['sha256']
+    assert after['foundation_plan'] == before['foundation_plan']
+    assert after['frontend'] == before['frontend']
+    path.unlink()
+    assert linux_sdk.input_identity(repo, prefix)['sha256'] != after['sha256']

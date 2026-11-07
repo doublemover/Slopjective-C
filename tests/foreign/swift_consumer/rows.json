@@ -1,0 +1,29 @@
+{
+  "schema": "objc3c.swift-consumer-rows.v1",
+  "module": "ForeignAPI",
+  "target": "x86_64-unknown-linux-gnu",
+  "rows": [
+    { "id": "renamed-primitive", "declaration": "objc3_swift_value", "required": true },
+    { "id": "nonnull-pointer", "declaration": "objc3_swift_read", "required": true },
+    { "id": "newtype", "declaration": "ObjC3SwiftAmount", "required": true },
+    { "id": "opaque-c-lifetime", "declaration": "ObjC3SwiftToken", "required": true },
+    { "id": "availability", "declaration": "objc3_swift_unavailable", "required": true }
+  ],
+  "unqualified": [
+    {
+      "id": "gnustep-object-import",
+      "status": "unsupported",
+      "reason": "No Linux Swift/GNUstep Objective-C object ABI contract is provided."
+    },
+    {
+      "id": "foreign-async-actors",
+      "status": "metadata-preserved",
+      "reason": "No Swift completion/error/actor execution model is admitted by this C pilot."
+    },
+    {
+      "id": "product-pch-import",
+      "status": "unsupported",
+      "reason": "Swift owns an independent Clang importer; product serialized AST/PCH inputs are not interchangeable."
+    }
+  ]
+}

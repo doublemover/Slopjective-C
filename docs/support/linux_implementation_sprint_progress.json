@@ -1,0 +1,180 @@
+{
+  "schema": "objc3c.linux-implementation-sprint-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "implementation_commit": "a30d104b2a6c68c7c8ef38e3d3f6133bf1a0b9f5",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-89c7a1e4d580-00b75dc3",
+  "compiler_patch_digest": "89c7a1e4d5806eb491262b400d4df51067f0614166c9e6fd73445909db3436a9",
+  "module_versions": {
+    "concurrency": "2.87.0",
+    "system": "2.15.0",
+    "keypath": "2.5.0"
+  },
+  "required_semantics": [
+    "objc3.cxx-nested-factory-types.v1",
+    "objc3.foreign-import-attributes.v1"
+  ],
+  "verification": {
+    "frontend_suites": 33,
+    "native_unit_tests": 234,
+    "compiler_regressions_passed": 409,
+    "compiler_regressions_unsupported": 3,
+    "maintained_tooling_tests": 335,
+    "maintained_tooling_subtests": 33,
+    "maintained_tooling_skips": 3,
+    "focused_tooling_tests": 100,
+    "focused_tooling_subtests": 12,
+    "focused_tooling_skips": 1,
+    "tooling_counts_overlap": true,
+    "feature_matrices": {
+      "normal": {
+        "configurations": 168,
+        "commands": 1206
+      },
+      "thread": {
+        "configurations": 168,
+        "commands": 1206
+      },
+      "address_undefined": {
+        "completed_configurations_before_repair": 96,
+        "repaired_followup_configurations": 72,
+        "total_completed_commands": 1206,
+        "note": "The initial report remains FAIL after 96 completed configurations. The corrected lifecycle callback types pass the complementary 72-case isolation/spawn followup; this is not one final 168-case ASan run."
+      }
+    },
+    "final_owned_callable_matrices": {
+      "modes": [
+        "normal",
+        "address,undefined",
+        "thread"
+      ],
+      "configurations_per_mode": 24,
+      "commands_per_mode": 132
+    },
+    "final_source_free_factory_packages": {
+      "modes": [
+        "normal",
+        "eager",
+        "address,undefined",
+        "thread"
+      ],
+      "configurations_per_mode": 8,
+      "commands_per_mode": 48
+    },
+    "final_full_source_free_fixture": {
+      "configurations": 1,
+      "commands": 6,
+      "mode": "normal"
+    },
+    "direct_runtime_clients": {
+      "modes": [
+        "normal",
+        "address,undefined",
+        "thread"
+      ],
+      "clients_per_mode": 10
+    },
+    "standalone_instrumented_runtime_tests_per_mode": 5,
+    "scope": "Broad feature matrices precede printing/importer-only native followups. Final frontend and package checks use the final compiler/importer. Final owned-callable matrices cover the last public task header changes. This does not claim a full final-binary SDK or full async-package sanitizer matrix.",
+    "reports": [
+      {
+        "path": "out/implementation-sprint-final-frontend.log",
+        "sha256": "dcdd2d1bf89b64a0db759244b0c60835af74b32910e432b39547ba271ccd0126"
+      },
+      {
+        "path": "out/implementation-sprint-ordered-native-unit.log",
+        "sha256": "727310172917e32489e837bde7996b84f9522206813821c83248ea6245d6a102"
+      },
+      {
+        "path": "out/implementation-sprint-ordered-matchers.log",
+        "sha256": "59950724883cf35c6bef39b7bdef05b6921f6cdc779886871898ff51a1c1e3af"
+      },
+      {
+        "path": "out/implementation-sprint-ordered-dynamic.log",
+        "sha256": "263cc66b989b803653d7e93c0ba71f49d81d0b9fc07e548b0e097320e72d7360"
+      },
+      {
+        "path": "out/implementation-sprint-ordered-source-tools.log",
+        "sha256": "e50be29904f9684680d8c9e7feff94796d7dd1c75b383de2bd2488129487d249"
+      },
+      {
+        "path": "out/implementation-sprint-ordered-lit.log",
+        "sha256": "d3681b4dbf525f7567855df12e804dceb2e534df6afcf58860d7b81755b36476"
+      },
+      {
+        "path": "out/implementation-sprint-maintained-tooling.log",
+        "sha256": "ef546d84c26f81c35f6381eb3dd829e265b603eb8dee9eeca965f48e491659eb"
+      },
+      {
+        "path": "out/implementation-sprint-tooling-final.log",
+        "sha256": "b660ac6adb1560380c4d4f632e52bedae5561f8b8af5f4f6c5b524ac7eb8a3e6"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-runtime-clients-final/qualification.json",
+        "sha256": "335413ec2bc7e5a817e4c42d66e6d7d9228ad3f24d363800ab5748c2df9ddb5a"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-runtime-instrumented/qualification.json",
+        "sha256": "395897139e869b16746da03f8666bda5fff5c90512f59480c4188ff943a3adf2"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-owned-guard-full/qualification.json",
+        "sha256": "a7105a3f9c10025f5c9b2b39f05d94413ad3566d77a981e0cc05d23516772b87"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-features-normal-followup/batch.json",
+        "sha256": "7721f0243590e8e82d07830433bfb411255a939a8e65ac426fb50e76bcb6ba6c"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-features-tsan-followup/batch.json",
+        "sha256": "f1bd33cf1ae5ca3a0a6ecb56b49ce42bc1eb3a7f80d509bcb54742fedc9be915"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-features-asan/batch.json",
+        "sha256": "cda41834689f51a8f94ebae7374f232f2dcc58914a6561b995c4b662284b4a97"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-features-asan-followup/batch.json",
+        "sha256": "e227c9bfb4ead6f10a5199c4c7c7e43057bf64c4452bd8aa85a24121a2c6975e"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-final-guard-factory-normal/qualification.json",
+        "sha256": "a21810ab7ceea17c5e7e582b1cdb16b9765629168a3473d668b4d1c01e26f9d1"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-final-guard-factory-eager/qualification.json",
+        "sha256": "4567daaf2b8f84b7b7640ce3c15548dd8437ab512cfca0ed22fe566c5b48227e"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-final-guard-factory-asan/qualification.json",
+        "sha256": "786ac4b537310a7437db73ca7f55633aef7aaf8aa6af56321212dbdfd2aa20c2"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-final-guard-factory-tsan/qualification.json",
+        "sha256": "e25fe5c09f10cbe4d79496fe1caf92bd0212b64c458ca7ce235ad04223d4a84f"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-owned-spawn-normal/batch.json",
+        "sha256": "7d8fe60bd091649fe8404a69ab9e5c6fd7b9a460fdf1ae000eb45a80d0faf59d"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-owned-spawn-asan/batch.json",
+        "sha256": "5b1042627d26fcd1d46a32f617a48a819de608903a201a15923491382b27988b"
+      },
+      {
+        "path": "out/native-validation/implementation-sprint-owned-spawn-tsan/batch.json",
+        "sha256": "b63e7aec567a53fc8dc21e05356f02d5a624d34ce886e672b7f165b67e2019d4"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "remaining": [
+    "Dependent unnamed types, custom coroutine promises and remaining dependent lookup/attribute publication contracts",
+    "Remaining ownership/capture, structured concurrency, isolation, key-path and language/library/profile implementation",
+    "Native Linux AArch64 implementation and qualification",
+    "Coordinated post-2.62 SDK delivery"
+  ]
+}

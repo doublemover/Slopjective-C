@@ -121,11 +121,16 @@ def qualify(sdk: Path, output: Path) -> dict:
         run('pch-link', [compiler, output / (key + '-native.o'), output / (key + '-provider.o'),
                          consumer, '-o', executable])
         execute('pch-application', executable)
-        assert len(report['executions']) == 17
-        assert len(report['rejections']) == 10
-        assert len(report['interfaces']) == 4
-        assert len({row['semantic_fingerprint'] for row in report['interfaces']}) == 2
-        assert all(row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces'])
+        if not (len(report['executions']) == 17):
+            raise ValueError('installed qualification contract failed: qualify-record-carriers.py:124')
+        if not (len(report['rejections']) == 10):
+            raise ValueError('installed qualification contract failed: qualify-record-carriers.py:125')
+        if not (len(report['interfaces']) == 4):
+            raise ValueError('installed qualification contract failed: qualify-record-carriers.py:126')
+        if not (len({row['semantic_fingerprint'] for row in report['interfaces']}) == 2):
+            raise ValueError('installed qualification contract failed: qualify-record-carriers.py:127')
+        if not (all((row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces']))):
+            raise ValueError('installed qualification contract failed: qualify-record-carriers.py:128')
         run('seal-after', [sys.executable, '-B', sdk / 'share/objc3c/verify-sdk.py', sdk])
         report['status'] = 'PASS'
     except BaseException as error:

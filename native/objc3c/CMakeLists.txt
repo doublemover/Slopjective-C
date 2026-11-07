@@ -5,6 +5,11 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
   message(FATAL_ERROR "The current compiler distribution targets native Linux.")
 endif()
 set(OBJC3C_CLANG_FOUNDATION_ROOT "" CACHE PATH "Qualified patched LLVM/Clang SDK root")
+option(OBJC3C_LINK_CLANG_CPP "Link the embedding facade through the shared clang-cpp DSO" OFF)
+set(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE "" CACHE STRING
+  "Owned compiler implementation instrumentation profile (isolated foundation required)")
+set_property(CACHE OBJC3C_COMPILER_INSTRUMENTATION_PROFILE PROPERTY STRINGS
+  "" compiler-asan-ubsan compiler-fuzz-asan-ubsan compiler-source-coverage)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,8 +23,9 @@ set(CMAKE_JOB_POOL_LINK objc3_link)
 add_library(objc3c_build_defaults INTERFACE)
 target_include_directories(objc3c_build_defaults INTERFACE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
-target_compile_options(objc3c_build_defaults INTERFACE
-  "$<BUILD_INTERFACE:-Wall;-Wextra;-pedantic;-ffile-prefix-map=${CMAKE_SOURCE_DIR}=.;-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.>")
+include(Objc3BuildWarnings)
+objc3c_configure_build_warnings(objc3c_build_defaults)
 include(Objc3ClangFoundation)
+include(Objc3ClangLink)
 include(CTest)
 add_subdirectory(src/clang_foundation)

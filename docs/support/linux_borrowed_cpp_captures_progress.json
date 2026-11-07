@@ -1,0 +1,98 @@
+{
+  "schema": "objc3c.linux-borrowed-cpp-captures-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "f613ce73866fbeccbc4f1ed7ba36ed04eb270c03",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-2a5b687130b3-00b75dc3",
+  "compiler_patch_digest": "2a5b687130b320f4704f1b0aa6f186344a6f1dbe96bb02fe524ec8fc946559c6",
+  "system_module_version": "2.1.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "scope": [
+    "Nongeneric nonmutable C++ lambda value-capture provenance through init/record/nested aliases, closure copies and noescape invocation",
+    "Independent ARC capture-owner snapshots and implicit/explicit invocation expiry checks",
+    "Hidden body/return/argument escapes, reference/address targets including conditional captures and transitive local chains, and persistent capture storage"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/borrowed-lambdas-foundation-build.json",
+      "sha256": "da99ece55bec9da0523fe3cc6902ddaaa9682ef748379d6e151a3fa8d55dd952"
+    },
+    "source_verification": {
+      "path": "out/borrowed-lambdas-source-verification.json",
+      "sha256": "22e3a2bf52a2ba71779c3ea797a21ce622c53411e912371803916a401d53173f"
+    },
+    "native": {
+      "compiler_regressions_passed": 380,
+      "platform_cases_unsupported": 3,
+      "native_unit_tests_passed": 182,
+      "report": {
+        "path": "out/borrowed-lambdas-native-batch.json",
+        "sha256": "12dca13c2b0592ee74da771116fad0290831a61fc019b24e72df71d8e47a1bc8"
+      },
+      "logs": [
+        {
+          "path": "out/borrowed-lambdas-native-0.log",
+          "sha256": "a5d946e56e4d43211c556c123a1729e6a195cbfb69cbd8260793458786fcfb35"
+        },
+        {
+          "path": "out/borrowed-lambdas-native-1.log",
+          "sha256": "c3a7b869ae1ac21d97e21f3c223192c6f528131985efe19bb0c9e074620faeca"
+        },
+        {
+          "path": "out/borrowed-lambdas-native-2.log",
+          "sha256": "008791b54617d2ed032d070aad6619e9b2dd94c72feed2182305cfca408b72dc"
+        },
+        {
+          "path": "out/borrowed-lambdas-native-3.log",
+          "sha256": "32fcf798598844b85bfedee8c23be735129260d840160188d5afe18b3b3a483b"
+        },
+        {
+          "path": "out/borrowed-lambdas-native-4.log",
+          "sha256": "9f2b5a69b14fcc08e5ffc4dd053a29f49648f912a9af80b013818c6d5cb106c9"
+        }
+      ]
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "build": {
+        "path": "out/borrowed-lambdas-all-frontend-build.log",
+        "sha256": "2a579fb984d6648b0c2c2231423475c0bf9748bbc7e9b67df66d1fa736cf0f7d"
+      },
+      "log": {
+        "path": "out/borrowed-lambdas-all-frontend-tests.log",
+        "sha256": "4fc0153081b4bfd90a7b178a9fb5bd4b3fc2d82ed8bc1b6b5b09f8c20eb7b7d5"
+      }
+    },
+    "tooling": {
+      "tests_passed": 14,
+      "log": {
+        "path": "out/borrowed-lambdas-tooling-tests.log",
+        "sha256": "11a0f69837185ee278d256b8cc0a6414fc89900bb1aa664a30ee3a8498b6f847"
+      }
+    },
+    "binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang-23",
+        "sha256": "89c353fcc95ff1627f9abd29ef3ad8e621103241168fbd561709f4c9c9ebb65a"
+      },
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "f8d5f3f49c9fb28c47c5602f6af16d8f173d1d89c1e28aae5d3fc256c3083fcc"
+      }
+    ]
+  },
+  "delivery": {
+    "accepted_sdk": "2.33.0",
+    "new_archive_built": false,
+    "combined_runtime_and_sanitizer_batch_deferred": true
+  },
+  "remaining": [
+    "Precise mutable/reference/generic capture state and callback effects",
+    "General MRC releases, nontrivial constructor/operator effects and remaining alias/union precision",
+    "Remaining ownership, async, isolation, structured runtime, key-path and language/library implementation",
+    "Combined sanitizer/runtime source batch and coordinated SDK delivery",
+    "Full profile conformance and native Linux AArch64 qualification"
+  ],
+  "profile_conformance_claimed": false
+}

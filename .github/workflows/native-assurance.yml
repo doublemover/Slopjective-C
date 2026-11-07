@@ -1,0 +1,142 @@
+name: Extended Linux native assurance
+on:
+  schedule:
+    - cron: '37 5 * * 0'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: linux-native-assurance-${{ github.event.pull_request.number || github.ref }}
+  # Finish the active cold compiler build; GitHub keeps the newest pending run.
+  # Each run still qualifies only its own exact source revision.
+  cancel-in-progress: false
+jobs:
+  plan:
+    name: Classify exact source revision
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    outputs:
+      native: ${{ steps.plan.outputs.native }}
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: plan
+        shell: bash
+        run: |
+          periodic=()
+          if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            periodic=(--periodic-sha "$GITHUB_SHA")
+          fi
+          python3 -B -m scripts.objc3c_assurance plan --plan out/native-assurance/plan.json "${periodic[@]}"
+      - name: Preserve source classification
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/plan.json
+          if-no-files-found: error
+          retention-days: 7
+  native:
+    name: Execute Linux compiler and runtime (${{ matrix.shard }})
+    needs: plan
+    if: needs.plan.outputs.native == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    runs-on: ubuntu-26.04
+    container:
+      image: debian:13
+      # TSan adjusts its own ASLR layout with personality(2).
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+      NATIVE_SHARD: ${{ matrix.shard }}
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - name: Pinned host tools
+        shell: bash
+        run: python3 -B -m scripts.objc3c_assurance.bootstrap --root /opt/objc3c-host --output out/native-assurance/startup
+      - name: Require sanitizer process layout support
+        run: |
+          mkdir -p out
+          g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
+          out/native-container-control
+      - name: Build and execute selected native surface
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.3
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_assurance run --plan out/native-assurance/selection/plan.json --output out/native-assurance/results --shard "$NATIVE_SHARD"
+      - name: Preserve clean-host setup diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-startup-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          path: out/native-assurance/startup/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Stage durable native evidence
+        if: always()
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          python3 -B -m scripts.objc3c_assurance publish --plan out/native-assurance/selection/plan.json --output out/native-assurance/results --shard "$NATIVE_SHARD" --destination "out/native-assurance/evidence/$NATIVE_SHARD"
+      - name: Preserve native evidence on success and failure
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          path: out/native-assurance/evidence/
+          if-no-files-found: error
+          retention-days: 7
+  gate:
+    name: Extended Linux native assurance gate
+    if: always()
+    needs: [plan, native]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read required source classification
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: evidence/plan
+      - name: Read required native evidence
+        if: needs.plan.outputs.native == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-*
+          merge-multiple: true
+          path: evidence/results
+      - name: Require exact-revision complete passing results
+        if: always()
+        env:
+          ASSURANCE_OUTCOMES: '{"plan":"${{ needs.plan.result }}","native":"${{ needs.native.result }}"}'
+        shell: bash
+        run: |
+          periodic=()
+          if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            periodic=(--periodic-sha "$GITHUB_SHA")
+          fi
+          python3 -B -m scripts.objc3c_assurance verify --sharded --plan evidence/plan/plan.json --output evidence/results "${periodic[@]}"

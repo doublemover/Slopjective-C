@@ -37,6 +37,8 @@ def main(argv: list[str] | None = None) -> int:
                         default=os.environ.get("OBJC3C_LLVM_ROOT") or os.environ.get("LLVM_ROOT"))
     parser.add_argument("--fetch", action="store_true")
     parser.add_argument("--jobs", type=int, default=2)
+    parser.add_argument("--sanitizer", choices=("address,undefined", "thread"),
+                        help="build a separate development runtime with visible ARC/Block synchronization")
     parser.add_argument("--report-file", type=Path,
                         help="write the structured result separately from subprocess diagnostics")
     args = parser.parse_args(argv)
@@ -51,6 +53,17 @@ def main(argv: list[str] | None = None) -> int:
         compiler_sha256 = hashlib.file_digest(compiler, 'sha256').hexdigest()
     configuration = {'compiler_root': str(args.compiler_root.resolve()), 'profile': profile, 'compiler_sha256': compiler_sha256,
                      'build_type': 'Release', 'oldabi': False, 'legacy_compat': False}
+    if args.sanitizer:
+        resource_root = Path(subprocess.check_output(
+            [str(bin_dir / 'clang'), '-print-resource-dir'], text=True).strip()).resolve(strict=True)
+        names = ('tsan',) if args.sanitizer == 'thread' else ('asan', 'ubsan')
+        runtime_files = [path for path in resource_root.rglob('libclang_rt.*')
+                         if path.is_file() and any(name in path.name for name in names)]
+        if not runtime_files:
+            parser.error("the selected compiler has no matching sanitizer runtimes")
+        configuration.update(sanitizer=args.sanitizer, sanitizer_resource_root=str(resource_root),
+            sanitizer_runtime_sha256={str(path.relative_to(resource_root)):
+                hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(runtime_files)})
     build_key = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
     build = repo / "out/toolchains/libobjc2-v2.3/build-linux-x86_64" / build_key
     stage = build / "stage"
@@ -71,6 +84,11 @@ def main(argv: list[str] | None = None) -> int:
         for language, compiler in (("C", "clang"), ("CXX", "clang++"),
                                     ("OBJC", "clang"), ("OBJCXX", "clang++")):
             configure.append(f"-DCMAKE_{language}_COMPILER={bin_dir / compiler}")
+        if args.sanitizer:
+            flags = "-fsanitize=" + args.sanitizer + " -fno-omit-frame-pointer"
+            configure += [f"-DCMAKE_{language}_FLAGS={flags}"
+                          for language in ("C", "CXX", "OBJC", "OBJCXX")]
+            configure += ["-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -fsanitize=" + args.sanitizer]
         commands = [
             [sys.executable, "-B", str(repo / "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"),
              "--profile", "linux-x86_64", "--source", str(source),

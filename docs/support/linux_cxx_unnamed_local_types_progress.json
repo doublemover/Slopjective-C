@@ -1,0 +1,86 @@
+{
+  "schema": "objc3c.linux-unnamed-local-types-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "56678fabf30891529fc5292f9ba4d3feb83b0d48",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-709d6ccca7a2-00b75dc3",
+  "frontend_input_sha256": "7de24d5329788021119e321141b6876811c1ef7e6ac352e3277114bd2a70f634",
+  "concurrency_module_version": "2.38.0",
+  "system_module_version": "2.14.0",
+  "keypath_module_version": "2.3.0",
+  "interface_schema": "2.2",
+  "extension_abi": 21,
+  "scope": [
+    "Published unnamed local C++ records/enums and records nested inside local records; local aliases and constexpr member evaluation",
+    "Owned tag definitions retained in source and typed fingerprints, including changes to unused field layouts",
+    "Lexical slots for unnamed types and implicit structor identity without producer source locations",
+    "Explicit unnamed-local capability coupled to local/executable type contracts across emission, codecs, module validation, artifact loading, resolution and import",
+    "Pure C++20/23 object consumers and source-free Objective-C++20/23 ARC/MRC normal/eager/ASan execution with exact copy/destruction counts, virtual dispatch and RTTI"
+  ],
+  "verification": {
+    "frontend_suites_passed": 33,
+    "tooling_tests_passed": 332,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "frontend_checkpoint": {
+      "path": "out/unnamed-locals-frontend-checkpoint.json",
+      "sha256": "c0934d212f8a39d812d328f801c91d1fe6f9954842a9ea65c9ff7094e923498a",
+      "bytes": 1135
+    },
+    "compiled_binaries": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "dd093be6b0edf09c298f91d6c4a6bc28666e43316daa372130e62ce4b2891493",
+        "bytes": 201237432
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/unnamed-locals-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa",
+            "bytes": 4559
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/unnamed-locals-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9",
+            "bytes": 4549
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/unnamed-locals-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109",
+            "bytes": 4557
+          }
+        }
+      ]
+    },
+    "unchanged_foundation_and_runtime_validation": "docs/support/linux_keypath_subscripts_progress.json"
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  },
+  "remaining": [
+    "Public unnamed nested types and escaping local types",
+    "Dependent/template public definitions, generic/public closure types and remaining package contracts",
+    "Coordinated installed SDK delivery and the broader Linux roadmap"
+  ]
+}

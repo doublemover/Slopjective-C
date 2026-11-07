@@ -1,13 +1,18 @@
 #include "clang_foundation/interface_validation.h"
+#include "clang_foundation/interface_emitter.h"
+#include "standard_library_headers.h"
 
 #include "clang_foundation/interface_source_import_bridge.h"
 
 #include <algorithm>
+#include <functional>
 #include <utility>
 
 #include "clang/AST/ASTImporterSharedState.h"
+#include "clang/AST/ASTConsumer.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
@@ -113,6 +118,8 @@ void InterfaceSourceImportBridge::ConfigureSourceRegistry(
 }
 
 void InterfaceSourceImportBridge::Reset() {
+  pending_inline_definitions_.clear();
+  registered_inline_definitions_.clear();
   registry_.clear();
   requests_.clear();
   declarations_.clear();
@@ -136,6 +143,7 @@ void InterfaceSourceImportBridge::Reset() {
   sema_ = nullptr;
   import_context_ = nullptr;
   importer_state_.reset();
+  native_header_prelude_.reset();
   on_demand_ = false;
   valid_ = false;
 }
@@ -168,8 +176,24 @@ void InterfaceSourceImportBridge::InitializeSema(clang::Sema &sema) {
     visible_.clear();
     initially_visible_declarations_.clear();
     importer_state_.reset();
+    native_header_prelude_.reset();
   }
   sema_ = &sema;
+}
+
+void InterfaceSourceImportBridge::QueueInlineDefinitions(
+    llvm::ArrayRef<clang::NamedDecl *> definitions) {
+  pending_inline_definitions_.insert(pending_inline_definitions_.end(),
+                                      definitions.begin(), definitions.end());
+}
+
+void InterfaceSourceImportBridge::RegisterInlineDefinitions() {
+  if (!definition_consumer_) return;
+  auto pending = std::move(pending_inline_definitions_);
+  pending_inline_definitions_.clear();
+  for (auto *declaration : pending)
+    if (registered_inline_definitions_.insert(declaration->getCanonicalDecl()).second)
+      definition_consumer_->HandleTopLevelDecl(clang::DeclGroupRef(declaration));
 }
 
 bool InterfaceSourceImportBridge::IsRegistered(
@@ -205,11 +229,15 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
         continue;
       if (decl.kind == "ObjCMethod" || decl.kind == "ObjCProperty" ||
           decl.kind == "ObjCIvar" || decl.kind == "Field" ||
-          decl.kind == "ObjCCategory")
+          (decl.kind == "ObjCCategory" || decl.kind == "UsingDirective"))
         continue;
       const bool tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                        decl.kind == "Enum";
-      const std::string key = (decl.kind == "ObjCProtocol" ? "protocol:"
+      const std::string key = HasCxxCoroutineTraitsSpecializationIdentity(decl)
+          ? "coroutine-traits-specialization:" + decl.stable_id
+          : HasCxxVariableSpecializationIdentity(decl)
+          ? "variable-specialization:" + decl.stable_id
+          : (decl.kind == "ObjCProtocol" ? "protocol:"
                                : tag                       ? "tag:"
                                                            : "ordinary:") +
                               decl.qualified_name;
@@ -218,8 +246,9 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
         const auto &old = *prior.identity;
         if (SameInterfaceDeclarationIdentity(old, decl))
           continue;
-        if (target_.allow_function_overloads && old.kind == "Function" &&
-            decl.kind == "Function" && old.stable_id != decl.stable_id)
+        if (target_.allow_function_overloads &&
+            old.stable_id != decl.stable_id &&
+            (IsCxxOverloadDeclaration(old) && IsCxxOverloadDeclaration(decl)))
           continue;
         reason = "source import '" + importing_module.str() +
             "' conflicts with visible declaration '" + decl.qualified_name +
@@ -230,6 +259,31 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
     }
   }
   return true;
+}
+
+void InterfaceSourceImportBridge::RestoreVisibleFriendLookup() {
+  // Hidden friends are excluded from ordinary lookup by their native IDNS bits,
+  // but ADL still needs their namespace lookup entries after the import point.
+  // ImportInto initially hides TU entries for source-scoped imports. Restore
+  // only verified functions from modules and SPI groups that are now visible.
+  for (const auto &module : visible_) {
+    auto declarations = declarations_.find(module);
+    auto artifact = artifacts_.find(module);
+    if (declarations == declarations_.end() || artifact == artifacts_.end()) continue;
+    const auto request = requests_.find(module);
+    for (auto *declaration : declarations->second) {
+      auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      if (!function || function->getFriendObjectKind() == clang::Decl::FOK_None) continue;
+      const auto id = ReadInterfaceDeclarationStableId(function);
+      auto identity = std::find_if(artifact->second.declarations.begin(), artifact->second.declarations.end(),
+          [&](const auto &candidate) { return candidate.stable_id == id; });
+      if (identity == artifact->second.declarations.end()) continue;
+      if (!identity->spi_group.empty() &&
+          (!directly_imported_.count(module) || request == requests_.end() ||
+           !IsGrantedSPI(*identity, request->second.spi_groups))) continue;
+      function->getDeclContext()->getPrimaryContext()->makeDeclVisibleInContext(function);
+    }
+  }
 }
 
 void InterfaceSourceImportBridge::RecordDirectImport(
@@ -250,6 +304,7 @@ void InterfaceSourceImportBridge::RecordDirectImport(
       [](const auto &left, const auto &right) {
         return left.module.canonical_name < right.module.canonical_name;
       });
+  RestoreVisibleFriendLookup();
 }
 
 SourceModuleImportStatus InterfaceSourceImportBridge::Activate(
@@ -298,18 +353,42 @@ void InterfaceSourceImportBridge::AppendModuleDeclarations(
     std::vector<clang::NamedDecl *> &out) const {
   auto found = declarations_.find(canonical_name.str());
   if (found == declarations_.end()) return;
-  for (auto *declaration : found->second) {
+  std::set<const clang::NamespaceDecl *> visited_namespaces;
+  std::function<void(clang::NamedDecl *)> append;
+  std::function<void(clang::NamespaceDecl *)> append_namespace;
+  append_namespace=[&](clang::NamespaceDecl *space) {
+    space=llvm::cast<clang::NamespaceDecl>(space->getPrimaryContext());
+    if(!visited_namespaces.insert(space).second) return;
+    auto &name=space->getASTContext().Idents.get(identifier);
+    for(auto *declaration:space->lookup(&name)) append(declaration);
+    for(auto *directive:space->using_directives())
+      append_namespace(directive->getNominatedNamespace());
+    for(auto *part:space->redecls())
+      for(auto *member:part->decls())
+        if(auto *child=llvm::dyn_cast<clang::NamespaceDecl>(member);child && child->isInline())
+          append_namespace(child);
+  };
+  append=[&](clang::NamedDecl *declaration) {
+    if(auto *using_decl=llvm::dyn_cast_or_null<clang::BaseUsingDecl>(declaration)) {
+      for(auto *shadow:using_decl->shadows()) append(shadow->getTargetDecl()->getUnderlyingDecl());
+      return;
+    }
+    if(auto *directive=llvm::dyn_cast_or_null<clang::UsingDirectiveDecl>(declaration)) {
+      append_namespace(directive->getNominatedNamespace()); return;
+    }
+    if(auto *shadow=llvm::dyn_cast_or_null<clang::UsingShadowDecl>(declaration))
+      declaration=shadow->getTargetDecl()->getUnderlyingDecl();
+    // A class specialization is selected through its primary template; it
+    // does not introduce another ordinary or module-qualified lookup name.
+    if (llvm::isa_and_nonnull<clang::ClassTemplateSpecializationDecl>(declaration)) return;
     if (!declaration || !declaration->getIdentifier() ||
-        declaration->getIdentifier()->getName() != identifier)
-      continue;
-    if (identifier_namespace &&
-        !(declaration->getIdentifierNamespace() & identifier_namespace))
-      continue;
-    if (std::none_of(out.begin(), out.end(), [&](clang::NamedDecl *prior) {
-          return prior->getCanonicalDecl() == declaration->getCanonicalDecl();
-        }))
-      out.push_back(declaration);
-  }
+        declaration->getIdentifier()->getName()!=identifier) return;
+    if(identifier_namespace && !(declaration->getIdentifierNamespace()&identifier_namespace)) return;
+    if(std::none_of(out.begin(),out.end(),[&](clang::NamedDecl *prior) {
+      return prior->getCanonicalDecl()==declaration->getCanonicalDecl();
+    })) out.push_back(declaration);
+  };
+  for(auto *declaration:found->second) append(declaration);
 }
 
 std::vector<clang::NamedDecl *> InterfaceSourceImportBridge::LookupUnqualified(
@@ -374,7 +453,7 @@ QualifiedModuleLookup InterfaceSourceImportBridge::LookupQualified(
   else if (target_.allow_function_overloads &&
            std::all_of(result.declarations.begin(), result.declarations.end(),
                [](clang::NamedDecl *declaration) {
-                 return llvm::isa<clang::FunctionDecl>(declaration);
+                 return llvm::isa<clang::FunctionDecl, clang::FunctionTemplateDecl>(declaration);
                }))
     result.status = QualifiedModuleLookupStatus::Found;
   else
@@ -512,8 +591,18 @@ SourceModuleImportStatus InterfaceSourceImportBridge::ImportObjC3Module(
       importer_state_ = std::make_shared<clang::ASTImporterSharedState>(
           *import_context_->getTranslationUnitDecl());
     }
+    // All registered native headers were parsed before source directives.
+    // Capture that immutable prelude once. Importing another provider can
+    // materialize template nodes and resolve implicit exception specifications;
+    // those AST mutations do not change the native header configuration.
+    if(!native_header_prelude_ && sema_->getLangOpts().CPlusPlus) {
+      StandardLibraryHeaderCache cache(&sema_->getASTContext(),&sema_->getPreprocessor());
+      auto prelude=ReadStandardLibraryHeaderManifest(sema_->getASTContext());
+      if(prelude.valid && !prelude.headers.empty())
+        native_header_prelude_=std::make_shared<const StandardLibraryHeaderManifest>(std::move(prelude));
+    }
     auto imported = session->ImportInto(sema_->getASTContext(), *file_manager_,
-        /*source_scoped_visibility=*/true, importer_state_);
+        /*source_scoped_visibility=*/true, importer_state_,native_header_prelude_.get());
     if (!imported.success) {
       // ASTImporter can already have inserted part of the module. Keep the
       // provider session alive and stop further AST mutations after failure.
@@ -522,6 +611,10 @@ SourceModuleImportStatus InterfaceSourceImportBridge::ImportObjC3Module(
       return reject_diagnostics("source declarations could not be imported for '" +
           canonical_name.str() + "'", imported.diagnostics);
     }
+
+    QueueInlineDefinitions(imported.inline_definitions);
+    // Explicit source imports run while parsing, after backend initialization.
+    RegisterInlineDefinitions();
 
     for (const auto &entry : imported.declarations_by_module) {
       auto &destination = declarations_[entry.first];

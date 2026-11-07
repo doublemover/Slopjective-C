@@ -1,0 +1,586 @@
+"""Analyze actual native/maintained-Clang compilation variants with matched tools."""
+from __future__ import annotations
+
+import argparse
+from concurrent.futures import ProcessPoolExecutor
+import json
+import multiprocessing
+import os
+from pathlib import Path
+import re
+import shlex
+
+from .binary_packages import digest, installed_shared_library, write_json
+from .compiler_instrumentation import _without_dependency_flags, graph_records, loaded_graph, verify_symbols
+from .llvm_ir_execution import Execution, StageFailure
+from .llvm_tools import foundation, identity, verify_installation
+from .sanitizer_policy import strict_environment
+from .sdk_example import dependencies as header_dependencies
+from .analysis_checkpoint import analysis_argv, load_checkpoints, reusable_action, run_unit
+from .analysis_scheduling import execute_jobs
+
+SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
+
+
+def checker_configuration(repo, source, policy):
+    return {'Checks': '-*,'+','.join(policy['checks']), 'WarningsAsErrors': '*',
+        'HeaderFilterRegex': '('+'|'.join(re.escape(str(path)) for path in
+            (repo / 'native', source / 'clang', repo / 'tests/tooling/fixtures/implementation_analysis'))+')/.*',
+        'SystemHeaders': False, 'FormatStyle': 'none'}
+
+
+def patch_units(repo):
+    return {value for patch in (repo / 'toolchains/llvm/patches').glob('*.patch')
+        for value in re.findall(r'^\+\+\+ b/(clang/lib/.*\.cpp)$', patch.read_text(), re.M)}
+
+
+def validate_timeout_overrides(policy, maintained_units):
+    overrides = policy.get('translation_unit_timeout_overrides_seconds', {})
+    if (not isinstance(overrides, dict) or len(overrides) > 16 or
+            any(path not in maintained_units or type(seconds) is not int or
+                not policy['translation_unit_timeout_seconds'] < seconds <= 3600
+                for path, seconds in overrides.items())):
+        raise ValueError('analysis timeout overrides require reviewed maintained Clang units and finite bounds')
+
+
+def translation_unit_timeout(policy, row, source):
+    default = policy['translation_unit_timeout_seconds']
+    if row['owner'] != 'maintained-clang':
+        return default
+    try:
+        relative = Path(row['file']).resolve().relative_to(Path(source).resolve()).as_posix()
+    except ValueError as error:
+        raise ValueError('maintained analysis timeout source escaped the admitted fork') from error
+    return policy.get('translation_unit_timeout_overrides_seconds', {}).get(relative, default)
+
+
+def arguments(row):
+    result = row.get('arguments') or shlex.split(row['command'])
+    if not isinstance(result, list) or not all(isinstance(arg, str) for arg in result):
+        raise ValueError('invalid analysis compilation command')
+    return result
+
+
+def output_path(row):
+    argv = arguments(row)
+    if '-c' not in argv or '-o' not in argv:
+        raise ValueError('analysis requires a concrete compilation command/output')
+    return (Path(row['directory']) / (row.get('output') or argv[argv.index('-o')+1])).resolve()
+
+
+def inventory(database, graph, selected_sources):
+    """Require every selected source/configuration in the actual default graph."""
+    selected_sources = {Path(path).resolve(strict=True) for path in selected_sources}
+    expected = {}
+    for line in graph.splitlines():
+        argv = shlex.split(line)
+        if not argv or Path(argv[0]).name == 'clang-scan-deps' or '-c' not in argv or '-o' not in argv:
+            continue
+        unit = (database.parent / argv[argv.index('-c')+1]).resolve()
+        if unit in selected_sources:
+            output = (database.parent / argv[argv.index('-o')+1]).resolve()
+            if output in expected:
+                raise ValueError('duplicate conflicting analysis graph output')
+            expected[output] = (unit, argv)
+    if {value[0] for value in expected.values()} != selected_sources:
+        raise ValueError('analysis graph omitted selected implementation translation units')
+    rows, outputs = [], set()
+    for row in json.loads(database.read_text()):
+        unit = (Path(row['directory']) / row['file']).resolve(strict=True)
+        if unit not in selected_sources:
+            continue
+        output = output_path(row)
+        if output not in expected or output in outputs or expected[output][0] != unit:
+            raise ValueError('duplicate, conflicting or unowned analysis compilation variant')
+        argv = arguments(row)
+        if (Path(row['directory']) / argv[argv.index('-c')+1]).resolve() != unit:
+            raise ValueError('analysis compilation command names a different translation unit')
+        actual, normalized = _without_dependency_flags(expected[output][1]), _without_dependency_flags(argv)
+        launcher = {}
+        if Path(actual[0]).name == 'ccache' and actual[1:] == normalized:
+            launcher[str(Path(actual[0]).resolve(strict=True))] = digest(Path(actual[0]))
+        elif actual != normalized:
+            raise ValueError('analysis flags differ from the actual compilation graph')
+        if not output.is_relative_to(database.parent):
+            raise ValueError('analysis object escaped its compilation database')
+        responses = {}
+        for arg in argv:
+            if arg.startswith('@'):
+                response = (Path(row['directory']) / arg[1:]).resolve(strict=True)
+                responses[str(response)] = digest(response)
+        outputs.add(output)
+        rows.append({'file': str(unit), 'directory': row['directory'], 'arguments': argv,
+                     'output': str(output), 'response_files': responses, 'build_launcher': launcher})
+    if outputs != set(expected) or not rows:
+        raise ValueError('analysis compilation database is incomplete')
+    return rows
+
+
+def dependencies(text, *, build, selected_outputs=None):
+    """Read Ninja's recorded actual header closure, rejecting stale/missing deps."""
+    records, counts, current = {}, {}, None
+    for line in text.splitlines():
+        if line and not line.startswith(' '):
+            if line.endswith(': deps not found'):
+                current = None
+                continue
+            match = re.fullmatch(r'(.*): #deps (\d+), deps mtime \d+ \((VALID|STALE)\)', line)
+            if not match:
+                raise ValueError('unrecognized implementation dependency record')
+            current = str((build / match[1]).resolve())
+            if selected_outputs is not None and current not in selected_outputs:
+                current = None
+                continue
+            if current in records or match[3] != 'VALID':
+                raise ValueError('duplicate or stale implementation dependency record')
+            records[current] = []
+            counts[current] = int(match[2])
+        elif line.strip() and current is not None:
+            records[current].append(str((build / line.strip()).resolve(strict=True)))
+    if any(len(records[path]) != count for path, count in counts.items()):
+        raise ValueError('implementation dependency record is truncated or overfull')
+    return records
+
+
+def dependency_query(ninja, build, outputs):
+    build = Path(build).resolve(strict=True)
+    targets = []
+    for output in outputs:
+        path = (build / output).resolve()
+        if not path.is_relative_to(build):
+            raise ValueError('analysis dependency target escaped its owned Ninja build')
+        targets.append(str(path.relative_to(build)))
+    return [ninja, '-C', build, '-t', 'deps', *targets]
+
+
+def selected_variants(rows, headers, changed):
+    """No changed-line filter: header edits select their complete dependent TUs."""
+    if not changed:
+        return rows
+    paths = {str(Path(path).resolve()) for path in changed}
+    known = {row['file'] for row in rows} | {path for values in headers.values() for path in values}
+    # Configuration/unknown/new/deleted inputs conservatively select everything.
+    if not paths <= known:
+        return rows
+    return [row for row in rows if row['file'] in paths or paths.intersection(headers.get(row['output'], []))]
+
+
+def owner_changes(repo, owner, changed):
+    """Return one owner's scoped edits, complete selection, or no selection.
+
+    ``()`` means an input shared by every owner changed and therefore requests a
+    complete selection. ``None`` means all edits are in recognized source scopes
+    that cannot affect this owner. A nonempty tuple retains dependency selection
+    within the owner. Unknown locations remain conservative and select all.
+    """
+    if not changed:
+        return ()
+    repo = Path(repo).resolve()
+    paths = [Path(path).resolve() for path in changed]
+    relatives = []
+    for path in paths:
+        try:
+            relatives.append(path.relative_to(repo).as_posix())
+        except ValueError:
+            return ()
+    global_prefixes = ('.github/workflows/implementation-analysis.yml', 'native/analysis/',
+        'scripts/objc3c_implementation_assurance/',
+        'tests/tooling/fixtures/implementation_analysis/', 'toolchains/llvm/')
+    global_files = {'scripts/objc3c_toolchain/'+name+'.py' for name in (
+        'analysis_checkpoint', 'analysis_scheduling', 'binary_packages', 'build', 'compiler_instrumentation', 'core',
+        'host', 'implementation_analysis', 'instrumentation_profiles', 'llvm_ir_execution',
+        'llvm_tools', 'sanitizer_policy', 'sdk_example')}
+    if any(path in global_files or path.startswith(global_prefixes) for path in relatives):
+        return ()
+    recognized = ('native/cmake/', 'native/objc3c/')
+    if any(not path.startswith(recognized) for path in relatives):
+        return ()
+    prefixes = {
+        'frontend': ('native/cmake/', 'native/objc3c/'),
+        'standalone-runtime': ('native/cmake/', 'native/objc3c/src/runtime/'),
+        'maintained-clang': (),
+    }
+    if owner not in prefixes:
+        raise ValueError('unknown implementation analysis owner')
+    relevant = tuple(path for path, relative in zip(paths, relatives)
+                     if relative.startswith(prefixes[owner]))
+    return relevant or None
+
+
+def textual_pch(row, *, replacement=None):
+    """Use exact wrapper text or a newly built fork-matched serialization."""
+    original, result, projections = row['arguments'], [], []
+    index = 0
+    while index < len(original):
+        if original[index:index+3] == ['-Xclang', '-include-pch', '-Xclang']:
+            if index+7 >= len(original):
+                raise ValueError('analysis PCH lacks its exact CMake textual include counterpart')
+            candidate = Path(row['directory']) / original[index+3]
+            if candidate.is_symlink():
+                raise ValueError('analysis bootstrap PCH is not an owned regular serialization')
+            pch = candidate.resolve(strict=True)
+            wrapper = pch.with_suffix('')
+            if (pch.name != 'cmake_pch.hxx.pch' or not pch.is_file() or not pch.stat().st_size or
+                    not wrapper.is_file() or wrapper.is_symlink() or
+                    original[index+4:index+7] != ['-Xclang', '-include', '-Xclang'] or
+                    (Path(row['directory']) / original[index+7]).resolve() != wrapper):
+                raise ValueError('analysis PCH lacks its exact CMake textual include counterpart')
+            projections.append({'bootstrap_pch': str(pch), 'pch_sha256': digest(pch),
+                'textual_wrapper': str(wrapper), 'wrapper_sha256': digest(wrapper),
+                'reason': ('The matched fork cannot deserialize bootstrap PCH. Rebuild this exact wrapper with '
+                           'the admitted fork, or preserve the forced textual include as the fail-closed fallback.')})
+            if replacement is not None:
+                replacement = Path(replacement)
+                if (replacement.is_symlink() or not replacement.is_file() or
+                        not replacement.stat().st_size or replacement.suffix != '.pch'):
+                    raise ValueError('analysis replacement PCH is not an owned regular serialization')
+                replacement = replacement.resolve(strict=True)
+                result.extend([*original[index:index+3], str(replacement)])
+                projections[-1].update(matched_pch=str(replacement), matched_pch_sha256=digest(replacement))
+            index += 4
+        elif original[index] == '-include-pch':
+            raise ValueError('unreviewed analysis PCH invocation')
+        else:
+            result.append(original[index]);index += 1
+    return result, projections
+
+
+def matched_pch_arguments(row, compiler, output):
+    """Rebuild a CMake PCH wrapper with the admitted fork and exact TU flags."""
+    original = _without_dependency_flags(arguments(row))
+    _, projections = textual_pch(row)
+    if len(projections) != 1:
+        raise ValueError('analysis matched PCH requires one exact bootstrap wrapper')
+    wrapper = projections[0]['textual_wrapper']
+    result, language, index = [str(Path(compiler).resolve(strict=True))], None, 1
+    while index < len(original):
+        if original[index:index+3] == ['-Xclang', '-include-pch', '-Xclang']:
+            index += 4
+            continue
+        if (original[index:index+3] == ['-Xclang', '-include', '-Xclang'] and
+                index+3 < len(original) and
+                (Path(row['directory']) / original[index+3]).resolve() == Path(wrapper)):
+            index += 4
+            continue
+        if original[index] in ('-c', '-o'):
+            if index+1 >= len(original):
+                raise ValueError('analysis PCH source/output option is incomplete')
+            index += 2
+            continue
+        if original[index] == '-x':
+            if index+1 >= len(original) or original[index+1] not in ('c++', 'objective-c++'):
+                raise ValueError('analysis PCH has an unreviewed source language')
+            language = original[index+1]+'-header'
+            index += 2
+            continue
+        result.append(original[index]);index += 1
+    source = Path(row['file'])
+    language = language or ('objective-c++-header' if source.suffix == '.mm' else 'c++-header')
+    result.extend(['-x', language, wrapper, '-o', str(output)])
+    return result
+
+
+def dependency_arguments(row, depfile):
+    """Preprocess exact TU flags, expanding the forced PCH wrapper as text."""
+    args, _ = textual_pch({**row, 'arguments': _without_dependency_flags(row['arguments'])})
+    query, index = [args[0]], 1
+    while index < len(args):
+        if args[index] == '-o':
+            index += 2
+            continue
+        if args[index] != '-c':
+            query.append(args[index])
+        index += 1
+    return [*query, '-M', '-MF', str(depfile), '-MT', 'implementation-analysis']
+
+
+def tool_configuration(repo, tool_build, plan):
+    bootstrap = Path(plan['host_environment']['bootstrap_root'])
+    cmake, ninja = (Path(plan['host_environment'][name+'_path']) for name in ('cmake', 'ninja'))
+    environment = strict_environment(bootstrap / 'bin/clang++', bootstrap / 'bin/llvm-symbolizer')
+    environment['PATH'] = os.pathsep.join(dict.fromkeys((str(cmake.parent), str(ninja.parent),
+                                                       *environment['PATH'].split(os.pathsep))))
+    arguments = [cmake, '-S', repo / 'native/analysis', '-B', tool_build, '-G', 'Ninja',
+        '-DCMAKE_MAKE_PROGRAM='+str(ninja), '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'),
+        '-DOBJC3_ANALYSIS_FOUNDATION='+str(plan['paths']['stage']),
+        '-DOBJC3_ANALYSIS_SOURCE='+str(plan['paths']['source'])]
+    return arguments, environment
+
+
+def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=()):
+    repo, output = repo.resolve(strict=True), output.resolve()
+    if output.exists() or not output.is_relative_to(repo / 'out'):
+        raise ValueError('implementation analysis requires fresh owned evidence')
+    if jobs not in (1, 2, 3, 4): raise ValueError('implementation analysis requires one to four worker processes')
+    checkpoints = load_checkpoints(repo, resume)
+    plan, _ = foundation(repo)
+    source, stage, build = (Path(plan['paths'][key]).resolve(strict=True)
+                            for key in ('source', 'stage', 'build'))
+    bootstrap = Path(plan['host_environment']['bootstrap_root'])
+    tool_build = (tool_build or repo / 'out/implementation-analysis/build').resolve()
+    if not tool_build.is_relative_to(repo / 'out') or tool_build.is_relative_to(output):
+        raise ValueError('analysis tool build requires its own owned repository output')
+    policy_path = repo / 'toolchains/llvm/implementation-analysis.json'
+    policy = json.loads(policy_path.read_text())
+    if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v1' or
+            policy.get('host') != 'linux-x86_64' or policy.get('tool') != 'objc3-clang-tidy' or
+            policy.get('warnings_as_errors') != '*' or policy.get('baseline') != [] or
+            policy.get('profile_checks') is not True or
+            policy.get('translation_unit_timeout_seconds') != 600 or
+            not policy.get('checks') or len(set(policy['checks'])) != len(policy['checks']) or
+            any(not re.fullmatch(r'[a-zA-Z0-9_.-]+', check) for check in policy['checks'])):
+        raise ValueError('unreviewed implementation analysis policy/baseline')
+    validate_timeout_overrides(policy, patch_units(repo))
+    output.mkdir(parents=True)
+    tool_arguments, environment = tool_configuration(repo, tool_build, plan)
+    report = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'running',
+        'subject': 'native-and-maintained-clang-implementation', 'policy': policy,
+        'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
+        'environment': environment, 'inventory': [], 'results': [], 'exclusions': [], 'matched_pches': [],
+        'repository_output': str(repo / 'out'),
+        'changed_paths': [str(Path(path).resolve()) for path in changed],
+        'parallel_workers': jobs,
+        'inputs': {str(path): digest(path) for path in (Path(__file__), policy_path,
+            Path(__file__).with_name('analysis_scheduling.py'),
+            Path(__file__).with_name('analysis_checkpoint.py'),
+            repo / 'native/analysis/CMakeLists.txt', repo / 'native/analysis/SelectedChecks.cpp',
+            repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp')}}
+    report['inputs'].update({str(path): signature for path, _, signature in checkpoints})
+    executor = Execution(output, environment, report, timeout=600)
+    run = executor.run
+    try:
+        run('configure-tool', tool_arguments)
+        run('build-tool', [plan['host_environment']['cmake_path'], '--build', tool_build, '--parallel', '2'])
+        tool = tool_build / policy['tool']
+        ninja = Path(plan['host_environment']['ninja_path'])
+        records = graph_records(tool_build, repo, [policy['tool']], ninja, environment,
+                                foundation=False, run=lambda name, argv: run('tool-'+name, argv))
+        verify_symbols(records, bootstrap / 'bin/llvm-nm', run=lambda name, argv: run('tool-'+name, argv))
+        report['tool_objects'] = records
+        tool_headers = dependencies(run('tool-headers', [ninja, '-C', tool_build, '-t', 'deps',
+            *(str(Path(row['object']).relative_to(tool_build)) for row in records)]),
+            build=tool_build, selected_outputs={row['object'] for row in records})
+        if any(not tool_headers.get(row['object']) for row in records):
+            raise ValueError('implementation analyzer lacks its build header closure')
+        report['inputs'].update({path: digest(Path(path)) for values in tool_headers.values() for path in values})
+        for name in ('compiler_instrumentation', 'llvm_tools', 'llvm_ir_execution', 'sanitizer_policy', 'binary_packages', 'analysis_checkpoint'):
+            path = Path(__file__).with_name(name+'.py')
+            report['inputs'][str(path)] = digest(path)
+        libraries = [installed_shared_library(stage / 'lib', name)
+                     for name in ('libLLVM.so', 'libclang-cpp.so')]
+        report['install_transitions'] = {name: verify_installation(
+                                        build / 'lib' / name,
+                                        installed_shared_library(stage / 'lib', name), build)
+                                        for name in ('libLLVM.so', 'libclang-cpp.so')}
+        report['tool_graph'] = loaded_graph(tool, Path('/lib64/ld-linux-x86-64.so.2').resolve(), libraries,
+            required=tuple(libraries), run=lambda name, argv: run('tool-'+name, argv))
+        report['tool'] = {'path': str(tool), 'sha256': digest(tool), 'version': run('tool-version', [tool, '--version'])}
+        checker_text = run('checker-inventory', [tool, '--list-checks', '--checks=*'])
+        available = {line.strip() for line in checker_text.splitlines()}
+        if not set(policy['checks']) <= available:
+            raise ValueError('selected check is absent from the pinned implementation analyzer')
+        config = output / 'checks.json'
+        write_json(config, checker_configuration(repo, source, policy))
+        report['inputs'].update({str(tool): digest(tool), str(config): digest(config),
+                                  **report['tool_graph']['libraries']})
+        report['configuration'] = str(config)
+        report['resource_directory'] = str(bootstrap / 'lib/clang/23')
+        for row in records:
+            report['inputs'][row['source']] = row['source_sha256']
+            report['inputs'][row['object']] = row['sha256']
+        matched_pches = {}
+        matched_compiler = stage / 'bin/clang++'
+        report['inputs'][str(matched_compiler)] = digest(matched_compiler)
+        def prepare_analysis(name, row):
+            directory = output / name
+            directory.mkdir()
+            args, projection = textual_pch(row)
+            if projection:
+                prototype = matched_pch_arguments(row, matched_compiler, Path('/objc3c-analysis-pch'))
+                key = identity({'argv': prototype, 'directory': row['directory'],
+                    'response_files': row.get('response_files', {}),
+                    'compiler_sha256': digest(matched_compiler),
+                    'bootstrap_pch_sha256': projection[0]['pch_sha256'],
+                    'wrapper_sha256': projection[0]['wrapper_sha256']})
+                matched = matched_pches.get(key)
+                if matched is None:
+                    # Stable tool-owned paths let a later failed-campaign resume
+                    # compare the exact projected command. The content-derived
+                    # identity changes whenever compiler, wrapper, bootstrap PCH
+                    # or semantic flags change; every campaign still rebuilds it.
+                    matched = tool_build / 'matched-pches' / (key+'.pch')
+                    matched.parent.mkdir(exist_ok=True)
+                    if matched.parent.is_symlink() or not matched.parent.is_dir():
+                        raise ValueError('fork-matched implementation analysis PCH directory is not owned')
+                    matched.unlink(missing_ok=True)
+                    command = matched_pch_arguments(row, matched_compiler, matched)
+                    run('matched-pch-'+key[:16], command, cwd=Path(row['directory']), outputs=(matched,))
+                    if not matched.is_file() or matched.is_symlink() or not matched.stat().st_size:
+                        raise ValueError('fork-matched implementation analysis PCH was not produced')
+                    matched_pches[key] = matched
+                    report['inputs'][str(matched)] = digest(matched)
+                    report['matched_pches'].append({'identity': key, 'path': str(matched),
+                        'sha256': digest(matched), 'bytes': matched.stat().st_size,
+                        'compiler': str(matched_compiler), 'argv': command,
+                        'directory': row['directory'],
+                        'bootstrap_pch': projection[0]['bootstrap_pch'],
+                        'bootstrap_pch_sha256': projection[0]['pch_sha256'],
+                        'textual_wrapper': projection[0]['textual_wrapper'],
+                        'wrapper_sha256': projection[0]['wrapper_sha256']})
+                args, projection = textual_pch(row, replacement=matched)
+            row['analysis_arguments'], row['pch_projection'] = args, projection
+            for item in projection:
+                report['inputs'][item['bootstrap_pch']] = item['pch_sha256']
+                report['inputs'][item['textual_wrapper']] = item['wrapper_sha256']
+            write_json(directory / 'compile_commands.json', [{'file': row['file'],
+                'directory': row['directory'], 'arguments': args}])
+            return analysis_argv(tool, directory, row['file'], config, bootstrap / 'lib/clang/23')
+        def analyze(name, row, *, expected=0, contains=()):
+            run(name, prepare_analysis(name, row), expected=expected, contains=contains)
+        control = repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp'
+        for bad in (False, True):
+            analyze('control-'+('defective' if bad else 'corrected'), {'file': str(control), 'directory': str(repo),
+                'arguments': [str(bootstrap / 'bin/clang++'), '-std=c++20', *(['-DDEFECTIVE'] if bad else []),
+                    '-c', str(control), '-o', str(output / 'unused-control.o')]},
+                expected=int(bad), contains=('clang-analyzer-core.NullDereference',) if bad else ())
+        owners = [('frontend', frontend_build.resolve(strict=True), None),
+                  ('standalone-runtime', runtime_build.resolve(strict=True), None),
+                  ('maintained-clang', build, {source / name for name in patch_units(repo)})]
+        for label, root, units in owners:
+            database = root / 'compile_commands.json'
+            graph = run(label+'-graph', [ninja, '-C', root, '-t', 'commands'])
+            if units is None:
+                prefix = repo / 'native/objc3c/src'
+                units = set()
+                for line in graph.splitlines():
+                    args = shlex.split(line)
+                    if args and Path(args[0]).name != 'clang-scan-deps' and '-c' in args and '-o' in args:
+                        unit = (root / args[args.index('-c')+1]).resolve()
+                        if unit.is_relative_to(prefix) and unit.suffix in SUFFIXES:
+                            units.add(unit)
+            # CMake module-map response files may belong to a configured variant
+            # that has not been compiled. Materialize its owned scan output;
+            # analysis must not invent or silently omit those flags.
+            for entry in json.loads(database.read_text()):
+                if Path(entry['file']).resolve() not in units:
+                    continue
+                for arg in arguments(entry):
+                    if arg.startswith('@'):
+                        path = (Path(entry['directory']) / arg[1:]).resolve()
+                        if not path.exists() and path.suffix == '.modmap' and path.is_relative_to(root):
+                            run(label+'-module-map-'+identity(str(path))[:16],
+                                [ninja, '-C', root, str(path.relative_to(root))])
+            # A CMake regeneration can update commands while generating maps.
+            graph = run(label+'-effective-graph', [ninja, '-C', root, '-t', 'commands'])
+            rows = inventory(database, graph, units)
+            deps = dependencies(run(label+'-headers', [ninja, '-C', root, '-t', 'deps',
+                *(str(Path(row['output']).relative_to(root)) for row in rows)]),
+                build=root, selected_outputs={row['output'] for row in rows})
+            pch_headers = {}
+            for row in rows:
+                _, projections = textual_pch(row)
+                # Object dependency records may stop at the serialized PCH.
+                # Follow its separate Ninja record so a shared-header edit also
+                # selects every TU that consumed that serialization.
+                for projection in projections:
+                    pch = projection['bootstrap_pch']
+                    if pch not in pch_headers:
+                        recorded = dependencies(run(label+'-pch-headers-'+identity(pch)[:16],
+                            dependency_query(ninja, root, [pch])), build=root,
+                            selected_outputs={pch})
+                        pch_headers[pch] = recorded.get(pch, [])
+                if not deps.get(row['output']):
+                    depfile = output / (label+'-'+identity(row['output'])[:16]+'.d')
+                    run(label+'-discover-headers-'+identity(row['output'])[:16],
+                        dependency_arguments(row, depfile),
+                        cwd=Path(row['directory']))
+                    deps[row['output']] = [str(path) for path in header_dependencies(depfile, Path(row['directory']))]
+                    row['dependency_origin'] = 'fresh-original-compiler-preprocessing'
+                else:
+                    row['dependency_origin'] = 'actual-ninja-compilation'
+                for projection in projections:
+                    pch = projection['bootstrap_pch']
+                    if not pch_headers[pch]:
+                        depfile = output / (label+'-pch-'+identity(pch)[:16]+'.d')
+                        run(label+'-discover-pch-headers-'+identity(pch)[:16],
+                            dependency_arguments(row, depfile), cwd=Path(row['directory']))
+                        pch_headers[pch] = [str(path) for path in header_dependencies(
+                            depfile, Path(row['directory']))]
+                    deps[row['output']] = sorted(set([*deps[row['output']], *pch_headers[pch],
+                        pch, projection['textual_wrapper']]))
+                if row['file'] not in deps[row['output']]:
+                    raise ValueError('implementation variant lacks its actual header dependency closure')
+            scoped_changes = owner_changes(repo, label, changed)
+            chosen = ([] if scoped_changes is None else
+                      selected_variants(rows, deps, scoped_changes))
+            report['inputs'][str(database)] = digest(database)
+            for row in rows:
+                row['owner'] = label
+                row['analysis_timeout_seconds'] = translation_unit_timeout(policy, row, source)
+                row.update(identity=identity(row), dependencies=deps[row['output']])
+                row['selected'] = row in chosen
+                report['inputs'].update({path: digest(Path(path)) for path in row['dependencies']})
+                report['inputs'].update(row['response_files'])
+                report['inputs'].update(row['build_launcher'])
+            report['inventory'].extend(rows)
+            report['exclusions'].append({'owner': label, 'database_entries': len(json.loads(database.read_text())),
+                'selected_variants': len(rows), 'analyzed_variants': len(chosen),
+                'reason': ('Owned implementation TUs and every maintained Clang patch TU; '
+                           'vendor/test/generated-only TUs excluded. Unaffected owners and variants '
+                           'are omitted only by source ownership plus explicit dependency closure.')})
+            executor.timeout = policy['translation_unit_timeout_seconds']
+            with ProcessPoolExecutor(max_workers=jobs, mp_context=multiprocessing.get_context('spawn')) as workers:
+                def prepared_jobs():
+                    for row in chosen:
+                        name = label+'-'+row['identity'][:16]
+                        argv = prepare_analysis(name, row)
+                        cached = reusable_action(checkpoints, report, row,
+                            arguments=row['analysis_arguments'])
+                        if cached:
+                            report['results'].append(cached)
+                            executor.save()
+                        else:
+                            executor.save()
+                            yield {'name': name, 'identity': row['identity'],
+                                'directory': str(output / name), 'environment': environment, 'argv': argv,
+                                'timeout': row['analysis_timeout_seconds']}
+
+                def completed(value):
+                    result, commands = value
+                    report['results'].append(result);report['commands'].extend(commands);executor.save()
+
+                execute_jobs(prepared_jobs(), submit=lambda job: workers.submit(run_unit, job),
+                             completed=completed, max_pending=2*jobs)
+        selected = [row['identity'] for row in report['inventory'] if row['selected']]
+        completed = [row['identity'] for row in report['results']]
+        if (len(set(completed)) != len(completed) or set(selected) != set(completed) or
+                any(row['status'] != 'PASS' for row in report['results'])):
+            raise ValueError('implementation analysis contains findings or incomplete translation units')
+        if any(digest(Path(path)) != value for path, value in report['inputs'].items()):
+            raise ValueError('implementation analysis inputs changed')
+        report.update(status='PASS', analyzed_variants=len(report['results']), inventory_variants=len(report['inventory']))
+        report['fresh_native_executions'] = sum(not row.get('execution_reused', False) for row in report['results'])
+        report['verified_checkpoint_actions'] = sum(row.get('execution_reused', False) for row in report['results'])
+    except BaseException as error:
+        report.update(status='FAIL', error=str(error))
+        raise
+    finally:
+        executor.save()
+    return report
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--repo', type=Path, default=Path.cwd())
+    for name in ('output', 'frontend-build', 'runtime-build'):
+        parser.add_argument('--'+name, type=Path, required=True)
+    parser.add_argument('--tool-build', type=Path)
+    parser.add_argument('--changed', nargs='*', type=Path, default=[])
+    parser.add_argument('--jobs', type=int, choices=(1, 2, 3, 4), default=2)
+    parser.add_argument('--resume', type=Path, action='append', default=[])
+    result = qualify(**vars(parser.parse_args()))
+    print(json.dumps({'status': result['status'], 'analyzed_variants': result['analyzed_variants']}))
+
+
+if __name__ == '__main__':
+    main()
