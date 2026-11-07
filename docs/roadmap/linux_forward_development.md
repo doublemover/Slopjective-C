@@ -38,6 +38,13 @@ alongside the direct C++20/23 overloaded-member AST import regression. Six-profi
 header controls also pass, alongside both instrumented source-free libc++ native modes.
 The replacement SDK and broader profile/implementation obligations remain open.
 
+The [System 2.31 synchronous-capture span](linux_borrowed_synchronous_captures.md)
+admits immediate primitive/default/generic arguments and read-only mutable
+borrowed/owned records. Opaque aggregate pointers, methods and operators retain
+mutation and owner-expiry obligations. Focused compiler and four instrumented
+native source/PCH configurations pass, alongside all thirty-five borrowed compiler
+regressions and twelve affected frontend groups. SDK consolidation follows.
+
 The [System 2.30 field-pin span](linux_borrowed_field_pins.md) connects field,
 array, alias and NSObject snapshots to lifetime proofs, including equivalent
 nested pins and inherited closure state. Primitive ARC record/array cleanup now

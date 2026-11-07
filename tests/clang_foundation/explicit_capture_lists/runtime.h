@@ -1017,6 +1017,38 @@ static void capture_owned_record_suite(void) {
     CAPTURE_CHECK(capture_destroyed == before + 1);
   }
   CAPTURE_CHECK(capture_destroyed == before + 2);
+  {
+    CaptureObject *owner = [CaptureObject make:42];
+    CaptureOwnerRecord record = {owner};
+    const char *loan = capture_record_bytes(owner);
+    auto work = [record, loan, count = 0]() mutable {
+      ++count;
+      CAPTURE_CHECK(capture_record_bytes(record.owner)[0] == 'o' && loan[0] == 'o');
+      return count;
+    };
+    auto copy = work;
+    int observed = [&loan](auto offset) { return int(loan[offset]); }(0);
+    CAPTURE_CHECK(observed == 'o');
+    loan = (const char *)0;
+    owner = (id)0;
+    record.owner = (id)0;
+    CAPTURE_CHECK(work() == 1 && work() == 2 && copy() == 1);
+    CAPTURE_CHECK(capture_destroyed == before + 2);
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 3);
+  {
+    CaptureObject *owner = [CaptureObject make:42];
+    CaptureOwnerRecord record = {owner};
+    auto work = [record](auto value) mutable {
+      CAPTURE_CHECK(capture_record_bytes(record.owner)[0] == 'o');
+      return value;
+    };
+    owner = (id)0;
+    record.owner = (id)0;
+    CAPTURE_CHECK(work(17) == 17 && work(25L) == 25);
+    CAPTURE_CHECK(capture_destroyed == before + 3);
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 4);
 #endif
 }
 #endif

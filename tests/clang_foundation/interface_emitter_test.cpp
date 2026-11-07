@@ -631,6 +631,25 @@ void TestBorrowedMemoryAliasReplay() {
           reference.pointer=published_memory_bytes(owner);
           return pointer;
         }
+        inline void published_memory_generic_immediate(void *owner,int count) {
+          const char *pointer=published_memory_bytes(owner);
+          [&pointer](auto amount){
+            const char *cursor=pointer;
+            for(int index=0;index<amount;++index)published_memory_use(cursor++);
+          }(count);
+          pointer=published_memory_bytes(owner);
+          published_memory_use(pointer);
+        }
+        #if __has_feature(objc_arc)
+        inline void published_memory_mutable_record(id owner) {
+          struct OwnedMutableRecord {id owner;};OwnedMutableRecord record{owner};
+          const char *loan=published_memory_object_bytes(owner);
+          auto work=[record,loan,count=0]()mutable{
+            ++count;published_memory_use(published_memory_object_bytes(record.owner));published_memory_use(loan);
+          };
+          owner=0;record.owner=0;work();work();
+        }
+        #endif
         inline void published_memory_immediate_reference(void *owner) {
           const char *pointer=published_memory_bytes(owner);
           [&pointer]{published_memory_use(pointer);}();
@@ -680,6 +699,10 @@ void TestBorrowedMemoryAliasReplay() {
           published_memory_owned_record((id)0);
           #endif
           published_memory_immediate_reference(owner);
+          published_memory_generic_immediate(owner,2);
+          #if __has_feature(objc_arc)
+          published_memory_mutable_record((id)0);
+          #endif
           published_memory_use(published_memory_reference_cell(owner));
           published_memory_use(published_memory_joined_reference(owner,choose));
           published_memory_use(published_memory_reference_read(owner,choose));
