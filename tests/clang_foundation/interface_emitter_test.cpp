@@ -4169,6 +4169,104 @@ void TestClosureFactories() {
   }
 }
 
+void TestInitializedOwnerReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})
+    for(bool arc:{false,true}) {
+      const bool cxx=std::string(standard)!="c17";
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
+      args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+      const std::string source=R"(
+        typedef borrowed const char *PublishedPartialBytes;
+        __attribute__((objc_root_class)) @interface PublishedPartialOwner {
+        @public char payload;
+        }
+        @end
+        void published_partial_use(const char *view __attribute__((noescape)));
+        int published_partial_change(PublishedPartialOwner *_Nullable __strong *slot,
+            const char *view __attribute__((noescape)));
+        inline PublishedPartialBytes published_partial_bytes(PublishedPartialOwner *_Nonnull owner)
+            __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->payload;}
+        inline void published_partial_body(PublishedPartialOwner *_Nonnull owner,int mode) {
+          const char *view=published_partial_bytes(owner);
+          #if !__has_feature(objc_arc)
+          withLifetime(owner)
+          #endif
+          {
+            struct Pair {PublishedPartialOwner *_Nullable first;int tag;};
+            struct Pair pair={owner,published_partial_change(&owner,view)};
+            __objc3_defer {published_partial_use(view);}
+            published_partial_use(view);(void)pair;(void)mode;
+          }
+        }
+        #if defined(__cplusplus) && __has_feature(objc_arc)
+        inline void published_partial_capture(PublishedPartialOwner *_Nonnull owner) {
+          const char *view=published_partial_bytes(owner);
+          auto work=[first=owner,tag=published_partial_change(&owner,view),view] {
+            published_partial_use(view);(void)first;(void)tag;
+          };
+          work();
+        }
+        #endif
+      )";
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.initialized_owners","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.initialized_owners","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);return result;
+      };
+      auto first=emit(source,"finally-provider.m");
+      auto replay=emit(first.source_bytes,"finally-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-finally.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> supported;
+      for(const auto &item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+      assert(arc==llvm::is_contained(supported,llvm::StringRef(kInitializedOwnerSemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      if(arc) {
+        auto older=supported;std::erase(older,llvm::StringRef(kInitializedOwnerSemantic));
+        auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+        assert(!rejected);llvm::consumeError(rejected.takeError());
+        auto missing=*decoded;std::erase(missing.required_semantics,kInitializedOwnerSemantic);
+        auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);
+        assert(llvm::StringRef(llvm::toString(invalid.takeError())).contains("initialized owner prefix identity"));
+      } else supported.push_back(kInitializedOwnerSemantic);
+      auto plain=emit("void plain_scope_contract(void);","plain-scope-contract.m");
+      auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+      invented->required_semantics.push_back(kInitializedOwnerSemantic);
+      auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);
+      llvm::consumeError(unexpected.takeError());
+      auto good=parse(first.source_bytes+R"(
+        void finally_consumer(PublishedPartialOwner *_Nonnull owner) {published_partial_body(owner,0);}
+      )","runtime-consumer.m");
+      assert(good && !good->getDiagnostics().hasErrorOccurred());
+      const std::string expired=R"(
+        void partial_expired(PublishedPartialOwner *_Nonnull owner) {
+          const char *view=published_partial_bytes(owner);
+          @try {
+            struct Pair {PublishedPartialOwner *_Nullable first;int tag;};
+            struct Pair pair={owner,published_partial_change(&owner,view)};(void)pair;
+          } @catch(id exception) {published_partial_use(view);}
+        }
+      )";
+      auto bad=parse(first.source_bytes+expired,"expired-runtime-scope.m");
+      assert(bad && bad->getDiagnostics().hasErrorOccurred());
+    }
+}
+
 void TestNativeFinallyReplay() {
   for(const char *standard:{"c17","c++20","c++23"})
     for(bool arc:{false,true}) {
@@ -8170,6 +8268,7 @@ int main(int argc,char **argv) {
   TestBorrowedMemoryAliasReplay();
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
+  TestInitializedOwnerReplay();
   TestNativeFinallyReplay();
   TestManagedRuntimeScopeReplay();
   TestBorrowedReceiverResultReplay();

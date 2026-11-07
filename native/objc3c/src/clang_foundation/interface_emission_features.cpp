@@ -158,6 +158,24 @@ bool HasDeclarationNSObjectStorage(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationInitializedOwner(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Owners : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitVarDecl(clang::VarDecl *variable) override {
+        const auto type=variable->getType();
+        found |= variable->hasInit() && (type->isRecordType() || type->isArrayType()) &&
+                 type.isDestructedType()!=clang::QualType::DK_none;
+        return true;
+      }
+      bool VisitLambdaExpr(clang::LambdaExpr *lambda) override {
+        found |= !lambda->getLambdaClass()->hasTrivialDestructor();return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationNativeFinally(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
     struct Finally : clang::DynamicRecursiveASTVisitor {

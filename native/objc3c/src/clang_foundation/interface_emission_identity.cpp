@@ -2426,6 +2426,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-dependent-await:v1;";
   if (HasDeclarationNSObjectStorage(representative))
     identity.canonical_type_identity+=";nsobject-storage:v1;";
+  if (HasDeclarationInitializedOwner(representative))
+    identity.canonical_type_identity += ";initialized-owner-prefixes:v1;";
   if (HasDeclarationNativeFinally(representative))
     identity.canonical_type_identity += ";native-finally:v1;";
   if (HasDeclarationManagedRuntimeScope(representative))

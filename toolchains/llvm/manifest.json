@@ -23,11 +23,11 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "2d0888bbb2e32d4fb23d751a86f390e7f7ce141745e1f39f83478bb04d37d513"
+      "sha256": "47271f720d400991a381f32a10ad17c6bd93c53f7cc4ec2f8a0ac40d02f9fac2"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "5928227816b9d3ed6904864a02dac86f2417ccdf87f52e0755a411c277b9b5ae"
+      "sha256": "87d369acdff9ef8d08da5d9cb2b069ac5574d1b12ce5efc3628a6b24b2eadc20"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",

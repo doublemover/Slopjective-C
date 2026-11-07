@@ -304,12 +304,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 38,
+        "minor": 39,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Completed primitive ARC record/array/nested/capture initialization prefixes, reverse failure cleanup and transfer to complete storage; evaluated owner/unowned snapshots, owned field aliases, native capture order, elided local lambda lifetime and rehash-safe ownership metadata cloning, with exact source-free admission (all 77 affected compiler cases, six source-free profiles, five adjacent frontend groups, codec/isolation, 19 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; matched SDK consolidation pending)",
         "Native finally registration around try/catch, exact cleanup ordering, exception/return/jump replacement, per-copy label and lexical loop targets, borrowed expiry/return checks, GNUstep Objective-C++ ABI rethrow ownership and exact source-free semantic admission (76 affected compiler cases, six source-free profiles, four adjacent frontend groups, codec/isolation, 19 AST controls and two 12-configuration ASan/UBSan native matrices / 84 commands pass; matched SDK consolidation pending)",
         "Native pool queue accounting, normal-only synchronous pool exits, async drain/reopen and exceptional cleanup, synchronized ARC snapshots and unlock ordering, proven-ready monitor awaits and actual suspension diagnostics, with bounded borrowed lifetime proofs and exact source-free capability admission (all 71 selected compiler cases, six source-free profiles, codec/isolation controls and 12 instrumented native configurations / 42 commands pass; five adjacent frontend groups, 19 AST controls and four existing async configurations / 19 commands pass; matched SDK consolidation pending)",
         "Receiver-owned native pointer/reference getter results through messages, property reads, self-body validation, superclass dispatch, stable Class bindings, owner snapshots/pins and exact source-free admission; async and actor/executor crossings preserve lifetime restrictions independently of scalar Sendable admission (42 new compiler commands, all 42 affected compiler cases, six source-free profiles and 12 instrumented native configurations / 42 commands pass; five adjacent frontend groups and codec/isolation controls pass; SDK consolidation pending)",

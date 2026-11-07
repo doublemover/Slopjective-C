@@ -449,6 +449,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
   if (nsobject_storage != nsobject_storage_capability)
     Add(result,"O3IFC106","NSObject storage identity and required capability must agree",expected.canonical_name);
+  const bool initialized_owners = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasInitializedOwnerIdentity);
+  const bool initialized_owner_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kInitializedOwnerSemantic) != sidecar.required_semantics.end();
+  if (initialized_owners != initialized_owner_capability)
+    Add(result,"O3IFC108","initialized owner prefix identity and required capability must agree",expected.canonical_name);
   const bool native_finally = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeFinallyIdentity);
   const bool native_finally_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeFinallySemantic) != sidecar.required_semantics.end();
   if (native_finally != native_finally_capability)

@@ -488,6 +488,10 @@ llvm::Error ValidateForEncoding(
   const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
   if (nsobject_storage != nsobject_storage_capability)
     return Invalid("NSObject storage identity and required capability must agree");
+  const bool initialized_owners = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasInitializedOwnerIdentity);
+  const bool initialized_owner_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kInitializedOwnerSemantic) != sidecar.required_semantics.end();
+  if (initialized_owners != initialized_owner_capability)
+    return Invalid("initialized owner prefix identity and required capability must agree");
   const bool native_finally = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeFinallyIdentity);
   const bool native_finally_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeFinallySemantic) != sidecar.required_semantics.end();
   if (native_finally != native_finally_capability)

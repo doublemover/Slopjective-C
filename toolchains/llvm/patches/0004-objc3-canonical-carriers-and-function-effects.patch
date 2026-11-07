@@ -43710,10 +43710,10 @@ index 000000000..1122bbb29
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..b35541fa3
+index 000000000..0d3134d73
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6053 @@
+@@ -0,0 +1,6139 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43995,6 +43995,7 @@ index 000000000..b35541fa3
 +    SmallVector<ByteFacts, 16> EvaluatedByteTargets;
 +    Value EvaluatedClosedTargets;
 +    Value EvaluatedNonNullTargets;
++    Value EvaluatedUnownedOwners;
 +    Value EvaluatedReady;
 +    // An active pin is an owning snapshot. Same additionally proves that the
 +    // source variable has not been reassigned since that snapshot was taken.
@@ -44679,6 +44680,12 @@ index 000000000..b35541fa3
 +        if (auto Begin = Element.getAs<CFGScopeBegin>())
 +          HasRuntimeScope |= compilerRuntimeMarker(Begin->getVarDecl(), "objc3.cfg.pool") ||
 +                             compilerRuntimeMarker(Begin->getVarDecl(), "objc3.cfg.sync");
++    for (const CFGBlock *Block : Graph)
++      for (const CFGElement &Element : *Block)
++        if (auto Statement = Element.getAs<CFGStmt>())
++          if (const auto *Declarations = dyn_cast<DeclStmt>(Statement->getStmt()))
++            for (const Decl *Declaration : Declarations->decls())
++              HasRuntimeScope |= compilerRuntimeMarker(Declaration, "objc3.cfg.initialized-owner");
 +    if (!HasRuntimeScope) return true;
 +    SmallVector<std::pair<const Stmt *, unsigned>, 16> Pending{{Body, 0}};
 +    llvm::SmallPtrSet<const Stmt *, 32> Seen;
@@ -44715,7 +44722,8 @@ index 000000000..b35541fa3
 +        for (const Decl *Declaration : Declarations->decls()) {
 +          const auto *Variable = dyn_cast<VarDecl>(Declaration);
 +          if (!Variable || !Registered.insert(Variable).second) continue;
-+          bool Pin = compilerRuntimeMarker(Variable, "objc3.cfg.sync-owner");
++          bool Pin = compilerRuntimeMarker(Variable, "objc3.cfg.sync-owner") ||
++                     compilerRuntimeMarker(Variable, "objc3.cfg.initialized-owner");
 +          if (!Pin && !compilerRuntimeMarker(Variable, "objc3.cfg.sync-unowned") &&
 +              !compilerRuntimeMarker(Variable, "objc3.cfg.pool") &&
 +              !compilerRuntimeMarker(Variable, "objc3.cfg.sync")) continue;
@@ -44729,21 +44737,32 @@ index 000000000..b35541fa3
 +    if (NativePoolDepths.size() * OwnerCount > 4096) return false;
 +    const unsigned OriginalOrigins = Origins.size();
 +    if (OriginalOrigins * (NewPins.size() + 1) > 4096) return false;
++    llvm::DenseMap<unsigned, SmallVector<std::pair<const Expr *, unsigned>, 2>> HeldCopies;
++    for (const auto &[Key, Held] : ClosureLoans)
++      HeldCopies[Key.second].push_back({Key.first, Held});
 +    for (const VarDecl *Pin : NewPins)
 +      for (unsigned I = 1; I != OriginalOrigins; ++I) {
 +        const Origin Original = Origins[I];
-+        if (!Original.Acquisition || Original.Pin) continue;
++        if (!Original.Acquisition || Original.Pin || Original.HeldByClosure) continue;
 +        unsigned Index = Origins.size();Origins.push_back(Original);
 +        Origins.back().Pin = Pin;Origins.back().Unstable = false;
 +        Acquisitions[Original.Acquisition].push_back(Index);
-+        if (auto Storage = OriginOwnerStorage.find(I); Storage != OriginOwnerStorage.end())
-+          OriginOwnerStorage[Index] = Storage->second;
-+        if (auto Selector = OriginOwnerSelectors.find(I); Selector != OriginOwnerSelectors.end())
-+          OriginOwnerSelectors[Index] = Selector->second;
++        if (auto Held = HeldCopies.find(I); Held != HeldCopies.end())
++          for (const auto &[Closure, Token] : Held->second) ClosureLoans[{Closure, Index}] = Token;
++        if (auto Storage = OriginOwnerStorage.find(I); Storage != OriginOwnerStorage.end()) {
++          const auto Copy = Storage->second; // Insertion may rehash this map.
++          OriginOwnerStorage[Index] = Copy;
++        }
++        if (auto Selector = OriginOwnerSelectors.find(I); Selector != OriginOwnerSelectors.end()) {
++          const auto Copy = Selector->second; // Insertion may rehash this map.
++          OriginOwnerSelectors[Index] = Copy;
++        }
 +        if (UnprovenOwnerSelectors.contains(I)) UnprovenOwnerSelectors.insert(Index);
 +        if (RejectedOwnerSelectors.contains(I)) RejectedOwnerSelectors.insert(Index);
-+        if (auto Future = FutureStorageOwners.find(I); Future != FutureStorageOwners.end())
-+          FutureStorageOwners[Index] = Future->second;
++        if (auto Future = FutureStorageOwners.find(I); Future != FutureStorageOwners.end()) {
++          const auto Copy = Future->second; // Insertion may rehash this map.
++          FutureStorageOwners[Index] = Copy;
++        }
 +      }
 +    return true;
 +  }
@@ -45315,7 +45334,7 @@ index 000000000..b35541fa3
 +        if (Type->isObjCRetainableType() &&
 +            Type.getObjCLifetime() != Qualifiers::OCL_Weak &&
 +            Type.getObjCLifetime() != Qualifiers::OCL_ExplicitNone)
-+          Owners.push_back({Variable, Lambda->isInitCapture(&Capture) ? Init : nullptr});
++          Owners.push_back({Variable, Init});
 +      }
 +    }
 +    return Owners;
@@ -45335,6 +45354,35 @@ index 000000000..b35541fa3
 +      }
 +    }
 +    return Captures;
++  }
++  void prepareOwnedStorageAliases() {
++    if (!Context.getLangOpts().ObjCAutoRefCount || Origins.size() > 4096) return;
++    SmallVector<Storage, 16> Owners;
++    for (const auto &[Location, Slot] : Slots) {
++      (void)Slot;
++      if (!path(Location) || !Location.first || !Location.first->hasLocalStorage() ||
++          hasUnknownIndex(Location)) continue;
++      QualType Type = storageType(Location);
++      if (!Type.isNull() && !Type->isReferenceType() && Type->isObjCRetainableType() &&
++          Type.getObjCLifetime() == Qualifiers::OCL_Strong) Owners.push_back(Location);
++    }
++    const unsigned Count = Origins.size();
++    for (unsigned I = 1; I != Count; ++I) {
++      const Origin Original = Origins[I];
++      if (!Original.Acquisition || !Original.Owner || !Original.Identity || Original.Pin ||
++          Original.Unstable || Original.HeldByClosure || Original.ConsumedByClosure ||
++          Original.SymbolicCallable || FutureStorageOwners.count(I) ||
++          OriginOwnerSelectors.count(I)) continue;
++      for (Storage Owner : Owners) {
++        if (auto Found = OriginOwnerStorage.find(I); Found != OriginOwnerStorage.end() && Found->second == Owner)
++          continue;
++        if (Origins.size() >= 4096) return;
++        unsigned Index = Origins.size();Origins.push_back(Original);
++        Origins.back().Owner = Owner.first;Origins.back().IndependentAlias = true;
++        Acquisitions[Original.Acquisition].push_back(Index);
++        OriginOwnerStorage[Index] = Owner;
++      }
++    }
 +  }
 +  void prepareIndependentAliases() {
 +    if (!Actions.getLangOpts().ObjCAutoRefCount || Origins.size()>4096) return;
@@ -45756,7 +45804,7 @@ index 000000000..b35541fa3
 +    const auto Captures = owningClosureCaptures(Closure);
 +    if (IsOwnerSummary)
 +      for (const auto &Capture : Captures) {
-+        Value Identity = Capture.Initializer ? ownerIdentity(Capture.Initializer, State)
++        Value Identity = Capture.Initializer ? evaluatedOwnerIdentity(Capture.Initializer, State)
 +            : State.OwnerIdentities[Slots.lookup({Capture.Variable, nullptr})];
 +        for (const auto &[Root, Index] : OwnerRoots)
 +          if (Root && Identity.test(Index)) AcquiredOwnerRoots.insert(Root);
@@ -45769,7 +45817,7 @@ index 000000000..b35541fa3
 +        continue;
 +      for (const auto &Capture : Captures) {
 +        auto Slot = Slots.find({Capture.Variable, nullptr});
-+        Value Identity = Capture.Initializer ? ownerIdentity(Capture.Initializer, State)
++        Value Identity = Capture.Initializer ? evaluatedOwnerIdentity(Capture.Initializer, State)
 +            : Slot == Slots.end() ? Value(OwnerCount)
 +                                 : State.OwnerIdentities[Slot->second];
 +        if (!Identity.test(ownerIndex(O)) ||
@@ -45884,6 +45932,13 @@ index 000000000..b35541fa3
 +        Result.set(OwnerRoots.lookup(nullptr));
 +    }
 +    return Result;
++  }
++  bool evaluatedOwnerIsUnowned(const Expr *E, const Facts &State) const {
++    if (E)
++      if (auto Slot = ExpressionSlots.find(E); Slot != ExpressionSlots.end())
++        if (State.EvaluatedReady.test(Slot->second))
++          return State.EvaluatedUnownedOwners.test(Slot->second);
++    return ownerIsUnowned(E, State);
 +  }
 +  Value evaluatedOwnerIdentity(const Expr *E, const Facts &State) const {
 +    if (E)
@@ -46919,15 +46974,15 @@ index 000000000..b35541fa3
 +              if (!O.Pin && !O.Unstable && !Alternative.Unstable && !Alternative.Pin &&
 +                  ownerIndex(Alternative)==ownerIndex(O) && O.Identity && Alternative.Owner &&
 +                  Alternative.Owner!=Owner && (O.IndependentAlias || Alternative.IndependentAlias)) {
-+                auto Slot=Slots.find({Alternative.Owner,nullptr});
-+                if (Slot!=Slots.end() && !State.UnownedOwners.test(Slot->second)) {
-+                  const auto &Identity=State.OwnerIdentities[Slot->second];
-+                  if (Identity.count()==1 && Identity.test(ownerIndex(O))) {
-+                    Replacement=Candidate;break;
-+                  }
++                Value Identity(OwnerCount);bool Unowned = false;
++                if (originOwnerFacts(Candidate, State, Identity, Unowned) && !Unowned &&
++                    Identity.count() == 1 && Identity.test(ownerIndex(O))) {
++                  Replacement = Candidate;break;
 +                }
 +              }
-+              if (ownerIndex(Alternative) != ownerIndex(O) || Alternative.Owner != O.Owner)
++              if (ownerIndex(Alternative) != ownerIndex(O) ||
++                  (Alternative.Owner != O.Owner &&
++                   !(O.Pin && !Alternative.Pin && Alternative.IndependentAlias)))
 +                continue;
 +              if (Alternative.Pin && Alternative.Pin != Owner &&
 +                  matchesPin(O, Alternative.Pin, State, I)) {
@@ -47299,8 +47354,10 @@ index 000000000..b35541fa3
 +        V = empty();
 +      Value Effects = effects(Initializer, State);
 +      if (LocalAddress && !isObjC3BorrowedType(Context, Type)) Effects = empty();
-+      Value Owner = ownerIdentity(Initializer, State);
-+      const bool Unowned = ownerIsUnowned(Initializer, State);
++      Value Owner = Type->isReferenceType() ? ownerIdentity(Initializer, State)
++                                            : evaluatedOwnerIdentity(Initializer, State);
++      const bool Unowned = Type->isReferenceType() ? ownerIsUnowned(Initializer, State)
++                                                  : evaluatedOwnerIsUnowned(Initializer, State);
 +      if (auto Found = Slots.find(Destination); Found != Slots.end()) {
 +        State.OwnerIdentities[Found->second] = Owner;
 +        State.UnownedOwners[Found->second] = Unowned;
@@ -48806,6 +48863,7 @@ index 000000000..b35541fa3
 +          State.EvaluatedEffects[Slot] = std::move(Effects);
 +          State.EvaluatedValues[Slot] = std::move(V);
 +          State.EvaluatedOwners[Slot] = std::move(Owner);
++          State.EvaluatedUnownedOwners[Slot] = ownerIsUnowned(Expression, State);
 +          State.EvaluatedTargets[Slot] = Target;
 +          State.EvaluatedClosedTargets[Slot] = Complete;
 +          State.EvaluatedNonNullTargets[Slot] = nonNullAddress(Expression, State);
@@ -48832,8 +48890,13 @@ index 000000000..b35541fa3
 +                !Variable->getInit()->isNullPointerConstant(
 +                    Context, Expr::NPC_ValueDependentIsNotNull))
 +              V.set(0);
-+            const bool Unowned = ownerIsUnowned(Variable->getInit(), State);
-+            Value Owner = ownerIdentity(Variable->getInit(), State);
++            const QualType InitializedType = Variable->getType();
++            const bool Unowned = InitializedType->isReferenceType()
++                ? ownerIsUnowned(Variable->getInit(), State)
++                : evaluatedOwnerIsUnowned(Variable->getInit(), State);
++            Value Owner = InitializedType->isReferenceType()
++                ? ownerIdentity(Variable->getInit(), State)
++                : evaluatedOwnerIdentity(Variable->getInit(), State);
 +            if (OwnerRoots.count(Variable) && Owner.none())
 +              Owner.set(OwnerRoots.lookup(Variable));
 +            const bool Reference = Variable->getType()->isReferenceType();
@@ -48894,7 +48957,7 @@ index 000000000..b35541fa3
 +                  if (SameObject) {State.EquivalentPins[P].set(Q);State.EquivalentPins[Q].set(P);}
 +                }
 +              }
-+              if (Released && Emit)
++              if (Released && Emit && !compilerRuntimeMarker(Variable, "objc3.cfg.initialized-owner"))
 +                diagnose(Node, "a lifetime pin created after manual owner release");
 +              if (Released) {
 +                State.ActivePins.reset(Found->second);
@@ -49075,12 +49138,29 @@ index 000000000..b35541fa3
 +                auto Initializer = Lambda->capture_init_begin();
 +                for (const auto &Capture : Lambda->captures()) {
 +                  const Expr *Init = *Initializer++;
++                  if (Capture.capturesVariable() && Capture.getCaptureKind() == LCK_ByCopy) {
++                    const auto *Variable = cast<VarDecl>(Capture.getCapturedVar());
++                    QualType Type = Variable->getType();
++                    if (Context.getLangOpts().ObjCAutoRefCount && Type->isObjCRetainableType() &&
++                        Type.getObjCLifetime() == Qualifiers::OCL_Strong) {
++                      Nested.InheritedOwners[Variable] = evaluatedOwnerIdentity(Init, State);
++                      if (evaluatedOwnerIsUnowned(Init, State)) Nested.InheritedUnownedOwners.insert(Variable);
++                      else Nested.InheritedUnownedOwners.erase(Variable);
++                    }
++                  }
 +                  if (Lambda->isInitCapture(&Capture)) {
 +                    const auto *Variable = cast<VarDecl>(Capture.getCapturedVar());
 +                    Nested.InheritedValues[{Variable, nullptr}] = value(Init, State);
 +                    Nested.InheritedEffects[{Variable, nullptr}] = effects(Init, State);
-+                    Nested.InheritedOwners[Variable] = ownerIdentity(Init, State);
-+                    if (ownerIsUnowned(Init, State)) Nested.InheritedUnownedOwners.insert(Variable);
++                    const QualType Type = Variable->getType();
++                    const bool StrongCopy = Context.getLangOpts().ObjCAutoRefCount &&
++                        Capture.getCaptureKind() == LCK_ByCopy && Type->isObjCRetainableType() &&
++                        Type.getObjCLifetime() == Qualifiers::OCL_Strong;
++                    Nested.InheritedOwners[Variable] = StrongCopy ? evaluatedOwnerIdentity(Init, State)
++                                                                : ownerIdentity(Init, State);
++                    if (StrongCopy ? evaluatedOwnerIsUnowned(Init, State) : ownerIsUnowned(Init, State))
++                      Nested.InheritedUnownedOwners.insert(Variable);
++                    else Nested.InheritedUnownedOwners.erase(Variable);
 +                    Nested.InheritedTargets[{Variable, nullptr}] = referent(Init, &State);
 +                    Nested.InheritedClosedTargets[{Variable, nullptr}] = closedTargets(Init, State);
 +                    Nested.InheritedNonNullTargets[{Variable, nullptr}] = nonNullAddress(Init, State);
@@ -49121,7 +49201,7 @@ index 000000000..b35541fa3
 +                    for (const auto &Owned : owningClosureCaptures(Lambda))
 +                      if (Owned.Variable == Capture.Variable) {
 +                        RequiresContract |= llvm::is_contained(Summary.Consumed, Capture.Variable);
-+                        Value Identity = Owned.Initializer ? ownerIdentity(Owned.Initializer, State)
++                        Value Identity = Owned.Initializer ? evaluatedOwnerIdentity(Owned.Initializer, State)
 +                            : State.OwnerIdentities[Slots.lookup({Owned.Variable, nullptr})];
 +                        const Value &Loans = State.CapturedValues[Slot];
 +                        for (int Bit = Loans.find_first(); Bit >= 0; Bit = Loans.find_next(Bit)) {
@@ -49303,6 +49383,10 @@ index 000000000..b35541fa3
 +      return true;
 +    }
 +    bool Changed = false;
++    Value EvaluatedUnowned = Destination.EvaluatedUnownedOwners;
++    EvaluatedUnowned |= Source.EvaluatedUnownedOwners;
++    Changed |= EvaluatedUnowned != Destination.EvaluatedUnownedOwners;
++    Destination.EvaluatedUnownedOwners = std::move(EvaluatedUnowned);
 +    Value Pools = Destination.ActiveNativePools;Pools |= Source.ActiveNativePools;
 +    Changed |= Pools != Destination.ActiveNativePools;Destination.ActiveNativePools = std::move(Pools);
 +    for (unsigned P = 0; P != Destination.NativePoolClaims.size(); ++P)
@@ -49482,6 +49566,7 @@ index 000000000..b35541fa3
 +    prepareFutureOwnerLoans();
 +    prepareClosureLoans();
 +    prepareIndependentAliases();
++    prepareOwnedStorageAliases();
 +    CFG::BuildOptions Options;
 +    Options.setAllAlwaysAdd();
 +    Options.AddLifetime = true;
@@ -49535,6 +49620,7 @@ index 000000000..b35541fa3
 +    Initial.EvaluatedMayTargets.assign(ExpressionSlots.size(), Value(Slots.size()));
 +    Initial.EvaluatedClosedTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedNonNullTargets.resize(ExpressionSlots.size());
++    Initial.EvaluatedUnownedOwners.resize(ExpressionSlots.size());
 +    Initial.EvaluatedByteTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedReady.resize(ExpressionSlots.size());
 +    for (auto [Owner, Index] : OwnerRoots)
@@ -62862,7 +62948,7 @@ index 000000000..3a79cace1
 +#endif
 diff --git a/clang/test/ObjC3/Sema/borrowed-field-pins.mm b/clang/test/ObjC3/Sema/borrowed-field-pins.mm
 new file mode 100644
-index 000000000..ea280965d
+index 000000000..fefe3265d
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-field-pins.mm
 @@ -0,0 +1,189 @@
@@ -63045,12 +63131,12 @@ index 000000000..ea280965d
 +}
 +#if __has_feature(objc_arc)
 +id make_unknown_pin_owner(void);
-+void unqualified_partial_arc_record(id owner,int choose) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++void qualified_partial_arc_record(id owner,int choose) {
 +  struct PartialPinBox {id first,second;};
 +  struct PartialPinBox box={owner,choose?owner:make_unknown_pin_owner()};
 +  withLifetime(box.first) {memory_use(memory_pin_bytes(box.first));}
 +}
-+void unqualified_partial_arc_array(id owner,int choose) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++void qualified_partial_arc_array(id owner,int choose) {
 +  id values[2]={owner,choose?owner:make_unknown_pin_owner()};
 +  withLifetime(values[0]) {memory_use(memory_pin_bytes(values[0]));}
 +}
@@ -64670,3 +64756,154 @@ index 000000000..4b54162fe
 +  }
 +done:return;
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-partial-initialization.h b/clang/test/ObjC3/Sema/Inputs/borrowed-partial-initialization.h
+new file mode 100644
+index 000000000..f42e31a36
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-partial-initialization.h
+@@ -0,0 +1,4 @@
++#ifndef BORROWED_PARTIAL_INITIALIZATION_H
++#define BORROWED_PARTIAL_INITIALIZATION_H
++#include "borrowed-runtime-scopes.h"
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-partial-initialization.m b/clang/test/ObjC3/Sema/borrowed-partial-initialization.m
+new file mode 100644
+index 000000000..7e5effbed
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-partial-initialization.m
+@@ -0,0 +1,135 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-partial-initialization.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-partial-initialization.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-partial-initialization.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-partial-initialization.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-partial-initialization.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-partial-initialization.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-partial-initialization.h"
++#endif
++#if __has_feature(objc_arc)
++int partial_change_owner(RuntimeScopeOwner *_Nullable __strong *slot,const char *view __attribute__((noescape)));
++int partial_unknown_effect(void);
++void partial_record_normal(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  struct Pair {RuntimeScopeOwner *_Nullable first;int tag;};
++  struct Pair pair={owner,partial_change_owner(&owner,view)};
++  __objc3_defer {receiver_use(view);}
++  receiver_use(view);(void)pair;
++}
++void partial_record_unwind(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {
++    struct Pair {RuntimeScopeOwner *_Nullable first;int tag;};
++    struct Pair pair={owner,partial_change_owner(&owner,view)};(void)pair;
++  } @catch(id exception) {
++    receiver_use(view); // expected-error {{after its owner lifetime ended}}
++  }
++}
++void partial_array_normal(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  RuntimeScopeOwner *_Nullable values[2]={owner,(partial_change_owner(&owner,view),(id)0)};
++  __objc3_defer {receiver_use(view);}
++  receiver_use(view);(void)values;
++}
++void partial_nested_record(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  struct Pair {RuntimeScopeOwner *_Nullable first;int tag;};
++  struct Outer {struct Pair values[2];int last;};
++  struct Outer outer={{{owner,partial_unknown_effect()},{owner,partial_change_owner(&owner,view)}},7};
++  __objc3_defer {receiver_use(view);}
++  receiver_use(view);(void)outer;
++}
++void partial_failed_first_field(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {
++    struct Pair {int tag;RuntimeScopeOwner *_Nullable last;};
++    struct Pair pair={partial_change_owner(&owner,view),owner};(void)pair;
++  } @catch(id exception) {
++    receiver_use(view); // expected-error {{after its owner lifetime ended}}
++  }
++}
++void partial_independent_outer_pin(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  withLifetime(owner) {
++    @try {
++      struct Pair {RuntimeScopeOwner *_Nullable first;int tag;};
++      struct Pair pair={owner,partial_change_owner(&owner,view)};(void)pair;
++    } @catch(id exception) {receiver_use(view);}
++  }
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void partial_finalizer_owner(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  @try {
++    struct Pair {RuntimeScopeOwner *_Nullable first;int tag;};
++    struct Pair pair={owner,partial_change_owner(&owner,view)};(void)pair;
++  } @finally {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++#ifdef __cplusplus
++void partial_owning_lambda(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  auto work=[first=owner,tag=partial_change_owner(&owner,view),view] {receiver_use(view);(void)first;(void)tag;};
++  work();
++}
++void partial_owning_lambda_reference(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  auto work=[first=owner,tag=partial_change_owner(&owner,view),&view] {receiver_use(view);(void)first;(void)tag;};
++  work();
++}
++void partial_lambda_unwind(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  try {
++    auto work=[first=owner,tag=partial_change_owner(&owner,view),view] {receiver_use(view);(void)first;(void)tag;};
++    work();
++  } catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++#endif
++#else
++void partial_mrc_ordinary_record(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  struct Pair {RuntimeScopeOwner *first;int tag;};
++  struct Pair pair={owner,7};receiver_use(view);(void)pair;
++}
++#endif
++
++#if !__has_feature(objc_arc)
++// expected-no-diagnostics
++#endif
++
++#if defined(__cplusplus) && __has_feature(objc_arc)
++void partial_ordinary_capture(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  auto work=[owner,tag=partial_change_owner(&owner,view),view] {receiver_use(view);(void)owner;(void)tag;};
++  work();
++}
++void partial_capture_order(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  auto work=[tag=partial_change_owner(&owner,view),first=owner] {(void)first;(void)tag;};
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++  (void)work;
++}
++#endif
++
++#if __has_feature(objc_arc)
++int partial_nonthrowing_change(RuntimeScopeOwner *_Nullable __strong *slot,const char *view __attribute__((noescape))) __attribute__((nothrow));
++void partial_nonthrowing_mutation(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  struct Pair {RuntimeScopeOwner *_Nullable first;int tag;};
++  struct Pair pair={owner,partial_nonthrowing_change(&owner,view)};
++  __objc3_defer {receiver_use(view);}receiver_use(view);(void)pair;
++}
++#endif

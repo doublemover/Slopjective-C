@@ -1,5 +1,13 @@
 # Linux implementation sprint
 
+The [System 2.39 initialized-owner span](linux_initialized_owner_prefixes.md)
+tracks completed ARC record/array/capture prefixes, failure unwind and transfer
+to complete storage. Owner/unowned snapshots preserve actual evaluation order;
+local owning lambdas retain their native capture order and elided temporary
+lifetime. All 77 affected compiler cases, six source-free profiles, five adjacent
+groups, codec/isolation, 19 AST controls and twelve instrumented native
+configurations / 42 commands pass.
+
 The [System 2.38 finalizer span](linux_native_finally.md) models `@finally`
 registration around try/catch, cleanup order, native unwind and replacement
 return/throw/jump transfers. It also repairs GNUstep C++ rethrow ownership and

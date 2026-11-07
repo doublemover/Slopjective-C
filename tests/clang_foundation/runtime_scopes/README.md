@@ -25,3 +25,8 @@ The finally witness checks exact defer/handler/finalizer order, return/goto and
 loop exits, finalizer return replacing an earlier return or exception, outward
 backward goto, replacement exception identity and mixed C++ unwinding. Each
 transfer checks borrowed payload access and exact object destruction.
+
+ARC partial-initialization witnesses initialize records, arrays, nested records
+and C++ owning lambdas before a later initializer clears the original owner and
+optionally throws. Borrowed payload access stays live through the initialized
+prefix. Every successful or exceptional path destroys the object exactly once.

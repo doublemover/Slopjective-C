@@ -260,6 +260,70 @@ static void scope_finally_suite(void) {
 #endif
 }
 
+
+#if __has_feature(objc_arc)
+static int scope_partial_initializer(ScopeProbe *_Nullable __strong *slot,
+                                     const char *view __attribute__((noescape)),int fail) {
+  *slot=(id)0;scope_use(view);
+  if(fail)@throw scope_exception;
+  return 31;
+}
+static void scope_partial_record(int fail) {
+  int before=scope_destroyed,caught=0;
+  ScopeProbe *_Nonnull owner=[ScopeProbe new];const char *view=&owner->payload;
+  @try {
+    struct Pair {ScopeProbe *_Nullable first;int tag;};
+    struct Pair pair={owner,scope_partial_initializer(&owner,view,fail)};
+    __objc3_defer {assert(scope_destroyed==before);scope_use(view);}
+    scope_use(view);assert(pair.first && pair.tag==31 && !owner);
+  } @catch(id exception) {assert(fail && exception==scope_exception);++caught;}
+  assert(caught==fail && scope_destroyed==before+1);
+}
+static void scope_partial_array(int fail) {
+  int before=scope_destroyed,caught=0;
+  ScopeProbe *_Nonnull owner=[ScopeProbe new];const char *view=&owner->payload;
+  @try {
+    ScopeProbe *_Nullable values[2]={owner,(scope_partial_initializer(&owner,view,fail),(id)0)};
+    __objc3_defer {assert(scope_destroyed==before);scope_use(view);}
+    scope_use(view);assert(values[0] && !values[1] && !owner);
+  } @catch(id exception) {assert(fail && exception==scope_exception);++caught;}
+  assert(caught==fail && scope_destroyed==before+1);
+}
+static void scope_partial_nested(int fail) {
+  int before=scope_destroyed,caught=0;
+  ScopeProbe *_Nonnull owner=[ScopeProbe new];const char *view=&owner->payload;
+  @try {
+    struct Inner {ScopeProbe *_Nullable owner;int tag;};
+    struct Outer {struct Inner values[2];};
+    struct Outer outer={{{owner,11},{owner,scope_partial_initializer(&owner,view,fail)}}};
+    __objc3_defer {assert(scope_destroyed==before);scope_use(view);}
+    scope_use(view);assert(outer.values[0].owner && outer.values[1].owner && !owner);
+  } @catch(id exception) {assert(fail && exception==scope_exception);++caught;}
+  assert(caught==fail && scope_destroyed==before+1);
+}
+#ifdef __cplusplus
+static void scope_partial_lambda(int fail) {
+  int before=scope_destroyed,caught=0;
+  ScopeProbe *_Nonnull owner=[ScopeProbe new];const char *view=&owner->payload;
+  @try {
+    auto work=[first=owner,tag=scope_partial_initializer(&owner,view,fail),view] {
+      assert(first && tag==31);scope_use(view);
+    };
+    work();assert(!owner && scope_destroyed==before);
+  } @catch(id exception) {assert(fail && exception==scope_exception);++caught;}
+  assert(caught==fail && scope_destroyed==before+1);
+}
+#endif
+static void scope_partial_suite(void) {
+  for(int fail=0;fail!=2;++fail) {
+    scope_partial_record(fail);scope_partial_array(fail);scope_partial_nested(fail);
+#ifdef __cplusplus
+    scope_partial_lambda(fail);
+#endif
+  }
+}
+#endif
+
 static void runtime_scope_suite(void) {
   int initial_created=scope_created,initial_destroyed=scope_destroyed;
   @autoreleasepool {
@@ -280,6 +344,9 @@ static void runtime_scope_suite(void) {
       assert(scope_lock_evaluations==arguments+1);
     }
     scope_normal_only_pool_exception();scope_finally_suite();
+#if __has_feature(objc_arc)
+    scope_partial_suite();
+#endif
 #if !__has_feature(objc_arc)
     scope_counted_pool();[scope_exception release];
 #endif

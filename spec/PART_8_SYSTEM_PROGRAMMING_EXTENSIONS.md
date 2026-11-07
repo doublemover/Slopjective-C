@@ -389,6 +389,18 @@ replaces the pending transfer; it shall not be modeled as a defer destructor
 that terminates on a second exception. Handler binding cleanup precedes the
 finalizer, while enclosing independent owner claims retain their own scopes.
 
+#### 8.7.3.2 Completed initialization ownership
+
+An ownership claim acquired by a completed managed field or capture slot shall
+remain available while later initializers execute. Failure shall unwind the
+completed prefix before enclosing cleanup, without applying whole-object
+destruction to an incomplete object. Successful completion shall preserve those
+claims in the completed storage. Proofs shall use the identities and ownership
+state captured when each initializer actually evaluates, including native capture
+initialization order. A later binding replacement shall not erase an independent
+completed claim; an already expired source shall not become valid through an
+unproved ownership copy.
+
 ### 8.7.4 Escaping-use trigger points and minimum diagnostics (normative) {#part-8-7-4}
 
 In strict-system mode, a borrowed pointer value is treated as **non-escaping** unless an explicit unsafe escape marker is used.

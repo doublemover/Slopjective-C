@@ -1,5 +1,13 @@
 # Linux feature completion and SDK delivery
 
+The [System 2.39 initialized-owner span](linux_initialized_owner_prefixes.md)
+tracks completed ARC record/array/capture prefixes, failure unwind and transfer
+to complete storage. Owner/unowned snapshots preserve actual evaluation order;
+local owning lambdas retain their native capture order and elided temporary
+lifetime. All 77 affected compiler cases, six source-free profiles, five adjacent
+groups, codec/isolation, 19 AST controls and twelve instrumented native
+configurations / 42 commands pass.
+
 The [System 2.38 finalizer span](linux_native_finally.md) models `@finally`
 registration around try/catch, cleanup order, native unwind and replacement
 return/throw/jump transfers. It also repairs GNUstep C++ rethrow ownership and
@@ -67,6 +75,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Native publication | User standard-library class/constexpr-variable specializations, including partial patterns, argument packs and native primary ABI | Source authored; six frontend profiles and two instrumented source-free provider/two-consumer executables pass; wider profiles and SDK consolidation pending |
 | Native publication | Inherited formatter state, iterator traits, deduced member identity and unique native virtual slots | Source authored; fifteen AST infrastructure tests, twelve affected frontend groups and all four source-free libstdc++/libc++ native configurations pass; SDK consolidation pending |
 | Native publication | Remaining dependent lookup, declaration/predicate forms and wider standard-library configurations | Open |
+| Ownership/System   | Completed primitive ARC record/array/capture prefixes, owner snapshots, native capture order and exceptional cleanup | 77 compiler cases, six source-free profiles, five adjacent groups, codec/isolation, 19 AST controls and 12 instrumented native configurations / 42 commands pass; SDK pending |
 | Ownership/System   | Native finally cleanup, handler ordering, replacement transfers and C++ rethrow payload ownership | 76 compiler cases, six source-free profiles, four adjacent groups, codec/isolation, 19 AST controls and two 12-configuration instrumented native matrices pass; SDK pending |
 | Ownership/System   | Native pool release queues, async drains, synchronized receiver snapshots and suspension restrictions | 71 compiler cases, six source-free profiles, five adjacent groups, codec/isolation, 19 AST controls, 12 native scope configurations and four existing async configurations pass; SDK pending |
 | Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass                                         |

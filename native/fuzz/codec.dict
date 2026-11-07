@@ -19,6 +19,7 @@
 "objc3.borrowed-receiver-results.v1"
 "objc3.managed-runtime-scopes.v1"
 "objc3.native-finally.v1"
+"objc3.initialized-owner-prefixes.v1"
 "objc3.native-declaration-attributes.v2"
 "objc3.native-dependent-await.v1"
 "objc3.nsobject-storage.v1"
