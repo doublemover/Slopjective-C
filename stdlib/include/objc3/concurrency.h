@@ -27,10 +27,10 @@
  * notification publishes without resuming the completed coroutine. C++ callers
  * may use task_group_handle::current_scope() for a retained group view. */
 
-/* Native async callable lowering is currently admitted in the compatibility
- * profile. Other profiles can use the shared C service ABI above without
- * eagerly parsing convenience bodies whose source-call ABI is not admitted. */
-#if defined(__OBJC__) && __OBJC3_PROFILE__ == 0
+/* Native async callable and group convenience APIs share the same Linux ABI
+ * across Objective-C 3 profiles. The selected profile still enforces its own
+ * nullability, Sendable, borrowed-lifetime and resource diagnostics. */
+#if defined(__OBJC__)
 #ifdef __cplusplus
 #include <objc3c/runtime/objc3_task.hpp>
 

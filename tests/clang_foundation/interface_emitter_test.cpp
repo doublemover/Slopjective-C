@@ -4168,6 +4168,88 @@ void TestClosureFactories() {
   }
 }
 
+void TestStrictAsyncProfileReplay() {
+  for (const char *standard : {"c++20", "c++23"}) {
+    auto plain=clang::tooling::buildASTFromCodeWithArgs("int allocation_policy;",
+        {"-x","c++",std::string("-std=")+standard});
+    assert(plain && !plain->getDiagnostics().hasErrorOccurred());
+    assert(!plain->getASTContext().getLangOpts().CoroAlignedAllocation);
+  }
+  for (const char *profile : {"strict", "strict-concurrency", "strict-system"}) {
+    for (const char *standard : {"c17", "c++20", "c++23"}) {
+      const bool cxx = std::string(standard) != "c17";
+      for (bool arc : {false, true}) {
+        std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+            std::string("-std=")+standard,"-fobjc-version=3","-fblocks",
+            "-fobjc-runtime=gnustep-2.2",std::string("-fobjc3-profile=")+profile,
+            "-fexceptions","-fobjc-exceptions","-fobjc-arc-exceptions",
+            "--target=x86_64-unknown-linux-gnu",
+            "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+        if (arc) args.push_back("-fobjc-arc");
+        clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+        auto parse=[&](const std::string &text,const char *name) {
+          return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+              std::make_shared<clang::PCHContainerOperations>(),
+              clang::tooling::getClangStripDependencyFileAdjuster(),files);
+        };
+        std::string source = cxx ? "#include <objc3c/runtime/objc3_task.hpp>\n"
+                                 : "#include <objc3c/runtime/objc3_runtime_services.h>\n";
+        source += R"(
+          inline int strict_frame_leaf(int value) __objc3_async_frame {return value+1;}
+          inline int strict_frame_parent(int value) __objc3_async_frame {
+            return __objc3_await strict_frame_leaf(value);
+          }
+        )";
+        std::vector<std::string> exports={"strict_frame_leaf","strict_frame_parent"};
+        if (cxx) {
+          source += R"(
+            inline int strict_task_leaf(int value) __objc3_async {return value+1;}
+            template<class T> int strict_task_generic(T value) __objc3_async {
+              return __objc3_await strict_task_leaf(int(value));
+            }
+          )";
+          exports.push_back("strict_task_leaf");exports.push_back("strict_task_generic");
+        }
+        auto emit=[&](const std::string &text,const char *name) {
+          auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+          assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                      "fixture.strict_async_profiles","test",{}));
+          auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.strict_async_profiles","test",{},{},{},exports);
+          for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+          return result;
+        };
+        if (cxx) {
+          auto aligned=parse("int strict_alignment_policy;","aligned-policy.mm");
+          assert(aligned && !aligned->getDiagnostics().hasErrorOccurred());
+          const auto aligned_profile=ReadInterfaceLanguageProfile(aligned->getASTContext());
+          args.push_back("-fno-coro-aligned-allocation");
+          auto unaligned=parse("int strict_alignment_policy;","unaligned-policy.mm");
+          args.pop_back();
+          assert(unaligned && !unaligned->getDiagnostics().hasErrorOccurred());
+          const auto unaligned_profile=ReadInterfaceLanguageProfile(unaligned->getASTContext());
+          assert(aligned_profile!=unaligned_profile);
+          assert(aligned_profile.find("coroutine-aligned-allocation=true")!=std::string::npos);
+          assert(unaligned_profile.find("coroutine-aligned-allocation=false")!=std::string::npos);
+        }
+        auto first=emit(source,"strict-async-provider.m");assert(first.success);
+        assert(first.identity.language_profile.find(profile)!=std::string::npos);
+        auto replay=emit(first.source_bytes,"replayed-strict-async-provider.m");
+        assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+        auto relocated=emit("\n\n"+source,"relocated-strict-async-provider.m");
+        assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+        std::string consumer=first.source_bytes+R"(
+          objc3_async_frame strict_frame_consumer(void) {return strict_frame_parent(41);}
+        )";
+        if(cxx)consumer+=R"(
+          objc3::task<int> strict_task_consumer(void) {return strict_task_generic(41L);}
+        )";
+        auto valid=parse(consumer,"strict-async-consumer.m");
+        assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+      }
+    }
+  }
+}
+
 void TestNativeDependentAwaitReplay() {
   std::ifstream input(std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/explicit_cxx_storage.h");
   assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
@@ -7446,6 +7528,7 @@ int main(int argc,char **argv) {
   TestFactoryTypeProjections();
   TestLocalFactoryResults();
   TestClosureFactories();
+  TestStrictAsyncProfileReplay();
   TestNativeDependentAwaitReplay();
   TestConcurrentBlockValueReplay();
   TestConcurrentCallableCaptureReplay();

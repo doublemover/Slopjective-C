@@ -31303,3 +31303,255 @@ index 000000000..49c7c4964
 +// CHECK-DAG: dependent_task_plain
 +// CHECK-DAG: dependent_task_value_only
 +// CHECK-DAG: DependentTaskADL
+diff --git a/clang/test/ObjC3/CodeGen/native-async-functions-strict-profiles.mm b/clang/test/ObjC3/CodeGen/native-async-functions-strict-profiles.mm
+new file mode 100644
+index 000000000..e93d3c8b2
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-async-functions-strict-profiles.mm
+@@ -0,0 +1,67 @@
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -emit-pch -o %t-strict-c++20-False %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -include-pch %t-strict-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -fobjc-arc -emit-pch -o %t-strict-c++20-True %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -fobjc-arc -include-pch %t-strict-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -emit-pch -o %t-strict-c++23-False %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -include-pch %t-strict-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -fobjc-arc -emit-pch -o %t-strict-c++23-True %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fcxx-exceptions -fobjc-arc -include-pch %t-strict-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -emit-pch -o %t-strict-concurrency-c++20-False %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -include-pch %t-strict-concurrency-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -fobjc-arc -emit-pch -o %t-strict-concurrency-c++20-True %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -fobjc-arc -include-pch %t-strict-concurrency-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -emit-pch -o %t-strict-concurrency-c++23-False %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -include-pch %t-strict-concurrency-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -fobjc-arc -emit-pch -o %t-strict-concurrency-c++23-True %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fcxx-exceptions -fobjc-arc -include-pch %t-strict-concurrency-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -emit-pch -o %t-strict-system-c++20-False %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -include-pch %t-strict-system-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -fobjc-arc -emit-pch -o %t-strict-system-c++20-True %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -fobjc-arc -include-pch %t-strict-system-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -emit-pch -o %t-strict-system-c++23-False %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -include-pch %t-strict-system-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -fobjc-arc -emit-pch -o %t-strict-system-c++23-True %S/Inputs/native-async-task.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fcxx-exceptions -fobjc-arc -include-pch %t-strict-system-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-async-task.h"
++
++// The source signature and effect retain a logical scalar result; the actual
++// call and coroutine return object use the runtime task class.
++// CHECK-LABEL: define{{.*}} void @_Z4leafi(
++// CHECK: llvm.coro.id
++// CHECK: llvm.coro.suspend
++int leaf(int value) __objc3_async { return value; }
++static_assert(__is_same(decltype(leaf(1)), objc3::task<int>));
++
++// CHECK-LABEL: define{{.*}} void @_Z6parenti(
++// CHECK: llvm.coro.id
++// CHECK: {{call|invoke}} void @_Z4leafi(
++// CHECK: llvm.coro.suspend
++int parent(int value) __objc3_async {
++  auto identity = [](int x) { return x; };
++  return 1 + __objc3_await leaf(identity(value));
++}
++
++// CHECK-LABEL: define{{.*}} void @_Z5emptyv(
++// CHECK: llvm.coro.id
++void empty() __objc3_async {}
++
++using callback = int (*)(int) __objc3_async;
++callback indirect = leaf;
++auto invoke(callback fn) { return fn(2); }
++
++struct Caller {
++  objc3::task<int> call(callback fn) { return fn(3); }
++};
++auto member_callback(callback fn) { return Caller().call(fn); }
+diff --git a/clang/test/ObjC3/CodeGen/native-c-async-frame-calls-strict-profiles.m b/clang/test/ObjC3/CodeGen/native-c-async-frame-calls-strict-profiles.m
+new file mode 100644
+index 000000000..943d29daa
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-c-async-frame-calls-strict-profiles.m
+@@ -0,0 +1,65 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -emit-pch -o %t-strict-c17-False %S/Inputs/native-c-async-frame.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -include-pch %t-strict-c17-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fobjc-arc -emit-pch -o %t-strict-c17-True %S/Inputs/native-c-async-frame.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fobjc-arc -include-pch %t-strict-c17-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c17-False %S/Inputs/native-c-async-frame.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c17-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -emit-pch -o %t-strict-concurrency-c17-True %S/Inputs/native-c-async-frame.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -include-pch %t-strict-concurrency-c17-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c17-False %S/Inputs/native-c-async-frame.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -include-pch %t-strict-system-c17-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-strict-system-c17-True %S/Inputs/native-c-async-frame.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-strict-system-c17-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++
++#include "Inputs/native-c-async-frame.h"
++@protocol Error @end
++
++struct Pair { int left; double right; };
++typedef int (^Callback)(int);
++int fetch(int) __objc3_async __asm__("native_frame_int");
++void empty(void) __objc3_async __asm__("native_frame_void");
++struct Pair pair(void) __objc3_async __asm__("native_frame_pair");
++__complex__ double complex_value(void) __objc3_async __asm__("native_frame_complex");
++id object(void) __objc3_async __asm__("native_frame_object");
++Callback block(void) __objc3_async __asm__("native_frame_block");
++int checked(void) __objc3_async __objc3_throws(id<Error>)
++    __asm__("native_frame_checked");
++typedef int (*AsyncInt)(int) __objc3_async;
++AsyncInt selected = fetch;
++_Static_assert(__builtin_types_compatible_p(__typeof__(&fetch), AsyncInt),
++               "the canonical function type keeps its logical result/effect");
++_Static_assert(sizeof(fetch(0)) == sizeof(objc3_async_frame),
++               "async calls materialize a physical C frame");
++
++// CHECK-LABEL: define{{.*}} void @direct(
++// CHECK: call void @{{.*}}native_frame_int{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame direct(int value) { return fetch(value); }
++// CHECK-LABEL: define{{.*}} void @indirect(
++// CHECK: call void %{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame indirect(AsyncInt function, int value) {
++  return function(value);
++}
++// CHECK-LABEL: define{{.*}} void @void_result(
++// CHECK: call void @{{.*}}native_frame_void{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame void_result(void) { return empty(); }
++// CHECK-LABEL: define{{.*}} void @record_result(
++// CHECK: call void @{{.*}}native_frame_pair{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame record_result(void) { return pair(); }
++// CHECK-LABEL: define{{.*}} void @complex_result(
++// CHECK: call void @{{.*}}native_frame_complex{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame complex_result(void) { return complex_value(); }
++// CHECK-LABEL: define{{.*}} void @object_result(
++// CHECK: call void @{{.*}}native_frame_object{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame object_result(void) { return object(); }
++// CHECK-LABEL: define{{.*}} void @block_result(
++// CHECK: call void @{{.*}}native_frame_block{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame block_result(void) { return block(); }
++// CHECK-LABEL: define{{.*}} void @checked_result(
++// CHECK: call void @{{.*}}native_frame_checked{{.*}}(ptr{{.*}}sret(%struct.objc3_async_frame)
++objc3_async_frame checked_result(void) { return checked(); }
+diff --git a/clang/test/ObjC3/CodeGen/native-group-next-plan-strict-profiles.m b/clang/test/ObjC3/CodeGen/native-group-next-plan-strict-profiles.m
+new file mode 100644
+index 000000000..5d722abab
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-group-next-plan-strict-profiles.m
+@@ -0,0 +1,37 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc3-profile=strict-system -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
++// The shared plan is compiler-owned, including canonical descriptors, complete
++// carrier copy/destruction operations and AST field offsets. No operand runs.
++int evaluated;
++const void *integer_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(int) *)++evaluated);
++}
++#if __has_feature(objc_arc)
++const void *object_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(id) *)0);
++}
++typedef int (^Reader)(void);
++const void *block_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(Reader) *)0);
++}
++#endif
++const void *void_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(void) *)0);
++}
++struct __attribute__((aligned(64))) Wide { int value; };
++const void *aligned_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(struct Wide) *)0);
++}
++// CHECK-DAG: @__objc3_async_group_next_plan{{.*}} = private constant {{.*}}i32 56, i32 1
++// CHECK-DAG: @__objc3_c_async_value_ops{{.*}} = private constant
++// CHECK-DAG: c"objc3.async.v1:_ZTSi\00"
++// CHECK-LABEL: define{{.*}} ptr @integer_plan(
++// CHECK-NOT: load i32, ptr @evaluated
++// CHECK-NOT: store i32 {{.*}}@evaluated
++// CHECK: ret ptr @__objc3_async_group_next_plan
++// ARC-LABEL: define{{.*}} ptr @object_plan(
++// ARC: ret ptr @__objc3_async_group_next_plan
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/pch-function-aliases.h b/clang/test/ObjC3/CodeGen/Inputs/pch-function-aliases.h
+new file mode 100644
+index 000000000..340769453
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/pch-function-aliases.h
+@@ -0,0 +1,22 @@
++#ifndef OBJC3_PCH_FUNCTION_ALIASES_H
++#define OBJC3_PCH_FUNCTION_ALIASES_H
++#include "native-c-async-frame.h"
++#ifdef __cplusplus
++extern "C" {
++#endif
++int pch_alias_target(int value) {return value+1;}
++extern int pch_alias(int) __attribute__((alias("pch_alias_target")));
++extern int pch_alias_chain(int) __attribute__((alias("pch_alias")));
++static objc3_async_frame pch_native_physical(int value) __asm__("pch_native_physical") __attribute__((used));
++static objc3_async_frame pch_native_physical(int value) {
++  objc3_async_frame frame={0};frame.version=(unsigned)value;return frame;
++}
++static int pch_native_logical(int) __objc3_async_frame __asm__("pch_native_logical")
++    __attribute__((alias("pch_native_physical"),unused));
++typedef int (*PCHResolverTarget)(int);
++PCHResolverTarget pch_alias_resolver(void) {return pch_alias_target;}
++extern int pch_indirect(int) __attribute__((ifunc("pch_alias_resolver")));
++#ifdef __cplusplus
++}
++#endif
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/pch-function-aliases.m b/clang/test/ObjC3/CodeGen/pch-function-aliases.m
+new file mode 100644
+index 000000000..8f49f45c9
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/pch-function-aliases.m
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch -o %t-c17-False %S/Inputs/pch-function-aliases.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-c17-True %S/Inputs/pch-function-aliases.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch -o %t-c++20-False %S/Inputs/pch-function-aliases.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-c++20-True %S/Inputs/pch-function-aliases.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch -o %t-c++23-False %S/Inputs/pch-function-aliases.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-c++23-True %S/Inputs/pch-function-aliases.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/pch-function-aliases.h"
++#ifdef __cplusplus
++extern "C" {
++#endif
++int call_aliases(int value) {return pch_alias(value)+pch_alias_chain(value)+pch_indirect(value);}
++objc3_async_frame call_native_alias(int value) {return pch_native_logical(value);}
++#ifdef __cplusplus
++}
++#endif
++// CHECK-DAG: @pch_alias = {{.*}}alias {{.*}}@pch_alias_target
++// CHECK-DAG: @pch_alias_chain = {{.*}}alias {{.*}}@pch_alias
++// CHECK-DAG: @pch_native_logical = internal alias {{.*}}@pch_native_physical
++// CHECK-DAG: @pch_indirect = {{.*}}ifunc {{.*}}@pch_alias_resolver

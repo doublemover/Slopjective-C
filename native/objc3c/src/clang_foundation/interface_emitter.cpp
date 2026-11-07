@@ -729,7 +729,8 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
   if(lang.CPlusPlus && !lang.CXXExceptions)args.push_back("-fno-exceptions");
   if(lang.CPlusPlus && !lang.RTTI)args.push_back("-fno-rtti");
   if(lang.CPlusPlus && !lang.ThreadsafeStatics)args.push_back("-fno-threadsafe-statics");
-  if (lang.CoroAlignedAllocation) args.push_back("-fcoro-aligned-allocation");
+  if (lang.CPlusPlus20) args.push_back(lang.CoroAlignedAllocation
+      ? "-fcoro-aligned-allocation" : "-fno-coro-aligned-allocation");
   if (lang.Blocks) args.push_back("-fblocks");
   if (lang.ShortEnums) args.push_back("-fshort-enums");
   args.push_back(lang.CharIsSigned ? "-fsigned-char" : "-funsigned-char");

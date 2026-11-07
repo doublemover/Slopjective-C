@@ -2008,6 +2008,8 @@ std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang,
                     : (lang.CPlusPlus ? "c++" : "c")) +
          ";standard=" + standard.getName() +
          ";blocks=" + (lang.Blocks ? "true" : "false");
+  if (lang.CPlusPlus20)
+    profile += std::string(";coroutine-aligned-allocation=") + (lang.CoroAlignedAllocation ? "true" : "false");
   profile += ";primitive-target-abi:v1;layout=" + std::string(target.getDataLayoutString()) +
       ";abi=" + target.getABI().str() +
       ";cxx-abi=" + std::to_string(static_cast<unsigned>(target.getCXXABI().getKind())) +

@@ -100,9 +100,22 @@ index 000000000..f559e4e4c
 +#endif
 +#endif
 diff --git a/clang/include/clang/Options/Options.td b/clang/include/clang/Options/Options.td
-index f893d858d..c83b20418 100644
+index f893d858d..cb86e02aa 100644
 --- a/clang/include/clang/Options/Options.td
 +++ b/clang/include/clang/Options/Options.td
+@@ -1745,10 +1745,10 @@ defm coroutines : BoolFOption<"coroutines",
+   NegFlag<SetFalse>>;
+ 
+ defm coro_aligned_allocation : BoolFOption<"coro-aligned-allocation",
+-  LangOpts<"CoroAlignedAllocation">, DefaultFalse,
++  LangOpts<"CoroAlignedAllocation">, Default<"LangOpts->ObjC3 && LangOpts->CPlusPlus20">,
+   PosFlag<SetTrue, [], [ClangOption, CC1Option],
+           "Prefer aligned allocation for C++ Coroutines">,
+-  NegFlag<SetFalse>>;
++  NegFlag<SetFalse, [], [ClangOption, CC1Option]>>;
+ 
+ defm experimental_library : BoolFOption<"experimental-library",
+   LangOpts<"ExperimentalLibrary">, DefaultFalse,
 @@ -3972,6 +3972,18 @@ def fno_verbose_asm : Flag<["-"], "fno-verbose-asm">, Group<f_Group>,
    Visibility<[ClangOption, CC1Option, FlangOption, FC1Option]>,
    MarshallingInfoNegativeFlag<CodeGenOpts<"AsmVerbose">>;
@@ -202,7 +215,7 @@ index 4823f566b..8a46a499c 100644
  }
  
 diff --git a/clang/lib/Driver/ToolChains/Clang.cpp b/clang/lib/Driver/ToolChains/Clang.cpp
-index db7893c54..56764b6b3 100644
+index db7893c54..230fd92b3 100644
 --- a/clang/lib/Driver/ToolChains/Clang.cpp
 +++ b/clang/lib/Driver/ToolChains/Clang.cpp
 @@ -7467,6 +7467,10 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
@@ -216,8 +229,17 @@ index db7893c54..56764b6b3 100644
    // -fblocks=0 is default.
    if (Args.hasFlag(options::OPT_fblocks, options::OPT_fno_blocks,
                     TC.IsBlocksDefault()) ||
+@@ -7487,6 +7491,8 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
+                    options::OPT_fno_coro_aligned_allocation, false) &&
+       types::isCXX(InputType))
+     CmdArgs.push_back("-fcoro-aligned-allocation");
++  else if (types::isCXX(InputType))
++    Args.AddLastArg(CmdArgs, options::OPT_fno_coro_aligned_allocation);
+ 
+   if (Args.hasFlag(options::OPT_fdefer_ts, options::OPT_fno_defer_ts,
+                    /*Default=*/false))
 diff --git a/clang/lib/Frontend/CompilerInvocation.cpp b/clang/lib/Frontend/CompilerInvocation.cpp
-index 8898e63ab..b699a23fa 100644
+index 8898e63ab..0af2fba0f 100644
 --- a/clang/lib/Frontend/CompilerInvocation.cpp
 +++ b/clang/lib/Frontend/CompilerInvocation.cpp
 @@ -3779,7 +3779,12 @@ void CompilerInvocationBase::GenerateLangArgs(const LangOptions &Opts,
@@ -234,7 +256,7 @@ index 8898e63ab..b699a23fa 100644
  
    if (Opts.ObjC) {
      GenerateArg(Consumer, OPT_fobjc_runtime_EQ, Opts.ObjCRuntime.getAsString());
-@@ -4131,6 +4136,42 @@ bool CompilerInvocation::ParseLangArgs(LangOptions &Opts, ArgList &Args,
+@@ -4131,6 +4136,48 @@ bool CompilerInvocation::ParseLangArgs(LangOptions &Opts, ArgList &Args,
    // needed for both Clang (header) modules and C++20 modules, so enable them
    // for either.
    Opts.Modules = Opts.ClangModules || Opts.CPlusPlusModules;
@@ -250,6 +272,12 @@ index 8898e63ab..b699a23fa 100644
 +      Opts.ObjC3Revision = 202610;
 +    }
 +  }
++  // Native task promises require the actual coroutine-frame alignment.
++  // Keep an explicit caller override visible, but make the safe allocation
++  // protocol the Objective-C 3 C++20/23 default.
++  if (Opts.ObjC3 && Opts.CPlusPlus20)
++    Opts.CoroAlignedAllocation = Args.hasFlag(
++        OPT_fcoro_aligned_allocation, OPT_fno_coro_aligned_allocation, true);
 +  if (const Arg *A = Args.getLastArg(OPT_fobjc3_profile_EQ)) {
 +    StringRef Profile = A->getValue();
 +    if (!Opts.ObjC3)
@@ -731,3 +759,53 @@ index 000000000..9e7d3503c
 +#else
 +int no_optional_header;
 +#endif
+diff --git a/clang/test/ObjC3/LanguageMode/native-coroutine-allocation-options.m b/clang/test/ObjC3/LanguageMode/native-coroutine-allocation-options.m
+new file mode 100644
+index 000000000..20a9c2c4c
+--- /dev/null
++++ b/clang/test/ObjC3/LanguageMode/native-coroutine-allocation-options.m
+@@ -0,0 +1,44 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args  -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args -fcoro-aligned-allocation -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args -fno-coro-aligned-allocation -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args  -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args -fcoro-aligned-allocation -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args -fno-coro-aligned-allocation -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args  -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args -fcoro-aligned-allocation -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args -fno-coro-aligned-allocation -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args  -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args -fcoro-aligned-allocation -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args -fno-coro-aligned-allocation -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args  -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args -fcoro-aligned-allocation -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -round-trip-args -fno-coro-aligned-allocation -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args  -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args -fcoro-aligned-allocation -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -round-trip-args -fno-coro-aligned-allocation -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args  -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args -fcoro-aligned-allocation -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -round-trip-args -fno-coro-aligned-allocation -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args  -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args -fcoro-aligned-allocation -fno-coro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -round-trip-args -fno-coro-aligned-allocation -fcoro-aligned-allocation -fsyntax-only -verify %s
++// RUN: %clang -### -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fno-coro-aligned-allocation -fsyntax-only %s 2>&1 | FileCheck %s
++// expected-no-diagnostics
++int native_coroutine_allocation_policy;
++// CHECK: "-fno-coro-aligned-allocation"

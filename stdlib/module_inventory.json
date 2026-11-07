@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 114,
+        "minor": 115,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native Linux frame/task lowering, C group-next plans and concurrency conveniences across strict profiles; default aligned coroutine allocation with explicit driver/invocation/interface identity, bodyless alias/ifunc PCH emission and non-suspending defer awaits (source authored; 125 new compiler commands, fifty affected native async regressions, eighteen source-free frontend profiles, fifteen AST tests and thirty-six instrumented native configurations / 126 commands pass; public async/actor predicates remain reserved; SDK consolidation pending)",
         "Native template-method imports preserve mapped deduced-return origins and merge instantiated virtual bodies into existing slots with exact parameter/deallocation bindings; standard formatter and iterator-trait source-free provider/two-consumer witnesses cover inherited native formatter state, formatting specifications, iterator concepts and algorithms (source authored; fifteen AST infrastructure tests, twelve affected frontend groups and all four instrumented source-free libstdc++/libc++ configurations pass, SDK consolidation pending)",
         "Native standard-library full/partial class and constexpr variable specializations publish through public module-owned type arguments and packs, preserving native primary ABI, complete definition identity, checked dependencies and a dedicated required capability (six C++20/23 plain/MRC/ARC frontend profiles and two instrumented source-free provider/two-consumer executables pass; six header/configuration profiles, assertion-enabled and exception/RTTI-disabled libstdc++ modes and both instrumented source-free libc++ modes pass; SDK consolidation pending)",
         "Native C++ standard-library publication binds a closed public-header list, actual include-closure bytes and per-header preprocessing configuration, preserves template-argument visibility, prepares eager/source-directed native header preludes and checks each provider independently; matched native declarations are reused (source authored; twelve existing frontend groups, direct C++20/23 overloaded-member AST import and two instrumented GCC-library source-free provider/two-consumer link/execute configurations pass; six C++20/23 plain/MRC/ARC header profiles pass; both source-free libc++ modes pass after explicit-instantiation, friend and unnamed-field origin repairs; native header distribution is implemented, SDK consolidation pending)",

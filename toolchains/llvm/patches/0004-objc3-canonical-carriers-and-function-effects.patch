@@ -1447,7 +1447,7 @@ index 7671f003c..44a30c6e2 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..a1bc5777c 100644
+index 2cb79b6ba..603ac6e0f 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,135 @@
@@ -1506,7 +1506,7 @@ index 2cb79b6ba..a1bc5777c 100644
 +def err_objc3_group_next_plan_payload : Error<
 +  "native group-next Optional payload requires supported plain storage or an ARC managed carrier">;
 +def err_objc3_group_next_plan_type : Error<
-+  "native group-next plan requires a pointer to a complete Optional<T> in Linux x86-64 GNUstep 2.2 Objective-C C compatibility mode">;
++  "native group-next plan requires a pointer to a complete Optional<T> in Linux x86-64 GNUstep 2.2 Objective-C C mode">;
 +def err_objc3_async_task_unsupported : Error<
 +  "native async task lowering requires a non-variadic Linux x86-64 Objective-C++20/23 callable with a concrete value or void result">;
 +def err_objc3_async_covariant_return : Error<
@@ -1536,7 +1536,7 @@ index 2cb79b6ba..a1bc5777c 100644
 +def err_objc3_async_c_frame_layout : Error<
 +  "native Objective-C async frame carrier has an incompatible runtime layout">;
 +def err_objc3_async_c_frame_target : Error<
-+  "native Objective-C async frame calls require a non-variadic Linux x86-64 GNUstep 2.2 compatibility callable with a concrete value or void logical result">;
++  "native Objective-C async frame calls require a non-variadic Linux x86-64 GNUstep 2.2 Objective-C callable with a concrete value or void logical result">;
 +def err_objc3_async_c_frame_symbol : Error<
 +  "native Objective-C async frame declarations require an explicit asm name for a frame-returning C entry point">;
 +def err_objc3_async_c_frame_ownership : Error<
@@ -13257,10 +13257,10 @@ index 000000000..80bc420b7
 +} // namespace clang
 diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
 new file mode 100644
-index 000000000..dd1d14938
+index 000000000..519b9615c
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.cpp
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,194 @@
 +//===--- SemaObjC3Effects.cpp - ObjC3 callable effects -------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -13397,7 +13397,6 @@ index 000000000..dd1d14938
 +  if (!getLangOpts().ObjC3 || !getLangOpts().ObjC ||
 +      (getLangOpts().CPlusPlus &&
 +       (!getLangOpts().CPlusPlus20 || !getLangOpts().Coroutines)) ||
-+      getLangOpts().ObjC3Profile != 0 ||
 +      getLangOpts().ObjCRuntime.getAsString() != "gnustep-2.2" ||
 +      Context.getTargetInfo().getPointerWidth(LangAS::Default) != 64 ||
 +      !Triple.isOSLinux() ||
@@ -16109,7 +16108,7 @@ index 1a437f3eb..fdfe5b43a 100644
      TL.setParam(i, Reader.readDeclAs<ParmVarDecl>());
    }
 diff --git a/clang/lib/Serialization/ASTReaderDecl.cpp b/clang/lib/Serialization/ASTReaderDecl.cpp
-index 4d5c8648f..156853caa 100644
+index 4d5c8648f..0b12994fa 100644
 --- a/clang/lib/Serialization/ASTReaderDecl.cpp
 +++ b/clang/lib/Serialization/ASTReaderDecl.cpp
 @@ -1196,6 +1196,7 @@ void ASTDeclReader::VisitObjCMethodDecl(ObjCMethodDecl *MD) {
@@ -16132,10 +16131,9 @@ index 4d5c8648f..156853caa 100644
      bool byRef = (flags & 1);
      bool nested = (flags & 2);
      Expr *copyExpr = ((flags & 4) ? Record.readExpr() : nullptr);
--
--    captures.push_back(BlockDecl::Capture(decl, byRef, nested, copyExpr));
 +    Expr *initExpr = ((flags & 8) ? Record.readExpr() : nullptr);
-+
+ 
+-    captures.push_back(BlockDecl::Capture(decl, byRef, nested, copyExpr));
 +    auto Kind = static_cast<BlockDecl::ObjC3CaptureKind>(Record.readInt());
 +    QualType CaptureType = Record.readType();
 +    SourceRange Range = Record.readSourceRange();
@@ -16145,6 +16143,19 @@ index 4d5c8648f..156853caa 100644
    }
    BD->setCaptures(Reader.getContext(), captures, capturesCXXThis);
  }
+@@ -3312,7 +3320,11 @@ bool ASTReader::isConsumerInterestedIn(Decl *D) {
+            (Var->isThisDeclarationADefinition() == VarDecl::Definition ||
+             OMPDeclareTargetDeclAttr::isDeclareTargetDeclaration(Var));
+   if (const auto *Func = dyn_cast<FunctionDecl>(D))
+-    return Func->doesThisDeclarationHaveABody() || PendingBodies.count(D);
++    // Alias and indirect-function attributes define symbols without a body.
++    // They must reach CodeGen after PCH/module loading just like definitions;
++    // otherwise references silently become unresolved ordinary declarations.
++    return Func->doesThisDeclarationHaveABody() || PendingBodies.count(D) ||
++           Func->hasAttr<AliasAttr>() || Func->hasAttr<IFuncAttr>();
+ 
+   if (auto *ES = D->getASTContext().getExternalSource())
+     if (ES->hasExternalDefinitions(D) == ExternalASTSource::EK_Never)
 diff --git a/clang/lib/Serialization/ASTWriter.cpp b/clang/lib/Serialization/ASTWriter.cpp
 index 1e3be005a..478584130 100644
 --- a/clang/lib/Serialization/ASTWriter.cpp
@@ -24564,7 +24575,7 @@ index 0573cdf95..df50d093f 100644
          // Objective-C Automatic Reference Counting:
          //   If a class has a non-static data member of Objective-C pointer
 diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
-index 2a8395e26..eb72f650d 100644
+index 2a8395e26..d26762db2 100644
 --- a/clang/lib/Sema/SemaChecking.cpp
 +++ b/clang/lib/Sema/SemaChecking.cpp
 @@ -29,9 +29,13 @@
@@ -24655,7 +24666,7 @@ index 2a8395e26..eb72f650d 100644
 +                    : ObjC3CarrierRepresentationInfo();
 +    const auto &Triple = Context.getTargetInfo().getTriple();
 +    if (!getLangOpts().ObjC3 || !getLangOpts().ObjC ||
-+        getLangOpts().CPlusPlus || getLangOpts().ObjC3Profile != 0 ||
++        getLangOpts().CPlusPlus ||
 +        getLangOpts().ObjCRuntime.getAsString() != "gnustep-2.2" ||
 +        !Triple.isOSLinux() || Triple.getArch() != llvm::Triple::x86_64 ||
 +        Type.isNull() || !Type->getAs<ObjC3OptionalType>() ||
@@ -43245,10 +43256,10 @@ index 9adba1943..76286b3f9 100644
          // is significant.  Allow non-dependent code to contain inappropriate
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..d3ae31385
+index 000000000..df2cba1bd
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,355 @@
+@@ -0,0 +1,356 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -43386,7 +43397,8 @@ index 000000000..d3ae31385
 +    return ExprError();
 +  }
 +  if (llvm::is_contained(ObjC3DeferOwnerStack,
-+                         getCurrentObjC3CallableContext(*this))) {
++                         getCurrentObjC3CallableContext(*this)) &&
++      !isObjC3NonSuspendingAwait(Operand)) {
 +    Diag(Loc, diag::err_objc3_async_defer_suspend);
 +    return ExprError();
 +  }
@@ -62386,3 +62398,33 @@ index 000000000..42b6cee27
 +  }; // expected-error@-3 {{C++ lambda reference capture}}
 +  work(0);work(0L);
 +}
+diff --git a/clang/test/ObjC3/Sema/native-async-strict-profile-diagnostics.m b/clang/test/ObjC3/Sema/native-async-strict-profile-diagnostics.m
+new file mode 100644
+index 000000000..f3e8402d3
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-async-strict-profile-diagnostics.m
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-concurrency -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-concurrency -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-system -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-system -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface ProfileMutable
++- (int)value;
++@end
++objc3_task_t *profile_schedule(void (^work)(void) __objc3_async_frame) __attribute__((objc_task_spawn));
++void reject_profile_capture(ProfileMutable *_Nonnull object) {
++  (void)profile_schedule(^void(void) __objc3_async_frame {(void)object;}); // expected-error {{non-Sendable type}}
++}
++int reject_profile_nullable(ProfileMutable *_Nullable object) {
++  return [object value]; // expected-error {{requires a nonnull receiver}}
++}
++void profile_close_handle(int);
++typedef int ProfileHandle __attribute__((objc_requires_cleanup(profile_close_handle),objc_resource_family(ProfileHandles),objc_invalid(-1)));
++void reject_profile_group_resource(void) {
++  (void)__builtin_objc3_async_group_next_plan((Optional(ProfileHandle) *)0); // expected-error {{requires supported plain storage or an ARC managed carrier}}
++}
++int profile_variadic(int value,...) __objc3_async_frame; // expected-error {{require a non-variadic Linux x86-64}}

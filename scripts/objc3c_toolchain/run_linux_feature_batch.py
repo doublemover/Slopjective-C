@@ -26,6 +26,10 @@ else:
 
 ROOT = Path(__file__).resolve().parents[2]
 FEATURES = ("captures", "keypaths", "async", "isolation", "spawn")
+OPTIONAL_FEATURES = ("strict-async",)
+PCH_MARKERS = {"captures": "CAPTURE_RUNTIME_PCH",
+               "keypaths": "TYPED_KEYPATH_RUNTIME_PCH",
+               "strict-async": "OBJC3_STRICT_ASYNC_PROFILES_PCH"}
 MODES = (("objective-c", "c17"), ("objective-c++", "c++20"),
          ("objective-c++", "c++23"))
 
@@ -39,11 +43,13 @@ class Configuration:
     optimization: str
     transport: str
     provider_ownership: str = ""
+    profile: str = "compatibility"
 
     @property
     def name(self) -> str:
         return "-".join(filter(None, (self.feature, self.standard, self.ownership,
-            self.optimization, self.transport, self.provider_ownership)))
+            self.optimization, self.transport, self.provider_ownership,
+            self.profile if self.profile != "compatibility" else "")))
 
 
 def configurations(features=FEATURES, transports=("source", "pch")):
@@ -54,8 +60,11 @@ def configurations(features=FEATURES, transports=("source", "pch")):
                     for transport in transports:
                         providers = ("arc", "mrc") if feature in ("async", "isolation") else ("",)
                         for provider in providers:
-                            yield Configuration(feature, language, standard, ownership,
-                                                optimization, transport, provider)
+                            profiles = (("strict", "strict-concurrency", "strict-system")
+                                        if feature == "strict-async" else ("compatibility",))
+                            for profile in profiles:
+                                yield Configuration(feature, language, standard, ownership,
+                                                    optimization, transport, provider, profile)
 
 
 def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
@@ -143,6 +152,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
             result.extend(("-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
                            "-fobjc-exceptions", "-fobjc-arc-exceptions"))
             result.append("-fobjc-arc" if ownership == "arc" else "-fno-objc-arc")
+            result.append("-fobjc3-profile=" + case.profile)
         if "++" in language:
             result.append("-fcoro-aligned-allocation")
         if case.feature in ("isolation", "spawn"):
@@ -167,9 +177,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                      case.optimization, work)
         # Match the consumer's preprocessor configuration, including the
         # fixture's include-suppression marker, under Clang module validation.
-        if case.feature in ("captures", "keypaths"):
-            opts.append("-D" + ("CAPTURE_RUNTIME_PCH" if case.feature == "captures"
-                                 else "TYPED_KEYPATH_RUNTIME_PCH"))
+        if case.feature in PCH_MARKERS:
+            opts.append("-D" + PCH_MARKERS[case.feature])
         invoke(case.name + "-pch", [compiler, *opts, header, "-o", target], work)
         return ["-include-pch", str(target)]
 
@@ -209,7 +218,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         view.symlink_to(entry, target_is_directory=entry.is_dir())
                 family = {"captures": "explicit_capture_lists", "keypaths": "typed_keypaths",
                           "async": "native_c_async", "isolation": "native_isolation",
-                          "spawn": "task_spawning"}[case.feature]
+                          "spawn": "task_spawning",
+                          "strict-async": "strict_async_profiles"}[case.feature]
                 source = fixtures / family
                 shutil.copytree(source, work, dirs_exist_ok=True)
                 if case.feature == "isolation":
@@ -346,8 +356,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     extra = []
                     if case.transport == "pch":
                         extra = pch(case, work / "runtime.h", work)
-                        extra.append("-D" + ("CAPTURE_RUNTIME_PCH" if case.feature == "captures"
-                                             else "TYPED_KEYPATH_RUNTIME_PCH"))
+                        extra.append("-D" + PCH_MARKERS[case.feature])
                     objects = []
                     if case.feature == "keypaths":
                         objects.append(compile_source(case, work / "provider.m", work, extra=extra))
@@ -386,7 +395,7 @@ def main():
         parser.add_argument("--" + name, type=Path)
     parser.add_argument("--sanitizer", choices=("address,undefined", "thread"))
     parser.add_argument("--resource-root", type=Path)
-    parser.add_argument("--feature", action="append", choices=FEATURES)
+    parser.add_argument("--feature", action="append", choices=FEATURES + OPTIONAL_FEATURES)
     parser.add_argument("--transport", action="append", choices=("source", "pch"))
     args = parser.parse_args()
     options = {name: getattr(args, name) for name in

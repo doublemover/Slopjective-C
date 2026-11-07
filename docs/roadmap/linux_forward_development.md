@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.115 strict-profile span](linux_strict_async_profiles.md)
+removes the profile gate from native frame/task lowering, C group plans and
+concurrency convenience APIs while retaining profile diagnostics. Aligned task
+allocation defaults, PCH aliases and non-suspending defer awaits are implemented.
+All 125 new compiler commands, fifty affected native async regressions, eighteen
+source-free frontend profiles and thirty-six instrumented source/PCH configurations
+pass. Public async/actor predicates stay reserved; SDK consolidation follows.
+
 The [Concurrency 2.114 formatter/iterator span](linux_cxx_formatter_and_virtual_imports.md)
 preserves deduced member origins and merges virtual bodies into existing native
 slots. Fifteen AST infrastructure tests and the reduced formatting consumer pass;
