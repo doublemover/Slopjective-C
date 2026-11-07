@@ -518,6 +518,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
+  const bool cpp_carrier_calls=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierCallIdentity);
+  const bool cpp_carrier_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierCallSemantic)!=sidecar.required_semantics.end();
+  if(cpp_carrier_calls!=cpp_carrier_capability)
+    Add(result,"O3IFC130","C++ carrier call identity and required capability must agree",expected.canonical_name);
   const bool resource_paths = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasResourceKeyPathValueIdentity);
   const bool resource_path_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kResourceKeyPathValueSemantic)!=sidecar.required_semantics.end();
   const bool resource_typed_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();

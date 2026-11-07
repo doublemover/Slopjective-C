@@ -6424,6 +6424,75 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
   }
 }
 
+void TestNativeCppCarrierCallReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string prelude=R"(
+      @protocol Error @end
+      namespace PublishedCarrierCall {
+        struct Value {int value;explicit Value(int);Value(const Value &);Value(Value &&);~Value() noexcept;};
+        typedef __objc3_optional(Value) Maybe;
+        typedef __objc3_result(Value,Value) Result;
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-carrier-call.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.carrier_call","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.carrier_call","test",{},{},{},{"PublishedCarrierCall","Error"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    const std::string source=prelude+R"(
+      namespace PublishedCarrierCall {
+        Maybe produce(bool);int consume_value(Maybe);
+        template<class T>struct Box {T value;~Box() noexcept {}};
+        typedef __objc3_optional(Box<int>) MaybeBox;
+        MaybeBox box();inline void discard_box(){box();}
+        inline Maybe relay(bool some){return produce(some);}
+        Maybe checked(int) __objc3_throws(id<Error>);
+        inline Maybe checked_relay(int mode) __objc3_throws(id<Error>) {return __objc3_try(checked(mode));}
+        inline int checked_optional(int mode) {
+          auto value=__objc3_try_optional(checked(mode));
+          __objc3_try_optional(checked(mode));return __objc3_has_value(value);
+        }
+        inline Maybe copy_value(const Maybe &value){return __objc3_copy(value);}
+        inline Maybe move_value(Maybe &value){return __objc3_move(value);}
+        inline Result result(bool ok){if(ok)return __objc3_ok(Value,Value,Value(7));return __objc3_err(Value,Value,Value(8));}
+        inline int use(bool some){auto value=relay(some);auto duplicate=copy_value(value);return consume_value(__objc3_move(duplicate));}
+      }
+    )";
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto check=[&](const auto &artifact,bool required) {
+      auto read=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,supported);assert(read);
+      assert(llvm::is_contained(read->required_semantics,std::string(kCppCarrierCallSemantic))==required);
+      if(required) {
+        auto older=supported;std::erase(older,llvm::StringRef(kCppCarrierCallSemantic));
+        auto rejected=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+        std::erase(read->required_semantics,kCppCarrierCallSemantic);
+      }else read->required_semantics.push_back(kCppCarrierCallSemantic);
+      auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);check(first,true);
+    check(emit(prelude+"namespace PublishedCarrierCall {Maybe signature(bool);}"),true);
+    check(emit(prelude+"namespace PublishedCarrierCall {const Maybe &view();}"),false);
+    check(emit(prelude+"namespace PublishedCarrierCall {inline void destroy_view(Maybe *value){value->~Maybe();}}"),true);
+    check(emit(prelude+"namespace PublishedCarrierCall {inline void destroy_array(Maybe *value){delete[] value;}}"),true);
+    check(emit(prelude+R"(
+      namespace PublishedCarrierCall {
+        inline int body_only(bool some) {
+          Maybe (*factory)(bool)=nullptr;auto value=factory(some);return __objc3_has_value(value);
+        }
+      }
+    )"),true);
+  }
+}
+
 void TestNativeCheckedCppResultReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10319,6 +10388,7 @@ int main(int argc,char **argv) {
   TestClosureFactories();
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
+  TestNativeCppCarrierCallReplay();
   TestNativeCheckedCppResultReplay();
   TestIsolatedPropertyReplay();
   TestOwnedNilResultReplay();

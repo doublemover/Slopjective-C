@@ -22,8 +22,8 @@ retry. Const C++ carriers retain nontrivial destruction in constant-storage
 classification; their storage cannot be made immutable across destruction. Native
 thread-exit controls verify one construction, reused storage and exact destruction
 of the surviving payload after join. Static/TLS lifetime-extended carrier
-references remain explicitly gated until their separate referent registration
-and retry protocol is implemented.
+references are delivered in [source 2.128](linux_checked_static_references.md),
+including separate referent registration and retry.
 
 The maintained property witness covers Some/None, copy/move, discarded values,
 constructor/parameter/temporary faults, partial and completed arrays, composed

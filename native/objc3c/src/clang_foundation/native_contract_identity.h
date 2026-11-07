@@ -87,6 +87,36 @@ inline bool ContainsNativeKeyPathResourceValue(clang::QualType type,
   return visit(visit,type,0);
 }
 
+// The native call contract applies at direct carrier value boundaries. Pointer
+// and reference views of carriers do not themselves pass ownership by value.
+inline bool IsNativeCppCarrierValue(clang::QualType type,unsigned depth=0) {
+  if(type.isNull() || depth>64)return false;
+  type=type.getCanonicalType();
+  auto payload=[&](clang::QualType value) {
+    if(IsNativeCppCarrierValue(value,depth+1))return true;
+    if(const auto *record=value->getAsCXXRecordDecl())
+      if(const auto *definition=record->getDefinition())return definition->hasNonTrivialDestructor();
+    return false;
+  };
+  if(const auto *optional=type->getAs<clang::ObjC3OptionalType>())return payload(optional->getElementType());
+  if(const auto *result=type->getAs<clang::ObjC3ResultType>())return payload(result->getSuccessType()) || payload(result->getErrorType());
+  return false;
+}
+inline bool HasNativeCppCarrierCallType(clang::QualType type,unsigned depth=0) {
+  if(type.isNull() || depth>64)return false;
+  type=type.getCanonicalType();
+  if(type->isPointerType() || type->isBlockPointerType() || type->isReferenceType())
+    return HasNativeCppCarrierCallType(type->getPointeeType(),depth+1);
+  if(const auto *member=type->getAs<clang::MemberPointerType>())
+    return HasNativeCppCarrierCallType(member->getPointeeType(),depth+1);
+  if(const auto *function=type->getAs<clang::FunctionType>()) {
+    if(IsNativeCppCarrierValue(function->getReturnType()))return true;
+    if(const auto *prototype=llvm::dyn_cast<clang::FunctionProtoType>(function))
+      for(auto parameter:prototype->param_types())if(IsNativeCppCarrierValue(parameter))return true;
+  }
+  return false;
+}
+
 inline void AppendNativeContractField(std::string &out, llvm::StringRef value) {
   out += std::to_string(value.size()) + ":" + value.str();
 }
@@ -201,6 +231,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeTypeContracts(out, array->getElementType(), context,
                               position + ".element", depth + 1);
   } else if (const auto *function = type->getAs<clang::FunctionType>()) {
+    if(HasNativeCppCarrierCallType(type))
+      AppendNativeContractField(out,";cxx-carrier-call:v1;");
     if (function->hasObjC3BorrowedResult()) {
       AppendNativeContractField(out, position + ":borrowed-result");
       AppendNativeContractField(out, ";borrowed-callable-owners:v1;");

@@ -22,8 +22,9 @@ cycles followed by successful commitment. Dedicated compiler controls exercise
 all four profiles, C++20/23, ARC/MRC, source/PCH and disabled elision. Source-free
 publication/replay preserves static/TLS references and semantic fingerprints in
 four configurations. Throwing-destructor checked results retain their explicit
-diagnostic. Initial focused execution and all 53 compiler commands pass; the
-complete native matrix is being consolidated with the subsequent feature span.
+diagnostic. All 53 compiler commands, four source-free profiles and the complete sixteen-
+configuration ASan/UBSan native matrix / 56 commands pass, including source/PCH,
+C17/C++20/23, ARC/MRC, C++-only exceptions and disabled elision.
 
 Extension ABI 24, native frame 1, runtime services 4 and schema 2.2 are unchanged.
 These are development-source receipts; final matched analysis and one replacement

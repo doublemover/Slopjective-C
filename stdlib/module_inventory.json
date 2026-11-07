@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 128,
+        "minor": 129,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Linux native pure C++ Optional/Result by-value arguments and indirect results, checked no-value failure and nested tryOptional results, exact full-expression argument/discard ownership, template destructor instantiation and cxx-carrier-call v1 source-free admission; all 522 executable compiler cases (three unsupported), 50 AST controls, twenty frontend groups, codec/isolation, 240 exact decoder replays and sixteen sanitizer configurations / 56 commands pass; matched SDK pending",
         "Static/TLS lifetime-extended native checked-record and pure C++ carrier references use provisional referent ownership through initializer temporary cleanup, commit one permanent destructor only on success and retry after native/typed/cancellation failure; 53 source/PCH compiler commands and four source-free profiles pass, with exact native retry and thread-exit controls; matched SDK pending",
         "Native C++ tryOptional calls and native awaits construct only successful payloads, commit None without fabricated owners and guard discarded results through full-expression cleanup; fresh conditional/comma, Some/None, array/field and automatic-reference regions retain selected-arm ownership through typed/native exits; all 518 executable compiler cases (53 new commands, three unsupported), 49 AST controls, sixteen instrumented configurations / 56 commands, thirteen frontend groups, codec/isolation and 220 decoder replays pass; matched SDK pending",
         "Source-free resource-owning C++ keypath and whole nontrivial native-union signatures and published bodies bind resource-values v1, including scalar final values through owned records; dependency traversal preserves logical Root/Value types through type locations rather than private generated records; four source-free profiles, nine adjacent frontend groups, codec/isolation and 220 production decoder replays pass (source; matched SDK pending)",
@@ -313,12 +314,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 54,
+        "minor": 55,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Caller-owned C++ carrier call slots survive register exhaustion and later-argument failures; completed returns survive cleanup until success; explicit complete heap/placement initialization, prefix rollback and selected-payload destruction reject borrowed aliases and unqualified storage policies; complete compiler/frontend and sixteen-configuration sanitizer consolidation passes, matched SDK pending",
         "Static/TLS reference referents register native or selected-payload destruction after successful full-expression completion; interrupted C++ initialization aborts its guard on typed or cancellation cleanup while successful initialization releases its guard; exact thread-exit, address reuse and retry controls pass; matched SDK pending",
         "Static/TLS pure C++ carriers register active-arm destruction after successful initializer cleanup and retry failed initialization; const carrier storage classification preserves its native destructor; thread-exit/reuse, exact owner counts and comma-LHS reference rollback pass the complete sixteen-configuration sanitizer matrix and full compiler/frontend consolidation; matched SDK pending",
         "Completed C++ values remain provisionally owned across initializer temporary destruction; typed propagation retains matching new/delete cleanup and partially initialized reference/aggregate owners; static and TLS initializers can retry after destructor failure without retaining prior constructed owners (source; all 514 executable compiler cases, 48 AST controls, sixteen instrumented configurations / 56 commands and compiler/frontend controls pass; matched SDK pending)",

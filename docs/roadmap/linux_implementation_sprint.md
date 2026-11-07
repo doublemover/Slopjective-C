@@ -1,12 +1,23 @@
 # Linux implementation sprint
 
+The [source 2.129 / System 2.55 carrier-call span](linux_cpp_carrier_call_abi.md)
+implements pure C++ Optional/Result arguments and indirect returns, including
+checked success-only ownership and nested `tryOptional`. Caller-owned slots retain
+exact full-expression cleanup across register exhaustion and failures. Complete
+explicit heap arrays, placement reuse and selected-payload destruction have native
+controls; source-free admission requires `objc3.cxx-carrier-call.v1`. All 522 executable compiler cases
+(three unsupported), 50 AST controls, twenty frontend groups, codec/isolation,
+240 decoder replays and sixteen sanitizer configurations / 56 commands pass.
+Implementation proceeds to composed payloads and fixed member arrays.
+
 The [source 2.128 / System 2.54 static-reference span](linux_checked_static_references.md)
 implements permanent referent ownership for static/TLS checked native records and
 pure C++ carriers. Failed initializer temporaries destroy the provisional referent;
 success registers its destructor once. Typed propagation and cancellation abort an
 interrupted C++ initialization guard so the next call can retry. Dedicated
-source/PCH compiler commands, all four source-free replay profiles and initial
-ASan/UBSan retry/thread-exit execution pass; wider native consolidation is running.
+source/PCH compiler commands, all four source-free replay profiles and the complete
+sixteen-configuration ASan/UBSan matrix / 56 commands pass, including exact
+retry, cancellation and thread-exit execution.
 
 The [source 2.127 / System 2.53 optional-result span](linux_checked_cpp_optionals.md)
 implements success-only native C++ `tryOptional` payloads, discarded-result
@@ -17,7 +28,7 @@ payload at thread exit; const storage classification preserves that destructor.
 All 518 executable compiler cases (three unsupported), 49 AST controls, sixteen
 sanitizer configurations / 56 commands, thirteen frontend groups, codec/isolation
 and 220 exact decoder replays pass. Earlier comma-LHS temporary faults retain the
-reference owner. Static/TLS lifetime-extended carrier references remain separate.
+reference owner. Static/TLS lifetime-extended carrier references are delivered in source 2.128.
 
 The [source 2.126 / keypath 2.11 resource-value span](linux_keypath_resource_values.md)
 admits explicit C++ resource owners, whole active native unions and composed

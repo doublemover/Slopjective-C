@@ -22,6 +22,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/ExprCXX.h"
 #include "clang/AST/DeclFriend.h"
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/StmtObjC.h"
@@ -128,6 +129,31 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationCppCarrierCall(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Calls : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitCXXNewExpr(clang::CXXNewExpr *allocation) override {
+        const auto type=allocation->getAllocatedType();
+        found|=!type.isNull() && IsNativeCppCarrierValue(clang::QualType(type->getBaseElementTypeUnsafe(),0));return true;
+      }
+      bool VisitCXXDeleteExpr(clang::CXXDeleteExpr *disposal) override {
+        const auto type=disposal->getDestroyedType();
+        found|=!type.isNull() && IsNativeCppCarrierValue(clang::QualType(type->getBaseElementTypeUnsafe(),0));return true;
+      }
+      bool VisitCXXPseudoDestructorExpr(clang::CXXPseudoDestructorExpr *destructor) override {
+        found|=IsNativeCppCarrierValue(destructor->getDestroyedType());return true;
+      }
+      bool VisitCallExpr(clang::CallExpr *call) override {
+        found|=HasNativeCppCarrierCallType(call->getCallee()->getType());
+        if(const auto *function=call->getDirectCallee())found|=HasNativeCppCarrierCallType(function->getType());
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationResourceKeyPathValue(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[declaration](const clang::Stmt *statement) {
     struct Literals : clang::DynamicRecursiveASTVisitor {

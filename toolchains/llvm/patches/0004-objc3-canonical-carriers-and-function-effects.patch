@@ -24138,7 +24138,7 @@ index 000000000..c40497364
 +  }
 +}
 diff --git a/clang/lib/Sema/SemaExprCXX.cpp b/clang/lib/Sema/SemaExprCXX.cpp
-index 538604aa2..dba295940 100644
+index 538604aa2..501e4153e 100644
 --- a/clang/lib/Sema/SemaExprCXX.cpp
 +++ b/clang/lib/Sema/SemaExprCXX.cpp
 @@ -11,9 +11,12 @@
@@ -24196,15 +24196,36 @@ index 538604aa2..dba295940 100644
  
    // Overall FIXME: we are recomputing too many types here and doing far too
    // much extra work. What this means is that we need to keep track of more
-@@ -6604,6 +6615,39 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
+@@ -6604,6 +6615,61 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
  
    assert(!isa<CXXBindTemporaryExpr>(E) && "Double-bound temporary?");
  
-+  // Managed carrier arguments and results own CodeGen temporaries without a
-+  // CXXRecordDecl destructor. They still require an ordinary full-expression
-+  // cleanup boundary, including for C calls, member calls and constructors.
-+  auto IsManagedCarrier = [](QualType T) { return hasObjC3CarrierManagedPayload(T); };
-+  if (getLangOpts().ObjCAutoRefCount) {
++  // Carrier arguments/results own CodeGen temporaries without a source
++  // CXXRecordDecl destructor. Both ARC and pure C++ payloads need the complete
++  // full-expression boundary, including calls, member calls and constructors.
++  bool InvalidCarrierCleanup=false;
++  auto IsManagedCarrier = [&](QualType T) {
++    const bool Cpp=hasObjC3CarrierCppDestructor(T);
++    if(Cpp) {
++      SmallVector<QualType,4> Payloads;
++      collectObjC3CarrierCppPayloadTypes(T,Payloads);
++      for(QualType Payload:Payloads) {
++        if(RequireCompleteType(E->getExprLoc(),Payload,diag::err_incomplete_type)) {
++          InvalidCarrierCleanup=true;continue;
++        }
++        auto *Record=Payload->getAsCXXRecordDecl();
++        if(!Record || Record->isDependentContext())continue;
++        auto *Destructor=LookupDestructor(Record);
++        if(!Destructor){InvalidCarrierCleanup=true;continue;}
++        InvalidCarrierCleanup|=CheckDestructorAccess(E->getExprLoc(),Destructor,
++            PDiag(diag::err_access_dtor_temp)<<Payload)==AR_inaccessible;
++        MarkFunctionReferenced(E->getExprLoc(),Destructor);
++        InvalidCarrierCleanup|=DiagnoseUseOfDecl(Destructor,E->getExprLoc());
++      }
++    }
++    return (getLangOpts().ObjCAutoRefCount && hasObjC3CarrierManagedPayload(T)) || Cpp;
++  };
++  if (getLangOpts().ObjC3) {
 +    bool NeedsCarrierCleanup = !E->isGLValue() && IsManagedCarrier(E->getType());
 +    if (const auto *Call = dyn_cast<CallExpr>(E)) {
 +      QualType Called = Call->getCallee()->getType();
@@ -24231,12 +24252,57 @@ index 538604aa2..dba295940 100644
 +        NeedsCarrierCleanup |= IsManagedCarrier(Parameter->getType());
 +    if (NeedsCarrierCleanup)
 +      Cleanup.setExprNeedsCleanups(true);
++    if(InvalidCarrierCleanup)return ExprError();
 +  }
 +
    // If the result is a glvalue, we shouldn't bind it.
    if (E->isGLValue())
      return E;
-@@ -7781,6 +7825,9 @@ ExprResult Sema::ActOnFinishFullExpr(Expr *FE, SourceLocation CC,
+@@ -7152,7 +7218,9 @@ canRecoverDotPseudoDestructorCallsOnPointerObjects(Sema &SemaRef,
+ 
+   // Otherwise, check if it's a type for which it's valid to use a pseudo-dtor.
+   return DestructedType->isDependentType() || DestructedType->isScalarType() ||
+-         DestructedType->isVectorType();
++         DestructedType->isVectorType() ||
++         (SemaRef.getLangOpts().ObjC3 && isa<ObjC3OptionalType,ObjC3ResultType>(
++             DestructedType.getCanonicalType().getTypePtr()));
+ }
+ 
+ ExprResult Sema::BuildPseudoDestructorExpr(Expr *Base,
+@@ -7169,7 +7237,9 @@ ExprResult Sema::BuildPseudoDestructorExpr(Expr *Base,
+   if (CheckArrow(*this, ObjectType, Base, OpKind, OpLoc))
+     return ExprError();
+ 
+-  if (!ObjectType->isDependentType() && !ObjectType->isScalarType() &&
++  const bool ObjC3Carrier=getLangOpts().ObjC3 &&
++      isa<ObjC3OptionalType,ObjC3ResultType>(ObjectType.getCanonicalType().getTypePtr());
++  if (!ObjC3Carrier && !ObjectType->isDependentType() && !ObjectType->isScalarType() &&
+       !ObjectType->isVectorType() && !ObjectType->isMatrixType()) {
+     if (getLangOpts().MSVCCompat && ObjectType->isVoidType())
+       Diag(OpLoc, diag::ext_pseudo_dtor_on_void) << Base->getSourceRange();
+@@ -7262,6 +7332,21 @@ ExprResult Sema::BuildPseudoDestructorExpr(Expr *Base,
+     }
+   }
+ 
++  if(ObjC3Carrier && !ObjectType->isDependentType()) {
++    SmallVector<QualType,4> Payloads;
++    collectObjC3CarrierCppPayloadTypes(ObjectType,Payloads);
++    for(QualType Payload:Payloads) {
++      if(RequireCompleteType(TildeLoc,Payload,diag::err_incomplete_type))return ExprError();
++      auto *Record=Payload->getAsCXXRecordDecl();
++      if(!Record || Record->isDependentContext())continue;
++      auto *Destructor=LookupDestructor(Record);
++      if(!Destructor)return ExprError();
++      if(CheckDestructorAccess(TildeLoc,Destructor,PDiag(diag::err_access_dtor)<<Payload)==AR_inaccessible)
++        return ExprError();
++      MarkFunctionReferenced(TildeLoc,Destructor);
++      if(DiagnoseUseOfDecl(Destructor,TildeLoc))return ExprError();
++    }
++  }
+   Expr *Result
+     = new (Context) CXXPseudoDestructorExpr(Context, Base,
+                                             OpKind == tok::arrow, OpLoc,
+@@ -7781,6 +7866,9 @@ ExprResult Sema::ActOnFinishFullExpr(Expr *FE, SourceLocation CC,
    if (FullExpr.isInvalid())
      return ExprError();
  
@@ -43782,10 +43848,10 @@ index 000000000..1122bbb29
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..88beb18f5
+index 000000000..e04b861ca
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6148 @@
+@@ -0,0 +1,6153 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49319,6 +49385,11 @@ index 000000000..88beb18f5
 +            initializeAggregate(Invocation, storage(Operator->getArg(0), &State),
 +                                Operator->getArg(0)->getType(), Operator->getArg(1),
 +                                State, Emit);
++        if (Emit)
++          if (const auto *Call=dyn_cast<CallExpr>(Invocation))
++            if (const auto *Destructor=dyn_cast<CXXPseudoDestructorExpr>(Call->getCallee()->IgnoreParenImpCasts()))
++              if (value(Destructor->getBase(),State).any())
++                diagnose(Invocation,"native destruction of borrowed storage without ownership");
 +        if (Emit)
 +          if (const auto *Disposal = dyn_cast<CXXDeleteExpr>(Invocation))
 +            if (value(Disposal->getArgument(), State).any())
@@ -58175,10 +58246,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..5dbc80262
+index 000000000..aa2792224
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,1992 @@
+@@ -0,0 +1,2018 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -60169,6 +60240,32 @@ index 000000000..5dbc80262
 +        ++Checked;
 +      }
 +    EXPECT_EQ(Checked,2u);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, CppCarrierCallsOwnFullExpressionCleanups) {
++  for(const char *Standard:{"c++20","c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(R"(
++      struct Owner {int value;Owner(int);Owner(const Owner &);~Owner() noexcept;};
++      typedef __objc3_optional(Owner) Maybe;
++      Maybe factory();int observe(Maybe);
++      void test(){observe(factory());factory();}
++    )",Args,"carrier-call-cleanups.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    FunctionDecl *Test=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="test")Test=F;
++    ASSERT_NE(Test,nullptr);
++    const auto *Body=dyn_cast<CompoundStmt>(Test->getBody());ASSERT_NE(Body,nullptr);
++    ASSERT_EQ(Body->size(),2u);
++    for(const auto *Statement:Body->body()) {
++      const auto *Cleanup=dyn_cast<ExprWithCleanups>(Statement);ASSERT_NE(Cleanup,nullptr);
++      EXPECT_TRUE(Cleanup->cleanupsHaveSideEffects());
++      EXPECT_TRUE(isa<CallExpr>(Cleanup->getSubExpr()));
++    }
 +  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
@@ -67427,3 +67524,24 @@ index 000000000..6c62c75d4
 +  (void)@keypath(ResourceCompilerRoot,active.plain); // expected-error {{key-path record traversal requires a complete native}}
 +  (void)@keypath(ResourceCompilerRoot,resource.handle); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
 +}
+diff --git a/clang/test/ObjC3/Sema/borrowed-carrier-explicit-destruction.mm b/clang/test/ObjC3/Sema/borrowed-carrier-explicit-destruction.mm
+new file mode 100644
+index 000000000..146d5fa02
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-carrier-explicit-destruction.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++struct Owner {Owner(int);Owner(const Owner &);~Owner() noexcept;};
++typedef __objc3_optional(Owner) Maybe;
++typedef borrowed Maybe *BorrowedMaybe;
++void reject_direct(BorrowedMaybe value) {
++  value->~Maybe(); // expected-error {{native destruction of borrowed storage without ownership}}
++}
++void reject_alias(BorrowedMaybe value) {
++  Maybe *alias=value;
++  alias->~Maybe(); // expected-error {{native destruction of borrowed storage without ownership}}
++}
++void allow_owned(Maybe *value) {value->~Maybe();}
