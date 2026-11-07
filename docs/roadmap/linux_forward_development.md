@@ -1,5 +1,15 @@
 # Objective-C 3.0 on Linux
 
+
+The [Concurrency 2.118 span](linux_native_frame_exceptions.md) implements typed
+nontrivial/move-only C++ property writes and owned native exception transport,
+including exact construction order, nil/partial/cancellation cleanup and bounded
+shared record graphs. Source-free replay preserves its SDK/EH contracts under
+`objc3.async-entry-abi.v5`. Thirty new compiler commands, ninety-two affected
+compiler cases, four new frontend profiles, codec/isolation controls and fourteen
+instrumented native configurations pass. Resource/effectful accessors and wider
+ownership/profile work remain; matched SDK delivery follows consolidation.
+
 The target is Objective-C **3.0 as defined by `spec/`**, implemented in the pinned
 native Clang toolchain and GNUstep 2.2 runtime. C17 and C++20/23 are underlying
 source modes. Linux x86-64 is the active implementation target. Windows,

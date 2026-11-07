@@ -497,7 +497,12 @@ An awaited property expression with synchronous accessors evaluates its receiver
 and explicit right-hand operand once on the caller, preserving their ordinary
 evaluation order. Each transported value is an independent snapshot; later
 operand effects cannot change an already captured value or invalidate its owned
-storage. The accessor sequence executes in the required isolation domain.
+storage. C++ class operands use their ordinary typed construction order: when
+native property assignment has no captured result, receiver evaluation precedes
+setter-argument construction. Copy/move construction and partial initialization
+retain their language-defined effects and cleanup. Nontrivial or move-only setter
+values do not invent a non-void assignment result. The accessor sequence executes
+in the required isolation domain.
 
 A compound assignment or increment/decrement performs its getter, computation
 and setter without an intervening suspension. Its result retains ordinary
@@ -692,6 +697,27 @@ When calling an `async throws` function, both effects must be handled:
 - `try` handles the throws effect (may throw).
 
 A conforming implementation shall accept `try await f(...)` as the canonical order.
+
+#### 7.9.1.1 Native exception boundaries {#part-7-9-1-1}
+
+A native exception escaping a task body or an awaited isolated synchronous entry
+shall not unwind through the runtime's C resume callback. Source handlers and
+lexical cleanup run before terminal publication. A representable native exception
+is retained in an owned error carrier; a matching C++ task consumer rethrows that
+exception with its dynamic type and identity. This transport does not introduce a
+checked `throws` effect into a source declaration.
+
+The task cancellation exception retains the cancellation outcome. Other native
+exceptions shall not be relabeled cancellation. A foreign exception without a
+representable owned carrier produces an invalid-argument service error. Failure
+to allocate its owned payload produces the corresponding service error using an
+allocation-independent error owner. Existing owned task errors preserve their
+native error identity. Frame-owned C++ values require nonthrowing destruction;
+ordinary constructor failure retains partial-initialization cleanup.
+
+Potentially throwing C++ isolation entries require enabled C++ exception handling
+and the qualified SDK exception bridge. The compiler shall diagnose admission
+without those contracts rather than allowing an exception across a C callback.
 
 ### 7.9.2 `defer` and scope cleanup across suspension {#part-7-9-2}
 

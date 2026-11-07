@@ -1082,6 +1082,35 @@ void __objc3_async_cf_result_ops(Promise *promise, const void *ops, bool adopt) 
   promise->__objc3_set_cf_result_ops(static_cast<const objc3_value_ops *>(ops), adopt);
 }
 
+// Reserved native-frame EH bridge. Called while the exception handler is
+// active; it transfers exactly one error owner or reports cancellation. The
+// compiler never depends on the standard library's exception_ptr layout.
+inline objc3_service_status
+__objc3_async_capture_current_exception(objc3_error_t **out) noexcept {
+  *out = nullptr;
+  auto failure = std::current_exception();
+  if (!failure) {
+    *out = objc3::task_detail::service_error(OBJC3_SERVICE_INVALID_ARGUMENT);
+    return OBJC3_SERVICE_OK;
+  }
+  try {
+    std::rethrow_exception(failure);
+  } catch (const objc3::task_cancelled &) {
+    return OBJC3_SERVICE_CANCELLED;
+  } catch (const objc3::task_error &foreign) {
+    *out = objc3_error_retain(foreign.native_handle());
+    if (!*out)
+      *out = objc3::task_detail::service_error(foreign.native_handle()
+          ? OBJC3_SERVICE_NOT_READY : OBJC3_SERVICE_INVALID_ARGUMENT);
+  } catch (...) {
+    const auto status = objc3_error_create(&failure,
+        &objc3::task_detail::value_ops<std::exception_ptr>::descriptor, out);
+    if (status != OBJC3_SERVICE_OK)
+      *out = objc3::task_detail::service_error(status);
+  }
+  return OBJC3_SERVICE_OK;
+}
+
 // Reserved explicit-frame storage hooks. Sema instantiates these ordinary C++
 // functions, so overload resolution, access, deleted members, constraints and
 // implicit special-member definitions follow the source language and persist

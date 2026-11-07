@@ -1365,7 +1365,7 @@ inline int published_entry(int value) __objc3_async_frame {
   assert(emitted.source_bytes.find("__objc3_await isolated_entry")!=std::string::npos);
   const std::vector<llvm::StringRef> supported={
       "objc3.cxx-data-interfaces.v1", "objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v4",
+      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v5",
       kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,RuntimeInterfaceSemantic()};
   auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
                                               emitted.source_bytes,supported);
@@ -1495,7 +1495,7 @@ inline int actor_request(objc3_actor_t *actor) __objc3_async {
   assert(emitted.source_bytes.find("promise_type")==std::string::npos);
   const std::vector<llvm::StringRef> supported={
       "objc3.cxx-data-interfaces.v1","objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v4",
+      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v5",
       kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,
       kSdkRuntimeDeclarationSemantic,RuntimeInterfaceSemantic(),
       "objc3.module-owned-names.v1"};
@@ -4167,6 +4167,77 @@ void TestClosureFactories() {
     assert(!secret.success && std::any_of(secret.diagnostics.begin(),secret.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
   }
+}
+
+void TestNativeFrameExceptionReplay() {
+  for(const char *standard:{"c++20","c++23"})
+    for(bool arc:{false,true}) {
+      std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+          "-fobjc-version=3","-fblocks","-fobjc-runtime=gnustep-2.2",
+          "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu",
+          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      if(arc)args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      const std::string source=R"(
+        #include <objc3c/runtime/objc3_task.hpp>
+        struct __attribute__((objc_unsafe_sendable)) PublishedFrameValue {
+          int value;
+          PublishedFrameValue(int);
+          PublishedFrameValue(const PublishedFrameValue &);
+          PublishedFrameValue(PublishedFrameValue &&);
+          ~PublishedFrameValue() noexcept;
+        };
+        @protocol Sendable @end
+        __attribute__((objc_root_class)) @interface PublishedThrowingProperty <Sendable>
+        @property(nonatomic) PublishedFrameValue value;
+        - (PublishedFrameValue)value __attribute__((objc_executor(main)));
+        - (void)setValue:(PublishedFrameValue)value __attribute__((objc_executor(main)));
+        @end
+        inline int published_throwing_property(PublishedThrowingProperty *object,
+                                               PublishedFrameValue *input) __objc3_async_frame {
+          __objc3_await (object.value=*input);
+          PublishedFrameValue result=__objc3_await object.value;
+          if(result.value<0)throw result.value;
+          return result.value;
+        }
+        template<class T> int published_throwing_template(T object,PublishedFrameValue *input)
+            __objc3_async_frame {return __objc3_await published_throwing_property(object,input);}
+      )";
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.native_frame_exceptions","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_frame_exceptions","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        return result;
+      };
+      auto first=emit(source,"frame-exceptions-provider.mm");assert(first.success);
+      auto replay=emit(first.source_bytes,"frame-exceptions-replay.mm");
+      assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-frame-exceptions.mm");
+      assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> semantics;
+      for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+      assert(llvm::is_contained(semantics,llvm::StringRef("objc3.async-entry-abi.v5")));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+      auto old=semantics;std::erase(old,llvm::StringRef(kAsyncEntryABISemantic));
+      old.push_back("objc3.async-entry-abi.v4");
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto consumer=parse(first.source_bytes+R"(
+        int consume_throwing(PublishedThrowingProperty *object,PublishedFrameValue *input) __objc3_async {
+          try {return __objc3_await published_throwing_template(object,input);}
+          catch(int value){return value;}
+        }
+      )","frame-exceptions-consumer.mm");
+      assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+    }
 }
 
 void TestIsolatedPropertyReplay() {
@@ -7485,7 +7556,7 @@ void TestBoundedCxxSemanticInterfaces() {
   {
     const std::vector<llvm::StringRef> semantics = {
         "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v4"};
+        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v5"};
     std::string previous;
     for (const char *signature :
          {"int get() const __objc3_async __objc3_throws(id<First>);",

@@ -59,3 +59,9 @@ accessors and broader ownership/Sendable/profile conformance remain open.
 Extension ABI 24, frame ABI 1 and service ABI 4 are unchanged. Source-free
 interfaces require `objc3.async-entry-abi.v4`; accepted SDK 2.62 remains historical
 while the replacement SDK follows implementation and consolidated verification.
+
+Concurrency [2.118](linux_native_frame_exceptions.md) subsequently implements
+nontrivial/move-only C++ writes and native exception transport, including ordinary
+receiver/construction ordering. Its source-free cutover is
+`objc3.async-entry-abi.v5`. Resource writes and async/checked-effect accessors
+remain open.

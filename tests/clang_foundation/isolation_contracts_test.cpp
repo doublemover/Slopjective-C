@@ -599,12 +599,19 @@ int frame_cross(int value) __objc3_async {
            ";\nint bad_transfer(MutableMessage *value) __objc3_async "
            "{ return __objc3_await unsafe(value); }"),
       "isolated argument");
-  if (Cxx)
-    Reject(Make(R"(
+  if (Cxx) {
+    Success(Compile(Make(R"(
 __attribute__((objc_executor(main))) int native_cpp_throw(void);
 int bounded_cpp(void) __objc3_async { return __objc3_await native_cpp_throw(); }
-)"),
-           "awaited isolated entry requires");
+)")));
+    Reject(Request(R"(
+#include "objc3_runtime_services.h"
+__attribute__((objc_executor(main))) int native_cpp_without_sdk(void);
+int bounded_cpp_without_sdk(void) __objc3_async_frame {
+  return __objc3_await native_cpp_without_sdk();
+}
+)", true, Arc, Standard), "awaited isolated entry requires");
+  }
   if (Cxx)
     Reject(Make(R"(
 int throwing_sync(void) throws(int);
@@ -706,7 +713,7 @@ int module_consume(__attribute__((ns_consumed)) SafeMessage *)
   assert(Emitted.success);
   const std::vector<llvm::StringRef> Semantics = {
       "objc3.canonical-function-effects.v1",
-      "objc3.async-entry-abi.v4",
+      "objc3.async-entry-abi.v5",
       RuntimeInterfaceSemantic(),
       "objc3.native-carrier-types.v1",
       "objc3.native-return-ownership.v1",

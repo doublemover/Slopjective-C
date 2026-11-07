@@ -25803,10 +25803,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..e860691b1
+index 000000000..2ab9b8016
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1667 @@
+@@ -0,0 +1,1716 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25835,6 +25835,7 @@ index 000000000..e860691b1
 +#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/StmtObjC.h"
++#include "clang/AST/StmtCXX.h"
 +#include "llvm/ADT/STLExtras.h"
 +#include "llvm/IR/Intrinsics.h"
 +
@@ -26264,6 +26265,21 @@ index 000000000..e860691b1
 +    CGF.Builder.ClearInsertionPoint();
 +  }
 +}
++const FunctionDecl *exceptionCaptureHook(ASTContext &Context) {
++  for (NamedDecl *D : Context.getTranslationUnitDecl()->lookup(
++           &Context.Idents.get("__objc3_async_capture_current_exception")))
++    if (const auto *F = dyn_cast<FunctionDecl>(D)) {
++      const auto *FT = F->getType()->getAs<FunctionProtoType>();
++      if (FT && FT->isNothrow() && F->getNumParams() == 1 &&
++          F->getReturnType()->isIntegerType() &&
++          F->getParamDecl(0)->getType()->isPointerType() &&
++          F->getParamDecl(0)->getType()->getPointeeType()->isPointerType() &&
++          !FT->isVariadic() && Context.getTypeSize(F->getReturnType()) == 32)
++        return F;
++    }
++  return nullptr;
++}
++
 +void cancel(CodeGenFunction &CGF, CGObjC3CAsyncData &Data) {
 +  CGF.Builder.CreateStore(CGF.Builder.getInt32(2), Data.Kind);
 +  CGF.EmitBranchThroughCleanup(Data.Final);
@@ -26298,6 +26314,19 @@ index 000000000..e860691b1
 +  CGF.Builder.ClearInsertionPoint();
 +  CGF.EmitBlock(Ready);
 +  return Owner;
++}
++llvm::Value *captureNativeException(CodeGenFunction &CGF, Address Error) {
++  CGF.Builder.CreateStore(nullPtr(CGF), Error);
++  if (CGF.getLangOpts().CXXExceptions)
++    if (const auto *Hook = exceptionCaptureHook(CGF.getContext())) {
++      CallArgList Args;
++      Args.add(RValue::get(Error.emitRawPointer(CGF)), Hook->getParamDecl(0)->getType());
++      return CGF.EmitCall(CGF.CGM.getTypes().arrangeFunctionDeclaration(Hook),
++          CGCallee::forDirect(CGF.CGM.GetAddrOfFunction(Hook), CGCalleeInfo(GlobalDecl(Hook))),
++          ReturnValueSlot(), Args).getScalarVal();
++    }
++  CGF.Builder.CreateStore(serviceError(CGF, CGF.Builder.getInt32(1)), Error);
++  return CGF.Builder.getInt32(0);
 +}
 +void replaceError(CodeGenFunction &CGF, CGObjC3CAsyncData &Data,
 +                    llvm::Value *Error) {
@@ -26406,7 +26435,7 @@ index 000000000..e860691b1
 +        Address(Promise, CGF.Int8PtrTy, CharUnits::fromQuantity(8)));
 +  }
 +  llvm::BasicBlock *Catch = nullptr;
-+  if (CGF.getLangOpts().ObjCExceptions) {
++  if (CGF.getLangOpts().ObjCExceptions || CGF.getLangOpts().CXXExceptions) {
 +    Catch = CGF.createBasicBlock("objc3.callback.exception");
 +    CGF.EHStack.pushCatch(1)->setHandler(
 +        0, CGM.getObjCRuntime().getCatchAllTypeInfo(), Catch);
@@ -26418,18 +26447,25 @@ index 000000000..e860691b1
 +    CGF.popCatchScope();
 +    CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
 +    CGF.EmitBlock(Catch);
-+    call(CGF, "objc_begin_catch", CGF.Int8PtrTy, {CGF.getExceptionFromSlot()});
-+    call(CGF, "objc_end_catch", CGF.VoidTy, {});
++    call(CGF, CGF.getLangOpts().CXXExceptions ? "__cxa_begin_catch" : "objc_begin_catch",
++         CGF.Int8PtrTy, {CGF.getExceptionFromSlot()});
 +    if (!Destroy) {
++      Address Error = CGF.CreateTempAlloca(CGF.Int8PtrTy, CGF.getPointerAlign(), "objc3.callback.error");
++      auto *Status = captureNativeException(CGF, Error);
 +      Address Completion = CGF.CreateTempAlloca(completionType(CGM),
-+          CharUnits::fromQuantity(8), "objc3.callback.cancelled");
++          CharUnits::fromQuantity(8), "objc3.callback.failure");
 +      CGF.Builder.CreateMemSet(Completion, CGF.Builder.getInt8(0), CGF.Builder.getInt64(48));
 +      storeField(CGF, Completion, 0, CGF.Builder.getInt32(48));
 +      storeField(CGF, Completion, 1, CGF.Builder.getInt32(ServiceABI));
-+      storeField(CGF, Completion, 2, CGF.Builder.getInt32(2));
++      storeField(CGF, Completion, 2, CGF.Builder.CreateSelect(
++          CGF.Builder.CreateICmpEQ(Status, CGF.Builder.getInt32(7)),
++          CGF.Builder.getInt32(2), CGF.Builder.getInt32(1)));
++      storeField(CGF, Completion, 6, CGF.Builder.CreateLoad(Error));
 +      call(CGF, "objc3_task_complete", CGF.Int32Ty,
 +           {Owner, Completion.emitRawPointer(CGF)});
++      call(CGF, "objc3_error_release", CGF.VoidTy, {CGF.Builder.CreateLoad(Error)});
 +    }
++    call(CGF, CGF.getLangOpts().CXXExceptions ? "__cxa_end_catch" : "objc_end_catch", CGF.VoidTy, {});
 +    CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
 +  }
 +  CGF.FinishFunction();
@@ -27080,23 +27116,30 @@ index 000000000..e860691b1
 +      }
 +    }
 +
-+    // A native exception may be handled by a source @catch. An exception that
-+    // escapes the async body has no checked-error conversion and cannot cross
-+    // the C resume callback; match the existing foreign-exception cancellation
-+    // channel, running all native unwind cleanup first.
-+    if (getLangOpts().ObjCExceptions) {
++    // Catch inside the native resume boundary, after source handlers and
++    // lexical unwind cleanup. The SDK owns C++ exception representation;
++    // unrepresentable foreign exceptions publish a service error, never an
++    // invented cancellation. C++-only EH also needs this boundary when ObjC
++    // exceptions are disabled.
++    if (getLangOpts().ObjCExceptions || getLangOpts().CXXExceptions) {
 +      auto Loc = Body.getBeginLoc();
 +      auto *Return = ReturnStmt::Create(getContext(), Loc, nullptr, nullptr);
 +      Data.ExceptionReturn = Return;
 +      auto *CatchBody = CompoundStmt::Create(getContext(), Return,
 +                                              FPOptionsOverride(), Loc, Loc);
-+      Stmt *Catch = new (getContext()) ObjCAtCatchStmt(Loc, Loc, nullptr, CatchBody);
-+      auto *Try = ObjCAtTryStmt::Create(getContext(), Loc,
-+          const_cast<Stmt *>(&Body), &Catch, 1, nullptr);
-+      EmitObjCAtTryStmt(*Try);
-+    } else {
-+      EmitStmt(&Body);
-+    }
++      if (getLangOpts().CXXExceptions) {
++        Stmt *Catch = new (getContext()) CXXCatchStmt(Loc, nullptr, CatchBody);
++        auto *Try = CXXTryStmt::Create(getContext(), Loc,
++            CompoundStmt::Create(getContext(), {const_cast<Stmt *>(&Body)},
++                                 FPOptionsOverride(), Loc, Body.getEndLoc()), {Catch});
++        EmitCXXTryStmt(*Try);
++      } else {
++        Stmt *Catch = new (getContext()) ObjCAtCatchStmt(Loc, Loc, nullptr, CatchBody);
++        auto *Try = ObjCAtTryStmt::Create(getContext(), Loc,
++            const_cast<Stmt *>(&Body), &Catch, 1, nullptr);
++        EmitObjCAtTryStmt(*Try);
++      }
++    } else EmitStmt(&Body);
 +    if (HaveInsertPoint()) {
 +      if (!Data.LogicalResult->isVoidType())
 +        Builder.CreateStore(Builder.getInt32(2), Data.Kind);
@@ -27253,7 +27296,13 @@ index 000000000..e860691b1
 +void CodeGenFunction::EmitObjC3CAsyncReturn(const ReturnStmt &S) {
 +  auto &Data = *ObjC3CAsync.Data;
 +  if (&S == Data.ExceptionReturn) {
-+    cancel(*this, Data);
++    Address Error = CreateTempAlloca(Int8PtrTy, getPointerAlign(), "objc3.exception.error");
++    auto *Status = captureNativeException(*this, Error);
++    replaceError(*this, Data, Builder.CreateLoad(Error));
++    Builder.CreateStore(Builder.CreateSelect(
++        Builder.CreateICmpEQ(Status, Builder.getInt32(7)), Builder.getInt32(2),
++        Builder.getInt32(1)), Data.Kind);
++    EmitBranchThroughCleanup(Data.Final);
 +    return;
 +  }
 +  ObjC3BlockCaptureFullExprScope CaptureRollback(*this, S.getRetValue());
@@ -31989,3 +32038,127 @@ index 000000000..a916b9745
 +@end
 +@implementation TailPaddingHuge @end
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-frame-exceptions.h b/clang/test/ObjC3/CodeGen/Inputs/native-frame-exceptions.h
+new file mode 100644
+index 000000000..e4e785942
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-frame-exceptions.h
+@@ -0,0 +1,40 @@
++#ifndef NATIVE_FRAME_EXCEPTION_CONTROLS_H
++#define NATIVE_FRAME_EXCEPTION_CONTROLS_H
++#include "native-explicit-cxx-storage.h"
++#ifndef NO_EXCEPTION_HOOK
++inline int __objc3_async_capture_current_exception(void **out) noexcept {*out=nullptr;return 0;}
++#endif
++struct __attribute__((objc_unsafe_sendable)) FrameExceptionValue {
++  int value;
++  FrameExceptionValue(int);
++  FrameExceptionValue(const FrameExceptionValue &);
++  FrameExceptionValue(FrameExceptionValue &&);
++  ~FrameExceptionValue() noexcept;
++};
++struct __attribute__((objc_unsafe_sendable)) FrameExceptionMove {
++  FrameExceptionMove(int);
++  FrameExceptionMove(const FrameExceptionMove &)=delete;
++  FrameExceptionMove(FrameExceptionMove &&);
++  ~FrameExceptionMove() noexcept;
++};
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface FrameExceptionHost <Sendable>
++@property(nonatomic) FrameExceptionValue value;
++- (FrameExceptionValue)value __attribute__((objc_executor(main)));
++- (void)setValue:(FrameExceptionValue)value __attribute__((objc_executor(main)));
++@property(nonatomic) FrameExceptionMove move;
++- (FrameExceptionMove)move __attribute__((objc_executor(main)));
++- (void)setMove:(FrameExceptionMove)value __attribute__((objc_executor(main)));
++@end
++int throwing_isolated_entry(int) __attribute__((objc_executor(main)));
++inline void typed_setters(FrameExceptionHost *object,FrameExceptionValue *value) __objc3_async_frame {
++  __objc3_await (object.value=*value);
++  __objc3_await (object.value=FrameExceptionValue(42));
++  __objc3_await (object.move=FrameExceptionMove(43));
++}
++inline int throwing_entry(FrameExceptionHost *object) __objc3_async_frame {
++  FrameExceptionValue result=__objc3_await object.value;
++  return __objc3_await throwing_isolated_entry(result.value);
++}
++inline int direct_exception() __objc3_async_frame {throw 44;}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-frame-exceptions.mm b/clang/test/ObjC3/CodeGen/native-frame-exceptions.mm
+new file mode 100644
+index 000000000..15560ac29
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-frame-exceptions.mm
+@@ -0,0 +1,35 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -emit-pch %S/Inputs/native-frame-exceptions.h -o %t-c++20-False-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -include-pch %t-c++20-False-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch %S/Inputs/native-frame-exceptions.h -o %t-c++20-False-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++20-False-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-arc -emit-pch %S/Inputs/native-frame-exceptions.h -o %t-c++20-True-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-arc -include-pch %t-c++20-True-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-frame-exceptions.h -o %t-c++20-True-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c++20-True-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -emit-pch %S/Inputs/native-frame-exceptions.h -o %t-c++23-False-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -include-pch %t-c++23-False-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch %S/Inputs/native-frame-exceptions.h -o %t-c++23-False-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++23-False-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-arc -emit-pch %S/Inputs/native-frame-exceptions.h -o %t-c++23-True-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-arc -include-pch %t-c++23-True-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-frame-exceptions.h -o %t-c++23-True-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c++23-True-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-frame-exceptions.h"
++#endif
++objc3_async_frame typed_setters_export(FrameExceptionHost *object,FrameExceptionValue *value) {return typed_setters(object,value);}
++objc3_async_frame throwing_export(FrameExceptionHost *object) {return throwing_entry(object);}
++objc3_async_frame direct_export() {return direct_exception();}
++// CHECK-DAG: @__cxa_begin_catch
++// CHECK-DAG: @{{.*}}__objc3_async_capture_current_exception
++// CHECK-DAG: @objc3_task_hop
++// CHECK-DAG: @{{.*}}__objc3_async_frame_capture
++// CHECK-DAG: @{{.*}}throwing_isolated_entry
+diff --git a/clang/test/ObjC3/CodeGen/isolation-shared-value-graphs.m b/clang/test/ObjC3/CodeGen/isolation-shared-value-graphs.m
+new file mode 100644
+index 000000000..9b1d3fd00
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/isolation-shared-value-graphs.m
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// expected-no-diagnostics
++#ifdef __cplusplus
++#include "Inputs/native-async-task.h"
++#else
++#include "Inputs/native-c-async-frame.h"
++#endif
++struct IsolationGraph0 {int value;};
++struct IsolationGraph1 {struct IsolationGraph0 left,right;};
++struct IsolationGraph2 {struct IsolationGraph1 left,right;};
++struct IsolationGraph3 {struct IsolationGraph2 left,right;};
++struct IsolationGraph4 {struct IsolationGraph3 left,right;};
++struct IsolationGraph5 {struct IsolationGraph4 left,right;};
++struct IsolationGraph6 {struct IsolationGraph5 left,right;};
++struct IsolationGraph7 {struct IsolationGraph6 left,right;};
++struct IsolationGraph8 {struct IsolationGraph7 left,right;};
++struct IsolationGraph9 {struct IsolationGraph8 left,right;};
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface IsolationGraphHost <Sendable>
++@property(nonatomic) struct IsolationGraph9 value;
++- (struct IsolationGraph9)value __attribute__((nothrow,objc_executor(main)));
++- (void)setValue:(struct IsolationGraph9)value __attribute__((nothrow,objc_executor(main)));
++@end
++struct IsolationGraph9 graph_snapshot(IsolationGraphHost *object,struct IsolationGraph9 input) __objc3_async_frame {
++  return __objc3_await (object.value=input);
++}

@@ -1,5 +1,15 @@
 # Linux feature completion and SDK delivery
 
+
+The [Concurrency 2.118 span](linux_native_frame_exceptions.md) implements typed
+nontrivial/move-only C++ property writes and owned native exception transport,
+including exact construction order, nil/partial/cancellation cleanup and bounded
+shared record graphs. Source-free replay preserves its SDK/EH contracts under
+`objc3.async-entry-abi.v5`. Thirty new compiler commands, ninety-two affected
+compiler cases, four new frontend profiles, codec/isolation controls and fourteen
+instrumented native configurations pass. Resource/effectful accessors and wider
+ownership/profile work remain; matched SDK delivery follows consolidation.
+
 This sprint targets the remaining Objective-C 3.0 specification and Linux
 x86-64 roadmap contracts. Implementation precedes consolidated native
 verification and a coordinated SDK release. Windows and retired compatibility

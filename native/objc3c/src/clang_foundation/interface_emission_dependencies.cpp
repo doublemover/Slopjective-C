@@ -339,7 +339,9 @@ class TypeDependencyVisitor final
     CheckCxxCoroutine(definition);
     const auto *type=clang::getObjC3CallableFunctionType(definition);
     UsesCxxTaskRuntime |= type && type->getObjC3FunctionEffects().Async &&
-                         !type->getObjC3FunctionEffects().AsyncFrame;
+        (!type->getObjC3FunctionEffects().AsyncFrame ||
+         (context_.getLangOpts().CPlusPlus && context_.getLangOpts().CXXExceptions &&
+          IsQualifiedRuntimeTaskHeader(context_)));
     if (const auto *constructor = llvm::dyn_cast<clang::CXXConstructorDecl>(definition))
       for (const auto *initializer : constructor->inits())
         if (initializer->isWritten()) TraverseStmt(initializer->getInit());

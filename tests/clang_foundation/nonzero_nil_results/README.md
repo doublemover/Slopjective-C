@@ -18,6 +18,6 @@ Plain scalar and non-owning resource-pointer records retain nil zero results.
 Implicit synchronous actor/executor entries fail before a hop, preserve consumed
 CF pin counts, and distinguish ordinary free executor calls with nil arguments.
 
-Source-free interfaces require `objc3.async-entry-abi.v4`. Older readers and
+Source-free interfaces require `objc3.async-entry-abi.v5`. Older readers and
 missing-capability artifacts are rejected; regenerate dependent interfaces,
 PCH, objects and packages. Physical frame/service/extension layouts are unchanged.

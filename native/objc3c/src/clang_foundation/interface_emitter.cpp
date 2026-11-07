@@ -726,7 +726,13 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
   // relocated SDK or another native standard library. These physical paths
   // are transient compiler inputs and never become interface identities.
   if(preprocessor)AppendInterfaceHeaderSearchArguments(*preprocessor,args);
-  if(lang.CPlusPlus && !lang.CXXExceptions)args.push_back("-fno-exceptions");
+  args.push_back(lang.Exceptions ? "-fexceptions" : "-fno-exceptions");
+  if (lang.CPlusPlus)
+    args.insert(args.end(), {"-Xclang", lang.CXXExceptions
+        ? "-fcxx-exceptions" : "-fno-cxx-exceptions"});
+  if (lang.ObjC) {
+    args.push_back(lang.ObjCExceptions ? "-fobjc-exceptions" : "-fno-objc-exceptions");
+  }
   if(lang.CPlusPlus && !lang.RTTI)args.push_back("-fno-rtti");
   if(lang.CPlusPlus && !lang.ThreadsafeStatics)args.push_back("-fno-threadsafe-statics");
   if (lang.CPlusPlus20) args.push_back(lang.CoroAlignedAllocation
@@ -1236,7 +1242,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kNSObjectStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
-      "objc3.async-entry-abi.v4",
+      "objc3.async-entry-abi.v5",
       "objc3.direct-dispatch.v1",
       "objc3.cxx-data-interfaces.v1",
       "objc3.cxx-member-interfaces.v1",
@@ -1428,7 +1434,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kNSObjectStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
-    "objc3.async-entry-abi.v4",
+    "objc3.async-entry-abi.v5",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",

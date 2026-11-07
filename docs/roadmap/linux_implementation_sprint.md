@@ -1,5 +1,15 @@
 # Linux implementation sprint
 
+
+The [Concurrency 2.118 span](linux_native_frame_exceptions.md) implements typed
+nontrivial/move-only C++ property writes and owned native exception transport,
+including exact construction order, nil/partial/cancellation cleanup and bounded
+shared record graphs. Source-free replay preserves its SDK/EH contracts under
+`objc3.async-entry-abi.v5`. Thirty new compiler commands, ninety-two affected
+compiler cases, four new frontend profiles, codec/isolation controls and fourteen
+instrumented native configurations pass. Resource/effectful accessors and wider
+ownership/profile work remain; matched SDK delivery follows consolidation.
+
 The newer [ambitious implementation sprint](linux_ambitious_implementation_sprint.md)
 is source-validated through **2.91**, System **2.16** and keypath **2.6**. Its
 [receipt](../support/linux_ambitious_implementation_sprint_progress.json) records

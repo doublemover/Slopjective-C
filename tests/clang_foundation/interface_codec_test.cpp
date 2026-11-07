@@ -38,13 +38,13 @@ std::string ReplaceOnce(std::string text, const std::string &from,
 
 int main() {
   const llvm::StringRef supported[] = {"effects.async.v1", "ownership.v1",
-                                       "objc3.async-entry-abi.v4"};
+                                       "objc3.async-entry-abi.v5"};
   const llvm::StringRef source = "int answer(void);\n";
   SemanticInterfaceSidecar original;
   original.module = Module("A", "sha256:semantic-A");
   original.canonical_source_sha256 = ComputeInterfaceSourceSha256(source);
   original.required_semantics = {"ownership.v1", "effects.async.v1",
-                                 "objc3.async-entry-abi.v4"};
+                                 "objc3.async-entry-abi.v5"};
   InterfaceDeclarationIdentity function{
       "c:@F@answer", "function", "A::answer", "int ()", {}};
   function.export_root = "A::answer";
@@ -92,7 +92,7 @@ int main() {
   assert(decoded->canonical_source_sha256 == original.canonical_source_sha256);
   assert((decoded->required_semantics ==
           std::vector<std::string>{
-              "effects.async.v1", "objc3.async-entry-abi.v4", "ownership.v1"}));
+              "effects.async.v1", "objc3.async-entry-abi.v5", "ownership.v1"}));
   assert(decoded->declarations.size() == 2);
   assert(decoded->declarations[0].stable_id == "c:@F@answer");
   assert(decoded->declarations[0].effects.is_async);

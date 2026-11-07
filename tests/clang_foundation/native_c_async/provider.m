@@ -73,8 +73,14 @@ int native_c_foreign(id exception, int *cleanups) __objc3_async {
 }
 
 // Native-C methods and Blocks share the same carrier boundary as functions.
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
 extern id object_dispose(__unsafe_unretained id);
+#ifdef __cplusplus
+}
+#endif
 extern void release_source(void *) __asm__("objc_release");
 extern const char *sel_getName(SEL);
 @implementation NativeCAsyncWorker

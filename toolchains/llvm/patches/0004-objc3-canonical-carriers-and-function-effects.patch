@@ -43256,10 +43256,10 @@ index 9adba1943..76286b3f9 100644
          // is significant.  Allow non-dependent code to contain inappropriate
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..cf47a3848
+index 000000000..cd88c0383
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,366 @@
+@@ -0,0 +1,371 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -43603,6 +43603,11 @@ index 000000000..cf47a3848
 +    return true;
 +  }
 +  if (S.getLangOpts().CPlusPlus) {
++    if (S.getLangOpts().CXXExceptions)
++      for (NamedDecl *D : S.Context.getTranslationUnitDecl()->lookup(
++               &S.Context.Idents.get("__objc3_async_capture_current_exception")))
++        if (auto *F = dyn_cast<FunctionDecl>(D))
++          S.MarkFunctionReferenced(Callable->getLocation(), F);
 +    // Value parameters own independent captures. Reference parameters and the
 +    // implicit C++ receiver retain ordinary coroutine borrowing: the caller
 +    // keeps their referents alive until the task and frame have quiesced.
@@ -49218,10 +49223,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..4b6f5c696
+index 000000000..461416a9b
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1647 @@
+@@ -0,0 +1,1695 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -49242,6 +49247,7 @@ index 000000000..4b6f5c696
 +#include "clang/AST/ObjC3Isolation.h"
 +#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/Basic/DiagnosticSema.h"
++#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/ParsedAttr.h"
 +#include "clang/Sema/Sema.h"
 +#include "clang/Sema/SemaObjC.h"
@@ -50091,6 +50097,24 @@ index 000000000..4b6f5c696
 +}
 +
 +namespace {
++bool hasExceptionCaptureHook(Sema &S) {
++  if (!S.getLangOpts().CXXExceptions) return false;
++  for (NamedDecl *D : S.Context.getTranslationUnitDecl()->lookup(
++           &S.Context.Idents.get("__objc3_async_capture_current_exception")))
++    if (const auto *F = dyn_cast<FunctionDecl>(D)) {
++      const auto *FT = F->getType()->getAs<FunctionProtoType>();
++      if (FT && FT->isNothrow() && F->getNumParams() == 1 &&
++          F->getReturnType()->isIntegerType() &&
++          F->getParamDecl(0)->getType()->isPointerType() &&
++          F->getParamDecl(0)->getType()->getPointeeType()->isPointerType() &&
++          !FT->isVariadic() && S.Context.getTypeSize(F->getReturnType()) == 32) {
++        S.MarkFunctionReferenced(F->getLocation(), const_cast<FunctionDecl *>(F));
++        return true;
++      }
++    }
++  return false;
++}
++
 +bool isolationFrameScalar(QualType T, bool Result) {
 +  if (Result && T->isVoidType())
 +    return true;
@@ -50105,6 +50129,7 @@ index 000000000..4b6f5c696
 +  if (isolationFrameScalar(T, Result)) return true;
 +  if (!T->isRecordType()) return false;
 +  unsigned Budget = 256;
++  llvm::DenseMap<std::pair<QualType, unsigned>, bool> Memo;
 +  auto Check = [&](auto &&Self, QualType Value, unsigned Depth, bool UnionArm = false) -> bool {
 +    if (Value.isNull() || Depth > 64 || Budget == 0 ||
 +        Value->isDependentType() || Value.isVolatileQualified() ||
@@ -50112,6 +50137,9 @@ index 000000000..4b6f5c696
 +        getObjC3ResourceTypeContract(S.Context, Value).Cleanup)
 +      return false;
 +    --Budget;
++    auto Key = std::make_pair(Value.getCanonicalType(), unsigned(UnionArm));
++    if (auto It = Memo.find(Key); It != Memo.end()) return It->second;
++    auto Evaluate = [&]() -> bool {
 +    if (Value->isObjCRetainableType()) return !UnionArm && S.getLangOpts().ObjCAutoRefCount;
 +    if (const auto *Array = S.Context.getAsArrayType(Value))
 +      return isa<ConstantArrayType>(Array) &&
@@ -50142,6 +50170,10 @@ index 000000000..4b6f5c696
 +      return true;
 +    }
 +    return isolationFrameScalar(Value, false);
++    };
++    bool Accepted = Evaluate();
++    Memo[Key] = Accepted;
++    return Accepted;
 +  };
 +  return Check(Check, T, 0);
 +}
@@ -50176,6 +50208,7 @@ index 000000000..4b6f5c696
 +  ObjCPropertyRefExpr *Reference = nullptr;
 +  Expr *RHS = nullptr;
 +  QualType Result;
++  ExprValueKind RHSKind = VK_PRValue;
 +  ObjCMethodDecl *Getter = nullptr, *Setter = nullptr;
 +  std::optional<BinaryOperatorKind> Binary;
 +  std::optional<UnaryOperatorKind> Unary;
@@ -50205,6 +50238,7 @@ index 000000000..4b6f5c696
 +    RHSBinding = Binary->getRHS()->IgnoreParens();
 +    Result.RHS = propertyInput(RHSBinding);
 +    if (!Result.RHS) return std::nullopt;
++    Result.RHSKind = Result.RHS->getValueKind();
 +  } else if (auto *Unary = dyn_cast<UnaryOperator>(Syntax); Unary && Unary->isIncrementDecrementOp()) {
 +    Result.Unary = Unary->getOpcode();
 +    Result.Reference = dyn_cast<ObjCPropertyRefExpr>(Unary->getSubExpr()->IgnoreParenImpCasts());
@@ -50226,9 +50260,10 @@ index 000000000..4b6f5c696
 +  if (RHSBinding && Property->isObjectReceiver()) {
 +    if (const auto *Receiver = dyn_cast<OpaqueValueExpr>(Property->getBase());
 +        Receiver && Receiver->isUnique()) {
-+      // Unique receivers are evaluated lazily at the message, after the
-+      // nonunique assignment result has evaluated and captured its RHS.
-+      Result.RHSFirst = true;
++      // Unique receivers are evaluated lazily at the message. A captured
++      // assignment result evaluates its RHS earlier; a nontrivial C++ setter
++      // has no such result, so receiver evaluation precedes its construction.
++      Result.RHSFirst = Pseudo->getResultExpr() != nullptr;
 +    } else for (auto *Semantic : Pseudo->semantics()) {
 +      if (Semantic == Property->getBase()) break;
 +      if (Semantic == RHSBinding) { Result.RHSFirst = true; break; }
@@ -50237,23 +50272,24 @@ index 000000000..4b6f5c696
 +  return Result;
 +}
 +
-+bool propertyWriteValue(Sema &S, QualType Type, unsigned &Budget, unsigned Depth = 0) {
++bool propertyWriteValue(Sema &S, QualType Type, unsigned &Budget,
++                        llvm::SmallPtrSetImpl<const clang::Type *> &Seen, unsigned Depth = 0) {
 +  if (Type.isNull() || !Budget || Depth > 64 || Type->isReferenceType() ||
 +      getObjC3ResourceTypeContract(S.Context, Type).Cleanup) return false;
 +  --Budget;
++  if (!Seen.insert(Type.getCanonicalType().getTypePtr()).second) return true;
 +  if (Type->isObjCRetainableType()) return true;
-+  if (!Type.isTriviallyCopyableType(S.Context)) return false;
 +  if (const auto *Array = S.Context.getAsArrayType(Type))
-+    return isa<ConstantArrayType>(Array) && propertyWriteValue(S, Array->getElementType(), Budget, Depth + 1);
++    return isa<ConstantArrayType>(Array) && propertyWriteValue(S, Array->getElementType(), Budget, Seen, Depth + 1);
 +  if (const auto *Record = Type->getAsRecordDecl()) {
 +    const auto *Definition = Record->getDefinition();
 +    if (!Definition) return false;
 +    for (const auto *Field : Definition->fields())
 +      if (Field->hasAttr<ObjCResourceAttr>() || Field->hasAttr<ObjCCleanupAttr>() ||
-+          !propertyWriteValue(S, Field->getType(), Budget, Depth + 1)) return false;
++          !propertyWriteValue(S, Field->getType(), Budget, Seen, Depth + 1)) return false;
 +    if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
 +      for (const auto &Base : Class->bases())
-+        if (!propertyWriteValue(S, Base.getType(), Budget, Depth + 1)) return false;
++        if (!propertyWriteValue(S, Base.getType(), Budget, Seen, Depth + 1)) return false;
 +  }
 +  return true;
 +}
@@ -50419,7 +50455,9 @@ index 000000000..4b6f5c696
 +      Expr *Argument = S.BuildDeclRefExpr(Param, Param->getType(), VK_LValue, Loc);
 +      // The frame already owns an independent value parameter. Move that
 +      // value into the target call rather than requiring another C++ copy.
-+      if (!Property && S.getLangOpts().CPlusPlus && Param->getType()->isRecordType())
++      if (S.getLangOpts().CPlusPlus && Param->getType()->isRecordType() &&
++          (!Property || (I + 1 == Params.size() && Property->RHS &&
++                         Property->RHSKind != VK_LValue)))
 +        Argument = ImplicitCastExpr::Create(
 +            S.Context, Param->getType(), CK_NoOp, Argument, nullptr,
 +            VK_XValue, FPOptionsOverride());
@@ -50685,7 +50723,20 @@ index 000000000..4b6f5c696
 +  }
 +  SmallVector<Expr *, 4> SourceArguments;
 +  if (Property) {
-+    if (Property->RHS) SourceArguments.push_back(Property->RHS);
++    if (Property->RHS) {
++      Expr *RHS = Property->RHS;
++      if (getLangOpts().CPlusPlus && RHS->getType()->isRecordType() &&
++          !RHS->getType().isTriviallyCopyableType(Context)) {
++        // A property pseudo-object retains its source RHS rather than the
++        // setter's by-value construction. Build that typed snapshot before
++        // evaluating a later receiver, including throwing/deleted operations.
++        ExprResult Copy = PerformCopyInitialization(
++            InitializedEntity::InitializeTemporary(RHS->getType()), Loc, RHS);
++        if (Copy.isInvalid()) return ExprError();
++        RHS = Copy.get();
++      }
++      SourceArguments.push_back(RHS);
++    }
 +  } else if (Call)
 +    llvm::append_range(SourceArguments, Call->arguments());
 +  else
@@ -50708,7 +50759,7 @@ index 000000000..4b6f5c696
 +               FT->getNumParams() == SourceArguments.size() &&
 +               isolationFrameValue(*this, FT->getReturnType(), true) &&
 +               (!getLangOpts().CPlusPlus || FT->isNothrow() ||
-+                Target->hasAttr<NoThrowAttr>());
++                Target->hasAttr<NoThrowAttr>() || hasExceptionCaptureHook(*this));
 +  for (QualType T : FT->param_types())
 +    Shape &= isolationFrameValue(*this, T, false);
 +  if (Property) {
@@ -50718,12 +50769,14 @@ index 000000000..4b6f5c696
 +      Shape &= Signature && !Signature->isVariadic() &&
 +          !Signature->getObjC3FunctionEffects().Async &&
 +          Signature->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
-+          (!getLangOpts().CPlusPlus || Signature->isNothrow() || Accessor->hasAttr<NoThrowAttr>());
++          (!getLangOpts().CPlusPlus || Signature->isNothrow() ||
++           Accessor->hasAttr<NoThrowAttr>() || hasExceptionCaptureHook(*this));
 +    }
 +    if (Property->writes()) {
 +      unsigned Budget = 256;
-+      Shape &= propertyWriteValue(*this, Property->Result, Budget);
-+      if (Property->RHS) Shape &= propertyWriteValue(*this, Property->RHS->getType(), Budget);
++      llvm::SmallPtrSet<const Type *, 32> Seen;
++      Shape &= propertyWriteValue(*this, Property->Result, Budget, Seen);
++      if (Property->RHS) Shape &= propertyWriteValue(*this, Property->RHS->getType(), Budget, Seen);
 +      if (Property->reads()) {
 +        Shape &= Property->Result->isArithmeticType() || Property->Result->isEnumeralType() ||
 +                 Property->Result->isPointerType();
@@ -62916,10 +62969,10 @@ index 000000000..36b7be651
 +}
 diff --git a/clang/test/ObjC3/Sema/isolated-property-boundaries.m b/clang/test/ObjC3/Sema/isolated-property-boundaries.m
 new file mode 100644
-index 000000000..ef8d3a2ad
+index 000000000..5787ff16d
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/isolated-property-boundaries.m
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,21 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -verify-ignore-unexpected=note %s
@@ -62937,9 +62990,6 @@ index 000000000..ef8d3a2ad
 +  return __objc3_await (object.mixed+=1); // expected-error {{awaited isolated entry requires}}
 +}
 +#ifdef __cplusplus
-+void reject_nontrivial_write(PropertyControlHost *object,PropertyNontrivial *value) __objc3_async_frame {
-+  __objc3_await (object.nontrivial=*value); // expected-error {{awaited isolated entry requires}}
-+}
 +int reject_throwing_getter(PropertyControlHost *object) __objc3_async_frame {
 +  return __objc3_await object.throwing; // expected-error {{awaited isolated entry requires}}
 +}

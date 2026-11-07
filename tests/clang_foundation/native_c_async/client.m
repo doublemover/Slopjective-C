@@ -36,8 +36,14 @@ static void finish(objc3_task_t *task, objc3_executor_t *executor) {
   assert(objc3_task_group_join(join) == OBJC3_SERVICE_OK);
   objc3_task_group_release(join);
 }
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
 extern id object_dispose(__unsafe_unretained id);
+#ifdef __cplusplus
+}
+#endif
 extern void *probe_retain(void *) __asm__("objc_retain");
 extern void probe_release(void *) __asm__("objc_release");
 static int destroyed_objects;
@@ -118,11 +124,16 @@ static void references(objc3_executor_t *executor) {
     assert(objc3_task_get_completion(task, &completion) == OBJC3_SERVICE_OK);
     assert(completion.kind == OBJC3_COMPLETION_ERROR && completion.error);
     objc3_task_release(task);
+    int before_foreign_cleanup=cleanups;
     frame = native_c_foreign((__bridge id)source, &cleanups);
     task = start(&frame, executor, 0);
     finish(task, executor);
     assert(objc3_task_get_completion(task, &completion) == OBJC3_SERVICE_OK);
-    assert(completion.kind == OBJC3_COMPLETION_CANCELLED && !completion.error);
+    assert(completion.kind == OBJC3_COMPLETION_ERROR && completion.error);
+    objc3_service_status foreign_status=OBJC3_SERVICE_OK;
+    assert(objc3_async_error_get_service(completion.error,&foreign_status)==OBJC3_SERVICE_OK &&
+           foreign_status==OBJC3_SERVICE_INVALID_ARGUMENT);
+    assert(cleanups==before_foreign_cleanup+1);
     objc3_task_release(task);
     probe_release(source);
   }
