@@ -42,8 +42,8 @@ same exception object with an owner still live at unlock.
 
 All 71 selected compiler cases, six source-free profiles and twelve
 instrumented native configurations / 42 commands pass. Codec and isolation
-controls also pass; adjacent and existing-async consolidation follows the source
-implementation commit.
+controls, five adjacent frontend groups, all nineteen AST controls and four
+existing async configurations / nineteen commands also pass.
 
 Broader `@finally` and partial-construction cleanup, open callable and
 global/interprocedural ownership precision, complete profile conformance and
