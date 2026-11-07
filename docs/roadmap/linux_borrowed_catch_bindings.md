@@ -20,14 +20,15 @@ not visit Objective-C catch parameter declarations. The source fix traverses tha
 declaration before the body, making it available to identity, dependency,
 reflection and static/dynamic AST consumers. New controls require both native
 visitor forms to visit the binding exactly once. Canonical source-free replay,
-relocation and expired consumers are authored; the full shared-header compiler
-rebuild and their execution remain pending.
+relocation and valid/expired consumers now pass in all six language/ownership
+profiles after the full shared-header compiler rebuild. Both visitor forms visit
+the binding exactly once; all nineteen AST infrastructure controls pass.
 
-Before that traversal rebuild, all eighteen source/PCH compiler commands pass,
+All eighteen source/PCH compiler commands pass,
 including direct/local/expired/rebound owners, rethrow, retained-source borrowing,
 C++ object/pointer bindings and opaque borrowed pointer/record/reference payloads.
-All sixty-eight selected borrowed/lifetime/cleanup/defer compiler cases and all
-eighteen existing/new AST infrastructure controls pass. The path oracle checks
+All sixty-eight selected borrowed/lifetime/cleanup/defer compiler cases pass
+after the complete rebuild, as do three adjacent borrowed frontend groups. The path oracle checks
 body work, deferred work and exactly one catch lifetime end on every exit in four
 language/ownership modes. Twelve Strict System ASan/UBSan native source/PCH
 configurations pass forty-two compile/PCH/link/execution commands. They check
@@ -36,7 +37,9 @@ ARC's throw operand may retain a separate autorelease claim until pool drain.
 
 The maintained catch_binding_ownership fixture installs with the SDK. Optional
 `--feature catch-bindings` selects all 24 O0/O2 configurations under Strict System.
-Three-source owner alias correlation, implicit exception-record construction and
+General assigned-owner correlation, implicit exception-record construction and
 broader native cleanup/storage remain separate obligations. Extension ABI 24 and
 service ABI 4 retain their layouts. Matched SDK delivery follows implementation
 and consolidated verification.
+
+Post-rebuild C17/C++23 ARC native smoke controls also pass six commands.

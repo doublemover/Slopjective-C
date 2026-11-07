@@ -4,9 +4,10 @@
 The [System 2.34 handler span](linux_borrowed_catch_bindings.md) implements catch
 owner initialization, ARC binding cleanup, rethrow lifetime regions and opaque
 borrowed payload obligations. Eighteen compiler commands, sixty-eight affected
-compiler cases, eighteen AST controls and twelve instrumented native configurations
-pass before the shared visitor rebuild. Catch-declaration traversal is authored;
-final compiler rebuild and source-free publication verification are in progress.
+compiler cases, nineteen AST controls and twelve instrumented native configurations
+pass. The complete shared visitor rebuild passes nineteen AST controls, all six
+source-free profiles and three adjacent frontend groups; the full sixty-eight
+compiler case consolidation also passes after rebuilding.
 
 
 The [Concurrency 2.118 span](linux_native_frame_exceptions.md) implements typed
