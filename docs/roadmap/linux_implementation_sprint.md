@@ -6,7 +6,8 @@ storage encodings, explicit nil failure, caller-owned snapshots and fresh result
 Implicit parameter copies/moves retain Sema constructor recipes and full-expression
 cleanup. All 52 dedicated compiler commands, 55 AST controls, new source-free
 profiles, 340 decoder replays and four selected sanitizer configurations / fourteen
-commands pass; updated broad consolidation is running.
+commands pass. Full consolidation passes 529 executable compiler cases (three
+unsupported), all 25 updated frontend groups and codec/isolation.
 
 The [source 2.133 / System 2.59 register-result span](linux_checked_cpp_register_results.md)
 implements checked trivial, empty, union, mixed-register and owning `trivial_abi`

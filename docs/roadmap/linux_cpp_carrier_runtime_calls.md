@@ -39,8 +39,8 @@ Block copy and copy-failure cleanup, implicit lvalue copies and constructor/late
 temporary failures through functions, void messages and Blocks. Packed and
 16-byte-aligned owners retain exact layout and lifetime counts. The previous
 MRC effect-signature AST fixture was corrected to invoke its Block locally
-instead of returning a stack Block. Updated broad compiler/frontend consolidation
-is running.
+instead of returning a stack Block. The full compiler suite passes all 529 executable cases (532 discovered, three
+unsupported); all 25 updated frontend groups and codec/isolation checks pass.
 
 Extension ABI 24, native frame 1, services 4 and schema 2.2 retain their layouts.
 One matched SDK and final matched analysis follow the implementation batch.
