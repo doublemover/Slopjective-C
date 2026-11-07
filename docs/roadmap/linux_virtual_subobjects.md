@@ -1,5 +1,10 @@
 # Virtual object variants and anonymous active members
 
+The [System 2.47 span](linux_block_array_members.md) now adds per-element
+registration and cleanup for bounded ARC Block member arrays. Current
+subobject publication requires v4; the v3 capability and array boundary below
+record the original 2.46 span.
+
 System source 2.46 gives native constructors and destructors separate
 complete-object and base-object cleanup graphs. Both versions share their source
 body and meet only at the function exit. Virtual initializer side effects and

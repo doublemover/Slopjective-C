@@ -1,5 +1,14 @@
 # Objective-C 3.0 on Linux
 
+The [System 2.47 Block-array span](linux_block_array_members.md) registers
+completed strong member-array elements before later copies, unwinds exact
+prefixes, preserves weak/null/filler behavior and emits counted release groups.
+Publication cuts over to native-subobject v4. All 66 affected compiler cases,
+four new source-free profiles, thirteen adjacent groups, 40 AST controls and
+twelve instrumented native configurations / 42 commands pass, together with
+codec/isolation controls and forty production decoder replays. Nullable-receiver
+proofs include hidden copy failure before constructor-body refinement.
+
 The [frontend 2.120 specialization span](linux_incomplete_specializations.md)
 adds opaque class partial/explicit specializations, external/member variable
 partials and native standard-library customization declarations. Namespace,

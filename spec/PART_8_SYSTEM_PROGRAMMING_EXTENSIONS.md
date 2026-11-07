@@ -443,6 +443,11 @@ that base-object rule. Indirect anonymous-union initialization registers only
 the successfully constructed active member; the parent destructor shall not add
 implicit whole-union destruction to user-authored active-arm cleanup.
 
+A failed strong Block member-array copy shall destroy only previously initialized
+elements and completed earlier subobjects. A complete field is registered only
+after its elements initialize. Null/default elements perform no heap copy; weak
+storage retains its distinct nonowning initialization and cleanup semantics.
+
 A native catch handler observes owner state after protected-region cleanup,
 including catch-all and scalar/reference exception bindings. A successful strong
 Block binding owns its copied captures; a failed heap copy does not initialize

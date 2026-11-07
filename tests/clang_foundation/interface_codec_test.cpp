@@ -46,6 +46,7 @@ int main() {
   assert(capabilities.count(kCxxUnnamedTemplateProjectionSemantic));
   assert(capabilities.count("objc3.c-inline-definitions.v1"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v2"));
+  assert(!capabilities.count("objc3.native-subobject-cleanup.v3"));
   assert(!capabilities.count("objc3.cxx-unnamed-template-projections.v1"));
   assert(!capabilities.count("objc3.cxx-incomplete-template-declarations.v1"));
   const llvm::StringRef supported[] = {"effects.async.v1", "ownership.v1",

@@ -28266,10 +28266,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..9ddeebc1a
+index 000000000..7529a1973
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,997 @@
+@@ -0,0 +1,1008 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -28938,8 +28938,19 @@ index 000000000..9ddeebc1a
 +    Options.AddCXXDefaultInitExprInCtors = true;
 +    Options.AddImplicitDtors = true;
 +    Options.AddTemporaryDtors = true;
-+    if (isa_and_nonnull<CXXConstructorDecl, CXXDestructorDecl>(Callable))
-+      if (cast<CXXMethodDecl>(Callable)->getParent()->getNumVBases()) Options.AddLifetime = true;
++    if (isa_and_nonnull<CXXConstructorDecl, CXXDestructorDecl>(Callable)) {
++      const auto *Record = cast<CXXMethodDecl>(Callable)->getParent();
++      bool ImplicitBlockCopy = false;
++      if (Context.getLangOpts().ObjCAutoRefCount && isa<CXXConstructorDecl>(Callable))
++        for (const auto *Field : Record->fields()) {
++          QualType Element = Context.getBaseElementType(Field->getType());
++          ImplicitBlockCopy |= Element->isBlockPointerType() &&
++                               Element.getObjCLifetime() == Qualifiers::OCL_Strong;
++        }
++      // Scalar and array member copies can fail before a body assignment
++      // establishes nonnull. Function-try handlers must see that path too.
++      if (Record->getNumVBases() || ImplicitBlockCopy) Options.AddLifetime = true;
++    }
 +    std::unique_ptr<CFG> Graph = CFG::buildCFG(Callable, Body, &Context, Options);
 +    if (!Graph) {
 +      // An unmodeled control-flow form cannot establish a proof of nonnull.
@@ -57948,10 +57959,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..de50b0cc7
+index 000000000..d39e60480
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,1673 @@
+@@ -0,0 +1,1715 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -59606,24 +59617,66 @@ index 000000000..de50b0cc7
 +  }
 +}
 +
-+TEST(ObjC3ASTInfrastructure, BlockArrayMembersRequirePerElementCopyRegistration) {
-+  auto AST=tooling::buildASTFromCodeWithArgs(R"(
-+    typedef void (^Callback)(void);void block_array_defer() noexcept;
-+    struct Owner {
-+      Callback callbacks[2];
-+      Owner(Callback source):callbacks{source,source} {__objc3_defer {block_array_defer();}}
-+      ~Owner() {__objc3_defer {block_array_defer();}}
-+    };
-+  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-+       "-fobjc-arc","-fblocks","-fexceptions"},"block-array-members.mm");
-+  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
-+  CXXRecordDecl *Owner=nullptr;
-+  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner")Owner=R;
-+  ASSERT_NE(Owner,nullptr);
-+  CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;Options.AddEHEdges=true;Options.AddInitializers=true;Options.AddImplicitDtors=true;
-+  CXXMethodDecl *Methods[]={*Owner->ctor_begin(),Owner->getDestructor()};
-+  for(CXXMethodDecl *Method:Methods)
-+    EXPECT_FALSE(CFG::buildCFG(Method,Method->getBody(),&AST->getASTContext(),Options));
++
++TEST(ObjC3ASTInfrastructure, BlockArrayMemberCopyFailureReleasesExactElementPrefix) {
++  for(unsigned Count:{0u,1u,3u})for(bool Weak:{false,true}) {
++    std::string Source="typedef void (^Callback)(void);void block_array_defer() noexcept;struct Owner {Callback callbacks["+std::to_string(Count)+"];";
++    if(Weak)Source+="__weak Callback weak["+std::to_string(Count)+"];";
++    Source+="Owner(Callback source):callbacks{";
++    for(unsigned I=0;I<Count;++I){if(I)Source+=",";Source+="source";}Source+="}";
++    if(Weak){Source+=",weak{";for(unsigned I=0;I<Count;++I){if(I)Source+=",";Source+="source";}Source+="}";}
++    Source+="{__objc3_defer {block_array_defer();}}~Owner(){__objc3_defer {block_array_defer();}}};";
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions"},"block-array-members.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    CXXRecordDecl *Owner=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner")Owner=R;
++    ASSERT_NE(Owner,nullptr);
++    for(bool Destroying:{false,true}) {
++      CXXMethodDecl *Method=Destroying?static_cast<CXXMethodDecl *>(Owner->getDestructor()):*Owner->ctor_begin();
++      CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;Options.AddEHEdges=true;Options.AddInitializers=true;Options.AddImplicitDtors=true;
++      auto Graph=CFG::buildCFG(Method,Method->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++      unsigned Budget=8192,Normal=0,Failed=0,FailureMask=0;
++      auto Explore=[&](auto &&Self,const CFGBlock *Block,unsigned Copies,unsigned Released,bool Whole,bool WeakReady,bool Unwind,unsigned Depth)->void {
++        ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);Unwind|=Block->isNativeExceptionExit();
++        EXPECT_FALSE(Block->hasNoReturnElement());
++        for(const auto &Element:*Block) {
++          if(auto I=Element.getAs<CFGInitializer>()) {
++            ASSERT_TRUE(I->getInitializer()->isAnyMemberInitializer());
++            if(I->getInitializer()->getAnyMember()->getName()=="callbacks"){EXPECT_EQ(Copies,Count);Whole=true;}else WeakReady=true;
++          }
++          if(auto S=Element.getAs<CFGStmt>())if(auto *Call=dyn_cast<CallExpr>(S->getStmt());Call && Call->getDirectCallee() && Call->getDirectCallee()->getName()=="__objc3_cfg_arc_subobject_release") {
++            ASSERT_EQ(Call->getNumArgs(),1u);
++            Released+=cast<IntegerLiteral>(Call->getArg(0))->getValue().getZExtValue();
++            EXPECT_LE(Released,Copies+(WeakReady?Count:0));
++          }
++        }
++        if(Block->succ_empty()) {
++          if(Unwind){++Failed;EXPECT_FALSE(Whole);EXPECT_FALSE(WeakReady);EXPECT_EQ(Released,Copies);FailureMask|=1u<<Copies;}
++          else {++Normal;EXPECT_TRUE(Whole);EXPECT_EQ(WeakReady,Weak);EXPECT_EQ(Copies,Count);EXPECT_EQ(Released,Destroying?Count*(Weak?2u:1u):0u);}
++          return;
++        }
++        const bool Copy=!Destroying && Block->succ_size()==2 && !Block->getTerminatorStmt();
++        unsigned Edge=0;
++        for(auto S:Block->succs()) {if(auto *Next=S.getReachableBlock())Self(Self,Next,Copies+(Copy && Edge==0),Released,Whole,WeakReady,Unwind,Depth+1);++Edge;}
++      };
++      Explore(Explore,&Graph->getEntry(),Destroying?Count:0u,0,Destroying,Destroying && Weak,false,0);
++      EXPECT_GT(Normal,0u);EXPECT_EQ(Failed,Destroying?0u:Count);EXPECT_EQ(FailureMask,Destroying?0u:(1u<<Count)-1);
++    }
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, BlockArrayConstructionKeepsBoundAndShapeGates) {
++  for(bool Nested:{false,true}) {
++    std::string Shape=Nested?"[2][2]":"[65]";
++    auto AST=tooling::buildASTFromCodeWithArgs("typedef void (^Callback)(void);struct Owner {Callback callbacks"+Shape+";Owner():callbacks{} {}~Owner(){} };",
++      {"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions"},"block-array-shape.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());CXXRecordDecl *Owner=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner")Owner=R;
++    ASSERT_NE(Owner,nullptr);auto *Constructor=*Owner->ctor_begin();
++    CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;Options.AddEHEdges=true;Options.AddInitializers=true;Options.AddImplicitDtors=true;
++    EXPECT_FALSE(CFG::buildCFG(Constructor,Constructor->getBody(),&AST->getASTContext(),Options));
++    EXPECT_EQ(bool(CFG::buildCFG(Owner->getDestructor(),Owner->getDestructor()->getBody(),&AST->getASTContext(),Options)),Nested);
++  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -66579,3 +66632,99 @@ index 000000000..5b3efb290
 +  try {RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;subobject_raise();}
 +  catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-block-array-members.h b/clang/test/ObjC3/Sema/Inputs/borrowed-block-array-members.h
+new file mode 100644
+index 000000000..8e1181db4
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-block-array-members.h
+@@ -0,0 +1 @@
++#include "borrowed-subobject-cleanup.h"
+diff --git a/clang/test/ObjC3/Sema/borrowed-block-array-members.mm b/clang/test/ObjC3/Sema/borrowed-block-array-members.mm
+new file mode 100644
+index 000000000..9e760e877
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-block-array-members.mm
+@@ -0,0 +1,83 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-block-array-members.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-block-array-members.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-block-array-members.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-block-array-members.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#if !__has_feature(objc_arc)
++// expected-no-diagnostics
++#endif
++#ifndef FROM_PCH
++#include "Inputs/borrowed-block-array-members.h"
++#endif
++typedef void (^ArrayMemberCallback)(void);
++struct NativeBlockArrayMembers {
++  ArrayMemberCallback callbacks[3];
++#if __has_feature(objc_arc)
++  __weak ArrayMemberCallback weak[3];
++#endif
++  NativeBlockArrayMembers(RuntimeScopeOwner *_Nonnull owner,ArrayMemberCallback source)
++      :callbacks{source,source,source}
++#if __has_feature(objc_arc)
++      ,weak{source,source,source}
++#endif
++  {
++    const char *view=owner->storage;__objc3_defer {receiver_use(view);}subobject_raise();
++  }
++  ~NativeBlockArrayMembers() noexcept(false) {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
++    __objc3_defer {receiver_use(view);}subobject_raise();
++  }
++};
++struct NativeBlockArraySparse {
++  ArrayMemberCallback callbacks[3];
++  NativeBlockArraySparse(RuntimeScopeOwner *_Nonnull owner,ArrayMemberCallback source):callbacks{source} {
++    const char *view=owner->storage;__objc3_defer {receiver_use(view);}subobject_raise();
++  }
++  ~NativeBlockArraySparse() noexcept(false) {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
++    __objc3_defer {receiver_use(view);}subobject_raise();
++  }
++};
++struct NativeBlockArrayZero {
++  ArrayMemberCallback callbacks[3]{};
++  NativeBlockArrayZero(RuntimeScopeOwner *_Nonnull owner) {
++    const char *view=owner->storage;__objc3_defer {receiver_use(view);}subobject_raise();
++  }
++  ~NativeBlockArrayZero() noexcept(false) {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
++    __objc3_defer {receiver_use(view);}subobject_raise();
++  }
++};
++
++#if __has_feature(objc_arc)
++RuntimeScopeOwner *_Nonnull block_array_nothrow_factory(void) __attribute__((nothrow));
++@interface RuntimeScopeOwner (BlockCopyNullability)
++- (void)ping;
++@end
++struct NullableBlockArrayCopy {
++  ArrayMemberCallback callbacks[3];
++  NullableBlockArrayCopy(RuntimeScopeOwner *_Nullable owner,ArrayMemberCallback source) try
++      :callbacks{source,source,source} {owner=block_array_nothrow_factory();}
++  catch(...) {[owner ping];} // expected-error {{ordinary message send requires a nonnull receiver}}
++};
++struct NullableScalarBlockCopy {
++  ArrayMemberCallback callback;
++  NullableScalarBlockCopy(RuntimeScopeOwner *_Nullable owner,ArrayMemberCallback source) try
++      :callback(source) {owner=block_array_nothrow_factory();}
++  catch(...) {[owner ping];} // expected-error {{ordinary message send requires a nonnull receiver}}
++};
++struct StabilizedBlockArrayHandler {
++  ArrayMemberCallback callbacks[3];
++  StabilizedBlockArrayHandler(RuntimeScopeOwner *_Nullable owner,ArrayMemberCallback source) try
++      :callbacks{source,source,source} {owner=block_array_nothrow_factory();}
++  catch(...) {owner=block_array_nothrow_factory();[owner ping];}
++};
++#endif

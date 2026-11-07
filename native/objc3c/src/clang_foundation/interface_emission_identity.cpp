@@ -2500,7 +2500,7 @@ bool ReadInterfaceDeclarationIdentity(
     if (visitor.found) identity.canonical_type_identity += ";cxx-incomplete-template-declarations:v2;";
   }
   if (HasDeclarationNativeSubobject(representative))
-    identity.canonical_type_identity += ";native-subobject-cleanup:v3;";
+    identity.canonical_type_identity += ";native-subobject-cleanup:v4;";
   if (HasDeclarationNativeAllocation(representative))
     identity.canonical_type_identity += ";native-allocation-cleanup:v2;";
   if (HasDeclarationNativeDisposal(representative))

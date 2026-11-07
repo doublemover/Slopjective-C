@@ -4379,6 +4379,148 @@ void TestAutomaticOwnerUnwindReplay() {
     }
 }
 
+void TestNativeBlockArrayMemberReplay() {
+  for(const char *standard:{"c++20","c++23"})
+    for(bool arc:{false,true}) {
+      const bool cxx=std::string(standard)!="c17";
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
+      args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+      const std::string source=R"(
+        typedef borrowed const char *PublishedAllocationBytes;
+        __attribute__((objc_root_class)) @interface PublishedAllocationOwner {@public char payload;}
+        @end
+        void published_allocation_use(const char *view __attribute__((noescape)));
+        PublishedAllocationOwner *_Nonnull published_subobject_factory(void);
+        void published_subobject_raise(void);
+        struct PublishedSubobjectBase {explicit PublishedSubobjectBase(int);~PublishedSubobjectBase() noexcept(false);};
+        struct PublishedSubobjectMember {explicit PublishedSubobjectMember(int);~PublishedSubobjectMember() noexcept(false);};
+        inline PublishedAllocationBytes published_allocation_bytes(PublishedAllocationOwner *_Nonnull owner)
+            __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->payload;}
+        struct PublishedSubobjectValue:virtual PublishedSubobjectBase {
+          PublishedSubobjectMember first,second;
+          PublishedSubobjectValue(PublishedAllocationOwner *_Nonnull owner,int)
+              :PublishedSubobjectBase(0),first(1),second(2) {
+            const char *view=published_allocation_bytes(owner);
+            __objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          }
+          explicit PublishedSubobjectValue(PublishedAllocationOwner *_Nonnull owner) try
+              :PublishedSubobjectValue(owner,0) {
+            const char *view=published_allocation_bytes(owner);
+            __objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          } catch(...) {published_allocation_use(published_allocation_bytes(owner));}
+          ~PublishedSubobjectValue() noexcept(false) try {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();
+            const char *view=published_allocation_bytes(local);
+            __objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          } catch(...) {
+            PublishedAllocationOwner *_Nonnull handler=published_subobject_factory();
+            const char *view=published_allocation_bytes(handler);
+            __objc3_defer {published_allocation_use(view);}return;
+          }
+        };
+        struct PublishedVirtualMost:PublishedSubobjectValue {
+          explicit PublishedVirtualMost(PublishedAllocationOwner *_Nonnull owner)
+              :PublishedSubobjectBase(3),PublishedSubobjectValue(owner) {}
+          ~PublishedVirtualMost() noexcept(false) {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();
+            const char *view=published_allocation_bytes(local);__objc3_defer {published_allocation_use(view);}
+          }
+        };
+        struct PublishedAnonymousValue {
+          union {PublishedSubobjectMember active;int fallback;};
+          explicit PublishedAnonymousValue(PublishedAllocationOwner *_Nonnull owner):active(1) {
+            const char *view=published_allocation_bytes(owner);__objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          }
+          ~PublishedAnonymousValue() noexcept(false) {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();
+            const char *view=published_allocation_bytes(local);__objc3_defer {published_allocation_use(view);}
+            active.~PublishedSubobjectMember();
+          }
+        };
+        typedef void (^PublishedMemberCallback)(void);
+        struct PublishedBlockMembers {
+          PublishedMemberCallback first[3],second[2];
+          PublishedBlockMembers(PublishedAllocationOwner *_Nonnull owner,PublishedMemberCallback callback)
+              :first{callback,callback,callback},second{} {
+            const char *view=published_allocation_bytes(owner);__objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          }
+          ~PublishedBlockMembers() noexcept(false) {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();
+            const char *view=published_allocation_bytes(local);__objc3_defer {published_allocation_use(view);}
+            published_subobject_raise();
+          }
+        };
+        inline void published_allocation_body(PublishedAllocationOwner *_Nonnull owner,int mode) {
+          withLifetime(owner) {
+            const char *view=published_allocation_bytes(owner);
+            try {__objc3_defer {published_allocation_use(view);}PublishedVirtualMost value(owner);PublishedAnonymousValue active(owner);(void)value;(void)active;}
+            catch(...) {published_allocation_use(view);}
+          }
+        }
+      )";
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.native_block_array_member","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_block_array_member","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);return result;
+      };
+      auto first=emit(source,"finally-provider.m");
+      auto replay=emit(first.source_bytes,"finally-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-finally.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> supported;
+      for(const auto &item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+      assert(llvm::is_contained(supported,llvm::StringRef(kNativeSubobjectSemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      auto older=supported;std::erase(older,llvm::StringRef(kNativeSubobjectSemantic));
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto missing=*decoded;std::erase(missing.required_semantics,kNativeSubobjectSemantic);
+      auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);
+      assert(llvm::StringRef(llvm::toString(invalid.takeError())).contains("native subobject cleanup identity"));
+      auto plain=emit("void plain_scope_contract(void);","plain-scope-contract.m");
+      auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+      invented->required_semantics.push_back(kNativeSubobjectSemantic);
+      auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);
+      llvm::consumeError(unexpected.takeError());
+      auto good=parse(first.source_bytes+R"(
+        void finally_consumer(PublishedAllocationOwner *_Nonnull owner) {published_allocation_body(owner,0);}
+      )","runtime-consumer.m");
+      assert(good && !good->getDiagnostics().hasErrorOccurred());
+      const std::string expired=R"(
+        void subobject_expired(PublishedAllocationOwner *_Nonnull owner) {
+          const char *view=0;
+          try {
+            PublishedAllocationOwner *_Nonnull local=published_subobject_factory();view=published_allocation_bytes(local);
+            PublishedSubobjectValue value(owner);(void)value;
+          } catch(...) {published_allocation_use(view);}
+        }
+      )";
+      auto bad=parse(first.source_bytes+expired,"expired-runtime-scope.m");
+      assert(bad && bad->getDiagnostics().hasErrorOccurred());
+
+    }
+}
+
 void TestNativeVirtualSubobjectReplay() {
   for(const char *standard:{"c++20","c++23"})
     for(bool arc:{false,true}) {
@@ -9303,6 +9445,7 @@ int main(int argc,char **argv) {
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
   TestAutomaticOwnerUnwindReplay();
+  TestNativeBlockArrayMemberReplay();
   TestNativeVirtualSubobjectReplay();
   TestNativeFunctionTryReplay();
   TestNativeSubobjectReplay();

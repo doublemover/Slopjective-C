@@ -304,12 +304,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 46,
+        "minor": 47,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Bounded ARC Block member-array per-element copy registration, exact failure-prefix cleanup, weak/null/filler/default initialization, empty/singleton/many boundaries and counted nonthrowing array release groups with exact v4 publication (66 affected compiler cases, four new source-free profiles, thirteen adjacent groups, 40 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; final codec/isolation and decoder consolidation finishing; matched SDK pending)",
         "Complete/base native virtual-object cleanup, abstract-constructor initializer exclusion, virtual delegation/function-try boundaries, nullable receiver proof alignment, anonymous active-member prefixes, strong/weak scalar Block member release and implicit heap-copy failure registration, plus stable ordinary unnamed-record publication (65 affected compiler cases, six new source-free profiles, fourteen adjacent frontend groups, codec/isolation, 39 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; final Block-array proof-boundary controls pass; installed package and matched SDK consolidation pending)",
         "Completed delegating-target whole-object cleanup, constructor/destructor function-try regions and implicit epilogues, handler rethrow/suppression without duplicate destruction, noexcept handler boundaries and repaired constructor source printing with exact v2 admission (62 affected compiler cases, four new source-free profiles, nine adjacent frontend groups, codec/isolation controls, 33 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; matched SDK consolidation pending)",
         "Native direct member/base constructor-prefix and destructor normal/return/unwind cleanup, remaining-prefix secondary termination, primitive ARC subobjects, exact native noexcept boundaries and owning-declaration-aware source-free admission (61 affected compiler cases, four new source-free profiles, eight adjacent frontend groups, codec/isolation controls, 29 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; matched SDK consolidation pending)",

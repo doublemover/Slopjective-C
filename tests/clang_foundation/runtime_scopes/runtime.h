@@ -984,6 +984,78 @@ struct ScopeBlockMemberOwner {
     if(scope_member_destroying_failure)scope_ordinary_raise(0);
   }
 };
+
+__attribute__((noinline,nothrow)) static int scope_arm_array_copy(int copy) {scope_fail_block_copy=copy;return 0;}
+__attribute__((noinline,nothrow)) static void scope_check_member_array(ScopeMemberCallback _Nullable const *_Nonnull values __attribute__((noescape)),int occupied) {
+  for(int index=0;index!=3;++index)assert((values[index]!=(id)0)==(index<occupied));
+}
+struct ScopeBlockArrayMemberOwner {
+  int armed;
+  ScopeMemberCallback _Nullable callbacks[3];
+  __weak ScopeMemberCallback _Nullable weak[3];
+  ScopeBlockArrayMemberOwner(ScopeProbe *_Nonnull owner,ScopeMemberCallback source,int copy)
+      :armed(scope_arm_array_copy(copy)),callbacks{source,source,source},weak{source,source,source} {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(180);}
+    scope_check_member_array(callbacks,3);
+    if(scope_member_body_failure)scope_ordinary_raise(0);
+  }
+  ~ScopeBlockArrayMemberOwner() noexcept(false) {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(181);}
+    if(scope_member_destroying_failure)scope_ordinary_raise(0);
+  }
+};
+struct ScopeBlockArraySparseOwner {
+  ScopeMemberCallback _Nullable callbacks[3];
+  ScopeBlockArraySparseOwner(ScopeProbe *_Nonnull owner,ScopeMemberCallback source):callbacks{source} {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);}
+    scope_check_member_array(callbacks,1);
+  }
+  ~ScopeBlockArraySparseOwner() {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);}
+  }
+};
+struct ScopeBlockArrayNullOwner {
+  ScopeMemberCallback _Nullable callbacks[3]{};
+  explicit ScopeBlockArrayNullOwner(ScopeProbe *_Nonnull owner) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);}
+    scope_check_member_array(callbacks,0);
+  }
+  ~ScopeBlockArrayNullOwner() {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);}
+  }
+};
+static void scope_block_array_member_unwind(void) {
+  for(int fault=0;fault!=6;++fault) {
+    int before=scope_destroyed,caught=0;allocation_trace_count=0;
+    scope_member_body_failure=fault==4;scope_member_destroying_failure=fault==5;
+    {
+      ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+      ScopeMemberCallback source=^{scope_use(&local->payload);};
+      @try {ScopeBlockArrayMemberOwner value(local,source,fault>=1 && fault<=3?fault:0);(void)value;}
+      @catch(id exception){assert(exception==scope_exception);++caught;}
+      assert(caught==(fault!=0) && scope_fail_block_copy==0);
+      assert(scope_destroyed==before+(fault==0 || fault==5));source();
+    }
+    assert(scope_destroyed==before+1+(fault==0 || fault==5));
+    assert(allocation_trace_count==(fault>=1 && fault<=3?0:fault==4?1:2));
+    if(fault==0 || fault>=4)assert(allocation_trace[0]==180);
+    if(fault==0 || fault==5)assert(allocation_trace[1]==181);
+  }
+  scope_member_body_failure=0;scope_member_destroying_failure=0;
+  int before=scope_destroyed;
+  {
+    ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+    ScopeMemberCallback source=^{scope_use(&local->payload);};
+    {ScopeBlockArraySparseOwner value(local,source);(void)value;}
+    {ScopeBlockArrayNullOwner value(local);(void)value;}
+    assert(scope_destroyed==before+2);source();
+  }
+  assert(scope_destroyed==before+3);
+}
+
 static void scope_block_member_unwind(void) {
   for(int fault=0;fault!=5;++fault) {
     int before=scope_destroyed,caught=0;allocation_trace_count=0;
@@ -1021,7 +1093,7 @@ static void scope_ordinary_record_block(void) {
 }
 static void scope_ordinary_owner_unwind(void) {
 #ifdef __cplusplus
-  scope_block_member_unwind();
+  scope_block_member_unwind();scope_block_array_member_unwind();
 #endif
   int before=scope_destroyed;
   @try {
