@@ -129,6 +129,22 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationCheckedCppMessage(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Messages : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+        const auto *method=message->getMethodDecl();
+        const auto *record=message->getType()->getAsCXXRecordDecl();
+        found|=method && method->getObjC3FunctionEffects().Throws!=clang::ObjC3ThrowsKind::None &&
+            record && record->hasNonTrivialDestructor();
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationCppCarrierComposition(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[declaration](const clang::Stmt *statement) {
     struct Values : clang::DynamicRecursiveASTVisitor {

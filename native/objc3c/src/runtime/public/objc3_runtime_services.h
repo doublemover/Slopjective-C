@@ -32,6 +32,12 @@ typedef enum objc3_service_status {
   OBJC3_SERVICE_TYPE_MISMATCH = 9
 } objc3_service_status;
 
+#ifdef __cplusplus
+/* Compiler failure bridge for a nil checked message with a native C++ result.
+ * Throws objc3::service_failure(INVALID_ARGUMENT); no result object exists. */
+[[noreturn]] void objc3_checked_nil_result(void);
+#endif
+
 /* Callbacks do not throw across this C ABI. Successful initialization creates
  * one owned value; failed initialization leaves destination uninitialized.
  * move_init leaves source uninitialized only on success. Descriptor callbacks

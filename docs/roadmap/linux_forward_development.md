@@ -1,5 +1,13 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.131 / System 2.57 message span](linux_checked_cpp_messages.md)
+implements ordinary checked native C++ instance/class/super messages and property
+syntax, with success-only ownership, preserved receiver mappings and explicit nil
+service failure after argument construction. Published bodies require
+`objc3.checked-cxx-messages.v1`. Focused compiler/native controls and all 52 AST
+controls pass; broader consolidation is running. Runtime-sized composed-record
+arrays now have exact constructor-prefix failure controls.
+
 The [source 2.130 / System 2.56 composition span](linux_composed_cpp_carriers.md)
 implements records containing carriers and fixed multidimensional carrier members,
 including implicit copy/move/destruction and nested Optional/Result payload records.

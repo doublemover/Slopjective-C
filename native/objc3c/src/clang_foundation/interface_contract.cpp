@@ -518,6 +518,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
+  const bool checked_cpp_messages=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCheckedCppMessageIdentity);
+  const bool checked_cpp_message_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCheckedCppMessageSemantic)!=sidecar.required_semantics.end();
+  if(checked_cpp_messages!=checked_cpp_message_capability)
+    Add(result,"O3IFC132","checked C++ message identity and required capability must agree",expected.canonical_name);
   const bool cpp_composition=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierCompositionIdentity);
   const bool cpp_composition_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierCompositionSemantic)!=sidecar.required_semantics.end();
   if(cpp_composition!=cpp_composition_capability)

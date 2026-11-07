@@ -14154,10 +14154,10 @@ index 000000000..2c37de629
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3Propagation.cpp
 new file mode 100644
-index 000000000..efd6ab5f9
+index 000000000..ddc084310
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,268 @@
+@@ -0,0 +1,293 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -14273,6 +14273,31 @@ index 000000000..efd6ab5f9
 +                                   SourceLocation RParenLoc) {
 +  if (!Operand)
 +    return ExprError();
++  ExprResult Resolved=CheckPlaceholderExpr(Operand);
++  if(Resolved.isInvalid())return ExprError();
++  Operand=Resolved.get();
++  // Preserve a property's receiver mappings while placing the checked form
++  // directly around its getter. A C++ getter's temporary must not bind until
++  // the error output has confirmed a constructed result.
++  if(auto *Pseudo=dyn_cast<PseudoObjectExpr>(Operand->IgnoreParenImpCasts());
++      Pseudo && Pseudo->getResultExpr() &&
++      Pseudo->getResultExprIndex()+1==Pseudo->getNumSemanticExprs()) {
++    const Expr *Source=getObjC3AsyncSourceCall(Pseudo->getResultExpr());
++    if(const auto *Message=dyn_cast<ObjCMessageExpr>(Source);
++        Message && Message->getMethodDecl() &&
++        Message->getMethodDecl()->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None &&
++        !Message->getMethodDecl()->getObjC3FunctionEffects().Async) {
++      ExprResult Checked=ActOnObjC3TryExpr(Kind,KeywordLoc,LParenLoc,
++          const_cast<ObjCMessageExpr *>(Message),RParenLoc);
++      if(Checked.isInvalid())return ExprError();
++      SmallVector<Expr *,4> Semantics;
++      for(auto *Semantic:Pseudo->semantics())Semantics.push_back(Semantic);
++      Semantics[Pseudo->getResultExprIndex()]=Checked.get();
++      auto *Syntax=ObjC3TryExpr::Create(Context,static_cast<ObjC3TryExpr::Kind>(Kind),
++          Pseudo->getSyntacticForm(),Checked.get()->getType(),KeywordLoc,LParenLoc,RParenLoc);
++      return PseudoObjectExpr::Create(Context,Syntax,Semantics,Pseudo->getResultExprIndex());
++    }
++  }
 +  auto Operation = static_cast<ObjC3TryExpr::Kind>(Kind);
 +  if (Kind > static_cast<unsigned>(ObjC3TryExpr::Kind::Force))
 +    return ExprError();
@@ -58290,10 +58315,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..0548505ae
+index 000000000..523d89bae
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2050 @@
+@@ -0,0 +1,2083 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -60342,6 +60367,39 @@ index 000000000..0548505ae
 +            for(const auto *Initializer:Constructor->inits())Visit(Visit,Initializer->getInit());
 +          }
 +    EXPECT_EQ(Copies,1u);EXPECT_EQ(Moves,1u);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, CheckedPropertiesKeepReceiverMappingsInsideTry) {
++  for(const char *Standard:{"c++20","c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(R"(
++      struct Owner {Owner(const Owner &);~Owner() noexcept;};
++      @protocol Error @end
++      __attribute__((objc_root_class)) @interface Host
++      @property(readonly)Owner value;
++      - (Owner)value __objc3_throws(id<Error>);
++      @end
++      auto inspect(Host *object){return __objc3_try_optional(object.value);}
++    )",Args,"checked-property-mappings.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    FunctionDecl *Inspect=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="inspect")Inspect=F;
++    ASSERT_NE(Inspect,nullptr);unsigned Found=0;
++    auto Visit=[&](auto &&Self,const Stmt *Node)->void {
++      if(!Node)return;
++      if(const auto *Pseudo=dyn_cast<PseudoObjectExpr>(Node);
++          Pseudo && isa<ObjC3TryExpr>(Pseudo->getSyntacticForm())) {
++        const auto *Try=dyn_cast<ObjC3TryExpr>(Pseudo->getResultExpr());ASSERT_NE(Try,nullptr);
++        EXPECT_TRUE(isa<ObjCMessageExpr>(Try->getOperand()));
++        EXPECT_TRUE(Pseudo->getType()->getAs<ObjC3OptionalType>());++Found;
++      }
++      for(const auto *Child:Node->children())Self(Self,Child);
++    };
++    Visit(Visit,Inspect->getBody());EXPECT_GE(Found,1u);
 +  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp

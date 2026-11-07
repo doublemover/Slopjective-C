@@ -9,7 +9,7 @@
 
 #include "objc3_runtime_services.h"
 
-#if !__has_builtin(__builtin_objc3_type_identity)
+#if !defined(OBJC3_RUNTIME_SERVICE_FAILURE_ONLY) && !__has_builtin(__builtin_objc3_type_identity)
 #error "The task bridge requires the qualified compiler type-identity builtin."
 #endif
 
@@ -33,6 +33,12 @@ public:
   }
   objc3_service_status status() const noexcept { return status_; }
 };
+
+// The runtime's compiler failure bridge shares this exact exception definition
+// without parsing the language-specific task templates with its host compiler.
+} // namespace objc3
+#ifndef OBJC3_RUNTIME_SERVICE_FAILURE_ONLY
+namespace objc3 {
 
 class task_cancelled : public std::exception {
 public:
@@ -1187,5 +1193,7 @@ auto __objc3_async_checked(objc3::basic_task<T> dependency, void **error) {
   return objc3::task_detail::checked_dependency<T>{std::move(dependency), error};
 }
 #endif
+
+#endif // OBJC3_RUNTIME_SERVICE_FAILURE_ONLY
 
 #endif

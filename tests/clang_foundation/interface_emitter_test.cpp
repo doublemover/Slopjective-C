@@ -6424,6 +6424,57 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
   }
 }
 
+void TestCheckedCppMessageReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string prelude=R"(
+      @protocol Error @end
+      namespace PublishedCheckedMessage {struct Value {int value;Value(int);Value(const Value &);Value(Value &&);~Value() noexcept;};}
+      __attribute__((objc_root_class)) @interface PublishedCheckedMessageHost
+      @property(nonatomic,readonly) PublishedCheckedMessage::Value value;
+      - (PublishedCheckedMessage::Value)value __objc3_throws(id<Error>);
+      - (PublishedCheckedMessage::Value)make:(int)mode __objc3_throws(id<Error>);
+      @end
+    )";
+    const auto source=prelude+R"(
+      namespace PublishedCheckedMessage {
+        inline Value message(PublishedCheckedMessageHost *_Nonnull object,int mode) __objc3_throws(id<Error>) {return __objc3_try([object make:mode]);}
+        inline int property(PublishedCheckedMessageHost *_Nonnull object) __objc3_throws(id<Error>) {
+          auto value=__objc3_try(object.value);return value.value;
+        }
+        inline int optional(PublishedCheckedMessageHost *_Nonnull object) {
+          auto value=__objc3_try_optional(object.value);__objc3_try_optional([object make:0]);return __objc3_has_value(value);
+        }
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"checked-cpp-messages.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.checked_messages","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.checked_messages","test",{},{},{},{"PublishedCheckedMessage","PublishedCheckedMessageHost","Error"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kCheckedCppMessageSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kCheckedCppMessageSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kCheckedCppMessageSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto declarations=emit(prelude);auto invented=DecodeSemanticInterfaceSidecar(declarations.sidecar_json,declarations.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kCheckedCppMessageSemantic)));
+    invented->required_semantics.push_back(kCheckedCppMessageSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestCppCarrierCompositionReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10441,6 +10492,7 @@ int main(int argc,char **argv) {
   TestClosureFactories();
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
+  TestCheckedCppMessageReplay();
   TestCppCarrierCompositionReplay();
   TestNativeCppCarrierCallReplay();
   TestNativeCheckedCppResultReplay();

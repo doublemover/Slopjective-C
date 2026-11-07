@@ -286,12 +286,14 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
 #include "checked.h"
 #include "async.h"
 #include "checked_results.h"
+#include "checked_messages.h"
 #include "checked_regions.h"
 #include "checked_optional_results.h"
 #include "checked_optional_storage.h"
 #include "checked_static_references.h"
 #include "carrier_calls.h"
 #include "carrier_record_payloads.h"
+#include "carrier_composed_allocations.h"
 static void property_suite(void) {
   assert(objc3_executor_create(1,&property_caller)==OBJC3_SERVICE_OK);
   assert(objc3_executor_create(1,&property_destination)==OBJC3_SERVICE_OK);
@@ -361,11 +363,13 @@ static void property_suite(void) {
   checked_property_suite(main_object,actor,child);
   async_property_suite(main_object,actor,child);
   checked_result_suite(main_object);
+  checked_message_suite(main_object,child);
   checked_region_suite(main_object);
   checked_optional_suite(main_object);
   checked_optional_storage_suite(main_object);
   checked_static_reference_suite(main_object);
   carrier_record_payload_suite();
+  carrier_composed_allocation_suite();
   carrier_call_suite(main_object);
   assert(objc3_actor_close(property_mailbox)==OBJC3_SERVICE_OK);
   assert(objc3_actor_join(property_mailbox)==OBJC3_SERVICE_OK);

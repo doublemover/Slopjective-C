@@ -21,6 +21,7 @@ endif()
 add_library(objc3_runtime_services STATIC
   services/error_service.cpp
   services/objc_task_error.cpp
+  services/checked_message_failure.cpp
   services/carrier_service.cpp
   concurrency/service_executor.cpp
   concurrency/service_task.cpp
@@ -78,6 +79,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND BUILD_TESTING)
   add_executable(objc3_async_error_bridge_test
     "${_repo}/tests/clang_foundation/structured_runtime/error_bridge.cpp")
   add_executable(objc3_keypath_service_test ../../tests/keypath_service_test.cpp)
+  add_executable(objc3_checked_message_failure_test ../../tests/checked_message_failure_test.cpp)
   add_executable(objc3_async_handle_join_test
     "${_repo}/tests/clang_foundation/async_handle_joins/runtime.cpp")
   # Link wrapping preserves sanitizer-provided operator-new interceptors.
@@ -87,7 +89,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND BUILD_TESTING)
   target_link_options(objc3_async_error_bridge_test PRIVATE
     "LINKER:--wrap=_ZnwmRKSt9nothrow_t"
     "LINKER:--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t")
-  foreach(_test task_services structured_runtime async_error_bridge keypath_service async_handle_join)
+  foreach(_test task_services structured_runtime async_error_bridge keypath_service async_handle_join checked_message_failure)
     target_link_libraries(objc3_${_test}_test PRIVATE objc3_runtime_services)
     target_compile_options(objc3_${_test}_test PRIVATE -UNDEBUG)
     add_test(NAME objc3_${_test} COMMAND objc3_${_test}_test)

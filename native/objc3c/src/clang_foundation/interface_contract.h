@@ -258,6 +258,10 @@ inline constexpr const char *kCheckedKeyPathReadSemantic = "objc3.keypath-checke
 inline bool HasCheckedKeyPathReadIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-checked-reads:v1;") != std::string::npos;
 }
+inline constexpr const char *kCheckedCppMessageSemantic = "objc3.checked-cxx-messages.v1";
+inline bool HasCheckedCppMessageIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";checked-cxx-messages:v1;") != std::string::npos;
+}
 inline constexpr const char *kCppCarrierCompositionSemantic = "objc3.cxx-carrier-composition.v1";
 inline bool HasCppCarrierCompositionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-carrier-composition:v1;") != std::string::npos ||

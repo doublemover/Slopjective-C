@@ -5768,7 +5768,7 @@ index 7421733ef..fc98b6929 100644
      }
      fields.push_back(fieldType);
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..91296b0c8 100644
+index e84e05e8e..3b47f16e3 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,23 @@
@@ -5803,7 +5803,7 @@ index e84e05e8e..91296b0c8 100644
  #include "clang/Basic/CodeGenOptions.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/CodeGen/CGFunctionInfo.h"
-@@ -492,6 +504,109 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
+@@ -492,6 +504,110 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
  }
  
  namespace {
@@ -5875,6 +5875,7 @@ index e84e05e8e..91296b0c8 100644
 +      if (!Init) return false;
 +      while (const auto *WithCleanups = dyn_cast<ExprWithCleanups>(Init)) Init = WithCleanups->getSubExpr();
 +      Init = Init->IgnoreParenImpCasts();
++      if(const auto *Pseudo=dyn_cast<PseudoObjectExpr>(Init))return Self(Self,Pseudo->getResultExpr());
 +      if (const auto *Conditional = dyn_cast<ConditionalOperator>(Init))
 +        return Self(Self, Conditional->getTrueExpr()) && Self(Self, Conditional->getFalseExpr());
 +      if (const auto *Comma = dyn_cast<BinaryOperator>(Init); Comma && Comma->getOpcode() == BO_Comma)
@@ -5913,7 +5914,7 @@ index e84e05e8e..91296b0c8 100644
    struct DestroyObject final : EHScopeStack::Cleanup {
      DestroyObject(Address addr, QualType type,
                    CodeGenFunction::Destroyer *destroyer,
-@@ -527,19 +642,31 @@ namespace {
+@@ -527,19 +643,31 @@ namespace {
        bool NRVO = flags.isForNormalCleanup() && NRVOFlag;
  
        llvm::BasicBlock *SkipDtorBB = nullptr;
@@ -5948,7 +5949,7 @@ index e84e05e8e..91296b0c8 100644
      }
  
      virtual ~DestroyNRVOVariable() = default;
-@@ -816,6 +943,7 @@ void CodeGenFunction::EmitScalarInit(const Expr *init, const ValueDecl *D,
+@@ -816,6 +944,7 @@ void CodeGenFunction::EmitScalarInit(const Expr *init, const ValueDecl *D,
    // If we're emitting a value with lifetime, we have to do the
    // initialization *before* we leave the cleanup scopes.
    if (auto *EWC = dyn_cast<ExprWithCleanups>(init)) {
@@ -5956,7 +5957,7 @@ index e84e05e8e..91296b0c8 100644
      CodeGenFunction::RunCleanupsScope Scope(*this);
      return EmitScalarInit(EWC->getSubExpr(), D, lvalue, capturedByInit);
    }
-@@ -1354,9 +1482,117 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -1354,9 +1483,117 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
@@ -6077,7 +6078,7 @@ index e84e05e8e..91296b0c8 100644
  }
  
  /// Emit a lifetime.begin marker if some criteria are satisfied.
-@@ -1487,7 +1723,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
+@@ -1487,7 +1724,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
  /// EmitAutoVarAlloca - Emit the alloca and debug information for a
  /// local variable.  Does not emit initialization or destruction.
  CodeGenFunction::AutoVarEmission
@@ -6087,7 +6088,7 @@ index e84e05e8e..91296b0c8 100644
    QualType Ty = D.getType();
    assert(
        Ty.getAddressSpace() == LangAS::Default ||
-@@ -1505,7 +1742,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1505,7 +1743,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      EmitVariablyModifiedType(Ty);
  
    auto *DI = getDebugInfo();
@@ -6097,7 +6098,7 @@ index e84e05e8e..91296b0c8 100644
  
    Address address = Address::invalid();
    RawAddress AllocaAddr = RawAddress::invalid();
-@@ -1518,7 +1756,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1518,7 +1757,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
              ? CGM.getOpenMPRuntime().getAddressOfLocalVariable(*this, &D)
              : Address::invalid();
  
@@ -6110,7 +6111,7 @@ index e84e05e8e..91296b0c8 100644
  
    if (getLangOpts().OpenMP && OpenMPLocalAddr.isValid()) {
      address = OpenMPLocalAddr;
-@@ -1532,7 +1774,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1532,7 +1775,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      // isConstantInitializer produces wrong answers for structs with
      // reference or bitfield members, and a few other cases, and checking
      // for POD-ness protects us from some of these.
@@ -6120,7 +6121,7 @@ index e84e05e8e..91296b0c8 100644
          (D.isConstexpr() ||
           ((Ty.isPODType(getContext()) ||
             getContext().getBaseElementType(Ty)->isObjCObjectPointerType()) &&
-@@ -1545,7 +1788,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1545,7 +1789,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        // in OpenCL.
        bool NeedsDtor =
            D.needsDestruction(getContext()) == QualType::DK_cxx_destructor;
@@ -6130,7 +6131,7 @@ index e84e05e8e..91296b0c8 100644
             Ty.getAddressSpace() == LangAS::opencl_constant) &&
            (CGM.getCodeGenOpts().MergeAllConstants && !NRVO &&
             !isEscapingByRef &&
-@@ -1690,6 +1934,18 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1690,6 +1935,18 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        }
      }
  
@@ -6149,7 +6150,7 @@ index e84e05e8e..91296b0c8 100644
      if (!VarAllocated) {
        if (!DidCallStackSave) {
          // Save the stack.
-@@ -1704,7 +1960,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1704,7 +1961,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
  
          // Push a cleanup block and restore the stack there.
          // FIXME: in general circumstances, this should be an EH cleanup.
@@ -6167,7 +6168,7 @@ index e84e05e8e..91296b0c8 100644
        }
  
        auto VlaSize = getVLASize(Ty);
-@@ -1743,10 +2008,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1743,10 +2009,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    if (D.hasAttr<AnnotateAttr>() && HaveInsertPoint())
      EmitVarAnnotations(&D, address.emitRawPointer(*this));
  
@@ -6203,7 +6204,7 @@ index e84e05e8e..91296b0c8 100644
  
    // Analogous to lifetime markers, we use a 'cleanup' to emit fake.use
    // calls for local variables. We are exempting volatile variables and
-@@ -1755,12 +2042,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1755,12 +2043,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    // overhead.
    if (CGM.getCodeGenOpts().getExtendVariableLiveness() ==
        CodeGenOptions::ExtendVariableLivenessKind::All) {
@@ -6229,7 +6230,7 @@ index e84e05e8e..91296b0c8 100644
  }
  
  static bool isCapturedBy(const VarDecl &, const Expr *);
-@@ -1949,7 +2245,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
+@@ -1949,7 +2246,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
    }
  }
  
@@ -6239,7 +6240,7 @@ index e84e05e8e..91296b0c8 100644
    assert(emission.Variable && "emission was not valid!");
  
    // If this was emitted as a global constant, we're done.
-@@ -1961,7 +2258,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -1961,7 +2259,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
    QualType type = D.getType();
  
    // If this local has an initializer, emit it now.
@@ -6257,7 +6258,7 @@ index e84e05e8e..91296b0c8 100644
  
    // If we are at an unreachable point, we don't need to emit the initializer
    // unless it contains a label.
-@@ -2023,6 +2329,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -2023,6 +2330,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
      return emitZeroOrPatternForAutoVarInit(type, D, Loc);
    };
  
@@ -6277,7 +6278,7 @@ index e84e05e8e..91296b0c8 100644
    if (isTrivialInitializer(Init))
      return initializeWhatIsTechnicallyUninitialized(Loc);
  
-@@ -2191,7 +2510,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2191,7 +2511,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      if (var->isARCPseudoStrong()) return;
  
      // Otherwise, consider whether to use an EH cleanup or not.
@@ -6287,7 +6288,7 @@ index e84e05e8e..91296b0c8 100644
  
      // Use the imprecise destroyer by default.
      if (!var->hasAttr<ObjCPreciseLifetimeAttr>())
-@@ -2199,6 +2519,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2199,6 +2520,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -6295,7 +6296,7 @@ index e84e05e8e..91296b0c8 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2218,8 +2539,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2218,8 +2540,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
    // Use an EH cleanup in array destructors iff the destructor itself
    // is being pushed as an EH cleanup.
    bool useEHCleanup = (cleanupKind & EHCleanup);
@@ -6320,7 +6321,7 @@ index e84e05e8e..91296b0c8 100644
  }
  
  void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
-@@ -2234,8 +2569,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2570,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -6429,7 +6430,7 @@ index e84e05e8e..91296b0c8 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2243,6 +2676,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2243,6 +2677,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
      emitAutoVarTypeCleanup(emission, dtorKind);
    }
  
@@ -6449,7 +6450,7 @@ index e84e05e8e..91296b0c8 100644
    // In GC mode, honor objc_precise_lifetime.
    if (getLangOpts().getGC() != LangOptions::NonGC &&
        D.hasAttr<ObjCPreciseLifetimeAttr>()) {
-@@ -2271,8 +2717,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2271,8 +2718,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
        Flags |= BLOCK_FIELD_IS_WEAK;
      enterByrefCleanup(NormalAndEHCleanup, emission.Addr, Flags,
                        /*LoadBlockVarAddr*/ false,
@@ -6469,7 +6470,7 @@ index e84e05e8e..91296b0c8 100644
  }
  
  CodeGenFunction::Destroyer *
-@@ -2285,6 +2741,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+@@ -2285,6 +2742,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -6478,7 +6479,7 @@ index e84e05e8e..91296b0c8 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +3154,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +3155,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -6492,7 +6493,7 @@ index e84e05e8e..91296b0c8 100644
        llvm::Value *V = Arg.isIndirect()
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
-@@ -2780,6 +3239,19 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2780,6 +3240,19 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
    llvm::Value *ArgVal = (DoStore ? Arg.getDirectValue() : nullptr);
  
    LValue lv = MakeAddrLValue(DeclPtr, Ty);
@@ -6512,7 +6513,7 @@ index e84e05e8e..91296b0c8 100644
    // If this is a thunk, don't bother with ARC lifetime management.
    // The true implementation will take care of that.
    if (IsScalar && !CurFuncIsThunk) {
-@@ -2789,7 +3261,8 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2789,7 +3262,8 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
        // For __strong, it's handled by just skipping the initial retain;
        // otherwise we have to balance out the initial +1 with an extra
        // cleanup to do the release at the end of the function.
@@ -7602,7 +7603,7 @@ index 6f7b7e7d6..0835d15e5 100644
    Value *V = Visit(E->getSubExpr());
    // Defend against dominance problems caused by jumps out of expression
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..a6cf899af 100644
+index c724a063b..798049cad 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,7 +12,14 @@
@@ -7689,7 +7690,7 @@ index c724a063b..a6cf899af 100644
      isSuperMessage = true;
      isClassMessage = true;
      break;
-@@ -677,9 +723,17 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+@@ -677,9 +723,30 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
      Receiver = EmitARCRetainAutorelease(ReceiverType, Receiver);
  
    QualType ResultType = method ? method->getReturnType() : E->getType();
@@ -7704,10 +7705,23 @@ index c724a063b..a6cf899af 100644
 +    Args.add(RValue::get(ObjC3CallErrorOutStorage.emitRawPointer(*this)),
 +             ParameterType);
 +  }
++
++  if (HasErrorOutput && supportsObjC3CheckedCppResult(CGM,E->getType())) {
++    // Nil dispatch cannot manufacture a native C++ result. Arguments retain
++    // ordinary message evaluation order and unwind ownership before failure.
++    auto *Nil=createBasicBlock("objc3.checked.message.nil");
++    auto *Present=createBasicBlock("objc3.checked.message.present");
++    Builder.CreateCondBr(Builder.CreateIsNull(Receiver),Nil,Present);
++    EmitBlock(Nil);
++    auto Failure=CGM.CreateRuntimeFunction(
++        llvm::FunctionType::get(VoidTy,false),"objc3_checked_nil_result");
++    EmitNoreturnRuntimeCallOrInvoke(Failure,{});
++    EmitBlock(Present);
++  }
  
    // For delegate init calls in ARC, do an unsafe store of null into
    // self.  This represents the call taking direct ownership of that
-@@ -700,8 +754,10 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+@@ -700,8 +767,10 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
  
    RValue result;
    if (isSuperMessage) {
@@ -7720,7 +7734,7 @@ index c724a063b..a6cf899af 100644
      bool isCategoryImpl = isa<ObjCCategoryImplDecl>(OMD->getDeclContext());
      result = Runtime.GenerateMessageSendSuper(*this, Return, ResultType,
                                                E->getSelector(),
-@@ -804,12 +860,23 @@ void CodeGenFunction::StartObjCMethod(const ObjCMethodDecl *OMD,
+@@ -804,12 +873,23 @@ void CodeGenFunction::StartObjCMethod(const ObjCMethodDecl *OMD,
      args.push_back(OMD->getCmdDecl());
  
    args.append(OMD->param_begin(), OMD->param_end());
@@ -7746,7 +7760,7 @@ index c724a063b..a6cf899af 100644
  
    if (OMD->isDirectMethod()) {
      CGM.getObjCRuntime().GenerateDirectMethodPrologue(*this, Fn, OMD, CD);
-@@ -832,11 +899,27 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -832,11 +912,27 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  /// Generate an Objective-C method.  An Objective-C method is a C function with
  /// its pointer, name, and types registered in the class structure.
  void CodeGenFunction::GenerateObjCMethod(const ObjCMethodDecl *OMD) {
@@ -7777,7 +7791,7 @@ index c724a063b..a6cf899af 100644
    FinishFunction(OMD->getBodyRBrace());
  }
  
-@@ -1166,12 +1249,23 @@ CodeGenFunction::generateObjCGetterBody(const ObjCImplementationDecl *classImpl,
+@@ -1166,12 +1262,23 @@ CodeGenFunction::generateObjCGetterBody(const ObjCImplementationDecl *classImpl,
  
    ObjCIvarDecl *ivar = propImpl->getPropertyIvarDecl();
  
@@ -7801,7 +7815,7 @@ index c724a063b..a6cf899af 100644
      } else {
        ObjCIvarDecl *ivar = propImpl->getPropertyIvarDecl();
        emitCPPObjectAtomicGetterCall(*this, ReturnValue.emitRawPointer(*this),
-@@ -1792,17 +1886,22 @@ void CodeGenFunction::GenerateObjCCtorDtorMethod(ObjCImplementationDecl *IMP,
+@@ -1792,17 +1899,22 @@ void CodeGenFunction::GenerateObjCCtorDtorMethod(ObjCImplementationDecl *IMP,
      // Suppress the final autorelease in ARC.
      AutoreleaseResult = false;
  
@@ -7829,7 +7843,7 @@ index c724a063b..a6cf899af 100644
      // constructor returns 'self'.
      CodeGenTypes &Types = CGM.getTypes();
      QualType IdTy(CGM.getContext().getObjCIdType());
-@@ -1996,6 +2095,7 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
+@@ -1996,6 +2108,7 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
  
    // Initialize the element variable.
    RunCleanupsScope elementVariableScope(*this);
@@ -7837,7 +7851,7 @@ index c724a063b..a6cf899af 100644
    bool elementIsVariable;
    LValue elementLValue;
    QualType elementType;
-@@ -2091,6 +2191,8 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
+@@ -2091,6 +2204,8 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
    BreakContinueStack.push_back(BreakContinue(S, LoopEnd, AfterBody));
    {
      RunCleanupsScope Scope(*this);
@@ -7846,7 +7860,7 @@ index c724a063b..a6cf899af 100644
      EmitStmt(S.getBody());
    }
    BreakContinueStack.pop_back();
-@@ -2185,7 +2287,9 @@ llvm::Value *CodeGenFunction::EmitObjCConsumeObject(QualType type,
+@@ -2185,7 +2300,9 @@ llvm::Value *CodeGenFunction::EmitObjCConsumeObject(QualType type,
                                                      llvm::Value *object) {
    // If we're in a conditional branch, we need to make the cleanup
    // conditional.
@@ -7857,7 +7871,7 @@ index c724a063b..a6cf899af 100644
    return object;
  }
  
-@@ -2380,6 +2484,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
+@@ -2380,6 +2497,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
  /// if it can prove that the block never escapes except down the stack.
  llvm::Value *CodeGenFunction::EmitARCRetainBlock(llvm::Value *value,
                                                   bool mandatory) {
@@ -7876,7 +7890,7 @@ index c724a063b..a6cf899af 100644
    llvm::Value *result
      = emitARCValueOperation(*this, value, nullptr,
                              CGM.getObjCEntrypoints().objc_retainBlock,
-@@ -2558,6 +2674,17 @@ llvm::Value *CodeGenFunction::EmitARCStoreStrongCall(Address addr,
+@@ -2558,6 +2687,17 @@ llvm::Value *CodeGenFunction::EmitARCStoreStrongCall(Address addr,
                                                       bool ignored) {
    assert(addr.getElementType() == value->getType());
  
@@ -7894,7 +7908,7 @@ index c724a063b..a6cf899af 100644
    llvm::Function *&fn = CGM.getObjCEntrypoints().objc_storeStrong;
    if (!fn)
      fn = getARCIntrinsic(llvm::Intrinsic::objc_storeStrong, CGM);
-@@ -3211,7 +3338,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+@@ -3211,7 +3351,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
    // Find the result expression.
    const Expr *resultExpr = E->getResultExpr();
    assert(resultExpr);
@@ -7903,7 +7917,7 @@ index c724a063b..a6cf899af 100644
  
    for (PseudoObjectExpr::const_semantics_iterator
           i = E->semantics_begin(), e = E->semantics_end(); i != e; ++i) {
-@@ -3229,7 +3356,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+@@ -3229,7 +3369,7 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
          assert(!OVMA::shouldBindAsLValue(ov));
          result = asImpl().visit(ov->getSourceExpr());
          opaqueData = OVMA::bind(CGF, ov,
@@ -7912,7 +7926,7 @@ index c724a063b..a6cf899af 100644
  
        // Otherwise, just bind it.
        } else {
-@@ -3252,7 +3379,8 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
+@@ -3252,7 +3392,8 @@ ARCExprEmitter<Impl,Result>::visitPseudoObjectExpr(const PseudoObjectExpr *E) {
    for (CodeGenFunction::OpaqueValueMappingData &opaque : opaques)
      opaque.unbind(CGF);
  
@@ -7922,7 +7936,7 @@ index c724a063b..a6cf899af 100644
  }
  
  template <typename Impl, typename Result>
-@@ -3525,6 +3653,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -3525,6 +3666,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCRetainScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -7930,7 +7944,7 @@ index c724a063b..a6cf899af 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainScalarExpr(cleanups->getSubExpr());
    }
-@@ -3540,6 +3669,7 @@ llvm::Value *
+@@ -3540,6 +3682,7 @@ llvm::Value *
  CodeGenFunction::EmitARCRetainAutoreleaseScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -7938,7 +7952,7 @@ index c724a063b..a6cf899af 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainAutoreleaseScalarExpr(cleanups->getSubExpr());
    }
-@@ -3650,6 +3780,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
+@@ -3650,6 +3793,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCUnsafeUnretainedScalarExpr(const Expr *e) {
    // Look through full-expressions.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -7946,7 +7960,7 @@ index c724a063b..a6cf899af 100644
      RunCleanupsScope scope(*this);
      return emitARCUnsafeUnretainedScalarExpr(*this, cleanups->getSubExpr());
    }
-@@ -3693,6 +3824,17 @@ CodeGenFunction::EmitARCStoreStrong(const BinaryOperator *e,
+@@ -3693,6 +3837,17 @@ CodeGenFunction::EmitARCStoreStrong(const BinaryOperator *e,
      hasImmediateRetain = true;
    }
  
@@ -7964,7 +7978,7 @@ index c724a063b..a6cf899af 100644
    LValue lvalue = EmitLValue(e->getLHS());
  
    // If the RHS was emitted retained, expand this.
-@@ -3704,6 +3846,10 @@ CodeGenFunction::EmitARCStoreStrong(const BinaryOperator *e,
+@@ -3704,6 +3859,10 @@ CodeGenFunction::EmitARCStoreStrong(const BinaryOperator *e,
      value = EmitARCStoreStrong(lvalue, value, ignored);
    }
  
@@ -7975,7 +7989,7 @@ index c724a063b..a6cf899af 100644
    return std::pair<LValue,llvm::Value*>(lvalue, value);
  }
  
-@@ -3719,6 +3865,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
+@@ -3719,6 +3878,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
  
  void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
                                            const ObjCAutoreleasePoolStmt &ARPS) {
@@ -7986,7 +8000,7 @@ index c724a063b..a6cf899af 100644
    const Stmt *subStmt = ARPS.getSubStmt();
    const CompoundStmt &S = cast<CompoundStmt>(*subStmt);
  
-@@ -3736,8 +3886,7 @@ void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
+@@ -3736,8 +3899,7 @@ void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
      EHStack.pushCleanup<CallObjCMRRAutoreleasePoolObject>(NormalCleanup, token);
    }
  
@@ -12112,10 +12126,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..b4e5590cb
+index 000000000..e1db1c6d8
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,930 @@
+@@ -0,0 +1,926 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12438,6 +12452,7 @@ index 000000000..b4e5590cb
 +    auto Fresh = [&](auto &&Self, const Expr *Value) -> bool {
 +      if (!Value) return false;
 +      Value = unboundCppCheckedResult(Value);
++      if(const auto *Pseudo=dyn_cast<PseudoObjectExpr>(Value))return Self(Self,Pseudo->getResultExpr());
 +      if (const auto *List = dyn_cast<InitListExpr>(Value)) {
 +        for (const auto *Element : List->inits()) if (!Self(Self, Element)) return false;
 +        return !List->inits().empty();
@@ -12486,11 +12501,6 @@ index 000000000..b4e5590cb
 +bool CodeGen::supportsObjC3ErrorOutCall(CodeGenFunction &CGF,
 +                                        const Expr *Expression) {
 +  if (const auto *Message = dyn_cast_or_null<ObjCMessageExpr>(Expression)) {
-+    // Private property frames check nil before constructing a result. General
-+    // nullable synchronous messages need a separate non-value failure policy.
-+    if (supportsObjC3CheckedCppResult(CGF.CGM, Message->getType()) &&
-+        (!CGF.CurCodeDecl || !CGF.CurCodeDecl->hasAttr<ObjC3IsolationThunkAttr>()))
-+      return false;
 +    return supportsObjC3ErrorOutMethod(CGF.CGM, Message->getMethodDecl());
 +  }
 +  const auto *Call = dyn_cast_or_null<CallExpr>(Expression);
@@ -35630,3 +35640,87 @@ index 000000000..729f767da
 +// CHECK: objc3.carrier.array.completed
 +// CHECK: @_ZN21CheckedCompilerResultC1ERKS_
 +// CHECK: @_ZN21CheckedCompilerResultC1EOS_
+diff --git a/clang/test/ObjC3/CodeGen/native-checked-cxx-messages.mm b/clang/test/ObjC3/CodeGen/native-checked-cxx-messages.mm
+new file mode 100644
+index 000000000..2403ebf0f
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-checked-cxx-messages.mm
+@@ -0,0 +1,78 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-core-c++20-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-core-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-core-c++20-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-core-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-core-c++23-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-core-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-core-c++23-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-core-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-strict-c++20-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-strict-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -emit-pch -o %t-strict-c++20-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -include-pch %t-strict-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-strict-c++23-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-strict-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -emit-pch -o %t-strict-c++23-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -include-pch %t-strict-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c++20-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -emit-pch -o %t-strict-concurrency-c++20-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -include-pch %t-strict-concurrency-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c++23-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -emit-pch -o %t-strict-concurrency-c++23-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -include-pch %t-strict-concurrency-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c++20-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-strict-system-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-strict-system-c++20-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-strict-system-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c++23-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-strict-system-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-strict-system-c++23-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-strict-system-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fno-elide-constructors -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-checked-cxx-results.h"
++__attribute__((objc_root_class)) @interface NativeCheckedMessageHost
++@property(nonatomic,readonly) CheckedCompilerResult direct;
++- (CheckedCompilerResult)direct __objc3_throws(id<Error>);
++- (CheckedCompilerResult)make:(int)mode argument:(CheckedCompilerResult)value __objc3_throws(id<Error>);
+++ (CheckedCompilerResult)makeMode:(int)mode __objc3_throws(id<Error>);
++@end
++extern "C" CheckedCompilerResult native_checked_message(NativeCheckedMessageHost *_Nonnull object,int mode) __objc3_throws(id<Error>) {
++  return __objc3_try([object make:mode argument:CheckedCompilerResult(47)]);
++}
++extern "C" int native_checked_property(NativeCheckedMessageHost *_Nonnull object) __objc3_throws(id<Error>) {
++  auto value=__objc3_try(object.direct);
++  const auto &reference=__objc3_try(object.direct);
++  auto optional=__objc3_try_optional(object.direct);
++  __objc3_try_optional(object.direct);
++  return value.value+reference.value+__objc3_has_value(optional);
++}
++extern "C" int native_checked_class(int mode) __objc3_throws(id<Error>) {
++  auto value=__objc3_try([NativeCheckedMessageHost makeMode:mode]);return value.value;
++}
++// CHECK-LABEL: define{{.*}} @native_checked_message(
++// CHECK: objc3.checked.message.nil
++// CHECK: {{call|invoke}} void @objc3_checked_nil_result(
++// CHECK: objc3.checked.message.present
++// CHECK-LABEL: define{{.*}} @native_checked_property(
++// CHECK: {{call|invoke}} void @objc3_checked_nil_result(
++// CHECK: br i1{{.*}}label %objc3.try.failure
++// CHECK-LABEL: define{{.*}} @native_checked_class(
++// CHECK: {{call|invoke}} void @objc3_checked_nil_result(

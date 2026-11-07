@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 130,
+        "minor": 131,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Ordinary checked native C++ instance/class/super messages and synchronous property syntax retain success-only results and receiver bindings; nullable Core receivers raise an explicit native service failure after argument construction, with exact ownership and checked-cxx-messages v1 publication; focused compiler/native and 52 AST controls pass, broader consolidation and matched SDK pending",
         "Pure C++ source records containing native carriers, fixed multidimensional carrier members and nested record payloads preserve selected copy/move/destruction recipes and require cxx-carrier-composition v1 in source-free types and published bodies; 49 new commands, 523 executable compiler cases (three unsupported), 51 AST controls, 21 frontend groups, codec/isolation, 260 decoder replays and four selected sanitizer configurations / fourteen commands pass, matched SDK pending",
         "Linux native pure C++ Optional/Result by-value arguments and indirect results, checked no-value failure and nested tryOptional results, exact full-expression argument/discard ownership, template destructor instantiation and cxx-carrier-call v1 source-free admission; all 522 executable compiler cases (three unsupported), 50 AST controls, twenty frontend groups, codec/isolation, 240 exact decoder replays and sixteen sanitizer configurations / 56 commands pass; matched SDK pending",
         "Static/TLS lifetime-extended native checked-record and pure C++ carrier references use provisional referent ownership through initializer temporary cleanup, commit one permanent destructor only on success and retry after native/typed/cancellation failure; 53 source/PCH compiler commands and four source-free profiles pass, with exact native retry and thread-exit controls; matched SDK pending",
@@ -315,12 +316,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 56,
+        "minor": 57,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Ordinary checked native C++ instance/class/super messages and synchronous property syntax retain success-only results and receiver bindings; nullable Core receivers raise an explicit native service failure after argument construction, with exact ownership and checked-cxx-messages v1 publication; focused compiler/native and 52 AST controls pass, broader consolidation and matched SDK pending",
         "Implicit carrier member-array special members use per-element native constructors and shared row-major completed-prefix cleanup; a completed current element remains protected through late copy-argument destructor failure, with fault injection at every construction/copy/move/temporary position; compiler/AST/frontend/decoder consolidation and four selected native configurations pass, matched SDK pending",
         "Caller-owned C++ carrier call slots survive register exhaustion and later-argument failures; completed returns survive cleanup until success; explicit complete heap/placement initialization, prefix rollback and selected-payload destruction reject borrowed aliases and unqualified storage policies; complete compiler/frontend and sixteen-configuration sanitizer consolidation passes, matched SDK pending",
         "Static/TLS reference referents register native or selected-payload destruction after successful full-expression completion; interrupted C++ initialization aborts its guard on typed or cancellation cleanup while successful initialization releases its guard; exact thread-exit, address reuse and retry controls pass; matched SDK pending",

@@ -28,6 +28,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kCheckedCppMessageSemantic,
     kCppCarrierCompositionSemantic,
     kCppCarrierCallSemantic,
     kResourceKeyPathValueSemantic,
@@ -677,6 +678,10 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool checked_cpp_messages=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCheckedCppMessageIdentity);
+  const bool checked_cpp_message_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCheckedCppMessageSemantic)!=sidecar.required_semantics.end();
+  if(checked_cpp_messages!=checked_cpp_message_capability)
+    return Invalid("checked C++ message identity and required capability must agree");
   const bool cpp_composition=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierCompositionIdentity);
   const bool cpp_composition_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierCompositionSemantic)!=sidecar.required_semantics.end();
   if(cpp_composition!=cpp_composition_capability)
