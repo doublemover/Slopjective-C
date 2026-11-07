@@ -35,9 +35,13 @@ carrier-record allocation to runtime-sized arrays, including zero elements and
 constructor-body failure at every position. The underlying completed-prefix
 cleanup owns only successfully initialized elements.
 
-Focused compiler commands, all 52 AST controls and the expanded ARC C++20 native
-witness pass. Full compiler, frontend/decoder and sixteen-configuration sanitizer
-consolidation is running. Native trivial/register returns, throwing destructors,
+All 49 dedicated compiler commands, 524 executable compiler cases (527 discovered,
+three unsupported), all 52 AST controls, 22 frontend groups, codec/isolation,
+280 exact production decoder replays and the complete sixteen-configuration
+ASan/UBSan matrix / 56 commands pass. Source/PCH, ARC/MRC, C17/C++20/23,
+C++-only exceptions and disabled elision are covered. A standalone host-C++
+link/run also verifies the runtime bridge without Objective-C linkage.
+Native trivial/register returns, throwing destructors,
 mixed carrier runtime encodings and other unqualified shapes remain separate
 implementation work. Extension ABI 24, native frame 1, services 4 and schema 2.2
 retain their layouts; public runtime header digests change. One matched SDK
