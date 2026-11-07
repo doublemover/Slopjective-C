@@ -631,6 +631,14 @@ void TestBorrowedMemoryAliasReplay() {
           reference.pointer=published_memory_bytes(owner);
           return pointer;
         }
+        inline int published_memory_local_reference(void *owner,int count) {
+          const char *pointer=published_memory_bytes(owner);int observed=0;
+          auto work=[&pointer,&observed](auto offset){
+            ++observed;published_memory_use(pointer+offset);return observed;
+          };
+          for(int index=0;index<count;++index)work(index);
+          return work(0L);
+        }
         inline void published_memory_generic_immediate(void *owner,int count) {
           const char *pointer=published_memory_bytes(owner);
           [&pointer](auto amount){
@@ -700,6 +708,7 @@ void TestBorrowedMemoryAliasReplay() {
           #endif
           published_memory_immediate_reference(owner);
           published_memory_generic_immediate(owner,2);
+          (void)published_memory_local_reference(owner,2);
           #if __has_feature(objc_arc)
           published_memory_mutable_record((id)0);
           #endif

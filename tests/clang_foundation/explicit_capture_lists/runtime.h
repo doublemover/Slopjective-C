@@ -1027,6 +1027,12 @@ static void capture_owned_record_suite(void) {
       return count;
     };
     auto copy = work;
+    int calls = 0;
+    auto local_read = [&loan, &calls](auto offset) {
+      ++calls;
+      return int(loan[offset]);
+    };
+    CAPTURE_CHECK(local_read(0) == 'o' && local_read(0L) == 'o' && calls == 2);
     int observed = [&loan](auto offset) { return int(loan[offset]); }(0);
     CAPTURE_CHECK(observed == 'o');
     loan = (const char *)0;

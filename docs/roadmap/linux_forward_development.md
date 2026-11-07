@@ -38,6 +38,13 @@ alongside the direct C++20/23 overloaded-member AST import regression. Six-profi
 header controls also pass, alongside both instrumented source-free libc++ native modes.
 The replacement SDK and broader profile/implementation obligations remain open.
 
+The [System 2.32 scope-bound reference span](linux_borrowed_local_reference_captures.md)
+adds complete local direct-call proofs for repeated/default/generic/pack/looped
+read-only reference callables. Escapes, aliasing and captured storage mutation
+retain their checks. Focused compiler, three frontend groups and four instrumented
+native source/PCH configurations pass, alongside all thirty-six borrowed compiler
+regressions. SDK consolidation follows.
+
 The [System 2.31 synchronous-capture span](linux_borrowed_synchronous_captures.md)
 admits immediate primitive/default/generic arguments and read-only mutable
 borrowed/owned records. Opaque aggregate pointers, methods and operators retain

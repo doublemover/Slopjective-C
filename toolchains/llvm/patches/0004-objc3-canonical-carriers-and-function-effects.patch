@@ -43606,10 +43606,10 @@ index 000000000..d3ae31385
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..8bca3ea4f
+index 000000000..2c2ea3dc3
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5441 @@
+@@ -0,0 +1,5486 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43939,9 +43939,10 @@ index 000000000..8bca3ea4f
 +  mutable llvm::SmallPtrSet<const VarDecl *, 16> MutatedCaptures;
 +  bool IsOwnerSummary = false;
 +  llvm::DenseMap<const Expr *, unsigned> ClosureSlots;
-+  mutable llvm::DenseMap<const LambdaExpr *, bool> ImmediateReadOnlyLambdas;
++  mutable llvm::DenseMap<const LambdaExpr *, bool> ReadOnlyReferenceLambdas;
 +  mutable llvm::SmallPtrSet<const VarDecl *, 8> ExpiringOwners;
 +  llvm::SmallPtrSet<const LambdaExpr *, 8> ImmediateLambdaCalls;
++  llvm::SmallPtrSet<const LambdaExpr *, 8> LocalReferenceLambdas;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
 +  llvm::DenseMap<const Expr *, SmallVector<const Expr *, 2>> OwnerEvaluations;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedReferenceCaptures;
@@ -44565,6 +44566,62 @@ index 000000000..8bca3ea4f
 +      if (unsigned Owner = Type->getObjC3BorrowedOwner()) return Owner - 1;
 +    return std::nullopt;
 +  }
++  bool stableLambdaArguments(const CXXOperatorCallExpr *Call) const {
++    if (Call->getOperator() != OO_Call || !Call->getNumArgs()) return false;
++    const auto *Function = Call->getDirectCallee();
++    const auto *Prototype = Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
++    if (!Prototype || Prototype->isVariadic() ||
++        Prototype->getNumParams() != Call->getNumArgs() - 1) return false;
++    const auto Primitive = [](QualType Type) {
++      return Type->isIntegralOrEnumerationType() || Type->isRealFloatingType() ||
++             Type->isAnyComplexType();
++    };
++    // Evaluation follows capture creation. No argument may rebind or consume
++    // captured storage, or introduce an unmodeled parameter lifetime.
++    for (unsigned I = 1; I != Call->getNumArgs(); ++I) {
++      QualType Type = Prototype->getParamType(I - 1);
++      if (!Primitive(Type) || !Primitive(Call->getArg(I)->getType()) ||
++          containsObjC3BorrowedType(Context, Type) ||
++          Call->getArg(I)->HasSideEffects(Context)) return false;
++    }
++    return true;
++  }
++  void collectLocalReferenceLambdas() {
++    llvm::DenseMap<const VarDecl *, const LambdaExpr *> Candidates;
++    llvm::DenseMap<const VarDecl *, unsigned> Uses, Calls;
++    struct Work {const Stmt *Node; bool Nested;};
++    SmallVector<Work, 32> Pending{{Body, false}};
++    llvm::SmallPtrSet<const Stmt *, 32> Seen;
++    unsigned Budget = 8192;
++    while (!Pending.empty()) {
++      auto [Node, Nested] = Pending.pop_back_val();
++      if (!Node || !Seen.insert(Node).second) continue;
++      if (!Budget--) return; // Failure leaves every candidate unqualified.
++      if (const auto *Declarations = dyn_cast<DeclStmt>(Node); !Nested && Declarations)
++        for (const Decl *D : Declarations->decls())
++          if (const auto *Variable = dyn_cast<VarDecl>(D);
++              Variable && Variable->hasLocalStorage() && Variable->hasInit() &&
++              !Variable->getType()->isReferenceType() &&
++              !Variable->getType().isVolatileQualified())
++            if (const auto *Lambda = immediateLambdaReceiver(Variable->getInit()))
++              Candidates[Variable] = Lambda;
++      if (const auto *Reference = dyn_cast<DeclRefExpr>(Node))
++        if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl()))
++          ++Uses[Variable];
++      if (const auto *Call = dyn_cast<CXXOperatorCallExpr>(Node);
++          !Nested && Call && stableLambdaArguments(Call))
++        if (const auto *Receiver = dyn_cast<DeclRefExpr>(Call->getArg(0)->IgnoreParenImpCasts()))
++          if (const auto *Variable = dyn_cast<VarDecl>(Receiver->getDecl()))
++            ++Calls[Variable];
++      Nested |= isa<LambdaExpr, BlockExpr>(Node);
++      for (const Stmt *Child : Node->children()) Pending.push_back({Child, Nested});
++    }
++    for (const auto &[Variable, Lambda] : Candidates)
++      if (Uses.lookup(Variable) && Uses.lookup(Variable) == Calls.lookup(Variable))
++        // Every use is a direct invocation in this body. Copies, aliasing,
++        // explicit operator/member calls, nested captures and escapes fail.
++        LocalReferenceLambdas.insert(Lambda);
++  }
 +  void collect(const Stmt *Node, const Stmt *Scope) {
 +    if (!Node)
 +      return;
@@ -44584,21 +44641,7 @@ index 000000000..8bca3ea4f
 +      if (const auto *Call = dyn_cast<CXXOperatorCallExpr>(E);
 +          Call && Call->getOperator() == OO_Call && Call->getNumArgs() >= 1)
 +        if (const auto *Lambda = immediateLambdaReceiver(Call->getArg(0))) {
-+          const auto *Function = Call->getDirectCallee();
-+          const auto *Prototype = Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
-+          bool Stable = Prototype && !Prototype->isVariadic() &&
-+              Prototype->getNumParams() == Call->getNumArgs() - 1;
-+          // Arguments are evaluated after capture creation. Admit only scalar
-+          // values whose evaluation cannot rebind or consume a captured owner.
-+          for (unsigned I = 1; Stable && I < Call->getNumArgs(); ++I) {
-+            QualType Type = Prototype->getParamType(I - 1);
-+            const auto Scalar = [](QualType T) {
-+              return T->isIntegralOrEnumerationType() || T->isRealFloatingType() || T->isAnyComplexType();
-+            };
-+            Stable = Scalar(Type) && Scalar(Call->getArg(I)->getType()) &&
-+                !containsObjC3BorrowedType(Context, Type) &&
-+                !Call->getArg(I)->HasSideEffects(Context);
-+          }
++          const bool Stable = stableLambdaArguments(Call);
 +          if (Stable) ImmediateLambdaCalls.insert(Lambda);
 +        }
 +      MightBorrow |= carriesBorrowedValue(E->getType());
@@ -45087,17 +45130,18 @@ index 000000000..8bca3ea4f
 +    }
 +    return true;
 +  }
-+  bool immediateReadOnlyLambda(const LambdaExpr *Lambda) const {
-+    if (auto Found = ImmediateReadOnlyLambdas.find(Lambda); Found != ImmediateReadOnlyLambdas.end()) return Found->second;
-+    // An immediate literal has no future instantiations. Check each concrete
-+    // synchronous body, retaining the conservative recursion and work bounds.
-+    ImmediateReadOnlyLambdas[Lambda] = false;
-+    if (!ImmediateLambdaCalls.contains(Lambda) || !qualifiedGenericCapture(Lambda)) return false;
++  bool readOnlyReferenceLambda(const LambdaExpr *Lambda) const {
++    if (auto Found = ReadOnlyReferenceLambdas.find(Lambda); Found != ReadOnlyReferenceLambdas.end()) return Found->second;
++    // Immediate literals and closed local uses have no escaping instantiations.
++    // Check every concrete synchronous body within the existing work bounds.
++    ReadOnlyReferenceLambdas[Lambda] = false;
++    if ((!ImmediateLambdaCalls.contains(Lambda) && !LocalReferenceLambdas.contains(Lambda)) ||
++        !qualifiedGenericCapture(Lambda)) return false;
 +    for (const auto &Capture : Lambda->captures())
 +      if (!Capture.capturesVariable()) return false;
 +    for (const auto &[Declaration, Body] : closureBodies(Lambda))
 +      if (!Body || !immediateReadOnlyLambdaBody(cast<FunctionDecl>(Declaration), Body)) return false;
-+    ImmediateReadOnlyLambdas[Lambda] = true;
++    ReadOnlyReferenceLambdas[Lambda] = true;
 +    return true;
 +  }
 +  OwnerSummary futureOwnerRequirements(const Expr *Closure) {
@@ -48309,7 +48353,7 @@ index 000000000..8bca3ea4f
 +                    (Type->isPointerType() || Type->isObjCObjectPointerType() ||
 +                     Type->isBlockPointerType() ||
 +                     (Type->getAsCXXRecordDecl() && Type->getAsCXXRecordDecl()->isLambda()));
-+                if (!immediateReadOnlyLambda(Lambda) &&
++                if (!readOnlyReferenceLambda(Lambda) &&
 +                    (Capture.getCaptureKind() == LCK_ByRef || capturedTargets(Init, State,
 +                        Variable && Variable->getType()->isReferenceType() && Capture.getCaptureKind() == LCK_ByCopy).any()) &&
 +                    (MutableOwnerReference || value(Init, State).any() ||
@@ -48481,7 +48525,7 @@ index 000000000..8bca3ea4f
 +          if (const auto *Call = dyn_cast<CXXOperatorCallExpr>(Invocation);
 +              Call && Call->getNumArgs() >= 1)
 +            if (const auto *Lambda = immediateLambdaReceiver(Call->getArg(0));
-+                Lambda && immediateReadOnlyLambda(Lambda))
++                Lambda && ImmediateLambdaCalls.contains(Lambda) && readOnlyReferenceLambda(Lambda))
 +              // The literal cannot escape and its synchronous invocation has
 +              // returned. It no longer protects a future reference mutation.
 +              State.CapturedReferenceTargets[ClosureSlots.lookup(Lambda)].reset();
@@ -48761,6 +48805,7 @@ index 000000000..8bca3ea4f
 +    if (const auto *Constructor = dyn_cast_or_null<CXXConstructorDecl>(Callable))
 +      for (const CXXCtorInitializer *Initializer : Constructor->inits())
 +        collectBindings(Initializer->getInit());
++    collectLocalReferenceLambdas();
 +    collect(Body, Body);
 +    if (const auto *Constructor = dyn_cast_or_null<CXXConstructorDecl>(Callable))
 +      for (const CXXCtorInitializer *Initializer : Constructor->inits())
@@ -53659,7 +53704,7 @@ index 000000000..81b4197d7
 +struct BorrowedAddress { const char **pointer; };
 diff --git a/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
 new file mode 100644
-index 000000000..151f30bd3
+index 000000000..f6e6f6268
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
 @@ -0,0 +1,163 @@
@@ -53722,7 +53767,7 @@ index 000000000..151f30bd3
 +}
 +void reference_capture(id owner) {
 +  const char *pointer=bytes(owner);
-+  auto work=[&pointer] {use_noescape(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto work=[&pointer] {use_noescape(pointer);};
 +  work();
 +}
 +void future_reference(id owner) {
@@ -54586,7 +54631,7 @@ index 000000000..be1320b34
 +@end
 diff --git a/clang/test/ObjC3/Sema/borrowed-future-captures.mm b/clang/test/ObjC3/Sema/borrowed-future-captures.mm
 new file mode 100644
-index 000000000..e86dfaeb8
+index 000000000..5be8e45f0
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-future-captures.mm
 @@ -0,0 +1,170 @@
@@ -54657,7 +54702,7 @@ index 000000000..e86dfaeb8
 +  return [owner]{future_use(future_bytes(owner));}; // expected-error {{borrowed pointer escapes}}
 +}
 +void unqualified_reference(void *owner) {
-+  auto work=[&owner]{future_use(future_bytes(owner));}; // expected-error {{C++ lambda reference capture}}
++  auto work=[&owner]{future_use(future_bytes(owner));};
 +  work();
 +}
 +void unqualified_mutable(void *owner) {
@@ -60696,7 +60741,7 @@ index 000000000..704126b02
 +}
 diff --git a/clang/test/ObjC3/Sema/borrowed-immediate-reference-captures.mm b/clang/test/ObjC3/Sema/borrowed-immediate-reference-captures.mm
 new file mode 100644
-index 000000000..728f54bc4
+index 000000000..64a8dfa65
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-immediate-reference-captures.mm
 @@ -0,0 +1,148 @@
@@ -60767,10 +60812,10 @@ index 000000000..728f54bc4
 +  const char *pointer=memory_bytes(owner);
 +  [pointer]{memory_use(pointer);}();
 +}
-+void named_reference_stays_checked(void *owner) {
++void named_reference_is_scope_bound(void *owner) {
 +  const char *pointer=memory_bytes(owner);
-+  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
-+  work();
++  auto work=[&pointer]{memory_use(pointer);};
++  work();work();
 +}
 +void immediate_argument_stays_checked(void *owner) {
 +  const char *pointer=memory_bytes(owner);
@@ -61459,7 +61504,7 @@ index 000000000..3ef017dd0
 +#endif
 diff --git a/clang/test/ObjC3/Sema/borrowed-owned-records.mm b/clang/test/ObjC3/Sema/borrowed-owned-records.mm
 new file mode 100644
-index 000000000..0154e8c22
+index 000000000..6fda36dee
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-owned-records.mm
 @@ -0,0 +1,136 @@
@@ -61570,7 +61615,7 @@ index 000000000..0154e8c22
 +#endif
 +}
 +void owner_reference_field(id owner) {
-+  MemoryObjectReference box{owner};auto work=[box]{memory_use(memory_object_bytes(box.owner));}; // expected-error {{reference capture requiring an explicit lifetime contract}}
++  MemoryObjectReference box{owner};auto work=[box]{memory_use(memory_object_bytes(box.owner));};
 +  owner=0;
 +  work(); // expected-error {{lifetime ended}}
 +}
@@ -62217,4 +62262,127 @@ index 000000000..4a5949a03
 +  const char *pointer=memory_object_bytes(record.owner);
 +  alias->change();
 +  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
+diff --git a/clang/test/ObjC3/Sema/borrowed-local-reference-captures.mm b/clang/test/ObjC3/Sema/borrowed-local-reference-captures.mm
+new file mode 100644
+index 000000000..42b6cee27
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-local-reference-captures.mm
+@@ -0,0 +1,117 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-owned-records.h"
++#endif
++int local_argument_effect();
++void local_concrete_reference(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);};
++  work();work();
++}
++void local_const_default(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  const auto work=[&pointer](int offset=0){memory_use(pointer+offset);};
++  work();work(1);
++}
++void local_generic_reference(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](auto offset){memory_use(pointer+offset);return int(*pointer);};
++  int a=work(0);int b=work(1L);(void)a;(void)b;
++}
++void local_generic_pack_reference(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](auto... offsets){(memory_use(pointer+offsets),...);};
++  work(0,1L);work(2u);
++}
++void local_reference_counter(void *owner,int count) {
++  const char *pointer=memory_bytes(owner);int observed=0;
++  auto work=[&pointer,&observed](int offset){++observed;memory_use(pointer+offset);};
++  for(int index=0;index<count;++index)work(index);
++}
++void local_reference_record(void *owner) {
++  MemoryHolder holder{memory_bytes(owner)};
++  auto work=[&holder]{memory_use(holder.pointer);};
++  work();work();
++}
++void local_owner_reference(void *owner) {
++  auto work=[&owner]{memory_use(memory_bytes(owner));};
++  work();work();
++  memory_consume(owner);
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void local_expired_before_call(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);};
++  memory_consume(owner);
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void local_rebound_loan(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);};
++  pointer=memory_bytes(owner); // expected-error {{mutation of storage captured by reference}}
++  work();
++}
++void local_reference_mutating_body(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{pointer=nullptr;}; // expected-error {{C++ lambda reference capture}}
++  work();
++}
++void local_reference_escaped(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto copy=work;copy();
++}
++void local_reference_alias(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto &alias=work;alias();
++}
++void local_reference_nested_use(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto nested=[&work]{work();};(void)nested; // expected-error {{C++ lambda reference capture}}
++}
++void local_reference_explicit_operator(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  work.operator()();
++}
++void local_reference_side_effect(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](int offset){memory_use(pointer+offset);}; // expected-error {{C++ lambda reference capture}}
++  work(local_argument_effect());
++}
++void local_reference_pointer_argument(void *owner,int *offset) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](int *offset){memory_use(pointer+*offset);}; // expected-error {{C++ lambda reference capture}}
++  work(offset);
++}
++void local_reference_return(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{return pointer;}; // expected-error {{C++ lambda reference capture}} expected-error {{return without a matching borrowed return}}
++  work();
++}
++void local_reference_unused(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  (void)work;
++}
++void local_generic_mutating_specialization(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](auto input){
++    if constexpr(sizeof(input)==sizeof(long))pointer=nullptr;
++    else memory_use(pointer);
++  }; // expected-error@-3 {{C++ lambda reference capture}}
++  work(0);work(0L);
 +}
