@@ -518,6 +518,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
+  const bool cpp_record_result=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCheckedCppRecordResultIdentity);
+  const bool cpp_record_result_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCheckedCppRecordResultSemantic)!=sidecar.required_semantics.end();
+  if(cpp_record_result!=cpp_record_result_capability)
+    Add(result,"O3IFC134","checked C++ record result identity and required capability must agree",expected.canonical_name);
   const bool cpp_storage=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierStorageIdentity);
   const bool cpp_storage_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierStorageSemantic)!=sidecar.required_semantics.end();
   if(cpp_storage!=cpp_storage_capability)

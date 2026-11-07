@@ -194,6 +194,7 @@ bool HasDeclarationLocalFactoryResult(const clang::NamedDecl *declaration);
 
 bool HasDeclarationLocalType(const clang::NamedDecl *declaration);
 
+bool HasDeclarationCheckedCppRecordResult(const clang::NamedDecl *declaration);
 bool HasDeclarationCppCarrierStorage(const clang::NamedDecl *declaration);
 bool HasDeclarationCheckedCppMessage(const clang::NamedDecl *declaration);
 bool HasDeclarationCppCarrierComposition(const clang::NamedDecl *declaration);

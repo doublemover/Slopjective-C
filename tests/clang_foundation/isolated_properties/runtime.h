@@ -287,6 +287,7 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
 #include "async.h"
 #include "checked_results.h"
 #include "checked_messages.h"
+#include "checked_register_results.h"
 #include "checked_regions.h"
 #include "checked_optional_results.h"
 #include "checked_optional_storage.h"
@@ -365,6 +366,7 @@ static void property_suite(void) {
   async_property_suite(main_object,actor,child);
   checked_result_suite(main_object);
   checked_message_suite(main_object,child);
+  checked_register_result_suite(main_object);
   checked_region_suite(main_object);
   checked_optional_suite(main_object);
   checked_optional_storage_suite(main_object);

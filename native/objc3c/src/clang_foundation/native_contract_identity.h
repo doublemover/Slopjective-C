@@ -103,6 +103,20 @@ inline bool IsNativeCppCarrierValue(clang::QualType type,unsigned depth=0) {
   if(const auto *result=type->getAs<clang::ObjC3ResultType>())return payload(result->getSuccessType()) || payload(result->getErrorType());
   return false;
 }
+inline bool HasNativeCheckedCppRecordResultType(clang::QualType type,unsigned depth=0) {
+  if(type.isNull() || depth>64)return false;
+  type=type.getCanonicalType();
+  if(type->isPointerType() || type->isBlockPointerType() || type->isReferenceType())
+    return HasNativeCheckedCppRecordResultType(type->getPointeeType(),depth+1);
+  if(const auto *member=type->getAs<clang::MemberPointerType>())
+    return HasNativeCheckedCppRecordResultType(member->getPointeeType(),depth+1);
+  if(const auto *function=type->getAs<clang::FunctionProtoType>()) {
+    const auto effects=function->getObjC3FunctionEffects();
+    return !effects.Async && effects.Throws!=clang::ObjC3ThrowsKind::None &&
+        (function->getReturnType()->getAsCXXRecordDecl() || function->getReturnType()->isDependentType());
+  }
+  return false;
+}
 inline bool HasNativeCppCarrierCallType(clang::QualType type,unsigned depth=0) {
   if(type.isNull() || depth>64)return false;
   type=type.getCanonicalType();
@@ -263,6 +277,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeTypeContracts(out, array->getElementType(), context,
                               position + ".element", depth + 1);
   } else if (const auto *function = type->getAs<clang::FunctionType>()) {
+    if(HasNativeCheckedCppRecordResultType(type))
+      AppendNativeContractField(out,";checked-cxx-record-results:v1;");
     if(HasNativeCppCarrierCallType(type))
       AppendNativeContractField(out,";cxx-carrier-call:v1;");
     if (function->hasObjC3BorrowedResult()) {

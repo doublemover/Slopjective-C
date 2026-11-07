@@ -129,6 +129,24 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationCheckedCppRecordResult(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Results : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitCallExpr(clang::CallExpr *call) override {
+        found|=HasNativeCheckedCppRecordResultType(call->getCallee()->getType());
+        if(const auto *function=call->getDirectCallee())found|=HasNativeCheckedCppRecordResultType(function->getType());
+        return true;
+      }
+      bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+        if(const auto *method=message->getMethodDecl())found|=HasNativeCheckedCppRecordResultType(method->getObjC3FunctionType());
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationCppCarrierStorage(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
     struct Storage : clang::DynamicRecursiveASTVisitor {

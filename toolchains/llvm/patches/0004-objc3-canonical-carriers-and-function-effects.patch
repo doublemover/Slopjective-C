@@ -5911,7 +5911,7 @@ index e0b62591a..2ad8208b6 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..7a2222f6f 100644
+index 4be3e977b..254b97344 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,142 @@
@@ -6249,7 +6249,7 @@ index 4be3e977b..7a2222f6f 100644
 +    if (A->isImplicit() ||
 +        (A->isInherited() &&
 +         !(Policy.PolishForDeclaration &&
-+           isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
++           isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
@@ -6266,7 +6266,7 @@ index 4be3e977b..7a2222f6f 100644
 +    // native attributes when printing a reusable declaration contract.
 +    const auto *SPI = dyn_cast<AnnotateAttr>(A);
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
-+        !isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
++        !isa<PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
@@ -15328,7 +15328,7 @@ index 3f0a7304d..4badce1e2 100644
        return true;
  
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..9c37debdd 100644
+index 11cd159c0..2117adb3f 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,8 @@
@@ -15843,7 +15843,39 @@ index 11cd159c0..9c37debdd 100644
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformChooseExpr(ChooseExpr *E) {
-@@ -17686,6 +18091,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
+@@ -17672,10 +18077,31 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
+ 
+   auto epi = exprFunctionType->getExtProtoInfo();
+   epi.ExtParameterInfos = extParamInfos.getPointerOrNull(paramTypes.size());
++  // Blocks are callable effect boundaries during substitution as well as
++  // parsing. Resolve their error type and publish the rebuilt signature before
++  // transforming captures/body, where checked expressions query that boundary.
++  if(epi.ObjC3Effects.Throws==ObjC3ThrowsKind::Typed) {
++    QualType Error=getDerived().TransformType(epi.ObjC3Effects.ErrorType);
++    if(Error.isNull()) {
++      getSema().ActOnBlockError(E->getCaretLocation(),nullptr);
++      return ExprError();
++    }
++    epi.ObjC3Effects.ErrorType=Error.getUnqualifiedType();
++  }
+ 
+   QualType functionType =
+     getDerived().RebuildFunctionProtoType(exprResultType, paramTypes, epi);
++  if(functionType.isNull()) {
++    getSema().ActOnBlockError(E->getCaretLocation(),nullptr);
++    return ExprError();
++  }
+   blockScope->FunctionType = functionType;
++  if(SemaRef.getLangOpts().ObjC3) {
++    auto *Signature=SemaRef.Context.getTrivialTypeSourceInfo(functionType,E->getCaretLocation());
++    auto Written=Signature->getTypeLoc().castAs<FunctionProtoTypeLoc>();
++    for(unsigned I=0;I<params.size();++I)Written.setParam(I,params[I]);
++    blockScope->TheDecl->setSignatureAsWritten(Signature);
++  }
+ 
+   // Set the parameters on the block decl.
+   if (!params.empty())
+@@ -17686,6 +18112,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
      blockScope->ReturnType = exprResultType;
    }
  
@@ -58315,10 +58347,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..523d89bae
+index 000000000..b7111479c
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2083 @@
+@@ -0,0 +1,2138 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -60400,6 +60432,61 @@ index 000000000..523d89bae
 +      for(const auto *Child:Node->children())Self(Self,Child);
 +    };
 +    Visit(Visit,Inspect->getBody());EXPECT_GE(Found,1u);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, TrivialAbiSurvivesDeclarationContractPrinting) {
++  for(const char *Standard:{"c++20","c++23"}) {
++    std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,
++      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu"};
++    auto AST=tooling::buildASTFromCodeWithArgs(R"(
++      struct [[clang::trivial_abi]] Owner {long value;Owner(int);Owner(const Owner &);~Owner() noexcept;};
++    )",Args,"trivial-abi-contract.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    const CXXRecordDecl *Record=nullptr;
++    for(const auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(const auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner" && R->isCompleteDefinition())Record=R;
++    ASSERT_NE(Record,nullptr);ASSERT_TRUE(Record->canPassInRegisters());
++    PrintingPolicy Policy(AST->getASTContext().getLangOpts());Policy.PolishForDeclaration=true;
++    std::string Text;llvm::raw_string_ostream Out(Text);Record->print(Out,Policy);Out<<';';
++    EXPECT_NE(Text.find("trivial_abi"),std::string::npos);
++    auto Replay=tooling::buildASTFromCodeWithArgs(Text,Args,"trivial-abi-replay.mm");
++    ASSERT_TRUE(Replay);ASSERT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++    bool Found=false;
++    for(const auto *D:Replay->getASTContext().getTranslationUnitDecl()->decls())
++      if(const auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner" && R->isCompleteDefinition()) {
++        EXPECT_TRUE(R->canPassInRegisters());EXPECT_FALSE(R->hasNonTrivialDestructorForCall());Found=true;
++      }
++    EXPECT_TRUE(Found);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, InstantiatedBlocksOwnTheirTypedEffectSignature) {
++  for(const char *Standard:{"c++20","c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,
++      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fblocks"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(R"(
++      @protocol Error @end
++      template<class E>auto factory(E error){return ^int(int value) __objc3_throws(E){if(value)__objc3_throw(error);return 0;};}
++      auto use(id<Error> error){return factory(error);}
++    )",Args,"instantiated-block-effects.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    unsigned Found=0;
++    auto Visit=[&](auto &&Self,const Stmt *Node)->void {
++      if(!Node)return;
++      if(const auto *Block=dyn_cast<BlockExpr>(Node)) {
++        const auto *Info=Block->getBlockDecl()->getSignatureAsWritten();ASSERT_NE(Info,nullptr);
++        const auto *Type=Info->getType()->getAs<FunctionProtoType>();ASSERT_NE(Type,nullptr);
++        const auto Effects=Type->getObjC3FunctionEffects();EXPECT_EQ(Effects.Throws,ObjC3ThrowsKind::Typed);
++        EXPECT_FALSE(Effects.ErrorType->isDependentType());EXPECT_TRUE(Effects.ErrorType->isObjCObjectPointerType());++Found;
++      }
++      for(const auto *Child:Node->children())Self(Self,Child);
++    };
++    for(const auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(const auto *Template=dyn_cast<FunctionTemplateDecl>(D))
++        for(const auto *Specialization:Template->specializations())Visit(Visit,Specialization->getBody());
++    EXPECT_EQ(Found,1u);
 +  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp

@@ -1,5 +1,14 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.133 / System 2.59 register-result span](linux_checked_cpp_register_results.md)
+implements checked trivial, empty, union, mixed-register and owning `trivial_abi`
+C++ results, with success-only binding and exact return cleanup. Publication
+preserves ABI attributes and requires `objc3.checked-cxx-record-results.v1`.
+Instantiated Blocks now retain their own substituted typed-effect signatures.
+All 98 new positive compiler commands, 54 AST controls, source-free profiles and
+four selected sanitizer configurations / fourteen commands pass; wider updated
+consolidation is running.
+
 The [source 2.132 / System 2.58 storage span](linux_cpp_carrier_default_storage.md)
 implements empty C++ Optional values, member defaults, partial and multidimensional
 arrays, computed heap bounds and parenthesized initialization. Invalid bounds

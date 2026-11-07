@@ -1057,6 +1057,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kDependentKeyPathLiteralSemantic);
     if (HasCheckedKeyPathReadIdentity(declaration))
       sidecar.required_semantics.push_back(kCheckedKeyPathReadSemantic);
+    if (HasCheckedCppRecordResultIdentity(declaration))
+      sidecar.required_semantics.push_back(kCheckedCppRecordResultSemantic);
     if (HasCppCarrierStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kCppCarrierStorageSemantic);
     if (HasCheckedCppMessageIdentity(declaration))

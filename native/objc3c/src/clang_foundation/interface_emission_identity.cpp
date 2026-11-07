@@ -2525,6 +2525,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationCheckedCppRecordResult(representative))
+    identity.canonical_type_identity += ";checked-cxx-record-results:v1;";
   if (HasDeclarationCppCarrierStorage(representative))
     identity.canonical_type_identity += ";cxx-carrier-storage:v1;";
   if (HasDeclarationCheckedCppMessage(representative))

@@ -6424,6 +6424,74 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
   }
 }
 
+void TestCheckedCppRecordResultReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string prelude=R"(
+      @protocol Error @end
+      namespace PublishedCheckedRegister {
+        struct Small {int value;};struct Pair {long value,other;};
+        struct Mixed {double value;int other;};struct Large {long value,other[4];};
+        struct [[clang::trivial_abi]] Owner {long value;explicit Owner(int);Owner(const Owner &);Owner(Owner &&);~Owner() noexcept;};
+      }
+    )";
+    const auto source=prelude+R"(
+      namespace PublishedCheckedRegister {
+        Small small_source(int) __objc3_throws(id<Error>);
+        Pair pair_source(int) __objc3_throws(id<Error>);
+        Mixed mixed_source(int) __objc3_throws(id<Error>);
+        Large large_source(int) __objc3_throws(id<Error>);
+        Owner owner_source(int) __objc3_throws(id<Error>);
+        inline Small small(int mode) __objc3_throws(id<Error>){return __objc3_try(small_source(mode));}
+        inline Pair pair(int mode) __objc3_throws(id<Error>){return __objc3_try(pair_source(mode));}
+        inline Mixed mixed(int mode) __objc3_throws(id<Error>){return __objc3_try(mixed_source(mode));}
+        inline Large large(int mode) __objc3_throws(id<Error>){return __objc3_try(large_source(mode));}
+        inline Owner owner(int mode) __objc3_throws(id<Error>){return __objc3_try(owner_source(mode));}
+        template<class T,class E> inline T block_forward(T (*source)(int) __objc3_throws(E),int mode) __objc3_throws(E) {
+          auto factory=^T(int input) __objc3_throws(E){return __objc3_try(source(input));};
+          return __objc3_try(factory(mode));
+        }
+        inline Owner generic_block(int mode) __objc3_throws(id<Error>){return __objc3_try(block_forward<Owner,id<Error>>(owner_source,mode));}
+        inline int optional(int mode) {
+          auto small=__objc3_try_optional(small_source(mode));auto owner=__objc3_try_optional(owner_source(mode));
+          __objc3_try_optional(small_source(mode));__objc3_try_optional(owner_source(mode));
+          return __objc3_has_value(small)+__objc3_has_value(owner);
+        }
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"checked-cpp-record-results.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.checked_register_results","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.checked_register_results","test",{},{},{},{"PublishedCheckedRegister","Error"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    auto ordinary_source=source;auto attribute=ordinary_source.find("[[clang::trivial_abi]] ");assert(attribute!=std::string::npos);
+    ordinary_source.erase(attribute,std::string("[[clang::trivial_abi]] ").size());
+    auto ordinary=emit(ordinary_source);
+    assert(first.identity.semantic_fingerprint!=ordinary.identity.semantic_fingerprint);
+
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kCheckedCppRecordResultSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kCheckedCppRecordResultSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kCheckedCppRecordResultSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto declarations=emit(prelude);auto invented=DecodeSemanticInterfaceSidecar(declarations.sidecar_json,declarations.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kCheckedCppRecordResultSemantic)));
+    invented->required_semantics.push_back(kCheckedCppRecordResultSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestCppCarrierDefaultStorageReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10541,6 +10609,7 @@ int main(int argc,char **argv) {
   TestClosureFactories();
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
+  TestCheckedCppRecordResultReplay();
   TestCppCarrierDefaultStorageReplay();
   TestCheckedCppMessageReplay();
   TestCppCarrierCompositionReplay();
