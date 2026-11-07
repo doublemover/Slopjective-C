@@ -1317,7 +1317,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       !IsDetachedNestedTemplateDefinition(body) &&
       !IsConcreteMemberClassSpecialization(llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(body)) &&
       !IsDependentMemberPartial(body) && !IsClosedParentMemberSpecialization(body) && !IsClosedParentPattern(body)) return false;
-  if ((body->getNumBases() || body->isPolymorphic()) && !body->getASTContext().getLangOpts().RTTI) return false;
+  if (body->isDynamicClass() && !body->getASTContext().getLangOpts().RTTI) return false;
   for (const auto *attribute : body->attrs()) {
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (!pattern || tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||

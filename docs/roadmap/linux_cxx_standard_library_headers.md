@@ -46,7 +46,13 @@ implemented separately without repeatedly rebuilding the accepted archive.
 The importer reuses declarations already parsed from matching native headers.
 Matching uses header bytes, spelling offsets, native identities and printed AST
 definitions, rather than merging another standard-library implementation into
-the consumer. The LLVM patch stack also fixes unresolved-member import to retain
+the consumer. Native template identities use canonical Clang USRs, independent
+of inline-namespace printing. Written friend declarations introduced by native
+class instantiation reuse the matching header entity; each declaration receives
+one mapping, while function imports own their parameters. Anonymous storage fields
+bind their native owner and field index when Clang provides no USR. Exact imported function
+redeclarations remain linked even when the two ASTs have different native template
+instantiation state. The LLVM patch stack also fixes unresolved-member import to retain
 the base type instead of the overload-set type, with implicit-this, explicit-arrow
 and explicit-dot template-instantiation regressions in C++20 and C++23.
 
@@ -71,9 +77,21 @@ Twelve existing frontend control groups pass. A maintained native executable tes
 removes the provider source, compiles two consumers, links the three objects and
 checks native values, callable ownership and common symbol addresses. Its C++20
 O0 and Objective-C++23 ARC O2 configurations pass with ASan/UBSan using libstdc++.
-A pinned libc++ build is available; its consumer import exposed an unsupported
-explicit-instantiation AST node, whose compiler fix and regression are in progress.
+The same two native modes also pass with `_GLIBCXX_ASSERTIONS=1` and with
+exceptions/RTTI disabled. Six header profiles reject consumers with changed
+header bytes, assertion configuration, exception/RTTI settings or library ABI.
+A focused synthetic-header test covers inline-namespace USRs, instantiated friends,
+source-free overload resolution and exact function redeclaration chains. The LLVM importer also preserves unnamed-field instantiation origins and reuses
+existing template records and anonymous fields. Thirteen AST infrastructure tests
+pass, including eight full/minimal C++20/23 imports into empty and prepopulated
+contexts. The reduced source-free anonymous-storage consumer passes; complete
+libc++ provider/two-consumer native execution is in progress.
 
-Other standard-library configurations, user specializations,
-broader dependent lookup contracts,
+CTest maintains `objc3_standard_library_identity`,
+`objc3_standard_library_assertions` and `objc3_standard_library_no_rtti_exceptions`.
+Configuring `OBJC3_TEST_LIBCXX_ROOT` registers `objc3_standard_library_libcxx`
+against that installation's headers and libraries. Configuration and vendor
+execution entries use the `extended` label.
+
+Other permitted standard-library customization forms, broader dependent lookup contracts,
 consolidated package/runtime verification and the replacement SDK remain tracked.

@@ -304,6 +304,14 @@ if (BUILD_TESTING)
   add_dependencies(objc3_c_inline_provider_test objc3_runtime_services)
   add_test(NAME objc3_c_inline_provider COMMAND objc3_c_inline_provider_test)
   set_tests_properties(objc3_c_inline_provider PROPERTIES TIMEOUT 90)
+  add_executable(objc3_standard_library_identity_test
+    ../../../../tests/clang_foundation/standard_library_identity_test.cpp)
+  target_include_directories(objc3_standard_library_identity_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_standard_library_identity_test PRIVATE objc3c_clang_foundation)
+  objc3c_link_clang_components(objc3_standard_library_identity_test clangTooling)
+  add_test(NAME objc3_standard_library_identity COMMAND objc3_standard_library_identity_test)
+  set_tests_properties(objc3_standard_library_identity PROPERTIES TIMEOUT 30)
   add_executable(objc3_standard_library_provider_test
     ../../../../tests/clang_foundation/standard_library_provider_test.cpp)
   target_include_directories(objc3_standard_library_provider_test SYSTEM PRIVATE
@@ -316,6 +324,28 @@ if (BUILD_TESTING)
     OBJC3_STANDARD_LIBRARY_TEST_LINK_FLAGS="${_c_inline_link_flags}")
   add_test(NAME objc3_standard_library_provider COMMAND objc3_standard_library_provider_test)
   set_tests_properties(objc3_standard_library_provider PROPERTIES TIMEOUT 300)
+  add_test(NAME objc3_standard_library_no_rtti_exceptions
+    COMMAND objc3_standard_library_provider_test -fno-exceptions -fno-rtti)
+  set_tests_properties(objc3_standard_library_no_rtti_exceptions PROPERTIES
+    LABELS "native;standard-library;extended" TIMEOUT 300)
+  add_test(NAME objc3_standard_library_assertions
+    COMMAND objc3_standard_library_provider_test -D_GLIBCXX_ASSERTIONS=1)
+  set_tests_properties(objc3_standard_library_assertions PROPERTIES
+    LABELS "native;standard-library;extended" TIMEOUT 600)
+  set(OBJC3_TEST_LIBCXX_ROOT "" CACHE PATH
+    "Optional libc++ installation for native standard-library interoperability tests")
+  if(OBJC3_TEST_LIBCXX_ROOT)
+    if(NOT EXISTS "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1/__config" OR
+        NOT IS_DIRECTORY "${OBJC3_TEST_LIBCXX_ROOT}/lib")
+      message(FATAL_ERROR "OBJC3_TEST_LIBCXX_ROOT must contain libc++ headers and libraries")
+    endif()
+    add_test(NAME objc3_standard_library_libcxx
+      COMMAND objc3_standard_library_provider_test
+        -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
+        "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
+    set_tests_properties(objc3_standard_library_libcxx PROPERTIES
+      LABELS "native;standard-library;extended" TIMEOUT 600)
+  endif()
   add_executable(objc3_borrowed_pointers_test
     ../../../../tests/clang_foundation/borrowed_pointers_test.cpp)
   target_include_directories(objc3_borrowed_pointers_test SYSTEM PRIVATE

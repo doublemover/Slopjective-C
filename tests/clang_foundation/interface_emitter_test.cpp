@@ -3297,6 +3297,7 @@ namespace NativeStandard {
         auto feature=request;feature.arguments.push_back(flag);
         feature.output_path=(root/(std::string("rejected-")+flag+".o")).string();
         auto result=Compile(feature);
+        if(result.success)std::fprintf(stderr,"INCOMPATIBLE STANDARD HEADER FLAG ADMITTED %s\n",flag);
         assert(!result.success && !std::filesystem::exists(feature.output_path));
         assert(std::any_of(result.interface_import_diagnostics.begin(),result.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139" || d.code=="O3IFC183";}));
       }

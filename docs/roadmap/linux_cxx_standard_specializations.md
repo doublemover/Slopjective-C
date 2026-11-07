@@ -32,8 +32,11 @@ unordered map using a published hash and equality operator, an instantiated
 partial hash, tuple/common-type traits, range traits and numeric limits after
 provider source removal. All six frontend profiles and both instrumented native
 provider/two-consumer execution modes pass. Compiler configuration inputs and
-feature-query fingerprints receive matching replay checks. Broader header-control
-consolidation and the libc++ importer repair are in progress. Accepted SDK 2.62 remains unchanged; consolidated delivery follows.
+feature-query fingerprints receive matching replay checks. All six header-control
+profiles pass, as do both native modes with `_GLIBCXX_ASSERTIONS=1` and with
+exceptions/RTTI disabled. Native primary USRs retain their inline implementation
+namespace identity under every display policy. A later libc++ template-instantiation
+failure remains under repair. Accepted SDK 2.62 remains unchanged; consolidated delivery follows.
 
 The substantial header and customization groups are separate CTest entries:
 `objc3_standard_library_headers` and `objc3_standard_library_specializations`.

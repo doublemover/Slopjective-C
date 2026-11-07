@@ -3,6 +3,7 @@
 #include "clang_foundation/interface_codec.h"
 #include "standard_coroutine_types.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/DeclFriend.h"
 #include "clang/AST/TypeLoc.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/TargetInfo.h"
@@ -106,8 +107,20 @@ inline std::string StandardHeaderTokenIdentity(llvm::StringRef text,
 class StandardHeaderWrittenExceptionSpecs {
   clang::ASTContext &context;
   std::vector<std::pair<clang::FunctionDecl *,clang::QualType>> saved;
+  llvm::SmallPtrSet<const clang::Decl *,32> visited;
   void Visit(clang::Decl *declaration) {
-    if(!declaration || declaration->isImplicit())return;
+    if(!declaration || declaration->isImplicit() || !visited.insert(declaration).second)return;
+    for(auto *redecl:declaration->redecls())
+      if(redecl!=declaration)Visit(redecl);
+    if(auto *friend_declaration=llvm::dyn_cast<clang::FriendDecl>(declaration))
+      Visit(friend_declaration->getFriendDecl());
+    if(auto *instantiation=llvm::dyn_cast<clang::ExplicitInstantiationDecl>(declaration)) {
+      const auto &source=context.getSourceManager();
+      auto location=source.getSpellingLoc(instantiation->getLocation());
+      if(location.isValid() && source.isInSystemHeader(location) &&
+          HasStandardLibraryHeaderAncestor(source.getFileID(location),source))
+        Visit(instantiation->getSpecialization());
+    }
     if(auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
         function && IsStandardLibraryDeclaration(function,context)) {
       const auto *type=function->getType()->getAs<clang::FunctionProtoType>();
@@ -120,7 +133,14 @@ class StandardHeaderWrittenExceptionSpecs {
         function->setType(context.getFunctionType(type->getReturnType(),type->getParamTypes(),info));
       }
     }
-    if(auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))Visit(pattern->getTemplatedDecl());
+    if(auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration)) {
+      Visit(pattern->getTemplatedDecl());
+      if(auto *record=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern);
+          record && IsStandardLibraryDeclaration(record,context))
+        for(auto *specialization:record->specializations())
+          for(auto *member:specialization->decls())
+            if(llvm::isa<clang::FriendDecl>(member))Visit(member);
+    }
     if(auto *scope=llvm::dyn_cast<clang::DeclContext>(declaration))for(auto *child:scope->decls())Visit(child);
   }
 public:
@@ -164,8 +184,10 @@ inline std::string StandardHeaderMacroProfile(clang::Preprocessor &preprocessor,
     // Their presence can grow when independent headers are combined. Bind
     // implementation configuration and every referenced compiler/caller macro,
     // while declaration reuse separately checks native written definitions.
-    if(!implementation && location.isValid() &&
-        preprocessor.getSourceManager().isInSystemHeader(location))continue;
+    const auto &source=preprocessor.getSourceManager();
+    const bool compiler=location.isValid() && (source.isWrittenInBuiltinFile(location) ||
+                                              source.isWrittenInCommandLineFile(location));
+    if(!implementation && !compiler && location.isValid() && source.isInSystemHeader(location))continue;
     std::string value=info->isFunctionLike()?"function:":"object:";
     value+=info->isC99Varargs()?"c99:":info->isGNUVarargs()?"gnu:":"fixed:";
     for(const auto *parameter:info->params())value+=parameter->getName().str()+",";

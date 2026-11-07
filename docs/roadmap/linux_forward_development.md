@@ -20,7 +20,9 @@ The [Concurrency 2.113 specialization span](linux_cxx_standard_specializations.m
 adds public ownership, definition identity and native ABI publication for full/
 partial class and constexpr variable customizations, including argument packs.
 All six frontend profiles and two instrumented source-free native executables
-pass; broader configuration controls and libc++ import coverage are in progress.
+pass, including assertion-enabled and no-exception/no-RTTI native modes.
+Six configuration/header control profiles also pass; libc++ template-instantiation
+coverage is in progress.
 
 The [Concurrency 2.112 standard-header span](linux_cxx_standard_library_headers.md)
 adds native C++ library publication/import contracts, independent provider header

@@ -2050,6 +2050,15 @@ std::string ReadInterfaceLanguageProfile(const clang::ASTContext &context) {
 std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration) {
   if (!declaration) return {};
+  // Native primaries can live in inline implementation namespaces. Printed
+  // qualification depends on the lookup context (notably libc++ ranges), so
+  // use their canonical native identity rather than a display-name key.
+  if(llvm::isa<clang::TemplateDecl>(declaration) &&
+      IsStandardLibraryDeclaration(declaration,declaration->getASTContext())) {
+    llvm::SmallString<128> native;
+    if(clang::index::generateUSRForDecl(declaration->getCanonicalDecl(),native))return {};
+    return native.str().str();
+  }
   if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(declaration))
     if (const auto *pattern = alias->getDescribedAliasTemplate())
       return ReadInterfaceDeclarationStableId(pattern);

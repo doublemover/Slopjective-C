@@ -353,29 +353,72 @@ void MapAdmittedDependencyDeclaration(clang::ASTImporter &importer,
 class StandardHeaderDeclarations final {
   clang::ASTContext &context;
   std::map<clang::FileID,std::string> digests;
+  llvm::SmallPtrSet<const clang::Decl *,32> visited;
 public:
   using Key=std::tuple<unsigned,std::string,unsigned,std::string>;
   std::map<Key,clang::NamedDecl *> declarations;
+  std::map<Key,std::vector<clang::NamedDecl *>> occurrences;
   explicit StandardHeaderDeclarations(clang::ASTContext &context):context(context) {}
   bool VisitNamedDecl(clang::NamedDecl *declaration) {
-    if(declaration->isImplicit() || !IsStandardLibraryDeclaration(declaration,context))return true;
+    // Parameters belong to their function import. Mapping them independently
+    // can bind an instantiated prototype to a different explicit specialization.
+    const bool storage=llvm::isa<clang::FieldDecl,clang::IndirectFieldDecl>(declaration);
+    if((declaration->isImplicit() && !storage) || llvm::isa<clang::ParmVarDecl>(declaration) ||
+        !IsStandardLibraryDeclaration(declaration,context))return true;
     const auto &source=context.getSourceManager();
     const auto [file,offset]=source.getDecomposedLoc(source.getSpellingLoc(declaration->getLocation()));
     auto [entry,inserted]=digests.try_emplace(file);
     if(inserted){bool invalid=false;auto bytes=source.getBufferData(file,&invalid);if(invalid)return true;entry->second=ComputeInterfaceSourceSha256(bytes);}
     if(entry->second.empty())return true;
     llvm::SmallString<128> usr;
-    if(clang::index::generateUSRForDecl(declaration,usr))return true;
-    auto [found,added]=declarations.emplace(Key{unsigned(declaration->getKind()),entry->second,offset,usr.str().str()},declaration);
-    if(!added && found->second && found->second->getCanonicalDecl()!=declaration->getCanonicalDecl())found->second=nullptr;
+    if(clang::index::generateUSRForDecl(declaration,usr)) {
+      // Anonymous storage fields deliberately have no Clang USR. Their native
+      // owner and field index provide an exact identity, including unnamed
+      // bit-fields and the implicit field of an anonymous struct/union.
+      auto *field=llvm::dyn_cast<clang::FieldDecl>(declaration);
+      if(!field)return true;
+      llvm::SmallString<128> owner;
+      if(clang::index::generateUSRForDecl(field->getParent(),owner))return true;
+      const auto index=clang::ASTImporter::getFieldIndex(field);
+      if(!index)return true;
+      usr.clear();llvm::raw_svector_ostream identity(usr);
+      identity<<owner<<"@native-field-index@"<<*index;
+    }
+    const Key key{unsigned(declaration->getKind()),entry->second,offset,usr.str().str()};
+    occurrences[key].push_back(declaration);
+    auto [found,added]=declarations.emplace(key,declaration);
+    if(!added && found->second && found->second->getCanonicalDecl()!=declaration->getCanonicalDecl() &&
+        (found->second->getFriendObjectKind()==clang::Decl::FOK_None ||
+         declaration->getFriendObjectKind()==clang::Decl::FOK_None))found->second=nullptr;
     return true;
   }
   void TraverseDecl(clang::Decl *declaration) {
-    if(!declaration || declaration->isImplicit())return;
+    if(!declaration || (declaration->isImplicit() &&
+        !llvm::isa<clang::FieldDecl,clang::IndirectFieldDecl>(declaration)) ||
+        !visited.insert(declaration).second)return;
+    if(auto *friend_declaration=llvm::dyn_cast<clang::FriendDecl>(declaration))
+      TraverseDecl(friend_declaration->getFriendDecl());
+    if(auto *instantiation=llvm::dyn_cast<clang::ExplicitInstantiationDecl>(declaration)) {
+      const auto &source=context.getSourceManager();
+      auto location=source.getSpellingLoc(instantiation->getLocation());
+      if(location.isValid() && source.isInSystemHeader(location) &&
+          HasStandardLibraryHeaderAncestor(source.getFileID(location),source))
+        TraverseDecl(instantiation->getSpecialization());
+    }
     if(auto *named=llvm::dyn_cast<clang::NamedDecl>(declaration))VisitNamedDecl(named);
+    // Instantiating a class can introduce another friend redeclaration of a
+    // native primary. It shares the written header location and canonical
+    // entity, but its pointer is distinct from the pattern's declaration.
+    for(auto *redecl:declaration->redecls())
+      if(redecl!=declaration)TraverseDecl(redecl);
     if(auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration)) {
       TraverseDecl(pattern->getTemplatedDecl());
       for(auto *parameter:*pattern->getTemplateParameters())TraverseDecl(parameter);
+      if(auto *record=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern);
+          record && IsStandardLibraryDeclaration(record,context))
+        for(auto *specialization:record->specializations())
+          for(auto *member:specialization->decls())
+            if(llvm::isa<clang::FriendDecl>(member))TraverseDecl(member);
     }
     if(auto *context=llvm::dyn_cast<clang::DeclContext>(declaration))
       for(auto *child:context->decls())TraverseDecl(child);
@@ -391,6 +434,8 @@ void SeedStandardHeaderDeclarations(clang::ASTImporter &importer,
   auto printed=[](const clang::NamedDecl *declaration,const clang::ASTContext &context) {
     std::string result;llvm::raw_string_ostream out(result);
     clang::PrintingPolicy policy(context.getLangOpts());
+    policy.PrintAsCanonical=true;
+    policy.SuppressInlineNamespace=static_cast<unsigned>(clang::PrintingPolicy::SuppressInlineNamespaceMode::None);
     declaration->print(out,policy);return StandardHeaderTokenIdentity(result,context.getLangOpts());
   };
   std::vector<std::pair<clang::NamedDecl *,clang::NamedDecl *>> matched;
@@ -400,16 +445,20 @@ void SeedStandardHeaderDeclarations(clang::ASTImporter &importer,
     auto found=target_declarations.declarations.find(key);
     if(!left || found==target_declarations.declarations.end() || !found->second)continue;
     auto *right=found->second;
-    if(!llvm::isa<clang::NamespaceDecl>(left) && printed(left,source)!=printed(right,target))continue;
-    matched.emplace_back(left,right);
+    const bool namespaced=llvm::isa<clang::NamespaceDecl>(left);
+    const auto right_text=namespaced?std::string():printed(right,target);
+    for(auto *occurrence:from.occurrences.at(key)) {
+      if(!namespaced && printed(occurrence,source)!=right_text)continue;
+      matched.emplace_back(occurrence,right);
+    }
   }
   }
-  for(auto [left,right]:matched) {
-    MapAdmittedDependencyDeclaration(importer,left,right);
-    auto *a=llvm::dyn_cast<clang::FunctionDecl>(left);auto *b=llvm::dyn_cast<clang::FunctionDecl>(right);
-    if(a && b && a->getNumParams()==b->getNumParams())
-      for(unsigned i=0;i<a->getNumParams();++i)importer.MapImported(a->getParamDecl(i),b->getParamDecl(i));
-  }
+  // Each written declaration has its own verified match. Do not also map a
+  // template's children here: instantiated friends can share a redeclaration
+  // chain while their template and function representatives are different
+  // written declarations. Recursively seeding children would overwrite an
+  // already established mapping to another redeclaration of the same entity.
+  for(auto [left,right]:matched)importer.MapImported(left,right);
 }
 
 class DefinitionTrackingImporter final : public clang::ASTImporter {
