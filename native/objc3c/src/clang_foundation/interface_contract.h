@@ -194,9 +194,13 @@ inline constexpr const char *kAutomaticOwnerUnwindSemantic = "objc3.automatic-ow
 inline bool HasAutomaticOwnerUnwindIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";automatic-owner-unwind:v1;") != std::string::npos;
 }
-inline constexpr const char *kNativeAllocationSemantic = "objc3.native-allocation-cleanup.v1";
+inline constexpr const char *kNativeArrayLifetimeSemantic = "objc3.native-array-lifetimes.v1";
+inline bool HasNativeArrayLifetimeIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-array-lifetimes:v1;") != std::string::npos;
+}
+inline constexpr const char *kNativeAllocationSemantic = "objc3.native-allocation-cleanup.v2";
 inline bool HasNativeAllocationIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-allocation-cleanup:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";native-allocation-cleanup:v2;") != std::string::npos;
 }
 inline constexpr const char *kNativeDisposalSemantic = "objc3.native-disposal.v2";
 inline bool HasNativeDisposalIdentity(const InterfaceDeclarationIdentity &d) {

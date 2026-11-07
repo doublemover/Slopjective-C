@@ -453,6 +453,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool automatic_owner_unwind_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAutomaticOwnerUnwindSemantic) != sidecar.required_semantics.end();
   if (automatic_owner_unwind != automatic_owner_unwind_capability)
     Add(result,"O3IFC185","automatic owner unwind identity and required capability must agree",expected.canonical_name);
+  const bool native_array_lifetimes = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeArrayLifetimeIdentity);
+  const bool native_array_lifetimes_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeArrayLifetimeSemantic) != sidecar.required_semantics.end();
+  if (native_array_lifetimes != native_array_lifetimes_capability)
+    Add(result,"O3IFC186","native array lifetime identity and required capability must agree",expected.canonical_name);
   const bool native_allocation = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeAllocationIdentity);
   const bool native_allocation_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeAllocationSemantic) != sidecar.required_semantics.end();
   if (native_allocation != native_allocation_capability)

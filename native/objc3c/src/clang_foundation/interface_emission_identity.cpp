@@ -2428,8 +2428,10 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";nsobject-storage:v1;";
   if (HasDeclarationAutomaticOwnerUnwind(representative))
     identity.canonical_type_identity += ";automatic-owner-unwind:v1;";
+  if (HasDeclarationNativeArrayLifetime(representative))
+    identity.canonical_type_identity += ";native-array-lifetimes:v1;";
   if (HasDeclarationNativeAllocation(representative))
-    identity.canonical_type_identity += ";native-allocation-cleanup:v1;";
+    identity.canonical_type_identity += ";native-allocation-cleanup:v2;";
   if (HasDeclarationNativeDisposal(representative))
     identity.canonical_type_identity += ";native-disposal:v2;";
   if (HasDeclarationInitializedOwner(representative))

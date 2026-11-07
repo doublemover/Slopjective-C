@@ -67,6 +67,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kInitializedOwnerSemantic,
     kNativeDisposalSemantic,
     kAutomaticOwnerUnwindSemantic,
+    kNativeArrayLifetimeSemantic,
     kNativeAllocationSemantic,
     kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,

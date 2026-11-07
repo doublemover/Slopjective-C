@@ -416,6 +416,12 @@ terminates. An empty array skips element destruction while retaining array
 deallocation. A borrowed pointer does not confer scalar or array deallocation
 ownership.
 
+The element-prefix destruction and secondary-exception rules apply to automatic
+arrays as well as heap arrays. A failed array construction destroys only completed
+elements, with native termination if that prefix cleanup throws. A zero-length
+array evaluates no element constructor arguments or element destructor, including
+noreturn element operations.
+
 A native catch handler observes owner state after protected-region cleanup,
 including catch-all and scalar/reference exception bindings. A successful strong
 Block binding owns its copied captures; a failed heap copy does not initialize

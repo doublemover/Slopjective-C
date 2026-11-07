@@ -452,13 +452,68 @@ static void array_failure_path(ScopeProbe *_Nonnull owner,int fail) {
   const int expected[6]={3,2,1,100,103,104};assert(allocation_trace_count==(fail?6:5));
   for(int i=0;i!=allocation_trace_count;++i)assert(allocation_trace[i]==expected[i]);
 }
+static int group_child_frees,group_child_constructing;
+static int group_next,group_fail_constructor,group_fail_destructors,group_allocated,group_freed;
+struct ConstructionGroup {
+  int index;
+  ConstructionGroup():index(++group_next) {allocation_event(index);if(index==group_fail_constructor)throw index;}
+  ~ConstructionGroup() noexcept(false) {allocation_event(20+index);if(group_fail_destructors&(1<<index))throw index;}
+  static void *operator new[](__SIZE_TYPE__ size) {void *value=malloc(size);assert(value);++group_allocated;return value;}
+  static void operator delete[](void *value) noexcept {allocation_event(90);++group_freed;free(value);}
+};
+static void construction_group_path(ScopeProbe *_Nonnull owner,int heap,int failure,int destruction) {
+  int allocated=group_allocated,freed=group_freed,caught=0;
+  group_next=0;group_fail_constructor=failure;group_fail_destructors=destruction?(1<<3):0;allocation_trace_count=0;
+  withLifetime(owner) {
+    const char *view=&owner->payload;
+    try {
+      __objc3_defer {scope_use(view);allocation_event(91);}
+      if(heap)delete[] new ConstructionGroup[3];
+      else {ConstructionGroup values[3];(void)values;}
+    } catch(int value) {assert(value==(failure?failure:3));++caught;scope_use(view);allocation_event(92);}
+  }
+  assert(caught==!!(failure || destruction));
+  assert(group_allocated==allocated+heap && group_freed==freed+heap);
+  int position=0,completed=failure?failure-1:3;
+  for(int i=1;i<=(failure?failure:3);++i)assert(allocation_trace[position++]==i);
+  for(int i=completed;i;--i)assert(allocation_trace[position++]==20+i);
+  if(heap)assert(allocation_trace[position++]==90);
+  assert(allocation_trace[position++]==91);
+  if(failure || destruction)assert(allocation_trace[position++]==92);
+  assert(position==allocation_trace_count);
+}
+static void construction_group_suite(ScopeProbe *_Nonnull owner) {
+  for(int heap=0;heap!=2;++heap) {
+    for(int failure=0;failure!=4;++failure)construction_group_path(owner,heap,failure,0);
+    construction_group_path(owner,heap,0,1);
+  }
+  for(int constructing=0;constructing!=2;++constructing) {
+    pid_t child=fork();assert(child>=0);
+    if(child==0) {
+      group_next=0;group_fail_constructor=constructing?3:0;
+      group_fail_destructors=(1<<2)|(constructing?0:1<<3);allocation_trace_count=0;
+      group_child_frees=group_freed;group_child_constructing=constructing;
+      std::set_terminate([]{int constructing=group_child_constructing;
+        bool trace=allocation_trace_count==(constructing?4:5) && allocation_trace[0]==1 &&
+            allocation_trace[1]==2 && allocation_trace[2]==3 && allocation_trace[3]==(constructing?22:23);
+        if(!constructing)trace=trace && allocation_trace[4]==22;
+        _Exit(trace && group_freed==group_child_frees?93:94);
+      });
+      try {if(constructing)delete[] new ConstructionGroup[3];else {ConstructionGroup values[3];(void)values;}}
+      catch(...) {_Exit(95);}_Exit(96);
+    }
+    int status=0;assert(waitpid(child,&status,0)==child);
+    assert(WIFEXITED(status) && WEXITSTATUS(status)==93);
+  }
+  group_fail_constructor=0;group_fail_destructors=0;
+}
 static void allocation_array_suite(void) {
   ScopeProbe *_Nonnull owner=[ScopeProbe new];
 #if !__has_feature(objc_arc)
   __objc3_defer {[owner release];}
 #endif
   allocation_failure_path(owner,0);allocation_failure_path(owner,1);
-  array_failure_path(owner,0);array_failure_path(owner,1);
+  array_failure_path(owner,0);array_failure_path(owner,1);construction_group_suite(owner);
   const char *view=&owner->payload;delete[] new ScopeNeverDisposal[0];scope_use(view);
   pid_t child=fork();assert(child>=0);
   if(child==0) {

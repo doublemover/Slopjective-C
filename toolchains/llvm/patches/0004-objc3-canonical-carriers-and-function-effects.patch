@@ -57932,10 +57932,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..fd181f6f4
+index 000000000..fd16e0814
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,978 @@
+@@ -0,0 +1,1073 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -58912,6 +58912,101 @@ index 000000000..fd181f6f4
 +    };
 +    for(auto *Catch:Try->catch_stmts())Check(Catch,Catch->getCatchParamDecl()?"@catch(id":"@catch(...)");
 +    Check(Try->getFinallyStmt(),"@finally");
++  }
++}
++TEST(ObjC3ASTInfrastructure, ArrayConstructionSeparatesPrefixTerminationFromDeallocation) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    struct Allocation {Allocation();~Allocation() noexcept(false);static void operator delete[](void *) noexcept;};
++    void allocation_marker(int) noexcept;
++    Allocation *allocation_paths() {
++      __objc3_defer {allocation_marker(3);}
++      try {return new Allocation[3];}catch(...) {allocation_marker(4);return nullptr;}
++    }
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"allocation-paths.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *Function=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++    if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getNameAsString()=="allocation_paths")Function=F;
++  ASSERT_NE(Function,nullptr);
++  CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++  Options.AddEHEdges=true;Options.AddImplicitDtors=true;
++  auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Failures=0,Successes=0,AllocationFailures=0,Terminated=0,Budget=4096;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Trace,bool Termination,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,64u);Termination|=Block->hasNoReturnElement();
++    for(const auto &Element:*Block) {
++      if(Element.getAs<CFGNewAllocator>())Trace.push_back(0);
++      if(auto Statement=Element.getAs<CFGStmt>()) {
++        const Stmt *Node=Statement->getStmt();
++        if(isa<CXXConstructExpr>(Node))Trace.push_back(1);
++        if(isa<CXXDeleteExpr>(Node))Trace.push_back(2);
++        if(isa<CXXNewExpr>(Node))Trace.push_back(5);
++        if(const auto *Call=dyn_cast<CallExpr>(Node);Call && Call->getDirectCallee() &&
++            Call->getDirectCallee()->getNameAsString()=="allocation_marker")
++          Trace.push_back(cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue());
++      }
++    }
++    if(Block->succ_empty()) {
++      if(Termination) {++Terminated;EXPECT_EQ(Trace,std::vector<int>({0,1}));}
++      else if(std::find(Trace.begin(),Trace.end(),5)!=Trace.end()) {
++        ++Successes;EXPECT_EQ(std::count(Trace.begin(),Trace.end(),2),0);
++      } else if(std::find(Trace.begin(),Trace.end(),1)!=Trace.end()) {
++        ++Failures;EXPECT_EQ(Trace,std::vector<int>({0,1,2,4,3}));
++      } else {++AllocationFailures;EXPECT_EQ(Trace,std::vector<int>({0,4,3}));}
++      return;
++    }
++    for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Trace,Termination,Depth+1);
++  };
++  Explore(Explore,&Graph->getEntry(),{},false,0);
++  EXPECT_GT(Failures,0u);EXPECT_GT(Successes,0u);EXPECT_GT(AllocationFailures,0u);EXPECT_GT(Terminated,0u);
++}
++
++TEST(ObjC3ASTInfrastructure, AutomaticArrayDestructionSeparatesZeroOneAndMany) {
++  for(unsigned Count:{0,1,3}) {
++    std::string Source=R"(
++      struct Element {Element() noexcept;~Element() noexcept(false);};
++      void automatic_array_marker(int) noexcept;
++      void automatic_array_paths() {
++        try {__objc3_defer {automatic_array_marker(3);}Element values[COUNT];(void)values;}
++        catch(...) {automatic_array_marker(4);}
++      }
++    )";
++    Source.replace(Source.find("COUNT"),5,std::to_string(Count));
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,
++      {"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"automatic-array.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    FunctionDecl *Function=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getNameAsString()=="automatic_array_paths")Function=F;
++    ASSERT_NE(Function,nullptr);
++    CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++    Options.AddEHEdges=true;Options.AddImplicitDtors=true;
++    auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++    unsigned Normal=0,Caught=0,Terminated=0,Budget=4096;
++    auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Trace,bool Termination,unsigned Depth)->void {
++      ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,64u);Termination|=Block->hasNoReturnElement();
++      for(const auto &Element:*Block) {
++        if(Element.getAs<CFGAutomaticObjDtor>())Trace.push_back(2);
++        if(auto Statement=Element.getAs<CFGStmt>()) {
++          const auto *Node=Statement->getStmt();if(isa<CXXConstructExpr>(Node))Trace.push_back(1);
++          if(const auto *Call=dyn_cast<CallExpr>(Node);Call && Call->getDirectCallee() &&
++             Call->getDirectCallee()->getNameAsString()=="automatic_array_marker")
++            Trace.push_back(cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue());
++        }
++      }
++      if(Block->succ_empty()) {
++        if(Termination){++Terminated;EXPECT_EQ(Trace,std::vector<int>({1,2}));}
++        else if(std::find(Trace.begin(),Trace.end(),4)!=Trace.end()) {
++          ++Caught;EXPECT_EQ(Trace,std::vector<int>({1,2,3,4}));
++        } else {++Normal;EXPECT_EQ(Trace,Count?std::vector<int>({1,2,3}):std::vector<int>({3}));}
++        return;
++      }
++      for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Trace,Termination,Depth+1);
++    };
++    Explore(Explore,&Graph->getEntry(),{},false,0);
++    EXPECT_GT(Normal,0u);EXPECT_EQ(Caught>0,Count>0);EXPECT_EQ(Terminated>0,Count>1);
 +  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
@@ -65480,4 +65575,78 @@ index 000000000..5321fe73f
 +  RuntimeScopeOwner *_Nonnull local=owner;
 +  OrdinaryWork empty=0,unused;
 +  receiver_use(local->storage);(void)empty;(void)unused;
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-array-groups.h b/clang/test/ObjC3/Sema/Inputs/borrowed-array-groups.h
+new file mode 100644
+index 000000000..078bce4c7
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-array-groups.h
+@@ -0,0 +1,9 @@
++#ifndef BORROWED_ARRAY_GROUPS_H
++#define BORROWED_ARRAY_GROUPS_H
++#include "borrowed-allocation-cleanup.h"
++struct ThrowingArrayGroup {
++  ThrowingArrayGroup();
++  ~ThrowingArrayGroup() noexcept(false);
++  static void operator delete[](void *) noexcept;
++};
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-array-groups.mm b/clang/test/ObjC3/Sema/borrowed-array-groups.mm
+new file mode 100644
+index 000000000..c1dcc7b61
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-array-groups.mm
+@@ -0,0 +1,53 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-array-groups.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-array-groups.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-array-groups.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-array-groups.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-array-groups.h"
++#endif
++void array_constructor_group_live(RuntimeScopeOwner *_Nonnull owner) {
++  withLifetime(owner) {
++    const char *view=owner->storage;
++    try {__objc3_defer {receiver_use(view);}delete[] new ThrowingArrayGroup[3];}
++    catch(...) {receiver_use(view);}
++  }
++}
++void automatic_array_group_live(RuntimeScopeOwner *_Nonnull owner) {
++  withLifetime(owner) {
++    const char *view=owner->storage;
++    try {__objc3_defer {receiver_use(view);}ThrowingArrayGroup values[3];(void)values;}
++    catch(...) {receiver_use(view);}
++  }
++}
++void array_constructor_group_expires_local(void) {
++  const char *view=0;
++  try {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;
++    ThrowingArrayGroup values[3];(void)values;
++  } catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++void automatic_array_group_expires_local(void) {
++  const char *view=0;
++  try {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;
++    ArrayDisposal values[3];(void)values;
++  } catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++void empty_local_array_skips_noreturn(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=owner->storage;
++  {NeverDisposal values[0];(void)values;}
++  owner=(id)0;receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void repeated_default_arguments_remain_gated(RuntimeScopeOwner *_Nonnull owner) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++  struct Repeated {Repeated(int value=1);~Repeated() noexcept(false);};
++  withLifetime(owner) {const char *view=owner->storage;Repeated values[3];receiver_use(view);(void)values;}
 +}

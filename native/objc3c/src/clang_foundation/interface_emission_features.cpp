@@ -169,6 +169,21 @@ bool HasDeclarationAutomaticOwnerUnwind(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNativeArrayLifetime(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Owners : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitVarDecl(clang::VarDecl *variable) override {
+        const auto &context=variable->getASTContext();
+        found |= variable->hasLocalStorage() && context.getAsConstantArrayType(variable->getType()) &&
+                 context.getBaseElementType(variable->getType())->getAsCXXRecordDecl();
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationNativeAllocation(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
     struct Allocation : clang::DynamicRecursiveASTVisitor {

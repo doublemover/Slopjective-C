@@ -48,3 +48,9 @@ pool, defer or lifetime statement. Exact destruction is checked before
 Objective-C/C++ catch entry. A runtime heap-copy fault checks stack capture
 cleanup and an uninitialized destination; successful record and Block slot
 copies keep their payload live through original-owner resets.
+
+Throwing array construction checks failure at every element in automatic and
+heap storage, reverse completed-prefix cleanup and exact matched frees. Automatic
+array destruction checks a first exception followed by the remaining reverse
+prefix. Child-process witnesses independently detect secondary prefix exceptions
+and secondary normal-destruction exceptions before outer cleanup or free.

@@ -1,5 +1,12 @@
 # Objective-C 3.0 on Linux
 
+The [System 2.43 array-group span](linux_array_construction_groups.md)
+adds bounded direct throwing array construction with native prefix cleanup and
+matched free, automatic throwing array destruction and secondary termination,
+and empty-array constructor/destructor bypass. All 60 affected compiler cases, four new source-free profiles, seven adjacent
+frontend groups, codec/isolation controls, 26 AST controls and twelve ASan/UBSan
+native configurations / 42 commands pass.
+
 The [System 2.42 ordinary-owner span](linux_automatic_owner_unwind.md)
 activates complete local unwind for every native handler, admits nonthrowing
 implicit ARC capture copies, registers heap-copy failure and repairs discovery of
