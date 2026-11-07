@@ -14137,10 +14137,10 @@ index 000000000..2c37de629
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3Propagation.cpp
 new file mode 100644
-index 000000000..f2634c35a
+index 000000000..efd6ab5f9
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,256 @@
+@@ -0,0 +1,268 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -14339,9 +14339,21 @@ index 000000000..f2634c35a
 +      return ExprError();
 +    Operand = Checked.get();
 +  }
++  // A synchronous native C++ result exists only after its error check.
++  // Move the original temporary binding around the checked expression so
++  // caller cleanup is registered on success, including discarded results.
++  CXXTemporary *ResultTemporary = nullptr;
++  if (!CheckedAsync && Operation != ObjC3TryExpr::Kind::Optionalize &&
++      getLangOpts().CPlusPlus && ResultType->isRecordType())
++    if (auto *Binding = dyn_cast<CXXBindTemporaryExpr>(Operand->IgnoreParenImpCasts())) {
++      ResultTemporary = Binding->getTemporary();
++      Operand = Binding->getSubExpr();
++    }
 +  CheckCompletedExpr(Operand, RParenLoc);
-+  return ObjC3TryExpr::Create(Context, Operation, Operand, ResultType,
-+                              KeywordLoc, LParenLoc, RParenLoc);
++  Expr *Result = ObjC3TryExpr::Create(Context, Operation, Operand, ResultType,
++                                     KeywordLoc, LParenLoc, RParenLoc);
++  if (ResultTemporary) Result = CXXBindTemporaryExpr::Create(Context, ResultTemporary, Result);
++  return Result;
 +}
 +
 +StmtResult Sema::ActOnObjC3ThrowStmt(SourceLocation KeywordLoc, Expr *Payload,

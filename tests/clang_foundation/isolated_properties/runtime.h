@@ -285,6 +285,7 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
 }
 #include "checked.h"
 #include "async.h"
+#include "checked_results.h"
 static void property_suite(void) {
   assert(objc3_executor_create(1,&property_caller)==OBJC3_SERVICE_OK);
   assert(objc3_executor_create(1,&property_destination)==OBJC3_SERVICE_OK);
@@ -353,6 +354,7 @@ static void property_suite(void) {
 #endif
   checked_property_suite(main_object,actor,child);
   async_property_suite(main_object,actor,child);
+  checked_result_suite(main_object);
   assert(objc3_actor_close(property_mailbox)==OBJC3_SERVICE_OK);
   assert(objc3_actor_join(property_mailbox)==OBJC3_SERVICE_OK);
   objc3_service_status unbind=objc3_actor_unbind_object(actor_pointer);

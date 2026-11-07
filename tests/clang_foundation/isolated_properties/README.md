@@ -24,3 +24,9 @@ It runs in the same maintained source/PCH witness and installed example.
 `async.h` covers suspended getter/setter composition, mixed accessors, same-actor
 and same-executor checks, class/super dispatch, C++ task accessors, owned results,
 nil and cancellation between accessors and during setter suspension.
+
+`checked_results.h` verifies native indirect C++ checked results through direct,
+indirect, virtual/member, Block and template calls, NRVO, move-only ownership,
+return/parameter cleanup faults, arrays, references and native-await copy-out.
+The matrix includes source/PCH, ARC/MRC, C++ exception-only and elision-disabled
+configurations.

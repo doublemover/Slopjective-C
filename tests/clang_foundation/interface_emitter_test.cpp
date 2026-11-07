@@ -6256,6 +6256,22 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
           return __objc3_try(__objc3_await (object.value+=value));
         }
       )";
+      if(!async)source+=R"(
+        struct __attribute__((objc_unsafe_sendable)) PublishedCheckedOwner {
+          int value;explicit PublishedCheckedOwner(int) noexcept;
+          PublishedCheckedOwner(const PublishedCheckedOwner &) noexcept;PublishedCheckedOwner(PublishedCheckedOwner &&) noexcept;
+          ~PublishedCheckedOwner() noexcept;
+        };
+        @interface PublishedCheckedProperty (NativeOwner)
+        @property(nonatomic) PublishedCheckedOwner owner;
+        - (PublishedCheckedOwner)owner __objc3_throws(id<Error>) __attribute__((nothrow,objc_executor(main)));
+        - (void)setOwner:(PublishedCheckedOwner)value __objc3_throws(id<Error>) __attribute__((nothrow,objc_executor(main)));
+        @end
+        inline int published_checked_owner(PublishedCheckedProperty *object) __objc3_async_frame __objc3_throws(id<Error>) {
+          PublishedCheckedOwner value=__objc3_try(__objc3_await object.owner);
+          __objc3_try(__objc3_await (object.owner=value));return value.value;
+        }
+      )";
       if(async)source+=R"(
         struct __attribute__((objc_unsafe_sendable)) PublishedAsyncPropertyOwner {
           int value;explicit PublishedAsyncPropertyOwner(int) noexcept;
@@ -6303,6 +6319,68 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
     assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
     auto bad=parse(first.source_bytes+"int unchecked_consumer(PublishedCheckedProperty *object) __objc3_async_frame {return __objc3_await (object.value+=1);}","unchecked-property-consumer.m");
     assert(bad && bad->getDiagnostics().hasErrorOccurred());
+  }
+}
+
+void TestNativeCheckedCppResultReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks","-fexceptions","-fobjc-exceptions",
+        "--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string source=R"(
+      @protocol Error @end
+      namespace NativeCheckedResults {
+        struct Value {
+          int value;explicit Value(int) noexcept;
+          Value(const Value &) noexcept;Value(Value &&) noexcept;~Value() noexcept;
+        };
+        struct MoveOnly {
+          int value;explicit MoveOnly(int) noexcept;
+          MoveOnly(const MoveOnly &)=delete;MoveOnly(MoveOnly &&) noexcept;~MoveOnly() noexcept;
+        };
+        Value produce(int) __objc3_throws(id<Error>);
+        MoveOnly produce_move(int) __objc3_throws(id<Error>);
+        template<class T> T generic_produce(int) __objc3_throws(id<Error>);
+        template<class T> T generic_forward(int mode) __objc3_throws(id<Error>) {return __objc3_try(generic_produce<T>(mode));}
+        int consume(Value,int) __objc3_throws(id<Error>);
+        inline Value forward(int mode) __objc3_throws(id<Error>) {return __objc3_try(produce(mode));}
+        inline MoveOnly forward_move(int mode) __objc3_throws(id<Error>) {return __objc3_try(produce_move(mode));}
+        inline int use(int mode) __objc3_throws(id<Error>) {
+          __objc3_try(produce(mode));
+          return __objc3_try(consume(__objc3_try(forward(mode)),mode));
+        }
+        typedef Value (^Factory)(int) __objc3_throws(id<Error>);
+        inline int block_use(int mode) __objc3_throws(id<Error>) {
+          Factory factory=^Value(int value) __objc3_throws(id<Error>) {return __objc3_try(produce(value));};
+          Value result=__objc3_try(factory(mode));return result.value;
+        }
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-checked-results.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+          "fixture.native_checked_results","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_checked_results","test",{},{},{},{"NativeCheckedResults","Error"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+    assert(llvm::is_contained(decoded->required_semantics,std::string(kCxxBlockExpressionSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kCxxBlockExpressionSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+      int consume_checked_generic(int mode) __objc3_throws(id<Error>) {
+        NativeCheckedResults::Value result=__objc3_try(NativeCheckedResults::generic_forward<NativeCheckedResults::Value>(mode));
+        return result.value;
+      }
+    )",args,"native-checked-generic-consumer.mm");
+    assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
   }
 }
 
@@ -10095,6 +10173,7 @@ int main(int argc,char **argv) {
   TestClosureFactories();
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
+  TestNativeCheckedCppResultReplay();
   TestIsolatedPropertyReplay();
   TestOwnedNilResultReplay();
   TestStrictAsyncProfileReplay();

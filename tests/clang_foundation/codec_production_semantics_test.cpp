@@ -8,15 +8,31 @@
 #include "llvm/Support/Error.h"
 #include <algorithm>
 #include <cassert>
+#include <memory>
 #include <string>
 #include <vector>
 
 using namespace objc3::clang_foundation;
 
 int main() {
-  for (unsigned family=0;family!=8;++family) {
-    const bool properties=family>=6,cxx=family&1,blocks=family>=2 && family<6,producers=family>=4 && family<6;
-    std::string source = properties ? R"(
+  for (unsigned family=0;family!=9;++family) {
+    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results;
+    const bool blocks=family>=2 && family<6,producers=family>=4 && family<6;
+    std::string source = results ? R"(
+      @protocol Error @end
+      namespace Catalog {
+        struct Value {
+          int value;explicit Value(int) noexcept;
+          Value(const Value &) noexcept;Value(Value &&) noexcept;~Value() noexcept;
+        };
+        Value source(int) __objc3_throws(id<Error>);
+        inline Value forward(int mode) __objc3_throws(id<Error>) {return __objc3_try(source(mode));}
+        inline int use(int mode) __objc3_throws(id<Error>) {
+          Value (^factory)(int) __objc3_throws(id<Error>)=^Value(int input) __objc3_throws(id<Error>) {return __objc3_try(source(input));};
+          Value value=__objc3_try(factory(mode));return value.value;
+        }
+      }
+    )" : properties ? R"(
       #include <objc3c/runtime/objc3_runtime_services.h>
       @protocol Sendable @end
       @protocol Error <Sendable> @end
@@ -70,8 +86,8 @@ int main() {
         return __objc3_try(__objc3_await (object.value+=1));
       }
     )";
-    std::vector<std::string> args={cxx?(blocks || properties?"-xobjective-c++":"-xc++"):(blocks || properties?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
-    if(blocks || properties)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
+    std::vector<std::string> args={cxx?(blocks || properties || results?"-xobjective-c++":"-xc++"):(blocks || properties?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
+    if(blocks || properties || results)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
     clang::tooling::FileContentMappings files;
     if(properties)AddRuntimeInterfaceFiles(files,args);
     auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"catalog-source","clang-tool",
@@ -84,7 +100,7 @@ int main() {
     const auto capabilities=SupportedSemanticInterfaceCapabilities();
     auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);
     assert(decoded);
-    const std::string expected=properties?kAsyncEntryABISemantic:producers?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
+    const std::string expected=properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
     assert(std::find(decoded->required_semantics.begin(),decoded->required_semantics.end(),expected)!=decoded->required_semantics.end());
     auto bytes=objc3::fuzz::Pack(artifact.source_bytes,artifact.sidecar_json);assert(!bytes.empty());
     std::string first;

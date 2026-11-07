@@ -81,22 +81,26 @@ static int checked_property_other_entries(PropertyActor *actor,PropertyChild *ch
   return __objc3_try(__objc3_await [child checkedSuperRoundtrip]);
 }
 #ifdef __cplusplus
+static int checked_owner_stage=-1;
 static int checked_owner_live,checked_owner_created,checked_owner_destroyed,checked_owner_setters;
 struct __attribute__((objc_unsafe_sendable)) CheckedPropertyOwner {
   int value;
   explicit CheckedPropertyOwner(int number) noexcept:value(number) {++checked_owner_live;++checked_owner_created;}
   CheckedPropertyOwner(const CheckedPropertyOwner &other) noexcept:value(other.value) {++checked_owner_live;++checked_owner_created;}
   CheckedPropertyOwner(CheckedPropertyOwner &&other) noexcept:value(other.value) {other.value=-1;++checked_owner_live;++checked_owner_created;}
-  ~CheckedPropertyOwner() noexcept {--checked_owner_live;++checked_owner_destroyed;assert(checked_owner_live>=0);}
+  ~CheckedPropertyOwner() noexcept {--checked_owner_live;++checked_owner_destroyed;
+    if(checked_owner_live<0)fprintf(stderr,"checked owner stage=%d created=%d destroyed=%d\n",checked_owner_stage,checked_owner_created,checked_owner_destroyed);
+    assert(checked_owner_live>=0);}
 };
 @interface PropertyMain (CheckedOwner)
 @property(nonatomic) CheckedPropertyOwner checkedOwner;
-- (CheckedPropertyOwner)checkedOwner __attribute__((nothrow,objc_executor(main)));
+- (CheckedPropertyOwner)checkedOwner __objc3_throws(id<Error>) __attribute__((nothrow,objc_executor(main)));
 - (void)setCheckedOwner:(CheckedPropertyOwner)value __objc3_throws(id<Error>) __attribute__((nothrow,objc_executor(main)));
 @end
 @implementation PropertyMain (CheckedOwner)
-- (CheckedPropertyOwner)checkedOwner {
+- (CheckedPropertyOwner)checkedOwner __objc3_throws(id<Error>) {
   assert(objc3_executor_is_current(property_main));
+  if(checked_property_fault==1)__objc3_throw(checked_property_error);
   return CheckedPropertyOwner(40);
 }
 - (void)setCheckedOwner:(CheckedPropertyOwner)value __objc3_throws(id<Error>) {
@@ -106,7 +110,7 @@ struct __attribute__((objc_unsafe_sendable)) CheckedPropertyOwner {
 @end
 static int checked_property_owner(PropertyMain *object,int operation) __objc3_async_frame {
   __objc3_do {
-    if(operation==0) {CheckedPropertyOwner value=__objc3_await object.checkedOwner;return value.value;}
+    if(operation==0) {CheckedPropertyOwner value=__objc3_try(__objc3_await object.checkedOwner);return value.value;}
     if(operation==1) {CheckedPropertyOwner value(47);__objc3_try(__objc3_await (object.checkedOwner=value));}
     else __objc3_try(__objc3_await (object.checkedOwner=CheckedPropertyOwner(47)));
     return 47;
@@ -169,7 +173,7 @@ static void checked_property_suite(PropertyMain *object,PropertyActor *actor,Pro
     objc3_async_frame frame=checked_property_owner(object,operation);objc3_task_t *task=property_start(&frame);
     objc3_completion done=property_finish(task,0);
     assert(done.kind==OBJC3_COMPLETION_SUCCESS);
-    assert(*(const int *)done.payload==(operation==0?40:(fault==2?-102:47)));
+    assert(*(const int *)done.payload==(operation==0?(fault==1?-101:40):(fault==2?-102:47)));
     assert(checked_owner_setters==(operation!=0));objc3_task_release(task);
     assert(checked_owner_live==0 && checked_owner_created==checked_owner_destroyed);
   }

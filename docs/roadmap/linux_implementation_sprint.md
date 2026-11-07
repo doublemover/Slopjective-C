@@ -1,5 +1,15 @@
 # Linux implementation sprint
 
+The [source 2.124 / System 2.51 checked-result span](linux_checked_cpp_results.md)
+implements native indirect C++ checked results, synchronous constructed property
+getters and provisional initialization ownership for locals, arrays and references.
+NRVO, return-time errors, parameter destructors, partial construction and native
+await copy-out have exact ownership controls. Focused execution and all 57 new
+compiler commands pass. Consolidation passes 156 compiler cases, 48 AST controls,
+sixteen sanitizer configurations / 56 commands, four new result profiles, twelve
+updated property profiles, nine adjacent frontend groups, codec/isolation and
+180 exact decoder replays. No public ABI layout changes.
+
 The [source 2.123 async-accessor span](linux_async_property_accessors.md)
 awaits getters and setters independently, preserving reads, assignments,
 compound/pre/post values, matched error effects and mixed accessor forms.

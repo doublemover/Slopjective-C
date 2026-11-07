@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 123,
+        "minor": 124,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native indirect C++ checked results and constructed synchronous property getters have no fabricated failure values, coordinated NRVO/return ownership, success-only result binding and provisional local/array/reference/native-await cleanup; direct/indirect/member/virtual/Block/template calls, move-only resources, partial construction and parameter/return cleanup faults pass 156 compiler cases (57 dedicated commands), 48 AST controls, sixteen instrumented native configurations / 56 commands, four new result profiles, twelve updated property profiles, nine adjacent frontend groups, codec/isolation and 180 exact decoder replays; existing public ABI contracts unchanged; matched SDK pending",
         "Async property reads, assignment/compound/pre/post composition, compatible mixed sync/async and checked accessors, same-actor/executor composition, C++ task accessors and owned async results use per-accessor native awaits with logical result types and preserved receiver/construction order; unawaited mutations reject and local composition needs no invented Sendable crossing; exact getter/setter/error/nil/owner and between-accessor/setter-suspension cancellation controls pass 47 compiler cases (including 78 new dedicated commands), 48 AST controls, fourteen instrumented native configurations / 49 commands, twelve new source-free profiles, eight adjacent groups, codec/isolation and 160 production decoder replays; existing ABI contracts unchanged; matched SDK pending",
         "Synchronous checked isolated property reads, writes, compound/pre/post operations and compatible mixed getter/setter effects propagate per accessor inside the private frame, preserving exact getter/setter failure boundaries, typed error identity, native values and nontrivial setter-argument destruction; 78 dedicated compiler commands across all four profiles, six new source-free profiles and four adjacent frontend groups pass; twelve instrumented native configurations / 42 commands and codec/isolation controls also pass; nontrivial synchronous checked getter results remain separate work; existing ABI contracts unchanged; matched SDK pending",
         "One explicit C++ frame lifetime policy now governs isolated values and property writes, admitting owned resource fields, active unions, move-only owners and composed resource arrays while preserving borrowed/raw/opaque/volatile-record guards; copy/move/setter and partial-acquisition faults, nil dispatch, cancellation and abandoned captures pass fourteen instrumented native configurations / 49 commands, 43 adjacent compiler cases and 52 dedicated source/PCH commands across all four profiles; eight new source-free profiles, seven adjacent frontend groups and codec/isolation controls also pass; existing ABI contracts unchanged; matched SDK pending",
@@ -307,12 +308,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 50,
+        "minor": 51,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native indirect C++ checked results and constructed synchronous property getters have no fabricated failure values, coordinated NRVO/return ownership, success-only result binding and provisional local/array/reference/native-await cleanup; direct/indirect/member/virtual/Block/template calls, move-only resources, partial construction and parameter/return cleanup faults pass 156 compiler cases (57 dedicated commands), 48 AST controls, sixteen instrumented native configurations / 56 commands, four new result profiles, twelve updated property profiles, nine adjacent frontend groups, codec/isolation and 180 exact decoder replays; existing public ABI contracts unchanged; matched SDK pending",
         "Direct native Block producer ownership transfer into strong locals, scalar/nested-array members, default member initializers, assignments and single consumed direct-call arguments, without invented caller copies; retained results stay guarded across address failure, with exact Block expression v3 admission (66 compiler cases, 48 AST controls, six new source-free profiles, eighteen adjacent groups, twelve ASan/UBSan native configurations / 42 commands, four provider/consumer executions, codec/isolation and 120 production decoder replays pass; matched SDK pending)",
         "Native strong Block slot mutation with RHS-copy-before-address evaluation, temporary owner unwind guards, old-destination preservation, successful ownership transfer, null assignment, nullable and borrowed-loan failure precision, MRC stable slot stores and exact automatic-owner-unwind v2 admission (66 compiler cases, 45 AST controls, ten new source-free profiles, sixteen adjacent groups, twelve ASan/UBSan native configurations / 42 commands, four package executions, codec/isolation and eighty production decoder replays pass; matched SDK pending)",
         "Bounded nested ARC Block member arrays, row-major scalar leaf registration, sequenced/conditional value computation, scalar-only literal captures, direct stable member/index reads, computed strong local and consumed copies with separate evaluation/copy failure edges and exact subobject v5 / Block expression v2 publication (66 compiler cases, 44 AST controls, twelve ASan/UBSan native configurations / 42 commands, ten new source-free profiles, fourteen adjacent groups, codec/isolation and forty production decoder replays pass; matched SDK pending)",
