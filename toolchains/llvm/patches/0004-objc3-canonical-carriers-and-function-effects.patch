@@ -49943,10 +49943,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..8ce662b6d
+index 000000000..7e5428558
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1716 @@
+@@ -0,0 +1,1762 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -50552,6 +50552,14 @@ index 000000000..8ce662b6d
 +  void VisitBlockExpr(BlockExpr *) {} // Each callable checks its own body.
 +  void VisitLambdaExpr(LambdaExpr *E) { Base::VisitLambdaExpr(E); }
 +  void VisitCoawaitExpr(CoawaitExpr *E) {
++    if (E->getKeywordLoc().isInvalid() && !E->isInstantiationDependent() &&
++        isa<OpaqueValueExpr>(E->getReadyExpr()) &&
++        isa<ObjCMessageExpr>(getObjC3AsyncSourceCall(E))) {
++      S.Diag(E->getOperand()->getExprLoc(), S.getDiagnostics().getCustomDiagID(
++          DiagnosticsEngine::Error,
++          "async property mutation requires an explicit await of the whole property operation"));
++      Invalid = true;
++    }
 +    llvm::SaveAndRestore<unsigned> AwaitGuard(AwaitDepth, AwaitDepth + 1);
 +    Visit(E->getOperand());
 +  }
@@ -50563,6 +50571,29 @@ index 000000000..8ce662b6d
 +  }
 +  void VisitCXXDefaultArgExpr(CXXDefaultArgExpr *E) { Visit(E->getExpr()); }
 +  void VisitCXXDefaultInitExpr(CXXDefaultInitExpr *E) { Visit(E->getExpr()); }
++  void VisitPseudoObjectExpr(PseudoObjectExpr *E) {
++    const auto *Function = dyn_cast<FunctionDecl>(Callable);
++    if ((!Function || !Function->hasAttr<ObjC3IsolationThunkAttr>()) &&
++        !E->isInstantiationDependent()) {
++      const Expr *Syntax = E->getSyntacticForm()->IgnoreParenImpCasts();
++      const ObjCPropertyRefExpr *Property = nullptr;
++      if (const auto *Binary = dyn_cast<BinaryOperator>(Syntax); Binary && Binary->isAssignmentOp())
++        Property = dyn_cast<ObjCPropertyRefExpr>(Binary->getLHS()->IgnoreParenImpCasts());
++      if (const auto *Unary = dyn_cast<UnaryOperator>(Syntax); Unary && Unary->isIncrementDecrementOp())
++        Property = dyn_cast<ObjCPropertyRefExpr>(Unary->getSubExpr()->IgnoreParenImpCasts());
++      const ObjCMethodDecl *Setter = Property ? (Property->isExplicitProperty()
++          ? Property->getExplicitProperty()->getSetterMethodDecl()
++          : Property->getImplicitPropertySetter()) : nullptr;
++      if (Setter && Setter->getObjC3FunctionEffects().Async) {
++        S.Diag(E->getExprLoc(), S.getDiagnostics().getCustomDiagID(
++            DiagnosticsEngine::Error,
++            "async property mutation requires an explicit await of the whole property operation"));
++        Invalid = true;
++        return;
++      }
++    }
++    Base::VisitPseudoObjectExpr(E);
++  }
 +  void VisitObjCMessageExpr(ObjCMessageExpr *E) {
 +    checkCall(E, E->getMethodDecl(), {E->getArgs(), E->getNumArgs()},
 +              E->getInstanceReceiver(),
@@ -50984,7 +51015,10 @@ index 000000000..8ce662b6d
 +      // Unique receivers are evaluated lazily at the message. A captured
 +      // assignment result evaluates its RHS earlier; a nontrivial C++ setter
 +      // has no such result, so receiver evaluation precedes its construction.
-+      Result.RHSFirst = Pseudo->getResultExpr() != nullptr;
++      // An async setter's frame result is not an early RHS capture.
++      const auto *Message = dyn_cast<ObjCMessageExpr>(getObjC3AsyncSourceCall(Pseudo));
++      Result.RHSFirst = Pseudo->getResultExpr() &&
++          (!Message || Message->getMethodDecl() != Result.Setter);
 +    } else for (auto *Semantic : Pseudo->semantics()) {
 +      if (Semantic == Property->getBase()) break;
 +      if (Semantic == RHSBinding) { Result.RHSFirst = true; break; }
@@ -51140,14 +51174,15 @@ index 000000000..8ce662b6d
 +  // declaration contexts preserve this relationship through PCH/AST import.
 +  if (SuperContext)
 +    Thunk->setLexicalDeclContext(SuperContext);
++  const bool SourceAsync = Property
++      ? cast<ObjCMethodDecl>(Target)->getObjC3FunctionEffects().Async
++      : Original->getObjC3FunctionEffects().Async;
 +  Thunk->addAttr(ObjC3IsolationThunkAttr::CreateImplicit(
-+      S.Context, ActorEntry,
-+      !Original->getObjC3FunctionEffects().Async &&
-+          isolationResultIsOwned(Target)));
++      S.Context, ActorEntry, !SourceAsync && isolationResultIsOwned(Target)));
 +  if (hasObjC3CFResultOwnership(Target)) {
 +    // A synchronous retained result transfers its source +1. An awaited
 +    // native-frame result is a +0 expression rooted by its full expression.
-+    if (!Original->getObjC3FunctionEffects().Async && Target->hasAttr<CFReturnsRetainedAttr>())
++    if (!SourceAsync && Target->hasAttr<CFReturnsRetainedAttr>())
 +      Thunk->addAttr(CFReturnsRetainedAttr::CreateImplicit(S.Context));
 +    else
 +      Thunk->addAttr(CFReturnsNotRetainedAttr::CreateImplicit(S.Context));
@@ -51248,7 +51283,7 @@ index 000000000..8ce662b6d
 +    }
 +    if (Value.isInvalid())
 +      return nullptr;
-+    if (Original->getObjC3FunctionEffects().Async) {
++    if (!Property && Original->getObjC3FunctionEffects().Async) {
 +      Value = S.ActOnObjC3CAwaitExpr(Loc, Value.get());
 +      if (Value.isInvalid())
 +        return nullptr;
@@ -51395,10 +51430,20 @@ index 000000000..8ce662b6d
 +        "isolated entry cannot transfer a receiver-owned interior view; copy to independent owned storage inside the executor"));
 +    return ExprError();
 +  }
++  bool PropertyNeedsFrame = false;
 +  if (Property && FT) {
++    for (const auto *Accessor : Accessors) {
++      const auto Effects = Accessor->getObjC3FunctionEffects();
++      PropertyNeedsFrame |= Effects.Async || Effects.Throws != ObjC3ThrowsKind::None;
++    }
++    if (const auto *ResultMessage = dyn_cast<ObjCMessageExpr>(getObjC3AsyncSourceCall(Source));
++        ResultMessage && ResultMessage->getMethodDecl()->getObjC3FunctionEffects().Async)
++      Property->Result = getObjC3AsyncAwaitFunctionType(*this, Source)->getReturnType();
 +    SmallVector<QualType, 1> Types;
 +    if (Property->RHS) Types.push_back(Property->RHS->getType());
 +    auto Info = FT->getExtProtoInfo();
++    // Accessors suspend individually inside the composed native frame.
++    Info.ObjC3Effects.Async = Info.ObjC3Effects.AsyncFrame = false;
 +    // A compound operation checks the getter before the setter. Their error
 +    // contracts must agree; a nonthrowing half contributes no extra effect.
 +    for (const auto *Accessor : Accessors) {
@@ -51424,7 +51469,7 @@ index 000000000..8ce662b6d
 +    FT = Context.getFunctionType(Logical, FT->param_types(),
 +                                  FT->getExtProtoInfo())->castAs<FunctionProtoType>();
 +  }
-+  if (!Crossing || !FT ||
++  if ((!Crossing && !PropertyNeedsFrame) || !FT ||
 +      (!getLangOpts().CPlusPlus && FT->getObjC3FunctionEffects().Async &&
 +       !FT->getObjC3FunctionEffects().AsyncFrame)) {
 +    if (DiagnoseObjC3AwaitIsolation(Operand))
@@ -51509,7 +51554,6 @@ index 000000000..8ce662b6d
 +    for (const auto *Accessor : Accessors) {
 +      const auto *Signature = isolationCalleeFunctionType(*this, Accessor);
 +      Shape &= Signature && !Signature->isVariadic() &&
-+          !Signature->getObjC3FunctionEffects().Async &&
 +          (!getLangOpts().CPlusPlus || Signature->isNothrow() ||
 +           Accessor->hasAttr<NoThrowAttr>() || hasExceptionCaptureHook(*this));
 +    }
@@ -51554,6 +51598,7 @@ index 000000000..8ce662b6d
 +    return ExprError();
 +  }
 +  bool Failed = false;
++  if (Crossing) {
 +  if (CxxReceiver)
 +    Failed |= checkTransfer(*this, SourceReceiver->getType()->getPointeeType(),
 +                            SourceReceiver->getExprLoc(), "shared isolated C++ receiver", Target, true);
@@ -51569,6 +51614,7 @@ index 000000000..8ce662b6d
 +  if (FT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::Typed)
 +    Failed |= checkTransfer(*this, FT->getObjC3FunctionEffects().ErrorType, Loc,
 +                            "isolated checked error", Target);
++  }
 +  if (Failed)
 +    return ExprError();
 +  if (getLangOpts().ObjCAutoRefCount) {
@@ -56909,20 +56955,22 @@ index 000000000..43084cdf3
 +}
 +#endif
 diff --git a/clang/lib/Sema/SemaPseudoObject.cpp b/clang/lib/Sema/SemaPseudoObject.cpp
-index 667366709..8f9442289 100644
+index 667366709..74865fbb0 100644
 --- a/clang/lib/Sema/SemaPseudoObject.cpp
 +++ b/clang/lib/Sema/SemaPseudoObject.cpp
-@@ -29,7 +29,9 @@
+@@ -29,7 +29,11 @@
  //
  //===----------------------------------------------------------------------===//
  
 +#include "SemaObjC3KeyPath.h"
++#include "SemaObjC3Effects.h"
++#include "clang/AST/ObjC3Async.h"
  #include "clang/Sema/SemaPseudoObject.h"
 +#include "clang/AST/ObjC3KeyPath.h"
  #include "clang/AST/ExprCXX.h"
  #include "clang/AST/ExprObjC.h"
  #include "clang/Basic/CharInfo.h"
-@@ -329,6 +331,10 @@ namespace {
+@@ -329,6 +333,10 @@ namespace {
                                         Expr *LHS, Expr *RHS);
     Expr *rebuildAndCaptureObject(Expr *syntacticBase) override;
  
@@ -56933,7 +56981,7 @@ index 667366709..8f9442289 100644
     bool findAtIndexGetter();
     bool findAtIndexSetter();
  
-@@ -415,6 +421,7 @@ ExprResult PseudoOpBuilder::complete(Expr *syntactic) {
+@@ -415,6 +423,7 @@ ExprResult PseudoOpBuilder::complete(Expr *syntactic) {
  /// The main skeleton for building an r-value operation.
  ExprResult PseudoOpBuilder::buildRValueOperation(Expr *op) {
    Expr *syntacticBase = rebuildAndCaptureObject(op);
@@ -56941,7 +56989,34 @@ index 667366709..8f9442289 100644
  
    ExprResult getExpr = buildGet();
    if (getExpr.isInvalid()) return ExprError();
-@@ -432,6 +439,7 @@ PseudoOpBuilder::buildAssignmentOperation(Scope *Sc, SourceLocation opcLoc,
+@@ -423,6 +432,26 @@ ExprResult PseudoOpBuilder::buildRValueOperation(Expr *op) {
+   return complete(syntacticBase);
+ }
+ 
++// A compound property's getter contributes its logical value, while the
++// whole written operation is adapted at the explicit await boundary. This
++// unlowered protocol node has no written keyword location. Isolation checking
++// rejects it if it survives outside the private property's native frame.
++static ExprResult prepareObjC3PropertyMutationGet(Sema &S, ExprResult Value,
++                                                 SourceLocation Loc) {
++  if (Value.isInvalid() || !S.getLangOpts().ObjC3) return Value;
++  const auto *Message = dyn_cast<ObjCMessageExpr>(Value.get()->IgnoreImplicit());
++  const auto *Method = Message ? Message->getMethodDecl() : nullptr;
++  if (!Method || !Method->getObjC3FunctionEffects().Async) return Value;
++  const auto *Signature = getObjC3AsyncAwaitFunctionType(S, Value.get());
++  if (!Signature) return ExprError();
++  auto *Common = new (S.Context) OpaqueValueExpr(Loc, Value.get()->getType(), VK_PRValue);
++  auto *Ready = new (S.Context) OpaqueValueExpr(Loc, S.Context.BoolTy, VK_PRValue);
++  auto *Suspend = new (S.Context) OpaqueValueExpr(Loc, S.Context.VoidTy, VK_PRValue);
++  auto *Resume = new (S.Context) OpaqueValueExpr(Loc, Signature->getReturnType(), VK_PRValue);
++  return new (S.Context) CoawaitExpr(SourceLocation(), Value.get(), Value.get(),
++                                    Ready, Suspend, Resume, Common);
++}
++
+ /// The basic skeleton for building a simple or compound
+ /// assignment operation.
+ ExprResult
+@@ -432,6 +461,7 @@ PseudoOpBuilder::buildAssignmentOperation(Scope *Sc, SourceLocation opcLoc,
    assert(BinaryOperator::isAssignmentOp(opcode));
  
    Expr *syntacticLHS = rebuildAndCaptureObject(LHS);
@@ -56949,15 +57024,29 @@ index 667366709..8f9442289 100644
    OpaqueValueExpr *capturedRHS = capture(RHS);
  
    // In some very specific cases, semantic analysis of the RHS as an
-@@ -494,6 +502,7 @@ PseudoOpBuilder::buildIncDecOperation(Scope *Sc, SourceLocation opcLoc,
+@@ -457,7 +487,7 @@ PseudoOpBuilder::buildAssignmentOperation(Scope *Sc, SourceLocation opcLoc,
+                                        opcLoc, S.CurFPFeatureOverrides());
+ 
+   } else {
+-    ExprResult opLHS = buildGet();
++    ExprResult opLHS = prepareObjC3PropertyMutationGet(S, buildGet(), opcLoc);
+     if (opLHS.isInvalid()) return ExprError();
+ 
+     // Build an ordinary, non-compound operation.
+@@ -494,9 +524,10 @@ PseudoOpBuilder::buildIncDecOperation(Scope *Sc, SourceLocation opcLoc,
    assert(UnaryOperator::isIncrementDecrementOp(opcode));
  
    Expr *syntacticOp = rebuildAndCaptureObject(op);
 +  if (!syntacticOp) return ExprError();
  
-   // Load the value.
-   ExprResult result = buildGet();
-@@ -724,6 +733,22 @@ Expr *ObjCPropertyOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
+-  // Load the value.
+-  ExprResult result = buildGet();
++  // Load the logical value before applying the arithmetic operation.
++  ExprResult result = prepareObjC3PropertyMutationGet(S, buildGet(), opcLoc);
+   if (result.isInvalid()) return ExprError();
+ 
+   QualType resultType = result.get()->getType();
+@@ -724,6 +755,27 @@ Expr *ObjCPropertyOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
  }
  
  /// Load from an Objective-C property reference.
@@ -56969,9 +57058,14 @@ index 667366709..8f9442289 100644
 +                                                     SourceLocation Loc) {
 +  const auto *Function = S.getCurFunctionDecl();
 +  if (Value.isInvalid() || !S.getLangOpts().ObjC3 || !Function ||
-+      !Function->hasAttr<ObjC3IsolationThunkAttr>() ||
-+      Method->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None)
++      !Function->hasAttr<ObjC3IsolationThunkAttr>())
 +    return Value;
++  const auto Effects = Method->getObjC3FunctionEffects();
++  if (Effects.Async) {
++    Value = S.ActOnObjC3CAwaitExpr(Loc, Value.get());
++    if (Value.isInvalid()) return Value;
++  }
++  if (Effects.Throws == ObjC3ThrowsKind::None) return Value;
 +  return S.ActOnObjC3TryExpr(
 +      static_cast<unsigned>(ObjC3TryExpr::Kind::Propagate), Loc, Loc,
 +      Value.get(), Loc);
@@ -56980,7 +57074,7 @@ index 667366709..8f9442289 100644
  ExprResult ObjCPropertyOpBuilder::buildGet() {
    findGetter();
    if (!Getter) {
-@@ -750,7 +775,7 @@ ExprResult ObjCPropertyOpBuilder::buildGet() {
+@@ -750,7 +802,7 @@ ExprResult ObjCPropertyOpBuilder::buildGet() {
          receiverType, RefExpr->isSuperReceiver(), GenericLoc,
          Getter->getSelector(), Getter, {});
    }
@@ -56989,7 +57083,7 @@ index 667366709..8f9442289 100644
  }
  
  /// Store to an Objective-C property reference.
-@@ -819,7 +844,7 @@ ExprResult ObjCPropertyOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
+@@ -819,7 +871,7 @@ ExprResult ObjCPropertyOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
        msgExpr->setArg(0, captureValueAsResult(arg));
    }
  
@@ -56998,7 +57092,7 @@ index 667366709..8f9442289 100644
  }
  
  /// @property-specific behavior for doing lvalue-to-rvalue conversion.
-@@ -1008,6 +1033,25 @@ ObjCSubscriptOpBuilder::buildAssignmentOperation(Scope *Sc,
+@@ -1008,6 +1060,25 @@ ObjCSubscriptOpBuilder::buildAssignmentOperation(Scope *Sc,
    if (opcode != BO_Assign && !findAtIndexGetter())
      return ExprError();
  
@@ -57024,7 +57118,7 @@ index 667366709..8f9442289 100644
    ExprResult result =
    PseudoOpBuilder::buildAssignmentOperation(Sc, opcLoc, opcode, LHS, RHS);
    if (result.isInvalid()) return ExprError();
-@@ -1027,8 +1071,17 @@ Expr *ObjCSubscriptOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
+@@ -1027,8 +1098,17 @@ Expr *ObjCSubscriptOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
  
    // Capture base expression in an OVE and rebuild the syntactic
    // form to use the OVE as its base expression.
@@ -57044,7 +57138,7 @@ index 667366709..8f9442289 100644
  
    syntacticBase =
        Rebuilder(S, [=](Expr *, unsigned Idx) -> Expr * {
-@@ -1066,6 +1119,7 @@ static void CheckKeyForObjCARCConversion(Sema &S, QualType ContainerT,
+@@ -1066,6 +1146,7 @@ static void CheckKeyForObjCARCConversion(Sema &S, QualType ContainerT,
  }
  
  bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
@@ -57052,7 +57146,7 @@ index 667366709..8f9442289 100644
    if (AtIndexGetter)
      return true;
  
-@@ -1165,6 +1219,13 @@ bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
+@@ -1165,6 +1246,13 @@ bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
  }
  
  bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
@@ -57066,7 +57160,7 @@ index 667366709..8f9442289 100644
    if (AtIndexSetter)
      return true;
  
-@@ -1296,6 +1357,10 @@ bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
+@@ -1296,6 +1384,10 @@ bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
  // Get the object at "Index" position in the container.
  // [BaseExpr objectAtIndexedSubscript : IndexExpr];
  ExprResult ObjCSubscriptOpBuilder::buildGet() {
@@ -57077,7 +57171,7 @@ index 667366709..8f9442289 100644
    if (!findAtIndexGetter())
      return ExprError();
  
-@@ -1325,6 +1390,18 @@ ExprResult ObjCSubscriptOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
+@@ -1325,6 +1417,18 @@ ExprResult ObjCSubscriptOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
                                             bool captureSetValueAsResult) {
    if (!findAtIndexSetter())
      return ExprError();
@@ -57096,7 +57190,7 @@ index 667366709..8f9442289 100644
    if (AtIndexSetter)
      S.DiagnoseUseOfDecl(AtIndexSetter, GenericLoc);
    QualType receiverType = InstanceBase->getType();
-@@ -1484,7 +1561,9 @@ ExprResult SemaPseudoObject::checkIncDec(Scope *Sc, SourceLocation opcLoc,
+@@ -1484,7 +1588,9 @@ ExprResult SemaPseudoObject::checkIncDec(Scope *Sc, SourceLocation opcLoc,
          = dyn_cast<ObjCPropertyRefExpr>(opaqueRef)) {
      ObjCPropertyOpBuilder builder(SemaRef, refExpr, false);
      return builder.buildIncDecOperation(Sc, opcLoc, opcode, op);
@@ -67205,4 +67299,32 @@ index 000000000..0c8e1198b
 +}
 +int reject_unchecked_property(CheckedPropertyHost *object) __objc3_async_frame {
 +  return __objc3_await object.value; // expected-error {{throwing call requires an explicit tryValue}}
++}
+diff --git a/clang/test/ObjC3/Sema/async-isolated-property-gates.m b/clang/test/ObjC3/Sema/async-isolated-property-gates.m
+new file mode 100644
+index 000000000..9bfbb293c
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/async-isolated-property-gates.m
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/async-isolated-properties.h"
++int missing_local_getter_await(AsyncPropertyHost *object) __objc3_async_frame {
++  return (object.getterPlain+=1); // expected-error {{async property mutation requires an explicit await}}
++}
++int missing_sync_getter_await(AsyncPropertyHost *object) {
++  return object.getterPlain++; // expected-error {{async property mutation requires an explicit await}}
++}
++int missing_async_property_await(AsyncPropertyHost *object) __objc3_async_frame {
++  return (object.plain+=1); // expected-error {{async property mutation requires an explicit await}}
++}
++int missing_async_setter_await(AsyncPropertyHost *object) __objc3_async_frame {
++  return (object.plain=42); // expected-error {{async property mutation requires an explicit await}}
++}
++int missing_async_increment_await(AsyncPropertyHost *object) __objc3_async_frame {
++  return object.plain++; // expected-error {{async property mutation requires an explicit await}}
 +}

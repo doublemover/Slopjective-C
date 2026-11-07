@@ -1,5 +1,15 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.123 async-accessor span](linux_async_property_accessors.md)
+awaits getters and setters independently, preserving reads, assignments,
+compound/pre/post values, matched error effects and mixed accessor forms.
+Same-actor/executor checked composition, C++ task accessors and owned async results
+now execute through the existing native frame ABI. All 47 compiler cases,
+48 AST controls, fourteen instrumented native configurations / 49 commands,
+twelve new source-free profiles, eight adjacent groups, codec/isolation and
+160 production decoder replays pass. All 51 open issue bodies/timestamps remain
+unchanged. Synchronous nontrivial checked results are the next ABI implementation.
+
 The [source 2.122 checked-accessor span](linux_checked_property_accessors.md)
 checks each synchronous getter/setter inside the isolated property frame, joins
 matching error effects and preserves compound/pre/post results. Getter failures

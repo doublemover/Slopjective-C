@@ -20,3 +20,7 @@ before child entry and after the actor hop retain exact accessor/argument counts
 contracts, exact getter/setter failure boundaries, identity-preserving recovery,
 class/super/actor dispatch, nil, cancellation and nontrivial C++ setter arguments.
 It runs in the same maintained source/PCH witness and installed example.
+
+`async.h` covers suspended getter/setter composition, mixed accessors, same-actor
+and same-executor checks, class/super dispatch, C++ task accessors, owned results,
+nil and cancellation between accessors and during setter suspension.

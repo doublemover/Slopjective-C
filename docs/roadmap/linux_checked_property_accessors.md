@@ -1,5 +1,8 @@
 # Checked isolated property accessors
 
+The [source 2.123 follow-up](linux_async_property_accessors.md) also completes
+async accessors and composition without an executor crossing.
+
 Source 2.122 propagates synchronous accessor errors inside the private isolated
 property frame. Each getter and setter gets its own checked call. A getter
 failure exits before mutation or setter execution; a setter failure preserves
@@ -26,6 +29,5 @@ nontrivial copies, moves and destruction on typed-error paths.
 
 The span uses extension ABI 24, native frame 1, runtime services 4 and schema 2.2.
 All twelve ASan/UBSan native configurations / 42 commands and codec/isolation
-controls pass. Async accessors, same-actor/executor composition without a crossing,
-synchronous checked getters returning nontrivial C++ records, broader error
+controls pass. Synchronous checked getters returning nontrivial C++ records, broader error
 payloads and full matched SDK consolidation remain separate implementation work.

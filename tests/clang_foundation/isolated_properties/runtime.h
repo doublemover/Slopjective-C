@@ -284,6 +284,7 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
   assert(!"isolated property did not complete");return done;
 }
 #include "checked.h"
+#include "async.h"
 static void property_suite(void) {
   assert(objc3_executor_create(1,&property_caller)==OBJC3_SERVICE_OK);
   assert(objc3_executor_create(1,&property_destination)==OBJC3_SERVICE_OK);
@@ -351,6 +352,7 @@ static void property_suite(void) {
   assert(((const PropertyConstructed *)done.payload)->value==73);objc3_task_release(task);
 #endif
   checked_property_suite(main_object,actor,child);
+  async_property_suite(main_object,actor,child);
   assert(objc3_actor_close(property_mailbox)==OBJC3_SERVICE_OK);
   assert(objc3_actor_join(property_mailbox)==OBJC3_SERVICE_OK);
   objc3_service_status unbind=objc3_actor_unbind_object(actor_pointer);
