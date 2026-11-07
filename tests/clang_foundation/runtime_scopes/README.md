@@ -54,3 +54,9 @@ heap storage, reverse completed-prefix cleanup and exact matched frees. Automati
 array destruction checks a first exception followed by the remaining reverse
 prefix. Child-process witnesses independently detect secondary prefix exceptions
 and secondary normal-destruction exceptions before outer cleanup or free.
+
+Constructor/destructor witnesses verify direct member/base prefixes, body defer
+and local owner cleanup, explicit return from a protected body and secondary
+subobject exceptions. Eight child policies distinguish construction/destruction
+secondary exceptions from native noexcept boundaries, including failed-new and
+delete failure traces that skip caller deallocation before termination.

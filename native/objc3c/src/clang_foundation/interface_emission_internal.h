@@ -202,6 +202,7 @@ bool HasDeclarationNativeDependentAwait(const clang::NamedDecl *);
 bool HasDeclarationNSObjectStorage(const clang::NamedDecl *);
 bool HasDeclarationAutomaticOwnerUnwind(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeArrayLifetime(const clang::NamedDecl *declaration);
+bool HasDeclarationNativeSubobject(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeAllocation(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeDisposal(const clang::NamedDecl *declaration);
 bool HasDeclarationInitializedOwner(const clang::NamedDecl *declaration);

@@ -198,6 +198,10 @@ inline constexpr const char *kNativeArrayLifetimeSemantic = "objc3.native-array-
 inline bool HasNativeArrayLifetimeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-array-lifetimes:v1;") != std::string::npos;
 }
+inline constexpr const char *kNativeSubobjectSemantic = "objc3.native-subobject-cleanup.v1";
+inline bool HasNativeSubobjectIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-subobject-cleanup:v1;") != std::string::npos;
+}
 inline constexpr const char *kNativeAllocationSemantic = "objc3.native-allocation-cleanup.v2";
 inline bool HasNativeAllocationIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-allocation-cleanup:v2;") != std::string::npos;

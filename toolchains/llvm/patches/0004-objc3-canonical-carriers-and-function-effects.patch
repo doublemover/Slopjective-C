@@ -57932,10 +57932,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..fd16e0814
+index 000000000..d907c05a7
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,1073 @@
+@@ -0,0 +1,1247 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -59008,6 +59008,180 @@ index 000000000..fd16e0814
 +    Explore(Explore,&Graph->getEntry(),{},false,0);
 +    EXPECT_GT(Normal,0u);EXPECT_EQ(Caught>0,Count>0);EXPECT_EQ(Terminated>0,Count>1);
 +  }
++}
++
++TEST(ObjC3ASTInfrastructure, ConstructorUnwindDestroysOnlyCompletedSubobjects) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    struct Base {Base(int);~Base() noexcept(false);};
++    struct Member {Member(int);~Member() noexcept(false);};
++    void subobject_marker(int) noexcept;
++    void subobject_raise(void);
++    struct Derived:Base {
++      Member first,second;
++      Derived():Base(0),first(1),second(2) {
++        __objc3_defer {subobject_marker(31);}
++        subobject_raise();
++      }
++    };
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"constructor-subobjects.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  CXXConstructorDecl *Constructor=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++    if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Derived")
++      for(auto *C:R->ctors())if(C->hasBody())Constructor=C;
++  ASSERT_NE(Constructor,nullptr);
++  CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++  Options.AddEHEdges=true;Options.AddImplicitDtors=true;Options.AddInitializers=true;
++  auto Graph=CFG::buildCFG(Constructor,Constructor->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Normal=0,Unwound=0,Terminated=0,Budget=4096;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Complete,bool Body,bool Deferred,bool Unwind,bool Termination,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);
++    Unwind|=Block->isNativeExceptionExit();Termination|=Block->hasNoReturnElement();
++    for(const auto &Element:*Block) {
++      if(auto Init=Element.getAs<CFGInitializer>()) {
++        auto *I=Init->getInitializer();
++        Complete.push_back(I->isBaseInitializer()?0:I->getMember()->getName()=="first"?1:2);
++      }
++      int Destroyed=-1;
++      if(auto Member=Element.getAs<CFGMemberDtor>())Destroyed=Member->getFieldDecl()->getName()=="first"?1:2;
++      if(auto Base=Element.getAs<CFGBaseDtor>()) {Destroyed=0;EXPECT_NE(Base->getDestructorDecl(AST->getASTContext()),nullptr);}
++      if(Destroyed>=0) {
++        ASSERT_FALSE(Complete.empty());EXPECT_EQ(Complete.back(),Destroyed);Complete.pop_back();
++        if(Body)EXPECT_TRUE(Deferred);
++      }
++      if(auto Statement=Element.getAs<CFGStmt>())
++        if(const auto *Call=dyn_cast<CallExpr>(Statement->getStmt());Call && Call->getDirectCallee()) {
++          if(Call->getDirectCallee()->getName()=="subobject_raise")Body=true;
++          if(Call->getDirectCallee()->getName()=="subobject_marker")Deferred=true;
++        }
++    }
++    if(Block->succ_empty()) {
++      if(Termination)++Terminated;
++      else if(Unwind){++Unwound;EXPECT_TRUE(Complete.empty());}
++      else {++Normal;EXPECT_EQ(Complete,std::vector<int>({0,1,2}));EXPECT_TRUE(Deferred);}
++      return;
++    }
++    for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())
++      Self(Self,Next,Complete,Body,Deferred,Unwind,Termination,Depth+1);
++  };
++  Explore(Explore,&Graph->getEntry(),{},false,false,false,false,0);
++  EXPECT_GT(Normal,0u);EXPECT_GT(Unwound,0u);EXPECT_GT(Terminated,0u);
++}
++
++TEST(ObjC3ASTInfrastructure, DestructorReturnCleansSubobjectsOutsideBodyHandlers) {
++  for(bool Noexcept:{false,true}) {
++    std::string Source=R"(
++      struct Base {Base();~Base() noexcept(false);};
++      struct Member {Member();~Member() noexcept(false);};
++      void subobject_marker(int) noexcept;
++      struct Derived:Base {
++        Member first,second;
++        ~Derived() noexcept(EXCEPTION_POLICY) {
++          try {__objc3_defer {subobject_marker(31);}return;}
++          catch(...) {subobject_marker(99);}
++        }
++      };
++    )";
++    Source.replace(Source.find("EXCEPTION_POLICY"),16,Noexcept?"true":"false");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,
++      {"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"destructor-subobjects.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    CXXDestructorDecl *Destructor=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Derived")Destructor=R->getDestructor();
++    ASSERT_NE(Destructor,nullptr);
++    CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++    Options.AddEHEdges=true;Options.AddImplicitDtors=true;Options.AddInitializers=true;
++    auto Graph=CFG::buildCFG(Destructor,Destructor->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++    unsigned Normal=0,Unwound=0,Terminated=0,CompleteTermination=0,Budget=4096;
++    auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Remaining,bool Deferred,bool Unwind,bool Termination,unsigned Depth)->void {
++      ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);
++      Unwind|=Block->isNativeExceptionExit();Termination|=Block->hasNoReturnElement();
++      for(const auto &Element:*Block) {
++        int Destroyed=-1;
++        if(auto Member=Element.getAs<CFGMemberDtor>())Destroyed=Member->getFieldDecl()->getName()=="first"?1:2;
++        if(Element.getAs<CFGBaseDtor>())Destroyed=0;
++        if(Destroyed>=0) {
++          ASSERT_FALSE(Remaining.empty());EXPECT_EQ(Remaining.back(),Destroyed);Remaining.pop_back();EXPECT_TRUE(Deferred);
++        }
++        if(auto Statement=Element.getAs<CFGStmt>())
++          if(const auto *Call=dyn_cast<CallExpr>(Statement->getStmt());Call && Call->getDirectCallee() &&
++             Call->getDirectCallee()->getName()=="subobject_marker") {
++            unsigned Marker=cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue();
++            EXPECT_EQ(Marker,31u);Deferred=true;
++          }
++      }
++      if(Block->succ_empty()) {
++        EXPECT_TRUE(Deferred);
++        if(Termination){++Terminated;if(Remaining.empty())++CompleteTermination;}
++        else if(Unwind){++Unwound;EXPECT_TRUE(Remaining.empty());}
++        else {++Normal;EXPECT_TRUE(Remaining.empty());}
++        return;
++      }
++      for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())
++        Self(Self,Next,Remaining,Deferred,Unwind,Termination,Depth+1);
++    };
++    Explore(Explore,&Graph->getEntry(),{0,1,2},false,false,false,0);
++    EXPECT_GT(Normal,0u);EXPECT_GT(Terminated,0u);
++    EXPECT_EQ(Unwound>0,!Noexcept);if(Noexcept)EXPECT_GT(CompleteTermination,0u);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, NoexceptSubobjectBodyTerminatesBeforeFrameCleanup) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    struct Allocation {
++      explicit Allocation(int);~Allocation() noexcept(false);
++      static void operator delete(void *) noexcept;
++    };
++    struct Member {~Member() noexcept;};
++    void noexcept_marker(int) noexcept;
++    struct Owner {
++      Member member;
++      ~Owner() noexcept {
++        __objc3_defer {noexcept_marker(31);}
++        delete new Allocation(1);
++      }
++    };
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"noexcept-subobjects.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  CXXDestructorDecl *Destructor=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++    if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner")Destructor=R->getDestructor();
++  ASSERT_NE(Destructor,nullptr);
++  CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++  Options.AddEHEdges=true;Options.AddImplicitDtors=true;Options.AddInitializers=true;
++  auto Graph=CFG::buildCFG(Destructor,Destructor->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Normal=0,FailedConstruction=0,FailedDestruction=0,Budget=4096;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Trace,bool Termination,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);Termination|=Block->hasNoReturnElement();
++    for(const auto &Element:*Block) {
++      if(Element.getAs<CFGMemberDtor>())Trace.push_back(4);
++      if(Element.getAs<CFGDeleteDtor>())Trace.push_back(2);
++      if(auto Statement=Element.getAs<CFGStmt>()) {
++        const auto *Node=Statement->getStmt();
++        if(isa<CXXConstructExpr>(Node))Trace.push_back(1);
++        if(isa<CXXDeleteExpr>(Node))Trace.push_back(3);
++        if(const auto *Call=dyn_cast<CallExpr>(Node);Call && Call->getDirectCallee() &&
++           Call->getDirectCallee()->getName()=="noexcept_marker")Trace.push_back(31);
++      }
++    }
++    if(Block->succ_empty()) {
++      if(Termination) {
++        EXPECT_EQ(std::count(Trace.begin(),Trace.end(),3),0);
++        EXPECT_EQ(std::count(Trace.begin(),Trace.end(),31),0);
++        EXPECT_EQ(std::count(Trace.begin(),Trace.end(),4),0);
++        if(std::find(Trace.begin(),Trace.end(),2)!=Trace.end())++FailedDestruction;
++        else if(std::find(Trace.begin(),Trace.end(),1)!=Trace.end())++FailedConstruction;
++      } else {++Normal;EXPECT_EQ(Trace[Trace.size()-2],31);EXPECT_EQ(Trace.back(),4);}
++      return;
++    }
++    for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Trace,Termination,Depth+1);
++  };
++  Explore(Explore,&Graph->getEntry(),{},false,0);
++  EXPECT_GT(Normal,0u);EXPECT_GT(FailedConstruction,0u);EXPECT_GT(FailedDestruction,0u);
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -65650,3 +65824,93 @@ index 000000000..c1dcc7b61
 +  struct Repeated {Repeated(int value=1);~Repeated() noexcept(false);};
 +  withLifetime(owner) {const char *view=owner->storage;Repeated values[3];receiver_use(view);(void)values;}
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-subobject-cleanup.h b/clang/test/ObjC3/Sema/Inputs/borrowed-subobject-cleanup.h
+new file mode 100644
+index 000000000..39eda6847
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-subobject-cleanup.h
+@@ -0,0 +1,8 @@
++#ifndef BORROWED_SUBOBJECT_CLEANUP_H
++#define BORROWED_SUBOBJECT_CLEANUP_H
++#include "borrowed-array-groups.h"
++int subobject_argument(int);
++void subobject_raise(void);
++struct SubobjectBase {explicit SubobjectBase(int);~SubobjectBase() noexcept(false);};
++struct SubobjectMember {explicit SubobjectMember(int);~SubobjectMember() noexcept(false);};
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-subobject-cleanup.mm b/clang/test/ObjC3/Sema/borrowed-subobject-cleanup.mm
+new file mode 100644
+index 000000000..ca5331fa2
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-subobject-cleanup.mm
+@@ -0,0 +1,70 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-subobject-cleanup.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-subobject-cleanup.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-subobject-cleanup.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-subobject-cleanup.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-subobject-cleanup.h"
++#endif
++struct NativeSubobjectOwner:SubobjectBase {
++  SubobjectMember first,second;
++  NativeSubobjectOwner(RuntimeScopeOwner *_Nonnull owner)
++      :SubobjectBase(subobject_argument(0)),first(subobject_argument(1)),second(subobject_argument(2)) {
++    const char *view=owner->storage;
++    __objc3_defer {receiver_use(view);}
++    receiver_use(view);subobject_raise();
++  }
++  ~NativeSubobjectOwner() noexcept(false) {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();
++    const char *view=local->storage;
++    __objc3_defer {receiver_use(view);}
++    receiver_use(view);subobject_raise();
++  }
++};
++struct NativeSubobjectCatch:SubobjectBase {
++  SubobjectMember member;
++  NativeSubobjectCatch():SubobjectBase(0),member(1) {
++    const char *view=0;
++    try {
++      RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;
++      subobject_raise();
++    } catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++  }
++  ~NativeSubobjectCatch() noexcept(false) {
++    const char *view=0;
++    try {
++      RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;
++      subobject_raise();
++    } catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++  }
++};
++struct NativeSubobjectReturn:SubobjectBase {
++  SubobjectMember member;
++  NativeSubobjectReturn():SubobjectBase(0),member(1) {}
++  ~NativeSubobjectReturn() noexcept(false) {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
++    try {__objc3_defer {receiver_use(view);}return;}
++    catch(...) {receiver_use(view);}
++  }
++};
++struct NativeARCSubobjects {
++  RuntimeScopeOwner *field;
++  NativeARCSubobjects(RuntimeScopeOwner *_Nonnull owner):field(owner) {
++    const char *view=owner->storage;
++    __objc3_defer {receiver_use(view);}
++    subobject_raise();
++  }
++  ~NativeARCSubobjects() noexcept(false) {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
++    __objc3_defer {receiver_use(view);}
++    subobject_raise();
++  }
++};

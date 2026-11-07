@@ -422,6 +422,13 @@ elements, with native termination if that prefix cleanup throws. A zero-length
 array evaluates no element constructor arguments or element destructor, including
 noreturn element operations.
 
+Native constructor failure cleanup shall distinguish completed subobjects from
+an initializer that failed. Destructor return shall run implicit member/base
+cleanup after leaving handlers in its body. Exception cleanup obligations apply
+while native propagation continues: noexcept and secondary-exception termination
+retain their native unwind boundaries, and a lifetime proof shall not infer
+cleanup that native termination bypasses.
+
 A native catch handler observes owner state after protected-region cleanup,
 including catch-all and scalar/reference exception bindings. A successful strong
 Block binding owns its copied captures; a failed heap copy does not initialize

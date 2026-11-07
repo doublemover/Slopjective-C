@@ -12,7 +12,7 @@
 namespace objc3::fuzz {
 using namespace clang_foundation;
 namespace {
-const llvm::StringRef supported[] = {"ownership.v1", "effects.async.v1", "objc3.async-entry-abi.v5", "objc3.borrowed-callable-owners.v1", "objc3.borrowed-interior-storage.v1", "objc3.borrowed-receiver-results.v1", "objc3.managed-runtime-scopes.v1", "objc3.native-finally.v1", "objc3.initialized-owner-prefixes.v1", "objc3.native-disposal.v2", "objc3.automatic-owner-unwind.v1", "objc3.native-array-lifetimes.v1", "objc3.native-allocation-cleanup.v2", "objc3.native-dependent-await.v1", "objc3.nsobject-storage.v1", "objc3.native-declaration-attributes.v2"};
+const llvm::StringRef supported[] = {"ownership.v1", "effects.async.v1", "objc3.async-entry-abi.v5", "objc3.borrowed-callable-owners.v1", "objc3.borrowed-interior-storage.v1", "objc3.borrowed-receiver-results.v1", "objc3.managed-runtime-scopes.v1", "objc3.native-finally.v1", "objc3.initialized-owner-prefixes.v1", "objc3.native-disposal.v2", "objc3.automatic-owner-unwind.v1", "objc3.native-array-lifetimes.v1", "objc3.native-subobject-cleanup.v1", "objc3.native-allocation-cleanup.v2", "objc3.native-dependent-await.v1", "objc3.nsobject-storage.v1", "objc3.native-declaration-attributes.v2"};
 [[noreturn]] void Failure(const char *property) {
   std::fprintf(stderr, "OBJ3_CODEC_PROPERTY: %s\n", property);std::abort();
 }

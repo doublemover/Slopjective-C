@@ -1,5 +1,13 @@
 # Objective-C 3.0 on Linux
 
+The [System 2.44 subobject span](linux_native_subobject_cleanup.md)
+adds constructor completed-prefix unwind, destructor member/base cleanup on
+return/exception paths, primitive ARC subobjects and native noexcept termination
+boundaries, with owning-declaration-aware publication. All 61 affected compiler cases, four new source-free profiles, eight adjacent
+frontend groups, codec/isolation controls, 29 AST controls and twelve ASan/UBSan
+native configurations / 42 commands pass.
+Wider subobject forms retain separate proof gates.
+
 The [System 2.43 array-group span](linux_array_construction_groups.md)
 adds bounded direct throwing array construction with native prefix cleanup and
 matched free, automatic throwing array destruction and secondary termination,

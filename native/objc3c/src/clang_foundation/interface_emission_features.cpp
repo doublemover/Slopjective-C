@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -66,6 +67,11 @@ bool ContainsLambda(const clang::Stmt *statement) {
 }
 template <class Predicate>
 bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate &contains) {
+  auto Contains = [&](const clang::Stmt *statement) {
+    if constexpr (std::is_invocable_v<Predicate, const clang::Stmt *, const clang::NamedDecl *>)
+      return contains(statement, declaration);
+    else return contains(statement);
+  };
   for (const auto *member:ClosedParentMemberSpecializations(declaration))
     if (HasPublishedExpression(member,contains)) return true;
   for (const auto *pattern:ClosedParentPatterns(declaration))
@@ -90,21 +96,21 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
     for (const auto *parameter : function->getMostRecentDecl()->parameters())
       if (const auto *expression = WrittenDefaultArgument(parameter);
-          expression && contains(expression)) return true;
+          expression && Contains(expression)) return true;
     if (PublishesFunctionBody(function))
       if (const auto *definition = function->getDefinition()) {
-        if (contains(definition->getBody())) return true;
+        if (Contains(definition->getBody())) return true;
         if (const auto *constructor = llvm::dyn_cast<clang::CXXConstructorDecl>(definition))
           for (const auto *initializer : constructor->inits())
-            if (initializer->isWritten() && contains(initializer->getInit())) return true;
+            if (initializer->isWritten() && Contains(initializer->getInit())) return true;
       }
   }
   if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration);
-      field && field->hasInClassInitializer()) return contains(field->getInClassInitializer());
+      field && field->hasInClassInitializer()) return Contains(field->getInClassInitializer());
   if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
       PublishesVariableInitializer(variable)) {
     if (const auto *definition=variable->getDefinition()) variable=definition;
-    if (variable->hasInit()) return contains(variable->getInit());
+    if (variable->hasInit()) return Contains(variable->getInit());
   }
   for (const auto *specialization:ConcreteMemberFunctionSpecializations(declaration))
     if (specialization->isInlined() && HasPublishedExpression(specialization,contains)) return true;
@@ -179,6 +185,20 @@ bool HasDeclarationNativeArrayLifetime(const clang::NamedDecl *declaration) {
                  context.getBaseElementType(variable->getType())->getAsCXXRecordDecl();
         return true;
       }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
+bool HasDeclarationNativeSubobject(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement, const clang::NamedDecl *owner) {
+    if (llvm::isa<clang::CXXConstructorDecl, clang::CXXDestructorDecl>(owner))
+      if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(owner);
+          function && PublishesFunctionBody(function) && function->getDefinition() && function->getDefinition()->getBody()) return true;
+    struct Subobjects : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitCXXConstructorDecl(clang::CXXConstructorDecl *method) override {found |= !method->isImplicit() && method->hasBody();return true;}
+      bool VisitCXXDestructorDecl(clang::CXXDestructorDecl *method) override {found |= !method->isImplicit() && method->hasBody();return true;}
     } visitor;
     visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
   });

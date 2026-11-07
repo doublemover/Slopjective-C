@@ -507,13 +507,124 @@ static void construction_group_suite(ScopeProbe *_Nonnull owner) {
   }
   group_fail_constructor=0;group_fail_destructors=0;
 }
+static int subobject_fail=-1,subobject_mask,subobject_return,subobject_dtor_bodies;
+static int subobject_check_local,subobject_expected_destroyed;
+static int subobject_stage(int stage) {
+  allocation_event(10+stage);if(subobject_fail==stage)throw stage;return stage;
+}
+struct ScopeSubobjectPart {
+  int tag;
+  explicit ScopeSubobjectPart(int value) noexcept:tag(value) {}
+  ~ScopeSubobjectPart() noexcept(false) {
+    if(subobject_check_local)assert(scope_destroyed==subobject_expected_destroyed);
+    allocation_event(20+tag);if(subobject_mask&(1<<tag))throw tag;
+  }
+};
+struct ScopeSubobjectBase:ScopeSubobjectPart {
+  explicit ScopeSubobjectBase(int tag) noexcept:ScopeSubobjectPart(tag) {}
+  ~ScopeSubobjectBase() noexcept(false)=default;
+};
+template<bool Noexcept> struct ScopeSubobjectWitness:ScopeSubobjectBase {
+  ScopeSubobjectPart first,second;
+  explicit ScopeSubobjectWitness(ScopeProbe *_Nonnull owner) noexcept(Noexcept)
+      :ScopeSubobjectBase(subobject_stage(0)),first(subobject_stage(1)),second(subobject_stage(2)) {
+    const char *view=&owner->payload;
+    __objc3_defer {scope_use(view);allocation_event(30);}
+    if(subobject_fail==3)subobject_stage(3);
+    scope_use(view);
+  }
+  ~ScopeSubobjectWitness() noexcept(Noexcept) {
+    ++subobject_dtor_bodies;
+    subobject_check_local=1;subobject_expected_destroyed=scope_destroyed+1;
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {
+      scope_use(view);allocation_event(31);
+#if !__has_feature(objc_arc)
+      [local release];
+#endif
+    }
+    if(subobject_fail==4)subobject_stage(4);
+    if(subobject_fail==6)delete new ConstructorFailure(1);
+    if(subobject_fail==7){auto *value=new ScopeDisposal(true);delete value;}
+    try {__objc3_defer {scope_use(view);allocation_event(32);}if(subobject_return)return;}
+    catch(...) {allocation_event(99);}
+  }
+};
+static void subobject_path(ScopeProbe *_Nonnull owner,int fail,int mask,int returning) {
+  int bodies=subobject_dtor_bodies,caught=0;subobject_fail=fail;subobject_mask=mask;
+  subobject_return=returning;subobject_check_local=0;allocation_trace_count=0;
+  withLifetime(owner) {
+    const char *view=&owner->payload;
+    try {__objc3_defer {scope_use(view);allocation_event(40);}ScopeSubobjectWitness<false> value(owner);(void)value;}
+    catch(int value) {assert(value==(fail>=0?fail:2));++caught;scope_use(view);allocation_event(41);}
+  }
+  assert(caught==!!(fail>=0 || mask));
+  int position=0,complete=fail>=0 && fail<3?fail:3;
+  for(int i=0;i!=(fail>=0 && fail<3?fail+1:3);++i)assert(allocation_trace[position++]==10+i);
+  if(fail==3)assert(allocation_trace[position++]==13);
+  if(complete==3)assert(allocation_trace[position++]==30);
+  if(fail<0 || fail==4) {
+    assert(subobject_dtor_bodies==bodies+1);
+    if(fail==4)assert(allocation_trace[position++]==14);
+    else assert(allocation_trace[position++]==32);
+    assert(allocation_trace[position++]==31);
+  } else assert(subobject_dtor_bodies==bodies);
+  for(int i=complete-1;i>=0;--i)assert(allocation_trace[position++]==20+i);
+  assert(allocation_trace[position++]==40);
+  if(caught)assert(allocation_trace[position++]==41);
+  assert(position==allocation_trace_count);subobject_check_local=0;
+}
+static void subobject_suite(ScopeProbe *_Nonnull owner) {
+  for(int fail=-1;fail!=5;++fail)subobject_path(owner,fail,0,0);
+  subobject_path(owner,-1,0,1);subobject_path(owner,-1,1<<2,0);subobject_path(owner,-1,1<<2,1);
+  for(int policy=0;policy!=8;++policy) {
+    pid_t child=fork();assert(child>=0);
+    if(child==0) {
+      subobject_fail=policy==0 || policy==5?3:policy==3?4:policy==4?2:policy==6?6:policy==7?7:-1;
+      subobject_mask=policy==2?(1<<2):policy>=3?0:((1<<2)|(1<<1));
+      subobject_return=1;subobject_check_local=0;allocation_trace_count=0;scope_disposal_count=0;
+      group_child_constructing=policy;
+      std::set_terminate([]{
+        const int policy=group_child_constructing;
+        const int expected0[]={10,11,12,13,30,22};
+        const int expected1[]={10,11,12,30,32,31,22,21};
+        const int expected2[]={10,11,12,30,32,31,22};
+        const int expected3[]={10,11,12,30,14};
+        const int expected4[]={10,11,12};
+        const int expected5[]={10,11,12,13};
+        const int expected6[]={10,11,12,30,10,1,11};
+        const int expected7[]={10,11,12,30};
+        const int *expected=policy==0?expected0:policy==1?expected1:policy==2?expected2:policy==3?expected3:policy==4?expected4:policy==5?expected5:policy==6?expected6:expected7;
+        int count=policy==0?6:policy==1?8:policy==2?7:policy==3?5:policy==4?3:policy==5?4:policy==6?7:4;
+        bool good=allocation_trace_count==count;
+        if(policy==7)good=good && scope_disposal_count==1 && scope_disposal_trace[0]==1;
+        for(int i=0;i<count && good;++i)good=allocation_trace[i]==expected[i];
+        if(!good) {
+          fprintf(stderr,"subobject policy %d native trace:",policy);
+          for(int i=0;i<allocation_trace_count;++i)fprintf(stderr," %d",allocation_trace[i]);
+          fprintf(stderr," scope disposal:");
+          for(int i=0;i<scope_disposal_count;++i)fprintf(stderr," %d",scope_disposal_trace[i]);
+          fprintf(stderr,"\n");
+        }
+        _Exit(good?101:102);
+      });
+      try {
+        if(policy>=2){ScopeSubobjectWitness<true> value(owner);(void)value;}
+        else {ScopeSubobjectWitness<false> value(owner);(void)value;}
+      } catch(...) {_Exit(103);}_Exit(104);
+    }
+    int status=0;assert(waitpid(child,&status,0)==child);
+    assert(WIFEXITED(status) && WEXITSTATUS(status)==101);
+  }
+  subobject_fail=-1;subobject_mask=0;subobject_check_local=0;
+}
 static void allocation_array_suite(void) {
   ScopeProbe *_Nonnull owner=[ScopeProbe new];
 #if !__has_feature(objc_arc)
   __objc3_defer {[owner release];}
 #endif
   allocation_failure_path(owner,0);allocation_failure_path(owner,1);
-  array_failure_path(owner,0);array_failure_path(owner,1);construction_group_suite(owner);
+  array_failure_path(owner,0);array_failure_path(owner,1);construction_group_suite(owner);subobject_suite(owner);
   const char *view=&owner->payload;delete[] new ScopeNeverDisposal[0];scope_use(view);
   pid_t child=fork();assert(child>=0);
   if(child==0) {
