@@ -429,6 +429,12 @@ while native propagation continues: noexcept and secondary-exception termination
 retain their native unwind boundaries, and a lifetime proof shall not infer
 cleanup that native termination bypasses.
 
+Once a delegating constructor's target completes, failure in its body destroys
+the complete object; target failure shall not destroy an incomplete whole object.
+Constructor/destructor function-try handlers observe completed subobject cleanup,
+including implicit destructor epilogues. Falling off those handlers implicitly
+rethrows; a destructor handler may return without repeating subobject destruction.
+
 A native catch handler observes owner state after protected-region cleanup,
 including catch-all and scalar/reference exception bindings. A successful strong
 Block binding owns its copied captures; a failed heap copy does not initialize

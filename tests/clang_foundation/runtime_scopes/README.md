@@ -60,3 +60,9 @@ and local owner cleanup, explicit return from a protected body and secondary
 subobject exceptions. Eight child policies distinguish construction/destruction
 secondary exceptions from native noexcept boundaries, including failed-new and
 delete failure traces that skip caller deallocation before termination.
+
+Delegation distinguishes failure in the target from failure after complete-object
+construction. Function-try witnesses check initializer/body/member failure,
+reverse cleanup before handler entry, implicit rethrow, destructor handler return
+and noexcept suppression/termination. Child-process traces defend against repeated
+whole-object/member destruction and incorrect outer cleanup during termination.

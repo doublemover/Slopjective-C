@@ -2431,7 +2431,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationNativeArrayLifetime(representative))
     identity.canonical_type_identity += ";native-array-lifetimes:v1;";
   if (HasDeclarationNativeSubobject(representative))
-    identity.canonical_type_identity += ";native-subobject-cleanup:v1;";
+    identity.canonical_type_identity += ";native-subobject-cleanup:v2;";
   if (HasDeclarationNativeAllocation(representative))
     identity.canonical_type_identity += ";native-allocation-cleanup:v2;";
   if (HasDeclarationNativeDisposal(representative))

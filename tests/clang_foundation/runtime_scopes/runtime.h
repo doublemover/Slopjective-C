@@ -618,13 +618,143 @@ static void subobject_suite(ScopeProbe *_Nonnull owner) {
   }
   subobject_fail=-1;subobject_mask=0;subobject_check_local=0;
 }
+static int delegation_bodies;
+struct ScopeDelegatingWitness {
+  ScopeSubobjectPart member;
+  ScopeDelegatingWitness(ScopeProbe *_Nonnull owner,int):member(subobject_stage(0)) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(50);}
+    if(subobject_fail==5)subobject_stage(5);
+  }
+  explicit ScopeDelegatingWitness(ScopeProbe *_Nonnull owner):ScopeDelegatingWitness(owner,0) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(51);}
+    if(subobject_fail==6)subobject_stage(6);
+  }
+  ~ScopeDelegatingWitness() noexcept(false) {
+    ++delegation_bodies;
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(52);
+#if !__has_feature(objc_arc)
+      [local release];
+#endif
+    }
+  }
+};
+static void delegation_path(ScopeProbe *_Nonnull owner,int failure) {
+  int bodies=delegation_bodies,caught=0;subobject_fail=failure;subobject_mask=0;allocation_trace_count=0;
+  withLifetime(owner) {
+    const char *view=&owner->payload;
+    try {__objc3_defer {scope_use(view);allocation_event(60);}ScopeDelegatingWitness value(owner);(void)value;}
+    catch(int value){assert(value==failure);++caught;scope_use(view);allocation_event(61);}
+  }
+  const int success[]={10,50,51,52,20,60};
+  const int initial[]={10,60,61};
+  const int target[]={10,15,50,20,60,61};
+  const int outer[]={10,50,16,51,52,20,60,61};
+  const int *expected=failure<0?success:failure==0?initial:failure==5?target:outer;
+  int count=failure<0?6:failure==0?3:failure==5?6:8;
+  assert(caught==(failure>=0) && allocation_trace_count==count);
+  for(int i=0;i<count;++i)assert(allocation_trace[i]==expected[i]);
+  assert(delegation_bodies==bodies+(failure<0 || failure==6));
+}
+template<bool Noexcept,bool Suppress> struct ScopeFunctionTryWitness:ScopeSubobjectBase {
+  ScopeSubobjectPart first,second;
+  explicit ScopeFunctionTryWitness(ScopeProbe *_Nonnull owner) noexcept(Noexcept) try
+      :ScopeSubobjectBase(subobject_stage(0)),first(subobject_stage(1)),second(subobject_stage(2)) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(70);}
+    if(subobject_fail==3)subobject_stage(3);
+  } catch(int value) {assert(value==subobject_fail);scope_use(&owner->payload);allocation_event(71);}
+  ~ScopeFunctionTryWitness() noexcept(Noexcept) try {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(72);
+#if !__has_feature(objc_arc)
+      [local release];
+#endif
+    }
+    if(subobject_fail==4)subobject_stage(4);
+    if(subobject_return)return;
+  } catch(int value) {
+    assert(value==(subobject_fail==4?4:2));
+    ScopeProbe *_Nonnull handler=[ScopeProbe new];const char *view=&handler->payload;
+    __objc3_defer {scope_use(view);allocation_event(74);
+#if !__has_feature(objc_arc)
+      [handler release];
+#endif
+    }
+    allocation_event(73);scope_use(view);
+    if constexpr(Suppress)return;
+  }
+};
+template<bool Noexcept,bool Suppress> static void function_try_path(ScopeProbe *_Nonnull owner,int failure,int mask,int returning) {
+  subobject_fail=failure;subobject_mask=mask;subobject_return=returning;subobject_check_local=0;allocation_trace_count=0;
+  int caught=0;
+  withLifetime(owner) {
+    const char *view=&owner->payload;
+    try {__objc3_defer {scope_use(view);allocation_event(80);}ScopeFunctionTryWitness<Noexcept,Suppress> value(owner);(void)value;}
+    catch(int value){assert(value==(failure>=0?failure:2));++caught;scope_use(view);allocation_event(81);}
+  }
+  int position=0,complete=failure>=0 && failure<3?failure:3;
+  for(int i=0;i!=(failure>=0 && failure<3?failure+1:3);++i)assert(allocation_trace[position++]==10+i);
+  if(failure==3)assert(allocation_trace[position++]==13);
+  if(complete==3)assert(allocation_trace[position++]==70);
+  bool constructor_failed=failure>=0 && failure<=3;
+  if(!constructor_failed) {
+    if(failure==4)assert(allocation_trace[position++]==14);
+    assert(allocation_trace[position++]==72);
+  }
+  for(int i=complete-1;i>=0;--i)assert(allocation_trace[position++]==20+i);
+  if(constructor_failed)assert(allocation_trace[position++]==71);
+  else if(failure==4 || mask) {assert(allocation_trace[position++]==73);assert(allocation_trace[position++]==74);}
+  assert(allocation_trace[position++]==80);
+  bool expected_catch=constructor_failed || (!Suppress && (failure==4 || mask));
+  assert(caught==expected_catch);
+  if(expected_catch)assert(allocation_trace[position++]==81);
+  assert(position==allocation_trace_count);
+}
+static void delegation_function_try_suite(ScopeProbe *_Nonnull owner) {
+  const int failures[]={-1,0,5,6};
+  for(int failure:failures)delegation_path(owner,failure);
+  for(int failure=-1;failure!=5;++failure)function_try_path<false,false>(owner,failure,0,0);
+  function_try_path<false,false>(owner,-1,1<<2,0);function_try_path<false,false>(owner,-1,1<<2,1);
+  function_try_path<false,true>(owner,4,0,0);function_try_path<false,true>(owner,-1,1<<2,1);
+  function_try_path<true,true>(owner,4,0,0);function_try_path<true,true>(owner,-1,1<<2,1);
+  for(int policy=0;policy!=4;++policy) {
+    pid_t child=fork();assert(child>=0);
+    if(child==0) {
+      allocation_trace_count=0;subobject_check_local=0;subobject_return=1;
+      subobject_fail=policy==0?6:policy==1?1:policy==3?3:-1;
+      subobject_mask=policy==0?1:policy==2?1<<2:policy==3?(1<<2)|(1<<1):0;
+      group_child_constructing=policy;
+      std::set_terminate([]{
+        int policy=group_child_constructing;
+        const int e0[]={10,50,16,51,52,20};
+        const int e1[]={10,11,20,71};
+        const int e2[]={10,11,12,70,72,22,21,20,73,74};
+        const int e3[]={10,11,12,13,70,22};
+        const int *expected=policy==0?e0:policy==1?e1:policy==2?e2:e3;
+        int count=policy==0?6:policy==1?4:policy==2?10:6;
+        bool good=allocation_trace_count==count;
+        for(int i=0;i<count && good;++i)good=allocation_trace[i]==expected[i];
+        if(!good){fprintf(stderr,"function-try policy %d:",policy);for(int i=0;i<allocation_trace_count;++i)fprintf(stderr," %d",allocation_trace[i]);fprintf(stderr,"\n");}
+        _Exit(good?111:112);
+      });
+      try {
+        if(policy==0){ScopeDelegatingWitness value(owner);(void)value;}
+        else if(policy==1 || policy==2){ScopeFunctionTryWitness<true,false> value(owner);(void)value;}
+        else {ScopeFunctionTryWitness<false,false> value(owner);(void)value;}
+      } catch(...) {_Exit(113);}_Exit(114);
+    }
+    int status=0;assert(waitpid(child,&status,0)==child);
+    assert(WIFEXITED(status) && WEXITSTATUS(status)==111);
+  }
+  subobject_fail=-1;subobject_mask=0;subobject_check_local=0;
+}
 static void allocation_array_suite(void) {
   ScopeProbe *_Nonnull owner=[ScopeProbe new];
 #if !__has_feature(objc_arc)
   __objc3_defer {[owner release];}
 #endif
   allocation_failure_path(owner,0);allocation_failure_path(owner,1);
-  array_failure_path(owner,0);array_failure_path(owner,1);construction_group_suite(owner);subobject_suite(owner);
+  array_failure_path(owner,0);array_failure_path(owner,1);construction_group_suite(owner);subobject_suite(owner);delegation_function_try_suite(owner);
   const char *view=&owner->payload;delete[] new ScopeNeverDisposal[0];scope_use(view);
   pid_t child=fork();assert(child>=0);
   if(child==0) {

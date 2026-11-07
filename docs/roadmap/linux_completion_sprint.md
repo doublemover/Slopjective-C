@@ -1,5 +1,13 @@
 # Linux feature completion and SDK delivery
 
+The [System 2.45 delegation/function-try span](linux_delegation_function_try.md)
+adds whole-object cleanup after successful delegation, function-try initializer
+and destructor epilogue coverage, implicit rethrow/suppression and noexcept
+handler boundaries. Constructor source replay preserves try/initializer ordering.
+All 62 affected compiler cases, four new source-free profiles, nine adjacent
+frontend groups, codec/isolation controls, 33 AST controls and twelve ASan/UBSan
+native configurations / 42 commands pass.
+
 The [System 2.44 subobject span](linux_native_subobject_cleanup.md)
 adds constructor completed-prefix unwind, destructor member/base cleanup on
 return/exception paths, primitive ARC subobjects and native noexcept termination

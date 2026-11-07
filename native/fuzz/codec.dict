@@ -27,4 +27,4 @@
 "objc3.nsobject-storage.v1"
 "objc3.automatic-owner-unwind.v1"
 "objc3.native-array-lifetimes.v1"
-"objc3.native-subobject-cleanup.v1"
+"objc3.native-subobject-cleanup.v2"

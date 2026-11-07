@@ -5911,15 +5911,16 @@ index e0b62591a..2ad8208b6 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..614521eff 100644
+index 4be3e977b..3eca9a54f 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
-@@ -19,133 +19,141 @@
+@@ -19,133 +19,142 @@
  #include "clang/AST/DeclVisitor.h"
  #include "clang/AST/Expr.h"
  #include "clang/AST/ExprCXX.h"
 +#include "clang/AST/ObjC3Isolation.h"
  #include "clang/AST/PrettyPrinter.h"
++#include "clang/AST/StmtCXX.h"
  #include "clang/Basic/Module.h"
  #include "clang/Basic/SourceManager.h"
 +#include "llvm/ADT/STLExtras.h"
@@ -6166,7 +6167,7 @@ index 4be3e977b..614521eff 100644
  }
  
  void TemplateParameterList::print(raw_ostream &Out, const ASTContext &Context,
-@@ -190,30 +198,33 @@ static QualType GetBaseType(QualType T) {
+@@ -190,30 +199,33 @@ static QualType GetBaseType(QualType T) {
    return BaseType;
  }
  
@@ -6209,7 +6210,7 @@ index 4be3e977b..614521eff 100644
      if (isFirst) {
        isFirst = false;
      } else {
-@@ -236,7 +247,7 @@ LLVM_DUMP_METHOD void DeclContext::dumpDeclContext() const {
+@@ -236,7 +248,7 @@ LLVM_DUMP_METHOD void DeclContext::dumpDeclContext() const {
    Printer.VisitDeclContext(const_cast<DeclContext *>(this), /*Indent=*/false);
  }
  
@@ -6218,7 +6219,7 @@ index 4be3e977b..614521eff 100644
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -265,12 +276,110 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -265,12 +277,110 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
    std::string AttrStr;
    llvm::raw_string_ostream AOut(AttrStr);
    llvm::ListSeparator LS(" ");
@@ -6332,7 +6333,7 @@ index 4be3e977b..614521eff 100644
      switch (A->getKind()) {
  #define ATTR(X)
  #define PRAGMA_SPELLING_ATTR(X) case attr::X:
-@@ -278,11 +387,151 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -278,11 +388,151 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -6485,7 +6486,7 @@ index 4be3e977b..614521eff 100644
        }
        break;
      }
-@@ -348,12 +597,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
+@@ -348,12 +598,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -6499,7 +6500,7 @@ index 4be3e977b..614521eff 100644
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -451,7 +699,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -451,7 +700,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -6508,7 +6509,7 @@ index 4be3e977b..614521eff 100644
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +719,15 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -471,6 +720,15 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -6524,7 +6525,7 @@ index 4be3e977b..614521eff 100644
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +811,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -554,9 +812,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -6539,7 +6540,7 @@ index 4be3e977b..614521eff 100644
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +929,127 @@ static void printExplicitSpecifier(ExplicitSpecifier ES, llvm::raw_ostream &Out,
+@@ -669,45 +930,127 @@ static void printExplicitSpecifier(ExplicitSpecifier ES, llvm::raw_ostream &Out,
    Out << Proto;
  }
  
@@ -6682,7 +6683,7 @@ index 4be3e977b..614521eff 100644
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +1063,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -721,12 +1064,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -6709,7 +6710,7 @@ index 4be3e977b..614521eff 100644
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +1107,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -753,12 +1108,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -6726,7 +6727,7 @@ index 4be3e977b..614521eff 100644
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1163,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -807,7 +1164,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -6738,7 +6739,7 @@ index 4be3e977b..614521eff 100644
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1177,35 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,17 +1178,35 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -6779,11 +6780,14 @@ index 4be3e977b..614521eff 100644
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1227,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -850,7 +1228,15 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
 -  if (D->isPureVirtual())
++  const auto *ConstructorTry = CDecl && !Policy.TerseOutput
++      ? dyn_cast_or_null<CXXTryStmt>(D->getBody()) : nullptr;
++  if (ConstructorTry) Out << " try";
 +  if (CDecl && !Policy.TerseOutput) {
 +    std::string Initializers;
 +    PrintConstructorInitializers(CDecl, Initializers);
@@ -6793,18 +6797,28 @@ index 4be3e977b..614521eff 100644
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -878,8 +1260,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -877,9 +1263,17 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+         Indentation -= Policy.Indentation;
        }
  
-       if (D->getBody())
+-      if (D->getBody())
 -        D->getBody()->printPrettyControlled(Out, nullptr, SubPolicy, Indentation, "\n",
 -                                  &Context);
++      if (ConstructorTry) {
++        // A constructor's function-try keyword precedes its initializer list.
++        // Print only the protected compound here, then its complete handlers.
++        ConstructorTry->getTryBlock()->printPrettyControlled(Out, nullptr, SubPolicy,
++            Indentation, "\n", &Context);
++        for (unsigned I = 0; I != ConstructorTry->getNumHandlers(); ++I)
++          ConstructorTry->getHandler(I)->printPretty(Out, nullptr, SubPolicy,
++              Indentation, "\n", &Context);
++      } else if (D->getBody())
 +        D->getBody()->printPrettyControlled(Out, nullptr, SubPolicy,
 +                                            Indentation, "\n", &Context);
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1276,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+@@ -894,19 +1288,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -6829,7 +6843,7 @@ index 4be3e977b..614521eff 100644
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -923,8 +1301,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1313,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -6842,7 +6856,7 @@ index 4be3e977b..614521eff 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,12 +1324,52 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,12 +1336,52 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -6897,7 +6911,7 @@ index 4be3e977b..614521eff 100644
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1379,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -959,9 +1391,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -6911,7 +6925,7 @@ index 4be3e977b..614521eff 100644
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1406,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -985,22 +1418,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -6959,7 +6973,7 @@ index 4be3e977b..614521eff 100644
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1464,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1022,6 +1476,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -6968,7 +6982,7 @@ index 4be3e977b..614521eff 100644
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1473,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1029,9 +1485,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
    }
  }
  
@@ -6979,7 +6993,7 @@ index 4be3e977b..614521eff 100644
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1488,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+@@ -1046,8 +1500,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -6989,7 +7003,7 @@ index 4be3e977b..614521eff 100644
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1510,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -1069,6 +1522,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
      Out << "inline ";
  
    Out << "namespace ";
@@ -6998,7 +7012,7 @@ index 4be3e977b..614521eff 100644
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +1538,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
+@@ -1095,6 +1550,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -7008,7 +7022,7 @@ index 4be3e977b..614521eff 100644
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +1577,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+@@ -1131,7 +1589,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -7018,7 +7032,7 @@ index 4be3e977b..614521eff 100644
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1709,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1262,7 +1721,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -7027,7 +7041,7 @@ index 4be3e977b..614521eff 100644
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +1729,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1282,12 +1741,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -7050,7 +7064,7 @@ index 4be3e977b..614521eff 100644
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +1758,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1302,7 +1770,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -7063,7 +7077,7 @@ index 4be3e977b..614521eff 100644
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +1780,14 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1320,6 +1792,14 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -7078,7 +7092,7 @@ index 4be3e977b..614521eff 100644
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +1845,17 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+@@ -1377,13 +1857,17 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -7099,7 +7113,7 @@ index 4be3e977b..614521eff 100644
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +1870,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+@@ -1398,9 +1882,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -7120,7 +7134,7 @@ index 4be3e977b..614521eff 100644
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +1953,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1472,9 +1965,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -7132,7 +7146,7 @@ index 4be3e977b..614521eff 100644
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +1963,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1483,8 +1975,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << name;
  
    if (OMD->isVariadic())
@@ -7157,7 +7171,7 @@ index 4be3e977b..614521eff 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +1986,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1492,8 +1998,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -7167,7 +7181,7 @@ index 4be3e977b..614521eff 100644
      Out << ';';
  }
  
-@@ -1512,8 +2005,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +2017,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -7178,7 +7192,7 @@ index 4be3e977b..614521eff 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2038,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +2050,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -7187,7 +7201,7 @@ index 4be3e977b..614521eff 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2051,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +2063,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -7197,7 +7211,7 @@ index 4be3e977b..614521eff 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2062,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +2074,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -7209,7 +7223,7 @@ index 4be3e977b..614521eff 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2080,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +2092,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -7218,7 +7232,7 @@ index 4be3e977b..614521eff 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2091,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+@@ -1596,7 +2103,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -7228,7 +7242,7 @@ index 4be3e977b..614521eff 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2115,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +2127,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -7237,7 +7251,7 @@ index 4be3e977b..614521eff 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2125,26 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1627,13 +2137,26 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -7268,7 +7282,7 @@ index 4be3e977b..614521eff 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2156,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +2168,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -7279,7 +7293,7 @@ index 4be3e977b..614521eff 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2264,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +2276,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
        }
      }
  
@@ -7301,7 +7315,7 @@ index 4be3e977b..614521eff 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2307,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +2319,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -7319,7 +7333,7 @@ index 4be3e977b..614521eff 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2336,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2348,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -57932,10 +57946,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..d907c05a7
+index 000000000..a22c21be7
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,1247 @@
+@@ -0,0 +1,1440 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -59182,6 +59196,199 @@ index 000000000..d907c05a7
 +  };
 +  Explore(Explore,&Graph->getEntry(),{},false,0);
 +  EXPECT_GT(Normal,0u);EXPECT_GT(FailedConstruction,0u);EXPECT_GT(FailedDestruction,0u);
++}
++TEST(ObjC3ASTInfrastructure, FunctionTryConstructorCleansBeforeHandlerAndImplicitRethrow) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    struct Base {Base(int);~Base() noexcept(false);};
++    struct Member {Member(int);~Member() noexcept(false);};
++    void subobject_marker(int) noexcept;
++    void subobject_raise(void);
++    struct Derived:Base {
++      Member first,second;
++      Derived() try:Base(0),first(1),second(2) {
++        __objc3_defer {subobject_marker(31);}
++        subobject_raise();
++      } catch(...) {subobject_marker(40);}
++    };
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"constructor-subobjects.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  CXXConstructorDecl *Constructor=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++    if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Derived")
++      for(auto *C:R->ctors())if(C->hasBody())Constructor=C;
++  ASSERT_NE(Constructor,nullptr);
++  CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++  Options.AddEHEdges=true;Options.AddImplicitDtors=true;Options.AddInitializers=true;
++  auto Graph=CFG::buildCFG(Constructor,Constructor->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Normal=0,Unwound=0,Terminated=0,Budget=4096;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Complete,bool Body,bool Deferred,bool Unwind,bool Termination,bool Handler,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);
++    Unwind|=Block->isNativeExceptionExit();Termination|=Block->hasNoReturnElement();
++    for(const auto &Element:*Block) {
++      if(auto Init=Element.getAs<CFGInitializer>()) {
++        auto *I=Init->getInitializer();
++        Complete.push_back(I->isBaseInitializer()?0:I->getMember()->getName()=="first"?1:2);
++      }
++      int Destroyed=-1;
++      if(auto Member=Element.getAs<CFGMemberDtor>())Destroyed=Member->getFieldDecl()->getName()=="first"?1:2;
++      if(auto Base=Element.getAs<CFGBaseDtor>()) {Destroyed=0;EXPECT_NE(Base->getDestructorDecl(AST->getASTContext()),nullptr);}
++      if(Destroyed>=0) {
++        ASSERT_FALSE(Complete.empty());EXPECT_EQ(Complete.back(),Destroyed);Complete.pop_back();
++        if(Body)EXPECT_TRUE(Deferred);
++      }
++      if(auto Statement=Element.getAs<CFGStmt>())
++        if(const auto *Call=dyn_cast<CallExpr>(Statement->getStmt());Call && Call->getDirectCallee()) {
++          if(Call->getDirectCallee()->getName()=="subobject_raise")Body=true;
++          if(Call->getDirectCallee()->getName()=="subobject_marker") {
++            unsigned Marker=cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue();
++            if(Marker==40){EXPECT_TRUE(Complete.empty());Handler=true;}else Deferred=true;
++          }
++        }
++    }
++    if(Block->succ_empty()) {
++      if(Termination)++Terminated;
++      else if(Unwind){++Unwound;EXPECT_TRUE(Complete.empty());EXPECT_TRUE(Handler);}
++      else {++Normal;EXPECT_EQ(Complete,std::vector<int>({0,1,2}));EXPECT_TRUE(Deferred);}
++      return;
++    }
++    for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())
++      Self(Self,Next,Complete,Body,Deferred,Unwind,Termination,Handler,Depth+1);
++  };
++  Explore(Explore,&Graph->getEntry(),{},false,false,false,false,false,0);
++  EXPECT_GT(Normal,0u);EXPECT_GT(Unwound,0u);EXPECT_GT(Terminated,0u);
++}
++
++TEST(ObjC3ASTInfrastructure, FunctionTryDestructorHandlersDoNotRepeatSubobjects) {
++  for(bool Noexcept:{false,true})for(bool Suppress:{false,true}) {
++    std::string Source=R"(
++      struct Base {~Base() noexcept(false);};
++      struct Member {~Member() noexcept(false);};
++      void function_try_marker(int) noexcept;
++      extern int function_try_return;
++      struct Owner:Base {
++        Member first,second;
++        ~Owner() noexcept(EXCEPTION_POLICY) try {
++          __objc3_defer {function_try_marker(31);}
++          if(function_try_return)return;
++        } catch(...) {function_try_marker(40);HANDLER_RETURN}
++      };
++    )";
++    Source.replace(Source.find("EXCEPTION_POLICY"),16,Noexcept?"true":"false");
++    Source.replace(Source.find("HANDLER_RETURN"),14,Suppress?"return;":"");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,
++      {"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"function-try-destructor.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    CXXDestructorDecl *Destructor=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner")Destructor=R->getDestructor();
++    ASSERT_NE(Destructor,nullptr);
++    CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++    Options.AddEHEdges=true;Options.AddImplicitDtors=true;Options.AddInitializers=true;
++    auto Graph=CFG::buildCFG(Destructor,Destructor->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++    unsigned Normal=0,Unwound=0,Handled=0,Suppressed=0,Terminated=0,Budget=8192;
++    auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Remaining,bool Deferred,bool Handler,bool Unwind,bool Termination,unsigned Depth)->void {
++      ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);
++      Unwind|=Block->isNativeExceptionExit();Termination|=Block->hasNoReturnElement();
++      for(const auto &Element:*Block) {
++        int Destroyed=-1;
++        if(auto Member=Element.getAs<CFGMemberDtor>())Destroyed=Member->getFieldDecl()->getName()=="first"?1:2;
++        if(Element.getAs<CFGBaseDtor>())Destroyed=0;
++        if(Destroyed>=0){ASSERT_FALSE(Remaining.empty());EXPECT_EQ(Remaining.back(),Destroyed);Remaining.pop_back();EXPECT_TRUE(Deferred);EXPECT_FALSE(Handler);}
++        if(auto Statement=Element.getAs<CFGStmt>())
++          if(const auto *Call=dyn_cast<CallExpr>(Statement->getStmt());Call && Call->getDirectCallee() && Call->getDirectCallee()->getName()=="function_try_marker") {
++            unsigned Marker=cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue();
++            if(Marker==40){EXPECT_TRUE(Remaining.empty());Handler=true;}else {EXPECT_EQ(Marker,31u);Deferred=true;}
++          }
++      }
++      if(Block->succ_empty()) {
++        if(Handler)++Handled;
++        if(Termination)++Terminated;
++        else if(Unwind){++Unwound;EXPECT_TRUE(Remaining.empty());EXPECT_TRUE(Handler);}
++        else {++Normal;EXPECT_TRUE(Remaining.empty());if(Handler)++Suppressed;}
++        return;
++      }
++      for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Remaining,Deferred,Handler,Unwind,Termination,Depth+1);
++    };
++    Explore(Explore,&Graph->getEntry(),{0,1,2},false,false,false,false,0);
++    EXPECT_GT(Normal,0u);EXPECT_GT(Handled,0u);EXPECT_GT(Terminated,0u);
++    EXPECT_EQ(Unwound>0,!Noexcept && !Suppress);EXPECT_EQ(Suppressed>0,Suppress);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, DelegatingConstructorDestroysWholeObjectOnlyAfterTarget) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    void delegation_marker(int) noexcept;
++    void delegation_raise(void);
++    struct Owner {
++      explicit Owner(int);
++      Owner():Owner(1) {__objc3_defer {delegation_marker(31);}delegation_raise();}
++      ~Owner() noexcept(false);
++    };
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"delegating-constructor.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  CXXConstructorDecl *Constructor=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++    if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner")
++      for(auto *C:R->ctors())if(C->hasBody())Constructor=C;
++  ASSERT_NE(Constructor,nullptr);
++  CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++  Options.AddEHEdges=true;Options.AddImplicitDtors=true;Options.AddInitializers=true;
++  auto Graph=CFG::buildCFG(Constructor,Constructor->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Normal=0,TargetFailure=0,BodyFailure=0,Terminated=0,Budget=4096;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,bool Complete,bool Deferred,bool Destroyed,bool Unwind,bool Termination,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);
++    Unwind|=Block->isNativeExceptionExit();Termination|=Block->hasNoReturnElement();
++    for(const auto &Element:*Block) {
++      if(auto Init=Element.getAs<CFGInitializer>())if(Init->getInitializer()->isDelegatingInitializer())Complete=true;
++      if(auto Dtor=Element.getAs<CFGAutomaticObjDtor>()) {
++        EXPECT_TRUE(Complete);EXPECT_TRUE(Deferred);EXPECT_FALSE(Destroyed);
++        EXPECT_EQ(Dtor->getVarDecl()->getName(),"__objc3_cfg_delegated_object");Destroyed=true;
++      }
++      if(auto Statement=Element.getAs<CFGStmt>())
++        if(const auto *Call=dyn_cast<CallExpr>(Statement->getStmt());Call && Call->getDirectCallee() && Call->getDirectCallee()->getName()=="delegation_marker")Deferred=true;
++    }
++    if(Block->succ_empty()) {
++      if(Termination){++Terminated;EXPECT_TRUE(Destroyed);}
++      else if(Unwind){if(Complete){++BodyFailure;EXPECT_TRUE(Destroyed);}else{++TargetFailure;EXPECT_FALSE(Destroyed);}}
++      else {++Normal;EXPECT_TRUE(Complete);EXPECT_FALSE(Destroyed);}
++      return;
++    }
++    for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Complete,Deferred,Destroyed,Unwind,Termination,Depth+1);
++  };
++  Explore(Explore,&Graph->getEntry(),false,false,false,false,false,0);
++  EXPECT_GT(Normal,0u);EXPECT_GT(TargetFailure,0u);EXPECT_GT(BodyFailure,0u);EXPECT_GT(Terminated,0u);
++}
++
++TEST(ObjC3ASTInfrastructure, ConstructorFunctionTryPrintingPrecedesInitializers) {
++  for(const char *Standard:{"c++20","c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,
++      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
++      "-fexceptions","-fobjc-exceptions"};if(ARC)Args.push_back("-fobjc-arc");
++    const std::string Part="struct Part {Part(int);~Part() noexcept(false);};\n";
++    auto AST=tooling::buildASTFromCodeWithArgs(Part+R"(
++      struct Owner {
++        Part first;
++        explicit Owner(int value):first(value) {}
++        Owner() try:Owner(1) {}catch(...) {}
++        ~Owner() noexcept(false) try {}catch(...) {return;}
++      };
++    )",Args,"function-try-printing.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    CXXRecordDecl *Owner=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner")Owner=R;
++    ASSERT_NE(Owner,nullptr);
++    PrintingPolicy Policy(AST->getASTContext().getLangOpts());Policy.PolishForDeclaration=true;
++    std::string Printed;llvm::raw_string_ostream Stream(Printed);Owner->print(Stream,Policy);Stream.flush();
++    auto Constructor=Printed.find("Owner()");ASSERT_NE(Constructor,std::string::npos);
++    auto Try=Printed.find("try",Constructor),Initializer=Printed.find(": Owner",Constructor);
++    ASSERT_NE(Try,std::string::npos);ASSERT_NE(Initializer,std::string::npos);EXPECT_LT(Try,Initializer);
++    auto Replay=tooling::buildASTFromCodeWithArgs(Part+Printed+";",Args,"function-try-printed.mm");
++    ASSERT_TRUE(Replay);EXPECT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -65912,5 +66119,89 @@ index 000000000..ca5331fa2
 +    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
 +    __objc3_defer {receiver_use(view);}
 +    subobject_raise();
++  }
++};
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-function-try.h b/clang/test/ObjC3/Sema/Inputs/borrowed-function-try.h
+new file mode 100644
+index 000000000..4046d3d88
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-function-try.h
+@@ -0,0 +1,4 @@
++#ifndef BORROWED_FUNCTION_TRY_H
++#define BORROWED_FUNCTION_TRY_H
++#include "borrowed-subobject-cleanup.h"
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-function-try.mm b/clang/test/ObjC3/Sema/borrowed-function-try.mm
+new file mode 100644
+index 000000000..65cf7b585
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-function-try.mm
+@@ -0,0 +1,68 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-function-try.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-function-try.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-function-try.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-function-try.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-function-try.h"
++#endif
++struct NativeDelegatingOwner:SubobjectBase {
++  SubobjectMember member;
++  NativeDelegatingOwner(RuntimeScopeOwner *_Nonnull owner,int mode):SubobjectBase(0),member(1) {
++    const char *view=owner->storage;__objc3_defer {receiver_use(view);}
++    if(mode)subobject_raise();
++  }
++  explicit NativeDelegatingOwner(RuntimeScopeOwner *_Nonnull owner):NativeDelegatingOwner(owner,0) {
++    const char *view=owner->storage;__objc3_defer {receiver_use(view);}
++    subobject_raise();
++  }
++  ~NativeDelegatingOwner() noexcept(false) {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
++    __objc3_defer {receiver_use(view);}
++  }
++};
++struct NativeFunctionTryOwner:SubobjectBase {
++  SubobjectMember first,second;
++  NativeFunctionTryOwner(RuntimeScopeOwner *_Nonnull owner) try
++      :SubobjectBase(subobject_argument(0)),first(subobject_argument(1)),second(subobject_argument(2)) {
++    const char *view=owner->storage;__objc3_defer {receiver_use(view);}subobject_raise();
++  } catch(...) {
++    receiver_use(owner->storage);
++    RuntimeScopeOwner *_Nonnull handler=runtime_scope_factory();const char *view=handler->storage;
++    __objc3_defer {receiver_use(view);}
++  }
++  ~NativeFunctionTryOwner() noexcept(false) try {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
++    __objc3_defer {receiver_use(view);}subobject_raise();
++  } catch(...) {
++    RuntimeScopeOwner *_Nonnull handler=runtime_scope_factory();const char *view=handler->storage;
++    __objc3_defer {receiver_use(view);}
++  }
++};
++struct NativeFunctionTrySuppress:SubobjectBase {
++  SubobjectMember member;
++  NativeFunctionTrySuppress();
++  ~NativeFunctionTrySuppress() noexcept try {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();const char *view=local->storage;
++    __objc3_defer {receiver_use(view);}subobject_raise();
++  } catch(...) {
++    RuntimeScopeOwner *_Nonnull handler=runtime_scope_factory();const char *view=handler->storage;
++    __objc3_defer {receiver_use(view);}return;
++  }
++};
++struct NativeFunctionTryExpired:SubobjectBase {
++  NativeFunctionTryExpired() try:SubobjectBase(0) {subobject_raise();}
++  catch(...) {
++    const char *view=0;
++    {RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;}
++    receiver_use(view); // expected-error {{after its owner lifetime ended}}
 +  }
 +};
