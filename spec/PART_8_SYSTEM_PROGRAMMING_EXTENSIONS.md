@@ -341,6 +341,22 @@ Functions may declare borrowed return relationships, enabling the compiler to en
 
 - `__attribute__((objc_returns_borrowed(owner_index=N)))` on the function/return.
 
+#### 8.7.2.1 Native receiver-owned results
+
+An Objective-C method or property declared `objc_returns_inner_pointer` promises
+that its pointer or native reference result is tied to the receiver's lifetime.
+Strict System preserves that obligation through ordinary messages, property
+reads, reference/address aliases and native copies that retain references.
+An implementation shall satisfy the receiver relationship or return independently
+stable storage. Copying a plain value from the view produces independent data.
+A formal-owner borrowed return annotation and receiver-owner annotation shall
+not give the same declaration conflicting ownership relationships.
+
+An async method shall not expose a receiver-owned result through an owned task
+carrier. An isolated entry shall not transfer such a result across an actor or
+executor boundary based on the raw pointer's scalar Sendable classification.
+An independent owned copy may be produced within the isolated operation instead.
+
 ### 8.7.3 Enforcement model (normative in strict-system) {#part-8-7-3}
 
 Strict-system conformance requires a front-end borrowed-pointer escape checker that is:

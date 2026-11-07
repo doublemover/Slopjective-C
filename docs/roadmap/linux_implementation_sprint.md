@@ -1,5 +1,13 @@
 # Linux implementation sprint
 
+The [System 2.36 receiver-result span](linux_borrowed_receiver_results.md)
+implements native getter pointer/reference loans, self/owner checks, messages,
+properties, superclass and stable Class bindings, with source-free identity and
+capability admission. Async and isolated crossings reject lifetime erasure
+independently of raw-pointer Sendable admission. All forty-two affected compiler
+cases, six source-free profiles and twelve instrumented native configurations pass;
+adjacent frontend/unit consolidation is finishing.
+
 The [System 2.35 interior-storage span](linux_borrowed_interior_storage.md) adds
 inline ivar/array/record loans and separate C++ reference-address lifetimes,
 including copy/capture propagation, builtin address-taking and source-free

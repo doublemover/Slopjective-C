@@ -341,6 +341,9 @@ class InterfaceCollector final
       if (llvm::isa<clang::ObjCReturnsBorrowedAttr, clang::NoThrowAttr>(attribute) &&
           llvm::isa<clang::FunctionDecl, clang::ObjCMethodDecl>(declaration))
         continue;
+      if (llvm::isa<clang::ObjCReturnsInnerPointerAttr>(attribute) &&
+          llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl>(declaration))
+        continue;
       if (llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr, clang::CFConsumedAttr>(attribute) &&
           llvm::isa<clang::ParmVarDecl>(declaration))
         continue;
@@ -1022,6 +1025,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeDependentAwaitSemantic);
     if (HasNSObjectStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kNSObjectStorageSemantic);
+    if (HasBorrowedReceiverResultIdentity(declaration))
+      sidecar.required_semantics.push_back(kBorrowedReceiverResultSemantic);
     if (HasBorrowedInteriorStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kBorrowedInteriorStorageSemantic);
     if (HasBorrowedCallableOwnerIdentity(declaration))
@@ -1242,6 +1247,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kAsyncConsumedOwnershipSemantic,
     kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
+    kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
@@ -1435,6 +1441,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kAsyncConsumedOwnershipSemantic,
     kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
+    kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,

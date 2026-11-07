@@ -5911,7 +5911,7 @@ index e0b62591a..2ad8208b6 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..7f7fca510 100644
+index 4be3e977b..614521eff 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,141 @@
@@ -6252,7 +6252,7 @@ index 4be3e977b..7f7fca510 100644
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
-+               ObjCFamilyAutoreleaseAttr, SwiftNameAttr, SwiftAsyncNameAttr,
++               ObjCFamilyAutoreleaseAttr, ObjCReturnsInnerPointerAttr, SwiftNameAttr, SwiftAsyncNameAttr,
 +               SwiftAsyncAttr, SwiftErrorAttr, SwiftAsyncErrorAttr,
 +               SwiftPrivateAttr, SwiftAttrAttr, SwiftNewTypeAttr, SwiftBridgeAttr,
 +               SwiftBridgedTypedefAttr, SwiftImportAsNonGenericAttr,
@@ -6274,7 +6274,7 @@ index 4be3e977b..7f7fca510 100644
 +             ObjCRequiresCleanupAttr, ObjCResourceFamilyAttr, ObjCInvalidAttr,
 +             ObjCRetainableFamilyAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
 +             ObjCFamilyAutoreleaseAttr, ObjCNSObjectAttr,
-+             ObjCReturnsBorrowedAttr, NoEscapeAttr, NoThrowAttr, NSConsumedAttr, CFConsumedAttr,
++             ObjCReturnsBorrowedAttr, ObjCReturnsInnerPointerAttr, NoEscapeAttr, NoThrowAttr, NSConsumedAttr, CFConsumedAttr,
 +             NSConsumesSelfAttr, SwiftNameAttr, SwiftAsyncNameAttr,
 +             SwiftAsyncAttr, SwiftErrorAttr, SwiftAsyncErrorAttr,
 +             SwiftPrivateAttr, SwiftAttrAttr, SwiftNewTypeAttr, SwiftBridgeAttr,
@@ -43187,7 +43187,7 @@ index 000000000..0b4821350
 +      Kind, Args, KeywordLoc, Parens.getCloseLocation());
 +}
 diff --git a/clang/lib/Sema/SemaObjC.cpp b/clang/lib/Sema/SemaObjC.cpp
-index 9adba1943..76286b3f9 100644
+index 9adba1943..9df5e3ad1 100644
 --- a/clang/lib/Sema/SemaObjC.cpp
 +++ b/clang/lib/Sema/SemaObjC.cpp
 @@ -556,10 +556,14 @@ static QualType applyObjCTypeArgs(Sema &S, SourceLocation loc, QualType type,
@@ -43265,12 +43265,30 @@ index 9adba1943..76286b3f9 100644
  
          // These attributes are normally just advisory, but in ARC, ns_consumed
          // is significant.  Allow non-dependent code to contain inappropriate
+@@ -1970,6 +1994,17 @@ void SemaObjC::handleXReturnsXRetainedAttr(Decl *D, const ParsedAttr &AL) {
+ }
+ 
+ void SemaObjC::handleReturnsInnerPointerAttr(Decl *D, const ParsedAttr &Attrs) {
++  if (getLangOpts().ObjC3 && D->hasAttr<ObjCReturnsBorrowedAttr>()) {
++    Diag(Attrs.getLoc(), getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "objc_returns_inner_pointer cannot combine receiver ownership with a formal borrowed owner"));
++    D->setInvalidDecl();return;
++  }
++  if (getLangOpts().ObjC3)
++    if (const auto *Method = dyn_cast<ObjCMethodDecl>(D); Method && Method->getObjC3FunctionEffects().Async) {
++      Diag(Attrs.getLoc(), getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++          "async methods cannot return a receiver-owned interior view; return an independent owned value"));
++      D->setInvalidDecl();return;
++    }
+   const int EP_ObjCMethod = 1;
+   const int EP_ObjCProperty = 2;
+ 
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..cd88c0383
+index 000000000..98311e69e
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,371 @@
+@@ -0,0 +1,376 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -43317,8 +43335,13 @@ index 000000000..cd88c0383
 +bool clang::prepareObjC3NilTaskMessage(Sema &S, ObjCMethodDecl *Method,
 +                                      SourceLocation Loc) {
 +  const auto *Type = getObjC3CallableFunctionType(Method);
-+  if (!Type || !Type->getObjC3FunctionEffects().Async ||
-+      !S.getLangOpts().CPlusPlus20) return false;
++  if (!Type || !Type->getObjC3FunctionEffects().Async) return false;
++  if (Method->hasAttr<ObjCReturnsInnerPointerAttr>()) {
++    S.Diag(Loc, S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "async methods cannot return a receiver-owned interior view; return an independent owned value"));
++    return true;
++  }
++  if (!S.getLangOpts().CPlusPlus20) return false;
 +  QualType Logical = Type->getReturnType();
 +  if (Logical->isDependentType() || (Logical->isIncompleteType() && !Logical->isVoidType())) return false;
 +  FunctionProtoType::ExtProtoInfo Info;
@@ -43644,10 +43667,10 @@ index 000000000..cd88c0383
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..6f7ebd418
+index 000000000..9189bfc8a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5843 @@
+@@ -0,0 +1,5887 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43687,6 +43710,10 @@ index 000000000..6f7ebd418
 +  if (Attribute.isUsedAsTypeAttr() && !isa<FunctionDecl, ObjCMethodDecl>(D)) return;
 +  if (!S.getLangOpts().ObjC3) {
 +    Reject("objc_returns_borrowed requires Objective-C 3.0");
++    return;
++  }
++  if (D->hasAttr<ObjCReturnsInnerPointerAttr>()) {
++    Reject("objc_returns_borrowed cannot combine a formal owner with objc_returns_inner_pointer receiver ownership");
 +    return;
 +  }
 +  ArrayRef<ParmVarDecl *> Parameters;
@@ -43985,7 +44012,9 @@ index 000000000..6f7ebd418
 +  llvm::SmallPtrSet<const LambdaExpr *, 8> LocalReferenceLambdas;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
 +  llvm::DenseMap<const Expr *, SmallVector<const Expr *, 2>> OwnerEvaluations;
-+  llvm::DenseMap<const Expr *, const Expr *> EmbeddedOwnerAcquisitions;
++  llvm::DenseMap<const Expr *, const Expr *> InferredOwnerAcquisitions;
++  llvm::SmallPtrSet<const Expr *, 8> UnknownReceiverResults, NullReceiverResults;
++  const VarDecl *ReturnReceiverOwner = nullptr;
 +  llvm::SmallPtrSet<const Expr *, 8> RejectedEmbeddedAcquisitions;
 +  llvm::SmallPtrSet<const Expr *, 16> EmbeddedAddressUses;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedReferenceCaptures;
@@ -44502,7 +44531,7 @@ index 000000000..6f7ebd418
 +    return nullptr;
 +  }
 +  const Expr *ownerArgument(const Expr *E, unsigned Index) const {
-+    if (auto Found = EmbeddedOwnerAcquisitions.find(E); Found != EmbeddedOwnerAcquisitions.end())
++    if (auto Found = InferredOwnerAcquisitions.find(E); Found != InferredOwnerAcquisitions.end())
 +      return Found->second;
 +    if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(E))
 +      if (const auto *Method = dyn_cast_or_null<CXXMethodDecl>(Operator->getDirectCallee()))
@@ -44686,6 +44715,25 @@ index 000000000..6f7ebd418
 +    if (Storage && Exhausted) *Exhausted = true;
 +    return nullptr;
 +  }
++  const Expr *receiverResultOwner(const ObjCMessageExpr *Message) {
++    if (Message->getReceiverKind() == ObjCMessageExpr::Instance)
++      return Message->getInstanceReceiver();
++    if (Message->getReceiverKind() != ObjCMessageExpr::SuperInstance) return nullptr;
++    // Super dispatch has no evaluated receiver Expr in the source CFG. Until
++    // it has an explicit snapshot, require arguments to be bound independently.
++    for (const Expr *Argument : Message->arguments())
++      if (Argument->HasSideEffects(Context)) return nullptr;
++    for (const Decl *Scope = Callable; Scope;
++         Scope = Scope->getDeclContext() ? Decl::castFromDeclContext(Scope->getDeclContext()) : nullptr)
++      if (const auto *Method = dyn_cast<ObjCMethodDecl>(Scope)) {
++        auto *Self = Method->getSelfDecl();
++        if (!Self) return nullptr;
++        addVariable(Self);
++        return DeclRefExpr::Create(Context, NestedNameSpecifierLoc{}, SourceLocation(), Self, false,
++            DeclarationNameInfo(Self->getDeclName(), Message->getBeginLoc()), Self->getType(), VK_LValue);
++      }
++    return nullptr;
++  }
 +  static bool addressBuiltin(const Decl *Declaration) {
 +    const auto *Function = dyn_cast_or_null<FunctionDecl>(Declaration);
 +    return Function && Function->getBuiltinID() && Function->getName() == "__builtin_addressof";
@@ -44702,7 +44750,7 @@ index 000000000..6f7ebd418
 +  }
 +  std::optional<unsigned> borrowedResultOwner(const Expr *Invocation) const {
 +    if (RejectedEmbeddedAcquisitions.contains(Invocation)) return std::nullopt;
-+    if (EmbeddedOwnerAcquisitions.count(Invocation)) return 0;
++    if (InferredOwnerAcquisitions.count(Invocation)) return 0;
 +    if (auto Owner = getObjC3BorrowedReturnOwner(callee(Invocation))) return Owner;
 +    if (const auto *Type = callPrototype(Invocation))
 +      if (unsigned Owner = Type->getObjC3BorrowedOwner()) return Owner - 1;
@@ -44877,9 +44925,20 @@ index 000000000..6f7ebd418
 +            markEmbeddedAddressUse(Invocation->getArg(I));
 +        }
 +      }
++      const Expr *InferredOwner = nullptr;
++      if (const auto *Message = dyn_cast<ObjCMessageExpr>(E))
++        if (const auto *Method = Message->getMethodDecl(); Method && Method->hasAttr<ObjCReturnsInnerPointerAttr>()) {
++          MightBorrow = true;
++          InferredOwner = receiverResultOwner(Message);
++          if (InferredOwner && E->getType()->isPointerType() &&
++              InferredOwner->IgnoreParenCasts()->isNullPointerConstant(Context, Expr::NPC_ValueDependentIsNotNull)) {
++            NullReceiverResults.insert(E);InferredOwner = nullptr;
++          } else if (!InferredOwner) UnknownReceiverResults.insert(E);
++        }
 +      bool ExhaustedStoragePath = false;
-+      if (const Expr *Owner = embeddedAddressOwner(E, &ExhaustedStoragePath)) {
-+        EmbeddedOwnerAcquisitions[E] = Owner;
++      if (!InferredOwner) InferredOwner = embeddedAddressOwner(E, &ExhaustedStoragePath);
++      if (const Expr *Owner = InferredOwner) {
++        InferredOwnerAcquisitions[E] = Owner;
 +        MightBorrow = true;
 +        if (Origins.size() + ownerKeys().size() * (PinSources.size() + 1) > 4096)
 +          RejectedEmbeddedAcquisitions.insert(E);
@@ -44900,12 +44959,12 @@ index 000000000..6f7ebd418
 +          Storage OwnerStorage = !Owner && SourceOwner ? storage(SourceOwner) : Storage{};
 +          QualType OwnerType = OwnerStorage.first ? storageType(OwnerStorage) : Owner ? Owner->getType() : QualType{};
 +          bool Unstable = (!Owner && !OwnerStorage.first) ||
-+                          (EmbeddedOwnerAcquisitions.count(E) &&
++                          (InferredOwnerAcquisitions.count(E) &&
 +                           ((Owner && !Owner->hasLocalStorage()) || (!Owner && OwnerStorage.first && !OwnerStorage.first->hasLocalStorage())) &&
 +                           !OwnerType.isNull() && !OwnerType.isConstQualified()) ||
 +                          (!OwnerType.isNull() &&
 +                           (OwnerType.getObjCLifetime() == Qualifiers::OCL_Weak ||
-+                            OwnerType.getObjCLifetime() == Qualifiers::OCL_ExplicitNone));
++                            (OwnerType.getObjCLifetime() == Qualifiers::OCL_ExplicitNone && !OwnerType->isObjCClassType())));
 +          if (Owner)
 +            addVariable(Owner);
 +          // Identities are flow facts, independent of the source type's ABI.
@@ -46420,6 +46479,8 @@ index 000000000..6f7ebd418
 +  Value value(const Expr *E, const Facts &State) const {
 +    if (!E)
 +      return empty();
++    if (NullReceiverResults.contains(E)) return empty();
++    if (UnknownReceiverResults.contains(E)) {Value Unknown = empty();Unknown.set(0);return Unknown;}
 +    auto Evaluated = ExpressionSlots.find(E);
 +    if (Evaluated != ExpressionSlots.end() &&
 +        State.EvaluatedReady.test(Evaluated->second)) {
@@ -46436,7 +46497,7 @@ index 000000000..6f7ebd418
 +    // Casts, including void* and uintptr_t, carry the facts until the result's
 +    // actual use establishes an escape. A local cast alone is not an escape.
 +    E = E->IgnoreParens();
-+    if (EmbeddedOwnerAcquisitions.count(E) && !E->isGLValue()) {
++    if (InferredOwnerAcquisitions.count(E) && !E->isGLValue()) {
 +      Value Result = acquired(E, State);
 +      if (Result.none()) Result.set(0);
 +      return Result;
@@ -46621,7 +46682,7 @@ index 000000000..6f7ebd418
 +        Result |= value(Element, State);
 +      return Result;
 +    }
-+    if (Acquisitions.count(E) && !(E->isGLValue() && EmbeddedOwnerAcquisitions.count(E)))
++    if (Acquisitions.count(E) && !(E->isGLValue() && InferredOwnerAcquisitions.count(E)))
 +      return acquired(E, State);
 +    if (const auto *Call = dyn_cast<CallExpr>(E);
 +        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
@@ -47683,7 +47744,7 @@ index 000000000..6f7ebd418
 +    if (!E) return empty();
 +    if (Depth > 64) {Value Unknown = empty();Unknown.set(0);return Unknown;}
 +    E = E->IgnoreParenImpCasts();
-+    if (EmbeddedOwnerAcquisitions.count(E)) {
++    if (InferredOwnerAcquisitions.count(E)) {
 +      Value Result = acquired(E, State);
 +      if (Result.none()) Result.set(0);
 +      return Result;
@@ -47884,9 +47945,10 @@ index 000000000..6f7ebd418
 +    return false;
 +  }
 +  bool validReturn(const Value &V) const {
-+    if (!ReturnOwner || *ReturnOwner >= Parameters.size() || hasExpired(V))
-+      return false;
-+    const ParmVarDecl *Owner = Parameters[*ReturnOwner];
++    if (hasExpired(V)) return false;
++    const VarDecl *Owner = ReturnReceiverOwner;
++    if (!Owner && ReturnOwner && *ReturnOwner < Parameters.size()) Owner = Parameters[*ReturnOwner];
++    if (!Owner) return false;
 +    for (int Bit = V.find_first(); Bit >= 0; Bit = V.find_next(Bit))
 +      if (Origins[Bit / 2].Identity != Owner || Origins[Bit / 2].StorageIdentity != ~0U)
 +        return false;
@@ -48321,7 +48383,7 @@ index 000000000..6f7ebd418
 +          diagnose(Invocation, "a retainable family operation after owner release");
 +    if (Emit) {
 +      auto Found = Acquisitions.find(Invocation);
-+      if (Found != Acquisitions.end()) {
++      if (Found != Acquisitions.end() && !InferredOwnerAcquisitions.count(Invocation)) {
 +        Value V = acquired(Invocation, State);
 +        for (int Bit = V.find_first(); Bit >= 0; Bit = V.find_next(Bit))
 +          if (Origins[Bit / 2].Unstable &&
@@ -48379,7 +48441,7 @@ index 000000000..6f7ebd418
 +      for (int Bit = Loans.find_first(); Bit >= 0; Bit = Loans.find_next(Bit)) {
 +        const Origin &O = Origins[Bit / 2];
 +        const auto *Acquisition = dyn_cast_or_null<Expr>(O.Acquisition);
-+        if (O.Owner && Acquisition && EmbeddedOwnerAcquisitions.count(Acquisition)) Owners.insert(O.Owner);
++        if (O.Owner && Acquisition && InferredOwnerAcquisitions.count(Acquisition)) Owners.insert(O.Owner);
 +      }
 +      for (const VarDecl *Owner : Owners) Invalidate({Owner, nullptr}, true);
 +    };
@@ -48478,6 +48540,9 @@ index 000000000..6f7ebd418
 +        continue;
 +      const Stmt *Node = Statement->getStmt();
 +      if (Emit)
++        if (const auto *Expression = dyn_cast<Expr>(Node); Expression && UnknownReceiverResults.contains(Expression))
++          diagnose(Expression, "a borrowed receiver result without a stable explicit receiver; bind receiver and arguments first");
++      if (Emit)
 +        if (const auto *Expression = dyn_cast<Expr>(Node); Expression && RejectedEmbeddedAcquisitions.contains(Expression))
 +          diagnose(Expression, "interior storage whose bounded owner proof is exhausted");
 +      if (Emit)
@@ -48487,7 +48552,7 @@ index 000000000..6f7ebd418
 +            diagnose(Load, "reference or interior storage access after its owner lifetime ended");
 +      if (Emit)
 +        if (const auto *Expression = dyn_cast<Expr>(Node))
-+          if (auto Owner = EmbeddedOwnerAcquisitions.find(Expression); Owner != EmbeddedOwnerAcquisitions.end()) {
++          if (auto Owner = InferredOwnerAcquisitions.find(Expression); Owner != InferredOwnerAcquisitions.end()) {
 +            Value Loan = acquired(Expression, State);
 +            bool Unstable = false;
 +            for (int Bit = Loan.find_first(); Bit >= 0; Bit = Loan.find_next(Bit))
@@ -48671,10 +48736,11 @@ index 000000000..6f7ebd418
 +        // offsets and constexpr calls. Never erase a tracked live/expired loan.
 +        // Return checking does not transfer state, so evaluate this proof only
 +        // during the diagnostic pass rather than on every CFG iteration.
-+        const bool StaticStorage = Emit && ReturnOwner && Returned && V.none() &&
++        const bool StaticStorage = Emit && (ReturnOwner || ReturnReceiverOwner) && Returned && V.none() &&
 +            staticStorageResult(Returned);
 +        if (!Dependent && !StaticStorage && Return->getRetValue() &&
-+            (ReturnOwner || isObjC3BorrowedType(Context, ReturnType)) && V.none() &&
++            (ReturnOwner || ReturnReceiverOwner || isObjC3BorrowedType(Context, ReturnType)) && V.none() &&
++            !NullReceiverResults.contains(Return->getRetValue()->IgnoreParenImpCasts()) &&
 +            !Return->getRetValue()->isNullPointerConstant(
 +                Context, Expr::NPC_ValueDependentIsNotNull))
 +          V.set(0);
@@ -49166,6 +49232,7 @@ index 000000000..6f7ebd418
 +    } else if (auto *Method = dyn_cast_or_null<ObjCMethodDecl>(Callable)) {
 +      Parameters.append(Method->param_begin(), Method->param_end());
 +      ReturnType = Method->getReturnType();
++      if (Method->hasAttr<ObjCReturnsInnerPointerAttr>()) ReturnReceiverOwner = Method->getSelfDecl();
 +    } else if (auto *Block = dyn_cast_or_null<BlockDecl>(Callable)) {
 +      Parameters.append(Block->param_begin(), Block->param_end());
 +      if (const TypeSourceInfo *Signature = Block->getSignatureAsWritten())
@@ -49173,7 +49240,7 @@ index 000000000..6f7ebd418
 +          ReturnType = Prototype->getReturnType();
 +    }
 +    ReturnOwner = getObjC3BorrowedReturnOwner(Callable);
-+    MightBorrow |= ReturnOwner.has_value() || (!ReturnType.isNull() && carriesBorrowedValue(ReturnType));
++    MightBorrow |= ReturnOwner.has_value() || ReturnReceiverOwner || (!ReturnType.isNull() && carriesBorrowedValue(ReturnType));
 +  }
 +  bool check() {
 +    // Unknown provenance still carries the nonescape obligation. It may be
@@ -49225,7 +49292,7 @@ index 000000000..6f7ebd418
 +        return P->hasAttr<NoEscapeAttr>() ||
 +               carriesBorrowedValue(P->getType());
 +      });
-+      if (Origins.size() > 1 || PromisedParameter ||
++      if (Origins.size() > 1 || PromisedParameter || ReturnReceiverOwner || !UnknownReceiverResults.empty() ||
 +          llvm::any_of(InheritedValues, [](const auto &Entry) { return Entry.second.any(); }))
 +        diagnose(Body, "control flow whose borrowed owner lifetime cannot be proved");
 +      return Invalid;
@@ -49522,10 +49589,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..461416a9b
+index 000000000..83032c60f
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1695 @@
+@@ -0,0 +1,1701 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -50965,6 +51032,12 @@ index 000000000..461416a9b
 +                  (Executor && (!Current || Current->getExecutor() !=
 +                                                Executor->getExecutor()));
 +  const auto *FT = isolationCalleeFunctionType(*this, Target);
++  if (Crossing && ((Target && Target->hasAttr<ObjCReturnsInnerPointerAttr>()) ||
++                   (Property && Property->reads() && Property->Getter->hasAttr<ObjCReturnsInnerPointerAttr>()))) {
++    Diag(Loc, getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "isolated entry cannot transfer a receiver-owned interior view; copy to independent owned storage inside the executor"));
++    return ExprError();
++  }
 +  if (Property && FT) {
 +    SmallVector<QualType, 1> Types;
 +    if (Property->RHS) Types.push_back(Property->RHS->getType());
@@ -63771,3 +63844,221 @@ index 000000000..885d2c6c1
 +  withLifetime(snapshot){memory_use(snapshot->bytes);}
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-receiver-results.h b/clang/test/ObjC3/Sema/Inputs/borrowed-receiver-results.h
+new file mode 100644
+index 000000000..7555b54c1
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-receiver-results.h
+@@ -0,0 +1,29 @@
++#ifndef BORROWED_RECEIVER_RESULTS_H
++#define BORROWED_RECEIVER_RESULTS_H
++#pragma clang assume_nonnull begin
++typedef borrowed const char *ReceiverBytes;
++void receiver_use(const char *bytes __attribute__((noescape)));
++void receiver_escape(const char *bytes);
++__attribute__((objc_root_class)) @interface ReceiverOwner {
++@public char storage[4];
++}
++@property(nonatomic,readonly) const char *view __attribute__((objc_returns_inner_pointer));
++- (const char *)bytes __attribute__((objc_returns_inner_pointer));
++- (const char *)bytesAfter:(int)unused __attribute__((objc_returns_inner_pointer));
++- (const char *)wrongOwner:(ReceiverOwner *_Nonnull )other __attribute__((objc_returns_inner_pointer));
+++ (Class)class;
+++ (const char *)classView __attribute__((objc_returns_inner_pointer));
++#ifdef __cplusplus
++- (char &)reference __attribute__((objc_returns_inner_pointer));
++#endif
++#if !__has_feature(objc_arc)
++- (void)release;
++#endif
++@end
++@interface ReceiverChild:ReceiverOwner
++- (const char *)superView __attribute__((objc_returns_inner_pointer));
++- (const char *)superAfter:(int)unused __attribute__((objc_returns_inner_pointer));
++@end
++ReceiverOwner *_Nonnull receiver_factory(void);
++#pragma clang assume_nonnull end
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-receiver-results.m b/clang/test/ObjC3/Sema/borrowed-receiver-results.m
+new file mode 100644
+index 000000000..5ef013377
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-receiver-results.m
+@@ -0,0 +1,123 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-receiver-results.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-receiver-results.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-receiver-results.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-receiver-results.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-receiver-results.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-receiver-results.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-receiver-results.h"
++#endif
++@implementation ReceiverOwner
++- (const char *)bytes {return storage;}
++- (const char *)bytesAfter:(int)unused {return storage;}
++- (const char *)view {return storage;}
++- (const char *)wrongOwner:(ReceiverOwner *_Nonnull )other {
++  return other->storage; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
+++ (Class)class {return self;}
+++ (const char *)classView {return "static";}
++#ifdef __cplusplus
++- (char &)reference {return storage[0];}
++#endif
++#if !__has_feature(objc_arc)
++- (void)release {}
++#endif
++@end
++@implementation ReceiverChild
++- (const char *)superView {return [super bytes];}
++- (const char *)superAfter:(int)unused {return [super bytesAfter:unused];}
++@end
++ReceiverBytes receiver_forward(ReceiverOwner *_Nonnull owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {return [owner bytes];}
++ReceiverBytes receiver_forward_property(ReceiverOwner *_Nonnull owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {return owner.view;}
++ReceiverBytes receiver_wrong_forward(ReceiverOwner *_Nonnull one,ReceiverOwner *_Nonnull two)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  return [two bytes]; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++void receiver_expiry(ReceiverOwner *_Nonnull owner) {
++  const char *bytes=[owner bytes];owner=(id)0;
++  receiver_use(bytes); // expected-error {{after its owner lifetime ended}}
++}
++void receiver_property_expiry(ReceiverOwner *_Nonnull owner) {
++  const char *bytes=owner.view;owner=(id)0;
++  receiver_use(bytes); // expected-error {{after its owner lifetime ended}}
++}
++void receiver_direct_escape(ReceiverOwner *_Nonnull owner) {
++  receiver_escape([owner bytes]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void receiver_pin(ReceiverOwner *_Nonnull owner) {
++  const char *bytes=0;
++  withLifetime(owner){bytes=[owner bytes];owner=(id)0;receiver_use(bytes);}
++  receiver_use(bytes); // expected-error {{after its owner lifetime ended}}
++}
++void receiver_temporary(void) {
++  receiver_use([receiver_factory() bytes]); // expected-error {{non-stable owner}}
++}
++void receiver_nil(void) {receiver_escape([(ReceiverOwner *_Nullable)0 bytes]);} // expected-error {{ordinary message send requires a nonnull receiver}}
++void receiver_class(void) {
++  receiver_use([ReceiverOwner classView]); // expected-error {{without a stable explicit receiver}}
++}
++#if !__has_feature(objc_arc)
++void receiver_release(ReceiverOwner *_Nonnull owner) {
++  const char *bytes=[owner bytes];[owner release];
++  receiver_use(bytes); // expected-error {{after its owner lifetime ended}}
++}
++#endif
++#ifdef __cplusplus
++char receiver_reference_copy(ReceiverOwner *_Nonnull owner) {
++  char value=[owner reference];owner=(id)0;return value;
++}
++void receiver_reference_expiry(ReceiverOwner *_Nonnull owner) {
++  char &reference=[owner reference];receiver_use(&reference);owner=(id)0;
++  receiver_use(&reference); // expected-error {{after its owner lifetime ended}}
++  reference='x'; // expected-error {{write after its owner lifetime ended}}
++}
++char &receiver_reference_escape(ReceiverOwner *_Nonnull owner) {
++  return [owner reference]; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++#endif
++@interface ReceiverConflict
++- (ReceiverBytes)first:(id)owner __attribute__((objc_returns_inner_pointer))
++    __attribute__((objc_returns_borrowed(owner_index=0))); // expected-error {{cannot combine a formal owner}}
++- (ReceiverBytes)second:(id)owner __attribute__((objc_returns_borrowed(owner_index=0)))
++    __attribute__((objc_returns_inner_pointer)); // expected-error {{cannot combine receiver ownership}}
++@end
++
++void receiver_operand_snapshot(ReceiverOwner *_Nonnull owner,ReceiverOwner *_Nonnull replacement) {
++  receiver_use([owner bytesAfter:(owner=replacement,0)]); // expected-error {{after its owner lifetime ended}} expected-warning {{unsequenced modification and access}}
++}
++void receiver_operand_snapshot_pin(ReceiverOwner *_Nonnull owner,ReceiverOwner *_Nonnull replacement) {
++  withLifetime(owner){receiver_use([owner bytesAfter:(owner=replacement,0)]);} // expected-warning {{unsequenced modification and access}}
++}
++void receiver_explicit_class(void) {
++  Class _Nonnull target=[ReceiverOwner class];receiver_use([target classView]);
++}
++@interface ReceiverChild (UnboundSuper)
++- (const char *)unboundSuper:(int *)counter __attribute__((objc_returns_inner_pointer));
++@end
++@implementation ReceiverChild (UnboundSuper)
++- (const char *)unboundSuper:(int *)counter {
++  return [super bytesAfter:++*counter]; // expected-error {{without a stable explicit receiver}} expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++@end
++
++@interface ReceiverOverride:ReceiverOwner
++- (const char *)bytes;
++@end
++void receiver_override_expiry(ReceiverOverride *_Nonnull owner) {
++  const char *bytes=[owner bytes];owner=(id)0;
++  receiver_use(bytes); // expected-error {{after its owner lifetime ended}}
++}
+diff --git a/clang/test/ObjC3/Sema/borrowed-receiver-crossings.m b/clang/test/ObjC3/Sema/borrowed-receiver-crossings.m
+new file mode 100644
+index 000000000..d5a33cf44
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-receiver-crossings.m
+@@ -0,0 +1,48 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-system -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-system -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-system -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/isolated-properties.h"
++actor class ReceiverBoundaryActor:PropertyControlRoot
++@property(nonatomic,readonly) const char *view __attribute__((objc_returns_inner_pointer));
++- (const char *)bytes __attribute__((objc_returns_inner_pointer,nothrow));
++- (const char *)view __attribute__((objc_returns_inner_pointer,nothrow));
++@end
++@interface ReceiverBoundaryExecutor:PropertyControlRoot
++@property(nonatomic,readonly) const char *view __attribute__((objc_returns_inner_pointer));
++- (const char *)bytes __attribute__((objc_returns_inner_pointer,nothrow,objc_executor(main)));
++- (const char *)view __attribute__((objc_returns_inner_pointer,nothrow,objc_executor(main)));
++- (const char *)badAsync __objc3_async_frame __attribute__((objc_returns_inner_pointer)); // expected-error {{async methods cannot return a receiver-owned interior view}}
++@end
++void receiver_actor_message(ReceiverBoundaryActor *owner) __objc3_async_frame {
++  (void)__objc3_await [owner bytes]; // expected-error {{isolated entry cannot transfer a receiver-owned interior view}}
++}
++void receiver_actor_property(ReceiverBoundaryActor *owner) __objc3_async_frame {
++  (void)__objc3_await owner.view; // expected-error {{isolated entry cannot transfer a receiver-owned interior view}}
++}
++void receiver_executor_message(ReceiverBoundaryExecutor *owner) __objc3_async_frame {
++  (void)__objc3_await [owner bytes]; // expected-error {{isolated entry cannot transfer a receiver-owned interior view}}
++}
++void receiver_executor_property(ReceiverBoundaryExecutor *owner) __objc3_async_frame {
++  (void)__objc3_await owner.view; // expected-error {{isolated entry cannot transfer a receiver-owned interior view}}
++}

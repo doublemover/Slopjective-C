@@ -157,6 +157,23 @@ bool HasDeclarationNSObjectStorage(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationBorrowedReceiverResult(const clang::NamedDecl *declaration) {
+  if(declaration->hasAttr<clang::ObjCReturnsInnerPointerAttr>())return true;
+  if(const auto *container=llvm::dyn_cast<clang::ObjCContainerDecl>(declaration))
+    for(const auto *method:container->methods())
+      if(method->hasAttr<clang::ObjCReturnsInnerPointerAttr>())return true;
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Receivers : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+        const auto *method=message->getMethodDecl();
+        found |= method && method->hasAttr<clang::ObjCReturnsInnerPointerAttr>();return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationBorrowedInteriorStorage(const clang::NamedDecl *declaration) {
   // Published inline/template/default expressions must be checked under the
   // same interior-storage ownership rules as the producer. Conservatively

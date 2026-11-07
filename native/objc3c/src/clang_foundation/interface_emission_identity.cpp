@@ -2426,6 +2426,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-dependent-await:v1;";
   if (HasDeclarationNSObjectStorage(representative))
     identity.canonical_type_identity+=";nsobject-storage:v1;";
+  if (HasDeclarationBorrowedReceiverResult(representative))
+    identity.canonical_type_identity += ";borrowed-receiver-results:v1;";
   if (HasDeclarationBorrowedInteriorStorage(representative))
     identity.canonical_type_identity += ";borrowed-interior-storage:v1;";
   if (HasDeclarationBorrowedCallableOwner(representative))

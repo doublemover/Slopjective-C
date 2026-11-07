@@ -4169,6 +4169,86 @@ void TestClosureFactories() {
   }
 }
 
+void TestBorrowedReceiverResultReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})
+    for(bool arc:{false,true}) {
+      const bool cxx=std::string(standard)!="c17";
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      const std::string source=R"(
+        typedef borrowed const char *PublishedReceiverBytes;
+        __attribute__((objc_root_class)) @interface PublishedReceiverOwner
+        @property(nonatomic,readonly) const char *view __attribute__((objc_returns_inner_pointer));
+        - (const char *)bytes __attribute__((objc_returns_inner_pointer));
+        #ifdef __cplusplus
+        - (char &)reference __attribute__((objc_returns_inner_pointer));
+        #endif
+        @end
+        void published_receiver_use(const char *bytes __attribute__((noescape)));
+        inline PublishedReceiverBytes published_receiver_bytes(PublishedReceiverOwner *_Nonnull owner)
+            __attribute__((objc_returns_borrowed(owner_index=0))) {return [owner bytes];}
+        inline PublishedReceiverBytes published_receiver_view(PublishedReceiverOwner *_Nonnull owner)
+            __attribute__((objc_returns_borrowed(owner_index=0))) {return owner.view;}
+        #ifdef __cplusplus
+        inline char published_receiver_copy(PublishedReceiverOwner *_Nonnull owner) {
+          char &reference=[owner reference];char copy=reference;owner=(id)0;return copy;
+        }
+        #endif
+      )";
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name);
+      };
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.borrowed_receiver_results","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.borrowed_receiver_results","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);return result;
+      };
+      auto first=emit(source,"receiver-provider.m");
+      auto replay=emit(first.source_bytes,"receiver-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-receiver.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> supported;
+      for(const auto &item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+      assert(llvm::is_contained(supported,llvm::StringRef(kBorrowedReceiverResultSemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      auto older=supported;std::erase(older,llvm::StringRef(kBorrowedReceiverResultSemantic));
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto missing=*decoded;std::erase(missing.required_semantics,kBorrowedReceiverResultSemantic);
+      auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);
+      assert(llvm::StringRef(llvm::toString(invalid.takeError())).contains("borrowed receiver result identity"));
+      auto good=parse(first.source_bytes+R"(
+        void receiver_consumer(PublishedReceiverOwner *_Nonnull owner) {
+          const char *bytes=published_receiver_bytes(owner);published_receiver_use(bytes);
+          withLifetime(owner){owner=(id)0;published_receiver_use(bytes);}
+        }
+      )","receiver-consumer.m");
+      assert(good && !good->getDiagnostics().hasErrorOccurred());
+      auto bad=parse(first.source_bytes+R"(
+        void receiver_expired(PublishedReceiverOwner *_Nonnull owner) {
+          const char *bytes=owner.view;owner=(id)0;published_receiver_use(bytes);
+        }
+      )","expired-receiver.m");
+      assert(bad && bad->getDiagnostics().hasErrorOccurred());
+      if(cxx) {
+        auto invalid_reference=parse(first.source_bytes+R"(
+          char &escape_receiver_reference(PublishedReceiverOwner *_Nonnull owner) {return [owner reference];}
+          void write_expired_receiver_reference(PublishedReceiverOwner *_Nonnull owner) {
+            char &reference=[owner reference];owner=(id)0;reference='x';
+          }
+        )","expired-receiver-reference.mm");
+        assert(invalid_reference && invalid_reference->getDiagnostics().hasErrorOccurred());
+      }
+    }
+}
+
 void TestBorrowedInteriorStorageReplay() {
   for(const char *standard:{"c17","c++20","c++23"})
     for(bool arc:{false,true}) {
@@ -7880,6 +7960,7 @@ int main(int argc,char **argv) {
   TestBorrowedMemoryAliasReplay();
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
+  TestBorrowedReceiverResultReplay();
   TestBorrowedInteriorStorageReplay();
   TestAsyncConsumedOwnershipCapability();
   TestConsumedAndMethodOwnershipRoundTrips();

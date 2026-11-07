@@ -84,7 +84,7 @@ bool IsPublishedSemanticAttribute(const clang::Attr *attribute) {
   return IsPublishedNativeAttribute(attribute) ||
       llvm::isa<clang::NSReturnsRetainedAttr,clang::NSReturnsNotRetainedAttr,
           clang::NSReturnsAutoreleasedAttr,clang::NSConsumedAttr,clang::CFConsumedAttr,
-          clang::NSConsumesSelfAttr,clang::ObjCReturnsBorrowedAttr,
+          clang::NSConsumesSelfAttr,clang::ObjCReturnsBorrowedAttr,clang::ObjCReturnsInnerPointerAttr,
           clang::ObjCExecutorAttr,clang::ObjCNonisolatedAttr,
           clang::ObjCUnsafeSendableAttr,clang::ObjCTaskSpawnAttr,
           clang::ObjCTaskDetachedAttr,clang::ObjCTaskGroupAttr,

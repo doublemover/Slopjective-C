@@ -1,4 +1,4 @@
-# Catch binding ownership and cleanup order
+# Catch binding ownership and native storage views
 
 Compile `main.m` under Strict System as C17 or C++20/23, ARC/MRC, source or PCH.
 For PCH use `OBJC3_CATCH_BINDING_OWNERSHIP_PCH`. Optional feature
@@ -8,7 +8,8 @@ this fixture with the SDK.
 Each native handler drops the original caller claim and acquires a declared
 borrow from its catch owner. Return, rethrow, outward goto and fallthrough must
 run the deferred consumer while the object remains live. The consumer reads the actual inline payload address under the owner contract.
-Inline array/nested-record loans, C++ reference record copies and builtin
+Receiver-owned native getters and property reads, inline array/nested-record
+loans, C++ reference record copies and builtin
 address-taking also remain valid while a lifetime pin holds the object after
 its original claim is dropped. Exact destruction counters verify native object
 lifetime and ordering.

@@ -449,6 +449,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
   if (nsobject_storage != nsobject_storage_capability)
     Add(result,"O3IFC106","NSObject storage identity and required capability must agree",expected.canonical_name);
+  const bool receiver_results = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedReceiverResultIdentity);
+  const bool receiver_result_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedReceiverResultSemantic) != sidecar.required_semantics.end();
+  if (receiver_results != receiver_result_capability)
+    Add(result,"O3IFC104","borrowed receiver result identity and required capability must agree",expected.canonical_name);
   const bool interior_storage = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedInteriorStorageIdentity);
   const bool interior_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedInteriorStorageSemantic) != sidecar.required_semantics.end();
   if (interior_storage != interior_storage_capability)

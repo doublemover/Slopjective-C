@@ -266,6 +266,8 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
     }
   if (declaration->hasAttr<clang::NoThrowAttr>())
     AppendNativeContractField(ownership, "nothrow");
+  if (declaration->hasAttr<clang::ObjCReturnsInnerPointerAttr>())
+    AppendNativeContractField(ownership, ";borrowed-receiver-results:v1;");
   if (declaration->hasAttr<clang::NSConsumesSelfAttr>())
     AppendNativeContractField(ownership, "ns-consumes-self");
   auto parameter = [&](const clang::ParmVarDecl *value, unsigned index) {

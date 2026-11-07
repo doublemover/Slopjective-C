@@ -22,6 +22,11 @@ __attribute__((objc_root_class)) @interface HandlerProbe {
 #endif
 }
 + (instancetype _Nonnull)new;
+@property(nonatomic,readonly) const char *view __attribute__((objc_returns_inner_pointer));
+- (const char *)bytes __attribute__((objc_returns_inner_pointer));
+#ifdef __cplusplus
+- (char &)reference __attribute__((objc_returns_inner_pointer));
+#endif
 #if !__has_feature(objc_arc)
 - (id)retain;
 - (oneway void)release;
@@ -39,6 +44,11 @@ __attribute__((objc_root_class)) @interface HandlerProbe {
 #if !__has_feature(objc_arc)
 - (id)retain {++references;return self;}
 - (oneway void)release {if(!--references)[self dealloc];}
+#endif
+- (const char *)bytes {return &payload;}
+- (const char *)view {return &payload;}
+#ifdef __cplusplus
+- (char &)reference {return payload;}
 #endif
 - (void)dealloc {++handler_destroyed;object_dispose(self);}
 @end
@@ -59,13 +69,14 @@ static int handler_paths(int mode) {
 #endif
   @try {
     @try {@throw source;}
-    @catch(HandlerProbe *owner) {
+    @catch(HandlerProbe *_Nonnull owner) {
 #if !__has_feature(objc_arc)
       [source release];
 #else
       source=(id)0;
 #endif
       HandlerBytes bytes=handler_bytes(owner);
+      handler_use([owner bytes]);
       __objc3_defer {
         assert(handler_destroyed==before && owner->payload=='q');handler_use(bytes);++handler_cleanup;
       }
@@ -74,7 +85,7 @@ static int handler_paths(int mode) {
       if(mode==1)@throw;
       if(mode==2)goto finished;
     }
-  } @catch(HandlerProbe *outer) {
+  } @catch(HandlerProbe *_Nonnull outer) {
     assert(mode==1 && handler_destroyed==before);
     handler_use(handler_bytes(outer));++handler_outer;
   }
@@ -83,13 +94,14 @@ finished:
 }
 static int interior_storage_case(void) {
   int before_destroyed=handler_destroyed,scalar=0;
-  HandlerProbe *owner=[HandlerProbe new];
+  HandlerProbe *_Nonnull owner=[HandlerProbe new];
     withLifetime(owner) {
-      const char *bytes=owner->inline_bytes;
+      const char *bytes=owner.view;
+      const char *array=owner->inline_bytes;
       const char *nested=owner->nested.bytes;
       scalar=owner->nested.value;
 #ifdef __cplusplus
-      char &reference=owner->payload;
+      char &reference=[owner reference];
       struct Reference {char &byte;};
       Reference first{reference},second=first;
       char copy=reference;
@@ -101,7 +113,7 @@ static int interior_storage_case(void) {
       [owner release];
 #endif
       assert(handler_destroyed==before_destroyed);
-      handler_use(bytes);handler_use(nested);
+      handler_use(bytes);handler_use(array);handler_use(nested);
 #ifdef __cplusplus
       handler_use(&second.byte);handler_use(address);assert(copy=='q');
 #endif
