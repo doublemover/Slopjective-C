@@ -38,7 +38,7 @@ struct InterfaceEffectIdentity {
 };
 
 inline constexpr const char *kAsyncEntryABISemantic =
-    "objc3.async-entry-abi.v3";
+    "objc3.async-entry-abi.v4";
 
 [[nodiscard]] bool
 IsValidAsyncABIIdentity(const InterfaceEffectIdentity &effects);

@@ -25749,10 +25749,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..2a48ffa8f
+index 000000000..47d0998a1
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1536 @@
+@@ -0,0 +1,1637 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -26268,10 +26268,11 @@ index 000000000..2a48ffa8f
 +  CGF.EmitBlock(Continue);
 +}
 +
-+// An allocation failure is still a typed lazy task, with process-lifetime
-+// context and callbacks. Starting or awaiting it reports the original service
-+// status; abandoning it needs neither an allocation nor a source-body cleanup.
-+llvm::Function *allocationFailureCallback(CodeGenFunction &Parent, bool Destroy) {
++// A service failure is a typed lazy task with immutable process-lifetime
++// context and callbacks. Starting/awaiting reports its original status;
++// abandonment needs no allocation, result construction or body cleanup.
++llvm::Function *typedFailureCallback(CodeGenFunction &Parent, bool Destroy,
++                                           unsigned Status = 3) {
 +  auto &CGM = Parent.CGM;
 +  auto &Ctx = CGM.getContext();
 +  FunctionArgList Args;
@@ -26281,8 +26282,10 @@ index 000000000..2a48ffa8f
 +  const auto &FI = CGM.getTypes().arrangeBuiltinFunctionDeclaration(Ctx.VoidTy, Args);
 +  auto *F = llvm::Function::Create(CGM.getTypes().GetFunctionType(FI),
 +      llvm::GlobalValue::InternalLinkage,
-+      Destroy ? "__objc3_c_async_allocation_failed_destroy"
-+              : "__objc3_c_async_allocation_failed_resume", &CGM.getModule());
++      Status == 3 ? (Destroy ? "__objc3_c_async_allocation_failed_destroy"
++                            : "__objc3_c_async_allocation_failed_resume")
++                  : (Destroy ? "__objc3_c_async_nil_result_failed_destroy"
++                             : "__objc3_c_async_nil_result_failed_resume"), &CGM.getModule());
 +  CGM.SetInternalFunctionAttributes(GlobalDecl(), F, FI);
 +  CodeGenFunction CGF(CGM);
 +  CGF.StartFunction(GlobalDecl(), Ctx.VoidTy, F, FI, Args);
@@ -26291,7 +26294,7 @@ index 000000000..2a48ffa8f
 +    llvm::Value *Requested = call(CGF, "objc3_task_is_cancel_requested",
 +                                  CGF.Int32Ty, {Owner});
 +    llvm::Value *Cancelled = CGF.Builder.CreateIsNotNull(Requested);
-+    llvm::Value *Error = serviceError(CGF, CGF.Builder.getInt32(3));
++    llvm::Value *Error = serviceError(CGF, CGF.Builder.getInt32(Status));
 +    Address Completion = CGF.CreateTempAlloca(completionType(CGM),
 +        CharUnits::fromQuantity(8), "objc3.allocation.failure");
 +    CGF.Builder.CreateMemSet(Completion, CGF.Builder.getInt8(0),
@@ -26403,6 +26406,70 @@ index 000000000..2a48ffa8f
 +  llvm_unreachable("Sema did not instantiate the native CF promise hook");
 +}
 +
++class NilResultClassifier {
++  ASTContext &Ctx;
++  llvm::DenseMap<const RecordDecl *, bool> Records;
++  unsigned Budget = 4096;
++public:
++  explicit NilResultClassifier(ASTContext &Ctx) : Ctx(Ctx) {}
++  bool requiresFailure(QualType Type, unsigned Depth = 0) {
++    if (Depth > 64 || !Budget || Type->isReferenceType() ||
++        getObjC3ResourceTypeContract(Ctx, Type).Cleanup) return true;
++    --Budget;
++    if (const auto *Array = Ctx.getAsArrayType(Type))
++      return requiresFailure(Array->getElementType(), Depth + 1);
++    const auto *Record = Type->getAsRecordDecl();
++    if (!Record) return false;
++    if (!Type.isTriviallyCopyableType(Ctx)) return true;
++    const auto *Definition = Record->getDefinition();
++    if (!Definition) return true;
++    if (auto Found = Records.find(Definition); Found != Records.end())
++      return Found->second;
++    // Only structural C++ values have a zero-state independent of user
++    // construction and default member initializers. Memoize shared record
++    // graphs so repeated by-value shapes take bounded work.
++    Records[Definition] = true;
++    if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition);
++        Class && !Class->isAggregate()) return true;
++    for (const FieldDecl *Field : Definition->fields())
++      if (Field->hasInClassInitializer() || Field->hasAttr<ObjCResourceAttr>() ||
++          Field->hasAttr<ObjCCleanupAttr>() ||
++          requiresFailure(Field->getType(), Depth + 1)) return true;
++    if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
++      for (const auto &Base : Class->bases())
++        if (requiresFailure(Base.getType(), Depth + 1)) return true;
++    return Records[Definition] = false;
++  }
++};
++static bool nilResultRequiresFailure(ASTContext &Ctx, QualType Type) {
++  return NilResultClassifier(Ctx).requiresFailure(Type);
++}
++
++static const ParmVarDecl *isolationNilReceiver(const FunctionDecl &Function,
++                                                 const Stmt &Body) {
++  if (!Function.getNumParams()) return nullptr;
++  const auto *Receiver = Function.getParamDecl(0);
++  if (!Receiver->getType()->isObjCObjectPointerType()) return nullptr;
++  const auto *Marker = Function.getAttr<ObjC3IsolationThunkAttr>();
++  if (Marker && Marker->getActorEntry()) return Receiver;
++  SmallVector<const Stmt *, 16> Pending{&Body};
++  unsigned Budget = 4096;
++  while (!Pending.empty() && Budget--) {
++    const Stmt *Node = Pending.pop_back_val();
++    if (!Node) continue;
++    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Node)) {
++      if (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance ||
++          Message->getReceiverKind() == ObjCMessageExpr::SuperClass) return Receiver;
++      if (const Expr *Value = Message->getInstanceReceiver())
++        if (const auto *Reference = dyn_cast<DeclRefExpr>(Value->IgnoreParenImpCasts());
++            Reference && Reference->getDecl() == Receiver) return Receiver;
++    }
++    if (isa<LambdaExpr, BlockExpr>(Node)) continue;
++    for (const Stmt *Child : Node->children()) Pending.push_back(Child);
++  }
++  return nullptr;
++}
++
 +bool clang::CodeGen::emitObjC3NilAsyncFrame(CodeGenFunction &Parent, Address Result,
 +                                           const ObjCMethodDecl *Method) {
 +  if (!Method || !Method->getObjC3FunctionEffects().Async) return false;
@@ -26412,42 +26479,63 @@ index 000000000..2a48ffa8f
 +  const auto *Original = getObjC3CallableFunctionType(Method);
 +  QualType Logical = Original->getReturnType();
 +  QualType Frame = Ctx.getObjC3AsyncFrameType(Logical);
-+  if (Frame.isNull()) return false;
-+  // Ordinary Objective-C nil returns have no C++ constructor or active-arm
-+  // semantics. Do not fabricate a nontrivial C++ object or resource owner.
-+  if ((Logical->isRecordType() && !Logical.isTriviallyCopyableType(Ctx)) ||
-+      getObjC3ResourceTypeContract(Ctx, Logical).Cleanup) return false;
-+  FunctionProtoType::ExtProtoInfo Info;
-+  Info.ObjC3Effects.Async = true;
-+  Info.ObjC3Effects.AsyncFrame = true;
-+  QualType Type = Ctx.getFunctionType(Logical, {}, Info);
-+  auto *Function = FunctionDecl::Create(Ctx, Ctx.getTranslationUnitDecl(),
-+      SourceLocation(), SourceLocation(), &Ctx.Idents.get("__objc3_nil_frame_entry"),
-+      Type, Ctx.getTrivialTypeSourceInfo(Type), SC_Static);
-+  Function->setImplicit();
-+  if (hasObjC3CFResultOwnership(Method))
-+    Function->addAttr(CFReturnsNotRetainedAttr::CreateImplicit(Ctx));
-+  Expr *Zero = Logical->isVoidType() ? nullptr : new (Ctx) ImplicitValueInitExpr(Logical);
-+  Stmt *Return = ReturnStmt::Create(Ctx, SourceLocation(), Zero, nullptr);
-+  auto *Body = CompoundStmt::Create(Ctx, {Return}, FPOptionsOverride(),
-+                                     SourceLocation(), SourceLocation());
-+  Function->setBody(Body);
-+  Ctx.setObjC3AsyncFrameType(Logical, Frame);
-+  const auto &FI = CGM.getTypes().arrangeFunctionDeclaration(Function);
-+  auto *Entry = llvm::Function::Create(CGM.getTypes().GetFunctionType(FI),
-+      llvm::GlobalValue::InternalLinkage, "__objc3_nil_frame_entry", &CGM.getModule());
-+  CGM.SetInternalFunctionAttributes(GlobalDecl(Function), Entry, FI);
-+  {
-+    CodeGenFunction Nil(CGM);
-+    FunctionArgList Parameters;
-+    Nil.StartFunction(GlobalDecl(Function), Frame, Entry, FI, Parameters);
-+    auto Debug = ApplyDebugLocation::CreateArtificial(Nil);
-+    Nil.EmitObjC3CAsyncBody(*Function, *Body);
-+    Nil.FinishFunction();
++  if (Frame.isNull()) {
++    // ASTContext result/carrier caches are not serialized. A PCH body can
++    // contain a task-only message whose descriptor hooks were prepared by
++    // Sema, but whose frame mapping has not been rebuilt in this context.
++    // Recover the already-validated runtime declaration, not a guessed layout.
++    for (NamedDecl *D : Ctx.getTranslationUnitDecl()->lookup(&Ctx.Idents.get("objc3_async_frame")))
++      if (const auto *Alias = dyn_cast<TypedefNameDecl>(D)) {
++        Frame = Alias->getUnderlyingType();
++        Ctx.setObjC3AsyncFrameType(Logical, Frame);
++        break;
++      }
 +  }
-+  CallArgList Arguments;
++  if (Frame.isNull()) return false;
 +  Address FrameResult = Task ? Address(Parent.CreateMemTemp(Frame, "objc3.nil.task.frame")) : Result;
-+  Parent.EmitCall(FI, CGCallee::forDirect(Entry), ReturnValueSlot(FrameResult, false), Arguments);
++  if (nilResultRequiresFailure(Ctx, Logical)) {
++    // Preserve the declared type without constructing an owner or C++ value.
++    // Immutable descriptor context makes construction/disposal allocation free;
++    // execution reports INVALID_ARGUMENT through the existing service channel.
++    auto *Descriptor = frameResultDescriptor(Parent, Logical);
++    storeField(Parent, FrameResult, 0, Parent.Builder.getInt32(40));
++    storeField(Parent, FrameResult, 1, Parent.Builder.getInt32(AsyncABI));
++    storeField(Parent, FrameResult, 2, Descriptor);
++    storeField(Parent, FrameResult, 3, typedFailureCallback(Parent, false, 1));
++    storeField(Parent, FrameResult, 4, typedFailureCallback(Parent, true, 1));
++    storeField(Parent, FrameResult, 5, Descriptor);
++  } else {
++    FunctionProtoType::ExtProtoInfo Info;
++    Info.ObjC3Effects.Async = true;
++    Info.ObjC3Effects.AsyncFrame = true;
++    QualType Type = Ctx.getFunctionType(Logical, {}, Info);
++    auto *Function = FunctionDecl::Create(Ctx, Ctx.getTranslationUnitDecl(),
++        SourceLocation(), SourceLocation(), &Ctx.Idents.get("__objc3_nil_frame_entry"),
++        Type, Ctx.getTrivialTypeSourceInfo(Type), SC_Static);
++    Function->setImplicit();
++    if (hasObjC3CFResultOwnership(Method))
++      Function->addAttr(CFReturnsNotRetainedAttr::CreateImplicit(Ctx));
++    Expr *Zero = Logical->isVoidType() ? nullptr : new (Ctx) ImplicitValueInitExpr(Logical);
++    Stmt *Return = ReturnStmt::Create(Ctx, SourceLocation(), Zero, nullptr);
++    auto *Body = CompoundStmt::Create(Ctx, {Return}, FPOptionsOverride(),
++                                       SourceLocation(), SourceLocation());
++    Function->setBody(Body);
++    Ctx.setObjC3AsyncFrameType(Logical, Frame);
++    const auto &FI = CGM.getTypes().arrangeFunctionDeclaration(Function);
++    auto *Entry = llvm::Function::Create(CGM.getTypes().GetFunctionType(FI),
++        llvm::GlobalValue::InternalLinkage, "__objc3_nil_frame_entry", &CGM.getModule());
++    CGM.SetInternalFunctionAttributes(GlobalDecl(Function), Entry, FI);
++    {
++      CodeGenFunction Nil(CGM);
++      FunctionArgList Parameters;
++      Nil.StartFunction(GlobalDecl(Function), Frame, Entry, FI, Parameters);
++      auto Debug = ApplyDebugLocation::CreateArtificial(Nil);
++      Nil.EmitObjC3CAsyncBody(*Function, *Body);
++      Nil.FinishFunction();
++    }
++    CallArgList Arguments;
++    Parent.EmitCall(FI, CGCallee::forDirect(Entry), ReturnValueSlot(FrameResult, false), Arguments);
++  }
 +  if (!Task) return true;
 +  // Use the SDK's typed constructor. The compiler never guesses the private
 +  // layout or destruction behavior of the C++ task carrier.
@@ -26665,8 +26753,8 @@ index 000000000..2a48ffa8f
 +  // A descriptor is static, nonnull and shared safely by these immutable
 +  // failure frames. No callback mutates or releases this context.
 +  storeField(*this, ReturnValue, 2, Data.ResultType);
-+  storeField(*this, ReturnValue, 3, allocationFailureCallback(*this, false));
-+  storeField(*this, ReturnValue, 4, allocationFailureCallback(*this, true));
++  storeField(*this, ReturnValue, 3, typedFailureCallback(*this, false));
++  storeField(*this, ReturnValue, 4, typedFailureCallback(*this, true));
 +  storeField(*this, ReturnValue, 5, Data.ResultType);
 +  EmitBranchThroughCleanup(ReturnBlock);
 +  EmitBlock(Initialize);
@@ -26857,6 +26945,19 @@ index 000000000..2a48ffa8f
 +    }
 +    checkCancelled(*this, Data);
 +    if (Callable.hasAttr<ObjC3IsolationThunkAttr>()) {
++      if (nilResultRequiresFailure(getContext(), Function->getReturnType()))
++        if (const auto *Function = dyn_cast<FunctionDecl>(&Callable))
++          if (const auto *Receiver = isolationNilReceiver(*Function, Body)) {
++            auto *Missing = createBasicBlock("objc3.isolation.nil.result");
++            auto *Present = createBasicBlock("objc3.isolation.receiver.present");
++            auto *Value = Builder.CreateLoad(GetAddrOfLocalVar(Receiver));
++            Builder.CreateCondBr(Builder.CreateIsNull(Value), Missing, Present);
++            EmitBlock(Missing);
++            replaceError(*this, Data, serviceError(*this, Builder.getInt32(1)));
++            Builder.CreateStore(Builder.getInt32(1), Data.Kind);
++            EmitBranchThroughCleanup(Data.Final);
++            EmitBlock(Present);
++          }
 +      auto Entry = emitObjC3IsolationEntry(*this, Callable,
 +                                          Builder.CreateLoad(Data.Owner));
 +      checkStatus(*this, Data, Entry.Status);
@@ -31555,3 +31656,120 @@ index 000000000..8f49f45c9
 +// CHECK-DAG: @pch_alias_chain = {{.*}}alias {{.*}}@pch_alias
 +// CHECK-DAG: @pch_native_logical = internal alias {{.*}}@pch_native_physical
 +// CHECK-DAG: @pch_indirect = {{.*}}ifunc {{.*}}@pch_alias_resolver
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/owned-nil-results.h b/clang/test/ObjC3/CodeGen/Inputs/owned-nil-results.h
+new file mode 100644
+index 000000000..43cd20acb
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/owned-nil-results.h
+@@ -0,0 +1,54 @@
++#ifndef OBJC3_OWNED_NIL_RESULTS_TEST_H
++#define OBJC3_OWNED_NIL_RESULTS_TEST_H
++#ifdef __cplusplus
++#include "native-async-task.h"
++// Descriptor hook shape only. The maintained runtime fixture executes the
++// actual SDK descriptor, including private nominal identity.
++template<class T> const void *__objc3_async_frame_result_type() {
++  static unsigned token;return &token;
++}
++struct NilValue {
++  explicit NilValue(int);
++  NilValue(const NilValue &);
++  ~NilValue() noexcept;
++};
++struct NilConstructed {int value;explicit NilConstructed(int);};
++struct NilReference {int &value;};
++int nil_member_default();
++struct NilDefaults {int value=nil_member_default();};
++namespace { struct NilPrivate {explicit NilPrivate(int);~NilPrivate() noexcept;}; }
++#else
++#include "native-c-async-frame.h"
++#endif
++void nil_close_handle(int);
++typedef int OwnedNilHandle __attribute__((objc_requires_cleanup(nil_close_handle),objc_resource_family(OwnedNilHandles),objc_invalid(-1)));
++struct NilResourceFields {OwnedNilHandle value;};
++struct NilShared0 {int value;};
++struct NilShared1 {struct NilShared0 left, right;};
++struct NilShared2 {struct NilShared1 left, right;};
++struct NilShared3 {struct NilShared2 left, right;};
++struct NilShared4 {struct NilShared3 left, right;};
++struct NilShared5 {struct NilShared4 left, right;};
++struct NilShared6 {struct NilShared5 left, right;};
++struct NilShared7 {struct NilShared6 left, right;};
++struct NilShared8 {struct NilShared7 left, right;};
++struct NilShared9 {struct NilShared8 left, right;};
++struct NilShared10 {struct NilShared9 left, right;};
++struct NilShared11 {struct NilShared10 left, right;};
++struct NilShared12 {struct NilShared11 left, right;};
++
++__attribute__((objc_root_class)) @interface OwnedNilRoot
++- (OwnedNilHandle)resource __objc3_async_frame;
++- (struct NilShared12)sharedGraph __objc3_async_frame;
++- (struct NilResourceFields)resourceFields __objc3_async_frame;
++- (OwnedNilHandle)isolatedResource __attribute__((nothrow,objc_executor(main)));
++#ifdef __cplusplus
++- (NilValue)valueFrame __objc3_async_frame;
++- (NilValue)valueTask __objc3_async;
++- (NilConstructed)constructed __objc3_async;
++- (NilReference)reference __objc3_async_frame;
++- (NilDefaults)defaults __objc3_async;
++- (NilPrivate)privateValue __objc3_async_frame;
++#endif
++@end
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/owned-nil-results.m b/clang/test/ObjC3/CodeGen/owned-nil-results.m
+new file mode 100644
+index 000000000..476105e23
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/owned-nil-results.m
+@@ -0,0 +1,51 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -emit-pch -o %t-c17-False %S/Inputs/owned-nil-results.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -include-pch %t-c17-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-c17-True %S/Inputs/owned-nil-results.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c17-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -emit-pch -o %t-c++20-False %S/Inputs/owned-nil-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -include-pch %t-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -emit-pch -o %t-c++20-True %S/Inputs/owned-nil-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -include-pch %t-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -emit-pch -o %t-c++23-False %S/Inputs/owned-nil-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -include-pch %t-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -emit-pch -o %t-c++23-True %S/Inputs/owned-nil-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -include-pch %t-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/owned-nil-results.h"
++#ifdef __cplusplus
++extern "C" {
++#endif
++objc3_async_frame nil_resource(OwnedNilRoot *root) {return [root resource];}
++objc3_async_frame nil_resource_fields(OwnedNilRoot *root) {return [root resourceFields];}
++objc3_async_frame nil_zero_graph(OwnedNilRoot *root) {return [root sharedGraph];}
++OwnedNilHandle nil_isolated_resource(OwnedNilRoot *root) __objc3_async_frame {return __objc3_await [root isolatedResource];}
++#ifdef __cplusplus
++objc3_async_frame nil_value_frame(OwnedNilRoot *root) {return [root valueFrame];}
++objc3::task<NilValue> nil_value_task(OwnedNilRoot *root) {return [root valueTask];}
++objc3::task<NilConstructed> nil_constructed_task(OwnedNilRoot *root) {return [root constructed];}
++objc3_async_frame nil_reference(OwnedNilRoot *root) {return [root reference];}
++objc3::task<NilDefaults> nil_defaults(OwnedNilRoot *root) {return [root defaults];}
++objc3_async_frame nil_private(OwnedNilRoot *root) {return [root privateValue];}
++}
++#endif
++// CHECK-LABEL: define{{.*}} void @nil_resource(
++// CHECK-NOT: @aligned_alloc
++// CHECK: store ptr @__objc3_c_async_nil_result_failed_resume
++// CHECK: ret void
++// CHECK: define{{.*}} void @__objc3_c_async_nil_result_failed_resume
++// CHECK: call i32 @objc3_async_error_create_service(i32 1,
++// CHECK-LABEL: define{{.*}} void @nil_resource_fields(
++// CHECK-NOT: @aligned_alloc
++// CHECK: store ptr @__objc3_c_async_nil_result_failed_resume
++// CHECK: ret void
++// CHECK-LABEL: define{{.*}} void @nil_zero_graph(
++// CHECK-NOT: @__objc3_c_async_nil_result_failed_resume
++// CHECK: ret void
++// CHECK: objc3.isolation.nil.result:
++// CHECK: call i32 @objc3_async_error_create_service(i32 1,
++// CHECK-NOT: call void @nil_close_handle

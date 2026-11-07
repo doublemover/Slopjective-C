@@ -82,6 +82,29 @@ Async is part of a block’s type:
 - `R (^)(Args) async`
 - `R (^)(Args)` (sync)
 
+### 7.2.4 Nil receivers and async results {#part-7-2-4}
+
+An ordinary async message to a nil receiver shall preserve the declared async
+result type. Receiver and argument expressions are evaluated once in the
+ordinary order, and consuming arguments retain their ordinary nil-receiver
+cleanup obligations. The method body is not entered.
+This rule also applies when an awaited synchronous isolated method is entered
+through an implicit async operation. A nil receiver is handled before any actor
+or executor entry; an ordinary nil argument to a free function is unaffected.
+
+Scalar, object and void results retain ordinary Objective-C nil-result behavior.
+A structural record may supply a zero result only when its fields and bases
+require no reference binding, resource ownership, user construction or default
+member initialization. Other record results, and resource-managed results or
+subobjects, shall produce a checked native failure when the async operation
+executes. They shall not fabricate a C++ value, active resource owner or borrowed
+reference. This native failure is distinct from a declared checked-error domain.
+
+Creating or abandoning a lazy result shall not construct or destroy its logical
+result value. Cancellation before execution retains the cancellation outcome and
+cleanup rules in [§7.6](#part-7-6). Optional message sends retain their separate
+nil short-circuit behavior.
+
 ---
 
 ## 7.3 `await` expressions {#part-7-3}

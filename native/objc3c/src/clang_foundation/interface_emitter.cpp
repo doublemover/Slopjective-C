@@ -1194,7 +1194,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (effects.is_async || effects.is_throwing || !effects.ownership_identity.empty() ||
         !effects.async_abi_identity.empty())
       sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
-    if (!effects.async_abi_identity.empty())
+    if (!effects.async_abi_identity.empty() || !effects.actor_isolation_identity.empty() ||
+        !effects.executor_affinity_identity.empty())
       sidecar.required_semantics.push_back(kAsyncEntryABISemantic);
     if (effects.ownership_identity.starts_with("native-return:"))
       sidecar.required_semantics.push_back("objc3.native-return-ownership.v1");
@@ -1235,7 +1236,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kNSObjectStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
-      "objc3.async-entry-abi.v3",
+      "objc3.async-entry-abi.v4",
       "objc3.direct-dispatch.v1",
       "objc3.cxx-data-interfaces.v1",
       "objc3.cxx-member-interfaces.v1",
@@ -1427,7 +1428,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kNSObjectStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
-    "objc3.async-entry-abi.v3",
+    "objc3.async-entry-abi.v4",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",

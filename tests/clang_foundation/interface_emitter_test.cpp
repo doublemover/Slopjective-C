@@ -1324,7 +1324,7 @@ void TestCAsyncPhysicalABIRoundTrips() {
     assert(found);
     const std::vector<llvm::StringRef> old_supported = {
         "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v1",
-        "objc3.async-entry-abi.v2", RuntimeInterfaceSemantic()};
+        "objc3.async-entry-abi.v2", "objc3.async-entry-abi.v3", RuntimeInterfaceSemantic()};
     auto old_reader = DecodeSemanticInterfaceSidecar(
         emitted.sidecar_json, emitted.source_bytes, old_supported);
     assert(!old_reader);
@@ -1364,7 +1364,7 @@ inline int published_entry(int value) __objc3_async_frame {
   assert(emitted.source_bytes.find("__objc3_await isolated_entry")!=std::string::npos);
   const std::vector<llvm::StringRef> supported={
       "objc3.cxx-data-interfaces.v1", "objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v3",
+      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v4",
       kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,RuntimeInterfaceSemantic()};
   auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
                                               emitted.source_bytes,supported);
@@ -1494,7 +1494,7 @@ inline int actor_request(objc3_actor_t *actor) __objc3_async {
   assert(emitted.source_bytes.find("promise_type")==std::string::npos);
   const std::vector<llvm::StringRef> supported={
       "objc3.cxx-data-interfaces.v1","objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v3",
+      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v4",
       kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,
       kSdkRuntimeDeclarationSemantic,RuntimeInterfaceSemantic(),
       "objc3.module-owned-names.v1"};
@@ -4165,6 +4165,120 @@ void TestClosureFactories() {
     auto secret=emit("static int hidden(int n){return n;} inline auto api(){return [](int n){return hidden(n);};}");
     assert(!secret.success && std::any_of(secret.diagnostics.begin(),secret.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
+  }
+}
+
+void TestOwnedNilResultReplay() {
+  for (const char *standard : {"c17", "c++20", "c++23"}) {
+    const bool cxx=std::string(standard)!="c17";
+    for(bool arc:{false,true}) {
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fblocks",
+          "-fobjc-runtime=gnustep-2.2","-fexceptions","-fobjc-exceptions",
+          "--target=x86_64-unknown-linux-gnu",
+          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      if(arc)args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      std::string source=cxx?"#include <objc3c/runtime/objc3_task.hpp>\n"
+                             :"#include <objc3c/runtime/objc3_runtime_services.h>\n";
+      source+=R"(
+        void published_nil_close(int);
+        typedef int PublishedNilHandle __attribute__((objc_requires_cleanup(published_nil_close),
+            objc_resource_family(PublishedNilHandles),objc_invalid(-1)));
+        struct PublishedNilRecord {PublishedNilHandle value;};
+      )";
+      if(cxx)source+=R"(
+        struct PublishedNilValue {
+          explicit PublishedNilValue(int);
+          PublishedNilValue(const PublishedNilValue &);
+          ~PublishedNilValue()noexcept;
+        };
+      )";
+      source+=R"(
+        __attribute__((objc_root_class)) @interface PublishedNilRoot
+        - (PublishedNilHandle)resource __objc3_async_frame;
+        - (struct PublishedNilRecord)record __objc3_async_frame;
+      )";
+      if(cxx)source+=R"(
+        - (PublishedNilValue)valueFrame __objc3_async_frame;
+        - (PublishedNilValue)valueTask __objc3_async;
+      )";
+      source+=R"(
+        @end
+        inline objc3_async_frame published_nil_resource(PublishedNilRoot *root) {return [root resource];}
+        inline objc3_async_frame published_nil_record(PublishedNilRoot *root) {return [root record];}
+      )";
+      if(cxx)source+=R"(
+        inline objc3_async_frame published_nil_value_frame(PublishedNilRoot *root) {return [root valueFrame];}
+        inline objc3::task<PublishedNilValue> published_nil_value_task(PublishedNilRoot *root) {return [root valueTask];}
+      )";
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.owned_nil_results","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.owned_nil_results","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        return result;
+      };
+      auto first=emit(source,"owned-nil-provider.m");assert(first.success);
+      auto replay=emit(first.source_bytes,"replayed-owned-nil-provider.m");
+      assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-owned-nil-provider.m");
+      assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> semantics;
+      for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+      assert(llvm::is_contained(semantics,llvm::StringRef(kAsyncEntryABISemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+      auto old=semantics;std::erase(old,llvm::StringRef(kAsyncEntryABISemantic));old.push_back("objc3.async-entry-abi.v3");
+      auto old_reader=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+      assert(!old_reader);llvm::consumeError(old_reader.takeError());
+      auto missing=*decoded;std::erase(missing.required_semantics,kAsyncEntryABISemantic);
+      auto stripped=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!stripped);llvm::consumeError(stripped.takeError());
+      std::string consumer=first.source_bytes+R"(
+        objc3_async_frame consume_owned_nil(PublishedNilRoot *root) {return published_nil_resource(root);}
+      )";
+      if(cxx)consumer+=R"(
+        objc3::task<PublishedNilValue> consume_owned_nil_task(PublishedNilRoot *root) {return published_nil_value_task(root);}
+      )";
+      auto valid=parse(consumer,"owned-nil-consumer.m");
+      assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+
+      // A synchronous isolated declaration can synthesize an async entry in a
+      // consumer. Its contract needs the same cutover without an explicit async
+      // declaration elsewhere in the interface.
+      const std::string implicit=R"(
+        void implicit_nil_close(int);
+        typedef int ImplicitNilHandle __attribute__((objc_requires_cleanup(implicit_nil_close),
+            objc_resource_family(ImplicitNilHandles),objc_invalid(-1)));
+        __attribute__((objc_root_class)) @interface ImplicitNilRoot
+        - (ImplicitNilHandle)resource __attribute__((nothrow,objc_executor(main)));
+        @end
+      )";
+      auto isolated=emit(implicit,"implicit-nil-provider.m");assert(isolated.success);
+      auto isolated_replay=emit(isolated.source_bytes,"implicit-nil-replay.m");
+      assert(isolated_replay.success && isolated_replay.identity.semantic_fingerprint==isolated.identity.semantic_fingerprint);
+      auto isolated_metadata=llvm::json::parse(isolated.sidecar_json);assert(isolated_metadata);
+      std::vector<llvm::StringRef> isolated_semantics;
+      for(const auto &value:*isolated_metadata->getAsObject()->getArray("required_semantics"))
+        isolated_semantics.push_back(*value.getAsString());
+      auto isolated_sidecar=DecodeSemanticInterfaceSidecar(isolated.sidecar_json,isolated.source_bytes,isolated_semantics);
+      assert(isolated_sidecar && llvm::is_contained(isolated_sidecar->required_semantics,kAsyncEntryABISemantic));
+      auto isolated_old_semantics=isolated_semantics;
+      std::erase(isolated_old_semantics,llvm::StringRef(kAsyncEntryABISemantic));
+      isolated_old_semantics.push_back("objc3.async-entry-abi.v3");
+      auto isolated_old=DecodeSemanticInterfaceSidecar(isolated.sidecar_json,isolated.source_bytes,isolated_old_semantics);
+      assert(!isolated_old);llvm::consumeError(isolated_old.takeError());
+      auto isolated_missing=*isolated_sidecar;
+      std::erase(isolated_missing.required_semantics,kAsyncEntryABISemantic);
+      auto isolated_stripped=EncodeSemanticInterfaceSidecar(isolated_missing,isolated_semantics);
+      assert(!isolated_stripped);llvm::consumeError(isolated_stripped.takeError());
+    }
   }
 }
 
@@ -7274,7 +7388,7 @@ void TestBoundedCxxSemanticInterfaces() {
   {
     const std::vector<llvm::StringRef> semantics = {
         "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v3"};
+        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v4"};
     std::string previous;
     for (const char *signature :
          {"int get() const __objc3_async __objc3_throws(id<First>);",
@@ -7528,6 +7642,7 @@ int main(int argc,char **argv) {
   TestFactoryTypeProjections();
   TestLocalFactoryResults();
   TestClosureFactories();
+  TestOwnedNilResultReplay();
   TestStrictAsyncProfileReplay();
   TestNativeDependentAwaitReplay();
   TestConcurrentBlockValueReplay();

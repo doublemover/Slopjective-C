@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.116 nil-result span](linux_owned_nil_results.md) supplies
+checked failures for nil receivers whose native async results require C++
+construction, reference binding or resource ownership, including implicit
+actor/executor entries. Private descriptors and task-only PCH carrier recovery
+are implemented. Twelve instrumented source/PCH configurations pass 43 commands;
+eighteen compiler commands, sixteen AST tests, six frontend profiles and codec/
+isolation controls pass. Wider consolidation and matched SDK delivery follow.
+
 The [Concurrency 2.115 strict-profile span](linux_strict_async_profiles.md)
 removes the profile gate from native frame/task lowering, C group plans and
 concurrency convenience APIs while retaining profile diagnostics. Aligned task

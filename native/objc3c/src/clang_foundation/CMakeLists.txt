@@ -140,10 +140,10 @@ install(DIRECTORY "${_objc3_repo}/stdlib/include/objc3"
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES "${_objc3_repo}/stdlib/module_inventory.json"
   DESTINATION share/objc3c/stdlib)
-foreach(_feature_fixture explicit_capture_lists typed_keypaths native_c_async native_isolation task_spawning strict_async_profiles)
+foreach(_feature_fixture explicit_capture_lists typed_keypaths native_c_async native_isolation task_spawning strict_async_profiles nonzero_nil_results)
   install(DIRECTORY "${_objc3_repo}/tests/clang_foundation/${_feature_fixture}"
     DESTINATION share/objc3c/examples/linux-features
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.m" PATTERN "*.mm"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.c" PATTERN "*.m" PATTERN "*.mm"
       PATTERN "*.cpp" PATTERN "README.md")
 endforeach()
 target_include_directories(objc3c_frontend_v2 INTERFACE "$<INSTALL_INTERFACE:include>")

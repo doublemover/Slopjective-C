@@ -192,10 +192,10 @@ index e3f74d73f..3609394b1 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..d9b55af08
+index 000000000..71548f84b
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,568 @@
+@@ -0,0 +1,574 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -452,21 +452,25 @@ index 000000000..d9b55af08
 +}
 +
 +namespace {
++using StorageVisitSet = llvm::DenseSet<std::pair<QualType, unsigned>>;
 +bool containsStorage(QualType Type, bool ThrowingCopy, unsigned &Budget,
-+                     unsigned Depth = 0, bool InCarrier = false) {
++                     StorageVisitSet &Seen, unsigned Depth = 0, bool InCarrier = false) {
 +  if (Type.isNull()) return false;
++  // Storage graphs share types across fields and bases. Count each qualified
++  // type/context once, retaining the existing conservative unique-work limit.
++  if (!Seen.insert({Type.getCanonicalType(), InCarrier}).second) return false;
 +  if (Depth > 64 || Budget == 0) return true;
 +  --Budget;
 +  if (const auto *Array = Type->getAsArrayTypeUnsafe())
-+    return containsStorage(Array->getElementType(), ThrowingCopy, Budget,
++    return containsStorage(Array->getElementType(), ThrowingCopy, Budget, Seen,
 +                           Depth + 1, InCarrier);
 +  if (const auto *Optional = Type->getAs<ObjC3OptionalType>())
 +    return ThrowingCopy ? containsStorage(Optional->getElementType(), true,
-+        Budget, Depth + 1, true) : hasObjC3CarrierManagedPayload(Type);
++        Budget, Seen, Depth + 1, true) : hasObjC3CarrierManagedPayload(Type);
 +  if (const auto *Result = Type->getAs<ObjC3ResultType>())
 +    return ThrowingCopy ?
-+        containsStorage(Result->getSuccessType(), true, Budget, Depth + 1, true) ||
-+        containsStorage(Result->getErrorType(), true, Budget, Depth + 1, true) :
++        containsStorage(Result->getSuccessType(), true, Budget, Seen, Depth + 1, true) ||
++        containsStorage(Result->getErrorType(), true, Budget, Seen, Depth + 1, true) :
 +        hasObjC3CarrierManagedPayload(Type);
 +  if (ThrowingCopy && InCarrier && Type->isBlockPointerType())
 +    return Type.getObjCLifetime() == Qualifiers::OCL_Strong;
@@ -476,10 +480,10 @@ index 000000000..d9b55af08
 +    if (!RD) return false;
 +    if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD))
 +      for (const auto &Base : CXX->bases())
-+        if (containsStorage(Base.getType(), ThrowingCopy, Budget, Depth + 1,
++        if (containsStorage(Base.getType(), ThrowingCopy, Budget, Seen, Depth + 1,
 +                            InCarrier)) return true;
 +    for (const auto *Field : RD->fields())
-+      if (containsStorage(Field->getType(), ThrowingCopy, Budget, Depth + 1,
++      if (containsStorage(Field->getType(), ThrowingCopy, Budget, Seen, Depth + 1,
 +                          InCarrier)) return true;
 +  }
 +  return false;
@@ -487,11 +491,13 @@ index 000000000..d9b55af08
 +}
 +bool clang::containsObjC3CarrierManagedStorage(QualType Type) {
 +  unsigned Budget = 256;
-+  return containsStorage(Type, false, Budget);
++  StorageVisitSet Seen;
++  return containsStorage(Type, false, Budget, Seen);
 +}
 +bool clang::containsObjC3CarrierThrowingCopy(QualType Type) {
 +  unsigned Budget = 256;
-+  return containsStorage(Type, true, Budget);
++  StorageVisitSet Seen;
++  return containsStorage(Type, true, Budget, Seen);
 +}
 +
 +static ObjC3ValueTypeFacts

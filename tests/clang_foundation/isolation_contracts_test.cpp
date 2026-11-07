@@ -706,7 +706,7 @@ int module_consume(__attribute__((ns_consumed)) SafeMessage *)
   assert(Emitted.success);
   const std::vector<llvm::StringRef> Semantics = {
       "objc3.canonical-function-effects.v1",
-      "objc3.async-entry-abi.v3",
+      "objc3.async-entry-abi.v4",
       RuntimeInterfaceSemantic(),
       "objc3.native-carrier-types.v1",
       "objc3.native-return-ownership.v1",

@@ -1131,7 +1131,8 @@ llvm::Error ValidateForEncoding(
     const auto &effects = declaration.effects;
     if (!IsValidAsyncABIIdentity(effects))
       return Invalid("invalid or missing physical async entry ABI identity");
-    if (!effects.async_abi_identity.empty() && !required.count(kAsyncEntryABISemantic))
+    if ((!effects.async_abi_identity.empty() || !effects.actor_isolation_identity.empty() ||
+         !effects.executor_affinity_identity.empty()) && !required.count(kAsyncEntryABISemantic))
       return Invalid("async entry ABI is missing its semantic capability");
     if (effects.async_abi_identity.find("10:c-frame-v1") != std::string::npos &&
         !required.count(RuntimeInterfaceSemantic().str()))

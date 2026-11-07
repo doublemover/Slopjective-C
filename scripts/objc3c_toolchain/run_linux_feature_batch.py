@@ -26,10 +26,11 @@ else:
 
 ROOT = Path(__file__).resolve().parents[2]
 FEATURES = ("captures", "keypaths", "async", "isolation", "spawn")
-OPTIONAL_FEATURES = ("strict-async",)
+OPTIONAL_FEATURES = ("strict-async", "nil-results")
 PCH_MARKERS = {"captures": "CAPTURE_RUNTIME_PCH",
                "keypaths": "TYPED_KEYPATH_RUNTIME_PCH",
-               "strict-async": "OBJC3_STRICT_ASYNC_PROFILES_PCH"}
+               "strict-async": "OBJC3_STRICT_ASYNC_PROFILES_PCH",
+               "nil-results": "OBJC3_NONZERO_NIL_RESULTS_PCH"}
 MODES = (("objective-c", "c17"), ("objective-c++", "c++20"),
          ("objective-c++", "c++23"))
 
@@ -219,7 +220,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                 family = {"captures": "explicit_capture_lists", "keypaths": "typed_keypaths",
                           "async": "native_c_async", "isolation": "native_isolation",
                           "spawn": "task_spawning",
-                          "strict-async": "strict_async_profiles"}[case.feature]
+                          "strict-async": "strict_async_profiles",
+                          "nil-results": "nonzero_nil_results"}[case.feature]
                 source = fixtures / family
                 shutil.copytree(source, work, dirs_exist_ok=True)
                 if case.feature == "isolation":
@@ -358,6 +360,9 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         extra = pch(case, work / "runtime.h", work)
                         extra.append("-D" + PCH_MARKERS[case.feature])
                     objects = []
+                    if case.feature == "nil-results":
+                        objects.append(compile_source(case, work / "allocations.c", work,
+                            language="c", standard="c17", ownership="none"))
                     if case.feature == "keypaths":
                         objects.append(compile_source(case, work / "provider.m", work, extra=extra))
                         (work / "provider.m").unlink()

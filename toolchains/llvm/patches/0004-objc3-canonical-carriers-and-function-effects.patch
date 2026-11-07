@@ -43256,10 +43256,10 @@ index 9adba1943..76286b3f9 100644
          // is significant.  Allow non-dependent code to contain inappropriate
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..df2cba1bd
+index 000000000..cf47a3848
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,356 @@
+@@ -0,0 +1,366 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -43299,21 +43299,31 @@ index 000000000..df2cba1bd
 +                                  Type->getExtProtoInfo())->castAs<FunctionProtoType>();
 +}
 +
++namespace {
++bool instantiateCxxFrameStorageHook(Sema &, QualType, SourceLocation, StringRef, bool);
++}
++
 +bool clang::prepareObjC3NilTaskMessage(Sema &S, ObjCMethodDecl *Method,
 +                                      SourceLocation Loc) {
 +  const auto *Type = getObjC3CallableFunctionType(Method);
 +  if (!Type || !Type->getObjC3FunctionEffects().Async ||
-+      Type->getObjC3FunctionEffects().AsyncFrame || !S.getLangOpts().CPlusPlus20) return false;
++      !S.getLangOpts().CPlusPlus20) return false;
 +  QualType Logical = Type->getReturnType();
-+  if (Logical->isDependentType() || (Logical->isIncompleteType() && !Logical->isVoidType()) ||
-+      (Logical->isRecordType() && !Logical.isTriviallyCopyableType(S.Context)) ||
-+      getObjC3ResourceTypeContract(S.Context, Logical).Cleanup) return false;
++  if (Logical->isDependentType() || (Logical->isIncompleteType() && !Logical->isVoidType())) return false;
 +  FunctionProtoType::ExtProtoInfo Info;
 +  Info.ObjC3Effects.Async = true;
 +  Info.ObjC3Effects.AsyncFrame = true;
 +  auto *FrameType = S.Context.getFunctionType(Logical, {}, Info)->castAs<FunctionProtoType>();
 +  QualType Frame = S.BuildObjC3AsyncTaskType(FrameType, Loc);
 +  if (Frame.isNull()) return true;
++  // A typed failure needs only its descriptor, never a result constructor or
++  // copy operation. Private record/enum identities come from the SDK hook.
++  if ((Logical->isRecordType() || Logical->isEnumeralType()) &&
++      Logical->getLinkage() != Linkage::External &&
++      instantiateCxxFrameStorageHook(S, Logical, Loc,
++                                    "__objc3_async_frame_result_type", false))
++    return true;
++  if (Type->getObjC3FunctionEffects().AsyncFrame) return false;
 +  LookupResult Hook(S, &S.Context.Idents.get("__objc3_async_from_frame"), Loc, Sema::LookupOrdinaryName);
 +  Hook.suppressDiagnostics();
 +  S.LookupQualifiedName(Hook, S.Context.getTranslationUnitDecl());
@@ -56915,10 +56925,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..24b0af1dc
+index 000000000..fb1a34685
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,592 @@
+@@ -0,0 +1,618 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -56927,6 +56937,7 @@ index 000000000..24b0af1dc
 +//
 +//===----------------------------------------------------------------------===//
 +
++#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
 +#include "clang/AST/VTableBuilder.h"
@@ -57510,6 +57521,31 @@ index 000000000..24b0af1dc
 +      EXPECT_EQ(Result->getResultAsAPSInt().getBitWidth(),Width);
 +      EXPECT_EQ(Result->getResultAsAPSInt().isUnsigned(),Unsigned);
 +    }
++}
++
++TEST(ObjC3ASTInfrastructure, SharedStorageGraphsCountQualifiedTypesOnce) {
++  for (const char *Language : {"objective-c", "objective-c++"}) {
++    std::string Code = "typedef void (^Work)(void); struct Plain0 {int value;};\n";
++    for (unsigned I=1; I!=13; ++I)
++      Code += "struct Plain"+std::to_string(I)+" {struct Plain"+
++          std::to_string(I-1)+" left, right;};\n";
++    Code += "struct Managed {struct Plain12 before; __objc3_optional(Work) work;};\n";
++    auto AST=tooling::buildASTFromCodeWithArgs(Code,{"-x",Language,
++        "-fblocks","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc"});
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    unsigned Checked=0;
++    for (Decl *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if (auto *Record=dyn_cast<RecordDecl>(D); Record && Record->isCompleteDefinition()) {
++        if (Record->getName()!="Plain12" && Record->getName()!="Managed") continue;
++        QualType Type=AST->getASTContext().getCanonicalTagType(Record);
++        const bool Managed=Record->getName()=="Managed";
++        EXPECT_EQ(containsObjC3CarrierManagedStorage(Type),Managed);
++        EXPECT_EQ(containsObjC3CarrierThrowingCopy(Type),Managed);
++        ++Checked;
++      }
++    EXPECT_EQ(Checked,2u);
++  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
