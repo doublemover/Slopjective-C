@@ -154,12 +154,18 @@ def check_factory_metadata(metadata):
             'NativeUnnamedTemplateProjections::provider_first','NativeUnnamedTemplateProjections::provider_read'}<=projections):
         raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeUnnamedTemplateProjections::First','NativeUnnamedTemplateProjections::Second',")
     incomplete={row['qualified_name'] for row in metadata['declarations']
-                if ';cxx-incomplete-template-declarations:v1;' in row.get('canonical_type_identity','')}
-    if ('objc3.cxx-incomplete-template-declarations.v1' not in metadata['required_semantics'] or
+                if ';cxx-incomplete-template-declarations:v2;' in row.get('canonical_type_identity','')}
+    if ('objc3.cxx-incomplete-template-declarations.v2' not in metadata['required_semantics'] or
             not {'NativeIncompleteTemplates::Box','NativeIncompleteTemplates::Enclosing',
                  'NativeIncompleteTemplates::Wrapper','NativeIncompleteTemplates::value',
-                 'NativeIncompleteTemplates::local'} <= incomplete):
+                 'NativeIncompleteTemplates::local','NativeIncompleteTemplates::Selection',
+                 'NativeIncompleteTemplates::selected','NativeIncompleteTemplates::selected_local'} <= incomplete):
         raise ValueError('qualify_native_async_packages: incomplete template declaration metadata is incomplete')
+    opaque_standard=[row for row in metadata['declarations']
+                     if ';cxx-incomplete-template-declarations:v2;' in row.get('canonical_type_identity','')
+                     and ';cxx-standard-library-specializations:v1;' in row.get('canonical_type_identity','')]
+    if len(opaque_standard) < 2:
+        raise ValueError('qualify_native_async_packages: opaque native standard specializations are missing')
     ordinary={'NativeUnnamedRecordProjections::First','NativeUnnamedRecordProjections::Second',
               'NativeUnnamedRecordProjections::Reader','NativeUnnamedRecordProjections::ReverseReader',
               'NativeUnnamedRecordProjections::NestedLeaf','NativeUnnamedRecordProjections::MemberExplicit',

@@ -5,6 +5,15 @@ int factory_package_checks() {
   {
     namespace Decl=NativeIncompleteTemplates;
     static_assert(!__is_complete_type(Decl::Default));
+    static_assert(!__is_complete_type(Decl::Hash));
+    static_assert(!__is_complete_type(Decl::BoxHash));
+    if(Decl::provider_hash_pointer(nullptr) || Decl::provider_box_hash_pointer(nullptr))return 92;
+    static_assert(Decl::Selection<int>::tag==1);
+    static_assert(!__is_complete_type(Decl::Selection<int*>));
+    static_assert(!__is_complete_type(Decl::Selection<char>));
+    if(Decl::provider_selected_pointer(nullptr) || Decl::provider_character_pointer(nullptr))return 90;
+    if(Decl::selected<int*>+Decl::selected_local<int*>!=42 ||
+       &Decl::provider_selected()!=&Decl::selected<int*> || &Decl::provider_selected_local()!=&Decl::selected_local<int*>)return 91;
     static_assert(!__is_complete_type(Decl::Enclosing::Opaque<int>));
     static_assert(!__is_complete_type(Decl::Wrapper<int>::Opaque<long>));
     if(Decl::provider_pointer(nullptr)!=nullptr || Decl::value<int>+Decl::local<int>!=42)return 87;

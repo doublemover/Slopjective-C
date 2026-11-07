@@ -1,5 +1,13 @@
 # Objective-C 3.0 on Linux
 
+The [frontend 2.120 specialization span](linux_incomplete_specializations.md)
+adds opaque class partial/explicit specializations, external/member variable
+partials and native standard-library customization declarations. Namespace,
+ordinary member and dependent member graphs preserve selection through replay
+and later completion. Admission cuts over to incomplete-declaration v2. Four new source-free profiles,
+nine adjacent groups, codec/isolation, forty decoder replays and four instrumented
+selection/completion witnesses pass.
+
 The [frontend 2.119 declaration span](linux_incomplete_template_declarations.md)
 publishes primary forward class templates, external variable templates and nested
 opaque heads, preserving defaults, constraints, ABI ownership and later

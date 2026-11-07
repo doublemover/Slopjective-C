@@ -198,9 +198,9 @@ inline constexpr const char *kNativeArrayLifetimeSemantic = "objc3.native-array-
 inline bool HasNativeArrayLifetimeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-array-lifetimes:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxIncompleteTemplateSemantic = "objc3.cxx-incomplete-template-declarations.v1";
+inline constexpr const char *kCxxIncompleteTemplateSemantic = "objc3.cxx-incomplete-template-declarations.v2";
 inline bool HasCxxIncompleteTemplateIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-incomplete-template-declarations:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-incomplete-template-declarations:v2;") != std::string::npos;
 }
 inline constexpr const char *kNativeSubobjectSemantic = "objc3.native-subobject-cleanup.v3";
 inline bool HasNativeSubobjectIdentity(const InterfaceDeclarationIdentity &d) {

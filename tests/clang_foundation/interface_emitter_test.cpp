@@ -3087,6 +3087,72 @@ void TestUnnamedTemplateProjections() {
   }
 }
 
+
+void TestOpaqueStandardLibrarySpecializations() {
+  for(const char *standard:{"c++20","c++23"}) {
+    std::vector<std::string> args={"-xc++",std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    auto emit=[&](const std::string &source,const char *file="opaque-standard.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      ast->getDiagnostics().getClient()->BeginSourceFile(ast->getLangOpts(),&ast->getPreprocessor());
+      auto EndDiagnostics=llvm::scope_exit([&]{ast->getDiagnostics().getClient()->EndSourceFile();});
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.opaque_standard","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.opaque_standard","test",{},{},{},{"NativeOpaqueStandard"},{},&ast->getPreprocessor());
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"OPAQUE STANDARD %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      return result;
+    };
+    const std::string source=R"(
+      #include <functional>
+      namespace NativeOpaqueStandard {
+        struct Key {int value;};
+        template<class T>struct Box {T value;};
+      }
+      namespace std {
+        template<>struct hash<NativeOpaqueStandard::Key>;
+        template<class T>struct hash<NativeOpaqueStandard::Box<T>>;
+      }
+      namespace NativeOpaqueStandard {
+        using Hash=std::hash<Key>;
+        using BoxHash=std::hash<Box<int>>;
+        Hash *provider_hash(Hash *);
+      }
+    )";
+    auto first=emit(source);assert(first.success);
+    auto replay=emit(first.source_bytes,"opaque-standard-replay.cpp");
+    assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto moved=emit("\n\n"+source,"moved-opaque-standard.cpp");
+    assert(moved.success && moved.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto capabilities=SupportedSemanticInterfaceCapabilities();
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,capabilities);assert(decoded);
+    unsigned opaque=0;
+    for(const auto &row:decoded->declarations)if(HasCxxIncompleteTemplateIdentity(row)) {
+      ++opaque;assert(row.kind=="ClassTemplateSpecialization" || row.kind=="ClassTemplatePartialSpecialization");
+    }
+    assert(opaque==2);
+    assert(emit(first.source_bytes+R"(
+      static_assert(!__is_complete_type(NativeOpaqueStandard::Hash));
+      static_assert(!__is_complete_type(NativeOpaqueStandard::BoxHash));
+    )","opaque-standard-consumer.cpp").success);
+    const auto completed=first.source_bytes+R"(
+      namespace std {
+        template<>struct hash<NativeOpaqueStandard::Key> {
+          size_t operator()(NativeOpaqueStandard::Key value)const noexcept {return value.value;}
+        };
+        template<class T>struct hash<NativeOpaqueStandard::Box<T>> {
+          size_t operator()(NativeOpaqueStandard::Box<T> value)const noexcept {return value.value;}
+        };
+      }
+      namespace NativeOpaqueStandard {
+        inline unsigned completed_hash(){return Hash{}({40})+BoxHash{}({2});}
+      }
+    )";
+    auto complete=emit(completed,"complete-standard.cpp");assert(complete.success);
+    auto complete_replay=emit(complete.source_bytes,"complete-standard-replay.cpp");
+    assert(complete_replay.success && complete_replay.identity.semantic_fingerprint==complete.identity.semantic_fingerprint);
+    auto final=DecodeSemanticInterfaceSidecar(complete.sidecar_json,complete.source_bytes,capabilities);assert(final);
+    for(const auto &row:final->declarations)assert(!HasCxxIncompleteTemplateIdentity(row));
+  }
+}
+
 void TestStandardLibrarySpecializations() {
   llvm::SmallString<256> temporary;
   assert(!llvm::sys::fs::createUniqueDirectory("objc3-standard-specializations",temporary));
@@ -7947,7 +8013,7 @@ void TestIncompleteTemplateDeclarations() {
     assert(!emit("namespace {struct Hidden{};}template<class T=Hidden>struct HiddenDefault;").success);
     assert(!emit("namespace {struct Hidden{};}template<class T=Hidden>extern T hidden_value;").success);
     assert(!emit("static constexpr int hidden(){return 42;}template<int N=hidden()>struct HiddenValue;").success);
-    assert(!emit("template<class T>struct Partial{};template<class T>struct Partial<T*>;").success);
+    assert(emit("template<class T>struct Partial{};template<class T>struct Partial<T*>;").success);
     const std::string completed=first.source_bytes+R"(
       namespace Incomplete {
         template<class T,int Bias> requires(sizeof(T)>0) struct Box {T payload;constexpr T get()const{return payload+Bias;}};
@@ -7968,6 +8034,101 @@ void TestIncompleteTemplateDeclarations() {
     assert(remaining==2);
     auto complete_replay=emit(complete.source_bytes,"completed-replay.cpp");
     assert(complete_replay.success && complete_replay.identity.semantic_fingerprint==complete.identity.semantic_fingerprint);
+  }
+}
+
+
+void TestIncompleteTemplateSpecializations() {
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="incomplete-specializations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      ast->getDiagnostics().getClient()->BeginSourceFile(ast->getLangOpts(),&ast->getPreprocessor());
+      auto EndDiagnostics=llvm::scope_exit([&]{ast->getDiagnostics().getClient()->EndSourceFile();});
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.incomplete_specializations","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.incomplete_specializations","test");
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"INCOMPLETE SPECIALIZATION %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      return result;
+    };
+    const std::string source=R"(
+      namespace Specializations {
+        template<class T>struct Family {static constexpr int tag=1;};
+        template<class T>struct Family<T*>;
+        template<>struct Family<char>;
+        template<class T>extern int value;
+        template<class T>extern int value<T*>;
+        template<class T>extern thread_local int local;
+        template<class T>extern thread_local int local<T*>;
+        template<class T>struct Outer {
+          template<class U>struct Inner {static constexpr int tag=1;};
+          template<class U>struct Inner<U*>;
+          template<class U>static int data;
+          template<class U>static int data<U*>;
+        };
+        struct Ordinary {
+          template<class T>struct Family {static constexpr int tag=1;};
+          template<class T>struct Family<T*>;
+          template<class T>static int data;
+          template<class T>static int data<T*>;
+        };
+        template<>struct Ordinary::Family<char>;
+        Family<int*> *pointer();
+        Family<char> *character();
+      }
+    )";
+    auto first=emit(source);assert(first.success);
+    auto replay=emit(first.source_bytes,"specialization-replay.cpp");
+    assert(replay.success && replay.source_bytes==first.source_bytes && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"specialization-relocated.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto capabilities=SupportedSemanticInterfaceCapabilities();
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,capabilities);assert(decoded);
+    bool primary=false,partial=false,explicit_class=false,variables=false;
+    for(const auto &row:decoded->declarations)if(HasCxxIncompleteTemplateIdentity(row)) {
+      primary|=row.kind=="ClassTemplate";
+      // Namespace specializations belong to the primary's semantic row.
+      partial|=row.canonical_type_identity.find(";cxx-class-partial-specializations:v1;")!=std::string::npos;
+      explicit_class|=row.canonical_type_identity.find(";cxx-class-specializations:v1;")!=std::string::npos;
+      variables|=row.kind=="VarTemplate";
+    }
+    assert(primary && partial && explicit_class && variables);
+    assert(emit(first.source_bytes+R"(
+      static_assert(!__is_complete_type(Specializations::Family<int*>));
+      static_assert(!__is_complete_type(Specializations::Family<char>));
+      static_assert(!__is_complete_type(Specializations::Outer<int>::Inner<long*>));
+      static_assert(!__is_complete_type(Specializations::Ordinary::Family<int*>));
+      static_assert(!__is_complete_type(Specializations::Ordinary::Family<char>));
+    )","opaque-specialization-consumer.cpp").success);
+    auto completed=first.source_bytes+R"(
+      namespace Specializations {
+        template<class T>struct Family<T*> {static constexpr int tag=2;};
+        template<>struct Family<char> {static constexpr int tag=3;};
+        template<class T>int value=10;
+        template<class T>int value<T*> = 40;
+        template<class T>thread_local int local=1;
+        template<class T>thread_local int local<T*> = 2;
+        template<class T>template<class U>struct Outer<T>::Inner<U*> {static constexpr int tag=4;};
+        template<class T>template<class U>int Outer<T>::data=10;
+        template<class T>template<class U>int Outer<T>::data<U*> = 42;
+        template<class T>struct Ordinary::Family<T*> {static constexpr int tag=5;};
+        template<>struct Ordinary::Family<char> {static constexpr int tag=6;};
+        template<class T>int Ordinary::data=10;
+        template<class T>int Ordinary::data<T*> = 42;
+      }
+      static_assert(Specializations::Family<int>::tag==1);
+      static_assert(Specializations::Family<int*>::tag==2);
+      static_assert(Specializations::Family<char>::tag==3);
+      static_assert(Specializations::Outer<int>::Inner<long*>::tag==4);
+      static_assert(Specializations::Ordinary::Family<int*>::tag==5);
+      static_assert(Specializations::Ordinary::Family<char>::tag==6);
+      inline int specialization_consumer(){return Specializations::value<int*>+Specializations::local<int*>+Specializations::Outer<int>::data<long*>;}
+    )";
+    auto complete=emit(completed,"completed-specializations.cpp");assert(complete.success);
+    auto complete_replay=emit(complete.source_bytes,"completed-specialization-replay.cpp");
+    assert(complete_replay.success && complete_replay.identity.semantic_fingerprint==complete.identity.semantic_fingerprint);
+    auto completion=DecodeSemanticInterfaceSidecar(complete.sidecar_json,complete.source_bytes,capabilities);assert(completion);
+    for(const auto &row:completion->declarations)assert(!HasCxxIncompleteTemplateIdentity(row));
+    assert(!emit("namespace{struct Hidden{};}template<class T>struct Public{};template<>struct Public<Hidden>;").success);
   }
 }
 
@@ -8117,8 +8278,8 @@ void TestPublicVariableTemplates() {
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
     assert(emit("template<class T> extern T value;").success);
-    for (const auto *gated:{"template<class T> inline int value=40;template<> int value<long> __attribute__((used))=42;",
-                           "template<class T> inline int value=40;template<class T> extern int value<T*>;"}) {
+    assert(emit("template<class T> inline int value=40;template<class T> extern int value<T*>;").success);
+    for (const auto *gated:{"template<class T> inline int value=40;template<> int value<long> __attribute__((used))=42;"}) {
       std::string fixed=gated;
       for (std::size_t pos=0;(pos=fixed.find(">=",pos))!=std::string::npos;pos+=3) fixed.replace(pos,2,"> =");
       assert(!emit(fixed).success);
@@ -9192,6 +9353,7 @@ int main(int argc,char **argv) {
   TestPublicAliasTemplates();
   TestFunctionTemplateDeclarations();
   TestPublicVariableTemplates();
+  TestIncompleteTemplateSpecializations();
   TestIncompleteTemplateDeclarations();
   TestPublicClassTemplates();
   TestClassMemberTemplates();

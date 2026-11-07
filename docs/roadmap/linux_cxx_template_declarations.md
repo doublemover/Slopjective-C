@@ -1,5 +1,9 @@
 # Function template declarations and defaults
 
+The [frontend 2.120 specialization span](linux_incomplete_specializations.md)
+adds forward partial/explicit/member declarations and opaque native
+standard-library customizations, with v2 admission and later completion.
+
 The [frontend 2.119 span](linux_incomplete_template_declarations.md) now adds
 primary forward class templates, external variable templates, nested opaque
 heads and later completion, with dedicated admission and a shared capability

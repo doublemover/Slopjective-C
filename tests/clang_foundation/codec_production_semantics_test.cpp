@@ -17,8 +17,12 @@ int main() {
     const std::string source = cxx ? R"(
       namespace Catalog {
         template<class T=int>struct Opaque;
+        template<class T>struct Opaque<T*>;
+        template<>struct Opaque<char>;
         template<class T=int>extern T value;
+        template<class T>extern T *value<T*>;
         template<class T=int>extern thread_local T local;
+        template<class T>extern thread_local T *local<T*>;
         Opaque<> *pointer();
       }
     )" : "inline int catalog_answer(void){return 42;}\n";

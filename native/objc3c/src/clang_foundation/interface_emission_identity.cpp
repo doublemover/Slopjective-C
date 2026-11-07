@@ -1886,7 +1886,8 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         PublishesVariableInitializer(variable)) {
       identity += ";cxx-definitions:v1;inline=" + std::to_string(variable->isInline()) +
           ";constexpr=" + std::to_string(variable->isConstexpr()) + ";initializer=" +
-          (variable->hasInit() ? DeclarationExpressionContract(variable->getInit(), context) : "none") + ";";
+          (variable->hasInit() ? DeclarationExpressionContract(variable->getInit(), context) :
+           variable->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly ? "declaration" : "none") + ";";
     }
     const auto lifetime = value->getType().getObjCLifetime();
     if (lifetime != clang::Qualifiers::OCL_None)
@@ -2467,7 +2468,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";automatic-owner-unwind:v1;";
   if (HasDeclarationNativeArrayLifetime(representative))
     identity.canonical_type_identity += ";native-array-lifetimes:v1;";
-  if (llvm::isa<clang::ClassTemplateDecl,clang::VarTemplateDecl,clang::CXXRecordDecl>(representative)) {
+  if (llvm::isa<clang::ClassTemplateDecl,clang::VarTemplateDecl,clang::CXXRecordDecl,
+                clang::VarTemplateSpecializationDecl>(representative)) {
     struct IncompleteTemplates:clang::DynamicRecursiveASTVisitor {
       bool found=false;
       bool TraverseStmt(clang::Stmt *) override {return true;}
@@ -2475,15 +2477,27 @@ bool ReadInterfaceDeclarationIdentity(
         return !declaration || declaration->isImplicit() || clang::DynamicRecursiveASTVisitor::TraverseDecl(declaration);
       }
       bool VisitClassTemplateDecl(clang::ClassTemplateDecl *pattern) override {
-        found |= !pattern->getTemplatedDecl()->getDefinition();return true;
+        found |= !pattern->getTemplatedDecl()->getDefinition();
+        for (const auto *specialization:PublishedClassSpecializations(pattern))found |= !specialization->getDefinition();
+        return true;
       }
       bool VisitVarTemplateDecl(clang::VarTemplateDecl *pattern) override {
         const auto *variable=pattern->getTemplatedDecl();
-        found |= variable->getStorageClass()==clang::SC_Extern && !variable->getDefinition();return true;
+        found |= !variable->getDefinition() && variable->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly;
+        for (const auto *partial:PublishedVariablePartials(pattern))found |= !partial->getDefinition();
+        return true;
+      }
+      bool VisitCXXRecordDecl(clang::CXXRecordDecl *record) override {
+        found |= llvm::isa<clang::ClassTemplateSpecializationDecl>(record) && !record->getDefinition();return true;
+      }
+      bool VisitVarDecl(clang::VarDecl *variable) override {
+        found |= llvm::isa<clang::VarTemplateSpecializationDecl>(variable) &&
+                 !variable->getDefinition() && variable->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly;
+        return true;
       }
     } visitor;
     visitor.TraverseDecl(representative);
-    if (visitor.found) identity.canonical_type_identity += ";cxx-incomplete-template-declarations:v1;";
+    if (visitor.found) identity.canonical_type_identity += ";cxx-incomplete-template-declarations:v2;";
   }
   if (HasDeclarationNativeSubobject(representative))
     identity.canonical_type_identity += ";native-subobject-cleanup:v3;";

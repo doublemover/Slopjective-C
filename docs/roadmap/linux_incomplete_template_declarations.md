@@ -1,5 +1,10 @@
 # Incomplete C++ template declarations and shared admission
 
+The [frontend 2.120 span](linux_incomplete_specializations.md) now includes
+opaque partial, explicit and member specializations and native standard-library
+customizations. Current admission requires incomplete-declaration v2. The v1
+capability and narrower boundaries below describe the original 2.119 span.
+
 Frontend source 2.119 publishes primary class-template declarations and external
 variable-template declarations in C++20/23. Class heads retain parameter kinds,
 defaults, constraints and nominal ABI ownership without claiming a layout or

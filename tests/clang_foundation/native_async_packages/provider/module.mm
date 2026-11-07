@@ -2019,6 +2019,14 @@ int NativeDeclarationAttributes::enabled(int value) __attribute__((enable_if(val
 namespace NativeIncompleteTemplates {
 template<> int value<int> = 40;
 template<> thread_local int local<int> = 2;
+template<> int selected<int*> = 40;
+template<> thread_local int selected_local<int*> = 2;
+Selection<int*> *provider_selected_pointer(Selection<int*> *pointer){return pointer;}
+Selection<char> *provider_character_pointer(Selection<char> *pointer){return pointer;}
+int &provider_selected(){return selected<int*>;}
+int &provider_selected_local(){return selected_local<int*>;}
+Hash *provider_hash_pointer(Hash *pointer){return pointer;}
+BoxHash *provider_box_hash_pointer(BoxHash *pointer){return pointer;}
 Default *provider_pointer(Default *pointer){return pointer;}
 int &provider_value(){return value<int>;}
 int &provider_local(){return local<int>;}

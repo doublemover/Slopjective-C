@@ -1298,7 +1298,8 @@ bool IsBoundedVariablePartial(const clang::VarTemplatePartialSpecializationDecl 
       (partial->isStaticDataMember() && !IsConcreteMemberVariableSpecialization(partial) && !IsDependentMemberPartial(partial) && !IsClosedParentPattern(partial)) ||
       (partial->getStorageClass()==clang::SC_Static && !IsConcreteMemberVariableSpecialization(partial) && !IsDependentMemberPartial(partial) && !IsClosedParentPattern(partial)) ||
       partial->getStorageClass()==clang::SC_PrivateExtern ||
-      partial->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly) return false;
+      (partial->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly &&
+       partial->getStorageClass()!=clang::SC_Extern && !partial->isStaticDataMember())) return false;
   for (const auto *attribute:partial->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if(tag->tags_size()!=1 || ReadNativeSymbolName(partial)!=*tag->tags_begin()) return false;
@@ -1324,11 +1325,17 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
   if (pattern && !IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   const auto *body=record->getDefinition();
   if (!body) {
-    // A primary declaration publishes a complete template head and nominal
-    // identity without claiming layout, members or a usable definition.
-    if (!pattern || !record->getIdentifier() || record->isInvalidDecl() ||
-        !record->getDescribedClassTemplate() ||
-        record->getDescribedClassTemplate()->getCanonicalDecl()!=pattern->getCanonicalDecl()) return false;
+    // A declaration binds its primary/partial/specialization head and nominal
+    // owner without inventing layout or members for the selected type.
+    if (!pattern || !record->getIdentifier() || record->isInvalidDecl()) return false;
+    if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record)) {
+      if (specialization->getSpecializedTemplate()->getCanonicalDecl()!=pattern->getCanonicalDecl()) return false;
+      if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(specialization))
+        if (!IsBoundedNestedTemplateParameters(partial->getTemplateParameters())) return false;
+      std::string key;
+      if (!ClassSpecializationArgumentKey(specialization,record->getASTContext(),key)) return false;
+    } else if (!record->getDescribedClassTemplate() ||
+               record->getDescribedClassTemplate()->getCanonicalDecl()!=pattern->getCanonicalDecl()) return false;
     for (const auto *attribute:record->attrs())
       if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
         if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
@@ -1493,10 +1500,14 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   }
   const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
   if (IsPublishedStandardSpecialization(record)) {
-    const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(record);
-    if (record->isCompleteDefinition() && PublishedStandardSpecializationOwner(record) &&
-        IsBoundedTemplateRecord(record) && (!partial || IsBoundedNestedTemplateParameters(partial->getTemplateParameters()))) return true;
-    AddDiagnostic(result,"O3IFC101","native standard specialization requires a complete bounded definition and named module owner",record->getQualifiedNameAsString());return false;
+    const auto *published=llvm::cast<clang::ClassTemplateSpecializationDecl>(record);
+    if (const auto *definition=published->getDefinition())
+      published=llvm::cast<clang::ClassTemplateSpecializationDecl>(definition);
+    const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(published);
+    if (PublishedStandardSpecializationOwner(published) &&
+        IsBoundedTemplateRecord(published,published->isCompleteDefinition()?nullptr:published->getSpecializedTemplate()) &&
+        (!partial || IsBoundedNestedTemplateParameters(partial->getTemplateParameters()))) return true;
+    AddDiagnostic(result,"O3IFC101","native standard specialization requires a bounded declaration and named module owner",record->getQualifiedNameAsString());return false;
   }
   bool supported = IsBoundedClosedParentMembers(declaration) && IsBoundedClosedParentPatterns(declaration);
   if (record && record->isCompleteDefinition()) {
