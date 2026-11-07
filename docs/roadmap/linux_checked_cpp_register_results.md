@@ -30,11 +30,11 @@ Native typed Blocks, source-free template replay and AST controls defend this
 boundary.
 
 All 98 new positive compiler commands and the repaired prior boundary controls
-pass. The earlier full 529-case run had three stale expected rejections; all three
-now verify the admitted behavior. All 54 AST controls and the new source-free
-profiles pass. Twenty-four adjacent frontend groups and 320 exact decoder replays
-passed before the template repair; updated frontend/compiler consolidation is
-running. Four selected ASan/UBSan configurations / fourteen commands pass with the
+pass. The complete 530-case compiler suite passes all 527 executable cases (three
+unsupported). Three earlier stale expected rejections now verify the admitted
+behavior. All 54 AST controls, twenty-four updated frontend groups and the new
+source-free profiles pass. The record span also retains its 320 exact decoder
+replays; expanded production replay follows the next runtime-call implementation. Four selected ASan/UBSan configurations / fourteen commands pass with the
 complete native record and dependent Block witness, including optimized MRC PCH
 without elision and both ownership modes with C++-only exceptions. Scalar,
 integer-pair, mixed floating, large, empty, union and owning register records
