@@ -1,5 +1,5 @@
 diff --git a/clang/lib/Analysis/CFG.cpp b/clang/lib/Analysis/CFG.cpp
-index bb8e98a89..065cc06a2 100644
+index bb8e98a89..544559033 100644
 --- a/clang/lib/Analysis/CFG.cpp
 +++ b/clang/lib/Analysis/CFG.cpp
 @@ -21,6 +21,7 @@
@@ -1969,7 +1969,22 @@ index bb8e98a89..065cc06a2 100644
      case Stmt::CXXFunctionalCastExprClass:
        return VisitCXXFunctionalCastExpr(cast<CXXFunctionalCastExpr>(S), asc);
  
-@@ -2840,8 +4360,8 @@ CFGBlock *CFGBuilder::VisitBreakStmt(BreakStmt *B) {
+@@ -2512,8 +4032,12 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+     case Stmt::ObjCMessageExprClass:
+       return VisitObjCMessageExpr(cast<ObjCMessageExpr>(S), asc);
+ 
+-    case Stmt::OpaqueValueExprClass:
+-      return Block;
++    case Stmt::OpaqueValueExprClass: {
++      auto *Opaque = cast<OpaqueValueExpr>(S);
++      // Unique values have no eager binding. Match CodeGen by evaluating their
++      // source at the actual use, including property receiver side effects.
++      return Opaque->isUnique() ? Visit(Opaque->getSourceExpr(), asc) : Block;
++    }
+ 
+     case Stmt::PseudoObjectExprClass:
+       return VisitPseudoObjectExpr(cast<PseudoObjectExpr>(S));
+@@ -2840,8 +4364,8 @@ CFGBlock *CFGBuilder::VisitBreakStmt(BreakStmt *B) {
    // If there is no target for the break, then we are looking at an incomplete
    // AST.  This means that the CFG cannot be constructed.
    if (BreakJumpTarget.block) {
@@ -1979,7 +1994,7 @@ index bb8e98a89..065cc06a2 100644
    } else
      badCFG = true;
  
-@@ -2874,6 +4394,14 @@ static bool isBuiltinAssumeWithSideEffects(const ASTContext &Ctx,
+@@ -2874,6 +4398,14 @@ static bool isBuiltinAssumeWithSideEffects(const ASTContext &Ctx,
  }
  
  CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
@@ -1994,7 +2009,7 @@ index bb8e98a89..065cc06a2 100644
    // Compute the callee type.
    QualType calleeType = C->getCallee()->getType();
    if (calleeType == Context->BoundMemberTy) {
-@@ -2890,7 +4418,8 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2890,7 +4422,8 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
    bool AddEHEdge = false;
  
    // Languages without exceptions are assumed to not throw.
@@ -2004,7 +2019,7 @@ index bb8e98a89..065cc06a2 100644
      if (BuildOpts.AddEHEdges)
        AddEHEdge = true;
    }
-@@ -2921,6 +4450,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2921,6 +4454,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
    if (!CanThrow(C->getCallee(), *Context))
      AddEHEdge = false;
  
@@ -2014,7 +2029,7 @@ index bb8e98a89..065cc06a2 100644
    if (OmitArguments) {
      assert(!NoReturn && "noreturn calls with unevaluated args not implemented");
      assert(!AddEHEdge && "EH calls with unevaluated args not implemented");
-@@ -2951,7 +4483,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2951,7 +4487,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
  
    if (AddEHEdge) {
      // Add exceptional edges.
@@ -2025,7 +2040,7 @@ index bb8e98a89..065cc06a2 100644
        addSuccessor(Block, TryTerminatedBlock);
      else
        addSuccessor(Block, &cfg->getExit());
-@@ -3120,7 +4654,8 @@ CFGBlock *CFGBuilder::VisitDeclStmt(DeclStmt *DS) {
+@@ -3120,7 +4658,8 @@ CFGBlock *CFGBuilder::VisitDeclStmt(DeclStmt *DS) {
  
  /// VisitDeclSubExpr - Utility method to add block-level expressions for
  /// DeclStmts and initializers in them.
@@ -2035,7 +2050,7 @@ index bb8e98a89..065cc06a2 100644
    assert(DS->isSingleDecl() && "Can handle single declarations only.");
  
    if (const auto *TND = dyn_cast<TypedefNameDecl>(DS->getSingleDecl())) {
-@@ -3149,6 +4684,17 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3149,6 +4688,17 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
      return Block;
    }
  
@@ -2053,7 +2068,7 @@ index bb8e98a89..065cc06a2 100644
    bool HasTemporaries = false;
  
    // Guard static initializers under a branch.
-@@ -3172,7 +4718,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3172,7 +4722,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    if (Init) {
      HasTemporaries = isa<ExprWithCleanups>(Init);
  
@@ -2062,7 +2077,7 @@ index bb8e98a89..065cc06a2 100644
          (BuildOpts.AddTemporaryDtors || BuildOpts.AddLifetime)) {
        // Generate destructors for temporaries in initialization expression.
        TempDtorContext Context;
-@@ -3214,6 +4760,18 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3214,6 +4764,18 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    // statement-expression.
    CFGBlock *LastBlock = Block;
  
@@ -2081,7 +2096,7 @@ index bb8e98a89..065cc06a2 100644
    if (Init) {
      if (HasTemporaries) {
        // For expression with temporaries go directly to subexpression to omit
-@@ -3221,8 +4779,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3221,8 +4783,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
        ExprWithCleanups *EC = cast<ExprWithCleanups>(Init);
        if (CFGBlock *newBlock = Visit(EC->getSubExpr()))
          LastBlock = newBlock;
@@ -2091,7 +2106,7 @@ index bb8e98a89..065cc06a2 100644
        if (CFGBlock *newBlock = Visit(Init))
          LastBlock = newBlock;
      }
-@@ -3231,17 +4788,14 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3231,17 +4792,14 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    // If the type of VD is a VLA, then we must process its size expressions.
    // FIXME: This does not find the VLA if it is embedded in other types,
    // like here: `int (*p_vla)[x];`
@@ -2112,7 +2127,7 @@ index bb8e98a89..065cc06a2 100644
  
    CFGBlock *B = LastBlock;
    if (blockAfterStaticInit) {
-@@ -3407,6 +4961,8 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
+@@ -3407,6 +4965,8 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -2121,7 +2136,7 @@ index bb8e98a89..065cc06a2 100644
    addAutomaticObjHandling(ScopePos, LocalScope::const_iterator(), S);
  
    if (auto *R = dyn_cast<ReturnStmt>(S))
-@@ -3414,13 +4970,10 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
+@@ -3414,13 +4974,10 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
          ConstructionContextLayer::create(cfg->getBumpVectorContext(), R),
          R->getRetValue());
  
@@ -2139,7 +2154,7 @@ index bb8e98a89..065cc06a2 100644
  
    // Visit children
    if (ReturnStmt *RS = dyn_cast<ReturnStmt>(S)) {
-@@ -3561,6 +5114,7 @@ CFGBlock *CFGBuilder::VisitSEHTryStmt(SEHTryStmt *Terminator) {
+@@ -3561,6 +5118,7 @@ CFGBlock *CFGBuilder::VisitSEHTryStmt(SEHTryStmt *Terminator) {
  
    // Save the current "__try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -2147,7 +2162,7 @@ index bb8e98a89..065cc06a2 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    // Save the current value for the __leave target.
-@@ -3604,13 +5158,23 @@ CFGBlock *CFGBuilder::VisitLabelStmt(LabelStmt *L) {
+@@ -3604,13 +5162,23 @@ CFGBlock *CFGBuilder::VisitLabelStmt(LabelStmt *L) {
  
  CFGBlock *CFGBuilder::VisitBlockExpr(BlockExpr *E, AddStmtChoice asc) {
    CFGBlock *LastBlock = VisitNoRecurse(E, asc);
@@ -2177,7 +2192,19 @@ index bb8e98a89..065cc06a2 100644
    return LastBlock;
  }
  
-@@ -4229,6 +5793,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
+@@ -4035,8 +5603,10 @@ CFGBlock *CFGBuilder::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
+ 
+     // If the semantic is an opaque value, we're being asked to bind
+     // it to its source expression.
+-    if (OpaqueValueExpr *OVE = dyn_cast<OpaqueValueExpr>(Semantic))
++    if (OpaqueValueExpr *OVE = dyn_cast<OpaqueValueExpr>(Semantic)) {
++      if (OVE->isUnique()) continue;
+       Semantic = OVE->getSourceExpr();
++    }
+ 
+     if (CFGBlock *B = Visit(Semantic))
+       lastBlock = B;
+@@ -4229,6 +5799,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
    return CatchBlock;
  }
  
@@ -2308,7 +2335,7 @@ index bb8e98a89..065cc06a2 100644
  CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
    // If we were in the middle of a block we stop processing that block.
    if (badCFG)
-@@ -4237,7 +5925,9 @@ CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
+@@ -4237,7 +5931,9 @@ CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -2319,7 +2346,7 @@ index bb8e98a89..065cc06a2 100644
      // The current try statement is the only successor.
      addSuccessor(Block, TryTerminatedBlock);
    else
-@@ -4290,7 +5980,10 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
+@@ -4290,7 +5986,10 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
  
    // FIXME: This needs updating when @finally support is added.
    if (!HasCatchAll) {
@@ -2331,7 +2358,7 @@ index bb8e98a89..065cc06a2 100644
        addSuccessor(NewTryTerminatedBlock, PrevTryTerminatedBlock);
      else
        addSuccessor(NewTryTerminatedBlock, &cfg->getExit());
-@@ -4301,6 +5994,7 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
+@@ -4301,6 +6000,7 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
  
    // Save the current "try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -2339,7 +2366,7 @@ index bb8e98a89..065cc06a2 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    assert(Terminator->getTryBody() && "try must contain a non-NULL body");
-@@ -4312,7 +6006,13 @@ CFGBlock *CFGBuilder::VisitObjCMessageExpr(ObjCMessageExpr *ME,
+@@ -4312,7 +6012,13 @@ CFGBlock *CFGBuilder::VisitObjCMessageExpr(ObjCMessageExpr *ME,
                                             AddStmtChoice asc) {
    findConstructionContextsForArguments(ME);
  
@@ -2354,7 +2381,7 @@ index bb8e98a89..065cc06a2 100644
    appendObjCMessage(Block, ME);
  
    return VisitChildren(ME);
-@@ -4326,7 +6026,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
+@@ -4326,7 +6032,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -2365,7 +2392,7 @@ index bb8e98a89..065cc06a2 100644
      // The current try statement is the only successor.
      addSuccessor(Block, TryTerminatedBlock);
    else
-@@ -4339,8 +6041,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
+@@ -4339,8 +6047,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
  }
  
  CFGBlock *CFGBuilder::VisitCXXTypeidExpr(CXXTypeidExpr *S, AddStmtChoice asc) {
@@ -2377,7 +2404,7 @@ index bb8e98a89..065cc06a2 100644
      appendStmt(Block, S);
    }
  
-@@ -4474,8 +6177,8 @@ CFGBlock *CFGBuilder::VisitContinueStmt(ContinueStmt *C) {
+@@ -4474,8 +6183,8 @@ CFGBlock *CFGBuilder::VisitContinueStmt(ContinueStmt *C) {
    // If there is no target for the continue, then we are looking at an
    // incomplete AST.  This means the CFG cannot be constructed.
    if (ContinueJumpTarget.block) {
@@ -2387,7 +2414,7 @@ index bb8e98a89..065cc06a2 100644
    } else
      badCFG = true;
  
-@@ -4793,7 +6496,10 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
+@@ -4793,7 +6502,10 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
      addSuccessor(NewTryTerminatedBlock, CatchBlock);
    }
    if (!HasCatchAll) {
@@ -2399,7 +2426,7 @@ index bb8e98a89..065cc06a2 100644
        addSuccessor(NewTryTerminatedBlock, PrevTryTerminatedBlock);
      else
        addSuccessor(NewTryTerminatedBlock, &cfg->getExit());
-@@ -4804,6 +6510,7 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
+@@ -4804,6 +6516,7 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
  
    // Save the current "try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -2407,7 +2434,7 @@ index bb8e98a89..065cc06a2 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    assert(Terminator->getTryBlock() && "try must contain a non-NULL body");
-@@ -4990,6 +6697,15 @@ CFGBlock *CFGBuilder::VisitCXXForRangeStmt(CXXForRangeStmt *S) {
+@@ -4990,6 +6703,15 @@ CFGBlock *CFGBuilder::VisitCXXForRangeStmt(CXXForRangeStmt *S) {
  CFGBlock *CFGBuilder::VisitExprWithCleanups(ExprWithCleanups *E,
                                              AddStmtChoice asc,
                                              bool ExternallyDestructed) {
@@ -2423,7 +2450,7 @@ index bb8e98a89..065cc06a2 100644
    if (BuildOpts.AddTemporaryDtors || BuildOpts.AddLifetime) {
      // If adding implicit destructors visit the full expression for adding
      // destructors of temporaries.
-@@ -5045,8 +6761,12 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
+@@ -5045,8 +6767,12 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
    if (NE->getInitializer())
      Block = Visit(NE->getInitializer());
  
@@ -2437,7 +2464,7 @@ index bb8e98a89..065cc06a2 100644
  
    if (NE->isArray() && *NE->getArraySize())
      Block = Visit(*NE->getArraySize());
-@@ -5060,21 +6780,43 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
+@@ -5060,21 +6786,43 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
  
  CFGBlock *CFGBuilder::VisitCXXDeleteExpr(CXXDeleteExpr *DE,
                                           AddStmtChoice asc) {
@@ -2483,7 +2510,7 @@ index bb8e98a89..065cc06a2 100644
  CFGBlock *CFGBuilder::VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr *E,
                                                   AddStmtChoice asc) {
    if (asc.alwaysAdd(*this, E)) {
-@@ -5099,6 +6841,8 @@ CFGBlock *CFGBuilder::VisitCXXTemporaryObjectExpr(CXXTemporaryObjectExpr *E,
+@@ -5099,6 +6847,8 @@ CFGBlock *CFGBuilder::VisitCXXTemporaryObjectExpr(CXXTemporaryObjectExpr *E,
  
  CFGBlock *CFGBuilder::VisitImplicitCastExpr(ImplicitCastExpr *E,
                                              AddStmtChoice asc) {
@@ -2492,7 +2519,7 @@ index bb8e98a89..065cc06a2 100644
    if (asc.alwaysAdd(*this, E)) {
      autoCreateBlock();
      appendStmt(Block, E);
-@@ -5143,6 +6887,13 @@ tryAgain:
+@@ -5143,6 +6893,13 @@ tryAgain:
      return nullptr;
    }
    switch (E->getStmtClass()) {
@@ -2506,7 +2533,7 @@ index bb8e98a89..065cc06a2 100644
      default:
        return VisitChildrenForTemporaries(E, false, Context);
  
-@@ -5328,7 +7079,12 @@ CFGBlock *CFGBuilder::VisitCXXBindTemporaryExprForTemporaryDtors(
+@@ -5328,7 +7085,12 @@ CFGBlock *CFGBuilder::VisitCXXBindTemporaryExprForTemporaryDtors(
  
      const CXXDestructorDecl *Dtor = E->getTemporary()->getDestructor();
  
@@ -2520,7 +2547,7 @@ index bb8e98a89..065cc06a2 100644
        // If the destructor is marked as a no-return destructor, we need to
        // create a new block for the destructor which does not have as a
        // successor anything built thus far. Control won't flow out of this
-@@ -5521,6 +7277,12 @@ CFGImplicitDtor::getDestructorDecl(ASTContext &astContext) const {
+@@ -5521,6 +7283,12 @@ CFGImplicitDtor::getDestructorDecl(ASTContext &astContext) const {
      case CFGElement::ScopeEnd:
      case CFGElement::FullExprCleanup:
      case CFGElement::CleanupFunction:
@@ -2533,7 +2560,7 @@ index bb8e98a89..065cc06a2 100644
        llvm_unreachable("getDestructorDecl should only be used with "
                         "ImplicitDtors");
      case CFGElement::AutomaticObjectDtor: {
-@@ -5806,6 +7568,8 @@ public:
+@@ -5806,6 +7574,8 @@ public:
      Terminator->getCond()->printPretty(OS, Helper, Policy);
    }
  
@@ -2542,7 +2569,7 @@ index bb8e98a89..065cc06a2 100644
    void VisitCXXTryStmt(CXXTryStmt *) { OS << "try ..."; }
  
    void VisitObjCAtTryStmt(ObjCAtTryStmt *) { OS << "@try ..."; }
-@@ -5856,6 +7620,13 @@ public:
+@@ -5856,6 +7626,13 @@ public:
      E->printPretty(OS, Helper, Policy);
    }
  
@@ -2556,7 +2583,7 @@ index bb8e98a89..065cc06a2 100644
  public:
    void print(CFGTerminator T) {
      switch (T.getKind()) {
-@@ -5866,6 +7637,13 @@ public:
+@@ -5866,6 +7643,13 @@ public:
        OS << "(Temp Dtor) ";
        Visit(T.getStmt());
        break;
@@ -2570,7 +2597,7 @@ index bb8e98a89..065cc06a2 100644
      case CFGTerminator::VirtualBaseBranch:
        OS << "(See if most derived ctor has already initialized vbases)";
        break;
-@@ -6074,6 +7852,36 @@ static void print_elem(raw_ostream &OS, StmtPrinterHelper &Helper,
+@@ -6074,6 +7858,36 @@ static void print_elem(raw_ostream &OS, StmtPrinterHelper &Helper,
      break;
    }
  
@@ -2607,7 +2634,7 @@ index bb8e98a89..065cc06a2 100644
    case CFGElement::Kind::CleanupFunction:
      OS << "CleanupFunction ("
         << E.castAs<CFGCleanupFunction>().getFunctionDecl()->getName() << ")";
-@@ -6230,6 +8038,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
+@@ -6230,6 +8044,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
        else
          OS << "...";
        OS << ")";
@@ -2621,7 +2648,7 @@ index bb8e98a89..065cc06a2 100644
      } else if (SEHExceptStmt *ES = dyn_cast<SEHExceptStmt>(Label)) {
        OS << "__except (";
        ES->getFilterExpr()->printPretty(OS, &Helper,
-@@ -6523,6 +8338,14 @@ const Stmt *CFGBlock::getTerminatorCondition(bool StripParens) const {
+@@ -6523,6 +8344,14 @@ const Stmt *CFGBlock::getTerminatorCondition(bool StripParens) const {
      return nullptr;
  
    const Expr *E = nullptr;
@@ -4974,10 +5001,10 @@ index e84e05e8e..e20dc81a1 100644
        // If a parameter is pseudo-strong then we can omit the implicit retain.
        if (D.isARCPseudoStrong()) {
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..afc5af401 100644
+index 6a0d127fb..bda027e8a 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
-@@ -14,6 +14,13 @@
+@@ -14,6 +14,14 @@
  #include "CGCUDARuntime.h"
  #include "CGCXXABI.h"
  #include "CGCall.h"
@@ -4985,13 +5012,14 @@ index 6a0d127fb..afc5af401 100644
 +#include "CGObjC3KeyPath.h"
 +#include "CGObjC3BlockCaptures.h"
 +#include "CGObjC3ManagedStorage.h"
++#include "clang/AST/ObjC3TypeContracts.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3TypedErrors.h"
 +#include "CGObjC3ABIBoundaries.h"
  #include "CGCleanup.h"
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
-@@ -32,6 +39,7 @@
+@@ -32,6 +40,7 @@
  #include "clang/AST/Expr.h"
  #include "clang/AST/InferAlloc.h"
  #include "clang/AST/MatrixUtils.h"
@@ -4999,7 +5027,7 @@ index 6a0d127fb..afc5af401 100644
  #include "clang/AST/NSAPI.h"
  #include "clang/AST/ParentMapContext.h"
  #include "clang/AST/StmtVisitor.h"
-@@ -1749,6 +1757,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
+@@ -1749,6 +1758,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
  
  LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
                                           KnownNonNull_t IsKnownNonNull) {
@@ -5008,7 +5036,7 @@ index 6a0d127fb..afc5af401 100644
    ApplyDebugLocation DL(*this, E);
    switch (E->getStmtClass()) {
    default: return EmitUnsupportedLValue(E, "l-value expression");
-@@ -1815,6 +1825,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
+@@ -1815,6 +1826,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
  
    case Expr::ExprWithCleanupsClass: {
      const auto *cleanups = cast<ExprWithCleanups>(E);
@@ -5016,7 +5044,7 @@ index 6a0d127fb..afc5af401 100644
      RunCleanupsScope Scope(*this);
      LValue LV = EmitLValue(cleanups->getSubExpr(), IsKnownNonNull);
      if (LV.isSimple()) {
-@@ -4000,8 +4011,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
+@@ -4000,8 +4012,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
                                     getTarget().isBigEndian()
                                         ? llvm::endianness::big
                                         : llvm::endianness::little);
@@ -5027,7 +5055,7 @@ index 6a0d127fb..afc5af401 100644
    }
  
    llvm::Constant *Components[] = {
-@@ -5019,6 +5030,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
+@@ -5019,6 +5031,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
      if (SanOpts.has(SanitizerKind::ArrayBounds))
        EmitBoundsCheck(E, E->getBase(), Idx, IdxTy, Accessed);
  
@@ -5036,7 +5064,7 @@ index 6a0d127fb..afc5af401 100644
      // Extend or truncate the index type to 32 or 64-bits.
      if (Promote && Idx->getType() != IntPtrTy)
        Idx = Builder.CreateIntCast(Idx, IntPtrTy, IdxSigned, "idxprom");
-@@ -6475,10 +6488,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -6475,10 +6489,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
@@ -5132,7 +5160,7 @@ index 6a0d127fb..afc5af401 100644
  
    llvm::scope_exit AddCoroElideSafeOnExit([&] {
      if (E->isCoroElideSafe()) {
-@@ -6702,6 +6799,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
+@@ -6702,6 +6800,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
      return EmitPointerToDataMemberBinaryExpr(E);
  
    assert(E->getOpcode() == BO_Assign && "unexpected binary l-value");
@@ -5141,7 +5169,7 @@ index 6a0d127fb..afc5af401 100644
  
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
-@@ -7314,9 +7413,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7314,9 +7414,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
                                             bool forLValue,
                                             AggValueSlot slot) {
    SmallVector<CodeGenFunction::OpaqueValueMappingData, 4> opaques;
@@ -5166,7 +5194,7 @@ index 6a0d127fb..afc5af401 100644
    LValueOrRValue result;
  
    for (PseudoObjectExpr::const_semantics_iterator
-@@ -7347,7 +7461,32 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7347,7 +7462,38 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
@@ -5183,16 +5211,22 @@ index 6a0d127fb..afc5af401 100644
 +        else if ((IsKeyPath || IsIsolation) && ov->getType()->isObjCRetainableType())
 +          opaqueData = OVMA::bind(CGF, ov, RValue::get(
 +              emitObjC3RetainableOperandSnapshot(CGF, ov->getSourceExpr())));
-+        else if (IsKeyPath && ov->getType()->isRecordType() &&
++        else if ((IsKeyPath || IsIsolation) && ov->getType()->isRecordType() &&
 +                 (!ov->getType()->getAsCXXRecordDecl() ||
 +                  ov->getType()->getAsCXXRecordDecl()->isTriviallyCopyable())) {
-+          // Aggregate OVEs normally alias their source storage. Key-path
-+          // operands are values and must survive mutation by later arguments.
++          // Aggregate OVEs normally alias their source storage. Key-path and
++          // isolated-call operands are values and must survive later effects.
 +          // Nontrivial C++ snapshots are already materialized xvalues; bind
 +          // their existing storage and native cleanup instead of copying again.
 +          Address Snapshot = CGF.CreateMemTemp(ov->getType(), "objc3.keypath.value");
 +          CGF.EmitAnyExprToMem(ov->getSourceExpr(), Snapshot,
 +                              ov->getType().getQualifiers(), true);
++          if (containsObjC3CarrierManagedStorage(ov->getType()))
++            CGF.pushDestroy(NormalAndEHCleanup, Snapshot, ov->getType(),
++                            destroyObjC3ManagedStorage, false);
++          else if (auto Kind = ov->getType().isDestructedType(); Kind != QualType::DK_none)
++            CGF.pushDestroy(NormalAndEHCleanup, Snapshot, ov->getType(),
++                            CGF.getDestroyer(Kind), false);
 +          opaqueData = OVMA::bind(CGF, ov,
 +              CGF.MakeAddrLValue(Snapshot, ov->getType()));
 +        } else
@@ -11130,7 +11164,7 @@ index 000000000..73f1baa4f
 +
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index 9742b496c..3f7ebce99 100644
+index 9742b496c..0bd3e7a80 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
 @@ -15,6 +15,10 @@
@@ -11244,7 +11278,25 @@ index 9742b496c..3f7ebce99 100644
        SuperClass = TheModule.getNamedGlobal(SuperClassName);
        if (!SuperClass)
        {
-@@ -1995,8 +2027,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -1885,8 +1917,15 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+         ivarBuilder.add(MakeConstantString(TypeStr));
+         // int *offset;
+         uint64_t BaseOffset = ComputeIvarBaseOffset(CGM, OID, IVD);
+-        uint64_t Offset = BaseOffset - superInstanceSize;
+-        llvm::Constant *OffsetValue = llvm::ConstantInt::get(IntTy, Offset);
++        // A subclass may reuse superclass tail padding. The nonfragile
++        // displacement is signed even when the absolute layout offsets are not.
++        int64_t Offset = static_cast<int64_t>(BaseOffset) -
++                         static_cast<int64_t>(superInstanceSize);
++        if (!llvm::isIntN(IntTy->getBitWidth(), Offset)) {
++          CGM.Error(IVD->getLocation(), "GNUstep ivar offset exceeds the signed runtime ABI range");
++          Offset = 0;
++        }
++        llvm::Constant *OffsetValue = llvm::ConstantInt::getSigned(IntTy, Offset);
+         std::string OffsetName = GetIVarOffsetVariableName(classDecl, IVD);
+         llvm::GlobalVariable *OffsetVar = TheModule.getGlobalVariable(OffsetName);
+         if (OffsetVar)
+@@ -1995,8 +2034,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
  
        if (SuperClass) {
          std::pair<llvm::GlobalVariable*, int> v{classStruct, 1};
@@ -11255,7 +11307,7 @@ index 9742b496c..3f7ebce99 100644
        }
  
      }
-@@ -2102,10 +2134,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -2102,10 +2141,11 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
          CGF.EmitBlock(SelfIsNilBlock);
  
          //   return (ReturnType){ };
@@ -11269,7 +11321,7 @@ index 9742b496c..3f7ebce99 100644
          }
          CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
          // }
-@@ -2309,10 +2342,11 @@ protected:
+@@ -2309,10 +2349,11 @@ protected:
        CGF.EmitBlock(SelfIsNilBlock);
  
        //   return (ReturnType){ };
@@ -11283,7 +11335,7 @@ index 9742b496c..3f7ebce99 100644
        }
        CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
        // }
-@@ -2547,8 +2581,8 @@ llvm::Value *CGObjCGNU::GetClassNamed(CodeGenFunction &CGF,
+@@ -2547,8 +2588,8 @@ llvm::Value *CGObjCGNU::GetClassNamed(CodeGenFunction &CGF,
  // techniques can modify the name -> class mapping.
  llvm::Value *CGObjCGNU::GetClass(CodeGenFunction &CGF,
                                   const ObjCInterfaceDecl *OID) {
@@ -11294,7 +11346,7 @@ index 9742b496c..3f7ebce99 100644
    if (auto *ClassSymbol = dyn_cast<llvm::GlobalVariable>(Value))
      CGM.setGVProperties(ClassSymbol, OID);
    return Value;
-@@ -2634,7 +2668,7 @@ llvm::Constant *CGObjCGNU::GetEHType(QualType T) {
+@@ -2634,7 +2675,7 @@ llvm::Constant *CGObjCGNU::GetEHType(QualType T) {
    assert(OPT && "Invalid @catch type.");
    const ObjCInterfaceDecl *IDecl = OPT->getObjectType()->getInterface();
    assert(IDecl && "Invalid @catch type.");
@@ -11303,7 +11355,7 @@ index 9742b496c..3f7ebce99 100644
  }
  
  llvm::Constant *CGObjCGNUstep::GetEHType(QualType T) {
-@@ -2666,8 +2700,7 @@ llvm::Constant *CGObjCGNUstep::GetEHType(QualType T) {
+@@ -2666,8 +2707,7 @@ llvm::Constant *CGObjCGNUstep::GetEHType(QualType T) {
    assert(PT && "Invalid @catch type.");
    const ObjCInterfaceType *IT = PT->getInterfaceType();
    assert(IT && "Invalid @catch type.");
@@ -11313,7 +11365,7 @@ index 9742b496c..3f7ebce99 100644
  
    std::string typeinfoName = "__objc_eh_typeinfo_" + className;
  
-@@ -2810,8 +2843,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2810,8 +2850,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
    llvm::Value *ReceiverClass = nullptr;
    bool isV2ABI = isRuntime(ObjCRuntime::GNUstep, 2);
    if (isV2ABI) {
@@ -11325,7 +11377,7 @@ index 9742b496c..3f7ebce99 100644
      if (IsClassMessage)  {
        // Load the isa pointer of the superclass is this is a class method.
        ReceiverClass =
-@@ -2828,8 +2862,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2828,8 +2869,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
          classLookupFunction = CGM.CreateRuntimeFunction(llvm::FunctionType::get(
                IdTy, PtrTy, true), "objc_get_class");
        }
@@ -11337,7 +11389,7 @@ index 9742b496c..3f7ebce99 100644
      } else {
        // Set up global aliases for the metaclass or class pointer if they do not
        // already exist.  These will are forward-references which will be set to
-@@ -2840,14 +2875,16 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2840,14 +2882,16 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
          if (!MetaClassPtrAlias) {
            MetaClassPtrAlias = llvm::GlobalAlias::create(
                IdElemTy, 0, llvm::GlobalValue::InternalLinkage,
@@ -11356,7 +11408,7 @@ index 9742b496c..3f7ebce99 100644
          }
          ReceiverClass = ClassPtrAlias;
        }
-@@ -2876,7 +2913,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+@@ -2876,7 +2920,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
  
    llvm::Metadata *impMD[] = {
        llvm::MDString::get(VMContext, Sel.getAsString()),
@@ -11367,7 +11419,7 @@ index 9742b496c..3f7ebce99 100644
        llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(
            llvm::Type::getInt1Ty(VMContext), IsClassMessage))};
    llvm::MDNode *node = llvm::MDNode::get(VMContext, impMD);
-@@ -2928,7 +2967,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -2928,7 +2974,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
  
    llvm::Metadata *impMD[] = {
        llvm::MDString::get(VMContext, Sel.getAsString()),
@@ -11377,7 +11429,7 @@ index 9742b496c..3f7ebce99 100644
        llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(
            llvm::Type::getInt1Ty(VMContext), Class != nullptr))};
    llvm::MDNode *node = llvm::MDNode::get(VMContext, impMD);
-@@ -2969,14 +3009,25 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -2969,14 +3016,25 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
        return false;
  
      // If there's a consumed argument, we need a nil check.
@@ -11406,7 +11458,7 @@ index 9742b496c..3f7ebce99 100644
        if (ResultType->isVoidType()) {
          // void results are definitely okay.
        } else if (ResultType->hasPointerRepresentation() &&
-@@ -3099,7 +3150,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -3099,7 +3157,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
        if (requiresExplicitAggZeroing) {
          assert(msgRet.isAggregate());
          Address addr = msgRet.getAggregateAddress();
@@ -11416,7 +11468,7 @@ index 9742b496c..3f7ebce99 100644
        }
  
        nilPathBB = CGF.Builder.GetInsertBlock();
-@@ -3141,6 +3193,15 @@ GenerateMethodList(StringRef ClassName,
+@@ -3141,6 +3200,15 @@ GenerateMethodList(StringRef ClassName,
                     StringRef CategoryName,
                     ArrayRef<const ObjCMethodDecl*> Methods,
                     bool isClassMethodList) {
@@ -11432,7 +11484,7 @@ index 9742b496c..3f7ebce99 100644
    if (Methods.empty())
      return NULLPtr;
  
-@@ -3403,7 +3464,8 @@ llvm::Value *CGObjCGNU::GenerateProtocolRef(CodeGenFunction &CGF,
+@@ -3403,7 +3471,8 @@ llvm::Value *CGObjCGNU::GenerateProtocolRef(CodeGenFunction &CGF,
  }
  
  llvm::Constant *CGObjCGNU::GenerateProtocolRef(const ObjCProtocolDecl *PD) {
@@ -11442,7 +11494,7 @@ index 9742b496c..3f7ebce99 100644
    if (!protocol)
      GenerateProtocol(PD);
    assert(protocol && "Unknown protocol");
-@@ -3440,7 +3502,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
+@@ -3440,7 +3509,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
    if (PD->isNonRuntimeProtocol())
      return;
  
@@ -11451,7 +11503,7 @@ index 9742b496c..3f7ebce99 100644
  
    // Use the protocol definition, if there is one.
    if (const ObjCProtocolDecl *Def = PD->getDefinition())
-@@ -3448,7 +3510,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
+@@ -3448,7 +3517,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
  
    SmallVector<std::string, 16> Protocols;
    for (const auto *PI : PD->protocols())
@@ -11460,7 +11512,7 @@ index 9742b496c..3f7ebce99 100644
    SmallVector<const ObjCMethodDecl*, 16> InstanceMethods;
    SmallVector<const ObjCMethodDecl*, 16> OptionalInstanceMethods;
    for (const auto *I : PD->instance_methods())
-@@ -3590,14 +3652,15 @@ llvm::Constant *CGObjCGNU::GenerateCategoryProtocolList(const
+@@ -3590,14 +3659,15 @@ llvm::Constant *CGObjCGNU::GenerateCategoryProtocolList(const
        GetRuntimeProtocolList(RefPro.begin(), RefPro.end());
    SmallVector<std::string, 16> Protocols;
    for (const auto *PD : RuntimeProtos)
@@ -11479,7 +11531,7 @@ index 9742b496c..3f7ebce99 100644
  
    // Collect the names of referenced protocols
    const ObjCCategoryDecl *CatDecl = OCD->getCategoryDecl();
-@@ -3734,7 +3797,7 @@ void CGObjCGNU::RegisterAlias(const ObjCCompatibleAliasDecl *OAD) {
+@@ -3734,7 +3804,7 @@ void CGObjCGNU::RegisterAlias(const ObjCCompatibleAliasDecl *OAD) {
    // Get the class declaration for which the alias is specified.
    ObjCInterfaceDecl *ClassDecl =
      const_cast<ObjCInterfaceDecl *>(OAD->getClassInterface());
@@ -11488,7 +11540,7 @@ index 9742b496c..3f7ebce99 100644
                              OAD->getNameAsString());
  }
  
-@@ -3746,14 +3809,14 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
+@@ -3746,14 +3816,14 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
      OID->getClassInterface()->getSuperClass();
    std::string SuperClassName;
    if (SuperClassDecl) {
@@ -11505,7 +11557,7 @@ index 9742b496c..3f7ebce99 100644
  
    // Emit the symbol that is used to generate linker errors if this class is
    // referenced in other modules but not declared.
-@@ -3865,7 +3928,7 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
+@@ -3865,7 +3935,7 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
        GetRuntimeProtocolList(RefProtocols.begin(), RefProtocols.end());
    SmallVector<std::string, 16> Protocols;
    for (const auto *I : RuntimeProtocols)
@@ -11514,7 +11566,7 @@ index 9742b496c..3f7ebce99 100644
  
    // Get the superclass pointer.
    llvm::Constant *SuperClass;
-@@ -4468,7 +4531,8 @@ llvm::Value *CGObjCGNU::EmitIvarOffset(CodeGenFunction &CGF,
+@@ -4468,7 +4538,8 @@ llvm::Value *CGObjCGNU::EmitIvarOffset(CodeGenFunction &CGF,
                CharUnits::fromQuantity(4)),
            PtrDiffTy);
      std::string name = "__objc_ivar_offset_value_" +
@@ -25751,10 +25803,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..47d0998a1
+index 000000000..e860691b1
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1637 @@
+@@ -0,0 +1,1667 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -26462,14 +26514,37 @@ index 000000000..47d0998a1
 +    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Node)) {
 +      if (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance ||
 +          Message->getReceiverKind() == ObjCMessageExpr::SuperClass) return Receiver;
-+      if (const Expr *Value = Message->getInstanceReceiver())
-+        if (const auto *Reference = dyn_cast<DeclRefExpr>(Value->IgnoreParenImpCasts());
-+            Reference && Reference->getDecl() == Receiver) return Receiver;
++      const Expr *Value = Message->getInstanceReceiver();
++      for (unsigned I = 0; Value && I != 32; ++I) {
++        Value = Value->IgnoreParenImpCasts();
++        if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Value)) Value = Opaque->getSourceExpr();
++        else break;
++      }
++      if (const auto *Reference = dyn_cast_or_null<DeclRefExpr>(Value);
++          Reference && Reference->getDecl() == Receiver) return Receiver;
 +    }
 +    if (isa<LambdaExpr, BlockExpr>(Node)) continue;
 +    for (const Stmt *Child : Node->children()) Pending.push_back(Child);
 +  }
 +  return nullptr;
++}
++
++static bool nilPropertyAssignmentHasResult(const Stmt &Body) {
++  const auto *Compound = dyn_cast<CompoundStmt>(&Body);
++  if (!Compound || Compound->size() != 1) return false;
++  const auto *Return = dyn_cast<ReturnStmt>(*Compound->body_begin());
++  if (!Return || !Return->getRetValue()) return false;
++  const Expr *Value = Return->getRetValue();
++  for (unsigned I = 0; I != 32; ++I) {
++    Value = Value->IgnoreParenImpCasts();
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Value)) Value = Cleanups->getSubExpr();
++    else if (const auto *Temporary = dyn_cast<CXXBindTemporaryExpr>(Value)) Value = Temporary->getSubExpr();
++    else break;
++  }
++  const auto *Pseudo = dyn_cast<PseudoObjectExpr>(Value);
++  const auto *Assignment = Pseudo ? dyn_cast<BinaryOperator>(Pseudo->getSyntacticForm()->IgnoreParenImpCasts()) : nullptr;
++  return Assignment && Assignment->getOpcode() == BO_Assign &&
++      isa<ObjCPropertyRefExpr>(Assignment->getLHS()->IgnoreParenImpCasts());
 +}
 +
 +bool clang::CodeGen::emitObjC3NilAsyncFrame(CodeGenFunction &Parent, Address Result,
@@ -26947,24 +27022,31 @@ index 000000000..47d0998a1
 +    }
 +    checkCancelled(*this, Data);
 +    if (Callable.hasAttr<ObjC3IsolationThunkAttr>()) {
-+      if (nilResultRequiresFailure(getContext(), Function->getReturnType()))
-+        if (const auto *Function = dyn_cast<FunctionDecl>(&Callable))
-+          if (const auto *Receiver = isolationNilReceiver(*Function, Body)) {
-+            auto *Missing = createBasicBlock("objc3.isolation.nil.result");
-+            auto *Present = createBasicBlock("objc3.isolation.receiver.present");
-+            auto *Value = Builder.CreateLoad(GetAddrOfLocalVar(Receiver));
-+            Builder.CreateCondBr(Builder.CreateIsNull(Value), Missing, Present);
-+            EmitBlock(Missing);
++      auto *Entered = createBasicBlock("objc3.isolation.entered");
++      if (const auto *Declaration = dyn_cast<FunctionDecl>(&Callable))
++        if (const auto *Receiver = isolationNilReceiver(*Declaration, Body)) {
++          auto *Missing = createBasicBlock("objc3.isolation.nil.result");
++          auto *Present = createBasicBlock("objc3.isolation.receiver.present");
++          auto *Value = Builder.CreateLoad(GetAddrOfLocalVar(Receiver));
++          Builder.CreateCondBr(Builder.CreateIsNull(Value), Missing, Present);
++          EmitBlock(Missing);
++          if (nilResultRequiresFailure(getContext(), Function->getReturnType()) &&
++              !nilPropertyAssignmentHasResult(Body)) {
 +            replaceError(*this, Data, serviceError(*this, Builder.getInt32(1)));
 +            Builder.CreateStore(Builder.getInt32(1), Data.Kind);
 +            EmitBranchThroughCleanup(Data.Final);
-+            EmitBlock(Present);
++          } else {
++            // A scalar/structural nil read or an assignment's already valid
++            // RHS needs no actor/executor lookup. Its ordinary accessor
++            // semantics still own argument handoff and nil cleanup.
++            EmitBranch(Entered);
 +          }
++          EmitBlock(Present);
++        }
 +      auto Entry = emitObjC3IsolationEntry(*this, Callable,
 +                                          Builder.CreateLoad(Data.Owner));
 +      checkStatus(*this, Data, Entry.Status);
 +      auto *Hop = createBasicBlock("objc3.isolation.hop");
-+      auto *Entered = createBasicBlock("objc3.isolation.entered");
 +      Builder.CreateCondBr(Entry.Suspend, Hop, Entered);
 +      EmitBlock(Hop);
 +      suspend(*this, Data, false);
@@ -31775,3 +31857,135 @@ index 000000000..476105e23
 +// CHECK: objc3.isolation.nil.result:
 +// CHECK: call i32 @objc3_async_error_create_service(i32 1,
 +// CHECK-NOT: call void @nil_close_handle
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/isolated-properties.h b/clang/test/ObjC3/CodeGen/Inputs/isolated-properties.h
+new file mode 100644
+index 000000000..b8bc21787
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/isolated-properties.h
+@@ -0,0 +1,42 @@
++#ifndef OBJC3_ISOLATED_PROPERTY_CONTROLS_H
++#define OBJC3_ISOLATED_PROPERTY_CONTROLS_H
++#ifdef __cplusplus
++#include "native-async-task.h"
++struct PropertyNontrivial {
++  PropertyNontrivial(const PropertyNontrivial &) noexcept;
++  ~PropertyNontrivial() noexcept;
++};
++#else
++#include "native-c-async-frame.h"
++#endif
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface PropertyControlRoot <Sendable> @end
++actor class PropertyControlActor : PropertyControlRoot
++@property(nonatomic) int value;
++- (int)value __attribute__((nothrow));
++- (void)setValue:(int)value __attribute__((nothrow));
++@end
++@interface PropertyControlHost : PropertyControlRoot
++@property(class,nonatomic) int classValue;
+++ (int)classValue __attribute__((nothrow,objc_executor(main)));
+++ (void)setClassValue:(int)value __attribute__((nothrow,objc_executor(main)));
++@property(nonatomic) int value;
++- (int)value __attribute__((nothrow,objc_executor(main)));
++- (void)setValue:(int)value __attribute__((nothrow,objc_executor(main)));
++@property(nonatomic) int mixed;
++- (int)mixed __attribute__((nothrow,objc_executor(main)));
++- (void)setMixed:(int)value __attribute__((nothrow,objc_executor(global)));
++#ifdef __cplusplus
++@property(nonatomic) PropertyNontrivial nontrivial;
++- (PropertyNontrivial)nontrivial __attribute__((nothrow,objc_executor(main)));
++- (void)setNontrivial:(PropertyNontrivial)value __attribute__((nothrow,objc_executor(main)));
++@property(nonatomic,readonly) int throwing;
++- (int)throwing __attribute__((objc_executor(main)));
++#endif
++@end
++
++@interface PropertyControlChild : PropertyControlHost
++- (int)superValue __objc3_async_frame __attribute__((nothrow));
+++ (int)superClassValue __objc3_async_frame __attribute__((nothrow));
++@end
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/isolated-properties.m b/clang/test/ObjC3/CodeGen/isolated-properties.m
+new file mode 100644
+index 000000000..2c12f8cc7
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/isolated-properties.m
+@@ -0,0 +1,52 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ast-print %s | FileCheck %s --check-prefix=PRINT
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t-c17-False %S/Inputs/isolated-properties.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t-c17-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -emit-pch -o %t-c17-True %S/Inputs/isolated-properties.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -include-pch %t-c17-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t-c++20-False %S/Inputs/isolated-properties.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -emit-pch -o %t-c++20-True %S/Inputs/isolated-properties.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -include-pch %t-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t-c++23-False %S/Inputs/isolated-properties.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -emit-pch -o %t-c++23-True %S/Inputs/isolated-properties.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -include-pch %t-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/isolated-properties.h"
++#ifdef __cplusplus
++extern "C" {
++#endif
++int isolated_property_get(PropertyControlActor *object) __objc3_async_frame {return __objc3_await object.value;}
++int isolated_property_assign(PropertyControlActor *object,int value) __objc3_async_frame {return __objc3_await (object.value=value);}
++int isolated_property_compound(PropertyControlActor *object,int value) __objc3_async_frame {return __objc3_await (object.value+=value);}
++int isolated_property_post(PropertyControlActor *object) __objc3_async_frame {return __objc3_await object.value++;}
++int isolated_property_pre(PropertyControlActor *object) __objc3_async_frame {return __objc3_await ++object.value;}
++int isolated_property_executor(PropertyControlHost *object) __objc3_async_frame {return __objc3_await object.value;}
++#ifdef __cplusplus
++}
++#endif
++// CHECK-LABEL: define{{.*}} void @isolated_property_get(
++// CHECK: {{call|invoke}} void @{{.*}}__objc3_isolation_entry_
++// CHECK-LABEL: define{{.*}} void @isolated_property_assign(
++// CHECK: {{call|invoke}} void @{{.*}}__objc3_isolation_entry_
++// CHECK-LABEL: define{{.*}} void @isolated_property_compound(
++// CHECK: {{call|invoke}} void @{{.*}}__objc3_isolation_entry_
++// CHECK-LABEL: define{{.*}} void @isolated_property_post(
++// CHECK: {{call|invoke}} void @{{.*}}__objc3_isolation_entry_
++// CHECK-LABEL: define{{.*}} void @isolated_property_pre(
++// CHECK: {{call|invoke}} void @{{.*}}__objc3_isolation_entry_
++// CHECK-LABEL: define{{.*}} void @isolated_property_executor(
++// CHECK: {{call|invoke}} void @{{.*}}__objc3_isolation_entry_
++// CHECK: objc3.isolation.nil.result:
++// PRINT: return __objc3_await (object.value = value);
++// PRINT: return __objc3_await (object.value += value);
++
++@implementation PropertyControlChild
++- (int)superValue __objc3_async_frame {return __objc3_await (super.value+=1);}
+++ (int)superClassValue __objc3_async_frame {return __objc3_await (super.classValue+=1);}
++@end
+diff --git a/clang/test/ObjC3/CodeGen/native-ivar-tail-padding.m b/clang/test/ObjC3/CodeGen/native-ivar-tail-padding.m
+new file mode 100644
+index 000000000..a916b9745
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-ivar-tail-padding.m
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -DOVERFLOW -emit-llvm -o %t.bad.ll -verify %s
++// RUN: test ! -e %t.bad.ll
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++__attribute__((objc_root_class)) @interface TailPaddingBase {Class isa;int base;} @end
++@interface TailPaddingChild : TailPaddingBase {int child;} @end
++@implementation TailPaddingBase @end
++@implementation TailPaddingChild @end
++// CHECK: @__objc_ivar_offset_TailPaddingChild.child.i = {{.*}}global i32 -4
++
++#ifdef OVERFLOW
++@interface TailPaddingHuge : TailPaddingBase {
++  char huge[(1ULL<<31)+32];
++  int beyond; // expected-error {{GNUstep ivar offset exceeds the signed runtime ABI range}}
++}
++@end
++@implementation TailPaddingHuge @end
++#endif

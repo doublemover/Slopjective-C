@@ -4169,6 +4169,102 @@ void TestClosureFactories() {
   }
 }
 
+void TestIsolatedPropertyReplay() {
+  for (const char *standard : {"c17","c++20","c++23"}) {
+    const bool cxx=std::string(standard)!="c17";
+    for (bool arc : {false,true}) {
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fblocks",
+          "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      if (arc) args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      std::string source="#include <objc3c/runtime/objc3_runtime_services.h>\n";
+      source+=R"(
+        @protocol Sendable @end
+        __attribute__((objc_root_class)) @interface PublishedPropertyRoot <Sendable> @end
+        actor class PublishedPropertyActor : PublishedPropertyRoot
+        @property(nonatomic,getter=fetchValue,setter=storeValue:) int value;
+        - (int)fetchValue __attribute__((nothrow));
+        - (void)storeValue:(int)value __attribute__((nothrow));
+        @end
+        @interface PublishedPropertyHost : PublishedPropertyRoot
+        @property(class,nonatomic) int value;
+        + (int)value __attribute__((nothrow,objc_executor(main)));
+        + (void)setValue:(int)value __attribute__((nothrow,objc_executor(main)));
+        @end
+        inline int published_class_property(int value) __objc3_async_frame {
+          return __objc3_await (PublishedPropertyHost.value=value);
+        }
+        inline int published_property_get(PublishedPropertyActor *root) __objc3_async_frame {
+          return __objc3_await root.value;
+        }
+        inline int published_property_set(PublishedPropertyActor *root,int value) __objc3_async_frame {
+          return __objc3_await (root.value=value);
+        }
+        inline int published_property_update(PublishedPropertyActor *root,int value) __objc3_async_frame {
+          return __objc3_await (root.value+=value);
+        }
+        inline int published_property_post(PublishedPropertyActor *root) __objc3_async_frame {
+          return __objc3_await root.value++;
+        }
+      )";
+      if(cxx)source+=R"(
+        template<class T> int published_property_template(T root,int value) __objc3_async_frame {
+          return __objc3_await (root.value+=value);
+        }
+      )";
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.isolated_properties","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.isolated_properties","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        return result;
+      };
+      auto first=emit(source,"property-provider.m");assert(first.success);
+      auto replay=emit(first.source_bytes,"property-replay.m");
+      assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-property-provider.m");
+      assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> semantics;
+      for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+      assert(llvm::is_contained(semantics,llvm::StringRef(kAsyncEntryABISemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+      auto missing=*decoded;std::erase(missing.required_semantics,kAsyncEntryABISemantic);
+      auto rejected=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!rejected);llvm::consumeError(rejected.takeError());
+      std::string consumer=(cxx?"#include <objc3c/runtime/objc3_task.hpp>\n":"")+first.source_bytes+R"(
+        int consume_property(PublishedPropertyActor *root) __objc3_async_frame {
+          int result=__objc3_await published_property_update(root,42);
+          return result+(__objc3_await root.value);
+        }
+      )";
+      if(cxx)consumer+=R"(
+        int consume_property_task(PublishedPropertyActor *root) __objc3_async {
+          return __objc3_await (root.value=17);
+        }
+        int consume_generic_property(PublishedPropertyActor *root) __objc3_async_frame {
+          return __objc3_await published_property_template(root,1);
+        }
+      )";
+      auto valid=parse(consumer,"property-consumer.m");assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+      auto invalid=parse(first.source_bytes+"int escape_property(PublishedPropertyActor *root){return root.value;}",
+                         "unawaited-property-consumer.m");
+      assert(invalid && invalid->getDiagnostics().hasErrorOccurred());
+      auto changed=source;const auto position=changed.find("storeValue:");assert(position!=std::string::npos);
+      while(changed.find("storeValue")!=std::string::npos)changed.replace(changed.find("storeValue"),10,"replaceValue");
+      auto altered=emit(changed,"changed-property-provider.m");
+      assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    }
+  }
+}
+
 void TestOwnedNilResultReplay() {
   for (const char *standard : {"c17", "c++20", "c++23"}) {
     const bool cxx=std::string(standard)!="c17";
@@ -7643,6 +7739,7 @@ int main(int argc,char **argv) {
   TestFactoryTypeProjections();
   TestLocalFactoryResults();
   TestClosureFactories();
+  TestIsolatedPropertyReplay();
   TestOwnedNilResultReplay();
   TestStrictAsyncProfileReplay();
   TestNativeDependentAwaitReplay();

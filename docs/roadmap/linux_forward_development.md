@@ -16,6 +16,15 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.117 property span](linux_isolated_property_operations.md)
+implements synchronous actor/executor property expressions, class/super dispatch,
+backing affinity, independent snapshots, nil results and cancellation. Source-free
+publication retains assignment parentheses; CFG ordering and signed GNUstep ivar
+offsets are repaired. Thirty compiler commands, seventeen AST tests, six frontend
+profiles, 120 selected compiler cases and twelve instrumented property configurations
+pass; three platform cases remain unsupported. Broader ownership/effect/profile
+contracts and matched SDK delivery remain open.
+
 The [Concurrency 2.116 nil-result span](linux_owned_nil_results.md) supplies
 checked failures for nil receivers whose native async results require C++
 construction, reference binding or resource ownership, including implicit

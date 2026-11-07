@@ -1,6 +1,6 @@
 # Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors {#part-7}
 
-_Working draft v0.11 — last updated 2026-02-27_
+_Working draft v0.11 — last updated 2026-11-07_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -490,6 +490,26 @@ async void f(Counter *c) {
 ```
 
 Within actor-isolated code already executing on the actor’s executor, `await` is not required for isolated member access unless the member is explicitly `async`.
+
+#### 7.7.2.2 Property expressions across isolation domains {#part-7-7-2-2}
+
+An awaited property expression with synchronous accessors evaluates its receiver
+and explicit right-hand operand once on the caller, preserving their ordinary
+evaluation order. Each transported value is an independent snapshot; later
+operand effects cannot change an already captured value or invalidate its owned
+storage. The accessor sequence executes in the required isolation domain.
+
+A compound assignment or increment/decrement performs its getter, computation
+and setter without an intervening suspension. Its result retains ordinary
+property assignment and prefix/postfix value semantics. Every invoked accessor
+shall have compatible isolation requirements. Class and `super` properties
+retain their selected accessor and lexical dispatch contracts. Actor accessors
+may require a compatible backing executor as in [§7.4](#part-7-4).
+
+Nil reads follow [§7.2.4](#part-7-2-4). A nil assignment may return its already
+valid right-hand value; it shall not fabricate a getter result. Nil operations
+require no actor or executor entry. Cancellation or abandonment before accessor
+entry retains ordinary argument ownership and shall not invoke an accessor.
 
 ### 7.7.3 Reentrancy {#part-7-7-3}
 

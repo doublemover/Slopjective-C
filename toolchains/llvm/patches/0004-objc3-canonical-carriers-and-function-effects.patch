@@ -49218,13 +49218,14 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..3dfec5c3d
+index 000000000..4b6f5c696
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1438 @@
+@@ -0,0 +1,1647 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include <optional>
 +#include "SemaObjC3Isolation.h"
 +#include "SemaObjC3Effects.h"
 +#include "clang/AST/ASTConsumer.h"
@@ -50171,12 +50172,145 @@ index 000000000..3dfec5c3d
 +  return false;
 +}
 +
++struct IsolationPropertyOperation {
++  ObjCPropertyRefExpr *Reference = nullptr;
++  Expr *RHS = nullptr;
++  QualType Result;
++  ObjCMethodDecl *Getter = nullptr, *Setter = nullptr;
++  std::optional<BinaryOperatorKind> Binary;
++  std::optional<UnaryOperatorKind> Unary;
++  bool RHSFirst = false;
++  bool writes() const { return Binary || Unary; }
++  bool reads() const { return !Binary || *Binary != BO_Assign; }
++};
++
++Expr *propertyInput(Expr *Value) {
++  for (unsigned I = 0; Value && I != 32; ++I) {
++    Value = Value->IgnoreParens();
++    if (auto *Opaque = dyn_cast<OpaqueValueExpr>(Value)) Value = Opaque->getSourceExpr();
++    else return Value;
++  }
++  return nullptr;
++}
++
++std::optional<IsolationPropertyOperation> propertyOperation(Expr *Source) {
++  auto *Pseudo = dyn_cast<PseudoObjectExpr>(Source);
++  if (!Pseudo) return std::nullopt;
++  IsolationPropertyOperation Result;
++  Expr *Syntax = Pseudo->getSyntacticForm()->IgnoreParenImpCasts();
++  Expr *RHSBinding = nullptr;
++  if (auto *Binary = dyn_cast<BinaryOperator>(Syntax); Binary && Binary->isAssignmentOp()) {
++    Result.Binary = Binary->getOpcode();
++    Result.Reference = dyn_cast<ObjCPropertyRefExpr>(Binary->getLHS()->IgnoreParenImpCasts());
++    RHSBinding = Binary->getRHS()->IgnoreParens();
++    Result.RHS = propertyInput(RHSBinding);
++    if (!Result.RHS) return std::nullopt;
++  } else if (auto *Unary = dyn_cast<UnaryOperator>(Syntax); Unary && Unary->isIncrementDecrementOp()) {
++    Result.Unary = Unary->getOpcode();
++    Result.Reference = dyn_cast<ObjCPropertyRefExpr>(Unary->getSubExpr()->IgnoreParenImpCasts());
++  } else Result.Reference = dyn_cast<ObjCPropertyRefExpr>(Syntax);
++  if (!Result.Reference) return std::nullopt;
++  auto *Property = Result.Reference;
++  if (Property->isExplicitProperty()) {
++    Result.Getter = Property->getExplicitProperty()->getGetterMethodDecl();
++    Result.Setter = Property->getExplicitProperty()->getSetterMethodDecl();
++  } else {
++    Result.Getter = Property->getImplicitPropertyGetter();
++    Result.Setter = Property->getImplicitPropertySetter();
++  }
++  if ((Result.reads() && !Result.Getter) || (Result.writes() && !Result.Setter))
++    return std::nullopt;
++  Result.Result = Source->getType();
++  // Preserve the parser's receiver/RHS evaluation order. The RHS value is a
++  // caller-side snapshot; the accessor sequence itself runs at the destination.
++  if (RHSBinding && Property->isObjectReceiver()) {
++    if (const auto *Receiver = dyn_cast<OpaqueValueExpr>(Property->getBase());
++        Receiver && Receiver->isUnique()) {
++      // Unique receivers are evaluated lazily at the message, after the
++      // nonunique assignment result has evaluated and captured its RHS.
++      Result.RHSFirst = true;
++    } else for (auto *Semantic : Pseudo->semantics()) {
++      if (Semantic == Property->getBase()) break;
++      if (Semantic == RHSBinding) { Result.RHSFirst = true; break; }
++    }
++  }
++  return Result;
++}
++
++bool propertyWriteValue(Sema &S, QualType Type, unsigned &Budget, unsigned Depth = 0) {
++  if (Type.isNull() || !Budget || Depth > 64 || Type->isReferenceType() ||
++      getObjC3ResourceTypeContract(S.Context, Type).Cleanup) return false;
++  --Budget;
++  if (Type->isObjCRetainableType()) return true;
++  if (!Type.isTriviallyCopyableType(S.Context)) return false;
++  if (const auto *Array = S.Context.getAsArrayType(Type))
++    return isa<ConstantArrayType>(Array) && propertyWriteValue(S, Array->getElementType(), Budget, Depth + 1);
++  if (const auto *Record = Type->getAsRecordDecl()) {
++    const auto *Definition = Record->getDefinition();
++    if (!Definition) return false;
++    for (const auto *Field : Definition->fields())
++      if (Field->hasAttr<ObjCResourceAttr>() || Field->hasAttr<ObjCCleanupAttr>() ||
++          !propertyWriteValue(S, Field->getType(), Budget, Depth + 1)) return false;
++    if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
++      for (const auto &Base : Class->bases())
++        if (!propertyWriteValue(S, Base.getType(), Budget, Depth + 1)) return false;
++  }
++  return true;
++}
++
++ExprResult rebuildPropertyOperation(Sema &S, const IsolationPropertyOperation &Operation,
++                                    ArrayRef<Expr *> Arguments, SourceLocation Loc,
++                                    bool SuperInstance) {
++  const auto *Original = Operation.Reference;
++  ObjCPropertyRefExpr *Property;
++  if (Original->isClassReceiver()) {
++    Property = new (S.Context) ObjCPropertyRefExpr(Operation.Getter, Operation.Setter,
++        Original->getType(), Original->getValueKind(), Original->getObjectKind(),
++        Loc, Loc, Original->getClassReceiver());
++  } else {
++    auto Receiver = S.DefaultLvalueConversion(Arguments.front());
++    if (Receiver.isInvalid()) return ExprError();
++    if (Original->isExplicitProperty() && !Original->isSuperReceiver())
++      Property = new (S.Context) ObjCPropertyRefExpr(Original->getExplicitProperty(),
++          Original->getType(), Original->getValueKind(), Original->getObjectKind(), Loc, Receiver.get());
++    else Property = new (S.Context) ObjCPropertyRefExpr(Operation.Getter, Operation.Setter,
++        Original->getType(), Original->getValueKind(), Original->getObjectKind(), Loc, Receiver.get());
++  }
++  ExprResult Value;
++  if (Operation.Binary)
++    Value = S.BuildBinOp(nullptr, Loc, *Operation.Binary, Property, Arguments.back());
++  else if (Operation.Unary)
++    Value = S.BuildUnaryOp(nullptr, Loc, *Operation.Unary, Property);
++  else Value = S.DefaultLvalueConversion(Property);
++  if (Value.isInvalid() || !Original->isSuperReceiver()) return Value;
++  // Selection was checked in the source method. Build with the independent
++  // frame receiver, then restore each accessor's exact lexical super dispatch.
++  SmallVector<Stmt *, 16> Pending{Value.get()};
++  llvm::SmallPtrSet<Stmt *, 32> Seen;
++  unsigned Budget = 4096;
++  while (!Pending.empty()) {
++    Stmt *Node = Pending.pop_back_val();
++    if (!Node || !Seen.insert(Node).second) continue;
++    if (!Budget--) {
++      S.Diag(Loc, diag::err_objc3_isolation_hop_shape);
++      return ExprError();
++    }
++    if (auto *Message = dyn_cast<ObjCMessageExpr>(Node))
++      if (Message->getMethodDecl() == Operation.Getter || Message->getMethodDecl() == Operation.Setter)
++        Message->setSuper(Loc, Original->getSuperReceiverType(), SuperInstance);
++    if (auto *Opaque = dyn_cast<OpaqueValueExpr>(Node)) Pending.push_back(Opaque->getSourceExpr());
++    for (Stmt *Child : Node->children()) Pending.push_back(Child);
++  }
++  return Value;
++}
++
 +FunctionDecl *buildIsolationThunk(Sema &S, Expr *Source, Expr *SourceReceiver,
 +                                  const Decl *Target,
 +                                  const FunctionProtoType *Original,
 +                                  const ObjCExecutorAttr *Executor,
 +                                  bool ActorEntry, ObjCMethodDecl *SuperContext,
-+                                  SourceLocation Loc) {
++                                  SourceLocation Loc,
++                                  const IsolationPropertyOperation *Property = nullptr) {
 +  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
 +  const bool HasReceiver = SourceReceiver != nullptr;
 +  auto *TU = S.Context.getTranslationUnitDecl();
@@ -50195,7 +50329,7 @@ index 000000000..3dfec5c3d
 +    Types.push_back(SourceReceiver->getType());
 +  llvm::append_range(Types, Original->param_types());
 +  SmallVector<const ParmVarDecl *, 4> SourceParameters;
-+  if (Message)
++  if (Message || Property)
 +    llvm::append_range(SourceParameters, cast<ObjCMethodDecl>(Target)->parameters());
 +  else
 +    llvm::append_range(SourceParameters, cast<FunctionDecl>(Target)->parameters());
@@ -50285,7 +50419,7 @@ index 000000000..3dfec5c3d
 +      Expr *Argument = S.BuildDeclRefExpr(Param, Param->getType(), VK_LValue, Loc);
 +      // The frame already owns an independent value parameter. Move that
 +      // value into the target call rather than requiring another C++ copy.
-+      if (S.getLangOpts().CPlusPlus && Param->getType()->isRecordType())
++      if (!Property && S.getLangOpts().CPlusPlus && Param->getType()->isRecordType())
 +        Argument = ImplicitCastExpr::Create(
 +            S.Context, Param->getType(), CK_NoOp, Argument, nullptr,
 +            VK_XValue, FPOptionsOverride());
@@ -50301,7 +50435,10 @@ index 000000000..3dfec5c3d
 +      Arguments.push_back(Argument);
 +    }
 +    ExprResult Value;
-+    if (Message && !HasReceiver) {
++    if (Property) {
++      Value = rebuildPropertyOperation(S, *Property, Arguments, Loc,
++                                       !SuperContext || SuperContext->isInstanceMethod());
++    } else if (Message && !HasReceiver) {
 +      Value = S.ObjC().BuildClassMessageImplicit(
 +          Message->getClassReceiver(), false, Loc, Message->getSelector(),
 +          const_cast<ObjCMethodDecl *>(cast<ObjCMethodDecl>(Target)), Arguments);
@@ -50447,19 +50584,57 @@ index 000000000..3dfec5c3d
 +  // storage or a dependent receiver. Rebuild its entry after substitution.
 +  if (getLangOpts().CPlusPlus && Operand->isInstantiationDependent()) return Operand;
 +  auto *Source = Operand->IgnoreImplicit()->IgnoreParenImpCasts();
++  if (isa<ObjCPropertyRefExpr>(Source)) {
++    auto Converted = DefaultLvalueConversion(Operand);
++    if (Converted.isInvalid()) return ExprError();
++    Operand = Converted.get();
++    Source = Operand->IgnoreImplicit()->IgnoreParenImpCasts();
++  }
++  auto Property = propertyOperation(Source);
 +  auto *Call = dyn_cast<CallExpr>(Source);
 +  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
-+  const Decl *Target = Call      ? static_cast<const Decl *>(Call->getDirectCallee())
-+                       : Message ? Message->getMethodDecl()
-+                                 : nullptr;
++  const Decl *Target = Property ? (Property->writes() ? Property->Setter : Property->Getter)
++                       : Call ? static_cast<const Decl *>(Call->getDirectCallee())
++                       : Message ? Message->getMethodDecl() : nullptr;
 +  auto *Callable = Decl::castFromDeclContext(CurContext);
 +  const auto *Executor = getObjC3Executor(Target);
 +  const auto *Current = getObjC3Executor(Callable);
-+  bool ActorEntry = Message && isObjC3ActorIsolated(Target);
-+  bool Crossing = (ActorEntry && !sameCurrentActor(Callable, Message)) ||
++  bool ActorEntry = (Message || Property) && isObjC3ActorIsolated(Target);
++  bool PropertyContract = true;
++  SmallVector<const ObjCMethodDecl *, 2> Accessors;
++  if (Property) {
++    if (Property->reads()) Accessors.push_back(Property->Getter);
++    if (Property->writes()) Accessors.push_back(Property->Setter);
++    for (const auto *Accessor : Accessors) {
++      ActorEntry |= isObjC3ActorIsolated(Accessor);
++      if (const auto *Required = getObjC3Executor(Accessor)) {
++        if (Executor && Executor->getExecutor() != Required->getExecutor()) PropertyContract = false;
++        else Executor = Required;
++      }
++    }
++  }
++  bool SameActor = false;
++  if (Property) {
++    if (const auto *Method = dyn_cast<ObjCMethodDecl>(Callable);
++        Method && isObjC3ActorIsolated(Method)) {
++      SameActor = Property->Reference->isSuperReceiver();
++      if (Property->Reference->isObjectReceiver())
++        if (auto *Base = propertyInput(Property->Reference->getBase()))
++          if (auto *Reference = dyn_cast<DeclRefExpr>(Base->IgnoreParenImpCasts()))
++            SameActor = Reference->getDecl() == Method->getSelfDecl();
++    }
++  } else if (Message) SameActor = sameCurrentActor(Callable, Message);
++  bool Crossing = (ActorEntry && !SameActor) ||
 +                  (Executor && (!Current || Current->getExecutor() !=
 +                                                Executor->getExecutor()));
 +  const auto *FT = isolationCalleeFunctionType(*this, Target);
++  if (Property && FT) {
++    SmallVector<QualType, 1> Types;
++    if (Property->RHS) Types.push_back(Property->RHS->getType());
++    auto Info = FT->getExtProtoInfo();
++    if (Types.empty()) Info.ExtParameterInfos = nullptr;
++    FT = Context.getFunctionType(Property->Result, Types, Info)->castAs<FunctionProtoType>();
++  }
 +  if (Message && FT && cast<ObjCMethodDecl>(Target)->hasRelatedResultType()) {
 +    // Preserve the source send's instantiated class/generic result rather than
 +    // erasing instancetype to the method declaration's logical id spelling.
@@ -50477,7 +50652,9 @@ index 000000000..3dfec5c3d
 +    return Operand;
 +  }
 +  ObjCMethodDecl *SuperContext = nullptr;
-+  Expr *SourceReceiver = Message ? Message->getInstanceReceiver() : nullptr;
++  Expr *SourceReceiver = Property && Property->Reference->isObjectReceiver()
++      ? propertyInput(Property->Reference->getBase())
++      : Message ? Message->getInstanceReceiver() : nullptr;
 +  const auto *CxxMethod = dyn_cast_or_null<CXXMethodDecl>(Target);
 +  const auto *MemberCall = dyn_cast_or_null<CXXMemberCallExpr>(Call);
 +  const auto *Member = Call
@@ -50494,6 +50671,11 @@ index 000000000..3dfec5c3d
 +          Context.getPointerType(SourceReceiver->getType()), VK_PRValue,
 +          OK_Ordinary, Loc, false, FPOptionsOverride());
 +  }
++  if (Property && Property->Reference->isSuperReceiver()) {
++    SuperContext = getCurMethodDecl();
++    if (SuperContext) SourceReceiver = BuildDeclRefExpr(SuperContext->getSelfDecl(),
++        SuperContext->getSelfDecl()->getType(), VK_LValue, Loc);
++  }
 +  if (Message && (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance ||
 +                  Message->getReceiverKind() == ObjCMessageExpr::SuperClass)) {
 +    SuperContext = getCurMethodDecl();
@@ -50502,7 +50684,9 @@ index 000000000..3dfec5c3d
 +          SuperContext->getSelfDecl()->getType(), VK_LValue, Message->getSuperLoc());
 +  }
 +  SmallVector<Expr *, 4> SourceArguments;
-+  if (Call)
++  if (Property) {
++    if (Property->RHS) SourceArguments.push_back(Property->RHS);
++  } else if (Call)
 +    llvm::append_range(SourceArguments, Call->arguments());
 +  else
 +    llvm::append_range(SourceArguments, Message->arguments());
@@ -50517,7 +50701,7 @@ index 000000000..3dfec5c3d
 +    Arguments.Visit(Argument);
 +  if (Arguments.failed())
 +    return ExprError();
-+  ArrayRef<ParmVarDecl *> TargetParameters = Message
++  ArrayRef<ParmVarDecl *> TargetParameters = Message || Property
 +      ? cast<ObjCMethodDecl>(Target)->parameters()
 +      : cast<FunctionDecl>(Target)->parameters();
 +  bool Shape = !FT->isVariadic() &&
@@ -50527,7 +50711,27 @@ index 000000000..3dfec5c3d
 +                Target->hasAttr<NoThrowAttr>());
 +  for (QualType T : FT->param_types())
 +    Shape &= isolationFrameValue(*this, T, false);
-+  if (Call) {
++  if (Property) {
++    Shape &= PropertyContract;
++    for (const auto *Accessor : Accessors) {
++      const auto *Signature = isolationCalleeFunctionType(*this, Accessor);
++      Shape &= Signature && !Signature->isVariadic() &&
++          !Signature->getObjC3FunctionEffects().Async &&
++          Signature->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
++          (!getLangOpts().CPlusPlus || Signature->isNothrow() || Accessor->hasAttr<NoThrowAttr>());
++    }
++    if (Property->writes()) {
++      unsigned Budget = 256;
++      Shape &= propertyWriteValue(*this, Property->Result, Budget);
++      if (Property->RHS) Shape &= propertyWriteValue(*this, Property->RHS->getType(), Budget);
++      if (Property->reads()) {
++        Shape &= Property->Result->isArithmeticType() || Property->Result->isEnumeralType() ||
++                 Property->Result->isPointerType();
++        if (Property->RHS) Shape &= Property->RHS->getType()->isArithmeticType() ||
++                                  Property->RHS->getType()->isEnumeralType();
++      }
++    }
++  } else if (Call) {
 +    const auto *Method = dyn_cast<CXXMethodDecl>(Target);
 +    Shape &= CxxReceiver || StaticMember || ((!Method || Method->isStatic()) &&
 +             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts()));
@@ -50559,7 +50763,7 @@ index 000000000..3dfec5c3d
 +  if (CxxReceiver)
 +    Failed |= checkTransfer(*this, SourceReceiver->getType()->getPointeeType(),
 +                            SourceReceiver->getExprLoc(), "shared isolated C++ receiver", Target, true);
-+  else if (SourceReceiver && Message->getReceiverKind() != ObjCMessageExpr::SuperClass)
++  else if (SourceReceiver && (!Message || Message->getReceiverKind() != ObjCMessageExpr::SuperClass))
 +    Failed |= checkTransfer(*this, transferSource(SourceReceiver)->getType(),
 +                            SourceReceiver->getExprLoc(), "isolated receiver", Target);
 +  for (const Expr *Argument : SourceArguments)
@@ -50581,7 +50785,7 @@ index 000000000..3dfec5c3d
 +  }
 +  auto *Thunk =
 +      buildIsolationThunk(*this, Source, SourceReceiver, Target, FT, Executor,
-+                          ActorEntry, SuperContext, Loc);
++                          ActorEntry, SuperContext, Loc, Property ? &*Property : nullptr);
 +  if (!Thunk)
 +    return ExprError();
 +  ExprResult Callee = BuildDeclRefExpr(Thunk, Thunk->getType(), VK_LValue, Loc);
@@ -50618,6 +50822,9 @@ index 000000000..3dfec5c3d
 +    Semantics.push_back(new (Context) OpaqueValueExpr(Base->getExprLoc(),
 +        Base->getType(), Base->getValueKind(), Base->getObjectKind(), Base));
 +  }
++  if (Property && Property->RHSFirst) {
++    if (!Capture(SourceArguments.front())) return ExprError();
++  }
 +  if (SourceReceiver &&
 +      !Capture(isolationConsumesReceiver(Target)
 +                   ? uninitializeConsumedArgument(SourceReceiver)
@@ -50627,14 +50834,16 @@ index 000000000..3dfec5c3d
 +    if (FT->getExtParameterInfo(I).isCFConsumed() ||
 +        (I < TargetParameters.size() && TargetParameters[I]->hasAttr<CFConsumedAttr>()))
 +      Cleanup.setExprNeedsCleanups(true);
-+    if (!Capture(SourceArguments[I])) return ExprError();
++    if ((!Property || !Property->RHSFirst) && !Capture(SourceArguments[I])) return ExprError();
 +  }
++  if (Property && Property->RHSFirst && SourceReceiver)
++    std::swap(Captures[0], Captures[1]);
 +  ExprResult Frame = BuildCallExpr(nullptr, Callee.get(), Loc, Captures, Loc);
 +  if (Frame.isInvalid())
 +    return ExprError();
 +  unsigned ResultIndex = Semantics.size();
 +  Semantics.push_back(Frame.get());
-+  return PseudoObjectExpr::Create(Context, Source, Semantics, ResultIndex);
++  return PseudoObjectExpr::Create(Context, Operand, Semantics, ResultIndex);
 +}
 +
 +bool Sema::isObjC3NonSuspendingAwait(Expr *Operand) {
@@ -56994,10 +57203,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..fb1a34685
+index 000000000..61f33d269
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,618 @@
+@@ -0,0 +1,650 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -57006,6 +57215,7 @@ index 000000000..fb1a34685
 +//
 +//===----------------------------------------------------------------------===//
 +
++#include "clang/Analysis/CFG.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
@@ -57615,6 +57825,37 @@ index 000000000..fb1a34685
 +      }
 +    EXPECT_EQ(Checked,2u);
 +  }
++}
++
++TEST(ObjC3ASTInfrastructure, PropertyCFGMatchesLazyOpaqueEvaluationOrder) {
++  for (bool Cxx : {false,true})
++    for (bool ARC : {false,true}) {
++      auto AST=tooling::buildASTFromCodeWithArgs(R"(
++        __attribute__((objc_root_class)) @interface EvaluationRoot
++        @property(nonatomic) int value;
++        @end
++        EvaluationRoot *receiver_effect(void);
++        int rhs_effect(void);
++        int expression(void){return receiver_effect().value=rhs_effect();}
++      )",{"-x",Cxx?"objective-c++":"objective-c",Cxx?"-std=c++23":"-std=c17",
++           "-fobjc-runtime=gnustep-2.2",ARC?"-fobjc-arc":"-fno-objc-arc"});
++      ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++      FunctionDecl *Function=nullptr;
++      for (Decl *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++        if (auto *F=dyn_cast<FunctionDecl>(D); F && F->getName()=="expression") Function=F;
++      ASSERT_TRUE(Function);
++      CFG::BuildOptions Options;Options.setAllAlwaysAdd();
++      auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);
++      ASSERT_TRUE(Graph);
++      std::vector<std::string> Calls;
++      for (const auto *Block:*Graph)
++        for (const auto &Element:*Block)
++          if (auto Statement=Element.getAs<CFGStmt>())
++            if (const auto *Call=dyn_cast<CallExpr>(Statement->getStmt()))
++              if (const auto *Callee=Call->getDirectCallee()) Calls.push_back(Callee->getNameAsString());
++      ASSERT_EQ(Calls.size(),2u);
++      EXPECT_EQ(Calls[0],"rhs_effect");EXPECT_EQ(Calls[1],"receiver_effect");
++    }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -62673,3 +62914,33 @@ index 000000000..36b7be651
 +  auto copy=work;auto &alias=copy;
 +  int one=work();int two=alias();(void)one;(void)two;
 +}
+diff --git a/clang/test/ObjC3/Sema/isolated-property-boundaries.m b/clang/test/ObjC3/Sema/isolated-property-boundaries.m
+new file mode 100644
+index 000000000..ef8d3a2ad
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/isolated-property-boundaries.m
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/isolated-properties.h"
++int reject_unawaited_property(PropertyControlActor *object) __objc3_async_frame {
++  return object.value; // expected-error {{cross-actor entry requires an explicit await}}
++}
++int reject_unawaited_assignment(PropertyControlActor *object) __objc3_async_frame {
++  return (object.value=42); // expected-error {{cross-actor entry requires an explicit await}}
++}
++int reject_mixed_domains(PropertyControlHost *object) __objc3_async_frame {
++  return __objc3_await (object.mixed+=1); // expected-error {{awaited isolated entry requires}}
++}
++#ifdef __cplusplus
++void reject_nontrivial_write(PropertyControlHost *object,PropertyNontrivial *value) __objc3_async_frame {
++  __objc3_await (object.nontrivial=*value); // expected-error {{awaited isolated entry requires}}
++}
++int reject_throwing_getter(PropertyControlHost *object) __objc3_async_frame {
++  return __objc3_await object.throwing; // expected-error {{awaited isolated entry requires}}
++}
++#endif
