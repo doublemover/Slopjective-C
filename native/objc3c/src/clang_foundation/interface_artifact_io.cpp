@@ -42,6 +42,7 @@ const auto kSupportedSemantics = std::to_array<llvm::StringRef>({
     kManagedRuntimeScopeSemantic,
     kNativeFinallySemantic,
     kInitializedOwnerSemantic,
+    kNativeDisposalSemantic,
     kBorrowedReceiverResultSemantic,
     kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,

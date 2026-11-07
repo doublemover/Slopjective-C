@@ -57923,10 +57923,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..27726ad4c
+index 000000000..f1b0d386c
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,731 @@
+@@ -0,0 +1,783 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -58657,6 +58657,58 @@ index 000000000..27726ad4c
 +  Static.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
 +  Dynamic.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
 +  EXPECT_EQ(Static.Bindings,1u);EXPECT_EQ(Dynamic.Bindings,1u);
++}
++
++TEST(ObjC3ASTInfrastructure, ScalarDeleteDeallocatesBeforeExceptionalCleanup) {
++  for (bool ARC : {false,true}) {
++    auto AST=tooling::buildASTFromCodeWithArgs(R"(
++      struct Disposal {~Disposal() noexcept(false);static void operator delete(void *) noexcept;};
++      void disposal_marker(int) noexcept;
++      void dispose_paths(Disposal *value) {
++        __objc3_defer {disposal_marker(3);}
++        try {delete value;}catch(...) {disposal_marker(4);}
++      }
++    )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++         "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions",
++         ARC?"-fobjc-arc":"-fno-objc-arc"},"delete-paths.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    FunctionDecl *Function=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getNameAsString()=="dispose_paths")Function=F;
++    ASSERT_NE(Function,nullptr);
++    CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++    Options.AddEHEdges=true;Options.AddImplicitDtors=true;
++    auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);
++    ASSERT_TRUE(Graph);
++    unsigned Paths=0,NullPaths=0,CaughtPaths=0,Budget=4096;
++    auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Trace,unsigned Depth)->void {
++      ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,64u);
++      for(const auto &Element:*Block) {
++        if(Element.getAs<CFGDeleteDtor>())Trace.push_back(1);
++        if(auto Statement=Element.getAs<CFGStmt>()) {
++          if(isa<CXXDeleteExpr>(Statement->getStmt()))Trace.push_back(2);
++          if(const auto *Call=dyn_cast<CallExpr>(Statement->getStmt());Call && Call->getDirectCallee() &&
++              Call->getDirectCallee()->getName()=="disposal_marker")
++            Trace.push_back(cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue());
++        }
++      }
++      if(Block->succ_empty()) {
++        ++Paths;
++        auto Destructor=std::find(Trace.begin(),Trace.end(),1);
++        if(Destructor==Trace.end()) {++NullPaths;EXPECT_EQ(Trace,std::vector<int>({3}));}
++        else {
++          ASSERT_NE(Destructor+1,Trace.end());EXPECT_EQ(*(Destructor+1),2);
++          EXPECT_EQ(std::count(Trace.begin(),Trace.end(),1),1);
++          EXPECT_EQ(std::count(Trace.begin(),Trace.end(),2),1);
++        }
++        if(std::find(Trace.begin(),Trace.end(),4)!=Trace.end())++CaughtPaths;
++        return;
++      }
++      for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Trace,Depth+1);
++    };
++    Explore(Explore,&Graph->getEntry(),{},0);
++    EXPECT_GE(Paths,3u);EXPECT_GT(NullPaths,0u);EXPECT_GT(CaughtPaths,0u);
++  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -64907,3 +64959,73 @@ index 000000000..7e5effbed
 +  __objc3_defer {receiver_use(view);}receiver_use(view);(void)pair;
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-throwing-disposal.h b/clang/test/ObjC3/Sema/Inputs/borrowed-throwing-disposal.h
+new file mode 100644
+index 000000000..3d03130c7
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-throwing-disposal.h
+@@ -0,0 +1,13 @@
++#ifndef BORROWED_THROWING_DISPOSAL_H
++#define BORROWED_THROWING_DISPOSAL_H
++#include "borrowed-runtime-scopes.h"
++struct ThrowingDisposal {
++  ~ThrowingDisposal() noexcept(false);
++  static void operator delete(void *) noexcept;
++};
++struct NeverDisposal {
++  ~NeverDisposal() noexcept __attribute__((noreturn));
++  static void operator delete(void *) noexcept;
++};
++void disposal_event(void) noexcept;
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-throwing-disposal.mm b/clang/test/ObjC3/Sema/borrowed-throwing-disposal.mm
+new file mode 100644
+index 000000000..0fbd0a028
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-throwing-disposal.mm
+@@ -0,0 +1,45 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-throwing-disposal.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-throwing-disposal.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-throwing-disposal.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-throwing-disposal.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-throwing-disposal.h"
++#endif
++void throwing_disposal_live(RuntimeScopeOwner *_Nonnull owner,ThrowingDisposal *value) {
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    try {__objc3_defer {receiver_use(view);}delete value;}
++    catch(...) {receiver_use(view);}
++    receiver_use(view);
++  }
++}
++void throwing_disposal_expired(RuntimeScopeOwner *_Nonnull owner,ThrowingDisposal *value) {
++  const char *view=[owner bytes];
++  try {{__objc3_defer {owner=(id)0;}delete value;}}
++  catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void throwing_disposal_finally(RuntimeScopeOwner *_Nonnull owner,ThrowingDisposal *value) {
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    @try {delete value;} @finally {receiver_use(view);}
++  }
++}
++void null_disposal_remains_reachable(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];__objc3_defer {disposal_event();}
++  delete static_cast<NeverDisposal *>(nullptr);
++  owner=(id)0;
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void throwing_disposal_array_stays_qualified(RuntimeScopeOwner *_Nonnull owner,ThrowingDisposal *value) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++  withLifetime(owner) {const char *view=[owner bytes];delete[] value;receiver_use(view);}
++}

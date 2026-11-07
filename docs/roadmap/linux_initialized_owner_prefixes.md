@@ -45,7 +45,6 @@ failed first/later initializers, nested records/arrays, outer pins, finalizers,
 owning value/reference captures, capture order and expiry after unwind. The
 installed optional `runtime-scopes` witness clears the original owner during a
 later initializer and optionally throws, checking live payloads and exact
-destruction in records, arrays, nested layouts and C++ lambdas. Source-free and
-all 77 affected compiler cases, six source-free profiles, five adjacent frontend
+destruction in records, arrays, nested layouts and C++ lambdas. All 77 affected compiler cases, six source-free profiles, five adjacent frontend
 groups, codec/isolation and all nineteen AST controls pass. Twelve ASan/UBSan
 native configurations / 42 commands pass after the final compiler rebuild.

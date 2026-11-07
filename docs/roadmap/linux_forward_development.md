@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [System 2.40 disposal span](linux_native_disposal.md) adds mandatory scalar
+deallocation after destructor failure and exact null-operand branching, including
+noreturn destructors. Twelve source/PCH commands, all twenty AST controls and
+twelve instrumented native configurations pass. All 78 affected compiler cases,
+four source-free profiles, five adjacent groups and codec/isolation controls pass.
+
 The [System 2.39 initialized-owner span](linux_initialized_owner_prefixes.md)
 tracks completed ARC record/array/capture prefixes, failure unwind and transfer
 to complete storage. Owner/unowned snapshots preserve actual evaluation order;

@@ -6,6 +6,12 @@
 #include <assert.h>
 #include <dlfcn.h>
 #include <stdio.h>
+#include <stdlib.h>
+#ifdef __cplusplus
+#include <exception>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 #pragma clang assume_nonnull begin
 #ifdef __cplusplus
 extern "C" {
@@ -324,6 +330,81 @@ static void scope_partial_suite(void) {
 }
 #endif
 
+
+#ifdef __cplusplus
+static int scope_disposal_trace[8],scope_disposal_count,scope_disposal_allocations,scope_disposal_frees;
+static int scope_disposal_deallocation_throws,scope_disposal_expected_child_frees,scope_disposal_operands;
+[[noreturn]] static void scope_disposal_fault(void) {throw 79;}
+static void scope_disposal_event(int event) {
+  assert(scope_disposal_count<8);scope_disposal_trace[scope_disposal_count++]=event;
+}
+struct ScopeDisposal {
+  int failure;
+  explicit ScopeDisposal(int fail) noexcept:failure(fail) {}
+  static void *operator new(__SIZE_TYPE__ size) {
+    void *value=malloc(size);assert(value);++scope_disposal_allocations;return value;
+  }
+  ~ScopeDisposal() noexcept(false) {scope_disposal_event(1);if(failure)throw 73;}
+  static void operator delete(void *value) noexcept {
+    scope_disposal_event(2);++scope_disposal_frees;free(value);
+    if(scope_disposal_deallocation_throws)scope_disposal_fault();
+  }
+};
+static ScopeDisposal *scope_disposal_operand(ScopeDisposal *value) noexcept {
+  ++scope_disposal_operands;return value;
+}
+struct ScopeNeverDisposal {
+  __attribute__((noreturn)) ~ScopeNeverDisposal() noexcept {abort();}
+  static void operator delete(void *value) noexcept {free(value);}
+};
+static void scope_disposal_path(ScopeProbe *_Nonnull owner,int fail,int deallocation_throws) {
+  int allocations=scope_disposal_allocations,frees=scope_disposal_frees,caught=0,operands=scope_disposal_operands;
+  scope_disposal_count=0;scope_disposal_deallocation_throws=deallocation_throws;
+  withLifetime(owner) {
+    const char *view=&owner->payload;
+    try {
+      __objc3_defer {scope_use(view);scope_disposal_event(3);}
+      delete scope_disposal_operand(new ScopeDisposal(fail));
+    } catch(int value) {
+      assert(value==(deallocation_throws?79:73));++caught;scope_use(view);scope_disposal_event(4);
+    }
+    scope_use(view);
+  }
+  assert(caught==(fail || deallocation_throws));
+  assert(scope_disposal_allocations==allocations+1 && scope_disposal_frees==frees+1 && scope_disposal_operands==operands+1);
+  assert(scope_disposal_count==(caught?4:3));
+  for(int i=0;i!=scope_disposal_count;++i)assert(scope_disposal_trace[i]==i+1);
+}
+static void scope_disposal_suite(void) {
+  ScopeProbe *_Nonnull owner=[ScopeProbe new];
+#if !__has_feature(objc_arc)
+  __objc3_defer {[owner release];}
+#endif
+  scope_disposal_path(owner,0,0);scope_disposal_path(owner,1,0);
+  scope_disposal_count=0;
+  const char *view=&owner->payload;
+  {__objc3_defer {scope_use(view);scope_disposal_event(3);}
+   delete static_cast<ScopeNeverDisposal *>(nullptr);scope_use(view);}
+  assert(scope_disposal_count==1 && scope_disposal_trace[0]==3);
+  // A second exception from deallocation during destructor unwind terminates.
+  pid_t child=fork();assert(child>=0);
+  if(child==0) {
+    scope_disposal_expected_child_frees=scope_disposal_frees+1;
+    std::set_terminate([]{
+      _Exit(scope_disposal_frees==scope_disposal_expected_child_frees && scope_disposal_count==2 &&
+            scope_disposal_trace[0]==1 && scope_disposal_trace[1]==2?83:82);
+    });scope_disposal_count=0;
+    scope_disposal_deallocation_throws=1;
+    // Supply a primary handler so C++ performs phase-two unwinding.
+    try {delete new ScopeDisposal(1);}catch(...) {_Exit(81);}
+    _Exit(84);
+  }
+  int status=0;assert(waitpid(child,&status,0)==child);
+  assert(WIFEXITED(status) && WEXITSTATUS(status)==83);
+  scope_disposal_deallocation_throws=0;
+}
+#endif
+
 static void runtime_scope_suite(void) {
   int initial_created=scope_created,initial_destroyed=scope_destroyed;
   @autoreleasepool {
@@ -344,6 +425,9 @@ static void runtime_scope_suite(void) {
       assert(scope_lock_evaluations==arguments+1);
     }
     scope_normal_only_pool_exception();scope_finally_suite();
+#ifdef __cplusplus
+    scope_disposal_suite();
+#endif
 #if __has_feature(objc_arc)
     scope_partial_suite();
 #endif

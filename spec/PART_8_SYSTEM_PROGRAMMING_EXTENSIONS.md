@@ -401,6 +401,12 @@ initialization order. A later binding replacement shall not erase an independent
 completed claim; an already expired source shall not become valid through an
 unproved ownership copy.
 
+Native disposal proofs shall include mandatory deallocation after a scalar C++
+destructor throws, before enclosing cleanup. A null delete operand shall evaluate
+once and bypass destruction and deallocation; a noreturn destructor shall not
+make the null path unreachable. Disposal shall preserve the native exception and
+termination boundaries while checking any owner lifetimes affected by cleanup.
+
 ### 8.7.4 Escaping-use trigger points and minimum diagnostics (normative) {#part-8-7-4}
 
 In strict-system mode, a borrowed pointer value is treated as **non-escaping** unless an explicit unsafe escape marker is used.

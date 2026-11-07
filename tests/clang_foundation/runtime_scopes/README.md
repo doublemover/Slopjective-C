@@ -30,3 +30,9 @@ ARC partial-initialization witnesses initialize records, arrays, nested records
 and C++ owning lambdas before a later initializer clears the original owner and
 optionally throws. Borrowed payload access stays live through the initialized
 prefix. Every successful or exceptional path destroys the object exactly once.
+
+C++ disposal witnesses check destructor/deallocator/defer/catch order, exact
+allocation/free counts, a null operand with a noreturn destructor and controlled
+fault detection when a deallocator violates its nonthrowing contract during
+unwind. The termination case
+runs in a child process with an explicit exit-code witness.
