@@ -4380,6 +4380,84 @@ void TestAutomaticOwnerUnwindReplay() {
 }
 
 
+void TestBlockMutationPackageReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    const bool cxx=std::string(standard)!="c17";
+    std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
+        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks",
+        "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    std::ifstream input(std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/block_values.h");assert(input);
+    const std::string source((std::istreambuf_iterator<char>(input)),std::istreambuf_iterator<char>());
+    auto emit=[&](const std::string &text,const char *name) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.block_mutation_package","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.block_mutation_package","test");
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source,"computed-block-provider.m");auto replay=emit(first.source_bytes,"computed-block-replay.m");
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"computed-block-relocated.m");assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+    assert(llvm::is_contained(decoded->required_semantics,std::string(kAutomaticOwnerUnwindSemantic)));
+    assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeSubobjectSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kAutomaticOwnerUnwindSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto missing=*decoded;std::erase(missing.required_semantics,kAutomaticOwnerUnwindSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto plain=emit("void plain_computed_contract(void);","plain-computed.m");
+    auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);invented->required_semantics.push_back(kAutomaticOwnerUnwindSemantic);
+    auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);llvm::consumeError(unexpected.takeError());
+  }
+}
+
+void TestBlockMutationReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
+    const bool cxx=std::string(standard)!="c17";
+    std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
+        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks",
+        "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string source=R"(
+      typedef void (^PublishedComputedCallback)(void);
+      struct PublishedComputedSlots {PublishedComputedCallback field,array[2];};
+      int published_computed_step(void);
+      void published_computed_checkpoint(void) __attribute__((nothrow));
+      void published_computed_consume(PublishedComputedCallback value __attribute__((ns_consumed))) __attribute__((nothrow));
+      inline void published_computed_body(struct PublishedComputedSlots *slots,int flag,int index) {
+        __objc3_defer {published_computed_checkpoint();}
+        PublishedComputedCallback local=(published_computed_step(),flag?slots->field:slots->array[index]);
+        published_computed_consume(flag?local:slots->array[index]);local();slots->array[index]();
+        slots->array[published_computed_step()]=(published_computed_step(),flag?local:slots->field);
+        local=slots->array[index];slots->field=(PublishedComputedCallback)0;
+      }
+    )";
+    auto emit=[&](const std::string &text,const char *name) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.block_mutation","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.block_mutation","test");
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source,"computed-block-provider.m");auto replay=emit(first.source_bytes,"computed-block-replay.m");
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"computed-block-relocated.m");assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+    assert(llvm::is_contained(decoded->required_semantics,std::string(kAutomaticOwnerUnwindSemantic)));
+    assert(!llvm::is_contained(decoded->required_semantics,std::string(kNativeSubobjectSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kAutomaticOwnerUnwindSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto missing=*decoded;std::erase(missing.required_semantics,kAutomaticOwnerUnwindSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto plain=emit("void plain_computed_contract(void);","plain-computed.m");
+    auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);invented->required_semantics.push_back(kAutomaticOwnerUnwindSemantic);
+    auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);llvm::consumeError(unexpected.takeError());
+  }
+}
+
 void TestComputedBlockValuesReplay() {
   for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
     const bool cxx=std::string(standard)!="c17";
@@ -9639,6 +9717,8 @@ int main(int argc,char **argv) {
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
   TestAutomaticOwnerUnwindReplay();
+  TestBlockMutationPackageReplay();
+  TestBlockMutationReplay();
   TestComputedBlockValuesReplay();
   TestComputedBlockArrayMemberReplay();
   TestNativeBlockArrayMemberReplay();

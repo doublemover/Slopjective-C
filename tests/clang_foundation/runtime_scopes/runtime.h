@@ -943,10 +943,12 @@ __attribute__((noinline)) static void scope_ordinary_raise(int mode) {
 }
 static void *_Nullable (*_Nullable scope_real_block_copy)(const void *_Nullable);
 static int scope_fail_block_copy;
+static int scope_mutation_observe,scope_mutation_events;
 #ifdef __cplusplus
 extern "C"
 #endif
 __attribute__((noinline)) void *_Nullable _Block_copy(const void *_Nullable source) {
+  if(scope_mutation_observe)scope_mutation_events=scope_mutation_events*10+2;
   if(scope_fail_block_copy && --scope_fail_block_copy==0){@throw scope_exception;}
   if(!scope_real_block_copy)scope_real_block_copy=(void *(*)(const void *))dlsym(RTLD_NEXT,"_Block_copy");
   assert(scope_real_block_copy);return scope_real_block_copy(source);
@@ -1083,6 +1085,61 @@ static void scope_computed_block_local_unwind(void) {
   }
 }
 
+
+static int scope_mutation_fault,scope_mutation_deferred;
+__attribute__((noinline)) static int scope_mutation_rhs(void) {
+  scope_mutation_events=scope_mutation_events*10+1;
+  if(scope_mutation_fault==1)scope_ordinary_raise(0);
+  return 0;
+}
+__attribute__((noinline)) static int scope_mutation_index(void) {
+  scope_mutation_events=scope_mutation_events*10+3;
+  if(scope_mutation_fault==3)scope_ordinary_raise(0);
+  return 0;
+}
+struct ScopeBlockMutationSlots {
+  ScopeMemberCallback _Nullable callbacks[2];
+  ScopeBlockMutationSlots():callbacks{} {}
+};
+static void scope_block_mutation_unwind(void) {
+  for(int member=0;member!=2;++member)for(int fault=0;fault!=(member?4:3);++fault) {
+    int before=scope_destroyed,caught=0;scope_mutation_fault=fault;scope_mutation_events=0;
+    {
+      ScopeBlockMutationSlots storage;
+      ScopeMemberCallback _Nullable local=(id)0,replacement=(id)0;
+      {
+        ScopeProbe *_Nonnull oldOwner=[ScopeProbe new],* _Nonnull newOwner=[ScopeProbe new];
+        ScopeMemberCallback old=^{scope_use(&oldOwner->payload);};
+        ScopeMemberCallback fresh=^{scope_use(&newOwner->payload);};
+        if(member)storage.callbacks[0]=old;else local=old;
+        replacement=fresh;
+      }
+      // The literal stack captures have ended; only copied closures hold owners.
+      assert(scope_destroyed==before);scope_mutation_deferred=0;
+      scope_fail_block_copy=fault==2?1:0;scope_mutation_observe=1;
+      @try {
+        __objc3_defer {++scope_mutation_deferred;}
+        if(member)storage.callbacks[scope_mutation_index()]=(scope_mutation_rhs(),replacement);
+        else local=(scope_mutation_rhs(),replacement);
+      } @catch(id exception) {assert(exception==scope_exception);++caught;}
+      scope_mutation_observe=0;
+      assert(caught==(fault!=0) && scope_fail_block_copy==0 && scope_mutation_deferred==1);
+      assert(scope_mutation_events==(fault==1?1:fault==2?12:member?123:12));
+      assert(scope_destroyed==before+(fault==0));
+      if(member)storage.callbacks[0]();else local();
+      replacement=(id)0;
+      // On failure the old owner survives in the unchanged slot. On success
+      // only the new owner survives. A leaked address-evaluation copy breaks
+      // this count before the target is cleared.
+      assert(scope_destroyed==before+1);
+      if(member)storage.callbacks[0]=(ScopeMemberCallback)0;else local=(ScopeMemberCallback)0;
+      assert(scope_destroyed==before+2);
+    }
+    assert(scope_destroyed==before+2);
+  }
+  scope_mutation_fault=0;scope_mutation_observe=0;
+}
+
 static void scope_computed_block_array_unwind(void) {
   // Copy failures cover every leaf, including a partial second row. Scalar
   // evaluation faults occur before leaf 1 and leaf 4, independently of copying.
@@ -1183,7 +1240,7 @@ static void scope_ordinary_record_block(void) {
 }
 static void scope_ordinary_owner_unwind(void) {
 #ifdef __cplusplus
-  scope_block_member_unwind();scope_block_array_member_unwind();scope_computed_block_array_unwind();scope_computed_block_local_unwind();
+  scope_block_member_unwind();scope_block_array_member_unwind();scope_computed_block_array_unwind();scope_computed_block_local_unwind();scope_block_mutation_unwind();
 #endif
   int before=scope_destroyed;
   @try {

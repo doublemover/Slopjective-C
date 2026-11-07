@@ -787,6 +787,7 @@ int main() {
     if (native_statement_live()!=0) return 93;
     auto value=native_statement_value();
     NativeBlockDefaults defaults;
+    if (NativeBlockValues::exercise(40)!=42 || NativeBlockValues::exercise(41)!=43) return 251;
     if (native_published_block(40)!=42 || native_published_statement(40)!=42 ||
         value.value!=42 || native_statement_live()!=1 || defaults.get()!=42) return 92;
   }

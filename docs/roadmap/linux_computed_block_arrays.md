@@ -1,5 +1,8 @@
 # Computed and nested Block array ownership
 
+The [System 2.49 span](linux_block_mutation.md) adds slot mutation and retained-RHS
+address-failure cleanup. This System 2.48 receipt remains the computed-value baseline.
+
 System source 2.48 extends member-array registration to bounded constant nested
 arrays. Native row-major scalar leaves share one flattened completed-prefix
 count, so a failure inside a later row releases exactly earlier initialized

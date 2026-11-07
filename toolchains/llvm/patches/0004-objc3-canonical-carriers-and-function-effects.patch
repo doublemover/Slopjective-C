@@ -57982,10 +57982,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..2927e735d
+index 000000000..203f6fad7
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,1829 @@
+@@ -0,0 +1,1872 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -59814,6 +59814,49 @@ index 000000000..2927e735d
 +  Owner->print(Stream,PrintingPolicy(AST->getASTContext().getLangOpts()));Stream.flush();
 +  auto Replayed=tooling::buildASTFromCodeWithArgs(Prefix+Printed+";",Args,"wrapped-array-replay.mm");
 +  ASSERT_TRUE(Replayed);EXPECT_FALSE(Replayed->getDiagnostics().hasErrorOccurred());
++}
++
++
++TEST(ObjC3ASTInfrastructure, BlockAssignmentCopiesBeforeAddressAndReleasesOnlySuccessfulTemporary) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    typedef void (^Callback)(void);int block_mutate_rhs();int block_mutate_index();void block_mutate_marker(int) noexcept;
++    struct Slots {Callback callbacks[2];};
++    void block_mutate_body(Slots &slots,Callback source) {
++      __objc3_defer {block_mutate_marker(9);}
++      slots.callbacks[block_mutate_index()]=(block_mutate_rhs(),source);block_mutate_marker(10);
++    }
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions"},"block-mutation.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());FunctionDecl *Function=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="block_mutate_body")Function=F;
++  ASSERT_NE(Function,nullptr);CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;Options.AddEHEdges=true;Options.AddInitializers=true;Options.AddImplicitDtors=true;
++  auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Budget=8192,Normal=0,Failed=0,FailureMask=0;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,unsigned Copies,bool Held,unsigned Ends,bool Stored,unsigned Failure,bool Unwind,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);Unwind|=Block->isNativeExceptionExit();EXPECT_FALSE(Block->hasNoReturnElement());unsigned Operation=0;
++    for(const auto &Element:*Block) {
++      if(auto S=Element.getAs<CFGStmt>()) {
++        if(const auto *D=dyn_cast<DeclStmt>(S->getStmt());D && D->isSingleDecl())
++          if(const auto *V=dyn_cast<VarDecl>(D->getSingleDecl());V && V->getName()=="__objc3_cfg_block_assignment_value"){EXPECT_EQ(Copies,1u);Held=true;}
++        if(const auto *B=dyn_cast<BinaryOperator>(S->getStmt());B && B->getOpcode()==BO_Assign){EXPECT_EQ(Copies,1u);EXPECT_TRUE(Held);Stored=true;}
++        if(const auto *Call=dyn_cast<CallExpr>(S->getStmt());Call && Call->getDirectCallee()) {
++          auto Name=Call->getDirectCallee()->getName();
++          if(Name=="block_mutate_rhs"){Operation=1;EXPECT_EQ(Copies,0u);EXPECT_FALSE(Held);}
++          if(Name=="block_mutate_index"){Operation=4;EXPECT_EQ(Copies,1u);EXPECT_TRUE(Held);EXPECT_EQ(Ends,0u);}
++          if(Name=="block_mutate_marker" && Held)EXPECT_EQ(Ends,1u);
++        }
++      }
++      if(auto End=Element.getAs<CFGLifetimeEnds>();End && End->getVarDecl()->getName()=="__objc3_cfg_block_assignment_value") {EXPECT_TRUE(Held);EXPECT_EQ(++Ends,1u);}
++    }
++    if(Block->succ_empty()) {
++      if(Unwind){++Failed;EXPECT_FALSE(Stored);EXPECT_EQ(Ends,Held?1u:0u);FailureMask|=Failure;}
++      else {++Normal;EXPECT_TRUE(Stored);EXPECT_EQ(Copies,1u);EXPECT_EQ(Ends,1u);}
++      return;
++    }
++    bool Copy=Block->succ_size()==2 && !Block->getTerminatorStmt() && !Operation;unsigned Edge=0;
++    for(auto S:Block->succs()){if(auto *Next=S.getReachableBlock())Self(Self,Next,Copies+(Copy && Edge==0),Held,Ends,Stored,Edge==1 && Block->succ_size()==2?(Copy?2:Operation):Failure,Unwind,Depth+1);++Edge;}
++  };
++  Explore(Explore,&Graph->getEntry(),0,false,0,false,0,false,0);
++  EXPECT_GT(Normal,0u);EXPECT_EQ(Failed,3u);EXPECT_EQ(FailureMask,7u);
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -66778,10 +66821,10 @@ index 000000000..8e1181db4
 +#include "borrowed-subobject-cleanup.h"
 diff --git a/clang/test/ObjC3/Sema/borrowed-block-array-members.mm b/clang/test/ObjC3/Sema/borrowed-block-array-members.mm
 new file mode 100644
-index 000000000..d78a7df87
+index 000000000..5bca9067a
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-block-array-members.mm
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,149 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-block-array-members.h -o %t-c++20-False.pch
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
@@ -66892,3 +66935,42 @@ index 000000000..d78a7df87
 +  ArrayMemberCallback local=(subobject_raise(),flag?storage.callbacks[index]:storage.callbacks[0]);
 +  array_member_consume(flag?local:storage.callbacks[index]);local();storage.callbacks[index]();
 +}
++
++int array_member_index(int);
++void native_block_mutation(RuntimeScopeOwner *_Nonnull owner,NativeBlockArrayMembers &storage,ArrayMemberCallback replacement,int index) {
++  const char *view=owner->storage;__objc3_defer {receiver_use(view);}
++  storage.callbacks[array_member_index(index)]=(subobject_raise(),replacement);
++  ArrayMemberCallback local=replacement;local=storage.callbacks[index];local();
++  storage.callbacks[index]=(ArrayMemberCallback)0;
++}
++#if __has_feature(objc_arc)
++void nullable_block_assignment_copy(RuntimeScopeOwner *_Nullable owner,NativeBlockArrayMembers &storage,ArrayMemberCallback replacement) {
++  try {storage.callbacks[(owner=block_array_nothrow_factory(),0)]=replacement;}
++  catch(...) {[owner ping];} // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++void stabilized_block_assignment_handler(RuntimeScopeOwner *_Nullable owner,NativeBlockArrayMembers &storage,ArrayMemberCallback replacement) {
++  try {storage.callbacks[(owner=block_array_nothrow_factory(),0)]=replacement;}
++  catch(...) {owner=block_array_nothrow_factory();[owner ping];}
++}
++#endif
++
++#if __has_feature(objc_arc)
++typedef borrowed const char *ArrayBlockBytes;
++ArrayBlockBytes array_block_bytes(ArrayMemberCallback owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void replaced_block_loan(ArrayMemberCallback owner,ArrayMemberCallback replacement) {
++  const char *view=array_block_bytes(owner);owner=replacement;
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void failed_block_assignment_preserves_loan(ArrayMemberCallback owner,ArrayMemberCallback replacement) {
++  const char *view=array_block_bytes(owner);
++  try {owner=replacement;}catch(...) {receiver_use(view);return;}
++}
++#endif
++
++#if __has_feature(objc_arc)
++void nullable_block_null_store(RuntimeScopeOwner *_Nullable owner,NativeBlockArrayMembers &storage) {
++  // A null store does not copy a Block before evaluating this destination.
++  try {storage.callbacks[(owner=block_array_nothrow_factory(),0)]=(ArrayMemberCallback)0;}
++  catch(...) {[owner ping];}
++}
++#endif

@@ -25,7 +25,7 @@
 "objc3.native-declaration-attributes.v2"
 "objc3.native-dependent-await.v1"
 "objc3.nsobject-storage.v1"
-"objc3.automatic-owner-unwind.v1"
+"objc3.automatic-owner-unwind.v2"
 "objc3.native-array-lifetimes.v1"
 "objc3.native-subobject-cleanup.v5"
 "objc3.cxx-unnamed-record-projections.v2"

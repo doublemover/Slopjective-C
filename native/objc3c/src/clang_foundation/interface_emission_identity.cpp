@@ -2465,7 +2465,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationNSObjectStorage(representative))
     identity.canonical_type_identity+=";nsobject-storage:v1;";
   if (HasDeclarationAutomaticOwnerUnwind(representative))
-    identity.canonical_type_identity += ";automatic-owner-unwind:v1;";
+    identity.canonical_type_identity += ";automatic-owner-unwind:v2;";
   if (HasDeclarationNativeArrayLifetime(representative))
     identity.canonical_type_identity += ";native-array-lifetimes:v1;";
   if (llvm::isa<clang::ClassTemplateDecl,clang::VarTemplateDecl,clang::CXXRecordDecl,

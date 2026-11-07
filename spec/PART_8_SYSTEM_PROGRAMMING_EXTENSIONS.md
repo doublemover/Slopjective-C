@@ -456,6 +456,14 @@ including strong local bindings and consumed arguments. Managed capture storage,
 weak-load temporaries and resource-bearing producers require their own cleanup
 regions; scalar-value admission shall not erase those obligations.
 
+A strong Block assignment shall finish RHS evaluation and ownership acquisition
+before evaluating the destination address. Failure before the store preserves
+the old destination. If address evaluation throws after ownership acquisition,
+the newly retained value shall be released before lexical cleanup. Successful
+storage transfers that ownership without a second release. A null assignment
+performs no heap copy. Borrowed and nullable proofs shall distinguish these
+failure boundaries from successful mutation.
+
 A native catch handler observes owner state after protected-region cleanup,
 including catch-all and scalar/reference exception bindings. A successful strong
 Block binding owns its copied captures; a failed heap copy does not initialize

@@ -641,6 +641,9 @@ def check_cpp_metadata(metadata):
         raise ValueError('C++ package lost its using-directive')
     for semantic, name, marker in (
         ('objc3.cxx-block-expressions.v2', 'native_published_block', ';cxx-block-expressions:v2;'),
+        ('objc3.cxx-block-expressions.v2', 'NativeBlockValues::exercise', ';cxx-block-expressions:v2;'),
+        ('objc3.automatic-owner-unwind.v2', 'NativeBlockValues::exercise', ';automatic-owner-unwind:v2;'),
+        ('objc3.native-subobject-cleanup.v5', 'NativeBlockValues::Slots', ';native-subobject-cleanup:v5;'),
         ('objc3.cxx-statement-expressions.v1', 'native_published_statement', ';cxx-statement-expressions:v1;'),
         ('objc3.cxx-local-types.v1', 'native_published_local_type', ';cxx-local-types:v1;'),
         ('objc3.cxx-unnamed-local-types.v1', 'native_unnamed_nested', ';cxx-unnamed-local-types:v1;'),

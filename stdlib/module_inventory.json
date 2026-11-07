@@ -304,12 +304,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 48,
+        "minor": 49,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native strong Block slot mutation with RHS-copy-before-address evaluation, temporary owner unwind guards, old-destination preservation, successful ownership transfer, null assignment, nullable and borrowed-loan failure precision, MRC stable slot stores and exact automatic-owner-unwind v2 admission (66 compiler cases, 45 AST controls, ten new source-free profiles, sixteen adjacent groups, twelve ASan/UBSan native configurations / 42 commands, four package executions, codec/isolation and eighty production decoder replays pass; matched SDK pending)",
         "Bounded nested ARC Block member arrays, row-major scalar leaf registration, sequenced/conditional value computation, scalar-only literal captures, direct stable member/index reads, computed strong local and consumed copies with separate evaluation/copy failure edges and exact subobject v5 / Block expression v2 publication (66 compiler cases, 44 AST controls, twelve ASan/UBSan native configurations / 42 commands, ten new source-free profiles, fourteen adjacent groups, codec/isolation and forty production decoder replays pass; matched SDK pending)",
         "Bounded ARC Block member-array per-element copy registration, exact failure-prefix cleanup, weak/null/filler/default initialization, empty/singleton/many boundaries and counted nonthrowing array release groups with exact v4 publication (66 affected compiler cases, four new source-free profiles, thirteen adjacent groups, 40 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; codec/isolation and forty production decoder replays pass; matched SDK pending)",
         "Complete/base native virtual-object cleanup, abstract-constructor initializer exclusion, virtual delegation/function-try boundaries, nullable receiver proof alignment, anonymous active-member prefixes, strong/weak scalar Block member release and implicit heap-copy failure registration, plus stable ordinary unnamed-record publication (65 affected compiler cases, six new source-free profiles, fourteen adjacent frontend groups, codec/isolation, 39 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; final Block-array proof-boundary controls pass; installed package and matched SDK consolidation pending)",

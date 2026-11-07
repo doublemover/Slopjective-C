@@ -190,9 +190,9 @@ inline bool HasNSObjectStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";nsobject-storage:v1;") != std::string::npos ||
          d.effects.ownership_identity.find(";nsobject-storage:v1;") != std::string::npos;
 }
-inline constexpr const char *kAutomaticOwnerUnwindSemantic = "objc3.automatic-owner-unwind.v1";
+inline constexpr const char *kAutomaticOwnerUnwindSemantic = "objc3.automatic-owner-unwind.v2";
 inline bool HasAutomaticOwnerUnwindIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";automatic-owner-unwind:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";automatic-owner-unwind:v2;") != std::string::npos;
 }
 inline constexpr const char *kNativeArrayLifetimeSemantic = "objc3.native-array-lifetimes.v1";
 inline bool HasNativeArrayLifetimeIdentity(const InterfaceDeclarationIdentity &d) {

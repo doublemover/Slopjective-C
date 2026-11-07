@@ -367,7 +367,8 @@
     "NativeUnnamedTemplateProjections",
     "NativeExplicitStorage",
     "NativeUnnamedRecordProjections",
-    "NativeIncompleteTemplates"
+    "NativeIncompleteTemplates",
+    "NativeBlockValues"
   ],
   "dependencies": []
 }

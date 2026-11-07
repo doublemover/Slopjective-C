@@ -13,8 +13,17 @@
 using namespace objc3::clang_foundation;
 
 int main() {
-  for (bool cxx : {false, true}) {
-    const std::string source = cxx ? R"(
+  for (unsigned family=0;family!=4;++family) {
+    const bool cxx=family&1,blocks=family>=2;
+    const std::string source = blocks ? R"(
+      typedef void (^CatalogCallback)(void);
+      struct CatalogSlots {CatalogCallback slots[2];};
+      int catalog_step(void);void catalog_checkpoint(void) __attribute__((nothrow));
+      inline void catalog_mutation(struct CatalogSlots *store,CatalogCallback value) {
+        __objc3_defer {catalog_checkpoint();}
+        store->slots[catalog_step()]=(catalog_step(),value);
+      }
+    )" : cxx ? R"(
       namespace Catalog {
         template<class T=int>struct Opaque;
         template<class T>struct Opaque<T*>;
@@ -26,9 +35,9 @@ int main() {
         Opaque<> *pointer();
       }
     )" : "inline int catalog_answer(void){return 42;}\n";
-    auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
-        cxx?std::vector<std::string>{"-xc++","-std=c++23"}:
-            std::vector<std::string>{"-xc","-std=c17"},"catalog-source");
+    std::vector<std::string> args={cxx?(blocks?"-xobjective-c++":"-xc++"):(blocks?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
+    if(blocks)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"catalog-source");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
         "fixture.catalog","test",{}));
@@ -37,7 +46,7 @@ int main() {
     const auto capabilities=SupportedSemanticInterfaceCapabilities();
     auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);
     assert(decoded);
-    const std::string expected=cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
+    const std::string expected=blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
     assert(std::find(decoded->required_semantics.begin(),decoded->required_semantics.end(),expected)!=decoded->required_semantics.end());
     auto bytes=objc3::fuzz::Pack(artifact.source_bytes,artifact.sidecar_json);assert(!bytes.empty());
     std::string first;

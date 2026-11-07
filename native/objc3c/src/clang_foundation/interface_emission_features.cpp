@@ -170,6 +170,13 @@ bool HasDeclarationAutomaticOwnerUnwind(const clang::NamedDecl *declaration) {
       bool found = false;
       bool VisitObjCAtCatchStmt(clang::ObjCAtCatchStmt *) override {found = true;return true;}
       bool VisitCXXCatchStmt(clang::CXXCatchStmt *) override {found = true;return true;}
+      bool VisitBinaryOperator(clang::BinaryOperator *operation) override {
+        if (operation->getOpcode()==clang::BO_Assign) {
+          auto type=operation->getLHS()->getType();
+          found |= type->isBlockPointerType() || type->isDependentType();
+        }
+        return true;
+      }
     } visitor;
     visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
   });

@@ -1,3 +1,4 @@
+#include "block_values.h"
 #include "incomplete_templates.h"
 #include "unnamed_record_projections.h"
 #include "unnamed_template_projections.h"

@@ -1,9 +1,18 @@
 # Linux implementation sprint
 
+The [System 2.49 Block-mutation span](linux_block_mutation.md) separates
+RHS evaluation, heap copy, destination-address evaluation and ownership transfer.
+A new native unwind guard repairs retained-RHS leakage on an address exception;
+failed stores preserve the old slot and borrowed loan. Nullable/null-store
+proofs, MRC stable stores and automatic-owner-unwind v2 publication are aligned.
+All 66 compiler cases, 45 AST controls, ten new source-free profiles, sixteen
+adjacent groups, twelve instrumented native configurations / 42 commands, four
+package executions, codec/isolation and eighty production decoder replays pass.
+
 The [System 2.48 computed/nested Block span](linux_computed_block_arrays.md)
 extends exact registration across nested rows, sequenced/conditional expressions,
 scalar captures, stable native member/index reads, strong local bindings and
-consumed arguments. Source-free admission cuts over to subobject v5. Focused
+consumed arguments. Source-free admission cuts over to subobject v5. All
 66 compiler cases, 44 AST controls, twelve instrumented native configurations /
 42 commands, ten new source-free profiles, fourteen adjacent groups, codec/
 isolation and forty decoder replays pass. Standalone value bodies require Block
