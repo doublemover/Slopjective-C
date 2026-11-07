@@ -3,8 +3,9 @@
 The [System 2.35 interior-storage span](linux_borrowed_interior_storage.md) adds
 inline ivar/array/record loans and separate C++ reference-address lifetimes,
 including copy/capture propagation, builtin address-taking and source-free
-capability admission. Focused controls pass; affected compiler/frontend/native
-consolidation is underway. Native managed-cleanup CFG registration and the wider
+capability admission. All thirty-nine borrowed compiler cases, six source-free
+profiles, three adjacent frontend groups, codec/isolation units and twelve
+instrumented native configurations pass. Native managed-cleanup CFG registration and the wider
 ownership/profile backlog remain open.
 
 

@@ -36,7 +36,11 @@ controls cover replay, relocation, semantic admission and valid/expired consumer
 in the same six profiles. The installed catch-binding runtime fixture now returns
 the actual object payload address, with inline arrays, nested storage, C++
 reference copies and exact construction/destruction under an independent pin.
-Focused and consolidated results are recorded when this span finishes verification.
+All eighteen new source/PCH compiler commands and all thirty-nine borrowed
+compiler cases pass. Six source-free profiles, three adjacent frontend groups,
+codec/isolation units and twelve ASan/UBSan native configurations / forty-two
+commands pass. An earlier broader fifty-nine-case borrowed/lifetime/defer pass
+also passed before the final reference return/write controls were added.
 
 Native managed-cleanup CFG registration, wider assigned-owner correlation and
 remaining ownership/profile boundaries remain separate implementation work.
