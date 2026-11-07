@@ -1,5 +1,14 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.130 / System 2.56 composition span](linux_composed_cpp_carriers.md)
+implements records containing carriers and fixed multidimensional carrier members,
+including implicit copy/move/destruction and nested Optional/Result payload records.
+Array-loop leaves retain native constructor recipes; completed-prefix cleanup also
+covers late argument destructor failure. Source-free types/bodies require
+`objc3.cxx-carrier-composition.v1`. All 523 executable compiler cases (three
+unsupported), 51 AST controls, 21 frontend groups, codec/isolation, 260 decoder
+replays and four selected native configurations / fourteen commands pass.
+
 The [source 2.129 / System 2.55 carrier-call span](linux_cpp_carrier_call_abi.md)
 implements pure C++ Optional/Result arguments and indirect returns, including
 checked success-only ownership and nested `tryOptional`. Caller-owned slots retain

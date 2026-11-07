@@ -11309,7 +11309,7 @@ index 6a25a799a..fb09ef44b 100644
              RecordArgPassingKind::CanNeverPassInRegs);
        } else if (PointerAuthQualifier Q = FT.getPointerAuth();
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
-index b0669c602..851fb1d7b 100644
+index b0669c602..6235b7d20 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
 +++ b/clang/lib/Sema/SemaDeclCXX.cpp
 @@ -11,8 +11,11 @@
@@ -11425,7 +11425,7 @@ index b0669c602..851fb1d7b 100644
      return false;
  
    // Don't make the defaulted default constructor defined as deleted if the
-@@ -9887,6 +9938,37 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
+@@ -9887,6 +9938,35 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
    QualType FieldType = S.Context.getBaseElementType(FD->getType());
    CXXRecordDecl *FieldRecord = FieldType->getAsCXXRecordDecl();
  
@@ -11433,8 +11433,6 @@ index b0669c602..851fb1d7b 100644
 +    const char *Unqualified = nullptr;
 +    if (inUnion())
 +      Unqualified = "union storage";
-+    else if (FD->getType()->isArrayType())
-+      Unqualified = "array storage";
 +    else if (FieldType.isVolatileQualified())
 +      Unqualified = "volatile storage";
 +    else if (IsAssignment)
@@ -11463,7 +11461,7 @@ index b0669c602..851fb1d7b 100644
    if (inUnion() && shouldDeleteForVariantObjCPtrMember(FD, FieldType))
      return true;
  
-@@ -10426,6 +10508,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
+@@ -10426,6 +10506,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
        return false;
      }
  
@@ -11481,7 +11479,7 @@ index b0669c602..851fb1d7b 100644
      bool ConstRHS = ConstArg && !FI->isMutable();
      if (!checkTrivialSubobjectCall(S, FI->getLocation(), FieldType, ConstRHS,
                                     CSM, TSK_Field, TAH, Diagnose))
-@@ -10765,6 +10858,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
+@@ -10765,6 +10856,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
      // Ill-formed if the field is an ObjectiveC pointer or of a type that is
      // non-trivial for the purpose of calls.
      QualType FT = FD->getType();
@@ -11502,7 +11500,7 @@ index b0669c602..851fb1d7b 100644
      if (FT.getObjCLifetime() == Qualifiers::OCL_Weak) {
        PrintDiagAndRemoveAttr(4);
        return;
-@@ -11172,6 +11279,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
+@@ -11172,6 +11277,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
  
  QualType Sema::CheckConstructorDeclarator(Declarator &D, QualType R,
                                            StorageClass &SC) {
@@ -11516,7 +11514,7 @@ index b0669c602..851fb1d7b 100644
    bool isVirtual = D.getDeclSpec().isVirtualSpecified();
  
    // C++ [class.ctor]p3:
-@@ -11371,6 +11485,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
+@@ -11371,6 +11483,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
  
  QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
                                           StorageClass& SC) {
@@ -11530,7 +11528,7 @@ index b0669c602..851fb1d7b 100644
    // C++ [class.dtor]p1:
    //   [...] A typedef-name that names a class is a class-name
    //   (7.1.3); however, a typedef-name that names a class shall not
-@@ -14149,6 +14270,28 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
+@@ -14149,6 +14268,28 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
  }
  
  bool SpecialMemberExceptionSpecInfo::visitField(FieldDecl *FD) {
@@ -11559,7 +11557,7 @@ index b0669c602..851fb1d7b 100644
    if (CSM == CXXSpecialMemberKind::DefaultConstructor &&
        FD->hasInClassInitializer()) {
      Expr *E = FD->getInClassInitializer();
-@@ -14218,6 +14361,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
+@@ -14218,6 +14359,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
    //   An implicitly declared special member function (Clause 12) shall have an
    //   exception-specification. [...]
    SpecialMemberExceptionSpecInfo Info(S, MD, CSM, ICI, MD->getLocation());
@@ -11571,7 +11569,7 @@ index b0669c602..851fb1d7b 100644
    if (ClassDecl->isInvalidDecl())
      return Info.ExceptSpec;
  
-@@ -18882,6 +19030,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
+@@ -18882,6 +19028,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
    const auto *NewFT = New->getType()->castAs<FunctionProtoType>();
    const auto *OldFT = Old->getType()->castAs<FunctionProtoType>();
  
@@ -11609,7 +11607,7 @@ index b0669c602..851fb1d7b 100644
    if (OldFT->hasExtParameterInfos()) {
      for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
        // A parameter of the overriding method should be annotated with noescape
-@@ -19001,6 +19180,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
+@@ -19001,6 +19178,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
        NewTy->isDependentType() || OldTy->isDependentType())
      return false;
  
@@ -12684,10 +12682,10 @@ index 000000000..547b8c20d
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
 new file mode 100644
-index 000000000..4c6f8d9df
+index 000000000..a3b529b44
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
-@@ -0,0 +1,216 @@
+@@ -0,0 +1,225 @@
 +//===--- SemaObjC3CarrierTransfer.cpp - carrier transfer semantics -------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//===----------------------------------------------------------------------===//
@@ -12696,6 +12694,7 @@ index 000000000..4c6f8d9df
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/TypeBase.h"
++#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/Sema.h"
@@ -12706,19 +12705,26 @@ index 000000000..4c6f8d9df
 +namespace {
 +
 +bool containsNestedCarrierOrManagedField(ASTContext &Context, QualType Type,
-+                                         llvm::SmallPtrSetImpl<const RecordDecl *> &Seen) {
-+  if (Type.isNull())
++                                         llvm::SmallPtrSetImpl<const RecordDecl *> &Seen,
++                                         unsigned &Budget,unsigned Depth=0) {
++  if (Type.isNull() || !Budget || Depth>64)
 +    return true;
++  --Budget;
 +  Type = Context.getCanonicalType(Type);
 +  const clang::Type *Ty = Type.getTypePtr();
 +  if (Ty->isObjCObjectPointerType() || Ty->isBlockPointerType() ||
 +      Ty->isObjCObjectType() || Type.getObjCLifetime() != Qualifiers::OCL_None)
 +    return true;
-+  if (isa<ObjC3OptionalType>(Ty) || isa<ObjC3ResultType>(Ty))
-+    return true;
++  if (isa<ObjC3OptionalType,ObjC3ResultType>(Ty)) {
++    auto Info=Context.getObjC3CarrierRepresentationType(Type);
++    if(Type.isVolatileQualified() || Info.State!=ObjC3CarrierRepresentationInfo::Status::Materialized)return true;
++    for(const auto *Field:{Info.ValueField,Info.SuccessField,Info.ErrorField})
++      if(Field && containsNestedCarrierOrManagedField(Context,Field->getType(),Seen,Budget,Depth+1))return true;
++    return false;
++  }
 +  if (const auto *Array = Context.getAsArrayType(Type))
 +    return containsNestedCarrierOrManagedField(Context, Array->getElementType(),
-+                                               Seen);
++                                               Seen,Budget,Depth+1);
 +  if (const auto *RT = Type->getAs<RecordType>()) {
 +    const RecordDecl *RD = RT->getDecl()->getDefinition();
 +    if (!RD || !RD->isCompleteDefinition())
@@ -12727,10 +12733,10 @@ index 000000000..4c6f8d9df
 +      return false;
 +    if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD))
 +      for (const CXXBaseSpecifier &Base : CXX->bases())
-+        if (containsNestedCarrierOrManagedField(Context, Base.getType(), Seen))
++        if (containsNestedCarrierOrManagedField(Context, Base.getType(), Seen,Budget,Depth+1))
 +          return true;
 +    for (const FieldDecl *Field : RD->fields())
-+      if (containsNestedCarrierOrManagedField(Context, Field->getType(), Seen))
++      if (containsNestedCarrierOrManagedField(Context, Field->getType(), Seen,Budget,Depth+1))
 +        return true;
 +  }
 +  return false;
@@ -12852,7 +12858,8 @@ index 000000000..4c6f8d9df
 +    if (IsARCPointer)
 +      continue;
 +    Seen.clear();
-+    if (containsNestedCarrierOrManagedField(Context, Field->getType(), Seen)) {
++    unsigned Budget=256;
++    if (containsNestedCarrierOrManagedField(Context, Field->getType(), Seen,Budget)) {
 +      Diag(KeywordLoc, diag::err_objc3_carrier_payload_unsupported)
 +          << Field->getType();
 +      return ExprError();
@@ -24336,7 +24343,7 @@ index 000000000..c71050aa5
 +  __objc3_try_force(reference()); // expected-error {{returns a prvalue}}
 +}
 diff --git a/clang/lib/Sema/SemaInit.cpp b/clang/lib/Sema/SemaInit.cpp
-index 09d9f1eab..098c25ab4 100644
+index 09d9f1eab..21537f651 100644
 --- a/clang/lib/Sema/SemaInit.cpp
 +++ b/clang/lib/Sema/SemaInit.cpp
 @@ -17,6 +17,7 @@
@@ -24396,13 +24403,17 @@ index 09d9f1eab..098c25ab4 100644
      return false;
  
    QualType ParmT =
-@@ -8002,10 +8009,36 @@ ExprResult InitializationSequence::Perform(Sema &S,
+@@ -8002,10 +8009,39 @@ ExprResult InitializationSequence::Perform(Sema &S,
      return ExprResult(Args[0]);
    }
  
-+  if (S.getLangOpts().CPlusPlus && Args.empty() &&
-+      (Entity.getKind() == InitializedEntity::EK_Member ||
-+       Entity.getKind() == InitializedEntity::EK_ParenAggInitMember) &&
++  const InitializedEntity *CarrierOwner=&Entity;
++  while(CarrierOwner && CarrierOwner->getKind()==InitializedEntity::EK_ArrayElement)
++    CarrierOwner=CarrierOwner->getParent();
++  const bool IsCarrierMemberStorage=CarrierOwner &&
++      (CarrierOwner->getKind()==InitializedEntity::EK_Member ||
++       CarrierOwner->getKind()==InitializedEntity::EK_ParenAggInitMember);
++  if (S.getLangOpts().CPlusPlus && Args.empty() && IsCarrierMemberStorage &&
 +      hasObjC3CarrierCppPayload(Entity.getType()) &&
 +      !hasObjC3CarrierManagedPayload(Entity.getType())) {
 +    unsigned ID = S.getDiagnostics().getCustomDiagID(
@@ -24421,8 +24432,7 @@ index 09d9f1eab..098c25ab4 100644
 +  // both user-written and generated member initializers. Parameter/result and
 +  // ordinary local implicit carrier transfer keep their existing boundaries.
 +  if (S.getLangOpts().CPlusPlus && Args.size() == 1 && Args[0]->isGLValue() &&
-+      (Entity.getKind() == InitializedEntity::EK_Member ||
-+       Entity.getKind() == InitializedEntity::EK_ParenAggInitMember) &&
++      IsCarrierMemberStorage &&
 +      hasObjC3CarrierCppPayload(Entity.getType()) &&
 +      !hasObjC3CarrierManagedPayload(Entity.getType()) &&
 +      S.Context.hasSameUnqualifiedType(Entity.getType(), Args[0]->getType()))
@@ -24433,7 +24443,41 @@ index 09d9f1eab..098c25ab4 100644
    if (S.getLangOpts().CPlusPlus11 && Entity.getType()->isReferenceType() &&
        Args.size() == 1 && isa<InitListExpr>(Args[0]) &&
        !Entity.isParamOrTemplateParamKind()) {
-@@ -9057,6 +9090,13 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -8370,6 +8406,15 @@ ExprResult InitializationSequence::Perform(Sema &S,
+ 
+     case SK_ConversionSequence:
+     case SK_ConversionSequenceNoNarrowing: {
++      if(S.getLangOpts().CPlusPlus && IsCarrierMemberStorage &&
++          !ArrayLoopCommonExprs.empty() && CurInit.get()->isGLValue() &&
++          hasObjC3CarrierCppPayload(Step->Type) && !hasObjC3CarrierManagedPayload(Step->Type) &&
++          S.Context.hasSameUnqualifiedType(Step->Type,CurInit.get()->getType())) {
++        CurInit=S.ActOnObjC3CarrierTransferExpr(CurInit.get()->isXValue(),
++            Kind.getLocation(),CurInit.get()->getBeginLoc(),CurInit.get(),CurInit.get()->getEndLoc());
++        if(CurInit.isInvalid())return ExprError();
++        break;
++      }
+       if (const auto *FromPtrType =
+               CurInit.get()->getType()->getAs<PointerType>()) {
+         if (const auto *ToPtrType = Step->Type->getAs<PointerType>()) {
+@@ -8556,6 +8601,17 @@ ExprResult InitializationSequence::Perform(Sema &S,
+     }
+ 
+     case SK_CAssignment: {
++      // Array-loop steps preserve the owning member entity. Build each
++      // carrier leaf's copy/move recipe before primitive assignment erases it.
++      if(S.getLangOpts().CPlusPlus && IsCarrierMemberStorage &&
++          CurInit.get()->isGLValue() && hasObjC3CarrierCppPayload(Step->Type) &&
++          !hasObjC3CarrierManagedPayload(Step->Type) &&
++          S.Context.hasSameUnqualifiedType(Step->Type,CurInit.get()->getType())) {
++        CurInit=S.ActOnObjC3CarrierTransferExpr(CurInit.get()->isXValue(),
++            Kind.getLocation(),CurInit.get()->getBeginLoc(),CurInit.get(),CurInit.get()->getEndLoc());
++        if(CurInit.isInvalid())return ExprError();
++        break;
++      }
+       QualType SourceType = CurInit.get()->getType();
+       Expr *Init = CurInit.get();
+ 
+@@ -9057,6 +9113,13 @@ bool InitializationSequence::Diagnose(Sema &S,
    else
      OnlyArg = nullptr;
  
@@ -24447,7 +24491,7 @@ index 09d9f1eab..098c25ab4 100644
    switch (Failure) {
    case FK_TooManyInitsForReference:
      // FIXME: Customize for the initialized entity?
-@@ -9116,7 +9156,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9116,7 +9179,7 @@ bool InitializationSequence::Diagnose(Sema &S,
                ? diag::err_array_init_different_type
                : diag::err_array_init_non_constant_array))
        << DestType.getNonReferenceType()
@@ -24456,7 +24500,7 @@ index 09d9f1eab..098c25ab4 100644
        << Args[0]->getSourceRange();
      break;
  
-@@ -9137,12 +9177,13 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9137,12 +9200,13 @@ bool InitializationSequence::Diagnose(Sema &S,
    case FK_AddressOfUnaddressableFunction: {
      auto *FD = cast<FunctionDecl>(cast<DeclRefExpr>(OnlyArg)->getDecl());
      S.checkAddressOfFunctionIsAvailable(FD, /*Complain=*/true,
@@ -24471,7 +24515,7 @@ index 09d9f1eab..098c25ab4 100644
      switch (FailedOverloadResult) {
      case OR_Ambiguous:
  
-@@ -9151,10 +9192,10 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9151,10 +9215,10 @@ bool InitializationSequence::Diagnose(Sema &S,
                Kind.getLocation(),
                Failure == FK_UserConversionOverloadFailed
                    ? (S.PDiag(diag::err_typecheck_ambiguous_condition)
@@ -24484,7 +24528,7 @@ index 09d9f1eab..098c25ab4 100644
                       << Args[0]->getSourceRange())),
            S, OCD_AmbiguousCandidates, Args);
        break;
-@@ -9164,10 +9205,10 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9164,10 +9228,10 @@ bool InitializationSequence::Diagnose(Sema &S,
        if (!S.RequireCompleteType(Kind.getLocation(),
                                   DestType.getNonReferenceType(),
                            diag::err_typecheck_nonviable_condition_incomplete,
@@ -24497,7 +24541,7 @@ index 09d9f1eab..098c25ab4 100644
            << DestType.getNonReferenceType();
  
        FailedCandidateSet.NoteCandidates(S, Args, Cands);
-@@ -9180,7 +9221,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9180,7 +9244,7 @@ bool InitializationSequence::Diagnose(Sema &S,
  
        StringLiteral *Msg = Best->Function->getDeletedMessage();
        S.Diag(Kind.getLocation(), diag::err_typecheck_deleted_function)
@@ -24506,7 +24550,7 @@ index 09d9f1eab..098c25ab4 100644
            << (Msg != nullptr) << (Msg ? Msg->getString() : StringRef())
            << Args[0]->getSourceRange();
        if (Ovl == OR_Deleted) {
-@@ -9214,7 +9255,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9214,7 +9278,7 @@ bool InitializationSequence::Diagnose(Sema &S,
               : diag::err_lvalue_reference_bind_to_unrelated)
        << DestType.getNonReferenceType().isVolatileQualified()
        << DestType.getNonReferenceType()
@@ -24515,7 +24559,7 @@ index 09d9f1eab..098c25ab4 100644
        << Args[0]->getSourceRange();
      break;
  
-@@ -9244,7 +9285,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9244,7 +9308,7 @@ bool InitializationSequence::Diagnose(Sema &S,
  
    case FK_RValueReferenceBindingToLValue:
      S.Diag(Kind.getLocation(), diag::err_lvalue_to_rvalue_ref)
@@ -24524,7 +24568,7 @@ index 09d9f1eab..098c25ab4 100644
        << Args[0]->getSourceRange();
      break;
  
-@@ -9254,7 +9295,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9254,7 +9318,7 @@ bool InitializationSequence::Diagnose(Sema &S,
      break;
  
    case FK_ReferenceInitDropsQualifiers: {
@@ -24533,7 +24577,7 @@ index 09d9f1eab..098c25ab4 100644
      QualType NonRefType = DestType.getNonReferenceType();
      Qualifiers DroppedQualifiers =
          SourceType.getQualifiers() - NonRefType.getQualifiers();
-@@ -9282,19 +9323,19 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9282,19 +9346,19 @@ bool InitializationSequence::Diagnose(Sema &S,
      S.Diag(Kind.getLocation(), diag::err_reference_bind_failed)
        << DestType.getNonReferenceType()
        << DestType.getNonReferenceType()->isIncompleteType()
@@ -24557,7 +24601,7 @@ index 09d9f1eab..098c25ab4 100644
               diag::err_amdgcn_predicate_type_needs_explicit_bool_cast)
            << OnlyArg << DestType;
        break;
-@@ -9302,7 +9343,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9302,7 +9366,7 @@ bool InitializationSequence::Diagnose(Sema &S,
      PartialDiagnostic PDiag = S.PDiag(diag::err_init_conversion_failed)
        << (int)Entity.getKind()
        << DestType
@@ -35345,7 +35389,7 @@ index 000000000..f48397312
 +// CHECK: call void @_ZN13RecursiveItemD1Ev
 diff --git a/clang/test/ObjC3/Sema/carrier-recursive-cxx.cpp b/clang/test/ObjC3/Sema/carrier-recursive-cxx.cpp
 new file mode 100644
-index 000000000..5d9e25fb2
+index 000000000..9acf12dfb
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-recursive-cxx.cpp
 @@ -0,0 +1,73 @@
@@ -35420,7 +35464,7 @@ index 000000000..5d9e25fb2
 +  Inner hidden;
 +};
 +void record_boundary(__objc3_optional(OrdinaryRecord) &source) {
-+  auto copied = __objc3_copy(source); // expected-error {{is not supported in an Objective-C 3 value carrier}}
++  auto copied = __objc3_copy(source);
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-nullable-flow-cxx.mm b/clang/test/ObjC3/Sema/guard-nullable-flow-cxx.mm
 new file mode 100644
@@ -58246,10 +58290,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..aa2792224
+index 000000000..0548505ae
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2018 @@
+@@ -0,0 +1,2050 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -60266,6 +60310,38 @@ index 000000000..aa2792224
 +      EXPECT_TRUE(Cleanup->cleanupsHaveSideEffects());
 +      EXPECT_TRUE(isa<CallExpr>(Cleanup->getSubExpr()));
 +    }
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, CarrierMemberArrayCopiesRetainLeafRecipes) {
++  for(const char *Standard:{"c++20","c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(R"(
++      struct Leaf {Leaf(const Leaf &);Leaf(Leaf &&);~Leaf() noexcept;};
++      typedef __objc3_optional(Leaf) Maybe;
++      struct Array {Maybe values[2][3];Array(int);Array(const Array &)=default;
++        Array(Array &&)=default;~Array() noexcept=default;};
++      void use(){Array source(0);Array copy(source);Array moved(static_cast<Array &&>(copy));}
++    )",Args,"carrier-array-recipes.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    unsigned Copies=0,Moves=0;
++    auto Visit=[&](auto &&Self,const Stmt *Node)->void {
++      if(!Node)return;
++      if(const auto *Transfer=dyn_cast<ObjC3CarrierTransferExpr>(Node)) {
++        if(Transfer->isMove())++Moves;else ++Copies;
++      }
++      for(const auto *Child:Node->children())Self(Self,Child);
++    };
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *Record=dyn_cast<CXXRecordDecl>(D);Record && Record->getName()=="Array" && Record->isCompleteDefinition())
++        for(const auto *Constructor:Record->ctors())
++          if(Constructor->isDefaulted() && Constructor->isCopyOrMoveConstructor()) {
++            EXPECT_FALSE(Constructor->isDeleted());
++            for(const auto *Initializer:Constructor->inits())Visit(Visit,Initializer->getInit());
++          }
++    EXPECT_EQ(Copies,1u);EXPECT_EQ(Moves,1u);
 +  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp

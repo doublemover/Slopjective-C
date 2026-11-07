@@ -129,6 +129,32 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationCppCarrierComposition(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[declaration](const clang::Stmt *statement) {
+    struct Values : clang::DynamicRecursiveASTVisitor {
+      const clang::ASTContext &context;bool found=false;
+      explicit Values(const clang::ASTContext &context):context(context) {}
+      bool VisitExpr(clang::Expr *expression) override {
+        found|=RequiresNativeCppCarrierComposition(expression->getType(),context);return true;
+      }
+      bool VisitVarDecl(clang::VarDecl *variable) override {
+        found|=RequiresNativeCppCarrierComposition(variable->getType(),context);return true;
+      }
+      bool VisitCXXNewExpr(clang::CXXNewExpr *allocation) override {
+        found|=RequiresNativeCppCarrierComposition(allocation->getAllocatedType(),context) ||
+            (allocation->isArray() && clang::containsObjC3CarrierCppStorage(allocation->getAllocatedType()));
+        return true;
+      }
+      bool VisitCXXDeleteExpr(clang::CXXDeleteExpr *disposal) override {
+        auto type=disposal->getDestroyedType();
+        found|=!type.isNull() && (RequiresNativeCppCarrierComposition(type,context) ||
+            (disposal->isArrayForm() && clang::containsObjC3CarrierCppStorage(type)));return true;
+      }
+    } visitor(declaration->getASTContext());
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationCppCarrierCall(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
     struct Calls : clang::DynamicRecursiveASTVisitor {

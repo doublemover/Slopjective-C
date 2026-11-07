@@ -16,6 +16,7 @@
 #include "clang/AST/ObjC3Isolation.h"
 #include "clang/AST/ObjC3KeyPath.h"
 #include "clang/AST/ObjC3ResourceTypes.h"
+#include "clang/AST/ObjC3TypeContracts.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallPtrSet.h"
 
@@ -117,6 +118,35 @@ inline bool HasNativeCppCarrierCallType(clang::QualType type,unsigned depth=0) {
   return false;
 }
 
+inline bool RequiresNativeCppCarrierComposition(clang::QualType type,
+                                                 const clang::ASTContext &context) {
+  llvm::SmallPtrSet<const clang::Type *,32> seen;unsigned budget=256;
+  auto visit=[&](auto &&self,clang::QualType value,unsigned depth)->bool {
+    if(value.isNull() || value->isDependentType())return false;
+    if(depth>64 || !budget)return true;
+    --budget;
+    value=value.getCanonicalType();
+    if(!seen.insert(value.getTypePtr()).second)return false;
+    if(const auto *array=context.getAsArrayType(value))
+      return clang::containsObjC3CarrierCppStorage(array->getElementType()) ||
+          self(self,array->getElementType(),depth+1);
+    auto payload=[&](clang::QualType child) {
+      if(child->isRecordType() && clang::containsObjC3CarrierCppStorage(child))return true;
+      return self(self,child,depth+1);
+    };
+    if(const auto *optional=value->getAs<clang::ObjC3OptionalType>())return payload(optional->getElementType());
+    if(const auto *result=value->getAs<clang::ObjC3ResultType>())
+      return payload(result->getSuccessType()) || payload(result->getErrorType());
+    if(const auto *record=value->getAsCXXRecordDecl())
+      if(const auto *definition=record->getDefinition()) {
+        for(const auto &parent:definition->bases())if(self(self,parent.getType(),depth+1))return true;
+        for(const auto *field:definition->fields())if(self(self,field->getType(),depth+1))return true;
+      }
+    return false;
+  };
+  return visit(visit,type,0);
+}
+
 inline void AppendNativeContractField(std::string &out, llvm::StringRef value) {
   out += std::to_string(value.size()) + ":" + value.str();
 }
@@ -174,6 +204,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeContractField(out, position + ":nullability");
     AppendNativeContractField(out, std::to_string(static_cast<unsigned>(*nullability)));
   }
+  if(RequiresNativeCppCarrierComposition(type,context))
+    AppendNativeContractField(out,";cxx-carrier-composition:v1;");
   clang::ObjC3KeyPathInfo keypath;
   if (clang::getObjC3KeyPathInfo(type, keypath)) {
     AppendNativeContractField(

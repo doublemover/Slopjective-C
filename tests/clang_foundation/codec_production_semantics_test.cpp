@@ -15,12 +15,22 @@
 using namespace objc3::clang_foundation;
 
 int main() {
-  for (unsigned family=0;family!=12;++family) {
-    const bool carrier_calls=family==11;
+  for (unsigned family=0;family!=13;++family) {
+    const bool composition=family==12,carrier_calls=family==11;
     const bool resource_paths=family==9,union_paths=family==10;
-    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results || union_paths;
+    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results || union_paths || composition;
     const bool blocks=family>=2 && family<6,producers=family>=4 && family<6;
-    std::string source = carrier_calls ? R"(
+    std::string source = composition ? R"(
+      namespace CatalogCarrierComposition {
+        struct Leaf {int value;explicit Leaf(int);Leaf(const Leaf &);Leaf(Leaf &&);~Leaf() noexcept;};
+        typedef __objc3_optional(Leaf) Maybe;
+        struct Array {Maybe values[2];explicit Array(int v):values{__objc3_some(Leaf,Leaf(v)),__objc3_none(Leaf)} {}
+          Array(const Array &)=default;Array(Array &&)=default;~Array() noexcept=default;};
+        typedef __objc3_optional(Array) Outer;
+        inline Outer make(){return __objc3_some(Array,Array(7));}
+        inline int use(){auto value=make();auto copy=__objc3_copy(value);return __objc3_has_value(copy);}
+      }
+    )" : carrier_calls ? R"(
       @protocol Error @end
       namespace CatalogCarrierCall {
         struct Value {int value;explicit Value(int);Value(const Value &);Value(Value &&);~Value() noexcept;};
@@ -145,8 +155,8 @@ int main() {
         return __objc3_try(__objc3_await (object.value+=1));
       }
     )";
-    std::vector<std::string> args={cxx?(blocks || properties || results || resource_paths || union_paths || carrier_calls?"-xobjective-c++":"-xc++"):(blocks || properties?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
-    if(blocks || properties || results || resource_paths || union_paths || carrier_calls)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
+    std::vector<std::string> args={cxx?(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition?"-xobjective-c++":"-xc++"):(blocks || properties?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
+    if(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
     clang::tooling::FileContentMappings files;
     if(properties || resource_paths || union_paths)AddRuntimeInterfaceFiles(files,args);
     if(resource_paths || union_paths)args.insert(args.end(),{"-include","objc3c/runtime/objc3_keypath.h"});
@@ -160,7 +170,7 @@ int main() {
     const auto capabilities=SupportedSemanticInterfaceCapabilities();
     auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);
     assert(decoded);
-    const std::string expected=carrier_calls?kCppCarrierCallSemantic:resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
+    const std::string expected=composition?kCppCarrierCompositionSemantic:carrier_calls?kCppCarrierCallSemantic:resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
     assert(std::find(decoded->required_semantics.begin(),decoded->required_semantics.end(),expected)!=decoded->required_semantics.end());
     auto bytes=objc3::fuzz::Pack(artifact.source_bytes,artifact.sidecar_json);assert(!bytes.empty());
     std::string first;

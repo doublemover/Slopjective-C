@@ -6424,6 +6424,59 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
   }
 }
 
+void TestCppCarrierCompositionReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string source=R"(
+      namespace PublishedCarrierStorage {
+        struct Leaf {int value;explicit Leaf(int);Leaf(const Leaf &);Leaf(Leaf &&);~Leaf() noexcept;};
+        typedef __objc3_optional(Leaf) Maybe;
+        struct Scalar {
+          Maybe value;
+          explicit Scalar(int v):value(__objc3_some(Leaf,Leaf(v))) {}
+          Scalar(const Scalar &)=default;Scalar(Scalar &&)=default;~Scalar() noexcept=default;
+        };
+        struct Array {
+          Maybe values[2][2];
+          explicit Array(int v):values{{__objc3_some(Leaf,Leaf(v)),__objc3_none(Leaf)},
+              {__objc3_none(Leaf),__objc3_some(Leaf,Leaf(v+1))}} {}
+          Array(const Array &)=default;Array(Array &&)=default;~Array() noexcept=default;
+        };
+        typedef __objc3_optional(Scalar) ScalarValue;
+        typedef __objc3_optional(Array) ArrayValue;
+        inline ArrayValue make(bool some){if(some)return __objc3_some(Array,Array(7));return __objc3_none(Array);}
+        inline int use(bool some){auto value=make(some);auto copy=__objc3_copy(value);auto moved=__objc3_move(copy);return __objc3_has_value(moved);}
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"composed-carriers.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.carrier_storage","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.carrier_storage","test",{},{},{},{"PublishedCarrierStorage"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kCppCarrierCompositionSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kCppCarrierCompositionSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kCppCarrierCompositionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto simple=emit("namespace PublishedCarrierStorage {struct Plain {~Plain() noexcept;};__objc3_optional(Plain) factory();}");
+    auto invented=DecodeSemanticInterfaceSidecar(simple.sidecar_json,simple.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kCppCarrierCompositionSemantic)));
+    invented->required_semantics.push_back(kCppCarrierCompositionSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestNativeCppCarrierCallReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10388,6 +10441,7 @@ int main(int argc,char **argv) {
   TestClosureFactories();
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
+  TestCppCarrierCompositionReplay();
   TestNativeCppCarrierCallReplay();
   TestNativeCheckedCppResultReplay();
   TestIsolatedPropertyReplay();
