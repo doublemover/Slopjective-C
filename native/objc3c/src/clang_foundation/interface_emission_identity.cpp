@@ -2597,7 +2597,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationLambda(representative))
     identity.canonical_type_identity += ";cxx-lambda-expressions:v1;";
   if (HasDeclarationLocalExpression(representative, true))
-    identity.canonical_type_identity += ";cxx-block-expressions:v2;";
+    identity.canonical_type_identity += ";cxx-block-expressions:v3;";
   if (HasDeclarationLocalExpression(representative, false))
     identity.canonical_type_identity += ";cxx-statement-expressions:v1;";
   if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(representative);

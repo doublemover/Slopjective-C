@@ -944,11 +944,13 @@ __attribute__((noinline)) static void scope_ordinary_raise(int mode) {
 static void *_Nullable (*_Nullable scope_real_block_copy)(const void *_Nullable);
 static int scope_fail_block_copy;
 static int scope_mutation_observe,scope_mutation_events;
+static int scope_producer_observe,scope_producer_copies;
 #ifdef __cplusplus
 extern "C"
 #endif
 __attribute__((noinline)) void *_Nullable _Block_copy(const void *_Nullable source) {
   if(scope_mutation_observe)scope_mutation_events=scope_mutation_events*10+2;
+  if(scope_producer_observe)++scope_producer_copies;
   if(scope_fail_block_copy && --scope_fail_block_copy==0){@throw scope_exception;}
   if(!scope_real_block_copy)scope_real_block_copy=(void *(*)(const void *))dlsym(RTLD_NEXT,"_Block_copy");
   assert(scope_real_block_copy);return scope_real_block_copy(source);
@@ -1140,6 +1142,109 @@ static void scope_block_mutation_unwind(void) {
   scope_mutation_fault=0;scope_mutation_observe=0;
 }
 
+
+static int scope_producer_calls,scope_producer_call_fault,scope_producer_deferred;
+__attribute__((noinline,ns_returns_retained)) static ScopeMemberCallback _Nonnull scope_block_producer_owned(int tag) {
+  ++scope_producer_calls;
+  if(scope_producer_call_fault==scope_producer_calls)scope_ordinary_raise(0);
+  ScopeProbe *_Nonnull owner __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+  return ^{assert(tag>=0);scope_use(&owner->payload);};
+}
+__attribute__((noinline)) static ScopeMemberCallback _Nonnull scope_block_producer_shared(int tag) {
+  return scope_block_producer_owned(tag);
+}
+__attribute__((noinline,nothrow)) static int scope_arm_block_producers(int copy,int call) {
+  scope_fail_block_copy=copy;scope_producer_call_fault=call;scope_producer_calls=0;scope_producer_copies=0;scope_producer_observe=1;return 0;
+}
+struct ScopeProducedBlockArrayOwner {
+  int armed;
+  ScopeMemberCallback _Nullable callbacks[2][2];
+  ScopeProducedBlockArrayOwner(ScopeProbe *_Nonnull owner,int copy,int call)
+      :armed(scope_arm_block_producers(copy,call)),
+       callbacks{{scope_block_producer_owned(1),scope_block_producer_owned(2)},
+                 {scope_block_producer_owned(3),scope_block_producer_owned(4)}} {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);allocation_event(210);}
+    for(int row=0;row!=2;++row)for(int col=0;col!=2;++col)callbacks[row][col]();
+    if(scope_member_body_failure)scope_ordinary_raise(0);
+  }
+  ~ScopeProducedBlockArrayOwner() noexcept(false) {
+    ScopeProbe *_Nonnull local=[ScopeProbe new];const char *view=&local->payload;
+    __objc3_defer {scope_use(view);allocation_event(211);}
+    if(scope_member_destroying_failure)scope_ordinary_raise(0);
+  }
+};
+struct ScopeProducedBlockDefaultOwner {
+  ScopeMemberCallback _Nullable scalar=scope_block_producer_owned(0);
+  ScopeMemberCallback _Nullable callbacks[2][2]={{scope_block_producer_owned(1),scope_block_producer_owned(2)},
+                                               {scope_block_producer_owned(3),scope_block_producer_owned(4)}};
+  ScopeProducedBlockDefaultOwner(ScopeProbe *_Nonnull owner) {
+    const char *view=&owner->payload;__objc3_defer {scope_use(view);}scalar();callbacks[1][1]();
+  }
+};
+static void scope_block_producer_subobjects(void) {
+  for(int fault=0;fault!=11;++fault) {
+    int before=scope_destroyed,caught=0;allocation_trace_count=0;
+    int copy=fault>=1 && fault<=4?fault:0,call=fault>=5 && fault<=8?fault-4:0;
+    scope_member_body_failure=fault==9;scope_member_destroying_failure=fault==10;
+    {
+      ScopeProbe *_Nonnull owner __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+      @try {ScopeProducedBlockArrayOwner value(owner,copy,call);(void)value;}
+      @catch(id exception){assert(exception==scope_exception);++caught;}
+      scope_producer_observe=0;
+      assert(caught==(fault!=0) && scope_fail_block_copy==0);
+      int produced=copy?copy:call?call-1:4;
+      assert(scope_producer_calls==(copy?copy:call?call:4));
+      assert(scope_producer_copies==produced);
+      assert(scope_destroyed==before+produced+(fault==0 || fault==10));
+      assert(allocation_trace_count==(copy || call?0:fault==9?1:2));
+    }
+    assert(scope_destroyed==before+1+(copy?copy:call?call-1:4)+(fault==0 || fault==10));
+  }
+  scope_member_body_failure=0;scope_member_destroying_failure=0;
+  for(int fault=0;fault!=6;++fault) {
+    int before=scope_destroyed,caught=0;scope_arm_block_producers(0,fault);
+    {
+      ScopeProbe *_Nonnull owner __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+      @try {ScopeProducedBlockDefaultOwner value(owner);(void)value;}
+      @catch(id exception){assert(exception==scope_exception);++caught;}
+      scope_producer_observe=0;int produced=fault?fault-1:5;
+      assert(caught==(fault!=0));assert(scope_producer_copies==produced);
+      assert(scope_destroyed==before+produced);
+    }
+    assert(scope_destroyed==before+1+(fault?fault-1:5));
+  }
+  scope_producer_call_fault=0;
+}
+#define SCOPE_BLOCK_PRODUCER_PATHS(FACTORY,NAME) \
+static void NAME(void) { \
+  for(int scenario=0;scenario!=8;++scenario) { \
+    int before=scope_destroyed,caught=0; \
+    int call=scenario>=1 && scenario<=3?scenario:0,copy=scenario>=4 && scenario<=6?scenario-3:0; \
+    scope_mutation_fault=scenario==7?3:0;scope_mutation_events=0;scope_producer_deferred=0;scope_computed_consumed_calls=0; \
+    @autoreleasepool { \
+      ScopeProbe *_Nonnull owner __attribute__((objc_precise_lifetime))=[ScopeProbe new];const char *view=&owner->payload; \
+      scope_arm_block_producers(copy,call); \
+      @try { \
+        __objc3_defer {scope_use(view);++scope_producer_deferred;} \
+        ScopeMemberCallback first=FACTORY(1); \
+        scope_computed_consume(FACTORY(2)); \
+        ScopeBlockMutationSlots storage;storage.callbacks[scope_mutation_index()]=FACTORY(3); \
+        first();storage.callbacks[0](); \
+      } @catch(id exception){assert(exception==scope_exception);++caught;} \
+      scope_producer_observe=0; \
+      int produced=call?call-1:copy?copy:3; \
+      assert(caught==(scenario!=0) && scope_fail_block_copy==0 && scope_producer_deferred==1); \
+      assert(scope_producer_calls==(call?call:copy?copy:3) && scope_producer_copies==produced); \
+      assert(scope_computed_consumed_calls==(scope_producer_calls==3)); \
+    } \
+    assert(scope_destroyed==before+1+(call?call-1:copy?copy:3)); \
+  } \
+  scope_mutation_fault=0;scope_producer_call_fault=0; \
+}
+SCOPE_BLOCK_PRODUCER_PATHS(scope_block_producer_owned,scope_block_producer_owned_paths)
+SCOPE_BLOCK_PRODUCER_PATHS(scope_block_producer_shared,scope_block_producer_shared_paths)
+#undef SCOPE_BLOCK_PRODUCER_PATHS
+
 static void scope_computed_block_array_unwind(void) {
   // Copy failures cover every leaf, including a partial second row. Scalar
   // evaluation faults occur before leaf 1 and leaf 4, independently of copying.
@@ -1240,7 +1345,7 @@ static void scope_ordinary_record_block(void) {
 }
 static void scope_ordinary_owner_unwind(void) {
 #ifdef __cplusplus
-  scope_block_member_unwind();scope_block_array_member_unwind();scope_computed_block_array_unwind();scope_computed_block_local_unwind();scope_block_mutation_unwind();
+  scope_block_member_unwind();scope_block_array_member_unwind();scope_computed_block_array_unwind();scope_computed_block_local_unwind();scope_block_mutation_unwind();scope_block_producer_subobjects();scope_block_producer_owned_paths();scope_block_producer_shared_paths();
 #endif
   int before=scope_destroyed;
   @try {

@@ -2038,7 +2038,7 @@ void TestCxxLocalExpressions() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
       "objc3.cxx-declaration-expressions.v1", "objc3.cxx-definitions.v1",
-      "objc3.cxx-block-expressions.v2", "objc3.cxx-statement-expressions.v1",
+      "objc3.cxx-block-expressions.v3", "objc3.cxx-statement-expressions.v1",
       "objc3.module-owned-names.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
@@ -2069,7 +2069,7 @@ void TestCxxLocalExpressions() {
     changed.replace(changed.find("n+delta"),std::string("n+delta").size(),"n+delta+1");
     auto different=emit(changed);
     assert(different.success && different.identity.semantic_fingerprint!=emitted.identity.semantic_fingerprint);
-    for (const auto capability:{"objc3.cxx-block-expressions.v2","objc3.cxx-statement-expressions.v1"}) {
+    for (const auto capability:{"objc3.cxx-block-expressions.v3","objc3.cxx-statement-expressions.v1"}) {
       auto erased=*decoded;
       std::erase(erased.required_semantics,capability);
       erased.module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(erased));
@@ -4409,6 +4409,54 @@ void TestBlockMutationPackageReplay() {
     auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
     auto plain=emit("void plain_computed_contract(void);","plain-computed.m");
     auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);invented->required_semantics.push_back(kAutomaticOwnerUnwindSemantic);
+    auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);llvm::consumeError(unexpected.takeError());
+  }
+}
+
+void TestBlockProducerTransferReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
+    const bool cxx=std::string(standard)!="c17";
+    std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
+        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks",
+        "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string source=R"(
+      typedef void (^PublishedProducerCallback)(void);
+      struct PublishedProducerSlots {PublishedProducerCallback field,array[2];};
+      PublishedProducerCallback published_producer_owned(int) __attribute__((ns_returns_retained));
+      PublishedProducerCallback published_producer_shared(int);
+      int published_producer_index(void);
+      void published_producer_checkpoint(void) __attribute__((nothrow));
+      void published_producer_consume(PublishedProducerCallback value __attribute__((ns_consumed))) __attribute__((nothrow));
+      inline void published_producer_body(struct PublishedProducerSlots *slots) {
+        __objc3_defer {published_producer_checkpoint();}
+        PublishedProducerCallback first=published_producer_owned(1),second=published_producer_shared(2);
+        slots->array[published_producer_index()]=published_producer_owned(3);
+        slots->field=published_producer_shared(4);
+        published_producer_consume(published_producer_owned(5));published_producer_consume(published_producer_shared(6));
+        first();second();
+      }
+    )";
+    auto emit=[&](const std::string &text,const char *name) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.block_producer_transfer","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.block_producer_transfer","test");
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source,"computed-block-provider.m");auto replay=emit(first.source_bytes,"computed-block-replay.m");
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"computed-block-relocated.m");assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+    assert(llvm::is_contained(decoded->required_semantics,std::string(kCxxBlockExpressionSemantic)));
+    assert(!llvm::is_contained(decoded->required_semantics,std::string(kNativeSubobjectSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kCxxBlockExpressionSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxBlockExpressionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto plain=emit("void plain_computed_contract(void);","plain-computed.m");
+    auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);invented->required_semantics.push_back(kCxxBlockExpressionSemantic);
     auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);llvm::consumeError(unexpected.takeError());
   }
 }
@@ -9718,6 +9766,7 @@ int main(int argc,char **argv) {
   TestBorrowedCallableOwnerCapability();
   TestAutomaticOwnerUnwindReplay();
   TestBlockMutationPackageReplay();
+  TestBlockProducerTransferReplay();
   TestBlockMutationReplay();
   TestComputedBlockValuesReplay();
   TestComputedBlockArrayMemberReplay();

@@ -1,5 +1,5 @@
 diff --git a/clang/lib/Analysis/CFG.cpp b/clang/lib/Analysis/CFG.cpp
-index bb8e98a89..913a47bd2 100644
+index bb8e98a89..1475e3270 100644
 --- a/clang/lib/Analysis/CFG.cpp
 +++ b/clang/lib/Analysis/CFG.cpp
 @@ -21,6 +21,9 @@
@@ -227,7 +227,7 @@ index bb8e98a89..913a47bd2 100644
  } // namespace
  
  /// distance - Calculates distance from this to L. L must be reachable from this
-@@ -507,11 +618,58 @@ namespace {
+@@ -507,11 +618,59 @@ namespace {
  ///  the AST in reverse order so that the successor of a basic block is
  ///  constructed prior to its predecessor.  This allows us to nicely capture
  ///  implicit fall-throughs without extra basic blocks.
@@ -244,6 +244,7 @@ index bb8e98a89..913a47bd2 100644
 +static bool collectObjC3BlockArrayInitializers(const Expr *, QualType, ASTContext &,
 +    SmallVectorImpl<const Expr *> &, SmallVectorImpl<const InitListExpr *> &, unsigned = 0);
 +static bool isObjC3StableBlockValue(const Expr *, ASTContext &);
++static bool isObjC3DirectBlockProducer(const Expr *, ASTContext &);
 +static bool supportsObjC3BlockArrayInitializer(const Expr *Value, QualType Type, ASTContext &Context) {
 +  SmallVector<const Expr *, 8> Elements;
 +  SmallVector<const InitListExpr *, 8> Lists;
@@ -286,7 +287,7 @@ index bb8e98a89..913a47bd2 100644
    std::unique_ptr<CFG> cfg;
  
    // Current block.
-@@ -531,9 +689,73 @@ class CFGBuilder {
+@@ -531,9 +690,73 @@ class CFGBuilder {
    // The frontend forbids mixing SEH __try with either try or @try.
    // So having one for all three is enough.
    CFGBlock *TryTerminatedBlock = nullptr;
@@ -360,7 +361,7 @@ index bb8e98a89..913a47bd2 100644
  
    // LabelMap records the mapping from Label expressions to their jump targets.
    using LabelMapTy = llvm::DenseMap<LabelDecl *, JumpTarget>;
-@@ -576,6 +798,11 @@ public:
+@@ -576,6 +799,11 @@ public:
  
    // buildCFG - Used by external clients to construct the CFG.
    std::unique_ptr<CFG> buildCFG(const Decl *D, Stmt *Statement);
@@ -372,7 +373,7 @@ index bb8e98a89..913a47bd2 100644
  
    bool alwaysAdd(const Stmt *stmt);
  
-@@ -599,6 +826,8 @@ private:
+@@ -599,6 +827,8 @@ private:
    CFGBlock *VisitCXXConstructExpr(CXXConstructExpr *C, AddStmtChoice asc);
    CFGBlock *VisitCXXNewExpr(CXXNewExpr *DE, AddStmtChoice asc);
    CFGBlock *VisitCXXDeleteExpr(CXXDeleteExpr *DE, AddStmtChoice asc);
@@ -381,7 +382,7 @@ index bb8e98a89..913a47bd2 100644
    CFGBlock *VisitCXXForRangeStmt(CXXForRangeStmt *S);
    CFGBlock *VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr *E,
                                         AddStmtChoice asc);
-@@ -608,7 +837,47 @@ private:
+@@ -608,7 +838,48 @@ private:
    CFGBlock *VisitCXXTryStmt(CXXTryStmt *S);
    CFGBlock *VisitCXXTypeidExpr(CXXTypeidExpr *S, AddStmtChoice asc);
    CFGBlock *VisitDeclStmt(DeclStmt *DS);
@@ -389,7 +390,8 @@ index bb8e98a89..913a47bd2 100644
 +  CFGBlock *VisitDeferStmt(DeferStmt *Statement);
 +  void emitDeferredScopeAction(const DeferredScopeAction &Action);
 +  bool supportsDeferredNativeEH(const Stmt *Statement,
-+                                bool FullExpressionTemporary = false) const;
++                                bool FullExpressionTemporary = false,
++                                bool BlockOwnershipTransfer = false) const;
 +  bool collectDeferredTemporaryCleanups(const Stmt *Expression,
 +                                       DeferredTemporaryMap &Pending) const;
 +  bool deferredNativeEHEdgesEnabled() const;
@@ -430,7 +432,7 @@ index bb8e98a89..913a47bd2 100644
    CFGBlock *VisitDefaultStmt(DefaultStmt *D);
    CFGBlock *VisitDoStmt(DoStmt *D);
    CFGBlock *VisitExprWithCleanups(ExprWithCleanups *E,
-@@ -634,6 +903,10 @@ private:
+@@ -634,6 +905,10 @@ private:
    CFGBlock *VisitObjCAtCatchStmt(ObjCAtCatchStmt *S);
    CFGBlock *VisitObjCAtSynchronizedStmt(ObjCAtSynchronizedStmt *S);
    CFGBlock *VisitObjCAtThrowStmt(ObjCAtThrowStmt *S);
@@ -441,7 +443,7 @@ index bb8e98a89..913a47bd2 100644
    CFGBlock *VisitObjCAtTryStmt(ObjCAtTryStmt *S);
    CFGBlock *VisitObjCAutoreleasePoolStmt(ObjCAutoreleasePoolStmt *S);
    CFGBlock *VisitObjCForCollectionStmt(ObjCForCollectionStmt *S);
-@@ -746,6 +1019,9 @@ private:
+@@ -746,6 +1021,9 @@ private:
    VisitConditionalOperatorForTemporaries(AbstractConditionalOperator *E,
                                           bool ExternallyDestructed,
                                           TempDtorContext &Context);
@@ -451,7 +453,7 @@ index bb8e98a89..913a47bd2 100644
    void InsertTempDecisionBlock(const TempDtorContext &Context,
                                 CFGBlock *FalseSucc = nullptr);
  
-@@ -856,11 +1132,23 @@ private:
+@@ -856,11 +1134,23 @@ private:
  
    void appendConstructor(CXXConstructExpr *CE) {
      CXXConstructorDecl *C = CE->getConstructor();
@@ -476,7 +478,7 @@ index bb8e98a89..913a47bd2 100644
      if (const ConstructionContext *CC =
              retrieveAndCleanupConstructionContext(CE)) {
        Block->appendConstructor(CE, CC, cfg->getBumpVectorContext());
-@@ -1451,6 +1739,22 @@ private:
+@@ -1451,6 +1741,22 @@ private:
      return {};
    }
  
@@ -499,7 +501,7 @@ index bb8e98a89..913a47bd2 100644
    bool hasTrivialDestructor(const VarDecl *VD) const;
    bool needsAutomaticDestruction(const VarDecl *VD) const;
  };
-@@ -1667,7 +1971,119 @@ void CFGBuilder::cleanupConstructionContext(Expr *E) {
+@@ -1667,7 +1973,135 @@ void CFGBuilder::cleanupConstructionContext(Expr *E) {
  ///  body (compound statement).  The ownership of the returned CFG is
  ///  transferred to the caller.  If CFG construction fails, this method returns
  ///  NULL.
@@ -613,13 +615,29 @@ index bb8e98a89..913a47bd2 100644
 +    if (const auto *Constructor = dyn_cast_or_null<CXXConstructorDecl>(D))
 +      for (const auto *Initializer : Constructor->inits()) {
 +        if (ObjC3BaseObject && Initializer->isBaseInitializer() && Initializer->isBaseVirtual()) continue;
++        if (Initializer->isAnyMemberInitializer()) {
++          QualType Type = Initializer->getAnyMember()->getType();
++          const bool Strong = !Context->getLangOpts().ObjCAutoRefCount ||
++              Context->getBaseElementType(Type).getObjCLifetime()==Qualifiers::OCL_Strong;
++          if (Strong && Type->isArrayType() && Context->getBaseElementType(Type)->isBlockPointerType()) {
++            SmallVector<const Expr *, 8> Elements;SmallVector<const InitListExpr *, 8> Lists;
++            if (!collectObjC3BlockArrayInitializers(Initializer->getInit(), Type, *Context, Elements, Lists)) return nullptr;
++            for (const Expr *Element : Elements)
++              if (Element && (containsFullExpressionTemporary(Element) || !supportsDeferredNativeEH(Element, false, true))) return nullptr;
++            continue;
++          }
++          if (Strong && Type->isBlockPointerType() && isObjC3DirectBlockProducer(Initializer->getInit(), *Context)) {
++            if (!supportsDeferredNativeEH(Initializer->getInit(), false, true)) return nullptr;
++            continue;
++          }
++        }
 +        if (containsFullExpressionTemporary(Initializer->getInit()) ||
 +            !supportsDeferredNativeEH(Initializer->getInit())) return nullptr;
 +      }
    assert(cfg.get());
    if (!Statement)
      return nullptr;
-@@ -1678,6 +2094,60 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
+@@ -1678,6 +2112,60 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
    Succ = createBlock();
    assert(Succ == &cfg->getExit());
    Block = nullptr;  // the EXIT block is empty.  Create all other blocks lazily.
@@ -680,7 +698,7 @@ index bb8e98a89..913a47bd2 100644
  
    if (BuildOpts.AddLifetime && BuildOpts.AddParameterLifetimes) {
      // Add parameters to the initial scope to handle lifetime ends.
-@@ -1716,9 +2186,16 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
+@@ -1716,9 +2204,16 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
    // branch per constructor, since the Standard states that all virtual bases
    // shall be initialized before non-virtual bases and direct data members.
    if (const auto *CD = dyn_cast_or_null<CXXConstructorDecl>(D)) {
@@ -698,7 +716,7 @@ index bb8e98a89..913a47bd2 100644
            I->isBaseInitializer() && I->isBaseVirtual()) {
          // We've reached the first virtual base init while iterating in reverse
          // order. Make a new block for virtual base initializers so that we
-@@ -1745,23 +2222,26 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
+@@ -1745,23 +2240,26 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
  
    // Backpatch the gotos whose label -> block mappings we didn't know when we
    // encountered them.
@@ -732,7 +750,7 @@ index bb8e98a89..913a47bd2 100644
        for (auto *L : G->labels()) {
          LabelMapTy::iterator LI = LabelMap.find(L->getLabel());
          // If there is no target for the goto, then we are looking at an
-@@ -1774,7 +2254,7 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
+@@ -1774,7 +2272,7 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
            continue;
          addSuccessor(B, JT.block);
        }
@@ -741,7 +759,7 @@ index bb8e98a89..913a47bd2 100644
      }
    }
  
-@@ -1791,14 +2271,7 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
+@@ -1791,14 +2289,7 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
        addSuccessor(B, LI->second.block);
      }
  
@@ -757,7 +775,14 @@ index bb8e98a89..913a47bd2 100644
  }
  
  /// createBlock - Used to lazily create blocks that are connected
-@@ -1838,8 +2311,7 @@ CFGBlock *CFGBuilder::addInitializer(CXXCtorInitializer *I) {
+@@ -1832,14 +2323,13 @@ CFGBlock *CFGBuilder::addInitializer(CXXCtorInitializer *I) {
+   Expr *Init = I->getInit();
+   if (Init) {
+     Expr *ActualInit = Init;
+-    if (BuildOpts.AddCXXDefaultInitExprInCtors)
++    if (BuildOpts.AddCXXDefaultInitExprInCtors || ObjC3SubobjectBody)
+       if (auto *DIE = dyn_cast<CXXDefaultInitExpr>(Init))
+         ActualInit = DIE->getExpr();
  
      HasTemporaries = isa<ExprWithCleanups>(ActualInit);
  
@@ -767,7 +792,7 @@ index bb8e98a89..913a47bd2 100644
        // Generate destructors for temporaries in initialization expression.
        TempDtorContext Context;
        auto *FullExprWithCleanups = cast<ExprWithCleanups>(ActualInit);
-@@ -1853,6 +2325,56 @@ CFGBlock *CFGBuilder::addInitializer(CXXCtorInitializer *I) {
+@@ -1853,6 +2343,58 @@ CFGBlock *CFGBuilder::addInitializer(CXXCtorInitializer *I) {
    autoCreateBlock();
    appendInitializer(Block, I);
  
@@ -795,6 +820,7 @@ index bb8e98a89..913a47bd2 100644
 +        if (!Element) continue;
 +        const auto *Cast = dyn_cast<ImplicitCastExpr>(getObjC3BlockArrayValue(Element));
 +        if (Strong && !isObjC3NullBlockValue(Element, *Context) &&
++            !isObjC3DirectBlockProducer(Element, *Context) &&
 +            (!Cast || Cast->getCastKind() != CK_ARCProduceObject))
 +          addObjC3BlockCopyOperation(Element);
 +        if (CFGBlock *Result = Visit(const_cast<Expr *>(Element))) Block = Result;
@@ -816,6 +842,7 @@ index bb8e98a89..913a47bd2 100644
 +      // registration and releases only the already initialized prefix.
 +      if (!isa<ImplicitValueInitExpr>(Value->IgnoreParenImpCasts()) &&
 +          !Value->isNullPointerConstant(*Context, Expr::NPC_ValueDependentIsNotNull) &&
++          !isObjC3DirectBlockProducer(Init, *Context) &&
 +          (!Cast || Cast->getCastKind() != CK_ARCProduceObject))
 +        addObjC3BlockCopyOperation(Init);
 +    }
@@ -824,7 +851,16 @@ index bb8e98a89..913a47bd2 100644
    if (Init) {
      // If the initializer is an ArrayInitLoopExpr, we want to extract the
      // initializer, that's used for each element.
-@@ -1944,7 +2466,7 @@ void CFGBuilder::addLoopExit(const Stmt *LoopStmt){
+@@ -1863,7 +2405,7 @@ CFGBlock *CFGBuilder::addInitializer(CXXCtorInitializer *I) {
+         ConstructionContextLayer::create(cfg->getBumpVectorContext(), I),
+         AILEInit ? AILEInit : Init);
+ 
+-    if (BuildOpts.AddCXXDefaultInitExprInCtors) {
++    if (BuildOpts.AddCXXDefaultInitExprInCtors || ObjC3SubobjectBody) {
+       if (CXXDefaultInitExpr *Default = dyn_cast<CXXDefaultInitExpr>(Init)) {
+         // In general, appending the expression wrapped by a CXXDefaultInitExpr
+         // may cause the same Expr to appear more than once in the CFG. Doing it
+@@ -1944,7 +2486,7 @@ void CFGBuilder::addLoopExit(const Stmt *LoopStmt){
  void CFGBuilder::addAutomaticObjHandling(LocalScope::const_iterator B,
                                           LocalScope::const_iterator E,
                                           Stmt *S) {
@@ -833,7 +869,7 @@ index bb8e98a89..913a47bd2 100644
        !BuildOpts.AddLifetime)
      return;
  
-@@ -1984,46 +2506,108 @@ void CFGBuilder::addAutomaticObjHandling(LocalScope::const_iterator B,
+@@ -1984,46 +2526,108 @@ void CFGBuilder::addAutomaticObjHandling(LocalScope::const_iterator B,
  void CFGBuilder::addAutomaticObjDestruction(LocalScope::const_iterator B,
                                              LocalScope::const_iterator E,
                                              Stmt *S) {
@@ -967,7 +1003,7 @@ index bb8e98a89..913a47bd2 100644
    }
  }
  
-@@ -2040,7 +2624,8 @@ void CFGBuilder::addScopeExitHandling(LocalScope::const_iterator B,
+@@ -2040,7 +2644,8 @@ void CFGBuilder::addScopeExitHandling(LocalScope::const_iterator B,
  
    if (BuildOpts.AddScopes) {
      autoCreateBlock();
@@ -977,7 +1013,7 @@ index bb8e98a89..913a47bd2 100644
    }
  
    if (!BuildOpts.AddLifetime)
-@@ -2053,9 +2638,9 @@ void CFGBuilder::addScopeExitHandling(LocalScope::const_iterator B,
+@@ -2053,9 +2658,9 @@ void CFGBuilder::addScopeExitHandling(LocalScope::const_iterator B,
    // Objects with trivial destructor ends their lifetime when their storage
    // is destroyed, for automatic variables, this happens when the end of the
    // scope is added.
@@ -990,7 +1026,7 @@ index bb8e98a89..913a47bd2 100644
  
    if (DeclsTrivial.empty())
      return;
-@@ -2074,7 +2659,7 @@ void CFGBuilder::addScopeChangesHandling(LocalScope::const_iterator SrcPos,
+@@ -2074,7 +2679,7 @@ void CFGBuilder::addScopeChangesHandling(LocalScope::const_iterator SrcPos,
                                           LocalScope::const_iterator DstPos,
                                           Stmt *S) {
    assert(Block && "Source block should be always crated");
@@ -999,7 +1035,7 @@ index bb8e98a89..913a47bd2 100644
        !BuildOpts.AddScopes) {
      return;
    }
-@@ -2090,7 +2675,7 @@ void CFGBuilder::addScopeChangesHandling(LocalScope::const_iterator SrcPos,
+@@ -2090,7 +2695,7 @@ void CFGBuilder::addScopeChangesHandling(LocalScope::const_iterator SrcPos,
    if (BuildOpts.AddScopes && !DstPos.inSameLocalScope(BasePos)) {
      for (LocalScope::const_iterator I = DstPos; I != BasePos; ++I)
        if (I.pointsToFirstDeclaredVar())
@@ -1008,7 +1044,7 @@ index bb8e98a89..913a47bd2 100644
    }
  
    // Append scopeEnds, destructor and lifetime with the terminator for
-@@ -2125,7 +2710,7 @@ CFGBlock *CFGBuilder::createScopeChangesHandlingBlock(
+@@ -2125,7 +2730,7 @@ CFGBlock *CFGBuilder::createScopeChangesHandlingBlock(
    if (SrcPos == DstPos)
      return DstBlk;
  
@@ -1017,7 +1053,7 @@ index bb8e98a89..913a47bd2 100644
        (!BuildOpts.AddScopes || SrcPos.inSameLocalScope(DstPos)))
      return DstBlk;
  
-@@ -2146,12 +2731,152 @@ CFGBlock *CFGBuilder::createScopeChangesHandlingBlock(
+@@ -2146,12 +2751,152 @@ CFGBlock *CFGBuilder::createScopeChangesHandlingBlock(
    return Block;
  }
  
@@ -1170,7 +1206,7 @@ index bb8e98a89..913a47bd2 100644
  
    // At the end destroy virtual base objects.
    for (const auto &VI : RD->vbases()) {
-@@ -2209,7 +2934,7 @@ LocalScope* CFGBuilder::createOrReuseLocalScope(LocalScope* Scope) {
+@@ -2209,7 +2954,7 @@ LocalScope* CFGBuilder::createOrReuseLocalScope(LocalScope* Scope) {
  /// addLocalScopeForStmt - Add LocalScope to local scopes tree for statement
  /// that should create implicit scope (e.g. if/else substatements).
  void CFGBuilder::addLocalScopeForStmt(Stmt *S) {
@@ -1179,7 +1215,7 @@ index bb8e98a89..913a47bd2 100644
        !BuildOpts.AddScopes)
      return;
  
-@@ -2219,23 +2944,41 @@ void CFGBuilder::addLocalScopeForStmt(Stmt *S) {
+@@ -2219,23 +2964,41 @@ void CFGBuilder::addLocalScopeForStmt(Stmt *S) {
    if (CompoundStmt *CS = dyn_cast<CompoundStmt>(S)) {
      for (auto *BI : CS->body()) {
        Stmt *SI = BI->stripLabelLikeStatements();
@@ -1224,7 +1260,7 @@ index bb8e98a89..913a47bd2 100644
        !BuildOpts.AddScopes)
      return Scope;
  
-@@ -2246,7 +2989,10 @@ LocalScope* CFGBuilder::addLocalScopeForDeclStmt(DeclStmt *DS,
+@@ -2246,7 +3009,10 @@ LocalScope* CFGBuilder::addLocalScopeForDeclStmt(DeclStmt *DS,
  }
  
  bool CFGBuilder::needsAutomaticDestruction(const VarDecl *VD) const {
@@ -1236,7 +1272,7 @@ index bb8e98a89..913a47bd2 100644
  }
  
  bool CFGBuilder::hasTrivialDestructor(const VarDecl *VD) const {
-@@ -2276,56 +3022,1387 @@ bool CFGBuilder::hasTrivialDestructor(const VarDecl *VD) const {
+@@ -2276,56 +3042,1470 @@ bool CFGBuilder::hasTrivialDestructor(const VarDecl *VD) const {
        return true;
    }
  
@@ -1735,6 +1771,12 @@ index bb8e98a89..913a47bd2 100644
 +      isa<StmtExpr, BlockExpr, LambdaExpr, PseudoObjectExpr, ObjCMessageExpr,
 +          CXXNewExpr, CXXDeleteExpr, CXXConstructExpr, CXXBindTemporaryExpr,
 +          CoroutineSuspendExpr, ObjC3ResourceExpr, ObjC3CarrierTransferExpr>(Value)) return false;
++  if (const auto *Default = dyn_cast<CXXDefaultArgExpr>(Value)) {
++    const Expr *Argument = Default->getExpr()->IgnoreParenImpCasts();
++    return isa<IntegerLiteral, FloatingLiteral, CharacterLiteral, CXXBoolLiteralExpr, CXXNullPtrLiteralExpr>(Argument) &&
++           isObjC3ScalarBlockOperand(Argument, Context, Budget, Depth + 1);
++  }
++  if (isa<CXXDefaultInitExpr>(Value)) return false;
 +  QualType Type = Value->getType();
 +  if ((!Type->isScalarType() && !Type->isVoidType() && !Type->isFunctionType()) ||
 +      Type->isObjCRetainableType() || Type.isVolatileQualified() || Type->isAtomicType() ||
@@ -1745,6 +1787,39 @@ index bb8e98a89..913a47bd2 100644
 +    if (!isObjC3ScalarBlockOperand(Child, Context, Budget, Depth + 1)) return false;
 +  return true;
 +}
++static bool isObjC3DirectBlockProducerImpl(const Expr *Value, ASTContext &Context,
++                                           unsigned &Budget, unsigned Depth = 0) {
++  if (!Value || !Budget-- || Depth > 64 || containsFullExpressionTemporary(Value)) return false;
++  Value = getObjC3BlockArrayValue(Value);
++  if (const auto *Cast = dyn_cast<CastExpr>(Value)) {
++    if (Cast->getCastKind()!=CK_NoOp && Cast->getCastKind()!=CK_ARCConsumeObject &&
++        Cast->getCastKind()!=CK_ARCReclaimReturnedObject && Cast->getCastKind()!=CK_ARCProduceObject) return false;
++    return isObjC3DirectBlockProducerImpl(Cast->getSubExpr(), Context, Budget, Depth + 1);
++  }
++  if (const auto *Comma = dyn_cast<BinaryOperator>(Value); Comma && Comma->getOpcode()==BO_Comma)
++    return isObjC3ScalarBlockOperand(Comma->getLHS(), Context, Budget, Depth + 1) &&
++           isObjC3DirectBlockProducerImpl(Comma->getRHS(), Context, Budget, Depth + 1);
++  const auto *Call = dyn_cast<CallExpr>(Value);
++  const auto *Function = Call ? Call->getDirectCallee() : nullptr;
++  const auto *Type = Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
++  if (!Type || !Type->getReturnType()->isBlockPointerType() || Type->isVariadic() ||
++      getObjC3ResourceTypeContract(Context, Type->getReturnType()).Cleanup ||
++      Type->hasObjC3BorrowedResult() || Type->getObjC3FunctionEffects().Async ||
++      Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None ||
++      (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) ||
++      !isObjC3ScalarBlockOperand(Call->getCallee(), Context, Budget, Depth + 1)) return false;
++  for (const auto *Parameter : Function->parameters())
++    if (Parameter->hasAttr<ObjCResourceAttr>() || Parameter->hasAttr<NSConsumedAttr>() ||
++        getObjC3ResourceTypeContract(Context, Parameter->getType()).Cleanup) return false;
++  for (const Expr *Argument : Call->arguments())
++    if (!isObjC3ScalarBlockOperand(Argument, Context, Budget, Depth + 1)) return false;
++  return true;
++}
++static bool isObjC3DirectBlockProducer(const Expr *Value, ASTContext &Context) {
++  unsigned Budget = 256;
++  return isObjC3DirectBlockProducerImpl(Value, Context, Budget);
++}
++
 +// Native strong member/index loads do not acquire a temporary owner. Admit
 +// their address recipe only from stable storage; overloaded/property/temporary
 +// bases and weak/unsafe loads retain independent cleanup obligations.
@@ -1826,7 +1901,10 @@ index bb8e98a89..913a47bd2 100644
 +    if (Array->getElementType()->isArrayType()) {
 +      if (!collectObjC3BlockArrayInitializers(Element, Array->getElementType(), Context, Elements, Lists, Depth + 1)) return false;
 +    } else {
-+      if (Elements.size() == 64 || (Element && !isObjC3StableBlockValue(Element, Context))) return false;
++      const bool StrongDestination = !Context.getLangOpts().ObjCAutoRefCount ||
++          Array->getElementType().getObjCLifetime()==Qualifiers::OCL_Strong;
++      if (Elements.size() == 64 || (Element && !isObjC3StableBlockValue(Element, Context) &&
++          !(StrongDestination && isObjC3DirectBlockProducer(Element, Context)))) return false;
 +      Elements.push_back(Element);
 +    }
 +  }
@@ -1839,7 +1917,8 @@ index bb8e98a89..913a47bd2 100644
 +  unsigned Budget = 256;
 +  return Type->isBlockPointerType() && Type.getObjCLifetime() == Qualifiers::OCL_Strong &&
 +         isObjC3StableBlockSlotAddress(Assignment->getLHS(), Context, Budget) &&
-+         isObjC3StableBlockValue(Assignment->getRHS(), Context);
++         (isObjC3StableBlockValue(Assignment->getRHS(), Context) ||
++          isObjC3DirectBlockProducer(Assignment->getRHS(), Context));
 +}
 +} // namespace
 +
@@ -1856,9 +1935,16 @@ index bb8e98a89..913a47bd2 100644
 +}
 +
 +bool CFGBuilder::supportsDeferredNativeEH(const Stmt *Statement,
-+                                         bool FullExpressionTemporary) const {
++                                         bool FullExpressionTemporary,
++                                         bool BlockOwnershipTransfer) const {
 +  if (!Statement)
 +    return true;
++  if (BlockOwnershipTransfer)
++    if (const auto *Value = dyn_cast<Expr>(Statement); Value && isObjC3DirectBlockProducer(Value, *Context))
++      return true; // The destination adopts the call's native +1 result. No full-expression owner remains.
++  if (const auto *Cast = dyn_cast<ImplicitCastExpr>(Statement);
++      Cast && Cast->getCastKind() == CK_ARCProduceObject && isObjC3DirectBlockProducer(Cast->getSubExpr(), *Context))
++    return true; // A single consumed argument adopts this result; call arity is checked below.
 +  if (const auto *Resource = dyn_cast<ObjC3ResourceExpr>(Statement)) {
 +    const VarDecl *Variable = Resource->getResourceVariable();
 +    return Variable && Variable->hasAttr<ObjCResourceAttr>() &&
@@ -1953,7 +2039,8 @@ index bb8e98a89..913a47bd2 100644
 +                        isObjC3ConsumedBlockCopy(Expression, *Context);
 +    if (BlockValue)
 +      BlockWrapper |= isObjC3NullBlockValue(Expression, *Context) ||
-+                      isObjC3StableBlockValue(Expression, *Context);
++                      isObjC3StableBlockValue(Expression, *Context) ||
++                      (!Context->getLangOpts().ObjCAutoRefCount && isObjC3DirectBlockProducer(Expression, *Context));
 +    if (BlockValue && Context->getLangOpts().ObjCAutoRefCount)
 +      BlockWrapper |= isObjC3StrongBlockAssignment(dyn_cast<BinaryOperator>(Expression), *Context);
 +    if (BlockValue && !Context->getLangOpts().ObjCAutoRefCount) {
@@ -1966,7 +2053,8 @@ index bb8e98a89..913a47bd2 100644
 +             Assignment->getRHS()->isNullPointerConstant(*Context, Expr::NPC_ValueDependentIsNotNull));
 +        unsigned Budget = 256;
 +        BlockWrapper |= isObjC3StableBlockSlotAddress(Assignment->getLHS(), *Context, Budget) &&
-+                        isObjC3StableBlockValue(Assignment->getRHS(), *Context);
++                        (isObjC3StableBlockValue(Assignment->getRHS(), *Context) ||
++                         isObjC3DirectBlockProducer(Assignment->getRHS(), *Context));
 +      }
 +    }
 +    if (Expression->isTypeDependent() || (BlockValue && !BlockLoad && !BlockWrapper) ||
@@ -2030,6 +2118,7 @@ index bb8e98a89..913a47bd2 100644
 +            (isObjC3SimpleBlockInitializer(Variable->getInit()) ||
 +             !Variable->hasInit() || isObjC3BlockSlotLoad(Variable->getInit()) ||
 +             isObjC3StableBlockValue(Variable->getInit(), *Context) ||
++             isObjC3DirectBlockProducer(Variable->getInit(), *Context) ||
 +             isObjC3NullBlockValue(Variable->getInit(), *Context));
 +        // The native initializer guard protects ownership acquired before a
 +        // full-expression temporary throws on destruction. Its conditional
@@ -2080,6 +2169,23 @@ index bb8e98a89..913a47bd2 100644
 +            !hasObjC3ARCObjectLifetime(Variable))
 +          return false;
 +      }
++  // Constructor/message argument ownership has independent entry/nil and
++  // parameter-cleanup boundaries. This direct-call recipe does not erase them.
++  auto ProducedConsumedArgument = [&](const Expr *Argument) {
++    const auto *Cast = dyn_cast<ImplicitCastExpr>(getObjC3BlockArrayValue(Argument));
++    return Cast && Cast->getCastKind()==CK_ARCProduceObject &&
++           isObjC3DirectBlockProducer(Cast->getSubExpr(), *Context);
++  };
++  if (const auto *Constructor = dyn_cast<CXXConstructExpr>(Statement))
++    for (const Expr *Argument : Constructor->arguments()) if (ProducedConsumedArgument(Argument)) return false;
++  if (const auto *Message = dyn_cast<ObjCMessageExpr>(Statement))
++    for (const Expr *Argument : Message->arguments()) if (ProducedConsumedArgument(Argument)) return false;
++  if (const auto *Call = dyn_cast<CallExpr>(Statement))
++    if (Call->getNumArgs()!=1)
++      for (const Expr *Argument : Call->arguments()) {
++        const auto *Cast = dyn_cast<ImplicitCastExpr>(getObjC3BlockArrayValue(Argument));
++        if (Cast && Cast->getCastKind()==CK_ARCProduceObject && isObjC3DirectBlockProducer(Cast->getSubExpr(), *Context)) return false;
++      }
 +  if (const auto *Call = dyn_cast<CallExpr>(Statement))
 +    if (const auto *Callee = Call->getDirectCallee())
 +      if (Callee->getIdentifier() && (Callee->getName() == "longjmp" ||
@@ -2104,6 +2210,19 @@ index bb8e98a89..913a47bd2 100644
 +  }
 +  if (isa<BlockExpr>(Statement))
 +    return false;
++  if (const auto *Declarations = dyn_cast<DeclStmt>(Statement)) {
++    for (const Decl *Declaration : Declarations->decls())
++      if (const auto *Variable = dyn_cast<VarDecl>(Declaration); Variable && Variable->hasInit()) {
++        QualType Type = Variable->getType();
++        const bool Transfer = Type->isBlockPointerType() &&
++            (!Context->getLangOpts().ObjCAutoRefCount || Type.getObjCLifetime()==Qualifiers::OCL_Strong);
++        if (!supportsDeferredNativeEH(Variable->getInit(), FullExpressionTemporary, Transfer)) return false;
++      }
++    return true;
++  }
++  if (const auto *Assignment = dyn_cast<BinaryOperator>(Statement); isObjC3StrongBlockAssignment(Assignment, *Context))
++    return supportsDeferredNativeEH(Assignment->getLHS(), FullExpressionTemporary) &&
++           supportsDeferredNativeEH(Assignment->getRHS(), FullExpressionTemporary, true);
 +  for (const Stmt *Child : Statement->children())
 +    if (!supportsDeferredNativeEH(Child, FullExpressionTemporary))
 +      return false;
@@ -2661,7 +2780,7 @@ index bb8e98a89..913a47bd2 100644
  }
  
  /// Visit - Walk the subtree of a statement and add extra
-@@ -2338,6 +4415,20 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+@@ -2338,6 +4518,20 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
      return nullptr;
    }
  
@@ -2682,7 +2801,7 @@ index bb8e98a89..913a47bd2 100644
    if (Expr *E = dyn_cast<Expr>(S))
      S = E->IgnoreParens();
  
-@@ -2349,6 +4440,66 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+@@ -2349,6 +4543,66 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
      default:
        return VisitStmt(S, asc);
  
@@ -2749,7 +2868,7 @@ index bb8e98a89..913a47bd2 100644
      case Stmt::ImplicitValueInitExprClass:
        if (BuildOpts.OmitImplicitValueInitializers)
          return Block;
-@@ -2427,6 +4578,9 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+@@ -2427,6 +4681,9 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
      case Stmt::CXXDeleteExprClass:
        return VisitCXXDeleteExpr(cast<CXXDeleteExpr>(S), asc);
  
@@ -2759,7 +2878,7 @@ index bb8e98a89..913a47bd2 100644
      case Stmt::CXXFunctionalCastExprClass:
        return VisitCXXFunctionalCastExpr(cast<CXXFunctionalCastExpr>(S), asc);
  
-@@ -2512,8 +4666,12 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+@@ -2512,8 +4769,12 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
      case Stmt::ObjCMessageExprClass:
        return VisitObjCMessageExpr(cast<ObjCMessageExpr>(S), asc);
  
@@ -2774,7 +2893,7 @@ index bb8e98a89..913a47bd2 100644
  
      case Stmt::PseudoObjectExprClass:
        return VisitPseudoObjectExpr(cast<PseudoObjectExpr>(S));
-@@ -2795,11 +4953,38 @@ CFGBlock *CFGBuilder::VisitBinaryOperator(BinaryOperator *B,
+@@ -2795,11 +5056,39 @@ CFGBlock *CFGBuilder::VisitBinaryOperator(BinaryOperator *B,
    }
  
    if (B->isAssignmentOp()) {
@@ -2784,9 +2903,10 @@ index bb8e98a89..913a47bd2 100644
 +    const bool StrongBlock = Context->getLangOpts().ObjC3 && Context->getLangOpts().ObjCAutoRefCount &&
 +        B->getOpcode() == BO_Assign && B->getLHS()->getType()->isBlockPointerType() &&
 +        B->getLHS()->getType().getObjCLifetime() == Qualifiers::OCL_Strong;
-+    const bool CopiesBlock = StrongBlock && !isObjC3NullBlockValue(B->getRHS(), *Context);
++    const bool OwnedBlockValue = StrongBlock && !isObjC3NullBlockValue(B->getRHS(), *Context);
++    const bool CopiesBlock = OwnedBlockValue && !isObjC3DirectBlockProducer(B->getRHS(), *Context);
 +    VarDecl *PendingValue = nullptr;
-+    if (CopiesBlock && HasScopeExitActions) {
++    if (OwnedBlockValue && HasScopeExitActions) {
 +      // Native retainBlock precedes lvalue-address evaluation. Hold its new
 +      // owner across that evaluation, then transfer it only after the store.
 +      PendingValue = createObjC3RuntimeVariable("__objc3_cfg_block_assignment_value",
@@ -2815,7 +2935,7 @@ index bb8e98a89..913a47bd2 100644
      return Visit(B->getRHS());
    }
  
-@@ -2840,8 +5025,8 @@ CFGBlock *CFGBuilder::VisitBreakStmt(BreakStmt *B) {
+@@ -2840,8 +5129,8 @@ CFGBlock *CFGBuilder::VisitBreakStmt(BreakStmt *B) {
    // If there is no target for the break, then we are looking at an incomplete
    // AST.  This means that the CFG cannot be constructed.
    if (BreakJumpTarget.block) {
@@ -2825,7 +2945,7 @@ index bb8e98a89..913a47bd2 100644
    } else
      badCFG = true;
  
-@@ -2874,6 +5059,14 @@ static bool isBuiltinAssumeWithSideEffects(const ASTContext &Ctx,
+@@ -2874,6 +5163,14 @@ static bool isBuiltinAssumeWithSideEffects(const ASTContext &Ctx,
  }
  
  CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
@@ -2840,7 +2960,7 @@ index bb8e98a89..913a47bd2 100644
    // Compute the callee type.
    QualType calleeType = C->getCallee()->getType();
    if (calleeType == Context->BoundMemberTy) {
-@@ -2890,7 +5083,8 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2890,7 +5187,8 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
    bool AddEHEdge = false;
  
    // Languages without exceptions are assumed to not throw.
@@ -2850,7 +2970,7 @@ index bb8e98a89..913a47bd2 100644
      if (BuildOpts.AddEHEdges)
        AddEHEdge = true;
    }
-@@ -2921,6 +5115,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2921,6 +5219,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
    if (!CanThrow(C->getCallee(), *Context))
      AddEHEdge = false;
  
@@ -2860,7 +2980,7 @@ index bb8e98a89..913a47bd2 100644
    if (OmitArguments) {
      assert(!NoReturn && "noreturn calls with unevaluated args not implemented");
      assert(!AddEHEdge && "EH calls with unevaluated args not implemented");
-@@ -2951,7 +5148,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2951,7 +5252,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
  
    if (AddEHEdge) {
      // Add exceptional edges.
@@ -2871,7 +2991,7 @@ index bb8e98a89..913a47bd2 100644
        addSuccessor(Block, TryTerminatedBlock);
      else
        addSuccessor(Block, &cfg->getExit());
-@@ -3120,7 +5319,8 @@ CFGBlock *CFGBuilder::VisitDeclStmt(DeclStmt *DS) {
+@@ -3120,7 +5423,8 @@ CFGBlock *CFGBuilder::VisitDeclStmt(DeclStmt *DS) {
  
  /// VisitDeclSubExpr - Utility method to add block-level expressions for
  /// DeclStmts and initializers in them.
@@ -2881,7 +3001,7 @@ index bb8e98a89..913a47bd2 100644
    assert(DS->isSingleDecl() && "Can handle single declarations only.");
  
    if (const auto *TND = dyn_cast<TypedefNameDecl>(DS->getSingleDecl())) {
-@@ -3149,6 +5349,17 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3149,6 +5453,17 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
      return Block;
    }
  
@@ -2899,7 +3019,7 @@ index bb8e98a89..913a47bd2 100644
    bool HasTemporaries = false;
  
    // Guard static initializers under a branch.
-@@ -3172,7 +5383,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3172,7 +5487,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    if (Init) {
      HasTemporaries = isa<ExprWithCleanups>(Init);
  
@@ -2908,7 +3028,7 @@ index bb8e98a89..913a47bd2 100644
          (BuildOpts.AddTemporaryDtors || BuildOpts.AddLifetime)) {
        // Generate destructors for temporaries in initialization expression.
        TempDtorContext Context;
-@@ -3199,6 +5410,9 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3199,6 +5514,9 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    }
  
    autoCreateBlock();
@@ -2918,7 +3038,7 @@ index bb8e98a89..913a47bd2 100644
    appendStmt(Block, DS);
  
    // If the initializer is an ArrayInitLoopExpr, we want to extract the
-@@ -3214,6 +5428,22 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3214,6 +5532,22 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    // statement-expression.
    CFGBlock *LastBlock = Block;
  
@@ -2941,7 +3061,7 @@ index bb8e98a89..913a47bd2 100644
    if (Init) {
      if (HasTemporaries) {
        // For expression with temporaries go directly to subexpression to omit
-@@ -3221,8 +5451,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3221,8 +5555,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
        ExprWithCleanups *EC = cast<ExprWithCleanups>(Init);
        if (CFGBlock *newBlock = Visit(EC->getSubExpr()))
          LastBlock = newBlock;
@@ -2951,7 +3071,7 @@ index bb8e98a89..913a47bd2 100644
        if (CFGBlock *newBlock = Visit(Init))
          LastBlock = newBlock;
      }
-@@ -3231,17 +5460,15 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3231,17 +5564,15 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    // If the type of VD is a VLA, then we must process its size expressions.
    // FIXME: This does not find the VLA if it is embedded in other types,
    // like here: `int (*p_vla)[x];`
@@ -2973,7 +3093,7 @@ index bb8e98a89..913a47bd2 100644
  
    CFGBlock *B = LastBlock;
    if (blockAfterStaticInit) {
-@@ -3407,6 +5634,10 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
+@@ -3407,6 +5738,10 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -2984,7 +3104,7 @@ index bb8e98a89..913a47bd2 100644
    addAutomaticObjHandling(ScopePos, LocalScope::const_iterator(), S);
  
    if (auto *R = dyn_cast<ReturnStmt>(S))
-@@ -3414,13 +5645,10 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
+@@ -3414,13 +5749,10 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
          ConstructionContextLayer::create(cfg->getBumpVectorContext(), R),
          R->getRetValue());
  
@@ -3002,7 +3122,7 @@ index bb8e98a89..913a47bd2 100644
  
    // Visit children
    if (ReturnStmt *RS = dyn_cast<ReturnStmt>(S)) {
-@@ -3457,6 +5685,16 @@ CFGBlock *CFGBuilder::VisitCoroutineSuspendExpr(CoroutineSuspendExpr *E,
+@@ -3457,6 +5789,16 @@ CFGBlock *CFGBuilder::VisitCoroutineSuspendExpr(CoroutineSuspendExpr *E,
      B = R;
    if (auto *R = Visit(E->getSuspendExpr()))
      B = R;
@@ -3019,7 +3139,7 @@ index bb8e98a89..913a47bd2 100644
    if (auto *R = Visit(E->getReadyExpr()))
      B = R;
    if (auto *R = Visit(E->getCommonExpr()))
-@@ -3561,6 +5799,7 @@ CFGBlock *CFGBuilder::VisitSEHTryStmt(SEHTryStmt *Terminator) {
+@@ -3561,6 +5903,7 @@ CFGBlock *CFGBuilder::VisitSEHTryStmt(SEHTryStmt *Terminator) {
  
    // Save the current "__try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -3027,7 +3147,7 @@ index bb8e98a89..913a47bd2 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    // Save the current value for the __leave target.
-@@ -3604,24 +5843,35 @@ CFGBlock *CFGBuilder::VisitLabelStmt(LabelStmt *L) {
+@@ -3604,24 +5947,35 @@ CFGBlock *CFGBuilder::VisitLabelStmt(LabelStmt *L) {
  
  CFGBlock *CFGBuilder::VisitBlockExpr(BlockExpr *E, AddStmtChoice asc) {
    CFGBlock *LastBlock = VisitNoRecurse(E, asc);
@@ -3074,7 +3194,7 @@ index bb8e98a89..913a47bd2 100644
        // If the initializer is an ArrayInitLoopExpr, we want to extract the
        // initializer, that's used for each element.
        auto *AILEInit = extractElementInitializerFromNestedAILE(
-@@ -3990,13 +6240,255 @@ CFGBlock *CFGBuilder::VisitObjCForCollectionStmt(ObjCForCollectionStmt *S) {
+@@ -3990,13 +6344,255 @@ CFGBlock *CFGBuilder::VisitObjCForCollectionStmt(ObjCForCollectionStmt *S) {
    return addStmt(S->getCollection());
  }
  
@@ -3330,7 +3450,7 @@ index bb8e98a89..913a47bd2 100644
    // FIXME: Add locking 'primitives' to CFG for @synchronized.
  
    // Inline the body.
-@@ -4035,8 +6527,10 @@ CFGBlock *CFGBuilder::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
+@@ -4035,8 +6631,10 @@ CFGBlock *CFGBuilder::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
  
      // If the semantic is an opaque value, we're being asked to bind
      // it to its source expression.
@@ -3342,7 +3462,7 @@ index bb8e98a89..913a47bd2 100644
  
      if (CFGBlock *B = Visit(Semantic))
        lastBlock = B;
-@@ -4207,6 +6701,14 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
+@@ -4207,6 +6805,14 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
    // won't be restored when traversing AST.
    SaveAndRestore save_scope_pos(ScopePos);
  
@@ -3357,7 +3477,7 @@ index bb8e98a89..913a47bd2 100644
    if (CS->getCatchBody())
      addStmt(CS->getCatchBody());
  
-@@ -4229,6 +6731,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
+@@ -4229,6 +6835,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
    return CatchBlock;
  }
  
@@ -3488,7 +3608,7 @@ index bb8e98a89..913a47bd2 100644
  CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
    // If we were in the middle of a block we stop processing that block.
    if (badCFG)
-@@ -4237,7 +6863,9 @@ CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
+@@ -4237,7 +6967,9 @@ CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -3499,7 +3619,7 @@ index bb8e98a89..913a47bd2 100644
      // The current try statement is the only successor.
      addSuccessor(Block, TryTerminatedBlock);
    else
-@@ -4261,9 +6889,22 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
+@@ -4261,9 +6993,22 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
    } else
      TrySuccessor = Succ;
  
@@ -3525,7 +3645,7 @@ index bb8e98a89..913a47bd2 100644
  
    CFGBlock *PrevTryTerminatedBlock = TryTerminatedBlock;
  
-@@ -4288,9 +6929,11 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
+@@ -4288,9 +7033,11 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
      addSuccessor(NewTryTerminatedBlock, CatchBlock);
    }
  
@@ -3539,7 +3659,7 @@ index bb8e98a89..913a47bd2 100644
        addSuccessor(NewTryTerminatedBlock, PrevTryTerminatedBlock);
      else
        addSuccessor(NewTryTerminatedBlock, &cfg->getExit());
-@@ -4301,6 +6944,7 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
+@@ -4301,6 +7048,7 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
  
    // Save the current "try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -3547,7 +3667,7 @@ index bb8e98a89..913a47bd2 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    assert(Terminator->getTryBody() && "try must contain a non-NULL body");
-@@ -4312,7 +6956,13 @@ CFGBlock *CFGBuilder::VisitObjCMessageExpr(ObjCMessageExpr *ME,
+@@ -4312,7 +7060,13 @@ CFGBlock *CFGBuilder::VisitObjCMessageExpr(ObjCMessageExpr *ME,
                                             AddStmtChoice asc) {
    findConstructionContextsForArguments(ME);
  
@@ -3562,7 +3682,7 @@ index bb8e98a89..913a47bd2 100644
    appendObjCMessage(Block, ME);
  
    return VisitChildren(ME);
-@@ -4326,7 +6976,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
+@@ -4326,7 +7080,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -3573,7 +3693,7 @@ index bb8e98a89..913a47bd2 100644
      // The current try statement is the only successor.
      addSuccessor(Block, TryTerminatedBlock);
    else
-@@ -4339,8 +6991,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
+@@ -4339,8 +7095,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
  }
  
  CFGBlock *CFGBuilder::VisitCXXTypeidExpr(CXXTypeidExpr *S, AddStmtChoice asc) {
@@ -3585,7 +3705,7 @@ index bb8e98a89..913a47bd2 100644
      appendStmt(Block, S);
    }
  
-@@ -4474,8 +7127,8 @@ CFGBlock *CFGBuilder::VisitContinueStmt(ContinueStmt *C) {
+@@ -4474,8 +7231,8 @@ CFGBlock *CFGBuilder::VisitContinueStmt(ContinueStmt *C) {
    // If there is no target for the continue, then we are looking at an
    // incomplete AST.  This means the CFG cannot be constructed.
    if (ContinueJumpTarget.block) {
@@ -3595,7 +3715,7 @@ index bb8e98a89..913a47bd2 100644
    } else
      badCFG = true;
  
-@@ -4772,14 +7425,25 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
+@@ -4772,14 +7529,25 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
    CFGBlock *PrevTryTerminatedBlock = TryTerminatedBlock;
  
    // Create a new block that will contain the try statement.
@@ -3624,7 +3744,7 @@ index bb8e98a89..913a47bd2 100644
      CXXCatchStmt *CS = Terminator->getHandler(I);
      if (CS->getExceptionDecl() == nullptr) {
        HasCatchAll = true;
-@@ -4793,7 +7457,12 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
+@@ -4793,7 +7561,12 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
      addSuccessor(NewTryTerminatedBlock, CatchBlock);
    }
    if (!HasCatchAll) {
@@ -3638,7 +3758,7 @@ index bb8e98a89..913a47bd2 100644
        addSuccessor(NewTryTerminatedBlock, PrevTryTerminatedBlock);
      else
        addSuccessor(NewTryTerminatedBlock, &cfg->getExit());
-@@ -4804,6 +7473,7 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
+@@ -4804,6 +7577,7 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
  
    // Save the current "try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -3646,7 +3766,7 @@ index bb8e98a89..913a47bd2 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    assert(Terminator->getTryBlock() && "try must contain a non-NULL body");
-@@ -4990,6 +7660,15 @@ CFGBlock *CFGBuilder::VisitCXXForRangeStmt(CXXForRangeStmt *S) {
+@@ -4990,6 +7764,15 @@ CFGBlock *CFGBuilder::VisitCXXForRangeStmt(CXXForRangeStmt *S) {
  CFGBlock *CFGBuilder::VisitExprWithCleanups(ExprWithCleanups *E,
                                              AddStmtChoice asc,
                                              bool ExternallyDestructed) {
@@ -3662,7 +3782,7 @@ index bb8e98a89..913a47bd2 100644
    if (BuildOpts.AddTemporaryDtors || BuildOpts.AddLifetime) {
      // If adding implicit destructors visit the full expression for adding
      // destructors of temporaries.
-@@ -5024,6 +7703,11 @@ CFGBlock *CFGBuilder::VisitCXXBindTemporaryExpr(CXXBindTemporaryExpr *E,
+@@ -5024,6 +7807,11 @@ CFGBlock *CFGBuilder::VisitCXXBindTemporaryExpr(CXXBindTemporaryExpr *E,
  
  CFGBlock *CFGBuilder::VisitCXXConstructExpr(CXXConstructExpr *C,
                                              AddStmtChoice asc) {
@@ -3674,7 +3794,7 @@ index bb8e98a89..913a47bd2 100644
    // If the constructor takes objects as arguments by value, we need to properly
    // construct these objects. Construction contexts we find here aren't for the
    // constructor C, they're for its arguments only.
-@@ -5033,6 +7717,79 @@ CFGBlock *CFGBuilder::VisitCXXConstructExpr(CXXConstructExpr *C,
+@@ -5033,6 +7821,79 @@ CFGBlock *CFGBuilder::VisitCXXConstructExpr(CXXConstructExpr *C,
    return VisitChildren(C);
  }
  
@@ -3754,7 +3874,7 @@ index bb8e98a89..913a47bd2 100644
  CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
                                        AddStmtChoice asc) {
    autoCreateBlock();
-@@ -5042,11 +7799,29 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
+@@ -5042,11 +7903,29 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
        ConstructionContextLayer::create(cfg->getBumpVectorContext(), NE),
        const_cast<CXXConstructExpr *>(NE->getConstructExpr()));
  
@@ -3787,7 +3907,7 @@ index bb8e98a89..913a47bd2 100644
  
    if (NE->isArray() && *NE->getArraySize())
      Block = Visit(*NE->getArraySize());
-@@ -5058,23 +7833,92 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
+@@ -5058,23 +7937,92 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
    return Block;
  }
  
@@ -3885,7 +4005,7 @@ index bb8e98a89..913a47bd2 100644
  CFGBlock *CFGBuilder::VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr *E,
                                                   AddStmtChoice asc) {
    if (asc.alwaysAdd(*this, E)) {
-@@ -5099,6 +7943,8 @@ CFGBlock *CFGBuilder::VisitCXXTemporaryObjectExpr(CXXTemporaryObjectExpr *E,
+@@ -5099,6 +8047,8 @@ CFGBlock *CFGBuilder::VisitCXXTemporaryObjectExpr(CXXTemporaryObjectExpr *E,
  
  CFGBlock *CFGBuilder::VisitImplicitCastExpr(ImplicitCastExpr *E,
                                              AddStmtChoice asc) {
@@ -3894,7 +4014,7 @@ index bb8e98a89..913a47bd2 100644
    if (asc.alwaysAdd(*this, E)) {
      autoCreateBlock();
      appendStmt(Block, E);
-@@ -5143,6 +7989,13 @@ tryAgain:
+@@ -5143,6 +8093,13 @@ tryAgain:
      return nullptr;
    }
    switch (E->getStmtClass()) {
@@ -3908,7 +4028,7 @@ index bb8e98a89..913a47bd2 100644
      default:
        return VisitChildrenForTemporaries(E, false, Context);
  
-@@ -5328,7 +8181,12 @@ CFGBlock *CFGBuilder::VisitCXXBindTemporaryExprForTemporaryDtors(
+@@ -5328,7 +8285,12 @@ CFGBlock *CFGBuilder::VisitCXXBindTemporaryExprForTemporaryDtors(
  
      const CXXDestructorDecl *Dtor = E->getTemporary()->getDestructor();
  
@@ -3922,7 +4042,7 @@ index bb8e98a89..913a47bd2 100644
        // If the destructor is marked as a no-return destructor, we need to
        // create a new block for the destructor which does not have as a
        // successor anything built thus far. Control won't flow out of this
-@@ -5521,6 +8379,12 @@ CFGImplicitDtor::getDestructorDecl(ASTContext &astContext) const {
+@@ -5521,6 +8483,12 @@ CFGImplicitDtor::getDestructorDecl(ASTContext &astContext) const {
      case CFGElement::ScopeEnd:
      case CFGElement::FullExprCleanup:
      case CFGElement::CleanupFunction:
@@ -3935,7 +4055,7 @@ index bb8e98a89..913a47bd2 100644
        llvm_unreachable("getDestructorDecl should only be used with "
                         "ImplicitDtors");
      case CFGElement::AutomaticObjectDtor: {
-@@ -5575,9 +8439,11 @@ CFGImplicitDtor::getDestructorDecl(ASTContext &astContext) const {
+@@ -5575,9 +8543,11 @@ CFGImplicitDtor::getDestructorDecl(ASTContext &astContext) const {
        assert(classDecl);
        return classDecl->getDestructor();
      }
@@ -3950,7 +4070,7 @@ index bb8e98a89..913a47bd2 100644
    }
    llvm_unreachable("getKind() returned bogus value");
  }
-@@ -5806,6 +8672,8 @@ public:
+@@ -5806,6 +8776,8 @@ public:
      Terminator->getCond()->printPretty(OS, Helper, Policy);
    }
  
@@ -3959,7 +4079,7 @@ index bb8e98a89..913a47bd2 100644
    void VisitCXXTryStmt(CXXTryStmt *) { OS << "try ..."; }
  
    void VisitObjCAtTryStmt(ObjCAtTryStmt *) { OS << "@try ..."; }
-@@ -5856,6 +8724,13 @@ public:
+@@ -5856,6 +8828,13 @@ public:
      E->printPretty(OS, Helper, Policy);
    }
  
@@ -3973,7 +4093,7 @@ index bb8e98a89..913a47bd2 100644
  public:
    void print(CFGTerminator T) {
      switch (T.getKind()) {
-@@ -5866,6 +8741,13 @@ public:
+@@ -5866,6 +8845,13 @@ public:
        OS << "(Temp Dtor) ";
        Visit(T.getStmt());
        break;
@@ -3987,7 +4107,7 @@ index bb8e98a89..913a47bd2 100644
      case CFGTerminator::VirtualBaseBranch:
        OS << "(See if most derived ctor has already initialized vbases)";
        break;
-@@ -6074,6 +8956,36 @@ static void print_elem(raw_ostream &OS, StmtPrinterHelper &Helper,
+@@ -6074,6 +9060,36 @@ static void print_elem(raw_ostream &OS, StmtPrinterHelper &Helper,
      break;
    }
  
@@ -4024,7 +4144,7 @@ index bb8e98a89..913a47bd2 100644
    case CFGElement::Kind::CleanupFunction:
      OS << "CleanupFunction ("
         << E.castAs<CFGCleanupFunction>().getFunctionDecl()->getName() << ")";
-@@ -6230,6 +9142,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
+@@ -6230,6 +9246,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
        else
          OS << "...";
        OS << ")";
@@ -4038,7 +4158,7 @@ index bb8e98a89..913a47bd2 100644
      } else if (SEHExceptStmt *ES = dyn_cast<SEHExceptStmt>(Label)) {
        OS << "__except (";
        ES->getFilterExpr()->printPretty(OS, &Helper,
-@@ -6523,6 +9442,14 @@ const Stmt *CFGBlock::getTerminatorCondition(bool StripParens) const {
+@@ -6523,6 +9546,14 @@ const Stmt *CFGBlock::getTerminatorCondition(bool StripParens) const {
      return nullptr;
  
    const Expr *E = nullptr;

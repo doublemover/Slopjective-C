@@ -151,9 +151,9 @@ inline constexpr const char *kCxxFriendSemantic = "objc3.cxx-friends.v1";
 inline bool HasCxxFriendIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-friends:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxBlockExpressionSemantic = "objc3.cxx-block-expressions.v2";
+inline constexpr const char *kCxxBlockExpressionSemantic = "objc3.cxx-block-expressions.v3";
 inline bool HasCxxBlockExpressionIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-block-expressions:v2;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-block-expressions:v3;") != std::string::npos;
 }
 inline constexpr const char *kCxxStatementExpressionSemantic = "objc3.cxx-statement-expressions.v1";
 inline bool HasCxxStatementExpressionIdentity(const InterfaceDeclarationIdentity &d) {

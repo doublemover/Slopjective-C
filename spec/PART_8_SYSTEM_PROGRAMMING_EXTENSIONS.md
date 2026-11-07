@@ -464,6 +464,14 @@ storage transfers that ownership without a second release. A null assignment
 performs no heap copy. Borrowed and nullable proofs shall distinguish these
 failure boundaries from successful mutation.
 
+A direct retained or reclaimed Block producer result shall be adopted by its
+strong destination without inventing an additional heap copy. Failed production
+does not initialize that destination. Produced assignment values remain owned
+across destination evaluation. Default member initializers obey the same prefix
+registration and failure rules. Direct consumed calls may adopt a sole prepared
+argument; ownership-bearing work in other argument/temporary regions requires
+its own complete cleanup model.
+
 A native catch handler observes owner state after protected-region cleanup,
 including catch-all and scalar/reference exception bindings. A successful strong
 Block binding owns its copied captures; a failed heap copy does not initialize

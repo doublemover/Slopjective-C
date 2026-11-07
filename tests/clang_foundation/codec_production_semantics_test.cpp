@@ -13,9 +13,22 @@
 using namespace objc3::clang_foundation;
 
 int main() {
-  for (unsigned family=0;family!=4;++family) {
-    const bool cxx=family&1,blocks=family>=2;
-    const std::string source = blocks ? R"(
+  for (unsigned family=0;family!=6;++family) {
+    const bool cxx=family&1,blocks=family>=2,producers=family>=4;
+    const std::string source = producers ? R"(
+      typedef void (^CatalogCallback)(void);
+      struct CatalogSlots {CatalogCallback slots[2];};
+      CatalogCallback catalog_producer(int) __attribute__((ns_returns_retained));
+      CatalogCallback catalog_shared(int);
+      int catalog_step(void);void catalog_checkpoint(void) __attribute__((nothrow));
+      void catalog_consume(CatalogCallback __attribute__((ns_consumed))) __attribute__((nothrow));
+      inline void catalog_production(struct CatalogSlots *store) {
+        __objc3_defer {catalog_checkpoint();}
+        CatalogCallback local=catalog_producer(1),shared=catalog_shared(2);
+        store->slots[catalog_step()]=catalog_producer(3);
+        catalog_consume(catalog_producer(4));local();shared();
+      }
+    )" : blocks ? R"(
       typedef void (^CatalogCallback)(void);
       struct CatalogSlots {CatalogCallback slots[2];};
       int catalog_step(void);void catalog_checkpoint(void) __attribute__((nothrow));
@@ -46,7 +59,7 @@ int main() {
     const auto capabilities=SupportedSemanticInterfaceCapabilities();
     auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);
     assert(decoded);
-    const std::string expected=blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
+    const std::string expected=producers?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
     assert(std::find(decoded->required_semantics.begin(),decoded->required_semantics.end(),expected)!=decoded->required_semantics.end());
     auto bytes=objc3::fuzz::Pack(artifact.source_bytes,artifact.sidecar_json);assert(!bytes.empty());
     std::string first;

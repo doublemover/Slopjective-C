@@ -1,5 +1,8 @@
 # Native Block slot mutation and exceptional ownership
 
+The [System 2.50 span](linux_block_producer_transfers.md) extends direct producer
+transfers and supersedes Block expression v2 with v3. This is the System 2.49 receipt.
+
 System source 2.49 completes stable native strong Block slot assignment across
 locals, members and indexed storage. The RHS evaluates first, its Block copy
 completes before destination-address evaluation, and only a successful store

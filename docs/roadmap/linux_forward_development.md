@@ -1,5 +1,14 @@
 # Objective-C 3.0 on Linux
 
+The [System 2.50 producer-transfer span](linux_block_producer_transfers.md)
+adopts retained/reclaimed Block results into locals, scalar/nested members,
+default initializers, assignments and single consumed direct calls. Native
+ownership supplies the value without an invented caller copy; produced values
+remain guarded across throwing destination evaluation. Block admission cuts over
+to v3. All 66 compiler cases, 48 AST controls, six new source-free profiles,
+eighteen adjacent groups, twelve instrumented native configurations / 42 commands,
+four provider/consumer executions, codec/isolation and 120 decoder replays pass.
+
 The [System 2.49 Block-mutation span](linux_block_mutation.md) separates
 RHS evaluation, heap copy, destination-address evaluation and ownership transfer.
 A new native unwind guard repairs retained-RHS leakage on an address exception;

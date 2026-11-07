@@ -57982,10 +57982,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..203f6fad7
+index 000000000..5a747cd7e
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,1872 @@
+@@ -0,0 +1,1966 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -59747,7 +59747,7 @@ index 000000000..203f6fad7
 +}
 +
 +TEST(ObjC3ASTInfrastructure, BlockArrayManagedAndUnsequencedOwnersKeepIndependentGates) {
-+  for(const char *Initializer:{"^{(void)object;}","^{(void)byref;}","produce()","(managed_step(object),a)"}) {
++  for(const char *Initializer:{"^{(void)object;}","^{(void)byref;}","(produce(),a)","(managed_step(object),a)"}) {
 +    std::string Source="typedef void (^Callback)(void);Callback produce();int managed_step(id);struct Owner {Callback callbacks[1];Owner(Callback a,id object){ }Owner(Callback a,id object,int):callbacks{"+std::string(Initializer)+"} {} };";
 +    // A byref variable is legal only in a local scope, so use a C++ constructor
 +    // parameter by reference for that separate reference capture boundary.
@@ -59857,6 +59857,100 @@ index 000000000..203f6fad7
 +  };
 +  Explore(Explore,&Graph->getEntry(),0,false,0,false,0,false,0);
 +  EXPECT_GT(Normal,0u);EXPECT_EQ(Failed,3u);EXPECT_EQ(FailureMask,7u);
++}
++
++
++TEST(ObjC3ASTInfrastructure, BlockProducerSubobjectsAdoptResultsWithoutInventingCopies) {
++  for(bool Retained:{false,true})for(bool NoThrow:{false,true})for(bool Default:{false,true}) {
++    std::string Source="typedef void (^Callback)(void);void producer_marker() noexcept;Callback producer(int)";
++    if(NoThrow)Source+=" noexcept";if(Retained)Source+=" __attribute__((ns_returns_retained))";Source+=";struct Owner {Callback scalar";
++    if(Default)Source+="=producer(0)";Source+=";Callback callbacks[2][2]";
++    if(Default)Source+="={{producer(1),producer(2)},{producer(3),producer(4)}}";
++    Source+=";Owner()";
++    if(!Default)Source+=":scalar(producer(0)),callbacks{{producer(1),producer(2)},{producer(3),producer(4)}}";
++    Source+="{__objc3_defer {producer_marker();}}};";
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions"},"block-producer-subobjects.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());CXXRecordDecl *Owner=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner")Owner=R;
++    ASSERT_NE(Owner,nullptr);auto *Constructor=*Owner->ctor_begin();
++    CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;Options.AddEHEdges=true;Options.AddInitializers=true;Options.AddImplicitDtors=true;
++    // Do not depend on a client enabling the ordinary default-init visitor.
++    Options.AddCXXDefaultInitExprInCtors=false;
++    auto Graph=CFG::buildCFG(Constructor,Constructor->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++    unsigned Budget=8192,Normal=0,Failed=0,FailureMask=0;
++    auto Explore=[&](auto &&Self,const CFGBlock *Block,unsigned Produced,unsigned Released,unsigned Fields,bool Unwind,unsigned Depth)->void {
++      ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);Unwind|=Block->isNativeExceptionExit();EXPECT_FALSE(Block->hasNoReturnElement());bool Operation=false;
++      for(const auto &Element:*Block) {
++        if(auto I=Element.getAs<CFGInitializer>()){++Fields;EXPECT_EQ(Produced,Fields==1?1u:5u);}
++        if(auto S=Element.getAs<CFGStmt>())if(const auto *Call=dyn_cast<CallExpr>(S->getStmt());Call && Call->getDirectCallee()) {
++          if(Call->getDirectCallee()->getName()=="producer"){Operation=true;if(NoThrow)++Produced;}
++          if(Call->getDirectCallee()->getName()=="__objc3_cfg_arc_subobject_release") {
++            Released+=Call->getNumArgs()?cast<IntegerLiteral>(Call->getArg(0))->getValue().getZExtValue():1;
++            EXPECT_LE(Released,Produced);
++          }
++        }
++      }
++      if(Block->succ_empty()) {
++        if(Unwind){++Failed;EXPECT_EQ(Released,Produced);FailureMask|=1u<<Produced;}
++        else {++Normal;EXPECT_EQ(Produced,5u);EXPECT_EQ(Fields,2u);EXPECT_EQ(Released,0u);}
++        return;
++      }
++      if(Block->succ_size()==2 && !Block->getTerminatorStmt())EXPECT_TRUE(Operation);
++      unsigned Edge=0;for(auto S:Block->succs()){if(auto *Next=S.getReachableBlock())Self(Self,Next,Produced+(!NoThrow && Operation && Edge==0),Released,Fields,Unwind,Depth+1);++Edge;}
++    };
++    Explore(Explore,&Graph->getEntry(),0,0,0,false,0);
++    EXPECT_GT(Normal,0u);EXPECT_EQ(Failed,NoThrow?0u:5u);EXPECT_EQ(FailureMask,NoThrow?0u:31u);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, ProducedBlockAssignmentHoldsResultAcrossAddressFailureWithoutCopyEdge) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    typedef void (^Callback)(void);Callback producer(int) __attribute__((ns_returns_retained));
++    int producer_index();void producer_marker() noexcept;struct Slots {Callback values[2];};
++    void produced_assignment(Slots &slots) {__objc3_defer {producer_marker();}slots.values[producer_index()]=producer(4);}
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions"},"produced-block-assignment.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());FunctionDecl *Function=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="produced_assignment")Function=F;
++  ASSERT_NE(Function,nullptr);CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;Options.AddEHEdges=true;Options.AddInitializers=true;Options.AddImplicitDtors=true;
++  auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Budget=4096,Normal=0,Failed=0,Failures=0;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,bool Held,unsigned Ends,bool Stored,bool Unwind,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,128u);Unwind|=Block->isNativeExceptionExit();bool Operation=false;
++    for(const auto &Element:*Block) {
++      if(auto S=Element.getAs<CFGStmt>()) {
++        if(const auto *D=dyn_cast<DeclStmt>(S->getStmt());D && D->isSingleDecl())if(const auto *V=dyn_cast<VarDecl>(D->getSingleDecl());V && V->getName()=="__objc3_cfg_block_assignment_value")Held=true;
++        if(const auto *B=dyn_cast<BinaryOperator>(S->getStmt());B && B->getOpcode()==BO_Assign){EXPECT_TRUE(Held);Stored=true;}
++        if(const auto *Call=dyn_cast<CallExpr>(S->getStmt());Call && Call->getDirectCallee()) {
++          auto Name=Call->getDirectCallee()->getName();Operation=Name=="producer" || Name=="producer_index";
++          if(Name=="producer")EXPECT_FALSE(Held);if(Name=="producer_index"){EXPECT_TRUE(Held);EXPECT_EQ(Ends,0u);}
++          if(Name=="producer_marker" && Held)EXPECT_EQ(Ends,1u);
++        }
++      }
++      if(auto End=Element.getAs<CFGLifetimeEnds>();End && End->getVarDecl()->getName()=="__objc3_cfg_block_assignment_value"){EXPECT_TRUE(Held);EXPECT_EQ(++Ends,1u);}
++    }
++    if(Block->succ_empty()) {
++      if(Unwind){++Failed;EXPECT_FALSE(Stored);EXPECT_EQ(Ends,Held?1u:0u);Failures|=Held?2:1;}
++      else {++Normal;EXPECT_TRUE(Stored);EXPECT_EQ(Ends,1u);}
++      return;
++    }
++    if(Block->succ_size()==2 && !Block->getTerminatorStmt())EXPECT_TRUE(Operation);
++    for(auto S:Block->succs())if(auto *Next=S.getReachableBlock())Self(Self,Next,Held,Ends,Stored,Unwind,Depth+1);
++  };
++  Explore(Explore,&Graph->getEntry(),false,0,false,false,0);EXPECT_GT(Normal,0u);EXPECT_EQ(Failed,2u);EXPECT_EQ(Failures,3u);
++}
++
++TEST(ObjC3ASTInfrastructure, BlockProducerTransferDoesNotEraseIndependentTemporaryRegions) {
++  for(const char *Body:{"producer(1)();","observe(producer(1));","Callback value=flag?producer(1):producer(2);",
++                        "consume_two(producer(1),scalar_step());","__weak Callback value=producer(1);",
++                        "Callback value=(producer(1),source);","Callback value=indirect(1);",
++                        "Construct value(producer(1));"}) {
++    std::string Source="typedef void (^Callback)(void);struct Construct {Construct(Callback __attribute__((ns_consumed)));};Callback producer(int) __attribute__((ns_returns_retained));void observe(Callback);void consume_two(Callback __attribute__((ns_consumed)),int);int scalar_step();void producer_marker() noexcept;void test(Callback source,int flag,Callback(*indirect)(int)){__objc3_defer {producer_marker();}"+std::string(Body)+"}";
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions"},"block-producer-gates.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());FunctionDecl *Function=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="test")Function=F;
++    ASSERT_NE(Function,nullptr);CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;Options.AddEHEdges=true;Options.AddInitializers=true;Options.AddImplicitDtors=true;
++    EXPECT_FALSE(CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options));
++  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -66821,10 +66915,10 @@ index 000000000..8e1181db4
 +#include "borrowed-subobject-cleanup.h"
 diff --git a/clang/test/ObjC3/Sema/borrowed-block-array-members.mm b/clang/test/ObjC3/Sema/borrowed-block-array-members.mm
 new file mode 100644
-index 000000000..5bca9067a
+index 000000000..93231def8
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-block-array-members.mm
-@@ -0,0 +1,149 @@
+@@ -0,0 +1,177 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-block-array-members.h -o %t-c++20-False.pch
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
@@ -66973,4 +67067,32 @@ index 000000000..5bca9067a
 +  try {storage.callbacks[(owner=block_array_nothrow_factory(),0)]=(ArrayMemberCallback)0;}
 +  catch(...) {[owner ping];}
 +}
++#endif
++
++ArrayMemberCallback block_member_owned_producer(int) __attribute__((ns_returns_retained));
++ArrayMemberCallback block_member_shared_producer(int);
++ArrayMemberCallback block_member_nothrow_producer(void) __attribute__((ns_returns_retained,nothrow));
++struct NativeBlockProducerMembers {
++  ArrayMemberCallback scalar=block_member_owned_producer(0);
++  ArrayMemberCallback callbacks[2][2]={{block_member_owned_producer(1),block_member_shared_producer(2)},
++                                    {block_member_owned_producer(3),block_member_shared_producer(4)}};
++  NativeBlockProducerMembers(RuntimeScopeOwner *_Nonnull owner) {
++    const char *view=owner->storage;__objc3_defer {receiver_use(view);}subobject_raise();
++  }
++};
++void native_block_producer_transfer(RuntimeScopeOwner *_Nonnull owner,NativeBlockArrayMembers &storage,int index) {
++  const char *view=owner->storage;__objc3_defer {receiver_use(view);}
++  ArrayMemberCallback first=(subobject_raise(),block_member_owned_producer(1));
++  ArrayMemberCallback second=block_member_shared_producer(2);
++  storage.callbacks[array_member_index(index)]=block_member_owned_producer(3);
++  array_member_consume(block_member_owned_producer(4));array_member_consume(block_member_shared_producer(5));
++  first();second();
++}
++#if __has_feature(objc_arc)
++struct NoInventedBlockProducerCopy {
++  ArrayMemberCallback callback;
++  NoInventedBlockProducerCopy(RuntimeScopeOwner *_Nullable owner) try:callback(block_member_nothrow_producer()) {
++    owner=block_array_nothrow_factory();
++  } catch(...) {[owner ping];}
++};
 +#endif
