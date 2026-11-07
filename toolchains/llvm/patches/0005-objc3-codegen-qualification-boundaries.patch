@@ -33748,3 +33748,136 @@ index 000000000..4a14926b5
 +// CHECK-LABEL: define{{.*}}native_finally_objc
 +// CHECK: invoke void @__cxa_rethrow()
 +// CHECK-NOT: _Unwind_Resume_or_Rethrow
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-resource-properties.h b/clang/test/ObjC3/CodeGen/Inputs/native-resource-properties.h
+new file mode 100644
+index 000000000..1ab475bdc
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-resource-properties.h
+@@ -0,0 +1,63 @@
++#ifndef NATIVE_RESOURCE_PROPERTY_CONTROLS_H
++#define NATIVE_RESOURCE_PROPERTY_CONTROLS_H
++#include "native-async-task.h"
++template<class T> void __objc3_async_frame_capture(void *,void *) {
++  static_assert(__is_constructible(T,T&&) && __is_nothrow_destructible(T));
++}
++template<class T> const void *__objc3_async_frame_value_ops() {
++  static_assert(__is_constructible(T,const T&) && __is_nothrow_destructible(T));return nullptr;
++}
++inline int __objc3_async_capture_current_exception(void **out) noexcept {*out=nullptr;return 0;}
++void resource_property_close(int) noexcept;
++typedef int ResourcePropertyHandle __attribute__((objc_requires_cleanup(resource_property_close),objc_resource_family(ResourcePropertyHandles),objc_invalid(-1)));
++struct __attribute__((objc_unsafe_sendable)) ResourcePropertyValue {
++  ResourcePropertyHandle handle;int value;
++  ResourcePropertyValue(int);
++  ResourcePropertyValue(const ResourcePropertyValue &);
++  ResourcePropertyValue(const volatile ResourcePropertyValue &);
++  ResourcePropertyValue(ResourcePropertyValue &&);
++  ~ResourcePropertyValue() noexcept;
++};
++struct __attribute__((objc_unsafe_sendable)) ResourcePropertyMove {
++  ResourcePropertyHandle handle;
++  ResourcePropertyMove(int);ResourcePropertyMove(const ResourcePropertyMove &)=delete;
++  ResourcePropertyMove(ResourcePropertyMove &&);~ResourcePropertyMove() noexcept;
++};
++union __attribute__((objc_unsafe_sendable)) ResourcePropertyUnion {
++  ResourcePropertyHandle handle;long scalar;
++  ResourcePropertyUnion(int,bool);ResourcePropertyUnion(const ResourcePropertyUnion &);
++  ResourcePropertyUnion(ResourcePropertyUnion &&);~ResourcePropertyUnion() noexcept;
++  int value() const;
++};
++struct __attribute__((objc_unsafe_sendable)) ResourcePropertyPair {ResourcePropertyValue values[2];};
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface ResourcePropertyHost <Sendable>
++@property(nonatomic) int scalar;
++- (int)scalar __attribute__((objc_executor(main)));
++- (void)setScalar:(int)value __attribute__((objc_executor(main)));
++@property(nonatomic) ResourcePropertyValue value;
++- (ResourcePropertyValue)value __attribute__((objc_executor(main)));
++- (void)setValue:(ResourcePropertyValue)value __attribute__((objc_executor(main)));
++@property(nonatomic) ResourcePropertyMove move;
++- (ResourcePropertyMove)move __attribute__((objc_executor(main)));
++- (void)setMove:(ResourcePropertyMove)value __attribute__((objc_executor(main)));
++@property(nonatomic) ResourcePropertyUnion variant;
++- (ResourcePropertyUnion)variant __attribute__((objc_executor(main)));
++- (void)setVariant:(ResourcePropertyUnion)value __attribute__((objc_executor(main)));
++@property(nonatomic) ResourcePropertyPair pair;
++- (ResourcePropertyPair)pair __attribute__((objc_executor(main)));
++- (void)setPair:(ResourcePropertyPair)value __attribute__((objc_executor(main)));
++@end
++inline int resource_property_entries(ResourcePropertyHost *object,ResourcePropertyValue *value,ResourcePropertyPair *pair,volatile int *snapshot) __objc3_async_frame {
++  __objc3_await (object.scalar=*snapshot);
++  __objc3_await (object.value=*value);
++  __objc3_await (object.value=ResourcePropertyValue(42));
++  __objc3_await (object.move=ResourcePropertyMove(43));
++  __objc3_await (object.variant=ResourcePropertyUnion(44,true));
++  __objc3_await (object.pair=*pair);
++  ResourcePropertyValue result=__objc3_await object.value;
++  ResourcePropertyUnion variant=__objc3_await object.variant;
++  ResourcePropertyPair paired=__objc3_await object.pair;
++  return result.value+variant.value()+paired.values[0].value;
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-resource-properties.mm b/clang/test/ObjC3/CodeGen/native-resource-properties.mm
+new file mode 100644
+index 000000000..3178377db
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-resource-properties.mm
+@@ -0,0 +1,58 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-pch %S/Inputs/native-resource-properties.h -o %t-core-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -include-pch %t-core-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-resource-properties.h -o %t-core-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -include-pch %t-core-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-pch %S/Inputs/native-resource-properties.h -o %t-core-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -include-pch %t-core-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-resource-properties.h -o %t-core-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -include-pch %t-core-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -include-pch %t-strict-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -include-pch %t-strict-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -include-pch %t-strict-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -include-pch %t-strict-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-concurrency-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -include-pch %t-strict-concurrency-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-concurrency-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -include-pch %t-strict-concurrency-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-concurrency-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -include-pch %t-strict-concurrency-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-concurrency-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -include-pch %t-strict-concurrency-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-system-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -include-pch %t-strict-system-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-system-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -include-pch %t-strict-system-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-system-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -include-pch %t-strict-system-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -emit-pch %S/Inputs/native-resource-properties.h -o %t-strict-system-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-arc -include-pch %t-strict-system-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-resource-properties.h"
++#endif
++objc3_async_frame resource_property_export(ResourcePropertyHost *object,ResourcePropertyValue *value,ResourcePropertyPair *pair,volatile int *snapshot) {
++  return resource_property_entries(object,value,pair,snapshot);
++}
++// CHECK-DAG: @{{.*}}__objc3_async_frame_capture
++// CHECK-DAG: @{{.*}}__objc3_async_frame_value_ops
++// CHECK-DAG: @objc3_task_hop
++// CHECK-DAG: @objc_msg_lookup_sender

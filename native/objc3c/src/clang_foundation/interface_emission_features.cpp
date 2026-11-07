@@ -930,7 +930,10 @@ public:
   bool VisitExpr(clang::Expr *expression) override {
     // Heap-copy and stable member/index value recipes also occur without a
     // literal BlockExpr, including source-free C bodies and consumed arguments.
-    blocks |= expression->getType()->isBlockPointerType();return true;
+    // Uninstantiated constructor initializers can contain an untyped
+    // ParenListExpr. Its children still need visiting for Block values.
+    const auto type = expression->getType();
+    blocks |= !type.isNull() && type->isBlockPointerType();return true;
   }
   bool VisitVarDecl(clang::VarDecl *variable) override {
     blocks |= variable->hasAttr<clang::BlocksAttr>(); return true;

@@ -4506,6 +4506,53 @@ void TestBlockMutationReplay() {
   }
 }
 
+void TestDependentExpressionCapabilityScan() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fblocks"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string source=R"(
+      namespace DependentExpressionScan {
+        template<class T> struct Holder {
+          T value;
+          explicit Holder(T input):value(input) {}
+        };
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"dependent-expression-scan.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+          "fixture.dependent_expression_scan","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.dependent_expression_scan","test",{},{},{},
+          {"DependentExpressionScan"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();
+    std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    for(bool block:{false,true}) {
+      auto first=emit(source+(block?R"(
+        namespace DependentExpressionScan {
+          typedef void (^Callback)(void);
+          inline void use(Callback value) {value();}
+        }
+      )":""));
+      auto replay=emit(first.source_bytes);
+      assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source+(block?R"(
+        namespace DependentExpressionScan {
+          typedef void (^Callback)(void);
+          inline void use(Callback value) {value();}
+        }
+      )":""));
+      assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      assert(llvm::is_contained(decoded->required_semantics,std::string(kCxxBlockExpressionSemantic))==block);
+    }
+  }
+}
+
 void TestComputedBlockValuesReplay() {
   for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
     const bool cxx=std::string(standard)!="c17";
@@ -5994,6 +6041,104 @@ void TestBorrowedCatchBindingReplay() {
         }
       )","expired-catch-binding.m");
       assert(bad && bad->getDiagnostics().hasErrorOccurred());
+    }
+}
+
+void TestExplicitResourcePropertyReplay() {
+  for(const char *standard:{"c++20","c++23"})
+    for(bool arc:{false,true}) {
+      std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+          "-fobjc-version=3","-fblocks","-fobjc-runtime=gnustep-2.2",
+          "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu",
+          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      if(arc)args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      const std::string source=R"(
+        #include <objc3c/runtime/objc3_task.hpp>
+        void published_resource_close(int) noexcept;
+        typedef int PublishedResourceHandle __attribute__((objc_requires_cleanup(published_resource_close),objc_resource_family(PublishedResourceHandles),objc_invalid(-1)));
+        struct __attribute__((objc_unsafe_sendable)) PublishedFrameValue {
+          PublishedResourceHandle handle;int value;
+          PublishedFrameValue(int);
+          PublishedFrameValue(const PublishedFrameValue &);
+          PublishedFrameValue(PublishedFrameValue &&);
+          ~PublishedFrameValue() noexcept;
+        };
+        struct __attribute__((objc_unsafe_sendable)) PublishedFramePair {PublishedFrameValue values[2];};
+        struct __attribute__((objc_unsafe_sendable)) PublishedResourceMove {
+          PublishedResourceHandle handle;explicit PublishedResourceMove(int);
+          PublishedResourceMove(const PublishedResourceMove &)=delete;
+          PublishedResourceMove(PublishedResourceMove &&);~PublishedResourceMove() noexcept;
+        };
+        union __attribute__((objc_unsafe_sendable)) PublishedResourceUnion {
+          PublishedResourceHandle handle;long scalar;
+          explicit PublishedResourceUnion(int);PublishedResourceUnion(const PublishedResourceUnion &);
+          PublishedResourceUnion(PublishedResourceUnion &&);~PublishedResourceUnion() noexcept;int value() const;
+        };
+        @protocol Sendable @end
+        __attribute__((objc_root_class)) @interface PublishedThrowingProperty <Sendable>
+        @property(nonatomic) PublishedFrameValue value;
+        - (PublishedFrameValue)value __attribute__((objc_executor(main)));
+        - (void)setValue:(PublishedFrameValue)value __attribute__((objc_executor(main)));
+        @property(nonatomic) PublishedFramePair pair;
+        - (PublishedFramePair)pair __attribute__((objc_executor(main)));
+        - (void)setPair:(PublishedFramePair)value __attribute__((objc_executor(main)));
+        @property(nonatomic) PublishedResourceMove move;
+        - (PublishedResourceMove)move __attribute__((objc_executor(main)));
+        - (void)setMove:(PublishedResourceMove)value __attribute__((objc_executor(main)));
+        @property(nonatomic) PublishedResourceUnion variant;
+        - (PublishedResourceUnion)variant __attribute__((objc_executor(main)));
+        - (void)setVariant:(PublishedResourceUnion)value __attribute__((objc_executor(main)));
+        @end
+        inline int published_throwing_property(PublishedThrowingProperty *object,
+                                               PublishedFrameValue *input,PublishedFramePair *pair) __objc3_async_frame {
+          __objc3_await (object.value=*input);
+          __objc3_await (object.pair=*pair);
+          __objc3_await (object.move=PublishedResourceMove(43));
+          __objc3_await (object.variant=PublishedResourceUnion(44));
+          PublishedFramePair paired=__objc3_await object.pair;
+          PublishedResourceUnion variant=__objc3_await object.variant;
+          PublishedFrameValue result=__objc3_await object.value;
+          if(result.value<0)throw result.value;
+          return result.value+paired.values[0].value+variant.value();
+        }
+        template<class T> int published_throwing_template(T object,PublishedFrameValue *input,PublishedFramePair *pair)
+            __objc3_async_frame {return __objc3_await published_throwing_property(object,input,pair);}
+      )";
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.explicit_resource_properties","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.explicit_resource_properties","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        return result;
+      };
+      auto first=emit(source,"frame-exceptions-provider.mm");assert(first.success);
+      auto replay=emit(first.source_bytes,"frame-exceptions-replay.mm");
+      assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-frame-exceptions.mm");
+      assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> semantics;
+      for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+      assert(llvm::is_contained(semantics,llvm::StringRef("objc3.async-entry-abi.v5")));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+      auto old=semantics;std::erase(old,llvm::StringRef(kAsyncEntryABISemantic));
+      old.push_back("objc3.async-entry-abi.v4");
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto consumer=parse(first.source_bytes+R"(
+        int consume_throwing(PublishedThrowingProperty *object,PublishedFrameValue *input,PublishedFramePair *pair) __objc3_async {
+          try {return __objc3_await published_throwing_template(object,input,pair);}
+          catch(int value){return value;}
+        }
+      )","frame-exceptions-consumer.mm");
+      assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
     }
 }
 
@@ -9768,6 +9913,7 @@ int main(int argc,char **argv) {
   TestBlockMutationPackageReplay();
   TestBlockProducerTransferReplay();
   TestBlockMutationReplay();
+  TestDependentExpressionCapabilityScan();
   TestComputedBlockValuesReplay();
   TestComputedBlockArrayMemberReplay();
   TestNativeBlockArrayMemberReplay();

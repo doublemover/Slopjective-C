@@ -1,5 +1,14 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.121 resource-property span](linux_resource_property_lifetimes.md)
+unifies explicit C++ frame lifetimes for isolated values and property writes,
+including move-only owners, active resource unions and composed arrays. Borrowed,
+raw-resource, opaque-lifetime and volatile-record guards remain enforced. Native
+copy/move/setter faults, partial acquisition, nil, cancellation and abandoned frames
+pass fourteen instrumented configurations / 49 commands. Dedicated source/PCH
+compiler controls cover all four profiles. A publication regression also repairs
+untyped dependent-initializer capability scanning without suppressing Block values.
+
 The [System 2.50 producer-transfer span](linux_block_producer_transfers.md)
 adopts retained/reclaimed Block results into locals, scalar/nested members,
 default initializers, assignments and single consumed direct calls. Native

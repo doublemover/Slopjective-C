@@ -49943,10 +49943,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..83032c60f
+index 000000000..16dcb83d0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1701 @@
+@@ -0,0 +1,1704 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -50842,6 +50842,17 @@ index 000000000..83032c60f
 +         T->isNullPtrType() || T->isObjCRetainableType();
 +}
 +
++// Explicit C++ copy/move/destruction owns resource fields, active union arms
++// and MRC storage as one value. Hook instantiation independently checks access,
++// deleted operations and nonthrowing destruction. A promise cannot erase loans.
++static std::optional<bool> explicitFrameLifetime(ASTContext &Context, QualType Type) {
++  const auto *Class = Type->getAsCXXRecordDecl();
++  if (!Class || !(Class=Class->getDefinition()) || Type.isTriviallyCopyableType(Context)) return std::nullopt;
++  const auto *Destructor = Class->getDestructor();
++  if (!Destructor || !Destructor->isUserProvided() || Destructor->isDeleted()) return std::nullopt;
++  return !containsObjC3BorrowedType(Context, Type);
++}
++
 +// Aggregate entries use the same typed capture/result operations as ordinary
 +// native frames. Keep resource transfer and MRC managed aggregate storage out
 +// of this value-copy boundary until their independent ownership is modeled.
@@ -50867,17 +50878,7 @@ index 000000000..83032c60f
 +    if (const auto *Record = Value->getAs<RecordType>()) {
 +      const auto *Definition = Record->getDecl()->getDefinition();
 +      if (!Definition) return false;
-+      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition);
-+          Class && !Value.isTriviallyCopyableType(S.Context)) {
-+        const auto *Destructor = Class->getDestructor();
-+        if (Destructor && Destructor->isUserProvided() && !Destructor->isDeleted())
-+          // An explicit C++ lifetime owns its active arm and MRC fields through
-+          // the ordinary typed copy/move/destruction hooks. Do not synthesize
-+          // field-wise ownership for it. Hook instantiation still checks access,
-+          // deleted operations, result copying and nonthrowing destruction;
-+          // Sendable checking independently forbids borrowed leaves.
-+          return !containsObjC3BorrowedType(S.Context, Value);
-+      }
++      if (auto Lifetime=explicitFrameLifetime(S.Context, Value)) return *Lifetime;
 +      // C unions and implicit/deleted C++ union lifetimes cannot infer which
 +      // managed arm is active. They still need a separate ownership contract.
 +      if (Definition->isUnion() && !Value.isTriviallyCopyableType(S.Context))return false;
@@ -50995,6 +50996,7 @@ index 000000000..83032c60f
 +bool propertyWriteValue(Sema &S, QualType Type, unsigned &Budget,
 +                        llvm::SmallPtrSetImpl<const clang::Type *> &Seen, unsigned Depth = 0) {
 +  if (Type.isNull() || !Budget || Depth > 64 || Type->isReferenceType() ||
++      (Type->isRecordType() && Type.isVolatileQualified()) ||
 +      getObjC3ResourceTypeContract(S.Context, Type).Cleanup) return false;
 +  --Budget;
 +  if (!Seen.insert(Type.getCanonicalType().getTypePtr()).second) return true;
@@ -51004,6 +51006,7 @@ index 000000000..83032c60f
 +  if (const auto *Record = Type->getAsRecordDecl()) {
 +    const auto *Definition = Record->getDefinition();
 +    if (!Definition) return false;
++    if (auto Lifetime=explicitFrameLifetime(S.Context, Type)) return *Lifetime;
 +    for (const auto *Field : Definition->fields())
 +      if (Field->hasAttr<ObjCResourceAttr>() || Field->hasAttr<ObjCCleanupAttr>() ||
 +          !propertyWriteValue(S, Field->getType(), Budget, Seen, Depth + 1)) return false;
@@ -67096,3 +67099,38 @@ index 000000000..93231def8
 +  } catch(...) {[owner ping];}
 +};
 +#endif
+diff --git a/clang/test/ObjC3/Sema/native-resource-property-gates.mm b/clang/test/ObjC3/Sema/native-resource-property-gates.mm
+new file mode 100644
+index 000000000..0a00ab19c
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-resource-property-gates.mm
+@@ -0,0 +1,29 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/native-resource-properties.h"
++struct __attribute__((objc_unsafe_sendable)) ResourcePropertyOpaque {ResourcePropertyHandle handle;};
++typedef borrowed const char *ResourcePropertyLoan;
++struct __attribute__((objc_unsafe_sendable)) ResourcePropertyBorrowed {
++  ResourcePropertyLoan view;
++  ResourcePropertyBorrowed(const ResourcePropertyBorrowed &);
++  ResourcePropertyBorrowed(ResourcePropertyBorrowed &&);~ResourcePropertyBorrowed() noexcept;
++};
++@interface ResourcePropertyHost (Gates)
++@property(nonatomic) ResourcePropertyOpaque opaque;
++- (ResourcePropertyOpaque)opaque __attribute__((objc_executor(main)));
++- (void)setOpaque:(ResourcePropertyOpaque)value __attribute__((objc_executor(main)));
++@property(nonatomic) ResourcePropertyBorrowed borrowedValue;
++- (ResourcePropertyBorrowed)borrowedValue __attribute__((objc_executor(main)));
++- (void)setBorrowedValue:(ResourcePropertyBorrowed)value __attribute__((objc_executor(main)));
++@property(nonatomic) ResourcePropertyHandle raw;
++- (ResourcePropertyHandle)raw __attribute__((objc_executor(main)));
++- (void)setRaw:(ResourcePropertyHandle)value __attribute__((objc_executor(main)));
++@end
++void resource_property_gates(ResourcePropertyHost *object,ResourcePropertyOpaque *opaque,ResourcePropertyBorrowed *borrowedValue,volatile ResourcePropertyValue *value) __objc3_async_frame {
++  __objc3_await (object.opaque=*opaque); // expected-error {{awaited isolated entry requires a direct}}
++  __objc3_await (object.borrowedValue=*borrowedValue); // expected-error {{awaited isolated entry requires a direct}}
++  __objc3_await (object.raw=(ResourcePropertyHandle)4); // expected-error {{awaited isolated entry requires a direct}}
++  __objc3_await (object.value=*value); // expected-error {{awaited isolated entry requires a direct}}
++}

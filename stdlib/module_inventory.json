@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 118,
+        "minor": 121,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "One explicit C++ frame lifetime policy now governs isolated values and property writes, admitting owned resource fields, active unions, move-only owners and composed resource arrays while preserving borrowed/raw/opaque/volatile-record guards; copy/move/setter and partial-acquisition faults, nil dispatch, cancellation and abandoned captures pass fourteen instrumented native configurations / 49 commands, 43 adjacent compiler cases and 52 dedicated source/PCH commands across all four profiles; eight new source-free profiles, seven adjacent frontend groups and codec/isolation controls also pass; existing ABI contracts unchanged; matched SDK pending",
         "Typed nontrivial/move-only C++ property writes with native receiver/construction ordering, exact nil/partial/cancellation cleanup, owned C++/Objective-C++ exception transport across native resume and isolation entries, distinct cancellation and allocation-independent packaging failures, SDK/EH-preserving source-free replay and async-entry semantic v5 (30 new compiler commands, 92 affected compiler cases, four new source-free profiles, codec/isolation controls and fourteen instrumented native configurations pass; matched SDK consolidation pending)",
         "Awaited synchronous actor/executor property reads, assignments and compound/pre/post updates, class/super dispatch, compatible actor backing affinity, same-actor access and typed nil RHS policies; independent record/ARC snapshots, matching unique-opaque CFG order, preserved publication parentheses and signed GNUstep tail-padding ivar offsets (thirty compiler commands, seventeen AST tests, six frontend profiles, 120 selected compiler cases, twelve instrumented property configurations / 42 commands and twelve existing nil configurations / 43 commands pass; three platform cases unsupported; SDK consolidation pending)",
         "Typed nil failure for constructed/reference/resource results across native frame/task and implicit actor/executor entries; allocation-independent failure carriers, private result descriptors and task-only PCH carrier recovery, exact consumed argument cleanup and async-entry-abi.v4 publication (source authored; twelve instrumented native source/PCH configurations / 43 commands pass; eighteen compiler commands, sixteen AST tests, six frontend profiles, codec/isolation units and three installed helper controls pass; wider consolidation and SDK delivery pending)",
