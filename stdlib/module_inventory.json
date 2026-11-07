@@ -304,12 +304,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 33,
+        "minor": 34,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Handler-scoped Objective-C/C++ catch value owners, normal/rethrow cleanup and unknown borrowed exception payloads, with native ARC catch release registration and recursive catch-declaration traversal (18 compiler commands, 68 affected compiler cases, 18 AST controls and 12 instrumented native configurations pass before the shared visitor rebuild; final visitor/publication verification pending)",
         "Closed local C++ reference-callable graphs across trivial copies/moves, const/mutable aliases, extended literal references and explicit generic operators; complete bounded use proofs preserve expiry/mutation checks and reject escapes, address/nested uses and nontrivial copy effects (twelve new source/PCH commands, all thirty-seven borrowed compiler regressions, three frontend groups and four instrumented native configurations / fourteen commands pass; SDK consolidation pending)",
         "Scope-bound read-only C++ reference lambda bindings with complete direct-call use proofs, repeated/default/generic/pack/loop invocation, retained reference-mutation hazards and owner-expiry checks (source authored; twelve new source/PCH commands, all thirty-six borrowed compiler regressions, three affected frontend groups and four instrumented native configurations pass; SDK consolidation pending)",
         "Synchronous immediate C++ reference captures with side-effect-free primitive/default/generic arguments, read-only mutable borrowed/ARC-owned record captures, and opaque aggregate/method/operator mutation tracking; summary dependencies survive concrete proof invalidation (source authored; twelve new source/PCH commands, all thirty-five borrowed compiler regressions, twelve affected frontend groups and four instrumented native configurations pass; SDK consolidation pending)",

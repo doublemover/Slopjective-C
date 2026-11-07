@@ -26,13 +26,14 @@ else:
 
 ROOT = Path(__file__).resolve().parents[2]
 FEATURES = ("captures", "keypaths", "async", "isolation", "spawn")
-OPTIONAL_FEATURES = ("strict-async", "nil-results", "properties", "exceptions")
+OPTIONAL_FEATURES = ("strict-async", "nil-results", "properties", "exceptions", "catch-bindings")
 PCH_MARKERS = {"captures": "CAPTURE_RUNTIME_PCH",
                "keypaths": "TYPED_KEYPATH_RUNTIME_PCH",
                "strict-async": "OBJC3_STRICT_ASYNC_PROFILES_PCH",
                "nil-results": "OBJC3_NONZERO_NIL_RESULTS_PCH",
                "properties": "OBJC3_ISOLATED_PROPERTIES_PCH",
-               "exceptions": "OBJC3_NATIVE_FRAME_EXCEPTIONS_PCH"}
+               "exceptions": "OBJC3_NATIVE_FRAME_EXCEPTIONS_PCH",
+               "catch-bindings": "OBJC3_CATCH_BINDING_OWNERSHIP_PCH"}
 MODES = (("objective-c", "c17"), ("objective-c++", "c++20"),
          ("objective-c++", "c++23"))
 
@@ -64,7 +65,8 @@ def configurations(features=FEATURES, transports=("source", "pch")):
                         providers = ("arc", "mrc") if feature in ("async", "isolation") else ("",)
                         for provider in providers:
                             profiles = (("strict", "strict-concurrency", "strict-system")
-                                        if feature == "strict-async" else ("compatibility",))
+                                        if feature == "strict-async" else
+                                        ("strict-system",) if feature == "catch-bindings" else ("compatibility",))
                             for profile in profiles:
                                 yield Configuration(feature, language, standard, ownership,
                                                     optimization, transport, provider, profile)
@@ -225,7 +227,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                           "strict-async": "strict_async_profiles",
                           "nil-results": "nonzero_nil_results",
                           "properties": "isolated_properties",
-                          "exceptions": "native_frame_exceptions"}[case.feature]
+                          "exceptions": "native_frame_exceptions",
+                          "catch-bindings": "catch_binding_ownership"}[case.feature]
                 source = fixtures / family
                 shutil.copytree(source, work, dirs_exist_ok=True)
                 if case.feature == "isolation":

@@ -4169,6 +4169,64 @@ void TestClosureFactories() {
   }
 }
 
+void TestBorrowedCatchBindingReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})
+    for(bool arc:{false,true}) {
+      const bool cxx=std::string(standard)!="c17";
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","-fexceptions","-fobjc-exceptions",
+          "--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name);
+      };
+      const std::string source=R"(
+        typedef borrowed const char *PublishedHandlerBytes;
+        PublishedHandlerBytes published_handler_bytes(id owner)
+            __attribute__((objc_returns_borrowed(owner_index=0)));
+        void published_handler_use(const char *bytes __attribute__((noescape)));
+        void published_handler_raise(void);
+        inline void published_handler_body(int mode) {
+          @try {
+            @try {published_handler_raise();}
+            @catch(id owner) {
+              PublishedHandlerBytes bytes=published_handler_bytes(owner);
+              __objc3_defer {published_handler_use(bytes);}
+              published_handler_use(bytes);
+              if(mode)@throw;
+              return;
+            }
+          } @catch(id outer) {published_handler_use(published_handler_bytes(outer));}
+        }
+      )";
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.borrowed_catch_bindings","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.borrowed_catch_bindings","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        return result;
+      };
+      auto first=emit(source,"catch-bindings-provider.m");assert(first.success);
+      auto replay=emit(first.source_bytes,"catch-bindings-replay.m");
+      assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-catch-bindings.m");
+      assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto good=parse(first.source_bytes+"void consume_handler(void){published_handler_body(0);}","catch-bindings-consumer.m");
+      assert(good && !good->getDiagnostics().hasErrorOccurred());
+      auto bad=parse(first.source_bytes+R"(
+        void escape_handler(void) {
+          const char *bytes=0;
+          @try {published_handler_raise();}
+          @catch(id owner){bytes=published_handler_bytes(owner);}
+          published_handler_use(bytes);
+        }
+      )","expired-catch-binding.m");
+      assert(bad && bad->getDiagnostics().hasErrorOccurred());
+    }
+}
+
 void TestNativeFrameExceptionReplay() {
   for(const char *standard:{"c++20","c++23"})
     for(bool arc:{false,true}) {

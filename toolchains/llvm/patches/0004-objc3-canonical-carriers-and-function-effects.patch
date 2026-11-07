@@ -548,7 +548,7 @@ index fd3cce10b..e2a8d508a 100644
  def LValuePathEntry : PropertyType<"APValue::LValuePathEntry">;
  def LValuePathSerializationHelper :
 diff --git a/clang/include/clang/AST/RecursiveASTVisitor.h b/clang/include/clang/AST/RecursiveASTVisitor.h
-index 165c6324c..aa6abdc98 100644
+index 165c6324c..52fa0fb1f 100644
 --- a/clang/include/clang/AST/RecursiveASTVisitor.h
 +++ b/clang/include/clang/AST/RecursiveASTVisitor.h
 @@ -1008,6 +1008,19 @@ DEF_TRAVERSE_TYPE(BuiltinType, {})
@@ -636,7 +636,18 @@ index 165c6324c..aa6abdc98 100644
    if (D->getReturnTypeSourceInfo()) {
      TRY_TO(TraverseTypeLoc(D->getReturnTypeSourceInfo()->getTypeLoc()));
    }
-@@ -2728,6 +2771,10 @@ bool RecursiveASTVisitor<Derived>::TraverseObjCProtocolLoc(
+@@ -2598,7 +2641,9 @@ DEF_TRAVERSE_STMT(IndirectGotoStmt, {})
+ DEF_TRAVERSE_STMT(LabelStmt, {})
+ DEF_TRAVERSE_STMT(AttributedStmt, {})
+ DEF_TRAVERSE_STMT(NullStmt, {})
+-DEF_TRAVERSE_STMT(ObjCAtCatchStmt, {})
++DEF_TRAVERSE_STMT(ObjCAtCatchStmt, {
++  TRY_TO(TraverseDecl(S->getCatchParamDecl()));
++})
+ DEF_TRAVERSE_STMT(ObjCAtFinallyStmt, {})
+ DEF_TRAVERSE_STMT(ObjCAtSynchronizedStmt, {})
+ DEF_TRAVERSE_STMT(ObjCAtThrowStmt, {})
+@@ -2728,6 +2773,10 @@ bool RecursiveASTVisitor<Derived>::TraverseObjCProtocolLoc(
  template <typename Derived>
  bool RecursiveASTVisitor<Derived>::TraverseConceptReference(
      ConceptReference *CR) {
@@ -647,7 +658,7 @@ index 165c6324c..aa6abdc98 100644
    if (!getDerived().shouldTraversePostOrder())
      TRY_TO(VisitConceptReference(CR));
    TRY_TO(TraverseNestedNameSpecifierLoc(CR->getNestedNameSpecifierLoc()));
-@@ -2946,6 +2993,67 @@ DEF_TRAVERSE_STMT(BlockExpr, {
+@@ -2946,6 +2995,67 @@ DEF_TRAVERSE_STMT(BlockExpr, {
    return true; // no child statements to loop through.
  })
  
@@ -43633,10 +43644,10 @@ index 000000000..cd88c0383
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..ff2a692d1
+index 000000000..29c42c798
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5555 @@
+@@ -0,0 +1,5582 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -44543,6 +44554,11 @@ index 000000000..ff2a692d1
 +    if (isa<DeclRefExpr>(Owner) || Owner->isGLValue())
 +      OwnerEvaluations[Owner].push_back(Invocation);
 +  }
++  static const VarDecl *exceptionBinding(const Stmt *Node) {
++    if (const auto *Catch = dyn_cast<ObjCAtCatchStmt>(Node)) return Catch->getCatchParamDecl();
++    if (const auto *Catch = dyn_cast<CXXCatchStmt>(Node)) return Catch->getExceptionDecl();
++    return nullptr;
++  }
 +  void collectBindings(const Stmt *Node) {
 +    if (!Node || isa<BlockExpr>(Node))
 +      return;
@@ -44551,6 +44567,7 @@ index 000000000..ff2a692d1
 +        collectBindings(Initializer);
 +      return;
 +    }
++    if (const VarDecl *Variable = exceptionBinding(Node)) addVariable(Variable);
 +    if (const auto *Binding = dyn_cast<ObjC3BindingCondition>(Node))
 +      BindingSnapshots[Binding->getBindingDecl()] = Binding->getSnapshotDecl();
 +    if (const auto *Match = dyn_cast<ObjC3MatchStmt>(Node))
@@ -48232,6 +48249,27 @@ index 000000000..ff2a692d1
 +      if (!Statement)
 +        continue;
 +      const Stmt *Node = Statement->getStmt();
++      if (const VarDecl *Variable = exceptionBinding(Node)) {
++        // Catch storage is initialized by the runtime, with no DeclStmt or
++        // source initializer. Give value bindings their handler-scoped owner
++        // identity and preserve unknown borrowed payload obligations. Never
++        // infer a referent or permission from an opaque exception payload.
++        for (auto [Location, Index] : Slots) if (Location.first == Variable) {
++          Value V = empty();
++          if (carriesBorrowedValue(storageType(Location))) V.set(0);
++          State.Values[Index] = V;State.Effects[Index] = V;
++          State.OwnerIdentities[Index].reset();
++          State.LocalTargets[Index] = {};State.MayTargets[Index].reset();
++          State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
++          State.ByteTargets[Index] = {};State.References[Index] = {};
++          State.UnownedOwners.reset(Index);
++          if (auto Root = StorageOwnerRoots.find(Location); Root != StorageOwnerRoots.end())
++            State.OwnerIdentities[Index].set(Root->second);
++        }
++        if (!Variable->getType()->isReferenceType())
++          if (auto Root = OwnerRoots.find(Variable); Root != OwnerRoots.end())
++            State.OwnerIdentities[Slots.lookup({Variable, nullptr})].set(Root->second);
++      }
 +      if (IsOwnerSummary)
 +        if (const auto *Unary = dyn_cast<UnaryOperator>(Node);
 +            Unary && (Unary->getOpcode() == UO_AddrOf || Unary->isIncrementDecrementOp())) {
@@ -57256,10 +57294,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..61f33d269
+index 000000000..27726ad4c
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,650 @@
+@@ -0,0 +1,731 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -57284,6 +57322,7 @@ index 000000000..61f33d269
 +#include <memory>
 +#include "clang/AST/ParentMapContext.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/AST/DynamicRecursiveASTVisitor.h"
 +#include "clang/ASTMatchers/ASTMatchFinder.h"
 +#include "clang/ASTMatchers/ASTMatchers.h"
 +#include "clang/Tooling/Tooling.h"
@@ -57909,6 +57948,86 @@ index 000000000..61f33d269
 +      ASSERT_EQ(Calls.size(),2u);
 +      EXPECT_EQ(Calls[0],"rhs_effect");EXPECT_EQ(Calls[1],"receiver_effect");
 +    }
++}
++
++TEST(ObjC3ASTInfrastructure, CatchLifetimeFollowsDeferredBodyOnEveryExit) {
++  for (bool Cxx : {false,true})
++    for (bool ARC : {false,true}) {
++      std::vector<std::string> Args={"-x",Cxx?"objective-c++":"objective-c",
++          Cxx?"-std=c++23":"-std=c17","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++          "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"};
++      if(ARC)Args.push_back("-fobjc-arc");
++      auto AST=tooling::buildASTFromCodeWithArgs(R"(
++        void catch_marker(int) __attribute__((nothrow));
++        void catch_raise(void);
++        void catch_paths(int mode) {
++          @try {
++            @try {catch_raise();}
++            @catch(id value) {
++              __objc3_defer {catch_marker(11);}
++              catch_marker(12);
++              if(mode)@throw;
++              return;
++            }
++          } @catch(...) {catch_marker(13);}
++        }
++      )",Args,"catch-lifetime.m");
++      ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++      FunctionDecl *Function=nullptr;
++      for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++        if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="catch_paths")Function=F;
++      ASSERT_NE(Function,nullptr);
++      CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++      Options.AddEHEdges=true;Options.AddImplicitDtors=true;
++      auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);
++      ASSERT_TRUE(Graph);
++      const CFGBlock *Start=nullptr;const VarDecl *Binding=nullptr;
++      for(const auto *Block:*Graph)
++        if(const auto *Catch=dyn_cast_or_null<ObjCAtCatchStmt>(Block->getLabel());
++           Catch && Catch->getCatchParamDecl()) {Start=Block;Binding=Catch->getCatchParamDecl();}
++      ASSERT_NE(Start,nullptr);ASSERT_NE(Binding,nullptr);
++      unsigned Paths=0,Budget=4096;
++      auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Trace,unsigned Depth)->void {
++        ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,64u);
++        for(const auto &Element:*Block) {
++          if(auto End=Element.getAs<CFGLifetimeEnds>();End && End->getVarDecl()==Binding)Trace.push_back(20);
++          if(auto Statement=Element.getAs<CFGStmt>())
++            if(const auto *Call=dyn_cast<CallExpr>(Statement->getStmt());Call && Call->getDirectCallee() &&
++                Call->getDirectCallee()->getName()=="catch_marker")
++              Trace.push_back(cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue());
++        }
++        if(Block->succ_empty()) {
++          ++Paths;ASSERT_GE(Trace.size(),3u);
++          EXPECT_EQ(Trace[0],12);EXPECT_EQ(Trace[1],11);EXPECT_EQ(Trace[2],20);
++          EXPECT_EQ(std::count(Trace.begin(),Trace.end(),20),1);
++          return;
++        }
++        for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Trace,Depth+1);
++      };
++      Explore(Explore,Start,{},0);EXPECT_GE(Paths,2u);
++    }
++}
++
++TEST(ObjC3ASTInfrastructure, NativeVisitorsTraverseObjCCatchBindingsExactlyOnce) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    __attribute__((objc_root_class)) @interface CatchBindingType @end
++    void catch_visitor(void) {
++      @try {} @catch(CatchBindingType *binding) {(void)binding;}
++      @catch(...) {}
++    }
++  )",{"-x","objective-c","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-exceptions"},"catch-visitor.m");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  struct StaticVisitor:RecursiveASTVisitor<StaticVisitor> {
++    unsigned Bindings=0;
++    bool VisitVarDecl(VarDecl *D){if(D->isExceptionVariable())++Bindings;return true;}
++  } Static;
++  struct DynamicVisitor:DynamicRecursiveASTVisitor {
++    unsigned Bindings=0;
++    bool VisitVarDecl(VarDecl *D) override {if(D->isExceptionVariable())++Bindings;return true;}
++  } Dynamic;
++  Static.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
++  Dynamic.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
++  EXPECT_EQ(Static.Bindings,1u);EXPECT_EQ(Dynamic.Bindings,1u);
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -62992,5 +63111,107 @@ index 000000000..5787ff16d
 +#ifdef __cplusplus
 +int reject_throwing_getter(PropertyControlHost *object) __objc3_async_frame {
 +  return __objc3_await object.throwing; // expected-error {{awaited isolated entry requires}}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-catch-bindings.m b/clang/test/ObjC3/Sema/borrowed-catch-bindings.m
+new file mode 100644
+index 000000000..9064eda85
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-catch-bindings.m
+@@ -0,0 +1,96 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-owned-records.h"
++#endif
++void caught_native_throw(void);
++void catch_local_owner(void) {
++  @try {caught_native_throw();}
++  @catch(id owner) {
++    const char *pointer=memory_object_bytes(owner);
++    __objc3_defer {memory_use(pointer);}
++    memory_use(pointer);
++  }
++}
++void catch_expired_owner(void) {
++  const char *pointer=0;
++  @try {caught_native_throw();}
++  @catch(id owner) {pointer=memory_object_bytes(owner);}
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void catch_rebound_owner(void) {
++  @try {caught_native_throw();}
++  @catch(id owner) {
++    const char *pointer=memory_object_bytes(owner);
++    owner=(id)0;
++    memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++  }
++}
++void catch_unwind_owner(void) {
++  const char *pointer=0;
++  @try {
++    @try {caught_native_throw();}
++    @catch(id owner) {pointer=memory_object_bytes(owner);@throw;}
++  } @catch(...) {memory_use(pointer);} // expected-error {{after its owner lifetime ended}}
++}
++#if __has_feature(objc_arc)
++void catch_independent_owner(void) {
++  id retained=(id)0;const char *pointer=0;
++  @try {caught_native_throw();}
++  @catch(id owner) {retained=owner;pointer=memory_object_bytes(retained);}
++  memory_use(pointer);retained=(id)0;
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++#endif
++#ifdef __cplusplus
++void cxx_catch_pointer_owner(void) {
++  try {caught_native_throw();}
++  catch(void *owner) {const char *pointer=memory_bytes(owner);__objc3_defer {memory_use(pointer);}memory_use(pointer);}
++}
++void cxx_catch_pointer_expiry(void) {
++  const char *pointer=0;
++  try {caught_native_throw();}catch(void *owner){pointer=memory_bytes(owner);}
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void cxx_catch_unknown_borrow(void) {
++  try {caught_native_throw();}
++  catch(MemoryBytes pointer){memory_escape(pointer);} // expected-error {{argument without a non-escaping lifetime contract}}
++}
++#endif
++
++#ifdef __cplusplus
++struct CaughtBorrowedPayload {MemoryBytes pointer;};
++void cxx_catch_unknown_record(void) {
++  try {caught_native_throw();}
++  catch(CaughtBorrowedPayload payload){memory_escape(payload.pointer);} // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void cxx_catch_unknown_reference(void) {
++  try {caught_native_throw();}
++  catch(const CaughtBorrowedPayload &payload){memory_escape(payload.pointer);} // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void cxx_catch_object_binding(void) {
++  try {caught_native_throw();}
++  catch(id owner){const char *pointer=memory_object_bytes(owner);__objc3_defer {memory_use(pointer);}memory_use(pointer);}
++}
++void cxx_catch_object_expiry(void) {
++  const char *pointer=0;
++  try {caught_native_throw();}catch(id owner){pointer=memory_object_bytes(owner);}
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
 +}
 +#endif

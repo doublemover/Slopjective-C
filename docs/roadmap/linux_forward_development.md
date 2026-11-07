@@ -1,6 +1,14 @@
 # Objective-C 3.0 on Linux
 
 
+The [System 2.34 handler span](linux_borrowed_catch_bindings.md) implements catch
+owner initialization, ARC binding cleanup, rethrow lifetime regions and opaque
+borrowed payload obligations. Eighteen compiler commands, sixty-eight affected
+compiler cases, eighteen AST controls and twelve instrumented native configurations
+pass before the shared visitor rebuild. Catch-declaration traversal is authored;
+final compiler rebuild and source-free publication verification are in progress.
+
+
 The [Concurrency 2.118 span](linux_native_frame_exceptions.md) implements typed
 nontrivial/move-only C++ property writes and owned native exception transport,
 including exact construction order, nil/partial/cancellation cleanup and bounded
