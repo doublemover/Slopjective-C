@@ -32,3 +32,8 @@ Open or escaping reference callables, state-changing invocation replay,
 interprocedural/global effects, lazy async lifetimes and exceptional ownership
 remain separate obligations. Extension ABI 24, runtime ABI 4 and accepted SDK
 2.62 remain unchanged; the matched SDK follows consolidated implementation.
+
+The [System 2.33 span](linux_borrowed_local_callable_graphs.md) extends these
+proofs across closed trivial copy/move and local reference-alias graphs, extended
+literal references and explicit call operators. The copy/alias restrictions above
+describe the original 2.32 boundary.

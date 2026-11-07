@@ -54,6 +54,13 @@ alongside the direct C++20/23 overloaded-member AST import regression. Six-profi
 header controls also pass, alongside both instrumented source-free libc++ native modes.
 The replacement SDK and broader profile/implementation obligations remain open.
 
+The [System 2.33 local-callable graph span](linux_borrowed_local_callable_graphs.md)
+admits closed trivial copy/move and reference-alias graphs, lifetime-extended
+literal references and explicit generic operators. Expiry, rebinding and escape
+checks remain enforced. Twelve new source/PCH commands, all thirty-seven borrowed
+regressions, three frontend groups and four instrumented native configurations
+pass. SDK consolidation follows.
+
 The [System 2.32 scope-bound reference span](linux_borrowed_local_reference_captures.md)
 adds complete local direct-call proofs for repeated/default/generic/pack/looped
 read-only reference callables. Escapes, aliasing and captured storage mutation

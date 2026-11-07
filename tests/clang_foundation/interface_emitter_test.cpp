@@ -636,8 +636,9 @@ void TestBorrowedMemoryAliasReplay() {
           auto work=[&pointer,&observed](auto offset){
             ++observed;published_memory_use(pointer+offset);return observed;
           };
-          for(int index=0;index<count;++index)work(index);
-          return work(0L);
+          auto copy=work;auto &alias=copy;const auto &readonly=alias;
+          for(int index=0;index<count;++index)alias(index);
+          return readonly.template operator()<long>(0L);
         }
         inline void published_memory_generic_immediate(void *owner,int count) {
           const char *pointer=published_memory_bytes(owner);

@@ -1033,6 +1033,15 @@ static void capture_owned_record_suite(void) {
       return int(loan[offset]);
     };
     CAPTURE_CHECK(local_read(0) == 'o' && local_read(0L) == 'o' && calls == 2);
+    auto local_copy = local_read;
+    const auto &local_alias = local_copy;
+    auto copied_alias = local_alias;
+    CAPTURE_CHECK(local_copy(0u) == 'o' &&
+                  local_alias.template operator()<long>(0L) == 'o' &&
+                  copied_alias(0) == 'o' && calls == 5);
+    const auto &literal_reference = [&loan](auto offset) { return int(loan[offset]); };
+    auto moved_reference = static_cast<decltype(local_copy) &&>(local_copy);
+    CAPTURE_CHECK(literal_reference(0L) == 'o' && moved_reference(0) == 'o' && calls == 6);
     int observed = [&loan](auto offset) { return int(loan[offset]); }(0);
     CAPTURE_CHECK(observed == 'o');
     loan = (const char *)0;

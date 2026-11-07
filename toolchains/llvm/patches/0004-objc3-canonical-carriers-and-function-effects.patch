@@ -43628,10 +43628,10 @@ index 000000000..cf47a3848
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..2c2ea3dc3
+index 000000000..ff2a692d1
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5486 @@
+@@ -0,0 +1,5555 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -44588,20 +44588,34 @@ index 000000000..2c2ea3dc3
 +      if (unsigned Owner = Type->getObjC3BorrowedOwner()) return Owner - 1;
 +    return std::nullopt;
 +  }
-+  bool stableLambdaArguments(const CXXOperatorCallExpr *Call) const {
-+    if (Call->getOperator() != OO_Call || !Call->getNumArgs()) return false;
-+    const auto *Function = Call->getDirectCallee();
-+    const auto *Prototype = Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
++  const Expr *lambdaCallReceiver(const CallExpr *Call, unsigned &First) const {
++    if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(Call);
++        Operator && Operator->getOperator() == OO_Call && Operator->getNumArgs()) {
++      First = 1;
++      return Operator->getArg(0);
++    }
++    if (const auto *Member = dyn_cast<CXXMemberCallExpr>(Call)) {
++      First = 0;
++      return Member->getImplicitObjectArgument();
++    }
++    return nullptr;
++  }
++  bool stableLambdaArguments(const CallExpr *Call, unsigned First = 1) const {
++    const auto *Function = dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee());
++    if (!Function || !Function->getParent()->isLambda() ||
++        Function->getOverloadedOperator() != OO_Call || Call->getNumArgs() < First)
++      return false;
++    const auto *Prototype = Function->getType()->getAs<FunctionProtoType>();
 +    if (!Prototype || Prototype->isVariadic() ||
-+        Prototype->getNumParams() != Call->getNumArgs() - 1) return false;
++        Prototype->getNumParams() != Call->getNumArgs() - First) return false;
 +    const auto Primitive = [](QualType Type) {
 +      return Type->isIntegralOrEnumerationType() || Type->isRealFloatingType() ||
 +             Type->isAnyComplexType();
 +    };
 +    // Evaluation follows capture creation. No argument may rebind or consume
 +    // captured storage, or introduce an unmodeled parameter lifetime.
-+    for (unsigned I = 1; I != Call->getNumArgs(); ++I) {
-+      QualType Type = Prototype->getParamType(I - 1);
++    for (unsigned I = First; I != Call->getNumArgs(); ++I) {
++      QualType Type = Prototype->getParamType(I - First);
 +      if (!Primitive(Type) || !Primitive(Call->getArg(I)->getType()) ||
 +          containsObjC3BorrowedType(Context, Type) ||
 +          Call->getArg(I)->HasSideEffects(Context)) return false;
@@ -44610,7 +44624,8 @@ index 000000000..2c2ea3dc3
 +  }
 +  void collectLocalReferenceLambdas() {
 +    llvm::DenseMap<const VarDecl *, const LambdaExpr *> Candidates;
-+    llvm::DenseMap<const VarDecl *, unsigned> Uses, Calls;
++    llvm::DenseMap<const VarDecl *, SmallVector<const VarDecl *, 2>> Derived;
++    llvm::DenseMap<const VarDecl *, unsigned> Uses, Calls, Copies;
 +    struct Work {const Stmt *Node; bool Nested;};
 +    SmallVector<Work, 32> Pending{{Body, false}};
 +    llvm::SmallPtrSet<const Stmt *, 32> Seen;
@@ -44620,28 +44635,78 @@ index 000000000..2c2ea3dc3
 +      if (!Node || !Seen.insert(Node).second) continue;
 +      if (!Budget--) return; // Failure leaves every candidate unqualified.
 +      if (const auto *Declarations = dyn_cast<DeclStmt>(Node); !Nested && Declarations)
-+        for (const Decl *D : Declarations->decls())
-+          if (const auto *Variable = dyn_cast<VarDecl>(D);
-+              Variable && Variable->hasLocalStorage() && Variable->hasInit() &&
-+              !Variable->getType()->isReferenceType() &&
-+              !Variable->getType().isVolatileQualified())
-+            if (const auto *Lambda = immediateLambdaReceiver(Variable->getInit()))
-+              Candidates[Variable] = Lambda;
++        for (const Decl *D : Declarations->decls()) {
++          const auto *Variable = dyn_cast<VarDecl>(D);
++          if (!Variable || !Variable->hasLocalStorage() || !Variable->hasInit() ||
++              Variable->getType().getNonReferenceType().isVolatileQualified()) continue;
++          if (const auto *Lambda = immediateLambdaReceiver(Variable->getInit())) {
++            // A local reference binding to this literal extends its temporary
++            // lifetime through the enclosing scope under ordinary C++ rules.
++            Candidates[Variable] = Lambda;
++            continue;
++          }
++          const auto *Record = Variable->getType().getNonReferenceType()->getAsCXXRecordDecl();
++          if (!Record || !Record->isLambda()) continue;
++          const Expr *Init = Variable->getInit();
++          for (unsigned I = 0; Init && I != 32; ++I) {
++            Init = Init->IgnoreParenImpCasts();
++            if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Init)) Init = Cleanups->getSubExpr();
++            else break;
++          }
++          // A reference aliases an existing local closure. A value binding may
++          // only use the closure's native copy/move constructor, with no user
++          // conversion, pointer indirection or temporary reference binding.
++          if (!Variable->getType()->isReferenceType()) {
++            const auto *Copy = dyn_cast_or_null<CXXConstructExpr>(Init);
++            if (!Copy || Copy->getNumArgs() != 1 ||
++                !Copy->getConstructor()->isCopyOrMoveConstructor() ||
++                !Copy->getConstructor()->isTrivial()) continue;
++            Init = Copy->getArg(0)->IgnoreParenImpCasts();
++            if (const auto *Cast = dyn_cast<CXXStaticCastExpr>(Init);
++                Cast && Cast->getCastKind() == CK_NoOp)
++              Init = Cast->getSubExpr()->IgnoreParenImpCasts();
++          }
++          const auto *Reference = dyn_cast_or_null<DeclRefExpr>(Init);
++          const auto *Source = Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
++          if (!Source || !Source->hasLocalStorage() ||
++              Source->getType().getNonReferenceType()->getAsCXXRecordDecl() != Record) continue;
++          Derived[Source].push_back(Variable);
++        }
 +      if (const auto *Reference = dyn_cast<DeclRefExpr>(Node))
 +        if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl()))
 +          ++Uses[Variable];
-+      if (const auto *Call = dyn_cast<CXXOperatorCallExpr>(Node);
-+          !Nested && Call && stableLambdaArguments(Call))
-+        if (const auto *Receiver = dyn_cast<DeclRefExpr>(Call->getArg(0)->IgnoreParenImpCasts()))
-+          if (const auto *Variable = dyn_cast<VarDecl>(Receiver->getDecl()))
-+            ++Calls[Variable];
++      if (const auto *Call = dyn_cast<CallExpr>(Node); !Nested && Call) {
++        unsigned First = 0;
++        const Expr *Receiver = lambdaCallReceiver(Call, First);
++        if (Receiver && stableLambdaArguments(Call, First))
++          if (const auto *Reference = dyn_cast<DeclRefExpr>(Receiver->IgnoreParenImpCasts()))
++            if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl())) ++Calls[Variable];
++      }
 +      Nested |= isa<LambdaExpr, BlockExpr>(Node);
 +      for (const Stmt *Child : Node->children()) Pending.push_back({Child, Nested});
 +    }
++    SmallVector<const VarDecl *, 16> Ready;
++    for (const auto &[Variable, Lambda] : Candidates) Ready.push_back(Variable);
++    while (!Ready.empty()) {
++      const auto *Source = Ready.pop_back_val();
++      for (const auto *Variable : Derived.lookup(Source)) {
++        if (!Budget--) return;
++        if (!Candidates.try_emplace(Variable, Candidates.lookup(Source)).second) continue;
++        ++Copies[Source];
++        Ready.push_back(Variable);
++      }
++    }
++    llvm::SmallPtrSet<const LambdaExpr *, 8> Rejected;
++    llvm::DenseMap<const LambdaExpr *, unsigned> Invocations;
++    for (const auto &[Variable, Lambda] : Candidates) {
++      if (Uses.lookup(Variable) != Calls.lookup(Variable) + Copies.lookup(Variable))
++        Rejected.insert(Lambda);
++      Invocations[Lambda] += Calls.lookup(Variable);
++    }
 +    for (const auto &[Variable, Lambda] : Candidates)
-+      if (Uses.lookup(Variable) && Uses.lookup(Variable) == Calls.lookup(Variable))
-+        // Every use is a direct invocation in this body. Copies, aliasing,
-+        // explicit operator/member calls, nested captures and escapes fail.
++      if (Invocations.lookup(Lambda) && !Rejected.contains(Lambda))
++        // Every transitive use is a native local copy/reference binding or a
++        // direct stable invocation in this body. Open/escaping graphs fail.
 +        LocalReferenceLambdas.insert(Lambda);
 +  }
 +  void collect(const Stmt *Node, const Stmt *Scope) {
@@ -44660,12 +44725,13 @@ index 000000000..2c2ea3dc3
 +        if (const auto *V = dyn_cast<VarDecl>(D))
 +          addVariable(V);
 +    if (const auto *E = dyn_cast<Expr>(Node)) {
-+      if (const auto *Call = dyn_cast<CXXOperatorCallExpr>(E);
-+          Call && Call->getOperator() == OO_Call && Call->getNumArgs() >= 1)
-+        if (const auto *Lambda = immediateLambdaReceiver(Call->getArg(0))) {
-+          const bool Stable = stableLambdaArguments(Call);
-+          if (Stable) ImmediateLambdaCalls.insert(Lambda);
-+        }
++      if (const auto *Call = dyn_cast<CallExpr>(E)) {
++        unsigned First = 0;
++        if (const Expr *Receiver = lambdaCallReceiver(Call, First))
++          if (const auto *Lambda = immediateLambdaReceiver(Receiver);
++              Lambda && stableLambdaArguments(Call, First))
++            ImmediateLambdaCalls.insert(Lambda);
++      }
 +      MightBorrow |= carriesBorrowedValue(E->getType());
 +      if (const auto *Function = callFunctionType(E)) MightBorrow |= Function->hasObjC3BorrowedResult();
 +      if (!isa<BlockExpr, LambdaExpr>(E) && !ExpressionSlots.count(E))
@@ -48544,13 +48610,16 @@ index 000000000..2c2ea3dc3
 +          checkCall(Invocation, State, Emit);
 +          observeCallbackWriteback(Invocation, State);
 +          invalidateCallTargetProofs(Invocation, State);
-+          if (const auto *Call = dyn_cast<CXXOperatorCallExpr>(Invocation);
-+              Call && Call->getNumArgs() >= 1)
-+            if (const auto *Lambda = immediateLambdaReceiver(Call->getArg(0));
-+                Lambda && ImmediateLambdaCalls.contains(Lambda) && readOnlyReferenceLambda(Lambda))
-+              // The literal cannot escape and its synchronous invocation has
-+              // returned. It no longer protects a future reference mutation.
-+              State.CapturedReferenceTargets[ClosureSlots.lookup(Lambda)].reset();
++          if (const auto *Call = dyn_cast<CallExpr>(Invocation)) {
++            unsigned First = 0;
++            if (const Expr *Receiver = lambdaCallReceiver(Call, First))
++              if (const auto *Lambda = immediateLambdaReceiver(Receiver);
++                  Lambda && ImmediateLambdaCalls.contains(Lambda) &&
++                  stableLambdaArguments(Call, First) && readOnlyReferenceLambda(Lambda))
++                // The literal cannot escape and its synchronous invocation has
++                // returned. It no longer protects a future reference mutation.
++                State.CapturedReferenceTargets[ClosureSlots.lookup(Lambda)].reset();
++          }
 +        }
 +        if (Emit)
 +          if (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(Invocation)) {
@@ -62313,7 +62382,7 @@ index 000000000..4a5949a03
 +}
 diff --git a/clang/test/ObjC3/Sema/borrowed-local-reference-captures.mm b/clang/test/ObjC3/Sema/borrowed-local-reference-captures.mm
 new file mode 100644
-index 000000000..42b6cee27
+index 000000000..51b0ea009
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-local-reference-captures.mm
 @@ -0,0 +1,117 @@
@@ -62388,12 +62457,12 @@ index 000000000..42b6cee27
 +}
 +void local_reference_escaped(void *owner) {
 +  const char *pointer=memory_bytes(owner);
-+  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto work=[&pointer]{memory_use(pointer);};
 +  auto copy=work;copy();
 +}
 +void local_reference_alias(void *owner) {
 +  const char *pointer=memory_bytes(owner);
-+  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto work=[&pointer]{memory_use(pointer);};
 +  auto &alias=work;alias();
 +}
 +void local_reference_nested_use(void *owner) {
@@ -62403,7 +62472,7 @@ index 000000000..42b6cee27
 +}
 +void local_reference_explicit_operator(void *owner) {
 +  const char *pointer=memory_bytes(owner);
-+  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto work=[&pointer]{memory_use(pointer);};
 +  work.operator()();
 +}
 +void local_reference_side_effect(void *owner) {
@@ -62464,3 +62533,143 @@ index 000000000..f3e8402d3
 +  (void)__builtin_objc3_async_group_next_plan((Optional(ProfileHandle) *)0); // expected-error {{requires supported plain storage or an ARC managed carrier}}
 +}
 +int profile_variadic(int value,...) __objc3_async_frame; // expected-error {{require a non-variadic Linux x86-64}}
+diff --git a/clang/test/ObjC3/Sema/borrowed-local-callable-graphs.mm b/clang/test/ObjC3/Sema/borrowed-local-callable-graphs.mm
+new file mode 100644
+index 000000000..36b7be651
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-local-callable-graphs.mm
+@@ -0,0 +1,134 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-owned-records.h"
++#endif
++int callable_graph_argument();
++template<class T> void callable_graph_escape(T);
++void graph_native_copies(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](auto offset=0){memory_use(pointer+offset);};
++  auto first=work;const auto second=first;
++  first(0);second(1L);work(2u);
++}
++void graph_reference_aliases(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](int offset=0){memory_use(pointer+offset);};
++  auto &one=work;const auto &two=one;auto copy=two;
++  two();one(1);copy(2);
++}
++void graph_explicit_operators(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](auto offset){memory_use(pointer+offset);};
++  auto copy=work;const auto &alias=copy;
++  work.operator()(0);copy.template operator()<long>(1L);alias.operator()(2u);
++}
++void graph_unused_copy(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);};
++  auto copy=work;auto unused=copy;
++  work();
++}
++void graph_copy_expiry(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);};
++  auto copy=work;const auto &alias=copy;
++  work();memory_consume(owner);
++  alias(); // expected-error {{after its owner lifetime ended}}
++}
++void graph_reference_rebinding(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);};
++  auto copy=work;const auto &alias=copy;
++  pointer=memory_bytes(owner); // expected-error {{mutation of storage captured by reference}}
++  alias();
++}
++void graph_copy_escape(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto copy=work;const auto &alias=copy;
++  callable_graph_escape(alias); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void graph_alias_address(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto &alias=work;auto *address=&alias;(void)address;
++}
++void graph_nested_copy(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto copy=work;
++  auto nested=[&copy]{copy();};(void)nested; // expected-error {{C++ lambda reference capture}}
++}
++void graph_copy_argument_effect(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](int offset){memory_use(pointer+offset);}; // expected-error {{C++ lambda reference capture}}
++  auto copy=work;copy(callable_graph_argument());
++}
++void graph_mutating_copy(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer](auto input){
++    if constexpr(sizeof(input)==sizeof(long))pointer=nullptr;
++    else memory_use(pointer);
++  }; // expected-error@-3 {{C++ lambda reference capture}}
++  auto copy=work;work(0);copy(0L);
++}
++
++void graph_extended_literal_references(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  const auto &work=[&pointer]{memory_use(pointer);};
++  auto &&other=[&pointer](auto offset){memory_use(pointer+offset);};
++  auto &alias=other;auto copy=work;
++  copy();work();alias(0);other.operator()(1L);
++}
++void graph_trivial_move(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer]{memory_use(pointer);};
++  auto moved=static_cast<decltype(work)&&>(work);
++  moved();work();
++}
++struct GraphNontrivialCopy {
++  GraphNontrivialCopy();
++  GraphNontrivialCopy(const GraphNontrivialCopy &);
++  int value;
++};
++void graph_nontrivial_copy(void *owner,GraphNontrivialCopy value) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer,value]{memory_use(pointer);}; // expected-error {{C++ lambda reference capture}}
++  auto copy=work;copy(); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++
++void graph_literal_reference_expiry(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  const auto &work=[&pointer]{memory_use(pointer);};
++  memory_consume(owner);
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void graph_literal_reference_rebinding(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  const auto &work=[&pointer]{memory_use(pointer);};
++  pointer=memory_bytes(owner); // expected-error {{mutation of storage captured by reference}}
++  work();
++}
++
++void graph_immediate_explicit_operator(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  [&pointer](auto offset){memory_use(pointer+offset);}.template operator()<int>(0);
++  pointer=nullptr;
++}
++void graph_mutable_scalar_state(void *owner) {
++  const char *pointer=memory_bytes(owner);
++  auto work=[&pointer,count=0]()mutable{++count;memory_use(pointer);return count;};
++  auto copy=work;auto &alias=copy;
++  int one=work();int two=alias();(void)one;(void)two;
++}
