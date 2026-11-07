@@ -1,5 +1,14 @@
 # Linux implementation sprint
 
+The [source 2.132 / System 2.58 storage span](linux_cpp_carrier_default_storage.md)
+implements empty C++ Optional values, member defaults, partial and multidimensional
+arrays, computed heap bounds and parenthesized initialization. Invalid bounds
+throw before allocation or return null for nonthrowing allocation, without running
+payload producers. Selected-prefix cleanup covers typed/native faults at every
+position. Twelve adjacent compiler cases (56 dedicated commands), seven frontend
+groups, 300 decoder replays and four selected sanitizer configurations / fourteen
+commands pass. Source-free storage requires `objc3.cxx-carrier-storage.v1`.
+
 The [source 2.131 / System 2.57 message span](linux_checked_cpp_messages.md)
 implements ordinary checked native C++ instance/class/super messages and property
 syntax, with success-only ownership, preserved receiver mappings and explicit nil

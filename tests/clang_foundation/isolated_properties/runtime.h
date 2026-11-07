@@ -292,6 +292,7 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
 #include "checked_optional_storage.h"
 #include "checked_static_references.h"
 #include "carrier_calls.h"
+#include "carrier_default_storage.h"
 #include "carrier_record_payloads.h"
 #include "carrier_composed_allocations.h"
 static void property_suite(void) {
@@ -370,6 +371,7 @@ static void property_suite(void) {
   checked_static_reference_suite(main_object);
   carrier_record_payload_suite();
   carrier_composed_allocation_suite();
+  carrier_default_storage_suite(main_object);
   carrier_call_suite(main_object);
   assert(objc3_actor_close(property_mailbox)==OBJC3_SERVICE_OK);
   assert(objc3_actor_join(property_mailbox)==OBJC3_SERVICE_OK);

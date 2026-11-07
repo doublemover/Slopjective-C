@@ -6424,6 +6424,55 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
   }
 }
 
+void TestCppCarrierDefaultStorageReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string prelude=R"(
+      namespace PublishedCheckedMessage {
+        struct Value {int value;Value(int);Value(const Value &);Value(Value &&);~Value() noexcept;};
+        typedef __objc3_optional(Value) Maybe;
+      }
+    )";
+    const auto source=prelude+R"(
+      namespace PublishedCheckedMessage {
+        struct Defaults {Maybe value{};Maybe array[2][2]{};};
+        inline int array_only(){Maybe values[2][2]{};return __objc3_has_value(values[1][1]);}
+        inline int defaults() {Maybe value{};Defaults fields;return __objc3_has_value(value)+__objc3_has_value(fields.array[1][1]);}
+        inline void dynamic(int count) {auto *values=new Maybe[count]{__objc3_some(Value,Value(7))};delete[] values;}
+        inline void matrix(int count) {auto *values=new Maybe[count][2]{{__objc3_some(Value,Value(7))}};delete[] values;}
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"carrier-default-storage.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.carrier_defaults","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.carrier_defaults","test",{},{},{},{"PublishedCheckedMessage"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kCppCarrierStorageSemantic)));
+    bool array_only=false;
+    for(const auto &d:read->declarations)if(d.qualified_name=="PublishedCheckedMessage::array_only"){assert(HasCppCarrierStorageIdentity(d));array_only=true;}
+    assert(array_only);
+    auto older=supported;std::erase(older,llvm::StringRef(kCppCarrierStorageSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kCppCarrierStorageSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto declarations=emit(prelude);auto invented=DecodeSemanticInterfaceSidecar(declarations.sidecar_json,declarations.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kCppCarrierStorageSemantic)));
+    invented->required_semantics.push_back(kCppCarrierStorageSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestCheckedCppMessageReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10492,6 +10541,7 @@ int main(int argc,char **argv) {
   TestClosureFactories();
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
+  TestCppCarrierDefaultStorageReplay();
   TestCheckedCppMessageReplay();
   TestCppCarrierCompositionReplay();
   TestNativeCppCarrierCallReplay();

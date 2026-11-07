@@ -129,6 +129,28 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationCppCarrierStorage(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Storage : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitExpr(clang::Expr *expression) override {
+        if(llvm::isa<clang::ImplicitValueInitExpr,clang::CXXScalarValueInitExpr>(expression) ||
+            (llvm::isa<clang::InitListExpr>(expression) && llvm::cast<clang::InitListExpr>(expression)->getNumInits()==0)) {
+          auto type=clang::QualType(expression->getType()->getBaseElementTypeUnsafe(),0).getCanonicalType();
+          found|=llvm::isa<clang::ObjC3OptionalType>(type.getTypePtr()) &&
+              clang::hasObjC3CarrierCppPayload(type) && !clang::hasObjC3CarrierManagedPayload(type);
+        }
+        return true;
+      }
+      bool VisitCXXNewExpr(clang::CXXNewExpr *allocation) override {
+        auto type=clang::QualType(allocation->getAllocatedType()->getBaseElementTypeUnsafe(),0);
+        found|=IsNativeCppCarrierValue(type);return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationCheckedCppMessage(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
     struct Messages : clang::DynamicRecursiveASTVisitor {
