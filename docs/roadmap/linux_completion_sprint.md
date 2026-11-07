@@ -1,5 +1,12 @@
 # Linux feature completion and SDK delivery
 
+The [System 2.35 interior-storage span](linux_borrowed_interior_storage.md) adds
+inline ivar/array/record loans and separate C++ reference-address lifetimes,
+including copy/capture propagation, builtin address-taking and source-free
+capability admission. Focused controls pass; affected compiler/frontend/native
+consolidation is underway. Native managed-cleanup CFG registration and the wider
+ownership/profile backlog remain open.
+
 
 The [System 2.34 handler span](linux_borrowed_catch_bindings.md) implements catch
 owner initialization, ARC binding cleanup, rethrow lifetime regions and opaque

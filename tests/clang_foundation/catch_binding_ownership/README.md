@@ -7,9 +7,11 @@ this fixture with the SDK.
 
 Each native handler drops the original caller claim and acquires a declared
 borrow from its catch owner. Return, rethrow, outward goto and fallthrough must
-run the deferred consumer while the object remains live. The consumer uses a
-static byte witness under the owner contract; separate object-field reads and
-exact destruction counters verify actual native object lifetime and ordering.
+run the deferred consumer while the object remains live. The consumer reads the actual inline payload address under the owner contract.
+Inline array/nested-record loans, C++ reference record copies and builtin
+address-taking also remain valid while a lifetime pin holds the object after
+its original claim is dropped. Exact destruction counters verify native object
+lifetime and ordering.
 Every source object is destroyed exactly once after handler cleanup and the
 per-case autorelease pool. Objective-C and Objective-C++ can retire the throw
 operand's autorelease claim at different permitted points.

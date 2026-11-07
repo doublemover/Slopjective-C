@@ -488,6 +488,10 @@ llvm::Error ValidateForEncoding(
   const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
   if (nsobject_storage != nsobject_storage_capability)
     return Invalid("NSObject storage identity and required capability must agree");
+  const bool interior_storage = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedInteriorStorageIdentity);
+  const bool interior_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedInteriorStorageSemantic) != sidecar.required_semantics.end();
+  if (interior_storage != interior_storage_capability)
+    return Invalid("borrowed interior storage identity and required capability must agree");
   const bool borrowed_callables = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasBorrowedCallableOwnerIdentity);
   const bool borrowed_callable_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kBorrowedCallableOwnerSemantic) != sidecar.required_semantics.end();
   if (borrowed_callables != borrowed_callable_capability)

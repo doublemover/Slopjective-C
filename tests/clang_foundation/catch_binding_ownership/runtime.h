@@ -15,6 +15,8 @@ __attribute__((objc_root_class)) @interface HandlerProbe {
   Class isa;
 @public
   char payload;
+  char inline_bytes[4];
+  struct {char bytes[4];int value;} nested;
 #if !__has_feature(objc_arc)
   int references;
 #endif
@@ -28,6 +30,7 @@ __attribute__((objc_root_class)) @interface HandlerProbe {
 @implementation HandlerProbe
 + (instancetype _Nonnull)new {
   HandlerProbe *value=class_createInstance(self,0);value->payload='q';
+  value->inline_bytes[0]='q';value->nested.bytes[0]='q';value->nested.value=17;
 #if !__has_feature(objc_arc)
   value->references=1;
 #endif
@@ -44,7 +47,7 @@ static HandlerBytes handler_bytes(HandlerProbe *owner)
     __attribute__((objc_returns_borrowed(owner_index=0)));
 __attribute__((objc_returns_borrowed(owner_index=0)))
 static HandlerBytes handler_bytes(HandlerProbe *owner) {
-  static const char bytes[]="q";assert(owner->payload=='q');return bytes;
+  assert(owner->payload=='q');return &owner->payload;
 }
 static void handler_use(const char *bytes __attribute__((noescape))) {assert(*bytes=='q');}
 static int handler_paths(int mode) {
@@ -78,6 +81,38 @@ static int handler_paths(int mode) {
 finished:
   return 20;
 }
+static int interior_storage_case(void) {
+  int before_destroyed=handler_destroyed,scalar=0;
+  HandlerProbe *owner=[HandlerProbe new];
+    withLifetime(owner) {
+      const char *bytes=owner->inline_bytes;
+      const char *nested=owner->nested.bytes;
+      scalar=owner->nested.value;
+#ifdef __cplusplus
+      char &reference=owner->payload;
+      struct Reference {char &byte;};
+      Reference first{reference},second=first;
+      char copy=reference;
+      const char *address=__builtin_addressof(reference);
+#endif
+#if __has_feature(objc_arc)
+      owner=(id)0;
+#else
+      [owner release];
+#endif
+      assert(handler_destroyed==before_destroyed);
+      handler_use(bytes);handler_use(nested);
+#ifdef __cplusplus
+      handler_use(&second.byte);handler_use(address);assert(copy=='q');
+#endif
+    }
+  return scalar;
+}
+static void interior_storage_suite(void) {
+  int before_created=handler_created,before_destroyed=handler_destroyed;
+  @autoreleasepool {assert(interior_storage_case()==17);}
+  assert(handler_created==before_created+1 && handler_destroyed==before_destroyed+1);
+}
 static void catch_binding_suite(void) {
   for(int mode=0;mode!=4;++mode) {
     int before=handler_destroyed,body=handler_body,cleanup=handler_cleanup;
@@ -85,6 +120,7 @@ static void catch_binding_suite(void) {
     assert(handler_body==body+1 && handler_cleanup==cleanup+1 && handler_destroyed==before+1);
   }
   assert(handler_outer==1 && handler_created==4 && handler_destroyed==4);
+  interior_storage_suite();
 }
 #pragma clang assume_nonnull end
 #endif

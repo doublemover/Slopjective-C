@@ -190,6 +190,10 @@ inline bool HasNSObjectStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";nsobject-storage:v1;") != std::string::npos ||
          d.effects.ownership_identity.find(";nsobject-storage:v1;") != std::string::npos;
 }
+inline constexpr const char *kBorrowedInteriorStorageSemantic = "objc3.borrowed-interior-storage.v1";
+inline bool HasBorrowedInteriorStorageIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";borrowed-interior-storage:v1;") != std::string::npos;
+}
 inline constexpr const char *kBorrowedCallableOwnerSemantic = "objc3.borrowed-callable-owners.v1";
 inline bool HasBorrowedCallableOwnerIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";borrowed-callable-owners:v1;") != std::string::npos ||

@@ -43644,10 +43644,10 @@ index 000000000..cd88c0383
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..29c42c798
+index 000000000..6f7ebd418
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5582 @@
+@@ -0,0 +1,5843 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43887,8 +43887,10 @@ index 000000000..29c42c798
 +    SmallVector<Storage, 2> Targets;
 +    bool Complete = false;
 +    bool Initialized = false;
++    Value AddressLoans;
 +    bool operator==(const ReferenceFacts &Other) const {
-+      return Complete == Other.Complete && Initialized == Other.Initialized && Targets == Other.Targets;
++      return Complete == Other.Complete && Initialized == Other.Initialized && Targets == Other.Targets &&
++             AddressLoans == Other.AddressLoans;
 +    }
 +  };
 +  struct Facts {
@@ -43983,6 +43985,9 @@ index 000000000..29c42c798
 +  llvm::SmallPtrSet<const LambdaExpr *, 8> LocalReferenceLambdas;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
 +  llvm::DenseMap<const Expr *, SmallVector<const Expr *, 2>> OwnerEvaluations;
++  llvm::DenseMap<const Expr *, const Expr *> EmbeddedOwnerAcquisitions;
++  llvm::SmallPtrSet<const Expr *, 8> RejectedEmbeddedAcquisitions;
++  llvm::SmallPtrSet<const Expr *, 16> EmbeddedAddressUses;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedReferenceCaptures;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedLambdaStorage;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedUnownedOwners;
@@ -44215,6 +44220,8 @@ index 000000000..29c42c798
 +  }
 +  ReferenceFacts referenceInitializer(Storage Destination, const Expr *E, const Facts &State) const {
 +    ReferenceFacts Result;Result.Initialized = true;
++    Result.AddressLoans = addressProvenance(E, State);
++    if (Result.AddressLoans.none()) Result.AddressLoans.clear();
 +    SmallVector<Storage, 4> Possible, Complete;
 +    localLValueAlternatives(E, State, Possible, false, 0, false);
 +    Result.Complete = localLValueAlternatives(E, State, Complete, true, 0, false);
@@ -44234,6 +44241,11 @@ index 000000000..29c42c798
 +    ReferenceFacts Joined = Destination;
 +    Joined.Complete = Destination.Initialized && Source.Initialized && Destination.Complete && Source.Complete;
 +    Joined.Initialized |= Source.Initialized;
++    if (Source.AddressLoans.any()) {
++      Joined.AddressLoans.resize(Origins.size() * 2);
++      Value Loans = Source.AddressLoans;Loans.resize(Origins.size() * 2);
++      Joined.AddressLoans |= Loans;
++    }
 +    for (Storage Target : Source.Targets)
 +      if (!llvm::is_contained(Joined.Targets, Target)) Joined.Targets.push_back(Target);
 +    if (Joined.Targets.size() > 64) Joined.Complete = false;
@@ -44490,6 +44502,8 @@ index 000000000..29c42c798
 +    return nullptr;
 +  }
 +  const Expr *ownerArgument(const Expr *E, unsigned Index) const {
++    if (auto Found = EmbeddedOwnerAcquisitions.find(E); Found != EmbeddedOwnerAcquisitions.end())
++      return Found->second;
 +    if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(E))
 +      if (const auto *Method = dyn_cast_or_null<CXXMethodDecl>(Operator->getDirectCallee()))
 +        if (!Method->isStatic())
@@ -44554,6 +44568,24 @@ index 000000000..29c42c798
 +    if (isa<DeclRefExpr>(Owner) || Owner->isGLValue())
 +      OwnerEvaluations[Owner].push_back(Invocation);
 +  }
++  void markEmbeddedAddressUse(const Expr *Expression) {
++    SmallVector<const Expr *, 8> Pending{Expression};
++    llvm::SmallPtrSet<const Expr *, 32> Seen;
++    unsigned Budget = 8192;
++    while (!Pending.empty()) {
++      const Expr *E = Pending.pop_back_val();
++      if (!E || !Seen.insert(E).second) continue;
++      if (!Budget--) {RejectedEmbeddedAcquisitions.insert(Expression);MightBorrow = true;return;}
++      EmbeddedAddressUses.insert(E->IgnoreParenImpCasts());
++      if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
++        Pending.push_back(Conditional->getTrueExpr());Pending.push_back(Conditional->getFalseExpr());
++      } else if (const auto *Cast = dyn_cast<CastExpr>(E)) Pending.push_back(Cast->getSubExpr());
++      else if (const auto *Paren = dyn_cast<ParenExpr>(E)) Pending.push_back(Paren->getSubExpr());
++      else if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E)) Pending.push_back(Opaque->getSourceExpr());
++      else if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) Pending.push_back(Cleanups->getSubExpr());
++      else if (const auto *Comma = dyn_cast<BinaryOperator>(E); Comma && Comma->getOpcode() == BO_Comma) Pending.push_back(Comma->getRHS());
++    }
++  }
 +  static const VarDecl *exceptionBinding(const Stmt *Node) {
 +    if (const auto *Catch = dyn_cast<ObjCAtCatchStmt>(Node)) return Catch->getCatchParamDecl();
 +    if (const auto *Catch = dyn_cast<CXXCatchStmt>(Node)) return Catch->getExceptionDecl();
@@ -44563,11 +44595,30 @@ index 000000000..29c42c798
 +    if (!Node || isa<BlockExpr>(Node))
 +      return;
 +    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
-+      for (const Expr *Initializer : Lambda->capture_inits())
-+        collectBindings(Initializer);
++      auto Init = Lambda->capture_init_begin();
++      for (const auto &Capture : Lambda->captures()) {
++        if (Capture.getCaptureKind() == LCK_ByRef) markEmbeddedAddressUse(*Init);
++        collectBindings(*Init++);
++      }
 +      return;
 +    }
 +    if (const VarDecl *Variable = exceptionBinding(Node)) addVariable(Variable);
++    if (const auto *Return = dyn_cast<ReturnStmt>(Node); Return && !ReturnType.isNull() && ReturnType->isReferenceType())
++      markEmbeddedAddressUse(Return->getRetValue());
++    if (const auto *Declarations = dyn_cast<DeclStmt>(Node))
++      for (const Decl *D : Declarations->decls())
++        if (const auto *V = dyn_cast<VarDecl>(D); V && V->getType()->isReferenceType() && V->hasInit())
++          markEmbeddedAddressUse(V->getInit());
++    if (const auto *List = dyn_cast<InitListExpr>(Node))
++      if (const auto *Record = List->getType()->getAsRecordDecl()) {
++        unsigned Index = 0;
++        if (const auto *Class = dyn_cast<CXXRecordDecl>(Record)) Index = Class->getNumBases();
++        for (const auto *Field : Record->fields()) {
++          if (Index >= List->getNumInits()) break;
++          if (Field->getType()->isReferenceType()) markEmbeddedAddressUse(List->getInit(Index));
++          ++Index;
++        }
++      }
 +    if (const auto *Binding = dyn_cast<ObjC3BindingCondition>(Node))
 +      BindingSnapshots[Binding->getBindingDecl()] = Binding->getSnapshotDecl();
 +    if (const auto *Match = dyn_cast<ObjC3MatchStmt>(Node))
@@ -44604,7 +44655,54 @@ index 000000000..29c42c798
 +      if (statementMayBorrow(Child)) return true;
 +    return false;
 +  }
++  // A pointer into inline ivar storage borrows the containing ObjC object.
++  // Pointer/reference indirection leaves that storage and needs a separate
++  // declared owner contract. Native record/base/array paths stay inline.
++  const Expr *embeddedIvarOwner(const Expr *Storage, bool *Exhausted = nullptr) const {
++    for (unsigned Depth = 0; Storage && Depth != 64; ++Depth) {
++      Storage = Storage->IgnoreParenImpCasts();
++      if (const auto *Cast = dyn_cast<CastExpr>(Storage); Cast && Cast->isGLValue()) {
++        Storage = Cast->getSubExpr();continue;
++      }
++      if (const auto *Comma = dyn_cast<BinaryOperator>(Storage); Comma && Comma->getOpcode() == BO_Comma) {
++        Storage = Comma->getRHS();continue;
++      }
++      if (const auto *Ivar = dyn_cast<ObjCIvarRefExpr>(Storage)) return Ivar->getBase();
++      if (const auto *Member = dyn_cast<MemberExpr>(Storage)) {
++        const auto *Field = dyn_cast<FieldDecl>(Member->getMemberDecl());
++        if (Member->isArrow() || !Field || Field->getType()->isReferenceType()) return nullptr;
++        Storage = Member->getBase();continue;
++      }
++      if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(Storage)) {
++        const Expr *Base = Subscript->getBase()->IgnoreParenImpCasts();
++        if (!Base->getType()->isArrayType()) return nullptr;
++        Storage = Base;continue;
++      }
++      if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Storage)) {
++        Storage = Opaque->getSourceExpr();continue;
++      }
++      return nullptr;
++    }
++    if (Storage && Exhausted) *Exhausted = true;
++    return nullptr;
++  }
++  static bool addressBuiltin(const Decl *Declaration) {
++    const auto *Function = dyn_cast_or_null<FunctionDecl>(Declaration);
++    return Function && Function->getBuiltinID() && Function->getName() == "__builtin_addressof";
++  }
++  const Expr *embeddedAddressOwner(const Expr *Expression, bool *Exhausted = nullptr) const {
++    if (EmbeddedAddressUses.contains(Expression)) return embeddedIvarOwner(Expression, Exhausted);
++    if (const auto *Call = dyn_cast<CallExpr>(Expression); Call && addressBuiltin(Call->getDirectCallee()) && Call->getNumArgs() == 1)
++      return embeddedIvarOwner(Call->getArg(0), Exhausted);
++    if (const auto *Unary = dyn_cast<UnaryOperator>(Expression))
++      if (Unary->getOpcode() == UO_AddrOf) return embeddedIvarOwner(Unary->getSubExpr(), Exhausted);
++    if (const auto *Cast = dyn_cast<ImplicitCastExpr>(Expression))
++      if (Cast->getCastKind() == CK_ArrayToPointerDecay) return embeddedIvarOwner(Cast->getSubExpr(), Exhausted);
++    return nullptr;
++  }
 +  std::optional<unsigned> borrowedResultOwner(const Expr *Invocation) const {
++    if (RejectedEmbeddedAcquisitions.contains(Invocation)) return std::nullopt;
++    if (EmbeddedOwnerAcquisitions.count(Invocation)) return 0;
 +    if (auto Owner = getObjC3BorrowedReturnOwner(callee(Invocation))) return Owner;
 +    if (const auto *Type = callPrototype(Invocation))
 +      if (unsigned Owner = Type->getObjC3BorrowedOwner()) return Owner - 1;
@@ -44760,6 +44858,33 @@ index 000000000..29c42c798
 +        ExpressionSlots[E] = ExpressionSlots.size();
 +      if (isa<MemberExpr, ArraySubscriptExpr>(E))
 +        addStorage(storage(E), E->getType());
++      if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
++        for (unsigned I = 0; I != Construction->getNumArgs() && I != Construction->getConstructor()->getNumParams(); ++I)
++          if (Construction->getConstructor()->getParamDecl(I)->getType()->isReferenceType())
++            markEmbeddedAddressUse(Construction->getArg(I));
++      if (const auto *Invocation = dyn_cast<CallExpr>(E)) {
++        if (const auto *Member = dyn_cast<CXXMemberCallExpr>(Invocation))
++          markEmbeddedAddressUse(Member->getImplicitObjectArgument());
++        if (addressBuiltin(Invocation->getDirectCallee()) && Invocation->getNumArgs() == 1)
++          markEmbeddedAddressUse(Invocation->getArg(0));
++        if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(Invocation); Operator && Operator->getNumArgs())
++          if (const auto *Method = dyn_cast_or_null<CXXMethodDecl>(Operator->getDirectCallee()); Method && !Method->isStatic())
++            markEmbeddedAddressUse(Operator->getArg(0));
++        auto Parameters = formalParameters(callee(Invocation));
++        for (unsigned I = 0; I != Invocation->getNumArgs(); ++I) {
++          unsigned Formal = formalIndex(Invocation, I);
++          if (Formal < Parameters.size() && Parameters[Formal]->getType()->isReferenceType())
++            markEmbeddedAddressUse(Invocation->getArg(I));
++        }
++      }
++      bool ExhaustedStoragePath = false;
++      if (const Expr *Owner = embeddedAddressOwner(E, &ExhaustedStoragePath)) {
++        EmbeddedOwnerAcquisitions[E] = Owner;
++        MightBorrow = true;
++        if (Origins.size() + ownerKeys().size() * (PinSources.size() + 1) > 4096)
++          RejectedEmbeddedAcquisitions.insert(E);
++      }
++      if (ExhaustedStoragePath) {RejectedEmbeddedAcquisitions.insert(E);MightBorrow = true;}
 +      if (auto OwnerIndex = borrowedResultOwner(E)) {
 +        MightBorrow = true;
 +        const Expr *OwnerExpr = ownerArgument(E, *OwnerIndex);
@@ -44775,6 +44900,9 @@ index 000000000..29c42c798
 +          Storage OwnerStorage = !Owner && SourceOwner ? storage(SourceOwner) : Storage{};
 +          QualType OwnerType = OwnerStorage.first ? storageType(OwnerStorage) : Owner ? Owner->getType() : QualType{};
 +          bool Unstable = (!Owner && !OwnerStorage.first) ||
++                          (EmbeddedOwnerAcquisitions.count(E) &&
++                           ((Owner && !Owner->hasLocalStorage()) || (!Owner && OwnerStorage.first && !OwnerStorage.first->hasLocalStorage())) &&
++                           !OwnerType.isNull() && !OwnerType.isConstQualified()) ||
 +                          (!OwnerType.isNull() &&
 +                           (OwnerType.getObjCLifetime() == Qualifiers::OCL_Weak ||
 +                            OwnerType.getObjCLifetime() == Qualifiers::OCL_ExplicitNone));
@@ -45905,6 +46033,9 @@ index 000000000..29c42c798
 +          (!CopiedScalar && within(Location, Other)) ||
 +          overlapsUnion(Location, Other) || (Aggregate && within(Other, Location)))
 +        Result |= Effects ? State.Effects[Index] : State.Values[Index];
++      if (!Effects && Aggregate && path(Other) != Query && within(Other, Location) &&
++          State.References[Index].AddressLoans.any())
++        Result |= State.References[Index].AddressLoans;
 +    }
 +    return Result;
 +  }
@@ -46305,9 +46436,17 @@ index 000000000..29c42c798
 +    // Casts, including void* and uintptr_t, carry the facts until the result's
 +    // actual use establishes an escape. A local cast alone is not an escape.
 +    E = E->IgnoreParens();
++    if (EmbeddedOwnerAcquisitions.count(E) && !E->isGLValue()) {
++      Value Result = acquired(E, State);
++      if (Result.none()) Result.set(0);
++      return Result;
++    }
++    if (const auto *Call = dyn_cast<CallExpr>(E); Call && addressBuiltin(Call->getDirectCallee()) && Call->getNumArgs() == 1)
++      return addressValue(Call->getArg(0), State);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
 +      return value(statementResult(Statement), State);
 +    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
++      if (Cast->getCastKind() == CK_ArrayToPointerDecay) return addressValue(Cast->getSubExpr(), State);
 +      if (Cast->getType()->isBooleanType())
 +        return empty();
 +      if (Cast->getType()->isRecordType() &&
@@ -46373,9 +46512,20 @@ index 000000000..29c42c798
 +        const Expr *Operand = Unary->getSubExpr()->IgnoreParenImpCasts();
 +        if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(Operand))
 +          return value(Subscript->getBase(), State);
-+        if (const auto *Member = dyn_cast<MemberExpr>(Operand))
-+          if (Member->isArrow())
-+            return value(Member->getBase(), State);
++        if (const auto *Member = dyn_cast<MemberExpr>(Operand)) {
++          if (const auto *Field = dyn_cast<FieldDecl>(Member->getMemberDecl()); Field && Field->getType()->isReferenceType()) {
++            Value Result = addressProvenance(Member, State);
++            Result |= storedValue(storage(Member, &State), Member->getType(), State);
++            return Result;
++          }
++          if (Member->isArrow()) return value(Member->getBase(), State);
++          if (!storage(Member, &State).first) return addressValue(Member->getBase(), State);
++        }
++        Value BindingAddress = addressProvenance(Operand, State);
++        if (BindingAddress.any()) {
++          BindingAddress |= storedValue(storage(Operand, &State), Operand->getType(), State);
++          return BindingAddress;
++        }
 +        if (const auto *Deref = dyn_cast<UnaryOperator>(Operand))
 +          if (Deref->getOpcode() == UO_Deref)
 +            return value(Deref->getSubExpr(), State);
@@ -46437,6 +46587,9 @@ index 000000000..29c42c798
 +            Result |= storedValue(Location, Capture.getVariable()->getType(), State);
 +            Found = true;
 +          }
++        if (Capture.getVariable()->getType()->isReferenceType())
++          if (auto Slot = Slots.find({Capture.getVariable(), nullptr}); Slot != Slots.end())
++            if (State.References[Slot->second].AddressLoans.any()) Result |= State.References[Slot->second].AddressLoans;
 +        if (!Found && isObjC3BorrowedType(Context, Capture.getVariable()->getType()))
 +          Result.set(0);
 +      }
@@ -46447,8 +46600,12 @@ index 000000000..29c42c798
 +      if (Snapshot != ClosureSlots.end() && State.CaptureReady.test(Snapshot->second))
 +        return State.CapturedValues[Snapshot->second];
 +      Value Result = futureOwnerLoans(Lambda, State);
-+      for (const Expr *Initializer : Lambda->capture_inits())
-+        Result |= value(Initializer, State);
++      auto Init = Lambda->capture_init_begin();
++      for (const auto &Capture : Lambda->captures()) {
++        Result |= value(*Init, State);
++        if (Capture.getCaptureKind() == LCK_ByRef) Result |= addressProvenance(*Init, State);
++        ++Init;
++      }
 +      return Result;
 +    }
 +    if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
@@ -46464,7 +46621,7 @@ index 000000000..29c42c798
 +        Result |= value(Element, State);
 +      return Result;
 +    }
-+    if (Acquisitions.count(E))
++    if (Acquisitions.count(E) && !(E->isGLValue() && EmbeddedOwnerAcquisitions.count(E)))
 +      return acquired(E, State);
 +    if (const auto *Call = dyn_cast<CallExpr>(E);
 +        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
@@ -46584,6 +46741,8 @@ index 000000000..29c42c798
 +      ExpireValue(V);
 +    for (Value &V : State.EvaluatedAcquisitions)
 +      ExpireValue(V);
++    for (auto &Reference : State.References)
++      if (Reference.AddressLoans.any()) ExpireValue(Reference.AddressLoans);
 +    if (auto Slot = Slots.find({Owner, nullptr}); Slot != Slots.end())
 +      State.OwnerIdentities[Slot->second].reset();
 +    for (auto [Pin, Source] : PinSources)
@@ -46612,6 +46771,7 @@ index 000000000..29c42c798
 +    return dyn_cast_or_null<FunctionProtoType>(callFunctionType(Invocation));
 +  }
 +  bool observeOwnerConsumption(const Expr *Invocation, Facts &State) const {
++    if (addressBuiltin(callee(Invocation))) return false;
 +    const bool ARC = Actions.getLangOpts().ObjCAutoRefCount;
 +    Value Identity(OwnerCount), Unbounded(OwnerCount);
 +    llvm::DenseMap<unsigned, unsigned> ConsumedClaims;
@@ -47519,10 +47679,59 @@ index 000000000..29c42c798
 +          return Index ? Index - 1 : ~0U;
 +    return Index;
 +  }
++  Value addressProvenance(const Expr *E, const Facts &State, unsigned Depth = 0) const {
++    if (!E) return empty();
++    if (Depth > 64) {Value Unknown = empty();Unknown.set(0);return Unknown;}
++    E = E->IgnoreParenImpCasts();
++    if (EmbeddedOwnerAcquisitions.count(E)) {
++      Value Result = acquired(E, State);
++      if (Result.none()) Result.set(0);
++      return Result;
++    }
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) return addressProvenance(Cleanups->getSubExpr(), State, Depth + 1);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E)) return addressProvenance(Opaque->getSourceExpr(), State, Depth + 1);
++    if (const auto *Variable = variable(E))
++      if (Variable->getType()->isReferenceType())
++        if (auto Slot = Slots.find({Variable, nullptr}); Slot != Slots.end()) {
++          Value Result = State.References[Slot->second].AddressLoans;
++          if (Result.size() == 0) return empty();
++          Result.resize(Origins.size() * 2);return Result;
++        }
++    if (const auto *Deref = dyn_cast<UnaryOperator>(E); Deref && Deref->getOpcode() == UO_Deref)
++      return value(Deref->getSubExpr(), State);
++    if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(E)) return value(Subscript->getBase(), State);
++    if (const auto *Member = dyn_cast<MemberExpr>(E)) {
++      Value Base = Member->isArrow() ? value(Member->getBase(), State)
++                                    : addressProvenance(Member->getBase(), State, Depth + 1);
++      if (const auto *Field = dyn_cast<FieldDecl>(Member->getMemberDecl()); Field && Field->getType()->isReferenceType()) {
++        if (auto Slot = Slots.find(storage(Member, &State)); Slot != Slots.end()) {
++          const auto &Loans = State.References[Slot->second].AddressLoans;
++          if (Loans.any()) {Value Result = Loans;Result.resize(Origins.size() * 2);return Result;}
++        }
++        // A reference member can name storage unrelated to its containing
++        // record. An outer allocation loan cannot prove that referent.
++        if (Base.any()) {Base.reset();Base.set(0);}
++      }
++      return Base;
++    }
++    if (const auto *Cast = dyn_cast<CastExpr>(E); Cast && Cast->isGLValue()) return addressProvenance(Cast->getSubExpr(), State, Depth + 1);
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
++      bool Truth;
++      if (!Conditional->getCond()->HasSideEffects(Context) && Conditional->getCond()->EvaluateAsBooleanCondition(Truth, Context))
++        return addressProvenance(Truth ? Conditional->getTrueExpr() : Conditional->getFalseExpr(), State, Depth + 1);
++      Value Result = addressProvenance(Conditional->getTrueExpr(), State, Depth + 1);
++      Result |= addressProvenance(Conditional->getFalseExpr(), State, Depth + 1);return Result;
++    }
++    if (const auto *Binary = dyn_cast<BinaryOperator>(E); Binary && Binary->getOpcode() == BO_Comma)
++      return addressProvenance(Binary->getRHS(), State, Depth + 1);
++    return empty();
++  }
 +  Value addressValue(const Expr *E, const Facts &State) const {
 +    if (!E)
 +      return empty();
 +    E = E->IgnoreParenImpCasts();
++    Value Address = addressProvenance(E, State);
++    if (Address.any()) return Address;
 +    if (const auto *Deref = dyn_cast<UnaryOperator>(E))
 +      if (Deref->getOpcode() == UO_Deref)
 +        return value(Deref->getSubExpr(), State);
@@ -47574,7 +47783,7 @@ index 000000000..29c42c798
 +    if ((getObjC3TaskBoundaryKind(Callee) & 3) ||
 +        isObjC3ActorIsolated(Callee) || getObjC3Executor(Callee))
 +      return false;
-+    if (modeledRecordCopy(Callee))
++    if (modeledRecordCopy(Callee) || addressBuiltin(Callee))
 +      return true;
 +    Index = formalIndex(Call, Index);
 +    if (Index == ~0U && lambdaInvocation(Callee))
@@ -48017,6 +48226,7 @@ index 000000000..29c42c798
 +    State = std::move(Joined);
 +  }
 +  void checkCall(const Expr *Invocation, Facts &State, bool Emit) {
++    if (addressBuiltin(callee(Invocation))) return;
 +    unsigned Count = 0;
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation))
 +      Count = Call->getNumArgs();
@@ -48134,7 +48344,7 @@ index 000000000..29c42c798
 +      }
 +  }
 +  void invalidateCallTargetProofs(const Expr *Invocation, Facts &State) const {
-+    if (modeledRecordCopy(callee(Invocation)) ||
++    if (addressBuiltin(callee(Invocation)) || modeledRecordCopy(callee(Invocation)) ||
 +        copyingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))) ||
 +        fillingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation)))) return;
 +    unsigned Count = 0;
@@ -48162,6 +48372,17 @@ index 000000000..29c42c798
 +          State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);State.ByteTargets[Index] = {};
 +        }
 +    };
++    auto InvalidateEmbeddedLoans = [&](const Expr *Expression) {
++      Value Loans = value(Expression, State);
++      Loans |= addressProvenance(Expression, State);
++      llvm::SmallPtrSet<const VarDecl *, 8> Owners;
++      for (int Bit = Loans.find_first(); Bit >= 0; Bit = Loans.find_next(Bit)) {
++        const Origin &O = Origins[Bit / 2];
++        const auto *Acquisition = dyn_cast_or_null<Expr>(O.Acquisition);
++        if (O.Owner && Acquisition && EmbeddedOwnerAcquisitions.count(Acquisition)) Owners.insert(O.Owner);
++      }
++      for (const VarDecl *Owner : Owners) Invalidate({Owner, nullptr}, true);
++    };
 +    const auto Formals = formalParameters(callee(Invocation));
 +    const auto *Prototype = callPrototype(Invocation);
 +    for (unsigned I = 0; I != Count; ++I) {
@@ -48174,9 +48395,11 @@ index 000000000..29c42c798
 +        QualType Object = Type->getPointeeType();
 +        if (!Object.isConstQualified() || Object->isRecordType())
 +          Invalidate(storage(Argument, &State), true);
++        if (!Object.isConstQualified() || Object->isRecordType()) InvalidateEmbeddedLoans(Argument);
 +      } else if (Argument->getType()->isPointerType()) {
 +        QualType Object = Argument->getType()->getPointeeType();
 +        if (Object.isConstQualified() && !Object->isRecordType()) continue;
++        InvalidateEmbeddedLoans(Argument);
 +        // An aggregate address can name a tracked object without having a
 +        // scalar slot of its own. Include that exact referent as well as the
 +        // expanded may-target set before retiring writable owner proofs.
@@ -48189,6 +48412,11 @@ index 000000000..29c42c798
 +    }
 +    auto InvalidateReceiver = [&](const Expr *Receiver) {
 +      if (lambdaInvocation(callee(Invocation))) return;
++      if (const Expr *Owner = embeddedIvarOwner(Receiver)) {
++        Storage Object = storage(Owner, &State);
++        if (Object.first) Invalidate(Object, true);
++      }
++      InvalidateEmbeddedLoans(Receiver);
 +      if (Receiver->getType()->isPointerType()) {
 +        if (Storage Exact = referent(Receiver, &State); Exact.first)
 +          Invalidate(Exact, true);
@@ -48249,6 +48477,28 @@ index 000000000..29c42c798
 +      if (!Statement)
 +        continue;
 +      const Stmt *Node = Statement->getStmt();
++      if (Emit)
++        if (const auto *Expression = dyn_cast<Expr>(Node); Expression && RejectedEmbeddedAcquisitions.contains(Expression))
++          diagnose(Expression, "interior storage whose bounded owner proof is exhausted");
++      if (Emit)
++        if (const auto *Load = dyn_cast<ImplicitCastExpr>(Node); Load && Load->getCastKind() == CK_LValueToRValue)
++          if (const auto *Reference = referenceFacts(Load->getSubExpr(), State);
++              Reference && hasExpired(Reference->AddressLoans))
++            diagnose(Load, "reference or interior storage access after its owner lifetime ended");
++      if (Emit)
++        if (const auto *Expression = dyn_cast<Expr>(Node))
++          if (auto Owner = EmbeddedOwnerAcquisitions.find(Expression); Owner != EmbeddedOwnerAcquisitions.end()) {
++            Value Loan = acquired(Expression, State);
++            bool Unstable = false;
++            for (int Bit = Loan.find_first(); Bit >= 0; Bit = Loan.find_next(Bit))
++              Unstable |= Origins[Bit / 2].Unstable;
++            if (RejectedEmbeddedAcquisitions.contains(Expression))
++              diagnose(Expression, "interior storage whose bounded owner proof is exhausted");
++            else if (hasExpired(Loan) || referenceOwnerUnowned(variable(Owner->second), State))
++              diagnose(Expression, "interior storage access after its owner lifetime ended");
++            else if (Unstable)
++              diagnose(Expression, "interior storage derived from a non-stable owner; bind it with withLifetime/keepAlive");
++          }
 +      if (const VarDecl *Variable = exceptionBinding(Node)) {
 +        // Catch storage is initialized by the runtime, with no DeclStmt or
 +        // source initializer. Give value bindings their handler-scoped owner
@@ -48396,15 +48646,20 @@ index 000000000..29c42c798
 +          }
 +      } else if (const auto *Assignment = dyn_cast<BinaryOperator>(Node)) {
 +        if (Assignment->isAssignmentOp()) {
++          if (Emit && hasExpired(addressProvenance(Assignment->getLHS(), State)))
++            diagnose(Assignment, "an interior storage write after its owner lifetime ended");
 +          mutateLocal(Assignment, Assignment->getLHS(), Assignment->getRHS(), State, Emit,
 +              [&](Storage Target, Facts &Branch) {assignLocal(Assignment, Target, Branch, Emit);});
 +        }
 +      } else if (const auto *Unary = dyn_cast<UnaryOperator>(Node);
 +                 Unary && Unary->isIncrementDecrementOp()) {
++        if (Emit && hasExpired(addressProvenance(Unary->getSubExpr(), State)))
++          diagnose(Unary, "an interior storage update after its owner lifetime ended");
 +        mutateLocal(Unary, Unary->getSubExpr(), Unary->getSubExpr(), State, Emit,
 +            [&](Storage Target, Facts &Branch) {incrementLocal(Unary, Target, Branch, Emit);});
 +      } else if (const auto *Return = dyn_cast<ReturnStmt>(Node)) {
 +        Value V = value(Return->getRetValue(), State);
++        if (!ReturnType.isNull() && ReturnType->isReferenceType()) V |= addressProvenance(Return->getRetValue(), State);
 +        const Expr *Returned = Return->getRetValue();
 +        const bool Dependent = Returned && (Returned->isTypeDependent() || Returned->isValueDependent());
 +        // An unresolved callback result has no declaration/owner proof yet.
@@ -48937,8 +49192,11 @@ index 000000000..29c42c798
 +    }
 +    collectBindings(Body);
 +    if (const auto *Constructor = dyn_cast_or_null<CXXConstructorDecl>(Callable))
-+      for (const CXXCtorInitializer *Initializer : Constructor->inits())
++      for (const CXXCtorInitializer *Initializer : Constructor->inits()) {
++        if (Initializer->isMemberInitializer() && Initializer->getMember()->getType()->isReferenceType())
++          markEmbeddedAddressUse(Initializer->getInit());
 +        collectBindings(Initializer->getInit());
++      }
 +    collectLocalReferenceLambdas();
 +    collect(Body, Body);
 +    if (const auto *Constructor = dyn_cast_or_null<CXXConstructorDecl>(Callable))
@@ -49035,8 +49293,11 @@ index 000000000..29c42c798
 +      Initial.NonNullTargets[Slots.lookup(Location)] = NonNull;
 +    for (const auto &[Location, Bytes] : InheritedByteTargets)
 +      Initial.ByteTargets[Slots.lookup(Location)] = Bytes;
-+    for (const auto &[Location, Binding] : InheritedReferences)
-+      Initial.References[Slots.lookup(Location)] = Binding;
++    for (const auto &[Location, Binding] : InheritedReferences) {
++      auto Copy = Binding;
++      if (Copy.AddressLoans.any()) Copy.AddressLoans.resize(Origins.size() * 2);
++      Initial.References[Slots.lookup(Location)] = std::move(Copy);
++    }
 +    for (const auto &[Location, Targets] : InheritedMayTargets)
 +      for (Storage Target : Targets)
 +        if (auto Found = Slots.find(Target); Found != Slots.end())
@@ -63213,5 +63474,300 @@ index 000000000..9064eda85
 +  const char *pointer=0;
 +  try {caught_native_throw();}catch(id owner){pointer=memory_object_bytes(owner);}
 +  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-ivar-storage.h b/clang/test/ObjC3/Sema/Inputs/borrowed-ivar-storage.h
+new file mode 100644
+index 000000000..74745d4ec
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-ivar-storage.h
+@@ -0,0 +1,102 @@
++#ifndef BORROWED_IVAR_STORAGE_H
++#define BORROWED_IVAR_STORAGE_H
++#include "borrowed-owned-records.h"
++#ifdef __cplusplus
++struct IvarNativeObject {int value;void mutate() noexcept;int operator()() const noexcept;};
++struct IvarReferencePayload {char &reference;};
++#endif
++struct IvarDeep0 {char byte;};
++struct IvarDeep1 {struct IvarDeep0 child;};
++struct IvarDeep2 {struct IvarDeep1 child;};
++struct IvarDeep3 {struct IvarDeep2 child;};
++struct IvarDeep4 {struct IvarDeep3 child;};
++struct IvarDeep5 {struct IvarDeep4 child;};
++struct IvarDeep6 {struct IvarDeep5 child;};
++struct IvarDeep7 {struct IvarDeep6 child;};
++struct IvarDeep8 {struct IvarDeep7 child;};
++struct IvarDeep9 {struct IvarDeep8 child;};
++struct IvarDeep10 {struct IvarDeep9 child;};
++struct IvarDeep11 {struct IvarDeep10 child;};
++struct IvarDeep12 {struct IvarDeep11 child;};
++struct IvarDeep13 {struct IvarDeep12 child;};
++struct IvarDeep14 {struct IvarDeep13 child;};
++struct IvarDeep15 {struct IvarDeep14 child;};
++struct IvarDeep16 {struct IvarDeep15 child;};
++struct IvarDeep17 {struct IvarDeep16 child;};
++struct IvarDeep18 {struct IvarDeep17 child;};
++struct IvarDeep19 {struct IvarDeep18 child;};
++struct IvarDeep20 {struct IvarDeep19 child;};
++struct IvarDeep21 {struct IvarDeep20 child;};
++struct IvarDeep22 {struct IvarDeep21 child;};
++struct IvarDeep23 {struct IvarDeep22 child;};
++struct IvarDeep24 {struct IvarDeep23 child;};
++struct IvarDeep25 {struct IvarDeep24 child;};
++struct IvarDeep26 {struct IvarDeep25 child;};
++struct IvarDeep27 {struct IvarDeep26 child;};
++struct IvarDeep28 {struct IvarDeep27 child;};
++struct IvarDeep29 {struct IvarDeep28 child;};
++struct IvarDeep30 {struct IvarDeep29 child;};
++struct IvarDeep31 {struct IvarDeep30 child;};
++struct IvarDeep32 {struct IvarDeep31 child;};
++struct IvarDeep33 {struct IvarDeep32 child;};
++struct IvarDeep34 {struct IvarDeep33 child;};
++struct IvarDeep35 {struct IvarDeep34 child;};
++struct IvarDeep36 {struct IvarDeep35 child;};
++struct IvarDeep37 {struct IvarDeep36 child;};
++struct IvarDeep38 {struct IvarDeep37 child;};
++struct IvarDeep39 {struct IvarDeep38 child;};
++struct IvarDeep40 {struct IvarDeep39 child;};
++struct IvarDeep41 {struct IvarDeep40 child;};
++struct IvarDeep42 {struct IvarDeep41 child;};
++struct IvarDeep43 {struct IvarDeep42 child;};
++struct IvarDeep44 {struct IvarDeep43 child;};
++struct IvarDeep45 {struct IvarDeep44 child;};
++struct IvarDeep46 {struct IvarDeep45 child;};
++struct IvarDeep47 {struct IvarDeep46 child;};
++struct IvarDeep48 {struct IvarDeep47 child;};
++struct IvarDeep49 {struct IvarDeep48 child;};
++struct IvarDeep50 {struct IvarDeep49 child;};
++struct IvarDeep51 {struct IvarDeep50 child;};
++struct IvarDeep52 {struct IvarDeep51 child;};
++struct IvarDeep53 {struct IvarDeep52 child;};
++struct IvarDeep54 {struct IvarDeep53 child;};
++struct IvarDeep55 {struct IvarDeep54 child;};
++struct IvarDeep56 {struct IvarDeep55 child;};
++struct IvarDeep57 {struct IvarDeep56 child;};
++struct IvarDeep58 {struct IvarDeep57 child;};
++struct IvarDeep59 {struct IvarDeep58 child;};
++struct IvarDeep60 {struct IvarDeep59 child;};
++struct IvarDeep61 {struct IvarDeep60 child;};
++struct IvarDeep62 {struct IvarDeep61 child;};
++struct IvarDeep63 {struct IvarDeep62 child;};
++struct IvarDeep64 {struct IvarDeep63 child;};
++struct IvarDeep65 {struct IvarDeep64 child;};
++struct IvarDeep66 {struct IvarDeep65 child;};
++struct IvarDeep67 {struct IvarDeep66 child;};
++struct IvarDeep68 {struct IvarDeep67 child;};
++struct IvarDeep69 {struct IvarDeep68 child;};
++struct IvarDeep70 {struct IvarDeep69 child;};
++struct IvarPayload {char bytes[8];int value;};
++__attribute__((objc_root_class)) @interface BorrowedIvarOwner {
++@public
++  char byte;
++  char bytes[8];
++  struct IvarPayload nested;
++  struct IvarPayload values[2];
++  char *external;
++  struct IvarDeep70 deep;
++#ifdef __cplusplus
++  IvarNativeObject native;
++  IvarReferencePayload referencing;
++#endif
++}
++- (void)release;
++@end
++BorrowedIvarOwner *ivar_unknown_owner(void);
++void ivar_mutate(void *value __attribute__((noescape)));
++#ifdef __cplusplus
++
++@interface BorrowedIvarOwner (Native)
++@end
++#endif
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-ivar-storage.m b/clang/test/ObjC3/Sema/borrowed-ivar-storage.m
+new file mode 100644
+index 000000000..885d2c6c1
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-ivar-storage.m
+@@ -0,0 +1,181 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ivar-storage.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ivar-storage.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ivar-storage.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ivar-storage.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ivar-storage.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ivar-storage.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-ivar-storage.h"
++#endif
++borrowed const char *ivar_byte(BorrowedIvarOwner *owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->byte;}
++borrowed const char *ivar_array(BorrowedIvarOwner *owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {return owner->bytes;}
++borrowed const char *ivar_element(BorrowedIvarOwner *owner,int index)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->bytes[index];}
++borrowed const char *ivar_nested(BorrowedIvarOwner *owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {return owner->nested.bytes;}
++borrowed const char *ivar_record_array(BorrowedIvarOwner *owner,int index)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->values[index].bytes[1];}
++void ivar_escape(BorrowedIvarOwner *owner) {
++  memory_escape(&owner->byte); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void ivar_local_expiry(BorrowedIvarOwner *owner) {
++  const char *pointer=owner->bytes;owner=(id)0;
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void ivar_lifetime_pin(BorrowedIvarOwner *owner) {
++  const char *pointer=0;
++  withLifetime(owner){pointer=&owner->nested.bytes[1];owner=(id)0;memory_use(pointer);}
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++borrowed const char *ivar_wrong_owner(BorrowedIvarOwner *one,BorrowedIvarOwner *two)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  return &two->byte; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++borrowed const char *ivar_pointer_indirection(BorrowedIvarOwner *owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  return &owner->external[1]; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++void ivar_unstable(void) {
++  memory_use(&ivar_unknown_owner()->byte); // expected-error {{interior storage derived from a non-stable owner}}
++}
++void ivar_opaque_record_write(BorrowedIvarOwner *owner) {
++  const char *pointer=owner->nested.bytes;ivar_mutate(&owner->nested);
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void ivar_opaque_byte_write(BorrowedIvarOwner *owner) {
++  const char *pointer=owner->bytes;ivar_mutate(owner->bytes);
++  memory_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void ivar_noescape_read(BorrowedIvarOwner *owner) {memory_use(owner->bytes);memory_use(&owner->byte);}
++
++void ivar_derived_storage(BorrowedIvarOwner *owner) {
++  struct IvarPayload *payload=&owner->nested;
++  const char *one=payload->bytes,*two=(*payload).bytes;
++  memory_use(one);memory_use(two);owner=(id)0;
++  memory_use(one); // expected-error {{after its owner lifetime ended}}
++  memory_use(two); // expected-error {{after its owner lifetime ended}}
++}
++BorrowedIvarOwner *ivar_global;
++void ivar_global_unstable(void) {
++  memory_use(ivar_global->bytes); // expected-error {{non-stable owner}}
++}
++#ifdef __cplusplus
++void ivar_reference_expiry(BorrowedIvarOwner *owner) {
++  char &reference=owner->byte;
++  memory_use(&reference);owner=(id)0;
++  memory_use(&reference); // expected-error {{after its owner lifetime ended}}
++  char value=reference; // expected-error {{after its owner lifetime ended}}
++  (void)value;
++}
++char ivar_reference_value_copy(BorrowedIvarOwner *owner) {
++  char &reference=owner->byte;char value=reference;owner=(id)0;return value;
++}
++struct IvarLocalReference {char &reference;};
++void ivar_reference_record_copy(BorrowedIvarOwner *owner) {
++  IvarLocalReference first{owner->byte};IvarLocalReference second=first;
++  IvarLocalReference third=static_cast<IvarLocalReference&&>(second);
++  memory_use(&third.reference);owner=(id)0;
++  memory_use(&first.reference); // expected-error {{after its owner lifetime ended}}
++  memory_use(&third.reference); // expected-error {{after its owner lifetime ended}}
++}
++IvarLocalReference ivar_reference_record_escape(BorrowedIvarOwner *owner) {
++  IvarLocalReference reference{owner->byte};
++  return reference; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++void ivar_reference_forms(BorrowedIvarOwner *one,BorrowedIvarOwner *two,int choose) {
++  char &reference=choose ? one->byte : two->byte;
++  char &alias=static_cast<char&>(((void)choose,reference));
++  memory_use(&alias);one=(id)0;
++  memory_use(&alias); // expected-error {{after its owner lifetime ended}}
++}
++borrowed const char *ivar_reference_member_boundary(BorrowedIvarOwner *owner)
++    __attribute__((objc_returns_borrowed(owner_index=0))) {
++  return &owner->referencing.reference; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++void ivar_native_receiver(BorrowedIvarOwner *owner) {
++  owner->native.mutate(); // expected-error {{receiver without a non-escaping lifetime contract}}
++}
++void ivar_native_operator_receiver(BorrowedIvarOwner *owner) {
++  owner->native(); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void ivar_native_independent_copy(BorrowedIvarOwner *owner) {
++  IvarNativeObject copy=owner->native;copy.mutate();(void)copy();
++}
++void ivar_builtin_address(BorrowedIvarOwner *owner) {
++  char &reference=owner->byte;char *one=__builtin_addressof(owner->byte);
++  char *two=__builtin_addressof(reference);memory_use(one);memory_use(two);
++  owner=(id)0;
++  memory_use(one); // expected-error {{after its owner lifetime ended}}
++  memory_use(two); // expected-error {{after its owner lifetime ended}}
++}
++void ivar_reference_closures(BorrowedIvarOwner *owner) {
++  char &reference=owner->byte;
++  auto value=[reference]() {return reference;};
++  auto borrowed=[&reference]() {return reference;};
++  (void)value();(void)borrowed();owner=(id)0;
++  (void)value();
++  (void)borrowed(); // expected-error {{after its owner lifetime ended}}
++}
++auto ivar_reference_closure_escape(BorrowedIvarOwner *owner) {
++  char &reference=owner->byte;
++  return [&reference]() {return reference;}; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++#endif
++
++void ivar_bounded_storage_path(BorrowedIvarOwner *owner) {
++  memory_use(&owner->deep.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.child.byte); // expected-error {{interior storage whose bounded owner proof is exhausted}}
++}
++
++#ifdef __cplusplus
++char &ivar_reference_return(BorrowedIvarOwner *owner) {
++  return owner->byte; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++char &ivar_reference_alias_return(BorrowedIvarOwner *owner) {
++  char &reference=owner->byte;
++  return reference; // expected-error {{return without a matching borrowed return and owner parameter contract}}
++}
++void ivar_reference_write_expiry(BorrowedIvarOwner *owner) {
++  char &reference=owner->byte;owner=(id)0;
++  reference='x'; // expected-error {{write after its owner lifetime ended}}
++  ++reference; // expected-error {{update after its owner lifetime ended}}
++}
++void ivar_reference_record_write_expiry(BorrowedIvarOwner *owner) {
++  IvarLocalReference record{owner->byte};owner=(id)0;
++  record.reference='x'; // expected-error {{write after its owner lifetime ended}}
++}
++#endif
++void ivar_consume_pair(id consumed __attribute__((ns_consumed)),const char *bytes __attribute__((noescape)));
++void ivar_consuming_argument(BorrowedIvarOwner *owner) {
++  const char *bytes=owner->bytes;
++#if __has_feature(objc_arc)
++  ivar_consume_pair(owner,bytes);memory_use(bytes);
++#else
++  ivar_consume_pair(owner,bytes); // expected-error {{borrowed argument overlapping a consumed owner claim}}
++#endif
++}
++void ivar_consuming_argument_pin(BorrowedIvarOwner *owner) {
++  withLifetime(owner) {const char *bytes=owner->bytes;ivar_consume_pair(owner,bytes);memory_use(bytes);}
++}
++#if __has_feature(objc_arc)
++void ivar_weak_owner(__weak BorrowedIvarOwner *owner) {
++  memory_use(owner->bytes); // expected-error {{dereferencing a __weak pointer is not allowed}} expected-error {{non-stable owner}}
++}
++void ivar_weak_pin(__weak BorrowedIvarOwner *owner) {
++  BorrowedIvarOwner *snapshot=owner;
++  withLifetime(snapshot){memory_use(snapshot->bytes);}
 +}
 +#endif

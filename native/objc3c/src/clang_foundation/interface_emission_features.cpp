@@ -157,6 +157,21 @@ bool HasDeclarationNSObjectStorage(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationBorrowedInteriorStorage(const clang::NamedDecl *declaration) {
+  // Published inline/template/default expressions must be checked under the
+  // same interior-storage ownership rules as the producer. Conservatively
+  // require admission for every published ivar expression, including scalar
+  // ones, rather than duplicating Sema's address-use classification here.
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Storage : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitObjCIvarRefExpr(clang::ObjCIvarRefExpr *) override {found = true; return true;}
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return visitor.found;
+  });
+}
+
 bool HasDeclarationBorrowedCallableOwner(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
     struct Ownership : clang::DynamicRecursiveASTVisitor {

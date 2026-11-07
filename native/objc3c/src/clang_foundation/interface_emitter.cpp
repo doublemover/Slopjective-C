@@ -1022,6 +1022,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeDependentAwaitSemantic);
     if (HasNSObjectStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kNSObjectStorageSemantic);
+    if (HasBorrowedInteriorStorageIdentity(declaration))
+      sidecar.required_semantics.push_back(kBorrowedInteriorStorageSemantic);
     if (HasBorrowedCallableOwnerIdentity(declaration))
       sidecar.required_semantics.push_back(kBorrowedCallableOwnerSemantic);
     if (HasAsyncConsumedOwnershipIdentity(declaration))
@@ -1240,6 +1242,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kAsyncConsumedOwnershipSemantic,
     kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
+    kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
       "objc3.async-entry-abi.v5",
@@ -1432,6 +1435,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kAsyncConsumedOwnershipSemantic,
     kNativeDependentAwaitSemantic,
     kNSObjectStorageSemantic,
+    kBorrowedInteriorStorageSemantic,
     kBorrowedCallableOwnerSemantic,
     kDependentKeyPathTypeSemantic,
     "objc3.async-entry-abi.v5",

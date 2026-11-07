@@ -318,6 +318,21 @@ Rules in strict-system mode:
 - borrowed pointers shall not be stored into globals, heap storage, or escaping blocks without explicit unsafe escape.
 - borrowed pointers derived from a non-stable owner require explicit lifetime control (`withLifetime`/`keepAlive`) or automatic owner materialization with a warning.
 
+#### 8.7.1.1 Inline storage and native references
+
+Taking an address into an Objective-C object's inline ivar storage, including
+array decay and nested inline native record/array fields, derives a loan from
+that object. A pointer or reference field does not establish that relationship
+for the separate storage it names. The inferred loan obeys the same escape,
+owner stability and explicit lifetime rules as a declared borrowed acquisition.
+
+A native reference to such storage carries the referent's address lifetime.
+Copying the reference binding or a record containing it preserves that
+obligation. Copying an independent scalar or plain value from the region does
+not carry its address lifetime. Reference captures retain address obligations;
+value captures follow the copied value. Builtin address-taking preserves the
+referent's ownership facts without a mutation effect.
+
 ### 8.7.2 `@returns_borrowed(owner: N)` {#part-8-7-2}
 
 Functions may declare borrowed return relationships, enabling the compiler to enforce owner lifetime.

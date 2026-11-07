@@ -4169,6 +4169,84 @@ void TestClosureFactories() {
   }
 }
 
+void TestBorrowedInteriorStorageReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})
+    for(bool arc:{false,true}) {
+      const bool cxx=std::string(standard)!="c17";
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      const std::string source=R"(
+        struct PublishedInteriorPayload {char bytes[4];int scalar;};
+        __attribute__((objc_root_class)) @interface PublishedInteriorOwner {
+        @public char byte;struct PublishedInteriorPayload payload;
+        } @end
+        void published_interior_use(const char *bytes __attribute__((noescape)));
+        inline borrowed const char *published_interior_bytes(PublishedInteriorOwner *owner)
+            __attribute__((objc_returns_borrowed(owner_index=0))) {return owner->payload.bytes;}
+        inline int published_interior_copy(PublishedInteriorOwner *owner) {
+          int copy=owner->payload.scalar;owner=(id)0;return copy;
+        }
+        #ifdef __cplusplus
+        inline int published_interior_reference(PublishedInteriorOwner *owner) {
+          char &reference=owner->byte;char copy=reference;
+          published_interior_use(__builtin_addressof(reference));owner=(id)0;return copy;
+        }
+        #endif
+      )";
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name);
+      };
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.borrowed_interior_storage","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.borrowed_interior_storage","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);return result;
+      };
+      auto first=emit(source,"interior-provider.m");
+      auto replay=emit(first.source_bytes,"interior-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-interior.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> supported;
+      for(const auto &item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+      assert(llvm::is_contained(supported,llvm::StringRef(kBorrowedInteriorStorageSemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      auto older=supported;std::erase(older,llvm::StringRef(kBorrowedInteriorStorageSemantic));
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto missing=*decoded;std::erase(missing.required_semantics,kBorrowedInteriorStorageSemantic);
+      auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);
+      assert(llvm::StringRef(llvm::toString(invalid.takeError())).contains("borrowed interior storage identity"));
+      auto good=parse(first.source_bytes+R"(
+        void interior_consumer(PublishedInteriorOwner *owner) {
+          const char *bytes=published_interior_bytes(owner);published_interior_use(bytes);
+          withLifetime(owner){owner=(id)0;published_interior_use(bytes);}
+        }
+      )","interior-consumer.m");
+      assert(good && !good->getDiagnostics().hasErrorOccurred());
+      auto bad=parse(first.source_bytes+R"(
+        void interior_expired(PublishedInteriorOwner *owner) {
+          const char *bytes=owner->payload.bytes;owner=(id)0;published_interior_use(bytes);
+        }
+      )","expired-interior.m");
+      assert(bad && bad->getDiagnostics().hasErrorOccurred());
+      if(cxx) {
+        auto invalid_reference=parse(first.source_bytes+R"(
+          char &escape_interior_reference(PublishedInteriorOwner *owner) {return owner->byte;}
+          void write_expired_interior_reference(PublishedInteriorOwner *owner) {
+            char &reference=owner->byte;owner=(id)0;reference='x';
+          }
+        )","expired-interior-reference.mm");
+        assert(invalid_reference && invalid_reference->getDiagnostics().hasErrorOccurred());
+      }
+    }
+}
+
 void TestBorrowedCatchBindingReplay() {
   for(const char *standard:{"c17","c++20","c++23"})
     for(bool arc:{false,true}) {
@@ -7802,6 +7880,7 @@ int main(int argc,char **argv) {
   TestBorrowedMemoryAliasReplay();
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
+  TestBorrowedInteriorStorageReplay();
   TestAsyncConsumedOwnershipCapability();
   TestConsumedAndMethodOwnershipRoundTrips();
   TestUnmodeledAttributesFailClosed();

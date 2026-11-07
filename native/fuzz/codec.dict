@@ -15,6 +15,7 @@
 "objc3.async-entry-abi.v5"
 "objc3c.semantic-interface.v2"
 "objc3.borrowed-callable-owners.v1"
+"objc3.borrowed-interior-storage.v1"
 "objc3.native-declaration-attributes.v2"
 "objc3.native-dependent-await.v1"
 "objc3.nsobject-storage.v1"
