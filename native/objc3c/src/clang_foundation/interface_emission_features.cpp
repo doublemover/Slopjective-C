@@ -128,6 +128,44 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationResourceKeyPathValue(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[declaration](const clang::Stmt *statement) {
+    struct Literals : clang::DynamicRecursiveASTVisitor {
+      const clang::ASTContext &context;bool found=false;
+      explicit Literals(const clang::ASTContext &context):context(context) {}
+      bool VisitCompoundLiteralExpr(clang::CompoundLiteralExpr *literal) override {
+        if(!clang::getObjC3KeyPathLiteralDescriptor(literal))return true;
+        clang::ObjC3KeyPathInfo info;
+        if(clang::getObjC3KeyPathInfo(literal->getType(),info))
+          found|=ContainsNativeKeyPathResourceValue(info.Value,context);
+        // A scalar final value can traverse a resource-owning record. Its
+        // generated accessor, rather than only its signature, owns that value.
+        struct Accessors : clang::DynamicRecursiveASTVisitor {
+          const clang::ASTContext &context;bool &found;
+          Accessors(const clang::ASTContext &context,bool &found):context(context),found(found) {}
+          bool VisitDeclRefExpr(clang::DeclRefExpr *reference) override {
+            const auto *function=llvm::dyn_cast<clang::FunctionDecl>(reference->getDecl());
+            if(!function || !function->isImplicit() || !function->getIdentifier() || !function->getName().starts_with("__objc3_keypath_") || !function->hasBody())return true;
+            struct Values : clang::DynamicRecursiveASTVisitor {
+              const clang::ASTContext &context;bool &found;
+              Values(const clang::ASTContext &context,bool &found):context(context),found(found) {}
+              bool VisitExpr(clang::Expr *expression) override {
+                found|=ContainsNativeKeyPathResourceValue(expression->getType(),context);return true;
+              }
+              bool VisitVarDecl(clang::VarDecl *variable) override {
+                found|=ContainsNativeKeyPathResourceValue(variable->getType(),context);return true;
+              }
+            } values(context,found);
+            values.TraverseStmt(const_cast<clang::Stmt *>(function->getBody()));return true;
+          }
+        } accessors(context,found);
+        accessors.TraverseStmt(literal->getInitializer());return true;
+      }
+    } visitor(declaration->getASTContext());
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
     struct Literals : clang::DynamicRecursiveASTVisitor {

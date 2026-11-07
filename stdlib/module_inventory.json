@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 125,
+        "minor": 126,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Source-free resource-owning C++ keypath and whole nontrivial native-union signatures and published bodies bind resource-values v1, including scalar final values through owned records; dependency traversal preserves logical Root/Value types through type locations rather than private generated records; four source-free profiles, nine adjacent frontend groups, codec/isolation and 220 production decoder replays pass (source; matched SDK pending)",
         "Native checked-result guards cover enclosing conditional/comma/aggregate/base/constructor initialization, lifetime-extended reference handoff on typed and exceptional exits, matching dynamic-allocation cleanup and static/TLS retry; all 514 executable compiler cases (three unsupported), 48 AST controls, sixteen sanitizer configurations / 56 commands, eighteen frontend groups, codec/isolation and 180 exact production decoder replays pass; deferred virtual-thunk annotation names now retain AST-owned storage; public ABI contracts unchanged, matched SDK pending",
         "Native indirect C++ checked results and constructed synchronous property getters have no fabricated failure values, coordinated NRVO/return ownership, success-only result binding and provisional local/array/reference/native-await cleanup; direct/indirect/member/virtual/Block/template calls, move-only resources, partial construction and parameter/return cleanup faults pass 156 compiler cases (57 dedicated commands), 48 AST controls, sixteen instrumented native configurations / 56 commands, four new result profiles, twelve updated property profiles, nine adjacent frontend groups, codec/isolation and 180 exact decoder replays; existing public ABI contracts unchanged; matched SDK pending",
         "Async property reads, assignment/compound/pre/post composition, compatible mixed sync/async and checked accessors, same-actor/executor composition, C++ task accessors and owned async results use per-accessor native awaits with logical result types and preserved receiver/construction order; unawaited mutations reject and local composition needs no invented Sendable crossing; exact getter/setter/error/nil/owner and between-accessor/setter-suspension cancellation controls pass 47 compiler cases (including 78 new dedicated commands), 48 AST controls, fourteen instrumented native configurations / 49 commands, twelve new source-free profiles, eight adjacent groups, codec/isolation and 160 production decoder replays; existing ABI contracts unchanged; matched SDK pending",
@@ -274,12 +275,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 10,
+        "minor": 11,
         "patch": 0
       },
       "header": "include/objc3/keypath.h",
       "status": "partial",
       "implemented": [
+        "Native by-value explicit C++ resource owners, composed records and whole active scalar/resource unions through keypath get/set and nested writeback preserve native copy/move/destruction; exact copy/setter faults and nullable-write cleanup pass eight ASan/UBSan configurations / 60 commands, all 29 compiler cases (52 new commands), 48 AST controls, four source-free profiles, nine adjacent frontend groups, codec/isolation and 220 exact production decoder replays; required resource-values v1 capability, matched SDK pending",
         "Native C++ nontrivial record values and record-field writeback with checked copying and exception cleanup (source)",
         "native typed property key-path literals",
         "typed read/write and readonly conversion",
@@ -299,7 +301,7 @@
       ],
       "remaining": [
         "effectful and isolated paths",
-        "borrowed and owned-resource value semantics",
+        "borrowed and owned-raw-resource value semantics",
         "complete installed contract validation"
       ]
     },

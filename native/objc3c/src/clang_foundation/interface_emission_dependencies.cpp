@@ -141,8 +141,10 @@ class TypeDependencyVisitor final
   }
   bool TraverseRecordType(clang::RecordType *type, bool traverse_qualifier) {
     clang::ObjC3KeyPathInfo keypath;
-    if (clang::getObjC3KeyPathInfo(clang::QualType(type, 0), keypath))
+    if (clang::getObjC3KeyPathInfo(clang::QualType(type, 0), keypath)) {
+      UsesTypedKeyPaths = true;
       return TraverseType(keypath.Root) && TraverseType(keypath.Value);
+    }
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseRecordType(type, traverse_qualifier);
   }
 
@@ -895,6 +897,14 @@ class TypeDependencyVisitor final
   }
 
   bool VisitTagType(clang::TagType *type) {
+    // TypeLoc traversal can visit the tag independently of TraverseRecordType.
+    // Compiler-owned keypath records carry logical Root/Value dependencies,
+    // never an external dependency on a generated private record name.
+    clang::ObjC3KeyPathInfo keypath;
+    if (clang::getObjC3KeyPathInfo(clang::QualType(type, 0), keypath)) {
+      UsesTypedKeyPaths = true;
+      return TraverseType(keypath.Root) && TraverseType(keypath.Value);
+    }
     const auto *declaration = type->getDecl();
     if (IsStandardCoroutineDeclaration(declaration,context_) || IsStandardLibraryDeclaration(declaration,context_)) {
       if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))

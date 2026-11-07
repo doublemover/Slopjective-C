@@ -15,10 +15,39 @@
 using namespace objc3::clang_foundation;
 
 int main() {
-  for (unsigned family=0;family!=9;++family) {
-    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results;
+  for (unsigned family=0;family!=11;++family) {
+    const bool resource_paths=family==9,union_paths=family==10;
+    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results || union_paths;
     const bool blocks=family>=2 && family<6,producers=family>=4 && family<6;
-    std::string source = results ? R"(
+    std::string source = union_paths ? R"(
+      union CatalogUnion {
+        int value;double other;
+        explicit CatalogUnion(int);CatalogUnion(const CatalogUnion &);
+        CatalogUnion(CatalogUnion &&) noexcept;~CatalogUnion() noexcept;
+      };
+      __attribute__((objc_root_class)) @interface CatalogUnionPath
+      @property(nonatomic) CatalogUnion active;
+      @end
+      KeyPath<CatalogUnionPath *,CatalogUnion> catalog_union_signature();
+      inline CatalogUnion catalog_union_value(CatalogUnionPath *_Nonnull object) {
+        return KeyPathGet(@keypath(CatalogUnionPath,active),object);
+      }
+    )" : resource_paths ? R"(
+      void catalog_close(int) noexcept;
+      typedef int CatalogHandle __attribute__((objc_requires_cleanup(catalog_close),objc_resource_family(CatalogHandles),objc_invalid(-1)));
+      struct CatalogOwner {
+        CatalogHandle handle;int value;
+        explicit CatalogOwner(int);CatalogOwner(const CatalogOwner &);
+        CatalogOwner(CatalogOwner &&) noexcept;~CatalogOwner() noexcept;
+      };
+      __attribute__((objc_root_class)) @interface CatalogResourcePath
+      @property(nonatomic) CatalogOwner owner;
+      @end
+      inline int catalog_resource_field(CatalogResourcePath *_Nonnull object,int value) {
+        object[@keypath(CatalogResourcePath,owner.value)]=value;
+        return object[@keypath(CatalogResourcePath,owner.value)];
+      }
+    )" : results ? R"(
       @protocol Error @end
       namespace Catalog {
         struct Value {
@@ -96,10 +125,11 @@ int main() {
         return __objc3_try(__objc3_await (object.value+=1));
       }
     )";
-    std::vector<std::string> args={cxx?(blocks || properties || results?"-xobjective-c++":"-xc++"):(blocks || properties?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
-    if(blocks || properties || results)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
+    std::vector<std::string> args={cxx?(blocks || properties || results || resource_paths || union_paths?"-xobjective-c++":"-xc++"):(blocks || properties?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
+    if(blocks || properties || results || resource_paths || union_paths)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
     clang::tooling::FileContentMappings files;
-    if(properties)AddRuntimeInterfaceFiles(files,args);
+    if(properties || resource_paths || union_paths)AddRuntimeInterfaceFiles(files,args);
+    if(resource_paths || union_paths)args.insert(args.end(),{"-include","objc3c/runtime/objc3_keypath.h"});
     auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"catalog-source","clang-tool",
         std::make_shared<clang::PCHContainerOperations>(),clang::tooling::getClangStripDependencyFileAdjuster(),files);
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -110,7 +140,7 @@ int main() {
     const auto capabilities=SupportedSemanticInterfaceCapabilities();
     auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);
     assert(decoded);
-    const std::string expected=properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
+    const std::string expected=resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
     assert(std::find(decoded->required_semantics.begin(),decoded->required_semantics.end(),expected)!=decoded->required_semantics.end());
     auto bytes=objc3::fuzz::Pack(artifact.source_bytes,artifact.sidecar_json);assert(!bytes.empty());
     std::string first;

@@ -43,3 +43,9 @@ selection, record writeback and independent root lifetime snapshots. The C++
 throwing-Block-copy witness runs through both explicit and subscript setters.
 Native source/PCH diagnostics additionally distinguish sequenced key-path
 operands from genuine conflicts within an operand or a surrounding expression.
+
+`cxx_resources.h` exercises explicit C++ resource-owning values and composed
+pairs through whole-value reads/writes, field traversal, nested writeback and
+nullable writes. Independent open/close counters defend every injected copy and
+setter failure under C++20/23, ARC/MRC and source/PCH. Raw resource field extraction
+and borrowed or implicit resource lifetimes retain compiler rejection controls.

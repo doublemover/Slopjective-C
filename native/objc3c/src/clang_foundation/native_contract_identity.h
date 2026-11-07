@@ -17,6 +17,7 @@
 #include "clang/AST/ObjC3KeyPath.h"
 #include "clang/AST/ObjC3ResourceTypes.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/SmallPtrSet.h"
 
 namespace objc3::clang_foundation {
 
@@ -59,6 +60,33 @@ inline bool HasNativeAsyncConsumedCallable(const clang::Decl *declaration) {
 
 // Values, not source expressions or AST addresses, participate in contract
 // identity. All fields are length-delimited, including user-defined names.
+// Only by-value record/array storage participates. An arbitrary pointee is
+// not a copied owner. Bounded exhaustion conservatively requires admission.
+inline bool ContainsNativeKeyPathResourceValue(clang::QualType type,
+                                               const clang::ASTContext &context) {
+  llvm::SmallPtrSet<const clang::Type *, 32> seen;
+  unsigned budget=256;
+  auto visit=[&](auto &&self,clang::QualType value,unsigned depth)->bool {
+    if(value.isNull() || value->isDependentType())return false;
+    if(depth>64 || !budget)return true;
+    --budget;
+    const auto resource=clang::getObjC3ResourceTypeContract(context,value);
+    if(resource.Cleanup || resource.Family)return true;
+    if(!seen.insert(value.getCanonicalType().getTypePtr()).second)return false;
+    if(const auto *array=context.getAsArrayType(value))return self(self,array->getElementType(),depth+1);
+    if(const auto *record=value->getAs<clang::RecordType>())
+      if(const auto *definition=record->getDecl()->getDefinition()) {
+        if(const auto *cxx=llvm::dyn_cast<clang::CXXRecordDecl>(definition);
+            cxx && cxx->isUnion() && cxx->hasNonTrivialDestructor())return true;
+        for(const auto *field:definition->fields())if(self(self,field->getType(),depth+1))return true;
+        if(const auto *cxx=llvm::dyn_cast<clang::CXXRecordDecl>(definition))
+          for(const auto &base:cxx->bases())if(self(self,base.getType(),depth+1))return true;
+      }
+    return false;
+  };
+  return visit(visit,type,0);
+}
+
 inline void AppendNativeContractField(std::string &out, llvm::StringRef value) {
   out += std::to_string(value.size()) + ":" + value.str();
 }
@@ -122,6 +150,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
         out, position + (keypath.Writable ? ":writable-keypath" : ":keypath"));
     if (type->isDependentType())
       AppendNativeContractField(out, ";keypath-dependent-types:v1;");
+    if (ContainsNativeKeyPathResourceValue(keypath.Value, context))
+      AppendNativeContractField(out, ";keypath-resource-values:v1;");
     AppendNativeTypeContracts(out, keypath.Root, context, position + ".root",
                               depth + 1);
     AppendNativeTypeContracts(out, keypath.Value, context, position + ".value",

@@ -352,6 +352,108 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestResourceKeyPathReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fexceptions","-fobjc-exceptions",
+        "--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args);
+    args.insert(args.end(),{"-include","objc3c/runtime/objc3_keypath.h"});
+    auto parse=[&](const std::string &text,const char *name) {
+      return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+          std::make_shared<clang::PCHContainerOperations>(),
+          clang::tooling::getClangStripDependencyFileAdjuster(),files);
+    };
+    const std::string source=R"(
+      void published_path_close(int) noexcept;
+      typedef int PublishedPathHandle __attribute__((objc_requires_cleanup(published_path_close),objc_resource_family(PublishedPathHandles),objc_invalid(-1)));
+      struct PublishedPathOwner {
+        PublishedPathHandle handle;int value;
+        explicit PublishedPathOwner(int);
+        PublishedPathOwner(const PublishedPathOwner &);
+        PublishedPathOwner(PublishedPathOwner &&) noexcept;
+        ~PublishedPathOwner() noexcept;
+      };
+      struct PublishedPathPair {PublishedPathOwner first,second;};
+      union PublishedPathUnion {
+        PublishedPathHandle handle;int plain;
+        explicit PublishedPathUnion(int);PublishedPathUnion(const PublishedPathUnion &);
+        PublishedPathUnion(PublishedPathUnion &&) noexcept;~PublishedPathUnion() noexcept;
+      };
+      __attribute__((objc_root_class)) @interface PublishedResourcePath
+      @property(nonatomic) PublishedPathOwner owner;
+      @property(nonatomic) PublishedPathPair pair;
+      @property(nonatomic) PublishedPathUnion active;
+      @property(nonatomic,strong) PublishedResourcePath *_Nullable next;
+      @end
+      inline int published_resource_plain() {return 0;}
+      KeyPath<PublishedResourcePath *,PublishedPathUnion> published_union_signature();
+      inline PublishedPathUnion published_union_get(PublishedResourcePath *_Nonnull root) {
+        return KeyPathGet(@keypath(PublishedResourcePath,active),root);
+      }
+      KeyPath<PublishedResourcePath *,PublishedPathOwner> published_resource_signature();
+      inline PublishedPathOwner published_resource_get(PublishedResourcePath *_Nonnull root) {
+        return KeyPathGet(@keypath(PublishedResourcePath,owner),root);
+      }
+      inline void published_resource_set(PublishedResourcePath *_Nonnull root,PublishedPathOwner value) {
+        KeyPathSet(@keypath(PublishedResourcePath,next.owner),root,value);
+      }
+      inline int published_resource_field(PublishedResourcePath *_Nonnull root,int value) {
+        root[@keypath(PublishedResourcePath,pair.first.value)]=value;
+        return root[@keypath(PublishedResourcePath,owner.value)];
+      }
+    )";
+    auto emit=[&](const std::string &text,const char *name) {
+      auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      auto emitted=EmitSemanticInterface(ast->getASTContext(),"fixture.resource_paths","test",{},{},{},
+          {"published_path_close","PublishedPathHandle","PublishedPathOwner","PublishedPathPair","PublishedPathUnion","PublishedResourcePath",
+           "published_union_signature","published_union_get","published_resource_signature","published_resource_get","published_resource_set","published_resource_field"});
+      for(const auto &d:emitted.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(emitted.success);return emitted;
+    };
+    auto first=emit(source,"resource-path-provider.mm");
+    auto replay=emit(first.source_bytes,"resource-path-replay.mm");
+    auto relocated=emit("\n\n"+source,"resource-path-relocated.mm");
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+    assert(llvm::is_contained(decoded->required_semantics,std::string(kResourceKeyPathValueSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kResourceKeyPathValueSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto missing=*decoded;std::erase(missing.required_semantics,kResourceKeyPathValueSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto selected=parse(source,"resource-path-selected.mm");assert(selected && !selected->getDiagnostics().hasErrorOccurred());
+    for(const std::string &name:{"published_union_signature","published_union_get","published_resource_signature","published_resource_field","published_resource_plain"}) {
+      auto subset=EmitSemanticInterface(selected->getASTContext(),"fixture.resource_paths","test",{},{},{},
+          {"published_path_close","PublishedPathHandle","PublishedPathOwner","PublishedPathPair","PublishedPathUnion","PublishedResourcePath",name});
+      for(const auto &d:subset.diagnostics)std::fprintf(stderr,"subset %s %s: %s (%s)\n",name.c_str(),d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(subset.success);
+      auto read=DecodeSemanticInterfaceSidecar(subset.sidecar_json,subset.source_bytes,supported);assert(read);
+      const bool required=name!="published_resource_plain";
+      assert(llvm::is_contained(read->required_semantics,std::string(kResourceKeyPathValueSemantic))==required);
+      if(!required) {
+        read->required_semantics.push_back(kResourceKeyPathValueSemantic);
+        auto invented=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invented);llvm::consumeError(invented.takeError());
+      }
+    }
+
+    auto consumer=parse(first.source_bytes+R"(
+      int resource_path_consumer(PublishedResourcePath *_Nonnull object) {
+        return published_resource_field(object,41);
+      }
+    )","resource-path-consumer.mm");
+    assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+    auto bad=parse(first.source_bytes+R"(
+      PublishedPathHandle raw_resource_consumer(PublishedResourcePath *_Nonnull object) {
+        return KeyPathGet(@keypath(PublishedResourcePath,owner.handle),object);
+      }
+    )","resource-path-raw-rejection.mm");
+    assert(bad && bad->getDiagnostics().hasErrorOccurred());
+  }
+}
+
 void TestDependentKeyPathLiteralBodies() {
   for (const char *standard : {"c++20", "c++23"}) {
     for (bool arc : {false, true}) {
@@ -10093,6 +10195,7 @@ int main(int argc,char **argv) {
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
+  TestResourceKeyPathReplay();
   TestDependentKeyPathLiteralBodies();
   TestNSObjectStorageCapability();
   TestBorrowedMemoryAliasReplay();

@@ -51751,10 +51751,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..8c1573c23
+index 000000000..fc33550e2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1610 @@
+@@ -0,0 +1,1631 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -51990,44 +51990,59 @@ index 000000000..8c1573c23
 +  return Value.getUnqualifiedType();
 +}
 +
++// A by-value C++ owner supplies its own resource copy/move/destruction.
++// Borrowed storage can never be waived by a user-provided destructor.
++bool explicitKeyPathResourceLifetime(Sema &S, QualType Type) {
++  const auto *Record = Type->getAsCXXRecordDecl();
++  if (!Record || !(Record = Record->getDefinition()) ||
++      Type.isTriviallyCopyableType(S.Context)) return false;
++  const auto *Destructor = Record->getDestructor();
++  return Destructor && Destructor->isUserProvided() &&
++      !Destructor->isDeleted() &&
++      Destructor->getType()->castAs<FunctionProtoType>()->isNothrow();
++}
++
 +bool erasesOwnership(Sema &S, QualType Value) {
-+  llvm::SmallPtrSet<const Type *, 16> Seen;
-+  auto Visit = [&](auto &&Self, QualType Type) -> bool {
++  llvm::SmallPtrSet<const Type *, 16> ValueSeen, IndirectSeen;
++  auto Visit = [&](auto &&Self, QualType Type, bool ByValue) -> bool {
 +    const auto Resource = getObjC3ResourceTypeContract(S.Context, Type);
 +    if (isObjC3BorrowedType(S.Context, Type) || Resource.Cleanup ||
 +        Resource.Family)
 +      return true;
++    auto &Seen = ByValue ? ValueSeen : IndirectSeen;
 +    if (!Seen.insert(Type.getCanonicalType().getTypePtr()).second)
 +      return false;
++    if (ByValue && explicitKeyPathResourceLifetime(S, Type))
++      return containsObjC3BorrowedType(S.Context, Type);
 +    if (const auto *Record = Type->getAs<RecordType>()) {
 +      if (const auto *Definition = Record->getDecl()->getDefinition()) {
 +        for (const FieldDecl *Field : Definition->fields())
-+          if (Self(Self, Field->getType()))
++          if (Self(Self, Field->getType(), ByValue))
 +            return true;
 +        if (const auto *CXX = dyn_cast<CXXRecordDecl>(Definition))
 +          for (const auto &Base : CXX->bases())
-+            if (Self(Self, Base.getType()))
++            if (Self(Self, Base.getType(), ByValue))
 +              return true;
 +      }
 +    }
 +    if (Type->isPointerType() || Type->isReferenceType() ||
 +        Type->isBlockPointerType())
-+      return Self(Self, Type->getPointeeType());
++      return Self(Self, Type->getPointeeType(), false);
 +    if (const auto *Member = Type->getAs<MemberPointerType>())
-+      return Self(Self, Member->getPointeeType());
++      return Self(Self, Member->getPointeeType(), false);
 +    if (const auto *Function = Type->getAs<FunctionType>()) {
-+      if (Self(Self, Function->getReturnType()))
++      if (Self(Self, Function->getReturnType(), false))
 +        return true;
 +      if (const auto *Proto = dyn_cast<FunctionProtoType>(Function))
 +        for (QualType Parameter : Proto->param_types())
-+          if (Self(Self, Parameter))
++          if (Self(Self, Parameter, false))
 +            return true;
 +    }
 +    if (const auto *Array = S.Context.getAsArrayType(Type))
-+      return Self(Self, Array->getElementType());
++      return Self(Self, Array->getElementType(), ByValue);
 +    return false;
 +  };
-+  return Visit(Visit, Value);
++  return Visit(Visit, Value, true);
 +}
 +
 +bool unionHasManagedLeaves(QualType Type,unsigned Depth=0) {
@@ -52155,6 +52170,11 @@ index 000000000..8c1573c23
 +bool keyPathRecordValue(Sema &S, QualType Type) {
 +  if (Type.isTriviallyCopyableType(S.Context)) return true;
 +  const auto *Record=Type->getAsCXXRecordDecl();
++  // A whole union can delegate active-arm ownership to its native user
++  // lifetime. Traversal into a nontrivial arm remains independently gated.
++  if (Record && Record->isUnion() && Record->hasDefinition() &&
++      explicitKeyPathResourceLifetime(S, Type) && !unionHasManagedLeaves(Type))
++    return true;
 +  auto managedUnion=[&](auto &&Self,QualType Current,unsigned Depth)->bool {
 +    if (Depth>64) return true;
 +    if (const auto *Array=S.Context.getAsArrayType(Current)) return Self(Self,Array->getElementType(),Depth+1);
@@ -52938,7 +52958,8 @@ index 000000000..8c1573c23
 +          (!Record->getIdentifier() && !Record->getTypedefNameForAnonDecl()) ||
 +          !keyPathRecordValue(*this, Current) ||
 +          erasesOwnership(*this, Current) ||
-+          (Record->isUnion() && unionHasManagedLeaves(Current))) {
++          (Record->isUnion() && (unionHasManagedLeaves(Current) ||
++                               !Current.isTriviallyCopyableType(Context)))) {
 +        reject(*this, MemberLocs[I],
 +               "key-path record traversal requires a complete native "
 +               "copyable record without borrowed/resource or managed-union ownership");
@@ -67339,4 +67360,34 @@ index 000000000..9bfbb293c
 +}
 +int missing_async_increment_await(AsyncPropertyHost *object) __objc3_async_frame {
 +  return object.plain++; // expected-error {{async property mutation requires an explicit await}}
++}
+diff --git a/clang/test/ObjC3/Sema/resource-keypath-gates.mm b/clang/test/ObjC3/Sema/resource-keypath-gates.mm
+new file mode 100644
+index 000000000..6c62c75d4
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/resource-keypath-gates.mm
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/resource-keypaths.h"
++struct ResourceCompilerRaw {ResourceCompilerHandle handle;};
++struct ResourceCompilerBorrowed {borrowed const char *loan;ResourceCompilerHandle handle;~ResourceCompilerBorrowed() noexcept;};
++struct ResourceCompilerThrowing {ResourceCompilerHandle handle;~ResourceCompilerThrowing() noexcept(false);};
++@interface ResourceCompilerRoot (Invalid)
++@property(nonatomic) ResourceCompilerHandle raw;
++@property(nonatomic) ResourceCompilerRaw implicit;
++@property(nonatomic) ResourceCompilerBorrowed loan;
++@property(nonatomic) ResourceCompilerThrowing throwing;
++@property(nonatomic,assign) ResourceCompilerValue *pointer;
++@end
++void invalid_resource_keypaths(void) {
++  (void)@keypath(ResourceCompilerRoot,raw); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
++  (void)@keypath(ResourceCompilerRoot,implicit); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
++  (void)@keypath(ResourceCompilerRoot,loan); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
++  (void)@keypath(ResourceCompilerRoot,throwing); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
++  (void)@keypath(ResourceCompilerRoot,pointer); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
++  (void)@keypath(ResourceCompilerRoot,active.plain); // expected-error {{key-path record traversal requires a complete native}}
++  (void)@keypath(ResourceCompilerRoot,resource.handle); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
 +}

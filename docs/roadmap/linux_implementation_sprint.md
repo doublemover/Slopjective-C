@@ -1,5 +1,17 @@
 # Linux implementation sprint
 
+The [source 2.126 / keypath 2.11 resource-value span](linux_keypath_resource_values.md)
+admits explicit C++ resource owners, whole active native unions and composed
+values through native key-path
+get/set and nested writeback, with exact copy/setter fault cleanup. Borrowed and
+raw-resource values retain their gates. Source-free signatures and bodies require
+`objc3.keypath-resource-values.v1`; logical type dependencies replace private
+record names. Eight sanitizer configurations / 60 commands, all 29 key-path
+compiler cases (52 new commands), 48 AST controls, four source-free profiles,
+nine adjacent frontend groups, codec/isolation and 220 exact decoder replays pass.
+All 51 open issue bodies/timestamps remain unchanged. Final SDK delivery remains
+batched.
+
 The [source 2.125 / System 2.52 initialization-region span](linux_checked_cpp_regions.md)
 extends native checked-result guards through conditional, comma, aggregate, base
 and constructor initialization. Reference handoff preserves normal typed-failure

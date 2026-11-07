@@ -1057,6 +1057,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kDependentKeyPathLiteralSemantic);
     if (HasCheckedKeyPathReadIdentity(declaration))
       sidecar.required_semantics.push_back(kCheckedKeyPathReadSemantic);
+    if (HasResourceKeyPathValueIdentity(declaration))
+      sidecar.required_semantics.push_back(kResourceKeyPathValueSemantic);
     if (HasNullableKeyPathWriteIdentity(declaration))
       sidecar.required_semantics.push_back(kNullableKeyPathWriteSemantic);
     if (!declaration.spi_group.empty())

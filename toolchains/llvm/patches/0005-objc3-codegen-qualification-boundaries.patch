@@ -34703,3 +34703,109 @@ index 000000000..9768cf229
 +// CHECK: objc3.init.completed
 +// CHECK: objc3.init.destroy
 +// CHECK: __objc3_isolation_entry_
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/resource-keypaths.h b/clang/test/ObjC3/CodeGen/Inputs/resource-keypaths.h
+new file mode 100644
+index 000000000..6e44658b1
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/resource-keypaths.h
+@@ -0,0 +1,38 @@
++#ifndef OBJC3_RESOURCE_KEYPATH_CONTROLS_H
++#define OBJC3_RESOURCE_KEYPATH_CONTROLS_H
++#include "../../Inputs/keypath-abi.h"
++void resource_compiler_close(int) noexcept;
++typedef int ResourceCompilerHandle __attribute__((objc_requires_cleanup(resource_compiler_close),objc_resource_family(ResourceCompilerHandles),objc_invalid(-1)));
++struct ResourceCompilerValue {
++  ResourceCompilerHandle handle;int value;
++  explicit ResourceCompilerValue(int);
++  ResourceCompilerValue(const ResourceCompilerValue &);
++  ResourceCompilerValue(ResourceCompilerValue &&) noexcept;
++  ~ResourceCompilerValue() noexcept;
++};
++struct ResourceCompilerPair {ResourceCompilerValue first,second;};
++union ResourceCompilerUnion {
++  struct ResourceArm {int tag;ResourceCompilerHandle handle;} owned;
++  int plain;explicit ResourceCompilerUnion(int);
++  ResourceCompilerUnion(const ResourceCompilerUnion &);
++  ResourceCompilerUnion(ResourceCompilerUnion &&) noexcept;
++  ~ResourceCompilerUnion() noexcept;
++};
++__attribute__((objc_root_class)) @interface ResourceCompilerRoot
++@property(nonatomic) ResourceCompilerValue resource;
++@property(nonatomic) ResourceCompilerPair resources;
++@property(nonatomic) ResourceCompilerUnion active;
++@property(nonatomic,strong) ResourceCompilerRoot *_Nullable next;
++@end
++static inline int resource_compiler_get(ResourceCompilerRoot *_Nonnull root) {
++  ResourceCompilerValue value=KeyPathGet(@keypath(ResourceCompilerRoot,resource),root);
++  ResourceCompilerPair pair=KeyPathGet(@keypath(ResourceCompilerRoot,resources),root);
++  return value.value+pair.first.value;
++}
++static inline void resource_compiler_set(ResourceCompilerRoot *_Nonnull root,ResourceCompilerValue value) {
++  KeyPathSet(@keypath(ResourceCompilerRoot,next.resource),root,value);
++  root[@keypath(ResourceCompilerRoot,resources.first.value)]=41;
++  ResourceCompilerUnion active=KeyPathGet(@keypath(ResourceCompilerRoot,active),root);
++  KeyPathSet(@keypath(ResourceCompilerRoot,active),root,active);
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/resource-keypaths.mm b/clang/test/ObjC3/CodeGen/resource-keypaths.mm
+new file mode 100644
+index 000000000..bf69205ff
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/resource-keypaths.mm
+@@ -0,0 +1,56 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-core-c++20-False %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-core-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-core-c++20-True %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-core-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-core-c++23-False %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-core-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-core-c++23-True %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-core-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-strict-c++20-False %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-strict-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict -emit-pch -o %t-strict-c++20-True %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict -include-pch %t-strict-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-strict-c++23-False %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-strict-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict -emit-pch -o %t-strict-c++23-True %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict -include-pch %t-strict-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c++20-False %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c++20-True %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c++23-False %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c++23-True %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c++20-False %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-strict-system-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c++20-True %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-system -include-pch %t-strict-system-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c++23-False %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-strict-system-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c++23-True %S/Inputs/resource-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -fobjc3-profile=strict-system -include-pch %t-strict-system-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/resource-keypaths.h"
++extern "C" int resource_keypath_get(ResourceCompilerRoot *_Nonnull root) {return resource_compiler_get(root);}
++extern "C" void resource_keypath_set(ResourceCompilerRoot *_Nonnull root,ResourceCompilerValue value) {resource_compiler_set(root,static_cast<ResourceCompilerValue &&>(value));}
++// CHECK: c"resource\00"
++// CHECK: c"resources.first.value\00"
++// CHECK: define{{.*}} @resource_keypath_get
++// CHECK: define{{.*}} @resource_keypath_set
++// CHECK: @_ZN21ResourceCompilerValueD1Ev

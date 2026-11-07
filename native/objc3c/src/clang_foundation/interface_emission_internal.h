@@ -194,6 +194,7 @@ bool HasDeclarationLocalFactoryResult(const clang::NamedDecl *declaration);
 
 bool HasDeclarationLocalType(const clang::NamedDecl *declaration);
 
+bool HasDeclarationResourceKeyPathValue(const clang::NamedDecl *declaration);
 bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration);
 bool HasDeclarationCheckedKeyPathRead(const clang::NamedDecl *declaration);
 bool HasDeclarationDependentKeyPathLiteral(const clang::NamedDecl *declaration);

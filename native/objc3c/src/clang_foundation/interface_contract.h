@@ -258,6 +258,11 @@ inline constexpr const char *kCheckedKeyPathReadSemantic = "objc3.keypath-checke
 inline bool HasCheckedKeyPathReadIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-checked-reads:v1;") != std::string::npos;
 }
+inline constexpr const char *kResourceKeyPathValueSemantic = "objc3.keypath-resource-values.v1";
+inline bool HasResourceKeyPathValueIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";keypath-resource-values:v1;") != std::string::npos ||
+         d.effects.ownership_identity.find(";keypath-resource-values:v1;") != std::string::npos;
+}
 inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-nullable-writes.v1";
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;

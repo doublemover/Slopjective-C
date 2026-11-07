@@ -28,6 +28,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kResourceKeyPathValueSemantic,
     kNullableKeyPathWriteSemantic,
     kCheckedKeyPathReadSemantic,
     kDependentKeyPathLiteralSemantic,
@@ -674,6 +675,11 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool resource_paths = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasResourceKeyPathValueIdentity);
+  const bool resource_path_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kResourceKeyPathValueSemantic)!=sidecar.required_semantics.end();
+  const bool resource_typed_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
+  if (resource_paths!=resource_path_capability || (resource_path_capability && !resource_typed_paths))
+    return Invalid("resource key-path identity and required resource/key-path capabilities must agree");
   const bool nullable_writes = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNullableKeyPathWriteIdentity);
   const bool nullable_write_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNullableKeyPathWriteSemantic)!=sidecar.required_semantics.end();
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();

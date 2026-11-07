@@ -483,7 +483,7 @@ index 000000000..fd9a42063
 +// MODE-MISMATCH: error:
 diff --git a/clang/test/ObjC3/LanguageMode/profile-macros.m b/clang/test/ObjC3/LanguageMode/profile-macros.m
 new file mode 100644
-index 000000000..37482ffad
+index 000000000..7f948bb1c
 --- /dev/null
 +++ b/clang/test/ObjC3/LanguageMode/profile-macros.m
 @@ -0,0 +1,42 @@
@@ -508,7 +508,7 @@ index 000000000..37482ffad
 +#if __OBJC3_LANGUAGE_REVISION__ != 202610
 +#error incorrect Objective-C 3 language revision
 +#endif
-+#if __OBJC3_EXTENSION_ABI_REVISION__ != 21
++#if __OBJC3_EXTENSION_ABI_REVISION__ != 24
 +#error incorrect Objective-C 3 extension ABI revision
 +#endif
 +#if __OBJC3_PROFILE__ != TEST_PROFILE
