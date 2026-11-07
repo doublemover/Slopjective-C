@@ -1,5 +1,13 @@
 # Linux implementation sprint
 
+The [System 2.41 allocation/array span](linux_array_and_allocation_cleanup.md)
+adds matched scalar deallocation after constructor failure, nontrivial array
+unwind/termination, empty-array behavior and bounded repeatable array construction.
+Borrowed deletion is diagnosed. Twenty-two AST controls, twenty-four focused
+compiler commands pass. All 79 affected compiler cases, eight allocation/disposal
+source-free profiles, six adjacent groups, codec/isolation, 22 AST controls and
+twelve instrumented native configurations / 42 commands pass.
+
 The [System 2.40 disposal span](linux_native_disposal.md) adds mandatory scalar
 deallocation after destructor failure and exact null-operand branching, including
 noreturn destructors. Twelve source/PCH commands, all twenty AST controls and

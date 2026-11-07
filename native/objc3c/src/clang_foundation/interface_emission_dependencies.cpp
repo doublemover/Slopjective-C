@@ -272,6 +272,16 @@ class TypeDependencyVisitor final
         builtin->getName().starts_with("__builtin_") &&
         builtin->getDeclContext()->getRedeclContext()->isTranslationUnit() && !builtin->hasBody())
       return;
+    // Parsing a new/delete expression supplies the ABI's implicit replaceable
+    // global allocation declarations without requiring a public header. An
+    // explicit replacement or redeclaration keeps normal dependency admission.
+    if (const auto *allocation = llvm::dyn_cast<clang::FunctionDecl>(target);
+        allocation && allocation->isImplicit() && !allocation->hasBody() &&
+        allocation->getDeclContext()->getRedeclContext()->isTranslationUnit() &&
+        allocation->isReplaceableGlobalAllocationFunction() &&
+        std::all_of(allocation->redecls().begin(),allocation->redecls().end(),
+                    [](const clang::FunctionDecl *decl){return decl->isImplicit();}))
+      return;
     if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(target);
         method && method->isImplicit()) {
       clang::ObjC3KeyPathInfo info;

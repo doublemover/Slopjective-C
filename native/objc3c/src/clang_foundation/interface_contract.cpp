@@ -449,6 +449,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
   if (nsobject_storage != nsobject_storage_capability)
     Add(result,"O3IFC106","NSObject storage identity and required capability must agree",expected.canonical_name);
+  const bool native_allocation = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeAllocationIdentity);
+  const bool native_allocation_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeAllocationSemantic) != sidecar.required_semantics.end();
+  if (native_allocation != native_allocation_capability)
+    Add(result,"O3IFC110","native allocation cleanup identity and required capability must agree",expected.canonical_name);
   const bool native_disposal = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeDisposalIdentity);
   const bool native_disposal_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeDisposalSemantic) != sidecar.required_semantics.end();
   if (native_disposal != native_disposal_capability)

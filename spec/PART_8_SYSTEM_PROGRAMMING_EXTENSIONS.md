@@ -407,6 +407,15 @@ once and bypass destruction and deallocation; a noreturn destructor shall not
 make the null path unreachable. Disposal shall preserve the native exception and
 termination boundaries while checking any owner lifetimes affected by cleanup.
 
+A failed constructor shall clean up only completed subobjects and then invoke
+matching deallocation for storage successfully allocated by its new-expression.
+An allocation failure shall not invoke that deallocator. Array disposal shall
+complete the remaining element prefix after a first destructor exception and
+then deallocate before propagation; a second escaping destructor exception
+terminates. An empty array skips element destruction while retaining array
+deallocation. A borrowed pointer does not confer scalar or array deallocation
+ownership.
+
 ### 8.7.4 Escaping-use trigger points and minimum diagnostics (normative) {#part-8-7-4}
 
 In strict-system mode, a borrowed pointer value is treated as **non-escaping** unless an explicit unsafe escape marker is used.

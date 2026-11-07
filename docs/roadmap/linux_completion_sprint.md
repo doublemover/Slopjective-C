@@ -1,5 +1,13 @@
 # Linux feature completion and SDK delivery
 
+The [System 2.41 allocation/array span](linux_array_and_allocation_cleanup.md)
+adds matched scalar deallocation after constructor failure, nontrivial array
+unwind/termination, empty-array behavior and bounded repeatable array construction.
+Borrowed deletion is diagnosed. Twenty-two AST controls, twenty-four focused
+compiler commands pass. All 79 affected compiler cases, eight allocation/disposal
+source-free profiles, six adjacent groups, codec/isolation, 22 AST controls and
+twelve instrumented native configurations / 42 commands pass.
+
 The [System 2.40 disposal span](linux_native_disposal.md) adds mandatory scalar
 deallocation after destructor failure and exact null-operand branching, including
 noreturn destructors. Twelve source/PCH commands, all twenty AST controls and
@@ -81,6 +89,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Native publication | User standard-library class/constexpr-variable specializations, including partial patterns, argument packs and native primary ABI | Source authored; six frontend profiles and two instrumented source-free provider/two-consumer executables pass; wider profiles and SDK consolidation pending |
 | Native publication | Inherited formatter state, iterator traits, deduced member identity and unique native virtual slots | Source authored; fifteen AST infrastructure tests, twelve affected frontend groups and all four source-free libstdc++/libc++ native configurations pass; SDK consolidation pending |
 | Native publication | Remaining dependent lookup, declaration/predicate forms and wider standard-library configurations | Open |
+| Ownership/System   | Failed scalar construction, nontrivial array disposal, zero-element behavior, bounded nonthrowing array construction and borrowed deletion | 79 compiler cases, eight source-free profiles, six adjacent groups, codec/isolation, 22 AST controls and 12 instrumented native configurations / 42 commands pass; SDK pending |
 | Ownership/System   | Throwing scalar delete deallocation, null/noreturn branches and exact exceptional cleanup order | 78 compiler cases, four source-free profiles, five adjacent groups, codec/isolation, 20 AST controls and 12 instrumented native configurations / 42 commands pass; SDK pending |
 | Ownership/System   | Completed primitive ARC record/array/capture prefixes, owner snapshots, native capture order and exceptional cleanup | 77 compiler cases, six source-free profiles, five adjacent groups, codec/isolation, 19 AST controls and 12 instrumented native configurations / 42 commands pass; SDK pending |
 | Ownership/System   | Native finally cleanup, handler ordering, replacement transfers and C++ rethrow payload ownership | 76 compiler cases, six source-free profiles, four adjacent groups, codec/isolation, 19 AST controls and two 12-configuration instrumented native matrices pass; SDK pending |

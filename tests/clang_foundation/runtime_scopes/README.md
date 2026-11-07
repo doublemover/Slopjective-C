@@ -36,3 +36,9 @@ allocation/free counts, a null operand with a noreturn destructor and controlled
 fault detection when a deallocator violates its nonthrowing contract during
 unwind. The termination case
 runs in a child process with an explicit exit-code witness.
+
+Allocation witnesses check completed member cleanup and matched free after a
+constructor fails, with no whole-object destructor call. Array witnesses check
+reverse destruction, the remaining prefix after the first exception, one array
+free, zero-length noreturn bypass and termination before free after a second
+element exception. Child processes provide exact termination trace witnesses.

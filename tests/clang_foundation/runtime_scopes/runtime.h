@@ -405,6 +405,76 @@ static void scope_disposal_suite(void) {
 }
 #endif
 
+
+#ifdef __cplusplus
+static int allocation_trace[32],allocation_trace_count,allocation_created,allocation_freed;
+static void allocation_event(int event) {assert(allocation_trace_count<32);allocation_trace[allocation_trace_count++]=event;}
+struct AllocationMember {
+  AllocationMember() noexcept {allocation_event(10);}
+  ~AllocationMember() noexcept {allocation_event(11);}
+};
+struct ConstructorFailure {
+  AllocationMember member;
+  explicit ConstructorFailure(int fail) {allocation_event(1);if(fail)throw 73;}
+  ~ConstructorFailure() noexcept {allocation_event(5);}
+  static void *operator new(__SIZE_TYPE__ size) {void *value=malloc(size);assert(value);++allocation_created;return value;}
+  static void operator delete(void *value) noexcept {allocation_event(2);++allocation_freed;free(value);}
+};
+static void allocation_failure_path(ScopeProbe *_Nonnull owner,int fail) {
+  int created=allocation_created,freed=allocation_freed,caught=0;allocation_trace_count=0;
+  withLifetime(owner) {
+    const char *view=&owner->payload;
+    try {__objc3_defer {scope_use(view);allocation_event(3);}delete new ConstructorFailure(fail);}
+    catch(int value) {assert(value==73);++caught;scope_use(view);allocation_event(4);}
+  }
+  assert(caught==fail && allocation_created==created+1 && allocation_freed==freed+1);
+  const int expected[2][6]={{10,1,5,11,2,3},{10,1,11,2,3,4}};
+  assert(allocation_trace_count==6);
+  for(int i=0;i!=6;++i)assert(allocation_trace[i]==expected[fail][i]);
+}
+static int array_next,array_failure_mask,array_created,array_freed,array_expected_child_frees;
+struct ArrayFailure {
+  int index;
+  ArrayFailure() noexcept:index(++array_next) {}
+  ~ArrayFailure() noexcept(false) {allocation_event(index);if(array_failure_mask&(1<<index))throw index;}
+  static void *operator new[](__SIZE_TYPE__ size) {void *value=malloc(size);assert(value);++array_created;return value;}
+  static void operator delete[](void *value) noexcept {allocation_event(100);++array_freed;free(value);}
+};
+static void array_failure_path(ScopeProbe *_Nonnull owner,int fail) {
+  int created=array_created,freed=array_freed,caught=0;
+  array_next=0;array_failure_mask=fail?(1<<2):0;allocation_trace_count=0;
+  withLifetime(owner) {
+    const char *view=&owner->payload;
+    try {__objc3_defer {scope_use(view);allocation_event(103);}delete[] new ArrayFailure[3];}
+    catch(int value) {assert(value==2);++caught;scope_use(view);allocation_event(104);}
+  }
+  assert(caught==fail && array_created==created+1 && array_freed==freed+1);
+  const int expected[6]={3,2,1,100,103,104};assert(allocation_trace_count==(fail?6:5));
+  for(int i=0;i!=allocation_trace_count;++i)assert(allocation_trace[i]==expected[i]);
+}
+static void allocation_array_suite(void) {
+  ScopeProbe *_Nonnull owner=[ScopeProbe new];
+#if !__has_feature(objc_arc)
+  __objc3_defer {[owner release];}
+#endif
+  allocation_failure_path(owner,0);allocation_failure_path(owner,1);
+  array_failure_path(owner,0);array_failure_path(owner,1);
+  const char *view=&owner->payload;delete[] new ScopeNeverDisposal[0];scope_use(view);
+  pid_t child=fork();assert(child>=0);
+  if(child==0) {
+    array_next=0;array_failure_mask=(1<<2)|(1<<1);allocation_trace_count=0;
+    array_expected_child_frees=array_freed;
+    std::set_terminate([]{
+      _Exit(array_freed==array_expected_child_frees && allocation_trace_count==3 &&
+            allocation_trace[0]==3 && allocation_trace[1]==2 && allocation_trace[2]==1?87:86);
+    });
+    try {delete[] new ArrayFailure[3];}catch(...) {_Exit(85);}_Exit(84);
+  }
+  int status=0;assert(waitpid(child,&status,0)==child);
+  assert(WIFEXITED(status) && WEXITSTATUS(status)==87);array_failure_mask=0;
+}
+#endif
+
 static void runtime_scope_suite(void) {
   int initial_created=scope_created,initial_destroyed=scope_destroyed;
   @autoreleasepool {
@@ -426,7 +496,7 @@ static void runtime_scope_suite(void) {
     }
     scope_normal_only_pool_exception();scope_finally_suite();
 #ifdef __cplusplus
-    scope_disposal_suite();
+    scope_disposal_suite();allocation_array_suite();
 #endif
 #if __has_feature(objc_arc)
     scope_partial_suite();

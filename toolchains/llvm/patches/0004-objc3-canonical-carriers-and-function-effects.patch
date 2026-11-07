@@ -43710,10 +43710,10 @@ index 000000000..1122bbb29
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..0d3134d73
+index 000000000..7ddc2199c
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6139 @@
+@@ -0,0 +1,6143 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49242,6 +49242,10 @@ index 000000000..0d3134d73
 +            initializeAggregate(Invocation, storage(Operator->getArg(0), &State),
 +                                Operator->getArg(0)->getType(), Operator->getArg(1),
 +                                State, Emit);
++        if (Emit)
++          if (const auto *Disposal = dyn_cast<CXXDeleteExpr>(Invocation))
++            if (value(Disposal->getArgument(), State).any())
++              diagnose(Invocation, "native deallocation of borrowed storage without ownership");
 +        if (Emit)
 +          if (const auto *Allocation = dyn_cast<CXXNewExpr>(Invocation))
 +            if (value(Allocation->getInitializer(), State).any())
@@ -57923,10 +57927,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..f1b0d386c
+index 000000000..62710758e
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,783 @@
+@@ -0,0 +1,874 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -58709,6 +58713,97 @@ index 000000000..f1b0d386c
 +    Explore(Explore,&Graph->getEntry(),{},0);
 +    EXPECT_GE(Paths,3u);EXPECT_GT(NullPaths,0u);EXPECT_GT(CaughtPaths,0u);
 +  }
++}
++
++TEST(ObjC3ASTInfrastructure, FailedConstructorDeallocatesOnlyAllocatedStorage) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    struct Allocation {explicit Allocation(int);~Allocation() noexcept;static void operator delete(void *) noexcept;};
++    void allocation_marker(int) noexcept;
++    Allocation *allocation_paths() {
++      __objc3_defer {allocation_marker(3);}
++      try {return new Allocation(7);}catch(...) {allocation_marker(4);return nullptr;}
++    }
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"allocation-paths.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *Function=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++    if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getNameAsString()=="allocation_paths")Function=F;
++  ASSERT_NE(Function,nullptr);
++  CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++  Options.AddEHEdges=true;Options.AddImplicitDtors=true;
++  auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Failures=0,Successes=0,AllocationFailures=0,Budget=4096;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Trace,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,64u);
++    for(const auto &Element:*Block) {
++      if(Element.getAs<CFGNewAllocator>())Trace.push_back(0);
++      if(auto Statement=Element.getAs<CFGStmt>()) {
++        const Stmt *Node=Statement->getStmt();
++        if(isa<CXXConstructExpr>(Node))Trace.push_back(1);
++        if(isa<CXXDeleteExpr>(Node))Trace.push_back(2);
++        if(isa<CXXNewExpr>(Node))Trace.push_back(5);
++        if(const auto *Call=dyn_cast<CallExpr>(Node);Call && Call->getDirectCallee() &&
++            Call->getDirectCallee()->getNameAsString()=="allocation_marker")
++          Trace.push_back(cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue());
++      }
++    }
++    if(Block->succ_empty()) {
++      if(std::find(Trace.begin(),Trace.end(),5)!=Trace.end()) {
++        ++Successes;EXPECT_EQ(std::count(Trace.begin(),Trace.end(),2),0);
++      } else if(std::find(Trace.begin(),Trace.end(),1)!=Trace.end()) {
++        ++Failures;EXPECT_EQ(Trace,std::vector<int>({0,1,2,4,3}));
++      } else {++AllocationFailures;EXPECT_EQ(Trace,std::vector<int>({0,4,3}));}
++      return;
++    }
++    for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Trace,Depth+1);
++  };
++  Explore(Explore,&Graph->getEntry(),{},0);
++  EXPECT_GT(Failures,0u);EXPECT_GT(Successes,0u);EXPECT_GT(AllocationFailures,0u);
++}
++
++TEST(ObjC3ASTInfrastructure, ArrayDeleteSeparatesEmptyUnwindAndTermination) {
++  auto AST=tooling::buildASTFromCodeWithArgs(R"(
++    struct Element {~Element() noexcept(false);static void operator delete[](void *) noexcept;};
++    void array_marker(int) noexcept;
++    void array_paths(Element *value) {
++      __objc3_defer {array_marker(3);}
++      try {delete[] value;}catch(...) {array_marker(4);}
++    }
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++       "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"},"array-paths.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *Function=nullptr;
++  for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++    if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getNameAsString()=="array_paths")Function=F;
++  ASSERT_NE(Function,nullptr);
++  CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++  Options.AddEHEdges=true;Options.AddImplicitDtors=true;
++  auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);ASSERT_TRUE(Graph);
++  unsigned Empty=0,Null=0,Caught=0,Terminated=0,Budget=4096;
++  auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Trace,bool Termination,unsigned Depth)->void {
++    ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,64u);Termination|=Block->hasNoReturnElement();
++    for(const auto &Element:*Block) {
++      if(Element.getAs<CFGDeleteDtor>())Trace.push_back(1);
++      if(auto Statement=Element.getAs<CFGStmt>()) {
++        const Stmt *Node=Statement->getStmt();if(isa<CXXDeleteExpr>(Node))Trace.push_back(2);
++        if(const auto *Call=dyn_cast<CallExpr>(Node);Call && Call->getDirectCallee() &&
++            Call->getDirectCallee()->getNameAsString()=="array_marker")
++          Trace.push_back(cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue());
++      }
++    }
++    if(Block->succ_empty()) {
++      if(Termination) {++Terminated;EXPECT_EQ(Trace,std::vector<int>({1}));}
++      else if(Trace==std::vector<int>({3}))++Null;
++      else if(Trace==std::vector<int>({2,3}))++Empty;
++      else if(Trace==std::vector<int>({1,2,4,3}))++Caught;
++      else EXPECT_EQ(Trace,std::vector<int>({1,2,3}));
++      return;
++    }
++    for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Trace,Termination,Depth+1);
++  };
++  Explore(Explore,&Graph->getEntry(),{},false,0);
++  EXPECT_GT(Empty,0u);EXPECT_GT(Null,0u);EXPECT_GT(Caught,0u);EXPECT_GT(Terminated,0u);
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -64980,7 +65075,7 @@ index 000000000..3d03130c7
 +#endif
 diff --git a/clang/test/ObjC3/Sema/borrowed-throwing-disposal.mm b/clang/test/ObjC3/Sema/borrowed-throwing-disposal.mm
 new file mode 100644
-index 000000000..0fbd0a028
+index 000000000..1fa988224
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-throwing-disposal.mm
 @@ -0,0 +1,45 @@
@@ -65026,6 +65121,102 @@ index 000000000..0fbd0a028
 +  owner=(id)0;
 +  receiver_use(view); // expected-error {{after its owner lifetime ended}}
 +}
-+void throwing_disposal_array_stays_qualified(RuntimeScopeOwner *_Nonnull owner,ThrowingDisposal *value) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++void throwing_disposal_array_live(RuntimeScopeOwner *_Nonnull owner,ThrowingDisposal *value) {
 +  withLifetime(owner) {const char *view=[owner bytes];delete[] value;receiver_use(view);}
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-allocation-cleanup.h b/clang/test/ObjC3/Sema/Inputs/borrowed-allocation-cleanup.h
+new file mode 100644
+index 000000000..49ae4743b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-allocation-cleanup.h
+@@ -0,0 +1,20 @@
++#ifndef BORROWED_ALLOCATION_CLEANUP_H
++#define BORROWED_ALLOCATION_CLEANUP_H
++#include "borrowed-throwing-disposal.h"
++struct ConstructorDisposal {
++  explicit ConstructorDisposal(int);
++  ~ConstructorDisposal() noexcept;
++  static void operator delete(void *) noexcept;
++};
++struct ArrayDisposal {
++  ArrayDisposal() noexcept;
++  ~ArrayDisposal() noexcept(false);
++  static void operator delete[](void *) noexcept;
++};
++typedef borrowed ArrayDisposal *BorrowedArrayDisposal;
++struct PartialArrayConstructor {
++  PartialArrayConstructor();
++  PartialArrayConstructor(int) noexcept;
++  ~PartialArrayConstructor() noexcept;
++};
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-allocation-cleanup.mm b/clang/test/ObjC3/Sema/borrowed-allocation-cleanup.mm
+new file mode 100644
+index 000000000..8ed9dd244
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-allocation-cleanup.mm
+@@ -0,0 +1,64 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-allocation-cleanup.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-allocation-cleanup.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-allocation-cleanup.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-allocation-cleanup.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-allocation-cleanup.h"
++#endif
++void constructor_cleanup_live(RuntimeScopeOwner *_Nonnull owner) {
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    try {__objc3_defer {receiver_use(view);}delete new ConstructorDisposal(7);}
++    catch(...) {receiver_use(view);}
++  }
++}
++void constructor_cleanup_expired(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];
++  try {{__objc3_defer {owner=(id)0;}delete new ConstructorDisposal(7);}}
++  catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++void constant_array_cleanup(RuntimeScopeOwner *_Nonnull owner) {
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    try {__objc3_defer {receiver_use(view);}delete[] new ArrayDisposal[3];}
++    catch(...) {receiver_use(view);}
++  }
++}
++void empty_array_cleanup_remains_reachable(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=[owner bytes];__objc3_defer {disposal_event();}
++  delete[] new NeverDisposal[0];owner=(id)0;
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void dynamic_array_cleanup_needs_element_model(RuntimeScopeOwner *_Nonnull owner,int count) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++  withLifetime(owner) {const char *view=[owner bytes];delete[] new ArrayDisposal[count];receiver_use(view);}
++}
++void borrowed_disposal_is_not_ownership(BorrowedArrayDisposal value) {
++  delete value; // expected-error {{native deallocation of borrowed storage without ownership}}
++}
++void borrowed_array_disposal_is_not_ownership(BorrowedArrayDisposal value) {
++  delete[] value; // expected-error {{native deallocation of borrowed storage without ownership}}
++}
++
++void throwing_array_filler_needs_prefix(RuntimeScopeOwner *_Nonnull owner) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++  withLifetime(owner) {
++    const char *view=[owner bytes];
++    delete[] new PartialArrayConstructor[2]{PartialArrayConstructor(1)};receiver_use(view);
++  }
++}
++
++void ordinary_constructor_unwind_expires_local(void) {
++  const char *view=0;
++  try {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=[local bytes];
++    delete new ConstructorDisposal(7);
++  } catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
 +}
