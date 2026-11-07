@@ -6482,6 +6482,19 @@ void TestNativeCheckedCppResultReplay() {
           auto value=__objc3_try_optional(produce_move(mode));
           auto moved=__objc3_move(value);return __objc3_has_value(moved);
         }
+        inline const OptionalValue &static_optional_reference(bool thread,int mode) {
+          if(thread) {
+            static thread_local const OptionalValue &value=__objc3_try_optional(produce(mode));
+            return value;
+          }
+          static const OptionalValue &value=__objc3_try_optional(produce(mode));return value;
+        }
+        inline const Value &static_native_reference(bool thread,int mode) {
+          if(thread) {
+            static thread_local const Value &value=__objc3_try_force(produce(mode));return value;
+          }
+          static const Value &value=__objc3_try_force(produce(mode));return value;
+        }
         typedef Value (^Factory)(int) __objc3_throws(id<Error>);
         inline int block_use(int mode) __objc3_throws(id<Error>) {
           Factory factory=^Value(int value) __objc3_throws(id<Error>) {return __objc3_try(produce(value));};

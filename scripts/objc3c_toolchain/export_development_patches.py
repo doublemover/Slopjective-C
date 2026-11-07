@@ -372,6 +372,7 @@ PACKETS = {
         "clang/lib/CodeGen/CGClass.cpp",
         "clang/lib/CodeGen/CGNonTrivialStruct.cpp",
         "clang/lib/CodeGen/CGDeclCXX.cpp",
+        "clang/lib/CodeGen/ItaniumCXXABI.cpp",
         "clang/lib/CodeGen/CGObjCRuntime.cpp",
         "clang/lib/CodeGen/CGObjC3Carriers.cpp",
         "clang/lib/CodeGen/CGObjC3Match.h",

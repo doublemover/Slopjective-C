@@ -1,5 +1,13 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.128 / System 2.54 static-reference span](linux_checked_static_references.md)
+implements permanent referent ownership for static/TLS checked native records and
+pure C++ carriers. Failed initializer temporaries destroy the provisional referent;
+success registers its destructor once. Typed propagation and cancellation abort an
+interrupted C++ initialization guard so the next call can retry. Dedicated
+source/PCH compiler commands, all four source-free replay profiles and initial
+ASan/UBSan retry/thread-exit execution pass; wider native consolidation is running.
+
 The [source 2.127 / System 2.53 optional-result span](linux_checked_cpp_optionals.md)
 implements success-only native C++ `tryOptional` payloads, discarded-result
 ownership and native-await optionals. Fresh conditional/comma, Some/None, array,
