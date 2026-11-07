@@ -30,3 +30,8 @@ indirect, virtual/member, Block and template calls, NRVO, move-only ownership,
 return/parameter cleanup faults, arrays, references and native-await copy-out.
 The matrix includes source/PCH, ARC/MRC, C++ exception-only and elision-disabled
 configurations.
+
+`checked_regions.h` extends ownership accounting to conditionals, comma expressions,
+aggregate/base/constructor initialization, multiple lifetime-extended references,
+partial dynamic arrays, matching allocation cleanup, static/TLS retry and native
+await initialization. Typed and native failures preserve exact destruction counts.

@@ -55366,7 +55366,7 @@ index 000000000..1a930933b
 +void raw_callback_declaration(const char *);
 diff --git a/clang/test/ObjC3/Sema/callable-ownership-casts.m b/clang/test/ObjC3/Sema/callable-ownership-casts.m
 new file mode 100644
-index 000000000..945b70967
+index 000000000..1bca66bd1
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/callable-ownership-casts.m
 @@ -0,0 +1,99 @@
@@ -55464,7 +55464,7 @@ index 000000000..945b70967
 +                                  BorrowedFactory result) {
 +  BorrowedCallback fabricated = raw; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
 +  BorrowedCallback named = raw_callback_declaration; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
-+  RawBytesFactory erased = result; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
++  RawBytesFactory erased = result; // c-error {{callable conversion changes an ownership or borrowed lifetime contract}} cxx-error {{cannot initialize a variable of type 'RawBytesFactory'}}
 +  BorrowedCallback same = borrowed;
 +  RawBytesCallback weakened = borrowed;
 +  (void)same; (void)weakened;

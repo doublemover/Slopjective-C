@@ -6515,7 +6515,7 @@ index e84e05e8e..86ddb543a 100644
        // If a parameter is pseudo-strong then we can omit the implicit retain.
        if (D.isARCPseudoStrong()) {
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..2555684dd 100644
+index 6a0d127fb..caece9a24 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,14 @@
@@ -6541,20 +6541,27 @@ index 6a0d127fb..2555684dd 100644
  #include "clang/AST/NSAPI.h"
  #include "clang/AST/ParentMapContext.h"
  #include "clang/AST/StmtVisitor.h"
-@@ -519,6 +528,24 @@ static bool isAAPCS(const TargetInfo &TargetInfo) {
+@@ -519,6 +528,31 @@ static bool isAAPCS(const TargetInfo &TargetInfo) {
    return TargetInfo.getABI().starts_with("aapcs");
  }
  
 +namespace {
 +struct DestroyObjC3ConstructedTemporary final : EHScopeStack::Cleanup {
-+  Address Storage, Initialized;
++  Address Storage, Initialized, FullExpressionComplete;
 +  QualType Type;
-+  DestroyObjC3ConstructedTemporary(Address Storage, Address Initialized, QualType Type)
-+      : Storage(Storage), Initialized(Initialized), Type(Type) {}
-+  void Emit(CodeGenFunction &CGF, Flags) override {
++  DestroyObjC3ConstructedTemporary(Address Storage, Address Initialized,
++                                  QualType Type,
++                                  Address FullExpressionComplete = Address::invalid())
++      : Storage(Storage), Initialized(Initialized),
++        FullExpressionComplete(FullExpressionComplete), Type(Type) {}
++  void Emit(CodeGenFunction &CGF, Flags Flags) override {
 +    auto *Destroy = CGF.createBasicBlock("objc3.reference.init.destroy");
 +    auto *Done = CGF.createBasicBlock("objc3.reference.init.done");
-+    CGF.Builder.CreateCondBr(CGF.Builder.CreateLoad(Initialized), Destroy, Done);
++    llvm::Value *NeedsDestroy = CGF.Builder.CreateLoad(Initialized);
++    if (FullExpressionComplete.isValid() && Flags.isForNormalCleanup())
++      NeedsDestroy = CGF.Builder.CreateAnd(NeedsDestroy, CGF.Builder.CreateNot(
++          CGF.Builder.CreateLoad(FullExpressionComplete)));
++    CGF.Builder.CreateCondBr(NeedsDestroy, Destroy, Done);
 +    CGF.EmitBlock(Destroy);
 +    CGF.Builder.CreateStore(CGF.Builder.getFalse(), Initialized);
 +    CGF.emitDestroy(Storage, Type, CodeGenFunction::destroyCXXObject, false);
@@ -6566,20 +6573,25 @@ index 6a0d127fb..2555684dd 100644
  LValue CodeGenFunction::
  EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
    const Expr *E = M->getSubExpr();
-@@ -588,6 +615,28 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -588,6 +622,33 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
    // Create and initialize the reference temporary.
    RawAddress Alloca = Address::invalid();
    RawAddress Object = createReferenceTemporary(*this, M, E, &Alloca);
 +  const bool Constructed = isObjC3ConstructedCppResultInitializer(CGM, E);
 +  Address ReferenceInitialized = Address::invalid();
++  Address ReferenceFullExpressionComplete = Address::invalid();
 +  if (Constructed && M->getStorageDuration() == SD_Automatic) {
 +    // Keep the first owner below the argument temporaries. The ordinary
 +    // lifetime-extended cleanup is installed only after their full expression.
 +    ReferenceInitialized = CreateTempAlloca(Builder.getInt1Ty(), CharUnits::One(),
 +                                            "objc3.reference.initialized");
 +    Builder.CreateStore(Builder.getFalse(), ReferenceInitialized);
++    ReferenceFullExpressionComplete = CreateTempAlloca(
++        Builder.getInt1Ty(), CharUnits::One(), "objc3.reference.full.expression.complete");
++    Builder.CreateStore(Builder.getFalse(), ReferenceFullExpressionComplete);
 +    pushFullExprCleanup<DestroyObjC3ConstructedTemporary>(
-+        EHCleanup, Object, ReferenceInitialized, E->getType());
++        NormalAndEHCleanup, Object, ReferenceInitialized, E->getType(),
++        ReferenceFullExpressionComplete);
 +  }
 +  auto Initialize = [&] {
 +    if (ReferenceInitialized.isValid()) {
@@ -6595,7 +6607,7 @@ index 6a0d127fb..2555684dd 100644
    if (auto *Var = dyn_cast<llvm::GlobalVariable>(
            Object.getPointer()->stripPointerCasts())) {
      llvm::Type *TemporaryType = ConvertTypeForMem(E->getType());
-@@ -604,7 +653,7 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -604,7 +665,7 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
                                        Object.getAlignment());
          EmitScalarInit(E, M->getExtendingDecl(), LV, false);
        } else {
@@ -6604,7 +6616,7 @@ index 6a0d127fb..2555684dd 100644
        }
      }
    } else {
-@@ -658,9 +707,13 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -658,9 +719,14 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
      default:
        break;
      }
@@ -6613,14 +6625,15 @@ index 6a0d127fb..2555684dd 100644
    }
 -  pushTemporaryCleanup(*this, M, E, Object);
 +  if (ReferenceInitialized.isValid())
-+    pushCleanupAfterFullExpr<DestroyObjC3ConstructedTemporary>(
-+        NormalAndEHCleanup, Object, ReferenceInitialized, E->getType());
++    pushCleanupAfterFullExprWithCompletionFlag<DestroyObjC3ConstructedTemporary>(
++        NormalAndEHCleanup, ReferenceFullExpressionComplete, Object,
++        ReferenceInitialized, E->getType());
 +  else
 +    pushTemporaryCleanup(*this, M, E, Object);
  
    // Perform derived-to-base casts and/or field accesses, to get from the
    // temporary object we created (and, potentially, for which we extended
-@@ -1749,6 +1802,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
+@@ -1749,6 +1815,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
  
  LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
                                           KnownNonNull_t IsKnownNonNull) {
@@ -6629,7 +6642,7 @@ index 6a0d127fb..2555684dd 100644
    ApplyDebugLocation DL(*this, E);
    switch (E->getStmtClass()) {
    default: return EmitUnsupportedLValue(E, "l-value expression");
-@@ -1815,6 +1870,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
+@@ -1815,6 +1883,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
  
    case Expr::ExprWithCleanupsClass: {
      const auto *cleanups = cast<ExprWithCleanups>(E);
@@ -6637,7 +6650,7 @@ index 6a0d127fb..2555684dd 100644
      RunCleanupsScope Scope(*this);
      LValue LV = EmitLValue(cleanups->getSubExpr(), IsKnownNonNull);
      if (LV.isSimple()) {
-@@ -4000,8 +4056,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
+@@ -4000,8 +4069,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
                                     getTarget().isBigEndian()
                                         ? llvm::endianness::big
                                         : llvm::endianness::little);
@@ -6648,7 +6661,7 @@ index 6a0d127fb..2555684dd 100644
    }
  
    llvm::Constant *Components[] = {
-@@ -5019,6 +5075,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
+@@ -5019,6 +5088,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
      if (SanOpts.has(SanitizerKind::ArrayBounds))
        EmitBoundsCheck(E, E->getBase(), Idx, IdxTy, Accessed);
  
@@ -6657,7 +6670,7 @@ index 6a0d127fb..2555684dd 100644
      // Extend or truncate the index type to 32 or 64-bits.
      if (Promote && Idx->getType() != IntPtrTy)
        Idx = Builder.CreateIntCast(Idx, IntPtrTy, IdxSigned, "idxprom");
-@@ -6475,10 +6533,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -6475,10 +6546,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
@@ -6753,7 +6766,7 @@ index 6a0d127fb..2555684dd 100644
  
    llvm::scope_exit AddCoroElideSafeOnExit([&] {
      if (E->isCoroElideSafe()) {
-@@ -6702,6 +6844,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
+@@ -6702,6 +6857,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
      return EmitPointerToDataMemberBinaryExpr(E);
  
    assert(E->getOpcode() == BO_Assign && "unexpected binary l-value");
@@ -6762,7 +6775,7 @@ index 6a0d127fb..2555684dd 100644
  
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
-@@ -7314,9 +7458,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7314,9 +7471,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
                                             bool forLValue,
                                             AggValueSlot slot) {
    SmallVector<CodeGenFunction::OpaqueValueMappingData, 4> opaques;
@@ -6787,7 +6800,7 @@ index 6a0d127fb..2555684dd 100644
    LValueOrRValue result;
  
    for (PseudoObjectExpr::const_semantics_iterator
-@@ -7347,7 +7506,38 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7347,7 +7519,38 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
@@ -11955,10 +11968,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..40b0a047c
+index 000000000..cef5033ee
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,825 @@
+@@ -0,0 +1,818 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12226,26 +12239,19 @@ index 000000000..40b0a047c
 +bool CodeGen::isObjC3ConstructedCppResultInitializer(CodeGenModule &CGM, const Expr *Root) {
 +  if (!Root || !CGM.getLangOpts().ObjC3 || !supportsObjC3CheckedCppResult(
 +          CGM, CGM.getContext().getBaseElementType(Root->getType()))) return false;
-+  auto Contains = [&](auto &&Self, const Expr *Value) -> bool {
-+    if (!Value) return false;
-+    for (;;) {
-+      Value = Value->IgnoreParenImpCasts();
-+      if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Value)) Value = Cleanups->getSubExpr();
-+      else if (const auto *Binding = dyn_cast<CXXBindTemporaryExpr>(Value)) Value = Binding->getSubExpr();
-+      else if (const auto *Construction = dyn_cast<CXXConstructExpr>(Value);
-+               Construction && Construction->isElidable() && Construction->getNumArgs() == 1)
-+        Value = Construction->getArg(0);
-+      else break;
-+    }
-+    if (Root->getType()->isArrayType())
-+      if (const auto *List = dyn_cast<InitListExpr>(Value))
-+        for (const auto *Element : List->inits()) if (Self(Self, Element)) return true;
-+    if (const auto *Try = dyn_cast<ObjC3TryExpr>(Value))
-+      return Try->getKind() != ObjC3TryExpr::Kind::Optionalize &&
-+          getObjC3AsyncCalleeFunctionType(Try->getOperand());
-+    if (const auto *Await = dyn_cast<CoawaitExpr>(Value))
++  // An outer conditional, aggregate or constructor can finish construction
++  // before its checked-call argument temporaries are destroyed. Track the
++  // destination's completion, not just the immediate leaf expression shape.
++  auto Contains = [&](auto &&Self, const Stmt *Node) -> bool {
++    if (!Node || isa<LambdaExpr, BlockExpr>(Node)) return false;
++    if (const auto *Try = dyn_cast<ObjC3TryExpr>(Node))
++      if (Try->getKind() != ObjC3TryExpr::Kind::Optionalize &&
++          getObjC3AsyncCalleeFunctionType(Try->getOperand())) return true;
++    if (const auto *Await = dyn_cast<CoawaitExpr>(Node))
 +      if (const auto *Signature = getObjC3AsyncCalleeFunctionType(Await))
-+        return Signature->getObjC3FunctionEffects().Async;
++        if (Signature->getObjC3FunctionEffects().Async) return true;
++    for (const Stmt *Child : Node->children())
++      if (Self(Self, Child)) return true;
 +    return false;
 +  };
 +  return Contains(Contains, Root);
@@ -14154,7 +14160,7 @@ index 7629b42dd..72a7f74ba 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..78b411bc1 100644
+index e7c24f1f3..1dff8bafb 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -44,6 +44,7 @@
@@ -14300,7 +14306,62 @@ index e7c24f1f3..78b411bc1 100644
  
    llvm::DenseMap<const ValueDecl *, FieldDecl *> LambdaCaptureFields;
    FieldDecl *LambdaThisCaptureField = nullptr;
-@@ -2297,6 +2379,7 @@ public:
+@@ -753,6 +835,10 @@ public:
+     /// Whether this is a conditional cleanup.
+     LLVM_PREFERRED_TYPE(bool)
+     unsigned IsConditional : 1;
++    /// ObjC3 normal propagation can leave a partially initialized full
++    /// expression. Its reference temporaries transfer ownership only on the
++    /// successful full-expression edge; exceptional cleanup always retains it.
++    RawAddress ObjC3FullExpressionComplete = RawAddress::invalid();
+ 
+     size_t getSize() const { return Size; }
+     CleanupKind getKind() const { return (CleanupKind)Kind; }
+@@ -939,9 +1025,15 @@ public:
+   /// potentially with an active flag.
+   template <class T, class... As>
+   void pushCleanupAfterFullExpr(CleanupKind Kind, As... A) {
++    pushCleanupAfterFullExprWithCompletionFlag<T>(Kind, RawAddress::invalid(), A...);
++  }
++
++  template <class T, class... As>
++  void pushCleanupAfterFullExprWithCompletionFlag(CleanupKind Kind,
++                                                   RawAddress Complete, As... A) {
+     if (!isInConditionalBranch())
+-      return pushCleanupAfterFullExprWithActiveFlag<T>(
+-          Kind, RawAddress::invalid(), A...);
++      return pushCleanupAfterFullExprWithActiveAndCompletionFlag<T>(
++          Kind, RawAddress::invalid(), Complete, A...);
+ 
+     RawAddress ActiveFlag = createCleanupActiveFlag();
+     assert(!DominatingValue<Address>::needsSaving(ActiveFlag) &&
+@@ -951,15 +1043,22 @@ public:
+     SavedTuple Saved{saveValueInCond(A)...};
+ 
+     typedef EHScopeStack::ConditionalCleanup<T, As...> CleanupType;
+-    pushCleanupAfterFullExprWithActiveFlag<CleanupType>(Kind, ActiveFlag,
+-                                                        Saved);
++    pushCleanupAfterFullExprWithActiveAndCompletionFlag<CleanupType>(
++        Kind, ActiveFlag, Complete, Saved);
+   }
+ 
+   template <class T, class... As>
+   void pushCleanupAfterFullExprWithActiveFlag(CleanupKind Kind,
+                                               RawAddress ActiveFlag, As... A) {
++    pushCleanupAfterFullExprWithActiveAndCompletionFlag<T>(
++        Kind, ActiveFlag, RawAddress::invalid(), A...);
++  }
++
++  template <class T, class... As>
++  void pushCleanupAfterFullExprWithActiveAndCompletionFlag(
++      CleanupKind Kind, RawAddress ActiveFlag, RawAddress Complete, As... A) {
+     LifetimeExtendedCleanupHeader Header = {sizeof(T), Kind,
+-                                            ActiveFlag.isValid()};
++                                            ActiveFlag.isValid(), Complete};
+ 
+     size_t OldSize = LifetimeExtendedCleanupStack.size();
+     LifetimeExtendedCleanupStack.resize(
+@@ -2297,6 +2396,7 @@ public:
        return false;
      case QualType::DK_cxx_destructor:
      case QualType::DK_objc_weak_lifetime:
@@ -14308,7 +14369,7 @@ index e7c24f1f3..78b411bc1 100644
      case QualType::DK_nontrivial_c_struct:
        return getLangOpts().Exceptions;
      case QualType::DK_objc_strong_lifetime:
-@@ -2387,7 +2470,8 @@ public:
+@@ -2387,7 +2487,8 @@ public:
    /// \param LoadBlockVarAddr Indicates whether we need to emit a load from
    /// \p Addr to get the address of the __block structure.
    void enterByrefCleanup(CleanupKind Kind, Address Addr, BlockFieldFlags Flags,
@@ -14318,7 +14379,7 @@ index e7c24f1f3..78b411bc1 100644
  
    void setBlockContextParameter(const ImplicitParamDecl *D, unsigned argNum,
                                  llvm::Value *ptr);
-@@ -3537,8 +3621,18 @@ public:
+@@ -3537,8 +3638,18 @@ public:
        return CGF.emitBlockByrefAddress(Addr, Variable, /*forward*/ false);
      }
    };
@@ -14339,7 +14400,7 @@ index e7c24f1f3..78b411bc1 100644
    void EmitAutoVarCleanups(const AutoVarEmission &emission);
    void emitAutoVarTypeCleanup(const AutoVarEmission &emission,
                                QualType::DestructionKind dtorKind);
-@@ -3641,6 +3735,11 @@ public:
+@@ -3641,6 +3752,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -14351,7 +14412,7 @@ index e7c24f1f3..78b411bc1 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
-@@ -3655,7 +3754,15 @@ public:
+@@ -3655,7 +3771,15 @@ public:
                             AggValueSlot AVS = AggValueSlot::ignored());
    Address
    EmitCompoundStmtWithoutScope(const CompoundStmt &S, bool GetLast = false,
@@ -14368,7 +14429,7 @@ index e7c24f1f3..78b411bc1 100644
  
    /// EmitLabel - Emit the block for the given label. It is legal to call this
    /// function even if there is no current insertion point.
-@@ -3665,6 +3772,8 @@ public:
+@@ -3665,6 +3789,8 @@ public:
    void EmitAttributedStmt(const AttributedStmt &S);
    void EmitGotoStmt(const GotoStmt &S);
    void EmitIndirectGotoStmt(const IndirectGotoStmt &S);
@@ -14377,7 +14438,7 @@ index e7c24f1f3..78b411bc1 100644
    void EmitIfStmt(const IfStmt &S);
  
    void EmitWhileStmt(const WhileStmt &S, ArrayRef<const Attr *> Attrs = {});
-@@ -3679,6 +3788,28 @@ public:
+@@ -3679,6 +3805,28 @@ public:
    void EmitCaseStmt(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
    void EmitCaseStmtRange(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
    void EmitDeferStmt(const DeferStmt &S);
@@ -14406,7 +14467,7 @@ index e7c24f1f3..78b411bc1 100644
    void EmitAsmStmt(const AsmStmt &S);
  
    const BreakContinue *GetDestForLoopControlStmt(const LoopControlStmt &S);
-@@ -3689,8 +3820,15 @@ public:
+@@ -3689,8 +3837,15 @@ public:
    void EmitObjCAtSynchronizedStmt(const ObjCAtSynchronizedStmt &S);
    void EmitObjCAutoreleasePoolStmt(const ObjCAutoreleasePoolStmt &S);
  
@@ -14422,7 +14483,7 @@ index e7c24f1f3..78b411bc1 100644
    RValue EmitCoawaitExpr(const CoawaitExpr &E,
                           AggValueSlot aggSlot = AggValueSlot::ignored(),
                           bool ignoreResult = false);
-@@ -5007,7 +5145,8 @@ public:
+@@ -5007,7 +5162,8 @@ public:
    /// Retrieves the default cleanup kind for an ARC cleanup.
    /// Except under -fobjc-arc-eh, ARC cleanups are normal-only.
    CleanupKind getARCCleanupKind() {
@@ -14433,7 +14494,7 @@ index e7c24f1f3..78b411bc1 100644
    }
  
 diff --git a/clang/lib/CodeGen/CodeGenModule.cpp b/clang/lib/CodeGen/CodeGenModule.cpp
-index 313a364e8..8cd08c4de 100644
+index 313a364e8..426c5ba41 100644
 --- a/clang/lib/CodeGen/CodeGenModule.cpp
 +++ b/clang/lib/CodeGen/CodeGenModule.cpp
 @@ -11,6 +11,8 @@
@@ -14491,7 +14552,28 @@ index 313a364e8..8cd08c4de 100644
    DeferredDeclsToEmit.clear();
    EmittedDeferredDecls.clear();
    DeferredAnnotations.clear();
-@@ -6073,6 +6099,9 @@ llvm::Constant *
+@@ -4687,7 +4713,7 @@ void CodeGenModule::EmitGlobal(GlobalDecl GD) {
+     if (FD->hasAttr<AnnotateAttr>()) {
+       StringRef MangledName = getMangledName(GD);
+       if (GetGlobalValue(MangledName))
+-        DeferredAnnotations[MangledName] = FD;
++        DeferredAnnotations[getContext().backupStr(MangledName)] = FD;
+     }
+ 
+     // Forward declarations are emitted lazily on first use.
+@@ -5608,7 +5634,10 @@ llvm::Constant *CodeGenModule::GetOrCreateLLVMFunction(
+   // Store the declaration associated with this function so it is potentially
+   // updated by further declarations or definitions and emitted at the end.
+   if (D && D->hasAttr<AnnotateAttr>())
+-    DeferredAnnotations[MangledName] = cast<ValueDecl>(D);
++    // A thunk caller may supply a name in a stack SmallString. Deferred
++    // annotation publication outlives it, so keep an AST-owned name here.
++    DeferredAnnotations[getContext().backupStr(MangledName)] =
++        cast<ValueDecl>(D);
+ 
+   // If we already created a function with the same mangled name (but different
+   // type) before, take its name and add it to the list of functions to be
+@@ -6073,6 +6102,9 @@ llvm::Constant *
  CodeGenModule::GetAddrOfGlobal(GlobalDecl GD, ForDefinition_t IsForDefinition) {
    const Decl *D = GD.getDecl();
  
@@ -14501,7 +14583,7 @@ index 313a364e8..8cd08c4de 100644
    if (isa<CXXConstructorDecl>(D) || isa<CXXDestructorDecl>(D))
      return getAddrOfCXXStructor(GD, /*FnInfo=*/nullptr, /*FnType=*/nullptr,
                                  /*DontDefer=*/false, IsForDefinition);
-@@ -6976,6 +7005,15 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD,
+@@ -6976,6 +7008,15 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD,
                                                   llvm::GlobalValue *GV) {
    const auto *D = cast<FunctionDecl>(GD.getDecl());
  
@@ -14517,7 +14599,7 @@ index 313a364e8..8cd08c4de 100644
    // Compute the function info and LLVM type.
    const CGFunctionInfo &FI = getTypes().arrangeGlobalDeclaration(GD);
    llvm::FunctionType *Ty = getTypes().GetFunctionType(FI);
-@@ -7944,10 +7982,45 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
+@@ -7944,10 +7985,45 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
    if (D->isTemplated())
      return;
  
@@ -22432,10 +22514,19 @@ index 39b8e50f6..b8198259f 100644
      if (CGF.getContext().getLangOpts().SanitizeAddressFieldPadding)
        return false;
 diff --git a/clang/lib/CodeGen/CGDeclCXX.cpp b/clang/lib/CodeGen/CGDeclCXX.cpp
-index 57c6bad67..fe9c24a69 100644
+index 57c6bad67..0e4a8391d 100644
 --- a/clang/lib/CodeGen/CGDeclCXX.cpp
 +++ b/clang/lib/CodeGen/CGDeclCXX.cpp
-@@ -90,7 +90,8 @@ static void EmitDeclDestroy(CodeGenFunction &CGF, const VarDecl &D,
+@@ -14,6 +14,8 @@
+ #include "CGDebugInfo.h"
+ #include "CGHLSLRuntime.h"
+ #include "CGObjCRuntime.h"
++#include "CGObjC3ArcCarriers.h"
++#include "CGObjC3TypedErrors.h"
+ #include "CGOpenMPRuntime.h"
+ #include "CodeGenFunction.h"
+ #include "TargetInfo.h"
+@@ -90,7 +92,8 @@ static void EmitDeclDestroy(CodeGenFunction &CGF, const VarDecl &D,
  
    case QualType::DK_objc_strong_lifetime:
    case QualType::DK_objc_weak_lifetime:
@@ -22445,7 +22536,29 @@ index 57c6bad67..fe9c24a69 100644
      // We don't care about releasing objects during process teardown.
      assert(!D.getTLSKind() && "should have rejected this");
      return;
-@@ -565,6 +566,10 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
+@@ -216,8 +219,20 @@ void CodeGenFunction::EmitCXXGlobalVarDeclInit(const VarDecl &D,
+     }
+     bool NeedsDtor =
+         D.needsDestruction(getContext()) == QualType::DK_cxx_destructor;
+-    if (PerformInit)
++    if (PerformInit) {
++      // Register the permanent static/TLS destructor only after initializer
++      // temporaries finish. A completed value must remain owned if one throws.
++      CleanupDeactivationScope Deactivation(*this);
++      const auto Saved = getObjC3CarrierLocalInitState();
++      if (isObjC3ConstructedCppResultInitializer(CGM, Init)) {
++        QualType Canonical = getContext().getCanonicalType(T).getUnqualifiedType();
++        Address Initialized = beginObjC3CarrierInitGuard(
++            *this, Canonical, DeclAddr, true);
++        setObjC3CarrierLocalInitState({DeclAddr, Canonical, Initialized});
++      }
+       EmitDeclInit(*this, D, DeclAddr);
++      setObjC3CarrierLocalInitState(Saved);
++    }
+     if (D.getType().isConstantStorage(getContext(), true, !NeedsDtor))
+       EmitDeclInvariant(*this, D, DeclPtr);
+     else
+@@ -565,6 +580,10 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
    llvm::GlobalVariable *COMDATKey =
        supportsCOMDAT() && D->isExternallyVisible() ? Addr : nullptr;
  
@@ -22456,7 +22569,7 @@ index 57c6bad67..fe9c24a69 100644
    if (D->getTLSKind()) {
      // FIXME: Should we support init_priority for thread_local?
      // FIXME: We only need to register one __cxa_thread_atexit function for the
-@@ -588,9 +593,10 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
+@@ -588,9 +607,10 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
      OrderGlobalInitsOrStermFinalizers Key(IPA->getPriority(),
                                            PrioritizedCXXGlobalInits.size());
      PrioritizedCXXGlobalInits.push_back(std::make_pair(Key, Fn));
@@ -22470,7 +22583,7 @@ index 57c6bad67..fe9c24a69 100644
      // For vague linkage globals, put the initializer into its own global_ctors
      // entry with the global as a comdat key. This ensures at most one
      // initializer per DSO runs during DSO dynamic initialization.
-@@ -653,6 +659,11 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
+@@ -653,6 +673,11 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
        Fn->setComdat(C);
      }
    } else {
@@ -24016,10 +24129,10 @@ index 000000000..942666dcb
 +int parameters(value) int value; { return value + 1; }
 diff --git a/clang/test/ObjC3/CodeGen/native-async-cxx-callables.mm b/clang/test/ObjC3/CodeGen/native-async-cxx-callables.mm
 new file mode 100644
-index 000000000..d14d14e53
+index 000000000..227545a74
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-async-cxx-callables.mm
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,51 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-llvm -o %t %s
 +// RUN: FileCheck %s < %t
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -emit-llvm -o /dev/null -verify %s
@@ -24063,6 +24176,11 @@ index 000000000..d14d14e53
 +  return a + c + d + e + f + g + h + __objc3_await Worker::constant();
 +}
 +Worker instantiate;
++// Deferred annotations must retain both secondary-base thunk names after the
++// mangler's stack buffers are gone. The sanitizer compiler also checks lifetime.
++// CHECK: @llvm.global.annotations =
++// CHECK-SAME: ptr @_ZThn16_NK6Worker5valueEi
++// CHECK-SAME: ptr @_ZThn16_NK6Worker7checkedEbPU15objcproto5Error11objc_object
 +// A secondary-base virtual thunk returns the task carrier through sret.
 +// CHECK: define {{.*}}void @_ZThn16_NK6Worker5valueEi(ptr {{.*}}sret
 +// CHECK: define {{.*}}void @_ZThn16_NK6Worker7checkedEbPU15objcproto5Error11objc_object(ptr {{.*}}sret
@@ -25319,7 +25437,7 @@ index 000000000..7ba1edbf5
 +// CHECK: call void @consume
 +// CHECK: call void @consume
 diff --git a/clang/lib/CodeGen/CGCleanup.cpp b/clang/lib/CodeGen/CGCleanup.cpp
-index 977f81a64..0b4525e9e 100644
+index 977f81a64..987815eaf 100644
 --- a/clang/lib/CodeGen/CGCleanup.cpp
 +++ b/clang/lib/CodeGen/CGCleanup.cpp
 @@ -358,7 +358,8 @@ static void ResolveAllBranchFixups(CodeGenFunction &CGF,
@@ -25342,7 +25460,27 @@ index 977f81a64..0b4525e9e 100644
    }
  
    if (ResolvedAny)
-@@ -665,6 +667,8 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
+@@ -482,6 +484,19 @@ void CodeGenFunction::PopCleanupBlocks(
+ void CodeGenFunction::PopCleanupBlocks(
+     EHScopeStack::stable_iterator Old, size_t OldLifetimeExtendedSize,
+     std::initializer_list<llvm::Value **> ValuesToReload) {
++  // This instruction belongs only to successful full-expression completion.
++  // An earlier typed propagation follows its own normal-cleanup edge and must
++  // destroy already constructed lifetime-extended reference temporaries. A
++  // throwing argument destructor still runs their provisional EH cleanup.
++  for (size_t I = OldLifetimeExtendedSize;
++       I != LifetimeExtendedCleanupStack.size();) {
++    const auto &Header = *reinterpret_cast<const LifetimeExtendedCleanupHeader *>(
++        &LifetimeExtendedCleanupStack[I]);
++    if (HaveInsertPoint() && Header.ObjC3FullExpressionComplete.isValid())
++      Builder.CreateStore(Builder.getTrue(), Header.ObjC3FullExpressionComplete);
++    I += sizeof(Header) + Header.getSize() +
++        (Header.isConditional() ? sizeof(RawAddress) : 0);
++  }
+   PopCleanupBlocks(Old, ValuesToReload);
+ 
+   // Move our deferred cleanups onto the EH stack.
+@@ -665,6 +680,8 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
    if (ForDeactivation && (Scope.isNormalCleanup() || !getLangOpts().EHAsynch)) {
      NormalDeactivateOrigIP = Builder.saveAndClearIP();
    }
@@ -25351,7 +25489,7 @@ index 977f81a64..0b4525e9e 100644
    // Remember activation information.
    bool IsActive = Scope.isActive();
    Address NormalActiveFlag =
-@@ -824,6 +828,8 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
+@@ -824,6 +841,8 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
        Scope.MarkEmitted();
        EHStack.popCleanup();
  
@@ -25360,7 +25498,7 @@ index 977f81a64..0b4525e9e 100644
        EmitCleanup(*this, Fn, cleanupFlags, NormalActiveFlag);
  
      // Otherwise, the best approach is to thread everything through
-@@ -905,7 +911,9 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
+@@ -905,7 +924,9 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
            NormalCleanupDest = RawAddress::invalid();
          }
  
@@ -25371,7 +25509,7 @@ index 977f81a64..0b4525e9e 100644
          InstsToAppend.push_back(llvm::UncondBrInst::Create(BranchAfter));
  
          // Build a switch-out if we need it:
-@@ -943,7 +951,9 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
+@@ -943,7 +964,9 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
  
          for (unsigned I = 0, E = Scope.getNumBranchAfters(); I != E; ++I) {
            Switch->addCase(Scope.getBranchAfterIndex(I),
@@ -25382,7 +25520,7 @@ index 977f81a64..0b4525e9e 100644
          }
  
          // If there aren't any enclosing cleanups, we can resolve all
-@@ -956,12 +966,28 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
+@@ -956,12 +979,28 @@ void CodeGenFunction::PopCleanupBlock(bool FallthroughIsBranchThrough,
          InstsToAppend.push_back(llvm::UncondBrInst::Create(BranchThroughDest));
        }
  
@@ -25849,7 +25987,7 @@ index 000000000..93991e73f
 +// CHECK-NOT: load i8
 +// CHECK: ret i1
 diff --git a/clang/lib/CodeGen/CGExprCXX.cpp b/clang/lib/CodeGen/CGExprCXX.cpp
-index 1769ab00e..73eedcf0f 100644
+index 1769ab00e..376a5ca48 100644
 --- a/clang/lib/CodeGen/CGExprCXX.cpp
 +++ b/clang/lib/CodeGen/CGExprCXX.cpp
 @@ -13,18 +13,70 @@
@@ -25923,7 +26061,36 @@ index 1769ab00e..73eedcf0f 100644
  struct MemberCallInfo {
    RequiredArgs ReqArgs;
    // Number of prefix arguments for the call. Ignores the `this` pointer.
-@@ -1569,6 +1621,13 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+@@ -1511,6 +1563,10 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+                                   llvm::Value *AllocSize, CharUnits AllocAlign,
+                                   const CallArgList &NewArgs) {
+   unsigned NumNonPlacementArgs = E->getNumImplicitArgs();
++  // Typed propagation leaves construction through a normal cleanup edge.
++  // Until the initializer succeeds, allocation still belongs to this scope.
++  const CleanupKind FailureCleanup = CGF.getLangOpts().ObjC3
++      ? NormalAndEHCleanup : EHCleanup;
+ 
+   // If we're not inside a conditional branch, then the cleanup will
+   // dominate and we can do the easier (and more efficient) thing.
+@@ -1525,7 +1581,7 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+     typedef CallDeleteDuringNew<DirectCleanupTraits> DirectCleanup;
+ 
+     DirectCleanup *Cleanup = CGF.EHStack.pushCleanupWithExtra<DirectCleanup>(
+-        EHCleanup, E->getNumPlacementArgs(), E->getOperatorDelete(),
++        FailureCleanup, E->getNumPlacementArgs(), E->getOperatorDelete(),
+         TypeIdentity, NewPtr.emitRawPointer(CGF), AllocSize,
+         E->implicitAllocationParameters(), AllocAlign);
+     for (unsigned I = 0, N = E->getNumPlacementArgs(); I != N; ++I) {
+@@ -1554,7 +1610,7 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+ 
+   ConditionalCleanup *Cleanup =
+       CGF.EHStack.pushCleanupWithExtra<ConditionalCleanup>(
+-          EHCleanup, E->getNumPlacementArgs(), E->getOperatorDelete(),
++          FailureCleanup, E->getNumPlacementArgs(), E->getOperatorDelete(),
+           SavedTypeIdentity, SavedNewPtr, SavedAllocSize,
+           E->implicitAllocationParameters(), AllocAlign);
+   for (unsigned I = 0, N = E->getNumPlacementArgs(); I != N; ++I) {
+@@ -1569,6 +1625,13 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
  llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
    // The element type being allocated.
    QualType allocType = getContext().getBaseElementType(E->getAllocatedType());
@@ -25937,7 +26104,7 @@ index 1769ab00e..73eedcf0f 100644
  
    // 1. Build a call to the allocation function.
    FunctionDecl *allocator = E->getOperatorNew();
-@@ -2092,6 +2151,10 @@ static void EmitArrayDelete(CodeGenFunction &CGF, const CXXDeleteExpr *E,
+@@ -2092,6 +2155,10 @@ static void EmitArrayDelete(CodeGenFunction &CGF, const CXXDeleteExpr *E,
  }
  
  void CodeGenFunction::EmitCXXDeleteExpr(const CXXDeleteExpr *E) {
@@ -34363,10 +34530,10 @@ index 000000000..ef4cef70c
 +// CHECK: objc3_task_hop
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-checked-cxx-results.h b/clang/test/ObjC3/CodeGen/Inputs/native-checked-cxx-results.h
 new file mode 100644
-index 000000000..617a73a16
+index 000000000..b270a8393
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/native-checked-cxx-results.h
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,65 @@
 +#ifndef OBJC3_CHECKED_CPP_RESULT_CONTROLS_H
 +#define OBJC3_CHECKED_CPP_RESULT_CONTROLS_H
 +#include "native-async-task.h"
@@ -34399,6 +34566,38 @@ index 000000000..617a73a16
 +  CheckedCompilerResult value=__objc3_try(__objc3_await object.value);
 +  __objc3_try(__objc3_await (object.value=value));return value.value;
 +}
++struct CheckedCompilerAggregate {CheckedCompilerResult first,second;int tail;};
++struct CheckedCompilerReferences {const CheckedCompilerResult &first;int tail;};
++int checked_compiler_integer(int) __objc3_throws(id<Error>);
++static inline int checked_compiler_regions(int mode,bool selected) __objc3_throws(id<Error>) {
++  CheckedCompilerResult conditional=selected
++      ?__objc3_try(checked_compiler_parameter(CheckedCompilerParameter()))
++      :__objc3_try(checked_compiler_parameter(CheckedCompilerParameter()));
++  CheckedCompilerAggregate aggregate={__objc3_try(checked_compiler_source(0)),
++      __objc3_try(checked_compiler_parameter(CheckedCompilerParameter())),
++      __objc3_try(checked_compiler_integer(mode))};
++  CheckedCompilerReferences references={__objc3_try(checked_compiler_source(0)),
++      __objc3_try(checked_compiler_integer(mode))};
++  return conditional.value+aggregate.tail+references.first.value;
++}
++struct CheckedCompilerHeap {
++  CheckedCompilerResult first;int tail;
++  static void *operator new(__SIZE_TYPE__);static void operator delete(void *) noexcept;
++  static void *operator new[](__SIZE_TYPE__);static void operator delete[](void *) noexcept;
++};
++static inline int checked_compiler_storage(int mode,bool selected) __objc3_throws(id<Error>) {
++  CheckedCompilerHeap *single=selected
++      ?new CheckedCompilerHeap{__objc3_try(checked_compiler_source(0)),__objc3_try(checked_compiler_integer(mode))}
++      :new CheckedCompilerHeap{__objc3_try(checked_compiler_source(0)),__objc3_try(checked_compiler_integer(mode))};
++  delete single;
++  CheckedCompilerHeap *array=new CheckedCompilerHeap[2]{
++      {__objc3_try(checked_compiler_source(0)),19},
++      {__objc3_try(checked_compiler_source(0)),__objc3_try(checked_compiler_integer(mode))}};
++  delete[] array;
++  static CheckedCompilerResult persistent=__objc3_try_force(checked_compiler_parameter(CheckedCompilerParameter()));
++  static thread_local CheckedCompilerResult local=__objc3_try_force(checked_compiler_parameter(CheckedCompilerParameter()));
++  return persistent.value+local.value;
++}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/native-checked-cxx-result-gates.mm b/clang/test/ObjC3/CodeGen/native-checked-cxx-result-gates.mm
 new file mode 100644
@@ -34429,10 +34628,10 @@ index 000000000..348208497
 +// CHECK: cannot compile this ObjC3 async/throws method ABI lowering yet
 diff --git a/clang/test/ObjC3/CodeGen/native-checked-cxx-results.mm b/clang/test/ObjC3/CodeGen/native-checked-cxx-results.mm
 new file mode 100644
-index 000000000..44c32e9e0
+index 000000000..9768cf229
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-checked-cxx-results.mm
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,71 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-core-c++20-False %S/Inputs/native-checked-cxx-results.h
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-core-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
@@ -34489,6 +34688,12 @@ index 000000000..44c32e9e0
 +extern "C" int checked_cpp_init_export() __objc3_throws(id<Error>) {return __objc3_try(checked_compiler_initialize());}
 +extern "C" objc3_async_frame checked_cpp_frame_export(CheckedCompilerHost *object) {
 +  return checked_compiler_property(object);
++}
++extern "C" int checked_cpp_regions_export(int mode,bool selected) __objc3_throws(id<Error>) {
++  return __objc3_try(checked_compiler_regions(mode,selected));
++}
++extern "C" int checked_cpp_storage_export(int mode,bool selected) __objc3_throws(id<Error>) {
++  return __objc3_try(checked_compiler_storage(mode,selected));
 +}
 +// CHECK-LABEL: define{{.*}} @checked_cpp_export(
 +// CHECK-SAME: sret(

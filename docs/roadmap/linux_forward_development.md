@@ -1,5 +1,16 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.125 / System 2.52 initialization-region span](linux_checked_cpp_regions.md)
+extends native checked-result guards through conditional, comma, aggregate, base
+and constructor initialization. Reference handoff preserves normal typed-failure
+cleanup, while dynamic allocation and static/TLS initialization retain their
+owners until construction/temporary cleanup succeeds. Focused compiler and native
+controls pass: all 514 executable compiler cases (three unsupported), 48 AST
+controls, sixteen sanitizer configurations / 56 commands, eighteen frontend groups,
+codec/isolation and 180 production decoder replays. A sanitizer-discovered deferred
+virtual-thunk annotation name now uses AST-owned storage. No new SDK or public ABI
+is claimed.
+
 The [source 2.124 / System 2.51 checked-result span](linux_checked_cpp_results.md)
 implements native indirect C++ checked results, synchronous constructed property
 getters and provisional initialization ownership for locals, arrays and references.
@@ -18,7 +29,7 @@ now execute through the existing native frame ABI. All 47 compiler cases,
 48 AST controls, fourteen instrumented native configurations / 49 commands,
 twelve new source-free profiles, eight adjacent groups, codec/isolation and
 160 production decoder replays pass. All 51 open issue bodies/timestamps remain
-unchanged. Synchronous nontrivial checked results are the next ABI implementation.
+unchanged. Synchronous nontrivial checked results are delivered in source 2.124.
 
 The [source 2.122 checked-accessor span](linux_checked_property_accessors.md)
 checks each synchronous getter/setter inside the isolated property frame, joins

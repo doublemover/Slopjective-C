@@ -27,6 +27,16 @@ int main() {
         };
         Value source(int) __objc3_throws(id<Error>);
         inline Value forward(int mode) __objc3_throws(id<Error>) {return __objc3_try(source(mode));}
+        int integer(int) __objc3_throws(id<Error>);
+        struct Aggregate {Value first,second;int tail;};
+        struct References {const Value &first;int tail;};
+        inline int regions(bool selected,int mode) __objc3_throws(id<Error>) {
+          Value conditional=selected?__objc3_try(source(mode)):__objc3_try(source(mode+1));
+          Aggregate value={__objc3_try(source(0)),__objc3_try(source(mode)),__objc3_try(integer(mode))};
+          References references={__objc3_try(source(0)),__objc3_try(integer(mode))};
+          return conditional.value+value.tail+references.first.value;
+        }
+
         inline int use(int mode) __objc3_throws(id<Error>) {
           Value (^factory)(int) __objc3_throws(id<Error>)=^Value(int input) __objc3_throws(id<Error>) {return __objc3_try(source(input));};
           Value value=__objc3_try(factory(mode));return value.value;

@@ -6350,6 +6350,21 @@ void TestNativeCheckedCppResultReplay() {
           __objc3_try(produce(mode));
           return __objc3_try(consume(__objc3_try(forward(mode)),mode));
         }
+        int produce_integer(int) __objc3_throws(id<Error>);
+        struct Aggregate {Value first,second;int tail;};
+        struct References {const Value &first;int tail;};
+        inline int conditional_use(bool selected,int mode) __objc3_throws(id<Error>) {
+          Value value=selected?__objc3_try(produce(mode)):__objc3_try(produce(mode+1));
+          return value.value;
+        }
+        inline int aggregate_use(int mode) __objc3_throws(id<Error>) {
+          Aggregate value={__objc3_try(produce(0)),__objc3_try(produce(mode)),__objc3_try(produce_integer(mode))};
+          return value.first.value+value.second.value+value.tail;
+        }
+        inline int reference_use(int mode) __objc3_throws(id<Error>) {
+          References value={__objc3_try(produce(0)),__objc3_try(produce_integer(mode))};
+          return value.first.value+value.tail;
+        }
         typedef Value (^Factory)(int) __objc3_throws(id<Error>);
         inline int block_use(int mode) __objc3_throws(id<Error>) {
           Factory factory=^Value(int value) __objc3_throws(id<Error>) {return __objc3_try(produce(value));};
