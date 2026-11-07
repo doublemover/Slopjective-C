@@ -1,5 +1,11 @@
 # Function template declarations and defaults
 
+The [frontend 2.119 span](linux_incomplete_template_declarations.md) now adds
+primary forward class templates, external variable templates, nested opaque
+heads and later completion, with dedicated admission and a shared capability
+catalog. The historical function-template-only boundaries below describe the
+original source milestone.
+
 The 2.45 source span admits forward declarations and later redeclarations of
 public C++20/23 function templates when the complete definition is available.
 Template/type/value defaults, function argument defaults and constraints survive

@@ -1323,7 +1323,20 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
                             const clang::ClassTemplateDecl *pattern) {
   if (pattern && !IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   const auto *body=record->getDefinition();
-  if (!body || !body->isCompleteDefinition() || (body->isUnion() && !body->isAnonymousStructOrUnion()) ||
+  if (!body) {
+    // A primary declaration publishes a complete template head and nominal
+    // identity without claiming layout, members or a usable definition.
+    if (!pattern || !record->getIdentifier() || record->isInvalidDecl() ||
+        !record->getDescribedClassTemplate() ||
+        record->getDescribedClassTemplate()->getCanonicalDecl()!=pattern->getCanonicalDecl()) return false;
+    for (const auto *attribute:record->attrs())
+      if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
+        if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
+            ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
+      } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+    return true;
+  }
+  if (!body->isCompleteDefinition() || (body->isUnion() && !body->isAnonymousStructOrUnion()) ||
       (!body->getIdentifier() && UnnamedTemplateRecordKey(body,body->getASTContext()).empty())) return false;
   if (record->getDeclContext()->isRecord() && !body->getLexicalDeclContext()->isRecord() &&
       !IsDetachedNestedTemplateDefinition(body) &&
@@ -1607,7 +1620,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
       const auto *definition=pattern->getTemplatedDecl()->getDefinition();
       const auto *variable=definition ? definition : pattern->getTemplatedDecl();
-      supported &= variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
+      supported &= (variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly ||
+                    variable->getStorageClass()==clang::SC_Extern) &&
           !variable->isStaticDataMember();
       for (const auto *partial:PublishedVariablePartials(pattern)) supported &= IsBoundedVariablePartial(partial);
       for (const auto *attribute:variable->attrs())

@@ -1,5 +1,14 @@
 # Objective-C 3.0 on Linux
 
+The [frontend 2.119 declaration span](linux_incomplete_template_declarations.md)
+publishes primary forward class templates, external variable templates and nested
+opaque heads, preserving defaults, constraints, ABI ownership and later
+completion. Production readers, emitters and the fuzz runner share one capability
+catalog, repairing C-inline import admission. Two new source-free profiles, eight
+adjacent groups, codec/isolation units, forty production decoder replays and two
+instrumented package-declaration witnesses pass. Installed package consolidation
+follows the remaining implementation sprint.
+
 The [System 2.46 virtual-subobject span](linux_virtual_subobjects.md)
 models complete/base-object construction and destruction as separate correlated
 paths, including virtual diamonds, delegation, function-try epilogues, abstract

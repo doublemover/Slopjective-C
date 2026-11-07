@@ -7883,6 +7883,94 @@ void TestClassMemberTemplates() {
   }
 }
 
+
+void TestIncompleteTemplateDeclarations() {
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto parse=[&](const std::string &source,const char *file) {
+      return clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+    };
+    auto emit=[&](const std::string &source,const char *file="incomplete-templates.cpp") {
+      auto ast=parse(source,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      ast->getDiagnostics().getClient()->BeginSourceFile(ast->getLangOpts(),&ast->getPreprocessor());
+      auto EndDiagnostics=llvm::scope_exit([&]{ast->getDiagnostics().getClient()->EndSourceFile();});
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.incomplete","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.incomplete","test");
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"INCOMPLETE %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      return result;
+    };
+    const std::string source=R"(
+      namespace Incomplete {
+        template<class T=int,int Bias=2> requires(sizeof(T)>0) struct Box;
+        template<class T=int> extern T value;
+        template<class T=int> extern thread_local T local;
+        struct Enclosing {template<class T>struct Opaque;};
+        template<class T>struct Wrapper {template<class U>struct Opaque;};
+        using Default=Box<>;
+        Box<> *pointer();
+        inline int read(){return value<int>+local<int>;}
+      }
+    )";
+    auto first=emit(source);assert(first.success);
+    auto replay=emit(first.source_bytes,"replayed-incomplete.cpp");
+    assert(replay.success && replay.source_bytes==first.source_bytes && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-incomplete.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    assert(llvm::is_contained(semantics,llvm::StringRef(kCxxIncompleteTemplateSemantic)));
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    unsigned incomplete=0;
+    for(const auto &row:decoded->declarations)if(HasCxxIncompleteTemplateIdentity(row)) {
+      ++incomplete;assert(row.kind=="ClassTemplate" || row.kind=="VarTemplate" || row.kind=="CXXRecord");
+    }
+    assert(incomplete==5);
+    auto older=semantics;std::erase(older,llvm::StringRef(kCxxIncompleteTemplateSemantic));
+    auto unavailable=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!unavailable);llvm::consumeError(unavailable.takeError());
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxIncompleteTemplateSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto row=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxIncompleteTemplateIdentity);assert(row!=wrong.declarations.end());row->kind="Namespace";
+    auto bad_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!bad_owner);llvm::consumeError(bad_owner.takeError());
+    auto changed=source;auto at=changed.find("class T=int,int Bias");assert(at!=std::string::npos);changed.replace(at,11,"class T=long");
+    auto different=emit(changed);assert(different.success && different.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto altered=DecodeSemanticInterfaceSidecar(different.sidecar_json,different.source_bytes,semantics);assert(altered);
+    auto find=[](const auto &sidecar,const char *name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(sidecar.declarations.begin(),sidecar.declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=sidecar.declarations.end());return *row;
+    };
+    assert(find(*decoded,"Incomplete::Box").native_symbol_name==find(*altered,"Incomplete::Box").native_symbol_name);
+    assert(find(*decoded,"Incomplete::Box").stable_id==find(*altered,"Incomplete::Box").stable_id);
+    auto plain=emit("void incomplete_plain(void);");assert(plain.success);
+    auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,semantics);assert(invented);
+    invented->required_semantics.push_back(kCxxIncompleteTemplateSemantic);
+    auto unnecessary=EncodeSemanticInterfaceSidecar(*invented,semantics);assert(!unnecessary);llvm::consumeError(unnecessary.takeError());
+    assert(!emit("namespace {struct Hidden{};}template<class T=Hidden>struct HiddenDefault;").success);
+    assert(!emit("namespace {struct Hidden{};}template<class T=Hidden>extern T hidden_value;").success);
+    assert(!emit("static constexpr int hidden(){return 42;}template<int N=hidden()>struct HiddenValue;").success);
+    assert(!emit("template<class T>struct Partial{};template<class T>struct Partial<T*>;").success);
+    const std::string completed=first.source_bytes+R"(
+      namespace Incomplete {
+        template<class T,int Bias> requires(sizeof(T)>0) struct Box {T payload;constexpr T get()const{return payload+Bias;}};
+        template<class T> T value=40;
+        template<class T> thread_local T local=2;
+      }
+      inline int incomplete_consumer(){Incomplete::Default value{40};return value.get()+Incomplete::read();}
+    )";
+    auto complete=emit(completed,"completed-templates.cpp");assert(complete.success);
+    auto complete_metadata=llvm::json::parse(complete.sidecar_json);assert(complete_metadata);
+    std::vector<llvm::StringRef> complete_semantics;
+    for(const auto &v:*complete_metadata->getAsObject()->getArray("required_semantics"))complete_semantics.push_back(*v.getAsString());
+    auto complete_sidecar=DecodeSemanticInterfaceSidecar(complete.sidecar_json,complete.source_bytes,complete_semantics);assert(complete_sidecar);
+    unsigned remaining=0;
+    for(const auto &row:complete_sidecar->declarations)if(HasCxxIncompleteTemplateIdentity(row)) {
+      ++remaining;assert(row.qualified_name=="Incomplete::Enclosing" || row.qualified_name=="Incomplete::Wrapper");
+    }
+    assert(remaining==2);
+    auto complete_replay=emit(complete.source_bytes,"completed-replay.cpp");
+    assert(complete_replay.success && complete_replay.identity.semantic_fingerprint==complete.identity.semantic_fingerprint);
+  }
+}
+
 void TestPublicClassTemplates() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="classes.cpp",
@@ -7950,7 +8038,7 @@ void TestPublicClassTemplates() {
     auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{int api(){return hidden();}};");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("template<class T>struct Box;").success);
+    assert(emit("template<class T>struct Box;").success);
     // Declaration-only members are supported contracts. Preserve their rows
     // and replay identity instead of retaining the old definition-only gate.
     for(const auto *admitted:{"template<class T>struct Box{T api();};",
@@ -8028,8 +8116,8 @@ void TestPublicVariableTemplates() {
     auto hidden=emit("namespace {struct Hidden{};} template<class T> inline Hidden value{};");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
-    for (const auto *gated:{"template<class T> extern T value;",
-                           "template<class T> inline int value=40;template<> int value<long> __attribute__((used))=42;",
+    assert(emit("template<class T> extern T value;").success);
+    for (const auto *gated:{"template<class T> inline int value=40;template<> int value<long> __attribute__((used))=42;",
                            "template<class T> inline int value=40;template<class T> extern int value<T*>;"}) {
       std::string fixed=gated;
       for (std::size_t pos=0;(pos=fixed.find(">=",pos))!=std::string::npos;pos+=3) fixed.replace(pos,2,"> =");
@@ -9104,6 +9192,7 @@ int main(int argc,char **argv) {
   TestPublicAliasTemplates();
   TestFunctionTemplateDeclarations();
   TestPublicVariableTemplates();
+  TestIncompleteTemplateDeclarations();
   TestPublicClassTemplates();
   TestClassMemberTemplates();
   TestClassMemberAliasTemplates();

@@ -1709,7 +1709,8 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         ";inline=" + std::to_string(variable->isInline()) +
         ";constexpr=" + std::to_string(variable->isConstexpr()) +
         ";thread-storage=" + std::to_string(variable->getTSCSpec()) +
-        ";initializer=" + (variable->hasInit() ? identity.Get(const_cast<clang::Expr *>(variable->getInit())) : "default") +
+        ";initializer=" + (variable->hasInit() ? identity.Get(const_cast<clang::Expr *>(variable->getInit())) :
+            variable->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly ? "declaration" : "default") +
         (partials.empty()?"":";partials="+ComputeInterfaceSourceSha256(partial_contract)) +
         "};cxx-variable-templates:v1;" +
         (partials.empty() || pattern->getDeclContext()->isRecord()?"":";cxx-variable-partial-specializations:v1;") +
@@ -2466,6 +2467,24 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";automatic-owner-unwind:v1;";
   if (HasDeclarationNativeArrayLifetime(representative))
     identity.canonical_type_identity += ";native-array-lifetimes:v1;";
+  if (llvm::isa<clang::ClassTemplateDecl,clang::VarTemplateDecl,clang::CXXRecordDecl>(representative)) {
+    struct IncompleteTemplates:clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool TraverseStmt(clang::Stmt *) override {return true;}
+      bool TraverseDecl(clang::Decl *declaration) override {
+        return !declaration || declaration->isImplicit() || clang::DynamicRecursiveASTVisitor::TraverseDecl(declaration);
+      }
+      bool VisitClassTemplateDecl(clang::ClassTemplateDecl *pattern) override {
+        found |= !pattern->getTemplatedDecl()->getDefinition();return true;
+      }
+      bool VisitVarTemplateDecl(clang::VarTemplateDecl *pattern) override {
+        const auto *variable=pattern->getTemplatedDecl();
+        found |= variable->getStorageClass()==clang::SC_Extern && !variable->getDefinition();return true;
+      }
+    } visitor;
+    visitor.TraverseDecl(representative);
+    if (visitor.found) identity.canonical_type_identity += ";cxx-incomplete-template-declarations:v1;";
+  }
   if (HasDeclarationNativeSubobject(representative))
     identity.canonical_type_identity += ";native-subobject-cleanup:v3;";
   if (HasDeclarationNativeAllocation(representative))

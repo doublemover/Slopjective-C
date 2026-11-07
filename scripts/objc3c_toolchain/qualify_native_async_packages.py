@@ -153,6 +153,13 @@ def check_factory_metadata(metadata):
             'NativeUnnamedTemplateProjections::Answer','NativeUnnamedTemplateProjections::Different',
             'NativeUnnamedTemplateProjections::provider_first','NativeUnnamedTemplateProjections::provider_read'}<=projections):
         raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeUnnamedTemplateProjections::First','NativeUnnamedTemplateProjections::Second',")
+    incomplete={row['qualified_name'] for row in metadata['declarations']
+                if ';cxx-incomplete-template-declarations:v1;' in row.get('canonical_type_identity','')}
+    if ('objc3.cxx-incomplete-template-declarations.v1' not in metadata['required_semantics'] or
+            not {'NativeIncompleteTemplates::Box','NativeIncompleteTemplates::Enclosing',
+                 'NativeIncompleteTemplates::Wrapper','NativeIncompleteTemplates::value',
+                 'NativeIncompleteTemplates::local'} <= incomplete):
+        raise ValueError('qualify_native_async_packages: incomplete template declaration metadata is incomplete')
     ordinary={'NativeUnnamedRecordProjections::First','NativeUnnamedRecordProjections::Second',
               'NativeUnnamedRecordProjections::Reader','NativeUnnamedRecordProjections::ReverseReader',
               'NativeUnnamedRecordProjections::NestedLeaf','NativeUnnamedRecordProjections::MemberExplicit',

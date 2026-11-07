@@ -104,6 +104,13 @@ If no matching declaration exists, the program is ill-formed.
 
 If a declaration is referenced using a module-qualified name in an emitted textual interface, the emitter shall preserve the module-qualified form **or** emit an equivalent unqualified name together with imports that make it unambiguous.
 
+A source-free native C++ template declaration preserves parameter kinds,
+defaults, constraints and nominal ABI ownership. An opaque class declaration does
+not supply a layout or member definition. An external variable-template
+declaration does not define or zero-initialize storage; linkage and TLS remain
+part of its contract. Required semantic admission shall distinguish these
+incomplete declaration graphs from complete definitions.
+
 ## 2.4 API surface contracts {#part-2-4}
 
 ### 2.4.0 Cross-module semantic preservation (normative) {#part-2-4-0}

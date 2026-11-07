@@ -227,6 +227,16 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_codec_test PRIVATE objc3c_clang_foundation)
   add_test(NAME objc3_interface_codec COMMAND objc3_interface_codec_test)
+
+  add_executable(objc3_codec_production_semantics_test
+    ../../../../tests/clang_foundation/codec_production_semantics_test.cpp
+    ../../../fuzz/CodecTarget.cpp)
+  target_include_directories(objc3_codec_production_semantics_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_include_directories(objc3_codec_production_semantics_test PRIVATE ../../../fuzz)
+  target_link_libraries(objc3_codec_production_semantics_test PRIVATE objc3c_clang_foundation)
+  objc3c_link_clang_components(objc3_codec_production_semantics_test clangTooling)
+  add_test(NAME objc3_codec_production_semantics COMMAND objc3_codec_production_semantics_test)
   add_executable(objc3_interface_import_test
     ../../../../tests/clang_foundation/interface_import_test.cpp)
   target_include_directories(objc3_interface_import_test SYSTEM PRIVATE

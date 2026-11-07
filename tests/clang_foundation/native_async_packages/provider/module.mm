@@ -1,3 +1,4 @@
+#include "incomplete_templates.h"
 #include "unnamed_record_projections.h"
 #include "unnamed_template_projections.h"
 #include "declaration_attributes.h"
@@ -2014,3 +2015,11 @@ __attribute__((returns_twice)) int NativeDeclarationAttributes::returns_twice(){
 
 int NativeDeclarationAttributes::enabled(int value) __attribute__((enable_if(value>=0,"nonnegative"))) {return value+2;}
 int NativeDeclarationAttributes::enabled(int value) __attribute__((enable_if(value<0,"negative"))) {return 2-value;}
+
+namespace NativeIncompleteTemplates {
+template<> int value<int> = 40;
+template<> thread_local int local<int> = 2;
+Default *provider_pointer(Default *pointer){return pointer;}
+int &provider_value(){return value<int>;}
+int &provider_local(){return local<int>;}
+}

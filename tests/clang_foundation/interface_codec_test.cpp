@@ -1,6 +1,7 @@
 #include "clang_foundation/interface_codec.h"
 
 #include <cassert>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -37,6 +38,15 @@ std::string ReplaceOnce(std::string text, const std::string &from,
 } // namespace
 
 int main() {
+  const auto production=SupportedSemanticInterfaceCapabilities();
+  std::set<std::string> capabilities;
+  for(auto semantic:production)assert(capabilities.insert(semantic.str()).second);
+  assert(capabilities.count(kCxxIncompleteTemplateSemantic));
+  assert(capabilities.count(kNativeSubobjectSemantic));
+  assert(capabilities.count(kCxxUnnamedTemplateProjectionSemantic));
+  assert(capabilities.count("objc3.c-inline-definitions.v1"));
+  assert(!capabilities.count("objc3.native-subobject-cleanup.v2"));
+  assert(!capabilities.count("objc3.cxx-unnamed-template-projections.v1"));
   const llvm::StringRef supported[] = {"effects.async.v1", "ownership.v1",
                                        "objc3.async-entry-abi.v5"};
   const llvm::StringRef source = "int answer(void);\n";

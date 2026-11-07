@@ -3,6 +3,17 @@
 
 int factory_package_checks() {
   {
+    namespace Decl=NativeIncompleteTemplates;
+    static_assert(!__is_complete_type(Decl::Default));
+    static_assert(!__is_complete_type(Decl::Enclosing::Opaque<int>));
+    static_assert(!__is_complete_type(Decl::Wrapper<int>::Opaque<long>));
+    if(Decl::provider_pointer(nullptr)!=nullptr || Decl::value<int>+Decl::local<int>!=42)return 87;
+    if(&Decl::provider_value()!=&Decl::value<int> || &Decl::provider_local()!=&Decl::local<int>)return 88;
+    Decl::value<int>+=2;Decl::local<int>+=40;
+    if(Decl::provider_value()!=42 || Decl::provider_local()!=42)return 89;
+    Decl::value<int> = 40;Decl::local<int> = 2;
+  }
+  {
     namespace Project=NativeUnnamedRecordProjections;
     static_assert(!__is_same(Project::First,Project::Second));
     static_assert(!__is_same(Project::Kind,Project::OtherKind));

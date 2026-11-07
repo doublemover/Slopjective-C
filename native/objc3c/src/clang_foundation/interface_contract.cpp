@@ -457,6 +457,12 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool native_array_lifetimes_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeArrayLifetimeSemantic) != sidecar.required_semantics.end();
   if (native_array_lifetimes != native_array_lifetimes_capability)
     Add(result,"O3IFC186","native array lifetime identity and required capability must agree",expected.canonical_name);
+  const bool incomplete_templates = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxIncompleteTemplateIdentity);
+  const bool incomplete_template_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kCxxIncompleteTemplateSemantic) != sidecar.required_semantics.end();
+  const bool incomplete_template_owners = std::all_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+      [](const auto &d) {return !HasCxxIncompleteTemplateIdentity(d) || d.kind=="ClassTemplate" || d.kind=="VarTemplate" || d.kind=="CXXRecord";});
+  if (incomplete_templates != incomplete_template_capability || !incomplete_template_owners)
+    Add(result,"O3IFC104","incomplete template declaration identity and required capability must agree",expected.canonical_name);
   const bool native_subobjects = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeSubobjectIdentity);
   const bool native_subobjects_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeSubobjectSemantic) != sidecar.required_semantics.end();
   if (native_subobjects != native_subobjects_capability)
