@@ -4169,6 +4169,99 @@ void TestClosureFactories() {
   }
 }
 
+void TestAutomaticOwnerUnwindReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})
+    for(bool arc:{false,true}) {
+      const bool cxx=std::string(standard)!="c17";
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
+      args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
+      clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+      const std::string source=R"(
+        typedef borrowed const char *PublishedOrdinaryBytes;
+        __attribute__((objc_root_class)) @interface PublishedOrdinaryOwner {
+        @public char payload;
+        }
+        @end
+        void published_ordinary_use(const char *view __attribute__((noescape)));
+        inline PublishedOrdinaryBytes published_ordinary_bytes(PublishedOrdinaryOwner *_Nonnull owner)
+            __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->payload;}
+        typedef void (^PublishedOrdinaryWork)(void);
+        inline void published_ordinary_capture(PublishedOrdinaryOwner *_Nonnull owner) {
+          PublishedOrdinaryOwner *_Nonnull local=owner;
+          const char *view=&local->payload;
+          PublishedOrdinaryWork first=^{(void)local;published_ordinary_use(view);};
+          PublishedOrdinaryWork second=first;
+          second();
+        }
+        PublishedOrdinaryOwner *_Nonnull published_ordinary_factory(void);
+        void published_ordinary_raise(void);
+        inline void published_ordinary_body(PublishedOrdinaryOwner *_Nonnull owner,int mode) {
+          const char *outer=published_ordinary_bytes(owner);
+          @try {
+            PublishedOrdinaryOwner *_Nonnull local=published_ordinary_factory();
+            const char *view=published_ordinary_bytes(local);
+            published_ordinary_use(view);
+            if(mode)published_ordinary_raise();
+          } @catch(...) {published_ordinary_use(outer);}
+        }
+      )";
+      auto parse=[&](const std::string &text,const char *name) {
+        return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto emit=[&](const std::string &text,const char *name) {
+        auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                    "fixture.automatic_owner_unwind","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.automatic_owner_unwind","test");
+        for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+        assert(result.success);return result;
+      };
+      auto first=emit(source,"ordinary-provider.m");
+      auto replay=emit(first.source_bytes,"ordinary-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-ordinary.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+      std::vector<llvm::StringRef> supported;
+      for(const auto &item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
+      assert(llvm::is_contained(supported,llvm::StringRef(kAutomaticOwnerUnwindSemantic)));
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      auto older=supported;std::erase(older,llvm::StringRef(kAutomaticOwnerUnwindSemantic));
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto missing=*decoded;std::erase(missing.required_semantics,kAutomaticOwnerUnwindSemantic);
+      auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);
+      assert(llvm::StringRef(llvm::toString(invalid.takeError())).contains("automatic owner unwind identity"));
+      auto plain=emit("void plain_scope_contract(void);","plain-scope-contract.m");
+      auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+      invented->required_semantics.push_back(kAutomaticOwnerUnwindSemantic);
+      auto unexpected=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unexpected);
+      llvm::consumeError(unexpected.takeError());
+      auto good=parse(first.source_bytes+R"(
+        void ordinary_consumer(PublishedOrdinaryOwner *_Nonnull owner) {published_ordinary_body(owner,0);}
+      )","runtime-consumer.m");
+      assert(good && !good->getDiagnostics().hasErrorOccurred());
+      const std::string expired=R"(
+        void ordinary_expired(PublishedOrdinaryOwner *_Nonnull owner) {
+          const char *view=0;
+          @try {
+            PublishedOrdinaryOwner *_Nonnull local=published_ordinary_factory();
+            view=published_ordinary_bytes(local);published_ordinary_raise();
+          } @catch(...) {published_ordinary_use(view);}
+        }
+      )";
+      auto bad=parse(first.source_bytes+expired,"expired-runtime-scope.m");
+      assert(bad && bad->getDiagnostics().hasErrorOccurred());
+
+    }
+}
+
 void TestNativeAllocationReplay() {
   for(const char *standard:{"c++20","c++23"})
     for(bool arc:{false,true}) {
@@ -8451,6 +8544,7 @@ int main(int argc,char **argv) {
   TestBorrowedMemoryAliasReplay();
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
+  TestAutomaticOwnerUnwindReplay();
   TestNativeAllocationReplay();
   TestNativeDisposalReplay();
   TestInitializedOwnerReplay();

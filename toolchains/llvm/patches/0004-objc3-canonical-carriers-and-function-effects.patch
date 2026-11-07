@@ -38024,7 +38024,7 @@ index 000000000..c8761fb65
 +}
 diff --git a/clang/test/ObjC3/Sema/resource-ownership.m b/clang/test/ObjC3/Sema/resource-ownership.m
 new file mode 100644
-index 000000000..afd780ae7
+index 000000000..16884e785
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-ownership.m
 @@ -0,0 +1,65 @@
@@ -38061,7 +38061,7 @@ index 000000000..afd780ae7
 +void retainable_family_is_not_a_scalar_resource(void) {
 +  RetainableHandle value __attribute__((objc_resource(close=close_retainable, invalid=0))) = 0; // expected-error {{requires a mutable nondependent integer, enum, or ordinary pointer handle}}
 +#if __has_feature(objc_arc)
-+  __weak RetainableHandle weak_value __attribute__((objc_resource(close=close_retainable, invalid=0))) = 0; // expected-error {{requires a mutable nondependent integer, enum, or ordinary pointer handle}} expected-warning {{'__weak' only applies to Objective-C object or block pointer types}}
++  __weak RetainableHandle weak_value __attribute__((objc_resource(close=close_retainable, invalid=0))) = 0; // expected-error {{requires a mutable nondependent integer, enum, or ordinary pointer handle}}
 +#endif
 +}
 +void incompatible_close(void) {
@@ -43710,10 +43710,10 @@ index 000000000..1122bbb29
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..7ddc2199c
+index 000000000..88beb18f5
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6143 @@
+@@ -0,0 +1,6148 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -44862,8 +44862,13 @@ index 000000000..7ddc2199c
 +  }
 +  bool statementMayBorrow(const Stmt *Node) const {
 +    if (!Node) return false;
-+    if (const auto *Expression = dyn_cast<Expr>(Node))
-+      if (carriesBorrowedValue(Expression->getType())) return true;
++    if (const auto *Expression = dyn_cast<Expr>(Node)) {
++      if (carriesBorrowedValue(Expression->getType()) ||
++          isa<ObjCIvarRefExpr>(Expression) || embeddedAddressOwner(Expression)) return true;
++      if (const auto *Message = dyn_cast<ObjCMessageExpr>(Expression))
++        if (const auto *Method = Message->getMethodDecl();
++            Method && Method->hasAttr<ObjCReturnsInnerPointerAttr>()) return true;
++    }
 +    for (const Stmt *Child : Node->children())
 +      if (statementMayBorrow(Child)) return true;
 +    return false;
@@ -57927,10 +57932,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..62710758e
+index 000000000..fd181f6f4
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,874 @@
+@@ -0,0 +1,978 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -58804,6 +58809,110 @@ index 000000000..62710758e
 +  };
 +  Explore(Explore,&Graph->getEntry(),{},false,0);
 +  EXPECT_GT(Empty,0u);EXPECT_GT(Null,0u);EXPECT_GT(Caught,0u);EXPECT_GT(Terminated,0u);
++}
++
++TEST(ObjC3ASTInfrastructure, OrdinaryOwnerUnwindsBeforeCatchWithoutExplicitActions) {
++  for (bool Cxx : {false,true})
++    for (bool ARC : {false,true}) {
++      std::vector<std::string> Args={"-x",Cxx?"objective-c++":"objective-c",
++          Cxx?"-std=c++23":"-std=c17","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++          "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"};
++      if(Cxx)Args.push_back("-fcxx-exceptions");
++      if(ARC)Args.push_back("-fobjc-arc");
++      std::string Body=R"(
++        id ordinary_factory(void) __attribute__((nothrow));
++        void ordinary_marker(int) __attribute__((nothrow));
++        void ordinary_raise(void);
++        void ordinary_path(void) {
++          @try {
++            id local=ordinary_factory();
++            ordinary_marker(11);ordinary_raise();(void)local;
++          } @catch(...) {ordinary_marker(12);}
++          ordinary_marker(13);
++        }
++      )";
++      if(Cxx) {
++        const auto Position=Body.find("@try");Body.replace(Position,4,"try");
++        const auto Catch=Body.find("@catch");Body.replace(Catch,6,"catch");
++      }
++      auto AST=tooling::buildASTFromCodeWithArgs(Body,Args,"ordinary-owner.m");
++      ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++      FunctionDecl *Function=nullptr;const VarDecl *Owner=nullptr;
++      for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++        if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="ordinary_path")Function=F;
++      ASSERT_NE(Function,nullptr);
++      CFG::BuildOptions Options;Options.setAllAlwaysAdd();Options.AddLifetime=true;
++      Options.AddEHEdges=true;Options.AddImplicitDtors=true;
++      auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);
++      ASSERT_TRUE(Graph);
++      for(const auto *Block:*Graph)
++        for(const auto &Element:*Block)
++          if(auto Statement=Element.getAs<CFGStmt>())
++            if(const auto *Declarations=dyn_cast<DeclStmt>(Statement->getStmt()))
++              for(const auto *D:Declarations->decls())
++                if(const auto *V=dyn_cast<VarDecl>(D);V && V->getName()=="local")Owner=V;
++      ASSERT_NE(Owner,nullptr);
++      unsigned Caught=0,Normal=0,Budget=4096;
++      auto Explore=[&](auto &&Self,const CFGBlock *Block,std::vector<int> Trace,unsigned Depth)->void {
++        ASSERT_GT(Budget--,0u);ASSERT_LT(Depth,64u);
++        for(const auto &Element:*Block) {
++          if(auto End=Element.getAs<CFGLifetimeEnds>();End && End->getVarDecl()==Owner)Trace.push_back(20);
++          if(auto Statement=Element.getAs<CFGStmt>())
++            if(const auto *Call=dyn_cast<CallExpr>(Statement->getStmt());Call && Call->getDirectCallee()) {
++              if(Call->getDirectCallee()->getName()=="ordinary_marker")
++                Trace.push_back(cast<IntegerLiteral>(Call->getArg(0)->IgnoreParenImpCasts())->getValue().getZExtValue());
++            }
++        }
++        if(Block->succ_empty()) {
++          auto Handler=std::find(Trace.begin(),Trace.end(),12);
++          auto End=std::find(Trace.begin(),Trace.end(),20);
++          EXPECT_NE(End,Trace.end());EXPECT_EQ(std::count(Trace.begin(),Trace.end(),20),1);
++          EXPECT_EQ(Trace.front(),11);EXPECT_EQ(Trace.back(),13);
++          if(Handler!=Trace.end()){++Caught;EXPECT_LT(End,Handler);}else ++Normal;
++          return;
++        }
++        for(auto Successor:Block->succs())if(const auto *Next=Successor.getReachableBlock())Self(Self,Next,Trace,Depth+1);
++      };
++      Explore(Explore,&Graph->getEntry(),{},0);EXPECT_GT(Caught,0u);EXPECT_GT(Normal,0u);
++    }
++}
++
++TEST(ObjC3ASTInfrastructure, CatchAllAndStandaloneHandlerPrintingPreserveBodies) {
++  for(bool Cxx:{false,true})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x",Cxx?"objective-c++":"objective-c",
++      Cxx?"-std=c++23":"-std=c17","-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++      "--target=x86_64-unknown-linux-gnu","-fexceptions","-fobjc-exceptions"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(R"(
++      void print_marker(void);
++      void print_paths(void) {
++        @try {@throw (id)0;}
++        @catch(id value) {print_marker();}
++        @catch(...) {print_marker();}
++        @finally {print_marker();}
++      }
++    )",Args,"print-handlers.m");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    FunctionDecl *Function=nullptr;
++    for(auto *D:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="print_paths")Function=F;
++    ASSERT_NE(Function,nullptr);
++    std::string Printed;llvm::raw_string_ostream OS(Printed);
++    Function->print(OS);OS.flush();
++    EXPECT_NE(Printed.find("@catch(...)"),std::string::npos);
++    auto Replay=tooling::buildASTFromCodeWithArgs("void print_marker(void);\n"+Printed,Args,"print-replay.m");
++    ASSERT_TRUE(Replay);EXPECT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++    auto *Try=cast<ObjCAtTryStmt>(cast<CompoundStmt>(Function->getBody())->body_front());
++    auto Check=[&](const Stmt *Part,const char *Syntax) {
++      std::string Text;llvm::raw_string_ostream Stream(Text);
++      Part->printPretty(Stream,nullptr,PrintingPolicy(AST->getASTContext().getLangOpts()));Stream.flush();
++      EXPECT_NE(Text.find(Syntax),std::string::npos);
++      EXPECT_NE(Text.find("print_marker()"),std::string::npos);
++      EXPECT_EQ(Text.find("todo"),std::string::npos);
++    };
++    for(auto *Catch:Try->catch_stmts())Check(Catch,Catch->getCatchParamDecl()?"@catch(id":"@catch(...)");
++    Check(Try->getFinallyStmt(),"@finally");
++  }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -65219,4 +65328,156 @@ index 000000000..8ed9dd244
 +    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=[local bytes];
 +    delete new ConstructorDisposal(7);
 +  } catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-ordinary-owner-scopes.h b/clang/test/ObjC3/Sema/Inputs/borrowed-ordinary-owner-scopes.h
+new file mode 100644
+index 000000000..7089ad8f1
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-ordinary-owner-scopes.h
+@@ -0,0 +1,5 @@
++#ifndef BORROWED_ORDINARY_OWNER_SCOPES_H
++#define BORROWED_ORDINARY_OWNER_SCOPES_H
++#include "borrowed-runtime-scopes.h"
++void ordinary_owner_thrower(void);
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-ordinary-owner-scopes.m b/clang/test/ObjC3/Sema/borrowed-ordinary-owner-scopes.m
+new file mode 100644
+index 000000000..2b6437cfa
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-ordinary-owner-scopes.m
+@@ -0,0 +1,48 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ordinary-owner-scopes.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ordinary-owner-scopes.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ordinary-owner-scopes.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ordinary-owner-scopes.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ordinary-owner-scopes.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ordinary-owner-scopes.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-ordinary-owner-scopes.h"
++#endif
++void ordinary_owner_call_unwind(void) {
++  const char *view=0;
++  @try {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;
++    ordinary_owner_thrower();
++  } @catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++void ordinary_owner_normal_exit(void) {
++  const char *view=0;
++  {RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;receiver_use(view);}
++  receiver_use(view); // expected-error {{after its owner lifetime ended}}
++}
++void ordinary_owner_outer_binding(RuntimeScopeOwner *_Nonnull owner) {
++  const char *view=owner->storage;
++  @try {RuntimeScopeOwner *other=runtime_scope_factory();(void)other;ordinary_owner_thrower();}
++  @catch(...) {receiver_use(view);}
++}
++#ifdef __cplusplus
++void ordinary_cpp_owner_call_unwind(void) {
++  const char *view=0;
++  try {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;
++    ordinary_owner_thrower();
++  } catch(...) {receiver_use(view);} // expected-error {{after its owner lifetime ended}}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-ordinary-block-scopes.h b/clang/test/ObjC3/Sema/Inputs/borrowed-ordinary-block-scopes.h
+new file mode 100644
+index 000000000..c3060d4ba
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-ordinary-block-scopes.h
+@@ -0,0 +1,6 @@
++#ifndef BORROWED_ORDINARY_BLOCK_SCOPES_H
++#define BORROWED_ORDINARY_BLOCK_SCOPES_H
++#include "borrowed-ordinary-owner-scopes.h"
++typedef void (^OrdinaryWork)(void);
++struct OrdinaryOwnerRecord {RuntimeScopeOwner *owner;};
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-ordinary-block-scopes.m b/clang/test/ObjC3/Sema/borrowed-ordinary-block-scopes.m
+new file mode 100644
+index 000000000..5321fe73f
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-ordinary-block-scopes.m
+@@ -0,0 +1,69 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ordinary-block-scopes.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ordinary-block-scopes.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ordinary-block-scopes.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ordinary-block-scopes.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-ordinary-block-scopes.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-ordinary-block-scopes.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-ordinary-block-scopes.h"
++#endif
++void ordinary_block_capture(RuntimeScopeOwner *_Nonnull owner) {
++  RuntimeScopeOwner *_Nonnull local=owner;
++  const char *view=local->storage;
++  OrdinaryWork work=^{(void)local;receiver_use(view);};
++  local=(id)0;owner=(id)0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{owner lifetime ended}}
++#endif
++}
++void ordinary_block_slot_copy(RuntimeScopeOwner *_Nonnull owner) {
++  RuntimeScopeOwner *_Nonnull local=owner;
++  const char *view=local->storage;
++  OrdinaryWork first=^{(void)local;receiver_use(view);};
++  OrdinaryWork second=first;
++  local=(id)0;owner=(id)0;
++#if __has_feature(objc_arc)
++  second();
++#else
++  second(); // expected-error {{owner lifetime ended}}
++#endif
++}
++void ordinary_record_block_capture(RuntimeScopeOwner *_Nonnull owner) {
++  RuntimeScopeOwner *_Nonnull local=owner;
++  struct OrdinaryOwnerRecord record={local};
++  OrdinaryWork work=^{receiver_use(record.owner->storage);};
++  record.owner=(id)0;local=(id)0;owner=(id)0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{owner lifetime ended}}
++#endif
++}
++void ordinary_block_catch_expiry(void) {
++  const char *view=0;
++  @try {
++    RuntimeScopeOwner *_Nonnull local=runtime_scope_factory();view=local->storage;
++    OrdinaryWork work=^{(void)local;receiver_use(view);};
++    work();ordinary_owner_thrower();
++  } @catch(...) {receiver_use(view);} // expected-error {{owner lifetime ended}}
++}
++void ordinary_block_null_initialization(RuntimeScopeOwner *_Nonnull owner) {
++  RuntimeScopeOwner *_Nonnull local=owner;
++  OrdinaryWork empty=0,unused;
++  receiver_use(local->storage);(void)empty;(void)unused;
 +}

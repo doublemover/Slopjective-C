@@ -304,12 +304,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 41,
+        "minor": 42,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Every-handler native local unwind, strong implicit ARC primitive capture cleanup and heap-copy failure, raw inline-storage closure loan discovery, catch-all/standalone handler printing and exact source-free capability admission (59 affected compiler cases, six new source-free profiles, seven adjacent frontend groups, codec/isolation controls, 24 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; matched SDK consolidation pending)",
         "Matched ordinary scalar deallocation after constructor failure, allocation-failure exclusion, grouped nontrivial array unwind/secondary termination, null/empty/noreturn handling, bounded repeatable constant array initialization including fillers, borrowed deallocation rejection and exact source-free admission (all 79 affected compiler cases, eight allocation/disposal source-free profiles, six adjacent frontend groups, codec/isolation, 22 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; matched SDK consolidation pending)",
         "Mandatory scalar C++ deallocation after destructor failure, exact null/noreturn branches and operand evaluation, termination boundaries and exact source-free semantic admission (twelve source/PCH compiler commands, all 20 AST controls and 12 instrumented native configurations / 42 commands pass; all 78 affected compiler cases, four source-free profiles, five adjacent frontend groups and codec/isolation controls pass; matched SDK consolidation pending)",
         "Completed primitive ARC record/array/nested/capture initialization prefixes, reverse failure cleanup and transfer to complete storage; evaluated owner/unowned snapshots, owned field aliases, native capture order, elided local lambda lifetime and rehash-safe ownership metadata cloning, with exact source-free admission (all 77 affected compiler cases, six source-free profiles, five adjacent frontend groups, codec/isolation, 19 AST controls and 12 ASan/UBSan native configurations / 42 commands pass; matched SDK consolidation pending)",

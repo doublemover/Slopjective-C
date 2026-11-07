@@ -475,6 +475,65 @@ static void allocation_array_suite(void) {
 }
 #endif
 
+#if __has_feature(objc_arc)
+__attribute__((noinline)) static void scope_ordinary_raise(int mode) {
+#ifdef __cplusplus
+  if(mode)throw 97;
+#endif
+  @throw scope_exception;
+}
+static void *_Nullable (*_Nullable scope_real_block_copy)(const void *_Nullable);
+static int scope_fail_block_copy;
+#ifdef __cplusplus
+extern "C"
+#endif
+__attribute__((noinline)) void *_Nullable _Block_copy(const void *_Nullable source) {
+  if(scope_fail_block_copy){scope_fail_block_copy=0;@throw scope_exception;}
+  if(!scope_real_block_copy)scope_real_block_copy=(void *(*)(const void *))dlsym(RTLD_NEXT,"_Block_copy");
+  assert(scope_real_block_copy);return scope_real_block_copy(source);
+}
+static void scope_ordinary_block_unwind(int fail_copy) {
+  int before=scope_destroyed;
+  @try {
+    ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+    const char *view=&local->payload;
+    scope_fail_block_copy=fail_copy;
+    void (^work)(void)=^{(void)local;scope_use(view);};
+    work();scope_ordinary_raise(0);
+  } @catch(...) {assert(scope_destroyed==before+1 && scope_fail_block_copy==0);}
+  assert(scope_destroyed==before+1);
+}
+static void scope_ordinary_record_block(void) {
+  int before=scope_destroyed;
+  {
+    ScopeProbe *_Nullable local=[ScopeProbe new];
+    struct CapturedRecord {ScopeProbe *_Nullable owner;};
+    struct CapturedRecord record={local};
+    void (^first)(void)=^{scope_use(&record.owner->payload);};
+    void (^second)(void)=first;
+    local=(id)0;record.owner=(id)0;
+    second();assert(scope_destroyed==before);
+  }
+  assert(scope_destroyed==before+1);
+}
+static void scope_ordinary_owner_unwind(void) {
+  int before=scope_destroyed;
+  @try {
+    ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+    scope_use(&local->payload);assert(scope_destroyed==before);
+    scope_ordinary_raise(0);
+  } @catch(...) {assert(scope_destroyed==before+1);}
+  assert(scope_destroyed==before+1);
+#ifdef __cplusplus
+  try {
+    ScopeProbe *_Nonnull local __attribute__((objc_precise_lifetime))=[ScopeProbe new];
+    scope_use(&local->payload);assert(scope_destroyed==before+1);
+    scope_ordinary_raise(1);
+  } catch(int value) {assert(value==97 && scope_destroyed==before+2);}
+  assert(scope_destroyed==before+2);
+#endif
+}
+#endif
 static void runtime_scope_suite(void) {
   int initial_created=scope_created,initial_destroyed=scope_destroyed;
   @autoreleasepool {
@@ -499,7 +558,8 @@ static void runtime_scope_suite(void) {
     scope_disposal_suite();allocation_array_suite();
 #endif
 #if __has_feature(objc_arc)
-    scope_partial_suite();
+    scope_partial_suite();scope_ordinary_owner_unwind();
+    scope_ordinary_block_unwind(0);scope_ordinary_block_unwind(1);scope_ordinary_record_block();
 #endif
 #if !__has_feature(objc_arc)
     scope_counted_pool();[scope_exception release];

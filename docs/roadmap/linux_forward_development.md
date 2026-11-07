@@ -1,5 +1,14 @@
 # Objective-C 3.0 on Linux
 
+The [System 2.42 ordinary-owner span](linux_automatic_owner_unwind.md)
+activates complete local unwind for every native handler, admits nonthrowing
+implicit ARC capture copies, registers heap-copy failure and repairs discovery of
+raw inline-storage closure loans. Catch-all and standalone handler printing is
+repaired. All 59 affected compiler cases, six new source-free profiles, seven
+adjacent frontend groups, codec/isolation controls, 24 AST controls and twelve
+instrumented native configurations / 42 commands pass. Broader exceptional
+ownership remains in the ledger.
+
 The [System 2.41 allocation/array span](linux_array_and_allocation_cleanup.md)
 adds matched scalar deallocation after constructor failure, nontrivial array
 unwind/termination, empty-array behavior and bounded repeatable array construction.

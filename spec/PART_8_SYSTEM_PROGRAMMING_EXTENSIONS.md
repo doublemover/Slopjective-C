@@ -416,6 +416,13 @@ terminates. An empty array skips element destruction while retaining array
 deallocation. A borrowed pointer does not confer scalar or array deallocation
 ownership.
 
+A native catch handler observes owner state after protected-region cleanup,
+including catch-all and scalar/reference exception bindings. A successful strong
+Block binding owns its copied captures; a failed heap copy does not initialize
+or destroy that destination binding. Closure analysis shall discover inferred
+inline-storage and receiver-result loans even when their native pointer type
+has no explicit borrowed spelling.
+
 ### 8.7.4 Escaping-use trigger points and minimum diagnostics (normative) {#part-8-7-4}
 
 In strict-system mode, a borrowed pointer value is treated as **non-escaping** unless an explicit unsafe escape marker is used.

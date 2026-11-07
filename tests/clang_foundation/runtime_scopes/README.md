@@ -42,3 +42,9 @@ constructor fails, with no whole-object destructor call. Array witnesses check
 reverse destruction, the remaining prefix after the first exception, one array
 free, zero-length noreturn bypass and termination before free after a second
 element exception. Child processes provide exact termination trace witnesses.
+
+Ordinary ARC local owners and implicit Block captures also unwind without a
+pool, defer or lifetime statement. Exact destruction is checked before
+Objective-C/C++ catch entry. A runtime heap-copy fault checks stack capture
+cleanup and an uninitialized destination; successful record and Block slot
+copies keep their payload live through original-owner resets.

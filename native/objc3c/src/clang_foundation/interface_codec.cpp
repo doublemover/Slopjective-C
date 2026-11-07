@@ -488,6 +488,10 @@ llvm::Error ValidateForEncoding(
   const bool nsobject_storage_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNSObjectStorageSemantic) != sidecar.required_semantics.end();
   if (nsobject_storage != nsobject_storage_capability)
     return Invalid("NSObject storage identity and required capability must agree");
+  const bool automatic_owner_unwind = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasAutomaticOwnerUnwindIdentity);
+  const bool automatic_owner_unwind_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAutomaticOwnerUnwindSemantic) != sidecar.required_semantics.end();
+  if (automatic_owner_unwind != automatic_owner_unwind_capability)
+    return Invalid("automatic owner unwind identity and required capability must agree");
   const bool native_allocation = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasNativeAllocationIdentity);
   const bool native_allocation_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kNativeAllocationSemantic) != sidecar.required_semantics.end();
   if (native_allocation != native_allocation_capability)
