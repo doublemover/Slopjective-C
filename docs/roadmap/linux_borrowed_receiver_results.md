@@ -40,8 +40,8 @@ views and native getters, with C++ references and exact destruction after pools.
 All forty-two new compiler commands and all forty-two affected compiler cases
 pass. Six source-free profiles and twelve ASan/UBSan native configurations /
 forty-two commands pass. Publication also repairs declaration polishing so the
-native attribute survives both written and inherited contracts. Adjacent frontend
-groups and codec/isolation controls finish the focused consolidation.
+native attribute survives both written and inherited contracts. Five adjacent
+frontend groups and the codec/isolation controls also pass.
 
 Effectful/resource key paths, wider native managed-cleanup CFG registration,
 open callable and global/interprocedural ownership precision, complete profile
