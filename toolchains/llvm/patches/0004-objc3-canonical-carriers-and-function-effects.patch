@@ -49943,10 +49943,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..16dcb83d0
+index 000000000..8ce662b6d
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1704 @@
+@@ -0,0 +1,1716 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -51253,7 +51253,7 @@ index 000000000..16dcb83d0
 +      if (Value.isInvalid())
 +        return nullptr;
 +    }
-+    if (Info.ObjC3Effects.Throws != ObjC3ThrowsKind::None) {
++    if (!Property && Info.ObjC3Effects.Throws != ObjC3ThrowsKind::None) {
 +      Value = S.ActOnObjC3TryExpr(
 +          static_cast<unsigned>(ObjC3TryExpr::Kind::Propagate), Loc, Loc,
 +          Value.get(), Loc);
@@ -51399,6 +51399,19 @@ index 000000000..16dcb83d0
 +    SmallVector<QualType, 1> Types;
 +    if (Property->RHS) Types.push_back(Property->RHS->getType());
 +    auto Info = FT->getExtProtoInfo();
++    // A compound operation checks the getter before the setter. Their error
++    // contracts must agree; a nonthrowing half contributes no extra effect.
++    for (const auto *Accessor : Accessors) {
++      const auto Effects = Accessor->getObjC3FunctionEffects();
++      if (Effects.Throws == ObjC3ThrowsKind::None) continue;
++      if (Info.ObjC3Effects.Throws == ObjC3ThrowsKind::None) {
++        Info.ObjC3Effects.Throws = Effects.Throws;
++        Info.ObjC3Effects.ErrorType = Effects.ErrorType;
++      } else if (Info.ObjC3Effects.Throws != Effects.Throws ||
++                 (Effects.Throws == ObjC3ThrowsKind::Typed &&
++                  !Context.hasSameType(Info.ObjC3Effects.ErrorType, Effects.ErrorType)))
++        PropertyContract = false;
++    }
 +    if (Types.empty()) Info.ExtParameterInfos = nullptr;
 +    FT = Context.getFunctionType(Property->Result, Types, Info)->castAs<FunctionProtoType>();
 +  }
@@ -51497,7 +51510,6 @@ index 000000000..16dcb83d0
 +      const auto *Signature = isolationCalleeFunctionType(*this, Accessor);
 +      Shape &= Signature && !Signature->isVariadic() &&
 +          !Signature->getObjC3FunctionEffects().Async &&
-+          Signature->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
 +          (!getLangOpts().CPlusPlus || Signature->isNothrow() ||
 +           Accessor->hasAttr<NoThrowAttr>() || hasExceptionCaptureHook(*this));
 +    }
@@ -56897,7 +56909,7 @@ index 000000000..43084cdf3
 +}
 +#endif
 diff --git a/clang/lib/Sema/SemaPseudoObject.cpp b/clang/lib/Sema/SemaPseudoObject.cpp
-index 667366709..7162be258 100644
+index 667366709..8f9442289 100644
 --- a/clang/lib/Sema/SemaPseudoObject.cpp
 +++ b/clang/lib/Sema/SemaPseudoObject.cpp
 @@ -29,7 +29,9 @@
@@ -56945,7 +56957,48 @@ index 667366709..7162be258 100644
  
    // Load the value.
    ExprResult result = buildGet();
-@@ -1008,6 +1017,25 @@ ObjCSubscriptOpBuilder::buildAssignmentOperation(Scope *Sc,
+@@ -724,6 +733,22 @@ Expr *ObjCPropertyOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
+ }
+ 
+ /// Load from an Objective-C property reference.
++// The isolated property thunk owns the accessor sequence. Each checked
++// accessor must propagate before a later accessor or its result is evaluated.
++// Source pseudo-objects retain their written check/await boundary instead.
++static ExprResult finishObjC3IsolatedPropertyAccessor(Sema &S, ExprResult Value,
++                                                     ObjCMethodDecl *Method,
++                                                     SourceLocation Loc) {
++  const auto *Function = S.getCurFunctionDecl();
++  if (Value.isInvalid() || !S.getLangOpts().ObjC3 || !Function ||
++      !Function->hasAttr<ObjC3IsolationThunkAttr>() ||
++      Method->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None)
++    return Value;
++  return S.ActOnObjC3TryExpr(
++      static_cast<unsigned>(ObjC3TryExpr::Kind::Propagate), Loc, Loc,
++      Value.get(), Loc);
++}
++
+ ExprResult ObjCPropertyOpBuilder::buildGet() {
+   findGetter();
+   if (!Getter) {
+@@ -750,7 +775,7 @@ ExprResult ObjCPropertyOpBuilder::buildGet() {
+         receiverType, RefExpr->isSuperReceiver(), GenericLoc,
+         Getter->getSelector(), Getter, {});
+   }
+-  return msg;
++  return finishObjC3IsolatedPropertyAccessor(S, msg, Getter, GenericLoc);
+ }
+ 
+ /// Store to an Objective-C property reference.
+@@ -819,7 +844,7 @@ ExprResult ObjCPropertyOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
+       msgExpr->setArg(0, captureValueAsResult(arg));
+   }
+ 
+-  return msg;
++  return finishObjC3IsolatedPropertyAccessor(S, msg, Setter, opcLoc);
+ }
+ 
+ /// @property-specific behavior for doing lvalue-to-rvalue conversion.
+@@ -1008,6 +1033,25 @@ ObjCSubscriptOpBuilder::buildAssignmentOperation(Scope *Sc,
    if (opcode != BO_Assign && !findAtIndexGetter())
      return ExprError();
  
@@ -56971,7 +57024,7 @@ index 667366709..7162be258 100644
    ExprResult result =
    PseudoOpBuilder::buildAssignmentOperation(Sc, opcLoc, opcode, LHS, RHS);
    if (result.isInvalid()) return ExprError();
-@@ -1027,8 +1055,17 @@ Expr *ObjCSubscriptOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
+@@ -1027,8 +1071,17 @@ Expr *ObjCSubscriptOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
  
    // Capture base expression in an OVE and rebuild the syntactic
    // form to use the OVE as its base expression.
@@ -56991,7 +57044,7 @@ index 667366709..7162be258 100644
  
    syntacticBase =
        Rebuilder(S, [=](Expr *, unsigned Idx) -> Expr * {
-@@ -1066,6 +1103,7 @@ static void CheckKeyForObjCARCConversion(Sema &S, QualType ContainerT,
+@@ -1066,6 +1119,7 @@ static void CheckKeyForObjCARCConversion(Sema &S, QualType ContainerT,
  }
  
  bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
@@ -56999,7 +57052,7 @@ index 667366709..7162be258 100644
    if (AtIndexGetter)
      return true;
  
-@@ -1165,6 +1203,13 @@ bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
+@@ -1165,6 +1219,13 @@ bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
  }
  
  bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
@@ -57013,7 +57066,7 @@ index 667366709..7162be258 100644
    if (AtIndexSetter)
      return true;
  
-@@ -1296,6 +1341,10 @@ bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
+@@ -1296,6 +1357,10 @@ bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
  // Get the object at "Index" position in the container.
  // [BaseExpr objectAtIndexedSubscript : IndexExpr];
  ExprResult ObjCSubscriptOpBuilder::buildGet() {
@@ -57024,7 +57077,7 @@ index 667366709..7162be258 100644
    if (!findAtIndexGetter())
      return ExprError();
  
-@@ -1325,6 +1374,18 @@ ExprResult ObjCSubscriptOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
+@@ -1325,6 +1390,18 @@ ExprResult ObjCSubscriptOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
                                             bool captureSetValueAsResult) {
    if (!findAtIndexSetter())
      return ExprError();
@@ -57043,7 +57096,7 @@ index 667366709..7162be258 100644
    if (AtIndexSetter)
      S.DiagnoseUseOfDecl(AtIndexSetter, GenericLoc);
    QualType receiverType = InstanceBase->getType();
-@@ -1484,7 +1545,9 @@ ExprResult SemaPseudoObject::checkIncDec(Scope *Sc, SourceLocation opcLoc,
+@@ -1484,7 +1561,9 @@ ExprResult SemaPseudoObject::checkIncDec(Scope *Sc, SourceLocation opcLoc,
          = dyn_cast<ObjCPropertyRefExpr>(opaqueRef)) {
      ObjCPropertyOpBuilder builder(SemaRef, refExpr, false);
      return builder.buildIncDecOperation(Sc, opcLoc, opcode, op);
@@ -67133,4 +67186,23 @@ index 000000000..0a00ab19c
 +  __objc3_await (object.borrowedValue=*borrowedValue); // expected-error {{awaited isolated entry requires a direct}}
 +  __objc3_await (object.raw=(ResourcePropertyHandle)4); // expected-error {{awaited isolated entry requires a direct}}
 +  __objc3_await (object.value=*value); // expected-error {{awaited isolated entry requires a direct}}
++}
+diff --git a/clang/test/ObjC3/Sema/checked-isolated-property-gates.m b/clang/test/ObjC3/Sema/checked-isolated-property-gates.m
+new file mode 100644
+index 000000000..0c8e1198b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/checked-isolated-property-gates.m
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/checked-isolated-properties.h"
++int reject_mismatched_property_errors(CheckedPropertyHost *object) __objc3_async_frame __objc3_throws(id<CheckedPropertyError>) {
++  return __objc3_try(__objc3_await (object.mismatched+=1)); // expected-error {{awaited isolated entry requires a direct}}
++}
++int reject_unchecked_property(CheckedPropertyHost *object) __objc3_async_frame {
++  return __objc3_await object.value; // expected-error {{throwing call requires an explicit tryValue}}
 +}

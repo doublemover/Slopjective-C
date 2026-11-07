@@ -6213,6 +6213,64 @@ void TestNativeFrameExceptionReplay() {
     }
 }
 
+void TestCheckedIsolatedPropertyReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
+    const bool cxx=std::string(standard)!="c17";
+    std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
+        "-fobjc-version=3","-fblocks","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-concurrency",
+        "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    if(arc)args.push_back("-fobjc-arc");
+    clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
+    auto parse=[&](const std::string &text,const char *name) {
+      return clang::tooling::buildASTFromCodeWithArgs(text,args,name,"clang-tool",
+          std::make_shared<clang::PCHContainerOperations>(),clang::tooling::getClangStripDependencyFileAdjuster(),files);
+    };
+    const std::string source=R"(
+      #include <objc3c/runtime/objc3_runtime_services.h>
+      @protocol Sendable @end
+      @protocol Error <Sendable> @end
+      __attribute__((objc_root_class)) @interface PublishedCheckedProperty <Sendable>
+      @property(nonatomic) int value;
+      - (int)value __objc3_throws(id<Error>) __attribute__((nothrow,objc_executor(main)));
+      - (void)setValue:(int)value __objc3_throws(id<Error>) __attribute__((nothrow,objc_executor(main)));
+      @property(nonatomic) int getterOnly;
+      - (int)getterOnly __objc3_throws(id<Error>) __attribute__((nothrow,objc_executor(main)));
+      - (void)setGetterOnly:(int)value __attribute__((nothrow,objc_executor(main)));
+      @end
+      inline int published_checked_property(PublishedCheckedProperty *object,int value) __objc3_async_frame __objc3_throws(id<Error>) {
+        __objc3_try(__objc3_await (object.value=value));
+        __objc3_try(__objc3_await (object.getterOnly+=2));
+        __objc3_try(__objc3_await object.value++);
+        return __objc3_try(__objc3_await --object.value);
+      }
+    )";
+    auto emit=[&](const std::string &text,const char *name) {
+      auto ast=parse(text,name);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+          "fixture.checked_properties","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.checked_properties","test");
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source,"checked-property-provider.m"),replay=emit(first.source_bytes,"checked-property-replay.m");
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"checked-property-relocated.m");
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+    assert(llvm::is_contained(decoded->required_semantics,std::string(kAsyncEntryABISemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kAsyncEntryABISemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto missing=*decoded;std::erase(missing.required_semantics,kAsyncEntryABISemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    assert(first.source_bytes.find("__objc3_isolation_entry_")==std::string::npos);
+    auto consumer=parse(first.source_bytes+"objc3_async_frame checked_consumer(PublishedCheckedProperty *object){return published_checked_property(object,42);}","checked-property-consumer.m");
+    assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+    auto bad=parse(first.source_bytes+"int unchecked_consumer(PublishedCheckedProperty *object) __objc3_async_frame {return __objc3_await (object.value+=1);}","unchecked-property-consumer.m");
+    assert(bad && bad->getDiagnostics().hasErrorOccurred());
+  }
+}
+
 void TestIsolatedPropertyReplay() {
   for (const char *standard : {"c17","c++20","c++23"}) {
     const bool cxx=std::string(standard)!="c17";
@@ -9997,6 +10055,7 @@ int main(int argc,char **argv) {
   TestFactoryTypeProjections();
   TestLocalFactoryResults();
   TestClosureFactories();
+  TestCheckedIsolatedPropertyReplay();
   TestIsolatedPropertyReplay();
   TestOwnedNilResultReplay();
   TestStrictAsyncProfileReplay();

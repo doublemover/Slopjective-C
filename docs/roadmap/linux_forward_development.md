@@ -1,5 +1,13 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.122 checked-accessor span](linux_checked_property_accessors.md)
+checks each synchronous getter/setter inside the isolated property frame, joins
+matching error effects and preserves compound/pre/post results. Getter failures
+skip setters; setter failures retain native argument cleanup. All 78 compiler
+commands, six source-free profiles and four adjacent frontend groups pass.
+Native fault controls also cover actor/class/super dispatch, nil, cancellation,
+C++ task callers and exact destruction of nontrivial setter arguments.
+
 The [source 2.121 resource-property span](linux_resource_property_lifetimes.md)
 unifies explicit C++ frame lifetimes for isolated values and property writes,
 including move-only owners, active resource unions and composed arrays. Borrowed,

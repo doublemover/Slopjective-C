@@ -15,3 +15,8 @@ Nil cases must finish using only the caller executor, including an unregistered
 destination. Constructed nil reads fail without construction; nil assignments
 preserve their independently valid RHS. C++ task callers, unstarted disposal and cancellation before parent entry,
 before child entry and after the actor hop retain exact accessor/argument counts.
+
+`checked.h` adds synchronous checked accessors, compatible getter/setter error
+contracts, exact getter/setter failure boundaries, identity-preserving recovery,
+class/super/actor dispatch, nil, cancellation and nontrivial C++ setter arguments.
+It runs in the same maintained source/PCH witness and installed example.
