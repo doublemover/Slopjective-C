@@ -310,10 +310,10 @@ inline bool HasCppCarrierCallIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-carrier-call:v2;") != std::string::npos ||
          d.effects.ownership_identity.find(";cxx-carrier-call:v2;") != std::string::npos;
 }
-inline constexpr const char *kResourceKeyPathValueSemantic = "objc3.keypath-resource-values.v1";
+inline constexpr const char *kResourceKeyPathValueSemantic = "objc3.keypath-resource-values.v2";
 inline bool HasResourceKeyPathValueIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";keypath-resource-values:v1;") != std::string::npos ||
-         d.effects.ownership_identity.find(";keypath-resource-values:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";keypath-resource-values:v2;") != std::string::npos ||
+         d.effects.ownership_identity.find(";keypath-resource-values:v2;") != std::string::npos;
 }
 inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-nullable-writes.v1";
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {

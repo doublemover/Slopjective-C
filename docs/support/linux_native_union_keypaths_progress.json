@@ -1,0 +1,43 @@
+{
+  "development_only": true,
+  "source_version": "2.144",
+  "system_version": "2.70",
+  "keypath_version": "2.12",
+  "prepared_source_tree": "377651f050b5dc5ee8595c4ec989eb0b4c4b592a",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 30,
+    "all_passed": true,
+    "last_full_sweep": "source 2.141: 539 passed, three unsupported"
+  },
+  "ast_controls": 60,
+  "publication_profiles": 2,
+  "production_decoder_exact_replays": 580,
+  "native": {
+    "configurations": 8,
+    "commands": 60,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "profiles": [
+      "C++20 O0 ARC/MRC source/PCH",
+      "C++23 O2 ARC/MRC source/PCH"
+    ],
+    "copy_elision": false,
+    "controls": [
+      "explicit resource and managed active arms",
+      "whole union and enclosing-record ownership",
+      "native field traversal and writeback",
+      "strong/weak/Block ownership and prefix rollback",
+      "copy/getter/setter failure injection",
+      "nullable route operand cleanup"
+    ]
+  },
+  "reader_contract": "objc3.keypath-resource-values.v2; whole union signatures and scalar accessor bodies",
+  "full_current_consolidation": "follows the implementation batch",
+  "adjacent_frontend_groups": 7
+}

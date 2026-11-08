@@ -6,6 +6,7 @@
 #include <cassert>
 #include "cxx_values.h"
 #include "cxx_resources.h"
+#include "cxx_managed_unions.h"
 
 struct SnapshotCapture {
   static inline bool fail_copy = false;
@@ -22,6 +23,7 @@ struct SnapshotCapture {
 int main() {
   keypath_cxx_value_contract();
   keypath_cxx_resource_contract();
+  keypath_cxx_managed_union_contract();
   const bool modes[]={false,true};
   for (bool subscript : modes) {
   @autoreleasepool {

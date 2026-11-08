@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [source 2.144 / System 2.70 / keypath 2.12 native-union span](linux_native_union_keypaths.md)
+implements explicit native managed-union lifetimes and active-arm field writeback,
+with bounded owner-region traversal and the resource-values v2 reader cutover.
+All eight native ASan/UBSan configurations and source/PCH controls pass;
+remaining feature implementation continues.
+
 The [source 2.143 / System 2.69 atomic property span](linux_atomic_managed_properties.md)
 implements owned atomic snapshots and unlocked replacement cleanup for managed
 carriers and qualified data-only ARC records, with exception-safe runtime locks

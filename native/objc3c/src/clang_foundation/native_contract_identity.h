@@ -292,7 +292,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     if (type->isDependentType())
       AppendNativeContractField(out, ";keypath-dependent-types:v1;");
     if (ContainsNativeKeyPathResourceValue(keypath.Value, context))
-      AppendNativeContractField(out, ";keypath-resource-values:v1;");
+      AppendNativeContractField(out, ";keypath-resource-values:v2;");
     AppendNativeTypeContracts(out, keypath.Root, context, position + ".root",
                               depth + 1);
     AppendNativeTypeContracts(out, keypath.Value, context, position + ".value",

@@ -52012,10 +52012,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..fc33550e2
+index 000000000..222d31516
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1631 @@
+@@ -0,0 +1,1641 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -52257,10 +52257,12 @@ index 000000000..fc33550e2
 +  const auto *Record = Type->getAsCXXRecordDecl();
 +  if (!Record || !(Record = Record->getDefinition()) ||
 +      Type.isTriviallyCopyableType(S.Context)) return false;
-+  const auto *Destructor = Record->getDestructor();
-+  return Destructor && Destructor->isUserProvided() &&
-+      !Destructor->isDeleted() &&
-+      Destructor->getType()->castAs<FunctionProtoType>()->isNothrow();
++  auto *Destructor = S.LookupDestructor(const_cast<CXXRecordDecl *>(Record));
++  if (!Destructor || !Destructor->isUserProvided() || Destructor->isDeleted())
++    return false;
++  const auto *Prototype = S.ResolveExceptionSpec(
++      Destructor->getLocation(), Destructor->getType()->castAs<FunctionProtoType>());
++  return Prototype && Prototype->isNothrow();
 +}
 +
 +bool erasesOwnership(Sema &S, QualType Value) {
@@ -52431,17 +52433,19 @@ index 000000000..fc33550e2
 +bool keyPathRecordValue(Sema &S, QualType Type) {
 +  if (Type.isTriviallyCopyableType(S.Context)) return true;
 +  const auto *Record=Type->getAsCXXRecordDecl();
-+  // A whole union can delegate active-arm ownership to its native user
-+  // lifetime. Traversal into a nontrivial arm remains independently gated.
++  // Native C++ special members own the active arm, including ARC fields.
++  // The ordinary C++ active-member precondition also applies to field paths;
++  // no implicit active-arm cleanup or discriminator is invented here.
 +  if (Record && Record->isUnion() && Record->hasDefinition() &&
-+      explicitKeyPathResourceLifetime(S, Type) && !unionHasManagedLeaves(Type))
++      explicitKeyPathResourceLifetime(S, Type))
 +    return true;
 +  auto managedUnion=[&](auto &&Self,QualType Current,unsigned Depth)->bool {
 +    if (Depth>64) return true;
 +    if (const auto *Array=S.Context.getAsArrayType(Current)) return Self(Self,Array->getElementType(),Depth+1);
 +    if (const auto *Tag=Current->getAs<RecordType>())
 +      if (const auto *Definition=Tag->getDecl()->getDefinition()) {
-+        if (Definition->isUnion() && unionHasManagedLeaves(Current)) return true;
++        if (Definition->isUnion() && unionHasManagedLeaves(Current) &&
++            !explicitKeyPathResourceLifetime(S, Current)) return true;
 +        for (const auto *Field:Definition->fields())
 +          if (Self(Self,Field->getType(),Depth+1)) return true;
 +        if (const auto *Class=dyn_cast<CXXRecordDecl>(Definition))
@@ -53212,15 +53216,18 @@ index 000000000..fc33550e2
 +    }
 +  };
 +  std::string Path;
++  bool NativeOwnerRegion = false;
 +  for (unsigned I = 0; I != Members.size(); ++I) {
 +    if (const auto *RecordType = Current->getAs<clang::RecordType>()) {
 +      RecordDecl *Record = RecordType->getDecl()->getDefinition();
++      NativeOwnerRegion |= explicitKeyPathResourceLifetime(*this, Current);
 +      if (!Record ||
 +          (!Record->getIdentifier() && !Record->getTypedefNameForAnonDecl()) ||
 +          !keyPathRecordValue(*this, Current) ||
-+          erasesOwnership(*this, Current) ||
-+          (Record->isUnion() && (unionHasManagedLeaves(Current) ||
-+                               !Current.isTriviallyCopyableType(Context)))) {
++          (erasesOwnership(*this, Current) &&
++           (!NativeOwnerRegion || containsObjC3BorrowedType(Context, Current))) ||
++          (Record->isUnion() && !Current.isTriviallyCopyableType(Context) &&
++           !explicitKeyPathResourceLifetime(*this, Current))) {
 +        reject(*this, MemberLocs[I],
 +               "key-path record traversal requires a complete native "
 +               "copyable record without borrowed/resource or managed-union ownership");
@@ -53274,6 +53281,9 @@ index 000000000..fc33550e2
 +      Current = Value;
 +      continue;
 +    }
++    // A new object accessor starts a separate ownership region. Only native
++    // by-value subobject traversal can rely on an enclosing explicit owner.
++    NativeOwnerRegion = false;
 +    const auto *Object = Current->getAs<ObjCObjectPointerType>();
 +    ObjCInterfaceDecl *Interface = Object ? Object->getInterfaceDecl() : nullptr;
 +    if (!Interface) {
@@ -58461,10 +58471,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..81a79e679
+index 000000000..d82f7452d
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2298 @@
+@@ -0,0 +1,2362 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -60757,6 +60767,70 @@ index 000000000..81a79e679
 +   const auto *Record=Function->getReturnType()->getAsCXXRecordDecl();ASSERT_NE(Record,nullptr);
 +   const auto *Destructor=Record->getDestructor();ASSERT_NE(Destructor,nullptr);
 +   EXPECT_TRUE(Destructor->isImplicit());EXPECT_TRUE(Destructor->getType()->castAs<FunctionProtoType>()->isNothrow());
++  };
++  Check(Provider);
++  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++  auto Imported=Importer.Import(Provider);ASSERT_TRUE(bool(Imported));Check(cast<FunctionDecl>(*Imported));
++ }
++}
++
++TEST(ObjC3ASTInfrastructure, NativeManagedUnionKeyPathsPreserveLifetimeOnImport) {
++ for(const char *Standard:{"c++20","c++23"}) {
++  std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,
++   "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fexceptions","-fobjc-exceptions"};
++  auto From=tooling::buildASTFromCodeWithArgs(R"union_control(#ifndef KEY_PATH_ABI_FIXTURE_H
++#define KEY_PATH_ABI_FIXTURE_H
++/* This mirrors the public native metadata ABI without a target sysroot. The
++ * maintained native-library fixtures import the installed objc3.keypath. */
++typedef struct objc3_keypath_component_v2 {
++  const char *owner_type;
++  const char *declaration_owner;
++  const char *member;
++  const char *value_type;
++  const char *getter_selector;
++  const char *setter_selector;
++  __UINT32_TYPE__ flags;
++  __UINT32_TYPE__ reserved;
++} objc3_keypath_component_v2;
++typedef struct objc3_keypath_descriptor_v2 {
++  __UINT32_TYPE__ abi_version;
++  __UINT32_TYPE__ flags;
++  __UINT64_TYPE__ component_count;
++  const char *root_type;
++  const char *value_type;
++  const char *path;
++  const objc3_keypath_component_v2 *components;
++} objc3_keypath_descriptor_v2;
++#endif
++
++struct ImportedUnionArm {int tag;id owner;id __weak observer;int value;};
++union ImportedManagedUnion {
++ ImportedUnionArm owned;int plain;ImportedManagedUnion();
++ ImportedManagedUnion(const ImportedManagedUnion &);~ImportedManagedUnion();
++};
++__attribute__((objc_root_class)) @interface ImportedUnionRoot
++@property(nonatomic) ImportedManagedUnion active;
++@end
++ImportedManagedUnion provider(ImportedUnionRoot *_Nonnull root) {
++ return KeyPathGet(@keypath(ImportedUnionRoot,active),root);
++}
++)union_control",Args,"native-union-provider.mm");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"native-union-consumer.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *Provider=nullptr;
++  for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())
++   if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="provider")Provider=F;
++  ASSERT_NE(Provider,nullptr);
++  auto Check=[](FunctionDecl *Function) {
++   const auto *Record=Function->getReturnType()->getAsCXXRecordDecl();ASSERT_NE(Record,nullptr);
++   Record=Record->getDefinition();ASSERT_NE(Record,nullptr);EXPECT_TRUE(Record->isUnion());
++   const auto *Destructor=Record->getDestructor();ASSERT_NE(Destructor,nullptr);
++   EXPECT_TRUE(Destructor->isUserProvided());EXPECT_FALSE(Destructor->isDeleted());
++   EXPECT_TRUE(Destructor->getType()->castAs<FunctionProtoType>()->isNothrow());
++   const auto *Arm=(*Record->field_begin())->getType()->getAsCXXRecordDecl();ASSERT_NE(Arm,nullptr);
++   auto Field=Arm->field_begin();++Field;
++   EXPECT_EQ((*Field)->getType().getObjCLifetime(),Qualifiers::OCL_Strong);++Field;
++   EXPECT_EQ((*Field)->getType().getObjCLifetime(),Qualifiers::OCL_Weak);
 +  };
 +  Check(Provider);
 +  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
@@ -67991,7 +68065,7 @@ index 000000000..9bfbb293c
 +}
 diff --git a/clang/test/ObjC3/Sema/resource-keypath-gates.mm b/clang/test/ObjC3/Sema/resource-keypath-gates.mm
 new file mode 100644
-index 000000000..6c62c75d4
+index 000000000..90820213d
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-keypath-gates.mm
 @@ -0,0 +1,24 @@
@@ -68016,7 +68090,7 @@ index 000000000..6c62c75d4
 +  (void)@keypath(ResourceCompilerRoot,loan); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
 +  (void)@keypath(ResourceCompilerRoot,throwing); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
 +  (void)@keypath(ResourceCompilerRoot,pointer); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
-+  (void)@keypath(ResourceCompilerRoot,active.plain); // expected-error {{key-path record traversal requires a complete native}}
++  (void)@keypath(ResourceCompilerRoot,active.plain);
 +  (void)@keypath(ResourceCompilerRoot,resource.handle); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
 +}
 diff --git a/clang/test/ObjC3/Sema/borrowed-carrier-explicit-destruction.mm b/clang/test/ObjC3/Sema/borrowed-carrier-explicit-destruction.mm
@@ -68100,3 +68174,28 @@ index 000000000..c3bca6563
 +union UnionStorage {__objc3_result(Copyable,Strong) value;};
 +static_assert(!__is_constructible(UnionStorage,const UnionStorage &));
 +static_assert(!__is_destructible(UnionStorage));
+diff --git a/clang/test/ObjC3/Sema/native-union-keypath-gates.mm b/clang/test/ObjC3/Sema/native-union-keypath-gates.mm
+new file mode 100644
+index 000000000..d141f4b85
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-union-keypath-gates.mm
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -Wno-nullability-completeness -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/native-union-keypaths.h"
++union ImplicitManagedUnion {NativeUnionArm owned;int plain;};
++union ThrowingManagedUnion {NativeUnionArm owned;int plain;ThrowingManagedUnion(const ThrowingManagedUnion &);~ThrowingManagedUnion() noexcept(false);};
++union BorrowedManagedUnion {borrowed const char *loan;NativeUnionArm owned;BorrowedManagedUnion(const BorrowedManagedUnion &);~BorrowedManagedUnion() noexcept;};
++@interface NativeUnionPathRoot (Invalid)
++@property(nonatomic) ImplicitManagedUnion implicit;
++@property(nonatomic) ThrowingManagedUnion throwing;
++@property(nonatomic) BorrowedManagedUnion loan;
++@end
++void native_union_keypath_gates(void) {
++ (void)@keypath(NativeUnionPathRoot,implicit); // expected-error {{key-path value must be a complete nondependent native}}
++ (void)@keypath(NativeUnionPathRoot,implicit.owned.value); // expected-error {{key-path record traversal requires a complete native}}
++ (void)@keypath(NativeUnionPathRoot,throwing); // expected-error {{key-path value must be a complete nondependent native}}
++ (void)@keypath(NativeUnionPathRoot,throwing.owned.value); // expected-error {{key-path record traversal requires a complete native}}
++ (void)@keypath(NativeUnionPathRoot,loan); // expected-error {{key paths cannot erase borrowed provenance}}
++ (void)@keypath(NativeUnionPathRoot,loan.owned.value); // expected-error {{key paths cannot erase borrowed provenance}}
++}

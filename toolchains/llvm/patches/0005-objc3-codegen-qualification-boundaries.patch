@@ -37295,3 +37295,69 @@ index 000000000..467e30624
 +// CHECK-LABEL: define internal void @__objc3_v12_storage_3_
 +// CHECK: store ptr null
 +// CHECK: @llvm.objc.moveWeak
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-union-keypaths.h b/clang/test/ObjC3/CodeGen/Inputs/native-union-keypaths.h
+new file mode 100644
+index 000000000..7ed2d71da
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-union-keypaths.h
+@@ -0,0 +1,25 @@
++#ifndef OBJC3_NATIVE_UNION_KEYPATH_CONTROLS
++#define OBJC3_NATIVE_UNION_KEYPATH_CONTROLS
++#include "../../Inputs/keypath-abi.h"
++struct NativeUnionArm {int tag;id owner;id __weak observer;int value;};
++union NativePathUnion {
++ NativeUnionArm owned;struct Plain {int tag,value;} plain;
++ NativePathUnion();NativePathUnion(const NativePathUnion &);
++ NativePathUnion(NativePathUnion &&) noexcept;~NativePathUnion();
++};
++struct NativePathEnvelope {int prefix;NativePathUnion active;};
++__attribute__((objc_root_class)) @interface NativeUnionPathRoot
++@property(nonatomic) NativePathUnion active;
++@property(nonatomic) NativePathEnvelope envelope;
++@property(nonatomic,strong) NativeUnionPathRoot *_Nullable next;
++@end
++static inline NativePathUnion native_union_whole(NativeUnionPathRoot *_Nonnull root) {
++ return KeyPathGet(@keypath(NativeUnionPathRoot,active),root);
++}
++static inline void native_union_write(NativeUnionPathRoot *_Nonnull root,NativePathUnion value,id owner) {
++ KeyPathSet(@keypath(NativeUnionPathRoot,active),root,value);
++ root[@keypath(NativeUnionPathRoot,envelope.active.owned.value)]=42;
++ root[@keypath(NativeUnionPathRoot,active.owned.owner)]=owner;
++ KeyPathSet(@keypath(NativeUnionPathRoot,next.active.owned.observer),root,owner);
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-union-keypaths.mm b/clang/test/ObjC3/CodeGen/native-union-keypaths.mm
+new file mode 100644
+index 000000000..b3fef7e83
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-union-keypaths.mm
+@@ -0,0 +1,29 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-c++20-core.pch %S/Inputs/native-union-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++20-core.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-c++20-strict.pch %S/Inputs/native-union-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-c++20-strict.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-c++20-strict-concurrency.pch %S/Inputs/native-union-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-c++20-strict-concurrency.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-c++20-strict-system.pch %S/Inputs/native-union-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-c++20-strict-system.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-c++23-core.pch %S/Inputs/native-union-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-c++23-core.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-c++23-strict.pch %S/Inputs/native-union-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-c++23-strict.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-c++23-strict-concurrency.pch %S/Inputs/native-union-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-c++23-strict-concurrency.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-c++23-strict-system.pch %S/Inputs/native-union-keypaths.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-c++23-strict-system.pch -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-union-keypaths.h"
++NativePathUnion read_native_union(NativeUnionPathRoot *_Nonnull root){return native_union_whole(root);}
++void write_native_union(NativeUnionPathRoot *_Nonnull root,NativePathUnion value,id owner){native_union_write(root,value,owner);}
++// CHECK: define{{.*}}read_native_union
++// CHECK: define{{.*}}write_native_union

@@ -49,3 +49,10 @@ pairs through whole-value reads/writes, field traversal, nested writeback and
 nullable writes. Independent open/close counters defend every injected copy and
 setter failure under C++20/23, ARC/MRC and source/PCH. Raw resource field extraction
 and borrowed or implicit resource lifetimes retain compiler rejection controls.
+
+`cxx_managed_unions.h` checks explicit C++ union active arms containing strong,
+weak and Block fields and native payloads. Whole/enclosing values and nested field
+writeback preserve native lifetimes through copy and setter faults. The ordinary
+C++ active-member precondition applies; no implicit discriminator is introduced.
+`cxx_resources.h` also covers scalar field paths inside explicitly owned native
+resource arms, including source/PCH execution with copy elision disabled.

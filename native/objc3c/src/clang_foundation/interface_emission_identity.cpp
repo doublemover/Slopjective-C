@@ -2556,7 +2556,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationCppCarrierCall(representative))
     identity.canonical_type_identity += ";cxx-carrier-call:v2;";
   if (HasDeclarationResourceKeyPathValue(representative))
-    identity.canonical_type_identity += ";keypath-resource-values:v1;";
+    identity.canonical_type_identity += ";keypath-resource-values:v2;";
   if (HasDeclarationNullableKeyPathWrite(representative))
     identity.canonical_type_identity += ";keypath-nullable-writes:v1;";
   if (HasDeclarationConcept(representative) && !llvm::isa<clang::ConceptDecl>(representative))

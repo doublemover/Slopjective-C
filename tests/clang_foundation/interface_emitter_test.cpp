@@ -352,6 +352,74 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestNativeUnionKeyPathReplay() {
+ for(const char *standard:{"c++20","c++23"}) {
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+   "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks",
+   "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+  clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args);
+  args.insert(args.end(),{"-include","objc3c/runtime/objc3_keypath.h"});
+  const std::string source=R"(
+   struct PublishedUnionArm {int tag;id owner;id __weak observer;int value;};
+   union PublishedManagedUnion {
+    PublishedUnionArm owned;struct Plain {int tag,value;} plain;
+    PublishedManagedUnion();PublishedManagedUnion(const PublishedManagedUnion &);
+    PublishedManagedUnion(PublishedManagedUnion &&) noexcept;~PublishedManagedUnion();
+   };
+   struct PublishedUnionEnvelope {int prefix;PublishedManagedUnion active;};
+   __attribute__((objc_root_class)) @interface PublishedUnionRoot
+   @property(nonatomic) PublishedManagedUnion active;
+   @property(nonatomic) PublishedUnionEnvelope envelope;
+   @property(nonatomic,strong) PublishedUnionRoot *_Nullable next;
+   @end
+   KeyPath<PublishedUnionRoot *,PublishedManagedUnion> published_union_signature();
+   inline PublishedManagedUnion published_union_read(PublishedUnionRoot *_Nonnull root) {
+    return KeyPathGet(@keypath(PublishedUnionRoot,active),root);
+   }
+   inline int published_union_field(PublishedUnionRoot *_Nonnull root,int value) {
+    root[@keypath(PublishedUnionRoot,envelope.active.owned.value)]=value;
+    return root[@keypath(PublishedUnionRoot,active.owned.value)];
+   }
+   inline void published_union_owner(PublishedUnionRoot *_Nonnull root,id owner) {
+    KeyPathSet(@keypath(PublishedUnionRoot,next.active.owned.owner),root,owner);
+   }
+   inline int published_union_plain(){return 0;}
+  )";
+  auto parse=[&](const std::string &text){auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-union-keypath.mm","clang-tool",std::make_shared<clang::PCHContainerOperations>(),clang::tooling::getClangStripDependencyFileAdjuster(),files);assert(ast && !ast->getDiagnostics().hasErrorOccurred());return ast;};
+  const std::vector<std::string> types={"PublishedUnionArm","PublishedManagedUnion","PublishedUnionEnvelope","PublishedUnionRoot"};
+  auto emit=[&](const std::string &text,const std::vector<std::string> &names) {
+   auto ast=parse(text);auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_union_paths","test",{},{},{},names);
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  auto names=types;names.insert(names.end(),{"published_union_signature","published_union_read","published_union_field","published_union_owner"});
+  auto first=emit(source,names),replay=emit(first.source_bytes,names),relocated=emit("\n\n"+source,names);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kResourceKeyPathValueSemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kResourceKeyPathValueSemantic));older.push_back("objc3.keypath-resource-values.v1");
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(decoded->required_semantics,kResourceKeyPathValueSemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  for(const std::string &name:{"published_union_signature","published_union_field","published_union_plain"}) {
+   auto subset_names=types;subset_names.push_back(name);auto subset=emit(source,subset_names);
+   auto read=DecodeSemanticInterfaceSidecar(subset.sidecar_json,subset.source_bytes,supported);assert(read);
+   assert(llvm::is_contained(read->required_semantics,std::string(kResourceKeyPathValueSemantic))==(name!="published_union_plain"));
+   if(name=="published_union_plain") {
+    read->required_semantics.push_back(kResourceKeyPathValueSemantic);auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+   }
+  }
+  auto consumer=parse(first.source_bytes+R"(
+   int consume_native_union(PublishedUnionRoot *_Nonnull root,id owner) {
+    auto whole=published_union_read(root);published_union_owner(root,owner);
+    return published_union_field(root,whole.owned.value);
+   }
+  )");
+ }
+}
+
 void TestResourceKeyPathReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -11104,6 +11172,7 @@ int main(int argc,char **argv) {
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
+  TestNativeUnionKeyPathReplay();
   TestResourceKeyPathReplay();
   TestDependentKeyPathLiteralBodies();
   TestNSObjectStorageCapability();

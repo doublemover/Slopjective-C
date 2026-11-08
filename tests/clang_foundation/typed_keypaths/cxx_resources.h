@@ -101,12 +101,36 @@ static void keypath_cxx_resource_contract() {
       assert(failed==(fault && path_resource_copies>=fault));
       assert(!path_resource_live && path_resource_opened==path_resource_closed);
     }
+    for(int resource=0;resource!=2;++resource)for(int fault=0;fault!=7;++fault) {
+      path_resource_union_owned=resource;path_resource_union_stored=85;
+      path_resource_copies=0;path_resource_copy_fault=fault;path_resource_set_fault=false;
+      bool failed=false;
+      try {
+        if(resource) {
+          KeyPathSet(@keypath(RuntimeResourcePathNode,activeResource.owned.value),node,86);
+          assert(KeyPathGet(@keypath(RuntimeResourcePathNode,activeResource.owned.value),node)==86);
+        }else {
+          node[@keypath(RuntimeResourcePathNode,activeResource.plain.value)]=87;
+          assert(node[@keypath(RuntimeResourcePathNode,activeResource.plain.value)]==87);
+        }
+      }catch(int error){assert(error==711);failed=true;}
+      assert(failed==(fault && path_resource_copies>=fault));
+      assert(path_resource_union_owned==bool(resource));
+      assert(!path_resource_live && path_resource_opened==path_resource_closed);
+    }
     path_resource_copy_fault=0;
     for(int resource=0;resource!=2;++resource) {
       path_resource_set_fault=true;bool failed=false;
       bool before_owned=path_resource_union_owned;int before_value=path_resource_union_stored;
       try {PathResourceUnion value(81,resource);KeyPathSet(@keypath(RuntimeResourcePathNode,activeResource),node,value);}
       catch(int error){assert(error==712);failed=true;}
+      assert(failed && path_resource_union_owned==before_owned && path_resource_union_stored==before_value);
+      assert(!path_resource_live && path_resource_opened==path_resource_closed);
+      failed=false;
+      try {
+        if(before_owned)KeyPathSet(@keypath(RuntimeResourcePathNode,activeResource.owned.value),node,88);
+        else KeyPathSet(@keypath(RuntimeResourcePathNode,activeResource.plain.value),node,89);
+      }catch(int error){assert(error==712);failed=true;}
       assert(failed && path_resource_union_owned==before_owned && path_resource_union_stored==before_value);
       assert(!path_resource_live && path_resource_opened==path_resource_closed);
     }
