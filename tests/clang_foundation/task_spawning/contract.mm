@@ -11,6 +11,7 @@
 #include "ownership_wait.h"
 #include "cxx_frame_values.h"
 #include "cxx_frame_borrows.h"
+#include "group_result_deduction.h"
 
 @protocol Sendable @end
 @protocol SpawnFailure <Error, Sendable> @end
@@ -195,7 +196,7 @@ void callback_group_owns_callable_until_quiescence(objc3_executor_t *source) {
     state.gate = objc3::task_handle<void>::adopt_native(&owned);
     auto value = std::make_shared<int>(42);
     std::weak_ptr<int> witness = value;
-    auto task = objc3::with_task_group<int>(ScopedCallback(&state, std::move(value))).start(source);
+    auto task = objc3::with_task_group(ScopedCallback(&state, std::move(value))).start(source);
     uint32_t executed = 0;
     assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
     if (!fail) {
@@ -231,23 +232,28 @@ void callback_group_owns_callable_until_quiescence(objc3_executor_t *source) {
   uint32_t executed = 0;
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   empty_result.result();
-  auto iterated = objc3::with_task_group<int>([](objc3::task_group_handle group)
+  auto iterated = objc3::with_task_group([](auto group)
                                                 -> objc3::task<int> {
     (void)pause(21).start_child(group);
     (void)pause(23).start_child(group);
     group.close();
-    auto first = co_await group.next<int>();
-    auto second = co_await group.next<int>();
+    auto first = co_await group.template next<int>();
+    auto second = co_await group.template next<int>();
     assert(first && second);
-    auto exhausted = co_await group.next<int>();
+    auto exhausted = co_await group.template next<int>();
     assert(!exhausted);
     co_await group;
     co_return first.result() + second.result();
   }).start(source);
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   assert(iterated.result() == 44);
+  auto mutable_result=objc3::with_task_group([value=44](objc3::task_group_handle) mutable ->objc3::task<int>{
+    co_return ++value;
+  }).start(source);
+  assert(objc3_executor_pump(source,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);
+  assert(mutable_result.result()==45);
   for (bool recover : {false, true}) {
-    auto errors = objc3::with_task_group<int>([recover](objc3::task_group_handle group)
+    auto errors = objc3::with_task_group([recover](objc3::task_group_handle group)
                                                  -> objc3::task<int> {
       auto failed = []() -> objc3::task<int> {
         throw 73;
@@ -313,7 +319,7 @@ struct CallbackFenceWork {
 void callback_frame_cleanup_is_scope_work(objc3_executor_t *source) {
   CallbackFenceState state;
   assert(objc3_executor_create(0, &state.worker) == OBJC3_SERVICE_OK);
-  auto task = objc3::with_task_group<CallbackFenceValue>(CallbackFenceWork(&state)).start(source);
+  auto task = objc3::with_task_group(CallbackFenceWork(&state)).start(source);
   uint32_t executed = 0;
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   {
@@ -375,7 +381,7 @@ struct CancelledScopeFactory {
 };
 void callback_registration_failure_runs_no_body(objc3_executor_t *source) {
   unsigned entered = 0;
-  auto task = objc3::with_task_group<int>(ClosedGroupFactory{&entered}).start(source);
+  auto task = objc3::with_task_group(ClosedGroupFactory{&entered}).start(source);
   uint32_t executed = 0;
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   bool caught = false;
@@ -384,7 +390,7 @@ void callback_registration_failure_runs_no_body(objc3_executor_t *source) {
     caught = failure.status() == OBJC3_SERVICE_CLOSED;
   }
   assert(caught && entered == 0);
-  auto cancelled = objc3::with_task_group<int>(CancelledScopeFactory{&entered}).start(source);
+  auto cancelled = objc3::with_task_group(CancelledScopeFactory{&entered}).start(source);
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   caught = false;
   try { (void)cancelled.result(); }
@@ -394,7 +400,7 @@ void callback_registration_failure_runs_no_body(objc3_executor_t *source) {
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
   frame_cxx_value_contract(source);
   cxx_frame_borrow_contract(source);
-  auto rejected = objc3::with_task_group<int>(RejectedQueueFactory{actor, &entered}).start_on(actor);
+  auto rejected = objc3::with_task_group(RejectedQueueFactory{actor, &entered}).start_on(actor);
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   caught = false;
   try { (void)rejected.result(); }
@@ -583,7 +589,7 @@ void raw_group_adapter_contract(objc3_executor_t *source) {
     rejected={};assert(caught && weak.expired() && RawGroupWork::entered==entered);
   }
   auto group=objc3::task_group_handle::create();
-  auto scope_task=objc3::with_task_group<int>([](objc3::task_group_handle group)->objc3::task<int>{
+  auto scope_task=objc3::with_task_group([](objc3::task_group_handle group)->objc3::task<int>{
     auto child=objc3_task_spawn_in_group(group,[]()->objc3::task<int>{co_return 42;});co_return co_await child;
   }).start(source);
   assert(objc3_executor_pump(source,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);assert(scope_task.result()==42);

@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.150 / System 2.76 task-group span](linux_deduced_task_groups.md)
+preserves inferred callback results and publishes group helpers through the
+pinned task header. It repairs an ordinary-local destructor probe crash and
+strengthens native error/retirement controls. All thirteen native sanitizer
+configurations, source-free publication, decoder and adjacent frontend checks pass.
+
 The [source 2.149 / System 2.75 native emission-policy span](linux_native_emission_policies.md)
 preserves ELF sections, retention, weak symbols and instrumentation policies in
 source-free declarations and bodies. Canonical external-declaration placement and

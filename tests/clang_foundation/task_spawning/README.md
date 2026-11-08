@@ -37,3 +37,10 @@ specialization and PCH witnesses. This closes the typed-E header dependency.
 The C++ raw-frame definitions have bounded native frame-body admission
 for value parameters and trivially copyable parameters/results. Neither effect
 erasure nor automatic group-scope finalization is claimed here.
+
+Result-inferred group callbacks retain typed and void results, including generic/
+mutable lambdas and move-only callable factories. `group_result_deduction.h`
+checks result types and rejects inference from erased frames or borrowed task
+references; raw-frame callbacks use explicit `<T>`. Manual detached-factory
+controls keep producer storage alive through frame retirement, which can follow
+completion publication. Native exceptions retain their original error identity.

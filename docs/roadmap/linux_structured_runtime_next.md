@@ -1,5 +1,12 @@
 # Linux structured runtime development
 
+The [Source 2.150 group checkpoint](linux_deduced_task_groups.md) now preserves
+inferred callback results and source-free task-header group helpers. The required
+create/add/iterate/implicit-join surface has concrete C/C++ APIs. Historical
+references below to remaining abstract group-library forms are superseded by
+this checkpoint; remaining spawn/capture/value contracts and profile acceptance
+remain open.
+
 This file tracks maintained runtime work following the task-destination and
 nonblocking group-await milestones. The coordinated Linux checkpoint passes the
 standalone runtime suites, native feature matrices and installed structured,

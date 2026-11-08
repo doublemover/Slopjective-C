@@ -148,6 +148,33 @@ class TypeDependencyVisitor final
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseRecordType(type, traverse_qualifier);
   }
 
+  clang::QualType PinnedGroupResult(const clang::TemplateSpecializationType *type) const {
+    if(type->isDependentType() || !type->isTypeAlias())return {};
+    const auto *alias=type->getTemplateName().getAsTemplateDecl();
+    if(!alias || alias->getQualifiedNameAsString()!=
+        "objc3::task_detail::group_callback_result_t" ||
+        !IsQualifiedRuntimeTaskDeclaration(alias,context_))return {};
+    return type->getAliasedType();
+  }
+  bool TraverseTemplateSpecializationType(clang::TemplateSpecializationType *type,
+                                           bool traverse_qualifier) {
+    if(auto result=PinnedGroupResult(type);!result.isNull()) {
+      // An owned callback's closure is implementation-only signature sugar.
+      // The pinned alias projects its exact result; the published body still
+      // checks the callback's capture graph and invocation independently.
+      UsesCxxTaskRuntime=UsesRuntimeFrame=true;return TraverseType(result);
+    }
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
+        TraverseTemplateSpecializationType(type,traverse_qualifier);
+  }
+  bool TraverseTemplateSpecializationTypeLoc(clang::TemplateSpecializationTypeLoc location,
+                                              bool traverse_qualifier) {
+    if(auto result=PinnedGroupResult(location.getTypePtr());!result.isNull()) {
+      UsesCxxTaskRuntime=UsesRuntimeFrame=true;return TraverseType(result);
+    }
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
+        TraverseTemplateSpecializationTypeLoc(location,traverse_qualifier);
+  }
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();

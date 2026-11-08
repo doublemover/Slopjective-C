@@ -1,5 +1,6 @@
 #ifndef OBJC3_MANUAL_FRAME_FACTORIES_H
 #define OBJC3_MANUAL_FRAME_FACTORIES_H
+#include <cstdio>
 
 // Manual factories deliberately return the physical carrier without source
 // async effects. Their frame borrows a field in the callable environment, so
@@ -71,7 +72,6 @@ inline int spawn_parent(State *state,unsigned shape,unsigned route) __objc3_asyn
     else if(route==2) child=objc3_task_spawn_in_group<int>(group,work); \
     else child=group.spawn<int>(work); \
   } while(false)
-  std::optional<Token> function_token;
   if(shape==0) {
     OBJC3_START_MANUAL(Functor{state});
   } else if(shape==1) {
@@ -79,8 +79,8 @@ inline int spawn_parent(State *state,unsigned shape,unsigned route) __objc3_asyn
       return make(token.state,&token.value);
     }));
   } else if(shape==3) {
-    function_token.emplace(state);
-    function_state=state;function_value=&function_token->value;
+    // A function pointer owns no environment. Its producer-provided token is
+    // held by the test caller until detached frame cleanup has also finished.
     OBJC3_START_MANUAL(function_factory);
   } else {
     Token token{state};
@@ -121,6 +121,13 @@ inline void finish(objc3_executor_t *source,const objc3::task_handle<int> &task)
   }
   assert(!"manual frame factory failed to quiesce");
 }
+inline void finish_retirement(State &state,unsigned expected_pins) {
+  for(unsigned step=0;step!=1000000;++step) {
+    if(state.destroyed==1 && state.pins==expected_pins)return;
+    std::this_thread::yield();
+  }
+  assert(!"detached manual frame did not release its callable after completion");
+}
 inline void contract(objc3_executor_t *source) {
   for(unsigned route=0;route!=4;++route) {
     auto parent=task_function_parent(route).start(source);
@@ -129,10 +136,23 @@ inline void contract(objc3_executor_t *source) {
   for(unsigned shape=0;shape!=4;++shape)
     for(unsigned route=0;route!=4;++route) {
       State state;
+      std::optional<Token> function_owner;
+      if(shape==3) {
+        function_owner.emplace(&state);
+        function_state=&state;function_value=&function_owner->value;
+      }
       auto parent=spawn_parent(&state,shape,route).start(source);
       finish(source,parent);
       assert(parent.result()==42);
       parent={};
+      // Detached completion can publish before its worker retires the frame.
+      // Preserve producer storage through that cleanup; structured routes are
+      // already joined by the parent's compiler-owned scope.
+      if(route==1)finish_retirement(state,shape==3?1u:0u);
+      function_owner.reset();
+      if(shape==3){function_state=nullptr;function_value=nullptr;}
+      if(state.factories!=1 || state.resumes!=1 || state.destroyed!=1 || state.pins!=0)
+        std::fprintf(stderr,"manual frame shape=%u route=%u factories=%u resumes=%u destroyed=%u pins=%u\n",shape,route,state.factories.load(),state.resumes.load(),state.destroyed.load(),state.pins.load());
       assert(state.factories==1 && state.resumes==1 && state.destroyed==1 && state.pins==0);
     }
   for(unsigned phase=0;phase!=4;++phase) {

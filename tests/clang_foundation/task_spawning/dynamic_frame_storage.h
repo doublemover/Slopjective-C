@@ -178,7 +178,11 @@ static void dynamic_frame_storage_contract(objc3_executor_t *source) {
     assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
     objc3_completion done = {0};
     assert(objc3_task_get_completion(task, &done) == OBJC3_SERVICE_OK);
-    assert(done.kind == OBJC3_COMPLETION_CANCELLED && state.arrays == 1);
+    assert(done.kind == OBJC3_COMPLETION_ERROR && done.error && state.arrays == 1);
+    bool caught=false;
+    try {objc3::task_detail::rethrow_completion(done);}
+    catch(int value){assert(value==37);caught=true;}
+    assert(caught);
     objc3_task_release(task);
   }
 #endif

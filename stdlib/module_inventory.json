@@ -94,19 +94,20 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 149,
+        "minor": 150,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native ELF section, used/retain/weak and instrumentation policies preserve typed declaration/static-local values and canonical replay, including inherited idempotent flags and extern placement; native-emission-policies v1 reader admission and source-free native override/instrumentation controls pass, matched SDK pending",
         "Explicitly owned native C++ union carrier payloads preserve active-arm ARC/C++ copy/move/destruction, over-aligned opaque storage and caller-owned argument/result recipes; forward-declared payload records use their complete definitions, implicit carrier results retain selected construction and move eligibility; native-arc-record-payload v2 reader cutover, matched SDK pending",
         "Public native unnamed enum groups retain canonical roots, first-enumerator identity, full representation/value contracts and enumerator selection through source-free replay and import; native-unnamed-enums v1 reader admission, matched SDK pending",
         "Native constructor/destructor and object initialization priorities, constant-initialization contracts and explicit static/TLS destruction policies retain source-free declaration/body identity and native-storage-lifetime v1 reader admission; matched SDK pending",
         "Native explicitly owned C++ unions containing ARC fields, enclosing records and active-arm field traversal retain native copy/destruction, partial-copy rollback and getter/snapshot/setter writeback; raw subobject traversal stays inside its explicit native owner region, borrowed and raw-resource extraction remain gated; keypath-resource-values v2 hard cutover, matched SDK pending",
         "Linux atomic managed Optional/Result and qualified data-only ARC record properties use owned getter snapshots, lock-protected fieldwise move replacement and unlocked old-owner destruction; callback exceptions unlock and dual-copy lock ordering deduplicates collisions; atomic-managed-properties v1 source-free admission, matched SDK pending",
         "Checked native C++ function/method/Block signatures prepare implicit nontrivial result destructors and resolve their actual exception specifications before ABI admission; declaration-only interfaces require checked-cxx-record-results v2 through canonical or ownership identities; native implicit and ARC-owning result controls preserve success-only construction and failure cleanup, matched SDK pending",
-        "Native C++ carrier payload records with ordinary ARC strong/weak/Block fields retain native special-member ownership through copy/move, calls, messages, Blocks, lambda/byref captures and arrays; provisional native C++ field ownership covers throwing initializer-temporary destruction; native-arc-record-payload v1 source-free admission, matched SDK pending",
+        "Native C++ carrier payload records with ordinary ARC strong/weak/Block fields retain native special-member ownership through copy/move, calls, messages, Blocks, lambda/byref captures and arrays; provisional native C++ field ownership covers throwing initializer-temporary destruction; native-arc-record-payload v2 source-free admission, matched SDK pending",
         "Native C++ carrier lambda value captures and fixed array captures retain Sema-selected payload recipes, closure copy/move special members, partial-capture failure cleanup, generic/dependent capture instantiation and native-carrier-lambda v1 source-free admission; matched SDK pending",
         "Mixed ARC/C++ native carrier records, bases, fixed multidimensional arrays and enclosing Optional/Result payloads retain Sema-selected copy/move/deleted and exception recipes, native special members, selected-prefix rollback, weak fields and native function/message/Block ownership; cxx-carrier-composition v2 hard cutover, matched SDK pending",
         "Native Linux escaping byref cells preserve over-aligned storage, selected C++/ARC carrier relocation recipes, throwing construction/destruction rollback, forwarding-race ownership and source-order cleanup; native-byref-storage v1 publication retains escaping flags and recipes through AST import; matched SDK pending",
@@ -158,6 +159,7 @@
         "C++ task-coroutine automatic group scopes and retained current-scope views (source)",
         "final-suspended C++ result/error ownership through shielded quiescence (source)",
         "with_task_group callback tasks with callable ownership through child quiescence (source)",
+        "with_task_group result deduction from owned callbacks, pinned task-header publication, exact typed results and explicit raw-frame result contracts; source-free native and current sanitizer controls pass, matched SDK pending",
         "registration-before-dispatch group children and callback-frame quiescence (source)",
         "nontrivial C++ explicit-frame value parameters/results and typed construction/destruction hooks (source)",
         "move-only frame captures, const value copying and partial construction unwind (source)",
@@ -281,7 +283,7 @@
         "Explicit C++ aggregate/union lifetime crossings and static member entries, source/PCH materialized argument snapshots, recovered storage-hook diagnostics and dependent native-frame awaits rebuilt after substitution with required publication semantics (source authored; 32 new compiler commands and 296 native scenarios pass; frontend/package consolidation pending)"
       ],
       "remaining": [
-        "remaining spawn/capture forms and abstract group-library forms",
+        "remaining spawn/capture forms and supported-value ownership/cancellation acceptance",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
         "Remaining dependent/unnamed-type and dependent lookup/unmodeled-attribute/profile publication contracts"
@@ -330,7 +332,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 75,
+        "minor": 76,
         "patch": 0
       },
       "header": "include/objc3/system.h",
@@ -342,7 +344,7 @@
         "Native explicitly owned C++ unions containing ARC fields, enclosing records and active-arm field traversal retain native copy/destruction, partial-copy rollback and getter/snapshot/setter writeback; raw subobject traversal stays inside its explicit native owner region, borrowed and raw-resource extraction remain gated; keypath-resource-values v2 hard cutover, matched SDK pending",
         "Linux atomic managed Optional/Result and qualified data-only ARC record properties use owned getter snapshots, lock-protected fieldwise move replacement and unlocked old-owner destruction; callback exceptions unlock and dual-copy lock ordering deduplicates collisions; atomic-managed-properties v1 source-free admission, matched SDK pending",
         "Checked native C++ function/method/Block signatures prepare implicit nontrivial result destructors and resolve their actual exception specifications before ABI admission; declaration-only interfaces require checked-cxx-record-results v2 through canonical or ownership identities; native implicit and ARC-owning result controls preserve success-only construction and failure cleanup, matched SDK pending",
-        "Native C++ carrier payload records with ordinary ARC strong/weak/Block fields retain native special-member ownership through copy/move, calls, messages, Blocks, lambda/byref captures and arrays; provisional native C++ field ownership covers throwing initializer-temporary destruction; native-arc-record-payload v1 source-free admission, matched SDK pending",
+        "Native C++ carrier payload records with ordinary ARC strong/weak/Block fields retain native special-member ownership through copy/move, calls, messages, Blocks, lambda/byref captures and arrays; provisional native C++ field ownership covers throwing initializer-temporary destruction; native-arc-record-payload v2 source-free admission, matched SDK pending",
         "Native C++ carrier lambda value captures and fixed array captures retain Sema-selected payload recipes, closure copy/move special members, partial-capture failure cleanup, generic/dependent capture instantiation and native-carrier-lambda v1 source-free admission; matched SDK pending",
         "Mixed ARC/C++ native carrier records, bases, fixed multidimensional arrays and enclosing Optional/Result payloads retain Sema-selected copy/move/deleted and exception recipes, native special members, selected-prefix rollback, weak fields and native function/message/Block ownership; cxx-carrier-composition v2 hard cutover, matched SDK pending",
         "Native Linux escaping byref cells preserve over-aligned storage, selected C++/ARC carrier relocation recipes, throwing construction/destruction rollback, forwarding-race ownership and source-order cleanup; native-byref-storage v1 publication retains escaping flags and recipes through AST import; matched SDK pending",
@@ -386,7 +388,7 @@
         "Built-in pointer pre/post increments/decrements, compound and commuted offsets, conditional targets, bounded one-past and same-array cursor loops; partial character/scalar writes invalidate address/nonnull proofs while preserving loan/callable facts and expiring owner claims (source authored; eighteen new source/PCH commands and all twenty-two existing borrowed regressions pass; native frontend replay/consumer controls pass; SDK consolidation pending)",
         "Constant byte-range memory operations recover complete tracked fields and array elements through native layout, typed aliases, constant/commuted/balanced offsets and conditional bases; exact copies preserve callable/loan facts and returned destinations while padding, partial/unknown ranges, dependent layouts and incomplete provenance remain conservative (source authored; eighteen new source/PCH commands, all twenty-two borrowed regressions and native frontend replay/consumer controls pass; SDK consolidation pending)",
         "Aliased builtin fills and representation copies preserve nested/conditional payloads, callable effects, owner identities and returned destination pointers; partial/open writes invalidate target proofs, incomplete may sets retain nonlocal alternatives and array addresses expose reachable siblings (source authored; eighteen new source/PCH commands and all twenty-one borrowed regressions pass; frontend replay execution pending)",
-        "Borrowed owner-contracted results from proven immutable program storage, with native constant evaluation, stable aliases/subobjects/constexpr calls, bounded pointer/conditional composition and conservative TLS/mutable/union/destruction rejection; public loan obligations remain intact (source authored; eighteen source/PCH commands and all twenty borrowed regressions pass; frontend replay consolidation pending)",
+        "Borrowed owner-contracted results from immutable program storage include qualified native unions and bounded statically bound helper chains, shared work limits and replaceable-function gates; public loan obligations remain intact. borrowed-result-proofs v1 publication, 56 borrowed compiler regressions, six publication profiles and source-free native controls pass; matched SDK pending",
         "Type-carried borrowed callback results and owner indices through indirect function/Block/member calls, aliases, auto/templates, native type/ODR/USR/overload identity and AST/PCH/interface persistence (source authored; focused native source/PCH/identity checks pass; frontend consolidation pending)",
         "Explicit MRC and retainable-family claim lower bounds through known aliases and CFG joins, retained-result alias identity, exact consumed-parameter multiplicity and conservative callable/deferred effects (source authored; focused source/PCH diagnostics pass)",
         "Closed finite pointer-target proofs across CFG joins, scalar/aggregate aliases and captures; indirect local field/array writes, constant offsets and conservative mutation invalidation (source)",

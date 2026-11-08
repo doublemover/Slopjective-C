@@ -1076,6 +1076,63 @@ inline task<void> finish_task_group(task_group_handle group) {
 
 } // namespace objc3
 
+#ifdef __OBJC__
+namespace objc3 {
+namespace task_detail {
+/* The callback returns a lazy task and receives an independently retained group
+ * view. Keep its callable object in this frame through callback completion and
+ * the final group join, including coroutine callbacks that borrow their closure.
+ * Tasks added by the callback must be structured descendants. */
+template <class T, class Storage>
+task<T> with_task_group_owned(Storage work) __attribute__((objc_task_group)) {
+  auto scope = task_group_handle::current_scope();
+  // User iteration/join must not include the callback itself. The private
+  // scope joins both this child group and the callback's own frame cleanup.
+  auto group = scope.child();
+  // Awaiting completion alone does not join callback frame/callback cleanup.
+  // Registration must precede dispatch, including failed-start paths.
+  auto body = [&]() {
+    if constexpr (std::is_same_v<decltype(work.get()(group)),objc3_async_frame>) {
+      auto frame=work.get()(group);
+      try {return task<T>::from_native(&frame);}
+      catch (...) {(void)objc3_async_frame_dispose(&frame);throw;}
+    } else return work.get()(group);
+  }();
+  auto callback = std::move(body).__objc3_start_group_body(scope);
+  if constexpr (std::is_void_v<T>) {
+    co_await callback;
+    co_return;
+  } else {
+    co_return co_await callback;
+  }
+}
+// Deduce only an owned task returned by value. A raw native frame erases its
+// logical result type, and a reference to someone else's task transfers no
+// ownership; those forms cannot infer a group result.
+template<class Task> struct group_callback_result;
+template<class T> struct group_callback_result<basic_task<T>> {using type=T;};
+template<class Work>
+using group_callback_result_t=typename group_callback_result<
+    decltype(std::declval<Work &>()(std::declval<task_group_handle &>()))>::type;
+} // namespace task_detail
+// Pin the source callable during the ordinary call. A lazy coroutine body
+// cannot acquire a stack Block after its caller has already returned.
+template <class T, class Work>
+task<T> with_task_group(Work work) {
+  return task_detail::with_task_group_owned<T>(
+      task_detail::callable_storage<Work>(std::move(work)));
+}
+// Typed task factories retain their exact result, including void. Explicit
+// <T> remains required for factories returning an erased objc3_async_frame.
+template<class Work>
+auto with_task_group(Work work) -> task<task_detail::group_callback_result_t<Work>> {
+  using T=task_detail::group_callback_result_t<Work>;
+  return task_detail::with_task_group_owned<T>(
+      task_detail::callable_storage<Work>(std::move(work)));
+}
+} // namespace objc3
+#endif
+
 // Reserved compiler hook. The canonical source function retains its logical
 // result type; evaluated native async calls return this lazy runtime carrier.
 template <class T> using __objc3_async_task = objc3::task<T>;

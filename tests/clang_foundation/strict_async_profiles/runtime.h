@@ -104,7 +104,7 @@ static void profile_cpp_suite(objc3_executor_t *executor) {
   assert(ordinary.result() == 42);
   assert(profile_task_entered == 1 && profile_task_cleaned == 1);
 
-  auto grouped = objc3::with_task_group<int>([](objc3::task_group_handle group)
+  auto grouped = objc3::with_task_group([](objc3::task_group_handle group)
       -> objc3::task<int> {
     auto child = objc3_task_spawn_in_group(group, [] { return profile_task_leaf(41); });
     co_return 1 + co_await child;

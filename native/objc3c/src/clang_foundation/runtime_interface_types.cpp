@@ -252,24 +252,32 @@ bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
       if (const auto *definition=tag->getDefinition())
         if (!DeclarationHeaderMatches(definition,context,runtime_interface::kTaskHeaderSha256))
           return false;
-  // Public task aliases retain this SDK-owned sugar in instantiated result
-  // expressions. Admit the alias, not the private traits record or its members.
+  // Public task/group aliases retain SDK-owned sugar in instantiated result
+  // expressions. Qualify the exact result projection, not its trait layout.
   if (llvm::isa<clang::TypedefNameDecl>(declaration) &&
-      declaration->getName()=="abi_type") {
+      (declaration->getName()=="abi_type" || declaration->getName()=="type")) {
     const auto *owner=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(
         declaration->getDeclContext());
-    if (owner && owner->getSpecializedTemplate()->getQualifiedNameAsString()==
-                     "objc3::task_detail::result_traits" &&
-        DeclarationHeaderMatches(owner,context,runtime_interface::kTaskHeaderSha256))
-      return true;
+    if (owner && DeclarationHeaderMatches(owner,context,runtime_interface::kTaskHeaderSha256)) {
+      const auto trait=owner->getSpecializedTemplate()->getQualifiedNameAsString();
+      if ((declaration->getName()=="abi_type" && trait=="objc3::task_detail::result_traits") ||
+          (declaration->getName()=="type" && trait=="objc3::task_detail::group_callback_result"))
+        return true;
+    }
   }
+  // The public inferred group overload exposes this owned-task result alias
+  // in its substituted signature. Trust only the pinned alias declaration;
+  // its private trait record and non-result members remain outside public admission.
+  if(name=="task_detail::group_callback_result_t" &&
+      llvm::isa<clang::TypeAliasTemplateDecl,clang::TypeAliasDecl>(declaration))
+    return true;
   const auto root=name.take_until([](char c) { return c=='<' || c==':'; });
   static constexpr const char *public_names[]={
       "basic_task", "basic_task_handle", "task", "task_handle",
       "task_group_handle", "task_group_next_request", "task_group_cleanup_request",
       "task_destination", "hop_to", "task_checkpoint", "task_checkpoint_t",
       "task_yield", "task_yield_t", "service_failure", "task_cancelled", "task_error",
-      "join_task", "finish_task_group"};
+      "join_task", "finish_task_group", "with_task_group"};
   return llvm::is_contained(public_names,root);
 }
 
