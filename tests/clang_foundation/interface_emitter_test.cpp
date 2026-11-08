@@ -1709,6 +1709,15 @@ void TestAsyncConsumedOwnershipCapability() {
         assert(decoded);
         auto replayed = emit(result.source_bytes, "relocated/ownership-consumer.m", exports);
         assert(replayed.identity.semantic_fingerprint == result.identity.semantic_fingerprint);
+        if(exported=="ordinary_block_factory") {
+          auto changed=source;
+          const auto factory=changed.find("inline auto ordinary_block_factory");
+          const auto result_value=changed.find("co_return 0",factory);
+          assert(factory!=std::string::npos && result_value!=std::string::npos);
+          changed.replace(result_value,std::string("co_return 0").size(),"co_return 1");
+          auto altered=emit(changed,"ownership-block-changed.m",exports);
+          assert(altered.identity.semantic_fingerprint!=result.identity.semantic_fingerprint);
+        }
         auto old = supported; std::erase(old, llvm::StringRef(kAsyncConsumedOwnershipSemantic));
         old.push_back("objc3.async-consuming-ownership.v1");
         old.push_back("objc3.async-consuming-ownership.v2");

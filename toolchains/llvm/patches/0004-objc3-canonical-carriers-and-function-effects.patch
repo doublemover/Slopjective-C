@@ -63919,25 +63919,36 @@ index 000000000..333709b96
 +#endif
 diff --git a/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h b/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h
 new file mode 100644
-index 000000000..0968922d3
+index 000000000..c8f5ed780
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/Inputs/native-effectful-block-spelling.h
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,20 @@
 +#ifndef OBJC3_EFFECTFUL_BLOCK_SPELLING_H
 +#define OBJC3_EFFECTFUL_BLOCK_SPELLING_H
 +#include "../../CodeGen/Inputs/native-c-async-frame.h"
 +typedef void (^SpelledFrame)(void) __objc3_async_frame;
 +SpelledFrame zero_frame=^void(void) __objc3_async_frame {};
++typedef const void *SpelledCFRef;
++typedef void (^SpelledConsumed)(__attribute__((cf_consumed)) SpelledCFRef,
++                                __attribute__((ns_consumed)) id);
++SpelledConsumed owned_parameters=^void(__attribute__((cf_consumed)) SpelledCFRef foreign,
++                                      __attribute__((ns_consumed)) id object) {
++  (void)foreign;(void)object;
++};
++typedef void (^SpelledNoescape)(void (^ __attribute__((noescape)) callback)(void));
++SpelledNoescape noescape_parameter=^void(void (^ __attribute__((noescape)) callback)(void)) {
++  callback();
++};
 +#ifdef __cplusplus
 +void (^zero_noexcept)(void) noexcept=^void(void) noexcept {};
 +#endif
 +#endif
 diff --git a/clang/test/ObjC3/AST/native-effectful-block-spelling.m b/clang/test/ObjC3/AST/native-effectful-block-spelling.m
 new file mode 100644
-index 000000000..0f3026927
+index 000000000..27159c533
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/native-effectful-block-spelling.m
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,46 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t-c17-False.m
 +// RUN: FileCheck %s < %t-c17-False.m
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only %t-c17-False.m
@@ -63982,6 +63993,8 @@ index 000000000..0f3026927
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only %t-c++23-True-pch.m
 +#include "Inputs/native-effectful-block-spelling.h"
 +// CHECK: ^void(void) __objc3_async_frame
++// CHECK: owned_parameters = ^void({{.*}}cf_consumed{{.*}}ns_consumed{{.*}})
++// CHECK: noescape_parameter = ^void({{.*}}noescape{{.*}})
 diff --git a/clang/test/ObjC3/Sema/borrowed-pointer-mutations.m b/clang/test/ObjC3/Sema/borrowed-pointer-mutations.m
 new file mode 100644
 index 000000000..803bc3459

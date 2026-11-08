@@ -990,16 +990,16 @@ std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool nat
   visitor.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return visitor.key;
 }
 
-const clang::CoroutineBodyStmt *PublishedCxxCoroutine(const clang::FunctionDecl *function) {
+const clang::CoroutineBodyStmt *PublishedCxxCoroutine(const clang::Decl *function) {
   if (!function) return nullptr;
   const auto *type=clang::getObjC3CallableFunctionType(function);
   if (type && type->getObjC3FunctionEffects().Async) return nullptr;
-  return llvm::dyn_cast_or_null<clang::CoroutineBodyStmt>(function->getBody());
+  return clang::getObjC3CoroutineBody(function);
 }
 
 // Keep the written body independent of compiler-generated frame temporaries.
 // Resolved promise/awaiter customization points get a separate dependency key.
-std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::FunctionDecl *function) {
+std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::Decl *function) {
   struct References final : clang::DynamicRecursiveASTVisitor {
     const clang::ASTContext &context;
     explicit References(const clang::ASTContext &context):context(context){}
@@ -1032,7 +1032,7 @@ std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::Functi
   return result;
 }
 
-std::string CxxCoroutineContract(const clang::FunctionDecl *function,
+std::string CxxCoroutineContract(const clang::Decl *function,
                                   const clang::ASTContext &context) {
   const auto *body=PublishedCxxCoroutine(function);
   if (!body) return {};
@@ -1045,14 +1045,14 @@ std::string CxxCoroutineContract(const clang::FunctionDecl *function,
   return ComputeInterfaceSourceSha256(key);
 }
 
-const clang::Stmt *PublishedFunctionBody(const clang::FunctionDecl *function) {
-  if (const auto *body=llvm::dyn_cast_or_null<clang::CoroutineBodyStmt>(function->getBody()))
+const clang::Stmt *PublishedFunctionBody(const clang::Decl *function) {
+  if (const auto *body=clang::getObjC3CoroutineBody(function))
     return body->getBody();
   return function->getBody();
 }
 
 const clang::Expr *PublishedAwaitSource(const clang::CoawaitExpr *await,
-                                        const clang::FunctionDecl *function,
+                                        const clang::Decl *function,
                                         const clang::ASTContext &context) {
   if (const auto *source=clang::getObjC3AwaitSourceExpression(await))
     return source;

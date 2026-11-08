@@ -157,14 +157,18 @@ public:
     if(const auto *pattern=expression->getCallOperator()->getDescribedFunctionTemplate())
       for(const auto *specialization:pattern->specializations())
         if(const auto *arguments=specialization->getTemplateSpecializationArgs())InspectArguments(arguments->asArray());
-    lambda_bodies_[expression->getBody()]=expression->getCallOperator();
+    callable_bodies_[expression->getBody()]=expression->getCallOperator();
     TraverseType(expression->getCallOperator()->getType());
     return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseLambdaExpr(expression,nullptr);
+  }
+  bool VisitBlockExpr(clang::BlockExpr *expression) {
+    callable_bodies_[expression->getBlockDecl()->getBody()]=expression->getBlockDecl();
+    return true;
   }
   bool TraverseStmt(clang::Stmt *statement,DataRecursionQueue *queue=nullptr) {
     const auto *previous=function_;
     auto restore=llvm::scope_exit([&]{function_=previous;});
-    if(auto found=lambda_bodies_.find(statement);found!=lambda_bodies_.end()) {
+    if(auto found=callable_bodies_.find(statement);found!=callable_bodies_.end()) {
       function_=found->second;
       HasCxxCoroutines |= PublishedCxxCoroutine(function_)!=nullptr;
       statement=const_cast<clang::Stmt *>(PublishedFunctionBody(function_));
@@ -218,8 +222,8 @@ public:
   }
 private:
   const clang::ASTContext &context_;
-  const clang::FunctionDecl *function_=nullptr;
-  std::map<const clang::Stmt *,const clang::FunctionDecl *> lambda_bodies_;
+  const clang::Decl *function_=nullptr;
+  std::map<const clang::Stmt *,const clang::Decl *> callable_bodies_;
 };
 
 void VisitPublishedRuntimeContracts(const clang::NamedDecl *declaration,
@@ -886,7 +890,7 @@ public:
     return true;
   }
   bool TraverseLambdaExpr(clang::LambdaExpr *expression,DataRecursionQueue * = nullptr) {
-    lambda_bodies_[expression->getBody()]=expression->getCallOperator();
+    callable_bodies_[expression->getBody()]=expression->getCallOperator();
     if (!clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseLambdaExpr(expression,nullptr))
       return false;
     std::vector<GenericLambdaBody> bodies;
@@ -896,7 +900,7 @@ public:
       for (const auto *parameter:body.function->parameters()) Local(parameter);
       Add(ExpressionType(body.function->getType()));
       auto *statement=const_cast<clang::Stmt *>(PublishedFunctionBody(body.function));
-      lambda_bodies_[statement]=body.function;
+      callable_bodies_[statement]=body.function;
       if (!TraverseStmt(statement)) return false;
     }
     return true;
@@ -904,7 +908,7 @@ public:
   bool TraverseStmt(clang::Stmt *statement,DataRecursionQueue *queue=nullptr) {
     const auto *previous=function_;
     auto restore=llvm::scope_exit([&]{function_=previous;});
-    if(auto found=lambda_bodies_.find(statement);found!=lambda_bodies_.end()) {
+    if(auto found=callable_bodies_.find(statement);found!=callable_bodies_.end()) {
       function_=found->second;
       if (auto contract=CxxCoroutineContract(function_,context_); !contract.empty()) Add(contract);
       statement=const_cast<clang::Stmt *>(PublishedFunctionBody(function_));
@@ -924,6 +928,7 @@ public:
   }
   bool VisitBlockExpr(clang::BlockExpr *expression) {
     const auto *block = expression->getBlockDecl();
+    callable_bodies_[block->getBody()]=block;
     Add("block-this:" + std::to_string(block->capturesCXXThis()));
     Add("block-noescape:" + std::to_string(block->doesNotEscape()));
     for (const auto *parameter : block->parameters()) {
@@ -1372,8 +1377,8 @@ public:
   }
 private:
   const clang::ASTContext &context_;
-  const clang::FunctionDecl *function_;
-  std::map<const clang::Stmt *,const clang::FunctionDecl *> lambda_bodies_;
+  const clang::Decl *function_;
+  std::map<const clang::Stmt *,const clang::Decl *> callable_bodies_;
   std::string bytes_;
   std::map<const clang::Decl *, unsigned> locals_;
   unsigned next_local_slot_ = 0;

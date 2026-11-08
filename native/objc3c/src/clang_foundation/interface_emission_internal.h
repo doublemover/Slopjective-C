@@ -20,6 +20,7 @@ class ClassTemplateSpecializationDecl;
 class CoawaitExpr;
 class ConceptDecl;
 class CoroutineBodyStmt;
+class Decl;
 class DeclContext;
 class EnumDecl;
 class Expr;
@@ -110,10 +111,10 @@ bool ContainsUnnamedLocalType(const clang::Stmt *statement);
 
 const char *CxxAccessName(clang::AccessSpecifier access);
 
-std::string CxxCoroutineContract(const clang::FunctionDecl *function,
+std::string CxxCoroutineContract(const clang::Decl *function,
                                   const clang::ASTContext &context);
 
-std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::FunctionDecl *function);
+std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::Decl *function);
 
 std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool native=false);
 
@@ -388,7 +389,7 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
                           llvm::raw_ostream &out, bool declaration_only = false);
 
 const clang::Expr *PublishedAwaitSource(const clang::CoawaitExpr *await,
-                                        const clang::FunctionDecl *function,
+                                        const clang::Decl *function,
                                         const clang::ASTContext &context);
 
 std::vector<const clang::ClassTemplateSpecializationDecl *> PublishedClassSpecializations(
@@ -396,13 +397,13 @@ std::vector<const clang::ClassTemplateSpecializationDecl *> PublishedClassSpecia
 
 const clang::CXXRecordDecl *PublishedClosureResult(const clang::FunctionDecl *function);
 
-const clang::CoroutineBodyStmt *PublishedCxxCoroutine(const clang::FunctionDecl *function);
+const clang::CoroutineBodyStmt *PublishedCxxCoroutine(const clang::Decl *function);
 
 const clang::TagDecl *PublishedFactoryResult(const clang::FunctionDecl *function);
 
 std::vector<const clang::TagDecl *> PublishedFactoryResults(const clang::FunctionDecl *function);
 
-const clang::Stmt *PublishedFunctionBody(const clang::FunctionDecl *function);
+const clang::Stmt *PublishedFunctionBody(const clang::Decl *function);
 
 std::vector<const clang::VarTemplatePartialSpecializationDecl *> PublishedVariablePartials(
     const clang::VarTemplateDecl *pattern);

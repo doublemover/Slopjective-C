@@ -9,12 +9,13 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-f2174d730013-70309e04",
-    "prepared_tree": "e4f03c6e908711a56488b0ee75bacb24c270eec5",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
+    "prepared_tree": "3d56580b779e717171174c76c6ee94c074747b51",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
-    "activated_product_sdk": false
+    "activated_product_sdk": false,
+    "patch_digest": "954801de6f9ac444bf9f5149c5982a4f5bd313069c5fd2bb871d6ba1fd611538"
   },
   "language_contracts": {
     "language": "Objective-C 3.0",
@@ -71,7 +72,8 @@
     "isolated_runtime_and_collected_frontend_failure_controls_passed": 215,
     "frontend_failure_isolation_and_native_owner_controls_passed": 134,
     "actual_debug_archive_command": "PASS: retained executable/link modes and receipts, excluded build objects, verified archive SHA",
-    "forked_native_coverage_control": "PASS: pinned LLVM tools retained all three child branches after profile merging into one raw profile"
+    "forked_native_coverage_control": "PASS: pinned LLVM tools retained all three child branches after profile merging into one raw profile",
+    "frontend_replay_generator_transport_patch_and_revision_controls_passed": 50
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
@@ -95,10 +97,14 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "d5ce98ef2a02903aa323611c6ecd1448b22a4f38",
+      "revision": "5e31ab954a4516e275978fd5c6fe5ea8e8a1ad6c",
       "status": "PASS",
-      "runs": [42495577561, 42495577501, 42495577590],
-      "tooling_tests_passed": 1540,
+      "runs": [
+        42505183137,
+        42505183139,
+        42505183158
+      ],
+      "tooling_tests_passed": 1553,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 107
     },
@@ -313,7 +319,9 @@
         "Emission-policy positive control explicitly enables ASan at compile and link",
         "C++ exception enable/disable flags go to the driver, preserving independent Objective-C exception mode"
       ],
-      "still_under_investigation": ["Unnamed-template projection bridge interface emission"],
+      "still_under_investigation": [
+        "Unnamed-template projection bridge interface emission"
+      ],
       "failure_collection": "Independent assertion-based cases now run in separate child processes; all cases still must pass. Failed current compiler inputs and executables are retained for one day, separately from accepted SDK artifacts."
     },
     "frontend_fuzz_checkpoint": {
@@ -331,13 +339,28 @@
       "run": 42495426909,
       "revision": "af58fb80f167497eb375ff1cc73ea8fb69001560",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-f2174d730013-70309e04",
-      "status": "IN_PROGRESS",
+      "status": "FAILED_FRONTEND",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42495426909",
       "scope": "Explicit core-only diagnostic selection. Full aggregate and SDK publication are disabled; this is not full SDK qualification.",
       "superseded_queued_request": {
         "run": 42495087183,
         "status": "CANCELLED_BEFORE_EXECUTION",
         "reason": "Separate diagnostic concurrency group starts core work alongside existing extended profiles"
+      },
+      "foundation": "PASS",
+      "compiler_regressions_passed": 563,
+      "native_unit_tests_passed": 461,
+      "frontend_tests_passed": 47,
+      "frontend_tests_failed": 3,
+      "all_configured_tests_attempted": true,
+      "result_artifact_sha256": "796936eabe737530e1d84a4906a0b4e1739ac8c20e9a718c26846350232b3392",
+      "failure_collection": {
+        "emitter_cases_passed": 132,
+        "emitter_cases_attempted": 158,
+        "import_cases_passed": 16,
+        "import_cases_attempted": 17,
+        "borrowed_cases_passed": 9,
+        "borrowed_cases_attempted": 11
       }
     },
     "source_coverage_checkpoint": {
@@ -349,6 +372,45 @@
       "repair_revision": "80b4b5366fc134ad51f2c246ea0311462a230db9",
       "artifact_sha256": "c63b3eaabb62f14642b9ec9c568c2d89fbf38986444838c100d71e6659d1bd67",
       "artifact_download_verified": true
+    },
+    "local_frontend_repair_checkpoint": {
+      "status": "PASS",
+      "scope": "Targeted local frontend diagnostics; not complete compiler or SDK qualification",
+      "compiler_foundation": "llvmorg-23.1.5-392dfff97d29-f2174d730013-70309e04",
+      "native_printer_overlay": {
+        "source": "clang/lib/AST/StmtPrinter.cpp",
+        "candidate_source_identity": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
+        "foundation_prefix_unchanged": true,
+        "accepted_sdk": false
+      },
+      "emitter_cases_passed": 164,
+      "import_cases_passed": 17,
+      "borrowed_cases_passed": 11,
+      "previously_unenrolled_emitter_cases_now_executed": 6,
+      "ctest_programs_passed": 3,
+      "CTest_seconds": 158.42,
+      "complete_current_source_CI_still_required": true,
+      "repairs": [
+        "Preserve named template-specialization callable owners independently of physical imported header paths",
+        "Prevent factory-result identity recursion at named template roots",
+        "Resolve unnamed member projections to their published outer dependency owner",
+        "Keep provider-owned extern variable specializations complete on replay",
+        "Publish ordinary/native coroutine Blocks with their own dependency, promise and written-body context",
+        "Retain consumed ownership attributes and omit synthetic coroutine scope wrappers in native Block printing",
+        "Refresh stale positive reader/admission expectations while preserving unsupported/private-dependency rejection controls"
+      ]
+    },
+    "artifact_transport_checkpoint": {
+      "run": 42500956208,
+      "status": "PASS",
+      "source_run": 42495426909,
+      "source_debug_artifact": 13625290901,
+      "scope": "Download-only diagnostic artifact transport; no compiler execution and no SDK publication",
+      "parts": 4,
+      "maximum_part_MiB": 480,
+      "payload_sha256": "43303eef7a72a66468cd8423624584cd302132b487b1fbc225b0220351618e96",
+      "inner_archive_checksum_verified": true,
+      "reassembled_compiler_inputs_bytes": 608002556
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
@@ -362,13 +424,24 @@
       "ccache",
       "signed Swift consumer"
     ],
-    "sources": ["pinned LLVM bare Git objects", "libobjc2", "robin-map"],
-    "package_downloads": ["npm", "uv", "pip"],
+    "sources": [
+      "pinned LLVM bare Git objects",
+      "libobjc2",
+      "robin-map"
+    ],
+    "package_downloads": [
+      "npm",
+      "uv",
+      "pip"
+    ],
     "identity": "Per-dependency pins and installer recipes; independent of feature commits and compiler patch digests",
     "admission": "Exact restored tool file/mode/link inventory before execution; existing signed Swift publisher seal; pinned Git objects with full fsck",
-    "excluded": ["compiler build trees", "product SDK archives"],
+    "excluded": [
+      "compiler build trees",
+      "product SDK archives"
+    ],
     "focused_python_tests_passed": 91,
-    "workflow_controls_passed": 81,
+    "workflow_controls_passed": 84,
     "installed_tool_inventories_checked": 5,
     "live_CMake_cache_admission": "PASS",
     "compiler_source_identity_unchanged": true,
@@ -394,7 +467,11 @@
       "quick": {
         "run": 42475762194,
         "status": "PASS",
-        "cache_hits": ["Python interpreter", "Python packages", "CMake"],
+        "cache_hits": [
+          "Python interpreter",
+          "Python packages",
+          "CMake"
+        ],
         "tests_passed": 1520,
         "subtests_passed": 33,
         "explicit_skips": 107

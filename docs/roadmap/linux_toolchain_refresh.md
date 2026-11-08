@@ -76,35 +76,40 @@ checks without starting another compiler build. Both runs pass: the second
 restored all eight tool/source cache entries, admitted all six tool prefixes and
 reused all three pristine source repositories. Its complete job took 101 seconds
 versus 179 seconds cold. Quick CI independently restored Python, packages and
-CMake and passed 1,520 tooling tests plus 33 subtests. All Node setup callers now
+CMake and passed 1,553 tooling tests plus 33 subtests. All Node setup callers now
 cache npm, and installs prefer cached package downloads.
 
-The corrected compiler foundation passes 563 compiler regressions and 460 native
-unit tests; its ten native runtime cases also pass. The next release stage exposed
-frontend test profiles sharing executables: registration now records each test's
-actual executable owner instead of deriving a target from its profile name.
-Serial qualification builds that program once, checks each real CTest command,
-runs every variant and then reclaims it. Coverage and compiler instrumentation
-use those same owners. Real CMake controls cover profile aliases, Python-wrapped
-execution and failure preservation without requiring a compiler rebuild.
+The preceding complete core run attempted all 50 frontend programs: 47 passed
+and three exposed remaining failures. Its compiler foundation passed 563 compiler
+regressions and 461 native unit cases. CTest now records the actual executable
+owner for every profile, builds shared programs once, runs every variant and
+collects independent assertion-based failures before rejecting the suite.
 
-The complete frontend pass now attempts all 50 configured tests: 45 pass and five
-expose downstream failures. Repairs preserve native borrowed-result owner
-conflicts, admitted bounded reference captures, virtual key-path runtime headers,
-explicit sanitizer controls and independent C++/Objective-C exception modes.
-The unnamed-template bridge emission failure still needs complete diagnostics.
-Independent assertion-based cases now run separately, so a failed prerequisite
-stops its case while the rest of the program continues; every case must pass.
-The updated canonical compiler patch/source seal verifies, and 134 focused
-controls pass. Quick CI passes 1,540 tooling tests plus 33 subtests.
+Local repairs now pass all **164 emitter, 17 import and 11 borrowed-pointer
+cases**, including six existing emitter cases that were never enrolled. Interface
+identities preserve exact unnamed template arguments without physical header paths,
+avoid factory-result recursion and correctly resolve re-exported dependency owners.
+Provider-owned extern specializations retain their complete storage contract.
+Ordinary/native coroutine Blocks use their own callable, promise and written-body
+context. Native printing retains consumed parameter attributes and omits synthetic
+scope wrappers, preserving stable repeated replay. The controls retain capability
+removal rejection, private-dependency rejection and changed-body sensitivity.
+Fifty focused tooling controls pass; quick CI at the preceding pushed checkpoint
+passes 1,553 tests and 33 subtests, with 107 explicit capability/platform skips.
 
-The preceding compiler identity passes the three frontend fuzz campaigns and six
-controls. Its LLVM campaign also passes all 21 IR/debugger executions, 63 generated
-semantic-oracle cases and seven controls. Coverage reaches the known missing
-key-path fixture header mapping repaired above; implementation analysis remains
-active. The next
-core-only diagnostic run is explicitly partial: it cannot satisfy the full
-aggregate or publish an SDK archive. Failure-only compiler inputs and failed
-executables expire after one day and permit local diagnosis without rebuilding
-LLVM. Once the remaining frontend failures are resolved, a complete matching
-release pass is still required before acceptance or activation.
+These local diagnostics reuse a verified, failure-only CI compiler foundation and
+a separately compiled canonical printer repair; they are not SDK acceptance.
+One-day compiler inputs can be split into four bounded, checksummed transport parts
+without executing another compiler build. The hosted transport and complete local
+reassembly pass; intermediate copies are reclaimed after verification.
+
+The preceding compiler identity passes three frontend fuzz campaigns and six
+controls, plus all 21 LLVM IR/debugger executions, 63 generated semantic-oracle
+cases and seven controls. Coverage reached the repaired key-path fixture mapping;
+the older implementation-analysis job remains active. A complete current-source
+release/native, analysis, LLVM/oracle and fresh-host archive pass is still required
+before accepting or activating the candidate. Release scheduling uses the exact
+source revision so an older analysis job does not hold a repaired release behind
+its completed native build. Compiler diagnostic selection cannot satisfy the full
+aggregate or publish an SDK. The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
+records each checkpoint and its scope.

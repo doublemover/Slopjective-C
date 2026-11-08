@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 @pytest.mark.parametrize('failure,selection', [
     ('assertion',None),('exception',None),('false',None),('none',None),
-    ('none','first'),('none','control'),('none','absent')])
+    ('none','first'),('none','control'),('none','absent'),('assertion','control')])
 def test_real_native_case_runner_collects_failures_and_continues(tmp_path, failure, selection):
     compiler = shutil.which('g++') or shutil.which('clang++')
     if not compiler:
@@ -38,6 +38,10 @@ int main() {
     if selection is not None:environment['OBJC3_TEST_CASE']=selection
     result = subprocess.run([str(binary)], text=True, capture_output=True, timeout=10,env=environment)
     if selection is not None:
+        if failure!='none' and selection=='control':
+            assert result.returncode==1 and 'FAIL control' in result.stderr
+            assert 'PASS last' not in result.stderr
+            return
         assert result.returncode==2 and 'PARTIAL diagnostic case selection' in result.stderr
         assert 'PASS last' not in result.stderr
         if selection=='absent':assert '0 independent cases passed' in result.stderr

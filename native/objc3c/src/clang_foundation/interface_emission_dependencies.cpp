@@ -334,7 +334,7 @@ class TypeDependencyVisitor final
                     "declaration expression references a non-public or unresolved dependency",
                     target->getQualifiedNameAsString());
   }
-  void CheckCxxCoroutine(const clang::FunctionDecl *function) {
+  void CheckCxxCoroutine(const clang::Decl *function) {
     if (const auto *body=PublishedCxxCoroutine(function)) {
       if (!body->hasDependentPromiseType()) {
         const auto *promise=body->getPromiseDecl()->getType()->getAsCXXRecordDecl();
@@ -614,7 +614,10 @@ class TypeDependencyVisitor final
     if (in_expression_) TraverseType(variable->getType());
     if (body_function_)
       for (const auto *attribute : variable->attrs())
-        if (!attribute->isImplicit() && !llvm::isa<clang::BlocksAttr,clang::AlignedAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr>(attribute))
+        if (!attribute->isImplicit() &&
+            !(llvm::isa<clang::ParmVarDecl>(variable) &&
+              llvm::isa<clang::NSConsumedAttr,clang::CFConsumedAttr>(attribute)) &&
+            !llvm::isa<clang::BlocksAttr,clang::AlignedAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr>(attribute))
           UnsupportedExpression("local variable attribute has no publication contract");
     if(body_function_)CheckDeclarationAttributes(variable);
     return true;
@@ -760,7 +763,7 @@ class TypeDependencyVisitor final
       body_function_=previous_function;
       if(inserted_context)lambda_contexts_.erase(enclosing_context);
     });
-    if(auto found=lambda_bodies_.find(statement);found!=lambda_bodies_.end()) {
+    if(auto found=callable_bodies_.find(statement);found!=callable_bodies_.end()) {
       if(previous_function) {
         enclosing_context=previous_function->getCanonicalDecl();
         inserted_context=lambda_contexts_.insert(enclosing_context).second;
@@ -868,7 +871,7 @@ class TypeDependencyVisitor final
           "generic local lambdas require complete instantiations with stable named types and supported structural, integral, null or pack values");
       return false;
     }
-    lambda_bodies_[expression->getBody()]=expression->getCallOperator();
+    callable_bodies_[expression->getBody()]=expression->getCallOperator();
     const auto contexts = lambda_contexts_;
     const auto locals = lambda_locals_;
     lambda_contexts_.insert(expression->getCallOperator()->getCanonicalDecl());
@@ -888,13 +891,14 @@ class TypeDependencyVisitor final
       }
       TraverseType(body.function->getType());
       auto *statement=const_cast<clang::Stmt *>(PublishedFunctionBody(body.function));
-      lambda_bodies_[statement]=body.function;
+      callable_bodies_[statement]=body.function;
       if (!TraverseStmt(statement)) return false;
     }
     return true;
   }
   bool TraverseBlockExpr(clang::BlockExpr *expression, DataRecursionQueue * = nullptr) {
     const auto contexts = lambda_contexts_;
+    callable_bodies_[expression->getBlockDecl()->getBody()]=expression->getBlockDecl();
     lambda_contexts_.insert(expression->getBlockDecl());
     auto restore = llvm::scope_exit([&] { lambda_contexts_ = contexts; });
     for (const auto &capture : expression->getBlockDecl()->captures()) {
@@ -907,7 +911,9 @@ class TypeDependencyVisitor final
     std::string message="declaration expressions with local declarations or captures require additional contracts";
     if(!reason.empty())message+="; "+reason.str();
     AddDiagnostic(result_, "O3IFC101",message,
-                  body_function_?body_function_->getQualifiedNameAsString():std::string());
+                  llvm::isa_and_nonnull<clang::NamedDecl>(body_function_)
+                      ? llvm::cast<clang::NamedDecl>(body_function_)->getQualifiedNameAsString()
+                      : std::string("Block"));
     return false;
   }
 
@@ -1082,8 +1088,8 @@ private:
   std::set<const clang::Decl *> factory_results_;
   std::set<const clang::Decl *> lambda_contexts_;
   std::set<const clang::Decl *> lambda_locals_;
-  const clang::FunctionDecl *body_function_ = nullptr;
-  std::map<const clang::Stmt *,const clang::FunctionDecl *> lambda_bodies_;
+  const clang::Decl *body_function_ = nullptr;
+  std::map<const clang::Stmt *,const clang::Decl *> callable_bodies_;
   const clang::ASTContext &context_;
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;

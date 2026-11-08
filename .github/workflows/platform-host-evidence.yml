@@ -5,7 +5,9 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: linux-sdk-release-${{ github.ref }}
+  # A completed native build must not hold a repaired revision behind an older
+  # analysis job. Each release still builds and checks its own exact revision.
+  group: linux-sdk-release-${{ github.sha }}
   cancel-in-progress: false
 jobs:
   implementation-analysis:
