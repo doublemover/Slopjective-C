@@ -27,6 +27,6 @@
       "C++20 ARC source C++-only exception handling"
     ]
   },
-  "updated_frontend_consolidation": "31 groups running; focused lambda replay passed",
-  "full_current_consolidation": "follows the implementation batch"
+  "full_current_consolidation": "follows the implementation batch",
+  "updated_frontend_groups": 31
 }

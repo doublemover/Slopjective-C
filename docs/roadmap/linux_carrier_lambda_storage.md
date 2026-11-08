@@ -19,7 +19,6 @@ capabilities reject. C++20/23 source-free replay and native AST import controls
 retain the constructor recipes. The [verification receipt](../support/linux_carrier_lambda_storage_progress.json)
 records completed checks: 49 dedicated compiler commands, all 57 AST controls,
 two source-free profiles, 500 production decoder replays and three native
-ASan/UBSan configurations / ten commands pass. The 31 updated frontend groups
-are being consolidated. Full current compiler/analysis consolidation and one
+ASan/UBSan configurations / ten commands pass. All 31 updated frontend groups pass. Full current compiler/analysis consolidation and one
 matched SDK follow the implementation batch; ABI 24/frame 1/services 4/schema 2.2
 retain their layouts.
