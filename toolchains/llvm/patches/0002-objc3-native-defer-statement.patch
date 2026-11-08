@@ -218,7 +218,7 @@ index 15d0e6435..74e772342 100644
 +  return cast<VarDecl>(getBindingStatement()->getSingleDecl());
 +}
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..2356950f8 100644
+index 9a97d52fd..256fbb80d 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -25,6 +25,7 @@
@@ -626,7 +626,17 @@ index 9a97d52fd..2356950f8 100644
  void StmtPrinter::VisitChooseExpr(ChooseExpr *Node) {
    OS << "__builtin_choose_expr(";
    PrintExpr(Node->getCond());
-@@ -2342,12 +2660,18 @@ void StmtPrinter::VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr *Node) {
+@@ -2339,16 +2657,30 @@ void StmtPrinter::VisitCXXDefaultInitExpr(CXXDefaultInitExpr *Node) {
+ 
+ void StmtPrinter::VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr *Node) {
+   auto TargetType = Node->getType();
++  const bool Carrier=isa<ObjC3OptionalType,ObjC3ResultType>(TargetType.getCanonicalType().getTypePtr());
++  if(Carrier)TargetType=Node->getTypeAsWritten();
++  // A carrier spelling such as Optional(T) is a type in declaration contexts,
++  // but expression parsing can interpret it as a call. Preserve written aliases
++  // or use a type-only wrapper while retaining a functional-cast AST on replay.
++  const bool CarrierTypeOnly=Carrier && TargetType==TargetType.getCanonicalType();
++  if(CarrierTypeOnly)OS<<"__typeof__(";
    auto *Auto = TargetType->getContainedDeducedType();
    bool Bare = Auto && Auto->isDeduced();
  
@@ -649,9 +659,11 @@ index 9a97d52fd..2356950f8 100644
 +      OS << ')';
 +  }
  
++  if(CarrierTypeOnly)OS<<")";
    // No extra braces surrounding the inner construct.
    if (!Node->isListInitialization())
-@@ -2467,21 +2791,19 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+     OS << '(';
+@@ -2467,21 +2799,19 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
          /*OmitTemplateKW*/true);
    }
  
@@ -682,7 +694,7 @@ index 9a97d52fd..2356950f8 100644
      }
      if (Method->isVariadic()) {
        if (NeedComma)
-@@ -2490,8 +2812,13 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2490,8 +2820,13 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
      }
      OS << ')';
  
@@ -697,7 +709,7 @@ index 9a97d52fd..2356950f8 100644
  
      auto *Proto = Method->getType()->castAs<FunctionProtoType>();
      Proto->printExceptionSpecification(OS, Policy);
-@@ -2503,6 +2830,20 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2503,6 +2838,20 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
        OS << " -> ";
        Proto->getReturnType().print(OS, Policy);
      }
@@ -718,7 +730,7 @@ index 9a97d52fd..2356950f8 100644
    }
  
    // Print the body.
-@@ -2748,6 +3089,16 @@ void StmtPrinter::VisitCXXParenListInitExpr(CXXParenListInitExpr *Node) {
+@@ -2748,6 +3097,16 @@ void StmtPrinter::VisitCXXParenListInitExpr(CXXParenListInitExpr *Node) {
  }
  
  void StmtPrinter::VisitConceptSpecializationExpr(ConceptSpecializationExpr *E) {
@@ -735,7 +747,7 @@ index 9a97d52fd..2356950f8 100644
    NestedNameSpecifierLoc NNS = E->getNestedNameSpecifierLoc();
    NNS.getNestedNameSpecifier().print(OS, Policy);
    if (E->getTemplateKWLoc().isValid())
-@@ -2828,18 +3179,30 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
+@@ -2828,18 +3187,30 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
  }
  
  void StmtPrinter::VisitCoawaitExpr(CoawaitExpr *S) {
@@ -769,7 +781,7 @@ index 9a97d52fd..2356950f8 100644
  }
  
  // Obj-C
-@@ -2955,13 +3318,33 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
+@@ -2955,13 +3326,33 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
  void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
    BlockDecl *BD = Node->getBlockDecl();
    OS << "^";
@@ -804,7 +816,7 @@ index 9a97d52fd..2356950f8 100644
      for (BlockDecl::param_iterator AI = BD->param_begin(),
           E = BD->param_end(); AI != E; ++AI) {
        if (AI != BD->param_begin()) OS << ", ";
-@@ -2976,7 +3359,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
+@@ -2976,7 +3367,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
      }
      OS << ')';
    }
@@ -832,7 +844,7 @@ index 9a97d52fd..2356950f8 100644
  }
  
  void StmtPrinter::VisitOpaqueValueExpr(OpaqueValueExpr *Node) {
-@@ -3045,3 +3447,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
+@@ -3045,3 +3455,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
  
  // Implement virtual destructor.
  PrinterHelper::~PrinterHelper() = default;

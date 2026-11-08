@@ -1089,6 +1089,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeStorageLifetimeSemantic);
     if (HasAtomicManagedPropertyIdentity(declaration))
       sidecar.required_semantics.push_back(kAtomicManagedPropertySemantic);
+    if (HasNativeLambdaArgumentABIIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeLambdaArgumentABISemantic);
+    if (HasNativeMRCRecordPayloadIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeMRCRecordPayloadSemantic);
     if (HasNativeARCRecordPayloadIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeARCRecordPayloadSemantic);
     if (HasNativeCarrierLambdaIdentity(declaration))

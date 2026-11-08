@@ -2,6 +2,7 @@
 #include "clang_foundation/interface_contract.h"
 #include "clang_foundation/interface_codec.h"
 #include "standard_coroutine_types.h"
+#include "runtime_interface_types.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/DeclFriend.h"
 #include "clang/AST/TypeLoc.h"
@@ -29,12 +30,24 @@ namespace objc3::clang_foundation {
 // C++ standard header. Main-file customizations remain package declarations.
 inline bool HasStandardLibraryHeaderAncestor(clang::FileID file,
                                               const clang::SourceManager &source,
-                                              bool *over_budget=nullptr) {
+                                              bool *over_budget=nullptr,
+                                              bool include_runtime_roots=false) {
   unsigned depth=0;
   for(;file.isValid() && depth!=128;++depth) {
     auto location=source.getLocForStartOfFile(file);
-    if(source.isInSystemHeader(location) &&
-       IsStandardLibraryHeaderName(llvm::sys::path::filename(source.getFilename(location)).str()))return true;
+    const auto name=llvm::sys::path::filename(source.getFilename(location));
+    if(source.isInSystemHeader(location) && IsStandardLibraryHeaderName(name.str()))return true;
+    // A pinned runtime header may include C prerequisites before a C++ header
+    // reaches them. Include guards retain the first include parent. Bind those
+    // prerequisites in both inventories without treating arbitrary SDK-looking
+    // files as standard-library declarations.
+    if(include_runtime_roots && (name=="objc3_runtime_services.h" ||
+        name=="objc3_task.hpp" || name=="objc3_keypath.h")) {
+      bool invalid=false;const auto bytes=source.getBufferData(file,&invalid);
+      const auto expected=name=="objc3_runtime_services.h"?RuntimeInterfaceHeaderSource():
+          name=="objc3_task.hpp"?RuntimeTaskHeaderSource():RuntimeKeyPathHeaderSource();
+      if(!invalid && bytes==expected)return true;
+    }
     auto included=source.getIncludeLoc(file);
     if(included.isInvalid())break;
     auto next=source.getFileID(source.getSpellingLoc(included));
@@ -244,7 +257,7 @@ inline StandardLibraryHeaderManifest ReadStandardLibraryHeaderManifest(
     if(file.isInvalid())continue;
     auto location=source.getLocForStartOfFile(file);
     bool over_budget=false;
-    const bool included=HasStandardLibraryHeaderAncestor(file,source,&over_budget);
+    const bool included=HasStandardLibraryHeaderAncestor(file,source,&over_budget,true);
     if(over_budget)result.valid=false;
     if(!source.isInSystemHeader(location) || !included)continue;
     const auto name=llvm::sys::path::filename(source.getFilename(location)).str();

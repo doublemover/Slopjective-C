@@ -46,7 +46,9 @@ inline void AppendInterfaceHeaderSearchArguments(const clang::Preprocessor &prep
   if(!sanitizers.empty()) {
     std::string option="-fsanitize=";
     for(auto name:sanitizers){if(option.back()!='=')option+=',';option+=name.str();}
-    arguments.push_back(std::move(option));
+    // Retain semantic feature state without imposing the producer's link/LTO
+    // requirements on a syntax-only reparse (for example CFI).
+    arguments.insert(arguments.end(),{"-Xclang",std::move(option)});
   }
   if(preprocessor.getLangOpts().CPlusPlus)
     switch(preprocessor.getPreprocessorOpts().ObjCXXARCStandardLibrary) {

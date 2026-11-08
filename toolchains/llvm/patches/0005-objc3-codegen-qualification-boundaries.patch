@@ -5935,7 +5935,7 @@ index 7421733ef..fc98b6929 100644
      }
      fields.push_back(fieldType);
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..8691f422b 100644
+index e84e05e8e..0573e2c53 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,23 @@
@@ -5970,7 +5970,7 @@ index e84e05e8e..8691f422b 100644
  #include "clang/Basic/CodeGenOptions.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/CodeGen/CGFunctionInfo.h"
-@@ -492,6 +504,114 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
+@@ -492,6 +504,122 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
  }
  
  namespace {
@@ -6043,10 +6043,18 @@ index e84e05e8e..8691f422b 100644
 +      while (const auto *WithCleanups = dyn_cast<ExprWithCleanups>(Init)) Init = WithCleanups->getSubExpr();
 +      Init = Init->IgnoreParenImpCasts();
 +      if(const auto *Pseudo=dyn_cast<PseudoObjectExpr>(Init))return Self(Self,Pseudo->getResultExpr());
++      if(const auto *Cast=dyn_cast<CXXFunctionalCastExpr>(Init);
++          Cast && Cast->getCastKind()==CK_NoOp && Cast->isPRValue() &&
++          CGM.getContext().hasSameUnqualifiedType(Cast->getType(),Cast->getSubExpr()->getType()))
++        return Self(Self,Cast->getSubExpr());
 +      if (const auto *Conditional = dyn_cast<ConditionalOperator>(Init))
 +        return Self(Self, Conditional->getTrueExpr()) && Self(Self, Conditional->getFalseExpr());
 +      if (const auto *Comma = dyn_cast<BinaryOperator>(Init); Comma && Comma->getOpcode() == BO_Comma)
 +        return Self(Self, Comma->getRHS());
++      if (isa<CoroutineSuspendExpr>(Init) && Init->isPRValue() &&
++          supportsObjC3OwnedCarrierCallABI(CGM,CarrierType) &&
++          CGM.getContext().hasSameUnqualifiedType(Init->getType(),CarrierType))
++        return true;
 +      if ((isa<CallExpr,ObjCMessageExpr>(Init) || isa<ObjC3TryExpr>(Init)) &&
 +          (supportsObjC3CarrierCppCallABI(CGM,CarrierType) || supportsObjC3MixedCarrierCallABI(CGM,CarrierType)) &&
 +          CGM.getContext().hasSameUnqualifiedType(Init->getType(),CarrierType))
@@ -6085,7 +6093,7 @@ index e84e05e8e..8691f422b 100644
    struct DestroyObject final : EHScopeStack::Cleanup {
      DestroyObject(Address addr, QualType type,
                    CodeGenFunction::Destroyer *destroyer,
-@@ -527,19 +647,31 @@ namespace {
+@@ -527,19 +655,31 @@ namespace {
        bool NRVO = flags.isForNormalCleanup() && NRVOFlag;
  
        llvm::BasicBlock *SkipDtorBB = nullptr;
@@ -6120,7 +6128,7 @@ index e84e05e8e..8691f422b 100644
      }
  
      virtual ~DestroyNRVOVariable() = default;
-@@ -816,6 +948,7 @@ void CodeGenFunction::EmitScalarInit(const Expr *init, const ValueDecl *D,
+@@ -816,6 +956,7 @@ void CodeGenFunction::EmitScalarInit(const Expr *init, const ValueDecl *D,
    // If we're emitting a value with lifetime, we have to do the
    // initialization *before* we leave the cleanup scopes.
    if (auto *EWC = dyn_cast<ExprWithCleanups>(init)) {
@@ -6128,7 +6136,7 @@ index e84e05e8e..8691f422b 100644
      CodeGenFunction::RunCleanupsScope Scope(*this);
      return EmitScalarInit(EWC->getSubExpr(), D, lvalue, capturedByInit);
    }
-@@ -1354,9 +1487,117 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -1354,9 +1495,117 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
@@ -6249,7 +6257,7 @@ index e84e05e8e..8691f422b 100644
  }
  
  /// Emit a lifetime.begin marker if some criteria are satisfied.
-@@ -1487,7 +1728,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
+@@ -1487,7 +1736,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
  /// EmitAutoVarAlloca - Emit the alloca and debug information for a
  /// local variable.  Does not emit initialization or destruction.
  CodeGenFunction::AutoVarEmission
@@ -6259,7 +6267,7 @@ index e84e05e8e..8691f422b 100644
    QualType Ty = D.getType();
    assert(
        Ty.getAddressSpace() == LangAS::Default ||
-@@ -1505,7 +1747,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1505,7 +1755,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      EmitVariablyModifiedType(Ty);
  
    auto *DI = getDebugInfo();
@@ -6269,7 +6277,7 @@ index e84e05e8e..8691f422b 100644
  
    Address address = Address::invalid();
    RawAddress AllocaAddr = RawAddress::invalid();
-@@ -1518,7 +1761,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1518,7 +1769,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
              ? CGM.getOpenMPRuntime().getAddressOfLocalVariable(*this, &D)
              : Address::invalid();
  
@@ -6282,7 +6290,7 @@ index e84e05e8e..8691f422b 100644
  
    if (getLangOpts().OpenMP && OpenMPLocalAddr.isValid()) {
      address = OpenMPLocalAddr;
-@@ -1532,7 +1779,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1532,7 +1787,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      // isConstantInitializer produces wrong answers for structs with
      // reference or bitfield members, and a few other cases, and checking
      // for POD-ness protects us from some of these.
@@ -6292,7 +6300,7 @@ index e84e05e8e..8691f422b 100644
          (D.isConstexpr() ||
           ((Ty.isPODType(getContext()) ||
             getContext().getBaseElementType(Ty)->isObjCObjectPointerType()) &&
-@@ -1545,7 +1793,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1545,7 +1801,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        // in OpenCL.
        bool NeedsDtor =
            D.needsDestruction(getContext()) == QualType::DK_cxx_destructor;
@@ -6302,7 +6310,7 @@ index e84e05e8e..8691f422b 100644
             Ty.getAddressSpace() == LangAS::opencl_constant) &&
            (CGM.getCodeGenOpts().MergeAllConstants && !NRVO &&
             !isEscapingByRef &&
-@@ -1690,6 +1939,18 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1690,6 +1947,18 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        }
      }
  
@@ -6321,7 +6329,7 @@ index e84e05e8e..8691f422b 100644
      if (!VarAllocated) {
        if (!DidCallStackSave) {
          // Save the stack.
-@@ -1704,7 +1965,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1704,7 +1973,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
  
          // Push a cleanup block and restore the stack there.
          // FIXME: in general circumstances, this should be an EH cleanup.
@@ -6339,7 +6347,7 @@ index e84e05e8e..8691f422b 100644
        }
  
        auto VlaSize = getVLASize(Ty);
-@@ -1743,10 +2013,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1743,10 +2021,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    if (D.hasAttr<AnnotateAttr>() && HaveInsertPoint())
      EmitVarAnnotations(&D, address.emitRawPointer(*this));
  
@@ -6375,7 +6383,7 @@ index e84e05e8e..8691f422b 100644
  
    // Analogous to lifetime markers, we use a 'cleanup' to emit fake.use
    // calls for local variables. We are exempting volatile variables and
-@@ -1755,12 +2047,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1755,12 +2055,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    // overhead.
    if (CGM.getCodeGenOpts().getExtendVariableLiveness() ==
        CodeGenOptions::ExtendVariableLivenessKind::All) {
@@ -6401,7 +6409,7 @@ index e84e05e8e..8691f422b 100644
  }
  
  static bool isCapturedBy(const VarDecl &, const Expr *);
-@@ -1768,6 +2069,7 @@ static bool isCapturedBy(const VarDecl &, const Expr *);
+@@ -1768,6 +2077,7 @@ static bool isCapturedBy(const VarDecl &, const Expr *);
  /// Determines whether the given __block variable is potentially
  /// captured by the given statement.
  static bool isCapturedBy(const VarDecl &Var, const Stmt *S) {
@@ -6409,7 +6417,7 @@ index e84e05e8e..8691f422b 100644
    if (const Expr *E = dyn_cast<Expr>(S))
      return isCapturedBy(Var, E);
    for (const Stmt *SubStmt : S->children())
-@@ -1949,7 +2251,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
+@@ -1949,7 +2259,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
    }
  }
  
@@ -6419,7 +6427,7 @@ index e84e05e8e..8691f422b 100644
    assert(emission.Variable && "emission was not valid!");
  
    // If this was emitted as a global constant, we're done.
-@@ -1961,7 +2264,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -1961,7 +2272,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
    QualType type = D.getType();
  
    // If this local has an initializer, emit it now.
@@ -6437,7 +6445,7 @@ index e84e05e8e..8691f422b 100644
  
    // If we are at an unreachable point, we don't need to emit the initializer
    // unless it contains a label.
-@@ -2023,6 +2335,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -2023,6 +2343,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
      return emitZeroOrPatternForAutoVarInit(type, D, Loc);
    };
  
@@ -6457,7 +6465,7 @@ index e84e05e8e..8691f422b 100644
    if (isTrivialInitializer(Init))
      return initializeWhatIsTechnicallyUninitialized(Loc);
  
-@@ -2191,7 +2516,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2191,7 +2524,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      if (var->isARCPseudoStrong()) return;
  
      // Otherwise, consider whether to use an EH cleanup or not.
@@ -6467,7 +6475,7 @@ index e84e05e8e..8691f422b 100644
  
      // Use the imprecise destroyer by default.
      if (!var->hasAttr<ObjCPreciseLifetimeAttr>())
-@@ -2199,6 +2525,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2199,6 +2533,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -6475,7 +6483,7 @@ index e84e05e8e..8691f422b 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2218,8 +2545,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2218,8 +2553,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
    // Use an EH cleanup in array destructors iff the destructor itself
    // is being pushed as an EH cleanup.
    bool useEHCleanup = (cleanupKind & EHCleanup);
@@ -6500,7 +6508,7 @@ index e84e05e8e..8691f422b 100644
  }
  
  void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
-@@ -2234,8 +2575,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2583,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -6609,7 +6617,7 @@ index e84e05e8e..8691f422b 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2243,6 +2682,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2243,6 +2690,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
      emitAutoVarTypeCleanup(emission, dtorKind);
    }
  
@@ -6629,7 +6637,7 @@ index e84e05e8e..8691f422b 100644
    // In GC mode, honor objc_precise_lifetime.
    if (getLangOpts().getGC() != LangOptions::NonGC &&
        D.hasAttr<ObjCPreciseLifetimeAttr>()) {
-@@ -2271,8 +2723,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2271,8 +2731,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
        Flags |= BLOCK_FIELD_IS_WEAK;
      enterByrefCleanup(NormalAndEHCleanup, emission.Addr, Flags,
                        /*LoadBlockVarAddr*/ false,
@@ -6649,7 +6657,7 @@ index e84e05e8e..8691f422b 100644
  }
  
  CodeGenFunction::Destroyer *
-@@ -2285,6 +2747,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+@@ -2285,6 +2755,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -6658,7 +6666,7 @@ index e84e05e8e..8691f422b 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +3160,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +3168,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -6672,7 +6680,7 @@ index e84e05e8e..8691f422b 100644
        llvm::Value *V = Arg.isIndirect()
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
-@@ -2780,6 +3245,19 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2780,6 +3253,19 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
    llvm::Value *ArgVal = (DoStore ? Arg.getDirectValue() : nullptr);
  
    LValue lv = MakeAddrLValue(DeclPtr, Ty);
@@ -6692,7 +6700,7 @@ index e84e05e8e..8691f422b 100644
    // If this is a thunk, don't bother with ARC lifetime management.
    // The true implementation will take care of that.
    if (IsScalar && !CurFuncIsThunk) {
-@@ -2789,7 +3267,8 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2789,7 +3275,8 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
        // For __strong, it's handled by just skipping the initial retain;
        // otherwise we have to balance out the initial +1 with an extra
        // cleanup to do the release at the end of the function.
@@ -6703,10 +6711,10 @@ index e84e05e8e..8691f422b 100644
        // If a parameter is pseudo-strong then we can omit the implicit retain.
        if (D.isARCPseudoStrong()) {
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..88aa52c02 100644
+index 6a0d127fb..cd2d2ecee 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
-@@ -14,6 +14,14 @@
+@@ -14,6 +14,15 @@
  #include "CGCUDARuntime.h"
  #include "CGCXXABI.h"
  #include "CGCall.h"
@@ -6714,6 +6722,7 @@ index 6a0d127fb..88aa52c02 100644
 +#include "CGObjC3KeyPath.h"
 +#include "CGObjC3BlockCaptures.h"
 +#include "CGObjC3ManagedStorage.h"
++#include "CGObjC3MixedCarriers.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3TypedErrors.h"
@@ -6721,7 +6730,7 @@ index 6a0d127fb..88aa52c02 100644
  #include "CGCleanup.h"
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
-@@ -32,6 +40,7 @@
+@@ -32,6 +41,7 @@
  #include "clang/AST/Expr.h"
  #include "clang/AST/InferAlloc.h"
  #include "clang/AST/MatrixUtils.h"
@@ -6729,7 +6738,32 @@ index 6a0d127fb..88aa52c02 100644
  #include "clang/AST/NSAPI.h"
  #include "clang/AST/ParentMapContext.h"
  #include "clang/AST/StmtVisitor.h"
-@@ -519,6 +528,48 @@ static bool isAAPCS(const TargetInfo &TargetInfo) {
+@@ -257,6 +267,24 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
+ /// EmitIgnoredExpr - Emit code to compute the specified expression,
+ /// ignoring the result.
+ void CodeGenFunction::EmitIgnoredExpr(const Expr *E) {
++  QualType Type=E->getType().getCanonicalType().getUnqualifiedType();
++  if(E->isPRValue() && !E->getType().isVolatileQualified() &&
++      isa<ObjC3OptionalType,ObjC3ResultType>(Type.getTypePtr()) &&
++      (isObjC3ConstructedCppResultInitializer(CGM,E) ||
++       (supportsObjC3CarrierCppLocalLifetime(CGM,Type) &&
++        !hasObjC3CarrierCppLocalDestructor(CGM,Type)))) {
++    // A discarded value still constructs and destroys its selected owner.
++    // Carrier types have no native CXXBindTemporaryExpr, so establish the same
++    // fresh destination and full-expression cleanup as an ordinary C++ value.
++    Address Temporary=CreateMemTemp(Type,"objc3.discarded.carrier");
++    if(supportsObjC3CarrierCppLocalLifetime(CGM,Type) ||
++        supportsObjC3MixedCarrierCallABI(CGM,Type))
++      emitObjC3CarrierCppValueInit(*this,E,Temporary);
++    else
++      emitObjC3CarrierARCValueInit(*this,E,Temporary);
++    if(auto Kind=Type.isDestructedType())pushDestroy(Kind,Temporary,Type);
++    return;
++  }
+   if (E->isPRValue())
+     return (void)EmitAnyExpr(E, AggValueSlot::ignored(), true);
+ 
+@@ -519,6 +547,48 @@ static bool isAAPCS(const TargetInfo &TargetInfo) {
    return TargetInfo.getABI().starts_with("aapcs");
  }
  
@@ -6778,7 +6812,7 @@ index 6a0d127fb..88aa52c02 100644
  LValue CodeGenFunction::
  EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
    const Expr *E = M->getSubExpr();
-@@ -575,12 +626,10 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -575,12 +645,10 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
    SmallVector<SubobjectAdjustment, 2> Adjustments;
    E = E->skipRValueSubobjectAdjustments(CommaLHSs, Adjustments);
  
@@ -6792,7 +6826,7 @@ index 6a0d127fb..88aa52c02 100644
        return EmitOpaqueValueLValue(opaque);
      }
    }
-@@ -588,6 +637,42 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -588,6 +656,42 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
    // Create and initialize the reference temporary.
    RawAddress Alloca = Address::invalid();
    RawAddress Object = createReferenceTemporary(*this, M, E, &Alloca);
@@ -6835,7 +6869,7 @@ index 6a0d127fb..88aa52c02 100644
    if (auto *Var = dyn_cast<llvm::GlobalVariable>(
            Object.getPointer()->stripPointerCasts())) {
      llvm::Type *TemporaryType = ConvertTypeForMem(E->getType());
-@@ -604,7 +689,7 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -604,7 +708,7 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
                                        Object.getAlignment());
          EmitScalarInit(E, M->getExtendingDecl(), LV, false);
        } else {
@@ -6844,7 +6878,7 @@ index 6a0d127fb..88aa52c02 100644
        }
      }
    } else {
-@@ -658,9 +743,22 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -658,9 +762,22 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
      default:
        break;
      }
@@ -6870,7 +6904,7 @@ index 6a0d127fb..88aa52c02 100644
  
    // Perform derived-to-base casts and/or field accesses, to get from the
    // temporary object we created (and, potentially, for which we extended
-@@ -1749,6 +1847,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
+@@ -1749,6 +1866,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
  
  LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
                                           KnownNonNull_t IsKnownNonNull) {
@@ -6879,7 +6913,7 @@ index 6a0d127fb..88aa52c02 100644
    ApplyDebugLocation DL(*this, E);
    switch (E->getStmtClass()) {
    default: return EmitUnsupportedLValue(E, "l-value expression");
-@@ -1815,6 +1915,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
+@@ -1815,6 +1934,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
  
    case Expr::ExprWithCleanupsClass: {
      const auto *cleanups = cast<ExprWithCleanups>(E);
@@ -6887,7 +6921,7 @@ index 6a0d127fb..88aa52c02 100644
      RunCleanupsScope Scope(*this);
      LValue LV = EmitLValue(cleanups->getSubExpr(), IsKnownNonNull);
      if (LV.isSimple()) {
-@@ -4000,8 +4101,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
+@@ -4000,8 +4120,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
                                     getTarget().isBigEndian()
                                         ? llvm::endianness::big
                                         : llvm::endianness::little);
@@ -6898,7 +6932,7 @@ index 6a0d127fb..88aa52c02 100644
    }
  
    llvm::Constant *Components[] = {
-@@ -5019,6 +5120,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
+@@ -5019,6 +5139,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
      if (SanOpts.has(SanitizerKind::ArrayBounds))
        EmitBoundsCheck(E, E->getBase(), Idx, IdxTy, Accessed);
  
@@ -6907,7 +6941,7 @@ index 6a0d127fb..88aa52c02 100644
      // Extend or truncate the index type to 32 or 64-bits.
      if (Promote && Idx->getType() != IntPtrTy)
        Idx = Builder.CreateIntCast(Idx, IntPtrTy, IdxSigned, "idxprom");
-@@ -6475,10 +6578,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -6475,10 +6597,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
@@ -7003,7 +7037,7 @@ index 6a0d127fb..88aa52c02 100644
  
    llvm::scope_exit AddCoroElideSafeOnExit([&] {
      if (E->isCoroElideSafe()) {
-@@ -6702,6 +6889,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
+@@ -6702,6 +6908,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
      return EmitPointerToDataMemberBinaryExpr(E);
  
    assert(E->getOpcode() == BO_Assign && "unexpected binary l-value");
@@ -7012,7 +7046,7 @@ index 6a0d127fb..88aa52c02 100644
  
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
-@@ -7314,9 +7503,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7314,9 +7522,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
                                             bool forLValue,
                                             AggValueSlot slot) {
    SmallVector<CodeGenFunction::OpaqueValueMappingData, 4> opaques;
@@ -7037,7 +7071,7 @@ index 6a0d127fb..88aa52c02 100644
    LValueOrRValue result;
  
    for (PseudoObjectExpr::const_semantics_iterator
-@@ -7347,7 +7551,38 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7347,7 +7570,38 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
@@ -9604,10 +9638,10 @@ index 000000000..fc638aef7
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..377330e96
+index 000000000..e5a023bb7
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1442 @@
+@@ -0,0 +1,1448 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -10314,8 +10348,12 @@ index 000000000..377330e96
 +      if(Field && !hasNoNestedManagedCarrierFields(Ctx,Field->getType(),Seen,Budget,Depth+1))return false;
 +    return true;
 +  }
-+  if (Ty->isObjCObjectPointerType() || Ty->isBlockPointerType() ||
-+      Ty->isObjCObjectType() || T.getObjCLifetime() != Qualifiers::OCL_None)
++  if (Ty->isObjCObjectPointerType() || Ty->isBlockPointerType())
++    // MRC record leaves are native unowned fields. Only the source C++ special
++    // members may retain/copy/release them; no implicit ARC operation is added.
++    return !Ctx.getLangOpts().ObjCAutoRefCount &&
++        T.getObjCLifetime()==Qualifiers::OCL_None;
++  if (Ty->isObjCObjectType() || T.getObjCLifetime() != Qualifiers::OCL_None)
 +    return false;
 +  if (const auto *AT = Ctx.getAsArrayType(T))
 +    return isa<ConstantArrayType>(AT) &&
@@ -10457,10 +10495,12 @@ index 000000000..377330e96
 +    return false;
 +  --Budget;
 +  if(Type->isObjCObjectPointerType() || Type->isBlockPointerType())
-+    return CGM.getLangOpts().ObjCAutoRefCount &&
++    return (!CGM.getLangOpts().ObjCAutoRefCount &&
++            Type.getObjCLifetime()==Qualifiers::OCL_None) ||
++        (CGM.getLangOpts().ObjCAutoRefCount &&
 +        (Type.getObjCLifetime()==Qualifiers::OCL_Strong ||
 +         Type.getObjCLifetime()==Qualifiers::OCL_Weak ||
-+         Type.getObjCLifetime()==Qualifiers::OCL_ExplicitNone);
++         Type.getObjCLifetime()==Qualifiers::OCL_ExplicitNone));
 +  if(Type->isObjCObjectType() || Type.getObjCLifetime()!=Qualifiers::OCL_None)
 +    return false;
 +  const clang::Type *Canonical = Type.getCanonicalType().getTypePtr();
@@ -10482,7 +10522,7 @@ index 000000000..377330e96
 +      // An explicit native lifetime owns the selected arm. ARC fields are
 +      // never copied or destroyed by an inferred whole-union field walk.
 +      const auto *Destructor=RD->getDestructor();
-+      if(!CGM.getLangOpts().ObjCAutoRefCount || !Destructor ||
++      if(!Destructor ||
 +          !Destructor->isUserProvided() || Destructor->isDeleted() ||
 +          Destructor->getAccess()!=AS_public ||
 +          !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow())return false;
@@ -12439,10 +12479,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..8f5a6e9a7
+index 000000000..d7fb5a2f8
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,945 @@
+@@ -0,0 +1,954 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12768,6 +12808,10 @@ index 000000000..8f5a6e9a7
 +      if (!Value) return false;
 +      Value = unboundCppCheckedResult(Value);
 +      if(const auto *Pseudo=dyn_cast<PseudoObjectExpr>(Value))return Self(Self,Pseudo->getResultExpr());
++      if(const auto *Cast=dyn_cast<CXXFunctionalCastExpr>(Value);
++          Cast && Cast->getCastKind()==CK_NoOp && Cast->isPRValue() &&
++          Context.hasSameUnqualifiedType(Cast->getType(),Cast->getSubExpr()->getType()))
++        return Self(Self,Cast->getSubExpr());
 +      const bool EmptyOptional=isa<ObjC3OptionalType>(Base.getTypePtr()) &&
 +          supportsObjC3CarrierCppCallABI(CGM,Base);
 +      if(isa<ImplicitValueInitExpr,CXXScalarValueInitExpr>(Value))return EmptyOptional;
@@ -12785,6 +12829,11 @@ index 000000000..8f5a6e9a7
 +        return Self(Self, Conditional->getTrueExpr()) && Self(Self, Conditional->getFalseExpr());
 +      if (const auto *Comma = dyn_cast<BinaryOperator>(Value); Comma && Comma->getOpcode() == BO_Comma)
 +        return Self(Self, Comma->getRHS());
++      if (isa<CoroutineSuspendExpr>(Value) && Value->isPRValue())
++        // A value returned by await_resume owns fresh selected payload storage.
++        // Reference-valued suspension results remain aliases and cannot acquire
++        // this provisional temporary owner.
++        return true;
 +      if (isa<CallExpr,ObjCMessageExpr>(Value) &&
 +          (supportsObjC3CarrierCppCallABI(CGM,Base) || supportsObjC3MixedCarrierCallABI(CGM,Base)))return true;
 +      if (const auto *Try = dyn_cast<ObjC3TryExpr>(Value))
@@ -26708,7 +26757,7 @@ index 000000000..93991e73f
 +// CHECK-NOT: load i8
 +// CHECK: ret i1
 diff --git a/clang/lib/CodeGen/CGExprCXX.cpp b/clang/lib/CodeGen/CGExprCXX.cpp
-index 1769ab00e..70d09fdd9 100644
+index 1769ab00e..7e388914c 100644
 --- a/clang/lib/CodeGen/CGExprCXX.cpp
 +++ b/clang/lib/CodeGen/CGExprCXX.cpp
 @@ -13,18 +13,71 @@
@@ -26913,7 +26962,20 @@ index 1769ab00e..70d09fdd9 100644
    return resultPtr;
  }
  
-@@ -2092,6 +2215,11 @@ static void EmitArrayDelete(CodeGenFunction &CGF, const CXXDeleteExpr *E,
+@@ -1999,6 +2122,12 @@ static bool EmitObjectDelete(CodeGenFunction &CGF, const CXXDeleteExpr *DE,
+     CGF.EmitCXXDestructorCall(Dtor, Dtor_Complete,
+                               /*ForVirtualBase=*/false,
+                               /*Delegating=*/false, Ptr, ElementType);
++  else if (ElementType.isDestructedType()==QualType::DK_objc3_carrier)
++    // A carrier owns selected payload storage without a source CXXRecordDecl
++    // destructor. Destroy it before the already-registered deallocation runs,
++    // using the same operation as array delete and explicit destruction.
++    CGF.emitDestroy(Ptr,ElementType,
++        CGF.getDestroyer(QualType::DK_objc3_carrier),false);
+   else if (auto Lifetime = ElementType.getObjCLifetime()) {
+     switch (Lifetime) {
+     case Qualifiers::OCL_None:
+@@ -2092,6 +2221,11 @@ static void EmitArrayDelete(CodeGenFunction &CGF, const CXXDeleteExpr *E,
  }
  
  void CodeGenFunction::EmitCXXDeleteExpr(const CXXDeleteExpr *E) {
@@ -37594,3 +37656,159 @@ index 000000000..247c0c805
 +// CHECK-LABEL: define {{.*}}ordinary_lazy_scope
 +// CHECK: call void {{.*}}ordinary_value
 +// CHECK: call void {{.*}}OrdinaryLazy{{.*}}D1Ev
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/mrc-record-payloads.h b/clang/test/ObjC3/CodeGen/Inputs/mrc-record-payloads.h
+new file mode 100644
+index 000000000..097a9ce50
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/mrc-record-payloads.h
+@@ -0,0 +1,35 @@
++#ifndef OBJC3_MRC_RECORD_PAYLOADS_H
++#define OBJC3_MRC_RECORD_PAYLOADS_H
++extern "C" id mrc_hold(id value);
++extern "C" void mrc_drop(id value);
++extern "C" void *mrc_block_copy(const void *value);
++extern "C" void mrc_block_release(const void *value);
++struct MRCPayload {
++  id value;explicit MRCPayload(id value):value(mrc_hold(value)){}
++  MRCPayload(const MRCPayload &other):value(mrc_hold(other.value)){}
++  MRCPayload(MRCPayload &&other)noexcept:value(other.value){other.value=0;}
++  ~MRCPayload()noexcept{mrc_drop(value);}
++};
++struct MRCTrivial {id value;int code;};
++struct MRCBlockPayload {
++  void (^value)(void);
++  explicit MRCBlockPayload(void (^value)(void)):value((void(^)(void))mrc_block_copy(value)){}
++  MRCBlockPayload(const MRCBlockPayload &other):value((void(^)(void))mrc_block_copy(other.value)){}
++  MRCBlockPayload(MRCBlockPayload &&other)noexcept:value(other.value){other.value=0;}
++  ~MRCBlockPayload()noexcept{mrc_block_release(value);}
++};
++typedef __objc3_optional(MRCPayload) MRCMaybe;
++typedef __objc3_result(MRCPayload,MRCBlockPayload) MRCResult;
++typedef __objc3_optional(MRCTrivial) MRCView;
++typedef __objc3_optional(MRCMaybe) MRCNested;
++struct MRCRecord {MRCMaybe values[2];};
++union MRCUnion {struct Owned {MRCMaybe value;} owned;int scalar;
++  MRCUnion(MRCPayload owner):owned{__objc3_some(MRCPayload,static_cast<MRCPayload &&>(owner))}{}
++  MRCUnion(const MRCUnion &other):owned(other.owned){}
++  ~MRCUnion()noexcept{owned.~Owned();}
++};
++MRCMaybe mrc_echo(MRCMaybe value);
++__attribute__((objc_root_class)) @interface MRCPayloadHost
++-(MRCMaybe)echo:(MRCMaybe)value;
++@end
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/mrc-record-payloads.mm b/clang/test/ObjC3/CodeGen/mrc-record-payloads.mm
+new file mode 100644
+index 000000000..4c2ab0740
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/mrc-record-payloads.mm
+@@ -0,0 +1,38 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-llvm -o %t-c++20.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/mrc-record-payloads.h -o %t-c++20.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20.pch -DFROM_PCH -emit-llvm -o %t-c++20-pch.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-llvm -o %t-c++23.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/mrc-record-payloads.h -o %t-c++23.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23.pch -DFROM_PCH -emit-llvm -o %t-c++23-pch.ll %s
++
++#ifndef FROM_PCH
++#include "Inputs/mrc-record-payloads.h"
++#endif
++MRCMaybe mrc_make(id value){return __objc3_some(MRCPayload,MRCPayload(value));}
++MRCMaybe mrc_forward(MRCMaybe value){return value;}
++MRCResult mrc_result(id value){return __objc3_ok(MRCPayload,MRCBlockPayload,MRCPayload(value));}
++MRCNested mrc_nested(id value){return __objc3_some(MRCMaybe,mrc_make(value));}
++int mrc_calls(MRCPayloadHost *_Nonnull host,id value){
++  auto first=mrc_make(value);auto copied=__objc3_copy(first);auto moved=__objc3_move(copied);
++  auto result=mrc_echo(mrc_forward(__objc3_copy(moved)));auto message=[host echo:__objc3_copy(result)];
++  auto block=^MRCMaybe(MRCMaybe input){return mrc_forward(__objc3_copy(input));};
++  auto final=block(__objc3_copy(message));return __objc3_has_value(final);
++}
++int mrc_captures(id value){
++  auto source=mrc_make(value);auto callback=[source]{return __objc3_has_value(source);};auto copy=callback;
++  auto block=^int{return __objc3_has_value(source);};void *heap=mrc_block_copy(block);
++  int result=((int(^)(void))heap)();mrc_block_release(heap);return result+copy();
++}
++int mrc_byref(id value){
++  __block MRCMaybe source=mrc_make(value);auto block=^int{return __objc3_has_value(source);};
++  void *heap=mrc_block_copy(block);int result=((int(^)(void))heap)();mrc_block_release(heap);return result;
++}
++int mrc_storage(id value){
++  MRCRecord source{{mrc_make(value),mrc_make(value)}};MRCRecord copied(source);
++  MRCMaybe array[2]={mrc_make(value),mrc_make(value)};auto *heap=new MRCMaybe[2]{mrc_make(value),mrc_make(value)};
++  int result=__objc3_has_value(heap[0])+__objc3_has_value(array[1])+__objc3_has_value(copied.values[1]);delete[]heap;
++  return result;
++}
++int mrc_union_storage(id value){MRCUnion source{MRCPayload(value)};MRCUnion copied(source);return __objc3_has_value(copied.owned.value);}
++MRCView mrc_unowned_view(id value){return __objc3_some(MRCTrivial,MRCTrivial{value,17});}
++MRCMaybe mrc_block_owner(void (^callback)(void)){auto value=__objc3_err(MRCPayload,MRCBlockPayload,MRCBlockPayload(callback));return __objc3_none(MRCPayload);}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-object-construction.h b/clang/test/ObjC3/CodeGen/Inputs/carrier-object-construction.h
+new file mode 100644
+index 000000000..8676d687c
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-object-construction.h
+@@ -0,0 +1,15 @@
++#ifndef OBJC3_CARRIER_OBJECT_CONSTRUCTION_H
++#define OBJC3_CARRIER_OBJECT_CONSTRUCTION_H
++void *operator new(__SIZE_TYPE__,void *)noexcept;
++void operator delete(void *,void *)noexcept;
++struct ObjectLeaf {
++ int code;explicit ObjectLeaf(int);ObjectLeaf(const ObjectLeaf &);
++ ObjectLeaf(ObjectLeaf &&);~ObjectLeaf()noexcept;
++};
++using ObjectMaybe=__objc3_optional(ObjectLeaf);
++using ObjectResult=__objc3_result(ObjectLeaf,int);
++using ObjectNested=__objc3_optional(ObjectMaybe);
++template<class T,class... Args>T *object_construct_at(T *storage,Args &&...args){return ::new((void *)storage)T(static_cast<Args &&>(args)...);}
++template<class T>void object_destroy_at(T *storage){storage->~T();}
++template<class T>T object_read(const void *storage){return *static_cast<const T *>(storage);}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-object-construction.mm b/clang/test/ObjC3/CodeGen/carrier-object-construction.mm
+new file mode 100644
+index 000000000..856161375
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-object-construction.mm
+@@ -0,0 +1,44 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-llvm -o %t-c++20-False.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/carrier-object-construction.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -emit-llvm -o %t-c++20-False-pch.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-llvm -o %t-c++20-True.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/carrier-object-construction.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -emit-llvm -o %t-c++20-True-pch.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-llvm -o %t-c++23-False.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/carrier-object-construction.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -emit-llvm -o %t-c++23-False-pch.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-llvm -o %t-c++23-True.ll %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/carrier-object-construction.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -emit-llvm -o %t-c++23-True-pch.ll %s
++
++#ifndef FROM_PCH
++#include "Inputs/carrier-object-construction.h"
++#endif
++ObjectMaybe copy_local(const ObjectMaybe &source){ObjectMaybe local=source;return local;}
++ObjectMaybe move_local(ObjectMaybe &source){ObjectMaybe local=static_cast<ObjectMaybe &&>(source);return local;}
++ObjectMaybe const_move(const ObjectMaybe &source){ObjectMaybe local=static_cast<const ObjectMaybe &&>(source);return local;}
++ObjectMaybe cast_temporary(const ObjectMaybe &source){return ObjectMaybe(source);}
++ObjectMaybe *copy_new(const ObjectMaybe &source){return new ObjectMaybe(source);}
++ObjectMaybe *move_new(ObjectMaybe &source){return new ObjectMaybe(static_cast<ObjectMaybe &&>(source));}
++void copy_placement(void *storage,const ObjectMaybe &source){::new(storage)ObjectMaybe(source);}
++void move_placement(void *storage,ObjectMaybe &source){::new(storage)ObjectMaybe(static_cast<ObjectMaybe &&>(source));}
++void generic_placement(void *storage,const ObjectMaybe &source){auto *value=object_construct_at(static_cast<ObjectMaybe *>(storage),source);object_destroy_at(value);}
++ObjectMaybe generic_read(const void *source){return object_read<ObjectMaybe>(source);}
++int array_copies(const ObjectMaybe &source){ObjectMaybe values[2]={source,source};auto *heap=new ObjectMaybe[2]{source,source};int count=__objc3_has_value(values[0])+__objc3_has_value(heap[1]);delete[]heap;return count;}
++ObjectResult result_copy(const ObjectResult &source){ObjectResult local(source);return local;}
++ObjectNested nested_copy(const ObjectNested &source){ObjectNested local(source);return local;}
++
++int functional_local_storage(const ObjectMaybe &source) {
++  auto value=ObjectMaybe(source);const ObjectMaybe &extended=ObjectMaybe(source);
++  (void)ObjectMaybe(source);(void)__objc3_copy(source);
++  if(__objc3_has_value(source))(void)ObjectMaybe(source);
++  return __objc3_has_value(value)+__objc3_has_value(extended);
++}
++
++struct ObjectTrivial {int code;ObjectTrivial(const ObjectTrivial &);};
++using TrivialObjectMaybe=__objc3_optional(ObjectTrivial);
++void discarded_trivial_copy(const TrivialObjectMaybe &source) {
++  (void)__objc3_copy(source);(void)TrivialObjectMaybe(source);
++}
++
++void scalar_delete(ObjectMaybe *value){delete value;}

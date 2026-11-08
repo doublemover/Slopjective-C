@@ -20,7 +20,9 @@ pointer views; unsafe-only record payloads also retain the new admission contrac
 Missing/invented capabilities, older readers, source relocation, generic use and
 source-free replay have controls. Native AST import retains field lifetimes and
 nontrivial special-member facts. Union, packed/volatile storage and other
-unqualified fields retain explicit boundaries; MRC mixed ownership remains open.
+unqualified fields retain explicit boundaries. The later
+[source 2.153 span](linux_native_mrc_record_payloads.md) admits source-owned MRC
+C++ object/Block wrappers without adding implicit ARC operations.
 
 The [verification receipt](../support/linux_native_arc_record_payloads_progress.json)
 records completed checks: 25 dedicated compiler commands, two updated ownership

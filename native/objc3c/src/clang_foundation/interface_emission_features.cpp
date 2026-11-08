@@ -238,6 +238,45 @@ bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNativeLambdaArgumentABI(const clang::NamedDecl *declaration) {
+  if(!declaration->getASTContext().getLangOpts().CPlusPlus)return false;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Closures : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitLambdaExpr(clang::LambdaExpr *closure) override {
+        found|=!closure->getLambdaClass()->canPassInRegisters();return true;
+      }
+    } closures;
+    closures.TraverseStmt(const_cast<clang::Stmt *>(statement));return closures.found;
+  });
+}
+
+bool HasDeclarationNativeMRCRecordPayload(const clang::NamedDecl *declaration) {
+  const auto &context=declaration->getASTContext();
+  if(const auto *value=llvm::dyn_cast<clang::ValueDecl>(declaration))
+    if(RequiresNativeMRCRecordPayload(value->getType(),context))return true;
+  if(const auto *alias=llvm::dyn_cast<clang::TypedefNameDecl>(declaration))
+    if(RequiresNativeMRCRecordPayload(alias->getUnderlyingType(),context))return true;
+  if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
+    if(RequiresNativeMRCRecordPayload(method->getReturnType(),context))return true;
+    for(const auto *parameter:method->parameters())
+      if(RequiresNativeMRCRecordPayload(parameter->getType(),context))return true;
+  }
+  return HasPublishedExpression(declaration,[declaration](const clang::Stmt *statement) {
+    struct Values : clang::DynamicRecursiveASTVisitor {
+      const clang::ASTContext &context;bool found=false;
+      explicit Values(const clang::ASTContext &context):context(context) {}
+      bool VisitExpr(clang::Expr *expression) override {
+        found|=RequiresNativeMRCRecordPayload(expression->getType(),context);return true;
+      }
+      bool VisitVarDecl(clang::VarDecl *variable) override {
+        found|=RequiresNativeMRCRecordPayload(variable->getType(),context);return true;
+      }
+    } visitor(declaration->getASTContext());
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationNativeARCRecordPayload(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[declaration](const clang::Stmt *statement) {
     struct Values : clang::DynamicRecursiveASTVisitor {

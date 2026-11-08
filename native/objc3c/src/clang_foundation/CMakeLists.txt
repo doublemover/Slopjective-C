@@ -332,10 +332,12 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/native_deduced_group_provider_test.cpp)
   add_executable(objc3_native_emission_policy_provider_test
     ../../../../tests/clang_foundation/native_emission_policy_provider_test.cpp)
+  add_executable(objc3_native_mrc_record_payload_provider_test
+    ../../../../tests/clang_foundation/native_mrc_record_payload_provider_test.cpp)
   add_executable(objc3_native_storage_lifetime_provider_test
     ../../../../tests/clang_foundation/native_storage_lifetime_provider_test.cpp)
   foreach(_standard_library_test IN ITEMS objc3_standard_library_provider_test
-      objc3_standard_library_customization_provider_test objc3_native_storage_lifetime_provider_test objc3_native_emission_policy_provider_test objc3_native_deduced_group_provider_test)
+      objc3_standard_library_customization_provider_test objc3_native_storage_lifetime_provider_test objc3_native_emission_policy_provider_test objc3_native_deduced_group_provider_test objc3_native_mrc_record_payload_provider_test)
     target_include_directories(${_standard_library_test} SYSTEM PRIVATE
       ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
     target_link_libraries(${_standard_library_test} PRIVATE objc3c_clang_foundation)
@@ -349,6 +351,10 @@ if (BUILD_TESTING)
     OBJC3_GROUP_TEST_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
     OBJC3_GROUP_TEST_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>")
   add_dependencies(objc3_native_deduced_group_provider_test objc3_runtime_services)
+  target_compile_definitions(objc3_native_mrc_record_payload_provider_test PRIVATE
+    OBJC3_MRC_TEST_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>"
+    OBJC3_MRC_TEST_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
+  add_dependencies(objc3_native_mrc_record_payload_provider_test objc3_runtime_services)
   add_test(NAME objc3_native_deduced_group_provider
     COMMAND objc3_native_deduced_group_provider_test)
   set_tests_properties(objc3_native_deduced_group_provider PROPERTIES
@@ -357,6 +363,10 @@ if (BUILD_TESTING)
     COMMAND objc3_native_emission_policy_provider_test)
   set_tests_properties(objc3_native_emission_policy_provider PROPERTIES
     LABELS "native;emission-policy;extended" TIMEOUT 300)
+  add_test(NAME objc3_native_mrc_record_payload_provider
+    COMMAND objc3_native_mrc_record_payload_provider_test)
+  set_tests_properties(objc3_native_mrc_record_payload_provider PROPERTIES
+    LABELS "native;mrc;carrier;extended" TIMEOUT 300)
   add_test(NAME objc3_native_storage_lifetime_provider
     COMMAND objc3_native_storage_lifetime_provider_test)
   set_tests_properties(objc3_native_storage_lifetime_provider PROPERTIES

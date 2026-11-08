@@ -283,6 +283,14 @@ inline constexpr const char *kAtomicManagedPropertySemantic = "objc3.atomic-mana
 inline bool HasAtomicManagedPropertyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";atomic-managed-properties:v1;") != std::string::npos;
 }
+inline constexpr const char *kNativeLambdaArgumentABISemantic = "objc3.native-lambda-argument-abi.v1";
+inline bool HasNativeLambdaArgumentABIIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-lambda-argument-abi:v1;") != std::string::npos;
+}
+inline constexpr const char *kNativeMRCRecordPayloadSemantic = "objc3.native-mrc-record-payload.v1";
+inline bool HasNativeMRCRecordPayloadIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-mrc-record-payload:v1;") != std::string::npos;
+}
 inline constexpr const char *kNativeARCRecordPayloadSemantic = "objc3.native-arc-record-payload.v2";
 inline bool HasNativeARCRecordPayloadIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-arc-record-payload:v2;") != std::string::npos ||

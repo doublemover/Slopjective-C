@@ -1255,6 +1255,109 @@ void TestBorrowedMemoryAliasReplay() {
   }
 }
 
+void TestSanitizedStandardLibraryReplay() {
+ for(const char *sanitizer:{"address","undefined","thread","cfi"}) {
+  std::vector<std::string> args={"-xc++","-std=c++20","--target=x86_64-unknown-linux-gnu",std::string("-fsanitize=")+sanitizer,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+  if(std::string(sanitizer)=="cfi")args.insert(args.end(),{"-flto","-fvisibility=hidden"});
+  const std::string source="#include <vector>\nnamespace SanitizedStandard {using Values=std::vector<int>;Values values();inline int size(){return values().size();}inline int storage(){alignas(int) unsigned char bytes[sizeof(int)]={};return sizeof(bytes);}}\n";
+  auto emit=[&](const std::string &text) {
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"sanitized-standard.cpp");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.sanitized_standard","test",{},{},{},{"SanitizedStandard"},{},&ast->getPreprocessor());
+    for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.source_bytes==replay.source_bytes);
+ }
+}
+
+void TestNativeLambdaArgumentABIReplay() {
+ for(const char *standard:{"c++20","c++23"})for(int ownership:{0,1,2}) {
+  std::vector<std::string> args={"-x",ownership?"objective-c++":"c++",std::string("-std=")+standard,"--target=x86_64-unknown-linux-gnu"};
+  if(ownership)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"});
+  if(ownership==2)args.push_back("-fobjc-arc");
+  const std::string source=R"(
+    namespace OwnedClosure {
+      void *acquire(void *);void release(void *);
+      struct Pin {void *value;explicit Pin(void *value):value(acquire(value)){}
+        Pin(const Pin &other):value(acquire(other.value)){}
+        Pin(Pin &&other)noexcept:value(other.value){other.value=nullptr;}
+        ~Pin()noexcept{release(value);}};
+      inline auto make(void *value){return [pin=Pin(value)]{return pin.value;};}
+      template<class Work>inline void *invoke(Work work){return work();}
+      inline void *use(void *value){return invoke(make(value));}
+    }
+  )";
+  auto emit=[&](const std::string &text) {
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"owning-closure.cpp");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.owning_closure","test",{},{},{},{"OwnedClosure"});
+    for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeLambdaArgumentABISemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeLambdaArgumentABISemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(decoded->required_semantics,kNativeLambdaArgumentABISemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  auto plain=emit("namespace OwnedClosure {inline auto make(int value){return [value]{return value;};}}");
+  auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+  assert(!llvm::is_contained(invented->required_semantics,std::string(kNativeLambdaArgumentABISemantic)));
+  invented->required_semantics.push_back(kNativeLambdaArgumentABISemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+ }
+}
+
+void TestNativeMRCRecordPayloadReplay() {
+ for(const char *standard:{"c++20","c++23"}) {
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks","-fexceptions","--target=x86_64-unknown-linux-gnu"};
+  const std::string source=R"(
+    namespace PublishedMRC {
+      id hold(id);void drop(id);
+      struct Owner {id object;explicit Owner(id value):object(hold(value)){}
+        Owner(const Owner &other):object(hold(other.object)){}
+        Owner(Owner &&other)noexcept:object(other.object){other.object=0;}
+        ~Owner()noexcept{drop(object);}};
+      using Maybe=__objc3_optional(Owner);
+      inline Maybe make(id value){return __objc3_some(Owner,Owner(value));}
+      inline Maybe echo(Maybe value){return value;}
+      inline int capture(id value){auto owned=make(value);auto callback=[owned]{return __objc3_has_value(owned);};return callback();}
+    }
+  )";
+  auto emit=[&](const std::string &text) {
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"mrc-payload.mm");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.mrc_payload","test",{},{},{},{"PublishedMRC"});
+    for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeMRCRecordPayloadSemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeMRCRecordPayloadSemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(decoded->required_semantics,kNativeMRCRecordPayloadSemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  auto signature=emit("namespace PublishedMRC {struct Owner{id object;Owner(const Owner &);~Owner()noexcept;};using Maybe=__objc3_optional(Owner);Maybe get();}");
+  auto declaration=DecodeSemanticInterfaceSidecar(signature.sidecar_json,signature.source_bytes,supported);assert(declaration);
+  assert(llvm::is_contained(declaration->required_semantics,std::string(kNativeMRCRecordPayloadSemantic)));
+  auto plain=emit("namespace PublishedMRC {struct Plain{int value;};using Maybe=__objc3_optional(Plain);Maybe get();}");
+  auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+  assert(!llvm::is_contained(invented->required_semantics,std::string(kNativeMRCRecordPayloadSemantic)));
+  invented->required_semantics.push_back(kNativeMRCRecordPayloadSemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+  auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+"int use_mrc(id value){return PublishedMRC::capture(value);}",args,"mrc-consumer.mm");
+  assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+ }
+}
+
 void TestBorrowedUnionByteStorageReplay() {
   for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
     const bool cxx=std::string(standard)!="c17";
@@ -11587,6 +11690,9 @@ int main(int argc,char **argv) {
   TestDependentKeyPathLiteralBodies();
   TestNSObjectStorageCapability();
   TestBorrowedMemoryAliasReplay();
+  TestSanitizedStandardLibraryReplay();
+  TestNativeLambdaArgumentABIReplay();
+  TestNativeMRCRecordPayloadReplay();
   TestBorrowedUnionByteStorageReplay();
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();

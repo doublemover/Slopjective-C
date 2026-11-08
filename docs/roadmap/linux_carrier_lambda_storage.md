@@ -11,7 +11,10 @@ cover explicit copy/move init-captures, implicit value captures, closure copies 
 moves, mutable/generic calls, heap closures, closure captures in heap Blocks,
 strong/weak arms, and throwing constructor/default-argument cleanup at each native
 array payload position. Borrowed captures and mutation analysis retain their
-separate lifetime requirements; MRC mixed ownership remains unqualified.
+separate lifetime requirements. The later
+[source 2.153 span](linux_native_mrc_record_payloads.md) admits source-owned MRC
+C++ object/Block wrappers and preserves owning closure argument ABI; other MRC
+ownership policies retain their separate boundaries.
 
 Published bodies require `objc3.native-carrier-lambda.v1`, including dependent
 value captures which may instantiate a carrier. Missing, invented and older-reader

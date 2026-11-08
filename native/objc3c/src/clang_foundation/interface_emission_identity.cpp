@@ -938,6 +938,16 @@ public:
   bool VisitStmt(clang::Stmt *statement) {
     Add(statement->getStmtClassName()); return true;
   }
+  bool TraverseConstantArrayTypeLoc(clang::ConstantArrayTypeLoc location,
+                                    bool = true) {
+    // Canonical declaration printing resolves a constant bound to its value.
+    // The enclosing expression/declaration type binds the element, qualifiers
+    // and exact extent. A written sizeof/constexpr bound must not become a
+    // different body merely because replay spells that same extent literally.
+    // Dependent and variable array bounds retain their expression traversal.
+    return WalkUpFromConstantArrayTypeLoc(location) &&
+           TraverseTypeLoc(location.getElementLoc());
+  }
   bool TraverseFunctionProtoTypeLoc(clang::FunctionProtoTypeLoc location,
                                      bool = true) {
     // A function-pointer type can carry source-only parameter declarations.
@@ -2633,6 +2643,10 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";native-storage-lifetime:v1;";
   if (HasDeclarationAtomicManagedProperty(representative))
     identity.canonical_type_identity += ";atomic-managed-properties:v1;";
+  if (HasDeclarationNativeLambdaArgumentABI(representative))
+    identity.canonical_type_identity += ";native-lambda-argument-abi:v1;";
+  if (HasDeclarationNativeMRCRecordPayload(representative))
+    identity.canonical_type_identity += ";native-mrc-record-payload:v1;";
   if (HasDeclarationNativeARCRecordPayload(representative))
     identity.canonical_type_identity += ";native-arc-record-payload:v2;";
   if (HasDeclarationNativeCarrierLambda(representative))

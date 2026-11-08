@@ -542,6 +542,14 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool atomic_managed_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kAtomicManagedPropertySemantic)!=sidecar.required_semantics.end();
   if(atomic_managed!=atomic_managed_capability)
     Add(result,"O3IFC141","atomic managed property identity and required capability must agree",expected.canonical_name);
+  const bool lambda_argument_abi=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeLambdaArgumentABIIdentity);
+  const bool lambda_argument_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeLambdaArgumentABISemantic)!=sidecar.required_semantics.end();
+  if(lambda_argument_abi!=lambda_argument_capability)
+    Add(result,"O3IFC149","native owning lambda argument ABI identity and required capability must agree",expected.canonical_name);
+  const bool mrc_record_payload=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeMRCRecordPayloadIdentity);
+  const bool mrc_record_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeMRCRecordPayloadSemantic)!=sidecar.required_semantics.end();
+  if(mrc_record_payload!=mrc_record_capability)
+    Add(result,"O3IFC148","native MRC record payload identity and required capability must agree",expected.canonical_name);
   const bool arc_record_payload=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeARCRecordPayloadIdentity);
   const bool arc_record_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeARCRecordPayloadSemantic)!=sidecar.required_semantics.end();
   if(arc_record_payload!=arc_record_capability)

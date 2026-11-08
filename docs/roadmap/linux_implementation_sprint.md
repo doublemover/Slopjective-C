@@ -1,5 +1,12 @@
 # Linux implementation sprint
 
+The [source 2.153 / System 2.79 native MRC and value-construction span](linux_native_mrc_record_payloads.md)
+implements source-owned MRC C++ payload lifetimes, ordinary carrier object
+construction and owned task results. It also preserves owning lambda argument
+ABI and valid function-template overloads through AST import, with exact reader
+capabilities and focused regression controls. Full consolidation is delegated
+to CI while implementation continues.
+
 The [source 2.152 / System 2.78 static return-graph span](linux_static_borrowed_control_flow.md)
 proves complete helper returns through branches, switches, loops, goto and native
 exception handlers, plus immutable local aliases and C++ array conditional decay.
@@ -368,7 +375,6 @@ capability admission. All thirty-nine borrowed compiler cases, six source-free
 profiles, three adjacent frontend groups, codec/isolation units and twelve
 instrumented native configurations pass. The wider exceptional cleanup and ownership/profile backlog remains open.
 
-
 The [System 2.34 handler span](linux_borrowed_catch_bindings.md) implements catch
 owner initialization, ARC binding cleanup, rethrow lifetime regions and opaque
 borrowed payload obligations. Eighteen compiler commands, sixty-eight affected
@@ -376,7 +382,6 @@ compiler cases, nineteen AST controls and twelve instrumented native configurati
 pass. The complete shared visitor rebuild passes nineteen AST controls, all six
 source-free profiles and three adjacent frontend groups; the full sixty-eight
 compiler case consolidation also passes after rebuilding.
-
 
 The [Concurrency 2.118 span](linux_native_frame_exceptions.md) implements typed
 nontrivial/move-only C++ property writes and owned native exception transport,

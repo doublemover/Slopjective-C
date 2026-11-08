@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 152,
+        "minor": 153,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native MRC C++ carrier records retain source-owned object/Block special members, including nested and explicit union payloads; ordinary local/temporary/heap/placement/library construction, const-rvalue copying and owned task results preserve native recipes. AST import retains owning lambda argument ABI and valid template overload heads; source-free contracts reject older/missing/invented capability claims. Focused regression controls are maintained; complete matrices and SDK delivery run through consolidated CI.",
         "Native ELF section, used/retain/weak and instrumentation policies preserve typed declaration/static-local values and canonical replay, including inherited idempotent flags and extern placement; native-emission-policies v1 reader admission and source-free native override/instrumentation controls pass, matched SDK pending",
         "Explicitly owned native C++ union carrier payloads preserve active-arm ARC/C++ copy/move/destruction, over-aligned opaque storage and caller-owned argument/result recipes; forward-declared payload records use their complete definitions, implicit carrier results retain selected construction and move eligibility; native-arc-record-payload v2 reader cutover, matched SDK pending",
         "Public native unnamed enum groups retain canonical roots, first-enumerator identity, full representation/value contracts and enumerator selection through source-free replay and import; native-unnamed-enums v1 reader admission, matched SDK pending",
@@ -332,12 +333,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 78,
+        "minor": 79,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native MRC C++ carrier records retain source-owned object/Block special members, including nested and explicit union payloads; ordinary local/temporary/heap/placement/library construction, const-rvalue copying and owned task results preserve native recipes. AST import retains owning lambda argument ABI and valid template overload heads; source-free contracts reject older/missing/invented capability claims. Focused regression controls are maintained; complete matrices and SDK delivery run through consolidated CI.",
         "Bounded static borrowed-result summaries follow complete native control-flow graphs through branches, switches, loops, goto and exception handlers plus immutable local pointer aliases; complete return validation, fallthrough rejection, nested-callable boundaries and shared AST/CFG work limits preserve conservative unknown/mutable/recursive gates; borrowed-result-proofs v2 hard reader cutover (58 borrowed compiler cases in the main batch, final focused compiler controls, six publication profiles, 64 AST controls, nine adjacent frontend groups, 720 production decoder replays and four source-free native ASan/UBSan configurations pass; matched SDK pending)",
         "Known local union byte geometry and equivalent pointer cells preserve borrowed provenance; complete plain union-pointer assignments replace stale loans, while partial, volatile, atomic, nontrivial, owner-bearing and unknown-target storage stays conservative; borrowed-union-byte-storage v1 source-free reader cutover (57 borrowed compiler regressions, six publication profiles, 64 AST controls, nine adjacent frontend groups, 720 production decoder replays and four source-free native ASan/UBSan configurations pass; matched SDK pending)",
         "Explicitly owned native C++ union carrier payloads preserve active-arm ARC/C++ copy/move/destruction, over-aligned opaque storage and caller-owned argument/result recipes; forward-declared payload records use their complete definitions, implicit carrier results retain selected construction and move eligibility; native-arc-record-payload v2 reader cutover, matched SDK pending",

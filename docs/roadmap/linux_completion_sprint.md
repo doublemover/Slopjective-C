@@ -1,5 +1,12 @@
 # Linux feature completion and SDK delivery
 
+The [source 2.153 / System 2.79 native MRC and value-construction span](linux_native_mrc_record_payloads.md)
+implements source-owned MRC C++ payload lifetimes, ordinary carrier object
+construction and owned task results. It also preserves owning lambda argument
+ABI and valid function-template overloads through AST import, with exact reader
+capabilities and focused regression controls. Full consolidation is delegated
+to CI while implementation continues.
+
 The [System 2.50 producer-transfer span](linux_block_producer_transfers.md)
 adopts retained/reclaimed Block results into locals, scalar/nested members,
 default initializers, assignments and single consumed direct calls. Native
