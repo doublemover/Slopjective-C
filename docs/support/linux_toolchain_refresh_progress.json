@@ -80,7 +80,8 @@
     "Quick tooling and documentation provision exact Python through the admitted uv route rather than the failing hosted toolcache asset download; Python/uv drift controls cover both routes",
     "Refresh all three compiler regression expectations exposed by production, sanitizer and coverage selections",
     "Run every foundation test command after a sibling test failure and require all commands to pass before staging",
-    "Retain nullable delete and modeled cleanup acceptance in CFG controls; assert the emitted selected-arm tag comparison"
+    "Retain nullable delete and modeled cleanup acceptance in CFG controls; assert the emitted selected-arm tag comparison",
+    "Default LLVM dispatch selects compiler execution; dependency-only choices are mutually exclusive and covered against silently skipping both jobs"
   ],
   "hosted_validation": {
     "quick_checks": {
@@ -166,6 +167,13 @@
           "status": "SUPERSEDED_FOUNDATION_EXPECTATIONS",
           "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473446817"
         }
+      },
+      "ambiguous_LLVM_dispatch_default": {
+        "run": 42477665104,
+        "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+        "status": "SKIPPED_NOT_QUALIFICATION",
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477665104",
+        "reason": "Unquoted off default did not select either job; compiler default and complementary dispatch conditions repaired"
       }
     },
     "SDK_release": {
@@ -181,10 +189,12 @@
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
     },
     "LLVM_IR_and_debugger": {
-      "run": 42477665104,
-      "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+      "run": 42477840115,
+      "revision": "081bf2290a3ffdcdb92e9ec3ed186f9a224d5b10",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477665104"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477840115",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
+      "source_note": "CI-only dispatch repair after the frozen 3b897e3c7 compiler source; identical canonical compiler and SDK payload"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -232,7 +242,7 @@
     "admission": "Exact restored tool file/mode/link inventory before execution; existing signed Swift publisher seal; pinned Git objects with full fsck",
     "excluded": ["compiler build trees", "product SDK archives"],
     "focused_python_tests_passed": 91,
-    "workflow_controls_passed": 72,
+    "workflow_controls_passed": 75,
     "installed_tool_inventories_checked": 5,
     "live_CMake_cache_admission": "PASS",
     "compiler_source_identity_unchanged": true,
