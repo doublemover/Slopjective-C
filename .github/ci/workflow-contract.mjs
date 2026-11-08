@@ -145,6 +145,20 @@ export function validateNativeGate(text) {
   );
   validateNativeContainer(workflow.jobs.native);
   const nativeJob = workflow.jobs.native;
+  const transport = workflow.jobs["diagnostic-transport"];
+  if (
+    nativeJob.if !==
+      "needs.plan.outputs.native == 'true' && inputs.diagnostic_transport_run == ''" ||
+    events.workflow_dispatch.inputs.diagnostic_transport_run?.default !== "" ||
+    events.workflow_dispatch.inputs.diagnostic_transport_artifact?.default !== "" ||
+    transport?.if !== "inputs.diagnostic_core_only && inputs.diagnostic_transport_run != ''" ||
+    events.workflow_call?.inputs?.diagnostic_transport_run ||
+    events.workflow_call?.inputs?.diagnostic_transport_artifact ||
+    transport["timeout-minutes"] !== 15
+  )
+    throw new Error(
+      "Artifact transport must be bounded, explicit and separate from compiler execution",
+    );
   if (
     nativeJob.strategy?.["fail-fast"] !== false ||
     nativeJob.strategy?.matrix?.shard !==
@@ -177,7 +191,7 @@ export function validateNativeGate(text) {
       "Activated container execution must trust only its exact checked-out workspace",
     );
   }
-  for (const id of ["plan", "native", "gate"]) {
+  for (const id of ["plan", "native", "gate", "diagnostic-transport"]) {
     const job = workflow.jobs?.[id];
     if (!job || job["continue-on-error"])
       throw new Error(`Missing or failure-normalizing native job ${id}`);

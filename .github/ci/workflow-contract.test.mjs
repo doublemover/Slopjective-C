@@ -224,6 +224,17 @@ for (const fault of [
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
 }
+for (const fault of ["compiler overlaps transport", "implicit transport", "unbounded transport"]) {
+  test(`artifact transport rejects ${fault}`, () => {
+    const owner = yaml.load(native);
+    if (fault === "compiler overlaps transport")
+      owner.jobs.native.if = "needs.plan.outputs.native == 'true'";
+    if (fault === "implicit transport") owner.jobs["diagnostic-transport"].if = "always()";
+    if (fault === "unbounded transport")
+      owner.jobs["diagnostic-transport"]["timeout-minutes"] = 360;
+    assert.throws(() => validateNativeGate(yaml.dump(owner)));
+  });
+}
 for (const target of ["native-assurance.yml", "platform-host-evidence.yml"]) {
   test(`unapproved caller cannot indirectly enable ${target}`, () => {
     const extra = yaml.dump({

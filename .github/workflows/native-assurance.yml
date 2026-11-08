@@ -9,15 +9,81 @@ on:
         description: Diagnose the core frontend only; no full gate or SDK publication
         type: boolean
         default: false
+      diagnostic_transport_run:
+        description: Split an existing diagnostic artifact for download; requires core-only mode
+        type: string
+        default: ''
+      diagnostic_transport_artifact:
+        description: Exact artifact name from diagnostic_transport_run
+        type: string
+        default: ''
   workflow_call:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: linux-native-assurance-${{ github.event.pull_request.number || github.ref }}${{ inputs.diagnostic_core_only && '-core-diagnosis' || '' }}
   # Finish the active cold compiler build; GitHub keeps the newest pending run.
   # Each run still qualifies only its own exact source revision.
   cancel-in-progress: false
 jobs:
+  diagnostic-transport:
+    name: Split existing artifact for bounded download (no compiler execution)
+    if: inputs.diagnostic_core_only && inputs.diagnostic_transport_run != ''
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.diagnostic_transport_artifact }}
+          run-id: ${{ inputs.diagnostic_transport_run }}
+          github-token: ${{ github.token }}
+          path: out/diagnostic-transport/input
+      - name: Retain exact payload hashes and split bounded parts
+        env:
+          SOURCE_RUN: ${{ inputs.diagnostic_transport_run }}
+          SOURCE_ARTIFACT: ${{ inputs.diagnostic_transport_artifact }}
+        run: >-
+          python3 -B -m scripts.objc3c_toolchain.artifact_transport
+          --source out/diagnostic-transport/input --output out/diagnostic-transport/parts
+          --source-run "$SOURCE_RUN" --source-artifact "$SOURCE_ARTIFACT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostic-download-${{ github.run_id }}-part0
+          path: |
+            out/diagnostic-transport/parts/payload.part0
+            out/diagnostic-transport/parts/manifest.json
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostic-download-${{ github.run_id }}-part1
+          path: |
+            out/diagnostic-transport/parts/payload.part1
+            out/diagnostic-transport/parts/manifest.json
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostic-download-${{ github.run_id }}-part2
+          path: |
+            out/diagnostic-transport/parts/payload.part2
+            out/diagnostic-transport/parts/manifest.json
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostic-download-${{ github.run_id }}-part3
+          path: |
+            out/diagnostic-transport/parts/payload.part3
+            out/diagnostic-transport/parts/manifest.json
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
   plan:
     name: Classify exact source revision
     runs-on: ubuntu-26.04
@@ -48,7 +114,7 @@ jobs:
   native:
     name: Execute Linux compiler and runtime (${{ matrix.shard }})
     needs: plan
-    if: needs.plan.outputs.native == 'true'
+    if: needs.plan.outputs.native == 'true' && inputs.diagnostic_transport_run == ''
     strategy:
       fail-fast: false
       matrix:

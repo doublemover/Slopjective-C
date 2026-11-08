@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: linux-sdk-release-${{ github.ref }}
   cancel-in-progress: false
