@@ -2625,6 +2625,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))
     identity.canonical_type_identity+=";native-emission-policies:v1;";
+  if (HasDeclarationBorrowedUnionStorage(representative))
+    identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
   if (HasDeclarationBorrowedResultProof(representative))
     identity.canonical_type_identity+=";borrowed-result-proofs:v1;";
   if (HasDeclarationNativeStorageLifetime(representative))

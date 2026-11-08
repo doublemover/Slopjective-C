@@ -226,6 +226,10 @@ inline constexpr const char *kManagedRuntimeScopeSemantic = "objc3.managed-runti
 inline bool HasManagedRuntimeScopeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";managed-runtime-scopes:v1;") != std::string::npos;
 }
+inline constexpr const char *kBorrowedUnionStorageSemantic = "objc3.borrowed-union-byte-storage.v1";
+inline bool HasBorrowedUnionStorageIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";borrowed-union-byte-storage:v1;") != std::string::npos;
+}
 inline constexpr const char *kNativeEmissionPolicySemantic = "objc3.native-emission-policies.v1";
 inline bool HasNativeEmissionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-emission-policies:v1;") != std::string::npos;

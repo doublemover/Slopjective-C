@@ -1255,6 +1255,65 @@ void TestBorrowedMemoryAliasReplay() {
   }
 }
 
+void TestBorrowedUnionByteStorageReplay() {
+  for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
+    const bool cxx=std::string(standard)!="c17";
+    std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    auto parse=[&](const std::string &source){return clang::tooling::buildASTFromCodeWithArgs(source,args,"union-byte-storage.m");};
+    auto emit=[&](const std::string &source) {
+      auto ast=parse(source);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.union_byte_storage","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.union_byte_storage","test");
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    const std::string source=R"(
+      typedef borrowed const char *UnionLoan;
+      UnionLoan union_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
+      void union_read(const char *value __attribute__((noescape)));
+      union PublishedByteUnion {const char *first;const char *second;};
+      inline void union_clear(void *owner) {
+        union PublishedByteUnion value={union_bytes(owner)};
+        char *bytes=(char *)&value;*(const char **)bytes="static";
+        union_read(value.second);
+      }
+      __attribute__((objc_returns_borrowed(owner_index=1)))
+      inline UnionLoan union_rebind(void *old_owner,void *new_owner) {
+        union PublishedByteUnion value={union_bytes(old_owner)};
+        value.second=union_bytes(new_owner);return value.first;
+      }
+      __attribute__((objc_returns_borrowed(owner_index=0)))
+      inline UnionLoan union_byte_view(void *owner) {
+        union PublishedByteUnion value={0};char *bytes=(char *)&value;
+        *(const char **)bytes=union_bytes(owner);return value.second;
+      }
+    )";
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+    assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedUnionStorageSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kBorrowedUnionStorageSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(decoded->required_semantics,kBorrowedUnionStorageSemantic);
+    auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+    auto signature=emit("union PublishedByteUnion {const char *first;const char *second;};void union_signature(union PublishedByteUnion *value);");
+    auto invented=DecodeSemanticInterfaceSidecar(signature.sidecar_json,signature.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kBorrowedUnionStorageSemantic)));
+    invented->required_semantics.push_back(kBorrowedUnionStorageSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto valid=parse(first.source_bytes+R"(
+      __attribute__((objc_returns_borrowed(owner_index=0)))
+      UnionLoan union_forward(void *owner){union_clear(owner);union_read(union_byte_view(owner));return union_rebind(0,owner);}
+    )");assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+    auto escape=parse(first.source_bytes+"const char *union_escape(void *owner){return union_byte_view(owner);}");
+    assert(escape && escape->getDiagnostics().hasErrorOccurred());
+  }
+}
+
 void TestBorrowedStaticStorageReplay() {
   for(const char *standard:{"c17","c++20","c++23"}) {
     const bool cxx=std::string(standard)!="c17";
@@ -11514,6 +11573,7 @@ int main(int argc,char **argv) {
   TestDependentKeyPathLiteralBodies();
   TestNSObjectStorageCapability();
   TestBorrowedMemoryAliasReplay();
+  TestBorrowedUnionByteStorageReplay();
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
   TestAutomaticOwnerUnwindReplay();

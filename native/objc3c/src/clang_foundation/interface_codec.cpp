@@ -29,6 +29,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
     kNativeEmissionPolicySemantic,
+    kBorrowedUnionStorageSemantic,
     kBorrowedResultProofSemantic,
     kNativeUnnamedEnumSemantic,
     kNativeStorageLifetimeSemantic,
@@ -695,6 +696,10 @@ llvm::Error ValidateForEncoding(
   const bool emission_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeEmissionPolicySemantic)!=sidecar.required_semantics.end();
   if(emission_policy!=emission_policy_capability)
     return Invalid("native emission policy identity and required capability must agree");
+  const bool borrowed_unions=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasBorrowedUnionStorageIdentity);
+  const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
+  if(borrowed_unions!=borrowed_union_capability)
+    return Invalid("borrowed union byte storage identity and required capability must agree");
   const bool borrowed_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasBorrowedResultProofIdentity);
   const bool borrowed_proof_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedResultProofSemantic)!=sidecar.required_semantics.end();
   if(borrowed_proofs!=borrowed_proof_capability)

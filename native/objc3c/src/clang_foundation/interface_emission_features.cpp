@@ -129,6 +129,27 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationBorrowedUnionStorage(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration) || declaration->getASTContext().getLangOpts().ObjC3Profile!=3)return false;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Unions : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      void inspect(clang::QualType type) {
+        if(type.isNull())return;
+        while(const auto *array=type->getAsArrayTypeUnsafe())type=array->getElementType();
+        if(const auto *record=type->getAsRecordDecl())found|=record->isUnion();
+      }
+      bool VisitExpr(clang::Expr *expression) override {inspect(expression->getType());return true;}
+      bool VisitVarDecl(clang::VarDecl *variable) override {inspect(variable->getType());return true;}
+      bool VisitMemberExpr(clang::MemberExpr *expression) override {
+        if(const auto *field=llvm::dyn_cast<clang::FieldDecl>(expression->getMemberDecl()))found|=field->getParent()->isUnion();
+        return true;
+      }
+    } unions;
+    unions.TraverseStmt(const_cast<clang::Stmt *>(statement));return unions.found;
+  });
+}
+
 bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   if (llvm::isa<clang::NamespaceDecl>(declaration)) return false;
   return HasPublishedExpression(declaration, [](const clang::Stmt *, const clang::NamedDecl *owner) {

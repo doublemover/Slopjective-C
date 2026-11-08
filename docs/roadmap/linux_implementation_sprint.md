@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [source 2.151 / System 2.77 borrowed union-storage span](linux_borrowed_union_byte_storage.md)
+uses native byte geometry and equivalent pointer cells to track local union loans.
+Complete plain pointer assignments replace stale facts; partial, volatile, atomic,
+owner-bearing and open targets retain conservative checks. All 57 borrowed compiler
+regressions, six publication profiles, decoder and source-free native controls pass.
+
 The [source 2.150 / System 2.76 task-group span](linux_deduced_task_groups.md)
 preserves inferred callback results and publishes group helpers through the
 pinned task header. It repairs an ordinary-local destructor probe crash and

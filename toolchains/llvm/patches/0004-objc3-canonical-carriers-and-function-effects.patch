@@ -44070,10 +44070,10 @@ index 000000000..1122bbb29
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..65db1789c
+index 000000000..a05e34ea6
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6179 @@
+@@ -0,0 +1,6225 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -47581,6 +47581,42 @@ index 000000000..65db1789c
 +    State.SamePins = SamePins;
 +    return !Aliases.empty();
 +  }
++  void overwriteWholeUnionPointer(const Stmt *Operation, Storage Destination,
++                                  Facts &State) const {
++    const auto *Assignment=dyn_cast_or_null<BinaryOperator>(Operation);
++    QualType Type=storageType(Destination);
++    if(!Assignment || Assignment->getOpcode()!=BO_Assign || !localObject(Destination) ||
++        hasUnknownIndex(Destination) || Type.isNull() || !Type->isPointerType() ||
++        Type.isVolatileQualified() || Destination.first->getType().isVolatileQualified() ||
++        Type->isDependentType() || Type->isIncompleteType())return;
++    const auto Begin=storageByteOffset(Destination);
++    if(!Begin)return;
++    const auto Size=Context.getTypeSizeInChars(Type);
++    Storage Parent=parentStorage(Destination);
++    for(unsigned Depth=0;Depth!=32;++Depth) {
++      QualType ParentType=storageType(Parent);
++      const auto *Record=ParentType.isNull()?nullptr:ParentType->getAsRecordDecl();
++      if(Record && Record->isUnion() && Record->getDefinition() &&
++          !ParentType.isVolatileQualified() && ParentType.isDestructedType()==QualType::DK_none &&
++          ParentType.isTriviallyCopyableType(Context) &&
++          storageByteOffset(Parent)==Begin && Context.getTypeSizeInChars(ParentType)==Size) {
++        bool Plain=true;
++        for(const auto &[Other,Index]:Slots)if(within(Other,Parent)) {
++          QualType OtherType=storageType(Other);
++          if(State.OwnerIdentities[Index].any() || OtherType.isVolatileQualified() ||
++              (!OtherType.isNull() && OtherType->isAtomicType())) {
++            Plain=false;break;
++          }
++        }
++        if(Plain)for(const auto &[Other,Index]:Slots)
++          if(within(Other,Parent) && !StorageInfo::isEqual(Other,Destination)) {
++            State.Values[Index].reset();State.Effects[Index].reset();
++          }
++      }
++      if(!path(Parent))break;
++      Parent=parentStorage(Parent);
++    }
++  }
 +  void store(const Stmt *Operation, Storage Destination, const Value &V,
 +             Facts &State, bool Emit, bool Replace = false,
 +             const Value *Effects = nullptr) {
@@ -47615,6 +47651,7 @@ index 000000000..65db1789c
 +      Found = Slots.find(Destination);
 +    }
 +    if (Found != Slots.end()) {
++      if(!Replace)overwriteWholeUnionPointer(Operation,Destination,State);
 +      if (!Replace && hasUnknownIndex(Destination))
 +        State.Values[Found->second] |= V;
 +      else
@@ -47919,7 +47956,7 @@ index 000000000..65db1789c
 +    if (Location.second) {
 +      const auto *Field = dyn_cast<FieldDecl>(Location.second);
 +      const auto *Record = ParentType->getAsRecordDecl();
-+      if (!Field || Field->isBitField() || !Record || Record->isUnion() ||
++      if (!Field || Field->isBitField() || !Record ||
 +          !Record->getDefinition() ||
 +          Field->getParent()->getCanonicalDecl() != Record->getCanonicalDecl())
 +        return std::nullopt;
@@ -48113,7 +48150,16 @@ index 000000000..65db1789c
 +        auto Start = storageByteOffset(Candidate);
 +        if (!Start || *Start != Offset) continue;
 +        if (!Selected.first || within(Selected, Candidate)) Selected = Candidate;
-+        else if (!within(Candidate, Selected)) return {Targets, false};
++        else if (!within(Candidate, Selected)) {
++          // Equal-sized pointer arms at the same physical byte range denote
++          // one local storage cell. A representative is enough: union reads
++          // still join every overlapping loan. Other ambiguous layouts stay
++          // open rather than inventing a unique target from source path IDs.
++          QualType Left=storageType(Selected),Right=storageType(Candidate);
++          if(!overlapsUnion(Selected,Candidate) || !Left->isPointerType() ||
++              !Context.hasSameUnqualifiedType(Left,Right))return {Targets,false};
++          if(path(Candidate)<path(Selected))Selected=Candidate;
++        }
 +      }
 +      if (!Selected.first) return {Targets, false};
 +      Exact.set(Slots.lookup(Selected));
@@ -48788,7 +48834,7 @@ index 000000000..65db1789c
 +          return {{{Target, 0}}, true};
 +        return {};
 +      }
-+      if (!Field || Field->isBitField() || Field->getParent()->isUnion() ||
++      if (!Field || Field->isBitField() ||
 +          !Field->getParent()->getDefinition() || Field->getParent()->isDependentContext()) return {};
 +      uint64_t Bits = Context.getASTRecordLayout(Field->getParent()->getDefinition()).getFieldOffset(Field->getFieldIndex());
 +      if (Bits % Context.getCharWidth() || Bits / Context.getCharWidth() > INT64_MAX) return {};
@@ -63915,10 +63961,10 @@ index 000000000..803bc3459
 +}
 diff --git a/clang/test/ObjC3/Sema/borrowed-stored-byte-cursors.m b/clang/test/ObjC3/Sema/borrowed-stored-byte-cursors.m
 new file mode 100644
-index 000000000..c4ca328e0
+index 000000000..9c18ef654
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-stored-byte-cursors.m
-@@ -0,0 +1,261 @@
+@@ -0,0 +1,262 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c17-False.pch
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
@@ -64143,7 +64189,8 @@ index 000000000..c4ca328e0
 +void stored_byte_typed_union(void *owner) {
 +  union {const char *pointer;long other;} object={0};
 +  char *bytes=(char *)&object;
-+  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
++  *(const char **)bytes=memory_bytes(owner);
++  memory_escape(object.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
 +}
 +void stored_byte_overflow(void *owner) {
 +  struct MemoryHolder object={memory_bytes(owner)};
@@ -68460,3 +68507,134 @@ index 000000000..d141f4b85
 + (void)@keypath(NativeUnionPathRoot,loan); // expected-error {{key paths cannot erase borrowed provenance}}
 + (void)@keypath(NativeUnionPathRoot,loan.owned.value); // expected-error {{key paths cannot erase borrowed provenance}}
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-union-byte-storage.h b/clang/test/ObjC3/Sema/Inputs/borrowed-union-byte-storage.h
+new file mode 100644
+index 000000000..0bd76007e
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-union-byte-storage.h
+@@ -0,0 +1,14 @@
++#ifndef OBJC3_UNION_BYTE_STORAGE_H
++#define OBJC3_UNION_BYTE_STORAGE_H
++typedef borrowed const char *UnionLoan;
++UnionLoan union_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void union_escape(const char *value);
++void union_read(const char *value __attribute__((noescape)));
++union PointerUnion {const char *first;const char *second;};
++struct NestedUnion {int prefix;union PointerUnion value;};
++union PartialUnion {const char *pointer;char bytes[2*sizeof(void *)];};
++union AtomicUnion {const char *pointer;_Atomic(const char *) atomic;};
++#ifdef __cplusplus
++union NontrivialUnion {const char *pointer;const char *other;~NontrivialUnion(){}};
++#endif
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-union-byte-storage.m b/clang/test/ObjC3/Sema/borrowed-union-byte-storage.m
+new file mode 100644
+index 000000000..1dae1e618
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-union-byte-storage.m
+@@ -0,0 +1,105 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-union-byte-storage.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-union-byte-storage.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-union-byte-storage.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-union-byte-storage.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-union-byte-storage.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-union-byte-storage.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-union-byte-storage.h"
++#endif
++void complete_union_overwrite(void *owner) {
++  union PointerUnion value={union_bytes(owner)};
++  value.second="permanent";
++  union_escape(value.first);union_escape(value.second);
++}
++__attribute__((objc_returns_borrowed(owner_index=1)))
++UnionLoan complete_union_rebind(void *previous,void *current) {
++  union PointerUnion value={union_bytes(previous)};
++  value.second=union_bytes(current);return value.first;
++}
++void complete_union_alias(void *owner) {
++  union PointerUnion value={union_bytes(owner)};
++  const char **cell=&value.second;*cell="permanent";
++  union_escape(value.first);
++}
++void complete_union_bytes(void *owner) {
++  union PointerUnion value={union_bytes(owner)};
++  char *bytes=(char *)&value;*(const char **)bytes="permanent";
++  union_escape(value.first);union_escape(value.second);
++}
++void borrowed_union_byte_store(void *owner) {
++  union PointerUnion value={0};char *bytes=(char *)&value;
++  *(const char **)bytes=union_bytes(owner);
++  union_read(value.second);
++  union_escape(value.first); // expected-error {{argument without a non-escaping lifetime contract}}
++  union_escape(value.second); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void nested_union_bytes(void *owner) {
++  struct NestedUnion value={17,{union_bytes(owner)}};
++  char *bytes=(char *)&value+__builtin_offsetof(struct NestedUnion,value);
++  *(const char **)bytes="permanent";
++  union_escape(value.value.first);
++}
++void nested_union_member(void *owner) {
++  struct NestedUnion value={17,{union_bytes(owner)}};
++  value.value.second="permanent";union_escape(value.value.first);
++}
++void partial_union_overwrite(void *owner) {
++  union PartialUnion value={union_bytes(owner)};
++  value.pointer="permanent";
++  union_escape(value.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void volatile_union_overwrite(void *owner) {
++  volatile union PointerUnion value={union_bytes(owner)};
++  value.second="permanent";
++  union_escape(value.first); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void atomic_union_overwrite(void *owner) {
++  union AtomicUnion value={union_bytes(owner)};
++  value.pointer="permanent";
++  union_escape(value.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void conditional_union_overwrite(void *owner,int choose) {
++  union PointerUnion first={union_bytes(owner)},second={union_bytes(owner)};
++  const char **cell=choose?&first.second:&second.second;*cell="permanent";
++  union_escape(first.first); // expected-error {{argument without a non-escaping lifetime contract}}
++  union_escape(second.first); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void unknown_union_byte_store(void *owner,void *unknown,int choose) {
++  union PointerUnion value={0};char *bytes=choose?(char *)&value:(char *)unknown;
++  *(const char **)bytes=union_bytes(owner); // expected-error {{indirect storage}}
++}
++void union_copy_keeps_loans(void *owner) {
++  union PointerUnion source={union_bytes(owner)},destination={0};
++  __builtin_memcpy(&destination,&source,sizeof destination);
++  union_escape(destination.second); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void union_partial_bytes_keep_loans(void *owner) {
++  union PointerUnion value={union_bytes(owner)};
++  __builtin_memset(&value,0,sizeof value-1);
++  union_escape(value.second); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++#ifdef __cplusplus
++void nontrivial_union_overwrite(void *owner) {
++  NontrivialUnion value={union_bytes(owner)};value.other="permanent";
++  union_escape(value.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void captured_union_mutation(void *owner) {
++  PointerUnion value={0};
++  auto callback=[value,owner]()mutable{value.second=union_bytes(owner);}; // expected-error {{persistent storage}}
++  (void)callback;
++}
++#endif

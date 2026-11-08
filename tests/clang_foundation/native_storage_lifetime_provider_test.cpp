@@ -41,6 +41,25 @@ inline const char *static_offset(int offset){return static_source()+offset;}
 STATIC_BORROWED
 inline StaticLoan static_view(void *owner,int offset){return static_offset(offset);}
 inline int static_read(void *owner){return static_view(owner,2)[0];}
+union PointerCell {const char *first;const char *second;};
+#ifdef __OBJC__
+__attribute__((objc_returns_borrowed(owner_index=1)))
+#endif
+inline StaticLoan rebound_union(void *previous,void *current) {
+  PointerCell value={static_view(previous,0)};
+  value.second=static_view(current,1);return value.second;
+}
+inline int overwritten_union(void *owner) {
+  PointerCell value={static_view(owner,0)};
+  value.second="permanent";
+  const char *pointer=value.second;return pointer[0];
+}
+STATIC_BORROWED
+inline StaticLoan byte_union(void *owner) {
+  PointerCell value={nullptr};char *bytes=(char *)&value;
+  *(const char **)bytes=static_view(owner,2);return value.first;
+}
+
 extern int created[10],destroyed[10];
 void create(int);void destroy(int);void startup(int);void shutdown(int);
 struct Owner {
@@ -101,6 +120,7 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   static_assert(!__is_same(PriorityType,OtherPriorityType));
   if(priority_identity(FirstPriority)!=FirstPriority || priority_overload(FirstPriority)!=1 || priority_overload(OtherPriority)!=2 || priority_box().value!=FirstPriority)return 4;
   if(static_read(&ready)!='a' || static_view(&ready,1)[0]!='t')return 5;
+  if(rebound_union(&attribute_ready,&ready)[0]!='t' || overwritten_union(&ready)!='p' || byte_union(&ready)[0]!='a')return 6;
   if(ready!=42 || attribute_ready!=43 || ordered.value!=2 || retained.value!=4 || finalized.value!=5)return 1;
   if(&local_retained()!=&provider_local() || local_finalized().value!=7)return 2;
   pthread_t thread;void *result=(void *)1;
