@@ -69043,3 +69043,13 @@ index 000000000..b6034bdd6
 +// CHECK: TypeRef=Root:
 +// CHECK: TypeRef=Value:
 +// CHECK-NOT: NotImplemented
+diff --git a/clang/unittests/Lex/CMakeLists.txt b/clang/unittests/Lex/CMakeLists.txt
+index cf338eef0..6c7e6b53a 100644
+--- a/clang/unittests/Lex/CMakeLists.txt
++++ b/clang/unittests/Lex/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-add_clang_unittest(LexTests
++add_distinct_clang_unittest(LexTests
+   DependencyDirectivesScannerTest.cpp
+   HeaderMapTest.cpp
+   HeaderSearchTest.cpp

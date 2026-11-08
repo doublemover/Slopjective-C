@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import shutil
 from types import SimpleNamespace
 
 import pytest
@@ -23,6 +24,7 @@ def runner(tmp_path, monkeypatch):
                 'command': [phase], 'follow_up_commands': [[phase, 'follow-up']],
                 'command_environment': {'QUALIFIED_BUILD': 'yes'}}
     monkeypatch.setattr(build, 'build_plans', lambda repo, **kwargs: {phase: plan(repo, phase=phase) for phase in ('configure', 'build', 'test', 'stage')})
+    monkeypatch.setattr(build, 'verify_build_targets', lambda configure, selected: {'required_targets': ['compiler']})
     directory.mkdir()
     (directory / "CMakeCache.txt").write_text("LLVM_ENABLE_ASSERTIONS:BOOL=ON\n")
     calls = []
@@ -55,6 +57,38 @@ def test_failed_phase_stops_before_tests_and_records_failure(runner, monkeypatch
     assert report['status'] == 'failed'
     assert report['phases'][-1]['exit_code'] == 7
     assert all(command[0] not in ('test', 'stage') for command, _ in calls)
+
+
+def test_missing_later_group_target_stops_before_any_compilation(runner, monkeypatch):
+    repo, directory, calls = runner
+    def missing(configure, selected):
+        raise ToolchainError('foundation configured build targets are missing: LexTests')
+    monkeypatch.setattr(build, 'verify_build_targets', missing)
+    with pytest.raises(ToolchainError, match='targets are missing: LexTests'):
+        build.build_foundation(repo)
+    assert all(command[0] == 'configure' for command, _ in calls)
+    assert json.loads((directory / 'foundation-build-report.json').read_text())['status'] == 'failed'
+
+
+@pytest.mark.parametrize('missing', [False, True])
+def test_real_ninja_inventory_admits_all_groups_without_running_commands(tmp_path, missing):
+    ninja = shutil.which('ninja')
+    assert ninja, 'the pinned development toolchain requires Ninja'
+    (tmp_path / 'build.ninja').write_text(
+        'rule compiler\n  command = touch compiled\n'
+        'build compiler: compiler\nbuild LexTests: compiler\n')
+    configure = {'paths': {'build': str(tmp_path)}, 'host_environment': {'ninja_path': ninja}}
+    selected = {'command': ['cmake', '--build', str(tmp_path), '--target', 'compiler', '--parallel', '2'],
+        'follow_up_commands': [['cmake', '--build', str(tmp_path), '--target',
+            'MissingTests' if missing else 'LexTests', '--parallel', '2']]}
+    if missing:
+        with pytest.raises(ToolchainError, match='targets are missing: MissingTests'):
+            build.verify_build_targets(configure, selected)
+    else:
+        report = build.verify_build_targets(configure, selected)
+        assert report['required_targets'] == ['compiler', 'LexTests']
+        assert report['configured_target_count'] == 2
+    assert not (tmp_path / 'compiled').exists()
 
 
 @pytest.mark.parametrize("field", ["source_tree", "source_build_id", "build_config_digest", "host_environment"])

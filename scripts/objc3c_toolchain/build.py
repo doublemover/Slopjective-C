@@ -149,6 +149,29 @@ def verify_effective_configuration(plan: dict) -> dict:
     return effective
 
 
+def verify_build_targets(configure_plan: dict, build_plan: dict) -> dict:
+    """Admit every build group before starting any expensive compilation."""
+    required = []
+    for command in (build_plan['command'], *build_plan.get('follow_up_commands', [])):
+        start = command.index('--target') + 1
+        end = command.index('--parallel')
+        required.extend(command[start:end])
+    required = list(dict.fromkeys(required))
+    try:
+        inventory = subprocess.check_output([
+            configure_plan['host_environment']['ninja_path'], '-C',
+            configure_plan['paths']['build'], '-t', 'targets', 'all'],
+            text=True, stderr=subprocess.STDOUT, timeout=30)
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ToolchainError(f'foundation target inventory failed: {error}') from error
+    available = {line.rsplit(': ', 1)[0] for line in inventory.splitlines() if ': ' in line}
+    missing = sorted(set(required) - available)
+    if missing:
+        raise ToolchainError('foundation configured build targets are missing: ' + ', '.join(missing))
+    return {'required_targets': required, 'configured_target_count': len(available),
+            'inventory_sha256': hashlib.sha256(inventory.encode()).hexdigest()}
+
+
 def build_foundation(repo: Path, **options) -> dict:
     with foundation_lock(repo.resolve()):
         return _build_foundation(repo, **options)
@@ -178,6 +201,7 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
             plan = plans[phase]
             if phase == "build":
                 report["effective_configuration"] = verify_effective_configuration(plans["configure"])
+                report['configured_build_targets'] = verify_build_targets(plans['configure'], plans['build'])
             directory = Path(plan["paths"]["build"])
             directory.mkdir(parents=True, exist_ok=True)
             report_path = directory / "foundation-build-report.json"

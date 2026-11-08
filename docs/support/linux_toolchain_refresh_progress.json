@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "HOSTED_QUALIFICATION_IN_PROGRESS",
+  "status": "HOSTED_QUALIFICATION_RETRY_REQUIRED",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -9,8 +9,8 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-63a70b43959c-70309e04",
-    "prepared_tree": "f59c678debdbc948eb339f514ca6444b0acdd0da",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-d0631b86fe07-70309e04",
+    "prepared_tree": "a9719f3e4d6b8a6097ed9500d6d1b48e2c996633",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
@@ -62,7 +62,8 @@
     "canonical_patch_stack_matches_prepared_source": true,
     "live_tool_pins_match": true,
     "clean_host_download_and_bootstrap_controls_passed": 19,
-    "download_bootstrap_export_and_revision_mode_controls_passed": 28
+    "download_bootstrap_export_and_revision_mode_controls_passed": 28,
+    "foundation_target_admission_export_and_host_pin_tests_passed": 31
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
@@ -71,13 +72,15 @@
     "Development and fresh SDK consumers share the checksum-pinned CMake installer",
     "Release reuses the native owner and its qualified archive instead of starting a duplicate SDK build",
     "Immutable official GitHub release-asset fallback retains archive checksums and ccache signature verification",
-    "libclang traverses dependent key-path root/value TypeLocs; an installed indexing regression is enrolled in the foundation suite"
+    "libclang traverses dependent key-path root/value TypeLocs; an installed indexing regression is enrolled in the foundation suite",
+    "Restore the explicitly selected LexTests target using upstream distinct-unit-test registration",
+    "Inventory all Ninja targets immediately after configure, before compiling any build group"
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "a5b5e1c22e62aafe75b72bf6cb864fabafafb242",
+      "revision": "fd9994da4",
       "status": "PASS",
-      "runs": [42466684792, 42466684831, 42466684923],
+      "runs": [42467430794, 42467430829, 42467430799],
       "tooling_tests_passed": 1496,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 107
@@ -101,13 +104,14 @@
     "SDK_release": {
       "run": 42466550171,
       "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
-      "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171"
+      "status": "FAILED_CORE_BUILD_TARGET",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171",
+      "failure": "Upstream merged ordinary Clang unit tests; LexTests was absent. The explicit lexer target and early all-group target admission are now repaired; current-source retry required."
     },
     "native_assurance": {
       "run": 42466550171,
       "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
-      "status": "IN_PROGRESS",
+      "status": "FAILED_CORE_BUILD_TARGET",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171"
     },
     "LLVM_IR_and_debugger": {

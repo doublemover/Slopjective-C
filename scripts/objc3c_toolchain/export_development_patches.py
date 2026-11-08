@@ -133,6 +133,7 @@ PACKETS = {
         "clang/lib/Sema/SemaDeclAttr.cpp",
         "clang/lib/Lex/Lexer.cpp",
         "clang/unittests/Lex/LexerTest.cpp",
+        "clang/unittests/Lex/CMakeLists.txt",
         "clang/lib/Basic/OperatorPrecedence.cpp",
         "clang/lib/AST/ObjC3OptionalOperators.cpp",
         "clang/include/clang/Basic/OperatorPrecedence.h",
