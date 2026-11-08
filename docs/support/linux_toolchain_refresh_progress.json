@@ -365,8 +365,15 @@
       "run": 42528858909,
       "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
-      "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528858909"
+      "status": "PASS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528858909",
+      "job": 128878567165,
+      "IR_and_debugger_executions": 21,
+      "semantic_oracle_cases": 63,
+      "semantic_oracle_controls": 7,
+      "artifact": 13639191209,
+      "artifact_bytes": 187908710,
+      "artifact_sha256": "b20abc826c3aa86aee6068eae87bdf6f3b9863fe2434ecf167443f26142c8e1d"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -604,6 +611,22 @@
       "source_seal": "PASS",
       "prepared_tree": "905250cc2c1edf42e59c21061db202c1973eaf93",
       "scope": "Actual corrected code generator with retained diagnostic libraries; complete current-source hosted qualification remains required."
+    },
+    "current_source_frontend_fuzz": {
+      "status": "PASS",
+      "run": 42528854066,
+      "job": 128878820042,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-802c019b",
+      "campaigns_passed": 3,
+      "controls_passed": 6,
+      "executions": [
+        35759,
+        25234,
+        395
+      ],
+      "artifact": 13638981154,
+      "artifact_sha256": "12e3c24fe4c53c479533c34f024971914c51d15e30995b9f0443edf452053b9f"
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
@@ -673,11 +696,11 @@
     "all_CI_entry_points": "Native/manual/periodic LLVM owners use the shared host action; quick/documentation/planning owners reuse Python packages; all setup-node callers cache npm and prefer cached downloads",
     "retired_contract": "Remove the unenrolled Windows-era test requiring every workflow command to use npm bridge; native workflow and dependency routing contracts now execute in policy CI",
     "current_revision_cache_reuse": {
-      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
       "observation": "GitHub cache API last-access timestamps during new release/LLVM setup",
       "restored_dependency_entries": 8,
       "dependency_keys_unchanged_by_new_compiler_patch": true,
-      "observed_utc": "2026-11-08T21:21:05Z"
+      "observed_utc": "2026-11-08T22:13:26.474672Z"
     }
   }
 }

@@ -92,7 +92,7 @@ replay; the formerly crashing upstream case passes its original FileCheck with
 the corrected code generator. These reused-library diagnostics are not SDK
 qualification. The complete canonical patch stack and prepared source seal pass.
 
-The same hosted identity passes **three frontend fuzz campaigns and six
+The current sealed source passes **three frontend fuzz campaigns and six
 controls**, plus **21 LLVM IR/debugger executions, 63 semantic-oracle cases and
 seven controls**. First-party coverage exceeded its 300-second emitter deadline
 after two cases. Coverage now runs the entire emitter catalogue through eight
@@ -131,8 +131,9 @@ C++20/23 configurations and four export/upstream-tool controls pass focused
 native replay; the canonical source seal verifies.
 
 Current-source [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42528854066)
-and [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42528858909)
-are running at `6d7fc2ade`. All current-source quick gates pass: 1,587 tests and 33
+are running at `6d7fc2ade`; frontend fuzz passes.
+[LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42528858909)
+passes all 21 IR/debugger executions, 63 oracle cases and seven controls. All current-source quick gates pass: 1,587 tests and 33
 subtests, with 111 explicit capability/platform skips. Fresh Debian/Ubuntu archive checks follow those release gates.
 **SDK 2.62.0 remains the last accepted archive; the replacement is not accepted
 or activated.** The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
