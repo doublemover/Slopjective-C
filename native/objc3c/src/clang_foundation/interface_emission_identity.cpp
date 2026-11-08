@@ -969,12 +969,16 @@ public:
     Add("thread-storage:" + std::to_string(declaration->getTSCSpec()));
     Add("block-byref:" + std::to_string(declaration->hasAttr<clang::BlocksAttr>()));
     if(declaration->isLocalVarDeclOrParm()) {
+      std::set<std::string> local_contracts;
       for(const auto *attribute:declaration->attrs()) {
         if(!attribute->isImplicit() && llvm::isa<clang::AlignedAttr>(attribute))
-          Add("local-alignment:"+NativeAttributeValue(attribute,declaration));
+          local_contracts.insert("local-alignment:"+NativeAttributeValue(attribute,declaration));
+        else if(!attribute->isImplicit() && llvm::isa<clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr>(attribute))
+          local_contracts.insert("local-emission-policy:"+NativeAttributeValue(attribute,declaration));
         else if(!attribute->isImplicit() && llvm::isa<clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr>(attribute))
-          Add("local-storage-lifetime:"+NativeAttributeValue(attribute,declaration));
+          local_contracts.insert("local-storage-lifetime:"+NativeAttributeValue(attribute,declaration));
       }
+      for(const auto &contract:local_contracts)Add(contract);
     }
     Add("init-style:" + std::to_string(declaration->getInitStyle()));
     if (!llvm::isa<clang::ParmVarDecl>(declaration))
@@ -1464,7 +1468,13 @@ std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
 std::string NativeAttributeValue(const clang::Attr *attribute,const clang::NamedDecl *declaration) {
   std::string key=std::to_string(attribute->getKind());
   auto add=[&](llvm::StringRef value){key+=";"+std::to_string(value.size())+":"+value.str();};
-  if(const auto *priority=llvm::dyn_cast<clang::InitPriorityAttr>(attribute))
+  if(const auto *section=llvm::dyn_cast<clang::SectionAttr>(attribute))
+    add(section->getName());
+  else if(const auto *sanitizers=llvm::dyn_cast<clang::NoSanitizeAttr>(attribute)) {
+    std::set<std::string> names;
+    for(auto name:sanitizers->sanitizers())names.insert(name.str());
+    for(const auto &name:names)add(name);
+  } else if(const auto *priority=llvm::dyn_cast<clang::InitPriorityAttr>(attribute))
     add(std::to_string(priority->getPriority()));
   else if(llvm::isa<clang::ConstructorAttr,clang::DestructorAttr>(attribute)) {
     const auto *constructor=llvm::dyn_cast<clang::ConstructorAttr>(attribute);
@@ -2613,6 +2623,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationNativeEmissionPolicy(representative))
+    identity.canonical_type_identity+=";native-emission-policies:v1;";
   if (HasDeclarationBorrowedResultProof(representative))
     identity.canonical_type_identity+=";borrowed-result-proofs:v1;";
   if (HasDeclarationNativeStorageLifetime(representative))

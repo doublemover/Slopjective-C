@@ -196,6 +196,7 @@ bool HasDeclarationLocalType(const clang::NamedDecl *declaration);
 
 bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration);
+bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration);
 bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeARCRecordPayload(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeCarrierLambda(const clang::NamedDecl *declaration);

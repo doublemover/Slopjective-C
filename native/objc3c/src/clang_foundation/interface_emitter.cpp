@@ -514,9 +514,9 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
   const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
   const auto original_storage=variable?variable->getStorageClass():clang::SC_None;
-  bool external_specialization=false;
+  bool external_specialization=false, adjusted_storage=false;
   auto restore_storage=llvm::scope_exit([&]{
-    if (external_specialization) const_cast<clang::VarDecl *>(variable)->setStorageClass(original_storage);
+    if (adjusted_storage) const_cast<clang::VarDecl *>(variable)->setStorageClass(original_storage);
   });
   const bool c_linkage =
       context.getLangOpts().CPlusPlus && ((function && function->isExternC()) ||
@@ -582,14 +582,19 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
       // Clang's existing declaration-only specialization extension carries no
       // initializer and requires no default constructor. Scope its extension
       // diagnostic to generated replay; ordinary source diagnostics stay intact.
-      external_specialization=true;
+      external_specialization=adjusted_storage=true;
       const_cast<clang::VarDecl *>(variable)->setStorageClass(clang::SC_Extern);
       out << "#pragma clang diagnostic push\n"
              "#pragma clang diagnostic ignored \"-Wexplicit-specialization-storage-class\"\n";
     } else if (policy.SuppressInitializers && variable->getStorageClass() == clang::SC_None &&
                !IsConcreteMemberVariableSpecialization(llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(variable)) &&
-               !IsClosedParentMemberSpecialization(variable))
-      out << "extern ";
+               !IsClosedParentMemberSpecialization(variable)) {
+      // Let Clang place the declaration's attributes around extern. Prefixing
+      // text would move left-position attributes after extern on the first
+      // emission and before it on reparse, breaking canonical source identity.
+      adjusted_storage=true;
+      const_cast<clang::VarDecl *>(variable)->setStorageClass(clang::SC_Extern);
+    }
   }
   // Clang's declaration-polishing policy omits non-keyword attributes.
   // Emit this modeled class contract through its native attribute printer.
@@ -1072,6 +1077,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kDependentKeyPathLiteralSemantic);
     if (HasCheckedKeyPathReadIdentity(declaration))
       sidecar.required_semantics.push_back(kCheckedKeyPathReadSemantic);
+    if (HasNativeEmissionPolicyIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeEmissionPolicySemantic);
     if (HasBorrowedResultProofIdentity(declaration))
       sidecar.required_semantics.push_back(kBorrowedResultProofSemantic);
     if (HasNativeUnnamedEnumIdentity(declaration))

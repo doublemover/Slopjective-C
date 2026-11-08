@@ -136,6 +136,32 @@ bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  auto Policy=[](const clang::NamedDecl *named) {
+    if(!named)return false;
+    for(const auto *attribute:named->attrs())
+      if(!attribute->isImplicit() && llvm::isa<clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr>(attribute))return true;
+    return false;
+  };
+  struct Declarations : clang::DynamicRecursiveASTVisitor {
+    decltype(Policy) &policy;bool found=false;
+    explicit Declarations(decltype(Policy) &policy):policy(policy) {}
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitNamedDecl(clang::NamedDecl *named) override{found|=policy(named);return true;}
+  } declarations(Policy);
+  declarations.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  if(declarations.found)return true;
+  return HasPublishedExpression(declaration,[&](const clang::Stmt *statement) {
+    struct Locals : clang::DynamicRecursiveASTVisitor {
+      decltype(Policy) &policy;bool found=false;
+      explicit Locals(decltype(Policy) &policy):policy(policy) {}
+      bool VisitVarDecl(clang::VarDecl *variable) override{found|=policy(variable);return true;}
+    } locals(Policy);
+    locals.TraverseStmt(const_cast<clang::Stmt *>(statement));return locals.found;
+  });
+}
+
 bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Storage=[](const clang::NamedDecl *named) {

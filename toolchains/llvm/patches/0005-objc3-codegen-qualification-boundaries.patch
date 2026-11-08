@@ -37477,3 +37477,56 @@ index 000000000..a94209362
 +// CHECK: {{call|invoke}} void @_ZN{{[0-9]+}}NativeUnionCompilerC1ERKS_
 +// CHECK: {{call|invoke}} void @_ZN{{[0-9]+}}NativeUnionCompilerD1Ev
 +// CHECK: @llvm.objc.copyWeak
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-emission-policies.h b/clang/test/ObjC3/CodeGen/Inputs/native-emission-policies.h
+new file mode 100644
+index 000000000..dc9be22b8
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-emission-policies.h
+@@ -0,0 +1,7 @@
++#ifndef NATIVE_EMISSION_POLICIES_H
++#define NATIVE_EMISSION_POLICIES_H
++extern int native_policy_data __attribute__((section(".data.objc3.policy"),weak));
++static __attribute__((used,retain,noinline,section(".text.objc3.policy"),no_sanitize("address","undefined"),disable_sanitizer_instrumentation,no_profile_instrument_function,no_instrument_function,no_stack_protector,nodebug))
++int native_policy_uninstrumented(const int *value){return *value+native_policy_data;}
++static __attribute__((noinline)) int native_policy_instrumented(const int *value){return *value;}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-emission-policies.mm b/clang/test/ObjC3/CodeGen/native-emission-policies.mm
+new file mode 100644
+index 000000000..d8fecb8e4
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-emission-policies.mm
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -std=c++20 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -std=c++20 -fobjc-arc -emit-pch %S/Inputs/native-emission-policies.h -o %t-c++20-core.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -std=c++20 -fobjc-arc -include-pch %t-c++20-core.pch -DNATIVE_EMISSION_POLICIES_PCH -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict -std=c++20 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict -std=c++20 -fobjc-arc -emit-pch %S/Inputs/native-emission-policies.h -o %t-c++20-strict.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict -std=c++20 -fobjc-arc -include-pch %t-c++20-strict.pch -DNATIVE_EMISSION_POLICIES_PCH -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-concurrency -std=c++20 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-concurrency -std=c++20 -fobjc-arc -emit-pch %S/Inputs/native-emission-policies.h -o %t-c++20-strict-concurrency.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-concurrency -std=c++20 -fobjc-arc -include-pch %t-c++20-strict-concurrency.pch -DNATIVE_EMISSION_POLICIES_PCH -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-system -std=c++20 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-system -std=c++20 -fobjc-arc -emit-pch %S/Inputs/native-emission-policies.h -o %t-c++20-strict-system.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-system -std=c++20 -fobjc-arc -include-pch %t-c++20-strict-system.pch -DNATIVE_EMISSION_POLICIES_PCH -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -std=c++23 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -std=c++23 -fobjc-arc -emit-pch %S/Inputs/native-emission-policies.h -o %t-c++23-core.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -std=c++23 -fobjc-arc -include-pch %t-c++23-core.pch -DNATIVE_EMISSION_POLICIES_PCH -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict -std=c++23 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict -std=c++23 -fobjc-arc -emit-pch %S/Inputs/native-emission-policies.h -o %t-c++23-strict.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict -std=c++23 -fobjc-arc -include-pch %t-c++23-strict.pch -DNATIVE_EMISSION_POLICIES_PCH -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-concurrency -std=c++23 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-concurrency -std=c++23 -fobjc-arc -emit-pch %S/Inputs/native-emission-policies.h -o %t-c++23-strict-concurrency.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-concurrency -std=c++23 -fobjc-arc -include-pch %t-c++23-strict-concurrency.pch -DNATIVE_EMISSION_POLICIES_PCH -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-system -std=c++23 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-system -std=c++23 -fobjc-arc -emit-pch %S/Inputs/native-emission-policies.h -o %t-c++23-strict-system.pch
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsanitize=address -stack-protector 3 -fobjc3-profile=strict-system -std=c++23 -fobjc-arc -include-pch %t-c++23-strict-system.pch -DNATIVE_EMISSION_POLICIES_PCH -emit-llvm -o - %s | FileCheck %s
++#ifndef NATIVE_EMISSION_POLICIES_PCH
++#include "Inputs/native-emission-policies.h"
++#endif
++int native_policy_data=17;
++int native_policy_call(const int *value){return native_policy_uninstrumented(value)+native_policy_instrumented(value);}
++// CHECK: @native_policy_data = weak global i32 17, section ".data.objc3.policy"
++// CHECK: define internal {{.*}}native_policy_uninstrumented{{.*}} #[[QUIET:[0-9]+]] section ".text.objc3.policy"
++// CHECK: define internal {{.*}}native_policy_instrumented{{.*}} #[[CHECKED:[0-9]+]]
++// CHECK: attributes #[[QUIET]] = { {{.*}}disable_sanitizer_instrumentation{{.*}}noprofile
++// CHECK: attributes #[[CHECKED]] = { {{.*}}sanitize_address sspreq

@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [source 2.149 / System 2.75 native emission-policy span](linux_native_emission_policies.md)
+preserves ELF sections, retention, weak symbols and instrumentation policies in
+source-free declarations and bodies. Canonical external-declaration placement and
+inherited flag deduplication now retain exact replay bytes. Compiler, AST,
+publication, decoder and source-free native controls pass; implementation continues.
+
 The [source 2.148 / System 2.74 static borrowed-result span](linux_static_borrowed_summaries.md)
 proves immutable native union storage and bounded statically bound helper chains,
 while preserving owner contracts and rejecting mutable/TLS/unknown or replaceable

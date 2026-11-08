@@ -352,6 +352,63 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestNativeEmissionPolicyReplay() {
+ for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
+  const bool cpp=std::string(standard)!="c17";
+  std::vector<std::string> args={"-x",cpp?"objective-c++":"objective-c",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu"};
+  if(arc)args.push_back("-fobjc-arc");
+  const std::string source=R"(
+   extern int policy_data __attribute__((section(".data.objc3.policy"),weak));
+   int policy_data=17;
+   int policy_read(const int *) __attribute__((section(".text.objc3.policy"),used,retain,noinline,no_sanitize("address","undefined"),disable_sanitizer_instrumentation,no_profile_instrument_function,no_instrument_function,no_stack_protector,nodebug));
+   inline int policy_read(const int *value){return *value+policy_data;}
+  )";
+  auto emit=[&](const std::string &text) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-emission-policy.m");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.emission_policy","test",{}));
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.emission_policy","test");
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.source_bytes==replay.source_bytes);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeEmissionPolicySemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeEmissionPolicySemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(decoded->required_semantics,kNativeEmissionPolicySemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  for(const auto &[before,after]:std::vector<std::pair<std::string,std::string>>{{".text.objc3.policy",".text.objc3.other"},{".data.objc3.policy",".data.objc3.other"},{"\"address\",\"undefined\"","\"address\""},{"disable_sanitizer_instrumentation,",""},{"no_profile_instrument_function,",""},{"no_instrument_function,",""},{"no_stack_protector,",""},{",nodebug",""},{",weak",""},{"used,",""},{"retain,",""}}) {
+   auto changed=source;auto at=changed.find(before);assert(at!=std::string::npos);changed.replace(at,before.size(),after);
+   assert(emit(changed).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+  auto equivalent=source;
+  auto reordered=equivalent.find("\"address\",\"undefined\"");assert(reordered!=std::string::npos);
+  equivalent.replace(reordered,std::string("\"address\",\"undefined\"").size(),"\"undefined\",\"address\"");
+  assert(emit(equivalent).identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+  auto repeated=source;auto flags=repeated.find("used,retain");assert(flags!=std::string::npos);
+  repeated.replace(flags,std::string("used,retain").size(),"used,used,retain,retain");
+  auto merged=emit(repeated);assert(merged.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+  assert(merged.source_bytes==first.source_bytes);
+  auto plain=emit("inline int policy_read(const int *value){return *value;}");
+  auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+  assert(!llvm::is_contained(invented->required_semantics,std::string(kNativeEmissionPolicySemantic)));
+  invented->required_semantics.push_back(kNativeEmissionPolicySemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+  if(cpp) {
+   auto local=emit(R"(inline int policy_local(){static __attribute__((section(".data.objc3.local"),used,retain)) int value=23;return value;})");
+   auto localReplay=emit(local.source_bytes);assert(local.identity.semantic_fingerprint==localReplay.identity.semantic_fingerprint);
+   auto changed=emit(R"(inline int policy_local(){static __attribute__((section(".data.objc3.other"),used,retain)) int value=23;return value;})");
+   assert(local.identity.semantic_fingerprint!=changed.identity.semantic_fingerprint);
+   auto generic=emit(R"(template<class T>__attribute__((no_sanitize("address"),no_profile_instrument_function)) inline T policy_generic(T value){return value;}inline int policy_call(){return policy_generic(29);})");
+   auto genericReplay=emit(generic.source_bytes);assert(generic.identity.semantic_fingerprint==genericReplay.identity.semantic_fingerprint);
+  }
+ }
+}
+
 void TestNativeManagedUnionPayloadReplay() {
  for(const char *standard:{"c++20","c++23"}) {
   std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
