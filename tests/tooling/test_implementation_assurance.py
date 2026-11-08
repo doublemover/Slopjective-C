@@ -35,7 +35,14 @@ def test_modified_analysis_plan_is_rejected(mutation):
         validate(plan)
 
 
-def passing_bundle(tmp_path, *, periodic=False):
+def passing_bundle(tmp_path, *, periodic=False, partition=None):
+    from scripts.objc3c_toolchain.analysis_partition import partition_spec, partition_rows
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    if periodic and partition is None:
+        for index in range(4):
+            plan, _ = passing_bundle(tmp_path / ('part-'+str(index)), periodic=True,
+                                     partition=partition_spec(index,4))
+        return plan, None
     plan = select(['native/objc3c/src/runtime/service.cpp'], **REV, periodic=periodic)
     analysis = tmp_path / 'analysis';analysis.mkdir()
     # Producer paths intentionally do not exist on the receiving machine.
@@ -55,8 +62,11 @@ def passing_bundle(tmp_path, *, periodic=False):
             'directory': '/producer/build/'+owner, 'output': '/producer/build/'+owner+'/source.o',
             'analysis_arguments': ['clang++', '-DREAL_FLAG=1', '-c', str(source)],
             'dependencies': [str(source)], 'selected': periodic or index < 2,
-            'analysis_timeout_seconds': policy['translation_unit_timeout_seconds'],
+            'analysis_timeout_seconds': (policy['maintained_translation_unit_timeout_seconds']
+                                         if owner=='maintained-clang' else policy['translation_unit_timeout_seconds']),
             'dependency_origin': 'actual-ninja-compilation'})
+    if partition is not None:
+        for row in inventory:row['selected'] &= bool(partition_rows([row], partition))
     results = [{'identity': row['identity'], 'status': 'PASS', 'diagnostics': [],
                 'execution_reused': False, 'timeout_seconds': row['analysis_timeout_seconds']}
                for row in inventory if row['selected']]
@@ -90,7 +100,8 @@ def passing_bundle(tmp_path, *, periodic=False):
         'source_build_id': 'fork-build', 'build_config_digest': 'config',
         'tool': {'path': tool, 'sha256': 'a'*64}, 'tool_graph': {'libraries': {'libclang.so': 'b'*64}},
         'tool_objects': [{'object': 'tool.o'}],
-        'inputs': {str(config): evidence.digest(analysis / 'checks.json')},
+        'inputs': {str(config): evidence.digest(analysis / 'checks.json'),
+                   **{path:'c'*64 for row in inventory for path in row['dependencies']}},
         'configuration': str(config), 'repository_output': str(producer_repo / 'out'),
         'resource_directory': '/producer/resources',
         'changed_paths': [str(producer_repo / path) for path in plan['analysis_paths']],
@@ -99,12 +110,14 @@ def passing_bundle(tmp_path, *, periodic=False):
                         'analyzed_variants': int(row['selected'])} for row in inventory],
         'analyzed_variants': len(results), 'inventory_variants': len(inventory),
         'fresh_native_executions': len(results), 'verified_checkpoint_actions': 0}
+    if partition is not None:inner['partition']=partition
     (analysis / 'qualification.json').write_text(json.dumps(inner))
     report = {'schema': evidence.SCHEMA, 'status': 'PASS', 'revision': plan['revision'],
         'plan_sha256': plan['sha256'], 'analysis_paths': plan['analysis_paths'],
         'temporary_builds_reclaimed': True, 'commands': [], 'evidence_root': str(producer.parent),
         'analyzed_variants': len(results), 'inventory_variants': len(inventory),
         'source_build_id': 'fork-build', 'build_config_digest': 'config'}
+    if partition is not None:report['partition']=partition
     build_logs = tmp_path / 'build-logs';build_logs.mkdir()
     for name in ('frontend-configure', 'frontend-build', 'runtime-configure', 'runtime-build'):
         path = build_logs / (name+'.log');path.write_text('successful build')

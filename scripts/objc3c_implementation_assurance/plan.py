@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 import subprocess
 
 from scripts.objc3c_assurance.plan import sha
+from scripts.objc3c_toolchain.analysis_partition import FULL_PARTITIONS
 
 SCHEMA = 'objc3c.implementation-assurance.plan.v1'
 
@@ -25,6 +26,7 @@ OWNERS = (
 TOOLCHAIN_OWNERS = {
     'scripts/objc3c_toolchain/analysis_checkpoint.py',
     'scripts/objc3c_toolchain/analysis_scheduling.py',
+    'scripts/objc3c_toolchain/analysis_partition.py',
     'scripts/objc3c_toolchain/binary_packages.py',
     'scripts/objc3c_toolchain/build.py',
     'scripts/objc3c_toolchain/compiler_instrumentation.py',
@@ -68,6 +70,7 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
         'periodic': periodic,
         'required': required,
         'analysis_paths': analysis_paths,
+        'analysis_partitions': FULL_PARTITIONS if required and not analysis_paths else 1,
         'selection': ('complete-owned-tu-inventory' if not analysis_paths and required else
                       'dependency-aware-owned-changes' if required else 'unaffected'),
         'reason': ('scheduled or manually dispatched complete analysis' if periodic else

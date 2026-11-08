@@ -67,19 +67,28 @@ language and feature flags. Identical variants share a content-addressed matched
 PCH. The bootstrap serialization, wrapper, matched serialization, compiler and
 both original/projected commands and hashes are retained. The forced textual
 include remains in the projected command, and a missing or invalid matched PCH
-fails instead of disabling validation. Native units and ordinary maintained
-Clang units retain a ten-minute ceiling. Nine maintained units exceeded that
-limit in the full instrumented scan: `ASTContext.cpp`, `ASTImporter.cpp`,
-`ExprConstant.cpp`, `SemaChecking.cpp`, `SemaDecl.cpp`, `SemaDeclCXX.cpp` and
-`SemaExpr.cpp`, `Serialization/ASTReader.cpp` and
-`Serialization/ASTReaderStmt.cpp`. The source-owned policy gives precisely those units a finite
-one-hour ceiling. The ASTContext progress probe has already recorded over 900
-seconds of completed function analysis with the complete checker set, establishing
-that ten minutes cannot cover that work. This is a resource allowance, not a
-passing result or performance target; the longer complete actions still need to
-finish without findings. Source/owner-scoped selection prevents the override from
-widening native actions. The row identity and terminal verifier bind the requested
-ceiling, reject unowned/unbounded overrides and retain earlier timeout failures.
+fails instead of disabling validation. Native units retain a ten-minute ceiling. The measured template-heavy feature
+and identity frontend units each have a thirty-minute allowance. Maintained
+Clang units have a finite one-hour ceiling: the full instrumented scan records
+completed compiler actions taking 1,443–3,509 seconds and thirty other units
+hitting the former ten-minute limit. These are execution bounds, not passing
+results or speed targets; findings, crashes and timeouts still fail.
+
+The preceding six-hour scan completed 206 of 235 variants: 169 passed, thirty
+timed out and seven reported findings. Its remaining 29 variants were interrupted
+by the hosted job limit. The retained diagnostics and exact source identities
+remain failed checkpoint evidence. The seven finding units are undergoing source
+repair and focused replay; no full current-source acceptance is claimed.
+
+Complete analysis now partitions the dependency-selected inventory across four
+independent CI jobs using stable variant identities. Each job builds and checks
+the same admitted foundation and runs the unchanged checker set with paired
+detector controls. The terminal gate requires every partition index, identical
+logical inventories and frozen source/header inputs, one compiler/configuration
+identity, and a disjoint union containing every selected fresh native action.
+Missing, duplicated, changed-input, filtered and failed partitions reject the
+aggregate. Dependency-scoped local selections retain one partition. The
+partition, workflow and retained-proof controls pass 127 tests.
 
 The interface emitter is partitioned by template publication, feature detection,
 AST/declaration identity, dependency admission and final publication. A private
@@ -108,8 +117,9 @@ runs use one immutable SHA. Repeated requests for the same source revision queue
 work. A repaired release can progress alongside an older revision's analysis once
 its native build has completed. The workflow builds the admitted `compiler-asan-ubsan` foundation,
 separate integrated-frontend and standalone-runtime databases, and the matched
-analysis tool in its own six-hour job so the already broad native qualification
-cannot consume the analyzer's time budget. A second job admits only the exact
+analysis tool in each bounded six-hour partition job; native qualification has
+its own execution budget. Completed analysis actions also report progress in the
+job log. A second job admits only the exact
 revision, canonical plan, complete per-TU inventory, paired detector controls,
 clean diagnostics and content-hashed retained evidence.
 

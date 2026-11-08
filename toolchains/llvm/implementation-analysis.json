@@ -24,14 +24,8 @@
   "baseline": [],
   "purpose": "Implementation defects in native sources and maintained Clang translation units; separate from ObjC3 language analyzer modeling",
   "translation_unit_timeout_overrides_seconds": {
-    "clang/lib/AST/ASTContext.cpp": 3600,
-    "clang/lib/AST/ASTImporter.cpp": 3600,
-    "clang/lib/AST/ExprConstant.cpp": 3600,
-    "clang/lib/Sema/SemaChecking.cpp": 3600,
-    "clang/lib/Sema/SemaDecl.cpp": 3600,
-    "clang/lib/Sema/SemaDeclCXX.cpp": 3600,
-    "clang/lib/Sema/SemaExpr.cpp": 3600,
-    "clang/lib/Serialization/ASTReader.cpp": 3600,
-    "clang/lib/Serialization/ASTReaderStmt.cpp": 3600
-  }
+    "native/objc3c/src/clang_foundation/interface_emission_features.cpp": 1800,
+    "native/objc3c/src/clang_foundation/interface_emission_identity.cpp": 1800
+  },
+  "maintained_translation_unit_timeout_seconds": 3600
 }

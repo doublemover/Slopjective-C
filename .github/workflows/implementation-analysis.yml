@@ -46,7 +46,11 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   analysis:
-    name: Analyze fork-matched implementation
+    name: Analyze fork-matched implementation (partition ${{ matrix.partition }})
+    strategy:
+      fail-fast: false
+      matrix:
+        partition: [0, 1, 2, 3]
     needs: plan
     if: needs.plan.outputs.analysis == 'true'
     runs-on: ubuntu-26.04
@@ -56,6 +60,7 @@ jobs:
     env:
       OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
       SOURCE_SHA: ${{ inputs.source_sha }}
+      ANALYSIS_PARTITION_INDEX: ${{ matrix.partition }}
     steps:
       - name: Development prerequisites
         run: |
@@ -87,12 +92,12 @@ jobs:
           elif [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
           fi
-          python3 -B -m scripts.objc3c_implementation_assurance run --plan out/implementation-assurance/selection/plan.json --output out/implementation-assurance/results "${periodic[@]}"
+          python3 -B -m scripts.objc3c_implementation_assurance run --plan out/implementation-assurance/selection/plan.json --output out/implementation-assurance/results --partition-index "$ANALYSIS_PARTITION_INDEX" "${periodic[@]}"
       - name: Preserve setup diagnostics
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: implementation-startup-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: implementation-startup-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.partition }}
           path: out/implementation-assurance/startup/
           if-no-files-found: error
           retention-days: 7
@@ -100,7 +105,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: implementation-results-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: implementation-results-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.partition }}
           path: |
             out/implementation-assurance/results/**/*.json
             out/implementation-assurance/results/**/*.xml
@@ -130,7 +135,8 @@ jobs:
         if: needs.plan.outputs.analysis == 'true'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: implementation-results-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          pattern: implementation-results-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-*
+          merge-multiple: false
           path: evidence/results
       - name: Require exact-revision complete passing analysis
         if: always()

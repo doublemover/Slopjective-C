@@ -21,6 +21,7 @@ def main(argv=None):
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--periodic-sha')
+    parser.add_argument('--partition-index', type=int, default=0)
     args = parser.parse_args(argv)
     repo = args.repo.resolve()
     revisions = (dict.fromkeys(('head', 'base', 'tested'), sha(args.periodic_sha))
@@ -42,7 +43,7 @@ def main(argv=None):
             parser.error('--output is required for run and verify')
         if args.command == 'run':
             from .runner import run
-            report = run(repo, plan, args.output)
+            report = run(repo, plan, args.output, partition_index=args.partition_index)
         else:
             from .evidence import aggregate
             report = aggregate(plan, args.output,

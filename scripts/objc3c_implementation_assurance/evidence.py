@@ -12,6 +12,7 @@ from scripts.objc3c_toolchain.sanitizer_policy import require_clean_diagnostic
 from scripts.objc3c_assurance.evidence import junit, lit
 
 from .plan import validate
+from scripts.objc3c_toolchain.analysis_partition import partition_rows, partition_spec
 
 SCHEMA = 'objc3c.implementation-assurance.result.v1'
 MAX_BYTES = 256 * 1024 * 1024
@@ -131,6 +132,7 @@ def verify_analysis_proof(root: Path, receipt: dict) -> None:
         headers = {row['output']: row['dependencies'] for row in rows}
         scoped = owner_changes(repo, owner, changed)
         selected = [] if scoped is None else selected_variants(rows, headers, scoped)
+        selected = partition_rows(selected, receipt.get('partition'))
         ids = {row['identity'] for row in selected}
         expected_ids.update(ids)
         if any(type(row.get('selected')) is not bool or row['selected'] != (row['identity'] in ids)
@@ -203,7 +205,8 @@ def verify_build_proof(root: Path, receipt: dict) -> None:
         raise ValueError('implementation foundation omitted actual native test results')
 
 
-def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
+def _aggregate_partition(plan: dict, root: Path, *, outcomes: dict, tested: str,
+                         partition=None) -> dict:
     validate(plan)
     if plan['revision']['tested'] != tested or outcomes.get('plan') != 'success':
         raise ValueError('implementation assurance selected the wrong source revision')
@@ -214,6 +217,8 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     if outcomes.get('analysis') != 'success':
         raise ValueError('required implementation analysis failed, was cancelled, skipped or incomplete')
     receipt = json.loads((root / 'result.json').read_text())
+    if receipt.get('partition', partition_spec()) != (partition or partition_spec()):
+        raise ValueError('implementation result belongs to the wrong partition')
     if (receipt.get('schema') != SCHEMA or receipt.get('status') != 'PASS' or
             receipt.get('revision') != plan['revision'] or receipt.get('plan_sha256') != plan['sha256'] or
             receipt.get('analysis_paths') != plan['analysis_paths'] or
@@ -225,6 +230,8 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     verify_build_proof(root, receipt)
     results = analysis_results(root)
     inner = json.loads((root / 'analysis/qualification.json').read_text())
+    if inner.get('partition', partition_spec()) != (partition or partition_spec()):
+        raise ValueError('implementation inner partition differs from its owner')
     producer_repo = Path(inner['repository_output']).parent
     if inner.get('changed_paths') != [str(producer_repo / path) for path in plan['analysis_paths']]:
         raise ValueError('implementation analysis used a different changed-path selection')
@@ -238,3 +245,59 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
         raise ValueError('implementation assurance evidence exceeds the 256 MiB artifact budget')
     return {'status': 'PASS', 'classification': plan['selection'], 'revision': plan['revision'],
             'analyzed_variants': len(results), 'artifact_bytes': total}
+
+
+def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
+    validate(plan)
+    count = plan['analysis_partitions']
+    if count == 1 or not plan['required']:
+        return _aggregate_partition(plan, root, outcomes=outcomes, tested=tested)
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError('implementation partition evidence is missing or linked')
+    roots = sorted(root.iterdir())
+    if len(roots) != count or any(path.is_symlink() or not path.is_dir() for path in roots):
+        raise ValueError('implementation analysis requires every partition artifact')
+    indices, results, variants, signatures = set(), [], [], set()
+    logical = None
+    total = 0
+    for directory in roots:
+        outer = json.loads((directory / 'result.json').read_text())
+        spec = outer.get('partition', {})
+        if (type(spec) is not dict or spec != partition_spec(spec.get('index'), count) or
+                spec['index'] in indices):
+            raise ValueError('implementation partition is missing, duplicated or substituted')
+        indices.add(spec['index'])
+        admitted = _aggregate_partition(plan, directory, outcomes=outcomes, tested=tested, partition=spec)
+        total += admitted['artifact_bytes']
+        inner = json.loads((directory / 'analysis/qualification.json').read_text())
+        signatures.add((inner['source_build_id'], inner['build_config_digest']))
+        # PCH projection and per-action arguments exist only on that action's owner.
+        common = sorted([{key:value for key,value in row.items()
+                          if key not in ('selected', 'analysis_arguments', 'pch_projection')}
+                         for row in inner['inventory']], key=lambda row:row['identity'])
+        hashes = {path:inner['inputs'].get(path) for row in common for path in row['dependencies']}
+        if any(not isinstance(value, str) or len(value)!=64 for value in hashes.values()):
+            raise ValueError('implementation partition omitted frozen source/header inputs')
+        current = {'inventory':common, 'dependency_sha256':hashes,
+                   'changed_paths':inner['changed_paths']}
+        first = logical is None
+        if not first and current != logical:
+            raise ValueError('implementation partitions analyzed different inventories or inputs')
+        logical = current
+        results.extend(row['identity'] for row in inner['results'])
+        if first:
+            repo = Path(inner['repository_output']).parent
+            for owner in ('frontend','standalone-runtime','maintained-clang'):
+                rows = [row for row in common if row['owner']==owner]
+                headers = {row['output']:row['dependencies'] for row in rows}
+                scoped = owner_changes(repo, owner, inner['changed_paths'])
+                if scoped is not None:
+                    variants.extend(row['identity'] for row in selected_variants(rows,headers,scoped))
+    if (indices != set(range(count)) or len(signatures)!=1 or
+            len(results)!=len(set(results)) or set(results)!=set(variants)):
+        raise ValueError('implementation partitions do not cover the complete selected inventory once')
+    if total > MAX_BYTES:
+        raise ValueError('combined implementation partition evidence exceeds its artifact budget')
+    return {'status':'PASS', 'classification':plan['selection'], 'revision':plan['revision'],
+            'partitions':count, 'analyzed_variants':len(results), 'artifact_bytes':total,
+            'inventory_sha256':hashlib.sha256(json.dumps(logical,sort_keys=True).encode()).hexdigest()}

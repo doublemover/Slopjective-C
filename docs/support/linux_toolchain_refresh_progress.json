@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "CURRENT_SOURCE_REPAIRS_READY_FOR_QUALIFICATION",
+  "status": "CURRENT_SOURCE_ANALYSIS_REPAIRS_IN_PROGRESS",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -60,7 +60,7 @@
   "focused_validation": {
     "tool_and_archive_owner_tests_passed": 96,
     "CI_revision_owner_tests_passed": 136,
-    "canonical_patch_stack_matches_prepared_source": true,
+    "canonical_patch_stack_matches_prepared_source": false,
     "live_tool_pins_match": true,
     "clean_host_download_and_bootstrap_controls_passed": 19,
     "download_bootstrap_export_and_revision_mode_controls_passed": 28,
@@ -97,16 +97,16 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "fabf34e633dd0c276322bb013f7a82b2f30138e8",
+      "revision": "71f8f9cca614e8aec416dd2a8dd749b4f31411a8",
       "status": "PASS",
       "runs": [
-        42517420361,
-        42517420277,
-        42517420154
+        42517837303,
+        42517837330,
+        42517837260
       ],
-      "tooling_tests_passed": 1556,
+      "tooling_tests_passed": 1576,
       "tooling_subtests_passed": 33,
-      "tooling_explicit_skips": 107
+      "tooling_explicit_skips": 111
     },
     "previous_attempts": {
       "SDK_release": {
@@ -303,6 +303,19 @@
           "controls": 6,
           "artifact_sha256": "0428fac5d542df9ced88c52f4408d2edcbb50a7a10376393a0dfd1ce1c1892d6"
         }
+      },
+      "full_analysis_time_budget": {
+        "run": 42488455572,
+        "job": 128755500273,
+        "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+        "status": "CANCELLED_AT_SIX_HOUR_LIMIT",
+        "inventory_variants": 235,
+        "completed_variants": 206,
+        "passed_variants": 169,
+        "timeout_variants": 30,
+        "finding_variants": 7,
+        "uncompleted_variants": 29,
+        "artifact_sha256": "3a2f5df5a12e6a5c4e2535362abab6b45eb34136084aecd380f11e7ea8ebb4a9"
       }
     },
     "SDK_release": {
@@ -478,10 +491,11 @@
       "run": 42506995176,
       "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
-      "status": "IN_PROGRESS",
+      "status": "SUPERSEDED_CANCEL_REQUESTED",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42506995176",
       "job": 128811758131,
-      "scope": "Complete fork-matched owned translation-unit inventory"
+      "scope": "Complete fork-matched owned translation-unit inventory",
+      "reason": "Known failing older compiler identity; complete replacement-source analysis will use four bounded independent partitions."
     },
     "upstream_repair_checkpoint": {
       "scope": "Focused local replay using retained compiler libraries, actual changed code-generation source and exact-version test tools; not SDK qualification.",
@@ -513,6 +527,17 @@
       "bounded_passed_JUnit_output_bytes": 16777216,
       "native_suite_failure_collection_controls_passed": 5,
       "shared_library_profile_merge_controls": "PASS: four pinned native binary/DSO \u00d7 merged/per-process fixtures preserve all fork/exec branches; full coverage owner requires all four unskipped before building LLVM."
+    },
+    "analysis_partition_repair": {
+      "status": "IMPLEMENTED",
+      "full_inventory_partitions": 4,
+      "dependency_scoped_partitions": 1,
+      "native_default_timeout_seconds": 600,
+      "large_frontend_units_timeout_seconds": 1800,
+      "maintained_compiler_timeout_seconds": 3600,
+      "focused_controls_passed": 127,
+      "terminal_completeness": "All partition indices, same full logical inventory and frozen source/header inputs, same compiler/config identity, disjoint union of every dependency-selected fresh native action.",
+      "source_repairs": "Seven finding units are being repaired and replayed against retained compiler libraries; final canonical source export/seal and complete current-source qualification remain pending."
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",

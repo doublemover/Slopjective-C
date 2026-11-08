@@ -45,6 +45,7 @@ jobs:
           tests/tooling/test_compiler_scan_graph.py
           tests/tooling/test_implementation_analysis.py
           tests/tooling/test_implementation_assurance.py
+          tests/tooling/test_analysis_partitions.py
           tests/tooling/test_analysis_checkpoint.py
           tests/tooling/test_source_coverage.py
           tests/tooling/test_source_coverage_profile_merging.py

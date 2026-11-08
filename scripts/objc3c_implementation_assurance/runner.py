@@ -34,8 +34,10 @@ def owned_path(repo: Path, path: Path) -> Path:
     return path
 
 
-def run(repo: Path, plan: dict, output: Path) -> dict:
+def run(repo: Path, plan: dict, output: Path, *, partition_index=0) -> dict:
     validate(plan)
+    from scripts.objc3c_toolchain.analysis_partition import partition_spec
+    partition = partition_spec(partition_index, plan['analysis_partitions'])
     if not plan['required']:
         raise ValueError('unaffected implementation assurance must not execute')
     repo = repo.resolve(strict=True)
@@ -44,10 +46,10 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
     # The locked builder is used below so it does not reacquire this same lock.
     owned_path(repo, repo / 'out/toolchains/objc3-development/.foundation-build.lock')
     with foundation_lock(repo):
-        return _run_locked(repo, plan, output)
+        return _run_locked(repo, plan, output, partition)
 
 
-def _run_locked(repo: Path, plan: dict, output: Path) -> dict:
+def _run_locked(repo: Path, plan: dict, output: Path, partition: dict) -> dict:
     if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
         raise ValueError('implementation assurance source changed before execution')
     if output.exists():
@@ -71,7 +73,7 @@ def _run_locked(repo: Path, plan: dict, output: Path) -> dict:
     logs.mkdir()
     report = {'schema': SCHEMA, 'status': 'running', 'revision': plan['revision'],
               'plan_sha256': plan['sha256'], 'analysis_paths': plan['analysis_paths'],
-              'evidence_root': str(output),
+              'evidence_root': str(output), 'partition': partition,
               'commands': [], 'artifacts': [], 'temporary_builds_reclaimed': False}
     started = time.monotonic()
 
@@ -149,7 +151,8 @@ def _run_locked(repo: Path, plan: dict, output: Path) -> dict:
             '--target', 'objc3_runtime_services', '--parallel', str(jobs)], environment)
         qualification = qualify(repo, output / 'analysis', frontend_build=frontend_build,
             runtime_build=runtime_build, tool_build=tool_build,
-            changed=[repo / path for path in plan['analysis_paths']], jobs=min(4, max(1, jobs)))
+            changed=[repo / path for path in plan['analysis_paths']], jobs=min(4, max(1, jobs)),
+            partition_index=partition['index'], partition_count=partition['count'])
         if qualification.get('status') != 'PASS':
             raise ValueError('fork-matched implementation analysis did not pass')
         results = analysis_results(output)

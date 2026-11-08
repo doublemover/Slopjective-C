@@ -18,8 +18,13 @@ from .sanitizer_policy import strict_environment
 from .sdk_example import dependencies as header_dependencies
 from .analysis_checkpoint import analysis_argv, load_checkpoints, reusable_action, run_unit
 from .analysis_scheduling import execute_jobs
+from .analysis_partition import partition_spec, partition_rows
 
 SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
+NATIVE_TIMEOUT_UNITS = {
+    'native/objc3c/src/clang_foundation/interface_emission_features.cpp',
+    'native/objc3c/src/clang_foundation/interface_emission_identity.cpp',
+}
 
 
 def checker_configuration(repo, source, policy):
@@ -36,8 +41,8 @@ def patch_units(repo):
 
 def validate_timeout_overrides(policy, maintained_units):
     overrides = policy.get('translation_unit_timeout_overrides_seconds', {})
-    if (not isinstance(overrides, dict) or len(overrides) > 16 or
-            any(path not in maintained_units or type(seconds) is not int or
+    if (not isinstance(overrides, dict) or len(overrides) > 48 or
+            any(path not in maintained_units | NATIVE_TIMEOUT_UNITS or type(seconds) is not int or
                 not policy['translation_unit_timeout_seconds'] < seconds <= 3600
                 for path, seconds in overrides.items())):
         raise ValueError('analysis timeout overrides require reviewed maintained Clang units and finite bounds')
@@ -45,13 +50,20 @@ def validate_timeout_overrides(policy, maintained_units):
 
 def translation_unit_timeout(policy, row, source):
     default = policy['translation_unit_timeout_seconds']
-    if row['owner'] != 'maintained-clang':
+    owner = row['owner']
+    if owner not in ('maintained-clang', 'frontend'):
         return default
+    root = Path(source).resolve()
+    if owner == 'frontend':root = root.parents[3]
     try:
-        relative = Path(row['file']).resolve().relative_to(Path(source).resolve()).as_posix()
+        relative = Path(row['file']).resolve().relative_to(root).as_posix()
     except ValueError as error:
-        raise ValueError('maintained analysis timeout source escaped the admitted fork') from error
-    return policy.get('translation_unit_timeout_overrides_seconds', {}).get(relative, default)
+        raise ValueError('maintained analysis timeout source escaped its admitted owner') from error
+    if owner == 'frontend' and relative not in NATIVE_TIMEOUT_UNITS:
+        return default
+    owner_default = (policy.get('maintained_translation_unit_timeout_seconds', default)
+                     if owner == 'maintained-clang' else default)
+    return policy.get('translation_unit_timeout_overrides_seconds', {}).get(relative, owner_default)
 
 
 def arguments(row):
@@ -307,11 +319,12 @@ def tool_configuration(repo, tool_build, plan):
     return arguments, environment
 
 
-def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=()):
+def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=(), partition_index=0, partition_count=1):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('implementation analysis requires fresh owned evidence')
     if jobs not in (1, 2, 3, 4): raise ValueError('implementation analysis requires one to four worker processes')
+    partition = partition_spec(partition_index, partition_count)
     checkpoints = load_checkpoints(repo, resume)
     plan, _ = foundation(repo)
     source, stage, build = (Path(plan['paths'][key]).resolve(strict=True)
@@ -327,6 +340,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             policy.get('warnings_as_errors') != '*' or policy.get('baseline') != [] or
             policy.get('profile_checks') is not True or
             policy.get('translation_unit_timeout_seconds') != 600 or
+            policy.get('maintained_translation_unit_timeout_seconds') != 3600 or
             not policy.get('checks') or len(set(policy['checks'])) != len(policy['checks']) or
             any(not re.fullmatch(r'[a-zA-Z0-9_.-]+', check) for check in policy['checks'])):
         raise ValueError('unreviewed implementation analysis policy/baseline')
@@ -339,9 +353,10 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         'environment': environment, 'inventory': [], 'results': [], 'exclusions': [], 'matched_pches': [],
         'repository_output': str(repo / 'out'),
         'changed_paths': [str(Path(path).resolve()) for path in changed],
-        'parallel_workers': jobs,
+        'parallel_workers': jobs, 'partition': partition,
         'inputs': {str(path): digest(path) for path in (Path(__file__), policy_path,
             Path(__file__).with_name('analysis_scheduling.py'),
+            Path(__file__).with_name('analysis_partition.py'),
             Path(__file__).with_name('analysis_checkpoint.py'),
             repo / 'native/analysis/CMakeLists.txt', repo / 'native/analysis/SelectedChecks.cpp',
             repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp')}}
@@ -518,10 +533,11 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 row['owner'] = label
                 row['analysis_timeout_seconds'] = translation_unit_timeout(policy, row, source)
                 row.update(identity=identity(row), dependencies=deps[row['output']])
-                row['selected'] = row in chosen
+                row['selected'] = row in chosen and bool(partition_rows([row], partition))
                 report['inputs'].update({path: digest(Path(path)) for path in row['dependencies']})
                 report['inputs'].update(row['response_files'])
                 report['inputs'].update(row['build_launcher'])
+            chosen = partition_rows(chosen, partition)
             report['inventory'].extend(rows)
             report['exclusions'].append({'owner': label, 'database_entries': len(json.loads(database.read_text())),
                 'selected_variants': len(rows), 'analyzed_variants': len(chosen),
@@ -548,6 +564,8 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 def completed(value):
                     result, commands = value
                     report['results'].append(result);report['commands'].extend(commands);executor.save()
+                    print('implementation analysis '+label+' '+result['identity'][:16]+': '+
+                          result['status']+' ('+str(len(report['results']))+' completed)', flush=True)
 
                 execute_jobs(prepared_jobs(), submit=lambda job: workers.submit(run_unit, job),
                              completed=completed, max_pending=2*jobs)
@@ -578,6 +596,8 @@ def main():
     parser.add_argument('--changed', nargs='*', type=Path, default=[])
     parser.add_argument('--jobs', type=int, choices=(1, 2, 3, 4), default=2)
     parser.add_argument('--resume', type=Path, action='append', default=[])
+    parser.add_argument('--partition-index', type=int, default=0)
+    parser.add_argument('--partition-count', type=int, choices=(1, 2, 4), default=1)
     result = qualify(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'analyzed_variants': result['analyzed_variants']}))
 
