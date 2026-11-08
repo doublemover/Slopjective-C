@@ -305,6 +305,7 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
 #include "byref_cpp_storage.h"
 #include "byref_c_storage.h"
 #include "mixed_carrier_storage.h"
+#include "carrier_lambda_storage.h"
 static void property_suite(void) {
   assert(objc3_executor_create(1,&property_caller)==OBJC3_SERVICE_OK);
   assert(objc3_executor_create(1,&property_destination)==OBJC3_SERVICE_OK);
@@ -398,6 +399,7 @@ static void property_suite(void) {
   byref_cpp_storage_suite();
   byref_c_storage_suite();
   mixed_carrier_storage_suite(main_object);
+  carrier_lambda_storage_suite();
   carrier_call_suite(main_object);
   assert(objc3_actor_close(property_mailbox)==OBJC3_SERVICE_OK);
   assert(objc3_actor_join(property_mailbox)==OBJC3_SERVICE_OK);

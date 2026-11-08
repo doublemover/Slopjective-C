@@ -1,5 +1,10 @@
 # Linux explicit Block capture lists
 
+The later [Source 2.140 lambda span](linux_carrier_lambda_storage.md) implements
+native pure C++ and mixed ARC carrier C++ lambda value/array captures. Historical
+mixed-lambda boundaries below describe the original capture spans; MRC mixed
+ownership and broader borrowed/mutation analysis remain separate.
+
 Part 8.8 now has a native implementation in the shared development compiler.
 The native compiler regressions and all 24 runtime configurations pass across
 C17/C++20/C++23, ARC/MRC, O0/O2 and source/PCH transport, including exceptional

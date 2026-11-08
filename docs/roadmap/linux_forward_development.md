@@ -1,5 +1,10 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.140 / System 2.66 lambda span](linux_carrier_lambda_storage.md)
+implements native pure C++ / mixed ARC carrier lambda value and array captures,
+closure copy/move and partial capture cleanup, with source-free semantic admission.
+The implementation batch continues before final consolidation and SDK delivery.
+
 The [source 2.139 / System 2.65 composition span](linux_mixed_carrier_storage.md)
 extends mixed ARC/C++ ownership to native enclosing records, bases, fixed arrays
 and composed Optional/Result payloads. Construction recipes, exception/deletion

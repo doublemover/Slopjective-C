@@ -6935,6 +6935,52 @@ void TestCheckedCppMessageReplay() {
   }
 }
 
+void TestNativeCarrierLambdaReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string source=R"(
+      namespace PublishedCarrierLambda {
+        struct Leaf {int value;explicit Leaf(int);Leaf(const Leaf &);Leaf(Leaf &&);~Leaf() noexcept;};
+        typedef id __strong Strong;typedef __objc3_result(Leaf,Strong) Mixed;
+        inline int use(const Mixed &source) {
+          auto value=__objc3_copy(source);auto callback=[value]{return __objc3_is_ok(value);};
+          auto copy=callback;auto moved=static_cast<decltype(copy) &&>(copy);
+          auto generic=[value]<class T>(T n){return __objc3_is_ok(value)+n;};return moved()+generic(2);
+        }
+        template<class T>inline int capture(const T &value){auto callback=[value]{return __objc3_is_ok(value);};return callback();}
+        inline int instantiate(const Mixed &value){return capture(value);}
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"carrier-lambda.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.carrier_lambda","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.carrier_lambda","test",{},{},{},{"PublishedCarrierLambda"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kNativeCarrierLambdaSemantic)));
+    assert(std::string(kNativeCarrierLambdaSemantic)=="objc3.native-carrier-lambda.v1");
+    auto older=supported;std::erase(older,llvm::StringRef(kNativeCarrierLambdaSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kNativeCarrierLambdaSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto simple=emit("namespace PublishedCarrierLambda {struct Plain {~Plain() noexcept;};__objc3_optional(Plain) factory();}");
+    auto invented=DecodeSemanticInterfaceSidecar(simple.sidecar_json,simple.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kNativeCarrierLambdaSemantic)));
+    invented->required_semantics.push_back(kNativeCarrierLambdaSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestMixedCarrierStorageReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -11013,6 +11059,7 @@ int main(int argc,char **argv) {
   TestCheckedCppRecordResultReplay();
   TestCppCarrierDefaultStorageReplay();
   TestCheckedCppMessageReplay();
+  TestNativeCarrierLambdaReplay();
   TestMixedCarrierStorageReplay();
   TestCppCarrierCompositionReplay();
   TestNativeCppCarrierCallReplay();

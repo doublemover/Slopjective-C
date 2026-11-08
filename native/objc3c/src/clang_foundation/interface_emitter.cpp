@@ -1057,6 +1057,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kDependentKeyPathLiteralSemantic);
     if (HasCheckedKeyPathReadIdentity(declaration))
       sidecar.required_semantics.push_back(kCheckedKeyPathReadSemantic);
+    if (HasNativeCarrierLambdaIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeCarrierLambdaSemantic);
     if (HasNativeByrefStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeByrefStorageSemantic);
     if (HasNativeBlockAlignmentIdentity(declaration))

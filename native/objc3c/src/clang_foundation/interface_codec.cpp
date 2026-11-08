@@ -28,6 +28,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kNativeCarrierLambdaSemantic,
     kNativeByrefStorageSemantic,
     kNativeBlockAlignmentSemantic,
     kMixedCarrierCallSemantic,
@@ -684,6 +685,10 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool carrier_lambdas=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeCarrierLambdaIdentity);
+  const bool carrier_lambda_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeCarrierLambdaSemantic)!=sidecar.required_semantics.end();
+  if(carrier_lambdas!=carrier_lambda_capability)
+    return Invalid("native carrier lambda identity and required capability must agree");
   const bool byref_storage=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeByrefStorageIdentity);
   const bool byref_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeByrefStorageSemantic)!=sidecar.required_semantics.end();
   if(byref_storage!=byref_capability)

@@ -129,6 +129,25 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationNativeCarrierLambda(const clang::NamedDecl *declaration) {
+  if(!declaration->getASTContext().getLangOpts().ObjC3 ||
+     !declaration->getASTContext().getLangOpts().CPlusPlus)return false;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Captures : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitLambdaExpr(clang::LambdaExpr *lambda) override {
+        for(const auto *field:lambda->getLambdaClass()->fields()) {
+          auto type=field->getType();
+          if(!type->isReferenceType() && (type->isDependentType() ||
+             clang::containsObjC3CarrierCppStorage(type)))found=true;
+        }
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationNativeByrefStorage(const clang::NamedDecl *declaration) {
   const auto &context=declaration->getASTContext();const auto &triple=context.getTargetInfo().getTriple();
   if(!context.getLangOpts().ObjC3 || triple.getArch()!=llvm::Triple::x86_64 ||
