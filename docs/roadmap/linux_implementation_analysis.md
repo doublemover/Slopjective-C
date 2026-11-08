@@ -77,8 +77,10 @@ results or speed targets; findings, crashes and timeouts still fail.
 The preceding six-hour scan completed 206 of 235 variants: 169 passed, thirty
 timed out and seven reported findings. Its remaining 29 variants were interrupted
 by the hosted job limit. The retained diagnostics and exact source identities
-remain failed checkpoint evidence. The seven finding units are undergoing source
-repair and focused replay; no full current-source acceptance is claimed.
+remain failed checkpoint evidence. All seven finding units are now repaired, exported and sealed. Focused local
+Static Analyzer replay clears all seventeen reported locations, and six
+additional modern C++ regression suites pass. This reused-compiler replay does
+not qualify the complete matching Clang-Tidy/SDK campaign.
 
 Complete analysis now partitions the dependency-selected inventory across four
 independent CI jobs using stable variant identities. Each job builds and checks
@@ -185,3 +187,13 @@ binds `CMAKE_MAKE_PROGRAM` to the admitted Ninja executable and retains both
 CMake and Ninja directories. A real clean-PATH CMake/Ninja build defends that
 boundary. The matched local tool builds successfully; completion of the full
 analysis inventory remains required.
+
+The repair initializes importer outputs and makes declaration/type invariants
+explicit, preserves absent evaluator frames and optional outputs, and keeps
+constructor bookkeeping inside the active call-frame lifetime. Coroutine
+alignment and builtin-call classification are captured once across callbacks;
+empty expression results, incomplete concrete keypaths and invalid cleanup
+callbacks reject. Modern constant-expression, decomposition and matrix suites
+are enrolled in every foundation profile. The new sealed identity is
+`llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b`; complete matching hosted
+qualification is still required before SDK acceptance.

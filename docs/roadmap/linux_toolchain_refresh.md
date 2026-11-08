@@ -112,14 +112,22 @@ suite-collection controls pass. Independent native owners now continue after a
 sibling failure; prerequisite failures still stop dependent work, and SDK
 packaging waits until every other required native owner passes.
 
-The candidate now has source identity `llvmorg-23.1.5-392dfff97d29-cbef07ba0441-70309e04`.
-The previous [release/native attempt](https://github.com/doublemover/Slopjective-C/actions/runs/42506995176)
-and passing [LLVM/oracle campaign](https://github.com/doublemover/Slopjective-C/actions/runs/42506996345)
-remain checkpoint evidence for their exact earlier source. Implementation
-analysis is still running; its remaining findings will be collected before one
-combined current-source release/native, analysis and LLVM/oracle pass. Fresh
-Debian/Ubuntu archive checks follow those required release gates. **SDK 2.62.0
-remains the last accepted archive; the replacement is not accepted or activated.**
-The [refresh receipt](../support/linux_toolchain_refresh_progress.json) records
-each checkpoint and its scope. New compiler patches continue to reuse all eight
-dependency cache entries; dependency identity does not depend on feature commits.
+The candidate now has sealed source identity
+`llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b`. The older full analysis
+reached its six-hour limit after 206/235 variants: 169 passed, thirty timed out
+and seven reported findings. Those seven units are repaired; focused local
+Static Analyzer replay clears all seventeen reported locations. Six modern
+C++ constant-expression/decomposition/matrix suites are now enrolled and pass
+local replay. The full Clang-Tidy campaign remains a separate matching gate.
+Complete analysis now uses four independent bounded partitions; its terminal
+gate verifies identical inventories/inputs and complete disjoint execution.
+The superseded single-job analysis was stopped after retaining its partial
+proof. No checks or variants were removed.
+
+A combined current-source release/native, partitioned analysis and LLVM/oracle
+pass is next. Fresh Debian/Ubuntu archive checks follow those release gates.
+**SDK 2.62.0 remains the last accepted archive; the replacement is not accepted
+or activated.** The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
+records each checkpoint and its scope. New compiler patches continue to reuse
+all eight dependency cache entries; dependency identity does not depend on
+feature commits.

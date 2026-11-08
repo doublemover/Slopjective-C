@@ -2901,7 +2901,7 @@ index 222881154..635cdf63d 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..3cebcec3e 100644
+index d743717ad..9236af367 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2915,7 +2915,34 @@ index d743717ad..3cebcec3e 100644
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTImporterSharedState.h"
  #include "clang/AST/ASTLambda.h"
-@@ -320,13 +324,22 @@ namespace clang {
+@@ -107,12 +111,15 @@ namespace clang {
+   template <class T>
+   static SmallVector<Decl *, 2>
+   getCanonicalForwardRedeclChain(Redeclarable<T> *D) {
++    assert(D && "redeclaration chain requires a source declaration");
++    auto *First = D->getFirstDecl();
++    assert(First && "redeclaration chain has no first declaration");
+     SmallVector<Decl *, 2> Redecls;
+-    for (auto *R : D->getFirstDecl()->redecls()) {
+-      if (R != D->getFirstDecl())
++    for (auto *R : First->redecls()) {
++      if (R != First)
+         Redecls.push_back(R);
+     }
+-    Redecls.push_back(D->getFirstDecl());
++    Redecls.push_back(First);
+     std::reverse(Redecls.begin(), Redecls.end());
+     return Redecls;
+   }
+@@ -188,6 +195,7 @@ namespace clang {
+     // Use this to import pointers of specific type.
+     template <typename ImportT>
+     [[nodiscard]] Error importInto(ImportT *&To, ImportT *From) {
++      To = nullptr;
+       auto ToOrErr = Importer.Import(From);
+       if (ToOrErr)
+         To = cast_or_null<ImportT>(*ToOrErr);
+@@ -320,13 +328,22 @@ namespace clang {
        DeclContext *ToDC = ToD->getDeclContext();
        DeclContext *ToLexicalDC = ToD->getLexicalDeclContext();
  
@@ -2940,7 +2967,7 @@ index d743717ad..3cebcec3e 100644
          Visible = true;
        }
  
-@@ -516,6 +529,7 @@ namespace clang {
+@@ -516,6 +533,7 @@ namespace clang {
      ExpectedDecl VisitEmptyDecl(EmptyDecl *D);
      ExpectedDecl VisitAccessSpecDecl(AccessSpecDecl *D);
      ExpectedDecl VisitStaticAssertDecl(StaticAssertDecl *D);
@@ -2948,7 +2975,7 @@ index d743717ad..3cebcec3e 100644
      ExpectedDecl VisitCXXExpansionStmtDecl(CXXExpansionStmtDecl *D);
      ExpectedDecl VisitTranslationUnitDecl(TranslationUnitDecl *D);
      ExpectedDecl VisitFileScopeAsmDecl(FileScopeAsmDecl *D);
-@@ -530,7 +544,37 @@ namespace clang {
+@@ -530,7 +548,37 @@ namespace clang {
      ExpectedDecl VisitEnumDecl(EnumDecl *D);
      ExpectedDecl VisitRecordDecl(RecordDecl *D);
      ExpectedDecl VisitEnumConstantDecl(EnumConstantDecl *D);
@@ -2986,7 +3013,7 @@ index d743717ad..3cebcec3e 100644
      ExpectedDecl VisitCXXMethodDecl(CXXMethodDecl *D);
      ExpectedDecl VisitCXXConstructorDecl(CXXConstructorDecl *D);
      ExpectedDecl VisitCXXDestructorDecl(CXXDestructorDecl *D);
-@@ -592,6 +636,14 @@ namespace clang {
+@@ -592,6 +640,14 @@ namespace clang {
      ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
      ExpectedStmt VisitLabelStmt(LabelStmt *S);
      ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
@@ -3001,7 +3028,7 @@ index d743717ad..3cebcec3e 100644
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -602,6 +654,11 @@ namespace clang {
+@@ -602,6 +658,11 @@ namespace clang {
      ExpectedStmt VisitContinueStmt(ContinueStmt *S);
      ExpectedStmt VisitBreakStmt(BreakStmt *S);
      ExpectedStmt VisitReturnStmt(ReturnStmt *S);
@@ -3013,7 +3040,7 @@ index d743717ad..3cebcec3e 100644
      // FIXME: MSAsmStmt
      // FIXME: SEHExceptStmt
      // FIXME: SEHFinallyStmt
-@@ -627,6 +684,18 @@ namespace clang {
+@@ -627,6 +688,18 @@ namespace clang {
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
@@ -3032,7 +3059,7 @@ index d743717ad..3cebcec3e 100644
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -644,6 +713,7 @@ namespace clang {
+@@ -644,6 +717,7 @@ namespace clang {
      ExpectedStmt VisitCharacterLiteral(CharacterLiteral *E);
      ExpectedStmt VisitStringLiteral(StringLiteral *E);
      ExpectedStmt VisitCompoundLiteralExpr(CompoundLiteralExpr *E);
@@ -3040,7 +3067,7 @@ index d743717ad..3cebcec3e 100644
      ExpectedStmt VisitAtomicExpr(AtomicExpr *E);
      ExpectedStmt VisitAddrLabelExpr(AddrLabelExpr *E);
      ExpectedStmt VisitConstantExpr(ConstantExpr *E);
-@@ -677,6 +747,7 @@ namespace clang {
+@@ -677,6 +751,7 @@ namespace clang {
      ExpectedStmt VisitCXXDeleteExpr(CXXDeleteExpr *E);
      ExpectedStmt VisitCXXConstructExpr(CXXConstructExpr *E);
      ExpectedStmt VisitCXXMemberCallExpr(CXXMemberCallExpr *E);
@@ -3048,7 +3075,7 @@ index d743717ad..3cebcec3e 100644
      ExpectedStmt VisitCXXDependentScopeMemberExpr(CXXDependentScopeMemberExpr *E);
      ExpectedStmt VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr *E);
      ExpectedStmt VisitCXXUnresolvedConstructExpr(CXXUnresolvedConstructExpr *E);
-@@ -705,6 +776,7 @@ namespace clang {
+@@ -705,6 +780,7 @@ namespace clang {
      ExpectedStmt
      VisitSubstNonTypeTemplateParmPackExpr(SubstNonTypeTemplateParmPackExpr *E);
      ExpectedStmt VisitPseudoObjectExpr(PseudoObjectExpr *E);
@@ -3056,7 +3083,7 @@ index d743717ad..3cebcec3e 100644
      ExpectedStmt VisitCXXParenListInitExpr(CXXParenListInitExpr *E);
      ExpectedStmt VisitCXXExpansionSelectExpr(CXXExpansionSelectExpr *E);
  
-@@ -1426,6 +1498,39 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -1426,6 +1502,39 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -3096,7 +3123,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1613,6 +1718,11 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1613,6 +1722,11 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
    Error Err = Error::success();
    FunctionProtoType::ExtProtoInfo ToEPI;
    ToEPI.ExtInfo = FromEPI.ExtInfo;
@@ -3108,7 +3135,7 @@ index d743717ad..3cebcec3e 100644
    ToEPI.Variadic = FromEPI.Variadic;
    ToEPI.HasTrailingReturn = FromEPI.HasTrailingReturn;
    ToEPI.TypeQuals = FromEPI.TypeQuals;
-@@ -1626,6 +1736,43 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1740,43 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -3152,7 +3179,7 @@ index d743717ad..3cebcec3e 100644
    if (Err)
      return std::move(Err);
  
-@@ -1821,6 +1968,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
+@@ -1821,6 +1972,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
    if (!ToEquivalentTypeOrErr)
      return ToEquivalentTypeOrErr.takeError();
  
@@ -3166,7 +3193,7 @@ index d743717ad..3cebcec3e 100644
    return Importer.getToContext().getAttributedType(
        T->getAttrKind(), *ToModifiedTypeOrErr, *ToEquivalentTypeOrErr,
        T->getAttr());
-@@ -2434,6 +2588,26 @@ ASTNodeImporter::ImportDeclContext(DeclContext *FromDC, bool ForceImport) {
+@@ -2434,6 +2592,26 @@ ASTNodeImporter::ImportDeclContext(DeclContext *FromDC, bool ForceImport) {
                                                  ImportedOrErr.takeError());
    }
  
@@ -3193,7 +3220,15 @@ index d743717ad..3cebcec3e 100644
    return ChildErrors;
  }
  
-@@ -2517,7 +2691,7 @@ static Error setTypedefNameForAnonDecl(TagDecl *From, TagDecl *To,
+@@ -2472,6 +2650,7 @@ Error ASTNodeImporter::ImportFieldDeclDefinition(const FieldDecl *From,
+ 
+ Error ASTNodeImporter::ImportDeclContext(
+     Decl *FromD, DeclContext *&ToDC, DeclContext *&ToLexicalDC) {
++  ToDC = ToLexicalDC = nullptr;
+   auto ToDCOrErr = Importer.ImportContext(FromD->getDeclContext());
+   if (!ToDCOrErr)
+     return ToDCOrErr.takeError();
+@@ -2517,7 +2696,7 @@ static Error setTypedefNameForAnonDecl(TagDecl *From, TagDecl *To,
  
  Error ASTNodeImporter::ImportDefinition(
      RecordDecl *From, RecordDecl *To, ImportDefinitionKind Kind) {
@@ -3202,7 +3237,7 @@ index d743717ad..3cebcec3e 100644
      // There are cases in LLDB when we first import a class without its
      // members. The class will have DefinitionData, but no members. Then,
      // importDefinition is called from LLDB, which tries to get the members, so
-@@ -2526,6 +2700,19 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2526,6 +2705,19 @@ Error ASTNodeImporter::ImportDefinition(
      // definition.
      To->setCompleteDefinition(false);
      To->completeDefinition();
@@ -3222,7 +3257,7 @@ index d743717ad..3cebcec3e 100644
    };
  
    if (To->getDefinition() || To->isBeingDefined()) {
-@@ -2537,6 +2724,12 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2537,6 +2729,12 @@ Error ASTNodeImporter::ImportDefinition(
          (To->isLambda() && shouldForceImportDeclContext(Kind))) {
        if (To->isLambda()) {
          auto *FromCXXRD = cast<CXXRecordDecl>(From);
@@ -3235,7 +3270,7 @@ index d743717ad..3cebcec3e 100644
          SmallVector<LambdaCapture, 8> ToCaptures;
          ToCaptures.reserve(FromCXXRD->capture_size());
          for (const auto &FromCapture : FromCXXRD->captures()) {
-@@ -2559,6 +2752,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2757,26 @@ Error ASTNodeImporter::ImportDefinition(
      return Error::success();
    }
  
@@ -3262,7 +3297,7 @@ index d743717ad..3cebcec3e 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -2899,6 +3112,47 @@ ExpectedDecl ASTNodeImporter::VisitStaticAssertDecl(StaticAssertDecl *D) {
+@@ -2899,6 +3117,47 @@ ExpectedDecl ASTNodeImporter::VisitStaticAssertDecl(StaticAssertDecl *D) {
    return ToD;
  }
  
@@ -3310,7 +3345,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedDecl
  ASTNodeImporter::VisitCXXExpansionStmtDecl(CXXExpansionStmtDecl *D) {
    auto DCOrErr = Importer.ImportContext(D->getDeclContext());
-@@ -2938,6 +3192,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2938,6 +3197,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
    if (ToD)
      return ToD;
  
@@ -3324,7 +3359,7 @@ index d743717ad..3cebcec3e 100644
    NamespaceDecl *MergeWithNamespace = nullptr;
    if (!Name) {
      // This is an anonymous namespace. Adopt an existing anonymous
-@@ -2983,12 +3244,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2983,12 +3249,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
      return RBraceLocOrErr.takeError();
  
    // Create the "to" namespace, if needed.
@@ -3340,7 +3375,7 @@ index d743717ad..3cebcec3e 100644
        return ToNamespace;
      ToNamespace->setRBraceLoc(*RBraceLocOrErr);
      ToNamespace->setLexicalDeclContext(LexicalDC);
-@@ -2996,7 +3258,7 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2996,7 +3263,7 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
  
      // If this is an anonymous namespace, register it as the anonymous
      // namespace within its context.
@@ -3349,7 +3384,7 @@ index d743717ad..3cebcec3e 100644
        if (auto *TU = dyn_cast<TranslationUnitDecl>(DC))
          TU->setAnonymousNamespace(ToNamespace);
        else
-@@ -3004,6 +3266,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -3004,6 +3271,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
      }
    }
    Importer.MapImported(D, ToNamespace);
@@ -3363,7 +3398,7 @@ index d743717ad..3cebcec3e 100644
  
    if (Error Err = ImportDeclContext(D))
      return std::move(Err);
-@@ -3085,7 +3354,18 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
+@@ -3085,7 +3359,18 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
  
          QualType FromUT = D->getUnderlyingType();
          QualType FoundUT = FoundTypedef->getUnderlyingType();
@@ -3383,7 +3418,7 @@ index d743717ad..3cebcec3e 100644
            // If the underlying declarations are unnamed records these can be
            // imported as different types. We should create a distinct typedef
            // node in this case.
-@@ -3222,6 +3502,8 @@ ASTNodeImporter::VisitTypeAliasTemplateDecl(TypeAliasTemplateDecl *D) {
+@@ -3222,6 +3507,8 @@ ASTNodeImporter::VisitTypeAliasTemplateDecl(TypeAliasTemplateDecl *D) {
      return ToAlias;
  
    ToTemplatedDecl->setDescribedAliasTemplate(ToAlias);
@@ -3392,7 +3427,7 @@ index d743717ad..3cebcec3e 100644
  
    ToAlias->setAccess(D->getAccess());
    ToAlias->setLexicalDeclContext(LexicalDC);
-@@ -3400,6 +3682,24 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3400,6 +3687,24 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
    if (ToD)
      return ToD;
  
@@ -3417,7 +3452,7 @@ index d743717ad..3cebcec3e 100644
    // Figure out what structure name we're looking for.
    unsigned IDNS = Decl::IDNS_Tag;
    DeclarationName SearchName = Name;
-@@ -3417,7 +3717,16 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3417,7 +3722,16 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
  
    // We may already have a record of the same name; try to find and match it.
    RecordDecl *PrevDecl = nullptr;
@@ -3435,7 +3470,7 @@ index d743717ad..3cebcec3e 100644
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      auto FoundDecls =
          Importer.findDeclsInToCtx(DC, SearchName);
-@@ -3438,6 +3747,19 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3438,6 +3752,19 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
            Found = Tag->getDecl();
        }
  
@@ -3455,7 +3490,7 @@ index d743717ad..3cebcec3e 100644
        if (auto *FoundRecord = dyn_cast<RecordDecl>(Found)) {
          // Do not emit false positive diagnostic in case of unnamed
          // struct/union and in case of anonymous structs.  Would be false
-@@ -3456,6 +3778,14 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3456,6 +3783,14 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
            continue;
  
          if (IsStructuralMatch(D, FoundRecord)) {
@@ -3470,7 +3505,7 @@ index d743717ad..3cebcec3e 100644
            RecordDecl *FoundDef = FoundRecord->getDefinition();
            if (D->isThisDeclarationADefinition() && FoundDef) {
              // FIXME: Structural equivalence check should check for same
-@@ -3463,9 +3793,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3463,9 +3798,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
              Importer.MapImported(D, FoundDef);
              if (const auto *DCXX = dyn_cast<CXXRecordDecl>(D)) {
                auto *FoundCXX = dyn_cast<CXXRecordDecl>(FoundDef);
@@ -3481,7 +3516,7 @@ index d743717ad..3cebcec3e 100644
                  // FoundDef may not have every implicit method that D has
                  // because implicit methods are created only if they are used.
                  if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
-@@ -3525,6 +3853,13 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3525,6 +3858,13 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
      }
  
      D2 = D2CXX;
@@ -3495,7 +3530,7 @@ index d743717ad..3cebcec3e 100644
      D2->setAccess(D->getAccess());
      D2->setLexicalDeclContext(LexicalDC);
      addDeclToContexts(D, D2);
-@@ -3572,6 +3907,8 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3572,6 +3912,8 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
    else
      return QualifierLocOrErr.takeError();
  
@@ -3504,7 +3539,7 @@ index d743717ad..3cebcec3e 100644
    if (D->isAnonymousStructOrUnion())
      D2->setAnonymousStructOrUnion(true);
  
-@@ -3996,6 +4333,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
+@@ -3996,6 +4338,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -3577,7 +3612,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4020,6 +4423,14 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4020,6 +4428,14 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
      return ToD;
  
    FunctionDecl *FoundByLookup = nullptr;
@@ -3592,7 +3627,7 @@ index d743717ad..3cebcec3e 100644
    FunctionTemplateDecl *FromFT = D->getDescribedFunctionTemplate();
  
    // If this is a function template specialization, then try to find the same
-@@ -4040,7 +4451,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4040,7 +4456,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    }
    // Try to find a function in our own ("to") context with the same name, same
    // type, and in the same context as the function we're importing.
@@ -3601,7 +3636,7 @@ index d743717ad..3cebcec3e 100644
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary | Decl::IDNS_OrdinaryFriend;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4052,7 +4463,52 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4052,7 +4468,52 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
          if (!hasSameVisibilityContextAndLinkage(FoundFunction, D))
            continue;
  
@@ -3655,7 +3690,7 @@ index d743717ad..3cebcec3e 100644
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
            FoundByLookup = FoundFunction;
-@@ -4105,9 +4561,36 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4105,9 +4566,36 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
                                   FoundByLookup->getDescribedFunctionTemplate());
            }
            return Importer.MapImported(D, FoundByLookup);
@@ -3695,7 +3730,7 @@ index d743717ad..3cebcec3e 100644
          }
        }
      }
-@@ -4120,6 +4603,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4608,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -3703,7 +3738,7 @@ index d743717ad..3cebcec3e 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4169,11 +4653,63 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4169,11 +4658,63 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToDefaultLoc = importChecked(Err, D->getDefaultLoc());
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
@@ -3772,7 +3807,7 @@ index d743717ad..3cebcec3e 100644
  
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
-@@ -4284,12 +4820,17 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4284,12 +4825,17 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    ToFunction->setQualifierInfo(ToQualifierLoc);
    ToFunction->setAccess(D->getAccess());
    ToFunction->setLexicalDeclContext(LexicalDC);
@@ -3791,7 +3826,7 @@ index d743717ad..3cebcec3e 100644
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -4330,6 +4871,36 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4330,6 +4876,36 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    }
    ToFunction->setParams(Parameters);
  
@@ -3828,7 +3863,7 @@ index d743717ad..3cebcec3e 100644
    // We need to complete creation of FunctionProtoTypeLoc manually with setting
    // params it refers to.
    if (TInfo) {
-@@ -4386,9 +4957,16 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4386,9 +4962,16 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
        ToFunction->setType(*TyOrErr);
      else
        return TyOrErr.takeError();
@@ -3847,7 +3882,7 @@ index d743717ad..3cebcec3e 100644
        return TSIOrErr.takeError();
    }
  
-@@ -4440,6 +5018,17 @@ ExpectedDecl ASTNodeImporter::VisitFieldDecl(FieldDecl *D) {
+@@ -4440,6 +5023,17 @@ ExpectedDecl ASTNodeImporter::VisitFieldDecl(FieldDecl *D) {
  
    // Determine whether we've already imported this field.
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
@@ -3865,7 +3900,7 @@ index d743717ad..3cebcec3e 100644
    for (auto *FoundDecl : FoundDecls) {
      if (FieldDecl *FoundField = dyn_cast<FieldDecl>(FoundDecl)) {
        // For anonymous fields, match up by index.
-@@ -4505,6 +5094,14 @@ ExpectedDecl ASTNodeImporter::VisitFieldDecl(FieldDecl *D) {
+@@ -4505,6 +5099,14 @@ ExpectedDecl ASTNodeImporter::VisitFieldDecl(FieldDecl *D) {
    ToField->setAccess(D->getAccess());
    ToField->setLexicalDeclContext(LexicalDC);
    ToField->setImplicit(D->isImplicit());
@@ -3880,7 +3915,7 @@ index d743717ad..3cebcec3e 100644
    if (ToCapturedVLAType)
      ToField->setCapturedVLAType(cast<VariableArrayType>(ToCapturedVLAType));
    LexicalDC->addDeclInternal(ToField);
-@@ -4793,7 +5390,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4793,7 +5395,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
    // Try to find a variable in our own ("to") context with the same name and
    // in the same context as the variable we're importing.
    VarDecl *FoundByLookup = nullptr;
@@ -3893,7 +3928,7 @@ index d743717ad..3cebcec3e 100644
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4802,6 +5403,10 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4802,6 +5408,10 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
          continue;
  
        if (auto *FoundVar = dyn_cast<VarDecl>(FoundDecl)) {
@@ -3904,7 +3939,7 @@ index d743717ad..3cebcec3e 100644
          if (!hasSameVisibilityContextAndLinkage(FoundVar, D))
            continue;
          if (Importer.IsStructurallyEquivalent(D->getType(),
-@@ -4897,9 +5502,15 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4897,9 +5507,15 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
    }
  
    ToVar->setTSCSpec(D->getTSCSpec());
@@ -3920,7 +3955,7 @@ index d743717ad..3cebcec3e 100644
    if (D->isInlineSpecified())
      ToVar->setInlineSpecified();
    if (D->isInline())
-@@ -4910,6 +5521,15 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4910,6 +5526,15 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
      ToVar->setPreviousDecl(Recent);
    }
  
@@ -3936,7 +3971,7 @@ index d743717ad..3cebcec3e 100644
    // Import the described template, if any.
    if (D->getDescribedVarTemplate()) {
      auto ToVTOrErr = import(D->getDescribedVarTemplate());
-@@ -4931,6 +5551,23 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4931,6 +5556,23 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
    if (Error Err = ImportInitializer(D, ToVar))
      return std::move(Err);
  
@@ -3960,7 +3995,7 @@ index d743717ad..3cebcec3e 100644
    if (D->isConstexpr())
      ToVar->setConstexpr(true);
  
-@@ -5062,6 +5699,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5704,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -3980,7 +4015,7 @@ index d743717ad..3cebcec3e 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5774,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5779,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -3988,7 +4023,7 @@ index d743717ad..3cebcec3e 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5789,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5794,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -3997,7 +4032,7 @@ index d743717ad..3cebcec3e 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5461,6 +6114,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
+@@ -5461,6 +6119,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
      return std::move(Err);
    if (ToD)
      return ToD;
@@ -4005,7 +4040,7 @@ index d743717ad..3cebcec3e 100644
  
    Error Err = Error::success();
    auto ToLoc = importChecked(Err, D->getNameInfo().getLoc());
-@@ -5468,28 +6122,59 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
+@@ -5468,28 +6127,59 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
    if (Err)
      return std::move(Err);
@@ -4073,7 +4108,7 @@ index d743717ad..3cebcec3e 100644
  
    return ImportUsingShadowDecls(D, ToUsing);
  }
-@@ -5517,6 +6202,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
+@@ -5517,6 +6207,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -4081,7 +4116,7 @@ index d743717ad..3cebcec3e 100644
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5685,6 +6371,21 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingValueDecl(
+@@ -5685,6 +6376,21 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingValueDecl(
    if (Error Err = ImportDeclarationNameLoc(D->getNameInfo(), NameInfo))
      return std::move(Err);
  
@@ -4103,7 +4138,7 @@ index d743717ad..3cebcec3e 100644
    UnresolvedUsingValueDecl *ToUsingValue;
    if (GetImportedOrCreateDecl(ToUsingValue, D, Importer.getToContext(), DC,
                                ToUsingLoc, ToQualifierLoc, NameInfo,
-@@ -5723,6 +6424,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
+@@ -5723,6 +6429,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
                                ToQualifierLoc, Loc, Name, ToEllipsisLoc))
      return ToUsing;
  
@@ -4111,7 +4146,7 @@ index d743717ad..3cebcec3e 100644
    ToUsing->setAccess(D->getAccess());
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
-@@ -5904,6 +6606,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
+@@ -5904,6 +6611,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
        break;
    }
  
@@ -4127,7 +4162,7 @@ index d743717ad..3cebcec3e 100644
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6787,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
+@@ -6076,6 +6792,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -4137,7 +4172,7 @@ index d743717ad..3cebcec3e 100644
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6458,11 +7172,12 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+@@ -6458,11 +7177,12 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -4151,7 +4186,7 @@ index d743717ad..3cebcec3e 100644
    updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
    if (FoundByLookup) {
-@@ -6489,6 +7204,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+@@ -6489,6 +7209,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
      D2->setPreviousDecl(Recent);
    }
  
@@ -4160,7 +4195,7 @@ index d743717ad..3cebcec3e 100644
    return D2;
  }
  
-@@ -6497,6 +7214,9 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateSpecializationDecl(
+@@ -6497,6 +7219,9 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateSpecializationDecl(
    ClassTemplateDecl *ClassTemplate;
    if (Error Err = importInto(ClassTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4170,7 +4205,7 @@ index d743717ad..3cebcec3e 100644
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6508,6 +7228,7 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateSpecializationDecl(
+@@ -6508,6 +7233,7 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateSpecializationDecl(
    if (Error Err =
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
@@ -4178,7 +4213,7 @@ index d743717ad..3cebcec3e 100644
    // Try to find an existing specialization with these template arguments and
    // template parameter list.
    void *InsertPos = nullptr;
-@@ -6711,6 +7432,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6711,6 +7437,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
    SmallVector<NamedDecl *, 4> ConflictingDecls;
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
    VarTemplateDecl *FoundByLookup = nullptr;
@@ -4190,7 +4225,7 @@ index d743717ad..3cebcec3e 100644
    for (auto *FoundDecl : FoundDecls) {
      if (!FoundDecl->isInIdentifierNamespace(Decl::IDNS_Ordinary))
        continue;
-@@ -6740,6 +7466,15 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6740,6 +7471,15 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
          break;
        }
        ConflictingDecls.push_back(FoundDecl);
@@ -4206,7 +4241,7 @@ index d743717ad..3cebcec3e 100644
      }
    }
  
-@@ -6777,10 +7512,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6777,10 +7517,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -4219,7 +4254,7 @@ index d743717ad..3cebcec3e 100644
    if (DC != Importer.getToContext().getTranslationUnitDecl())
      updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
-@@ -6796,6 +7532,7 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6796,6 +7537,7 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
      ToVarTD->setPreviousDecl(Recent);
    }
  
@@ -4227,7 +4262,7 @@ index d743717ad..3cebcec3e 100644
    return ToVarTD;
  }
  
-@@ -6818,6 +7555,9 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6818,6 +7560,9 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
    VarTemplateDecl *VarTemplate = nullptr;
    if (Error Err = importInto(VarTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4237,7 +4272,7 @@ index d743717ad..3cebcec3e 100644
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6839,10 +7579,21 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6839,10 +7584,21 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
  
@@ -4263,7 +4298,7 @@ index d743717ad..3cebcec3e 100644
    if (FoundSpecialization) {
      if (IsStructuralMatch(D, FoundSpecialization)) {
        VarDecl *FoundDef = FoundSpecialization->getDefinition();
-@@ -6879,13 +7630,9 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6879,13 +7635,9 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
    using PartVarSpecDecl = VarTemplatePartialSpecializationDecl;
    // Create a new specialization.
    if (auto *FromPartial = dyn_cast<PartVarSpecDecl>(D)) {
@@ -4278,7 +4313,7 @@ index d743717ad..3cebcec3e 100644
                                  VarTemplate, QualType(), nullptr,
                                  D->getStorageClass(), TemplateArgs))
        return ToPartial;
-@@ -6914,8 +7661,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6914,8 +7666,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
  
    // Update InsertPos, because preceding import calls may have invalidated
    // it by adding new specializations.
@@ -4292,7 +4327,7 @@ index d743717ad..3cebcec3e 100644
  
    QualType T;
    if (Error Err = importInto(T, D->getType()))
-@@ -6935,6 +7685,10 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6935,6 +7690,10 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
    }
  
    D2->setSpecializationKind(D->getSpecializationKind());
@@ -4303,7 +4338,7 @@ index d743717ad..3cebcec3e 100644
  
    if (D->getTemplateArgsAsWritten())
      D2->setTemplateArgsAsWritten(ToTAInfo);
-@@ -6948,6 +7702,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6948,6 +7707,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
      D2->setConstexpr(true);
  
    D2->setAccess(D->getAccess());
@@ -4312,7 +4347,7 @@ index d743717ad..3cebcec3e 100644
  
    if (Error Err = ImportInitializer(D, D2))
      return std::move(Err);
-@@ -6995,7 +7751,10 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -6995,7 +7756,10 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
        if (auto *FoundTemplate = dyn_cast<FunctionTemplateDecl>(FoundDecl)) {
          if (!hasSameVisibilityContextAndLinkage(FoundTemplate, D))
            continue;
@@ -4324,7 +4359,7 @@ index d743717ad..3cebcec3e 100644
            FunctionTemplateDecl *TemplateWithDef =
                getTemplateDefinition(FoundTemplate);
            if (D->isThisDeclarationADefinition() && TemplateWithDef)
-@@ -7051,17 +7810,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7051,17 +7815,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -4346,7 +4381,7 @@ index d743717ad..3cebcec3e 100644
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7831,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7076,6 +7836,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -4362,7 +4397,7 @@ index d743717ad..3cebcec3e 100644
    return ToFunc;
  }
  
-@@ -7111,7 +7875,10 @@ ASTNodeImporter::VisitRequiresExprBodyDecl(RequiresExprBodyDecl *D) {
+@@ -7111,7 +7880,10 @@ ASTNodeImporter::VisitRequiresExprBodyDecl(RequiresExprBodyDecl *D) {
    if (GetImportedOrCreateDecl(To, D, Importer.getToContext(), DC, RequiresLoc))
      return To;
    To->setLexicalDeclContext(LexicalDC);
@@ -4374,7 +4409,7 @@ index d743717ad..3cebcec3e 100644
    return To;
  }
  
-@@ -7328,6 +8095,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +8100,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -4472,7 +4507,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +8343,93 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
+@@ -7485,6 +8348,93 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -4566,7 +4601,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8720,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8725,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -4745,7 +4780,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +9201,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +9206,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -4762,7 +4797,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8132,13 +9259,22 @@ ExpectedStmt ASTNodeImporter::VisitAddrLabelExpr(AddrLabelExpr *E) {
+@@ -8132,13 +9264,22 @@ ExpectedStmt ASTNodeImporter::VisitAddrLabelExpr(AddrLabelExpr *E) {
        ToAmpAmpLoc, ToLabelLoc, ToLabel, ToType);
  }
  ExpectedStmt ASTNodeImporter::VisitConstantExpr(ConstantExpr *E) {
@@ -4792,7 +4827,7 @@ index d743717ad..3cebcec3e 100644
  }
  ExpectedStmt ASTNodeImporter::VisitParenExpr(ParenExpr *E) {
    Error Err = Error::success();
-@@ -8835,6 +9971,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +9976,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
                                     E->getFPFeatures());
  }
  
@@ -4846,7 +4881,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9082,7 +10265,9 @@ ASTNodeImporter::VisitUnresolvedLookupExpr(UnresolvedLookupExpr *E) {
+@@ -9082,7 +10270,9 @@ ASTNodeImporter::VisitUnresolvedLookupExpr(UnresolvedLookupExpr *E) {
  ExpectedStmt
  ASTNodeImporter::VisitUnresolvedMemberExpr(UnresolvedMemberExpr *E) {
    Error Err = Error::success();
@@ -4857,7 +4892,7 @@ index d743717ad..3cebcec3e 100644
    auto ToOperatorLoc = importChecked(Err, E->getOperatorLoc());
    auto ToQualifierLoc = importChecked(Err, E->getQualifierLoc());
    auto ToTemplateKeywordLoc = importChecked(Err, E->getTemplateKeywordLoc());
-@@ -9163,6 +10348,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
+@@ -9163,6 +10353,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -4874,7 +4909,7 @@ index d743717ad..3cebcec3e 100644
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10647,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
+@@ -9452,6 +10652,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -4889,7 +4924,7 @@ index d743717ad..3cebcec3e 100644
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10700,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+@@ -9497,6 +10705,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
        E->getIndex(), E->getFinal());
  }
  
@@ -4911,7 +4946,7 @@ index d743717ad..3cebcec3e 100644
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10882,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10887,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -4926,7 +4961,7 @@ index d743717ad..3cebcec3e 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10937,199 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10942,199 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -5127,7 +5162,7 @@ index d743717ad..3cebcec3e 100644
  }
  
  namespace {
-@@ -9857,6 +11271,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +11276,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -5187,7 +5222,7 @@ index d743717ad..3cebcec3e 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -9880,6 +11347,14 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9880,6 +11352,14 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
      break;
    }
  
@@ -5202,7 +5237,7 @@ index d743717ad..3cebcec3e 100644
    case attr::EnableIf: {
      const auto *From = cast<EnableIfAttr>(FromAttr);
      AI.importAttr(From, AI.importArg(From->getCond()).value(),
-@@ -10123,12 +11598,62 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,12 +11603,62 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -5269,7 +5304,7 @@ index d743717ad..3cebcec3e 100644
          return ToAttrOrErr.takeError();
      }
  
-@@ -10571,6 +12096,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +12101,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -5282,7 +5317,7 @@ index d743717ad..3cebcec3e 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +12112,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +12117,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -5294,7 +5329,7 @@ index d743717ad..3cebcec3e 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +12124,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +12129,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5306,7 +5341,7 @@ index d743717ad..3cebcec3e 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +12136,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +12141,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5328,7 +5363,7 @@ index d743717ad..3cebcec3e 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -10823,6 +12354,8 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10823,6 +12359,8 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
      ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
                 ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
                 FromValue.getArrayInitializedElts());
@@ -5337,7 +5372,7 @@ index d743717ad..3cebcec3e 100644
      break;
    case APValue::Struct:
      Result.MakeStruct(FromValue.getStructNumBases(),
-@@ -10838,7 +12371,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10838,7 +12376,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
      APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
      if (Err)
        return std::move(Err);
@@ -5346,7 +5381,7 @@ index d743717ad..3cebcec3e 100644
      break;
    }
    case APValue::AddrLabelDiff: {
-@@ -10858,10 +12391,10 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10858,10 +12396,10 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
        return std::move(Err);
      MutableArrayRef<const CXXRecordDecl *> ToPath =
          Result.setMemberPointerUninit(
@@ -5359,7 +5394,7 @@ index d743717ad..3cebcec3e 100644
      for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
           Idx++) {
        const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
-@@ -10912,7 +12445,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10912,7 +12450,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
        }
      }
      CharUnits Offset = FromValue.getLValueOffset();
@@ -5368,7 +5403,7 @@ index d743717ad..3cebcec3e 100644
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11006,6 +12539,11 @@ Decl *ASTImporter::MapImported(Decl *From, Decl *To) {
+@@ -11006,6 +12544,11 @@ Decl *ASTImporter::MapImported(Decl *From, Decl *To) {
    // This mapping should be maintained only in this function. Therefore do not
    // check for additional consistency.
    ImportedFromDecls[To] = From;
@@ -5380,7 +5415,7 @@ index d743717ad..3cebcec3e 100644
    // In the case of TypedefNameDecl we create the Decl first and only then we
    // import and set its DeclContext. So, the DC is still not set when we reach
    // here from GetImportedOrCreateDecl.
-@@ -11049,3 +12587,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +12592,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -10966,7 +11001,7 @@ index 000000000..f4be4eda0
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..fb09ef44b 100644
+index 6a25a799a..2ab82b1c7 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,6 +10,10 @@
@@ -10991,7 +11026,15 @@ index 6a25a799a..fb09ef44b 100644
  #include "clang/AST/Randstruct.h"
  #include "clang/AST/StmtCXX.h"
  #include "clang/AST/Type.h"
-@@ -2046,7 +2054,8 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
+@@ -429,6 +437,7 @@ ParsedType Sema::getTypeName(const IdentifierInfo &II, SourceLocation NameLoc,
+     return nullptr;
+   case LookupResultKind::NotFoundInCurrentInstantiation:
+     if (AllowImplicitTypename == ImplicitTypenameContext::Yes) {
++      assert(SS && "dependent type lookup requires a qualified scope");
+       QualType T = Context.getDependentNameType(ElaboratedTypeKeyword::None,
+                                                 SS->getScopeRep(), &II);
+       TypeLocBuilder TLB;
+@@ -2046,7 +2055,8 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
      return false;
  
    if (D->hasAttr<UnusedAttr>() || D->hasAttr<ObjCPreciseLifetimeAttr>() ||
@@ -11001,7 +11044,7 @@ index 6a25a799a..fb09ef44b 100644
      return false;
  
    if (isa<LabelDecl>(D))
-@@ -2208,7 +2217,9 @@ void Sema::DiagnoseUnusedButSetDecl(const VarDecl *VD,
+@@ -2208,7 +2218,9 @@ void Sema::DiagnoseUnusedButSetDecl(const VarDecl *VD,
                                      DiagReceiverTy DiagReceiver) {
    // If it's not referenced, it can't be set. If it has the Cleanup attribute,
    // it's not really unused.
@@ -11012,7 +11055,7 @@ index 6a25a799a..fb09ef44b 100644
      return;
  
    //  In C++, `_` variables behave as if they were maybe_unused
-@@ -2648,6 +2659,17 @@ void Sema::MergeTypedefNameDecl(Scope *S, TypedefNameDecl *New,
+@@ -2648,6 +2660,17 @@ void Sema::MergeTypedefNameDecl(Scope *S, TypedefNameDecl *New,
      return New->setInvalidDecl();
    }
  
@@ -11030,7 +11073,7 @@ index 6a25a799a..fb09ef44b 100644
    // If the old declaration is invalid, just give up here.
    if (Old->isInvalidDecl())
      return New->setInvalidDecl();
-@@ -2919,6 +2941,42 @@ static bool mergeDeclAttribute(Sema &S, NamedDecl *D,
+@@ -2919,6 +2942,42 @@ static bool mergeDeclAttribute(Sema &S, NamedDecl *D,
    // "use explicit attribute on decl if present, else use attribute from
    // previous decl", for example if the attribute needs to be consistent
    // between redeclarations, you need to call a custom merge function here.
@@ -11073,7 +11116,7 @@ index 6a25a799a..fb09ef44b 100644
    InheritableAttr *NewAttr = nullptr;
    if (const auto *AA = dyn_cast<AvailabilityAttr>(Attr)) {
      const IdentifierInfo *InferredPlatformII = nullptr;
-@@ -3774,6 +3832,9 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -3774,6 +3833,9 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
    if (Old->isInvalidDecl())
      return true;
  
@@ -11083,7 +11126,7 @@ index 6a25a799a..fb09ef44b 100644
    // Disallow redeclaration of some builtins.
    if (!getASTContext().canBuiltinBeRedeclared(Old)) {
      Diag(New->getLocation(), diag::err_builtin_redeclare) << Old->getDeclName();
-@@ -4025,6 +4086,37 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -4025,6 +4087,37 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
      return true;
    }
  
@@ -11121,7 +11164,18 @@ index 6a25a799a..fb09ef44b 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
-@@ -4545,7 +4637,7 @@ bool Sema::MergeCompatibleFunctionDecls(FunctionDecl *New, FunctionDecl *Old,
+@@ -4389,8 +4482,8 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+     }
+ 
+     if (Context.typesAreCompatible(OldQType, NewQType)) {
+-      const FunctionType *OldFuncType = OldQType->getAs<FunctionType>();
+-      const FunctionType *NewFuncType = NewQType->getAs<FunctionType>();
++      const FunctionType *OldFuncType = OldQType->castAs<FunctionType>();
++      const FunctionType *NewFuncType = NewQType->castAs<FunctionType>();
+       const FunctionProtoType *OldProto = nullptr;
+       if (MergeTypeWithOld && isa<FunctionNoProtoType>(NewFuncType) &&
+           (OldProto = dyn_cast<FunctionProtoType>(OldFuncType))) {
+@@ -4545,7 +4638,7 @@ bool Sema::MergeCompatibleFunctionDecls(FunctionDecl *New, FunctionDecl *Old,
    // was visible.
    QualType Merged = Context.mergeTypes(Old->getType(), New->getType());
    if (!Merged.isNull() && MergeTypeWithOld)
@@ -11130,7 +11184,7 @@ index 6a25a799a..fb09ef44b 100644
  
    return false;
  }
-@@ -4596,6 +4688,15 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
+@@ -4596,6 +4689,15 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
    if (New->isInvalidDecl() || Old->isInvalidDecl() || New->getType()->containsErrors() || Old->getType()->containsErrors())
      return;
  
@@ -11146,7 +11200,7 @@ index 6a25a799a..fb09ef44b 100644
    QualType MergedT;
    if (getLangOpts().CPlusPlus) {
      if (New->getType()->isUndeducedType()) {
-@@ -4675,7 +4776,7 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
+@@ -4675,7 +4777,7 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
    // Don't actually update the type on the new declaration if the old
    // declaration was an extern declaration in a different scope.
    if (MergeTypeWithOld)
@@ -11155,7 +11209,7 @@ index 6a25a799a..fb09ef44b 100644
  }
  
  static bool mergeTypeWithPrevious(Sema &S, VarDecl *NewVD, VarDecl *OldVD,
-@@ -9118,6 +9219,8 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
+@@ -9118,6 +9220,8 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
  
    bool isVM = T->isVariablyModifiedType();
    if (isVM || NewVD->hasAttr<CleanupAttr>() ||
@@ -11164,7 +11218,7 @@ index 6a25a799a..fb09ef44b 100644
        NewVD->hasAttr<BlocksAttr>())
      setFunctionHasBranchProtectedScope();
  
-@@ -10772,6 +10875,10 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
+@@ -10772,6 +10876,10 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
              Previous.getResultKind() != LookupResultKind::FoundOverloaded) &&
             "previous declaration set still overloaded");
  
@@ -11175,7 +11229,21 @@ index 6a25a799a..fb09ef44b 100644
      // Diagnose no-prototype function declarations with calling conventions that
      // don't support variadic calls. Only do this in C and do it after merging
      // possibly prototyped redeclarations.
-@@ -12615,10 +12722,50 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+@@ -12576,10 +12684,11 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+           Method->isCanonicalDecl()) {
+         AddOverriddenMethods(Method->getParent(), Method);
+       }
+-      if (Method->isVirtual() && NewFD->getTrailingRequiresClause())
++      const Expr *Requires = NewFD->getTrailingRequiresClause().ConstraintExpr;
++      if (Method->isVirtual() && Requires)
+         // C++2a [class.virtual]p6
+         // A virtual method shall not have a requires-clause.
+-        Diag(NewFD->getTrailingRequiresClause().ConstraintExpr->getBeginLoc(),
++        Diag(Requires->getBeginLoc(),
+              diag::err_constrained_virtual_method);
+ 
+       if (Method->isStatic())
+@@ -12615,10 +12724,50 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
      // But, issue any diagnostic on the first declaration only.
      if (Previous.empty() && NewFD->isExternC()) {
        QualType R = NewFD->getReturnType();
@@ -11227,7 +11295,7 @@ index 6a25a799a..fb09ef44b 100644
                 !R->isObjCObjectPointerType())
          Diag(NewFD->getLocation(), diag::warn_return_value_udt) << NewFD << R;
      }
-@@ -13600,6 +13747,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
+@@ -13600,6 +13749,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
      return Super::visitWithKind(PDIK, QT, FD, InNonTrivialUnion);
    }
  
@@ -11239,7 +11307,7 @@ index 6a25a799a..fb09ef44b 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13666,6 +13818,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
+@@ -13666,6 +13820,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
      return Super::visitWithKind(DK, QT, FD, InNonTrivialUnion);
    }
  
@@ -11251,7 +11319,7 @@ index 6a25a799a..fb09ef44b 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13731,6 +13888,11 @@ struct DiagNonTrivalCUnionCopyVisitor
+@@ -13731,6 +13890,11 @@ struct DiagNonTrivalCUnionCopyVisitor
      return Super::visitWithKind(PCK, QT, FD, InNonTrivialUnion);
    }
  
@@ -11263,7 +11331,7 @@ index 6a25a799a..fb09ef44b 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -14943,9 +15105,69 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -14943,9 +15107,69 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
@@ -11333,7 +11401,16 @@ index 6a25a799a..fb09ef44b 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -16714,6 +16936,39 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -15585,7 +15809,7 @@ Sema::BuildDeclaratorGroup(MutableArrayRef<Decl *> Group) {
+       DeducedType *DT = D->getType()->getContainedDeducedType();
+       if (!DT || DT->getDeducedType().isNull())
+         continue;
+-      if (Deduced.isNull()) {
++      if (!DeducedDecl) {
+         Deduced = DT->getDeducedType();
+         DeducedDecl = D;
+       } else if (!Context.hasSameType(DT->getDeducedType(), Deduced)) {
+@@ -16714,6 +16938,39 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
@@ -11373,7 +11450,7 @@ index 6a25a799a..fb09ef44b 100644
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -16728,10 +16983,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16728,10 +16985,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
    sema::AnalysisBasedWarnings::Policy *ActivePolicy = nullptr;
  
    // If we skip function body, we can't tell if a function is a coroutine.
@@ -11388,7 +11465,7 @@ index 6a25a799a..fb09ef44b 100644
        CheckCoroutineWrapper(FD);
    }
  
-@@ -20223,7 +20479,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20481,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -11399,7 +11476,7 @@ index 6a25a799a..fb09ef44b 100644
              RecordArgPassingKind::CanNeverPassInRegs);
        } else if (PointerAuthQualifier Q = FT.getPointerAuth();
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
-index b0669c602..4118e7eef 100644
+index b0669c602..3b5c9bf01 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
 +++ b/clang/lib/Sema/SemaDeclCXX.cpp
 @@ -11,8 +11,11 @@
@@ -11414,7 +11491,32 @@ index b0669c602..4118e7eef 100644
  #include "clang/AST/ASTMutationListener.h"
  #include "clang/AST/CXXInheritance.h"
  #include "clang/AST/CharUnits.h"
-@@ -5026,6 +5029,10 @@ static bool RefersToRValueRef(Expr *MemRef) {
+@@ -471,6 +474,7 @@ static bool functionDeclHasDefaultArgument(const FunctionDecl *FD) {
+ 
+ bool Sema::MergeCXXFunctionDecl(FunctionDecl *New, FunctionDecl *Old,
+                                 Scope *S) {
++  assert(New && Old && "merging requires both function declarations");
+   bool Invalid = false;
+ 
+   // The declaration context corresponding to the scope is the semantic
+@@ -1481,6 +1485,8 @@ static DeclAccessPair findDecomposableBaseClass(Sema &S, SourceLocation Loc,
+       }
+     }
+ 
++    // A successful base lookup must have recorded a nonempty path.
++    assert(BestPath && !BestPath->empty() && "base lookup did not record its match");
+     //   ... unambiguous ...
+     QualType BaseType = BestPath->back().Base->getType();
+     if (Paths.isAmbiguous(S.Context.getCanonicalType(BaseType))) {
+@@ -4595,6 +4601,7 @@ Sema::BuildMemInitializer(Decl *ConstructorD,
+     }
+ 
+     if (BaseType.isNull()) {
++      assert(TyD && "unresolved base initializer escaped lookup diagnostics");
+       MarkAnyDeclReferenced(TyD->getLocation(), TyD, /*OdrUse=*/false);
+ 
+       TypeLocBuilder TLB;
+@@ -5026,6 +5033,10 @@ static bool RefersToRValueRef(Expr *MemRef) {
    return Referenced->getType()->isRValueReferenceType();
  }
  
@@ -11425,7 +11527,7 @@ index b0669c602..4118e7eef 100644
  static bool
  BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
                                 ImplicitInitializerKind ImplicitInitKind,
-@@ -5114,6 +5121,15 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
+@@ -5114,6 +5125,15 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
    QualType FieldBaseElementType =
      SemaRef.Context.getBaseElementType(Field->getType());
  
@@ -11441,7 +11543,7 @@ index b0669c602..4118e7eef 100644
    if (FieldBaseElementType->isRecordType()) {
      InitializedEntity InitEntity =
          Indirect ? InitializedEntity::InitializeMemberImplicit(Indirect)
-@@ -5164,7 +5180,8 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
+@@ -5164,7 +5184,8 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
      }
    }
  
@@ -11451,7 +11553,7 @@ index b0669c602..4118e7eef 100644
      // ARC and Weak:
      //   Default-initialize Objective-C pointers to NULL.
      CXXMemberInit
-@@ -5398,6 +5415,25 @@ static void MarkFieldDestructorReferenced(Sema &S, SourceLocation Location,
+@@ -5398,6 +5419,25 @@ static void MarkFieldDestructorReferenced(Sema &S, SourceLocation Location,
  
    QualType FieldType = S.Context.getBaseElementType(Field->getType());
  
@@ -11477,7 +11579,7 @@ index b0669c602..4118e7eef 100644
    auto *FieldClassDecl = FieldType->getAsCXXRecordDecl();
    if (!FieldClassDecl)
      return;
-@@ -7471,6 +7507,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
+@@ -7471,6 +7511,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
    else if (Record->hasNonTrivialDestructor())
      Record->setParamDestroyedInCallee(CanPass);
  
@@ -11491,7 +11593,7 @@ index b0669c602..4118e7eef 100644
    if (getLangOpts().ForceEmitVTables) {
      // If we want to emit all the vtables, we need to mark it as used.  This
      // is especially required for cases like vtable assumption loads.
-@@ -7685,6 +7728,12 @@ static bool defaultedSpecialMemberIsConstexpr(
+@@ -7685,6 +7732,12 @@ static bool defaultedSpecialMemberIsConstexpr(
    if (!S.getLangOpts().CPlusPlus11)
      return false;
  
@@ -11504,7 +11606,7 @@ index b0669c602..4118e7eef 100644
    // C++11 [dcl.constexpr]p4:
    // In the definition of a constexpr constructor [...]
    bool Ctor = true;
-@@ -9809,7 +9858,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
+@@ -9809,7 +9862,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
    // The defaulted special functions are defined as deleted if this is a variant
    // member with a non-trivial ownership type, e.g., ObjC __strong or __weak
    // type under ARC.
@@ -11514,7 +11616,7 @@ index b0669c602..4118e7eef 100644
      return false;
  
    // Don't make the defaulted default constructor defined as deleted if the
-@@ -9887,6 +9937,35 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
+@@ -9887,6 +9941,35 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
    QualType FieldType = S.Context.getBaseElementType(FD->getType());
    CXXRecordDecl *FieldRecord = FieldType->getAsCXXRecordDecl();
  
@@ -11550,7 +11652,7 @@ index b0669c602..4118e7eef 100644
    if (inUnion() && shouldDeleteForVariantObjCPtrMember(FD, FieldType))
      return true;
  
-@@ -10426,6 +10505,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
+@@ -10426,6 +10509,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
        return false;
      }
  
@@ -11568,7 +11670,7 @@ index b0669c602..4118e7eef 100644
      bool ConstRHS = ConstArg && !FI->isMutable();
      if (!checkTrivialSubobjectCall(S, FI->getLocation(), FieldType, ConstRHS,
                                     CSM, TSK_Field, TAH, Diagnose))
-@@ -10765,6 +10855,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
+@@ -10765,6 +10859,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
      // Ill-formed if the field is an ObjectiveC pointer or of a type that is
      // non-trivial for the purpose of calls.
      QualType FT = FD->getType();
@@ -11589,7 +11691,7 @@ index b0669c602..4118e7eef 100644
      if (FT.getObjCLifetime() == Qualifiers::OCL_Weak) {
        PrintDiagAndRemoveAttr(4);
        return;
-@@ -11172,6 +11276,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
+@@ -11172,6 +11280,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
  
  QualType Sema::CheckConstructorDeclarator(Declarator &D, QualType R,
                                            StorageClass &SC) {
@@ -11603,7 +11705,7 @@ index b0669c602..4118e7eef 100644
    bool isVirtual = D.getDeclSpec().isVirtualSpecified();
  
    // C++ [class.ctor]p3:
-@@ -11371,6 +11482,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
+@@ -11371,6 +11486,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
  
  QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
                                           StorageClass& SC) {
@@ -11617,7 +11719,7 @@ index b0669c602..4118e7eef 100644
    // C++ [class.dtor]p1:
    //   [...] A typedef-name that names a class is a class-name
    //   (7.1.3); however, a typedef-name that names a class shall not
-@@ -14149,6 +14267,32 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
+@@ -14149,6 +14271,32 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
  }
  
  bool SpecialMemberExceptionSpecInfo::visitField(FieldDecl *FD) {
@@ -11650,7 +11752,7 @@ index b0669c602..4118e7eef 100644
    if (CSM == CXXSpecialMemberKind::DefaultConstructor &&
        FD->hasInClassInitializer()) {
      Expr *E = FD->getInClassInitializer();
-@@ -14218,6 +14362,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
+@@ -14218,6 +14366,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
    //   An implicitly declared special member function (Clause 12) shall have an
    //   exception-specification. [...]
    SpecialMemberExceptionSpecInfo Info(S, MD, CSM, ICI, MD->getLocation());
@@ -11662,7 +11764,32 @@ index b0669c602..4118e7eef 100644
    if (ClassDecl->isInvalidDecl())
      return Info.ExceptSpec;
  
-@@ -18882,6 +19031,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
+@@ -16442,6 +16595,7 @@ ExprResult Sema::BuildCXXConstructExpr(
+     bool HadMultipleCandidates, bool IsListInitialization,
+     bool IsStdInitListInitialization, bool RequiresZeroInit,
+     CXXConstructionKind ConstructKind, SourceRange ParenRange) {
++  assert(Constructor && "construction requires a selected constructor");
+   bool Elidable = false;
+ 
+   // C++0x [class.copy]p34:
+@@ -16507,6 +16661,7 @@ ExprResult Sema::BuildCXXConstructExpr(
+     bool HadMultipleCandidates, bool IsListInitialization,
+     bool IsStdInitListInitialization, bool RequiresZeroInit,
+     CXXConstructionKind ConstructKind, SourceRange ParenRange) {
++  assert(Constructor && "construction requires a selected constructor");
+   assert(declaresSameEntity(
+              Constructor->getParent(),
+              DeclInitType->getBaseElementTypeUnsafe()->getAsCXXRecordDecl()) &&
+@@ -18571,7 +18726,7 @@ NamedDecl *Sema::ActOnFriendFunctionDecl(Scope *S, Declarator &D,
+       return nullptr;
+     }
+   } else {
+-    CXXRecordDecl *RC = dyn_cast<CXXRecordDecl>(DC);
++    auto *RC = cast<CXXRecordDecl>(DC);
+     if (RC->isLambda()) {
+       Diag(NameInfo.getBeginLoc(), diag::err_friend_lambda_decl);
+     }
+@@ -18882,6 +19037,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
    const auto *NewFT = New->getType()->castAs<FunctionProtoType>();
    const auto *OldFT = Old->getType()->castAs<FunctionProtoType>();
  
@@ -11700,7 +11827,7 @@ index b0669c602..4118e7eef 100644
    if (OldFT->hasExtParameterInfos()) {
      for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
        // A parameter of the overriding method should be annotated with noescape
-@@ -19001,6 +19181,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
+@@ -19001,6 +19187,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
        NewTy->isDependentType() || OldTy->isDependentType())
      return false;
  
@@ -11909,7 +12036,7 @@ index 04ba52809..fc19d89f5 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..e9bc7b363 100644
+index 5d4c5ff7d..e87d5b454 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -1,3 +1,7 @@
@@ -11944,7 +12071,20 @@ index 5d4c5ff7d..e9bc7b363 100644
  #include <limits>
  #include <optional>
  
-@@ -4701,6 +4710,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
+@@ -1871,9 +1880,11 @@ ExprResult Sema::CreateGenericSelectionExpr(
+         *this, Sema::ExpressionEvaluationContext::Unevaluated);
+     ExprResult R = DefaultFunctionArrayLvalueConversion(
+         reinterpret_cast<Expr *>(ControllingExprOrType));
+-    if (R.isInvalid())
++    if (!R.isUsable())
+       return ExprError();
+     ControllingExpr = R.get();
++    if (!ControllingExpr)
++      return ExprError();
+   } else {
+     // The extension form uses the type directly rather than converting it.
+     ControllingType = reinterpret_cast<TypeSourceInfo *>(ControllingExprOrType);
+@@ -4701,6 +4712,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
      case Type::Atomic:
        T = cast<AtomicType>(Ty)->getValueType();
        break;
@@ -11965,7 +12105,63 @@ index 5d4c5ff7d..e9bc7b363 100644
      case Type::PredefinedSugar:
        T = cast<PredefinedSugarType>(Ty)->desugar();
        break;
-@@ -6271,7 +6294,11 @@ bool Sema::GatherArgumentsForCall(SourceLocation CallLoc, FunctionDecl *FDecl,
+@@ -5037,6 +5062,8 @@ ExprResult Sema::ActOnArraySubscriptExpr(Scope *S, Expr *base,
+                                          SourceLocation lbLoc,
+                                          MultiExprArg ArgExprs,
+                                          SourceLocation rbLoc) {
++  if (!base)
++    return ExprError();
+ 
+   if (base && !base->getType().isNull() &&
+       base->hasPlaceholderType(BuiltinType::ArraySection)) {
+@@ -5058,6 +5085,8 @@ ExprResult Sema::ActOnArraySubscriptExpr(Scope *S, Expr *base,
+     if (result.isInvalid())
+       return ExprError();
+     base = result.get();
++    if (!base)
++      return ExprError();
+   }
+ 
+   // Check if base and idx form a MatrixSubscriptExpr.
+@@ -5272,7 +5301,7 @@ ExprResult Sema::CreateBuiltinMatrixSingleSubscriptExpr(Expr *Base,
+     return ConvExpr.get();
+   };
+ 
+-  auto *MTy = Base->getType()->getAs<ConstantMatrixType>();
++  auto *MTy = Base->getType()->castAs<ConstantMatrixType>();
+   RowIdx = IsIndexValid(RowIdx, MTy->getNumRows(), false);
+   if (!RowIdx)
+     return ExprError();
+@@ -5338,7 +5367,7 @@ ExprResult Sema::CreateBuiltinMatrixSubscriptExpr(Expr *Base, Expr *RowIdx,
+     return ConvExpr.get();
+   };
+ 
+-  auto *MTy = Base->getType()->getAs<ConstantMatrixType>();
++  auto *MTy = Base->getType()->castAs<ConstantMatrixType>();
+   RowIdx = IsIndexValid(RowIdx, MTy->getNumRows(), false);
+   ColumnIdx = IsIndexValid(ColumnIdx, MTy->getNumColumns(), true);
+   if (!RowIdx || !ColumnIdx)
+@@ -5473,16 +5502,15 @@ Sema::CreateBuiltinArraySubscriptExpr(Expr *Base, SourceLocation LLoc,
+       return ExprError();
+     }
+   } else if (LHSTy->isSubscriptableVectorType()) {
+-    if (LHSTy->isBuiltinType() &&
+-        LHSTy->getAs<BuiltinType>()->isSveVLSBuiltinType()) {
+-      const BuiltinType *BTy = LHSTy->getAs<BuiltinType>();
++    const auto *BTy = dyn_cast<BuiltinType>(LHSTy.getTypePtr());
++    if (BTy && BTy->isSveVLSBuiltinType()) {
+       if (BTy->isSVEBool())
+         return ExprError(Diag(LLoc, diag::err_subscript_svbool_t)
+                          << LHSExp->getSourceRange()
+                          << RHSExp->getSourceRange());
+       ResultType = BTy->getSveEltType(Context);
+     } else {
+-      const VectorType *VTy = LHSTy->getAs<VectorType>();
++      const auto *VTy = LHSTy->castAs<VectorType>();
+       ResultType = VTy->getElementType();
+     }
+     BaseExpr = LHSExp; // vectors: V[123]
+@@ -6271,7 +6299,11 @@ bool Sema::GatherArgumentsForCall(SourceLocation CallLoc, FunctionDecl *FDecl,
        if (Proto->getExtParameterInfo(i).isNoEscape() &&
            ProtoArgType->isBlockPointerType())
          if (auto *BE = dyn_cast<BlockExpr>(Arg->IgnoreParenNoopCasts(Context)))
@@ -11978,7 +12174,37 @@ index 5d4c5ff7d..e9bc7b363 100644
        if ((Proto->getExtParameterInfo(i).getABI() == ParameterABI::HLSLOut ||
             Proto->getExtParameterInfo(i).getABI() == ParameterABI::HLSLInOut)) {
          ExprResult ArgExpr = HLSL().ActOnOutParamExpr(Param, Arg);
-@@ -7276,7 +7303,21 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+@@ -7182,8 +7214,10 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+   // Check for a valid function type, but only if it is not a builtin which
+   // requires custom type checking. These will be handled by
+   // CheckBuiltinFunctionCall below just after creation of the call expression.
++  const bool CustomBuiltin =
++      BuiltinID && Context.BuiltinInfo.hasCustomTypechecking(BuiltinID);
+   const FunctionType *FuncT = nullptr;
+-  if (!BuiltinID || !Context.BuiltinInfo.hasCustomTypechecking(BuiltinID)) {
++  if (!CustomBuiltin) {
+   retry:
+     if (const PointerType *PT = Fn->getType()->getAs<PointerType>()) {
+       // C99 6.5.2.2p1 - "The expression that denotes the called function shall
+@@ -7230,7 +7264,7 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+   }
+ 
+   // Bail out early if calling a builtin with custom type checking.
+-  if (BuiltinID && Context.BuiltinInfo.hasCustomTypechecking(BuiltinID)) {
++  if (CustomBuiltin) {
+     // For HLSL builtin aliases, the call was resolved via overload resolution
+     // which may have selected a conversion sequence (e.g., vector-to-scalar
+     // truncation). Convert arguments to match the declared prototype before
+@@ -7249,6 +7283,8 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+     return E;
+   }
+ 
++  assert(FuncT && "ordinary calls require a resolved function type");
++
+   if (getLangOpts().CUDA) {
+     if (Config) {
+       // CUDA: Kernel calls must be to global functions
+@@ -7276,7 +7312,21 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
      return ExprError();
  
    // We know the result type of the call, set it.
@@ -12001,7 +12227,17 @@ index 5d4c5ff7d..e9bc7b363 100644
    TheCall->setValueKind(Expr::getValueKindForType(FuncT->getReturnType()));
  
    // WebAssembly tables can't be used as arguments.
-@@ -9422,7 +9463,87 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -7929,7 +7979,8 @@ bool Sema::areMatrixTypesOfTheSameDimension(QualType srcTy, QualType destTy) {
+   const ConstantMatrixType *matSrcType = srcTy->getAs<ConstantMatrixType>();
+   const ConstantMatrixType *matDestType = destTy->getAs<ConstantMatrixType>();
+ 
+-  return matSrcType->getNumRows() == matDestType->getNumRows() &&
++  return matSrcType && matDestType &&
++         matSrcType->getNumRows() == matDestType->getNumRows() &&
+          matSrcType->getNumColumns() == matDestType->getNumColumns();
+ }
+ 
+@@ -9422,7 +9473,87 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      return AssignConvertType::FunctionVoidPointer;
    }
  
@@ -12090,7 +12326,7 @@ index 5d4c5ff7d..e9bc7b363 100644
            diag::warn_typecheck_convert_incompatible_function_pointer_strict,
            Loc) &&
        RHSType->isFunctionPointerType() && LHSType->isFunctionPointerType() &&
-@@ -9431,7 +9552,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9431,7 +9562,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
  
    // C99 6.5.16.1p1 (constraint 3): both operands are pointers to qualified or
    // unqualified versions of compatible types, ...
@@ -12098,7 +12334,7 @@ index 5d4c5ff7d..e9bc7b363 100644
  
    if (ltrans->isOverflowBehaviorType() || rtrans->isOverflowBehaviorType()) {
      if (!S.Context.hasSameType(ltrans, rtrans)) {
-@@ -9452,7 +9572,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9452,7 +9582,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      }
    }
  
@@ -12122,7 +12358,7 @@ index 5d4c5ff7d..e9bc7b363 100644
      // Check if the pointee types are compatible ignoring the sign.
      // We explicitly check for char so that we catch "char" vs
      // "unsigned char" on systems where "char" is unsigned.
-@@ -9524,12 +9659,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9524,12 +9669,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      const auto *LFPT = dyn_cast<FunctionProtoType>(LFT);
      const auto *RFPT = dyn_cast<FunctionProtoType>(RFT);
      if (LFPT && RFPT) {
@@ -12145,7 +12381,7 @@ index 5d4c5ff7d..e9bc7b363 100644
        rtrans = S.Context.getFunctionType(LFPT->getReturnType(),
                                           LFPT->getParamTypes(), EPI);
      } else if (RFPT) {
-@@ -9592,12 +9735,61 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+@@ -9592,12 +9745,61 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
    //  * CVR and address space of LHS should be a superset of CVR and address
    //  space of RHS.
    //  * unqualified types should be compatible.
@@ -12209,7 +12445,33 @@ index 5d4c5ff7d..e9bc7b363 100644
      return AssignConvertType::IncompatibleBlockPointer;
  
    return ConvTy;
-@@ -10173,6 +10365,25 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
+@@ -9921,10 +10123,10 @@ AssignConvertType Sema::CheckAssignmentConstraints(QualType LHSType,
+     }
+ 
+     // U^ -> void*
+-    if (RHSType->getAs<BlockPointerType>()) {
++    if (RHSType->isBlockPointerType()) {
+       if (LHSPointer->getPointeeType()->isVoidType()) {
+         LangAS AddrSpaceL = LHSPointer->getPointeeType().getAddressSpace();
+-        LangAS AddrSpaceR = RHSType->getAs<BlockPointerType>()
++        LangAS AddrSpaceR = RHSType->castAs<BlockPointerType>()
+                                 ->getPointeeType()
+                                 .getAddressSpace();
+         Kind =
+@@ -9940,10 +10142,10 @@ AssignConvertType Sema::CheckAssignmentConstraints(QualType LHSType,
+   if (isa<BlockPointerType>(LHSType)) {
+     // U^ -> T^
+     if (RHSType->isBlockPointerType()) {
+-      LangAS AddrSpaceL = LHSType->getAs<BlockPointerType>()
++      LangAS AddrSpaceL = LHSType->castAs<BlockPointerType>()
+                               ->getPointeeType()
+                               .getAddressSpace();
+-      LangAS AddrSpaceR = RHSType->getAs<BlockPointerType>()
++      LangAS AddrSpaceR = RHSType->castAs<BlockPointerType>()
+                               ->getPointeeType()
+                               .getAddressSpace();
+       Kind = AddrSpaceL != AddrSpaceR ? CK_AddressSpaceConversion : CK_BitCast;
+@@ -10173,6 +10375,25 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
    ExprResult LocalRHS = CallerRHS;
    ExprResult &RHS = ConvertRHS ? CallerRHS : LocalRHS;
  
@@ -12235,7 +12497,7 @@ index 5d4c5ff7d..e9bc7b363 100644
    if (const auto *LHSPtrType = LHSType->getAs<PointerType>()) {
      if (const auto *RHSPtrType = RHS.get()->getType()->getAs<PointerType>()) {
        if (RHSPtrType->getPointeeType()->hasAttr(attr::NoDeref) &&
-@@ -10184,6 +10395,13 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
+@@ -10184,6 +10405,13 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
      }
    }
  
@@ -12249,7 +12511,36 @@ index 5d4c5ff7d..e9bc7b363 100644
    if (getLangOpts().CPlusPlus) {
      if (!LHSType->isRecordType() && !LHSType->isAtomicType()) {
        // C++ 5.17p3: If the left operand is not of class type, the
-@@ -16922,6 +17140,211 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
+@@ -11299,21 +11527,13 @@ QualType Sema::CheckRemainderOperands(
+   ExprResult &LHS, ExprResult &RHS, SourceLocation Loc, bool IsCompAssign) {
+   checkArithmeticNull(*this, LHS, RHS, Loc, /*IsCompare=*/false);
+ 
+-  // Note: This check is here to simplify the double exclusions of
+-  // scalar and vector HLSL checks. No getLangOpts().HLSL
+-  // is needed since all languages exlcude doubles.
+-  if (LHS.get()->getType()->isDoubleType() ||
+-      RHS.get()->getType()->isDoubleType() ||
+-      (LHS.get()->getType()->isVectorType() && LHS.get()
+-                                                   ->getType()
+-                                                   ->getAs<VectorType>()
+-                                                   ->getElementType()
+-                                                   ->isDoubleType()) ||
+-      (RHS.get()->getType()->isVectorType() && RHS.get()
+-                                                   ->getType()
+-                                                   ->getAs<VectorType>()
+-                                                   ->getElementType()
+-                                                   ->isDoubleType()))
++  // Remainder excludes scalar and vector doubles in every language.
++  auto ContainsDouble = [](QualType Type) {
++    if (Type->isDoubleType())return true;
++    const auto *Vector = Type->getAs<VectorType>();
++    return Vector && Vector->getElementType()->isDoubleType();
++  };
++  if (ContainsDouble(LHS.get()->getType()) || ContainsDouble(RHS.get()->getType()))
+     return InvalidOperands(Loc, LHS, RHS);
+ 
+   if (LHS.get()->getType()->isVectorType() ||
+@@ -16922,6 +17142,216 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
        ExpressionEvaluationContext::PotentiallyEvaluated);
  }
  
@@ -12334,7 +12625,12 @@ index 5d4c5ff7d..e9bc7b363 100644
 +    const auto *Resource = Resolved->getAttr<ObjCResourceAttr>();
 +    const auto *Call = cast<CallExpr>(Resource->getCall());
 +    const auto *Close = Call->getDirectCallee();
-+    const auto *Prototype = Close->getType()->getAs<FunctionProtoType>();
++    const auto *Prototype = Close
++        ? Close->getType()->getAs<FunctionProtoType>() : nullptr;
++    if (!Close || !Prototype) {
++      Reject("resource Block capture requires a direct prototyped cleanup callback");
++      return;
++    }
 +    if (!Close->hasAttr<NoThrowAttr>() && !Prototype->isNothrow()) {
 +      Reject("resource Block capture requires a statically nonthrowing cleanup; "
 +             "declare the callback nothrow or noexcept");
@@ -12461,7 +12757,7 @@ index 5d4c5ff7d..e9bc7b363 100644
  void Sema::ActOnBlockArguments(SourceLocation CaretLoc, Declarator &ParamInfo,
                                 Scope *CurScope) {
    assert(ParamInfo.getIdentifier() == nullptr &&
-@@ -17047,6 +17470,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17047,6 +17477,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
    if (!LangOpts.Blocks)
      Diag(CaretLoc, diag::err_blocks_disable) << LangOpts.OpenCL;
  
@@ -12506,7 +12802,7 @@ index 5d4c5ff7d..e9bc7b363 100644
    // Leave the expression-evaluation context.
    if (hasAnyUnrecoverableErrorsInThisFunction())
      DiscardCleanupsInEvaluationContext();
-@@ -17054,9 +17515,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17054,9 +17522,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
           "cleanups within block not correctly bound!");
    PopExpressionEvaluationContext();
  
@@ -12516,7 +12812,7 @@ index 5d4c5ff7d..e9bc7b363 100644
    maybeAddDeclWithEffects(BD);
  
    if (BSI->HasImplicitReturnType)
-@@ -17140,9 +17598,40 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17140,9 +17605,40 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // Cap.getVariable() is always a VarDecl because
      // blocks cannot capture structured bindings or other ValueDecl kinds.
      auto *Var = cast<VarDecl>(Cap.getVariable());
@@ -12558,7 +12854,7 @@ index 5d4c5ff7d..e9bc7b363 100644
          // The capture logic needs the destructor, so make sure we mark it.
          // Usually this is unnecessary because most local variables have
          // their destructors marked at declaration time, but parameters are
-@@ -17161,6 +17650,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17161,6 +17657,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
          SourceLocation Loc = Cap.getLocation();
  
@@ -12590,7 +12886,7 @@ index 5d4c5ff7d..e9bc7b363 100644
          ExprResult Result = BuildDeclarationNameExpr(
              CXXScopeSpec(), DeclarationNameInfo(Var->getDeclName(), Loc), Var);
  
-@@ -17193,12 +17707,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17193,12 +17714,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
        }
      }
  
@@ -12616,7 +12912,7 @@ index 5d4c5ff7d..e9bc7b363 100644
    // Pop the block scope now but keep it alive to the end of this function.
    AnalysisBasedWarnings::Policy WP =
        AnalysisWarnings.getPolicyInEffectAt(Body->getEndLoc());
-@@ -17218,7 +17742,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17749,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -12627,7 +12923,7 @@ index 5d4c5ff7d..e9bc7b363 100644
          setFunctionHasBranchProtectedScope();
          break;
        }
-@@ -19492,6 +20018,24 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19492,6 +20025,24 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
                             const bool Nested, Sema &S, bool Invalid) {
    bool ByRef = false;
  
@@ -12652,7 +12948,7 @@ index 5d4c5ff7d..e9bc7b363 100644
    // Blocks are not allowed to capture arrays, excepting OpenCL.
    // OpenCL v2.0 s1.12.5 (revision 40): arrays are captured by reference
    // (decayed to pointers).
-@@ -19506,7 +20050,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19506,7 +20057,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
    }
  
    // Forbid the block-capture of autoreleasing variables.
@@ -25886,7 +26182,7 @@ index 76c51b8d9..2fe982a87 100644
      if (includeCategoryNamespace) {
        if (auto category = MD->getCategory())
 diff --git a/clang/lib/Sema/SemaCoroutine.cpp b/clang/lib/Sema/SemaCoroutine.cpp
-index 4b99e4454..7e7a47729 100644
+index 4b99e4454..057530808 100644
 --- a/clang/lib/Sema/SemaCoroutine.cpp
 +++ b/clang/lib/Sema/SemaCoroutine.cpp
 @@ -14,11 +14,14 @@
@@ -26460,7 +26756,19 @@ index 4b99e4454..7e7a47729 100644
  
      return false;
    }
-@@ -1648,10 +1914,12 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+@@ -1638,9 +1904,10 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+   Expr *FrameSize =
+       S.BuildBuiltinCallExpr(Loc, Builtin::BI__builtin_coro_size, {});
+ 
++  const bool AlignedAllocation = S.getLangOpts().CoroAlignedAllocation;
+   Expr *FrameAlignment = nullptr;
+ 
+-  if (S.getLangOpts().CoroAlignedAllocation) {
++  if (AlignedAllocation) {
+     FrameAlignment =
+         S.BuildBuiltinCallExpr(Loc, Builtin::BI__builtin_coro_align, {});
+ 
+@@ -1648,10 +1915,12 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
      if (!AlignValTy)
        return false;
  
@@ -26477,7 +26785,25 @@ index 4b99e4454..7e7a47729 100644
    }
  
    // Make new call.
-@@ -1868,7 +2136,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1661,7 +1930,7 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+     return false;
+ 
+   SmallVector<Expr *, 2> NewArgs(1, FrameSize);
+-  if (S.getLangOpts().CoroAlignedAllocation &&
++  if (AlignedAllocation &&
+       isAlignedAllocation(IAP.PassAlignment))
+     NewArgs.push_back(FrameAlignment);
+ 
+@@ -1717,7 +1986,7 @@ bool CoroutineStmtBuilder::makeNewAndDeleteExpr() {
+   //   function.
+   //
+   // So we are not forced to pass alignment to the deallocation function.
+-  if (S.getLangOpts().CoroAlignedAllocation &&
++  if (AlignedAllocation &&
+       OpDeleteType->getNumParams() > DeleteArgs.size() &&
+       S.getASTContext().hasSameUnqualifiedType(
+           OpDeleteType->getParamType(DeleteArgs.size()),
+@@ -1868,7 +2137,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
    assert(!GroType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
@@ -26489,7 +26815,7 @@ index 4b99e4454..7e7a47729 100644
    assert(!FnRetType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
-@@ -1906,8 +2177,8 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1906,8 +2178,8 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
      ReturnStmt = S.BuildReturnStmt(Loc, ReturnValue);
    } else {
      GroDecl = VarDecl::Create(
@@ -26500,7 +26826,7 @@ index 4b99e4454..7e7a47729 100644
          S.BuildDecltypeType(ReturnValue).getCanonicalType(),
          S.Context.getTrivialTypeSourceInfo(GroType, Loc), SC_None);
      GroDecl->setImplicit();
-@@ -1989,8 +2260,9 @@ static VarDecl *buildVarDecl(Sema &S, SourceLocation Loc, QualType Type,
+@@ -1989,8 +2261,9 @@ static VarDecl *buildVarDecl(Sema &S, SourceLocation Loc, QualType Type,
  // Build statements that move coroutine function parameters to the coroutine
  // frame, and store them on the function scope info.
  bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
@@ -26512,7 +26838,7 @@ index 4b99e4454..7e7a47729 100644
  
    auto *ScopeInfo = getCurFunction();
    if (!ScopeInfo->CoroutineParameterMoves.empty())
-@@ -2002,7 +2274,7 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
+@@ -2002,7 +2275,7 @@ bool Sema::buildCoroutineParameterMoves(SourceLocation Loc) {
    //   parameter of type cv T, the copy is a variable of type cv T with
    //   automatic storage duration that is direct-initialized from an xvalue of
    //   type T referring to the parameter.
@@ -52310,7 +52636,7 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..222d31516
+index 000000000..912c48695
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 @@ -0,0 +1,1641 @@
@@ -53820,7 +54146,7 @@ index 000000000..222d31516
 +    return ExprError();
 +  Expr *Path = Checked.get();
 +  ObjC3KeyPathInfo Info;
-+  if (!getObjC3KeyPathInfo(Path->getType(), Info)) {
++  if (!getObjC3KeyPathInfo(Path->getType(), Info) || !Info.Get || !Info.Metadata) {
 +    reject(S, Loc, "key-path application requires a typed key-path value");
 +    return ExprError();
 +  }

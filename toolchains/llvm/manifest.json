@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "bf17e95069bd4b03051d0b73b1ec02108a0f8ac56bffd02625513a90436aa651"
+      "sha256": "d944065c723ec476090b89e258bb7595b39b7622af98f1a665e924e3e7050693"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
@@ -31,7 +31,7 @@
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
-      "sha256": "0cd4ded5695dc83792bbd4714334160001ce3570669dc0fd690f840241d49ec4"
+      "sha256": "97ae1ad1aacd7770e6ed6233c4a5d417fb6fa44f2db1870ca944bd544b5565af"
     },
     {
       "file": "0007-objc3-linux-debugger-runtime-contracts.patch",
@@ -285,7 +285,13 @@
       "clang/test/Parser/cxx2a-init-statement.cpp",
       "clang/test/Parser/cxx2b-init-statement.cpp",
       "clang/test/CodeGenCXX/mangle-concept.cpp",
-      "clang/test/AST/ast-dump-template-name.cpp"
+      "clang/test/AST/ast-dump-template-name.cpp",
+      "clang/test/SemaCXX/cxx20-decomposition.cpp",
+      "clang/test/SemaCXX/constant-expression-cxx2a.cpp",
+      "clang/test/SemaCXX/constant-expression-cxx2b.cpp",
+      "clang/test/SemaTemplate/matrix-type.cpp",
+      "clang/test/SemaCXX/matrix-type-operators.cpp",
+      "clang/test/SemaCXX/matrix-type-builtins.cpp"
     ]
   },
   "host_tools": {

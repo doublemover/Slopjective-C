@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "CURRENT_SOURCE_ANALYSIS_REPAIRS_IN_PROGRESS",
+  "status": "CURRENT_SOURCE_REPAIRS_READY_FOR_QUALIFICATION",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -9,13 +9,14 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-cbef07ba0441-70309e04",
-    "prepared_tree": "71313f05ea1e73b4aed2f056846951a9e3e70f1f",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+    "prepared_tree": "58ab1811696fe17b8ca6b8a5d4d76fa5798ee7cc",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
     "activated_product_sdk": false,
-    "patch_digest": "cbef07ba04413928ab3f3d095338a91e736c9443ce550334a8c7ee4924344b4a"
+    "patch_digest": "bace3bd39a7e843f83f94add1925ef9ec6f8be18647dba83537e89357c65fadb",
+    "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51"
   },
   "language_contracts": {
     "language": "Objective-C 3.0",
@@ -60,7 +61,7 @@
   "focused_validation": {
     "tool_and_archive_owner_tests_passed": 96,
     "CI_revision_owner_tests_passed": 136,
-    "canonical_patch_stack_matches_prepared_source": false,
+    "canonical_patch_stack_matches_prepared_source": true,
     "live_tool_pins_match": true,
     "clean_host_download_and_bootstrap_controls_passed": 19,
     "download_bootstrap_export_and_revision_mode_controls_passed": 28,
@@ -316,22 +317,38 @@
         "finding_variants": 7,
         "uncompleted_variants": 29,
         "artifact_sha256": "3a2f5df5a12e6a5c4e2535362abab6b45eb34136084aecd380f11e7ea8ebb4a9"
+      },
+      "superseded_954_analysis": {
+        "run": 42506995176,
+        "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
+        "status": "CANCELLED_SUPERSEDED",
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42506995176",
+        "job": 128811758131,
+        "scope": "Complete fork-matched owned translation-unit inventory",
+        "reason": "Known failing older compiler identity; complete replacement-source analysis will use four bounded independent partitions.",
+        "completed_variants": 126,
+        "passed_variants": 116,
+        "timeout_variants": 7,
+        "finding_variants": 3,
+        "uncompleted_variants": 109,
+        "artifact_sha256": "7cf9cc38b4209102161d1556c74f266d0fda0a177ae7764e08c2a0df848eab39"
       }
     },
     "SDK_release": {
       "status": "NOT_STARTED",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-cbef07ba0441-70309e04",
-      "reason": "Collect remaining matched analysis findings before one combined current-source qualification."
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+      "reason": "Combined compiler source, upstream prerequisites, complete coverage and partitioned analysis repairs are ready for one matching qualification campaign."
     },
     "native_assurance": {
       "status": "NOT_STARTED",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-cbef07ba0441-70309e04",
-      "reason": "Collect remaining matched analysis findings before one combined current-source qualification."
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+      "reason": "Combined compiler source, upstream prerequisites, complete coverage and partitioned analysis repairs are ready for one matching qualification campaign."
     },
     "LLVM_IR_and_debugger": {
       "status": "NOT_STARTED",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-cbef07ba0441-70309e04",
-      "reason": "Collect remaining matched analysis findings before one combined current-source qualification."
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+      "reason": "Combined compiler source, upstream prerequisites, complete coverage and partitioned analysis repairs are ready for one matching qualification campaign."
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -488,14 +505,9 @@
       "reassembled_compiler_inputs_bytes": 608002556
     },
     "implementation_analysis": {
-      "run": 42506995176,
-      "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-954801de6f9a-70309e04",
-      "status": "SUPERSEDED_CANCEL_REQUESTED",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42506995176",
-      "job": 128811758131,
-      "scope": "Complete fork-matched owned translation-unit inventory",
-      "reason": "Known failing older compiler identity; complete replacement-source analysis will use four bounded independent partitions."
+      "status": "NOT_STARTED",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+      "reason": "Combined compiler source, upstream prerequisites, complete coverage and partitioned analysis repairs are ready for one matching qualification campaign."
     },
     "upstream_repair_checkpoint": {
       "scope": "Focused local replay using retained compiler libraries, actual changed code-generation source and exact-version test tools; not SDK qualification.",
@@ -537,7 +549,26 @@
       "maintained_compiler_timeout_seconds": 3600,
       "focused_controls_passed": 127,
       "terminal_completeness": "All partition indices, same full logical inventory and frozen source/header inputs, same compiler/config identity, disjoint union of every dependency-selected fresh native action.",
-      "source_repairs": "Seven finding units are being repaired and replayed against retained compiler libraries; final canonical source export/seal and complete current-source qualification remain pending."
+      "source_repairs": "All seven finding units repaired and exported; all 17 previously reported Static Analyzer locations are clear in focused local replay. Complete matching Clang-Tidy/SDK qualification remains required."
+    },
+    "compiler_analysis_repair_checkpoint": {
+      "status": "PASS_FOCUSED_LOCAL_REPLAY",
+      "scope": "Previously reported Static Analyzer locations in actual canonical C++ translation units, using retained f217 compiler engine/headers; not complete matched Clang-Tidy or SDK qualification.",
+      "reported_units": 7,
+      "reported_diagnostics_cleared": 17,
+      "modern_cxx_regression_suites_passed": 6,
+      "source_seal": "PASS",
+      "prepared_tree": "58ab1811696fe17b8ca6b8a5d4d76fa5798ee7cc",
+      "repairs": [
+        "Initialize importer pointer/context outputs on failure paths and retain canonical redeclaration invariants",
+        "Retire constructor-state bookkeeping while its evaluator frame is still active; preserve optional argument outputs and absent-frame constant evaluation",
+        "Snapshot coroutine alignment and builtin-call classification across callbacks",
+        "Use resolved type/constraint/constructor invariants and validate decoded expression results",
+        "Reject incomplete concrete keypaths and non-prototyped resource cleanup callbacks",
+        "Preserve dependent matrix comparison and native vector/pointer subtype contracts"
+      ],
+      "diagnostic_limits": "Standalone driver additionally reports unselected dead-store/LLVM bit-shift diagnostics; this replay is restricted to the previously selected defect checkers and affected Clang units.",
+      "focused_tooling_controls_passed": 161
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",

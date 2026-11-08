@@ -605,10 +605,52 @@ index ef071cdef..b9cd9b3de 100644
    case Expr::CXXBoolLiteralExprClass:
    case Expr::CXXPseudoDestructorExprClass:
 diff --git a/clang/lib/AST/ExprConstant.cpp b/clang/lib/AST/ExprConstant.cpp
-index 120af89a9..52edceb63 100644
+index 120af89a9..d825aa87b 100644
 --- a/clang/lib/AST/ExprConstant.cpp
 +++ b/clang/lib/AST/ExprConstant.cpp
-@@ -8538,6 +8538,56 @@ public:
+@@ -3412,7 +3412,7 @@ static bool evaluateVarDeclInit(EvalInfo &Info, const Expr *E,
+ 
+     // Assume parameters of a potential constant expression are usable in
+     // constant expressions.
+-    if (!Info.checkingPotentialConstantExpression() ||
++    if (!Info.checkingPotentialConstantExpression() || !Info.CurrentCall ||
+         !Info.CurrentCall->Callee ||
+         !Info.CurrentCall->Callee->Equals(VD->getDeclContext())) {
+       if (Info.getLangOpts().CPlusPlus11) {
+@@ -6865,6 +6865,8 @@ static bool MaybeHandleUnionActiveMemberChange(EvalInfo &Info,
+                                                const LValue &LHS) {
+   if (LHS.InvalidBase || LHS.Designator.Invalid)
+     return false;
++  if (!LHSExpr)
++    return true;
+ 
+   llvm::SmallVector<std::pair<unsigned, const FieldDecl*>, 4> UnionPathLengths;
+   // C++ [class.union]p5:
+@@ -7026,7 +7028,8 @@ static bool EvaluateArgs(ArrayRef<const Expr *> Args, CallRef Call,
+         return false;
+       Success = false;
+     }
+-    if (PVD && PVD->isExplicitObjectParameter() && That && That->isLValue())
++    if (ObjectArg && PVD && PVD->isExplicitObjectParameter() && That &&
++        That->isLValue())
+       ObjectArg->setFrom(Info.Ctx, *That);
+   }
+   return Success;
+@@ -7135,11 +7138,12 @@ static bool HandleConstructorCall(const Expr *E, const LValue &This,
+     return false;
+   }
+ 
++  // Constructor-state bookkeeping must retire while its call frame is active.
++  CallStackFrame Frame(Info, E->getSourceRange(), Definition, &This, E, Call);
+   EvalInfo::EvaluatingConstructorRAII EvalObj(
+       Info,
+       ObjectUnderConstruction{This.getLValueBase(), This.Designator.Entries},
+       RD->getNumBases());
+-  CallStackFrame Frame(Info, E->getSourceRange(), Definition, &This, E, Call);
+ 
+   // FIXME: Creating an APValue just to hold a nonexistent return value is
+   // wasteful.
+@@ -8538,6 +8542,56 @@ public:
    bool VisitStmt(const Stmt *) {
      llvm_unreachable("Expression evaluator should not be called on stmts");
    }
@@ -665,7 +707,17 @@ index 120af89a9..52edceb63 100644
    bool VisitExpr(const Expr *E) {
      return Error(E);
    }
-@@ -16184,6 +16234,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
+@@ -9480,7 +9534,8 @@ bool LValueExprEvaluator::VisitVarDecl(const Expr *E, const VarDecl *VD) {
+     // variable) or be ill-formed (and trigger an appropriate evaluation
+     // diagnostic)).
+     CallStackFrame *CurrFrame = Info.CurrentCall;
+-    if (CurrFrame->Callee && CurrFrame->Callee->Equals(VD->getDeclContext())) {
++    if (CurrFrame && CurrFrame->Callee &&
++        CurrFrame->Callee->Equals(VD->getDeclContext())) {
+       // Function parameters are stored in some caller's frame. (Usually the
+       // immediate caller, but for an inherited constructor they may be more
+       // distant.)
+@@ -16184,6 +16239,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
      return CanTy->isUnionType() ? GCCTypeClass::Union
                                  : GCCTypeClass::ClassOrStruct;
  
@@ -678,7 +730,7 @@ index 120af89a9..52edceb63 100644
    case Type::Atomic:
      // GCC classifies _Atomic T the same as T.
      return EvaluateBuiltinClassifyType(
-@@ -22121,6 +22177,14 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
+@@ -22121,6 +22182,14 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
  #define STMT(Node, Base) case Expr::Node##Class:
  #define EXPR(Node, Base)
  #include "clang/AST/StmtNodes.inc"
