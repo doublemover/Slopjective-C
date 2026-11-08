@@ -282,7 +282,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeContractField(out, std::to_string(static_cast<unsigned>(*nullability)));
   }
   if(RequiresNativeARCRecordPayload(type,context))
-    AppendNativeContractField(out,";native-arc-record-payload:v1;");
+    AppendNativeContractField(out,";native-arc-record-payload:v2;");
   if(RequiresNativeCppCarrierComposition(type,context))
     AppendNativeContractField(out,";cxx-carrier-composition:v2;");
   clang::ObjC3KeyPathInfo keypath;

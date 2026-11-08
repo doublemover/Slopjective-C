@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.147 / System 2.73 native-union carrier span](linux_native_union_carrier_payloads.md)
+implements explicitly owned managed union payloads, complete forward-record
+qualification and selected implicit-return copy/move recipes, including move-only
+values. Native call/capture/storage and source-free reader controls pass with the
+ARC-record-payload v2 cutover. Remaining implementation continues before delivery.
+
 The [source 2.146 / System 2.72 unnamed-enum span](linux_native_unnamed_enums.md)
 restores native enum declaration groups and binds distinct enum owners in public
 types, generic arguments and inline bodies. Source-free consumers preserve native

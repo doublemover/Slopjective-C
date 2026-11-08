@@ -1,0 +1,47 @@
+{
+  "development_only": true,
+  "source_version": "2.147",
+  "system_version": "2.73",
+  "prepared_source_tree": "df14bd88929dfd74e3cdeba20d7f7205576d420d",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 26,
+    "all_passed": true,
+    "full_sweep": "running"
+  },
+  "ast_controls": 62,
+  "publication_profiles": 2,
+  "production_decoder_exact_replays": 640,
+  "production_decoder_families": 32,
+  "adjacent_frontend_groups": 11,
+  "native": {
+    "configurations": 5,
+    "commands": 18,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "fully_instrumented_runtime_client_configurations": 1,
+    "constructor_prefix_controls": "final fully instrumented configuration",
+    "copy_move_temporary_fault_cases_per_execution": 84,
+    "profiles": [
+      "C++20 ARC source O0",
+      "C++23 ARC PCH O2 no-elision",
+      "C++23 MRC PCH O2 no-elision",
+      "C++20 ARC source C++-only exception handling",
+      "C++23 ARC PCH O2 no-elision, ASan/UBSan runtime and client"
+    ]
+  },
+  "reader_contract": "objc3.native-arc-record-payload.v2",
+  "regressions": [
+    "complete forward-declared native ARC record and union payload qualification",
+    "implicit carrier returns preserve selected native copy/move recipes",
+    "implicit move-only carrier result construction without record NRVO",
+    "null transfer children in byref capture analysis",
+    "source-free implicit return move identity"
+  ],
+  "full_current_consolidation": "compiler sweep running; full matched analysis and SDK follow remaining implementation"
+}

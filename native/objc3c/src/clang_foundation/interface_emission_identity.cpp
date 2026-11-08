@@ -1253,6 +1253,25 @@ public:
     return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::
         TraversePseudoObjectExpr(expression,nullptr);
   }
+  bool TraverseObjC3CarrierTransferExpr(clang::ObjC3CarrierTransferExpr *expression,
+                                        DataRecursionQueue * = nullptr) {
+    if (!WalkUpFromObjC3CarrierTransferExpr(expression)) return false;
+    Add(expression->isMove() ? "carrier-transfer:move" : "carrier-transfer:copy");
+    auto *source = expression->getSource();
+    // Implicit return moves add a same-type xvalue cast. Published moveValue
+    // syntax selects the identical payload recipe directly from the lvalue.
+    // Normalize only that synthetic cast; keep qualifiers, explicit casts,
+    // the chosen operation and every native payload initializer in identity.
+    if (expression->isMove())
+      if (auto *cast = llvm::dyn_cast_or_null<clang::ImplicitCastExpr>(source);
+          cast && cast->getCastKind() == clang::CK_NoOp && cast->isXValue() &&
+          cast->getSubExpr()->isLValue() &&
+          context_.hasSameType(cast->getType(), cast->getSubExpr()->getType()))
+        source = cast->getSubExpr();
+    return TraverseStmt(source) && TraverseStmt(expression->getValueInit()) &&
+           TraverseStmt(expression->getSuccessInit()) &&
+           TraverseStmt(expression->getErrorInit());
+  }
   bool TraverseOpaqueValueExpr(clang::OpaqueValueExpr *expression,
                                DataRecursionQueue * = nullptr) {
     return TraverseStmt(expression->getSourceExpr());
@@ -2599,7 +2618,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationAtomicManagedProperty(representative))
     identity.canonical_type_identity += ";atomic-managed-properties:v1;";
   if (HasDeclarationNativeARCRecordPayload(representative))
-    identity.canonical_type_identity += ";native-arc-record-payload:v1;";
+    identity.canonical_type_identity += ";native-arc-record-payload:v2;";
   if (HasDeclarationNativeCarrierLambda(representative))
     identity.canonical_type_identity += ";native-carrier-lambda:v1;";
   if (HasDeclarationNativeByrefStorage(representative))

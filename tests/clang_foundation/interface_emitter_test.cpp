@@ -352,6 +352,50 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestNativeManagedUnionPayloadReplay() {
+ for(const char *standard:{"c++20","c++23"}) {
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+  const std::string source=R"(
+   @protocol Error @end
+   namespace NativeUnionPayload {
+    struct Arm {int tag;id __strong owner;id __weak observer;int value;};
+    union Value;
+    union alignas(64) Value {Arm owned;int scalar;
+     Value();Value(const Value &);Value(Value &&);~Value() noexcept;};
+    using Maybe=__objc3_optional(Value);using Result=__objc3_result(Value,id __strong);
+    inline Maybe make(){return __objc3_some(Value,Value());}
+    inline Maybe copy(const Maybe &value){return __objc3_copy(value);}
+    inline Maybe implicit_result(){Maybe value=make();return value;}
+    inline Maybe checked() __objc3_throws(id<Error>){Maybe value=make();return value;}
+    inline Maybe captured(const Maybe &value){auto callback=[value]{return __objc3_copy(value);};return callback();}
+   }
+   __attribute__((objc_root_class)) @interface PublishedNativeUnionHost
+   - (NativeUnionPayload::Maybe)echo:(NativeUnionPayload::Maybe)value;
+   @end
+   inline NativeUnionPayload::Maybe published_union_message(PublishedNativeUnionHost *_Nonnull object,NativeUnionPayload::Maybe value){return [object echo:value];}
+  )";
+  auto emit=[&](const std::string &text) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-union-carrier.mm");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_union_carrier","test",{},{},{},{"Error","NativeUnionPayload","PublishedNativeUnionHost","published_union_message"});
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeARCRecordPayloadSemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeARCRecordPayloadSemantic));older.push_back("objc3.native-arc-record-payload.v1");
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(decoded->required_semantics,kNativeARCRecordPayloadSemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+   int native_union_consumer(PublishedNativeUnionHost *_Nonnull object){auto value=NativeUnionPayload::implicit_result();auto copy=published_union_message(object,value);return __objc3_has_value(copy);}
+  )",args,"native-union-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+ }
+}
+
 void TestNativeUnnamedEnumReplay() {
  for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
   const bool cpp=std::string(standard)!="c17";
@@ -7295,7 +7339,7 @@ void TestNativeARCRecordPayloadReplay() {
     const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
     auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
     assert(llvm::is_contained(read->required_semantics,std::string(kNativeARCRecordPayloadSemantic)));
-    assert(std::string(kNativeARCRecordPayloadSemantic)=="objc3.native-arc-record-payload.v1");
+    assert(std::string(kNativeARCRecordPayloadSemantic)=="objc3.native-arc-record-payload.v2");
     auto older=supported;std::erase(older,llvm::StringRef(kNativeARCRecordPayloadSemantic));
     auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
     std::erase(read->required_semantics,kNativeARCRecordPayloadSemantic);
@@ -11331,6 +11375,7 @@ int main(int argc,char **argv) {
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
+  TestNativeManagedUnionPayloadReplay();
   TestNativeUnnamedEnumReplay();
   TestNativeStorageLifetimeReplay();
   TestNativeUnionKeyPathReplay();
