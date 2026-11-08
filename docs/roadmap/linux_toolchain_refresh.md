@@ -76,7 +76,7 @@ checks without starting another compiler build. Both runs pass: the second
 restored all eight tool/source cache entries, admitted all six tool prefixes and
 reused all three pristine source repositories. Its complete job took 101 seconds
 versus 179 seconds cold. Quick CI independently restored Python, packages and
-CMake and passed 1,553 tooling tests plus 33 subtests. All Node setup callers now
+CMake and passed 1,554 tooling tests plus 33 subtests. All Node setup callers now
 cache npm, and installs prefer cached package downloads.
 
 The preceding complete core run attempted all 50 frontend programs: 47 passed
@@ -95,10 +95,13 @@ context. Native printing retains consumed parameter attributes and omits synthet
 scope wrappers, preserving stable repeated replay. The controls retain capability
 removal rejection, private-dependency rejection and changed-body sensitivity.
 Fifty focused tooling controls pass; quick CI at the preceding pushed checkpoint
-passes 1,553 tests and 33 subtests, with 107 explicit capability/platform skips.
+passes 1,554 tests and 33 subtests, with 107 explicit capability/platform skips.
 
 These local diagnostics reuse a verified, failure-only CI compiler foundation and
 a separately compiled canonical printer repair; they are not SDK acceptance.
+Frontend-only development can select an exact same-version generator with
+`-DOBJC3C_TABLEGEN=/path/to/llvm-tblgen`. Instrumented profiles always use their
+own foundation generator; an override is rejected.
 One-day compiler inputs can be split into four bounded, checksummed transport parts
 without executing another compiler build. The hosted transport and complete local
 reassembly pass; intermediate copies are reclaimed after verification.
@@ -113,3 +116,9 @@ source revision so an older analysis job does not hold a repaired release behind
 its completed native build. Compiler diagnostic selection cannot satisfy the full
 aggregate or publish an SDK. The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
 records each checkpoint and its scope.
+
+The current-source release at `9c675d3ab` is running
+[release/native and complete implementation analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42506995176)
+and [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42506996345).
+All quick gates pass. The new compiler patch reused the same eight dependency
+cache entries; dependency identity remains independent of project feature commits.

@@ -43,9 +43,10 @@ ref-qualified call operators. A focused native test source covers empty and mixe
 external chains, declaration-list erase shapes, noncopyable callback reuse and
 repeated parent-map clearing. The requires-clause mangler also asserts the resolved
 template invariant, with the upstream concept-mangling regression selected in
-ordinary and instrumented profiles. These changes have passed patch admission
-and test-source compilation; the corrected compiler build and native execution
-remain pending while the earlier full scan collects the rest of its findings.
+ordinary and instrumented profiles. The corrected compiler foundation now passes all 563 compiler regressions and
+461 native unit cases at `f2174d730013`, including these infrastructure controls.
+Complete matching implementation analysis remains pending; native unit success
+does not qualify the full analyzer inventory.
 The external-field regression reproduces the exact `DeclBase.cpp` null-member
 access under UBSan on the preceding compiler. Its four companion cases pass on
 that compiler. The template-name dumper now asserts the using-shadow invariant;
@@ -55,9 +56,9 @@ Matcher construction now forwards its tuple once through `std::make_from_tuple`,
 using guaranteed copy elision for nonmovable matcher objects. The new regression
 checks distinct move-only elements and mutable/const reference preservation.
 Five companion cases pass against the changed header overlay and matched preceding
-compiler libraries. The non-pointer parent arena and external-load implementation
-still require the pending rebuilt compiler; these controls do not imply that the
-entire fork-fix batch has passed.
+compiler libraries. The rebuilt compiler also executes the non-pointer parent arena and external-load
+controls successfully. The complete sanitizer/analyzer inventory retains its
+separate current-source gate.
 
 The matched analyzer cannot deserialize the foundation's bootstrap-produced
 CMake PCH. Analysis validates the exact PCH/wrapper pair and rebuilds the wrapper
@@ -103,9 +104,9 @@ calls. Routine PR feedback uses the independent quick checks and does not rebuil
 LLVM or run full static analysis. Manual/local dependency selection still scopes
 native edits independently to the frontend and standalone runtime; shared
 fork/tool/checker changes select maintained Clang units as well. Complete extended
-runs use one immutable SHA. Active long builds finish before a newer queued
-explicit run. The
-workflow builds the admitted `compiler-asan-ubsan` foundation,
+runs use one immutable SHA. Repeated requests for the same source revision queue without canceling active
+work. A repaired release can progress alongside an older revision's analysis once
+its native build has completed. The workflow builds the admitted `compiler-asan-ubsan` foundation,
 separate integrated-frontend and standalone-runtime databases, and the matched
 analysis tool in its own six-hour job so the already broad native qualification
 cannot consume the analyzer's time budget. A second job admits only the exact
