@@ -1,5 +1,13 @@
 # Linux implementation sprint
 
+The [source 2.135 / System 2.61 mixed-call span](linux_mixed_carrier_calls.md)
+implements ARC/C++ carrier arguments and results through native functions,
+messages and Blocks, with checked propagation, selected-arm cleanup and explicit
+source-free capability admission. All 24 dedicated compiler commands, two
+publication profiles, 360 production decoder replays and four sanitizer
+configurations / fourteen commands pass; adjacent/full consolidation continues.
+One matched SDK follows the implementation batch.
+
 The [source 2.134 / System 2.60 runtime-call span](linux_cpp_carrier_runtime_calls.md)
 implements qualified C++ carrier messages and Block invocation with v13 native
 storage encodings, explicit nil failure, caller-owned snapshots and fresh results.

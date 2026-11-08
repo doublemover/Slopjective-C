@@ -132,6 +132,27 @@ inline bool HasNativeCppCarrierCallType(clang::QualType type,unsigned depth=0) {
   return false;
 }
 
+inline bool IsNativeMixedCarrierValue(clang::QualType type) {
+  return !type.isNull() && clang::hasObjC3CarrierCppPayload(type) &&
+      clang::hasObjC3CarrierManagedPayload(type);
+}
+inline bool HasNativeMixedCarrierCallType(clang::QualType type,unsigned depth=0) {
+  if(type.isNull())return false;
+  if(depth>64)return true;
+  type=type.getCanonicalType();
+  if(type->isPointerType() || type->isBlockPointerType() || type->isReferenceType())
+    return HasNativeMixedCarrierCallType(type->getPointeeType(),depth+1);
+  if(const auto *member=type->getAs<clang::MemberPointerType>())
+    return HasNativeMixedCarrierCallType(member->getPointeeType(),depth+1);
+  if(const auto *function=type->getAs<clang::FunctionType>()) {
+    if(IsNativeMixedCarrierValue(function->getReturnType()) ||
+        HasNativeMixedCarrierCallType(function->getReturnType(),depth+1))return true;
+    if(const auto *prototype=llvm::dyn_cast<clang::FunctionProtoType>(function))
+      for(auto parameter:prototype->param_types())
+        if(IsNativeMixedCarrierValue(parameter) || HasNativeMixedCarrierCallType(parameter,depth+1))return true;
+  }
+  return false;
+}
 inline bool HasNativeCppCarrierRuntimeType(clang::QualType type,unsigned depth=0) {
   if(type.isNull())return false;
   if(depth>64)return true;
@@ -300,6 +321,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeTypeContracts(out, array->getElementType(), context,
                               position + ".element", depth + 1);
   } else if (const auto *function = type->getAs<clang::FunctionType>()) {
+    if(HasNativeMixedCarrierCallType(type))
+      AppendNativeContractField(out,";mixed-carrier-call:v1;");
     if(HasNativeCppCarrierRuntimeType(type))
       AppendNativeContractField(out,";cxx-carrier-runtime:v1;");
     if(HasNativeCheckedCppRecordResultType(type))

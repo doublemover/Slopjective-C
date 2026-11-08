@@ -129,6 +129,29 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationMixedCarrierCall(const clang::NamedDecl *declaration) {
+  if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
+    if(HasNativeMixedCarrierCallType(method->getObjC3FunctionType()))return true;
+  if(const auto *container=llvm::dyn_cast<clang::ObjCContainerDecl>(declaration))
+    for(const auto *method:container->methods())
+      if(HasNativeMixedCarrierCallType(method->getObjC3FunctionType()))return true;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Calls : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitCallExpr(clang::CallExpr *call) override {
+        found|=HasNativeMixedCarrierCallType(call->getCallee()->getType());return true;
+      }
+      bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+        if(const auto *method=message->getMethodDecl())found|=HasNativeMixedCarrierCallType(method->getObjC3FunctionType());return true;
+      }
+      bool VisitBlockExpr(clang::BlockExpr *block) override {
+        found|=HasNativeMixedCarrierCallType(block->getType());return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationCppCarrierRuntime(const clang::NamedDecl *declaration) {
   if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
     if(HasNativeCppCarrierCallType(method->getObjC3FunctionType()))return true;

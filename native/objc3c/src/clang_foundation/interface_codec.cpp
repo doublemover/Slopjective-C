@@ -28,6 +28,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kMixedCarrierCallSemantic,
     kCppCarrierRuntimeSemantic,
     kCheckedCppRecordResultSemantic,
     kCppCarrierStorageSemantic,
@@ -681,6 +682,10 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool mixed_calls=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasMixedCarrierCallIdentity);
+  const bool mixed_call_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kMixedCarrierCallSemantic)!=sidecar.required_semantics.end();
+  if(mixed_calls!=mixed_call_capability)
+    return Invalid("mixed ARC/C++ carrier call identity and required capability must agree");
   const bool cpp_runtime=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCppCarrierRuntimeIdentity);
   const bool cpp_runtime_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCppCarrierRuntimeSemantic)!=sidecar.required_semantics.end();
   if(cpp_runtime!=cpp_runtime_capability)

@@ -6424,6 +6424,63 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
   }
 }
 
+void TestMixedCarrierCallReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string prelude=R"(
+      @protocol Error @end
+      namespace PublishedMixedCall {
+        struct Value {int value;explicit Value(int);Value(const Value &);Value(Value &&);~Value() noexcept;};
+        typedef id __strong Strong;typedef __objc3_result(Value,Strong) Maybe;
+        typedef Maybe (^Callback)(Maybe);
+      }
+      __attribute__((objc_root_class)) @interface PublishedMixedCallHost
+      - (PublishedMixedCall::Maybe)echo:(PublishedMixedCall::Maybe)value;
+      - (PublishedMixedCall::Maybe)checked:(PublishedMixedCall::Maybe)value __objc3_throws(id<Error>);
+      @end
+    )";
+    const auto source=prelude+R"(
+      namespace PublishedMixedCall {
+        inline Maybe message(PublishedMixedCallHost *_Nonnull object){return [object echo:__objc3_ok(Value,Strong,Value(7))];}
+        inline Maybe implicit_message(PublishedMixedCallHost *_Nonnull object,const Maybe &value){return [object echo:value];}
+        inline Maybe implicit_block(Callback _Nonnull callback,const Maybe &value){return callback(value);}
+        inline int checked(PublishedMixedCallHost *_Nonnull object){auto value=__objc3_try_optional([object checked:__objc3_ok(Value,Strong,Value(7))]);return __objc3_has_value(value);}
+        inline Maybe invoke(Callback _Nonnull callback){return callback(__objc3_ok(Value,Strong,Value(7)));}
+        inline int literal(){auto callback=^Maybe(Maybe value){return __objc3_copy(value);};auto value=callback(__objc3_err(Value,Strong,(id)0));return __objc3_is_ok(value);}
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"mixed-carrier-call.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.mixed_carrier_call","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.mixed_carrier_call","test",{},{},{},{"PublishedMixedCall","PublishedMixedCallHost","Error"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kMixedCarrierCallSemantic)));
+    auto older=supported;std::erase(older,llvm::StringRef(kMixedCarrierCallSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kMixedCarrierCallSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto declarations=emit(R"(
+      @protocol Error @end
+      namespace PublishedMixedCall {struct Plain {int value;};}
+      __attribute__((objc_root_class)) @interface PublishedMixedCallHost @end
+    )");auto invented=DecodeSemanticInterfaceSidecar(declarations.sidecar_json,declarations.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kMixedCarrierCallSemantic)));
+    invented->required_semantics.push_back(kMixedCarrierCallSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestCppCarrierRuntimeReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10666,6 +10723,7 @@ int main(int argc,char **argv) {
   TestClosureFactories();
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
+  TestMixedCarrierCallReplay();
   TestCppCarrierRuntimeReplay();
   TestCheckedCppRecordResultReplay();
   TestCppCarrierDefaultStorageReplay();

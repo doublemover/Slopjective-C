@@ -24400,7 +24400,7 @@ index 000000000..c71050aa5
 +  __objc3_try_force(reference()); // expected-error {{returns a prvalue}}
 +}
 diff --git a/clang/lib/Sema/SemaInit.cpp b/clang/lib/Sema/SemaInit.cpp
-index 09d9f1eab..05a67e06d 100644
+index 09d9f1eab..b2c85e4c4 100644
 --- a/clang/lib/Sema/SemaInit.cpp
 +++ b/clang/lib/Sema/SemaInit.cpp
 @@ -17,6 +17,7 @@
@@ -24460,7 +24460,7 @@ index 09d9f1eab..05a67e06d 100644
      return false;
  
    QualType ParmT =
-@@ -8002,10 +8009,44 @@ ExprResult InitializationSequence::Perform(Sema &S,
+@@ -8002,10 +8009,45 @@ ExprResult InitializationSequence::Perform(Sema &S,
      return ExprResult(Args[0]);
    }
  
@@ -24493,7 +24493,8 @@ index 09d9f1eab..05a67e06d 100644
 +  if (S.getLangOpts().CPlusPlus && Args.size() == 1 && Args[0]->isGLValue() &&
 +      (IsCarrierMemberStorage || IsCarrierValueParameter) &&
 +      hasObjC3CarrierCppPayload(Entity.getType()) &&
-+      !hasObjC3CarrierManagedPayload(Entity.getType()) &&
++      (!hasObjC3CarrierManagedPayload(Entity.getType()) ||
++       (IsCarrierValueParameter && S.getLangOpts().ObjCAutoRefCount)) &&
 +      S.Context.hasSameUnqualifiedType(Entity.getType(), Args[0]->getType())) {
 +    ExprResult Transfer=S.ActOnObjC3CarrierTransferExpr(
 +        Args[0]->isXValue(), Kind.getLocation(), Args[0]->getBeginLoc(), Args[0],
@@ -24505,7 +24506,7 @@ index 09d9f1eab..05a67e06d 100644
    if (S.getLangOpts().CPlusPlus11 && Entity.getType()->isReferenceType() &&
        Args.size() == 1 && isa<InitListExpr>(Args[0]) &&
        !Entity.isParamOrTemplateParamKind()) {
-@@ -8370,6 +8411,15 @@ ExprResult InitializationSequence::Perform(Sema &S,
+@@ -8370,6 +8412,15 @@ ExprResult InitializationSequence::Perform(Sema &S,
  
      case SK_ConversionSequence:
      case SK_ConversionSequenceNoNarrowing: {
@@ -24521,7 +24522,7 @@ index 09d9f1eab..05a67e06d 100644
        if (const auto *FromPtrType =
                CurInit.get()->getType()->getAs<PointerType>()) {
          if (const auto *ToPtrType = Step->Type->getAs<PointerType>()) {
-@@ -8556,6 +8606,17 @@ ExprResult InitializationSequence::Perform(Sema &S,
+@@ -8556,6 +8607,17 @@ ExprResult InitializationSequence::Perform(Sema &S,
      }
  
      case SK_CAssignment: {
@@ -24539,7 +24540,7 @@ index 09d9f1eab..05a67e06d 100644
        QualType SourceType = CurInit.get()->getType();
        Expr *Init = CurInit.get();
  
-@@ -9057,6 +9118,13 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9057,6 +9119,13 @@ bool InitializationSequence::Diagnose(Sema &S,
    else
      OnlyArg = nullptr;
  
@@ -24553,7 +24554,7 @@ index 09d9f1eab..05a67e06d 100644
    switch (Failure) {
    case FK_TooManyInitsForReference:
      // FIXME: Customize for the initialized entity?
-@@ -9116,7 +9184,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9116,7 +9185,7 @@ bool InitializationSequence::Diagnose(Sema &S,
                ? diag::err_array_init_different_type
                : diag::err_array_init_non_constant_array))
        << DestType.getNonReferenceType()
@@ -24562,7 +24563,7 @@ index 09d9f1eab..05a67e06d 100644
        << Args[0]->getSourceRange();
      break;
  
-@@ -9137,12 +9205,13 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9137,12 +9206,13 @@ bool InitializationSequence::Diagnose(Sema &S,
    case FK_AddressOfUnaddressableFunction: {
      auto *FD = cast<FunctionDecl>(cast<DeclRefExpr>(OnlyArg)->getDecl());
      S.checkAddressOfFunctionIsAvailable(FD, /*Complain=*/true,
@@ -24577,7 +24578,7 @@ index 09d9f1eab..05a67e06d 100644
      switch (FailedOverloadResult) {
      case OR_Ambiguous:
  
-@@ -9151,10 +9220,10 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9151,10 +9221,10 @@ bool InitializationSequence::Diagnose(Sema &S,
                Kind.getLocation(),
                Failure == FK_UserConversionOverloadFailed
                    ? (S.PDiag(diag::err_typecheck_ambiguous_condition)
@@ -24590,7 +24591,7 @@ index 09d9f1eab..05a67e06d 100644
                       << Args[0]->getSourceRange())),
            S, OCD_AmbiguousCandidates, Args);
        break;
-@@ -9164,10 +9233,10 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9164,10 +9234,10 @@ bool InitializationSequence::Diagnose(Sema &S,
        if (!S.RequireCompleteType(Kind.getLocation(),
                                   DestType.getNonReferenceType(),
                            diag::err_typecheck_nonviable_condition_incomplete,
@@ -24603,7 +24604,7 @@ index 09d9f1eab..05a67e06d 100644
            << DestType.getNonReferenceType();
  
        FailedCandidateSet.NoteCandidates(S, Args, Cands);
-@@ -9180,7 +9249,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9180,7 +9250,7 @@ bool InitializationSequence::Diagnose(Sema &S,
  
        StringLiteral *Msg = Best->Function->getDeletedMessage();
        S.Diag(Kind.getLocation(), diag::err_typecheck_deleted_function)
@@ -24612,7 +24613,7 @@ index 09d9f1eab..05a67e06d 100644
            << (Msg != nullptr) << (Msg ? Msg->getString() : StringRef())
            << Args[0]->getSourceRange();
        if (Ovl == OR_Deleted) {
-@@ -9214,7 +9283,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9214,7 +9284,7 @@ bool InitializationSequence::Diagnose(Sema &S,
               : diag::err_lvalue_reference_bind_to_unrelated)
        << DestType.getNonReferenceType().isVolatileQualified()
        << DestType.getNonReferenceType()
@@ -24621,7 +24622,7 @@ index 09d9f1eab..05a67e06d 100644
        << Args[0]->getSourceRange();
      break;
  
-@@ -9244,7 +9313,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9244,7 +9314,7 @@ bool InitializationSequence::Diagnose(Sema &S,
  
    case FK_RValueReferenceBindingToLValue:
      S.Diag(Kind.getLocation(), diag::err_lvalue_to_rvalue_ref)
@@ -24630,7 +24631,7 @@ index 09d9f1eab..05a67e06d 100644
        << Args[0]->getSourceRange();
      break;
  
-@@ -9254,7 +9323,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9254,7 +9324,7 @@ bool InitializationSequence::Diagnose(Sema &S,
      break;
  
    case FK_ReferenceInitDropsQualifiers: {
@@ -24639,7 +24640,7 @@ index 09d9f1eab..05a67e06d 100644
      QualType NonRefType = DestType.getNonReferenceType();
      Qualifiers DroppedQualifiers =
          SourceType.getQualifiers() - NonRefType.getQualifiers();
-@@ -9282,19 +9351,19 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9282,19 +9352,19 @@ bool InitializationSequence::Diagnose(Sema &S,
      S.Diag(Kind.getLocation(), diag::err_reference_bind_failed)
        << DestType.getNonReferenceType()
        << DestType.getNonReferenceType()->isIncompleteType()
@@ -24663,7 +24664,7 @@ index 09d9f1eab..05a67e06d 100644
               diag::err_amdgcn_predicate_type_needs_explicit_bool_cast)
            << OnlyArg << DestType;
        break;
-@@ -9302,7 +9371,7 @@ bool InitializationSequence::Diagnose(Sema &S,
+@@ -9302,7 +9372,7 @@ bool InitializationSequence::Diagnose(Sema &S,
      PartialDiagnostic PDiag = S.PDiag(diag::err_init_conversion_failed)
        << (int)Entity.getKind()
        << DestType
