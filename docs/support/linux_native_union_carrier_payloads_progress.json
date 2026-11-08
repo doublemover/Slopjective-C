@@ -9,7 +9,11 @@
   "compiler": {
     "dedicated_commands": 26,
     "all_passed": true,
-    "full_sweep": "running"
+    "full_sweep": {
+      "discovered": 549,
+      "passed": 546,
+      "unsupported": 3
+    }
   },
   "ast_controls": 62,
   "publication_profiles": 2,
@@ -43,5 +47,6 @@
     "null transfer children in byref capture analysis",
     "source-free implicit return move identity"
   ],
-  "full_current_consolidation": "compiler sweep running; full matched analysis and SDK follow remaining implementation"
+  "full_current_consolidation": "546 executable compiler cases pass; full matched analysis and SDK follow remaining implementation",
+  "all_focused_checks_passed": true
 }

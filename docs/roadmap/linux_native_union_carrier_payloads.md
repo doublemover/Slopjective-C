@@ -40,6 +40,7 @@ and C++-only exception handling. A fifth C++23 ARC PCH configuration instruments
 both runtime and client and adds constructor-prefix and array-prefix failures.
 
 The [receipt](../support/linux_native_union_carrier_payloads_progress.json)
-records focused results and current consolidation. Extension ABI 24/frame
+records focused results and the complete compiler consolidation: 546 passing
+executable cases, 549 discovered, three unsupported. Extension ABI 24/frame
 1/services 4/schema 2.2 layouts retain their versions. Remaining implementation
 precedes final matched analysis and one SDK delivery.
