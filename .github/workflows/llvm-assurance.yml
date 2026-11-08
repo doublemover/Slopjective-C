@@ -1,13 +1,25 @@
 name: Extended LLVM IR and optimized debugger assurance
 on:
   workflow_dispatch:
+    inputs:
+      dependency_cache:
+        description: Run only dependency setup checks instead of the compiler campaign
+        type: choice
+        options: [off, any, warm]
+        default: off
 permissions:
   contents: read
 concurrency:
-  group: linux-llvm-assurance-${{ github.event.pull_request.number || github.ref }}
+  group: linux-llvm-assurance-${{ github.event.pull_request.number || github.ref }}-${{ inputs.dependency_cache || 'off' }}
   cancel-in-progress: false
 jobs:
+  dependency-cache:
+    if: inputs.dependency_cache == 'any' || inputs.dependency_cache == 'warm'
+    uses: ./.github/workflows/dependency-cache.yml
+    with:
+      expectation: ${{ inputs.dependency_cache }}
   llvm-assurance:
+    if: inputs.dependency_cache == '' || inputs.dependency_cache == 'off'
     name: Execute matched LLVM IR and optimized debug controls
     runs-on: ubuntu-26.04
     container:

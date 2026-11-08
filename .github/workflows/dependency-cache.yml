@@ -1,5 +1,10 @@
 name: Linux dependency cache qualification
 on:
+  workflow_call:
+    inputs:
+      expectation:
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       expectation:
