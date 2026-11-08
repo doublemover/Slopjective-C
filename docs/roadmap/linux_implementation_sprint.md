@@ -2,9 +2,10 @@
 
 The [source 2.136 / System 2.62 C++ value-call span](linux_cpp_carrier_value_calls.md)
 extends caller-owned carrier construction to trivial-destructor, plain, empty and
-union record payloads, with the `objc3.cxx-carrier-call.v2` hard cutover. Native
-and publication controls are being consolidated while the remaining feature
-batch continues.
+union record payloads, with the `objc3.cxx-carrier-call.v2` hard cutover. All 49 dedicated compiler commands, 27 updated frontend groups,
+380 decoder replays, release/instrumented layout controls and four sanitizer
+configurations / fourteen commands pass. Full consolidation follows the feature
+batch.
 
 The [source 2.135 / System 2.61 mixed-call span](linux_mixed_carrier_calls.md)
 implements ARC/C++ carrier arguments and results through native functions,

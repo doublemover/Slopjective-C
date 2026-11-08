@@ -34,8 +34,10 @@ respective invocation boundaries.
 All 49 dedicated compiler commands, 27 updated frontend groups, four publication
 profiles and 380 production decoder replays pass. Fourteen runtime patch controls
 and native layout controls pass with both release and ASan/UBSan runtime builds,
-including 51 malformed-description rejection checks. The native fixture matrix
-is being consolidated, including the equal-layout capture-helper regression.
+including 51 malformed-description rejection checks. Four native ASan/UBSan configurations / fourteen commands pass, including
+C++20/23, ARC/MRC, optimized PCH, disabled elision, C++-only exceptions and the
+equal-layout capture-helper regression. A separate MRC no-elision debug run also
+passes. Full compiler consolidation follows the feature batch.
 This development span does not reseal the compiler or produce an SDK archive. Extension ABI 24, native frame 1, services 4 and schema
 2.2 retain their layouts; final consolidation and one matched SDK follow the
 implementation batch.
