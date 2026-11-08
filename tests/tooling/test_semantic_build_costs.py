@@ -27,7 +27,7 @@ def native_build_reports(tmp_path_factory):
         identity = hashlib.sha256(main.read_bytes()).hexdigest()
         commands = {'configure': ['cmake', '-S', source, '-B', directory, '-G', 'Ninja',
                 '-DCMAKE_C_COMPILER='+compiler, '-DCMAKE_INSTALL_PREFIX='+str(prefix)],
-            'build': ['cmake', '--build', directory, '--parallel', '1'],
+            'build': ['cmake', '--build', directory, '--target', 'witness', '--parallel', '1'],
             'test': ['ctest', '--test-dir', directory, '--no-tests=error', '--output-on-failure'],
             'stage': ['cmake', '--install', directory]}
         return {phase: {'paths': {'build': str(directory)},
@@ -35,7 +35,8 @@ def native_build_reports(tmp_path_factory):
             'sdk_consumers': {'installed': {'present': prefix.exists()}},
             'source_build_id': identity, 'source_tree': identity, 'build_config_digest': 'control-config',
             'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'},
-            'host_environment': {'compiler': compiler}, 'command': list(map(str, argv))}
+            'host_environment': {'compiler': compiler, 'ninja_path': shutil.which('ninja')},
+            'command': list(map(str, argv))}
             for phase, argv in commands.items()}
     patch = pytest.MonkeyPatch();patch.setattr(build, 'build_plans', plans)
     reports = []
@@ -45,6 +46,7 @@ def native_build_reports(tmp_path_factory):
         for stage in ('cold', 'unchanged-a', 'unchanged-b', 'changed-source'):
             if stage == 'changed-source': main.write_text('int main(void) { return 6*7 == 42 ? 0 : 1; }\n')
             report = build.build_foundation(repo, host='linux-x86_64', stage=True)
+            assert report['configured_build_targets']['required_targets'] == ['witness']
             reports.append(Path(report['run_directory']) / 'report.json')
         yield root, reports
     finally:
