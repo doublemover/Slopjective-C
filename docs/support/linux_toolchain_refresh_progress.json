@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "REPAIRS_PUSHED_PRECEDING_ANALYSIS_AND_COVERAGE_CONTINUE",
+  "status": "CURRENT_SOURCE_QUALIFICATION_IN_PROGRESS",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -346,35 +346,71 @@
         "artifact": 13635914224,
         "artifact_sha256": "bd61c179ccede3d231c632e57ac3ff0acb10dfe935669a460eeb3766da27bb95",
         "repair": "Explicit lookup/direct dispatch across ARC/MRC and C++20/23; require the actual message result and its owned global store. All eight focused native configurations pass."
+      },
+      "ecf_native_and_independent_owners": {
+        "SDK_release": {
+          "run": 42528854066,
+          "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+          "status": "FAILED_CORE_REPAIRED_RETRY_REQUIRED",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
+        },
+        "native_assurance": {
+          "run": 42528854066,
+          "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+          "status": "FAILED_CORE_REPAIRED_RETRY_REQUIRED",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42528858909,
+          "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+          "status": "PASS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528858909",
+          "job": 128878567165,
+          "IR_and_debugger_executions": 21,
+          "semantic_oracle_cases": 63,
+          "semantic_oracle_controls": 7,
+          "artifact": 13639191209,
+          "artifact_bytes": 187908710,
+          "artifact_sha256": "b20abc826c3aa86aee6068eae87bdf6f3b9863fe2434ecf167443f26142c8e1d"
+        },
+        "implementation_analysis": {
+          "run": 42528854066,
+          "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+          "status": "IN_PROGRESS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066",
+          "partition_jobs": {
+            "0": 128878455810,
+            "1": 128878455745,
+            "2": 128878455827,
+            "3": 128878455772
+          }
+        }
       }
     },
     "SDK_release": {
-      "run": 42528854066,
-      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
-      "status": "FAILED_CORE_REPAIRED_RETRY_REQUIRED",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
+      "run": 42536848346,
+      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536848346"
     },
     "native_assurance": {
-      "run": 42528854066,
-      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
-      "status": "FAILED_CORE_REPAIRED_RETRY_REQUIRED",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
+      "run": 42536848346,
+      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536848346"
     },
     "LLVM_IR_and_debugger": {
-      "run": 42528858909,
-      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
-      "status": "PASS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528858909",
-      "job": 128878567165,
-      "IR_and_debugger_executions": 21,
-      "semantic_oracle_cases": 63,
-      "semantic_oracle_controls": 7,
-      "artifact": 13639191209,
-      "artifact_bytes": 187908710,
-      "artifact_sha256": "b20abc826c3aa86aee6068eae87bdf6f3b9863fe2434ecf167443f26142c8e1d"
+      "run": 42536852949,
+      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536852949"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -531,16 +567,16 @@
       "reassembled_compiler_inputs_bytes": 608002556
     },
     "implementation_analysis": {
-      "run": 42528854066,
-      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+      "run": 42536848346,
+      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536848346",
       "partition_jobs": {
-        "0": 128878455810,
-        "1": 128878455745,
-        "2": 128878455827,
-        "3": 128878455772
+        "0": 128903024978,
+        "1": 128903024972,
+        "2": 128903025000,
+        "3": 128903025029
       }
     },
     "upstream_repair_checkpoint": {
@@ -613,22 +649,6 @@
       "prepared_tree": "905250cc2c1edf42e59c21061db202c1973eaf93",
       "scope": "Actual corrected code generator with retained diagnostic libraries; complete current-source hosted qualification remains required."
     },
-    "current_source_frontend_fuzz": {
-      "status": "PASS",
-      "run": 42528854066,
-      "job": 128878820042,
-      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-802c019b",
-      "campaigns_passed": 3,
-      "controls_passed": 6,
-      "executions": [
-        35759,
-        25234,
-        395
-      ],
-      "artifact": 13638981154,
-      "artifact_sha256": "12e3c24fe4c53c479533c34f024971914c51d15e30995b9f0443edf452053b9f"
-    },
     "core_checkpoint": {
       "run": 42528854066,
       "job": 128878819997,
@@ -670,7 +690,23 @@
         "Keep the sealed private SDK before sanitizer products; block failed prerequisites and publish only after the complete native batch passes",
         "Preserve PYTHONDONTWRITEBYTECODE through lit child environments; new real nested import regression writes no prepared-source bytecode"
       ],
-      "remaining_hosted_work": "Collect preceding source coverage and four-part analysis, then qualify the repaired complete identity"
+      "remaining_hosted_work": "Repaired complete qualification running; preceding independent analysis/coverage jobs continue to expose additional defects."
+    },
+    "preceding_frontend_fuzz": {
+      "status": "PASS",
+      "run": 42528854066,
+      "job": 128878820042,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-802c019b",
+      "campaigns_passed": 3,
+      "controls_passed": 6,
+      "executions": [
+        35759,
+        25234,
+        395
+      ],
+      "artifact": 13638981154,
+      "artifact_sha256": "12e3c24fe4c53c479533c34f024971914c51d15e30995b9f0443edf452053b9f"
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",

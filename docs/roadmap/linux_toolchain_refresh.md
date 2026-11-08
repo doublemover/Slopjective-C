@@ -140,13 +140,16 @@ lit dropping the nested Python no-bytecode policy. All three are repaired at
 `facffee19`: 105 focused controls, the original module/optimizer case and a real
 nested-Python regression pass. Removing the environment repair makes that
 regression fail as intended. The source seal verifies. The preceding coverage
-and four analysis partitions continue to collect independent results before the
-next complete retry.
+and four analysis partitions continue to collect independent results alongside
+the repaired complete qualification.
 
 That preceding source also passes three frontend fuzz campaigns/six controls and
 [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42528858909):
 21 IR/debugger executions, 63 oracle cases and seven controls. Current repaired-source quick gates pass 1,592 tests and 33 subtests, with 111
 explicit capability/platform skips.
+The repaired [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42536848346)
+and [LLVM/oracle](https://github.com/doublemover/Slopjective-C/actions/runs/42536852949)
+campaigns are running at `87040229e` with producer `5916ec08b8a2 / 0fcb354b`.
 Fresh Debian/Ubuntu archive checks follow a passing complete release campaign.
 **SDK 2.62.0 remains the last accepted archive; the replacement is not accepted
 or activated.** The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
