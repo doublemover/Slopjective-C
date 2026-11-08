@@ -129,6 +129,39 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationNativeBlockAlignment(const clang::NamedDecl *declaration) {
+  auto &context=declaration->getASTContext();const auto &triple=context.getTargetInfo().getTriple();
+  if(!context.getLangOpts().ObjC3 || triple.getArch()!=llvm::Triple::x86_64 ||
+      !triple.isOSLinux() || !triple.isGNUEnvironment() ||
+      context.getLangOpts().ObjCRuntime.getAsString()!="gnustep-2.2")return false;
+  return HasPublishedExpression(declaration,[&](const clang::Stmt *statement) {
+    struct Alignment : clang::DynamicRecursiveASTVisitor {
+      clang::ASTContext &context;bool found=false;
+      explicit Alignment(clang::ASTContext &context):context(context) {}
+      bool VisitVarDecl(clang::VarDecl *variable) override {
+        // Publication of local alignment is part of this contract even if a
+        // particular instantiation does not need an aligned heap Block.
+        if(variable->isLocalVarDecl())
+          for(const auto *attribute:variable->attrs())
+            if(!attribute->isImplicit() && llvm::isa<clang::AlignedAttr>(attribute))found=true;
+        return true;
+      }
+      bool VisitBlockExpr(clang::BlockExpr *block) override {
+        for(const auto &capture:block->getBlockDecl()->captures()) {
+          if(capture.isByRef())continue;
+          auto type=capture.getCaptureType();
+          if(type->isDependentType()){found=true;continue;}
+          if(!type->isIncompleteType() &&
+              (context.getTypeAlignInChars(type)>clang::CharUnits::fromQuantity(16) ||
+               context.getDeclAlign(capture.getVariable())>clang::CharUnits::fromQuantity(16)))found=true;
+        }
+        return true;
+      }
+    } visitor(context);
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationMixedCarrierCall(const clang::NamedDecl *declaration) {
   if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
     if(HasNativeMixedCarrierCallType(method->getObjC3FunctionType()))return true;

@@ -258,6 +258,10 @@ inline constexpr const char *kCheckedKeyPathReadSemantic = "objc3.keypath-checke
 inline bool HasCheckedKeyPathReadIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-checked-reads:v1;") != std::string::npos;
 }
+inline constexpr const char *kNativeBlockAlignmentSemantic = "objc3.native-block-alignment.v1";
+inline bool HasNativeBlockAlignmentIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-block-alignment:v1;") != std::string::npos;
+}
 inline constexpr const char *kMixedCarrierCallSemantic = "objc3.mixed-carrier-call.v1";
 inline bool HasMixedCarrierCallIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";mixed-carrier-call:v1;") != std::string::npos;

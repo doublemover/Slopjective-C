@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.137 / System 2.63 aligned Block span](linux_aligned_block_storage.md)
+implements native aligned heap captures and published local alignment contracts.
+All 73 dedicated compiler commands, 420 decoder replays and six sanitizer
+configurations / 21 commands pass. Adjacent frontend and instrumented runtime
+consolidation continues while the remaining implementation batch proceeds.
+
 The [source 2.136 / System 2.62 C++ value-call span](linux_cpp_carrier_value_calls.md)
 extends caller-owned carrier construction to trivial-destructor, plain, empty and
 union record payloads, with the `objc3.cxx-carrier-call.v2` hard cutover. All 49 dedicated compiler commands, 27 updated frontend groups,

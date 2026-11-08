@@ -724,6 +724,8 @@ std::string UnnamedTemplateTypeKey(clang::QualType type,const clang::ASTContext 
   return visitor.key;
 }
 
+std::string NativeAttributeValue(const clang::Attr *,const clang::NamedDecl *);
+
 class DeclarationExpressionIdentity final
     : public clang::RecursiveASTVisitor<DeclarationExpressionIdentity> {
 public:
@@ -963,6 +965,10 @@ public:
     Add("storage:" + std::to_string(declaration->getStorageClass()));
     Add("thread-storage:" + std::to_string(declaration->getTSCSpec()));
     Add("block-byref:" + std::to_string(declaration->hasAttr<clang::BlocksAttr>()));
+    if(declaration->isLocalVarDeclOrParm())
+      for(const auto *attribute:declaration->attrs())
+        if(!attribute->isImplicit() && llvm::isa<clang::AlignedAttr>(attribute))
+          Add("local-alignment:"+NativeAttributeValue(attribute,declaration));
     Add("init-style:" + std::to_string(declaration->getInitStyle()));
     if (!llvm::isa<clang::ParmVarDecl>(declaration))
       Add("nrvo:" + std::to_string(declaration->isNRVOVariable()));
@@ -2525,6 +2531,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationNativeBlockAlignment(representative))
+    identity.canonical_type_identity += ";native-block-alignment:v1;";
   if (HasDeclarationMixedCarrierCall(representative))
     identity.canonical_type_identity += ";mixed-carrier-call:v1;";
   if (HasDeclarationCppCarrierRuntime(representative))

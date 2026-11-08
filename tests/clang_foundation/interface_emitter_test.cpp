@@ -6481,6 +6481,87 @@ void TestMixedCarrierCallReplay() {
   }
 }
 
+void TestNativeBlockAlignmentReplay() {
+ for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+   "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+   "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+  if(arc)args.push_back("-fobjc-arc");
+  const std::string source=R"(
+   namespace PublishedAlignedBlock {
+    struct alignas(128) Value {int value;explicit Value(int);Value(const Value &);~Value() noexcept;};
+    inline int capture(int seed){Value value(seed);auto callback=^int{return value.value;};return callback();}
+    inline int scalar(int seed){alignas(64) int value=seed;auto callback=^int{return value;};return callback();}
+    template<class T> inline int aligned_local(T value){alignas(T) T copy(value);auto callback=^int{(void)copy;return 1;};return callback();}
+    template<class T> inline int generic(T value){auto callback=^int{(void)value;return 1;};return callback();}
+   }
+  )";
+  auto emit=[&](const std::string &text) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-aligned-block.mm");
+   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.aligned_block","test",{}));
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.aligned_block","test",{},{},{},{"PublishedAlignedBlock"});
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  auto changed=source;auto alignment=changed.find("alignas(64)");assert(alignment!=std::string::npos);
+  changed.replace(alignment,std::string("alignas(64)").size(),"alignas(256)");
+  assert(first.identity.semantic_fingerprint!=emit(changed).identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+  assert(llvm::is_contained(read->required_semantics,std::string(kNativeBlockAlignmentSemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeBlockAlignmentSemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(read->required_semantics,kNativeBlockAlignmentSemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*read,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  auto plain=emit("namespace PublishedAlignedBlock {inline int plain(){return 42;}}");
+  auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+  invented->required_semantics.push_back(kNativeBlockAlignmentSemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+ }
+ for(bool arc:{false,true}) {
+  std::vector<std::string> args={"-x","objective-c","-std=c17",
+   "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+   "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+  if(arc)args.push_back("-fobjc-arc");
+  const std::string source=R"(
+   struct __attribute__((aligned(64))) PublishedCAlignedValue {int value;};
+   inline int published_c_aligned_capture(int seed) {
+    struct PublishedCAlignedValue value={seed};int scalar __attribute__((aligned(32)))=seed;
+    int (^block)(void)=^int{return value.value+scalar;};return block();
+   }
+  )";
+  auto emit=[&](const std::string &text) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-c-aligned-block.m");
+   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.c_aligned_block","test",{}));
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.c_aligned_block","test");
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  auto changed=source;auto alignment=changed.find("aligned(32)");assert(alignment!=std::string::npos);
+  changed.replace(alignment,std::string("aligned(32)").size(),"aligned(64)");
+  assert(first.identity.semantic_fingerprint!=emit(changed).identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+  assert(llvm::is_contained(read->required_semantics,std::string(kNativeBlockAlignmentSemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeBlockAlignmentSemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(read->required_semantics,kNativeBlockAlignmentSemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*read,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  auto plain=emit("inline int published_c_plain(void){return 42;}");
+  auto invented=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,supported);assert(invented);
+  invented->required_semantics.push_back(kNativeBlockAlignmentSemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+ }
+}
+
 void TestCppCarrierValueReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10790,6 +10871,7 @@ int main(int argc,char **argv) {
   TestCheckedIsolatedPropertyReplay();
   TestAsyncIsolatedPropertyReplay();
   TestMixedCarrierCallReplay();
+  TestNativeBlockAlignmentReplay();
   TestCppCarrierValueReplay();
   TestCppCarrierRuntimeReplay();
   TestCheckedCppRecordResultReplay();

@@ -400,10 +400,29 @@ index 2b987f99d..3d5492fd2 100644
  	struct reference_list *list = object_getIndexedIvars(hiddenClass);
  	INIT_LOCK(list->lock);
 diff --git a/blocks_runtime.m b/blocks_runtime.m
-index 91ab85d94..39b18d208 100644
+index 91ab85d94..ffbcf8f23 100644
 --- a/blocks_runtime.m
 +++ b/blocks_runtime.m
-@@ -252,7 +252,18 @@ OBJC_PUBLIC void *_Block_copy(const void *src)
+@@ -247,12 +247,36 @@ OBJC_PUBLIC void *_Block_copy(const void *src)
+ 	// If the block is Global, there's no need to copy it on the heap.
+ 	if(self->isa == &_NSConcreteStackBlock)
+ 	{
+-		ret = gc->malloc(self->descriptor->size);
++		// ObjC3 native descriptors use a versioned reserved word to carry
++		// alignment beyond malloc's guarantee. Reference counts remain in
++		// the distinct Block header word, including repeated heap copies.
++		unsigned long layout = self->descriptor->reserved;
++		if (sizeof(layout) == 8 && (layout >> 32) == 0x4f334241UL) {
++			size_t alignment = (size_t)(layout & 0xffffffffUL);
++			if (alignment <= 16 || (alignment & (alignment - 1)) ||
++			    self->descriptor->size < sizeof(struct Block_layout)) abort();
++			if (!gc->malloc_aligned) return NULL;
++			ret = gc->malloc_aligned(alignment, self->descriptor->size);
++		} else {
++			ret = gc->malloc(self->descriptor->size);
++		}
++		if (!ret) return NULL;
+ 		memcpy(ret, self, self->descriptor->size);
  		ret->isa = &_NSConcreteMallocBlock;
  		if(self->flags & BLOCK_HAS_COPY_DISPOSE)
  		{
@@ -423,7 +442,7 @@ index 91ab85d94..39b18d208 100644
  		}
  		// We don't need any atomic operations here, because on-stack blocks
  		// can not be aliased across threads (unless you've done something
-@@ -321,4 +332,4 @@ OBJC_PUBLIC bool _Block_tryRetain(const void* arg)
+@@ -321,4 +345,4 @@ OBJC_PUBLIC bool _Block_tryRetain(const void* arg)
  		newVal = __sync_val_compare_and_swap(refCountPtr, refCountVal, newVal + 1);
  	} while (newVal != refCountVal);
  	return true;
@@ -886,7 +905,7 @@ index ec2f646a2..97508cbaf 100644
  	// an instance of cls.
  	cls = classForObject(instance);
 diff --git a/gc_none.c b/gc_none.c
-index f263f37ba..29cb171eb 100644
+index f263f37ba..2cf4137c7 100644
 --- a/gc_none.c
 +++ b/gc_none.c
 @@ -8,7 +8,12 @@
@@ -911,6 +930,43 @@ index f263f37ba..29cb171eb 100644
  	return (id)(addr + 1);
  }
  
+@@ -35,6 +41,15 @@ static void *alloc(size_t size)
+ 	return calloc(size, 1);
+ }
+ 
++static void *alloc_aligned(size_t alignment, size_t size)
++{
++	void *storage = NULL;
++	if (alignment < sizeof(void*) || (alignment & (alignment - 1)) ||
++	    posix_memalign(&storage, alignment, size) != 0) return NULL;
++	memset(storage, 0, size);
++	return storage;
++}
++
+ void objc_registerThreadWithCollector(void) {}
+ void objc_unregisterThreadWithCollector(void) {}
+ void objc_assertRegisteredThreadWithCollector() {}
+@@ -44,6 +59,7 @@ PRIVATE struct gc_ops gc_ops_none =
+ 	.allocate_class = allocate_class,
+ 	.free_object    = free_object,
+ 	.malloc         = alloc,
++	.malloc_aligned = alloc_aligned,
+ 	.free           = free
+ };
+ PRIVATE struct gc_ops *gc = &gc_ops_none;
+diff --git a/gc_ops.h b/gc_ops.h
+index 153b4b507..43605e5ba 100644
+--- a/gc_ops.h
++++ b/gc_ops.h
+@@ -23,6 +23,8 @@ struct gc_ops
+ 	 * memory that it returns.
+ 	 */
+ 	void* (*malloc)(size_t);
++	/** Native aligned Block storage; NULL when the collector cannot supply it. */
++	void* (*malloc_aligned)(size_t, size_t);
+ 	/**
+ 	 * Frees some memory that was previously used to store pointers.
+ 	 */
 diff --git a/loader.c b/loader.c
 index 449d7a7ce..18d026dc6 100644
 --- a/loader.c
@@ -935,6 +991,20 @@ index 541c31eee..adf23f784 100644
  
  /**
   * Initialise the protocol tables.
+diff --git a/objc/blocks_private.h b/objc/blocks_private.h
+index 8fd8ab8d9..c8c4845c9 100644
+--- a/objc/blocks_private.h
++++ b/objc/blocks_private.h
+@@ -24,7 +24,8 @@
+ struct Block_descriptor
+ {
+ 	/**
+-	 * Reserved for future use.  Currently always 0.
++	 * Zero for ordinary descriptors. ObjC3 native aligned descriptors use
++	 * high word 0x4f334241 and a power-of-two byte alignment in the low word.
+ 	 */
+ 	unsigned long int reserved;
+ 	/** Size of the block. */
 diff --git a/objcxx_eh.cc b/objcxx_eh.cc
 index 8ef5baf33..a1f588e86 100644
 --- a/objcxx_eh.cc
