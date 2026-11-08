@@ -23,9 +23,10 @@ nontrivial special-member facts. Union, packed/volatile storage and other
 unqualified fields retain explicit boundaries; MRC mixed ownership remains open.
 
 The [verification receipt](../support/linux_native_arc_record_payloads_progress.json)
-records completed checks: 25 dedicated compiler commands, the updated ownership
-admission control, all 58 AST controls, two source-free profiles, 520 production
+records completed checks: 25 dedicated compiler commands, two updated ownership
+admission controls, all 58 AST controls, two source-free profiles, 520 production
 decoder replays and three native ASan/UBSan configurations / ten commands pass.
-A full sweep of 542 discovered compiler cases is running. ABI 24/frame 1/services 4/schema 2.2 retain their
+All 539 executable compiler cases pass (542 discovered, three unsupported),
+including the updated obsolete rejection control, and all 32 frontend groups pass. ABI 24/frame 1/services 4/schema 2.2 retain their
 layouts. Full current compiler/analysis consolidation and one matched SDK follow
 the remaining implementation batch.

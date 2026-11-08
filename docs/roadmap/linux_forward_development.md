@@ -3,7 +3,8 @@
 The [source 2.141 / System 2.67 ARC record span](linux_native_arc_record_payloads.md)
 implements native C++ carrier payload records containing ordinary strong/weak/
 Block fields, and protects completed C++ fields while initializer temporaries
-finish cleanup. Current verification is being consolidated; remaining feature
+finish cleanup. All 539 executable compiler cases, 58 AST controls, 32 frontend groups, 520
+decoder replays and three native sanitizer configurations pass. Remaining feature
 implementation continues before one matched SDK delivery.
 
 The [source 2.140 / System 2.66 lambda span](linux_carrier_lambda_storage.md)

@@ -38193,10 +38193,10 @@ index 000000000..5eb8d547d
 +}
 diff --git a/clang/test/ObjC3/Sema/carrier-mixed-cxx-arc.mm b/clang/test/ObjC3/Sema/carrier-mixed-cxx-arc.mm
 new file mode 100644
-index 000000000..1ef3601bf
+index 000000000..b0996d717
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-mixed-cxx-arc.mm
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,34 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +
 +using Managed = __objc3_optional(id);
@@ -38229,7 +38229,8 @@ index 000000000..1ef3601bf
 +}
 +
 +struct HiddenManaged { id object; };
-+using RejectedRecord = __objc3_optional(HiddenManaged); // expected-error {{is not supported in an Objective-C 3 value carrier}}
++using NativeARCRecord = __objc3_optional(HiddenManaged);
++void accepted_native_arc_record(const NativeARCRecord &source) {auto copy=__objc3_copy(source);}
 diff --git a/clang/test/ObjC3/Sema/optional-coalescing-nullability.m b/clang/test/ObjC3/Sema/optional-coalescing-nullability.m
 new file mode 100644
 index 000000000..fa58f2c59

@@ -2,15 +2,22 @@
   "development_only": true,
   "source_version": "2.141",
   "system_version": "2.67",
-  "prepared_source_tree": "a814e0bda23736da20f30ece6cc999af8da429cb",
+  "prepared_source_tree": "3247af4f66775db6ec02c9b6ae9cd9aaace9b5b4",
   "extension_abi": 24,
   "compiler_identity_resealed": false,
   "matched_sdk_produced": false,
   "compiler": {
     "dedicated_commands": 25,
-    "updated_ownership_admission_commands": 1,
+    "updated_ownership_admission_commands": 2,
     "all_passed": true,
-    "full_sweep": "542 discovered cases currently running"
+    "full_sweep": {
+      "discovered": 542,
+      "passed": 539,
+      "unsupported": 3,
+      "initial_sweep_passed": 538,
+      "updated_obsolete_rejection_control_passed": 1,
+      "implementation_changed_after_sweep": false
+    }
   },
   "ast_controls": 58,
   "publication_profiles": 2,
@@ -30,6 +37,6 @@
     ]
   },
   "regression": "completed native C++ field cleanup when a constructor initializer temporary destructor throws",
-  "updated_frontend_consolidation": "focused current record replay passed; 31 preceding groups passed at source 2.140",
-  "full_current_consolidation": "compiler sweep running; analysis follows implementation batch"
+  "full_current_consolidation": "compiler/frontend/AST/native controls passed; full analysis follows implementation batch",
+  "updated_frontend_groups": 32
 }
