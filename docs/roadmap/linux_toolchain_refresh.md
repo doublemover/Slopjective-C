@@ -14,6 +14,11 @@ independent version numbers; no additional ABI revision is invented for this
 release refresh. All provider objects, PCH, interfaces and packages must be
 regenerated against the new source identity.
 
+The public embedding API already uses **frontend ABI 3** for module-aware
+compilation, including the shipped embedding example. Its embedded base options
+and shared result accessors retain their explicit v2 identities by design; they
+are fields of the current ABI contract, not a pending migration to another ABI.
+
 Development now uses Node **26.13.0 LTS**, npm **12.2.2**, CMake **4.4.5**,
 uv **0.13.7**, pip **26.3**, pytest **9.2.0** and independently signed Swift
 **6.4.2**. Python 3.15.0, Ninja 1.13.2, ccache 4.14.2, jsonschema 4.26.0,

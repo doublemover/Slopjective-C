@@ -31,7 +31,8 @@
       "objc3.concurrency": "2.153.0",
       "objc3.keypath": "2.12.0",
       "objc3.system": "2.79.0"
-    }
+    },
+    "frontend_embedding_abi": 3
   },
   "development_tools": {
     "pytest": "9.2.0",
@@ -74,9 +75,12 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "e84dacdd46b3d4fc63159dbb421172ec2e77c5a0",
+      "revision": "a5b5e1c22e62aafe75b72bf6cb864fabafafb242",
       "status": "PASS",
-      "runs": [42465896886, 42465896906, 42465896841]
+      "runs": [42466684792, 42466684831, 42466684923],
+      "tooling_tests_passed": 1496,
+      "tooling_subtests_passed": 33,
+      "tooling_explicit_skips": 107
     },
     "previous_attempts": {
       "SDK_release": {
