@@ -42,7 +42,8 @@ def test_checked_references_agree(repo: Path) -> None:
     ("native/fuzz/CMakeLists.txt", "LLVM 23.1.5 EXACT", "LLVM 23.1.3 EXACT"),
     ("scripts/objc3c_toolchain/cmake_linux.sh", "version=4.4.5", "version=4.4.4"),
     (".github/workflows/spec-quality.yml", "3d3c42e5aac5ba805825da76410c181273ba90b1", "v4"),
-    (".github/workflows/spec-quality.yml", 'python-version: "3.15.0"', 'python-version: "3.13.3"'),
+    (".github/workflows/spec-quality.yml", '--python 3.15.0', '--python 3.13.3'),
+    (".github/workflows/spec-quality.yml", 'uv==0.13.7', 'uv==0.13.1'),
 ])
 def test_stale_consumer_is_rejected(repo: Path, filename: str, old: str, new: str) -> None:
     path = repo / filename

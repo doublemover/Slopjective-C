@@ -83,6 +83,11 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
         for value in re.findall(r"npm install --global npm@([^\s]+)", contents):
             if value != tools["npm"]:
                 errors.append(f"{path.name} npm={value}; expected {tools['npm']}")
+        for name, pattern in (("uv", r"uv==([0-9.]+)"),
+                              ("python", r"--python\s+['\"]?([0-9.]+)")):
+            for value in re.findall(pattern, contents):
+                if value != tools[name]:
+                    errors.append(f"{path.name} {name}={value}; expected {tools[name]}")
         for action, revision in re.findall(r"uses: (actions/[A-Za-z0-9_-]+)@([^\s#]+)", contents):
             pin = manifest.get("ci_actions", {}).get(action)
             if not pin or revision != pin["commit"]:
