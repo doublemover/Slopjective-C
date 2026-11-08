@@ -30667,10 +30667,10 @@ index 000000000..7fe1386d6
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..5f34b66dd
+index 000000000..583fd51a7
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
-@@ -0,0 +1,1753 @@
+@@ -0,0 +1,1762 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -31530,7 +31530,7 @@ index 000000000..5f34b66dd
 +      {"initialized_allocation",
 +       {"allocate,construct,first,", "allocate,first,caught,"}},
 +      {"scalar_deallocation",
-+       {"delete-dtor,delete,first,", "delete-dtor,delete,first,caught,"}},
++       {"first,", "delete-dtor,delete,first,", "delete-dtor,delete,first,caught,"}},
 +      {"unmatched_inner_handler",
 +       {"work,second,first,", "work,second,caught,first,",
 +        "work,second,first,unwind,"}}};
@@ -31599,7 +31599,7 @@ index 000000000..5f34b66dd
 +  EXPECT_EQ(Expected.size(), Cases);
 +}
 +
-+TEST(ObjC3ConditionCFG, DeferredNativeEHRefusesUnmodeledPartialCleanup) {
++TEST(ObjC3ConditionCFG, DeferredNativeEHSeparatesModeledCleanupAndUnorderedTemporaries) {
 +  auto AST = tooling::buildASTFromCodeWithArgs(R"(
 +    void first() noexcept;
 +    struct Lifetime { Lifetime(); ~Lifetime() noexcept(false); };
@@ -31635,6 +31635,13 @@ index 000000000..5f34b66dd
 +         "-fobjc-exceptions"});
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  // Native prefix construction, failed allocation, nullable deletion and
++  // pool/synchronization/finally cleanup have registration-aware graphs now.
++  // ObjC3ASTInfrastructure checks their cleanup ordering and exceptional paths.
++  // Multiple unordered full-expression owners still require refusal.
++  const std::set<std::string> Unsupported = {
++      "unordered_arguments", "conditional_temporary", "unordered_operands",
++      "lambda_capture_temporary"};
 +  unsigned Cases = 0;
 +  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
 +    auto *Function = dyn_cast<FunctionDecl>(D);
@@ -31645,8 +31652,10 @@ index 000000000..5f34b66dd
 +    Options.AddEHEdges = Options.AddImplicitDtors =
 +        Options.AddTemporaryDtors = true;
 +    Options.setAllAlwaysAdd();
-+    EXPECT_FALSE(CFG::buildCFG(Function, Function->getBody(),
-+                              &AST->getASTContext(), Options));
++    auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                               &AST->getASTContext(), Options);
++    EXPECT_EQ(Unsupported.count(Function->getNameAsString()) == 0,
++              static_cast<bool>(Graph));
 +    ++Cases;
 +  }
 +  EXPECT_EQ(11u, Cases);

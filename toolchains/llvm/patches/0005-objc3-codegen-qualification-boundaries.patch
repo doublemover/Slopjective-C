@@ -35766,7 +35766,7 @@ index 000000000..727132b7b
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/native-checked-cxx-optionals.mm b/clang/test/ObjC3/CodeGen/native-checked-cxx-optionals.mm
 new file mode 100644
-index 000000000..aa627e512
+index 000000000..0188b96bc
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-checked-cxx-optionals.mm
 @@ -0,0 +1,133 @@
@@ -35894,7 +35894,7 @@ index 000000000..aa627e512
 +// CHECK: br label %[[CONT]]
 +// CHECK: [[CONT]]:
 +// CHECK: [[TAG:%[a-zA-Z0-9._]+]] = load i8,
-+// CHECK: [[PRESENT:%[a-zA-Z0-9._]+]] = trunc i8 [[TAG]] to i1
++// CHECK: [[PRESENT:%[a-zA-Z0-9._]+]] = icmp ne i8 [[TAG]], 0
 +// CHECK: br i1 [[PRESENT]], label %[[DESTROY:[a-zA-Z0-9._]+]], label %[[DONE:[a-zA-Z0-9._]+]]
 +// CHECK: [[DESTROY]]:
 +// CHECK: call void @_ZN21CheckedCompilerResultD1Ev
