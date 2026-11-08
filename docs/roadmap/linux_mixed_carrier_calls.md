@@ -30,6 +30,6 @@ All 24 dedicated compiler commands, two source-free publication profiles,
 360 production decoder replays and four ARC ASan/UBSan configurations / fourteen
 commands pass. Native controls include both active arms, implicit/explicit
 copies and moves, nested/default arms, strong/weak ownership, checked/optional
-returns, nil receivers and copy/move/late temporary failures. Adjacent frontend
-and full compiler consolidation is in progress. This development compiler is
-not a matched SDK.
+returns, nil receivers and copy/move/late temporary failures. All 26 updated frontend groups and all 530 executable compiler cases pass
+(533 discovered, three unsupported). This development compiler is not a matched
+SDK.
