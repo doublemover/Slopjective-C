@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "CURRENT_SOURCE_QUALIFICATION_IN_PROGRESS",
+  "status": "REPAIRS_PUSHED_PRECEDING_ANALYSIS_AND_COVERAGE_CONTINUE",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -9,14 +9,15 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
-    "prepared_tree": "905250cc2c1edf42e59c21061db202c1973eaf93",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+    "prepared_tree": "af4bb535063d95a62b3201df0a6b92152a411908",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
     "activated_product_sdk": false,
-    "patch_digest": "ecf695f956f6822ddc4fff89190c7abbd749ad44872e9523c73b57b4dcb8975c",
-    "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51"
+    "patch_digest": "5916ec08b8a2715e43d644055e72c7c28699d0963c6194cec290b6724d035fdb",
+    "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51",
+    "implementation_revision": "facffee19e95b7b5771dec2695803ae86dd69482"
   },
   "language_contracts": {
     "language": "Objective-C 3.0",
@@ -98,14 +99,14 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "revision": "facffee19e95b7b5771dec2695803ae86dd69482",
       "status": "PASS",
       "runs": [
-        42528832922,
-        42528832941,
-        42528833086
+        42536428010,
+        42536427975,
+        42536428273
       ],
-      "tooling_tests_passed": 1587,
+      "tooling_tests_passed": 1592,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 111
     },
@@ -351,14 +352,14 @@
       "run": 42528854066,
       "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
-      "status": "IN_PROGRESS",
+      "status": "FAILED_CORE_REPAIRED_RETRY_REQUIRED",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
     },
     "native_assurance": {
       "run": 42528854066,
       "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
-      "status": "IN_PROGRESS",
+      "status": "FAILED_CORE_REPAIRED_RETRY_REQUIRED",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
     },
     "LLVM_IR_and_debugger": {
@@ -627,6 +628,49 @@
       ],
       "artifact": 13638981154,
       "artifact_sha256": "12e3c24fe4c53c479533c34f024971914c51d15e30995b9f0443edf452053b9f"
+    },
+    "core_checkpoint": {
+      "run": 42528854066,
+      "job": 128878819997,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "status": "FAILED_TOOL_AND_ORCHESTRATION_PREREQUISITES",
+      "artifact": 13638414519,
+      "artifact_sha256": "6f01fc57decdced9a753cd1185d7f99226a7b2a0ef894cf3125ba7171b262a4a",
+      "passed_suites": {
+        "frontend_programs": 50,
+        "runtime_tests": 10,
+        "installed_commands": 37,
+        "sanitizer_executions": 4,
+        "Swift_consumer_cases": 8,
+        "semantic_workload_and_import_summaries": 64
+      },
+      "upstream": {
+        "passed": 4157,
+        "unsupported": 220,
+        "expectedly_failed": 3,
+        "failed": 1,
+        "failure": "Modules/pr93497.cppm requires exact-fork opt"
+      },
+      "orchestration_failures": [
+        "Private SDK candidate was incorrectly ordered after its sanitizer consumers",
+        "Nested lit Python helpers dropped the no-bytecode policy and changed the prepared source"
+      ],
+      "SDK_packaging": "BLOCKED; no accepted archive produced"
+    },
+    "native_harness_repair": {
+      "revision": "facffee19e95b7b5771dec2695803ae86dd69482",
+      "status": "PASS_FOCUSED_CONTROLS_HOSTED_RETRY_REQUIRED",
+      "focused_controls_passed": 105,
+      "native_lit_cases_passed": 2,
+      "unpatched_nested_python_control_rejected": true,
+      "source_seal": "PASS",
+      "prepared_tree": "af4bb535063d95a62b3201df0a6b92152a411908",
+      "repairs": [
+        "Build and hash exact-fork opt before the complete upstream selection",
+        "Keep the sealed private SDK before sanitizer products; block failed prerequisites and publish only after the complete native batch passes",
+        "Preserve PYTHONDONTWRITEBYTECODE through lit child environments; new real nested import regression writes no prepared-source bytecode"
+      ],
+      "remaining_hosted_work": "Collect preceding source coverage and four-part analysis, then qualify the repaired complete identity"
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",

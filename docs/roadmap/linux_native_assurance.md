@@ -20,6 +20,13 @@ selected shard, exact source/plan identity, disjoint complete suite coverage and
 the original combined 256 MiB evidence budget. This changes execution layout,
 without adding a cadence or accepting an earlier revision's products.
 
+The core SDK is a sealed private candidate needed by the installed sanitizer
+product checks. It stays before those consumers in the execution graph. A failed
+earlier check blocks packaging and its dependent products while independent
+runtime schedules continue. Package failure also blocks its consumers. The
+workflow publishes an archive only after the complete native shard succeeds;
+release installation additionally waits for matched implementation analysis.
+
 ## Fast PR feedback and optional native qualification
 
 Routine pull requests run the existing tooling, documentation/capability and

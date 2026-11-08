@@ -108,11 +108,11 @@ all 164 cases. CTest output retention is explicitly bounded so its default
 1-KiB passed-test truncation cannot erase that proof. Forty-six focused
 coverage/tool controls, 125 export/owner/revision controls and five real native
 suite-collection controls pass. Independent native owners now continue after a
-sibling failure; prerequisite failures still stop dependent work, and SDK
-packaging waits until every other required native owner passes.
+sibling failure; prerequisite failures stop dependent work. Sanitizer products consume the sealed
+private SDK candidate; delivery waits until every required native owner passes.
 
 The candidate now has sealed source identity
-`llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b`. The older full analysis
+`llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b`. The older full analysis
 reached its six-hour limit after 206/235 variants: 169 passed, thirty timed out
 and seven reported findings. Those seven units are repaired; focused local
 Static Analyzer replay clears all seventeen reported locations. Six modern
@@ -130,11 +130,24 @@ checks the actual call result and owned global store. All eight ARC/MRC,
 C++20/23 configurations and four export/upstream-tool controls pass focused
 native replay; the canonical source seal verifies.
 
-Current-source [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42528854066)
-are running at `6d7fc2ade`; frontend fuzz passes.
-[LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42528858909)
-passes all 21 IR/debugger executions, 63 oracle cases and seven controls. All current-source quick gates pass: 1,587 tests and 33
-subtests, with 111 explicit capability/platform skips. Fresh Debian/Ubuntu archive checks follow those release gates.
+The [preceding source campaign](https://github.com/doublemover/Slopjective-C/actions/runs/42528854066)
+at `6d7fc2ade` passes all 50 frontend programs, ten runtime tests, 37 installed
+commands, four sanitizer executions, eight Swift cases and 64 semantic workload/
+import summaries. Upstream testing now passes 4,157 cases with 220 unsupported
+and three expected failures; one remaining test needs the exact-fork `opt` tool.
+Its other two failures identify a private-package consumer ordering cycle and
+lit dropping the nested Python no-bytecode policy. All three are repaired at
+`facffee19`: 105 focused controls, the original module/optimizer case and a real
+nested-Python regression pass. Removing the environment repair makes that
+regression fail as intended. The source seal verifies. The preceding coverage
+and four analysis partitions continue to collect independent results before the
+next complete retry.
+
+That preceding source also passes three frontend fuzz campaigns/six controls and
+[LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42528858909):
+21 IR/debugger executions, 63 oracle cases and seven controls. Current repaired-source quick gates pass 1,592 tests and 33 subtests, with 111
+explicit capability/platform skips.
+Fresh Debian/Ubuntu archive checks follow a passing complete release campaign.
 **SDK 2.62.0 remains the last accepted archive; the replacement is not accepted
 or activated.** The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
 records each checkpoint and its scope. New compiler patches continue to reuse
