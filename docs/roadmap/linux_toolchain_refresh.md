@@ -28,6 +28,14 @@ analysis now preserves both periodic mode and a caller's explicit source SHA.
 Executable workflow controls defend all phases under PR, manual, scheduled and
 workflow-call configurations.
 
+The refreshed clean-host run exposed transient upstream GitHub release download
+failures. The installer can now retrieve the identical immutable asset through
+GitHub's official release API, retaining the pinned checksum and ccache publisher
+signature. Regression controls reject transfer failures and corrupted downloads.
+The prior LLVM campaign also exposed an undefined libclang visitor for dependent
+key-path types. The visitor now traverses both root and value type locations;
+an indexing regression covers read, write and nested Optional component types.
+
 The hosted release workflow reuses the extended native owner
 for the current compiler, GNU runtime, frontend, installed consumers and one
 sealed archive, then waits for matched

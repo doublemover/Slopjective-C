@@ -36,6 +36,7 @@ jobs:
           tests/tooling/test_assurance_workflow_revision_modes.py
           tests/tooling/test_qualification_integrity.py
           tests/tooling/test_native_assurance_bootstrap.py
+          tests/tooling/test_cloud_environment_setup.py
           tests/tooling/test_executor_lock_qualification.py
           tests/tooling/test_pytest_execution_inventory.py
           tests/tooling/test_toolchain_host_tools.py
