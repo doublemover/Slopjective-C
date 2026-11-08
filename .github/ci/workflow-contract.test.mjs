@@ -141,6 +141,18 @@ for (const trigger of ["pull_request", "push", "workflow_run"]) {
   });
 }
 
+for (const fault of ["ambiguous default", "default skipped", "cache overlaps compiler"]) {
+  test(`manual LLVM dispatch rejects ${fault}`, () => {
+    const workflow = yaml.load(llvmOptional);
+    if (fault === "ambiguous default")
+      workflow.on.workflow_dispatch.inputs.dependency_cache.default = false;
+    if (fault === "default skipped")
+      workflow.jobs["llvm-assurance"].if = "inputs.dependency_cache == 'off'";
+    if (fault === "cache overlaps compiler") workflow.jobs["dependency-cache"].if = "always()";
+    assert.throws(() => validateOptionalLLVM(yaml.dump(workflow)));
+  });
+}
+
 for (const fault of [
   "missing PR",
   "unbounded time",

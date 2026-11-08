@@ -312,6 +312,18 @@ export function validateImplementationGate(text, releaseText) {
 
 export function validateOptionalLLVM(text) {
   const workflow = yaml.load(text);
+  const cacheMode = workflow.on?.workflow_dispatch?.inputs?.dependency_cache;
+  if (
+    cacheMode?.default !== "compiler" ||
+    JSON.stringify(cacheMode.options) !== JSON.stringify(["compiler", "any", "warm"]) ||
+    workflow.jobs?.["llvm-assurance"]?.if !==
+      "inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm'" ||
+    workflow.jobs?.["dependency-cache"]?.if !==
+      "inputs.dependency_cache == 'any' || inputs.dependency_cache == 'warm'"
+  )
+    throw new Error(
+      "The default compiler campaign and dependency-only modes must be complementary",
+    );
   if (
     JSON.stringify(Object.keys(workflow.on ?? {})) !== JSON.stringify(["workflow_dispatch"]) ||
     workflow.permissions?.contents !== "read"

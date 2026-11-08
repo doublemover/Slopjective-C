@@ -5,12 +5,12 @@ on:
       dependency_cache:
         description: Run only dependency setup checks instead of the compiler campaign
         type: choice
-        options: [off, any, warm]
-        default: off
+        options: [compiler, any, warm]
+        default: compiler
 permissions:
   contents: read
 concurrency:
-  group: linux-llvm-assurance-${{ github.event.pull_request.number || github.ref }}-${{ inputs.dependency_cache || 'off' }}
+  group: linux-llvm-assurance-${{ github.event.pull_request.number || github.ref }}-${{ inputs.dependency_cache || 'compiler' }}
   cancel-in-progress: false
 jobs:
   dependency-cache:
@@ -19,7 +19,7 @@ jobs:
     with:
       expectation: ${{ inputs.dependency_cache }}
   llvm-assurance:
-    if: inputs.dependency_cache == '' || inputs.dependency_cache == 'off'
+    if: inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm'
     name: Execute matched LLVM IR and optimized debug controls
     runs-on: ubuntu-26.04
     container:
