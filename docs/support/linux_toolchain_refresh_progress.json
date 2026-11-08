@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "CURRENT_SOURCE_REPAIRS_READY_FOR_QUALIFICATION",
+  "status": "CURRENT_SOURCE_QUALIFICATION_IN_PROGRESS",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -98,14 +98,14 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "71f8f9cca614e8aec416dd2a8dd749b4f31411a8",
+      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
       "status": "PASS",
       "runs": [
-        42517837303,
-        42517837330,
-        42517837260
+        42524558363,
+        42524558323,
+        42524558412
       ],
-      "tooling_tests_passed": 1576,
+      "tooling_tests_passed": 1587,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 111
     },
@@ -336,19 +336,25 @@
       }
     },
     "SDK_release": {
-      "status": "NOT_STARTED",
+      "run": 42524566466,
+      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
-      "reason": "Combined compiler source, upstream prerequisites, complete coverage and partitioned analysis repairs are ready for one matching qualification campaign."
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42524566466"
     },
     "native_assurance": {
-      "status": "NOT_STARTED",
+      "run": 42524566466,
+      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
-      "reason": "Combined compiler source, upstream prerequisites, complete coverage and partitioned analysis repairs are ready for one matching qualification campaign."
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42524566466"
     },
     "LLVM_IR_and_debugger": {
-      "status": "NOT_STARTED",
+      "run": 42524570448,
+      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
-      "reason": "Combined compiler source, upstream prerequisites, complete coverage and partitioned analysis repairs are ready for one matching qualification campaign."
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42524570448"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -505,9 +511,17 @@
       "reassembled_compiler_inputs_bytes": 608002556
     },
     "implementation_analysis": {
-      "status": "NOT_STARTED",
+      "run": 42524566466,
+      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
-      "reason": "Combined compiler source, upstream prerequisites, complete coverage and partitioned analysis repairs are ready for one matching qualification campaign."
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42524566466",
+      "partition_jobs": {
+        "0": 128865300773,
+        "1": 128865300922,
+        "2": 128865300818,
+        "3": 128865300830
+      }
     },
     "upstream_repair_checkpoint": {
       "scope": "Focused local replay using retained compiler libraries, actual changed code-generation source and exact-version test tools; not SDK qualification.",

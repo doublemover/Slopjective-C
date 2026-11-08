@@ -124,8 +124,10 @@ gate verifies identical inventories/inputs and complete disjoint execution.
 The superseded single-job analysis was stopped after retaining its partial
 proof. No checks or variants were removed.
 
-A combined current-source release/native, partitioned analysis and LLVM/oracle
-pass is next. Fresh Debian/Ubuntu archive checks follow those release gates.
+Current-source [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42524566466)
+and [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42524570448)
+are running at `9d15bcc9e`. All quick gates pass: 1,587 tests and 33 subtests,
+with 111 explicit capability/platform skips. Fresh Debian/Ubuntu archive checks follow those release gates.
 **SDK 2.62.0 remains the last accepted archive; the replacement is not accepted
 or activated.** The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
 records each checkpoint and its scope. New compiler patches continue to reuse
