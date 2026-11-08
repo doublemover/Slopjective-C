@@ -13,56 +13,8 @@ jobs:
     with:
       source_sha: ${{ github.sha }}
   build:
-    runs-on: ubuntu-26.04
-    container:
-      image: debian:13
-      options: --security-opt seccomp=unconfined
-    timeout-minutes: 360
-    env:
-      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
-    steps:
-      - name: Development prerequisites
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Pinned host tools
-        shell: bash
-        run: python3 -B -m scripts.objc3c_assurance.bootstrap --root /opt/objc3c-host --output out/sdk-startup
-      - name: Check live development pins
-        shell: bash
-        run: |
-          source /opt/objc3c-host/activate.sh
-          python -m scripts.objc3c_toolchain check-host-tools --runtime
-      - name: Build and qualify complete SDK
-        shell: bash
-        run: |
-          source /opt/objc3c-host/activate.sh
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          python -m scripts.objc3c_toolchain build-sdk --fetch > release.json.log
-      - name: Upload shipped archives and qualification receipts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: objc3c-linux-sdk
-          path: |
-            out/toolchains/sdk-cache/*.tar.zst
-            out/toolchains/sdk-cache/*.tar.json
-            scripts/install_objc3c_linux.sh
-            scripts/objc3c_toolchain/install_sdk.py
-            scripts/qualify_linux_archive.sh
-          if-no-files-found: error
-      - name: Upload detailed evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: objc3c-linux-evidence
-          path: |
-            out/toolchains/linux-sdk-builds/**/*.log
-            out/toolchains/linux-sdk-builds/**/build-report.json
-            out/toolchains/linux-sdk-builds/**/release.json
-            out/native-validation/**/summary.json
-            release.json.log
-            out/sdk-startup/
+    name: Current native qualification and SDK archive
+    uses: ./.github/workflows/native-assurance.yml
   install:
     needs: [build, implementation-analysis]
     runs-on: ubuntu-26.04

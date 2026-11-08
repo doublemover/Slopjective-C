@@ -162,6 +162,13 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     release = (root / '.github/workflows/platform-host-evidence.yml').read_text()
     assert 'uses: ./.github/workflows/implementation-analysis.yml' in release
     assert 'needs: [build, implementation-analysis]' in release
+    assert 'uses: ./.github/workflows/native-assurance.yml' in release
+    assert 'build-sdk --fetch' not in release
+    native = (root / '.github/workflows/native-assurance.yml').read_text()
+    assert 'workflow_call:' in native
+    assert "if: success() && matrix.shard == 'core'" in native
+    assert 'name: objc3c-linux-sdk' in native and 'name: objc3c-linux-sdk' in release
+    assert 'out/toolchains/sdk-cache/*.tar.zst' in native
     runner = (root / 'scripts/objc3c_implementation_assurance/runner.py').read_text()
     assert "PROFILE = 'compiler-asan-ubsan'" in runner
     assert 'with foundation_lock(repo)' in runner

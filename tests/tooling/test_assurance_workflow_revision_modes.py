@@ -65,7 +65,10 @@ python3() { "$TEST_PYTHON" "$ARGV_RECORDER" "$@"; }
                  'ARGV_FILE': str(output), 'GITHUB_EVENT_NAME': event, 'GITHUB_SHA': SHA,
                  'SOURCE_SHA': called_sha, 'NATIVE_SHARD': 'core', 'GITHUB_WORKSPACE': str(tmp_path)},
             timeout=15)
-        argv = json.loads(output.read_text().strip())
+        recorded = [json.loads(line) for line in output.read_text().splitlines()]
+        matching = [argv for argv in recorded if module in argv]
+        assert len(matching) == 1
+        argv = matching[0]
         if module.endswith('implementation_assurance') and called_sha:
             expected = CALLED_SHA
         elif event in ('workflow_dispatch', 'schedule'):

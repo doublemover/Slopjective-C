@@ -3,6 +3,7 @@ on:
   schedule:
     - cron: '37 5 * * 0'
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 concurrency:
@@ -83,11 +84,25 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
+          python3 -B -m scripts.objc3c_toolchain check-host-tools --runtime
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
           fi
           python3 -B -m scripts.objc3c_assurance run --plan out/native-assurance/selection/plan.json --output out/native-assurance/results --shard "$NATIVE_SHARD" "${periodic[@]}"
+      - name: Preserve the qualified SDK archive for release consumers
+        if: success() && matrix.shard == 'core'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: objc3c-linux-sdk
+          path: |
+            out/toolchains/sdk-cache/*.tar.zst
+            out/toolchains/sdk-cache/*.tar.json
+            scripts/install_objc3c_linux.sh
+            scripts/objc3c_toolchain/install_sdk.py
+            scripts/qualify_linux_archive.sh
+          if-no-files-found: error
+          retention-days: 7
       - name: Preserve clean-host setup diagnostics
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -65,7 +65,8 @@
     "Periodic revision mode is preserved by native execution and evidence publication",
     "Workflow-call source SHA reaches implementation-analysis execution",
     "Full release jobs use current prerequisites and sanitizer process layout",
-    "Development and fresh SDK consumers share the checksum-pinned CMake installer"
+    "Development and fresh SDK consumers share the checksum-pinned CMake installer",
+    "Release reuses the native owner and its qualified archive instead of starting a duplicate SDK build"
   ],
   "hosted_validation": {
     "SDK_release": "pending dispatch",

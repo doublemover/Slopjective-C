@@ -28,8 +28,9 @@ analysis now preserves both periodic mode and a caller's explicit source SHA.
 Executable workflow controls defend all phases under PR, manual, scheduled and
 workflow-call configurations.
 
-The hosted release workflow builds and checks the current compiler, GNU runtime,
-frontend and installed consumers; seals one archive; and waits for matched
+The hosted release workflow reuses the extended native owner
+for the current compiler, GNU runtime, frontend, installed consumers and one
+sealed archive, then waits for matched
 implementation analysis before fresh Debian 13 and Ubuntu 26.04 installation,
 relocation, embedding, debugger and ordinary-user qualification. Extended native,
 sanitizer, fuzz, coverage and LLVM/debugger owners provide their separate current
