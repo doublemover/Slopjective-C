@@ -6935,6 +6935,60 @@ void TestCheckedCppMessageReplay() {
   }
 }
 
+void TestNativeARCRecordPayloadReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string source=R"(
+      namespace PublishedARCRecord {
+        typedef id __strong Strong;typedef id __weak Weak;typedef int (^Callback)();
+        struct Owner {Strong object;Weak observer;Callback callback;};
+        typedef __objc3_optional(Owner) Maybe;typedef __objc3_result(Owner,Strong) Result;
+        struct UnsafeOwner {id __unsafe_unretained object;};
+        typedef __objc3_optional(UnsafeOwner) UnsafeMaybe;
+        inline UnsafeMaybe unsafe_copy(const UnsafeMaybe &value){return __objc3_copy(value);}
+
+        inline Maybe make(Strong object,Callback callback){return __objc3_some(Owner,Owner{object,object,callback});}
+        inline int use(Strong object,Callback callback) {
+          auto value=make(object,callback);auto copied=__objc3_copy(value);auto moved=__objc3_move(copied);
+          auto probe=[moved]{return __objc3_has_value(moved);};return probe();
+        }
+        template<class T>inline __objc3_optional(T) copy(const __objc3_optional(T) &value){return __objc3_copy(value);}
+        inline Maybe instantiate(const Maybe &value){return copy(value);}
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"arc-record.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.arc_record_payload","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.arc_record_payload","test",{},{},{},{"PublishedARCRecord"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kNativeARCRecordPayloadSemantic)));
+    assert(std::string(kNativeARCRecordPayloadSemantic)=="objc3.native-arc-record-payload.v1");
+    auto older=supported;std::erase(older,llvm::StringRef(kNativeARCRecordPayloadSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kNativeARCRecordPayloadSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto unsafeOnly=emit("namespace PublishedARCRecord {struct UnsafeOwner {id __unsafe_unretained object;};typedef __objc3_optional(UnsafeOwner) UnsafeMaybe;inline UnsafeMaybe copy(const UnsafeMaybe &value){return __objc3_copy(value);}}");
+    auto unsafeSidecar=DecodeSemanticInterfaceSidecar(unsafeOnly.sidecar_json,unsafeOnly.source_bytes,supported);assert(unsafeSidecar);
+    assert(llvm::is_contained(unsafeSidecar->required_semantics,std::string(kNativeARCRecordPayloadSemantic)));
+    auto simple=emit("namespace PublishedARCRecord {struct Plain {~Plain() noexcept;};__objc3_optional(Plain) factory();}");
+    auto invented=DecodeSemanticInterfaceSidecar(simple.sidecar_json,simple.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kNativeARCRecordPayloadSemantic)));
+    invented->required_semantics.push_back(kNativeARCRecordPayloadSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestNativeCarrierLambdaReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -11059,6 +11113,7 @@ int main(int argc,char **argv) {
   TestCheckedCppRecordResultReplay();
   TestCppCarrierDefaultStorageReplay();
   TestCheckedCppMessageReplay();
+  TestNativeARCRecordPayloadReplay();
   TestNativeCarrierLambdaReplay();
   TestMixedCarrierStorageReplay();
   TestCppCarrierCompositionReplay();

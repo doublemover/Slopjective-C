@@ -12601,10 +12601,10 @@ index 5d4c5ff7d..e9bc7b363 100644
        S.Diag(Loc, diag::err_arc_autoreleasing_capture)
 diff --git a/clang/lib/Sema/SemaObjC3CarrierARC.cpp b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
 new file mode 100644
-index 000000000..cd8c61bdf
+index 000000000..41debd841
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,91 @@
 +//===--- SemaObjC3CarrierARC.cpp - ARC payload admission --------*- C++ -*-===//
 +#include "SemaObjC3CarrierARC.h"
 +#include "clang/AST/ASTContext.h"
@@ -12664,9 +12664,7 @@ index 000000000..cd8c61bdf
 +      !(S.getLangOpts().ObjCAutoRefCount &&
 +        (isa<ObjC3OptionalType, ObjC3ResultType>(
 +             PayloadType.getCanonicalType().getTypePtr()) ||
-+         (PayloadType->getAsCXXRecordDecl() &&
-+          containsObjC3CarrierCppStorage(PayloadType) &&
-+          containsObjC3CarrierManagedStorage(PayloadType))))) {
++         PayloadType->getAsCXXRecordDecl()))) {
 +    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
 +    return true;
 +  }
@@ -12721,10 +12719,10 @@ index 000000000..547b8c20d
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
 new file mode 100644
-index 000000000..976ae00bf
+index 000000000..02274aacc
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
-@@ -0,0 +1,232 @@
+@@ -0,0 +1,230 @@
 +//===--- SemaObjC3CarrierTransfer.cpp - carrier transfer semantics -------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//===----------------------------------------------------------------------===//
@@ -12899,9 +12897,7 @@ index 000000000..976ae00bf
 +    // A qualified native C++ enclosing object owns its managed carrier fields
 +    // through its source special members. Build that object's real constructor
 +    // recipe; do not recurse into its representation as primitive storage.
-+    if (getLangOpts().ObjCAutoRefCount && Payload->getAsCXXRecordDecl() &&
-+        containsObjC3CarrierCppStorage(Payload) &&
-+        containsObjC3CarrierManagedStorage(Payload))
++    if (getLangOpts().ObjCAutoRefCount && Payload->getAsCXXRecordDecl())
 +      continue;
 +    Seen.clear();
 +    unsigned Budget=256;
@@ -17768,7 +17764,7 @@ index 000000000..a5c7b2fb5
 +RecoveredResult recovered_result;
 diff --git a/clang/test/ObjC3/Sema/carrier-arc-ownership.mm b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
 new file mode 100644
-index 000000000..ad835d466
+index 000000000..59fa68eef
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
 @@ -0,0 +1,36 @@
@@ -17785,7 +17781,7 @@ index 000000000..ad835d466
 +typedef __objc3_optional(Action) BlockOptional;
 +typedef __objc3_optional(Action __weak) WeakBlockOptional;
 +typedef __objc3_optional(Action __unsafe_unretained) UnsafeBlockOptional;
-+typedef __objc3_optional(struct ContainsRetainableField) AggregateOptional; // expected-error {{payload type}}
++typedef __objc3_optional(struct ContainsRetainableField) AggregateOptional;
 +
 +void accepted_types(id object) {
 +  StrongOptional strong = __objc3_some(id, object);
@@ -17798,8 +17794,8 @@ index 000000000..ad835d466
 +struct ArrayOfRetainableFields { id values[2]; };
 +struct ManagedBase { id value; };
 +struct DerivedManaged : ManagedBase { int plain; };
-+typedef __objc3_optional(ArrayOfRetainableFields) ArrayAggregate; // expected-error {{payload type}}
-+typedef __objc3_optional(DerivedManaged) DerivedAggregate; // expected-error {{payload type}}
++typedef __objc3_optional(ArrayOfRetainableFields) ArrayAggregate;
++typedef __objc3_optional(DerivedManaged) DerivedAggregate;
 +typedef __objc3_optional(StrongOptional) NestedManagedCarrier;
 +
 +typedef __objc3_optional(Action __autoreleasing) AutoreleasingBlockOptional; // expected-error {{payload type}}
@@ -58435,10 +58431,10 @@ index 3b50b8115..6bf8ee9c4 100644
  }
 diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
 new file mode 100644
-index 000000000..46cbb85af
+index 000000000..8d89daa8f
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2243 @@
+@@ -0,0 +1,2271 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -60680,6 +60676,34 @@ index 000000000..46cbb85af
 +  ASSERT_NE(Provider,nullptr);
 +  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
 +  auto Imported=Importer.Import(Provider);ASSERT_TRUE(bool(Imported));Check(To->getASTContext());
++ }
++}
++
++TEST(ObjC3ASTInfrastructure, NativeARCRecordCarrierFieldsSurviveImport) {
++ for(const char *Standard:{"c++20","c++23"}) {
++  std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,
++   "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks"};
++  auto From=tooling::buildASTFromCodeWithArgs(R"(
++   struct NativeOwner {id __strong object;id __weak observer;};
++   using Maybe=__objc3_optional(NativeOwner);
++   Maybe provider(const Maybe &value){return __objc3_copy(value);}
++  )",Args,"arc-record-provider.mm");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"arc-record-consumer.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *Provider=nullptr;
++  for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())
++   if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="provider")Provider=F;
++  ASSERT_NE(Provider,nullptr);
++  auto Check=[](FunctionDecl *Function) {
++   const auto *Optional=Function->getReturnType()->getAs<ObjC3OptionalType>();ASSERT_NE(Optional,nullptr);
++   const auto *Record=Optional->getElementType()->getAsCXXRecordDecl();ASSERT_NE(Record,nullptr);
++   EXPECT_TRUE(Record->hasObjectMember());EXPECT_FALSE(Record->hasTrivialCopyConstructor());EXPECT_FALSE(Record->hasTrivialDestructor());
++   auto Field=Record->field_begin();ASSERT_NE(Field,Record->field_end());EXPECT_EQ((*Field)->getType().getObjCLifetime(),Qualifiers::OCL_Strong);
++   ++Field;ASSERT_NE(Field,Record->field_end());EXPECT_EQ((*Field)->getType().getObjCLifetime(),Qualifiers::OCL_Weak);
++  };
++  Check(Provider);
++  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++  auto Imported=Importer.Import(Provider);ASSERT_TRUE(bool(Imported));Check(cast<FunctionDecl>(*Imported));
 + }
 +}
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp

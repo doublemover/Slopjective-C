@@ -165,6 +165,36 @@ inline bool HasNativeCppCarrierRuntimeType(clang::QualType type,unsigned depth=0
   }
   return false;
 }
+inline bool RequiresNativeARCRecordPayload(clang::QualType type,
+                                             const clang::ASTContext &context) {
+  if(!context.getLangOpts().ObjC3 || !context.getLangOpts().ObjCAutoRefCount ||
+      !context.getLangOpts().CPlusPlus)return false;
+  llvm::SmallPtrSet<const clang::Type *,32> seen,payload_seen;unsigned budget=256;
+  auto visit=[&](auto &&self,clang::QualType value,bool payload,unsigned depth)->bool {
+    if(value.isNull())return false;
+    if(depth>64 || !budget)return true;
+    --budget;
+    if(value->isDependentType())return payload;
+    value=value.getCanonicalType();
+    if(payload && (value->isObjCObjectPointerType() || value->isBlockPointerType() || value.hasNonTrivialObjCLifetime()))return true;
+    if(!(payload?payload_seen:seen).insert(value.getTypePtr()).second)return false;
+    if(const auto *optional=value->getAs<clang::ObjC3OptionalType>())return self(self,optional->getElementType(),true,depth+1);
+    if(const auto *result=value->getAs<clang::ObjC3ResultType>())return self(self,result->getSuccessType(),true,depth+1) || self(self,result->getErrorType(),true,depth+1);
+    if(const auto *array=context.getAsArrayType(value))return self(self,array->getElementType(),payload,depth+1);
+    if(value->isPointerType() || value->isReferenceType())return self(self,value->getPointeeType(),false,depth+1);
+    if(const auto *function=value->getAs<clang::FunctionProtoType>()) {
+      if(self(self,function->getReturnType(),false,depth+1))return true;
+      for(auto parameter:function->param_types())if(self(self,parameter,false,depth+1))return true;
+    }
+    if(const auto *record=value->getAsCXXRecordDecl())if(const auto *definition=record->getDefinition()) {
+      for(const auto &parent:definition->bases())if(self(self,parent.getType(),payload,depth+1))return true;
+      for(const auto *field:definition->fields())if(self(self,field->getType(),payload,depth+1))return true;
+    }
+    return false;
+  };
+  return visit(visit,type,false,0);
+}
+
 inline bool RequiresNativeCppCarrierComposition(clang::QualType type,
                                                  const clang::ASTContext &context) {
   llvm::SmallPtrSet<const clang::Type *,32> seen;unsigned budget=256;
@@ -251,6 +281,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeContractField(out, position + ":nullability");
     AppendNativeContractField(out, std::to_string(static_cast<unsigned>(*nullability)));
   }
+  if(RequiresNativeARCRecordPayload(type,context))
+    AppendNativeContractField(out,";native-arc-record-payload:v1;");
   if(RequiresNativeCppCarrierComposition(type,context))
     AppendNativeContractField(out,";cxx-carrier-composition:v2;");
   clang::ObjC3KeyPathInfo keypath;

@@ -2531,6 +2531,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationNativeARCRecordPayload(representative))
+    identity.canonical_type_identity += ";native-arc-record-payload:v1;";
   if (HasDeclarationNativeCarrierLambda(representative))
     identity.canonical_type_identity += ";native-carrier-lambda:v1;";
   if (HasDeclarationNativeByrefStorage(representative))

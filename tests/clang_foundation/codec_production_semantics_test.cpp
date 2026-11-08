@@ -15,12 +15,19 @@
 using namespace objc3::clang_foundation;
 
 int main() {
-  for (unsigned family=0;family!=25;++family) {
-    const bool carrier_lambdas=family==24,mixed_storage=family==23,byref_cpp=family==21,byref_c=family==22,aligned_c=family==20,aligned_blocks=family==19,cpp_values=family==18,mixed_calls=family==17,cpp_runtime=family==16,registers=family==15,storage=family==14,messages=family==13,composition=family==12,carrier_calls=family==11;
+  for (unsigned family=0;family!=26;++family) {
+    const bool arc_records=family==25,carrier_lambdas=family==24,mixed_storage=family==23,byref_cpp=family==21,byref_c=family==22,aligned_c=family==20,aligned_blocks=family==19,cpp_values=family==18,mixed_calls=family==17,cpp_runtime=family==16,registers=family==15,storage=family==14,messages=family==13,composition=family==12,carrier_calls=family==11;
     const bool resource_paths=family==9,union_paths=family==10;
-    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results || union_paths || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || byref_cpp || mixed_storage || carrier_lambdas;
+    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results || union_paths || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || byref_cpp || mixed_storage || carrier_lambdas || arc_records;
     const bool blocks=family>=2 && family<6,producers=family>=4 && family<6;
-    std::string source = carrier_lambdas ? R"(
+    std::string source = arc_records ? R"(
+      namespace CatalogARCRecord {
+        typedef id __strong Strong;typedef id __weak Weak;
+        struct Owner {Strong object;Weak observer;};typedef __objc3_optional(Owner) Maybe;
+        inline Maybe make(Strong object){return __objc3_some(Owner,Owner{object,object});}
+        inline int use(Strong object){auto value=make(object);auto copy=__objc3_copy(value);return __objc3_has_value(copy);}
+      }
+    )" : carrier_lambdas ? R"(
       namespace CatalogCarrierLambda {
         struct Leaf {int value;explicit Leaf(int);Leaf(const Leaf &);Leaf(Leaf &&);~Leaf() noexcept;};
         typedef id __strong Strong;typedef __objc3_result(Leaf,Strong) Mixed;
@@ -250,8 +257,8 @@ int main() {
         return __objc3_try(__objc3_await (object.value+=1));
       }
     )";
-    std::vector<std::string> args={cxx?(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || byref_cpp || mixed_storage || carrier_lambdas?"-xobjective-c++":"-xc++"):(blocks || properties || aligned_c || byref_c?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
-    if(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || aligned_c || byref_cpp || byref_c || mixed_storage || carrier_lambdas)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
+    std::vector<std::string> args={cxx?(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || byref_cpp || mixed_storage || carrier_lambdas || arc_records?"-xobjective-c++":"-xc++"):(blocks || properties || aligned_c || byref_c?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
+    if(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || aligned_c || byref_cpp || byref_c || mixed_storage || carrier_lambdas || arc_records)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
     clang::tooling::FileContentMappings files;
     if(properties || resource_paths || union_paths)AddRuntimeInterfaceFiles(files,args);
     if(resource_paths || union_paths)args.insert(args.end(),{"-include","objc3c/runtime/objc3_keypath.h"});
@@ -265,7 +272,7 @@ int main() {
     const auto capabilities=SupportedSemanticInterfaceCapabilities();
     auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);
     assert(decoded);
-    const std::string expected=carrier_lambdas?kNativeCarrierLambdaSemantic:mixed_storage?kCppCarrierCompositionSemantic:byref_cpp || byref_c?kNativeByrefStorageSemantic:aligned_c || aligned_blocks?kNativeBlockAlignmentSemantic:cpp_values?kCppCarrierCallSemantic:mixed_calls?kMixedCarrierCallSemantic:cpp_runtime?kCppCarrierRuntimeSemantic:registers?kCheckedCppRecordResultSemantic:storage?kCppCarrierStorageSemantic:messages?kCheckedCppMessageSemantic:composition?kCppCarrierCompositionSemantic:carrier_calls?kCppCarrierCallSemantic:resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
+    const std::string expected=arc_records?kNativeARCRecordPayloadSemantic:carrier_lambdas?kNativeCarrierLambdaSemantic:mixed_storage?kCppCarrierCompositionSemantic:byref_cpp || byref_c?kNativeByrefStorageSemantic:aligned_c || aligned_blocks?kNativeBlockAlignmentSemantic:cpp_values?kCppCarrierCallSemantic:mixed_calls?kMixedCarrierCallSemantic:cpp_runtime?kCppCarrierRuntimeSemantic:registers?kCheckedCppRecordResultSemantic:storage?kCppCarrierStorageSemantic:messages?kCheckedCppMessageSemantic:composition?kCppCarrierCompositionSemantic:carrier_calls?kCppCarrierCallSemantic:resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
     assert(std::find(decoded->required_semantics.begin(),decoded->required_semantics.end(),expected)!=decoded->required_semantics.end());
     auto bytes=objc3::fuzz::Pack(artifact.source_bytes,artifact.sidecar_json);assert(!bytes.empty());
     std::string first;

@@ -1,0 +1,35 @@
+{
+  "development_only": true,
+  "source_version": "2.141",
+  "system_version": "2.67",
+  "prepared_source_tree": "a814e0bda23736da20f30ece6cc999af8da429cb",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 25,
+    "updated_ownership_admission_commands": 1,
+    "all_passed": true,
+    "full_sweep": "542 discovered cases currently running"
+  },
+  "ast_controls": 58,
+  "publication_profiles": 2,
+  "production_decoder_exact_replays": 520,
+  "native": {
+    "configurations": 3,
+    "commands": 10,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "profiles": [
+      "C++20 ARC source O0",
+      "C++23 ARC PCH O2 no-elision",
+      "C++20 ARC source C++-only exception handling"
+    ]
+  },
+  "regression": "completed native C++ field cleanup when a constructor initializer temporary destructor throws",
+  "updated_frontend_consolidation": "focused current record replay passed; 31 preceding groups passed at source 2.140",
+  "full_current_consolidation": "compiler sweep running; analysis follows implementation batch"
+}

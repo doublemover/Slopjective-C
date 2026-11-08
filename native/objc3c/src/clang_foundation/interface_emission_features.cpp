@@ -129,6 +129,22 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationNativeARCRecordPayload(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[declaration](const clang::Stmt *statement) {
+    struct Values : clang::DynamicRecursiveASTVisitor {
+      const clang::ASTContext &context;bool found=false;
+      explicit Values(const clang::ASTContext &context):context(context) {}
+      bool VisitExpr(clang::Expr *expression) override {
+        found|=RequiresNativeARCRecordPayload(expression->getType(),context);return true;
+      }
+      bool VisitVarDecl(clang::VarDecl *variable) override {
+        found|=RequiresNativeARCRecordPayload(variable->getType(),context);return true;
+      }
+    } visitor(declaration->getASTContext());
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationNativeCarrierLambda(const clang::NamedDecl *declaration) {
   if(!declaration->getASTContext().getLangOpts().ObjC3 ||
      !declaration->getASTContext().getLangOpts().CPlusPlus)return false;

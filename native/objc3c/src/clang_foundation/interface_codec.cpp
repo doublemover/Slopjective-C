@@ -28,6 +28,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kNativeARCRecordPayloadSemantic,
     kNativeCarrierLambdaSemantic,
     kNativeByrefStorageSemantic,
     kNativeBlockAlignmentSemantic,
@@ -685,6 +686,10 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool arc_record_payload=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeARCRecordPayloadIdentity);
+  const bool arc_record_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeARCRecordPayloadSemantic)!=sidecar.required_semantics.end();
+  if(arc_record_payload!=arc_record_capability)
+    return Invalid("native ARC record payload identity and required capability must agree");
   const bool carrier_lambdas=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeCarrierLambdaIdentity);
   const bool carrier_lambda_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeCarrierLambdaSemantic)!=sidecar.required_semantics.end();
   if(carrier_lambdas!=carrier_lambda_capability)

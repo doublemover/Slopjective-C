@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.141 / System 2.67 ARC record span](linux_native_arc_record_payloads.md)
+implements native C++ carrier payload records containing ordinary strong/weak/
+Block fields, and protects completed C++ fields while initializer temporaries
+finish cleanup. Current verification is being consolidated; remaining feature
+implementation continues before one matched SDK delivery.
+
 The [source 2.140 / System 2.66 lambda span](linux_carrier_lambda_storage.md)
 implements native pure C++ / mixed ARC carrier lambda value and array captures,
 closure copy/move and partial capture cleanup, with source-free semantic admission.
