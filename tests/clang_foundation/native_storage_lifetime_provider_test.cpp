@@ -11,7 +11,9 @@ void Run(const fs::path &root,const char *standard,int ownership,
   std::vector<std::string> flags={"-pthread"};
   if(suppress_implicit_destruction)flags.push_back("-fno-c++-static-destructors");
   auto request=[&](const fs::path &input,const fs::path &output) {
-    return Request(input,output,standard,ownership,optimization,flags);
+    auto value=Request(input,output,standard,ownership,optimization,flags);
+    if(ownership)value.arguments.push_back("-fobjc3-profile=strict-system");
+    return value;
   };
   const auto source=root/"provider/module.mm";
   Write(source,R"storage(
@@ -24,6 +26,21 @@ inline int priority_overload(PriorityType){return 1;}
 inline int priority_overload(OtherPriorityType){return 2;}
 template<class T>struct PriorityBox {T value;};
 inline PriorityBox<PriorityType> priority_box(){return {FirstPriority};}
+#ifdef __OBJC__
+typedef borrowed const char *StaticLoan;
+#define STATIC_BORROWED __attribute__((objc_returns_borrowed(owner_index=0)))
+#else
+typedef const char *StaticLoan;
+#define STATIC_BORROWED
+#endif
+union StaticUnion {char bytes[8];long other;};
+extern const StaticUnion static_union;
+const StaticUnion static_union={{'s','t','a','t','i','c',0}};
+inline const char *static_source(){return static_union.bytes;}
+inline const char *static_offset(int offset){return static_source()+offset;}
+STATIC_BORROWED
+inline StaticLoan static_view(void *owner,int offset){return static_offset(offset);}
+inline int static_read(void *owner){return static_view(owner,2)[0];}
 extern int created[10],destroyed[10];
 void create(int);void destroy(int);void startup(int);void shutdown(int);
 struct Owner {
@@ -83,6 +100,7 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   using namespace StorageLifetime;
   static_assert(!__is_same(PriorityType,OtherPriorityType));
   if(priority_identity(FirstPriority)!=FirstPriority || priority_overload(FirstPriority)!=1 || priority_overload(OtherPriority)!=2 || priority_box().value!=FirstPriority)return 4;
+  if(static_read(&ready)!='a' || static_view(&ready,1)[0]!='t')return 5;
   if(ready!=42 || attribute_ready!=43 || ordered.value!=2 || retained.value!=4 || finalized.value!=5)return 1;
   if(&local_retained()!=&provider_local() || local_finalized().value!=7)return 2;
   pthread_t thread;void *result=(void *)1;

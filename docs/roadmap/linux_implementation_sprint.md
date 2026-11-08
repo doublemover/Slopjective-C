@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [source 2.148 / System 2.74 static borrowed-result span](linux_static_borrowed_summaries.md)
+proves immutable native union storage and bounded statically bound helper chains,
+while preserving owner contracts and rejecting mutable/TLS/unknown or replaceable
+sources. All 56 borrowed compiler regressions, six publication profiles and four
+source-free native configurations pass. Remaining implementation continues.
+
 The [source 2.147 / System 2.73 native-union carrier span](linux_native_union_carrier_payloads.md)
 implements explicitly owned managed union payloads, complete forward-record
 qualification and selected implicit-return copy/move recipes, including move-only

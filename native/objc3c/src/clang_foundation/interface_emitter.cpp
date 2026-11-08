@@ -1072,6 +1072,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kDependentKeyPathLiteralSemantic);
     if (HasCheckedKeyPathReadIdentity(declaration))
       sidecar.required_semantics.push_back(kCheckedKeyPathReadSemantic);
+    if (HasBorrowedResultProofIdentity(declaration))
+      sidecar.required_semantics.push_back(kBorrowedResultProofSemantic);
     if (HasNativeUnnamedEnumIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeUnnamedEnumSemantic);
     if (HasNativeStorageLifetimeIdentity(declaration))

@@ -2613,6 +2613,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationBorrowedResultProof(representative))
+    identity.canonical_type_identity+=";borrowed-result-proofs:v1;";
   if (HasDeclarationNativeStorageLifetime(representative))
     identity.canonical_type_identity += ";native-storage-lifetime:v1;";
   if (HasDeclarationAtomicManagedProperty(representative))

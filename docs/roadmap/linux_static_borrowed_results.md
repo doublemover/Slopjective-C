@@ -1,5 +1,10 @@
 # Borrowed results backed by immutable program storage
 
+The [Source 2.148 extension](linux_static_borrowed_summaries.md) adds immutable
+union bases and bounded helper summaries, exact reader admission and completed
+source-free native controls. The original checkpoint below retains its original
+scope; its blanket union exclusion is superseded for these qualified bases.
+
 Current execution checkpoint: the maintained native frontend replay, identity and
 consumer controls pass in the ABI 24 development embedding. See the
 [2.110 consolidation](linux_publication_and_byte_ranges.md). Source-free package

@@ -1173,7 +1173,7 @@ void TestBorrowedStaticStorageReplay() {
         for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
         assert(result.success);return result;
       };
-      const std::string source=R"(
+      std::string source=R"(
         typedef borrowed const char *StaticLoan;
         extern const char static_program_data[8];
         const char static_program_data[8]="program";
@@ -1187,7 +1187,36 @@ void TestBorrowedStaticStorageReplay() {
           return choose?static_program_data:0;
         }
       )";
+      source+=R"(
+        union StaticPublishedUnion {char bytes[8];long other;};
+        extern const union StaticPublishedUnion static_union_data;
+        const union StaticPublishedUnion static_union_data={{'u','n','i','o','n',0}};
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_union_view(void *owner){return static_union_data.bytes;}
+      )";
+      if(cxx)source+=R"(
+        inline const char *static_inline_source(){return static_union_data.bytes;}
+        inline const char *static_inline_offset(int offset){return static_inline_source()+offset;}
+        inline const char *static_inline_choice(int choose){return choose?static_program_data:static_inline_source();}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_inline_view(void *owner,int offset){return static_inline_offset(offset);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_inline_select(void *owner,int choose){return static_inline_choice(choose);}
+      )";
       auto first=emit(source,"static-borrowed-results.m");
+      const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+      assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedResultProofSemantic)));
+      auto older=supported;std::erase(older,llvm::StringRef(kBorrowedResultProofSemantic));
+      auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+      std::erase(decoded->required_semantics,kBorrowedResultProofSemantic);
+      auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+
+      auto declaration=emit("typedef borrowed const char *StaticLoan;__attribute__((objc_returns_borrowed(owner_index=0))) StaticLoan static_signature(void *owner);","static-borrowed-signature.m");
+      auto invented=DecodeSemanticInterfaceSidecar(declaration.sidecar_json,declaration.source_bytes,supported);assert(invented);
+      assert(!llvm::is_contained(invented->required_semantics,std::string(kBorrowedResultProofSemantic)));
+      invented->required_semantics.push_back(kBorrowedResultProofSemantic);
+      auto invalid_capability=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid_capability);llvm::consumeError(invalid_capability.takeError());
       auto replay=emit(first.source_bytes,"replayed-static-borrowed-results.m");
       assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
       auto relocated=emit("\n\n"+source,"relocated-static-borrowed-results.m");
@@ -1198,6 +1227,7 @@ void TestBorrowedStaticStorageReplay() {
       auto valid=parse(first.source_bytes+R"(
         __attribute__((objc_returns_borrowed(owner_index=0)))
         StaticLoan static_forward(void *owner) {
+          static_consume(static_union_view(owner));
           static_consume(static_program_view(owner,1));
           return static_program_choice(owner,1);
         }

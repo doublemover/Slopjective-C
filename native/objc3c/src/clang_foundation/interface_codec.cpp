@@ -28,6 +28,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kBorrowedResultProofSemantic,
     kNativeUnnamedEnumSemantic,
     kNativeStorageLifetimeSemantic,
     kAtomicManagedPropertySemantic,
@@ -689,6 +690,10 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool borrowed_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasBorrowedResultProofIdentity);
+  const bool borrowed_proof_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedResultProofSemantic)!=sidecar.required_semantics.end();
+  if(borrowed_proofs!=borrowed_proof_capability)
+    return Invalid("borrowed result proof identity and required capability must agree");
   const bool native_enums=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeUnnamedEnumIdentity);
   const bool native_enum_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeUnnamedEnumSemantic)!=sidecar.required_semantics.end();
   if(native_enums!=native_enum_capability)

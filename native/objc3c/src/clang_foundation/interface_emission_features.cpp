@@ -129,6 +129,13 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
+  if (llvm::isa<clang::NamespaceDecl>(declaration)) return false;
+  return HasPublishedExpression(declaration, [](const clang::Stmt *, const clang::NamedDecl *owner) {
+    return owner->hasAttr<clang::ObjCReturnsBorrowedAttr>();
+  });
+}
+
 bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Storage=[](const clang::NamedDecl *named) {
