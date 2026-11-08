@@ -266,6 +266,13 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
                 raise ValueError('frontend/paired-codec fuzz qualification did not pass')
             return result['campaigns'] + result['controls']
         if name == 'source-coverage':
+            # Fail fast on native profile ownership/merging before the expensive compiler build.
+            merge_results = directory / 'profile-merge-regressions.xml'
+            command('profile-merge-regressions', [sys.executable, '-B', '-m', 'pytest', '-q',
+                repo / 'tests/tooling/test_source_coverage_profile_merging.py',
+                '--junitxml='+str(merge_results)])
+            if len(junit(merge_results)) != 4:
+                raise ValueError('native profile merge regression inventory is incomplete')
             profile_foundation('compiler-source-coverage')
             from scripts.objc3c_toolchain.coverage_controls import qualify as controls
             from scripts.objc3c_toolchain.source_coverage import qualify as first_party
@@ -275,7 +282,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
             compiler = compiler_coverage(repo, directory / 'compiler', jobs=2)
             if any(result['status'] != 'PASS' for result in (control, native, compiler)):
                 raise ValueError('complete source coverage qualification did not pass')
-            return ([{'name': 'coverage-controls', 'status': 'PASS', 'controls': len(control['controls'])}] +
+            return ([{'name': 'coverage-controls', 'status': 'PASS', 'controls': len(control['controls'])},
+                     {'name': 'native-profile-merge-controls', 'status': 'PASS', 'tests': 4}] +
                     [{'name': row['component']+'-'+row['name'], 'status': 'PASS'} for row in native['suites']] +
                     [{'name': row['name'], 'status': 'PASS'} for row in compiler['suites']])
         raise ValueError('unimplemented native suite: ' + name)

@@ -97,14 +97,14 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
+      "revision": "fabf34e633dd0c276322bb013f7a82b2f30138e8",
       "status": "PASS",
       "runs": [
-        42506989172,
-        42506989173,
-        42506989224
+        42517420361,
+        42517420277,
+        42517420154
       ],
-      "tooling_tests_passed": 1554,
+      "tooling_tests_passed": 1556,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 107
     },
@@ -511,7 +511,8 @@
       },
       "native_shard_scope": "Retained f217 compiler libraries with canonical native printer overlay; all eight shard commands pass and independently verified JUnit covers all 164 cases. Not complete instrumented SDK qualification.",
       "bounded_passed_JUnit_output_bytes": 16777216,
-      "native_suite_failure_collection_controls_passed": 5
+      "native_suite_failure_collection_controls_passed": 5,
+      "shared_library_profile_merge_controls": "PASS: four pinned native binary/DSO \u00d7 merged/per-process fixtures preserve all fork/exec branches; full coverage owner requires all four unskipped before building LLVM."
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",

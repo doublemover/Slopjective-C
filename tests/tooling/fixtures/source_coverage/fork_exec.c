@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#ifdef PROFILE_SHARED_CLIENT
+int profile_branch(int n);
+#else
 __attribute__((noinline)) int profile_branch(int n) {
   if(n==0)return 10;
   if(n==1)return 11;
@@ -8,6 +11,8 @@ __attribute__((noinline)) int profile_branch(int n) {
   if(n==3)return 13;
   return 14;
 }
+#endif
+#ifndef PROFILE_SHARED_LIBRARY
 int main(int argc,char **argv) {
   if(argc>1){profile_branch(3);return 0;}
   for(int i=0;i<4;++i) {
@@ -22,3 +27,5 @@ int main(int argc,char **argv) {
   }
   profile_branch(4);return 0;
 }
+
+#endif

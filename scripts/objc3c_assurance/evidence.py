@@ -306,6 +306,8 @@ def suite_results(root: Path, name: str) -> list[dict]:
             raise ValueError('frontend/paired-codec fuzz campaigns or controls are incomplete')
         return campaigns + controls
     if name == 'source-coverage':
+        if len(junit(directory / 'profile-merge-regressions.xml')) != 4:
+            raise ValueError('native profile merge regression inventory is incomplete')
         controls = read('controls/qualification.json')
         native = read('first-party/qualification.json')
         compiler = read('compiler/qualification.json')
@@ -320,7 +322,8 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 not any(row.get('state') == 'executed' for row in compiler.get('source_coverage', {}).values()) or
                 not compiler.get('binary_ids') or not native.get('temporary_build_reclaimed')):
             raise ValueError('first-party/patched compiler source coverage is incomplete')
-        return ([{'name': 'coverage-controls', 'status': 'PASS', 'controls': len(controls['controls'])}] +
+        return ([{'name': 'coverage-controls', 'status': 'PASS', 'controls': len(controls['controls'])},
+                 {'name': 'native-profile-merge-controls', 'status': 'PASS', 'tests': 4}] +
                 [{'name': row['component']+'-'+row['name'], 'status': 'PASS'} for row in native['suites']] +
                 [{'name': row['name'], 'status': 'PASS'} for row in compiler['suites']])
     raise ValueError('unrecognized native assurance suite')

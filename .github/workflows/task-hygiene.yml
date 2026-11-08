@@ -47,6 +47,10 @@ jobs:
           tests/tooling/test_implementation_assurance.py
           tests/tooling/test_analysis_checkpoint.py
           tests/tooling/test_source_coverage.py
+          tests/tooling/test_source_coverage_profile_merging.py
+          tests/tooling/test_emitter_coverage_shards.py
+          tests/tooling/test_upstream_test_tools.py
+          tests/tooling/test_native_suite_collection.py
           tests/tooling/test_codec_fuzz.py
           tests/tooling/test_runtime_schedule_model.py
           tests/tooling/test_llvm_ir_assurance.py
