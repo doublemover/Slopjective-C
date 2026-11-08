@@ -32,7 +32,7 @@ def qualify(repo, output):
     env['LLVM_PROFILE_FILE'] = os.devnull
     report = {'schema': 'objc3c.source-coverage-controls.v1', 'status': 'running', 'commands': [], 'controls': [], 'inputs': inputs,
         'profile_runtime': {'path': str(runtime), 'sha256': digest(runtime),
-            'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.3'}}
+            'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.5'}}
     started = time.monotonic()
     def save():
         report['seconds'] = round(time.monotonic()-started, 6);write_json(output / 'qualification.json', report)

@@ -93,3 +93,60 @@ def test_ephemeral_git_trust_is_limited_to_the_checked_out_workspace(tmp_path):
                    env=environment,check=True)
     assert status(repos[0]).returncode == 0
     assert status(repos[1]).returncode == 128
+
+
+def test_llvm_extract_keeps_native_tools_without_materializing_unselected_products(tmp_path):
+    import io
+    import tarfile
+
+    archive = tmp_path / 'llvm.tar.xz'
+    retained = ['bin/clang', 'bin/ld.lld', 'lib/libLLVM.so', 'include/llvm/IR.h']
+    excluded = ['bin/flang', 'bin/llvm-bolt', 'lib/libMLIR.so',
+                'lib/libFortranRuntime.a', 'include/mlir-c/Support.h']
+    with tarfile.open(archive, 'w:xz') as bundle:
+        for name in [*retained, *excluded]:
+            data = name.encode()
+            entry = tarfile.TarInfo('LLVM-release/' + name)
+            entry.size = len(data)
+            bundle.addfile(entry, io.BytesIO(data))
+    destination = tmp_path / 'llvm'
+    destination.mkdir()
+    subprocess.run(['bash', '-c',
+        'source "$1/scripts/setup_cloud_environment.sh"; extract_llvm "$2" "$3"',
+        'test', str(REPO), str(archive), str(destination)], check=True, timeout=15)
+    assert all((destination / name).is_file() for name in retained)
+    assert all(not (destination / name).exists() for name in excluded)
+
+
+def test_cached_cmake_must_match_the_current_release(tmp_path):
+    root = tmp_path / 'cmake'
+    (root / 'bin').mkdir(parents=True)
+    compiler = root / 'bin/cmake'
+    compiler.write_text('#!/bin/sh\necho "cmake version 4.4.4"\n')
+    compiler.chmod(0o755)
+    result = subprocess.run(['bash', str(REPO / 'scripts/objc3c_toolchain/cmake_linux.sh'), str(root)],
+                            capture_output=True, text=True, timeout=15)
+    assert result.returncode != 0
+    assert 'differs from the admitted release' in result.stderr
+
+
+def test_cmake_checksum_failure_reclaims_download_without_extracting(tmp_path):
+    fake_bin = tmp_path / 'bin'
+    fake_bin.mkdir()
+    curl = fake_bin / 'curl'
+    curl.write_text('''#!/bin/sh
+for argument; do destination=$argument; done
+printf 'corrupted archive' > "$destination"
+''')
+    curl.chmod(0o755)
+    tar = fake_bin / 'tar'
+    tar.write_text('#!/bin/sh\ntouch "$EXTRACTED"\n')
+    tar.chmod(0o755)
+    destination = tmp_path / 'cmake'
+    extracted = tmp_path / 'extracted'
+    result = subprocess.run(['bash', str(REPO / 'scripts/objc3c_toolchain/cmake_linux.sh'), str(destination)],
+        env={**os.environ, 'PATH': str(fake_bin) + os.pathsep + os.defpath,
+             'EXTRACTED': str(extracted)}, capture_output=True, text=True, timeout=15)
+    assert result.returncode != 0
+    assert not extracted.exists() and not destination.exists()
+    assert not list(tmp_path.glob('.cmake-install.*'))

@@ -1,7 +1,7 @@
 # Native Clang compiler
 
 `objc3c` is the public Linux compiler. The default CMake build uses only the
-qualified LLVM/Clang 23.1.3 frontend, with native C, C++, Objective-C and
+pinned LLVM/Clang 23.1.5 frontend, with native C, C++, Objective-C and
 Objective-C++ types, ownership and ABI. The former optional migration build
 switch, custom parser/lowering and custom runtime integration have been removed.
 

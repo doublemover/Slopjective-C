@@ -20,7 +20,7 @@ def policy(repo):
     path = repo / 'toolchains/swift/manifest.json'
     value = json.loads(path.read_text())
     if (value.get('schema') != 'objc3c.swift-consumer-toolchain.v1' or
-            value.get('host') != 'debian13-x86_64' or value.get('version') != '6.4.1' or
+            value.get('host') != 'debian13-x86_64' or value.get('version') != '6.4.2' or
             value.get('signing_fingerprint') != '52BB7E3DE28A71BE22EC05FFEF80A866B47A981F' or
             not value['archive_url'].startswith('https://download.swift.org/') or
             digest(repo / value['public_key']) != value['public_key_sha256']):

@@ -1,0 +1,76 @@
+{
+  "schema": "objc3c.linux-toolchain-refresh.v1",
+  "date": "2026-11-08",
+  "status": "READY_FOR_HOSTED_QUALIFICATION",
+  "last_accepted_sdk": {
+    "version": "2.62.0",
+    "extension_abi_revision": 21,
+    "receipt": "docs/support/linux_source_batch_2_62_acceptance.json"
+  },
+  "candidate_sdk": {
+    "version": "2.153.0",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-992b035d8e73-5f678820",
+    "prepared_tree": "72f1ebd19b4ec95146699d03c944f773104ab868",
+    "llvm": "23.1.5",
+    "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
+    "matched_archive_accepted": false,
+    "activated_product_sdk": false
+  },
+  "language_contracts": {
+    "language": "Objective-C 3.0",
+    "extension_abi_revision": 24,
+    "runtime_services_abi": 4,
+    "async_frame_abi": 1,
+    "keypath_metadata_abi": 2,
+    "semantic_interface_schema": "2.2",
+    "modules": {
+      "objc3.core": "2.0.0",
+      "objc3.errors": "2.0.0",
+      "objc3.text": "2.0.0",
+      "objc3.collections": "2.0.0",
+      "objc3.concurrency": "2.153.0",
+      "objc3.keypath": "2.12.0",
+      "objc3.system": "2.79.0"
+    }
+  },
+  "development_tools": {
+    "pytest": "9.2.0",
+    "jsonschema": "4.26.0",
+    "python": "3.15.0",
+    "node": "26.13.0",
+    "npm": "12.2.2",
+    "cmake": "4.4.5",
+    "ninja": "1.13.2",
+    "ccache": "4.14.2",
+    "uv": "0.13.7",
+    "pip": "26.3"
+  },
+  "independent_swift_consumer": {
+    "version": "6.4.2",
+    "signature_verified": true,
+    "manifest": "toolchains/swift/manifest.json"
+  },
+  "unchanged_current_releases": {
+    "libobjc2": "2.3",
+    "GNUstep_runtime_ABI": "2.2",
+    "robin_map": "1.4.1"
+  },
+  "focused_validation": {
+    "tool_and_archive_owner_tests_passed": 96,
+    "CI_revision_owner_tests_passed": 136,
+    "canonical_patch_stack_matches_prepared_source": true,
+    "live_tool_pins_match": true
+  },
+  "CI_repairs": [
+    "Periodic revision mode is preserved by native execution and evidence publication",
+    "Workflow-call source SHA reaches implementation-analysis execution",
+    "Full release jobs use current prerequisites and sanitizer process layout",
+    "Development and fresh SDK consumers share the checksum-pinned CMake installer"
+  ],
+  "hosted_validation": {
+    "SDK_release": "pending dispatch",
+    "native_assurance": "pending dispatch",
+    "LLVM_IR_and_debugger": "pending dispatch"
+  },
+  "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical."
+}

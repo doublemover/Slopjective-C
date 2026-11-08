@@ -6,8 +6,8 @@ function(objc3c_configure_linux_runtime runtime_source runtime_build robin_sourc
     message(FATAL_ERROR "linux-x86_64-libobjc2 requires a native Linux x86-64 target")
   endif()
   if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
-     NOT CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "23.1.3")
-    message(FATAL_ERROR "Linux native runtime requires the pinned Clang 23.1.3 client")
+     NOT CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "23.1.5")
+    message(FATAL_ERROR "Linux native runtime requires the pinned Clang 23.1.5 client")
   endif()
   foreach(_path IN ITEMS runtime_source runtime_build robin_source)
     if(NOT ${_path} OR NOT IS_DIRECTORY "${${_path}}")

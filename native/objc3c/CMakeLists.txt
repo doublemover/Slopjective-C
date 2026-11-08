@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.4.4)
+cmake_minimum_required(VERSION 4.4.5)
 project(objc3c LANGUAGES CXX)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")

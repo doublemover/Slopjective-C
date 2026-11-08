@@ -4,7 +4,7 @@ endif()
 file(REAL_PATH "${OBJC3C_CLANG_FOUNDATION_ROOT}" _objc3_sdk)
 set(LLVM_DIR "${_objc3_sdk}/lib/cmake/llvm")
 set(Clang_DIR "${_objc3_sdk}/lib/cmake/clang")
-find_package(LLVM 23.1.3 EXACT REQUIRED CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
+find_package(LLVM 23.1.5 EXACT REQUIRED CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
 find_package(Clang REQUIRED CONFIG PATHS "${Clang_DIR}" NO_DEFAULT_PATH)
 file(REAL_PATH "${LLVM_DIR}" _objc3_llvm_config)
 file(REAL_PATH "${Clang_DIR}" _objc3_clang_config)
@@ -105,7 +105,7 @@ find_file(_objc3_build_identity_header ObjC3BuildIdentity.h
         "${_objc3_sdk}/tools/clang/include/clang/Basic"
   NO_DEFAULT_PATH REQUIRED)
 file(READ "${_objc3_build_identity_header}" _objc3_compiled_stamp)
-if (NOT _objc3_compiled_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
+if (NOT _objc3_compiled_identity MATCHES "392dfff97d29b59d77e5cac6d4b6ef2585fe7117" OR
     NOT _objc3_compiled_stamp MATCHES "${OBJC3C_FOUNDATION_PATCH_DIGEST}" OR
     NOT _objc3_compiled_stamp MATCHES "${OBJC3C_FOUNDATION_CONFIG_DIGEST}")
   message(FATAL_ERROR "Clang headers do not match the pinned source and patch stack")
@@ -124,7 +124,7 @@ execute_process(
   OUTPUT_VARIABLE _objc3_driver_identity
   ERROR_VARIABLE _objc3_driver_error)
 if (NOT _objc3_driver_exit EQUAL 0 OR
-    NOT _objc3_driver_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
+    NOT _objc3_driver_identity MATCHES "392dfff97d29b59d77e5cac6d4b6ef2585fe7117" OR
     NOT _objc3_driver_identity MATCHES "ObjC3-patches=${OBJC3C_FOUNDATION_PATCH_DIGEST}" OR
     NOT _objc3_driver_identity MATCHES "ObjC3-config=${OBJC3C_FOUNDATION_CONFIG_DIGEST}")
   message(FATAL_ERROR "Clang executable does not match the sealed source and SDK headers: ${_objc3_driver_error}")

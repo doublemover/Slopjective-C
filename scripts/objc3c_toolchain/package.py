@@ -284,6 +284,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     shutil.copyfile(robin_license, license_dir / 'LICENSE')
     shutil.copy2(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck',
                  prefix / 'bin/FileCheck')
+    shutil.copyfile(Path(__file__).with_name('cmake_linux.sh'),
+                    prefix / 'share/objc3c/install-cmake-linux.sh')
     normalize_permissions(prefix)
     data = {'schema': SCHEMA, 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],

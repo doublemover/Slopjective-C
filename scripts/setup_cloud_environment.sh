@@ -76,10 +76,10 @@ install_python() {
 }
 
 install_node() {
-  local dest="$setup_root/node-v26.12.0-linux-x64" archive="$scratch/node.tar.xz"
+  local dest="$setup_root/node-v26.13.0-linux-x64" archive="$scratch/node.tar.xz"
   if [[ ! -x "$dest/bin/node" ]]; then
-    download_verified https://nodejs.org/dist/v26.12.0/node-v26.12.0-linux-x64.tar.xz \
-      "$archive" fd47865ecd6391ebb431fc815e01b9135bf83ded5cf373247e9331e196b7aded
+    download_verified https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-x64.tar.xz \
+      "$archive" d28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997
     tar -xJf "$archive" -C "$setup_root"
     rm -f "$archive"
   fi
@@ -89,6 +89,31 @@ install_node() {
   if [[ "$(PATH="$dest/bin:$PATH" "$dest/bin/npm" --version)" != "$npm_version" ]]; then
     PATH="$dest/bin:$PATH" "$dest/bin/npm" install --global --prefix "$dest" "npm@$npm_version"
   fi
+}
+
+
+install_cmake() {
+  local version dest
+  version=$(host_version cmake)
+  dest="$setup_root/cmake-$version-linux-x86_64"
+  bash "$repo_root/scripts/objc3c_toolchain/cmake_linux.sh" "$dest"
+  for tool in cmake ctest cpack; do
+    ln -sfn "../cmake-$version-linux-x86_64/bin/$tool" "$setup_root/bin/$tool"
+  done
+}
+
+# Avoid materializing independent compiler products that pruning would remove.
+# The verified archive is transient; retain only the LLVM/Clang/lld/LLDB surface.
+extract_llvm() {
+  local archive=$1 dest=$2 pattern
+  local -a excludes=()
+  for pattern in include/flang include/mlir include/mlir-c lib/cmake/flang lib/cmake/mlir \
+      bin/bbc bin/f18-parse-demo bin/flang bin/flang-23 bin/flang-new bin/merge-fdata bin/perf2bolt \
+      'bin/fir-*' 'bin/mlir-*' bin/tblgen-to-irdl 'bin/llvm-bolt*' 'bin/llvm-boltdiff' \
+      'lib/libFortran*' 'lib/libflang*' 'lib/libFIR*' 'lib/libMLIR*' 'lib/libLLVMBOLT*'; do
+    excludes+=("--exclude=*/$pattern")
+  done
+  tar -xJf "$archive" -C "$dest" --strip-components=1 "${excludes[@]}"
 }
 
 
@@ -121,20 +146,20 @@ prune_llvm() {
 
 
 install_llvm() {
-  local dest="$setup_root/llvm-23.1.3" archive="$scratch/llvm.tar.xz"
+  local dest="$setup_root/llvm-23.1.5" archive="$scratch/llvm.tar.xz"
   if [[ -f "$dest/.objc3c-install-incomplete" ]]; then rm -rf -- "$dest"; fi
   if [[ ! -x "$dest/bin/llvm-config" ]]; then
     # SHA-256 from LLVM's upstream release provenance, not a rolling APT snapshot.
-    download_verified https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.3/LLVM-23.1.3-Linux-X64.tar.xz \
-      "$archive" ca9fe385a5d9e2d88132dc0e23a00e9f87f38fa75f67207b5e457d208e71d013
+    download_verified https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/LLVM-23.1.5-Linux-X64.tar.xz \
+      "$archive" f72edb0b36580ece7f52e23858f00c18fad4e87395ea7ad05d7e55c39f8fc78a
     mkdir -p "$dest"
     touch "$dest/.objc3c-install-incomplete"
-    tar -xJf "$archive" -C "$dest" --strip-components=1
+    extract_llvm "$archive" "$dest"
     rm -f "$dest/.objc3c-install-incomplete"
     rm -f "$archive"
   fi
   prune_llvm "$dest"
-  [[ $("$dest/bin/llvm-config" --version) == 23.1.3 ]]
+  [[ $("$dest/bin/llvm-config" --version) == 23.1.5 ]]
   for tool in clang clang++ llc llvm-ar llvm-ranlib llvm-readobj llvm-config ld.lld; do
     test -x "$dest/bin/$tool"
   done
@@ -168,7 +193,7 @@ install_ccache() {
 
 parallel_installs() {
   local job status=0 index
-  local -a jobs=(install_python install_node install_llvm install_ccache) pids=()
+  local -a jobs=(install_python install_node install_llvm install_ccache install_cmake) pids=()
   for job in "${jobs[@]}"; do
     echo "Starting $job"
     ( set -e; "$job" ) >"$setup_root/logs/$job.log" 2>&1 & pids+=("$!")
@@ -187,13 +212,13 @@ parallel_installs() {
 
 write_activation() {
   cat >"$setup_root/activate.sh" <<EOF
-export OBJC3C_BOOTSTRAP_LLVM_ROOT='$setup_root/llvm-23.1.3'
+export OBJC3C_BOOTSTRAP_LLVM_ROOT='$setup_root/llvm-23.1.5'
 export OBJC3C_LLVM_ROOT="\$OBJC3C_BOOTSTRAP_LLVM_ROOT"
 export LLVM_ROOT="\$OBJC3C_LLVM_ROOT"
 export LLVM_DIR="\$LLVM_ROOT/lib/cmake/llvm"
-export LD_LIBRARY_PATH='$setup_root/llvm-23.1.3/lib'
-export PATH='$setup_root/venv315/bin:$setup_root/node-v26.12.0-linux-x64/bin:$setup_root/bin:'"\$LLVM_ROOT/bin:\$PATH"
-export OBJC3C_CI_LLVM_VERSION=23.1.3
+export LD_LIBRARY_PATH='$setup_root/llvm-23.1.5/lib'
+export PATH='$setup_root/venv315/bin:$setup_root/node-v26.13.0-linux-x64/bin:$setup_root/bin:'"\$LLVM_ROOT/bin:\$PATH"
+export OBJC3C_CI_LLVM_VERSION=23.1.5
 export OBJC3C_NATIVE_EXECUTION_CLANG_PATH="\$LLVM_ROOT/bin/clang++"
 export OBJC3C_NATIVE_EXECUTION_LLC_PATH="\$LLVM_ROOT/bin/llc"
 export OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH="\$LLVM_ROOT/bin/llvm-readobj"

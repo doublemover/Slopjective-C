@@ -1,5 +1,10 @@
 # Objective-C 3.0 on Linux
 
+The [current SDK/toolchain refresh](linux_toolchain_refresh.md) targets SDK 2.153.0
+on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.0
+until the matched release and fresh-host qualification pass. Historical receipts
+below retain their original versions and execution scope.
+
 The [source 2.153 / System 2.79 native MRC and value-construction span](linux_native_mrc_record_payloads.md)
 implements source-owned MRC C++ payload lifetimes, ordinary carrier object
 construction and owned task results. It also preserves owning lambda argument

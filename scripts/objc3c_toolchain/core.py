@@ -18,9 +18,9 @@ class ToolchainError(RuntimeError):
 
 
 PINNED_UPSTREAM = {
-    "tag": "llvmorg-23.1.3",
-    "tag_object": "856f0005e57023e63664c560a829c620360ea1f1",
-    "commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+    "tag": "llvmorg-23.1.5",
+    "tag_object": "604d7ddfacefc074968a9ba0d88c667ab31b42bd",
+    "commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
 }
 
 

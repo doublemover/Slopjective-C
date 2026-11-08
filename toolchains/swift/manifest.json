@@ -1,16 +1,16 @@
 {
   "schema": "objc3c.swift-consumer-toolchain.v1",
-  "version": "6.4.1",
+  "version": "6.4.2",
   "host": "debian13-x86_64",
-  "archive_url": "https://download.swift.org/swift-6.4.1-release/debian13/swift-6.4.1-RELEASE/swift-6.4.1-RELEASE-debian13.tar.gz",
-  "archive_sha256": "3273c647a4e29231e1d0962a170f4ba14eca06675591dfe384e7c22b0e476a47",
-  "archive_bytes": 1122730813,
-  "signature_sha256": "33d728ea65ce733c44c96687014455f43406d8c48381f7494b2a0feffed8a6c7",
+  "archive_url": "https://download.swift.org/swift-6.4.2-release/debian13/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE-debian13.tar.gz",
+  "archive_sha256": "8b6fde775b7cfc7a3758739d8abb09bb6fba519c6532d6b1a47faff791646c64",
+  "archive_bytes": 1122816308,
+  "signature_sha256": "3a02212b9a49926a4a5744c1f3624c6ad59976d11b531b70ef47d7997b28d3f3",
   "signing_fingerprint": "52BB7E3DE28A71BE22EC05FFEF80A866B47A981F",
   "public_key": "toolchains/swift/signing-key.asc",
   "public_key_sha256": "6310f9267c7f889a83cb0498dcd647c675586e5327b77d9d4fb0537dc2ee098d",
   "key_origin_url": "https://www.swift.org/keys/all-keys.asc",
-  "archive_root": "swift-6.4.1-RELEASE-debian13",
+  "archive_root": "swift-6.4.2-RELEASE-debian13",
   "bin": [
     "swift",
     "swiftc",
@@ -31,5 +31,5 @@
   ],
   "library_files": ["usr/lib/libswiftDemangle.so"],
   "purpose": "Independent stock Swift consumer; text C headers only, no product PCH/AST or compiler/runtime substitution.",
-  "selected_manifest_sha256": "c42fe740ab0ee6680cb1c338a04c6d5cc33159db6544cb380588c184bd806a5d"
+  "selected_manifest_sha256": "8afeb82716604908e026e83e0ae12559632df6422f1e6c9776b48c8a8ac94634"
 }

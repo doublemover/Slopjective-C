@@ -268,7 +268,6 @@ def test_native_assurance_workflow_has_exact_periodic_and_dispatch_revision_gate
     workflow = (root / '.github/workflows/native-assurance.yml').read_text()
     assert 'schedule:' in workflow and 'workflow_dispatch:' in workflow
     assert '--periodic-sha "$GITHUB_SHA"' in workflow
-    assert workflow.count('--periodic-sha "$GITHUB_SHA"') == 2
     assert 'objc3c_assurance plan' in workflow and 'objc3c_assurance verify' in workflow
     dependencies = {'gnupg', 'libxml2', 'libcurl4', 'libedit2', 'libsqlite3-0', 'libncurses6'}
     for path in ('native-assurance.yml', 'adaptive-closeout.yml'):

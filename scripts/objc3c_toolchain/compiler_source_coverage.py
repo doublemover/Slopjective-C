@@ -233,7 +233,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         return log
     try:
         for name, tool in tools.items():
-            if not tool.is_file() or '23.1.3' not in run(name+'-version', [tool, '--version'], profile=False).read_text():
+            if not tool.is_file() or '23.1.5' not in run(name+'-version', [tool, '--version'], profile=False).read_text():
                 raise ValueError('coverage tool differs from the isolated compiler profile')
         binary_identity = {}
         for index, binary in enumerate(binaries):

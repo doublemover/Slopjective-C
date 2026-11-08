@@ -44,7 +44,7 @@ def test_tool_admission_and_probe_timeout_replace_stale_success(tmp_path, monkey
     output = tmp_path / 'evidence'; output.mkdir()
     (output / 'qualification.json').write_text('{"status":"PASS"}')
     monkeypatch.setattr(locks.subprocess, 'check_output', lambda *args, **kwargs:
-                        'clang version ' + ('22.0.0' if failure == 'tool-mismatch' else '23.1.3'))
+                        'clang version ' + ('22.0.0' if failure == 'tool-mismatch' else '23.1.5'))
     def run(*args, **kwargs):
         if failure == 'tool-mismatch':
             pytest.fail('must not compile with the mismatched tool')

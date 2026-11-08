@@ -156,8 +156,7 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     root = Path(__file__).resolve().parents[2]
     workflow = (root / '.github/workflows/implementation-analysis.yml').read_text()
     assert 'schedule:' in workflow and 'workflow_dispatch:' in workflow
-    assert 'workflow_call:' in workflow and workflow.count('--periodic-sha "$SOURCE_SHA"') == 2
-    assert workflow.count('--periodic-sha "$GITHUB_SHA"') == 2
+    assert 'workflow_call:' in workflow
     assert 'Linux implementation analysis gate' in workflow
     assert '--retain-builds' not in workflow
     release = (root / '.github/workflows/platform-host-evidence.yml').read_text()

@@ -229,9 +229,9 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         'build_storage': 'One linked witness resident; temporary build products reclaimed after successful admission or interruption.',
         'raw_profile_limit_bytes_per_suite': FIRST_PARTY_PROFILE_LIMIT,
         'profile_runtime': {'path': str(runtime), 'sha256': digest(runtime),
-            'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.3'},
+            'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.5'},
         'measurement_compiler': {'path': str(compiler), 'sha256': digest(compiler),
-            'provenance': 'pinned-bootstrap-llvm-23.1.3',
+            'provenance': 'pinned-bootstrap-llvm-23.1.5',
             'subject': 'measurement-tool-not-covered-implementation'},
         'compiled_product_reuse': {'receipt': str(reuse_build_receipt), 'sha256': digest(reuse_build_receipt),
             'execution_reused': False} if reused else None,
@@ -276,7 +276,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     try:
         for name, path in {'clang++': compiler, **tools}.items():
             version = run(name+'-version', [path, '--version'])
-            if '23.1.3' not in version: raise ValueError('coverage tool version differs from the admitted bootstrap')
+            if '23.1.5' not in version: raise ValueError('coverage tool version differs from the admitted bootstrap')
         libraries = [installed_shared_library(stage / 'lib', name)
                      for name in ('libLLVM.so', 'libclang-cpp.so')]
         frozen.update({str(path): digest(path) for path in libraries})

@@ -129,7 +129,7 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
     try:
         version = run('swift-version', [swiftc, '--version'], foreign=True)
         info = json.loads(run('swift-target-info', [swiftc, '-print-target-info'], foreign=True))
-        if ('Swift version 6.4.1 (swift-6.4.1-RELEASE)' not in version or
+        if ('Swift version 6.4.2 (swift-6.4.2-RELEASE)' not in version or
                 info.get('target', {}).get('triple') != rows['target'] or
                 Path(info['paths']['runtimeResourcePath']).resolve() != swift_root / 'usr/lib/swift'):
             raise ValueError('Swift consumer compiler/target/resources differ from the admitted pair')
@@ -137,7 +137,7 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
             native_version=run('native-version', [sdk / 'bin/clang', '--version']),
             swift_clang_version=run('swift-clang-version', [swift_root / 'usr/bin/clang', '--version'], foreign=True),
             symbolizer_version=run('native-symbolizer-version', [symbolizer, '--version']))
-        if '23.1.3' not in report['symbolizer_version']:
+        if '23.1.5' not in report['symbolizer_version']:
             raise ValueError('native compiler diagnostics require the pinned LLVM symbolizer')
         for name, binary, is_foreign in (('native', sdk / 'bin/clang', False),
                                          ('swift-driver', swiftc, True), ('swift-frontend', frontend, True)):

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.4.4)
+cmake_minimum_required(VERSION 4.4.5)
 
 # Standalone runtime development does not need Clang libraries or a sealed SDK.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)

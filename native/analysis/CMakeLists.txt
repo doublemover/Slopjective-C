@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.4.4)
+cmake_minimum_required(VERSION 4.4.5)
 project(objc3_implementation_analysis LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -10,7 +10,7 @@ set(OBJC3_ANALYSIS_SOURCE "" CACHE PATH "Matching sealed LLVM source tree")
 if(NOT OBJC3_ANALYSIS_FOUNDATION OR NOT OBJC3_ANALYSIS_SOURCE)
   message(FATAL_ERROR "Both matching foundation and source roots are required")
 endif()
-find_package(LLVM 23.1.3 EXACT REQUIRED CONFIG
+find_package(LLVM 23.1.5 EXACT REQUIRED CONFIG
   PATHS "${OBJC3_ANALYSIS_FOUNDATION}/lib/cmake/llvm" NO_DEFAULT_PATH)
 find_package(Clang REQUIRED CONFIG
   PATHS "${OBJC3_ANALYSIS_FOUNDATION}/lib/cmake/clang" NO_DEFAULT_PATH)

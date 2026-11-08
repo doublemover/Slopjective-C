@@ -168,10 +168,10 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         argv = list(map(str, argv));name = log.stem
         status, text = 0, ''
         if mutation == 'unexpected-error' and name == 'swift-version': raise KeyError('deliberate protocol error')
-        if name == 'swift-version': text = 'Swift version 6.4.1 (swift-6.4.1-RELEASE)'
+        if name == 'swift-version': text = 'Swift version 6.4.2 (swift-6.4.2-RELEASE)'
         elif name == 'swift-target-info': text = json.dumps({'target': {'triple': 'x86_64-unknown-linux-gnu'},
             'paths': {'runtimeResourcePath': str(swift / 'usr/lib/swift')}})
-        elif name == 'native-symbolizer-version': text = 'LLVM version 23.1.3'
+        elif name == 'native-symbolizer-version': text = 'LLVM version 23.1.5'
         elif '--emit-interface' in argv:
             source, destination = Path(argv[1]), Path(argv[argv.index('--emit-interface')+1])
             destination.write_bytes(source.read_bytes())

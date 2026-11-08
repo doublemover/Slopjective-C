@@ -13,7 +13,7 @@ printf '%s  %s\n' "$expected_sha" "$archive" | sha256sum -c -
 # Provision the small installer prerequisites before inspecting the archive.
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  python3 python3-venv zstd g++ libc6-dev libzstd-dev zlib1g-dev libssl-dev passwd util-linux
+  python3 python3-venv zstd g++ libc6-dev libzstd-dev zlib1g-dev libssl-dev passwd util-linux curl ca-certificates xz-utils
 umask 077
 scratch=$(mktemp -d)
 trap 'rm -rf -- "$scratch"' EXIT
@@ -55,8 +55,10 @@ PY
 python3 -m venv "$scratch/cmake"
 cmake_version=$(python3 -c 'import json,os; print(json.load(open(os.environ["OBJC3C_SDK_ROOT"]+"/objc3-sdk.json"))["host_tools"]["cmake"])')
 ninja_version=$(python3 -c 'import json,os; print(json.load(open(os.environ["OBJC3C_SDK_ROOT"]+"/objc3-sdk.json"))["host_tools"]["ninja"])')
-"$scratch/cmake/bin/pip" install "cmake==$cmake_version" "ninja==$ninja_version"
-export PATH="$scratch/cmake/bin:$PATH"
+"$scratch/cmake/bin/pip" install "ninja==$ninja_version"
+bash "$OBJC3C_SDK_ROOT/share/objc3c/install-cmake-linux.sh" "$scratch/cmake-release"
+test "$("$scratch/cmake-release/bin/cmake" --version | head -n 1)" = "cmake version $cmake_version"
+export PATH="$scratch/cmake-release/bin:$scratch/cmake/bin:$PATH"
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$OBJC3C_SDK_ROOT" \
   -DCMAKE_CXX_COMPILER="$OBJC3C_SDK_ROOT/bin/clang++" -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
 cmake --build build --parallel 2
