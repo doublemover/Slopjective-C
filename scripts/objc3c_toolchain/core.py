@@ -562,24 +562,13 @@ def prepare(repo: Path, *, manifest_path: Path | None = None, fetch: bool = Fals
     try:
         remote = manifest["upstream"]["url"]
         commit = expected["upstream_commit"]
-        if fetch:
-            _run(["git", "init", str(checkout)])
-            _run(["git", "-C", str(checkout), "remote", "add", "origin", remote])
-            tag = expected["upstream_tag"]
-            _run(["git", "-C", str(checkout), "fetch", "--depth", "1", "origin", f"refs/tags/{tag}:refs/tags/{tag}"])
-            tag_object = _run(["git", "-C", str(checkout), "rev-parse", tag])
-            if tag_object != expected["upstream_tag_object"]:
-                raise ToolchainError(f"fetched tag object {tag_object}; expected {expected['upstream_tag_object']}")
-            peeled = _run(["git", "-C", str(checkout), "rev-parse", f"{tag}^{{commit}}"])
-            if peeled != commit:
-                raise ToolchainError(f"pinned tag resolves to {peeled}; expected {commit}")
-            _run(["git", "-C", str(checkout), "checkout", "--detach", commit])
-        else:
-            cache = (repo / "out" / "toolchains" / "upstream-cache.git").resolve()
-            if not cache.exists():
-                raise ToolchainError(f"missing local upstream cache {cache}; run prepare --fetch to acquire pinned source")
-            _run(["git", "clone", "--no-checkout", str(cache), str(checkout)])
-            _run(["git", "checkout", "--detach", commit], cwd=checkout)
+        from .source_cache import checkout as cached_checkout, SourceCacheError
+        try:
+            cached_checkout(repo / 'out/toolchains/upstream-cache.git', checkout,
+                url=remote, tag=expected['upstream_tag'], commit=commit,
+                tag_object=expected['upstream_tag_object'], fetch=fetch)
+        except SourceCacheError as error:
+            raise ToolchainError(str(error)) from error
         head = _run(["git", "rev-parse", "HEAD"], cwd=checkout)
         if head != commit:
             raise ToolchainError(f"fetched wrong upstream base {head}; expected {commit}")

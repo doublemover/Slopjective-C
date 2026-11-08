@@ -1,0 +1,61 @@
+name: Linux dependency cache qualification
+on:
+  workflow_dispatch:
+    inputs:
+      expectation:
+        description: Require a fully warm tool and source cache
+        type: choice
+        options: [any, warm]
+        default: any
+permissions:
+  contents: read
+concurrency:
+  group: linux-dependency-cache-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  dependencies:
+    runs-on: ubuntu-26.04
+    container:
+      image: debian:13
+    timeout-minutes: 30
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Reuse or provision the current pinned dependencies
+        uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/dependency-cache
+          include_swift: "true"
+      - name: Verify live versions and cache reuse
+        shell: bash
+        env:
+          CACHE_EXPECTATION: ${{ inputs.expectation }}
+        run: |
+          source /opt/objc3c-host/activate.sh
+          python3 -B -m scripts.objc3c_toolchain check-host-tools --runtime
+          python3 -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path('out/dependency-cache')
+          admission = json.loads((root / 'objc3-dependency-admission.json').read_text())
+          sources = json.loads((root / 'objc3-source-cache.json').read_text())
+          if os.environ['CACHE_EXPECTATION'] == 'warm':
+              assert set(admission['admitted']) == {'llvm', 'python', 'node', 'cmake', 'ccache', 'swift'}
+              assert len(sources) == 3 and all(row['cache_hit'] for row in sources)
+          (root / 'qualification.json').write_text(json.dumps({
+              'status': 'PASS', 'expectation': os.environ['CACHE_EXPECTATION'],
+              'admitted_tools': admission['admitted'], 'pristine_sources': sources}, indent=2)+'\n')
+          PY
+      - name: Preserve cache qualification evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dependency-cache-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/dependency-cache/
+          if-no-files-found: error
+          retention-days: 7

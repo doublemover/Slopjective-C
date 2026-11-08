@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "READY_FOR_HOSTED_QUALIFICATION_RETRY",
+  "status": "HOSTED_QUALIFICATION_IN_PROGRESS",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -82,10 +82,10 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "fd9994da4",
+      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
       "status": "PASS",
-      "runs": [42467430794, 42467430829, 42467430799],
-      "tooling_tests_passed": 1496,
+      "runs": [42473442521, 42473442576, 42473442904],
+      "tooling_tests_passed": 1502,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 107
     },
@@ -121,7 +121,7 @@
         "LLVM_IR_and_debugger": {
           "run": 42466553014,
           "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
-          "status": "IN_PROGRESS",
+          "status": "SUPERSEDED",
           "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466553014"
         }
       },
@@ -129,40 +129,40 @@
         "SDK_release": {
           "run": 42469535429,
           "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
-          "status": "IN_PROGRESS",
+          "status": "SUPERSEDED_AFTER_THREE_STALE_COMPILER_EXPECTATIONS",
           "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469535429"
         },
         "native_assurance": {
           "run": 42469535429,
           "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
-          "status": "IN_PROGRESS",
+          "status": "SUPERSEDED_AFTER_THREE_STALE_COMPILER_EXPECTATIONS",
           "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469535429"
         },
         "LLVM_IR_and_debugger": {
           "run": 42469539102,
           "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
-          "status": "IN_PROGRESS",
+          "status": "FAILED_THREE_STALE_COMPILER_EXPECTATIONS",
           "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469539102"
         }
       }
     },
     "SDK_release": {
-      "run": 42469535429,
-      "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
-      "status": "REQUIRES_CORRECTED_SOURCE_RETRY",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469535429"
+      "run": 42473442540,
+      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473442540"
     },
     "native_assurance": {
-      "run": 42469535429,
-      "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
-      "status": "REQUIRES_CORRECTED_SOURCE_RETRY",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469535429"
+      "run": 42473442540,
+      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473442540"
     },
     "LLVM_IR_and_debugger": {
-      "run": 42469539102,
-      "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
-      "status": "REQUIRES_CORRECTED_SOURCE_RETRY",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469539102"
+      "run": 42473446817,
+      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473446817"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -197,5 +197,26 @@
       "classification": "Expectations lag supported carrier-copy construction, generic discarded-carrier cleanup and the temporary-destructor diagnostic; updated with positive codegen and isolated selected-arm destruction assertions."
     }
   },
-  "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical."
+  "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
+  "dependency_caching": {
+    "status": "IMPLEMENTED_AWAITING_COLD_WARM_HOSTED_CHECKS",
+    "tools": [
+      "LLVM bootstrap",
+      "Python interpreter and development environment",
+      "Node/npm",
+      "CMake",
+      "ccache",
+      "signed Swift consumer"
+    ],
+    "sources": ["pinned LLVM bare Git objects", "libobjc2", "robin-map"],
+    "package_downloads": ["npm", "uv", "pip"],
+    "identity": "Per-dependency pins and installer recipes; independent of feature commits and compiler patch digests",
+    "admission": "Exact restored tool file/mode/link inventory before execution; existing signed Swift publisher seal; pinned Git objects with full fsck",
+    "excluded": ["compiler build trees", "product SDK archives"],
+    "focused_python_tests_passed": 91,
+    "workflow_controls_passed": 63,
+    "installed_tool_inventories_checked": 5,
+    "live_CMake_cache_admission": "PASS",
+    "compiler_source_identity_unchanged": true
+  }
 }

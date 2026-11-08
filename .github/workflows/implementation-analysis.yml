@@ -1,7 +1,7 @@
 name: Extended Linux implementation analysis
 on:
   schedule:
-    - cron: '19 7 * * 0'
+    - cron: "19 7 * * 0"
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -71,8 +71,9 @@ jobs:
           name: implementation-plan-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/implementation-assurance/selection
       - name: Pinned host tools
-        shell: bash
-        run: python3 -B -m scripts.objc3c_assurance.bootstrap --root /opt/objc3c-host --output out/implementation-assurance/startup
+        uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/implementation-assurance/startup
       - name: Build and analyze selected implementation
         shell: bash
         run: |

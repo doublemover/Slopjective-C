@@ -4,6 +4,46 @@ import { resolve, join } from "node:path";
 import * as yaml from "js-yaml";
 import { validateConfig } from "./adaptive-ci.mjs";
 
+const dependencyActions = ["linux-host-tools", "python-tools"].map(
+  (name) => `./.github/actions/${name}`,
+);
+const pinnedAction = (uses) =>
+  /^[^@]+@[a-f0-9]{40}$/.test(uses) || dependencyActions.includes(uses);
+
+export function validateDependencyActions(actions) {
+  for (const name of dependencyActions) {
+    if (!actions[name]) throw new Error(`Missing dependency action ${name}`);
+    const action = yaml.load(actions[name]);
+    if (action.runs?.using !== "composite") throw new Error("Dependency setup must be composite");
+    const steps = action.runs.steps ?? [];
+    for (const step of steps) {
+      if (step["continue-on-error"] || (step.uses && !pinnedAction(step.uses)))
+        throw new Error("Dependency actions must preserve failures and pin external actions");
+    }
+    const admit = steps.findIndex((step) => step.run?.includes("dependency_cache admit"));
+    const provision = steps.findIndex((step) =>
+      /assurance.bootstrap|uv.*sync/.test(step.run ?? ""),
+    );
+    const seal = steps.findIndex((step) => step.run?.includes("dependency_cache seal"));
+    const saves = steps.flatMap((step, index) =>
+      step.uses?.startsWith("actions/cache/save@") ? [index] : [],
+    );
+    const restores = steps.flatMap((step, index) =>
+      step.uses?.startsWith("actions/cache/restore@") ? [index] : [],
+    );
+    if (
+      !restores.length ||
+      !saves.length ||
+      !restores.every((index) => index < admit) ||
+      !(admit < provision && provision <= seal) ||
+      !saves.every((index) => index > seal)
+    )
+      throw new Error(
+        "Restore, admission, provisioning, sealing and publication must stay ordered",
+      );
+  }
+}
+
 export function validateNativeContainer(job) {
   if (
     job.container?.image !== "debian:13" ||
@@ -102,7 +142,7 @@ export function validateNativeGate(text) {
       throw new Error(`Missing or failure-normalizing native job ${id}`);
     for (const step of job.steps ?? []) {
       if (step["continue-on-error"]) throw new Error("Native failures must remain failures");
-      if (step.uses && !/^[^@]+@[a-f0-9]{40}$/.test(step.uses))
+      if (step.uses && !pinnedAction(step.uses))
         throw new Error("Native actions must be SHA-pinned");
       if (
         step.uses?.startsWith("actions/upload-artifact@") &&
@@ -216,7 +256,7 @@ export function validateImplementationGate(text, releaseText) {
     for (const step of job.steps ?? []) {
       if (step["continue-on-error"])
         throw new Error("Implementation analysis failures must remain failures");
-      if (step.uses && !/^[^@]+@[a-f0-9]{40}$/.test(step.uses))
+      if (step.uses && !pinnedAction(step.uses))
         throw new Error("Implementation analysis actions must be SHA-pinned");
       if (
         step.uses?.startsWith("actions/upload-artifact@") &&
@@ -419,6 +459,16 @@ export async function validateWorkflowContracts(config, readWorkflow) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = resolve(fileURLToPath(new URL("../workflows/", import.meta.url)));
+  validateDependencyActions(
+    Object.fromEntries(
+      await Promise.all(
+        dependencyActions.map(async (name) => [
+          name,
+          await readFile(resolve(root, "../..", name, "action.yml"), "utf8"),
+        ]),
+      ),
+    ),
+  );
   const config = JSON.parse(await readFile(new URL("./adaptive-ci.json", import.meta.url), "utf8"));
   await validateWorkflowContracts(config, (name) => readFile(join(root, name), "utf8"));
   const allWorkflows = Object.fromEntries(

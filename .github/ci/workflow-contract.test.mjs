@@ -4,6 +4,7 @@ import test from "node:test";
 import * as yaml from "js-yaml";
 import {
   validateImplementationGate,
+  validateDependencyActions,
   validateNativeContainer,
   validateNativeGate,
   validateNativeRelease,
@@ -52,6 +53,49 @@ const documentationQuick = await readFile(
   new URL("../workflows/spec-quality.yml", import.meta.url),
   "utf8",
 );
+
+const dependencyActions = Object.fromEntries(
+  await Promise.all(
+    ["linux-host-tools", "python-tools"].map(async (name) => [
+      `./.github/actions/${name}`,
+      await readFile(new URL(`../actions/${name}/action.yml`, import.meta.url), "utf8"),
+    ]),
+  ),
+);
+test("shared dependency setup admits restored bytes before execution and publishes misses early", () => {
+  validateDependencyActions(dependencyActions);
+});
+for (const name of Object.keys(dependencyActions)) {
+  for (const fault of [
+    "missing",
+    "floating",
+    "hidden failure",
+    "admit after execution",
+    "save before seal",
+  ]) {
+    test(`${name} rejects ${fault}`, () => {
+      const actions = { ...dependencyActions };
+      const action = yaml.load(actions[name]);
+      const steps = action.runs.steps;
+      if (fault === "missing") delete actions[name];
+      else {
+        if (fault === "floating")
+          steps.find((step) => step.uses).uses = "actions/cache/restore@main";
+        if (fault === "hidden failure") steps[0]["continue-on-error"] = true;
+        if (fault === "admit after execution") {
+          const index = steps.findIndex((step) => step.run?.includes("dependency_cache admit"));
+          steps.push(...steps.splice(index, 1));
+        }
+        if (fault === "save before seal") {
+          const index = steps.findIndex((step) => step.uses?.startsWith("actions/cache/save@"));
+          steps.unshift(...steps.splice(index, 1));
+        }
+        actions[name] = yaml.dump(action);
+      }
+      assert.throws(() => validateDependencyActions(actions));
+    });
+  }
+}
 
 test("quick PR feedback stays separate from optional compiler qualification", () => {
   validateQuickChecks(toolingQuick, documentationQuick);

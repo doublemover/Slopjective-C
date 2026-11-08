@@ -59,3 +59,14 @@ checks. A candidate is not accepted or activated until those required results
 pass. The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
 records actual status; full language/profile conformance and remaining feature
 implementation are separate roadmap obligations.
+
+Development dependencies now have separate exact caches for the LLVM bootstrap,
+Python interpreter/environment, Node/npm, CMake, ccache and signed Swift consumer,
+plus pristine LLVM, libobjc2 and robin-map Git objects. Quick checks reuse Python
+and package downloads. Keys follow dependency pins and installer recipes rather
+than feature commits. Restored tool bytes are admitted before execution; source
+objects retain exact tag/commit checks and full Git integrity checks. Cold misses
+are published immediately after successful setup, even if later compiler tests
+fail. Compiler build trees and product SDK archives are excluded. The manual
+`Linux dependency cache qualification` workflow checks cold setup and can require
+all tool and source caches on a second clean runner.

@@ -71,7 +71,9 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
         if not version or version.group(1) != tools["cmake"]:
             errors.append("Linux CMake installer differs from host_tools.cmake")
     workflow_count = 0
-    for path in sorted((repo / ".github/workflows").glob("*.yml")):
+    owners = [*sorted((repo / ".github/workflows").glob("*.yml")),
+              *sorted((repo / '.github/actions').rglob('action.yml'))]
+    for path in owners:
         contents = path.read_text()
         for name, field in (("node", "node-version"), ("python", "python-version")):
             for value in re.findall(rf"^\s*{field}:\s*['\"]?([^'\"\s]+)", contents, re.M):
@@ -88,7 +90,7 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
             for value in re.findall(pattern, contents):
                 if value != tools[name]:
                     errors.append(f"{path.name} {name}={value}; expected {tools[name]}")
-        for action, revision in re.findall(r"uses: (actions/[A-Za-z0-9_-]+)@([^\s#]+)", contents):
+        for action, revision in re.findall(r"uses: (actions/[A-Za-z0-9_/-]+)@([^\s#]+)", contents):
             pin = manifest.get("ci_actions", {}).get(action)
             if not pin or revision != pin["commit"]:
                 errors.append(f"{path.name} {action} does not use its locked stable commit")

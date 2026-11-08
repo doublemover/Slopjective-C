@@ -19,10 +19,10 @@ from scripts.objc3c_toolchain_runtime.source_patches import prepare_source, veri
 
 def checkout(path: Path, url: str, revision: str, tag: str, fetch: bool, *, allow_owned_changes=False) -> None:
     if not path.exists():
-        if not fetch:
-            raise ValueError(f"missing pinned source {path}; use --fetch to acquire it")
         path.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["git", "clone", "--depth", "1", "--branch", tag, url, str(path)], check=True)
+        from scripts.objc3c_toolchain.source_cache import checkout as cached_checkout
+        cached_checkout(path.parent.parent / 'source-cache' / (path.parent.name + '.git'),
+                        path, url=url, tag=tag, commit=revision, fetch=fetch)
     actual = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
     if actual != revision:
         raise ValueError(f"source {path} is at {actual}; expected {revision}")

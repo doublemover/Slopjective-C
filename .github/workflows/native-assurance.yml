@@ -1,7 +1,7 @@
 name: Extended Linux native assurance
 on:
   schedule:
-    - cron: '37 5 * * 0'
+    - cron: "37 5 * * 0"
   workflow_dispatch:
   workflow_call:
 permissions:
@@ -70,8 +70,10 @@ jobs:
           name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - name: Pinned host tools
-        shell: bash
-        run: python3 -B -m scripts.objc3c_assurance.bootstrap --root /opt/objc3c-host --output out/native-assurance/startup
+        uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup
+          include_swift: ${{ matrix.shard == 'core' }}
       - name: Require sanitizer process layout support
         run: |
           mkdir -p out
