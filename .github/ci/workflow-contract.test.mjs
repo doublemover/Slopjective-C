@@ -180,6 +180,31 @@ test("manual SDK release reuses a passing native archive", () => {
   validateNativeRelease(native, release);
 });
 for (const fault of [
+  "diagnosis by default",
+  "hidden partial scope",
+  "partial default matrix",
+  "partial release input",
+  "partial release caller",
+  "partial SDK publication",
+]) {
+  test(`core diagnosis rejects ${fault}`, () => {
+    const owner = yaml.load(native),
+      caller = yaml.load(release);
+    if (fault === "diagnosis by default")
+      owner.on.workflow_dispatch.inputs.diagnostic_core_only.default = true;
+    if (fault === "hidden partial scope") delete owner["run-name"];
+    if (fault === "partial default matrix")
+      owner.jobs.native.strategy.matrix.shard = "${{ fromJSON('[\"core\"]') }}";
+    if (fault === "partial release input")
+      owner.on.workflow_call = { inputs: { diagnostic_core_only: { type: "boolean" } } };
+    if (fault === "partial release caller") caller.jobs.build.with = { diagnostic_core_only: true };
+    if (fault === "partial SDK publication")
+      owner.jobs.native.steps.find((step) => step.with?.name === "objc3c-linux-sdk").if =
+        "success() && matrix.shard == 'core'";
+    assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
+  });
+}
+for (const fault of [
   "automatic release",
   "conditional owner",
   "hidden owner failure",
@@ -262,7 +287,11 @@ test("native containers admit TSan personality and debugger process controls", a
 });
 for (const [name, before, after] of [
   ["missing aggregate", "  gate:", "  renamed:"],
-  ["conditional aggregate", "    if: always()\n    needs:", "    if: success()\n    needs:"],
+  [
+    "conditional aggregate",
+    "    if: always() && !inputs.diagnostic_core_only\n    needs:",
+    "    if: success()\n    needs:",
+  ],
   ["automatic expensive PR", "on:\n", "on:\n  pull_request:\n"],
   ["privileged PR trigger", "on:\n", "on:\n  pull_request_target:\n"],
   ["missing dependency", "    needs: [plan, native]", "    needs: [plan]"],

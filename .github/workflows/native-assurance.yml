@@ -1,8 +1,14 @@
 name: Extended Linux native assurance
+run-name: ${{ inputs.diagnostic_core_only && 'Linux core diagnosis (partial surface)' || 'Extended Linux native assurance' }}
 on:
   schedule:
     - cron: "37 5 * * 0"
   workflow_dispatch:
+    inputs:
+      diagnostic_core_only:
+        description: Diagnose the core frontend only; no full gate or SDK publication
+        type: boolean
+        default: false
   workflow_call:
 permissions:
   contents: read
@@ -46,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+        shard: ${{ inputs.diagnostic_core_only && fromJSON('["core"]') || fromJSON(needs.plan.outputs.shards) }}
     runs-on: ubuntu-26.04
     container:
       image: debian:13
@@ -93,7 +99,7 @@ jobs:
           fi
           python3 -B -m scripts.objc3c_assurance run --plan out/native-assurance/selection/plan.json --output out/native-assurance/results --shard "$NATIVE_SHARD" "${periodic[@]}"
       - name: Preserve the qualified SDK archive for release consumers
-        if: success() && matrix.shard == 'core'
+        if: success() && matrix.shard == 'core' && !inputs.diagnostic_core_only
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: objc3c-linux-sdk
@@ -161,7 +167,7 @@ jobs:
           retention-days: 7
   gate:
     name: Extended Linux native assurance gate
-    if: always()
+    if: always() && !inputs.diagnostic_core_only
     needs: [plan, native]
     runs-on: ubuntu-26.04
     timeout-minutes: 5

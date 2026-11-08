@@ -116,9 +116,18 @@ export function validateNativeGate(text) {
     );
   }
   const gate = workflow.jobs?.gate;
+  const diagnosis = events.workflow_dispatch?.inputs?.diagnostic_core_only;
+  if (
+    diagnosis?.type !== "boolean" ||
+    diagnosis.default !== false ||
+    events.workflow_call?.inputs?.diagnostic_core_only ||
+    workflow["run-name"] !==
+      "${{ inputs.diagnostic_core_only && 'Linux core diagnosis (partial surface)' || 'Extended Linux native assurance' }}"
+  )
+    throw new Error("Core diagnosis must be explicit, partial, and unavailable to release callers");
   if (
     gate?.name !== "Extended Linux native assurance gate" ||
-    gate.if !== "always()" ||
+    gate.if !== "always() && !inputs.diagnostic_core_only" ||
     JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["native", "plan"]) ||
     gate["continue-on-error"]
   ) {
@@ -138,7 +147,8 @@ export function validateNativeGate(text) {
   const nativeJob = workflow.jobs.native;
   if (
     nativeJob.strategy?.["fail-fast"] !== false ||
-    nativeJob.strategy?.matrix?.shard !== "${{ fromJSON(needs.plan.outputs.shards) }}" ||
+    nativeJob.strategy?.matrix?.shard !==
+      "${{ inputs.diagnostic_core_only && fromJSON('[\"core\"]') || fromJSON(needs.plan.outputs.shards) }}" ||
     nativeJob.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
     !execute?.run.includes('--shard "$NATIVE_SHARD"') ||
     !(gate.steps ?? []).some(
@@ -202,11 +212,12 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     release.permissions?.contents !== "read" ||
     call?.uses !== "./.github/workflows/native-assurance.yml" ||
     call.if ||
+    Object.hasOwn(call.with ?? {}, "diagnostic_core_only") ||
     call["continue-on-error"] ||
     JSON.stringify(install?.needs?.toSorted()) !==
       JSON.stringify(["build", "implementation-analysis"]) ||
     archive.length !== 1 ||
-    archive[0].if !== "success() && matrix.shard == 'core'" ||
+    archive[0].if !== "success() && matrix.shard == 'core' && !inputs.diagnostic_core_only" ||
     !(install.steps ?? []).some(
       (step) =>
         step.uses?.startsWith("actions/download-artifact@") &&
