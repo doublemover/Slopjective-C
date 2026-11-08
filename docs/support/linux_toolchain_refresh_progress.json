@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "READY_FOR_HOSTED_QUALIFICATION",
+  "status": "HOSTED_QUALIFICATION_RETRY_REQUIRED",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -9,8 +9,8 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-992b035d8e73-5f678820",
-    "prepared_tree": "72f1ebd19b4ec95146699d03c944f773104ab868",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-63a70b43959c-70309e04",
+    "prepared_tree": "f59c678debdbc948eb339f514ca6444b0acdd0da",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
@@ -59,19 +59,38 @@
     "tool_and_archive_owner_tests_passed": 96,
     "CI_revision_owner_tests_passed": 136,
     "canonical_patch_stack_matches_prepared_source": true,
-    "live_tool_pins_match": true
+    "live_tool_pins_match": true,
+    "clean_host_download_and_bootstrap_controls_passed": 19
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
     "Workflow-call source SHA reaches implementation-analysis execution",
     "Full release jobs use current prerequisites and sanitizer process layout",
     "Development and fresh SDK consumers share the checksum-pinned CMake installer",
-    "Release reuses the native owner and its qualified archive instead of starting a duplicate SDK build"
+    "Release reuses the native owner and its qualified archive instead of starting a duplicate SDK build",
+    "Immutable official GitHub release-asset fallback retains archive checksums and ccache signature verification",
+    "libclang traverses dependent key-path root/value TypeLocs; an installed indexing regression is enrolled in the foundation suite"
   ],
   "hosted_validation": {
-    "SDK_release": "pending dispatch",
-    "native_assurance": "pending dispatch",
-    "LLVM_IR_and_debugger": "pending dispatch"
+    "SDK_release": {
+      "run": 42465615959,
+      "status": "FAILED_BEFORE_EXECUTION",
+      "reason": "Upstream LLVM/ccache download 504s; official immutable asset fallback added"
+    },
+    "native_assurance": {
+      "run": 42465615959,
+      "status": "FAILED_BEFORE_EXECUTION"
+    },
+    "LLVM_IR_and_debugger": {
+      "run": 42465618852,
+      "status": "FAILED_BEFORE_EXECUTION",
+      "previous_build_blocker": "Missing dependent-keypath libclang visitor repaired"
+    },
+    "quick_checks": {
+      "revision": "e84dacdd46b3d4fc63159dbb421172ec2e77c5a0",
+      "status": "PASS",
+      "runs": [42465896886, 42465896906, 42465896841]
+    }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical."
 }

@@ -33942,10 +33942,10 @@ index 000000000..eafa8e821
 +// CHECK: "patternKind": "none"
 +
 diff --git a/clang/tools/libclang/CIndex.cpp b/clang/tools/libclang/CIndex.cpp
-index 6e30ffd6b..b4b5f552b 100644
+index 6e30ffd6b..ad8a3ec0c 100644
 --- a/clang/tools/libclang/CIndex.cpp
 +++ b/clang/tools/libclang/CIndex.cpp
-@@ -1766,6 +1766,26 @@ bool CursorVisitor::VisitFunctionTypeLoc(FunctionTypeLoc TL,
+@@ -1766,6 +1766,36 @@ bool CursorVisitor::VisitFunctionTypeLoc(FunctionTypeLoc TL,
        if (Visit(MakeCXCursor(D, TU, RegionOfInterest)))
          return true;
  
@@ -33969,10 +33969,20 @@ index 6e30ffd6b..b4b5f552b 100644
 +      return true;
 +  if (TypeSourceInfo *Error = TL.getErrorLoc())
 +    return Visit(Error->getTypeLoc());
++  return false;
++}
++
++bool CursorVisitor::VisitObjC3DependentKeyPathTypeLoc(
++    ObjC3DependentKeyPathTypeLoc TL) {
++  if (TypeSourceInfo *Root = TL.getRootLoc())
++    if (Visit(Root->getTypeLoc()))
++      return true;
++  if (TypeSourceInfo *Value = TL.getValueLoc())
++    return Visit(Value->getTypeLoc());
    return false;
  }
  
-@@ -2112,6 +2132,14 @@ public:
+@@ -2112,6 +2142,14 @@ public:
    void VisitForStmt(const ForStmt *FS);
    void VisitGotoStmt(const GotoStmt *GS);
    void VisitIfStmt(const IfStmt *If);
@@ -33987,7 +33997,7 @@ index 6e30ffd6b..b4b5f552b 100644
    void VisitInitListExpr(const InitListExpr *IE);
    void VisitMemberExpr(const MemberExpr *M);
    void VisitOffsetOfExpr(const OffsetOfExpr *E);
-@@ -2242,6 +2270,7 @@ public:
+@@ -2242,6 +2280,7 @@ public:
  
    // Attributes
    void VisitAnnotateAttr(const AnnotateAttr *A);
@@ -33995,7 +34005,7 @@ index 6e30ffd6b..b4b5f552b 100644
  
  private:
    void AddDeclarationNameInfo(const Stmt *S);
-@@ -3172,6 +3201,58 @@ void EnqueueVisitor::VisitIfStmt(const IfStmt *If) {
+@@ -3172,6 +3211,58 @@ void EnqueueVisitor::VisitIfStmt(const IfStmt *If) {
    AddStmt(If->getInit());
    AddDecl(If->getConditionVariable());
  }
@@ -34054,7 +34064,7 @@ index 6e30ffd6b..b4b5f552b 100644
  void EnqueueVisitor::VisitInitListExpr(const InitListExpr *IE) {
    // We care about the syntactic form of the initializer list, only.
    if (InitListExpr *Syntactic = IE->getSyntacticForm())
-@@ -3728,6 +3809,13 @@ void EnqueueVisitor::VisitAnnotateAttr(const AnnotateAttr *A) {
+@@ -3728,6 +3819,13 @@ void EnqueueVisitor::VisitAnnotateAttr(const AnnotateAttr *A) {
    EnqueueChildren(A);
  }
  
@@ -69003,3 +69013,33 @@ index 000000000..da355f091
 +void deleted_implicit(MRCDeletedMaybe &value){MRCDeletedMaybe moved(static_cast<MRCDeletedMaybe &&>(value));} // expected-error {{call to deleted constructor of 'MRCDeleted'}}
 +void const_rvalue_copy(const MRCDeletedMaybe &value){MRCDeletedMaybe copied(static_cast<const MRCDeletedMaybe &&>(value));}
 +void volatile_copy(volatile MRCMaybe &value){auto copy=__objc3_copy(value);} // expected-error {{volatile carrier copy and move construction is not supported}}
+diff --git a/clang/test/Index/objc3-dependent-keypath-cursors.mm b/clang/test/Index/objc3-dependent-keypath-cursors.mm
+new file mode 100644
+index 000000000..b6034bdd6
+--- /dev/null
++++ b/clang/test/Index/objc3-dependent-keypath-cursors.mm
+@@ -0,0 +1,24 @@
++// RUN: c-index-test -test-load-source all %s -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s
++
++// Exercise both dependent component TypeLocs rather than merely linking
++// libclang. Nested carrier components must retain their references as well.
++template<class Root, class Value>
++using ReadPath = KeyPath<Root, Value>;
++template<class Root, class Value>
++using WritePath = WritableKeyPath<Root, Value>;
++template<class Root, class Value>
++using NestedPath = KeyPath<Root, __objc3_optional(Value)>;
++
++// CHECK: TypeAliasTemplateDecl=ReadPath:
++// CHECK: TypeAliasDecl=ReadPath:
++// CHECK: TypeRef=Root:
++// CHECK: TypeRef=Value:
++// CHECK: TypeAliasTemplateDecl=WritePath:
++// CHECK: TypeAliasDecl=WritePath:
++// CHECK: TypeRef=Root:
++// CHECK: TypeRef=Value:
++// CHECK: TypeAliasTemplateDecl=NestedPath:
++// CHECK: TypeAliasDecl=NestedPath:
++// CHECK: TypeRef=Root:
++// CHECK: TypeRef=Value:
++// CHECK-NOT: NotImplemented

@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "e79b1468f340c0ab70336e1ec412f7648c0d5d61edd3e456c58e3da3092c3ba3"
+      "sha256": "d79bb7bd093c1426532f29aa94bd883a26ef6d2443597367269cf901026c373f"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
@@ -255,6 +255,7 @@
     "clangd_tidy_checks": false,
     "additional_test_suites": [
       "clang/test/Index/objc3-condition-cursors.mm",
+      "clang/test/Index/objc3-dependent-keypath-cursors.mm",
       "clang/test/Index/objc3-native-expression-cursors.mm",
       "clang-tools-extra/test/clang-query/objc3-conditions.mm",
       "clang/test/Parser/lambda-attr.cu",

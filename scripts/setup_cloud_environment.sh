@@ -50,9 +50,21 @@ run_with_budget() {
   return "$status"
 }
 
+download_file() {
+  local url=$1 archive=$2 maximum=$3 release_asset=${4:-}
+  if curl -fsSL --retry 3 --max-filesize "$maximum" "$url" -o "$archive"; then
+    return 0
+  fi
+  [[ -n "$release_asset" ]] || return 1
+  # GitHub's release-page redirect can fail independently of its official
+  # release-asset API. Keep the identical immutable asset and verification.
+  curl -fsSL --retry 3 --max-filesize "$maximum" \
+    -H 'Accept: application/octet-stream' "$release_asset" -o "$archive"
+}
+
 download_verified() {
-  local url=$1 archive=$2 digest=$3
-  curl -fsSL --retry 3 --max-filesize 2300000000 "$url" -o "$archive"
+  local url=$1 archive=$2 digest=$3 release_asset=${4:-}
+  download_file "$url" "$archive" 2300000000 "$release_asset" || return 1
   printf '%s  %s\n' "$digest" "$archive" | sha256sum -c -
 }
 
@@ -151,7 +163,8 @@ install_llvm() {
   if [[ ! -x "$dest/bin/llvm-config" ]]; then
     # SHA-256 from LLVM's upstream release provenance, not a rolling APT snapshot.
     download_verified https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.5/LLVM-23.1.5-Linux-X64.tar.xz \
-      "$archive" f72edb0b36580ece7f52e23858f00c18fad4e87395ea7ad05d7e55c39f8fc78a
+      "$archive" f72edb0b36580ece7f52e23858f00c18fad4e87395ea7ad05d7e55c39f8fc78a \
+      https://api.github.com/repos/llvm/llvm-project/releases/assets/705655313
     mkdir -p "$dest"
     touch "$dest/.objc3c-install-incomplete"
     extract_llvm "$archive" "$dest"
@@ -180,8 +193,10 @@ install_ccache() {
       "$scratch/libsodium.deb" 9ff9d97bb7ce3aee7f6e6ec3a785cdbe237454a7b9fd84728121bc4ef2bebebe
     dpkg-deb -x "$scratch/libsodium.deb" "$scratch/minisign"
     download_verified https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz \
-      "$archive" bd1313f5316f594443dcb4113a4191c666ac6450e0cf016ff8cb8b080f46c160
-    curl -fsSL --max-filesize 4096 https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz.minisig -o "$archive.minisig"
+      "$archive" bd1313f5316f594443dcb4113a4191c666ac6450e0cf016ff8cb8b080f46c160 \
+      https://api.github.com/repos/ccache/ccache/releases/assets/653390076
+    download_file https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz.minisig \
+      "$archive.minisig" 4096 https://api.github.com/repos/ccache/ccache/releases/assets/653390079
     env LD_LIBRARY_PATH="$scratch/minisign/usr/lib/x86_64-linux-gnu" \
       "$scratch/minisign/usr/bin/minisign" -P RWQX7yXbBedVfI4PNx6FLdFXu9GHUFsr28s4BVGxm4BeybtnX3P06saF -Vm "$archive"
     tar -xJf "$archive" -C "$setup_root"

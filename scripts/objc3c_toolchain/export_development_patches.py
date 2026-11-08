@@ -155,6 +155,7 @@ PACKETS = {
         "clang/include/clang/ASTMatchers/ASTMatchers.h",
         "clang/test/Index/objc3-native-expression-cursors.mm",
         "clang/test/Index/objc3-condition-cursors.mm",
+        "clang/test/Index/objc3-dependent-keypath-cursors.mm",
         "clang/unittests/AST/ObjC3ConditionToolingTest.cpp",
         "clang/tools/libclang/CXCursor.cpp",
         "clang/tools/libclang/CIndex.cpp",
