@@ -35272,7 +35272,7 @@ index 000000000..9f55af3f8
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-binding-semantics.mm b/clang/test/ObjC3/Sema/guard-binding-semantics.mm
 new file mode 100644
-index 000000000..fee0db4e1
+index 000000000..27c2d35b9
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/guard-binding-semantics.mm
 @@ -0,0 +1,102 @@
@@ -35333,7 +35333,7 @@ index 000000000..fee0db4e1
 +typedef __objc3_optional(InaccessibleDestruction) HiddenDestructor;
 +
 +void hidden_snapshot_requires_destruction(HiddenDestructor &source) {
-+  guard let value = source else { return; } // expected-error {{variable of type 'InaccessibleDestruction' has private destructor}}
++  guard let value = source else { return; } // expected-error {{temporary of type 'InaccessibleDestruction' has private destructor}}
 +}
 +
 +template <class T> int dependent_binding(T source) {

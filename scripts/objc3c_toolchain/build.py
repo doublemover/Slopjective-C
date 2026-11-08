@@ -231,6 +231,7 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
             environment.update(plan.get("command_environment", {}))
             environment["PYTHONDONTWRITEBYTECODE"] = "1"
             environment["CCACHE_COMPILERCHECK"] = "content"
+            failed_tests = []
             for index, command in enumerate([plan["command"], *plan.get("follow_up_commands", [])]):
                 command = list(command)
                 result_file = None
@@ -254,7 +255,12 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
                 history_path.write_text(json.dumps(report, indent=2) + "\n")
                 report_path.write_text(json.dumps(report, indent=2) + "\n")
                 if result.returncode:
+                    if phase == 'test':
+                        failed_tests.append(str(log_path))
+                        continue
                     raise ToolchainError(f"foundation {phase} exited {result.returncode}; see {log_path}")
+            if failed_tests:
+                raise ToolchainError('foundation test commands failed; see ' + ', '.join(failed_tests))
         refreshed = build_plans(repo, source_dir=source, host=host, instrumentation_profile=instrumentation_profile)["configure"]
         for key in ("source_build_id", "source_tree", "build_config_digest", "host_environment"):
             if refreshed[key] != plans["configure"][key]:

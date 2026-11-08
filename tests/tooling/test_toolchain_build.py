@@ -59,6 +59,24 @@ def test_failed_phase_stops_before_tests_and_records_failure(runner, monkeypatch
     assert all(command[0] not in ('test', 'stage') for command, _ in calls)
 
 
+@pytest.mark.parametrize('failed_command', [0, 1])
+def test_test_failure_collects_every_sibling_result_and_prevents_staging(runner, monkeypatch, failed_command):
+    repo, directory, calls = runner
+    def run(command, **kwargs):
+        calls.append((command, kwargs['env']))
+        failed = command[0] == 'test' and int(len(command) > 1) == failed_command
+        return SimpleNamespace(returncode=7 if failed else 0)
+    monkeypatch.setattr(build.subprocess, 'run', run)
+    with pytest.raises(ToolchainError, match='foundation test commands failed'):
+        build.build_foundation(repo, stage=True)
+    report = json.loads((directory / 'foundation-build-report.json').read_text())
+    assert report['status'] == 'failed'
+    assert [phase['exit_code'] for phase in report['phases'] if phase['phase'] == 'test'] == (
+        [7, 0] if failed_command == 0 else [0, 7])
+    assert len([command for command, _ in calls if command[0] == 'test']) == 2
+    assert all(command[0] != 'stage' for command, _ in calls)
+
+
 def test_missing_later_group_target_stops_before_any_compilation(runner, monkeypatch):
     repo, directory, calls = runner
     def missing(configure, selected):

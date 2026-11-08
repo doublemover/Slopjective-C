@@ -19501,14 +19501,14 @@ index 000000000..1e23935ba
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp
 new file mode 100644
-index 000000000..93e89f727
+index 000000000..6b26db11d
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,28 @@
 +// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -DTEST_UNINITIALIZED -emit-llvm -o %t.uninitialized.ll -verify %s
 +// RUN: test ! -e %t.uninitialized.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -DTEST_COPY -emit-llvm -o %t.copy.ll -verify %s
-+// RUN: test ! -e %t.copy.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -DTEST_COPY -emit-llvm -o %t.copy.ll -verify=copy %s
++// RUN: FileCheck %s --check-prefix=COPY < %t.copy.ll
 +
 +struct Owned {
 +  explicit Owned(int);
@@ -19524,9 +19524,14 @@ index 000000000..93e89f727
 +  MaybeOwned value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
 +}
 +#elif defined(TEST_COPY)
-+void reject_local_carrier_copy(void) {
-+  MaybeOwned value = source; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++// copy-no-diagnostics
++extern "C" void copy_local_carrier(void) {
++  MaybeOwned value = source;
 +}
++// COPY-LABEL: define{{.*}} void @copy_local_carrier(
++// COPY: call void @_ZN5OwnedC1ERKS_
++// COPY: call void @_ZN5OwnedD1Ev
++// COPY: ret void
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime.cpp b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime.cpp
 new file mode 100644
@@ -35761,10 +35766,10 @@ index 000000000..727132b7b
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/native-checked-cxx-optionals.mm b/clang/test/ObjC3/CodeGen/native-checked-cxx-optionals.mm
 new file mode 100644
-index 000000000..396a989df
+index 000000000..aa627e512
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-checked-cxx-optionals.mm
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,133 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-core-c++20-False %S/Inputs/native-checked-cxx-results.h
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-core-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
@@ -35832,6 +35837,9 @@ index 000000000..396a989df
 +  __objc3_try_optional(checked_compiler_source(mode));
 +  return __objc3_has_value(value)+__objc3_has_value(conditional)+__objc3_has_value(sequenced)+__objc3_has_value(explicit_value)+__objc3_has_value(reference)+__objc3_has_value(array[0])+__objc3_has_value(fields.second);
 +}
++extern "C" void native_cpp_discarded_optional(int mode) {
++  __objc3_try_optional(checked_compiler_source(mode));
++}
 +extern "C" const CheckedCompilerOptional &native_cpp_optional_storage(bool thread) {
 +  if(thread) {
 +    static thread_local const CheckedCompilerOptional local=__objc3_try_optional(checked_compiler_parameter(CheckedCompilerParameter()));
@@ -35869,11 +35877,30 @@ index 000000000..396a989df
 +  return __objc3_has_value(value);
 +}
 +// CHECK-LABEL: define{{.*}} @native_cpp_optionals(
-+// CHECK: objc3.optional.discard.initialized
++// CHECK: objc3.discarded.carrier
 +// CHECK: objc3.reference.full.expression.complete
 +// CHECK: store i8 0
 +// CHECK: store i8 1
-+// CHECK: objc3.optional.discard.destroy
++// CHECK: objc3.carrier.dtor.present
++// CHECK-LABEL: define{{.*}} void @native_cpp_discarded_optional(
++// CHECK: %objc3.discarded.carrier = alloca
++// CHECK: {{call|invoke}} {{.*}}@{{.*}}checked_compiler_source
++// CHECK: br i1 %objc3.try.failed, label %[[FAIL:[a-zA-Z0-9._]+]], label %[[SUCCESS:[a-zA-Z0-9._]+]]
++// CHECK: [[FAIL]]:
++// CHECK: store i8 0
++// CHECK: br label %[[CONT:[a-zA-Z0-9._]+]]
++// CHECK: [[SUCCESS]]:
++// CHECK: store i8 1
++// CHECK: br label %[[CONT]]
++// CHECK: [[CONT]]:
++// CHECK: [[TAG:%[a-zA-Z0-9._]+]] = load i8,
++// CHECK: [[PRESENT:%[a-zA-Z0-9._]+]] = trunc i8 [[TAG]] to i1
++// CHECK: br i1 [[PRESENT]], label %[[DESTROY:[a-zA-Z0-9._]+]], label %[[DONE:[a-zA-Z0-9._]+]]
++// CHECK: [[DESTROY]]:
++// CHECK: call void @_ZN21CheckedCompilerResultD1Ev
++// CHECK: br label %[[DONE]]
++// CHECK: [[DONE]]:
++// CHECK: ret void
 +// CHECK: @__cxa_thread_atexit
 +// CHECK: @__cxa_atexit
 diff --git a/clang/lib/CodeGen/ItaniumCXXABI.cpp b/clang/lib/CodeGen/ItaniumCXXABI.cpp
