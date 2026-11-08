@@ -129,6 +129,23 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationNativeByrefStorage(const clang::NamedDecl *declaration) {
+  const auto &context=declaration->getASTContext();const auto &triple=context.getTargetInfo().getTriple();
+  if(!context.getLangOpts().ObjC3 || triple.getArch()!=llvm::Triple::x86_64 ||
+      !triple.isOSLinux() || !triple.isGNUEnvironment() ||
+      context.getLangOpts().ObjCRuntime.getAsString()!="gnustep-2.2")return false;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Byref : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitBlockExpr(clang::BlockExpr *block) override {
+        for(const auto &capture:block->getBlockDecl()->captures())found|=capture.isByRef();
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationNativeBlockAlignment(const clang::NamedDecl *declaration) {
   auto &context=declaration->getASTContext();const auto &triple=context.getTargetInfo().getTriple();
   if(!context.getLangOpts().ObjC3 || triple.getArch()!=llvm::Triple::x86_64 ||

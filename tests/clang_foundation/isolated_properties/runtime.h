@@ -302,6 +302,8 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
 #include "native_storage_layout.h"
 #include "aligned_block_captures.h"
 #include "aligned_c_block_captures.h"
+#include "byref_cpp_storage.h"
+#include "byref_c_storage.h"
 static void property_suite(void) {
   assert(objc3_executor_create(1,&property_caller)==OBJC3_SERVICE_OK);
   assert(objc3_executor_create(1,&property_destination)==OBJC3_SERVICE_OK);
@@ -392,6 +394,8 @@ static void property_suite(void) {
   native_storage_layout_suite();
   aligned_block_capture_suite();
   aligned_c_block_capture_suite(93);
+  byref_cpp_storage_suite();
+  byref_c_storage_suite();
   carrier_call_suite(main_object);
   assert(objc3_actor_close(property_mailbox)==OBJC3_SERVICE_OK);
   assert(objc3_actor_join(property_mailbox)==OBJC3_SERVICE_OK);

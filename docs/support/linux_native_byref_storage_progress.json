@@ -1,0 +1,54 @@
+{
+  "development_only": true,
+  "source_version": "2.138",
+  "system_version": "2.64",
+  "extension_abi": 24,
+  "prepared_source_tree": "8b6b3919ba25fa13db237f5bae63d132e6fc91f9",
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 73,
+    "all_passed": true,
+    "full_consolidation": "follows the feature batch"
+  },
+  "ast_controls": 56,
+  "updated_frontend_groups": 29,
+  "publication_profiles": 6,
+  "production_decoder_exact_replays": 460,
+  "runtime_patch_controls": 14,
+  "runtime_source_patch_sha256": "a6daff30189397e88a58d0982d2dae28a0e49f3db0849773b57ea0ac20e97fed",
+  "native": {
+    "configurations": 6,
+    "commands": 21,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "runtime": "release"
+  },
+  "instrumented_runtime": {
+    "configurations": 2,
+    "commands": 7,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ]
+  },
+  "forwarding_race": {
+    "commands": 3,
+    "forced_races": 4,
+    "all_passed": true,
+    "sanitizers": [
+      "thread"
+    ],
+    "runtime_instrumented": true
+  },
+  "runtime_regressions_fixed": [
+    "weak Block references never access an object-only refcount prefix",
+    "encoding callbacks use exact function pointer types",
+    "throwing copy/dispose frees uncommitted cells and Blocks",
+    "forwarding publication loser destroys its candidate and retains the published cell"
+  ]
+}

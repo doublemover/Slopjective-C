@@ -518,6 +518,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
+  const bool byref_storage=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeByrefStorageIdentity);
+  const bool byref_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeByrefStorageSemantic)!=sidecar.required_semantics.end();
+  if(byref_storage!=byref_capability)
+    Add(result,"O3IFC138","native byref storage identity and required capability must agree",expected.canonical_name);
   const bool aligned_blocks=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeBlockAlignmentIdentity);
   const bool aligned_block_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeBlockAlignmentSemantic)!=sidecar.required_semantics.end();
   if(aligned_blocks!=aligned_block_capability)

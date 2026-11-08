@@ -12,7 +12,7 @@ index 3f0733757..e6b303498 100644
  list(APPEND libobjc_CXX_SRCS ${libobjcxx_CXX_SRCS})
  target_sources(objc PRIVATE ${libobjc_CXX_SRCS})
 diff --git a/arc.mm b/arc.mm
-index fbba14c03..66f2d8c5d 100644
+index fbba14c03..86d2eb76b 100644
 --- a/arc.mm
 +++ b/arc.mm
 @@ -91,12 +91,6 @@ extern "C"
@@ -132,7 +132,11 @@ index fbba14c03..66f2d8c5d 100644
  {
 -	//fprintf(stderr, "Autoreleasing %p\n", obj);
 -	if (useARCAutoreleasePool)
--	{
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	struct arc_autorelease_pool *pool = tls->pool;
++	if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+ 	{
 -		struct arc_tls *tls = getARCThreadData();
 -		if (NULL != tls)
 -		{
@@ -148,25 +152,21 @@ index fbba14c03..66f2d8c5d 100644
 -			pool->insert++;
 -			return obj;
 -		}
--	}
--	if (objc_test_class_flag(classForObject(obj), objc_class_flag_fast_arc))
-+	struct arc_tls *tls = getARCThreadData();
-+	if (NULL == tls) { abort(); }
-+	struct arc_autorelease_pool *pool = tls->pool;
-+	if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
- 	{
--		initAutorelease();
--		if (0 != AutoreleaseAdd)
--		{
--			AutoreleaseAdd(AutoreleasePool, SELECTOR(addObject:), obj);
--		}
--		return obj;
 +		pool = new_zeroed<struct arc_autorelease_pool>();
 +		if (NULL == pool) { abort(); }
 +		pool->previous = tls->pool;
 +		pool->insert = pool->pool;
 +		tls->pool = pool;
  	}
+-	if (objc_test_class_flag(classForObject(obj), objc_class_flag_fast_arc))
+-	{
+-		initAutorelease();
+-		if (0 != AutoreleaseAdd)
+-		{
+-			AutoreleaseAdd(AutoreleasePool, SELECTOR(addObject:), obj);
+-		}
+-		return obj;
+-	}
 -	return ManualRetainReleaseMessage(obj, autorelease, id(*)(id, SEL));
 +	*pool->insert++ = obj;
 +	return obj;
@@ -300,15 +300,42 @@ index fbba14c03..66f2d8c5d 100644
  	}
  	return objc_retain(obj);
  }
-@@ -775,7 +650,7 @@ extern "C" void* block_load_weak(void *block);
+@@ -775,8 +650,9 @@ extern "C" void* block_load_weak(void *block);
  static BOOL setObjectHasWeakRefs(id obj)
  {
  	BOOL isGlobalObject = isPersistentObject(obj);
 -	Class cls = isGlobalObject ? Nil : obj->isa;
+-	if (obj && cls && objc_test_class_flag(cls, objc_class_flag_fast_arc))
 +	Class cls = isGlobalObject ? Nil : classForObject(obj);
- 	if (obj && cls && objc_test_class_flag(cls, objc_class_flag_fast_arc))
++	if (obj && cls && !objc_test_class_flag(cls, objc_class_flag_is_block) &&
++	    objc_test_class_flag(cls, objc_class_flag_fast_arc))
  	{
  		uintptr_t *refCount = ((uintptr_t*)obj) - 1;
+ 		if (obj)
+@@ -889,7 +765,9 @@ extern "C" OBJC_PUBLIC id objc_storeWeak(id *addr, id obj)
+ extern "C" OBJC_PUBLIC BOOL objc_delete_weak_refs(id obj)
+ {
+ 	LOCK_FOR_SCOPE(&weakRefLock);
+-	if (objc_test_class_flag(classForObject(obj), objc_class_flag_fast_arc))
++	Class cls = classForObject(obj);
++	if (!objc_test_class_flag(cls, objc_class_flag_is_block) &&
++	    objc_test_class_flag(cls, objc_class_flag_fast_arc))
+ 	{
+ 		// Don't proceed if the object isn't deallocating.
+ 		uintptr_t *refCount = ((uintptr_t*)obj) - 1;
+@@ -1044,8 +922,10 @@ extern "C" OBJC_PUBLIC id objc_initWeak(id *addr, id obj)
+ 		*addr = obj;
+ 		return obj;
+ 	}
+-	// If the object is being deallocated return nil.
+-	if (object_getRetainCount_np(obj) == 0)
++	// Blocks keep their reference count in the Block header, not before isa.
++	Class cls = classForObject(obj);
++	if (objc_test_class_flag(cls, objc_class_flag_is_block) ?
++	    _Block_isDeallocating(obj) : object_getRetainCount_np(obj) == 0)
+ 	{
+ 		*addr = nil;
+ 		return nil;
 diff --git a/associate.m b/associate.m
 index 2b987f99d..3d5492fd2 100644
 --- a/associate.m
@@ -399,11 +426,187 @@ index 2b987f99d..3d5492fd2 100644
  	Class hiddenClass = initHiddenClassForObject(new);
  	struct reference_list *list = object_getIndexedIvars(hiddenClass);
  	INIT_LOCK(list->lock);
+diff --git a/blocks_runtime.h b/blocks_runtime.h
+index f69490ae9..3bdaaae08 100644
+--- a/blocks_runtime.h
++++ b/blocks_runtime.h
+@@ -7,6 +7,8 @@ enum block_flags
+ 	 * The block descriptor contains copy and dispose helpers.
+ 	 */
+ 	BLOCK_HAS_COPY_DISPOSE = (1 << 25),
++	/** Byref-only: the initial stack isa word carries native byte alignment. */
++	BLOCK_BYREF_OBJC3_ALIGNED = (1 << 26),
+ 	/**
+ 	 * The helpers have C++ code.
+ 	 */
+@@ -91,8 +93,9 @@ struct Block_descriptor_basic
+ struct block_byref_obj
+ {
+ 	/**
+-	 * Class pointer.  Currently unused and always NULL.  Could be used in the
+-	 * future to support introspection.
++	 * Stack cells normally use NULL. BLOCK_BYREF_OBJC3_ALIGNED cells carry
++	 * their required byte alignment until publication replaces it with the
++	 * heap-cell identity.
+ 	 */
+ 	void *isa;
+ 	/**
 diff --git a/blocks_runtime.m b/blocks_runtime.m
-index 91ab85d94..ffbcf8f23 100644
+index 91ab85d94..4c3046b99 100644
 --- a/blocks_runtime.m
 +++ b/blocks_runtime.m
-@@ -247,12 +247,36 @@ OBJC_PUBLIC void *_Block_copy(const void *src)
+@@ -64,52 +64,27 @@ OBJC_PUBLIC const char * _Block_signature(void *b)
+ 
+ static int increment24(int *ref)
+ {
+-	int old = *ref;
+-	int val = old & BLOCK_REFCOUNT_MASK;
+-	if (val == BLOCK_REFCOUNT_MASK)
+-	{
+-		return val;
+-	}
+-	assert(val < BLOCK_REFCOUNT_MASK);
+-	if (!__sync_bool_compare_and_swap(ref, old, old+1))
+-	{
+-		return increment24(ref);
++	int old = __atomic_load_n(ref, __ATOMIC_RELAXED);
++	for (;;) {
++		int value = old & BLOCK_REFCOUNT_MASK;
++		if (value == BLOCK_REFCOUNT_MASK) return value;
++		if (__atomic_compare_exchange_n(ref, &old, old + 1, false,
++		    __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) return value + 1;
+ 	}
+-	return val + 1;
+ }
+ 
+ static int decrement24(int *ref)
+ {
+-	int old = *ref;
+-	int val = old & BLOCK_REFCOUNT_MASK;
+-	if (val == BLOCK_REFCOUNT_MASK)
+-	{
+-		return val;
+-	}
+-	assert(val > 0);
+-	if (!__sync_bool_compare_and_swap(ref, old, old-1))
+-	{
+-		return decrement24(ref);
++	int old = __atomic_load_n(ref, __ATOMIC_RELAXED);
++	for (;;) {
++		int value = old & BLOCK_REFCOUNT_MASK;
++		if (value == BLOCK_REFCOUNT_MASK) return value;
++		assert(value > 0);
++		if (__atomic_compare_exchange_n(ref, &old, old - 1, false,
++		    __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) return value - 1;
+ 	}
+-	return val - 1;
+ }
+ 
+-// This is a really ugly hack that works around a buggy register allocator in
+-// GCC.  Compiling nontrivial code using __sync_bool_compare_and_swap() with
+-// GCC (4.2.1, at least), causes the register allocator to run out of registers
+-// and fall over and die.  We work around this by wrapping this CAS in a
+-// function, which means the register allocator can trivially handle it.  Do
+-// not remove the noinline attribute - without it, gcc will inline it early on
+-// and then crash later.
+-#ifndef __clang__
+-__attribute__((noinline))
+-static int cas(void *ptr, void *old, void *new)
+-{
+-	return __sync_bool_compare_and_swap((void**)ptr, old, new);
+-}
+-#define __sync_bool_compare_and_swap cas
+-#endif
+-
+ /* Certain field types require runtime assistance when being copied to the
+  * heap.  The following function is used to copy fields of types: blocks,
+  * pointers to byref structures, and objects (including
+@@ -130,19 +105,33 @@ OBJC_PUBLIC void _Block_object_assign(void *destAddr, const void *object, const
+ 		{
+ 			struct block_byref_obj *src = (struct block_byref_obj *)object;
+ 			struct block_byref_obj **dst = destAddr;
+-			src = src->forwarding;
++			src = __atomic_load_n(&src->forwarding, __ATOMIC_ACQUIRE);
++			int source_flags = __atomic_load_n(&src->flags, __ATOMIC_ACQUIRE);
+ 
+-			if ((src->flags & BLOCK_REFCOUNT_MASK) == 0)
++			if ((source_flags & BLOCK_REFCOUNT_MASK) == 0)
+ 			{
+-				*dst = gc->malloc(src->size);
+-				memcpy(*dst, src, src->size);
++				if (src->size < (int)(sizeof(void*) * 2 + sizeof(int) * 2)) abort();
++				if (IS_SET(source_flags, BLOCK_BYREF_OBJC3_ALIGNED)) {
++					size_t alignment = (size_t)src->isa;
++					if (alignment <= 16 || (alignment & (alignment - 1)) || !gc->malloc_aligned) abort();
++					*dst = gc->malloc_aligned(alignment, (size_t)src->size);
++				} else {
++					*dst = gc->malloc((size_t)src->size);
++				}
++				// This void ABI cannot publish a usable reference on allocation failure.
++				if (!*dst) abort();
++				memcpy(*dst, src, (size_t)src->size);
+ 				(*dst)->isa = _HeapBlockByRef;
+ 				// Refcount must be two; one for the copy and one for the
+ 				// on-stack version that will point to it.
+ 				(*dst)->flags += 2;
+-				if (IS_SET(src->flags, BLOCK_HAS_COPY_DISPOSE))
++				if (IS_SET(source_flags, BLOCK_HAS_COPY_DISPOSE))
+ 				{
+-					src->byref_keep(*dst, src);
++					BOOL initialized = NO;
++					@try { src->byref_keep(*dst, src); initialized = YES; }
++					@finally {
++						if (!initialized) { gc->free(*dst); *dst = NULL; }
++					}
+ 				}
+ 				(*dst)->forwarding = *dst;
+ 				// Concurrency.  If we try copying the same byref structure
+@@ -155,12 +144,13 @@ OBJC_PUBLIC void _Block_object_assign(void *destAddr, const void *object, const
+ 				// other thread created.
+ 				if (!__sync_bool_compare_and_swap(&src->forwarding, src, *dst))
+ 				{
+-					if((size_t)src->size >= sizeof(struct block_byref_obj))
+-					{
+-						src->byref_dispose(*dst);
+-					}
+-					gc->free(*dst);
+-					*dst = src->forwarding;
++					@try {
++						if (IS_SET(source_flags, BLOCK_HAS_COPY_DISPOSE) && src->byref_dispose)
++							src->byref_dispose(*dst);
++					} @finally { gc->free(*dst); *dst = NULL; }
++					*dst = __atomic_load_n(&src->forwarding, __ATOMIC_ACQUIRE);
++					// The losing copy now owns a reference to the published cell.
++					increment24(&(*dst)->flags);
+ 				}
+ 			}
+ 			else
+@@ -205,17 +195,17 @@ OBJC_PUBLIC void _Block_object_dispose(const void *object, const int flags)
+ 		{
+ 			struct block_byref_obj *src =
+ 				(struct block_byref_obj*)object;
+-			src = src->forwarding;
++			src = __atomic_load_n(&src->forwarding, __ATOMIC_ACQUIRE);
++			int source_flags = __atomic_load_n(&src->flags, __ATOMIC_ACQUIRE);
+ 			if (src->isa == _HeapBlockByRef)
+ 			{
+-				int refcount = (src->flags & BLOCK_REFCOUNT_MASK) == 0 ? 0 : decrement24(&src->flags);
++				int refcount = (source_flags & BLOCK_REFCOUNT_MASK) == 0 ? 0 : decrement24(&src->flags);
+ 				if (refcount == 0)
+ 				{
+-					if(IS_SET(src->flags, BLOCK_HAS_COPY_DISPOSE) && (0 != src->byref_dispose))
+-					{
+-						src->byref_dispose(src);
+-					}
+-					gc->free(src);
++					@try {
++						if(IS_SET(source_flags, BLOCK_HAS_COPY_DISPOSE) && src->byref_dispose)
++							src->byref_dispose(src);
++					} @finally { gc->free(src); }
+ 				}
+ 			}
+ 		}
+@@ -247,12 +237,36 @@ OBJC_PUBLIC void *_Block_copy(const void *src)
  	// If the block is Global, there's no need to copy it on the heap.
  	if(self->isa == &_NSConcreteStackBlock)
  	{
@@ -442,7 +645,25 @@ index 91ab85d94..ffbcf8f23 100644
  		}
  		// We don't need any atomic operations here, because on-stack blocks
  		// can not be aliased across threads (unless you've done something
-@@ -321,4 +345,4 @@ OBJC_PUBLIC bool _Block_tryRetain(const void* arg)
+@@ -285,10 +299,13 @@ OBJC_PUBLIC void _Block_release(const void *src)
+ 	{
+ 		if (__sync_sub_and_fetch(&self->reserved, 1) == 0)
+ 		{
+-			if(self->flags & BLOCK_HAS_COPY_DISPOSE)
+-				self->descriptor->dispose_helper(self);
+-			objc_delete_weak_refs((id)self);
+-			gc->free(self);
++			@try {
++				if(self->flags & BLOCK_HAS_COPY_DISPOSE)
++					self->descriptor->dispose_helper(self);
++			} @finally {
++				objc_delete_weak_refs((id)self);
++				gc->free(self);
++			}
+ 		}
+ 	}
+ }
+@@ -321,4 +338,4 @@ OBJC_PUBLIC bool _Block_tryRetain(const void* arg)
  		newVal = __sync_val_compare_and_swap(refCountPtr, refCountVal, newVal + 1);
  	} while (newVal != refCountVal);
  	return true;
@@ -789,7 +1010,7 @@ index d638d9772..7f1fefdc6 100644
  		abort();
  	}
 diff --git a/encoding2.c b/encoding2.c
-index e9c698305..d224e1a2a 100644
+index e9c698305..f0a3a385e 100644
 --- a/encoding2.c
 +++ b/encoding2.c
 @@ -30,6 +30,43 @@ const char *objc_skip_type_qualifiers (const char *type)
@@ -836,7 +1057,29 @@ index e9c698305..d224e1a2a 100644
  static const char *sizeof_type(const char *type, size_t *size);
  
  OBJC_PUBLIC
-@@ -225,6 +262,15 @@ static const char *sizeof_type(const char *type, size_t *size)
+@@ -81,6 +118,21 @@ static const char * findParameterStart(const char *types, unsigned int index)
+ 
+ 
+ typedef const char *(*type_parser)(const char*, void*);
++static const char *sizeof_callback(const char *type, void *context)
++{
++	return sizeof_type(type, context);
++}
++static const char *sizeof_union_field(const char *type, size_t *size);
++static const char *union_size_callback(const char *type, void *context)
++{
++	return sizeof_union_field(type, context);
++}
++static const char *alignof_type(const char *type, size_t *align);
++static const char *alignment_callback(const char *type, void *context)
++{
++	return alignof_type(type, context);
++}
++
+ 
+ static int parse_array(const char **type, type_parser callback, void *context)
+ {
+@@ -225,8 +277,17 @@ static const char *sizeof_type(const char *type, size_t *size)
  		}
  		case '{':
  		{
@@ -850,9 +1093,30 @@ index e9c698305..d224e1a2a 100644
 +				return native_end;
 +			}
  			const char *t = type;
- 			parse_struct(&t, (type_parser)sizeof_type, size);
+-			parse_struct(&t, (type_parser)sizeof_type, size);
++			parse_struct(&t, sizeof_callback, size);
  			size_t align = objc_alignof_type(type);
-@@ -320,6 +366,12 @@ static const char *alignof_type(const char *type, size_t *align)
+ 			round_up(size, align * 8);
+ 			return t;
+@@ -236,7 +297,7 @@ static const char *sizeof_type(const char *type, size_t *size)
+ 			const char *t = type;
+ 			size_t element_size = 0;
+ 			// FIXME: aligned size
+-			int element_count = parse_array(&t, (type_parser)sizeof_type, &element_size);
++			int element_count = parse_array(&t, sizeof_callback, &element_size);
+ 			(*size) += element_size * element_count;
+ 			return t;
+ 		}
+@@ -244,7 +305,7 @@ static const char *sizeof_type(const char *type, size_t *size)
+ 		{
+ 			const char *t = type;
+ 			size_t union_size = 0;
+-			parse_union(&t, (type_parser)sizeof_union_field, &union_size);
++			parse_union(&t, union_size_callback, &union_size);
+ 			*size += union_size;
+ 			return t;
+ 		}
+@@ -320,20 +381,26 @@ static const char *alignof_type(const char *type, size_t *align)
  		}
  		case '{':
  		{
@@ -863,8 +1127,45 @@ index e9c698305..d224e1a2a 100644
 +				return native_end;
 +			}
  			const char *t = type;
- 			parse_struct(&t, (type_parser)alignof_type, align);
+-			parse_struct(&t, (type_parser)alignof_type, align);
++			parse_struct(&t, alignment_callback, align);
  			return t;
+ 		}
+ 		case '(':
+ 		{
+ 			const char *t = type;
+-			parse_union(&t, (type_parser)alignof_type, align);
++			parse_union(&t, alignment_callback, align);
+ 			return t;
+ 		}
+ 		case '[':
+ 		{
+ 			const char *t = type;
+-			parse_array(&t, (type_parser)alignof_type, align);
++			parse_array(&t, alignment_callback, align);
+ 			return t;
+ 		}
+ 		case 'b':
+@@ -522,8 +589,9 @@ void objc_layout_structure (const char *type,
+ 	layout->type = 0;
+ }
+ 
+-static const char *layout_structure_callback(const char *type, struct objc_struct_layout *layout)
++static const char *layout_structure_callback(const char *type, void *context)
+ {
++	struct objc_struct_layout *layout = context;
+ 	size_t align = 0;
+ 	size_t size = 0;
+ 	const char *end = sizeof_type(type, &size);
+@@ -554,7 +622,7 @@ BOOL objc_layout_structure_next_member(struct objc_struct_layout *layout)
+ 	layout->record_align = 0;
+ 	layout->prev_type = layout->type;
+ 	const char *type = layout->original_type;
+-	parse_struct(&type, (type_parser)layout_structure_callback, layout);
++	parse_struct(&type, layout_structure_callback, layout);
+ 	//printf("Calculated: (%s) %s %d %d\n", layout->original_type, layout->type, layout->record_size, layout->record_align);
+ 	//printf("old start %s, new start %s\n", end, layout->type);
+ 	return layout->type != end;
 diff --git a/fast_paths.m b/fast_paths.m
 index ec2f646a2..97508cbaf 100644
 --- a/fast_paths.m

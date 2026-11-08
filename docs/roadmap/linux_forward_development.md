@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.138 / System 2.64 byref storage span](linux_native_byref_storage.md)
+implements aligned forwarding cells, native carrier relocation, throwing cleanup
+and concurrent first-copy ownership, with exact source-free capability admission.
+Focused verification includes native races under ThreadSanitizer; the feature
+batch continues before matched compiler/analysis consolidation and SDK delivery.
+
 The [source 2.137 / System 2.63 aligned Block span](linux_aligned_block_storage.md)
 implements native aligned heap captures and published local alignment contracts.
 All 73 dedicated compiler commands, 420 decoder replays and six sanitizer

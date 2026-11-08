@@ -2531,6 +2531,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationNativeByrefStorage(representative))
+    identity.canonical_type_identity += ";native-byref-storage:v1;";
   if (HasDeclarationNativeBlockAlignment(representative))
     identity.canonical_type_identity += ";native-block-alignment:v1;";
   if (HasDeclarationMixedCarrierCall(representative))

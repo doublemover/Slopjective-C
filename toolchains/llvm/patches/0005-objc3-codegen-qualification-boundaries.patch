@@ -4229,7 +4229,7 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..55b4062d2 100644
+index 0683a4937..969684f81 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
 @@ -1,3 +1,4 @@
@@ -4816,7 +4816,27 @@ index 0683a4937..55b4062d2 100644
    case QualType::PCK_Struct:
      return std::make_pair(BlockCaptureEntityKind::NonTrivialCStruct,
                            BlockFieldFlags());
-@@ -1737,7 +2059,11 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1719,6 +2041,19 @@ struct CallBlockRelease final : EHScopeStack::Cleanup {
+     CGF.BuildBlockRelease(BlockVarAddr, FieldFlags, CanThrow);
+   }
+ };
++struct ConditionalByrefRelease final : EHScopeStack::Cleanup {
++  CallBlockRelease Release;Address Managed;bool WhenManaged;
++  ConditionalByrefRelease(CallBlockRelease Release,Address Managed,bool WhenManaged)
++      :Release(Release),Managed(Managed),WhenManaged(WhenManaged) {}
++  void Emit(CodeGenFunction &CGF,Flags F) override {
++    auto *Run=CGF.createBasicBlock("objc3.byref.release.partition");
++    auto *Done=CGF.createBasicBlock("objc3.byref.release.done");
++    llvm::Value *Active=CGF.Builder.CreateLoad(Managed);
++    if(!WhenManaged)Active=CGF.Builder.CreateNot(Active);
++    CGF.Builder.CreateCondBr(Active,Run,Done);CGF.EmitBlock(Run);
++    Release.Emit(CGF,F);CGF.EmitBranch(Done);CGF.EmitBlock(Done);
++  }
++};
+ } // end anonymous namespace
+ 
+ /// Check if \p T is a C++ class that has a destructor that can throw.
+@@ -1737,7 +2072,11 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
    std::string Str;
    ASTContext &Ctx = CGM.getContext();
    const BlockDecl::Capture &CI = *Cap.Cap;
@@ -4829,7 +4849,7 @@ index 0683a4937..55b4062d2 100644
  
    BlockCaptureEntityKind Kind;
    BlockFieldFlags Flags;
-@@ -1766,6 +2092,28 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1766,6 +2105,28 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
      Str += llvm::to_string(TyStr.size()) + TyStr.c_str();
      break;
    }
@@ -4858,7 +4878,17 @@ index 0683a4937..55b4062d2 100644
    case BlockCaptureEntityKind::ARCWeak:
      Str += "w";
      break;
-@@ -1808,6 +2156,15 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1790,7 +2151,8 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+         // If CaptureStrKind::Merged is passed, check both the copy expression
+         // and the destructor.
+         if (StrKind != CaptureStrKind::DisposeHelper) {
+-          if (Ctx.getBlockVarCopyInit(Var).canThrow())
++          if (Ctx.getBlockVarCopyInit(Var).canThrow() ||
++            CodeGenFunction::cxxDestructorCanThrow(CaptureTy))
+             Str += "c";
+         }
+         if (StrKind != CaptureStrKind::CopyHelper) {
+@@ -1808,6 +2170,15 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
      break;
    }
    case BlockCaptureEntityKind::NonTrivialCStruct: {
@@ -4874,7 +4904,7 @@ index 0683a4937..55b4062d2 100644
      bool IsVolatile = CaptureTy.isVolatileQualified();
      CharUnits Alignment = BlockAlignment.alignmentAtOffset(Cap.getOffset());
  
-@@ -1861,23 +2218,35 @@ static std::string getCopyDestroyHelperFuncName(
+@@ -1861,23 +2232,35 @@ static std::string getCopyDestroyHelperFuncName(
  static void pushCaptureCleanup(BlockCaptureEntityKind CaptureKind,
                                 Address Field, QualType CaptureType,
                                 BlockFieldFlags Flags, bool ForCopyHelper,
@@ -4913,7 +4943,7 @@ index 0683a4937..55b4062d2 100644
        CGF.pushDestroy(Kind, Field, CaptureType, Destroyer, Kind & EHCleanup);
      }
      break;
-@@ -1972,7 +2341,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1972,7 +2355,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
        continue;
  
      const BlockDecl::Capture &CI = *capture.Cap;
@@ -4922,7 +4952,7 @@ index 0683a4937..55b4062d2 100644
      BlockFieldFlags flags = capture.CopyFlags;
  
      unsigned index = capture.getIndex();
-@@ -1980,6 +2349,16 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1980,6 +2363,16 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      Address dstField = Builder.CreateStructGEP(dst, index);
  
      switch (capture.CopyKind) {
@@ -4939,7 +4969,7 @@ index 0683a4937..55b4062d2 100644
      case BlockCaptureEntityKind::CXXRecord:
        // If there's an explicit copy expression, we do that.
        assert(CI.getCopyExpr() && "copy expression for variable is missing");
-@@ -1989,7 +2368,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1989,7 +2382,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
        EmitARCCopyWeak(dstField, srcField);
        break;
      case BlockCaptureEntityKind::AddressDiscriminatedPointerAuth: {
@@ -4948,7 +4978,7 @@ index 0683a4937..55b4062d2 100644
        PointerAuthQualifier PointerAuth = Type.getPointerAuth();
        assert(PointerAuth && PointerAuth.isAddressDiscriminated());
        EmitPointerAuthCopy(PointerAuth, Type, dstField, srcField);
-@@ -1999,7 +2378,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1999,7 +2392,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      case BlockCaptureEntityKind::NonTrivialCStruct: {
        // If this is a C struct that requires non-trivial copy construction,
        // emit a call to its copy constructor.
@@ -4957,7 +4987,7 @@ index 0683a4937..55b4062d2 100644
        callCStructCopyConstructor(MakeAddrLValue(dstField, varType),
                                   MakeAddrLValue(srcField, varType));
        break;
-@@ -2024,7 +2403,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2024,7 +2417,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
          // Unless EH cleanup is required, we don't need this anymore, so kill
          // it. It's not quite worth the annoyance to avoid creating it in the
          // first place.
@@ -4967,7 +4997,17 @@ index 0683a4937..55b4062d2 100644
            if (auto *I = cast_or_null<llvm::Instruction>(
                    dstField.getPointerIfNotSigned()))
              I->eraseFromParent();
-@@ -2051,7 +2431,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2038,7 +2432,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+         dstAddr, srcValue, llvm::ConstantInt::get(Int32Ty, flags.getBitMask())
+       };
+ 
+-      if (CI.isByRef() && C.getBlockVarCopyInit(CI.getVariable()).canThrow())
++      if (CI.isByRef() && (C.getBlockVarCopyInit(CI.getVariable()).canThrow() ||
++          cxxDestructorCanThrow(captureType)))
+         EmitRuntimeCallOrInvoke(CGM.getBlockObjectAssign(), args);
+       else
+         EmitNounwindRuntimeCall(CGM.getBlockObjectAssign(), args);
+@@ -2051,7 +2446,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      // Ensure that we destroy the copied object if an exception is thrown later
      // in the helper function.
      pushCaptureCleanup(capture.CopyKind, dstField, captureType, flags,
@@ -4977,7 +5017,7 @@ index 0683a4937..55b4062d2 100644
    }
  
    FinishFunction();
-@@ -2071,6 +2452,9 @@ getBlockFieldFlagsForObjCObjectPointer(const BlockDecl::Capture &CI,
+@@ -2071,6 +2467,9 @@ getBlockFieldFlagsForObjCObjectPointer(const BlockDecl::Capture &CI,
  static std::pair<BlockCaptureEntityKind, BlockFieldFlags>
  computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
                                    const LangOptions &LangOpts) {
@@ -4987,7 +5027,7 @@ index 0683a4937..55b4062d2 100644
    if (CI.isEscapingByref()) {
      BlockFieldFlags Flags = BLOCK_FIELD_IS_BYREF;
      if (T.isObjCGCWeak())
-@@ -2078,6 +2462,11 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -2078,6 +2477,11 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
    }
  
@@ -4999,7 +5039,7 @@ index 0683a4937..55b4062d2 100644
    switch (T.isDestructedType()) {
    case QualType::DK_cxx_destructor:
      return std::make_pair(BlockCaptureEntityKind::CXXRecord, BlockFieldFlags());
-@@ -2090,6 +2479,7 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -2090,6 +2494,7 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      // Support __weak direct captures.
      return std::make_pair(BlockCaptureEntityKind::ARCWeak,
                            getBlockFieldFlagsForObjCObjectPointer(CI, T));
@@ -5007,7 +5047,7 @@ index 0683a4937..55b4062d2 100644
    case QualType::DK_nontrivial_c_struct:
      return std::make_pair(BlockCaptureEntityKind::NonTrivialCStruct,
                            BlockFieldFlags());
-@@ -2168,8 +2558,9 @@ CodeGenFunction::GenerateDestroyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2168,8 +2573,9 @@ CodeGenFunction::GenerateDestroyHelperFunction(const CGBlockInfo &blockInfo) {
      Address srcField = Builder.CreateStructGEP(src, capture.getIndex());
  
      pushCaptureCleanup(capture.DisposeKind, srcField,
@@ -5019,7 +5059,53 @@ index 0683a4937..55b4062d2 100644
    }
  
    cleanups.ForceCleanup();
-@@ -2555,7 +2946,8 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
+@@ -2358,6 +2764,30 @@ public:
+ 
+ /// Emits the copy/dispose helpers for a __block variable that is a non-trivial
+ /// C struct.
++class ObjC3CarrierByrefHelpers final : public BlockByrefHelpers {
++  QualType VarType;const Expr *Recipe;
++public:
++  ObjC3CarrierByrefHelpers(CharUnits Alignment,QualType Type,const Expr *Recipe)
++      :BlockByrefHelpers(Alignment),VarType(Type),Recipe(Recipe) {}
++  void emitCopy(CodeGenFunction &CGF,Address Destination,Address Source) override {
++    const auto *Transfer=cast<ObjC3CarrierTransferExpr>(Recipe->IgnoreImplicit());
++    const auto *Root=cast<OpaqueValueExpr>(Transfer->getSource());
++    CodeGenFunction::OpaqueValueMapping Bind(CGF,Root,CGF.MakeAddrLValue(Source,Root->getType()));
++    if(supportsObjC3MixedCarrierCallABI(CGF.CGM,VarType))
++      emitObjC3MixedCarrierValueInit(CGF,Recipe,Destination);
++    else emitObjC3CarrierCppValueInit(CGF,Recipe,Destination);
++    if(!VarType.isConstQualified())
++      clearObjC3MovedCaptureCarrier(CGF,VarType,Source,false);
++  }
++  bool needsDispose() const override {return VarType.isDestructedType()!=QualType::DK_none;}
++  void emitDispose(CodeGenFunction &CGF,Address Field) override {
++    destroyObjC3CapturedValue(CGF,Field,VarType);
++  }
++  void profileImpl(llvm::FoldingSetNodeID &ID) const override {
++    ID.AddPointer(VarType.getCanonicalType().getAsOpaquePtr());ID.AddPointer(Recipe);
++  }
++};
++
+ class NonTrivialCStructByrefHelpers final : public BlockByrefHelpers {
+   QualType VarType;
+ 
+@@ -2540,6 +2970,14 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
+   CharUnits valueAlignment =
+     byrefInfo.ByrefAlignment.alignmentAtOffset(byrefInfo.FieldOffset);
+ 
++  if(CGM.getLangOpts().ObjC3 && hasObjC3CarrierCppPayload(type)) {
++    const Expr *Recipe=getContext().getBlockVarCopyInit(&var).getCopyExpr();
++    if(!Recipe || !(supportsObjC3CarrierCppCallABI(CGM,type) || supportsObjC3MixedCarrierCallABI(CGM,type))) {
++      diagnoseUnsupportedObjC3CarrierOperation(CGM,var.getLocation(),type,"native C++ carrier byref relocation");
++      return nullptr;
++    }
++    return ::buildByrefHelpers(CGM,byrefInfo,ObjC3CarrierByrefHelpers(valueAlignment,type,Recipe));
++  }
+   if (const CXXRecordDecl *record = type->getAsCXXRecordDecl()) {
+     const Expr *copyExpr =
+         CGM.getContext().getBlockVarCopyInit(&var).getCopyExpr();
+@@ -2555,7 +2993,8 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
    // If type is a non-trivial C struct type that is non-trivial to
    // destructly move or destroy, build the copy and dispose helpers.
    if (type.isNonTrivialToPrimitiveDestructiveMove() == QualType::PCK_Struct ||
@@ -5029,7 +5115,34 @@ index 0683a4937..55b4062d2 100644
      return ::buildByrefHelpers(
          CGM, byrefInfo, NonTrivialCStructByrefHelpers(valueAlignment, type));
  
-@@ -2866,9 +3258,27 @@ void CodeGenFunction::BuildBlockRelease(llvm::Value *V, BlockFieldFlags flags,
+@@ -2777,11 +3216,13 @@ void CodeGenFunction::emitByrefStructureInit(const AutoVarEmission &emission) {
+ 
+   llvm::Value *V;
+ 
+-  // Initialize the 'isa', which is just 0 or 1.
+-  int isa = 0;
+-  if (type.isObjCGCWeak())
+-    isa = 1;
+-  V = Builder.CreateIntToPtr(Builder.getInt32(isa), Int8PtrTy, "isa");
++  const auto &Triple=CGM.getTarget().getTriple();
++  CharUnits ByrefAlignment=getBlockByrefInfo(&D).ByrefAlignment;
++  bool NativeAligned=getLangOpts().ObjC3 && Triple.getArch()==llvm::Triple::x86_64 &&
++      Triple.isOSLinux() && Triple.isGNUEnvironment() &&
++      getLangOpts().ObjCRuntime.getAsString()=="gnustep-2.2" && ByrefAlignment>CharUnits::fromQuantity(16);
++  uint64_t isa=NativeAligned ? uint64_t(ByrefAlignment.getQuantity()) : type.isObjCGCWeak() ? 1 : 0;
++  V = Builder.CreateIntToPtr(llvm::ConstantInt::get(SizeTy,isa), Int8PtrTy, "isa");
+   storeHeaderField(V, getPointerSize(), "byref.isa");
+ 
+   // Store the address of the variable into its own forwarding pointer.
+@@ -2792,6 +3233,7 @@ void CodeGenFunction::emitByrefStructureInit(const AutoVarEmission &emission) {
+   //   c) the flags field is set to either 0 if no helper functions are
+   //      needed or BLOCK_BYREF_HAS_COPY_DISPOSE if they are,
+   BlockFlags flags;
++  if(NativeAligned)flags|=BLOCK_BYREF_OBJC3_ALIGNED;
+   if (helpers) flags |= BLOCK_BYREF_HAS_COPY_DISPOSE;
+   if (ByRefHasLifetime) {
+     if (HasByrefExtendedLayout) flags |= BLOCK_BYREF_LAYOUT_EXTENDED;
+@@ -2866,9 +3308,42 @@ void CodeGenFunction::BuildBlockRelease(llvm::Value *V, BlockFieldFlags flags,
  
  void CodeGenFunction::enterByrefCleanup(CleanupKind Kind, Address Addr,
                                          BlockFieldFlags Flags,
@@ -5039,6 +5152,21 @@ index 0683a4937..55b4062d2 100644
 +                                        bool LoadBlockVarAddr, bool CanThrow,
 +                                        const VarDecl *SourceVariable) {
 +  CallBlockRelease Release(Addr, Flags, LoadBlockVarAddr, CanThrow);
++  if(SourceVariable && supportsObjC3MixedCarrierLocalLifetime(CGM,SourceVariable->getType()) &&
++      hasObjC3DeferredSourceOwner(SourceVariable)) {
++    auto Storage=emitBlockByrefAddress(Addr,SourceVariable,false);
++    auto Selection=snapshotObjC3MixedCarrierCleanupSelection(*this,SourceVariable->getType(),Storage);
++    auto Managed=CreateTempAlloca(Builder.getInt1Ty(),CharUnits::One(),"objc3.byref.managed");
++    CGBuilderTy Entry(CGM,AllocaInsertPt);Entry.CreateStore(Builder.getFalse(),Managed);
++    Builder.CreateStore(emitObjC3MixedCarrierSelectionIsManaged(*this,SourceVariable->getType(),Selection),Managed);
++    EHStack.pushCleanup<ConditionalByrefRelease>(Kind,Release,Managed,false);
++    EHStack.pushCleanup<EmitObjC3OrderedRelease>(Kind,registerObjC3SourceRelease(
++        SourceVariable,Addr,bool(Kind & EHCleanup),
++        [Managed,Flags,LoadBlockVarAddr,CanThrow](CodeGenFunction &CGF,Address Storage,EHScopeStack::Cleanup::Flags F) {
++          ConditionalByrefRelease(CallBlockRelease(Storage,Flags,LoadBlockVarAddr,CanThrow),Managed,true).Emit(CGF,F);
++        }));
++    return;
++  }
 +  // The heap forwarding cell can own a managed record or carrier as well as
 +  // a direct object pointer. Keep it alive through all source cleanup actions;
 +  // a user C++ destructor still runs at its native registration point.
@@ -22716,10 +22844,18 @@ index 000000000..40dda7a3e
 +// CHECK: objc3.match.selected
 +// CHECK: call void @llvm.objc.storeStrong
 diff --git a/clang/lib/CodeGen/CGBlocks.h b/clang/lib/CodeGen/CGBlocks.h
-index b2e850046..55248a417 100644
+index b2e850046..72df7e213 100644
 --- a/clang/lib/CodeGen/CGBlocks.h
 +++ b/clang/lib/CodeGen/CGBlocks.h
-@@ -150,6 +150,8 @@ enum class BlockCaptureEntityKind {
+@@ -37,6 +37,7 @@ class CGBlockInfo;
+ // Flags stored in __block variables.
+ enum BlockByrefFlags {
+   BLOCK_BYREF_HAS_COPY_DISPOSE         = (1   << 25), // compiler
++  BLOCK_BYREF_OBJC3_ALIGNED            = (1   << 26), // native Linux
+   BLOCK_BYREF_LAYOUT_MASK              = (0xF << 28), // compiler
+   BLOCK_BYREF_LAYOUT_EXTENDED          = (1   << 28),
+   BLOCK_BYREF_LAYOUT_NON_OBJECT        = (2   << 28),
+@@ -150,6 +151,8 @@ enum class BlockCaptureEntityKind {
    ARCWeak,
    ARCStrong,
    NonTrivialCStruct,
@@ -26623,10 +26759,10 @@ index 1769ab00e..70d09fdd9 100644
  
 diff --git a/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp b/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
 new file mode 100644
-index 000000000..ef76bf727
+index 000000000..4c33c9aa5
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
-@@ -0,0 +1,317 @@
+@@ -0,0 +1,335 @@
 +//===--- CGObjC3MixedCarriers.cpp - Mixed ARC/C++ carrier locals -----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
@@ -26839,6 +26975,24 @@ index 000000000..ef76bf727
 +  return NoThrow(NoThrow,Type,0);
 +}
 +
++llvm::Value *CodeGen::emitObjC3MixedCarrierSelectionIsManaged(
++    CodeGenFunction &CGF,QualType Type,Address Selection) {
++  llvm::Value *Selected=CGF.Builder.CreateLoad(Selection);
++  llvm::Value *Managed=CGF.Builder.getFalse();unsigned Ordinal=0;
++  auto Visit=[&](auto &&Self,QualType T)->void {
++    if(isCarrier(T)) {
++      auto Info=CGF.getContext().getObjC3CarrierRepresentationType(T);
++      for(const auto *Field:{Info.ValueField,Info.SuccessField,Info.ErrorField})
++        if(Field)Self(Self,Field->getType());
++    } else {
++      ++Ordinal;
++      if(isARCPointer(T))Managed=CGF.Builder.CreateOr(Managed,
++          CGF.Builder.CreateICmpEQ(Selected,CGF.Builder.getInt32(Ordinal)));
++    }
++  };
++  Visit(Visit,Type);return Managed;
++}
++
 +void CodeGen::emitObjC3MixedCarrierValueInit(CodeGenFunction &CGF,
 +                                            const Expr *E, Address Destination) {
 +  QualType Type = E->getType().getCanonicalType().getUnqualifiedType();
@@ -26946,10 +27100,10 @@ index 000000000..ef76bf727
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3MixedCarriers.h b/clang/lib/CodeGen/CGObjC3MixedCarriers.h
 new file mode 100644
-index 000000000..8586561b5
+index 000000000..08fe0f832
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3MixedCarriers.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,57 @@
 +//===--- CGObjC3MixedCarriers.h - Mixed ARC/C++ carrier locals -*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3MIXEDCARRIERS_H
@@ -26970,8 +27124,8 @@ index 000000000..8586561b5
 +/// Automatic direct carrier trees with native ARC pointer leaves and ordinary
 +/// C++ object leaves. Explicit Block captures reuse these construction recipes
 +/// with separate native/managed cleanup partitions. This does not admit
-+/// assignment, enclosing record storage, or the by-value call ABI of a
-+/// nontrivial C++ payload.
++/// assignment or enclosing record storage. Qualified native calls and byref
++/// relocation retain dedicated selected-arm ownership contracts.
 +bool supportsObjC3MixedCarrierCallABI(CodeGenModule &, QualType);
 +bool supportsObjC3MixedCarrierLocalLifetime(CodeGenModule &, QualType);
 +
@@ -26991,6 +27145,7 @@ index 000000000..8586561b5
 +/// Freeze the active leaf identity before source cleanup actions execute.
 +/// Only discriminants on the active path are read; no inactive payload is
 +/// evaluated. Each destruction partition captures the same stable selection.
++llvm::Value *emitObjC3MixedCarrierSelectionIsManaged(CodeGenFunction &, QualType, Address Selection);
 +Address snapshotObjC3MixedCarrierCleanupSelection(CodeGenFunction &, QualType,
 +                                                  Address Storage);
 +
@@ -36509,3 +36664,119 @@ index 000000000..936c9c1a7
 +// CHECK-DAG: objc3alignedv1_64
 +// CHECK-DAG: i64 5706977999748857920
 +// CHECK-LABEL: define{{.*}} @native_aligned_c_blocks(
+diff --git a/clang/test/ObjC3/CodeGen/native-byref-c-storage.m b/clang/test/ObjC3/CodeGen/native-byref-c-storage.m
+new file mode 100644
+index 000000000..e96252991
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-byref-c-storage.m
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -emit-pch -o %t-core-mrc %S/Inputs/native-aligned-c-block.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -include-pch %t-core-mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-core-arc %S/Inputs/native-aligned-c-block.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -include-pch %t-core-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-strict-mrc %S/Inputs/native-aligned-c-block.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-strict-mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -emit-pch -o %t-strict-arc %S/Inputs/native-aligned-c-block.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -include-pch %t-strict-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-mrc %S/Inputs/native-aligned-c-block.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -emit-pch -o %t-strict-concurrency-arc %S/Inputs/native-aligned-c-block.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -include-pch %t-strict-concurrency-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-mrc %S/Inputs/native-aligned-c-block.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-strict-system-mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-strict-system-arc %S/Inputs/native-aligned-c-block.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-strict-system-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-aligned-c-block.h"
++int native_byref_c_values(int seed) {
++ __block struct NativeCBlockValue value={seed};
++ int (^block)(void)=^int{return ++value.value;};return block();
++}
++// CHECK-LABEL: define{{.*}} @native_byref_c_values(
++// CHECK: store ptr inttoptr (i64 64 to ptr)
+diff --git a/clang/test/ObjC3/CodeGen/native-byref-cpp-storage.mm b/clang/test/ObjC3/CodeGen/native-byref-cpp-storage.mm
+new file mode 100644
+index 000000000..ec5b04f69
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-byref-cpp-storage.mm
+@@ -0,0 +1,73 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-core-c++20-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-core-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-core-c++20-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-core-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-pch -o %t-core-c++23-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -include-pch %t-core-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-core-c++23-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-core-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-strict-c++20-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-strict-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -emit-pch -o %t-strict-c++20-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -include-pch %t-strict-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -emit-pch -o %t-strict-c++23-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -include-pch %t-strict-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -emit-pch -o %t-strict-c++23-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict -fobjc-arc -include-pch %t-strict-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c++20-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -emit-pch -o %t-strict-concurrency-c++20-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -include-pch %t-strict-concurrency-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -emit-pch -o %t-strict-concurrency-c++23-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -include-pch %t-strict-concurrency-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -emit-pch -o %t-strict-concurrency-c++23-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-concurrency -fobjc-arc -include-pch %t-strict-concurrency-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c++20-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-strict-system-c++20-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-strict-system-c++20-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-strict-system-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -emit-pch -o %t-strict-system-c++23-False %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -include-pch %t-strict-system-c++23-False -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -emit-pch -o %t-strict-system-c++23-True %S/Inputs/native-checked-cxx-results.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-strict-system-c++23-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fno-elide-constructors -fexceptions -fcxx-exceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-checked-cxx-results.h"
++struct ByrefCompilerOwner {int value;ByrefCompilerOwner(int);ByrefCompilerOwner(const ByrefCompilerOwner &);ByrefCompilerOwner(ByrefCompilerOwner &&);~ByrefCompilerOwner() noexcept;};
++struct alignas(16) ByrefCompilerPrefix {int value;ByrefCompilerPrefix(int) noexcept;ByrefCompilerPrefix(const ByrefCompilerPrefix &) noexcept;~ByrefCompilerPrefix() noexcept;};
++using ByrefCompilerMaybe=__objc3_optional(ByrefCompilerOwner);
++extern "C" int native_byref_cpp_values(int seed) {
++ ByrefCompilerPrefix prefix(seed);
++ __block ByrefCompilerMaybe value __attribute__((aligned(64)))=__objc3_some(ByrefCompilerOwner,ByrefCompilerOwner(seed));
++ int (^block)(void)=^int{return prefix.value+__objc3_has_value(value);};return block();
++}
++extern "C" int native_byref_cpp_trivial(int seed) {
++ __block __objc3_optional(int) value=__objc3_some(int,seed);
++ int (^block)(void)=^int{return __objc3_has_value(value);};return block();
++}
++#if __has_feature(objc_arc)
++using ByrefStrong=id __strong;
++using ByrefMixed=__objc3_result(ByrefCompilerOwner,ByrefStrong);
++extern "C" int native_byref_mixed_values(int seed) {
++ __block ByrefMixed value=__objc3_ok(ByrefCompilerOwner,ByrefStrong,ByrefCompilerOwner(seed));
++ int (^block)(void)=^int{return __objc3_is_ok(value);};return block();
++}
++#endif
++// CHECK-LABEL: define{{.*}} @native_byref_cpp_values(
++// CHECK: store ptr inttoptr (i64 64 to ptr)
++// CHECK: invoke void @_Block_object_assign
