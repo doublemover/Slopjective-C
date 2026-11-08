@@ -129,6 +129,35 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration) {
+  const auto &context=declaration->getASTContext();
+  if(!context.getLangOpts().ObjC3 || !context.getLangOpts().ObjCAutoRefCount)return false;
+  auto Atomic=[&context](const clang::ObjCPropertyDecl *property) {
+    return property && property->isAtomic() &&
+        (clang::containsObjC3CarrierManagedStorage(property->getType()) ||
+         (property->getType()->isRecordType() && clang::getObjC3ValueTypeFacts(context,
+             property->getType(),clang::ObjC3PayloadPosition::OptionalElement).HasARCManagedRecordFields));
+  };
+  if(Atomic(llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration)))return true;
+  if(const auto *container=llvm::dyn_cast<clang::ObjCContainerDecl>(declaration))
+    for(const auto *property:container->properties())if(Atomic(property))return true;
+  return HasPublishedExpression(declaration,[&](const clang::Stmt *statement) {
+    struct Accesses : clang::DynamicRecursiveASTVisitor {
+      const clang::ASTContext &context;bool found=false;
+      explicit Accesses(const clang::ASTContext &context):context(context) {}
+      bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+        if(const auto *method=message->getMethodDecl())
+          if(const auto *property=method->findPropertyDecl())
+            found|=property->isAtomic() && (clang::containsObjC3CarrierManagedStorage(property->getType()) ||
+                (property->getType()->isRecordType() && clang::getObjC3ValueTypeFacts(context,
+                    property->getType(),clang::ObjC3PayloadPosition::OptionalElement).HasARCManagedRecordFields));
+        return true;
+      }
+    } visitor(context);
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationNativeARCRecordPayload(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[declaration](const clang::Stmt *statement) {
     struct Values : clang::DynamicRecursiveASTVisitor {

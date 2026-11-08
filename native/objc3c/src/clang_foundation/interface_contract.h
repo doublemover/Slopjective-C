@@ -258,6 +258,10 @@ inline constexpr const char *kCheckedKeyPathReadSemantic = "objc3.keypath-checke
 inline bool HasCheckedKeyPathReadIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-checked-reads:v1;") != std::string::npos;
 }
+inline constexpr const char *kAtomicManagedPropertySemantic = "objc3.atomic-managed-properties.v1";
+inline bool HasAtomicManagedPropertyIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";atomic-managed-properties:v1;") != std::string::npos;
+}
 inline constexpr const char *kNativeARCRecordPayloadSemantic = "objc3.native-arc-record-payload.v1";
 inline bool HasNativeARCRecordPayloadIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-arc-record-payload:v1;") != std::string::npos ||

@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.143 / System 2.69 atomic property span](linux_atomic_managed_properties.md)
+implements owned atomic snapshots and unlocked replacement cleanup for managed
+carriers and qualified data-only ARC records, with exception-safe runtime locks
+and exact source-free capability admission. Focused native ThreadSanitizer and
+ASan/UBSan controls pass; remaining feature implementation continues.
+
 The [source 2.142 / System 2.68 implicit-result span](linux_implicit_checked_record_results.md)
 prepares native implicit destructors before checked function/method/Block ABI
 admission and binds declaration-only interfaces to the checked-record v2 reader

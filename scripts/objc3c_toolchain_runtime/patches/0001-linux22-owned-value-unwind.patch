@@ -1413,6 +1413,73 @@ index 5ac70a39d..c151ab2c5 100644
  /**
   * The GNU C++ exception personality function, provided by libsupc++ (GNU) or
   * libcxxrt (PathScale).
+diff --git a/properties.m b/properties.m
+index 7c3dcc31f..ac90f80f2 100644
+--- a/properties.m
++++ b/properties.m
+@@ -127,13 +127,19 @@ OBJC_PUBLIC
+ void objc_copyCppObjectAtomic(void *dest, const void *src,
+                               void (*copyHelper) (void *dest, const void *source))
+ {
+-	volatile int *lock = lock_for_pointer(src < dest ? src : dest);
+-	volatile int *lock2 = lock_for_pointer(src < dest ? dest : src);
++	volatile int *lock = lock_for_pointer(src);
++	volatile int *lock2 = lock_for_pointer(dest);
++	// Order the actual lock slots, not the unrelated source object addresses.
++	if ((uintptr_t)lock > (uintptr_t)lock2) {
++		volatile int *swap = lock; lock = lock2; lock2 = swap;
++	}
+ 	lock_spinlock(lock);
+-	lock_spinlock(lock2);
+-	copyHelper(dest, src);
+-	unlock_spinlock(lock);
+-	unlock_spinlock(lock2);
++	if (lock2 != lock) lock_spinlock(lock2);
++	@try { copyHelper(dest, src); }
++	@finally {
++		if (lock2 != lock) unlock_spinlock(lock2);
++		unlock_spinlock(lock);
++	}
+ }
+ 
+ OBJC_PUBLIC
+@@ -142,8 +148,8 @@ void objc_getCppObjectAtomic(void *dest, const void *src,
+ {
+ 	volatile int *lock = lock_for_pointer(src);
+ 	lock_spinlock(lock);
+-	copyHelper(dest, src);
+-	unlock_spinlock(lock);
++	@try { copyHelper(dest, src); }
++	@finally { unlock_spinlock(lock); }
+ }
+ 
+ OBJC_PUBLIC
+@@ -152,8 +158,23 @@ void objc_setCppObjectAtomic(void *dest, const void *src,
+ {
+ 	volatile int *lock = lock_for_pointer(dest);
+ 	lock_spinlock(lock);
+-	copyHelper(dest, src);
+-	unlock_spinlock(lock);
++	@try { copyHelper(dest, src); }
++	@finally { unlock_spinlock(lock); }
++}
++
++// Managed moves cannot allocate or invoke payload constructors. The accessor
++// owns both temporary regions and destroys the replaced value after unlocking.
++OBJC_PUBLIC
++void objc3_swapManagedPropertyAtomic(void *slot, void *replaced, void *incoming,
++                                    void (*moveHelper)(void *, void *))
++{
++	volatile int *lock = lock_for_pointer(slot);
++	lock_spinlock(lock);
++	@try {
++		moveHelper(replaced, slot);
++		moveHelper(slot, incoming);
++	}
++	@finally { unlock_spinlock(lock); }
+ }
+ 
+ /**
 diff --git a/runtime.c b/runtime.c
 index be03c3f70..c05a5719f 100644
 --- a/runtime.c
@@ -1580,3 +1647,27 @@ index 3723ad57f..89e0c99e1 100644
  	LockGuard g{selector_table_lock};
  	copy = selector_lookup(aSel.name, aSel.types);
  	if (nullptr != copy && selector_identical(aSel, copy))
+diff --git a/spinlock.h b/spinlock.h
+index 2efec4755..10c2ef518 100644
+--- a/spinlock.h
++++ b/spinlock.h
+@@ -38,16 +38,12 @@ static inline volatile int *lock_for_pointer(const void *ptr)
+ }
+ 
+ /**
+- * Unlocks the spinlock.  This is not an atomic operation.  We are only ever
+- * modifying the lowest bit of the spinlock word, so it doesn't matter if this
+- * is two writes because there is no contention among the high bit.  There is
+- * no possibility of contention among calls to this, because it may only be
+- * called by the thread owning the spin lock.
++ * Release the lock word atomically. This pairs with the compare/exchange
++ * acquisition and keeps every concurrent lock-word access atomic.
+  */
+ inline static void unlock_spinlock(volatile int *spinlock)
+ {
+-	__sync_synchronize();
+-	*spinlock = 0;
++	__atomic_store_n(spinlock, 0, __ATOMIC_RELEASE);
+ }
+ /**
+  * Attempts to lock a spinlock.  This is heavily optimised for the uncontended

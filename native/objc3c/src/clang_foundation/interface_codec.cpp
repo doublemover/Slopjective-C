@@ -28,6 +28,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kAtomicManagedPropertySemantic,
     kNativeARCRecordPayloadSemantic,
     kNativeCarrierLambdaSemantic,
     kNativeByrefStorageSemantic,
@@ -686,6 +687,10 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool atomic_managed=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasAtomicManagedPropertyIdentity);
+  const bool atomic_managed_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kAtomicManagedPropertySemantic)!=sidecar.required_semantics.end();
+  if(atomic_managed!=atomic_managed_capability)
+    return Invalid("atomic managed property identity and required capability must agree");
   const bool arc_record_payload=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeARCRecordPayloadIdentity);
   const bool arc_record_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeARCRecordPayloadSemantic)!=sidecar.required_semantics.end();
   if(arc_record_payload!=arc_record_capability)

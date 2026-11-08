@@ -6935,6 +6935,52 @@ void TestCheckedCppMessageReplay() {
   }
 }
 
+void TestAtomicManagedPropertyReplay() {
+ for(const char *standard:{"c17","c++20","c++23"}) {
+  const bool cpp=std::string(standard)!="c17";
+  std::vector<std::string> args={"-x",cpp?"objective-c++":"objective-c",std::string("-std=")+standard,
+   "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks",
+   "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+  const std::string source=R"(
+   typedef __objc3_optional(id) AtomicMaybe;
+   struct AtomicRecord {int generation;AtomicMaybe value;};
+   __attribute__((objc_root_class)) @interface PublishedAtomicHost
+   @property(atomic) AtomicMaybe value;
+   @property(atomic) struct AtomicRecord record;
+   @end
+   inline int published_atomic_read(PublishedAtomicHost *_Nonnull host){struct AtomicRecord value=host.record;return value.generation+__objc3_has_value(value.value);}
+  )";
+  auto emit=[&](const std::string &text) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"atomic-managed-property.m");
+   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.atomic_managed","test",{}));
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.atomic_managed","test",{},{},{},{"AtomicMaybe","AtomicRecord","PublishedAtomicHost","published_atomic_read"});
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+  assert(llvm::is_contained(read->required_semantics,std::string(kAtomicManagedPropertySemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kAtomicManagedPropertySemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(read->required_semantics,kAtomicManagedPropertySemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*read,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  auto rawOnly=emit("typedef __objc3_optional(id) AtomicMaybe;struct AtomicRecord {id object;};__attribute__((objc_root_class)) @interface PublishedAtomicHost @property(atomic) struct AtomicRecord record;@end inline int published_atomic_read(PublishedAtomicHost *_Nonnull host){return host.record.object!=(id)0;}");
+  auto rawSidecar=DecodeSemanticInterfaceSidecar(rawOnly.sidecar_json,rawOnly.source_bytes,supported);assert(rawSidecar);
+  assert(llvm::is_contained(rawSidecar->required_semantics,std::string(kAtomicManagedPropertySemantic)));
+  std::string ordinary=source;size_t at=0;
+  while((at=ordinary.find("@property(atomic)",at))!=std::string::npos){ordinary.replace(at,17,"@property(nonatomic)");at+=20;}
+  auto changed=emit(ordinary);assert(first.identity.semantic_fingerprint!=changed.identity.semantic_fingerprint);
+  auto invented=DecodeSemanticInterfaceSidecar(changed.sidecar_json,changed.source_bytes,supported);assert(invented);
+  assert(!llvm::is_contained(invented->required_semantics,std::string(kAtomicManagedPropertySemantic)));
+  invented->required_semantics.push_back(kAtomicManagedPropertySemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+ }
+}
+
 void TestImplicitCheckedRecordReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -11162,6 +11208,7 @@ int main(int argc,char **argv) {
   TestCheckedCppRecordResultReplay();
   TestCppCarrierDefaultStorageReplay();
   TestCheckedCppMessageReplay();
+  TestAtomicManagedPropertyReplay();
   TestImplicitCheckedRecordReplay();
   TestNativeARCRecordPayloadReplay();
   TestNativeCarrierLambdaReplay();

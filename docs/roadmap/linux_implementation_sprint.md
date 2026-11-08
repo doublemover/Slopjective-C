@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [source 2.143 / System 2.69 atomic property span](linux_atomic_managed_properties.md)
+implements owned atomic snapshots and unlocked replacement cleanup for managed
+carriers and qualified data-only ARC records, with exception-safe runtime locks
+and exact source-free capability admission. Focused native ThreadSanitizer and
+ASan/UBSan controls pass; remaining feature implementation continues.
+
 The [source 2.137 / System 2.63 aligned Block span](linux_aligned_block_storage.md)
 implements native aligned heap captures and published local alignment contracts.
 All 73 dedicated compiler commands, 420 decoder replays and six sanitizer
