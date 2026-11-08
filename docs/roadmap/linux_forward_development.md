@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.152 / System 2.78 static return-graph span](linux_static_borrowed_control_flow.md)
+proves complete helper returns through branches, switches, loops, goto and native
+exception handlers, plus immutable local aliases and C++ array conditional decay.
+The borrowed-result-proofs v2 reader cutover, compiler, publication, decoder and
+source-free native controls pass. Remaining implementation continues.
+
 The [source 2.151 / System 2.77 borrowed union-storage span](linux_borrowed_union_byte_storage.md)
 uses native byte geometry and equivalent pointer cells to track local union loans.
 Complete plain pointer assignments replace stale facts; partial, volatile, atomic,
@@ -1860,10 +1866,10 @@ milestone; earlier tooling coverage does not establish new feature coverage.
 1. Finish the remaining ownership, async, isolation, key-path and structured runtime
    slices together. Preserve live owners through suspension and exceptions;
    retain complete callable identity across source, PCH, import and packages.
-2. Complete remaining abstract group-library forms on the delivered C/C++ scope
-   protocol. Preserve cancellation and retained actor/destination ownership
-   through scope cleanup; ordinary C++ task-coroutine lowering and owned callback
-   groups are delivered.
+2. Complete remaining spawn/capture/value ownership contracts on the delivered
+   C/C++ create/add/iterate/implicit-join protocol. Preserve cancellation and
+   retained actor/destination ownership through scope cleanup; inferred typed
+   callbacks and source-free task-header group helpers are delivered.
 3. Reconcile every remaining Part 3/5 type/control-flow requirement, generic
    constraint, property/reflection/metaprogramming and specified foreign/Swift
    interop surface with real implementation. Keep optional feature-set limits

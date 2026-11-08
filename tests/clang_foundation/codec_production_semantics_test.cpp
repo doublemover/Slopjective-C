@@ -44,9 +44,10 @@ int main() {
       extern const CodecStaticUnion codec_static_union;
       const CodecStaticUnion codec_static_union={{'s','t','a','t','i','c',0}};
       inline const char *codec_static_source(){return codec_static_union.bytes;}
-      inline const char *codec_static_offset(int offset){return codec_static_source()+offset;}
+      inline const char *codec_static_offset(int offset){if(offset)return codec_static_source()+offset;return codec_static_union.bytes;}
+      inline const char *codec_static_local(int offset){const char *const value=codec_static_offset(offset);return value;}
       __attribute__((objc_returns_borrowed(owner_index=0)))
-      inline CodecStaticLoan codec_static_view(void *owner,int offset){return codec_static_offset(offset);}
+      inline CodecStaticLoan codec_static_view(void *owner,int offset){return codec_static_local(offset);}
     )" : union_carriers ? R"(
       namespace CatalogUnionCarrier {
         struct Arm {int tag;id __strong owner;id __weak observer;};

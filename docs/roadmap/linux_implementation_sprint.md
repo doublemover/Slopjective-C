@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [source 2.152 / System 2.78 static return-graph span](linux_static_borrowed_control_flow.md)
+proves complete helper returns through branches, switches, loops, goto and native
+exception handlers, plus immutable local aliases and C++ array conditional decay.
+The borrowed-result-proofs v2 reader cutover, compiler, publication, decoder and
+source-free native controls pass. Remaining implementation continues.
+
 The [source 2.151 / System 2.77 borrowed union-storage span](linux_borrowed_union_byte_storage.md)
 uses native byte geometry and equivalent pointer cells to track local union loans.
 Complete plain pointer assignments replace stale facts; partial, volatile, atomic,

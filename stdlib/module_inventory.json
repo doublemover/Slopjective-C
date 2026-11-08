@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 151,
+        "minor": 152,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -332,12 +332,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 77,
+        "minor": 78,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Bounded static borrowed-result summaries follow complete native control-flow graphs through branches, switches, loops, goto and exception handlers plus immutable local pointer aliases; complete return validation, fallthrough rejection, nested-callable boundaries and shared AST/CFG work limits preserve conservative unknown/mutable/recursive gates; borrowed-result-proofs v2 hard reader cutover (58 borrowed compiler cases in the main batch, final focused compiler controls, six publication profiles, 64 AST controls, nine adjacent frontend groups, 720 production decoder replays and four source-free native ASan/UBSan configurations pass; matched SDK pending)",
         "Known local union byte geometry and equivalent pointer cells preserve borrowed provenance; complete plain union-pointer assignments replace stale loans, while partial, volatile, atomic, nontrivial, owner-bearing and unknown-target storage stays conservative; borrowed-union-byte-storage v1 source-free reader cutover (57 borrowed compiler regressions, six publication profiles, 64 AST controls, nine adjacent frontend groups, 720 production decoder replays and four source-free native ASan/UBSan configurations pass; matched SDK pending)",
         "Explicitly owned native C++ union carrier payloads preserve active-arm ARC/C++ copy/move/destruction, over-aligned opaque storage and caller-owned argument/result recipes; forward-declared payload records use their complete definitions, implicit carrier results retain selected construction and move eligibility; native-arc-record-payload v2 reader cutover, matched SDK pending",
         "Public native unnamed enum groups retain canonical roots, first-enumerator identity, full representation/value contracts and enumerator selection through source-free replay and import; native-unnamed-enums v1 reader admission, matched SDK pending",
@@ -389,7 +390,7 @@
         "Built-in pointer pre/post increments/decrements, compound and commuted offsets, conditional targets, bounded one-past and same-array cursor loops; partial character/scalar writes invalidate address/nonnull proofs while preserving loan/callable facts and expiring owner claims (source authored; eighteen new source/PCH commands and all twenty-two existing borrowed regressions pass; native frontend replay/consumer controls pass; SDK consolidation pending)",
         "Constant byte-range memory operations recover complete tracked fields and array elements through native layout, typed aliases, constant/commuted/balanced offsets and conditional bases; exact copies preserve callable/loan facts and returned destinations while padding, partial/unknown ranges, dependent layouts and incomplete provenance remain conservative (source authored; eighteen new source/PCH commands, all twenty-two borrowed regressions and native frontend replay/consumer controls pass; SDK consolidation pending)",
         "Aliased builtin fills and representation copies preserve nested/conditional payloads, callable effects, owner identities and returned destination pointers; partial/open writes invalidate target proofs, incomplete may sets retain nonlocal alternatives and array addresses expose reachable siblings (source authored; eighteen new source/PCH commands and all twenty-one borrowed regressions pass; frontend replay execution pending)",
-        "Borrowed owner-contracted results from immutable program storage include qualified native unions and bounded statically bound helper chains, shared work limits and replaceable-function gates; public loan obligations remain intact. borrowed-result-proofs v1 publication, 56 borrowed compiler regressions, six publication profiles and source-free native controls pass; matched SDK pending",
+        "Borrowed owner-contracted results from immutable program storage include qualified native unions and bounded statically bound helper chains, shared work limits and replaceable-function gates; public loan obligations remain intact. borrowed-result-proofs v2 publication with complete bounded helper return graphs, immutable local aliases and native array conditional decay, 58 borrowed compiler cases in the main batch plus final focused controls, six publication profiles and source-free native controls pass; matched SDK pending",
         "Type-carried borrowed callback results and owner indices through indirect function/Block/member calls, aliases, auto/templates, native type/ODR/USR/overload identity and AST/PCH/interface persistence (source authored; focused native source/PCH/identity checks pass; frontend consolidation pending)",
         "Explicit MRC and retainable-family claim lower bounds through known aliases and CFG joins, retained-result alias identity, exact consumed-parameter multiplicity and conservative callable/deferred effects (source authored; focused source/PCH diagnostics pass)",
         "Closed finite pointer-target proofs across CFG joins, scalar/aggregate aliases and captures; indirect local field/array writes, constant offsets and conservative mutation invalidation (source)",

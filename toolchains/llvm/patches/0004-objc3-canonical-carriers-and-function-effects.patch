@@ -44070,10 +44070,10 @@ index 000000000..1122bbb29
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..a05e34ea6
+index 000000000..bf3cb7c9a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6225 @@
+@@ -0,0 +1,6308 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -48540,6 +48540,95 @@ index 000000000..a05e34ea6
 +    unsigned Budget = 4096;
 +    return staticStorageResultImpl(Expression, 0, Budget);
 +  }
++  bool stableStaticLValueBase(const APValue &Result, unsigned &Budget) const {
++    auto Base = Result.getLValueBase();
++    if (const auto *Declaration = Base.dyn_cast<const ValueDecl *>()) {
++      const auto *Variable = dyn_cast<VarDecl>(Declaration);
++      return Variable && Variable->hasGlobalStorage() &&
++             Variable->getTLSKind() == VarDecl::TLS_None &&
++             Context.getBaseElementType(Variable->getType()).isConstQualified() &&
++             stableStaticStorageType(Variable->getType(), Budget);
++    }
++    if (const auto *Value = Base.dyn_cast<const Expr *>()) {
++      if (isa<StringLiteral>(Value)) return true;
++      if (const auto *Compound = dyn_cast<CompoundLiteralExpr>(Value))
++        return Compound->isFileScope() &&
++               Context.getBaseElementType(Compound->getType()).isConstQualified() &&
++               stableStaticStorageType(Compound->getType(), Budget);
++    }
++    return false;
++  }
++  bool staticArrayStorageResult(const Expr *Expression, unsigned Depth,
++                                unsigned &Budget) const {
++    if(!Expression || Depth>32 || !Budget || !Expression->getType()->isArrayType() ||
++        Expression->isTypeDependent() || Expression->isValueDependent())return false;
++    --Budget;
++    Expression=Expression->IgnoreParenImpCasts();
++    // In C++, equal-bound arrays remain lvalues across ?: and decay only
++    // after selection. Prove the actual array bases instead of treating an
++    // array slot as a pointer load or fabricating a temporary decay AST.
++    if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(Expression)) {
++      bool Truth;
++      if(!Choice->getCond()->HasSideEffects(Context) &&
++          Choice->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++        return staticArrayStorageResult(Truth?Choice->getTrueExpr():Choice->getFalseExpr(),Depth+1,Budget);
++      return staticArrayStorageResult(Choice->getTrueExpr(),Depth+1,Budget) &&
++             staticArrayStorageResult(Choice->getFalseExpr(),Depth+1,Budget);
++    }
++    if(const auto *Comma=dyn_cast<BinaryOperator>(Expression);Comma && Comma->getOpcode()==BO_Comma)
++      return staticArrayStorageResult(Comma->getRHS(),Depth+1,Budget);
++    Expr::EvalResult Result;
++    return Expression->EvaluateAsLValue(Result,Context) && !Result.HasSideEffects &&
++        !Result.HasUndefinedBehavior && Result.Val.isLValue() &&
++        stableStaticLValueBase(Result.Val,Budget);
++  }
++  bool staticFunctionResult(const FunctionDecl *Function, unsigned Depth,
++                            unsigned &Budget) const {
++    if(!Function || Depth>32 || !Budget || !Function->getBody() ||
++        Function->isDependentContext() || isa<CoroutineBodyStmt>(Function->getBody()))return false;
++    // Bound AST and CFG work together. Check actual returns, including GNU
++    // statement-expression exits, but not bodies of nested callables. Capture
++    // initializers still execute in this function and retain its return rules.
++    SmallVector<const Stmt *,16> Pending{Function->getBody()};
++    bool HasReturn=false;
++    while(!Pending.empty()) {
++      const Stmt *Node=Pending.pop_back_val();
++      if(!Node)continue;
++      if(!Budget)return false;
++      --Budget;
++      if(const auto *Lambda=dyn_cast<LambdaExpr>(Node)) {
++        for(const Expr *Initializer:Lambda->capture_inits())Pending.push_back(Initializer);
++        continue;
++      }
++      if(isa<BlockExpr>(Node))continue;
++      if(const auto *Return=dyn_cast<ReturnStmt>(Node)) {
++        HasReturn=true;
++        if(!staticStorageResultImpl(Return->getRetValue(),Depth+1,Budget))return false;
++      }
++      for(const Stmt *Child:Node->children())Pending.push_back(Child);
++    }
++    if(!HasReturn || !Budget)return false;
++    CFG::BuildOptions Options;
++    std::unique_ptr<CFG> Graph=CFG::buildCFG(const_cast<FunctionDecl *>(Function),
++        const_cast<Stmt *>(Function->getBody()),&Context,Options);
++    if(!Graph || Graph->size()>Budget)return false;
++    Budget-=Graph->size();
++    // Every normal exit must finish a checked return. A missing switch default,
++    // a loop's fallthrough or a goto to the end cannot fabricate static storage.
++    // Throw/noreturn exits produce no pointer result and impose no return proof.
++    for(const auto &Edge:Graph->getExit().preds()) {
++      const CFGBlock *Block=Edge.getReachableBlock();
++      if(!Block)continue;
++      // An exit edge from an actual try-dispatch block propagates an
++      // unmatched exception, rather than falling off the function body.
++      bool Terminated=Block->hasNoReturnElement() ||
++          llvm::is_contained(Graph->try_blocks(),Block);
++      for(const auto &Element:*Block)if(auto Statement=Element.getAs<CFGStmt>())
++        Terminated|=isa<ReturnStmt,CXXThrowExpr,ObjCAtThrowStmt>(Statement->getStmt());
++      if(!Terminated)return false;
++    }
++    return true;
++  }
 +  bool staticStorageResultImpl(const Expr *Expression, unsigned Depth,
 +                               unsigned &Budget) const {
 +    if (!Expression || Depth > 32 || !Budget || Expression->isTypeDependent() || Expression->isValueDependent())
@@ -48571,6 +48660,9 @@ index 000000000..a05e34ea6
 +          return staticStorageResultImpl(Binary->getRHS(), Depth + 1, Budget);
 +      }
 +    }
++    if(const auto *Decay=dyn_cast<ImplicitCastExpr>(Expression);
++        Decay && Decay->getCastKind()==CK_ArrayToPointerDecay)
++      return staticArrayStorageResult(Decay->getSubExpr(),Depth+1,Budget);
 +    if (const auto *Cast = dyn_cast<CastExpr>(Expression);
 +        Cast && Cast->isPRValue() && Cast->getSubExpr()->isPRValue() &&
 +        Cast->getType()->isPointerType() && Cast->getSubExpr()->getType()->isPointerType())
@@ -48578,12 +48670,21 @@ index 000000000..a05e34ea6
 +    // A pointer lvalue names its slot; only a complete rvalue load can prove
 +    // the pointee. Treating &constantPointer as constantPointer is unsound.
 +    if (!Expression->isPRValue()) return false;
++    // Immutable pointer locals may select permanent bases without becoming
++    // mutable bindings. Parameter-derived/volatile/reference slots stay open.
++    if(const auto *Load=dyn_cast<ImplicitCastExpr>(Expression);
++        Load && Load->getCastKind()==CK_LValueToRValue && Load->getType()->isPointerType())
++      if(const auto *Reference=dyn_cast<DeclRefExpr>(Load->getSubExpr()->IgnoreParenImpCasts()))
++        if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
++            Variable && Variable->hasLocalStorage() && Variable->hasInit() &&
++            Variable->getType().isConstQualified() && !Variable->getType().isVolatileQualified() &&
++            !Variable->getType()->isReferenceType())
++          return staticStorageResultImpl(Variable->getInit(),Depth+1,Budget);
 +    Expr::EvalResult Result;
 +    if (!Expression->EvaluateAsRValue(Result, Context) ||
 +        Result.HasSideEffects || Result.HasUndefinedBehavior || !Result.Val.isLValue()) {
-+      // Inspect only a statically bound definition with one return expression.
-+      // Parameter-derived addresses cannot resolve to immutable static bases;
-+      // no argument substitution, local mutation or unknown call is inferred.
++      // Inspect statically bound definitions whose complete bounded return graph
++      // proves permanent bases. No argument substitution or mutable slot is inferred.
 +      // C external inline definitions may differ from the selected external
 +      // definition, whereas C++ inline definitions share their ODR contract.
 +      const auto *Call = dyn_cast<CallExpr>(Expression->IgnoreParenImpCasts());
@@ -48596,27 +48697,9 @@ index 000000000..a05e34ea6
 +           (!Actions.getLangOpts().CPlusPlus || !Definition->isInlined())))return false;
 +      if (const auto *Method = dyn_cast<CXXMethodDecl>(Definition);
 +          Method && !Method->isStatic())return false;
-+      const auto *Body = dyn_cast_or_null<CompoundStmt>(Definition->getBody());
-+      const auto *Return = Body && Body->size() == 1 ?
-+          dyn_cast<ReturnStmt>(*Body->body_begin()) : nullptr;
-+      return Return && staticStorageResultImpl(Return->getRetValue(), Depth + 1, Budget);
++      return staticFunctionResult(Definition,Depth+1,Budget);
 +    }
-+    auto Base = Result.Val.getLValueBase();
-+    if (const auto *Declaration = Base.dyn_cast<const ValueDecl *>()) {
-+      const auto *Variable = dyn_cast<VarDecl>(Declaration);
-+      return Variable && Variable->hasGlobalStorage() &&
-+             Variable->getTLSKind() == VarDecl::TLS_None &&
-+             Context.getBaseElementType(Variable->getType()).isConstQualified() &&
-+             stableStaticStorageType(Variable->getType(), Budget);
-+    }
-+    if (const auto *Value = Base.dyn_cast<const Expr *>()) {
-+      if (isa<StringLiteral>(Value)) return true;
-+      if (const auto *Compound = dyn_cast<CompoundLiteralExpr>(Value))
-+        return Compound->isFileScope() &&
-+               Context.getBaseElementType(Compound->getType()).isConstQualified() &&
-+               stableStaticStorageType(Compound->getType(), Budget);
-+    }
-+    return false;
++    return stableStaticLValueBase(Result.Val,Budget);
 +  }
 +  bool validReturn(const Value &V) const {
 +    if (hasExpired(V)) return false;
@@ -68637,4 +68720,121 @@ index 000000000..1dae1e618
 +  auto callback=[value,owner]()mutable{value.second=union_bytes(owner);}; // expected-error {{persistent storage}}
 +  (void)callback;
 +}
++#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
+new file mode 100644
+index 000000000..87990f550
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
+@@ -0,0 +1,50 @@
++#ifndef OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
++#define OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
++typedef borrowed const char *StaticGraphLoan;
++#define STATIC_GRAPH __attribute__((objc_returns_borrowed(owner_index=0)))
++static const char graph_first[]="first",graph_second[]="second";
++static char graph_mutable[]="mutable";
++const char *graph_unknown(void);
++static const char *graph_branch(int choose){if(choose)return graph_first;return graph_second;}
++static const char *graph_switch(int choose){switch(choose){case 0:return graph_first;case 1:return graph_second;default:return 0;}}
++static const char *graph_loop(int count){while(count--){if(count==2)return graph_second;}return graph_first;}
++static const char *graph_goto(int choose){if(choose)goto other;return graph_first;other:return graph_second;}
++static const char *graph_const_local(int choose){const char *const value=choose?graph_first:graph_second;return value;}
++union StaticGraphUnion {char bytes[8];long other;};
++extern const union StaticGraphUnion graph_union;
++extern const char graph_equal_bound[8];
++static const char *graph_equal_arrays(int choose){const char *const value=choose?graph_equal_bound:graph_union.bytes;return value;}
++static const char *graph_array_local(int choose){const char local[8]="local";return choose?graph_equal_bound:local;}
++static const char *graph_array_mutable(int choose){return choose?graph_equal_bound:graph_mutable;}
++
++static const char *graph_const_union(int choose){const char *const value=choose?graph_first:graph_union.bytes;const char *const alias=value;return alias;}
++static const char *graph_const_chain(int choose){const char *const value=graph_const_local(choose);const char *const other=value;return other+1;}
++static const char *graph_mixed(int choose,const char *unknown){if(choose)return graph_first;return unknown;}
++static const char *graph_missing_default(int choose){switch(choose){case 0:return graph_first;case 1:return graph_second;}}
++static const char *graph_missing_branch(int choose){if(choose)return graph_first;}
++static const char *graph_missing_loop(int count){while(count--){return graph_first;}}
++static const char *graph_goto_end(int choose){if(choose)goto end;return graph_first;end:;}
++static const char *graph_mutable_local(int choose){const char *value=graph_first;if(choose)value=graph_unknown();return value;}
++static const char *graph_unknown_local(void){const char *const value=graph_unknown();return value;}
++static const char *graph_mutable_storage(void){const char *const value=graph_mutable;return value;}
++static const char *graph_nested_return(int choose,const char *unknown){(void)({if(choose)return unknown;0;});return graph_first;}
++static const char *graph_recursive(int choose){if(choose)return graph_first;return graph_recursive(choose);}
++static const char *graph_indirect(const char *(*callback)(void)){if(callback)return callback();return graph_first;}
++#define GRAPH_REPEAT_16(x) x x x x x x x x x x x x x x x x
++#define GRAPH_REPEAT_256(x) GRAPH_REPEAT_16(GRAPH_REPEAT_16(x))
++#define GRAPH_REPEAT_4096(x) GRAPH_REPEAT_16(GRAPH_REPEAT_256(x))
++static const char *graph_budget(void){GRAPH_REPEAT_4096(;)return graph_first;}
++static const char *graph_small_budget(int choose){GRAPH_REPEAT_256(;)if(choose)return graph_first;return graph_second;}
++#undef GRAPH_REPEAT_4096
++#undef GRAPH_REPEAT_256
++#undef GRAPH_REPEAT_16
++#ifdef __cplusplus
++static const char *graph_nested_lambda(int choose){auto callback=[choose]()->const char *{return graph_unknown();};(void)callback;return choose?graph_first:graph_second;}
++static const char *graph_throw(int choose){if(choose)throw 37;return graph_first;}
++static const char *graph_catch(int choose){try{if(choose)throw 37;return graph_first;}catch(int){return graph_second;}}
++static const char *graph_missing_try(int choose){try{if(choose)return graph_first;}catch(...){return graph_second;}}
++static const char *graph_missing_catch(int choose){try{if(choose)throw 37;return graph_first;}catch(...){} }
++static const char *graph_bad_catch(int choose){try{if(choose)throw 37;return graph_first;}catch(int){return graph_unknown();}}
++static const char *graph_capture_return(int choose,const char *unknown){auto callback=[value=({if(choose)return unknown;0;})]{return value;};(void)callback;return graph_first;}
++#endif
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-static-control-flow.m b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
+new file mode 100644
+index 000000000..806fb1785
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
+@@ -0,0 +1,55 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-static-control-flow.h"
++#endif
++STATIC_GRAPH StaticGraphLoan static_graph_branch(void *owner,int choose){return graph_branch(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_switch(void *owner,int choose){return graph_switch(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_loop(void *owner,int count){return graph_loop(count);}
++STATIC_GRAPH StaticGraphLoan static_graph_goto(void *owner,int choose){return graph_goto(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_const_local(void *owner,int choose){return graph_const_local(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_equal_arrays(void *owner,int choose){return graph_equal_arrays(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_array_local(void *owner,int choose){return graph_array_local(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_array_mutable(void *owner,int choose){return graph_array_mutable(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_const_union(void *owner,int choose){return graph_const_union(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_const_direct(void *owner,int choose){const char *const value=choose?graph_first:graph_union.bytes;const char *const alias=value;return alias;}
++STATIC_GRAPH StaticGraphLoan static_graph_const_chain(void *owner,int choose){return graph_const_chain(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_small_budget(void *owner,int choose){return graph_small_budget(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_mixed(void *owner,int choose,const char *unknown){return graph_mixed(choose,unknown);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_missing_default(void *owner,int choose){return graph_missing_default(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_missing_branch(void *owner,int choose){return graph_missing_branch(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_missing_loop(void *owner,int count){return graph_missing_loop(count);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_goto_end(void *owner,int choose){return graph_goto_end(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_mutable_local(void *owner,int choose){return graph_mutable_local(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_unknown_local(void *owner,int unused){return graph_unknown_local();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_mutable_storage(void *owner,int unused){return graph_mutable_storage();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_nested_return(void *owner,int choose,const char *unknown){return graph_nested_return(choose,unknown);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_recursive(void *owner,int choose){return graph_recursive(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_indirect(void *owner,const char *(*callback)(void)){return graph_indirect(callback);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_budget(void *owner,int unused){return graph_budget();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++#ifdef __cplusplus
++STATIC_GRAPH StaticGraphLoan static_graph_nested_lambda(void *owner,int choose){return graph_nested_lambda(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_throw(void *owner,int choose){return graph_throw(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_catch(void *owner,int choose){return graph_catch(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_missing_try(void *owner,int choose){return graph_missing_try(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_missing_catch(void *owner,int choose){return graph_missing_catch(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_bad_catch(void *owner,int choose){return graph_bad_catch(choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_capture_return(void *owner,int choose,const char *unknown){return graph_capture_return(choose,unknown);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +#endif

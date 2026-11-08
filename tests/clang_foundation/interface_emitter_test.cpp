@@ -1353,11 +1353,24 @@ void TestBorrowedStaticStorageReplay() {
         const union StaticPublishedUnion static_union_data={{'u','n','i','o','n',0}};
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_union_view(void *owner){return static_union_data.bytes;}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_local_view(void *owner,int choose) {
+          const char *const value=choose?static_program_data:static_union_data.bytes;
+          const char *const alias=value;return alias;
+        }
       )";
       if(cxx)source+=R"(
         inline const char *static_inline_source(){return static_union_data.bytes;}
         inline const char *static_inline_offset(int offset){return static_inline_source()+offset;}
         inline const char *static_inline_choice(int choose){return choose?static_program_data:static_inline_source();}
+        inline const char *static_branch_source(int choose){if(choose)return static_program_data;return static_inline_source();}
+        inline const char *static_switch_source(int choose){switch(choose){case 0:return static_program_data;case 1:return static_inline_source();default:return 0;}}
+        inline const char *static_loop_source(int count){while(count--){if(count==1)return static_inline_source();}return static_program_data;}
+        inline const char *static_goto_source(int choose){if(choose)goto other;return static_program_data;other:return static_inline_source();}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_graph_view(void *owner,int choose){return choose?static_branch_source(choose):static_loop_source(choose);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_graph_switch(void *owner,int choose){return choose?static_switch_source(choose):static_goto_source(choose);}
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_inline_view(void *owner,int offset){return static_inline_offset(offset);}
         __attribute__((objc_returns_borrowed(owner_index=0)))
@@ -1388,6 +1401,7 @@ void TestBorrowedStaticStorageReplay() {
         __attribute__((objc_returns_borrowed(owner_index=0)))
         StaticLoan static_forward(void *owner) {
           static_consume(static_union_view(owner));
+          static_consume(static_local_view(owner,1));
           static_consume(static_program_view(owner,1));
           return static_program_choice(owner,1);
         }
