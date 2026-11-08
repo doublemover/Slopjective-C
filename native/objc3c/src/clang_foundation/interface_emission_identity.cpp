@@ -2546,7 +2546,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationCheckedCppMessage(representative))
     identity.canonical_type_identity += ";checked-cxx-messages:v1;";
   if (HasDeclarationCppCarrierComposition(representative))
-    identity.canonical_type_identity += ";cxx-carrier-composition:v1;";
+    identity.canonical_type_identity += ";cxx-carrier-composition:v2;";
   if (HasDeclarationCppCarrierCall(representative))
     identity.canonical_type_identity += ";cxx-carrier-call:v2;";
   if (HasDeclarationResourceKeyPathValue(representative))

@@ -192,10 +192,10 @@ index e3f74d73f..3609394b1 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..a32e863c4
+index 000000000..620f0447f
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,598 @@
+@@ -0,0 +1,600 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -716,7 +716,9 @@ index 000000000..a32e863c4
 +        if(!Record || (Record->hasNonTrivialDestructor() && (!Destructor ||
 +            Destructor->isDeleted() || Destructor->getAccess()!=AS_public ||
 +            !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow())) ||
-+            containsObjC3CarrierManagedStorage(Leaf))return false;
++            (containsObjC3CarrierManagedStorage(Leaf) &&
++             !(Ctx.getLangOpts().ObjCAutoRefCount &&
++               containsObjC3CarrierCppStorage(Leaf))))return false;
 +        const auto Layout=Ctx.getTypeInfoInChars(Leaf);
 +        const uint64_t Size=Layout.Width.getQuantity(),Align=Layout.Align.getQuantity();
 +        char Unit=Align==1?'c':Align==2?'s':Align==4?'i':Align==8?'q':Align==16?'D':0;

@@ -1,5 +1,11 @@
 # Mixed ARC and C++ carrier locals
 
+The later [Source 2.139 composition span](linux_mixed_carrier_storage.md) extends
+this original local slice to mixed native record fields, fixed arrays, bases and
+composed carrier payloads. The [call span](linux_mixed_carrier_calls.md) supplies
+native functions/messages/Blocks. Historical boundaries below describe the
+original span; assignment, MRC mixed ownership and unqualified forms remain open.
+
 The production compiler implementation now composes direct `Optional` and
 `Result` trees whose alternatives contain ARC pointers and ordinary C++ objects.
 The installed recursive carrier qualifier contains the execution matrix for this

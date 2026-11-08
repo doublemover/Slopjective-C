@@ -286,10 +286,10 @@ inline constexpr const char *kCheckedCppMessageSemantic = "objc3.checked-cxx-mes
 inline bool HasCheckedCppMessageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";checked-cxx-messages:v1;") != std::string::npos;
 }
-inline constexpr const char *kCppCarrierCompositionSemantic = "objc3.cxx-carrier-composition.v1";
+inline constexpr const char *kCppCarrierCompositionSemantic = "objc3.cxx-carrier-composition.v2";
 inline bool HasCppCarrierCompositionIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-carrier-composition:v1;") != std::string::npos ||
-         d.effects.ownership_identity.find(";cxx-carrier-composition:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-carrier-composition:v2;") != std::string::npos ||
+         d.effects.ownership_identity.find(";cxx-carrier-composition:v2;") != std::string::npos;
 }
 inline constexpr const char *kCppCarrierCallSemantic = "objc3.cxx-carrier-call.v2";
 inline bool HasCppCarrierCallIdentity(const InterfaceDeclarationIdentity &d) {

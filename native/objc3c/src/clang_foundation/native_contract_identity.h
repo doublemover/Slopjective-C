@@ -252,7 +252,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     AppendNativeContractField(out, std::to_string(static_cast<unsigned>(*nullability)));
   }
   if(RequiresNativeCppCarrierComposition(type,context))
-    AppendNativeContractField(out,";cxx-carrier-composition:v1;");
+    AppendNativeContractField(out,";cxx-carrier-composition:v2;");
   clang::ObjC3KeyPathInfo keypath;
   if (clang::getObjC3KeyPathInfo(type, keypath)) {
     AppendNativeContractField(

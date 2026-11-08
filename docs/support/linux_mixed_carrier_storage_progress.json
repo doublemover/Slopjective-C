@@ -1,0 +1,36 @@
+{
+  "development_only": true,
+  "source_version": "2.139",
+  "system_version": "2.65",
+  "prepared_source_tree": "8440b9b8c9e0f319533ddf64b0ace1950d1c9ae0",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 33,
+    "all_passed": true
+  },
+  "ast_controls": 56,
+  "publication_profiles": 2,
+  "production_decoder_exact_replays": 480,
+  "pre_nested_extension_frontend_groups": {
+    "count": 30,
+    "all_passed": true
+  },
+  "final_nested_extension_frontend_control": "TestMixedCarrierStorageReplay, two ARC C++20/23 profiles",
+  "native": {
+    "configurations": 3,
+    "commands": 10,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "profiles": [
+      "C++20 ARC source O0",
+      "C++23 ARC PCH O2 no-elision",
+      "C++20 ARC source C++-only exception handling"
+    ]
+  },
+  "full_current_consolidation": "follows the implementation batch"
+}

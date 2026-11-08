@@ -6935,6 +6935,59 @@ void TestCheckedCppMessageReplay() {
   }
 }
 
+void TestMixedCarrierStorageReplay() {
+  for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
+    std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+    if(arc)args.push_back("-fobjc-arc");
+    const std::string source=R"(
+      namespace PublishedMixedStorage {
+        struct Leaf {int value;explicit Leaf(int);Leaf(const Leaf &);Leaf(Leaf &&);~Leaf() noexcept;};
+        typedef id __strong Strong;typedef __objc3_result(Leaf,Strong) Mixed;
+        typedef __objc3_optional(Mixed) Maybe;
+        struct Record {
+          Mixed first,values[2][2];
+          explicit Record(int v):first(__objc3_ok(Leaf,Strong,Leaf(v))),
+            values{{__objc3_err(Leaf,Strong,(id)0),__objc3_ok(Leaf,Strong,Leaf(v+1))},
+                   {__objc3_ok(Leaf,Strong,Leaf(v+2)),__objc3_err(Leaf,Strong,(id)0)}} {}
+          Record(const Record &)=default;Record(Record &&)=default;~Record() noexcept=default;
+        };
+        inline int use(int seed){Record value(seed),copied(value),moved(static_cast<Record &&>(copied));Maybe empty[2][2]={};return __objc3_is_ok(moved.values[1][1])+__objc3_has_value(empty[0][0]);}
+        typedef __objc3_optional(Record) Outer;
+        inline Outer outer(int seed){return __objc3_some(Record,Record(seed));}
+        inline int nested(int seed){auto value=outer(seed);auto copy=__objc3_copy(value);auto moved=__objc3_move(copy);return __objc3_has_value(moved);}
+        template<class T>struct Generic {__objc3_result(T,Strong) values[2];};
+        inline int generic(const Generic<Leaf> &source){Generic<Leaf> copy(source);return __objc3_is_ok(copy.values[1]);}
+      }
+    )";
+    auto emit=[&](const std::string &text) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"mixed-storage.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.mixed_storage","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.mixed_storage","test",{},{},{},{"PublishedMixedStorage"});
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(result.success);return result;
+    };
+    auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+    assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+    const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+    auto read=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(read);
+    assert(llvm::is_contained(read->required_semantics,std::string(kCppCarrierCompositionSemantic)));
+    assert(std::string(kCppCarrierCompositionSemantic)=="objc3.cxx-carrier-composition.v2");
+    auto older=supported;std::erase(older,llvm::StringRef(kCppCarrierCompositionSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+    std::erase(read->required_semantics,kCppCarrierCompositionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto simple=emit("namespace PublishedMixedStorage {struct Plain {~Plain() noexcept;};__objc3_optional(Plain) factory();}");
+    auto invented=DecodeSemanticInterfaceSidecar(simple.sidecar_json,simple.source_bytes,supported);assert(invented);
+    assert(!llvm::is_contained(invented->required_semantics,std::string(kCppCarrierCompositionSemantic)));
+    invented->required_semantics.push_back(kCppCarrierCompositionSemantic);
+    auto unsupported=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestCppCarrierCompositionReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -10960,6 +11013,7 @@ int main(int argc,char **argv) {
   TestCheckedCppRecordResultReplay();
   TestCppCarrierDefaultStorageReplay();
   TestCheckedCppMessageReplay();
+  TestMixedCarrierStorageReplay();
   TestCppCarrierCompositionReplay();
   TestNativeCppCarrierCallReplay();
   TestNativeCheckedCppResultReplay();

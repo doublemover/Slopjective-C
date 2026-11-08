@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.139 / System 2.65 composition span](linux_mixed_carrier_storage.md)
+extends mixed ARC/C++ ownership to native enclosing records, bases, fixed arrays
+and composed Optional/Result payloads. Construction recipes, exception/deletion
+facts, prefix rollback and native call/capture ownership use the hard cutover
+`objc3.cxx-carrier-composition.v2`. Remaining feature implementation continues.
+
 The [source 2.138 / System 2.64 byref storage span](linux_native_byref_storage.md)
 implements aligned forwarding cells, native carrier relocation, throwing cleanup
 and concurrent first-copy ownership, with exact source-free capability admission.
