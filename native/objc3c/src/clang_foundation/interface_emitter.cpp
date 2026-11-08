@@ -738,6 +738,12 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
   }
   if(lang.CPlusPlus && !lang.RTTI)args.push_back("-fno-rtti");
   if(lang.CPlusPlus && !lang.ThreadsafeStatics)args.push_back("-fno-threadsafe-statics");
+  if(lang.CPlusPlus) {
+    static constexpr const char *policies[]={"all","thread-local","none"};
+    const auto policy=static_cast<unsigned>(lang.getRegisterStaticDestructors());
+    assert(policy<std::size(policies));
+    args.push_back(std::string("-fc++-static-destructors=")+policies[policy]);
+  }
   if (lang.CPlusPlus20) args.push_back(lang.CoroAlignedAllocation
       ? "-fcoro-aligned-allocation" : "-fno-coro-aligned-allocation");
   if (lang.Blocks) args.push_back("-fblocks");
@@ -1057,6 +1063,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kDependentKeyPathLiteralSemantic);
     if (HasCheckedKeyPathReadIdentity(declaration))
       sidecar.required_semantics.push_back(kCheckedKeyPathReadSemantic);
+    if (HasNativeStorageLifetimeIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeStorageLifetimeSemantic);
     if (HasAtomicManagedPropertyIdentity(declaration))
       sidecar.required_semantics.push_back(kAtomicManagedPropertySemantic);
     if (HasNativeARCRecordPayloadIdentity(declaration))

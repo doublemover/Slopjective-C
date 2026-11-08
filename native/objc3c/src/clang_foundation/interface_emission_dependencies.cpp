@@ -69,7 +69,7 @@ class TypeDependencyVisitor final
    void CheckDeclarationAttributes(const clang::NamedDecl *declaration) {
      if (!declaration) return;
      for (const auto *attribute:declaration->attrs())
-       if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr>(attribute))
+       if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::ConstructorAttr,clang::DestructorAttr>(attribute))
          TraverseAttr(const_cast<clang::Attr *>(attribute));
        else if(llvm::isa<clang::DiagnoseIfAttr,clang::EnableIfAttr>(attribute)) {
          const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute);
@@ -587,7 +587,7 @@ class TypeDependencyVisitor final
     if (in_expression_) TraverseType(variable->getType());
     if (body_function_)
       for (const auto *attribute : variable->attrs())
-        if (!attribute->isImplicit() && !llvm::isa<clang::BlocksAttr,clang::AlignedAttr>(attribute))
+        if (!attribute->isImplicit() && !llvm::isa<clang::BlocksAttr,clang::AlignedAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr>(attribute))
           UnsupportedExpression("local variable attribute has no publication contract");
     if(body_function_)CheckDeclarationAttributes(variable);
     return true;

@@ -194,6 +194,7 @@ bool HasDeclarationLocalFactoryResult(const clang::NamedDecl *declaration);
 
 bool HasDeclarationLocalType(const clang::NamedDecl *declaration);
 
+bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration);
 bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeARCRecordPayload(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeCarrierLambda(const clang::NamedDecl *declaration);

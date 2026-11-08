@@ -1,5 +1,12 @@
 # Linux implementation sprint
 
+The [source 2.145 / System 2.71 static-lifetime span](linux_native_storage_lifetime.md)
+preserves native initialization priorities, constant initialization and explicit
+static/TLS destruction policies through publication and import. Six publication
+profiles, 61 AST controls, 600 decoder replays and four source-free native
+ASan/UBSan configurations pass. Broader consolidation runs alongside continued
+implementation.
+
 The [source 2.144 / System 2.70 / keypath 2.12 native-union span](linux_native_union_keypaths.md)
 implements explicit native managed-union lifetimes and active-arm field writeback,
 with bounded owner-region traversal and the resource-values v2 reader cutover.

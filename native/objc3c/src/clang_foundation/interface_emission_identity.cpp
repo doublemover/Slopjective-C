@@ -965,10 +965,14 @@ public:
     Add("storage:" + std::to_string(declaration->getStorageClass()));
     Add("thread-storage:" + std::to_string(declaration->getTSCSpec()));
     Add("block-byref:" + std::to_string(declaration->hasAttr<clang::BlocksAttr>()));
-    if(declaration->isLocalVarDeclOrParm())
-      for(const auto *attribute:declaration->attrs())
+    if(declaration->isLocalVarDeclOrParm()) {
+      for(const auto *attribute:declaration->attrs()) {
         if(!attribute->isImplicit() && llvm::isa<clang::AlignedAttr>(attribute))
           Add("local-alignment:"+NativeAttributeValue(attribute,declaration));
+        else if(!attribute->isImplicit() && llvm::isa<clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr>(attribute))
+          Add("local-storage-lifetime:"+NativeAttributeValue(attribute,declaration));
+      }
+    }
     Add("init-style:" + std::to_string(declaration->getInitStyle()));
     if (!llvm::isa<clang::ParmVarDecl>(declaration))
       Add("nrvo:" + std::to_string(declaration->isNRVOVariable()));
@@ -1433,7 +1437,23 @@ std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
 std::string NativeAttributeValue(const clang::Attr *attribute,const clang::NamedDecl *declaration) {
   std::string key=std::to_string(attribute->getKind());
   auto add=[&](llvm::StringRef value){key+=";"+std::to_string(value.size())+":"+value.str();};
-  if(const auto *alignment=llvm::dyn_cast<clang::AlignedAttr>(attribute)) {
+  if(const auto *priority=llvm::dyn_cast<clang::InitPriorityAttr>(attribute))
+    add(std::to_string(priority->getPriority()));
+  else if(llvm::isa<clang::ConstructorAttr,clang::DestructorAttr>(attribute)) {
+    const auto *constructor=llvm::dyn_cast<clang::ConstructorAttr>(attribute);
+    const auto *destructor=llvm::dyn_cast<clang::DestructorAttr>(attribute);
+    auto *expression=constructor?constructor->getPriority():destructor->getPriority();
+    clang::Expr::EvalResult value;
+    if(!expression)add(std::to_string(clang::ConstructorAttr::DefaultPriority));
+    else if(expression->EvaluateAsInt(value,declaration->getASTContext())) {
+      llvm::SmallString<32> number;value.Val.getInt().toString(number,10);add(number);
+    } else {
+      DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
+      if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+        if(const auto *pattern=function->getDescribedFunctionTemplate())identity.TemplateParameters(pattern);
+      add(identity.Get(expression));
+    }
+  } else if(const auto *alignment=llvm::dyn_cast<clang::AlignedAttr>(attribute)) {
     add(alignment->isAlignas() ? "alignas" : "aligned");
     if(!alignment->isAlignmentDependent())
       add(std::to_string(alignment->getAlignment(declaration->getASTContext())));
@@ -2028,6 +2048,10 @@ std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang,
                     : (lang.CPlusPlus ? "c++" : "c")) +
          ";standard=" + standard.getName() +
          ";blocks=" + (lang.Blocks ? "true" : "false");
+  if(lang.CPlusPlus)
+    profile += ";native-static-lifetime:v1;destructors=" +
+        std::to_string(static_cast<unsigned>(lang.getRegisterStaticDestructors())) +
+        ";threadsafe-statics=" + std::to_string(lang.ThreadsafeStatics);
   if (lang.CPlusPlus20)
     profile += std::string(";coroutine-aligned-allocation=") + (lang.CoroAlignedAllocation ? "true" : "false");
   profile += ";primitive-target-abi:v1;layout=" + std::string(target.getDataLayoutString()) +
@@ -2531,6 +2555,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationNativeStorageLifetime(representative))
+    identity.canonical_type_identity += ";native-storage-lifetime:v1;";
   if (HasDeclarationAtomicManagedProperty(representative))
     identity.canonical_type_identity += ";atomic-managed-properties:v1;";
   if (HasDeclarationNativeARCRecordPayload(representative))

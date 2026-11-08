@@ -352,6 +352,86 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestNativeStorageLifetimeReplay() {
+ for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+  if(arc)args.push_back("-fobjc-arc");
+  const std::string source=R"(
+   namespace NativeStorage {
+    enum PriorityValue {Priority=201};
+    struct Owner {int value;constexpr explicit Owner(int value):value(value){}~Owner() noexcept {}};
+    void start() __attribute__((constructor(Priority)));
+    void finish() __attribute__((destructor(203)));
+    inline constinit int ready=42;
+    __attribute__((require_constant_initialization)) inline int attribute_ready=43;
+    __attribute__((init_priority(202),always_destroy)) inline Owner ordered(44);
+    __attribute__((no_destroy)) inline Owner retained(45);
+    __attribute__((no_destroy)) inline thread_local Owner thread_retained(46);
+    template<class T>__attribute__((no_destroy)) inline T templated{};
+    inline Owner &local() {static __attribute__((no_destroy)) Owner value(47);return value;}
+    inline Owner &local_destroyed() {static __attribute__((always_destroy)) Owner value(48);return value;}
+    inline int local_constant() {static constinit int value=49;return value;}
+    int plain();
+   }
+  )";
+  auto emit=[&](const std::string &text,const std::vector<std::string> &names=std::vector<std::string>{"NativeStorage"}) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-storage.mm");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_storage","test",{},{},{},names);
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  auto private_ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"private-storage-priority.mm");assert(private_ast && !private_ast->getDiagnostics().hasErrorOccurred());
+  auto private_priority=EmitSemanticInterface(private_ast->getASTContext(),"fixture.native_storage","test",{},{},{},{"NativeStorage::start"});
+  assert(!private_priority.success);
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeStorageLifetimeSemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeStorageLifetimeSemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(decoded->required_semantics,kNativeStorageLifetimeSemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  for(const std::string &name:{"local","local_constant","plain"}) {
+   auto subset=emit(source,{"NativeStorage::Owner","NativeStorage::"+name});
+   auto read=DecodeSemanticInterfaceSidecar(subset.sidecar_json,subset.source_bytes,supported);assert(read);
+   assert(llvm::is_contained(read->required_semantics,std::string(kNativeStorageLifetimeSemantic))==(name!="plain"));
+   if(name=="plain") {read->required_semantics.push_back(kNativeStorageLifetimeSemantic);auto invalid=EncodeSemanticInterfaceSidecar(*read,supported);assert(!invalid);llvm::consumeError(invalid.takeError());}
+  }
+  for(const auto &change:std::vector<std::pair<std::string,std::string>>{
+    {"Priority=201","Priority=211"},{"destructor(203)","destructor(213)"},
+    {"init_priority(202)","init_priority(212)"},{"no_destroy","always_destroy"},
+    {"constinit int ready","int ready"},{"static __attribute__((no_destroy)) Owner value(47)","static __attribute__((always_destroy)) Owner value(47)"}}) {
+   auto changed=source;auto at=changed.find(change.first);assert(at!=std::string::npos);changed.replace(at,change.first.size(),change.second);
+   auto next=emit(changed);assert(next.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+  for(const char *policy:{"-fc++-static-destructors=thread-local","-fno-c++-static-destructors","-fno-threadsafe-statics"}) {
+   auto changed_args=args;changed_args.push_back(policy);
+   auto changed_ast=clang::tooling::buildASTFromCodeWithArgs(source,changed_args,"storage-policy.mm");assert(changed_ast && !changed_ast->getDiagnostics().hasErrorOccurred());
+   auto changed=EmitSemanticInterface(changed_ast->getASTContext(),"fixture.native_storage","test",{},{},{},{"NativeStorage"});
+   for(const auto &d:changed.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(changed.success);assert(changed.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+  auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+   int storage_consumer(){return NativeStorage::local().value+NativeStorage::local_destroyed().value+NativeStorage::local_constant()+NativeStorage::ready+NativeStorage::templated<int>;}
+  )",args,"storage-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+ }
+ for(bool arc:{false,true}) {
+  std::vector<std::string> args={"-x","objective-c","-std=c17","-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+  if(arc)args.push_back("-fobjc-arc");
+  auto emit=[&](const std::string &text) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"c-storage-priority.m");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.c_storage","test",{},{},{},{});assert(result.success);return result;
+  };
+  auto first=emit("enum NativePriority {NativeStart=201};void initialize(void) __attribute__((constructor(NativeStart)));void finalize(void) __attribute__((destructor(203)));");
+  auto replay=emit(first.source_bytes);assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeStorageLifetimeSemantic)));
+ }
+}
+
 void TestNativeUnionKeyPathReplay() {
  for(const char *standard:{"c++20","c++23"}) {
   std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -11172,6 +11252,7 @@ int main(int argc,char **argv) {
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
+  TestNativeStorageLifetimeReplay();
   TestNativeUnionKeyPathReplay();
   TestResourceKeyPathReplay();
   TestDependentKeyPathLiteralBodies();

@@ -129,6 +129,32 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  auto Storage=[](const clang::NamedDecl *named) {
+    if(!named)return false;
+    for(const auto *attribute:named->attrs())
+      if(!attribute->isImplicit() && llvm::isa<clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr>(attribute))return true;
+    return false;
+  };
+  struct Declarations : clang::DynamicRecursiveASTVisitor {
+    decltype(Storage) &storage;bool found=false;
+    explicit Declarations(decltype(Storage) &storage):storage(storage) {}
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitNamedDecl(clang::NamedDecl *named) override{found|=storage(named);return true;}
+  } declarations(Storage);
+  declarations.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  if(declarations.found)return true;
+  return HasPublishedExpression(declaration,[&](const clang::Stmt *statement) {
+    struct Locals : clang::DynamicRecursiveASTVisitor {
+      decltype(Storage) &storage;bool found=false;
+      explicit Locals(decltype(Storage) &storage):storage(storage) {}
+      bool VisitVarDecl(clang::VarDecl *variable) override{found|=storage(variable);return true;}
+    } locals(Storage);
+    locals.TraverseStmt(const_cast<clang::Stmt *>(statement));return locals.found;
+  });
+}
+
 bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration) {
   const auto &context=declaration->getASTContext();
   if(!context.getLangOpts().ObjC3 || !context.getLangOpts().ObjCAutoRefCount)return false;
