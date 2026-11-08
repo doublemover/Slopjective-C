@@ -28,6 +28,16 @@ BUILD_TIMEOUT = 3600
 MAX_TEST_TIMEOUT = 900
 
 
+def selected_targets(build: Path, component: str, names: list[str]) -> dict[str, str]:
+    if component == 'runtime':
+        return {name: name + '_test' for name in names}
+    rows = json.loads((build / 'frontend-test-targets.json').read_text())['tests']
+    owners = {row['name']: row['target'] for row in rows}
+    if not set(names) <= set(owners):
+        raise ValueError('coverage suite has no registered frontend target owner')
+    return {name: owners[name] for name in names}
+
+
 def suite_timeout(policy: dict, component: str, name: str) -> int:
     """Return a reviewed, bounded timeout for an instrumented test shard."""
     values = policy.get('test_timeouts_seconds')
@@ -311,11 +321,11 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
             if not selected or len(selected) != len(set(selected)) or not set(selected) <= set(cases):
                 raise ValueError('coverage selected suite is missing, empty or duplicated')
             report['exclusions'][component+'-unselected-tests'] = sorted(set(cases)-set(selected))
-            targets = [name+'_test' for name in selected]
+            targets = selected_targets(build, component, selected)
             records = {}
             report['objects'][component] = []
             for name in selected:
-                target = name+'_test'
+                target = targets[name]
                 common = ['objc3c_frontend_v2'] if component == 'frontend' else []
                 run(component+'-'+name+'-build', [plan['host_environment']['cmake_path'], '--build', build,
                     '--target', target, *common, '--parallel', str(jobs)], timeout=BUILD_TIMEOUT)

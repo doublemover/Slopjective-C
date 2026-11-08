@@ -583,7 +583,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         report['frontends'] = frontend_tests(facade, output / 'frontends', run_frontend, jobs=jobs)
         # Serial qualification reclaims passing test executables, but retains
         # their object files and exact binary identities in the nested receipt.
-        targets = [row['target'] for row in report['frontends']['tests']] + embedding_tools
+        targets = list(dict.fromkeys([row['target'] for row in report['frontends']['tests']] + embedding_tools))
         report['embedding_objects'] = graph_records(facade, repo, targets, ninja, environment,
             foundation=False, run=lambda name, cmd: run('embedding-'+name, cmd))
         verify_symbols(report['embedding_objects'], bootstrap / 'bin/llvm-nm',

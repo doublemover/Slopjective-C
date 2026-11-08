@@ -1,3 +1,5 @@
+include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/FrontendTests.cmake")
+
 if (MSVC)
   # Clang's generated option identifiers require standard macro expansion.
   target_compile_options(objc3c_build_defaults INTERFACE /Zc:preprocessor /Zc:__cplusplus)
@@ -174,15 +176,15 @@ if (BUILD_TESTING)
   add_executable(objc3_runtime_lifetime_test "${_runtime_lifetime_object}")
   set_target_properties(objc3_runtime_lifetime_test PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(objc3_runtime_lifetime_test PRIVATE objc3_runtime_services)
-  add_test(NAME objc3_runtime_lifetime COMMAND objc3_runtime_lifetime_test)
+  objc3c_add_frontend_test(NAME objc3_runtime_lifetime COMMAND objc3_runtime_lifetime_test)
   set_tests_properties(objc3_runtime_lifetime PROPERTIES TIMEOUT 20)
   add_executable(objc3_opaque_storage_transaction_test ../../tests/opaque_storage_transaction_test.cpp)
   target_link_libraries(objc3_opaque_storage_transaction_test PRIVATE objc3_runtime_services)
   target_link_options(objc3_opaque_storage_transaction_test PRIVATE "LINKER:--wrap=_Znwm")
-  add_test(NAME objc3_opaque_storage_transaction COMMAND objc3_opaque_storage_transaction_test)
+  objc3c_add_frontend_test(NAME objc3_opaque_storage_transaction COMMAND objc3_opaque_storage_transaction_test)
   set_tests_properties(objc3_opaque_storage_transaction PROPERTIES TIMEOUT 20)
   add_executable(objc3_assertion_control_test ../../tests/assertion_control_test.cpp)
-  add_test(NAME objc3_assertion_control COMMAND objc3_assertion_control_test)
+  objc3c_add_frontend_test(NAME objc3_assertion_control COMMAND objc3_assertion_control_test)
   set_tests_properties(objc3_assertion_control PROPERTIES WILL_FAIL TRUE)
   add_executable(objc3_async_error_bridge_test
     ../../../../tests/clang_foundation/structured_runtime/error_bridge.cpp)
@@ -190,10 +192,10 @@ if (BUILD_TESTING)
   target_link_options(objc3_async_error_bridge_test PRIVATE
     "LINKER:--wrap=_ZnwmRKSt9nothrow_t"
     "LINKER:--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t")
-  add_test(NAME objc3_async_error_bridge COMMAND objc3_async_error_bridge_test)
+  objc3c_add_frontend_test(NAME objc3_async_error_bridge COMMAND objc3_async_error_bridge_test)
   add_executable(objc3_keypath_service_test ../../tests/keypath_service_test.cpp)
   target_link_libraries(objc3_keypath_service_test PRIVATE objc3_runtime_services)
-  add_test(NAME objc3_keypath_service COMMAND objc3_keypath_service_test)
+  objc3c_add_frontend_test(NAME objc3_keypath_service COMMAND objc3_keypath_service_test)
   add_executable(objc3_keypath_native_ast_test
     ../../../../tests/clang_foundation/keypath_native_ast_test.cpp)
   target_compile_definitions(objc3_keypath_native_ast_test PRIVATE
@@ -202,31 +204,31 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_keypath_native_ast_test PRIVATE
     clangAST clangBasic clangFrontend clangSerialization clangTooling)
-  add_test(NAME objc3_keypath_native_ast COMMAND objc3_keypath_native_ast_test)
+  objc3c_add_frontend_test(NAME objc3_keypath_native_ast COMMAND objc3_keypath_native_ast_test)
   add_executable(objc3_stdlib_map_count_test ../../tests/stdlib_map_count_test.cpp
     ../runtime/stdlib/collections_service.cpp)
   target_compile_definitions(objc3_stdlib_map_count_test PRIVATE OBJC3_RUNTIME_I32_INDEX_TESTING)
   target_link_options(objc3_stdlib_map_count_test PRIVATE "LINKER:--wrap=_Znwm")
   target_link_libraries(objc3_stdlib_map_count_test PRIVATE objc3_runtime_services)
-  add_test(NAME objc3_stdlib_map_count COMMAND objc3_stdlib_map_count_test)
+  objc3c_add_frontend_test(NAME objc3_stdlib_map_count COMMAND objc3_stdlib_map_count_test)
   set_tests_properties(objc3_stdlib_map_count PROPERTIES TIMEOUT 20)
   add_executable(objc3_sdk_identity_test ../../../../tests/clang_foundation/sdk_identity_test.cpp)
   target_include_directories(objc3_sdk_identity_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_sdk_identity_test PRIVATE objc3c_clang_foundation)
-  add_test(NAME objc3_sdk_identity COMMAND objc3_sdk_identity_test)
+  objc3c_add_frontend_test(NAME objc3_sdk_identity COMMAND objc3_sdk_identity_test)
   add_executable(objc3_carrier_service_test ../../tests/carrier_service_test.cpp)
   target_link_libraries(objc3_carrier_service_test PRIVATE objc3_runtime_services)
-  add_test(NAME objc3_carrier_service COMMAND objc3_carrier_service_test)
+  objc3c_add_frontend_test(NAME objc3_carrier_service COMMAND objc3_carrier_service_test)
   add_executable(objc3_interface_contract_test
     ../../../../tests/clang_foundation/interface_contract_test.cpp)
   target_link_libraries(objc3_interface_contract_test PRIVATE objc3c_clang_foundation)
-  add_test(NAME objc3_interface_contract COMMAND objc3_interface_contract_test)
+  objc3c_add_frontend_test(NAME objc3_interface_contract COMMAND objc3_interface_contract_test)
   add_executable(objc3_interface_codec_test
     ../../../../tests/clang_foundation/interface_codec_test.cpp)
   target_include_directories(objc3_interface_codec_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_codec_test PRIVATE objc3c_clang_foundation)
-  add_test(NAME objc3_interface_codec COMMAND objc3_interface_codec_test)
+  objc3c_add_frontend_test(NAME objc3_interface_codec COMMAND objc3_interface_codec_test)
 
   add_executable(objc3_codec_production_semantics_test
     ../../../../tests/clang_foundation/codec_production_semantics_test.cpp
@@ -238,7 +240,7 @@ if (BUILD_TESTING)
     OBJC3_CODEC_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}")
   target_link_libraries(objc3_codec_production_semantics_test PRIVATE objc3c_clang_foundation)
   objc3c_link_clang_components(objc3_codec_production_semantics_test clangTooling)
-  add_test(NAME objc3_codec_production_semantics COMMAND objc3_codec_production_semantics_test)
+  objc3c_add_frontend_test(NAME objc3_codec_production_semantics COMMAND objc3_codec_production_semantics_test)
   add_executable(objc3_interface_import_test
     ../../../../tests/clang_foundation/interface_import_test.cpp)
   target_include_directories(objc3_interface_import_test SYSTEM PRIVATE
@@ -246,24 +248,24 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_interface_import_test PRIVATE objc3c_clang_foundation)
   target_compile_definitions(objc3_interface_import_test PRIVATE
     OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES="${_objc3_repo}/tests/clang_foundation/native_async_packages")
-  add_test(NAME objc3_interface_import COMMAND objc3_interface_import_test)
+  objc3c_add_frontend_test(NAME objc3_interface_import COMMAND objc3_interface_import_test)
   add_executable(objc3_interface_import_api_test
     ../../../../tests/clang_foundation/interface_import_api_test.cpp)
   target_include_directories(objc3_interface_import_api_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_import_api_test PRIVATE objc3c_frontend_v2)
-  add_test(NAME objc3_interface_import_api COMMAND objc3_interface_import_api_test)
+  objc3c_add_frontend_test(NAME objc3_interface_import_api COMMAND objc3_interface_import_api_test)
   add_executable(objc3_interface_module_resolution_test
     ../../../../tests/clang_foundation/interface_module_resolution_test.cpp)
   target_link_libraries(objc3_interface_module_resolution_test PRIVATE objc3c_frontend_v2)
-  add_test(NAME objc3_interface_module_resolution COMMAND objc3_interface_module_resolution_test)
+  objc3c_add_frontend_test(NAME objc3_interface_module_resolution COMMAND objc3_interface_module_resolution_test)
   add_executable(objc3_interface_module_provenance_test
     ../../../../tests/clang_foundation/interface_module_provenance_test.cpp)
   target_include_directories(objc3_interface_module_provenance_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_module_provenance_test PRIVATE objc3c_clang_foundation)
   objc3c_link_clang_components(objc3_interface_module_provenance_test clangTooling clangFrontend clangAST)
-  add_test(NAME objc3_interface_module_provenance COMMAND objc3_interface_module_provenance_test)
+  objc3c_add_frontend_test(NAME objc3_interface_module_provenance COMMAND objc3_interface_module_provenance_test)
 
   add_executable(objc3_interface_source_import_bridge_test
     ../../../../tests/clang_foundation/interface_source_import_bridge_test.cpp)
@@ -271,32 +273,32 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_source_import_bridge_test PRIVATE objc3c_clang_foundation)
   objc3c_link_clang_components(objc3_interface_source_import_bridge_test clangTooling clangFrontend clangAST)
-  add_test(NAME objc3_interface_source_import_bridge
+  objc3c_add_frontend_test(NAME objc3_interface_source_import_bridge
     COMMAND objc3_interface_source_import_bridge_test)
   add_executable(objc3_compile_session_test
     ../../../../tests/clang_foundation/compile_session_test.cpp)
   target_link_libraries(objc3_compile_session_test PRIVATE objc3c_frontend_v2)
-  add_test(NAME objc3_compile_session COMMAND objc3_compile_session_test)
+  objc3c_add_frontend_test(NAME objc3_compile_session COMMAND objc3_compile_session_test)
   add_executable(objc3_ownership_projection_test
     ../../../../tests/clang_foundation/ownership_projection_test.cpp)
   target_include_directories(objc3_ownership_projection_test SYSTEM PRIVATE
     ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_ownership_projection_test PRIVATE objc3c_clang_foundation)
   objc3c_link_clang_components(objc3_ownership_projection_test clangTooling)
-  add_test(NAME objc3_ownership_projection COMMAND objc3_ownership_projection_test)
+  objc3c_add_frontend_test(NAME objc3_ownership_projection COMMAND objc3_ownership_projection_test)
   add_executable(objc3_module_method_names_test
     ../../../../tests/clang_foundation/module_method_names_test.cpp)
   target_include_directories(objc3_module_method_names_test SYSTEM PRIVATE
     "${_objc3_repo}/out/toolchains/objc3-development/src/lldb/source" ${LLVM_INCLUDE_DIRS})
   target_link_libraries(objc3_module_method_names_test PRIVATE LLVMSupport)
-  add_test(NAME objc3_module_method_names COMMAND objc3_module_method_names_test)
+  objc3c_add_frontend_test(NAME objc3_module_method_names COMMAND objc3_module_method_names_test)
 
   add_executable(objc3_interface_module_names_test
     ../../../../tests/clang_foundation/interface_module_names_test.cpp)
   target_include_directories(objc3_interface_module_names_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_module_names_test PRIVATE objc3c_frontend_v2)
-  add_test(NAME objc3_interface_module_names COMMAND objc3_interface_module_names_test)
+  objc3c_add_frontend_test(NAME objc3_interface_module_names COMMAND objc3_interface_module_names_test)
   add_executable(objc3_c_inline_provider_test
     ../../../../tests/clang_foundation/c_inline_provider_test.cpp)
   target_include_directories(objc3_c_inline_provider_test SYSTEM PRIVATE
@@ -314,7 +316,7 @@ if (BUILD_TESTING)
     OBJC3_C_INLINE_TEST_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>"
     OBJC3_C_INLINE_TEST_LINK_FLAGS="${_c_inline_link_flags}")
   add_dependencies(objc3_c_inline_provider_test objc3_runtime_services)
-  add_test(NAME objc3_c_inline_provider COMMAND objc3_c_inline_provider_test)
+  objc3c_add_frontend_test(NAME objc3_c_inline_provider COMMAND objc3_c_inline_provider_test)
   set_tests_properties(objc3_c_inline_provider PROPERTIES TIMEOUT 90)
   add_executable(objc3_standard_library_identity_test
     ../../../../tests/clang_foundation/standard_library_identity_test.cpp)
@@ -322,7 +324,7 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_standard_library_identity_test PRIVATE objc3c_clang_foundation)
   objc3c_link_clang_components(objc3_standard_library_identity_test clangTooling)
-  add_test(NAME objc3_standard_library_identity COMMAND objc3_standard_library_identity_test)
+  objc3c_add_frontend_test(NAME objc3_standard_library_identity COMMAND objc3_standard_library_identity_test)
   set_tests_properties(objc3_standard_library_identity PROPERTIES TIMEOUT 30)
   add_executable(objc3_standard_library_provider_test
     ../../../../tests/clang_foundation/standard_library_provider_test.cpp)
@@ -355,33 +357,33 @@ if (BUILD_TESTING)
     OBJC3_MRC_TEST_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>"
     OBJC3_MRC_TEST_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
   add_dependencies(objc3_native_mrc_record_payload_provider_test objc3_runtime_services)
-  add_test(NAME objc3_native_deduced_group_provider
+  objc3c_add_frontend_test(NAME objc3_native_deduced_group_provider
     COMMAND objc3_native_deduced_group_provider_test)
   set_tests_properties(objc3_native_deduced_group_provider PROPERTIES
     LABELS "native;task-group;extended" TIMEOUT 300)
-  add_test(NAME objc3_native_emission_policy_provider
+  objc3c_add_frontend_test(NAME objc3_native_emission_policy_provider
     COMMAND objc3_native_emission_policy_provider_test)
   set_tests_properties(objc3_native_emission_policy_provider PROPERTIES
     LABELS "native;emission-policy;extended" TIMEOUT 300)
-  add_test(NAME objc3_native_mrc_record_payload_provider
+  objc3c_add_frontend_test(NAME objc3_native_mrc_record_payload_provider
     COMMAND objc3_native_mrc_record_payload_provider_test)
   set_tests_properties(objc3_native_mrc_record_payload_provider PROPERTIES
     LABELS "native;mrc;carrier;extended" TIMEOUT 300)
-  add_test(NAME objc3_native_storage_lifetime_provider
+  objc3c_add_frontend_test(NAME objc3_native_storage_lifetime_provider
     COMMAND objc3_native_storage_lifetime_provider_test)
   set_tests_properties(objc3_native_storage_lifetime_provider PROPERTIES
     LABELS "native;lifetime;extended" TIMEOUT 300)
-  add_test(NAME objc3_standard_library_customization_provider
+  objc3c_add_frontend_test(NAME objc3_standard_library_customization_provider
     COMMAND objc3_standard_library_customization_provider_test)
   set_tests_properties(objc3_standard_library_customization_provider PROPERTIES
     LABELS "native;standard-library;extended" TIMEOUT 900)
-  add_test(NAME objc3_standard_library_provider COMMAND objc3_standard_library_provider_test)
+  objc3c_add_frontend_test(NAME objc3_standard_library_provider COMMAND objc3_standard_library_provider_test)
   set_tests_properties(objc3_standard_library_provider PROPERTIES TIMEOUT 300)
-  add_test(NAME objc3_standard_library_no_rtti_exceptions
+  objc3c_add_frontend_test(NAME objc3_standard_library_no_rtti_exceptions
     COMMAND objc3_standard_library_provider_test -fno-exceptions -fno-rtti)
   set_tests_properties(objc3_standard_library_no_rtti_exceptions PROPERTIES
     LABELS "native;standard-library;extended" TIMEOUT 300)
-  add_test(NAME objc3_standard_library_assertions
+  objc3c_add_frontend_test(NAME objc3_standard_library_assertions
     COMMAND objc3_standard_library_provider_test -D_GLIBCXX_ASSERTIONS=1)
   set_tests_properties(objc3_standard_library_assertions PROPERTIES
     LABELS "native;standard-library;extended" TIMEOUT 600)
@@ -392,13 +394,13 @@ if (BUILD_TESTING)
         NOT IS_DIRECTORY "${OBJC3_TEST_LIBCXX_ROOT}/lib")
       message(FATAL_ERROR "OBJC3_TEST_LIBCXX_ROOT must contain libc++ headers and libraries")
     endif()
-    add_test(NAME objc3_standard_library_libcxx
+    objc3c_add_frontend_test(NAME objc3_standard_library_libcxx
       COMMAND objc3_standard_library_provider_test
         -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
         "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
     set_tests_properties(objc3_standard_library_libcxx PROPERTIES
       LABELS "native;standard-library;extended" TIMEOUT 600)
-    add_test(NAME objc3_standard_library_libcxx_customizations
+    objc3c_add_frontend_test(NAME objc3_standard_library_libcxx_customizations
       COMMAND objc3_standard_library_customization_provider_test
         -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
         "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
@@ -410,25 +412,25 @@ if (BUILD_TESTING)
   target_include_directories(objc3_borrowed_pointers_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_borrowed_pointers_test PRIVATE objc3c_clang_foundation)
-  add_test(NAME objc3_borrowed_pointers COMMAND objc3_borrowed_pointers_test)
+  objc3c_add_frontend_test(NAME objc3_borrowed_pointers COMMAND objc3_borrowed_pointers_test)
   add_executable(objc3_interface_spi_test
     ../../../../tests/clang_foundation/interface_spi_test.cpp)
   target_include_directories(objc3_interface_spi_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_spi_test PRIVATE objc3c_frontend_v2)
-  add_test(NAME objc3_interface_spi COMMAND objc3_interface_spi_test)
+  objc3c_add_frontend_test(NAME objc3_interface_spi COMMAND objc3_interface_spi_test)
   add_executable(objc3_interface_availability_test
     ../../../../tests/clang_foundation/interface_availability_test.cpp)
   target_include_directories(objc3_interface_availability_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_availability_test PRIVATE objc3c_clang_foundation)
-  add_test(NAME objc3_interface_availability COMMAND objc3_interface_availability_test)
+  objc3c_add_frontend_test(NAME objc3_interface_availability COMMAND objc3_interface_availability_test)
   add_executable(objc3_interface_exports_test
     ../../../../tests/clang_foundation/interface_exports_test.cpp)
   target_include_directories(objc3_interface_exports_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_exports_test PRIVATE objc3c_clang_foundation)
-  add_test(NAME objc3_interface_exports COMMAND objc3_interface_exports_test)
+  objc3c_add_frontend_test(NAME objc3_interface_exports COMMAND objc3_interface_exports_test)
   add_executable(objc3_interface_emitter_test
     ../../../../tests/clang_foundation/interface_emitter_test.cpp)
   target_include_directories(objc3_interface_emitter_test SYSTEM PRIVATE
@@ -439,10 +441,10 @@ if (BUILD_TESTING)
     OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES="${_objc3_repo}/tests/clang_foundation/native_async_packages"
     OBJC3_INTERFACE_TEST_STDLIB_HEADERS="${_objc3_repo}/stdlib/include/objc3"
     OBJC3_INTERFACE_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}")
-  add_test(NAME objc3_interface_emitter COMMAND objc3_interface_emitter_test)
-  add_test(NAME objc3_standard_library_headers
+  objc3c_add_frontend_test(NAME objc3_interface_emitter COMMAND objc3_interface_emitter_test)
+  objc3c_add_frontend_test(NAME objc3_standard_library_headers
     COMMAND objc3_interface_emitter_test standard-library-headers)
-  add_test(NAME objc3_standard_library_specializations
+  objc3c_add_frontend_test(NAME objc3_standard_library_specializations
     COMMAND objc3_interface_emitter_test standard-library-specializations)
   set_tests_properties(objc3_standard_library_headers objc3_standard_library_specializations
     PROPERTIES LABELS "native;standard-library;extended" TIMEOUT 1800)
@@ -454,19 +456,19 @@ if (BUILD_TESTING)
     OBJC3_ISOLATION_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
   target_link_libraries(objc3_isolation_contracts_test PRIVATE objc3c_clang_foundation)
   objc3c_link_clang_components(objc3_isolation_contracts_test clangTooling)
-  add_test(NAME objc3_isolation_contracts COMMAND objc3_isolation_contracts_test)
+  objc3c_add_frontend_test(NAME objc3_isolation_contracts COMMAND objc3_isolation_contracts_test)
   add_executable(objc3_explicit_capture_lists_test
     ../../../../tests/clang_foundation/explicit_capture_lists_test.cpp)
   target_include_directories(objc3_explicit_capture_lists_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_explicit_capture_lists_test PRIVATE objc3c_clang_foundation)
-  add_test(NAME objc3_explicit_capture_lists COMMAND objc3_explicit_capture_lists_test)
+  objc3c_add_frontend_test(NAME objc3_explicit_capture_lists COMMAND objc3_explicit_capture_lists_test)
   add_executable(objc3_interface_artifact_io_test
     ../../../../tests/clang_foundation/interface_artifact_io_test.cpp)
   target_include_directories(objc3_interface_artifact_io_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_artifact_io_test PRIVATE objc3c_clang_foundation)
-  add_test(NAME objc3_interface_artifact_io COMMAND objc3_interface_artifact_io_test)
+  objc3c_add_frontend_test(NAME objc3_interface_artifact_io COMMAND objc3_interface_artifact_io_test)
   add_executable(objc3_task_services_test
     ../../../../tests/tooling/fixtures/clang_foundation/services/task_services.cpp
     ../../../../tests/clang_foundation/structured_runtime/actor_scheduling.cpp
@@ -475,12 +477,12 @@ if (BUILD_TESTING)
   # production service library keeps them out of its ABI and implementation.
   target_compile_definitions(objc3_task_services_test PRIVATE OBJC3_RUNTIME_SERVICE_TESTING)
   target_link_libraries(objc3_task_services_test PRIVATE objc3_runtime_services)
-  add_test(NAME objc3_task_services COMMAND objc3_task_services_test)
+  objc3c_add_frontend_test(NAME objc3_task_services COMMAND objc3_task_services_test)
   set_tests_properties(objc3_task_services PROPERTIES TIMEOUT 30)
   add_executable(objc3_structured_runtime_test
     ../../../../tests/clang_foundation/structured_runtime/worker.cpp)
   target_link_libraries(objc3_structured_runtime_test PRIVATE objc3_runtime_services)
-  add_test(NAME objc3_structured_runtime COMMAND objc3_structured_runtime_test)
+  objc3c_add_frontend_test(NAME objc3_structured_runtime COMMAND objc3_structured_runtime_test)
   set_tests_properties(objc3_structured_runtime PROPERTIES TIMEOUT 30)
   # Task headers require the product compiler's canonical type-identity builtin.
   # Keep the compiler implementation bootstrapped independently, while compiling
@@ -509,7 +511,7 @@ if (BUILD_TESTING)
   add_executable(objc3_task_coroutines_test ${_task_coroutine_objects})
   set_target_properties(objc3_task_coroutines_test PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(objc3_task_coroutines_test PRIVATE objc3_runtime_services)
-  add_test(NAME objc3_task_coroutines COMMAND objc3_task_coroutines_test)
+  objc3c_add_frontend_test(NAME objc3_task_coroutines COMMAND objc3_task_coroutines_test)
   set_tests_properties(objc3_task_coroutines PROPERTIES TIMEOUT 45)
   set(_task_group_await_source
     "${_objc3_repo}/tests/clang_foundation/task_coroutines/group_await.cpp")
@@ -534,7 +536,7 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_task_group_await_test PRIVATE objc3_runtime_services)
   target_link_options(objc3_task_group_await_test PRIVATE
     "LINKER:--wrap=objc3_task_group_scope_enter")
-  add_test(NAME objc3_task_group_await COMMAND objc3_task_group_await_test)
+  objc3c_add_frontend_test(NAME objc3_task_group_await COMMAND objc3_task_group_await_test)
   set_tests_properties(objc3_task_group_await PROPERTIES TIMEOUT 45)
   include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/GenericCollectionTests.cmake")
   objc3_add_generic_collection_tests()
@@ -543,12 +545,12 @@ if (BUILD_TESTING)
   target_compile_definitions(objc3_text_scalar_boundary_test PRIVATE OBJC3_TEXT_CONSTRUCTION_TESTING)
   target_link_options(objc3_text_scalar_boundary_test PRIVATE "LINKER:--wrap=_Znwm")
   target_link_libraries(objc3_text_scalar_boundary_test PRIVATE objc3_runtime_services)
-  add_test(NAME objc3_text_scalar_boundary COMMAND objc3_text_scalar_boundary_test)
+  objc3c_add_frontend_test(NAME objc3_text_scalar_boundary COMMAND objc3_text_scalar_boundary_test)
   set_tests_properties(objc3_text_scalar_boundary PROPERTIES TIMEOUT 20)
   add_executable(objc3_text_file_cli ../../tests/text_file_cli.cpp)
   target_link_libraries(objc3_text_file_cli PRIVATE objc3_runtime_services)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
-  add_test(NAME objc3_text_file_cli
+  objc3c_add_frontend_test(NAME objc3_text_file_cli TARGET objc3_text_file_cli
     COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/clang_foundation/text_file_cli_test.py"
       "$<TARGET_FILE:objc3_text_file_cli>")
@@ -560,30 +562,7 @@ endif()
 # CTest's JSON omits commands for missing binaries, so record target paths at
 # generation time and cross-check this inventory before serial qualification.
 if(BUILD_TESTING)
-  get_property(_frontend_tests DIRECTORY PROPERTY TESTS)
-  set(_frontend_test_rows "")
-  foreach(_test IN LISTS _frontend_tests)
-    if(_test STREQUAL "objc3_text_file_cli")
-      set(_target "${_test}")
-    else()
-      set(_target "${_test}_test")
-    endif()
-    if(NOT TARGET "${_target}")
-      message(FATAL_ERROR "Frontend CTest ${_test} has no owned target ${_target}")
-    endif()
-    # CTest inventory is the single owner of assertion policy: new targets
-    # cannot silently miss a separately maintained list in optimized builds.
-    target_compile_options(${_target} PRIVATE -UNDEBUG
-      "SHELL:-include '${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h'")
-    target_link_libraries(${_target} PRIVATE objc3c_build_defaults)
-    if(_frontend_test_rows)
-      string(APPEND _frontend_test_rows ",\n")
-    endif()
-    string(APPEND _frontend_test_rows
-      "    {\"name\":\"${_test}\",\"target\":\"${_target}\",\"executable\":\"$<TARGET_FILE:${_target}>\"}")
-  endforeach()
-  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/frontend-test-targets.json"
-    CONTENT "{\n  \"tests\": [\n${_frontend_test_rows}\n  ]\n}\n")
+  objc3c_write_frontend_test_inventory()
   get_property(_custom_compile_rows GLOBAL PROPERTY OBJC3C_CUSTOM_COMPILE_ROWS)
   list(JOIN _custom_compile_rows ",\n" _custom_compile_json)
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/custom-compile-records.json"
