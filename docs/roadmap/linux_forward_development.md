@@ -3,8 +3,9 @@
 The [source 2.137 / System 2.63 aligned Block span](linux_aligned_block_storage.md)
 implements native aligned heap captures and published local alignment contracts.
 All 73 dedicated compiler commands, 420 decoder replays and six sanitizer
-configurations / 21 commands pass. Adjacent frontend and instrumented runtime
-consolidation continues while the remaining implementation batch proceeds.
+configurations / 21 commands, all 28 updated frontend groups and two additional
+instrumented-runtime configurations / seven commands pass. The remaining
+implementation batch continues.
 
 The [source 2.136 / System 2.62 C++ value-call span](linux_cpp_carrier_value_calls.md)
 extends caller-owned carrier construction to trivial-destructor, plain, empty and

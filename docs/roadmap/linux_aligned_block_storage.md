@@ -24,8 +24,8 @@ alignment mutations have controls in six C/C++ ownership profiles.
 
 All 73 dedicated compiler commands, 420 production decoder replays and six native
 ASan/UBSan configurations / 21 commands pass. Fourteen runtime patch controls
-pass. Adjacent frontend groups and execution against the instrumented runtime
-are being consolidated. Escaping byref cells retain their separate storage and
+pass. All 28 updated frontend groups and two additional instrumented-runtime
+configurations / seven commands pass. Escaping byref cells retain their separate storage and
 relocation implementation boundary.
 
 Extension ABI 24, native frame 1, services 4 and schema 2.2 retain their layouts.
