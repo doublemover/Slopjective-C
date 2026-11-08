@@ -320,12 +320,17 @@
       "artifact_sha256": "8ef2407ab8892bdda035575696cd6703bae38a125645fd24f586929af93a5ba2"
     },
     "core_diagnosis": {
-      "run": 42495087183,
-      "revision": "fd0c7e56d28e05f2b786f9174f17b7a693347678",
+      "run": 42495426909,
+      "revision": "af58fb80f167497eb375ff1cc73ea8fb69001560",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-f2174d730013-70309e04",
-      "status": "QUEUED",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42495087183",
-      "scope": "Explicit core-only diagnostic selection. Full aggregate and SDK publication are disabled; this is not full SDK qualification."
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42495426909",
+      "scope": "Explicit core-only diagnostic selection. Full aggregate and SDK publication are disabled; this is not full SDK qualification.",
+      "superseded_queued_request": {
+        "run": 42495087183,
+        "status": "CANCELLED_BEFORE_EXECUTION",
+        "reason": "Separate diagnostic concurrency group starts core work alongside existing extended profiles"
+      }
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
