@@ -166,6 +166,14 @@ def suite_results(root: Path, name: str) -> list[dict]:
             raise ValueError('sanitizer execution/control/profile matrix is incomplete')
         return rows
     if name == 'upstream':
+        from .upstream import UPSTREAM_TOOLS
+        selection = read('selection.json')
+        tools = selection.get('tools', {})
+        if (set(tools) != set(UPSTREAM_TOOLS) or any(
+                not isinstance(value, str) or len(value) != 64 or
+                any(character not in '0123456789abcdef' for character in value)
+                for value in tools.values())):
+            raise ValueError('upstream test tool inventory is incomplete')
         return lit(directory / 'lit.json')
     if name == 'swift-consumer':
         from scripts.objc3c_toolchain.swift_consumer import REQUIRED_ROWS, execution_result
@@ -301,8 +309,11 @@ def suite_results(root: Path, name: str) -> list[dict]:
         controls = read('controls/qualification.json')
         native = read('first-party/qualification.json')
         compiler = read('compiler/qualification.json')
+        from .emitter_shards import EMITTER_TESTS, emitter_partition
+        if (native.get('emitter_partition') != emitter_partition(directory / 'first-party', native['suites'])):
+            raise ValueError('emitter coverage partition proof changed')
         if (len(controls.get('controls', [])) != 5 or
-                len(native.get('suites', [])) != 14 or
+                len(native.get('suites', [])) != 13 + len(EMITTER_TESTS) or
                 any(not any(value.get('state') == 'executed' for value in row.get('source_coverage', {}).values())
                     for row in native['suites']) or
                 len(compiler.get('suites', [])) != 4 or not compiler.get('eligible') or

@@ -79,46 +79,47 @@ versus 179 seconds cold. Quick CI independently restored Python, packages and
 CMake and passed 1,554 tooling tests plus 33 subtests. All Node setup callers now
 cache npm, and installs prefer cached package downloads.
 
-The preceding complete core run attempted all 50 frontend programs: 47 passed
-and three exposed remaining failures. Its compiler foundation passed 563 compiler
-regressions and 461 native unit cases. CTest now records the actual executable
-owner for every profile, builds shared programs once, runs every variant and
-collects independent assertion-based failures before rejecting the suite.
+The latest complete core run at `9c675d3ab` passes **all 50 frontend programs**,
+**563 compiler regressions and 461 native unit cases**, including all 164 emitter,
+17 import and 11 borrowed-pointer cases. Its upstream selection reaches 4,381
+cases and exposes 451 failures: 439 missing test utilities, 11 stale expectations
+and one Objective-C message crash during C++ global initialization. Exact-fork
+utilities are now explicit prerequisites. Updated expectations retain semantic
+checks for native printing, Block ODR identity and ARC array initialization.
+Installed-consumer and sanitizer checks also pass before that upstream failure.
+The null current-function context is handled explicitly and has four ARC/MRC,
+C++20/23 regressions. All 450 utility/expectation failures pass focused local lit
+replay; the formerly crashing upstream case passes its original FileCheck with
+the corrected code generator. These reused-library diagnostics are not SDK
+qualification. The complete canonical patch stack and prepared source seal pass.
 
-Local repairs now pass all **164 emitter, 17 import and 11 borrowed-pointer
-cases**, including six existing emitter cases that were never enrolled. Interface
-identities preserve exact unnamed template arguments without physical header paths,
-avoid factory-result recursion and correctly resolve re-exported dependency owners.
-Provider-owned extern specializations retain their complete storage contract.
-Ordinary/native coroutine Blocks use their own callable, promise and written-body
-context. Native printing retains consumed parameter attributes and omits synthetic
-scope wrappers, preserving stable repeated replay. The controls retain capability
-removal rejection, private-dependency rejection and changed-body sensitivity.
-Fifty focused tooling controls pass; quick CI at the preceding pushed checkpoint
-passes 1,554 tests and 33 subtests, with 107 explicit capability/platform skips.
+The same hosted identity passes **three frontend fuzz campaigns and six
+controls**, plus **21 LLVM IR/debugger executions, 63 semantic-oracle cases and
+seven controls**. First-party coverage exceeded its 300-second emitter deadline
+after two cases. Coverage now runs the entire emitter catalogue through eight
+bounded shards, each with a 900-second instrumented deadline. The producer and
+terminal verifier require all shards, identical catalogues, disjoint complete
+case execution and one executable identity from retained native JUnit. The
+ordinary core still runs the complete unsplit suite. Coverage profiles now merge
+by binary build identity and module signature across fork and exec, avoiding a
+full shared-compiler profile copy for every process. Real native controls verify
+all child and exec branches survive the merge under the existing storage bound.
+All eight native shard commands pass; the retained JUnit independently verifies
+all 164 cases. CTest output retention is explicitly bounded so its default
+1-KiB passed-test truncation cannot erase that proof. Forty-six focused
+coverage/tool controls, 125 export/owner/revision controls and five real native
+suite-collection controls pass. Independent native owners now continue after a
+sibling failure; prerequisite failures still stop dependent work, and SDK
+packaging waits until every other required native owner passes.
 
-These local diagnostics reuse a verified, failure-only CI compiler foundation and
-a separately compiled canonical printer repair; they are not SDK acceptance.
-Frontend-only development can select an exact same-version generator with
-`-DOBJC3C_TABLEGEN=/path/to/llvm-tblgen`. Instrumented profiles always use their
-own foundation generator; an override is rejected.
-One-day compiler inputs can be split into four bounded, checksummed transport parts
-without executing another compiler build. The hosted transport and complete local
-reassembly pass; intermediate copies are reclaimed after verification.
-
-The preceding compiler identity passes three frontend fuzz campaigns and six
-controls, plus all 21 LLVM IR/debugger executions, 63 generated semantic-oracle
-cases and seven controls. Coverage reached the repaired key-path fixture mapping;
-the older implementation-analysis job remains active. A complete current-source
-release/native, analysis, LLVM/oracle and fresh-host archive pass is still required
-before accepting or activating the candidate. Release scheduling uses the exact
-source revision so an older analysis job does not hold a repaired release behind
-its completed native build. Compiler diagnostic selection cannot satisfy the full
-aggregate or publish an SDK. The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
-records each checkpoint and its scope.
-
-The current-source release at `9c675d3ab` is running
-[release/native and complete implementation analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42506995176)
-and [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42506996345).
-All quick gates pass. The new compiler patch reused the same eight dependency
-cache entries; dependency identity remains independent of project feature commits.
+The candidate now has source identity `llvmorg-23.1.5-392dfff97d29-cbef07ba0441-70309e04`.
+The previous [release/native attempt](https://github.com/doublemover/Slopjective-C/actions/runs/42506995176)
+and passing [LLVM/oracle campaign](https://github.com/doublemover/Slopjective-C/actions/runs/42506996345)
+remain checkpoint evidence for their exact earlier source. Implementation
+analysis is still running; its remaining findings will be collected before one
+combined current-source release/native, analysis and LLVM/oracle pass. Fresh
+Debian/Ubuntu archive checks follow those required release gates. **SDK 2.62.0
+remains the last accepted archive; the replacement is not accepted or activated.**
+The [refresh receipt](../support/linux_toolchain_refresh_progress.json) records
+each checkpoint and its scope. New compiler patches continue to reuse all eight
+dependency cache entries; dependency identity does not depend on feature commits.

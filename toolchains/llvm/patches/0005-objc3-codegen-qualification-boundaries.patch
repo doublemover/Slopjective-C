@@ -7837,7 +7837,7 @@ index 6f7b7e7d6..0835d15e5 100644
    Value *V = Visit(E->getSubExpr());
    // Defend against dominance problems caused by jumps out of expression
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..c1988d810 100644
+index c724a063b..0e16891fb 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,7 +12,15 @@
@@ -7890,9 +7890,9 @@ index c724a063b..c1988d810 100644
    CGObjCRuntime &Runtime = CGM.getObjCRuntime();
    bool isSuperMessage = false;
    bool isClassMessage = false;
-+  const auto *SuperContext = dyn_cast<ObjCMethodDecl>(CurFuncDecl);
++  const auto *SuperContext = dyn_cast_or_null<ObjCMethodDecl>(CurFuncDecl);
 +  const FunctionDecl *SuperThunk = nullptr;
-+  if (const auto *Function = dyn_cast<FunctionDecl>(CurFuncDecl);
++  if (const auto *Function = dyn_cast_or_null<FunctionDecl>(CurFuncDecl);
 +      Function && Function->hasAttr<ObjC3IsolationThunkAttr>()) {
 +    SuperContext = dyn_cast<ObjCMethodDecl>(Function->getLexicalDeclContext());
 +    if (SuperContext)
@@ -37839,3 +37839,23 @@ index 000000000..856161375
 +}
 +
 +void scalar_delete(ObjectMaybe *value){delete value;}
+diff --git a/clang/test/ObjC3/CodeGen/global-init-messages.mm b/clang/test/ObjC3/CodeGen/global-init-messages.mm
+new file mode 100644
+index 000000000..24b579db0
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/global-init-messages.mm
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// Global initialization has no current source function or Objective-C method.
++// A dynamic class send must not manufacture a super/isolation thunk context.
++__attribute__((objc_root_class)) @interface GlobalMaker
+++ (id)make;
++@end
++struct GlobalOwner { id value; };
++GlobalOwner global_owner{[GlobalMaker make]};
++// CHECK: define internal void @__cxx_global_var_init
++// CHECK: call{{.*}}ptr @objc_msgSend
++// CHECK: store ptr

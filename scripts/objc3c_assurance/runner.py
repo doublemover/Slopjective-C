@@ -15,9 +15,10 @@ from scripts.objc3c_toolchain.build import build_foundation
 from scripts.objc3c_toolchain.core import build_plans
 from scripts.objc3c_toolchain.frontend_tests import qualify as frontend_tests
 from scripts.objc3c_toolchain.qualify_installed import qualify_installed
-from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, native_files, package_execution
+from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, package_execution
 from .plan import foundation_receipts, from_checkout, selected_suites, validate
-from .execution import checked_command, execute_ctest
+from .execution import checked_command, execute_ctest, execute_suites
+from .upstream import prepare_upstream_tools
 
 # Existing Clang lit taxonomy, confined to touched compiler subsystems. Whole
 # check-clang/check-llvm promotion awaits measured runner cost, not a new cron.
@@ -102,7 +103,9 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
         shared[key] = build
         return build
 
-    def execute(suite):
+    def execute(suite, suite_directory):
+        nonlocal directory
+        directory = suite_directory
         name = suite['id']
         if name == 'foundation':
             try:
@@ -185,8 +188,11 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
             return result['executions']
         if name == 'upstream':
             foundation = repo / 'out/toolchains/objc3-development'
+            # Test prerequisites stay outside the installed SDK distribution.
+            tools = prepare_upstream_tools(repo, command)
             selected = [foundation / 'src' / name for name in UPSTREAM]
             write_json(directory / 'selection.json', {'selected': list(UPSTREAM),
+                'tools': tools,
                 'reason': 'unchanged-language regressions across AST/Sema/CodeGen/serialization/driver',
                 'excluded': {'check-clang/check-llvm': 'whole-suite promotion requires measured runner cost; #8283'}})
             result_file = directory / 'lit.json'
@@ -276,28 +282,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
 
     try:
         save()
-        for suite in suites:
-            directory = output / suite['id']
-            directory.mkdir()
-            row = {'id': suite['id'], 'status': 'running', 'executions': [], 'artifacts': []}
-            report['suites'].append(row)
-            save()
-            try:
-                row['executions'] = execute(suite)
-                # Upload logs/results only, never the generated compilers, SDKs,
-                # runtime archives or complete CMake build trees.
-                row['artifacts'] = [artifact(output, path) for path in native_files(directory)]
-                if not row['executions'] or not row['artifacts']:
-                    raise ValueError('native suite produced no execution or artifact inventory')
-                row['status'] = 'PASS'
-            except BaseException as error:
-                # Nested owners can fail before returning an execution list.
-                # Their actual diagnostics must still join the durable upload.
-                row['artifacts'] = [artifact(output, path) for path in native_files(directory)]
-                row.update(status='FAIL', error=str(error))
-                raise
-            finally:
-                save()
+        execute_suites(suites, output=output, report=report, execute=execute, save=save)
         if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
             raise ValueError('source revision or selection changed during native execution')
         from scripts.objc3c_toolchain.semantic_build_costs import snapshot

@@ -69094,3 +69094,345 @@ index cf338eef0..6c7e6b53a 100644
    DependencyDirectivesScannerTest.cpp
    HeaderMapTest.cpp
    HeaderSearchTest.cpp
+diff --git a/clang/docs/LibASTMatchersReference.html b/clang/docs/LibASTMatchersReference.html
+index 7e0bbbcb1..735535a5e 100644
+--- a/clang/docs/LibASTMatchersReference.html
++++ b/clang/docs/LibASTMatchersReference.html
+@@ -2188,6 +2188,85 @@ nullStmt()
+ </pre></td></tr>
+ 
+ 
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3BindingCondition0')"><a name="objc3BindingCondition0Anchor">objc3BindingCondition</a></td><td>Matcher&lt;ObjC3BindingCondition&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3BindingCondition0"><pre>Matches one optional binding in an ObjC3 condition list.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3CarrierTransferExpr0')"><a name="objc3CarrierTransferExpr0Anchor">objc3CarrierTransferExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3CarrierTransferExpr.html">ObjC3CarrierTransferExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3CarrierTransferExpr0"><pre>Matches explicit native ObjC3 carrier copy or move construction.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3CatchStmt0')"><a name="objc3CatchStmt0Anchor">objc3CatchStmt</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3CatchStmt.html">ObjC3CatchStmt</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3CatchStmt0"><pre>Matches an individual native ObjC3 catch clause.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3CoalesceExpr0')"><a name="objc3CoalesceExpr0Anchor">objc3CoalesceExpr</a></td><td>Matcher&lt;ObjC3CoalesceExpr&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3CoalesceExpr0"><pre>Matches a native nil-coalescing expression, including dependent operands.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3DoCatchStmt0')"><a name="objc3DoCatchStmt0Anchor">objc3DoCatchStmt</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3DoCatchStmt.html">ObjC3DoCatchStmt</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3DoCatchStmt0"><pre>Matches native ObjC3 do/catch statements.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3GuardStmt0')"><a name="objc3GuardStmt0Anchor">objc3GuardStmt</a></td><td>Matcher&lt;ObjC3GuardStmt&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3GuardStmt0"><pre>Matches a native ObjC3 guard and its ordered conditions and failure body.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3IfBindingStmt0')"><a name="objc3IfBindingStmt0Anchor">objc3IfBindingStmt</a></td><td>Matcher&lt;ObjC3IfBindingStmt&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3IfBindingStmt0"><pre>Matches a native ObjC3 if-let or if-var statement.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3LifetimeStmt0')"><a name="objc3LifetimeStmt0Anchor">objc3LifetimeStmt</a></td><td>Matcher&lt;ObjC3LifetimeStmt&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3LifetimeStmt0"><pre>Matches precise native lifetime control, preserving the written operand.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3MatchArm0')"><a name="objc3MatchArm0Anchor">objc3MatchArm</a></td><td>Matcher&lt;ObjC3MatchArm&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3MatchArm0"><pre>Matches an ordered arm of either native ObjC3 match form.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3MatchExpr0')"><a name="objc3MatchExpr0Anchor">objc3MatchExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3MatchExpr.html">ObjC3MatchExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3MatchExpr0"><pre>Matches native ObjC3 expression-form matches.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3MatchStmt0')"><a name="objc3MatchStmt0Anchor">objc3MatchStmt</a></td><td>Matcher&lt;ObjC3MatchStmt&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3MatchStmt0"><pre>Matches native ObjC3 statement-form matches.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3OptionalAccessExpr0')"><a name="objc3OptionalAccessExpr0Anchor">objc3OptionalAccessExpr</a></td><td>Matcher&lt;ObjC3OptionalAccessExpr&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3OptionalAccessExpr0"><pre></pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3OptionalExpr0')"><a name="objc3OptionalExpr0Anchor">objc3OptionalExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3OptionalExpr.html">ObjC3OptionalExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3OptionalExpr0"><pre>Matches native ObjC3 Optional construction and presence queries.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3ResultExpr0')"><a name="objc3ResultExpr0Anchor">objc3ResultExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3ResultExpr.html">ObjC3ResultExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3ResultExpr0"><pre>Matches native ObjC3 Result construction and arm queries.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3ThrowStmt0')"><a name="objc3ThrowStmt0Anchor">objc3ThrowStmt</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3ThrowStmt.html">ObjC3ThrowStmt</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3ThrowStmt0"><pre>Matches native ObjC3 typed error transfer.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3TryExpr0')"><a name="objc3TryExpr0Anchor">objc3TryExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3TryExpr.html">ObjC3TryExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3TryExpr0"><pre>Matches native ObjC3 checked propagation, optionalization or forcing.
++</pre></td></tr>
++
++
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objcCatchStmt0')"><a name="objcCatchStmt0Anchor">objcCatchStmt</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjCAtCatchStmt.html">ObjCAtCatchStmt</a>&gt;...</td></tr>
+ <tr><td colspan="4" class="doc" id="objcCatchStmt0"><pre>Matches Objective-C @catch statements.
+ 
+@@ -5415,6 +5494,36 @@ Given
+ </pre></td></tr>
+ 
+ 
++<tr><td>Matcher&lt;ObjC3BindingCondition&gt;</td><td class="name" onclick="toggle('isObjC3MutableBinding0')"><a name="isObjC3MutableBinding0Anchor">isObjC3MutableBinding</a></td><td></td></tr>
++<tr><td colspan="4" class="doc" id="isObjC3MutableBinding0"><pre>Matches `var` bindings in native ObjC3 conditions or match arms.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3GuardStmt&gt;</td><td class="name" onclick="toggle('objc3ConditionCountIs0')"><a name="objc3ConditionCountIs0Anchor">objc3ConditionCountIs</a></td><td>unsigned Count</td></tr>
++<tr><td colspan="4" class="doc" id="objc3ConditionCountIs0"><pre>Matches the number of ordered conditions, including both bindings and Bool
++expressions, in an ObjC3 guard or if binding.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3IfBindingStmt&gt;</td><td class="name" onclick="toggle('objc3ConditionCountIs1')"><a name="objc3ConditionCountIs1Anchor">objc3ConditionCountIs</a></td><td>unsigned Count</td></tr>
++<tr><td colspan="4" class="doc" id="objc3ConditionCountIs1"><pre>Matches the number of ordered conditions, including both bindings and Bool
++expressions, in an ObjC3 guard or if binding.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3LifetimeStmt&gt;</td><td class="name" onclick="toggle('isObjC3KeepAlive0')"><a name="isObjC3KeepAlive0Anchor">isObjC3KeepAlive</a></td><td></td></tr>
++<tr><td colspan="4" class="doc" id="isObjC3KeepAlive0"><pre></pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3MatchArm&gt;</td><td class="name" onclick="toggle('isObjC3MutableBinding1')"><a name="isObjC3MutableBinding1Anchor">isObjC3MutableBinding</a></td><td></td></tr>
++<tr><td colspan="4" class="doc" id="isObjC3MutableBinding1"><pre>Matches `var` bindings in native ObjC3 conditions or match arms.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3OptionalAccessExpr&gt;</td><td class="name" onclick="toggle('isObjC3OptionalMessage0')"><a name="isObjC3OptionalMessage0Anchor">isObjC3OptionalMessage</a></td><td></td></tr>
++<tr><td colspan="4" class="doc" id="isObjC3OptionalMessage0"><pre></pre></td></tr>
++
++
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html">ObjCInterfaceDecl</a>&gt;</td><td class="name" onclick="toggle('isDerivedFrom3')"><a name="isDerivedFrom3Anchor">isDerivedFrom</a></td><td>std::string BaseName</td></tr>
+ <tr><td colspan="4" class="doc" id="isDerivedFrom3"><pre>Overloaded method as shortcut for isDerivedFrom(hasName(...)).
+ </pre></td></tr>
+@@ -9313,7 +9422,8 @@ hasConditionVariableStatement(...)
+ 
+ 
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1IfStmt.html">IfStmt</a>&gt;</td><td class="name" onclick="toggle('hasElse0')"><a name="hasElse0Anchor">hasElse</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
+-<tr><td colspan="4" class="doc" id="hasElse0"><pre>Matches the else-statement of an if statement.
++<tr><td colspan="4" class="doc" id="hasElse0"><pre>Matches the else-statement of an if statement or the mandatory failure body
++of a native ObjC3 guard.
+ 
+ Examples matches the if statement
+   (matcher = ifStmt(hasElse(cxxBoolLiteral(equals(true)))))
+@@ -9345,7 +9455,8 @@ cxxForRangeStmt(hasInitStatement(anything()))
+ 
+ 
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1IfStmt.html">IfStmt</a>&gt;</td><td class="name" onclick="toggle('hasThen0')"><a name="hasThen0Anchor">hasThen</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
+-<tr><td colspan="4" class="doc" id="hasThen0"><pre>Matches the then-statement of an if statement.
++<tr><td colspan="4" class="doc" id="hasThen0"><pre>Matches the then-statement of an if statement, including a native ObjC3
++if-let or if-var statement.
+ 
+ Examples matches the if statement
+   (matcher = ifStmt(hasThen(cxxBoolLiteral(equals(true)))))
+@@ -9681,6 +9792,84 @@ Given
+ </pre></td></tr>
+ 
+ 
++<tr><td>Matcher&lt;ObjC3BindingCondition&gt;</td><td class="name" onclick="toggle('hasObjC3Binding0')"><a name="hasObjC3Binding0Anchor">hasObjC3Binding</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1VarDecl.html">VarDecl</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Binding0"><pre>Matches the source-facing declaration introduced by a condition or match
++arm. Compiler-owned snapshot declarations are not candidates.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3BindingCondition&gt;</td><td class="name" onclick="toggle('hasObjC3Source0')"><a name="hasObjC3Source0Anchor">hasObjC3Source</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Source0"><pre>Matches the evaluated source of an optional binding or carrier transfer.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3CarrierTransferExpr.html">ObjC3CarrierTransferExpr</a>&gt;</td><td class="name" onclick="toggle('hasObjC3Source1')"><a name="hasObjC3Source1Anchor">hasObjC3Source</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Source1"><pre>Matches the evaluated source of an optional binding or carrier transfer.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3CoalesceExpr&gt;</td><td class="name" onclick="toggle('hasObjC3CoalesceFallback0')"><a name="hasObjC3CoalesceFallback0Anchor">hasObjC3CoalesceFallback</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3CoalesceFallback0"><pre>Matches the lazy written fallback, before implicit conversion or lowering.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3CoalesceExpr&gt;</td><td class="name" onclick="toggle('hasObjC3CoalesceSource0')"><a name="hasObjC3CoalesceSource0Anchor">hasObjC3CoalesceSource</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3CoalesceSource0"><pre>Matches the written source operand of a native nil-coalescing expression.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3GuardStmt&gt;</td><td class="name" onclick="toggle('hasElse1')"><a name="hasElse1Anchor">hasElse</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasElse1"><pre>Matches the else-statement of an if statement or the mandatory failure body
++of a native ObjC3 guard.
++
++Examples matches the if statement
++  (matcher = ifStmt(hasElse(cxxBoolLiteral(equals(true)))))
++  if (false) false; else true;
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3GuardStmt&gt;</td><td class="name" onclick="toggle('hasObjC3Condition0')"><a name="hasObjC3Condition0Anchor">hasObjC3Condition</a></td><td>unsigned Index, Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Condition0"><pre>Matches a condition at its zero-based source position. An index outside the
++list fails to match. Binding conditions remain distinct from Bool Exprs.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3IfBindingStmt&gt;</td><td class="name" onclick="toggle('hasElse2')"><a name="hasElse2Anchor">hasElse</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasElse2"><pre>Matches the else-statement of an if statement or the mandatory failure body
++of a native ObjC3 guard.
++
++Examples matches the if statement
++  (matcher = ifStmt(hasElse(cxxBoolLiteral(equals(true)))))
++  if (false) false; else true;
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3IfBindingStmt&gt;</td><td class="name" onclick="toggle('hasObjC3Condition1')"><a name="hasObjC3Condition1Anchor">hasObjC3Condition</a></td><td>unsigned Index, Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Condition1"><pre>Matches a condition at its zero-based source position. An index outside the
++list fails to match. Binding conditions remain distinct from Bool Exprs.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3IfBindingStmt&gt;</td><td class="name" onclick="toggle('hasThen1')"><a name="hasThen1Anchor">hasThen</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasThen1"><pre>Matches the then-statement of an if statement, including a native ObjC3
++if-let or if-var statement.
++
++Examples matches the if statement
++  (matcher = ifStmt(hasThen(cxxBoolLiteral(equals(true)))))
++  if (false) true; else false;
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3MatchArm&gt;</td><td class="name" onclick="toggle('hasObjC3Binding1')"><a name="hasObjC3Binding1Anchor">hasObjC3Binding</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1VarDecl.html">VarDecl</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Binding1"><pre>Matches the source-facing declaration introduced by a condition or match
++arm. Compiler-owned snapshot declarations are not candidates.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3OptionalAccessExpr&gt;</td><td class="name" onclick="toggle('hasObjC3OptionalReceiver0')"><a name="hasObjC3OptionalReceiver0Anchor">hasObjC3OptionalReceiver</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3OptionalReceiver0"><pre></pre></td></tr>
++
++
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html">ObjCInterfaceDecl</a>&gt;</td><td class="name" onclick="toggle('hasType9')"><a name="hasType9Anchor">hasType</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Decl.html">Decl</a>&gt; InnerMatcher</td></tr>
+ <tr><td colspan="4" class="doc" id="hasType9"><pre>Overloaded to match the declaration of the expression's or value
+ declaration's type.
+diff --git a/clang/test/AST/ast-dump-expr-json.m b/clang/test/AST/ast-dump-expr-json.m
+index 3c502c049..477f8eba2 100644
+--- a/clang/test/AST/ast-dump-expr-json.m
++++ b/clang/test/AST/ast-dump-expr-json.m
+@@ -234,7 +234,7 @@ void TestObjCBoolLiteral(void) {
+ // CHECK-NEXT:        "valueCategory": "lvalue",
+ // CHECK-NEXT:        "encodedType": {
+ // CHECK-NEXT:         "desugaredQualType": "void (^)(void)",
+-// CHECK-NEXT:         "qualType": "typeof (^{ })"
++// CHECK-NEXT:         "qualType": "typeof (^ {\n ;\n})"
+ // CHECK-NEXT:        }
+ // CHECK-NEXT:       }
+ // CHECK-NEXT:      ]
+diff --git a/clang/test/AST/ast-print-attr.c b/clang/test/AST/ast-print-attr.c
+index 8e047f16b..786cdee03 100644
+--- a/clang/test/AST/ast-print-attr.c
++++ b/clang/test/AST/ast-print-attr.c
+@@ -7,8 +7,7 @@ using A = __kindof id (*)[1];
+ using B = int ** __ptr32 *[3];
+ 
+ // FIXME: This is the wrong spelling for the attribute.
+-// FIXME: Too many parens here!
+-// CHECK: using C = int ((*))() __attribute__((cdecl));
++// CHECK: using C = int (*)() __attribute__((cdecl));
+ using C = int (*)() [[gnu::cdecl]];
+ 
+ // CHECK: int fun_asm() asm("test");
+diff --git a/clang/test/AST/ast-print-cconv-preserve.cpp b/clang/test/AST/ast-print-cconv-preserve.cpp
+index 1cb488a9c..b6ea404bf 100644
+--- a/clang/test/AST/ast-print-cconv-preserve.cpp
++++ b/clang/test/AST/ast-print-cconv-preserve.cpp
+@@ -6,9 +6,9 @@ void (__attribute__((preserve_none)) *none)();
+ 
+ __attribute__((preserve_all)) void (*all)();
+ 
+-// CHECK: __attribute__((preserve_all)) void ((*all))();
++// CHECK: __attribute__((preserve_all)) void (*all)();
+ 
+ __attribute__((preserve_most)) void (*most)();
+ 
+-// CHECK: __attribute__((preserve_most)) void ((*most))();
++// CHECK: __attribute__((preserve_most)) void (*most)();
+ 
+diff --git a/clang/test/AST/ast-print-method-decl.cpp b/clang/test/AST/ast-print-method-decl.cpp
+index cb5d10096..a4116c6a3 100644
+--- a/clang/test/AST/ast-print-method-decl.cpp
++++ b/clang/test/AST/ast-print-method-decl.cpp
+@@ -20,7 +20,7 @@ struct DelegatingCtor2 {
+   template <typename Ty> DelegatingCtor2(Ty);
+ 
+   // FIXME: Implicitly specialized method should not be output
+-  // CHECK-NEXT: template<> DelegatingCtor2<float>(float);
++  // CHECK-NEXT: template<> DelegatingCtor2(float);
+ 
+   // CHECK-NEXT: DelegatingCtor2(int X) : DelegatingCtor2((float)X) {
+   DelegatingCtor2(int X) : DelegatingCtor2((float)X) {
+@@ -36,7 +36,7 @@ struct DelegatingCtor3 {
+   DelegatingCtor3(auto);
+ 
+   // FIXME: Implicitly specialized method should not be output
+-  // CHECK: template<> DelegatingCtor3<const char *>(const char *);
++  // CHECK: template<> DelegatingCtor3(const char *);
+ 
+   // CHECK: DelegatingCtor3(int) : DelegatingCtor3("") {
+   DelegatingCtor3(int) : DelegatingCtor3("") {
+diff --git a/clang/test/Modules/odr_hash-blocks.cpp b/clang/test/Modules/odr_hash-blocks.cpp
+index b1e62a1cf..4125e8edf 100644
+--- a/clang/test/Modules/odr_hash-blocks.cpp
++++ b/clang/test/Modules/odr_hash-blocks.cpp
+@@ -41,7 +41,7 @@
+ #define ACCESS private:
+ #endif
+ 
+-// TODO: S1 and S2 should generate errors.
++// Parameter spelling is not an ODR difference; a different Block body is.
+ namespace Blocks {
+ #if defined(FIRST)
+ struct S1 {
+@@ -65,6 +65,8 @@ struct S2 {
+ };
+ #else
+ S2 s2;
++// expected-error@second.h:* {{'Blocks::S2' has different definitions in different modules; first difference is definition in module 'SecondModule' found field 'block' with an initializer}}
++// expected-note@first.h:* {{but in 'FirstModule' found field 'block' with a different initializer}}
+ #endif
+ 
+ #if defined(FIRST)
+diff --git a/clang/test/PCH/objc_stmts.m b/clang/test/PCH/objc_stmts.m
+index ee7b78073..3507f9ce4 100644
+--- a/clang/test/PCH/objc_stmts.m
++++ b/clang/test/PCH/objc_stmts.m
+@@ -9,4 +9,4 @@
+ 
+ // CHECK: @catch(A *a)
+ // CHECK: @catch(B *b)
+-// CHECK: @catch()
++// CHECK: @catch(...)
+diff --git a/clang/test/SemaObjC/attr-ns_returns_retained.m b/clang/test/SemaObjC/attr-ns_returns_retained.m
+index 37e1416d5..2c7448eae 100644
+--- a/clang/test/SemaObjC/attr-ns_returns_retained.m
++++ b/clang/test/SemaObjC/attr-ns_returns_retained.m
+@@ -3,7 +3,7 @@
+ 
+ #if __has_feature(objc_arc)
+ __attribute__((ns_returns_retained)) id (^invalidBlockRedecl)(void); // expected-note {{previous definition is here}}
+-id (^invalidBlockRedecl)(void); //expected-error {{redefinition of 'invalidBlockRedecl' with a different type: 'id (^__strong)(void)' vs 'id ((^__strong))(void) __attribute__((ns_returns_retained))'}}
++id (^invalidBlockRedecl)(void); //expected-error {{redefinition of 'invalidBlockRedecl' with a different type: 'id (^__strong)(void)' vs 'id (__attribute__((ns_returns_retained)) ^__strong)(void)'}}
+ #else
+ __attribute__((ns_returns_retained)) id (^invalidBlockRedecl)(void);
+ id (^invalidBlockRedecl)(void);

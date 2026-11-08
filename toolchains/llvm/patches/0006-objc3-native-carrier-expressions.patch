@@ -2499,3 +2499,62 @@ index 502c374f4..ee2671f16 100644
      if (QT == Ctx.getObjCInstanceType()) {
        // instancetype corresponds to expression types.
        return getType();
+diff --git a/clang/test/CodeGenObjC/arc-ternary-op.m b/clang/test/CodeGenObjC/arc-ternary-op.m
+index 46529b411..5ab3ecac0 100644
+--- a/clang/test/CodeGenObjC/arc-ternary-op.m
++++ b/clang/test/CodeGenObjC/arc-ternary-op.m
+@@ -156,7 +156,7 @@ void test3(int cond) {
+   // CHECK: %[[V2:.*]] = load ptr, ptr @g0, align 8
+   // CHECK: %[[V3:.*]] = call ptr @llvm.objc.retain(ptr %[[V2]])
+   // CHECK: store ptr %[[V3]], ptr %[[_COMPOUNDLITERAL]], align 8
+-  // CHECK: %[[ARRAYINIT_ELEMENT:.*]] = getelementptr inbounds ptr, ptr %[[_COMPOUNDLITERAL]], i64 1
++  // CHECK: %[[ARRAYINIT_ELEMENT:arrayinit[.]element[0-9]*]] = getelementptr inbounds ptr, ptr %[[_COMPOUNDLITERAL]], i64 1
+   // CHECK: %[[V4:.*]] = load ptr, ptr @g1, align 8
+   // CHECK: %[[V5:.*]] = call ptr @llvm.objc.retain(ptr %[[V4]])
+   // CHECK: store ptr %[[V5]], ptr %[[ARRAYINIT_ELEMENT]], align 8
+@@ -166,7 +166,7 @@ void test3(int cond) {
+   // CHECK: %[[V6:.*]] = load ptr, ptr @g1, align 8
+   // CHECK: %[[V7:.*]] = call ptr @llvm.objc.retain(ptr %[[V6]])
+   // CHECK: store ptr %[[V7]], ptr %[[_COMPOUNDLITERAL1]], align 8
+-  // CHECK: %[[ARRAYINIT_ELEMENT3:.*]] = getelementptr inbounds ptr, ptr %[[_COMPOUNDLITERAL1]], i64 1
++  // CHECK: %[[ARRAYINIT_ELEMENT3:arrayinit[.]element[0-9]*]] = getelementptr inbounds ptr, ptr %[[_COMPOUNDLITERAL1]], i64 1
+   // CHECK: %[[V8:.*]] = load ptr, ptr @g0, align 8
+   // CHECK: %[[V9:.*]] = call ptr @llvm.objc.retain(ptr %[[V8]])
+   // CHECK: store ptr %[[V9]], ptr %[[ARRAYINIT_ELEMENT3]], align 8
+diff --git a/clang/test/CodeGenObjC/arc.m b/clang/test/CodeGenObjC/arc.m
+index 2d860c111..cd623b4fc 100644
+--- a/clang/test/CodeGenObjC/arc.m
++++ b/clang/test/CodeGenObjC/arc.m
+@@ -1374,7 +1374,7 @@ void test71(void) {
+ // CHECK: %[[V3:.*]] = load ptr, ptr %[[A_ADDR]], align 8, !tbaa !{{[0-9]+}}
+ // CHECK: %[[V4:.*]] = call ptr @llvm.objc.retain(ptr %[[V3]]) #2
+ // CHECK: store ptr %[[V4]], ptr %[[T]], align 8, !tbaa !{{[0-9]+}}
+-// CHECK: %[[ARRAYINIT_ELEMENT:.*]] = getelementptr inbounds ptr, ptr %[[T]], i64 1
++// CHECK: %[[ARRAYINIT_ELEMENT:arrayinit[.]element[0-9]*]] = getelementptr inbounds ptr, ptr %[[T]], i64 1
+ // CHECK: %[[V5:.*]] = load ptr, ptr %[[B_ADDR]], align 8, !tbaa !{{[0-9]+}}
+ // CHECK: %[[V6:.*]] = call ptr @llvm.objc.retain(ptr %[[V5]]) #2
+ // CHECK: store ptr %[[V6]], ptr %[[ARRAYINIT_ELEMENT]], align 8, !tbaa !{{[0-9]+}}
+diff --git a/clang/test/CodeGenObjCXX/arc-exceptions.mm b/clang/test/CodeGenObjCXX/arc-exceptions.mm
+index 950e4c914..56b85b240 100644
+--- a/clang/test/CodeGenObjCXX/arc-exceptions.mm
++++ b/clang/test/CodeGenObjCXX/arc-exceptions.mm
+@@ -119,16 +119,16 @@ void test5(void) {
+ // CHECK-NEXT:  store ptr [[ARRAY]],
+ // CHECK-NEXT:  [[T0:%.*]] = invoke noundef ptr @_Z12test5_helperj(i32 noundef 0)
+ // CHECK:       store ptr [[T0]], ptr [[ARRAY]], align
+-// CHECK-NEXT:  [[A01:%.*]] = getelementptr inbounds ptr, ptr [[ARRAY]], i64 1
++// CHECK:       [[A01:%arrayinit[.]element[0-9]*]] = getelementptr inbounds ptr, ptr [[ARRAY]], i64 1
+ // CHECK-NEXT:  store ptr [[A01]],
+ // CHECK-NEXT:  [[T0:%.*]] = invoke noundef ptr @_Z12test5_helperj(i32 noundef 1)
+ // CHECK:       store ptr [[T0]], ptr [[A01]], align
+-// CHECK-NEXT:  [[A1:%.*]] = getelementptr inbounds [2 x ptr], ptr [[ARRAY]], i64 1
++// CHECK:       [[A1:%arrayinit[.]element[0-9]*]] = getelementptr inbounds [2 x ptr], ptr [[ARRAY]], i64 1
+ // CHECK-NEXT:  store ptr [[A1]],
+ // CHECK-NEXT:  store ptr [[A1]],
+ // CHECK-NEXT:  [[T0:%.*]] = invoke noundef ptr @_Z12test5_helperj(i32 noundef 2)
+ // CHECK:       store ptr [[T0]], ptr [[A1]], align
+-// CHECK-NEXT:  [[A11:%.*]] = getelementptr inbounds ptr, ptr [[A1]], i64 1
++// CHECK:       [[A11:%arrayinit[.]element[0-9]*]] = getelementptr inbounds ptr, ptr [[A1]], i64 1
+ // CHECK-NEXT:  store ptr [[A11]],
+ // CHECK-NEXT:  [[T0:%.*]] = invoke noundef ptr @_Z12test5_helperj(i32 noundef 3)
+ // CHECK:       store ptr [[T0]], ptr [[A11]], align

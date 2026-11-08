@@ -11698,14 +11698,19 @@ void TestIndependentCxxAndObjCExceptionModes() {
 }
 
 int main(int argc,char **argv) {
-  test::IsolatedCases cases;
+  unsigned shard = 0, shards = 1;
   if(argc==2) {
     const std::string group=argv[1];
+    test::IsolatedCases cases;
     if(group=="standard-library-headers") {cases.Run("TestStandardLibraryHeaderContracts", TestStandardLibraryHeaderContracts);return cases.Finish();}
     if(group=="standard-library-specializations") {cases.Run("TestStandardLibrarySpecializations", TestStandardLibrarySpecializations);return cases.Finish();}
-    return 2;
+    shards = 8;
+    for(; shard < shards; ++shard)
+      if(group == "coverage-shard-" + std::to_string(shard))break;
+    if(shard == shards)return 2;
   }
-  if(argc!=1)return 2;
+  if(argc!=1 && argc!=2)return 2;
+  test::IsolatedCases cases(shard, shards);
   cases.Run("TestDeducedTaskGroupReplay",TestDeducedTaskGroupReplay);
   cases.Run("TestNativeEmissionPolicyReplay",TestNativeEmissionPolicyReplay);
   cases.Run("TestOpaqueStandardLibrarySpecializations",TestOpaqueStandardLibrarySpecializations);

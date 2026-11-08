@@ -18,9 +18,17 @@ namespace objc3::clang_foundation::test {
 // The enclosing CTest timeout and sanitizer settings apply to every child.
 class IsolatedCases {
   unsigned passed_ = 0, failed_ = 0;
+  unsigned ordinal_ = 0, shard_ = 0, shards_ = 1;
   const char *selected_ = std::getenv("OBJC3_TEST_CASE");
 public:
+  explicit IsolatedCases(unsigned shard = 0, unsigned shards = 1)
+      : shard_(shard), shards_(shards) {
+    if(!shards_ || shard_ >= shards_)throw std::invalid_argument("invalid test shard");
+  }
   template<class Work> void Run(const std::string &name, Work work) {
+    const auto ordinal = ordinal_++;
+    if(shards_ > 1)std::cerr << "CATALOG " << ordinal << ' ' << name << '\n';
+    if(ordinal % shards_ != shard_)return;
     if(selected_ && name != selected_)return;
     std::cout.flush();std::cerr.flush();std::fflush(nullptr);
     const auto child = fork();
@@ -51,6 +59,7 @@ public:
     }
   }
   int Finish() const {
+    if(shards_ > 1)std::cerr << "SHARD " << shard_ << '/' << shards_ << '\n';
     std::cerr << passed_ << " independent cases passed; " << failed_ << " failed\n";
     if(failed_)return 1;
     if(selected_) {

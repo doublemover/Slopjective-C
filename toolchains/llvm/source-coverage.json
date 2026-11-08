@@ -2,11 +2,22 @@
   "schema": "objc3c.native-source-coverage-policy.v1",
   "host": "linux-x86_64",
   "compiler_profile": "compiler-source-coverage",
-  "compile_flags": ["-fprofile-instr-generate", "-fcoverage-mapping", "-fprofile-update=atomic"],
+  "compile_flags": [
+    "-fprofile-instr-generate",
+    "-fcoverage-mapping",
+    "-fprofile-update=atomic"
+  ],
   "frontend_tests": [
     "objc3_compile_session",
     "objc3_interface_contract",
-    "objc3_interface_emitter",
+    "objc3_interface_emitter_coverage_0",
+    "objc3_interface_emitter_coverage_1",
+    "objc3_interface_emitter_coverage_2",
+    "objc3_interface_emitter_coverage_3",
+    "objc3_interface_emitter_coverage_4",
+    "objc3_interface_emitter_coverage_5",
+    "objc3_interface_emitter_coverage_6",
+    "objc3_interface_emitter_coverage_7",
     "objc3_interface_import_api",
     "objc3_interface_module_resolution",
     "objc3_interface_artifact_io"
@@ -23,7 +34,14 @@
   ],
   "test_timeouts_seconds": {
     "default": 120,
-    "frontend:objc3_interface_emitter": 300
+    "frontend:objc3_interface_emitter_coverage_0": 900,
+    "frontend:objc3_interface_emitter_coverage_1": 900,
+    "frontend:objc3_interface_emitter_coverage_2": 900,
+    "frontend:objc3_interface_emitter_coverage_3": 900,
+    "frontend:objc3_interface_emitter_coverage_4": 900,
+    "frontend:objc3_interface_emitter_coverage_5": 900,
+    "frontend:objc3_interface_emitter_coverage_6": 900,
+    "frontend:objc3_interface_emitter_coverage_7": 900
   },
   "purpose": "Measured first-party and patched-compiler implementation coverage with separate denominators and patch-hunk views. No uncalibrated percentage threshold."
 }

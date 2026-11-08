@@ -462,6 +462,12 @@ if (BUILD_TESTING)
     OBJC3_INTERFACE_TEST_STDLIB_HEADERS="${_objc3_repo}/stdlib/include/objc3"
     OBJC3_INTERFACE_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}")
   objc3c_add_frontend_test(NAME objc3_interface_emitter COMMAND objc3_interface_emitter_test)
+  if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE STREQUAL "compiler-source-coverage")
+    foreach(_objc3_emitter_shard RANGE 0 7)
+      objc3c_add_frontend_test(NAME objc3_interface_emitter_coverage_${_objc3_emitter_shard}
+        COMMAND objc3_interface_emitter_test coverage-shard-${_objc3_emitter_shard})
+    endforeach()
+  endif()
   objc3c_add_frontend_test(NAME objc3_standard_library_headers
     COMMAND objc3_interface_emitter_test standard-library-headers)
   objc3c_add_frontend_test(NAME objc3_standard_library_specializations

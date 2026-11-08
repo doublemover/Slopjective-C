@@ -19,6 +19,7 @@ from .llvm_tools import identity
 from .sanitizer_policy import strict_environment, require_clean_diagnostic
 from .sdk_example import dependencies
 from scripts.objc3c_assurance.evidence import junit
+from scripts.objc3c_assurance.emitter_shards import CTEST_OUTPUT_LIMIT
 
 LIMIT = 64 * 1024**2
 FIRST_PARTY_PROFILE_LIMIT = 256 * 1024**2
@@ -127,6 +128,13 @@ def read_export(path, *, repo, build, eligible):
                 'summary': summary, 'uncovered_branches': [branch for branch in row.get('branches', [])
                                                          if branch[4] == 0 or branch[5] == 0]}
     return result
+
+
+def suite_profile_environment(environment: dict, raw: Path) -> dict:
+    # Build identity plus LLVM's module signature enables locked merging across fork
+    # and exec. A PID component duplicates the complete shared-Clang profile
+    # for every compiler subprocess instead of retaining one file per module.
+    return {**environment, 'LLVM_PROFILE_FILE': str(raw / '%b-%m.profraw')}
 
 
 def raw_profiles(root, *, limit=LIMIT):
@@ -375,11 +383,13 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                     frozen.update(loader_graph['libraries'])
                 work = output / 'suites' / (component+'-'+name);work.mkdir(parents=True)
                 raw = work / 'raw';raw.mkdir()
-                case_env = {**env, 'LLVM_PROFILE_FILE': str(raw / '%p-%m.profraw')}
+                case_env = suite_profile_environment(env, raw)
                 result = work / 'tests.xml'
                 timeout = suite_timeout(policy, component, name)
                 run(component+'-'+name, ['ctest', '--test-dir', build, '--no-tests=error', '--output-on-failure',
-                    '-R', '^'+re.escape(name)+'$', '--timeout', str(timeout), '--output-junit', result],
+                    '-R', '^'+re.escape(name)+'$', '--timeout', str(timeout),
+                    '--test-output-size-passed', str(CTEST_OUTPUT_LIMIT),
+                    '--test-output-size-failed', str(CTEST_OUTPUT_LIMIT), '--output-junit', result],
                     environment=case_env, timeout=timeout+30)
                 executions = junit(result, expected={name})
                 profiles = raw_profiles(raw, limit=FIRST_PARTY_PROFILE_LIMIT)
@@ -426,6 +436,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 # transient linked test binaries are reclaimed per shard.
         if len(report['suites']) != sum(len(policy[key]) for key in ('frontend_tests', 'runtime_tests')):
             raise ValueError('source coverage is missing a required suite/shard')
+        from scripts.objc3c_assurance.emitter_shards import emitter_partition
+        report['emitter_partition'] = emitter_partition(output, report['suites'])
         if any(digest(Path(path)) != value for path, value in frozen.items()):
             raise ValueError('source coverage input/object/tool changed during execution')
         report['status'] = 'PASS'

@@ -60,3 +60,37 @@ def execute_ctest(build: Path, label: str, directory: Path, command) -> list[dic
     command(label, ['ctest', '--test-dir', build, '--no-tests=error',
                     '--output-on-failure', '--timeout', '120'])
     return junit(directory / (label + '.xml'), expected=names)
+
+
+def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, save):
+    """Collect independent failures; require prerequisites and package only a clean batch."""
+    from .evidence import artifact, native_files
+    failures = []
+    # Packaging is a delivery step; finish every independent check before it.
+    ordered = [row for row in suites if row['id'] != 'package'] + [
+        row for row in suites if row['id'] == 'package']
+    for suite in ordered:
+        directory = output / suite['id'];directory.mkdir()
+        row = {'id': suite['id'], 'status': 'running', 'executions': [], 'artifacts': []}
+        report['suites'].append(row)
+        if suite['id'] == 'package' and failures:
+            row.update(status='BLOCKED', error='Earlier native checks failed: '+', '.join(failures))
+            save()
+            continue
+        save()
+        try:
+            row['executions'] = execute(suite, directory)
+            row['artifacts'] = [artifact(output, path) for path in native_files(directory)]
+            if not row['executions'] or not row['artifacts']:
+                raise ValueError('native suite produced no execution or artifact inventory')
+            row['status'] = 'PASS'
+        except BaseException as error:
+            row['artifacts'] = [artifact(output, path) for path in native_files(directory)]
+            row.update(status='FAIL', error=str(error))
+            if not isinstance(error, Exception) or suite['id'] in ('foundation', 'runtime'):
+                raise
+            failures.append(suite['id'])
+        finally:
+            save()
+    if failures:
+        raise ValueError('native suites failed: '+', '.join(failures))
