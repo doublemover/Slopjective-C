@@ -279,7 +279,7 @@ main() {
   write_activation
   source "$setup_root/activate.sh"
   cd "$repo_root"
-  run_with_budget npm ci
+  run_with_budget npm ci --prefer-offline --no-audit --no-fund
   ccache --max-size="$cache_limit" --cleanup
   # Cached wheels are expendable; keep installed tools and useful build objects.
   uv cache prune --ci

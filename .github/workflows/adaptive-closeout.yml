@@ -35,8 +35,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Pinned host tools
-        shell: bash
-        run: python3 -B -m scripts.objc3c_assurance.bootstrap --root /opt/objc3c-host --output out/native-assurance/startup
+        uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup
+          include_swift: ${{ matrix.shard == 'core' }}
       - name: Require sanitizer process layout support
         run: |
           mkdir -p out

@@ -10,6 +10,37 @@ const dependencyActions = ["linux-host-tools", "python-tools"].map(
 const pinnedAction = (uses) =>
   /^[^@]+@[a-f0-9]{40}$/.test(uses) || dependencyActions.includes(uses);
 
+export function validateDependencyRouting(workflows) {
+  for (const name of [
+    "native-assurance.yml",
+    "implementation-analysis.yml",
+    "llvm-assurance.yml",
+    "adaptive-closeout.yml",
+  ]) {
+    const workflow = yaml.load(workflows[name]);
+    const setup = Object.values(workflow.jobs)
+      .flatMap((job) => job.steps ?? [])
+      .filter((step) => step.name === "Pinned host tools");
+    if (setup.length !== 1 || setup[0].uses !== "./.github/actions/linux-host-tools")
+      throw new Error(`${name} must reuse the shared pinned dependency setup`);
+  }
+  for (const name of ["task-hygiene.yml", "spec-quality.yml", "planning-lint.yml"]) {
+    const workflow = yaml.load(workflows[name]);
+    const steps = Object.values(workflow.jobs).flatMap((job) => job.steps ?? []);
+    if (!steps.some((step) => step.uses === "./.github/actions/python-tools"))
+      throw new Error(`${name} must reuse Python dependencies`);
+  }
+  for (const [name, text] of Object.entries(workflows)) {
+    const steps = Object.values(yaml.load(text).jobs ?? {}).flatMap((job) => job.steps ?? []);
+    if (
+      steps.some(
+        (step) => step.uses?.startsWith("actions/setup-node@") && step.with?.cache !== "npm",
+      )
+    )
+      throw new Error(`${name} must reuse npm downloads`);
+  }
+}
+
 export function validateDependencyActions(actions) {
   for (const name of dependencyActions) {
     if (!actions[name]) throw new Error(`Missing dependency action ${name}`);
@@ -478,6 +509,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         .map(async (name) => [name, await readFile(join(root, name), "utf8")]),
     ),
   );
+  validateDependencyRouting(allWorkflows);
   validateNativeRelease(
     allWorkflows["native-assurance.yml"],
     allWorkflows["platform-host-evidence.yml"],

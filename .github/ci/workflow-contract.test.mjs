@@ -5,6 +5,7 @@ import * as yaml from "js-yaml";
 import {
   validateImplementationGate,
   validateDependencyActions,
+  validateDependencyRouting,
   validateNativeContainer,
   validateNativeGate,
   validateNativeRelease,
@@ -62,6 +63,36 @@ const dependencyActions = Object.fromEntries(
     ]),
   ),
 );
+const dependencyWorkflows = {
+  ...workflows,
+  "native-assurance.yml": native,
+  "implementation-analysis.yml": implementation,
+  "llvm-assurance.yml": llvmOptional,
+  "task-hygiene.yml": toolingQuick,
+  "spec-quality.yml": documentationQuick,
+};
+for (const name of ["planning-lint.yml", "adaptive-policy-checks.yml"])
+  dependencyWorkflows[name] = await readFile(
+    new URL(`../workflows/${name}`, import.meta.url),
+    "utf8",
+  );
+test("every native, quick and planning owner reuses pinned dependency caches", () => {
+  validateDependencyRouting(dependencyWorkflows);
+});
+for (const [name, text] of Object.entries(dependencyWorkflows)) {
+  if (!/\.\/\.github\/actions\/(linux-host-tools|python-tools)|cache: npm/.test(text)) continue;
+  test(`${name} rejects bypassing dependency reuse`, () => {
+    assert.throws(() =>
+      validateDependencyRouting({
+        ...dependencyWorkflows,
+        [name]: text
+          .replaceAll("./.github/actions/linux-host-tools", "uncached-setup")
+          .replaceAll("./.github/actions/python-tools", "uncached-setup")
+          .replaceAll("cache: npm", "cache: ''"),
+      }),
+    );
+  });
+}
 test("shared dependency setup admits restored bytes before execution and publishes misses early", () => {
   validateDependencyActions(dependencyActions);
 });

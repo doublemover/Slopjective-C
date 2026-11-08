@@ -69,4 +69,12 @@ objects retain exact tag/commit checks and full Git integrity checks. Cold misse
 are published immediately after successful setup, even if later compiler tests
 fail. Compiler build trees and product SDK archives are excluded. The manual
 `Linux dependency cache qualification` workflow checks cold setup and can require
-all tool and source caches on a second clean runner.
+all tool and source caches on a second clean runner. Before the new workflow
+reaches the default branch, dispatch `llvm-assurance.yml` with
+`dependency_cache=any`, then `dependency_cache=warm`; these modes run dependency
+checks without starting another compiler build. Both runs pass: the second
+restored all eight tool/source cache entries, admitted all six tool prefixes and
+reused all three pristine source repositories. Its complete job took 101 seconds
+versus 179 seconds cold. Quick CI independently restored Python, packages and
+CMake and passed 1,520 tooling tests plus 33 subtests. All Node setup callers now
+cache npm, and installs prefer cached package downloads.

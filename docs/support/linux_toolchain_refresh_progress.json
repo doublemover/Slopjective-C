@@ -82,10 +82,10 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+      "revision": "07f5bb17d572b8eb401a5932f23d58b07039311a",
       "status": "PASS",
-      "runs": [42473442521, 42473442576, 42473442904],
-      "tooling_tests_passed": 1502,
+      "runs": [42475762174, 42475762187, 42475762194],
+      "tooling_tests_passed": 1520,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 107
     },
@@ -199,7 +199,7 @@
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
   "dependency_caching": {
-    "status": "IMPLEMENTED_AWAITING_COLD_WARM_HOSTED_CHECKS",
+    "status": "PASS",
     "tools": [
       "LLVM bootstrap",
       "Python interpreter and development environment",
@@ -214,9 +214,38 @@
     "admission": "Exact restored tool file/mode/link inventory before execution; existing signed Swift publisher seal; pinned Git objects with full fsck",
     "excluded": ["compiler build trees", "product SDK archives"],
     "focused_python_tests_passed": 91,
-    "workflow_controls_passed": 63,
+    "workflow_controls_passed": 72,
     "installed_tool_inventories_checked": 5,
     "live_CMake_cache_admission": "PASS",
-    "compiler_source_identity_unchanged": true
+    "compiler_source_identity_unchanged": true,
+    "hosted_qualification": {
+      "revision": "07f5bb17d572b8eb401a5932f23d58b07039311a",
+      "cold": {
+        "run": 42475757968,
+        "status": "PASS",
+        "tool_and_source_cache_entries_published": 8,
+        "job_seconds": 179,
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42475757968"
+      },
+      "warm": {
+        "run": 42475996283,
+        "status": "PASS",
+        "tool_and_source_cache_entries_restored": 8,
+        "admitted_tools": 6,
+        "source_cache_hits": 3,
+        "job_seconds": 101,
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42475996283"
+      },
+      "quick": {
+        "run": 42475762194,
+        "status": "PASS",
+        "cache_hits": ["Python interpreter", "Python packages", "CMake"],
+        "tests_passed": 1520,
+        "subtests_passed": 33,
+        "explicit_skips": 107
+      }
+    },
+    "all_CI_entry_points": "Native/manual/periodic LLVM owners use the shared host action; quick/documentation/planning owners reuse Python packages; all setup-node callers cache npm and prefer cached downloads",
+    "retired_contract": "Remove the unenrolled Windows-era test requiring every workflow command to use npm bridge; native workflow and dependency routing contracts now execute in policy CI"
   }
 }
