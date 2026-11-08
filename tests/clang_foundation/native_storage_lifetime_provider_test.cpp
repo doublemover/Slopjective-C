@@ -16,6 +16,14 @@ void Run(const fs::path &root,const char *standard,int ownership,
   const auto source=root/"provider/module.mm";
   Write(source,R"storage(
 namespace StorageLifetime {
+enum {FirstPriority=201,LastPriority=203};
+enum {OtherPriority=201,OtherLast=203};
+using PriorityType=decltype(FirstPriority);using OtherPriorityType=decltype(OtherPriority);
+inline PriorityType priority_identity(PriorityType value){return value;}
+inline int priority_overload(PriorityType){return 1;}
+inline int priority_overload(OtherPriorityType){return 2;}
+template<class T>struct PriorityBox {T value;};
+inline PriorityBox<PriorityType> priority_box(){return {FirstPriority};}
 extern int created[10],destroyed[10];
 void create(int);void destroy(int);void startup(int);void shutdown(int);
 struct Owner {
@@ -32,10 +40,10 @@ inline Owner &local_retained(){static __attribute__((no_destroy)) Owner value(6)
 inline Owner &local_finalized(){static __attribute__((always_destroy)) Owner value(7);return value;}
 inline Owner &thread_finalized(){static thread_local __attribute__((always_destroy)) Owner value(8);return value;}
 Owner &provider_local(){return local_retained();}
-void first() __attribute__((constructor(201)));
-void last() __attribute__((constructor(203)));
-void late_shutdown() __attribute__((destructor(203)));
-void early_shutdown() __attribute__((destructor(201)));
+void first() __attribute__((constructor(FirstPriority)));
+void last() __attribute__((constructor(LastPriority)));
+void late_shutdown() __attribute__((destructor(LastPriority)));
+void early_shutdown() __attribute__((destructor(FirstPriority)));
 void verify_exit() __attribute__((destructor(101)));
 int created[10],destroyed[10];
 int startup_count,startup_trace[3],shutdown_count,shutdown_trace[2];
@@ -73,6 +81,8 @@ void verify_exit(){
 static void *worker(void *){return StorageLifetime::thread_finalized().value==8?nullptr:(void *)1;}
 )storage")+"extern \"C\" int check_"+name+R"storage(() {
   using namespace StorageLifetime;
+  static_assert(!__is_same(PriorityType,OtherPriorityType));
+  if(priority_identity(FirstPriority)!=FirstPriority || priority_overload(FirstPriority)!=1 || priority_overload(OtherPriority)!=2 || priority_box().value!=FirstPriority)return 4;
   if(ready!=42 || attribute_ready!=43 || ordered.value!=2 || retained.value!=4 || finalized.value!=5)return 1;
   if(&local_retained()!=&provider_local() || local_finalized().value!=7)return 2;
   pthread_t thread;void *result=(void *)1;

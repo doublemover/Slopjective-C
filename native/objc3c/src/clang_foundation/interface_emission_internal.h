@@ -244,7 +244,7 @@ bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const cl
 
 bool HasFactoryValueArgument(const clang::TemplateArgument &,const clang::ASTContext &);
 
-bool HasOnlyProjectedLocalTypes(clang::QualType type);
+bool HasOnlyPublishedUnnamedTypes(clang::QualType type);
 
 bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
                                    const clang::ASTContext &context);
@@ -253,6 +253,8 @@ bool HasTemplateTemplateParameters(const clang::TemplateParameterList *parameter
 
 std::string HashInterfaceFacts(llvm::StringRef facts);
 
+bool IsPublishedUnnamedEnumEntity(const clang::NamedDecl *declaration);
+const clang::EnumDecl *NativeUnnamedEnumeration(const clang::NamedDecl *declaration);
 std::string InterfaceQualifiedName(const clang::NamedDecl *declaration);
 
 bool IsBoundedClassMemberAlias(const clang::TypeAliasTemplateDecl *pattern);

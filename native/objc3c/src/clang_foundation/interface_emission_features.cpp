@@ -1011,7 +1011,7 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
   return visitor.key;
 }
 
-bool HasOnlyProjectedLocalTypes(clang::QualType type) {
+bool HasOnlyPublishedUnnamedTypes(clang::QualType type) {
   struct Qualified:clang::DynamicRecursiveASTVisitor {
     bool valid=true;
     bool TraverseType(clang::QualType type,bool traverse_qualifier=true) override {
@@ -1030,8 +1030,8 @@ bool HasOnlyProjectedLocalTypes(clang::QualType type) {
     bool VisitTagType(clang::TagType *type) override {
       const auto *tag=type->getDecl();
       if(IsExpressionLocalTag(tag) || (!tag->getIdentifier() && !tag->getTypedefNameForAnonDecl()))
-        valid &= FactoryResultOrigin(tag)!=nullptr ||
-            !UnnamedTemplateTagKey(tag,tag->getASTContext()).empty();
+        valid &= (NativeUnnamedEnumeration(tag) && IsPublishedType(tag) && !IsExpressionLocalTag(tag)) ||
+            FactoryResultOrigin(tag)!=nullptr || !UnnamedTemplateTagKey(tag,tag->getASTContext()).empty();
       if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(tag))
         for(const auto &argument:specialization->getTemplateArgs().asArray())TraverseTemplateArgument(argument);
       return true;

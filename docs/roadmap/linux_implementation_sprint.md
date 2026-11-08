@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [source 2.146 / System 2.72 unnamed-enum span](linux_native_unnamed_enums.md)
+restores native enum declaration groups and binds distinct enum owners in public
+types, generic arguments and inline bodies. Source-free consumers preserve native
+identity after provider removal. Remaining implementation continues after the
+completed Source 2.145 compiler/frontend consolidation.
+
 The [source 2.145 / System 2.71 static-lifetime span](linux_native_storage_lifetime.md)
 preserves native initialization priorities, constant initialization and explicit
 static/TLS destruction policies through publication and import. Six publication

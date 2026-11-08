@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 145,
+        "minor": 146,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Public native unnamed enum groups retain canonical roots, first-enumerator identity, full representation/value contracts and enumerator selection through source-free replay and import; native-unnamed-enums v1 reader admission, matched SDK pending",
         "Native constructor/destructor and object initialization priorities, constant-initialization contracts and explicit static/TLS destruction policies retain source-free declaration/body identity and native-storage-lifetime v1 reader admission; matched SDK pending",
         "Native explicitly owned C++ unions containing ARC fields, enclosing records and active-arm field traversal retain native copy/destruction, partial-copy rollback and getter/snapshot/setter writeback; raw subobject traversal stays inside its explicit native owner region, borrowed and raw-resource extraction remain gated; keypath-resource-values v2 hard cutover, matched SDK pending",
         "Linux atomic managed Optional/Result and qualified data-only ARC record properties use owned getter snapshots, lock-protected fieldwise move replacement and unlocked old-owner destruction; callback exceptions unlock and dual-copy lock ordering deduplicates collisions; atomic-managed-properties v1 source-free admission, matched SDK pending",
@@ -328,12 +329,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 71,
+        "minor": 72,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Public native unnamed enum groups retain canonical roots, first-enumerator identity, full representation/value contracts and enumerator selection through source-free replay and import; native-unnamed-enums v1 reader admission, matched SDK pending",
         "Native constructor/destructor and object initialization priorities, constant-initialization contracts and explicit static/TLS destruction policies retain source-free declaration/body identity and native-storage-lifetime v1 reader admission; matched SDK pending",
         "Native explicitly owned C++ unions containing ARC fields, enclosing records and active-arm field traversal retain native copy/destruction, partial-copy rollback and getter/snapshot/setter writeback; raw subobject traversal stays inside its explicit native owner region, borrowed and raw-resource extraction remain gated; keypath-resource-values v2 hard cutover, matched SDK pending",
         "Linux atomic managed Optional/Result and qualified data-only ARC record properties use owned getter snapshots, lock-protected fieldwise move replacement and unlocked old-owner destruction; callback exceptions unlock and dual-copy lock ordering deduplicates collisions; atomic-managed-properties v1 source-free admission, matched SDK pending",

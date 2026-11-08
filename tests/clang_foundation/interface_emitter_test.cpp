@@ -352,6 +352,85 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestNativeUnnamedEnumReplay() {
+ for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
+  const bool cpp=std::string(standard)!="c17";
+  std::vector<std::string> args={"-x",cpp?"objective-c++":"objective-c",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+  if(arc)args.push_back("-fobjc-arc");
+  const std::string body=R"(
+   enum {First=201,Second=203};
+   enum {Third=17,Fourth=19};
+   void initialize(void) __attribute__((constructor(First)));
+  )";
+  const std::string extra=cpp?R"(
+   using Choice=decltype(First);
+   inline constexpr Choice selected=First;
+   inline constexpr Choice identity(Choice value){return value;}
+   inline decltype(Third) indirect(decltype(Third) value){return value;}
+   template<auto Value>struct ValueTag {static constexpr auto value=Value;};
+   inline int choose(){return ValueTag<First>::value;}
+   using Unlisted=ValueTag<static_cast<Choice>(211)>;
+   inline int unlisted(){return Unlisted::value;}
+   template<class T>struct TypeTag {T value;};
+   using Wrapped=TypeTag<Choice>;
+   inline Wrapped wrapped(){return {First};}
+   struct Container {enum {Member=23,Other=29};};
+  )":"";
+  const std::string source=cpp?"namespace NativeEnum {"+body+extra+"}":body;
+  auto emit=[&](const std::string &text,const std::vector<std::string> &names=std::vector<std::string>{}) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-enums.m");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.native_enums","test",{},{},{},names);
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeUnnamedEnumSemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeUnnamedEnumSemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  std::erase(decoded->required_semantics,kNativeUnnamedEnumSemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  const std::string prefix=cpp?"NativeEnum::":"";
+  for(const std::string &member:{"First","Second"}) {
+   auto subset=emit(source,{prefix+member});auto again=emit(subset.source_bytes,{prefix+member});
+   assert(subset.identity.semantic_fingerprint==again.identity.semantic_fingerprint);
+   assert(subset.source_bytes.find("Second")!=std::string::npos);
+   assert(subset.source_bytes.find("Third")==std::string::npos);
+  }
+  auto changed=source;changed.replace(changed.find("Second=203"),10,"Second=213");
+  assert(emit(changed).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  auto named=emit(cpp?"namespace NativeEnum {enum Named {First=201,Second=203};}":"enum Named {First=201,Second=203};");
+  auto invented=DecodeSemanticInterfaceSidecar(named.sidecar_json,named.source_bytes,supported);assert(invented);
+  assert(!llvm::is_contained(invented->required_semantics,std::string(kNativeUnnamedEnumSemantic)));
+  invented->required_semantics.push_back(kNativeUnnamedEnumSemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+  if(cpp) {
+   for(const std::string &boundary:{
+       "namespace NativeEnum {Choice unavailable(Choice);}",
+       "namespace NativeEnum {static inline Choice hidden(Choice value){return value;} inline Choice unavailable(Choice value){return hidden(value);}}"}) {
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(source+boundary,args,"enum-boundary.mm");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto rejected=EmitSemanticInterface(ast->getASTContext(),"fixture.enum_boundary","test",{},{},{},{"NativeEnum::First","NativeEnum::Choice","NativeEnum::unavailable"});
+    assert(!rejected.success);
+   }
+   const std::string owners="namespace NativeEnum {enum {A=1,B=2};enum {C=1,D=2};using Result=decltype(A);Result selected();}";
+   auto other_owner=owners;other_owner.replace(other_owner.find("decltype(A)"),11,"decltype(C)");
+   assert(emit(owners).identity.semantic_fingerprint!=emit(other_owner).identity.semantic_fingerprint);
+   const auto narrow=emit("namespace NativeEnum {enum : unsigned char {First=1,Second=2};}");
+   const auto wide=emit("namespace NativeEnum {enum : unsigned long {First=1,Second=2};}");
+   assert(narrow.identity.semantic_fingerprint!=wide.identity.semantic_fingerprint);
+   auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+    static_assert(NativeEnum::identity(NativeEnum::selected)==NativeEnum::First);
+    static_assert(NativeEnum::Container::Other==29);
+    static_assert(NativeEnum::Unlisted::value==static_cast<NativeEnum::Choice>(211));
+    int enum_consumer(){return NativeEnum::choose()+NativeEnum::indirect(NativeEnum::Third);}
+   )",args,"enum-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+  }
+ }
+}
+
 void TestNativeStorageLifetimeReplay() {
  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
   std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
@@ -11252,6 +11331,7 @@ int main(int argc,char **argv) {
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
+  TestNativeUnnamedEnumReplay();
   TestNativeStorageLifetimeReplay();
   TestNativeUnionKeyPathReplay();
   TestResourceKeyPathReplay();

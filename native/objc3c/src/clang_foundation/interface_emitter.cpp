@@ -78,7 +78,12 @@ class InterfaceCollector final
          continue;
        if (std::none_of(root_declarations_.begin(), root_declarations_.end(),
                         [&](const auto *root) {
-                          return InterfaceQualifiedName(root) == name;
+                          if(InterfaceQualifiedName(root)==name)return true;
+                          if(const auto *enumeration=NativeUnnamedEnumeration(root))
+                            return llvm::any_of(enumeration->enumerators(),[&](const auto *constant) {
+                              return InterfaceQualifiedName(constant)==name;
+                            });
+                          return false;
                         }))
          AddDiagnostic(result_, "O3IFC155",
                        "export selection does not name an eligible public root "
@@ -401,6 +406,10 @@ class InterfaceCollector final
                         : "declaration has no canonical type identity supported by the interface contract",
                     identity.stable_id.empty()
                         ? declaration->getQualifiedNameAsString() : identity.stable_id);
+      return true;
+    }
+    if(identity.canonical_type_identity.find("!unmodeled-native-enum")!=std::string::npos) {
+      AddDiagnostic(result_,"O3IFC144","native unnamed enum type identity exceeds its supported graph bound",identity.stable_id);
       return true;
     }
     if (identity.effects.ownership_identity.find("!unmodeled") != std::string::npos) {
@@ -1063,6 +1072,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kDependentKeyPathLiteralSemantic);
     if (HasCheckedKeyPathReadIdentity(declaration))
       sidecar.required_semantics.push_back(kCheckedKeyPathReadSemantic);
+    if (HasNativeUnnamedEnumIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeUnnamedEnumSemantic);
     if (HasNativeStorageLifetimeIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeStorageLifetimeSemantic);
     if (HasAtomicManagedPropertyIdentity(declaration))

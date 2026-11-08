@@ -102,6 +102,28 @@ std::string CanonicalType(clang::QualType type,
   policy.SuppressUnwrittenScope = false;
   policy.AnonymousTagNameStyle=static_cast<unsigned>(clang::PrintingPolicy::AnonymousTagMode::Plain);
   auto spelling=type.getCanonicalType().getAsString(policy);
+  struct EnumOwners : clang::DynamicRecursiveASTVisitor {
+    unsigned ordinal=0;std::string key;
+    bool TraverseDecl(clang::Decl *) override{return true;}
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitType(clang::Type *) override{return ++ordinal<=4096;}
+    bool VisitRecordType(clang::RecordType *record) override {
+      if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record->getDecl()))
+        for(const auto &argument:specialization->getTemplateArgs().asArray())
+          if(!TraverseTemplateArgument(argument))return false;
+      return true;
+    }
+    bool VisitEnumType(clang::EnumType *enumeration) override {
+      if(NativeUnnamedEnumeration(enumeration->getDecl()) &&
+          IsPublishedType(enumeration->getDecl()) && !IsExpressionLocalTag(enumeration->getDecl())) {
+        const auto owner=ReadInterfaceDeclarationStableId(enumeration->getDecl());
+        key+=std::to_string(ordinal)+":"+std::to_string(owner.size())+":"+owner;
+      }
+      return true;
+    }
+  } enums;
+  if(!enums.TraverseType(type.getCanonicalType()))spelling+=";!unmodeled-native-enum-type-graph;";
+  else if(!enums.key.empty())spelling+=";native-unnamed-enums:v1;type-owners="+ComputeInterfaceSourceSha256(enums.key)+";";
   const auto origins=FactoryTypeKey(type,context);
   if(!origins.empty())spelling+=";factory-type-origins="+ComputeInterfaceSourceSha256(origins)+";";
   const auto members=UnnamedTemplateTypeKey(type,context);
@@ -115,7 +137,37 @@ bool IsInMainFile(const clang::ASTContext &context,
   return IsModuleOwnedSource(context, location, source_root);
 }
 
+bool IsPublishedUnnamedEnumEntity(const clang::NamedDecl *declaration) {
+  if(!IsTopLevel(declaration))return false;
+  if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))declaration=pattern->getTemplatedDecl();
+  if(const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))declaration=pattern->getTemplatedDecl();
+  clang::QualType type;
+  if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
+    if(function->getStorageClass()==clang::SC_Static ||
+        (!function->isInlined() && !function->getDescribedFunctionTemplate()) || !function->hasBody())return false;
+    type=function->getType();
+  }else if(const auto *variable=llvm::dyn_cast<clang::VarDecl>(declaration)) {
+    if(variable->getStorageClass()==clang::SC_Static || (!variable->isInline() && !variable->isConstexpr()) || !variable->hasInit())return false;
+    type=variable->getType();
+  }else return false;
+  return CanonicalType(type,declaration->getASTContext()).find(";native-unnamed-enums:v1;")!=std::string::npos &&
+      HasOnlyPublishedUnnamedTypes(type);
+}
+
+const clang::EnumDecl *NativeUnnamedEnumeration(const clang::NamedDecl *declaration) {
+  if(!declaration)return nullptr;
+  const auto *enumeration=llvm::dyn_cast<clang::EnumDecl>(declaration);
+  if(const auto *constant=llvm::dyn_cast<clang::EnumConstantDecl>(declaration))
+    enumeration=llvm::dyn_cast<clang::EnumDecl>(constant->getDeclContext());
+  return enumeration && !enumeration->getIdentifier() &&
+      !enumeration->getTypedefNameForAnonDecl() && !enumeration->enumerators().empty()
+      ? enumeration:nullptr;
+}
+
 std::string InterfaceQualifiedName(const clang::NamedDecl *declaration) {
+  if(const auto *enumeration=llvm::dyn_cast<clang::EnumDecl>(declaration);
+      NativeUnnamedEnumeration(enumeration))
+    declaration=*enumeration->enumerator_begin();
   if (const auto *using_enum=llvm::dyn_cast<clang::UsingEnumDecl>(declaration)) {
     std::string owner;
     if(const auto *parent=llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext()))
@@ -741,7 +793,7 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
         variable && variable->getDescribedVarTemplate()) return false;
     if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
-      return pattern->getTemplatedDecl()->isExternallyVisible();
+      return pattern->getTemplatedDecl()->isExternallyVisible() || IsPublishedUnnamedEnumEntity(pattern);
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
         function && function->getDescribedFunctionTemplate()) return false;
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
@@ -750,13 +802,13 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
       return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
       return !llvm::isa<clang::CXXMethodDecl>(function) &&
-             function->isExternallyVisible();
+             (function->isExternallyVisible() || IsPublishedUnnamedEnumEntity(function));
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
-      return variable->hasGlobalStorage() && variable->isExternallyVisible();
+      return variable->hasGlobalStorage() && (variable->isExternallyVisible() || IsPublishedUnnamedEnumEntity(variable));
     // C typedef names have no linkage, but are public module lookup names.
     if (llvm::isa<clang::TypedefNameDecl>(declaration)) return true;
     if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration))
-      return tag->isExternallyVisible();
+      return tag->isExternallyVisible() || NativeUnnamedEnumeration(tag);
     if (const auto *objc = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
       return objc->isExternallyVisible();
     if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))

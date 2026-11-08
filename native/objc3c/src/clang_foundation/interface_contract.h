@@ -258,6 +258,10 @@ inline constexpr const char *kCheckedKeyPathReadSemantic = "objc3.keypath-checke
 inline bool HasCheckedKeyPathReadIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-checked-reads:v1;") != std::string::npos;
 }
+inline constexpr const char *kNativeUnnamedEnumSemantic = "objc3.native-unnamed-enums.v1";
+inline bool HasNativeUnnamedEnumIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-unnamed-enums:v1;")!=std::string::npos;
+}
 inline constexpr const char *kNativeStorageLifetimeSemantic = "objc3.native-storage-lifetime.v1";
 inline bool HasNativeStorageLifetimeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-storage-lifetime:v1;")!=std::string::npos ||

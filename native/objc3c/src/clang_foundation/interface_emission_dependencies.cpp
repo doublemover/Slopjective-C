@@ -301,7 +301,7 @@ class TypeDependencyVisitor final
       return;
     CheckVisibility(target);
     if (target->getDeclContext()->isFunctionOrMethod() ||
-        (!target->isExternallyVisible() && IsTopLevel(target)) ||
+        (!target->isExternallyVisible() && IsTopLevel(target) && !IsPublishedUnnamedEnumEntity(target)) ||
         (!IsInMainFile(context_, target->getLocation()) && !IsResolved(target)))
       AddDiagnostic(result_, "O3IFC112",
                     "declaration expression references a non-public or unresolved dependency",
@@ -1591,7 +1591,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       }
       if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member)) {
         if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(type))
-          supported &= (tag->getIdentifier() || tag->getTypedefNameForAnonDecl() || IsExpressionLocalTag(tag) ||
+          supported &= (tag->getIdentifier() || tag->getTypedefNameForAnonDecl() || NativeUnnamedEnumeration(tag) || IsExpressionLocalTag(tag) ||
               (llvm::isa<clang::CXXRecordDecl>(tag) &&
                !UnnamedTemplateRecordKey(llvm::cast<clang::CXXRecordDecl>(tag),tag->getASTContext()).empty()));
         supported &= IsBoundedCxxDeclaration(type, result, exports);

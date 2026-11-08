@@ -44,5 +44,9 @@
     "unsupported": 3,
     "all_executable_passed": true
   },
-  "frontend_consolidation": "all selected current groups running"
+  "frontend_consolidation": {
+    "selected_groups": 70,
+    "all_passed": true,
+    "source_checkpoint": "2.145"
+  }
 }

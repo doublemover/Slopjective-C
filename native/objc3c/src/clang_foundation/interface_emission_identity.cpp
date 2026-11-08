@@ -428,9 +428,11 @@ bool GenericArgumentKey(const clang::TemplateArgument &argument,
     if (value.isNull() || value->isDependentType())return false;
     const auto origins=FactoryTypeKey(value,context);
     const auto members=UnnamedTemplateTypeKey(value,context);
+    const auto canonical=CanonicalType(value,context);
+    const bool native_enums=canonical.find(";native-unnamed-enums:v1;")!=std::string::npos;
     if(value->hasUnnamedOrLocalType() || !origins.empty() || !members.empty())
-      if(!allow_factory || (origins.empty() && members.empty()) || !HasOnlyProjectedLocalTypes(value))return false;
-    add(CanonicalType(value,context));return true;
+      if(!allow_factory || (!native_enums && origins.empty() && members.empty()) || !HasOnlyPublishedUnnamedTypes(value))return false;
+    add(canonical);return true;
   };
   add(std::to_string(argument.getKind()));
   switch(argument.getKind()) {
@@ -843,6 +845,7 @@ public:
   }
   bool VisitTagType(clang::TagType *type) {
     const auto *tag=type->getDecl();
+    if(NativeUnnamedEnumeration(tag) && IsPublishedType(tag) && !IsExpressionLocalTag(tag))Reference(tag);
     if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(tag);
         ClosedClassArguments(specialization)) Reference(specialization);
     const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(tag);
@@ -1298,6 +1301,11 @@ public:
             if(const auto slot=parameters->find(reference->getDecl()->getCanonicalDecl());slot!=parameters->end()) {
               out << "__objc3_parameter_" << slot->second;return true;
             }
+          if(const auto *constant=llvm::dyn_cast<clang::EnumConstantDecl>(reference->getDecl());
+              constant && IsPublishedType(llvm::cast<clang::EnumDecl>(constant->getDeclContext())) &&
+              !IsExpressionLocalTag(llvm::cast<clang::EnumDecl>(constant->getDeclContext()))) {
+            constant->printQualifiedName(out,policy);return true;
+          }
           // Detached specialization replay qualifies ordinary namespace calls.
           // Keep the spelling independent of that lexical replay context; the
           // typed traversal binds the selected overload and its native symbol.
@@ -1996,6 +2004,14 @@ bool SelectedExport(const clang::NamedDecl *declaration,
   if (exports.empty() ||
       std::find(exports.begin(), exports.end(), "*") != exports.end())
     return true;
+  if(const auto *enumeration=NativeUnnamedEnumeration(declaration))
+    if(IsTopLevel(enumeration))
+      for(const auto *constant:enumeration->enumerators()) {
+        const auto member=InterfaceQualifiedName(constant);
+        if(std::any_of(exports.begin(),exports.end(),[&](const auto &name) {
+          return member==name || member.starts_with(name+"::");
+        }))return true;
+      }
   const auto root = ExportRootName(declaration);
   return std::any_of(exports.begin(), exports.end(), [&](const auto &name) {
     // Selecting a namespace admits its public descendants. Selecting a leaf
@@ -2201,6 +2217,27 @@ std::string ReadInterfaceDeclarationStableId(
       return "c:@RecordProjectedFunction@"+projected;
   llvm::SmallString<128> usr;
   if (clang::index::generateUSRForDecl(declaration, usr)) return {};
+  if(!usr.str().starts_with("c:@")) {
+    if(IsPublishedUnnamedEnumEntity(declaration)) {
+      const auto suffix=usr.str().find('@');
+      if(suffix!=llvm::StringRef::npos)return "c:"+usr.str().substr(suffix).str();
+    }
+    // Clang gives a public template instantiation filename-scoped USRs when
+    // an argument has an unnamed enum type. Its checked primary owner and
+    // converted argument graph already supply stable module-owned identity.
+    // Keep the complete native scope/member suffix, including overload types.
+    for(const clang::DeclContext *scope=llvm::isa<clang::ClassTemplateSpecializationDecl>(declaration)
+          ? llvm::cast<clang::ClassTemplateSpecializationDecl>(declaration):declaration->getDeclContext();scope;scope=scope->getParent())
+      if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(scope);
+          specialization && IsPublishedType(specialization->getSpecializedTemplate())) {
+        std::string arguments;
+        if(ClassSpecializationArgumentKey(specialization,declaration->getASTContext(),arguments) &&
+            arguments.find(";native-unnamed-enums:v1;")!=std::string::npos) {
+          const auto suffix=usr.str().find('@');
+          if(suffix!=llvm::StringRef::npos)return "c:"+usr.str().substr(suffix).str();
+        }
+      }
+  }
   // Native USRs encode filenames for C typedefs because those names have no
   // linkage. Module provenance provides the provider identity; physical source
   // and canonical artifact filenames must not change the exported type name.
@@ -2240,6 +2277,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.qualified_name = declaration->getNameAsString();
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
+  if(NativeUnnamedEnumeration(representative))
+    identity.canonical_type_identity+=";native-unnamed-enums:v1;";
   if (identity.canonical_type_identity.empty()) return false;
   if (HasEffectfulTemplateProjection(representative,context))
     identity.canonical_type_identity+=";cxx-template-callable-projections:v1;";
