@@ -13,7 +13,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: linux-native-assurance-${{ github.event.pull_request.number || github.ref }}
+  group: linux-native-assurance-${{ github.event.pull_request.number || github.ref }}${{ inputs.diagnostic_core_only && '-core-diagnosis' || '' }}
   # Finish the active cold compiler build; GitHub keeps the newest pending run.
   # Each run still qualifies only its own exact source revision.
   cancel-in-progress: false
