@@ -101,13 +101,27 @@ endif()
 # Build the upstream tool against the same qualified Clang/LLVM libraries.
 set(_scan_source "${_objc3_repo}/out/toolchains/objc3-development/src/clang/tools/clang-scan-deps")
 set(_tablegen "${_objc3_repo}/out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen")
-if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
+set(OBJC3C_TABLEGEN "" CACHE FILEPATH "Explicit same-version LLVM TableGen for frontend development")
+if(OBJC3C_TABLEGEN)
+  if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
+    message(FATAL_ERROR "Compiler profiles require their own foundation TableGen")
+  endif()
+  file(REAL_PATH "${OBJC3C_TABLEGEN}" _tablegen)
+elseif(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
   string(JSON _profile_build GET "${_objc3_profile}" paths build)
   set(_tablegen "${_profile_build}/bin/llvm-tblgen")
 endif()
 if(NOT EXISTS "${_tablegen}")
   message(FATAL_ERROR "The sealed foundation build must provide llvm-tblgen")
 endif()
+execute_process(COMMAND "${_tablegen}" --version
+  RESULT_VARIABLE _tablegen_exit OUTPUT_VARIABLE _tablegen_version ERROR_VARIABLE _tablegen_error)
+string(FIND "${_tablegen_version}" "LLVM version ${LLVM_PACKAGE_VERSION}\n" _tablegen_version_at)
+if(NOT _tablegen_exit EQUAL 0 OR _tablegen_version_at EQUAL -1)
+  message(FATAL_ERROR "Frontend TableGen must match LLVM ${LLVM_PACKAGE_VERSION}: ${_tablegen_error}")
+endif()
+file(SHA256 "${_tablegen}" _tablegen_sha256)
+message(STATUS "Frontend TableGen: ${_tablegen} (SHA-256 ${_tablegen_sha256})")
 add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Opts.inc"
   COMMAND "${_tablegen}" -gen-opt-parser-defs
     -I "${_objc3_repo}/out/toolchains/objc3-development/src/llvm/include"
@@ -438,6 +452,7 @@ if (BUILD_TESTING)
   objc3c_add_frontend_test(NAME objc3_interface_exports COMMAND objc3_interface_exports_test)
   add_executable(objc3_interface_emitter_test
     ../../../../tests/clang_foundation/interface_emitter_test.cpp)
+  target_compile_options(objc3_interface_emitter_test PRIVATE -Werror=unused-function)
   target_include_directories(objc3_interface_emitter_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_emitter_test PRIVATE objc3c_clang_foundation)

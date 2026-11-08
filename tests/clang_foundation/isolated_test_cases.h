@@ -18,8 +18,10 @@ namespace objc3::clang_foundation::test {
 // The enclosing CTest timeout and sanitizer settings apply to every child.
 class IsolatedCases {
   unsigned passed_ = 0, failed_ = 0;
+  const char *selected_ = std::getenv("OBJC3_TEST_CASE");
 public:
   template<class Work> void Run(const std::string &name, Work work) {
+    if(selected_ && name != selected_)return;
     std::cout.flush();std::cerr.flush();std::fflush(nullptr);
     const auto child = fork();
     if(child < 0)throw std::system_error(errno,std::generic_category(),"fork test case");
@@ -50,7 +52,12 @@ public:
   }
   int Finish() const {
     std::cerr << passed_ << " independent cases passed; " << failed_ << " failed\n";
-    return failed_ ? 1 : 0;
+    if(failed_)return 1;
+    if(selected_) {
+      std::cerr << "PARTIAL diagnostic case selection; full suite not qualified\n";
+      return 2;
+    }
+    return passed_ ? 0 : 1;
   }
 };
 } // namespace objc3::clang_foundation::test

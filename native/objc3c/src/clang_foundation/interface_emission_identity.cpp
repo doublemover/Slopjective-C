@@ -639,11 +639,15 @@ std::string UnnamedTemplateRecordKey(const clang::CXXRecordDecl *record,
     if (record->isLambda() || record->isLocalClass()) return {};
     const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record);
     const auto *pattern=specialization?specialization->getSpecializedTemplate():record->getDescribedClassTemplate();
+    const bool at_owner=(owner && pattern && pattern->getCanonicalDecl()==owner->getCanonicalDecl()) ||
+        (ordinary && record->getCanonicalDecl()==ordinary->getCanonicalDecl());
+    // Named template roots have no unnamed member path. Inspect this before
+    // their arguments: a factory's local result can refer back to its callable
+    // identity through those arguments and must not recurse merely to say no.
+    if(at_owner && !unnamed)return {};
     std::string arguments;
     if (specialization && !ClassSpecializationArgumentKey(specialization,context,arguments)) return {};
-    if ((owner && pattern && pattern->getCanonicalDecl()==owner->getCanonicalDecl()) ||
-        (ordinary && record->getCanonicalDecl()==ordinary->getCanonicalDecl())) {
-      if (!unnamed) return {};
+    if (at_owner) {
       const clang::NamedDecl *publication=owner?static_cast<const clang::NamedDecl *>(owner):ordinary;
       std::string key=ReadInterfaceDeclarationStableId(publication)+":"+ReadNativeSymbolName(publication)+":"+arguments;
       for (auto i=path.rbegin();i!=path.rend();++i)key+=";"+*i;
@@ -2154,7 +2158,16 @@ std::string ReadInterfaceLanguageProfile(const clang::ASTContext &context) {
 static std::string ProjectedCallableKey(const clang::FunctionDecl *function) {
   const auto &context=function->getASTContext();
   const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);
-  const auto parent=method?UnnamedTemplateRecordKey(method->getParent(),context):std::string();
+  auto parent=method?UnnamedTemplateRecordKey(method->getParent(),context):std::string();
+  if(parent.empty() && method) {
+    const auto type=context.getCanonicalTagType(method->getParent());
+    // A named specialization can contain an unnamed argument. Its displayed
+    // qualified member name retains that argument's physical header path.
+    // Bind the exact canonical owner and argument origins instead, including
+    // methods whose own parameter/result types do not mention their owner.
+    if(!UnnamedTemplateTypeKey(type,context).empty())
+      parent="named-record:"+CanonicalType(type,context);
+  }
   if (parent.empty() && UnnamedTemplateTypeKey(function->getType(),context).empty()) return {};
   std::string name=function->getQualifiedNameAsString();
   if (!parent.empty()) {
@@ -2599,6 +2612,13 @@ bool ReadInterfaceDeclarationIdentity(
         found |= llvm::isa<clang::ClassTemplateSpecializationDecl>(record) && !record->getDefinition();return true;
       }
       bool VisitVarDecl(clang::VarDecl *variable) override {
+        // Provider-owned explicit specializations replay as extern declarations.
+        // Their external-storage contract is complete even when the consumer
+        // cannot see the provider's definition. Partial patterns and genuinely
+        // incomplete primary declarations still require the v2 capability.
+        if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(variable);
+            IsExplicitNamespaceVariableSpecialization(specialization) &&
+            !PublishesVariableInitializer(variable)) return true;
         found |= llvm::isa<clang::VarTemplateSpecializationDecl>(variable) &&
                  !variable->getDefinition() && variable->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly;
         return true;

@@ -286,7 +286,9 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
   Expect(Request(Root, Header +
       "typedef BorrowedBytes (*Provider)(id); Provider provider=bytes;",
       Language, Standard, ARC), false,
-      "cannot initialize a variable of type 'Provider'");
+      Language == BaseLanguage::ObjectiveC
+          ? "callable conversion changes an ownership or borrowed lifetime contract"
+          : "cannot initialize a variable of type 'Provider'");
   const std::vector<std::string> Escapes = {
       "void f(id o) { global_pointer=bytes(o); }",
       "void f(id o) { static const char *p; p=bytes(o); }",

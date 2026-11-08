@@ -85,3 +85,36 @@ file(WRITE "${{CMAKE_BINARY_DIR}}/chosen.txt" "${{_c_inline_objc_runtime}}")
         assert Path((build / 'chosen.txt').read_text()) == runtime / 'lib/libobjc.so'
     else:
         assert result.returncode != 0 and '_c_inline_objc_runtime' in result.stderr
+
+
+@pytest.mark.parametrize('mode',['foundation','explicit','wrong-version','profile-override','missing'])
+def test_frontend_generator_admission_executes_the_actual_cmake_guard(tmp_path,mode):
+    text=(ROOT/'native/objc3c/src/clang_foundation/CMakeLists.txt').read_text()
+    start=text.index('set(_tablegen ')
+    end=text.index('add_custom_command(OUTPUT',start)
+    repo=tmp_path/'repo';tool=repo/'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen'
+    tool.parent.mkdir(parents=True)
+    version='23.1.4' if mode=='wrong-version' else '23.1.5'
+    marker=tmp_path/'executed'
+    tool.write_text(f'#!/bin/sh\nprintf ran > "{marker}"\nprintf "LLVM version {version}\\n"\n')
+    tool.chmod(0o755)
+    source=tmp_path/'source';source.mkdir()
+    explicit=tool if mode!='missing' else tmp_path/'absent-generator'
+    settings=(f'set(OBJC3C_TABLEGEN "{explicit}")\n' if mode!='foundation' else '')
+    if mode=='profile-override':settings+='set(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE compiler-asan-ubsan)\n'
+    (source/'CMakeLists.txt').write_text(f'''cmake_minimum_required(VERSION 3.25)
+project(FrontendGenerator NONE)
+set(_objc3_repo "{repo}")
+set(LLVM_PACKAGE_VERSION 23.1.5)
+{settings}
+{text[start:end]}
+''')
+    result=subprocess.run(['cmake','-S',str(source),'-B',str(tmp_path/'build')],
+                          text=True,capture_output=True,timeout=30)
+    if mode in ('foundation','explicit'):
+        assert result.returncode==0,result.stdout+result.stderr
+        assert owner.digest(tool) in result.stdout and marker.is_file()
+    else:
+        assert result.returncode!=0
+        if mode=='wrong-version':assert 'must match LLVM 23.1.5' in result.stderr
+        if mode in ('profile-override','missing'):assert not marker.exists()

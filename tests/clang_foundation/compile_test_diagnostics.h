@@ -13,6 +13,6 @@ inline void ReportFailure(const CompileResult &result) {
     std::cerr << diagnostic.code << ": " << diagnostic.message << '\n';
   if(result.interface_artifact)
     for(const auto &diagnostic:result.interface_artifact->diagnostics)
-      std::cerr << diagnostic.code << ": " << diagnostic.message << '\n';
+      std::cerr << diagnostic.code << ": " << diagnostic.message << " [" << diagnostic.subject << "]\n";
 }
 } // namespace objc3::clang_foundation::test

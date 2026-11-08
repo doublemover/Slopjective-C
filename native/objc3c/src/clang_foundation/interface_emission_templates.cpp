@@ -400,7 +400,11 @@ const clang::NamedDecl *TemplatePublicationOwner(const clang::NamedDecl *declara
           llvm::isa<clang::ClassTemplateSpecializationDecl>(record) ||
           (!record->getIdentifier() && !record->getTypedefNameForAnonDecl() &&
            !record->isLocalClass() && !record->isLambda());
-      if (pattern && !record->isDependentContext() && !record->getDescribedClassTemplate() &&
+      // An unnamed member has no independently published declaration root.
+      // Keep walking to its named record/template owner so re-exported aliases
+      // bind to the exact resolved dependency rather than an unresolvable tag.
+      if (pattern && (record->getIdentifier() || record->getTypedefNameForAnonDecl()) &&
+          !record->isDependentContext() && !record->getDescribedClassTemplate() &&
           !llvm::isa<clang::ClassTemplateSpecializationDecl>(record)) return record;
     }
   }

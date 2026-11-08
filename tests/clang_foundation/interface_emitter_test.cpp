@@ -32,6 +32,26 @@ using namespace objc3::clang_foundation;
 
 namespace {
 
+std::vector<llvm::StringRef> CurrentReaderSemantics() {
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();
+  return {catalog.begin(),catalog.end()};
+}
+
+template<class Emit>
+void ExpectCurrentPublication(Emit emit,const std::string &source) {
+  auto artifact=emit(source);
+  if(!artifact.success)std::fprintf(stderr,"Publication source: %s\n",source.c_str());
+  for(const auto &diagnostic:artifact.diagnostics)
+    std::fprintf(stderr,"%s: %s [%s]\n",diagnostic.code.c_str(),
+                 diagnostic.message.c_str(),diagnostic.subject.c_str());
+  assert(artifact.success);
+  auto replay=emit(artifact.source_bytes);
+  for(const auto &diagnostic:replay.diagnostics)
+    std::fprintf(stderr,"%s: %s [%s]\n",diagnostic.code.c_str(),
+                 diagnostic.message.c_str(),diagnostic.subject.c_str());
+  assert(replay.success && replay.identity.semantic_fingerprint==artifact.identity.semantic_fingerprint);
+}
+
 void TestPrimitiveAndObjectiveCContractIdentity() {
   auto emit = [](const std::string &source, std::vector<std::string> flags) {
     flags.push_back("--target=x86_64-unknown-linux-gnu");
@@ -1598,17 +1618,18 @@ void TestAsyncConsumedOwnershipCapability() {
     for (bool arc : {false, true}) {
       std::vector<std::string> args = {"-x", std::string(standard) == "c17" ? "objective-c" : "objective-c++",
           std::string("-std=") + standard, "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
-          "--target=x86_64-unknown-linux-gnu", "-fblocks"};
+          "--target=x86_64-unknown-linux-gnu", "-fblocks",
+          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;
-      AddRuntimeInterfaceFiles(files, args);
+      AddRuntimeInterfaceFiles(files, args, std::string(standard) != "c17");
       const std::string source = R"(
         #include "objc3c/runtime/objc3_runtime_services.h"
         typedef const void *CFRef;
         CFRef body_source(void) __attribute__((nothrow,cf_returns_retained));
         int sync_entry(__attribute__((cf_consumed)) CFRef) __attribute__((nothrow,objc_executor(main)));
         int consume_signature(__attribute__((cf_consumed)) CFRef) __objc3_async_frame;
-        static inline int consume_body(void) __objc3_async_frame {
+        inline int consume_body(void) __objc3_async_frame {
           return __objc3_await sync_entry(body_source());
         }
         static int unpublished_body(void) __objc3_async_frame {
@@ -1618,10 +1639,10 @@ void TestAsyncConsumedOwnershipCapability() {
         - (instancetype)initFrame __objc3_async_frame;
         @end
         id retained_signature(void) __objc3_async_frame __attribute__((ns_returns_retained));
-        static inline id retained_body(void) __objc3_async_frame {return __objc3_await retained_signature();}
+        inline id retained_body(void) __objc3_async_frame {return __objc3_await retained_signature();}
         CFRef retained_foreign_signature(void) __objc3_async_frame __attribute__((cf_returns_retained));
         CFRef borrowed_foreign_signature(void) __objc3_async_frame __attribute__((cf_returns_not_retained));
-        static inline CFRef retained_foreign_body(void) __objc3_async_frame {
+        inline CFRef retained_foreign_body(void) __objc3_async_frame {
           return __objc3_await retained_foreign_signature();
         }
         int plain(void);
@@ -1634,13 +1655,13 @@ void TestAsyncConsumedOwnershipCapability() {
         id retained_task_signature(void) __objc3_async __attribute__((ns_returns_retained));
         CFRef retained_foreign_task_signature(void) __objc3_async __attribute__((cf_returns_retained));
         CFRef borrowed_foreign_task_signature(void) __objc3_async __attribute__((cf_returns_not_retained));
-        static inline id retained_task_body(void) __objc3_async {return __objc3_await retained_task_signature();}
-        static inline CFRef retained_foreign_task_body(void) __objc3_async {return __objc3_await retained_foreign_task_signature();}
-        static inline objc3::task<int> ordinary_body(__attribute__((cf_consumed)) CFRef value) {
+        inline id retained_task_body(void) __objc3_async {return __objc3_await retained_task_signature();}
+        inline CFRef retained_foreign_task_body(void) __objc3_async {return __objc3_await retained_foreign_task_signature();}
+        inline objc3::task<int> ordinary_body(__attribute__((cf_consumed)) CFRef value) {
           if (value) CFRelease(value);
           co_return 0;
         }
-        static inline auto ordinary_block_factory(void) {
+        inline auto ordinary_block_factory(void) {
           return ^objc3::task<int>(__attribute__((cf_consumed)) CFRef value) {
             if (value) CFRelease(value);
             co_return 0;
@@ -1655,7 +1676,7 @@ void TestAsyncConsumedOwnershipCapability() {
         assert(ast && !ast->getDiagnostics().hasErrorOccurred());
         auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.async.ownership", "test", {}, {}, {}, exports);
         for (const auto &diagnostic : result.diagnostics)
-          std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
+          std::fprintf(stderr, "%s: %s [%s]\n", diagnostic.code.c_str(), diagnostic.message.c_str(), diagnostic.subject.c_str());
         assert(result.success);
         return result;
       };
@@ -1957,7 +1978,7 @@ void TestCOverloadableInterfaces() {
 
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      "__attribute__((no_profile_instrument_function)) void *old_api(void);\n",
+      "__attribute__((target(\"sse4.2\"))) void *target_specific_api(void);\n",
       {"-x", "c", "-std=c11", "--target=x86_64-unknown-linux-gnu"},
       "attributed_fixture.c");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -2179,12 +2200,7 @@ inline int actor_request(objc3_actor_t *actor) __objc3_async {
     std::fprintf(stderr,"%s: %s [%s]\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
   assert(emitted.success);
   assert(emitted.source_bytes.find("promise_type")==std::string::npos);
-  const std::vector<llvm::StringRef> supported={
-      "objc3.cxx-data-interfaces.v1","objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v5",
-      kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,
-      kSdkRuntimeDeclarationSemantic,RuntimeInterfaceSemantic(),
-      "objc3.module-owned-names.v1"};
+  const auto supported = CurrentReaderSemantics();
   auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,supported);
   assert(decoded);
   assert(std::all_of(decoded->declarations.begin(),decoded->declarations.end(),
@@ -2766,12 +2782,7 @@ void TestCxxLocalExpressions() {
 }
 
 void TestCxxLocalTypes() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-definitions.v1",
-      "objc3.cxx-member-interfaces.v1", "objc3.cxx-declaration-expressions.v1",
-      "objc3.cxx-lambda-expressions.v1", "objc3.cxx-local-types.v1",
-      "objc3.cxx-unnamed-local-types.v1",
-      "objc3.module-owned-names.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source, const char *filename = "local-types.cpp") {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -2846,19 +2857,13 @@ void TestCxxLocalTypes() {
     assert(!invalid); llvm::consumeError(invalid.takeError());
     auto factory = emit("inline auto factory() { struct Local {int n;}; return Local{42}; }");
     assert(factory.success && factory.sidecar_json.find(kCxxLocalFactoryResultSemantic)!=std::string::npos);
-    for (const auto *boundary : {
-             "static int hidden(); inline int call() {struct Local {int get() {return hidden();}}; return Local{}.get();}",
-             "struct Public {struct {int n;} value;};"}) {
-      auto rejected = emit(boundary);
-      assert(!rejected.success);
-    }
+    assert(!emit("static int hidden(); inline int call() {struct Local {int get() {return hidden();}}; return Local{}.get();}").success);
+    ExpectCurrentPublication(emit,"struct Public {struct {int n;} value;};");
   }
 }
 
 void TestGenericLocalLambdas() {
-  const std::vector<llvm::StringRef> semantics={"objc3.cxx-data-interfaces.v1",
-      "objc3.cxx-definitions.v1","objc3.cxx-lambda-expressions.v1",
-      "objc3.cxx-generic-local-lambdas.v2"};
+  const auto semantics = CurrentReaderSemantics();
   for (const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &code,const char *file="generic-local.cpp",
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
@@ -3046,8 +3051,7 @@ void TestCxxUnionValues() {
     assert(!damaged);llvm::consumeError(damaged.takeError());
     auto factory=emit("inline auto factory(){union Local{int n;};return Local{42};}");
     assert(factory.success && factory.sidecar_json.find(kCxxLocalFactoryResultSemantic)!=std::string::npos);
-    auto anonymous_public=emit("struct Public{union{int n;double d;} value;};");
-    assert(!anonymous_public.success);
+    ExpectCurrentPublication(emit,"struct Public{union{int n;double d;} value;};");
   }
 }
 
@@ -3151,7 +3155,7 @@ void TestPublicFunctionTemplates() {
     auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     assert(!emit("static int hidden;template<class T> int api(T n){return hidden+n;}").success);
     assert(!emit("template<class T> T helper(T n){return n;}inline int api(){return helper(42);}","excluded-template.cpp",{"api"}).success);
-    assert(!emit("template<class T> T declared(T n);").success);
+    ExpectCurrentPublication(emit,"template<class T> T declared(T n);");
   }
 }
 
@@ -4206,7 +4210,7 @@ void TestCustomCoroutineBodies() {
            "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR},filename);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.custom_coroutines","test",{}));
-      return EmitSemanticInterface(ast->getASTContext(),"fixture.custom_coroutines","test",{},{},{},exports);
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.custom_coroutines","test",{},{},{},exports,{},&ast->getPreprocessor());
     };
     auto first=emit(source);
     for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
@@ -9213,7 +9217,7 @@ void TestConcreteMemberClassSpecializations() {
     auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     auto hidden=emit("static int hidden(){return 42;}struct Concrete{template<class T>struct Box{};};template<>struct Concrete::Box<int>{int get(){return hidden();}};");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("struct Concrete{template<class T>struct Box{};};template<>struct Concrete::Box<int>;").success);
+    ExpectCurrentPublication(emit,"struct Concrete{template<class T>struct Box{};};template<>struct Concrete::Box<int>;");
   }
 }
 
@@ -9367,7 +9371,7 @@ void TestDetachedStaticDataTemplates() {
     auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{static int value;};template<class T>int Box<T>::value=hidden();");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("template<class T>struct Box{static int value;};").success);
+    ExpectCurrentPublication(emit,"template<class T>struct Box{static int value;};");
   }
 }
 
@@ -9456,7 +9460,7 @@ void TestDetachedCallableTemplates() {
     assert(reinitialized.success && reinitialized.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{int get();};template<class T>int Box<T>::get(){return hidden();}");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("template<class T>struct Box{int get();};").success);
+    ExpectCurrentPublication(emit,"template<class T>struct Box{int get();};");
   }
 }
 
@@ -9557,7 +9561,7 @@ void TestPartialVariableSpecializations() {
     assert(!rejected);llvm::consumeError(rejected.takeError());
     auto hidden=emit("static int hidden(){return 42;}template<class T>inline int value=0;template<class T>inline int value<T*> =hidden();");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("template<class T>inline int value=0;template<class T>extern int value<T*>;").success);
+    ExpectCurrentPublication(emit,"template<class T>inline int value=0;template<class T>extern int value<T*>;");
   }
 }
 
@@ -9615,7 +9619,7 @@ void TestPartialClassSpecializations() {
     assert(!rejected);llvm::consumeError(rejected.takeError());
     auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{};template<class T>struct Box<T*>{int get(){return hidden();}};");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("template<class T>struct Box{};template<class T>struct Box<T*>;").success);
+    ExpectCurrentPublication(emit,"template<class T>struct Box{};template<class T>struct Box<T*>;");
   }
 }
 
@@ -9671,8 +9675,8 @@ void TestClassSpecializations() {
     assert(!rejected);llvm::consumeError(rejected.takeError());
     auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{};template<>struct Box<int>{int get(){return hidden();}};");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("template<class T>struct Box{};template<>struct Box<int>;").success);
-    assert(!emit("template<class T>struct Box{};template<class T>struct Box<T*>{Box();};").success);
+    ExpectCurrentPublication(emit,"template<class T>struct Box{};template<>struct Box<int>;");
+    ExpectCurrentPublication(emit,"template<class T>struct Box{};template<class T>struct Box<T*>{Box();};");
   }
 }
 
@@ -9725,7 +9729,7 @@ void TestVariableSpecializations() {
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
     assert(!emit("template<class T>inline int value=0;template<>int value<int> __attribute__((used)) =42;").success);
-    assert(!emit("template<class T>inline int value=0;template<class T>extern int value<T*>;").success);
+    ExpectCurrentPublication(emit,"template<class T>inline int value=0;template<class T>extern int value<T*>;");
   }
 }
 
@@ -9961,10 +9965,8 @@ void TestConcreteNestedTemplates() {
     auto hidden=emit("static int hidden(){return 42;}struct Outer{template<class T>struct Box{int f(){return hidden();}};};");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
-    for(const auto *source:{
-        "struct Outer{template<class T>struct Box;};",
-        "struct Outer{template<class T>union Box{T value;};};"})
-      assert(!emit(source).success);
+    ExpectCurrentPublication(emit,"struct Outer{template<class T>struct Box;};");
+    assert(!emit("struct Outer{template<class T>union Box{T value;};};").success);
   }
 }
 
@@ -10044,7 +10046,7 @@ void TestConcreteMemberTemplates() {
         "struct Concrete{template<class U>static U value;};",
         "struct Concrete{template<template<class>class U>int f();};",
         "struct Concrete{template<class U>int g(U);};"})
-      assert(!emit(source).success);
+      ExpectCurrentPublication(emit,source);
   }
 }
 
@@ -10190,11 +10192,9 @@ void TestNestedTemplateTypes() {
       assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
           [](const auto &d){return d.code=="O3IFC112";}));
     }
-    for(const auto *gated:{
-      "template<class T>struct Outer{struct Inner;};",
-      "template<class T>struct Outer{union Inner{T value;};};",
-      "template<class T>struct Outer{template<class U>static U value;};"})
-      assert(!emit(gated).success);
+    assert(!emit("template<class T>struct Outer{struct Inner;};").success);
+    ExpectCurrentPublication(emit,"template<class T>struct Outer{template<class U>static U value;};");
+    assert(!emit("template<class T>struct Outer{union Inner{T value;};};").success);
     auto partial=emit("template<class T>struct Outer{template<class U>struct Inner{};template<class U>struct Inner<U*>{};};");
     assert(partial.success && partial.sidecar_json.find(kCxxDependentMemberPartialSemantic)!=std::string::npos);
   }
@@ -10329,7 +10329,7 @@ void TestClassMemberTemplates() {
         "template<class T>struct Box{template<class U>U f(U);};",
         "template<class T>struct Box{template<template<class>class U>int f();};",
         "template<class T>struct Box{template<class U>int f(U,...)=delete;};"})
-      assert(!emit(gated).success);
+      ExpectCurrentPublication(emit,gated);
     const std::string specialized="template<class T>struct Box{template<class U>int f(U n){return n;}};template<>template<>int Box<int>::f<int>(int n){return n+1;}";
     auto member=emit(specialized);
     assert(member.success && member.sidecar_json.find(kCxxClosedParentMemberSemantic)!=std::string::npos);
@@ -10800,10 +10800,7 @@ void TestNativeExportRoots() {
 }
 
 void TestCxxFriends() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-definitions.v1",
-      "objc3.cxx-friends.v1", "objc3.module-owned-names.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -11002,12 +10999,7 @@ void TestCxxNamespaceAttributes() {
 }
 
 void TestCxxImmediateDefaulting() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-declaration-expressions.v1", "objc3.cxx-definitions.v1",
-      "objc3.cxx-defaulted-comparisons.v1", "objc3.cxx-out-of-line-defaulting.v1",
-      "objc3.cxx-immediate-defaulting.v1", "objc3.module-owned-names.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -11129,11 +11121,7 @@ void TestCxxDefaultedComparisons() {
 }
 
 void TestCxxDefinitions() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-namespaces.v1", "objc3.cxx-definitions.v1",
-      "objc3.cxx-declaration-expressions.v1", "objc3.module-owned-names.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
     auto emit = [&](const std::string &source,
@@ -11503,9 +11491,7 @@ void TestCxxClassLifecycles() {
 
 void TestBoundedCxxSemanticInterfaces() {
   {
-    const std::vector<llvm::StringRef> semantics = {
-        "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v5"};
+    const auto semantics = CurrentReaderSemantics();
     std::string previous;
     for (const char *signature :
          {"int get() const __objc3_async __objc3_throws(id<First>);",
@@ -11565,10 +11551,7 @@ void TestBoundedCxxSemanticInterfaces() {
     }
   }
   std::string prior;
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-      "objc3.native-return-ownership.v1", "objc3.direct-dispatch.v1",
-      "objc3.cxx-data-interfaces.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *language : {"c++", "objective-c++"}) {
     const bool objc = std::string(language) == "objective-c++";
     for (const char *standard : {"c++20", "c++23"}) {
@@ -11663,7 +11646,10 @@ void TestBoundedCxxSemanticInterfaces() {
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto emitted = EmitSemanticInterface(ast->getASTContext(),
                                          "fixture.unsupported", "test");
-    if (llvm::StringRef(source).contains("[](auto value)")) {
+    if (llvm::StringRef(source).contains("struct Public {struct")) {
+      assert(emitted.success);
+      assert(emitted.sidecar_json.find(kCxxUnnamedTemplateProjectionSemantic)!=std::string::npos);
+    } else if (llvm::StringRef(source).contains("[](auto value)")) {
       assert(emitted.success);
       assert(emitted.sidecar_json.find("objc3.cxx-generic-local-lambdas.v2")!=std::string::npos);
     } else {
@@ -11711,6 +11697,12 @@ int main(int argc,char **argv) {
     return 2;
   }
   if(argc!=1)return 2;
+  cases.Run("TestDeducedTaskGroupReplay",TestDeducedTaskGroupReplay);
+  cases.Run("TestNativeEmissionPolicyReplay",TestNativeEmissionPolicyReplay);
+  cases.Run("TestOpaqueStandardLibrarySpecializations",TestOpaqueStandardLibrarySpecializations);
+  cases.Run("TestBorrowedCatchBindingReplay",TestBorrowedCatchBindingReplay);
+  cases.Run("TestExplicitResourcePropertyReplay",TestExplicitResourcePropertyReplay);
+  cases.Run("TestNativeFrameExceptionReplay",TestNativeFrameExceptionReplay);
   cases.Run("TestIndependentCxxAndObjCExceptionModes",TestIndependentCxxAndObjCExceptionModes);
   cases.Run("TestPrimitiveAndObjectiveCContractIdentity", TestPrimitiveAndObjectiveCContractIdentity);
   cases.Run("TestOrdinaryCDeclarationsRoundTrip", TestOrdinaryCDeclarationsRoundTrip);
