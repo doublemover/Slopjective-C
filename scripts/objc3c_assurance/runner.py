@@ -93,6 +93,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
         command(key+'-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
             f'-DOBJC3C_CLANG_FOUNDATION_ROOT={foundation}',
             f'-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE={profile}',
+            '-DBUILD_TESTING=OFF',
             f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}', '-DCMAKE_BUILD_TYPE=Release',
             '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', f'-DPython3_EXECUTABLE={sys.executable}'],
             environment_override=profile_environment)

@@ -529,6 +529,15 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         return diagnostic
 
     try:
+        from .test_runtime import prepare as prepare_runtime
+        dependency = prepare_runtime(repo, bootstrap, output / 'objc-runtime', fetch=True, jobs=jobs)
+        report['test_objc_runtime'] = dependency
+        policy.inputs[dependency['library']] = dependency['library_sha256']
+        policy.inputs[dependency['receipt']] = dependency['receipt_sha256']
+        policy.inputs[str(Path(__file__).with_name('test_runtime.py'))] = digest(Path(__file__).with_name('test_runtime.py'))
+        for selected_environment in (environment, policy.environment):
+            selected_environment['LD_LIBRARY_PATH'] = os.pathsep.join(filter(None, (
+                selected_environment.get('LD_LIBRARY_PATH'), str(Path(dependency['root']) / 'lib'))))
         policy.ensure_controls('O1')
         llvm_library = libraries[1].resolve(strict=True)
         report['loaded_graphs']['foundation-clang'] = loaded_graph(stage / 'bin/clang',
@@ -553,6 +562,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
             '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'), '-DCMAKE_BUILD_TYPE=Release',
             '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld',
             '-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
+            '-DOBJC3_LIBOBJC2_BUILD_DIR='+dependency['root'],
             '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE='+PROFILE])
         embedding_tools = ['objc3c', 'objc3c_frontend_v2', 'clang-scan-deps', 'objc3_compiler_process_control']
         run('embedding-tools-build', ['cmake', '--build', facade, '--target', *embedding_tools,

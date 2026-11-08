@@ -255,9 +255,10 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     def save():
         report['seconds'] = round(time.monotonic()-started, 6)
         write_json(output / 'qualification.json', report)
-    def run(name, argv, *, environment=env, expected=0, cwd=repo, timeout=COMMAND_TIMEOUT):
+    def run(name, argv, *, environment=None, expected=0, cwd=repo, timeout=COMMAND_TIMEOUT):
+        environment = env if environment is None else environment
         if any(row['name'] == name for row in report['commands']): raise ValueError('duplicate coverage command')
-        row = {'name': name, 'environment': environment, **command(argv, cwd=cwd, environment=environment,
+        row = {'name': name, 'environment': dict(environment), **command(argv, cwd=cwd, environment=environment,
             log=output / 'logs' / (name+'.log'), timeout=timeout)}
         report['commands'].append(row);save()
         text = Path(row['log']).read_text(errors='replace')
@@ -284,6 +285,14 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         save()
         return result
     try:
+        from .test_runtime import prepare as prepare_runtime
+        dependency = prepare_runtime(repo, bootstrap, output / 'objc-runtime', fetch=True, jobs=jobs)
+        report['test_objc_runtime'] = dependency
+        frozen[dependency['library']] = dependency['library_sha256']
+        frozen[dependency['receipt']] = dependency['receipt_sha256']
+        frozen[str(Path(__file__).with_name('test_runtime.py'))] = digest(Path(__file__).with_name('test_runtime.py'))
+        env = {**env, 'LD_LIBRARY_PATH': os.pathsep.join(filter(None, (
+            env.get('LD_LIBRARY_PATH'), str(Path(dependency['root']) / 'lib'))))}
         for name, path in {'clang++': compiler, **tools}.items():
             version = run(name+'-version', [path, '--version'])
             if '23.1.5' not in version: raise ValueError('coverage tool version differs from the admitted bootstrap')
@@ -313,6 +322,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 '-DBUILD_TESTING=ON', '-DPython3_EXECUTABLE='+__import__('sys').executable]
             if component == 'frontend':
                 configure += ['-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
+                              '-DOBJC3_LIBOBJC2_BUILD_DIR='+dependency['root'],
                               '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE=compiler-source-coverage']
             run(component+'-configure', configure)
             discovery = json.loads(run(component+'-discovery', ['ctest', '--test-dir', build, '--show-only=json-v1']))

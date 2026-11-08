@@ -104,6 +104,7 @@ def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3) ->
             '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'), '-DCMAKE_BUILD_TYPE=Release',
             '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld',
             '-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
+            '-DBUILD_TESTING=OFF',
             '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE=compiler-asan-ubsan'])
         run('facade-build', [host['cmake_path'], '--build', facade, '--target', 'objc3c', '--parallel', str(jobs)])
         ir = qualify_ir(repo, output / 'ir', runtime=runtime / 'libobjc3_runtime_services.a',

@@ -17,6 +17,7 @@
 using namespace objc3::clang_foundation;
 namespace fs = std::filesystem;
 namespace {
+unsigned Failures = 0;
 const std::string Header = R"(
 typedef borrowed const char *BorrowedBytes;
 BorrowedBytes bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
@@ -60,7 +61,8 @@ void Expect(const CompileRequest &R, bool Success,
     for (const auto &D : Result.diagnostics)
       std::cerr << D.message << '\n';
   }
-  assert(Result.success == Success);
+  if (Result.success != Success)
+    ++Failures;
   if (!Diagnostic.empty()) {
     bool Found = false;
     for (const auto &D : Result.diagnostics)
@@ -71,7 +73,8 @@ void Expect(const CompileRequest &R, bool Success,
       for (const auto &D : Result.diagnostics)
         std::cerr << D.message << '\n';
     }
-    assert(Found && "rejection must identify its borrowed operation/contract");
+    if (!Found)
+      ++Failures;
   }
 }
 void SemanticCases(const fs::path &Root, BaseLanguage Language,
@@ -261,7 +264,7 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       "void f(id o) { struct Holder h[2][2]={{{bytes(o)},{0}},{{0},{0}}};escape(h[0][1].pointer);h[0][0].pointer=0;escape(h[0][0].pointer); }",
       "void f(id o) { struct Holder source={bytes(o)},copy={0};__builtin_memcpy(&copy,&source,sizeof copy);use(copy.pointer);copy.pointer=0;escape(copy.pointer); }",
       "void f(id o,void *heap) { const char *p=bytes(o);__builtin_memcpy(heap,&p,0); }",
-      "typedef BorrowedBytes (*Provider)(id); Provider provider=bytes; void f(id o) {use(provider(o));}",
+      "typedef BorrowedBytes (*Provider)(id) __attribute__((objc_returns_borrowed(owner_index=0))); Provider provider=bytes; void f(id o) {use(provider(o));}",
       "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { Optional(BorrowedBytes) s=Some(BorrowedBytes,bytes(o));guard let p=s else{return 0;}return p; }",
       "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { Optional(BorrowedBytes) s=Some(BorrowedBytes,bytes(o));if let p=s {return p;}return 0; }",
       "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { Optional(BorrowedBytes) s=Some(BorrowedBytes,bytes(o));return match(s){case __objc3_case_some(let p)=>p;case __objc3_case_none=>(BorrowedBytes)0;}; }",
@@ -279,6 +282,10 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
   };
   for (const auto &Code : Accepted)
     Expect(Request(Root, Header + Code, Language, Standard, ARC), true);
+  Expect(Request(Root, Header +
+      "typedef BorrowedBytes (*Provider)(id); Provider provider=bytes;",
+      Language, Standard, ARC), false,
+      "callable conversion changes an ownership or borrowed lifetime contract");
   const std::vector<std::string> Escapes = {
       "void f(id o) { global_pointer=bytes(o); }",
       "void f(id o) { static const char *p; p=bytes(o); }",
@@ -839,4 +846,7 @@ int main() {
   ForeignPersistenceCases(Root);
   RetainablePersistenceCases(Root);
   fs::remove_all(Root);
+  if (Failures)
+    std::cerr << Failures << " borrowed-pointer expectations failed\n";
+  return Failures ? 1 : 0;
 }

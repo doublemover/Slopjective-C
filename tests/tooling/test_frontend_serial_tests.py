@@ -47,7 +47,7 @@ def test_failed_test_preserves_its_executable_and_receipt(tmp_path, monkeypatch)
             (build / args[4]).write_bytes(b'failed program')
         else:
             raise RuntimeError('CTest failed')
-    with pytest.raises(RuntimeError, match='CTest failed'):
+    with pytest.raises(ValueError, match='CTest failed'):
         qualify(build, tmp_path / 'proof', run, jobs=2)
     assert Path(rows[0]['executable']).read_bytes() == b'failed program'
     receipt = json.loads((tmp_path / 'proof/qualification.json').read_text())
@@ -119,7 +119,7 @@ def test_failed_variant_preserves_the_shared_executable(tmp_path, monkeypatch):
     def run(label, args):
         if args[0] == 'cmake': Path(rows[0]['executable']).write_bytes(b'shared program')
         elif label.endswith('objc3_second-ctest'): raise RuntimeError('second profile failed')
-    with pytest.raises(RuntimeError, match='second profile'):
+    with pytest.raises(ValueError, match='second profile'):
         qualify(build, tmp_path / 'proof', run, jobs=2)
     receipt = json.loads((tmp_path / 'proof/qualification.json').read_text())
     assert receipt['status'] == 'FAIL' and len(receipt['tests']) == 1
@@ -197,3 +197,43 @@ def test_source_coverage_uses_the_registered_profile_owner(tmp_path):
         'objc3_standard_library_assertions': 'objc3_standard_library_provider_test'}
     with pytest.raises(ValueError, match='registered frontend target owner'):
         selected_targets(tmp_path, 'frontend', ['objc3_missing'])
+
+
+@pytest.mark.parametrize('phase', ['build', 'ctest'])
+def test_failure_collects_other_targets_before_raising(tmp_path, monkeypatch, phase):
+    build, rows = fixture(tmp_path, monkeypatch)
+    executed = []
+    def run(label, args):
+        if args[0] == 'cmake':
+            if phase == 'build' and args[4] == rows[0]['target']:
+                raise RuntimeError('first target compile failed')
+            (build / args[4]).write_bytes(b'program')
+        else:
+            executed.append(label)
+            if phase == 'ctest' and label.endswith('objc3_first-ctest'):
+                raise RuntimeError('first target execution failed')
+    with pytest.raises(ValueError, match='frontend test commands failed'):
+        qualify(build, tmp_path / 'proof', run, jobs=2)
+    receipt = json.loads((tmp_path / 'proof/qualification.json').read_text())
+    assert [row['name'] for row in receipt['tests']] == ['objc3_second']
+    assert receipt['failures'][0]['phase'] == phase
+    assert 'frontend-objc3_second-ctest' in executed
+    assert not Path(rows[1]['executable']).exists()
+    if phase == 'ctest': assert Path(rows[0]['executable']).is_file()
+
+
+def test_failed_profile_still_runs_later_profiles_of_the_same_binary(tmp_path, monkeypatch):
+    build, rows = fixture(tmp_path, monkeypatch)
+    rows[1].update(target=rows[0]['target'], executable=rows[0]['executable'])
+    (build / 'frontend-test-targets.json').write_text(json.dumps({'tests': rows}))
+    executed = []
+    def run(label, args):
+        if args[0] == 'cmake': Path(rows[0]['executable']).write_bytes(b'program')
+        else:
+            executed.append(label)
+            if label.endswith('objc3_first-ctest'): raise RuntimeError('first profile failed')
+    with pytest.raises(ValueError, match='first profile failed'):
+        qualify(build, tmp_path / 'proof', run, jobs=2)
+    receipt = json.loads((tmp_path / 'proof/qualification.json').read_text())
+    assert len(executed) == 2 and [row['name'] for row in receipt['tests']] == ['objc3_second']
+    assert not receipt['reclaimed'] and Path(rows[0]['executable']).is_file()

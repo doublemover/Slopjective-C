@@ -118,6 +118,7 @@ void copy_pointer_representation(id owner) {
 
 // A callable's borrowed result is a signature contract, not a loan of the
 // callback address. The result of invoking it still has a nonescape obligation.
-typedef BorrowedBytes (*BorrowedProvider)(id);
+typedef BorrowedBytes (*BorrowedProvider)(id)
+    __attribute__((objc_returns_borrowed(owner_index=0)));
 BorrowedProvider provider = borrowed_bytes;
 void indirect_borrowed_result(id owner) { consume_borrowed(provider(owner)); }

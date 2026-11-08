@@ -137,7 +137,7 @@ def _run_locked(repo: Path, plan: dict, output: Path) -> dict:
             f'-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE={PROFILE}', '-DOBJC3C_LINK_CLANG_CPP=ON',
             f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
             f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
-            '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_TESTING=ON'], environment)
+            '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_TESTING=OFF'], environment)
         command('frontend-build', [cmake, '--build', frontend_build, '--target', 'objc3c',
             'clang-scan-deps', '--parallel', str(jobs)], environment)
         command('runtime-configure', [cmake, '-S', repo / 'native/objc3c/src/runtime',

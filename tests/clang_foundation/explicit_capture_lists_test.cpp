@@ -22,6 +22,7 @@
 using namespace objc3::clang_foundation;
 namespace fs = std::filesystem;
 namespace {
+unsigned Failures = 0;
 const char *Declarations = R"objc(
 void use(int);
 void invoke(void (^work)(void) __attribute__((noescape)));
@@ -55,7 +56,8 @@ void expect(const CompileRequest &Request, bool Success,
     std::cerr << "unexpected capture result for:\n" << *Request.source_text << '\n';
     for (const auto &D : Result.diagnostics) std::cerr << D.message << '\n';
   }
-  assert(Result.success == Success);
+  if (Result.success != Success)
+    ++Failures;
   if (!Message.empty()) {
     bool Found = false;
     for (const auto &D : Result.diagnostics)
@@ -66,7 +68,8 @@ void expect(const CompileRequest &Request, bool Success,
       for (const auto &D : Result.diagnostics)
         std::cerr << D.message << '\n';
     }
-    assert(Found && "capture diagnostic must identify the violated obligation");
+    if (!Found)
+      ++Failures;
   }
 }
 void semantics(const fs::path &Root, BaseLanguage Language,
@@ -378,4 +381,7 @@ int main() {
   semantics(Root, BaseLanguage::ObjectiveCxx, "c++23", true);
   persistence(Root);
   fs::remove_all(Root);
+  if (Failures)
+    std::cerr << Failures << " capture expectations failed\n";
+  return Failures ? 1 : 0;
 }
