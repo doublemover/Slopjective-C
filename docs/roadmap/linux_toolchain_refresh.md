@@ -78,3 +78,12 @@ reused all three pristine source repositories. Its complete job took 101 seconds
 versus 179 seconds cold. Quick CI independently restored Python, packages and
 CMake and passed 1,520 tooling tests plus 33 subtests. All Node setup callers now
 cache npm, and installs prefer cached package downloads.
+
+The corrected compiler foundation passes 563 compiler regressions and 460 native
+unit tests; its ten native runtime cases also pass. The next release stage exposed
+frontend test profiles sharing executables: registration now records each test's
+actual executable owner instead of deriving a target from its profile name.
+Serial qualification builds that program once, checks each real CTest command,
+runs every variant and then reclaims it. Coverage and compiler instrumentation
+use those same owners. Real CMake controls cover profile aliases, Python-wrapped
+execution and failure preservation without requiring a compiler rebuild.

@@ -65,7 +65,9 @@
     "download_bootstrap_export_and_revision_mode_controls_passed": 28,
     "foundation_target_admission_export_and_host_pin_tests_passed": 31,
     "foundation_target_export_cost_and_host_pin_controls_passed": 59,
-    "final_build_cost_patch_export_and_pin_tests_passed": 60
+    "final_build_cost_patch_export_and_pin_tests_passed": 60,
+    "shared_frontend_owner_tests_passed": 167,
+    "shared_frontend_owner_requires_local_foundation_skips": 3
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
@@ -81,7 +83,8 @@
     "Refresh all three compiler regression expectations exposed by production, sanitizer and coverage selections",
     "Run every foundation test command after a sibling test failure and require all commands to pass before staging",
     "Retain nullable delete and modeled cleanup acceptance in CFG controls; assert the emitted selected-arm tag comparison",
-    "Default LLVM dispatch selects compiler execution; dependency-only choices are mutually exclusive and covered against silently skipping both jobs"
+    "Default LLVM dispatch selects compiler execution; dependency-only choices are mutually exclusive and covered against silently skipping both jobs",
+    "Record actual CTest executable owners for every frontend and generic collection test; build shared profile executables once, verify actual CTest commands, run every variant before reclaiming; use the same owners for coverage and deduplicate instrumentation targets"
   ],
   "hosted_validation": {
     "quick_checks": {
@@ -174,27 +177,47 @@
         "status": "SKIPPED_NOT_QUALIFICATION",
         "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477665104",
         "reason": "Unquoted off default did not select either job; compiler default and complementary dispatch conditions repaired"
+      },
+      "frontend_profile_ownership": {
+        "SDK_release": {
+          "run": 42477662743,
+          "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+          "status": "SUPERSEDED_FRONTEND_CMAKE_TARGET_OWNERSHIP",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
+        },
+        "native_assurance": {
+          "run": 42477662743,
+          "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+          "status": "SUPERSEDED_FRONTEND_CMAKE_TARGET_OWNERSHIP",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42477840115,
+          "revision": "081bf2290a3ffdcdb92e9ec3ed186f9a224d5b10",
+          "status": "SUPERSEDED_FRONTEND_CMAKE_TARGET_OWNERSHIP",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477840115",
+          "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
+          "source_note": "CI-only dispatch repair after the frozen 3b897e3c7 compiler source; identical canonical compiler and SDK payload"
+        }
       }
     },
     "SDK_release": {
-      "run": 42477662743,
-      "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+      "run": 42481874543,
+      "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481874543"
     },
     "native_assurance": {
-      "run": 42477662743,
-      "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+      "run": 42481874543,
+      "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481874543"
     },
     "LLVM_IR_and_debugger": {
-      "run": 42477840115,
-      "revision": "081bf2290a3ffdcdb92e9ec3ed186f9a224d5b10",
+      "run": 42481877692,
+      "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477840115",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
-      "source_note": "CI-only dispatch repair after the frozen 3b897e3c7 compiler source; identical canonical compiler and SDK payload"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481877692"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -205,24 +228,16 @@
       "explicit_skips": 107
     },
     "compiler_regression_checkpoint": {
-      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
-      "production": {
-        "passed": 562,
-        "failed": 1,
-        "unsupported": 3
-      },
-      "native_AST_unit_tests": {
-        "passed": 246,
-        "failed": 2
-      },
-      "other_native_unit_commands_passed": 4,
-      "all_six_test_commands_collected": true,
-      "failures": [
-        "native-checked-cxx-optionals.mm: selected carrier tag is compared against zero, not truncated",
-        "ObjC3ConditionCFG.DeferredCXXOperationsPreserveRegistrationAndHandlers: missing null-delete path",
-        "ObjC3ConditionCFG.DeferredNativeEHRefusesUnmodeledPartialCleanup: seven formerly unsupported cleanup forms are now modeled"
-      ],
-      "correction": "Check the observed tag comparison, require the exact null-delete path, retain rejection of all four unmodeled temporary forms and admit the seven cleanup forms covered by existing detailed graph-order tests"
+      "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
+      "status": "PASS",
+      "compiler_tests_passed": 563,
+      "native_unit_tests_passed": 460,
+      "unsupported_platform_cases": 3,
+      "all_six_test_commands_passed": true,
+      "native_runtime_tests_passed": 10,
+      "artifact_sha256": "481895d4cde6d566b617162f1b54b116eaf08a56bc3899431c3931e621ecfc8e",
+      "remaining_blocker": "Frontend CMake derived fictitious target names for shared standard-library test profiles; registration now owns the executable and qualification groups its variants"
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
