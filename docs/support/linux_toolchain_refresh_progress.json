@@ -67,7 +67,8 @@
     "foundation_target_export_cost_and_host_pin_controls_passed": 59,
     "final_build_cost_patch_export_and_pin_tests_passed": 60,
     "shared_frontend_owner_tests_passed": 167,
-    "shared_frontend_owner_requires_local_foundation_skips": 3
+    "shared_frontend_owner_requires_local_foundation_skips": 3,
+    "isolated_runtime_and_collected_frontend_failure_controls_passed": 215
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
@@ -84,14 +85,17 @@
     "Run every foundation test command after a sibling test failure and require all commands to pass before staging",
     "Retain nullable delete and modeled cleanup acceptance in CFG controls; assert the emitted selected-arm tag comparison",
     "Default LLVM dispatch selects compiler execution; dependency-only choices are mutually exclusive and covered against silently skipping both jobs",
-    "Record actual CTest executable owners for every frontend and generic collection test; build shared profile executables once, verify actual CTest commands, run every variant before reclaiming; use the same owners for coverage and deduplicate instrumentation targets"
+    "Record actual CTest executable owners for every frontend and generic collection test; build shared profile executables once, verify actual CTest commands, run every variant before reclaiming; use the same owners for coverage and deduplicate instrumentation targets",
+    "Preserve explicit borrowed callback owner contracts in positive frontend/installed witnesses and require contract-erasing conversions to reject",
+    "Collect independent frontend build/test failures and all shared-target variants before failing; preserve failed binaries and semantic fixture diagnostics without accepting a failed suite",
+    "Compiler-only fuzz/IR/analysis configurations omit unused CTests; coverage and full compiler-process frontend tests provision and hash the pinned GNU runtime, use its explicit CMake root and retain its library loading path"
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "07f5bb17d572b8eb401a5932f23d58b07039311a",
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
       "status": "PASS",
-      "runs": [42475762174, 42475762187, 42475762194],
-      "tooling_tests_passed": 1520,
+      "runs": [42488156110, 42488156282, 42488156189],
+      "tooling_tests_passed": 1536,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 107
     },
@@ -199,25 +203,45 @@
           "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
           "source_note": "CI-only dispatch repair after the frozen 3b897e3c7 compiler source; identical canonical compiler and SDK payload"
         }
+      },
+      "borrowed_fixture_and_runtime_dependency": {
+        "SDK_release": {
+          "run": 42481874543,
+          "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+          "status": "FAILED_DOWNSTREAM_AFTER_PASSING_COMPILER_TESTS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481874543"
+        },
+        "native_assurance": {
+          "run": 42481874543,
+          "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+          "status": "FAILED_DOWNSTREAM_AFTER_PASSING_COMPILER_TESTS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481874543"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42481877692,
+          "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+          "status": "FAILED_DOWNSTREAM_AFTER_PASSING_COMPILER_TESTS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481877692"
+        }
       }
     },
     "SDK_release": {
-      "run": 42481874543,
-      "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+      "run": 42488455572,
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481874543"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488455572"
     },
     "native_assurance": {
-      "run": 42481874543,
-      "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+      "run": 42488455572,
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481874543"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488455572"
     },
     "LLVM_IR_and_debugger": {
-      "run": 42481877692,
-      "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
+      "run": 42488460689,
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42481877692"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488460689"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -228,7 +252,7 @@
       "explicit_skips": 107
     },
     "compiler_regression_checkpoint": {
-      "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
+      "revision": "35df7e8a6a104479af384d08c7755c3c1276a60d",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
       "status": "PASS",
       "compiler_tests_passed": 563,
@@ -237,7 +261,34 @@
       "all_six_test_commands_passed": true,
       "native_runtime_tests_passed": 10,
       "artifact_sha256": "481895d4cde6d566b617162f1b54b116eaf08a56bc3899431c3931e621ecfc8e",
-      "remaining_blocker": "Frontend CMake derived fictitious target names for shared standard-library test profiles; registration now owns the executable and qualification groups its variants"
+      "remaining_blocker": "Borrowed-pointer positive fixture erased its callback owner contract; isolated frontend CTest configuration required a separately pinned GNU runtime. Both corrected; complete downstream retry remains required.",
+      "isolated_workers": {
+        "LLVM_ASan_UBSan": {
+          "compiler_tests_passed": 561,
+          "native_unit_tests_passed": 443,
+          "unsupported_platform_cases": 3,
+          "foundation_build_tests_and_stage": "PASS"
+        },
+        "frontend_fuzz": {
+          "compiler_tests_passed": 561,
+          "native_unit_tests_passed": 443,
+          "unsupported_platform_cases": 3,
+          "foundation_build_tests_and_stage": "PASS"
+        },
+        "source_coverage": {
+          "compiler_tests_passed": 561,
+          "native_unit_tests_passed": 443,
+          "unsupported_platform_cases": 3,
+          "foundation_build_tests_and_stage": "PASS"
+        },
+        "implementation_analysis": {
+          "compiler_tests_passed": 561,
+          "native_unit_tests_passed": 443,
+          "unsupported_platform_cases": 3,
+          "foundation_build_tests_and_stage": "PASS"
+        }
+      },
+      "LLVM_MD5_regressions_passed": 4
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
