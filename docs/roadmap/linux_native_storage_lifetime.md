@@ -34,6 +34,6 @@ explicit destruction with implicit static destructors disabled. The maintained
 CTest `objc3_native_storage_lifetime_provider` carries these controls.
 
 The [receipt](../support/linux_native_storage_lifetime_progress.json) identifies
-the prepared development source. Full current compiler/frontend consolidation is
-running alongside continued implementation. Extension ABI 24/frame 1/services
+the prepared development source. The full compiler sweep passes all 544 executable cases (547 discovered, three
+unsupported); broad frontend consolidation runs alongside continued implementation. Extension ABI 24/frame 1/services
 4/schema 2.2 layouts remain unchanged; one matched SDK follows the feature batch.

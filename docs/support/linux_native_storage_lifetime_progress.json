@@ -38,6 +38,11 @@
   },
   "reader_contract": "objc3.native-storage-lifetime.v1",
   "profile_cutover": "C++ destructor registration policy and thread-safe static initialization bind language identity and canonical reparse arguments",
-  "compiler_consolidation": "full source 2.145 sweep running; last completed source 2.141: 539 executable cases passed, three unsupported",
+  "compiler_consolidation": {
+    "discovered": 547,
+    "executable_passed": 544,
+    "unsupported": 3,
+    "all_executable_passed": true
+  },
   "frontend_consolidation": "all selected current groups running"
 }
