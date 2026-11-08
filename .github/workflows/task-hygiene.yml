@@ -68,6 +68,7 @@ jobs:
           tests/tooling/test_linux_sdk_reuse.py
           tests/tooling/test_frontend_serial_tests.py
           tests/tooling/test_frontend_runtime_dependency.py
+          tests/tooling/test_isolated_frontend_cases.py
           tests/tooling/test_linux_sdk_publication.py
           tests/tooling/test_source_graph.py
           tests/tooling/test_sdk_source_modules.py

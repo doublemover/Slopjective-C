@@ -19,11 +19,11 @@
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
-      "sha256": "95ae843aa744422087a9950f0d10f29da037c3709f9fcf5c1b682ada2fd8e28c"
+      "sha256": "4abd41799c2160373eb34d2879de8a296be62653e952d235f37b8e577f414711"
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "23ce235afa516989191c9bc73eb672f2f6540a3a3be41e34d83e980094784937"
+      "sha256": "6985401b90b88ce47757fba7c4763702cc9c15b0fdd95d94039a5cbc412a1e17"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
@@ -49,8 +49,15 @@
     "assertions": true,
     "rtti": true,
     "eh": true,
-    "targets": ["X86"],
-    "projects": ["clang", "lld", "clang-tools-extra", "lldb"],
+    "targets": [
+      "X86"
+    ],
+    "projects": [
+      "clang",
+      "lld",
+      "clang-tools-extra",
+      "lldb"
+    ],
     "build_targets": [
       "clang",
       "FileCheck",
@@ -104,7 +111,13 @@
       },
       {
         "name": "objc3_facade_libraries",
-        "targets": ["clangTooling", "clangIndex", "clangCodeGen", "clangFrontend", "clangDriver"]
+        "targets": [
+          "clangTooling",
+          "clangIndex",
+          "clangCodeGen",
+          "clangFrontend",
+          "clangDriver"
+        ]
       },
       {
         "name": "native_type_contract_tests",
@@ -118,11 +131,20 @@
       },
       {
         "name": "native_editor_tools",
-        "targets": ["clangd", "clang-format", "clang-query", "c-index-test"]
+        "targets": [
+          "clangd",
+          "clang-format",
+          "clang-query",
+          "c-index-test"
+        ]
       },
       {
         "name": "native_debugger_tools",
-        "targets": ["lldb", "lldb-server", "llvm-dwarfdump"]
+        "targets": [
+          "lldb",
+          "lldb-server",
+          "llvm-dwarfdump"
+        ]
       }
     ],
     "distribution_components": [

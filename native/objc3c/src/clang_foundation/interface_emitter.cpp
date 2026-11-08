@@ -745,7 +745,7 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
   if(preprocessor)AppendInterfaceHeaderSearchArguments(*preprocessor,args);
   args.push_back(lang.Exceptions ? "-fexceptions" : "-fno-exceptions");
   if (lang.CPlusPlus)
-    args.insert(args.end(), {"-Xclang", lang.CXXExceptions
+    args.insert(args.end(), {lang.CXXExceptions
         ? "-fcxx-exceptions" : "-fno-cxx-exceptions"});
   if (lang.ObjC) {
     args.push_back(lang.ObjCExceptions ? "-fobjc-exceptions" : "-fno-objc-exceptions");

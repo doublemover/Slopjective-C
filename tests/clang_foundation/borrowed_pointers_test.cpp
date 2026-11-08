@@ -1,3 +1,4 @@
+#include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/AST/Decl.h"
@@ -285,7 +286,7 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
   Expect(Request(Root, Header +
       "typedef BorrowedBytes (*Provider)(id); Provider provider=bytes;",
       Language, Standard, ARC), false,
-      "callable conversion changes an ownership or borrowed lifetime contract");
+      "cannot initialize a variable of type 'Provider'");
   const std::vector<std::string> Escapes = {
       "void f(id o) { global_pointer=bytes(o); }",
       "void f(id o) { static const char *p; p=bytes(o); }",
@@ -375,6 +376,7 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
              "void f(id o){const char *p=bytes(o);auto work=[p]{use_noescape(p);};p=0;auto copy=work;copy();work.operator()();sync(copy);}",
              "void f(id o){auto work=[p=bytes(o)]{use_noescape(p);};work();}",
              "void f(id o){const char *p=bytes(o);auto work=[p](auto){use_noescape(p);};work(0);}",
+             "void f(id o){const char *p=bytes(o);auto work=[&p]{use_noescape(p);};work();}",
              "void f(id o){Holder h{bytes(o)};auto work=[h]{use_noescape(h.pointer);};h.pointer=0;work();}",
              "void f(id o){const char *p=bytes(o);auto work=[p]{auto nested=[p]{use_noescape(p);};nested();};work();}"})
       Expect(Request(Root,LambdaHeader+Code,Language,Standard,ARC),true);
@@ -383,7 +385,7 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
              "void f(id o){auto work=[p=bytes(o)]{escape(p);};work();}",
              "void f(id o){const char *p=bytes(o);auto work=[p]{};sink(work);}",
              "auto f(id o){const char *p=bytes(o);return [p]{};}",
-             "void f(id o){const char *p=bytes(o);auto work=[&p]{use_noescape(p);};work();}",
+             "void f(id o){const char *p=bytes(o);auto work=[&p]{use_noescape(p);};sink(work);}",
              "void f(id o){const char *p=0;auto work=[&p]{escape(p);};p=bytes(o);work();}",
              "void f(id o){const char *p=0;AddressHolder h{&p};auto work=[h]{escape(*h.pointer);};p=bytes(o);work();}",
              "void f(id o,int choose){const char *p=0;if(choose){auto work=[&p]{escape(p);};sink(work);}p=bytes(o);}",
@@ -832,21 +834,33 @@ struct ImportedDiamond : ImportedLeft, ImportedRight {};
 }
 
 int main() {
-  TestIndependentStrongAliases();
+  test::IsolatedCases cases;
+  cases.Run("independent strong aliases",TestIndependentStrongAliases);
   const auto Stamp = std::chrono::steady_clock::now().time_since_epoch().count();
   const auto Root = fs::temp_directory_path() / ("objc3-borrowed-" + std::to_string(Stamp));
   fs::create_directories(Root);
   for (bool ARC : {false, true}) {
-    SemanticCases(Root, BaseLanguage::ObjectiveC, "c17", ARC);
-    SemanticCases(Root, BaseLanguage::ObjectiveCxx, "c++20", ARC);
-    SemanticCases(Root, BaseLanguage::ObjectiveCxx, "c++23", ARC);
+    for (const auto &[language,standard] : std::vector<std::pair<BaseLanguage,const char *>>{
+        {BaseLanguage::ObjectiveC,"c17"},
+        {BaseLanguage::ObjectiveCxx,"c++20"},
+        {BaseLanguage::ObjectiveCxx,"c++23"}}) {
+      cases.Run(std::string(standard)+(ARC ? " ARC" : " MRC"),[&] {
+        Failures=0;SemanticCases(Root,language,standard,ARC);return Failures==0;
+      });
+    }
   }
-  InheritedBorrowPersistenceCases(Root);
-  PersistenceCases(Root);
-  ForeignPersistenceCases(Root);
-  RetainablePersistenceCases(Root);
+  cases.Run("inherited persistence",[&] {
+    Failures=0;InheritedBorrowPersistenceCases(Root);return Failures==0;
+  });
+  cases.Run("borrowed persistence",[&] {
+    Failures=0;PersistenceCases(Root);return Failures==0;
+  });
+  cases.Run("foreign persistence",[&] {
+    Failures=0;ForeignPersistenceCases(Root);return Failures==0;
+  });
+  cases.Run("retainable persistence",[&] {
+    Failures=0;RetainablePersistenceCases(Root);return Failures==0;
+  });
   fs::remove_all(Root);
-  if (Failures)
-    std::cerr << Failures << " borrowed-pointer expectations failed\n";
-  return Failures ? 1 : 0;
+  return cases.Finish();
 }

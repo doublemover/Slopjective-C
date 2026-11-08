@@ -1,3 +1,5 @@
+#include "compile_test_diagnostics.h"
+#include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/interface_codec.h"
@@ -631,6 +633,7 @@ void TestUnnamedTemplateProjectionImports() {
     bridge.interface_exports={"Bridge"};bridge.imported_interfaces={ImportOf(path,emitted.interface_artifact->identity)};
     auto bridge_path=root/"test.unnamed_bridge.objc3i";bridge.interface_output_path=bridge_path.string();
     auto projected=Compile(bridge);
+    test::ReportFailure(projected);
     if(!projected.success)std::fprintf(stderr,"UNNAMED BRIDGE %s\n",projected.failure.c_str());
     assert(projected.success && projected.interface_artifact);
     auto consumer=ModuleRequest(root/"second-consumer.mm","",R"(
@@ -814,22 +817,23 @@ void TestCompilerVarargsMembersAreReused() {
 } // namespace
 
 int main() {
-  TestAdmissionDiagnosticsUseInvocationFileSystem();
-  TestPreparedImportBudgets();
-  TestPrimitiveABIProfilesRejectMismatchedConsumers();
-  TestThreeModuleSemanticLookupAndIdentity();
-  TestPinnedRuntimeTypesSurvivePreparedImport();
-  TestCompilerVarargsMembersAreReused();
-  TestStandardCoroutineTypesAndTraitsImports();
-  TestCustomCoroutinePromiseRedeclarations();
-  TestNativeAttributeTemplateImports();
-  TestUnnamedTemplateProjectionImports();
-  TestBadLockAndMissingTransitiveArtifactFailBeforeImport();
-  TestCarrierPayloadNullabilityRejectsStaleLocks();
-  TestDuplicateLookupNamesAreRejected();
-  TestCompleteExportIdentitiesAndPrivateDirectLookup();
-  TestRelativeArtifactsAndResponseFileLayoutFlags();
-  TestLaterCxxOverloadConflicts();
-  TestCxxBaseAndDefaultedImports();
-  return 0;
+  test::IsolatedCases cases;
+  cases.Run("TestAdmissionDiagnosticsUseInvocationFileSystem", TestAdmissionDiagnosticsUseInvocationFileSystem);
+  cases.Run("TestPreparedImportBudgets", TestPreparedImportBudgets);
+  cases.Run("TestPrimitiveABIProfilesRejectMismatchedConsumers", TestPrimitiveABIProfilesRejectMismatchedConsumers);
+  cases.Run("TestThreeModuleSemanticLookupAndIdentity", TestThreeModuleSemanticLookupAndIdentity);
+  cases.Run("TestPinnedRuntimeTypesSurvivePreparedImport", TestPinnedRuntimeTypesSurvivePreparedImport);
+  cases.Run("TestCompilerVarargsMembersAreReused", TestCompilerVarargsMembersAreReused);
+  cases.Run("TestStandardCoroutineTypesAndTraitsImports", TestStandardCoroutineTypesAndTraitsImports);
+  cases.Run("TestCustomCoroutinePromiseRedeclarations", TestCustomCoroutinePromiseRedeclarations);
+  cases.Run("TestNativeAttributeTemplateImports", TestNativeAttributeTemplateImports);
+  cases.Run("TestUnnamedTemplateProjectionImports", TestUnnamedTemplateProjectionImports);
+  cases.Run("TestBadLockAndMissingTransitiveArtifactFailBeforeImport", TestBadLockAndMissingTransitiveArtifactFailBeforeImport);
+  cases.Run("TestCarrierPayloadNullabilityRejectsStaleLocks", TestCarrierPayloadNullabilityRejectsStaleLocks);
+  cases.Run("TestDuplicateLookupNamesAreRejected", TestDuplicateLookupNamesAreRejected);
+  cases.Run("TestCompleteExportIdentitiesAndPrivateDirectLookup", TestCompleteExportIdentitiesAndPrivateDirectLookup);
+  cases.Run("TestRelativeArtifactsAndResponseFileLayoutFlags", TestRelativeArtifactsAndResponseFileLayoutFlags);
+  cases.Run("TestLaterCxxOverloadConflicts", TestLaterCxxOverloadConflicts);
+  cases.Run("TestCxxBaseAndDefaultedImports", TestCxxBaseAndDefaultedImports);
+  return cases.Finish();
 }

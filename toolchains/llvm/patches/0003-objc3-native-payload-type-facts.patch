@@ -797,10 +797,10 @@ index 000000000..465064235
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..deb808903
+index 000000000..5e6c14eda
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,1044 @@
+@@ -0,0 +1,1080 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -1748,6 +1748,42 @@ index 000000000..deb808903
 +    llvm::SmallString<128> ImportedUSR;
 +    ASSERT_FALSE(index::generateUSRForType(ImportedType.getCanonicalType(),Target->getASTContext(),ImportedUSR));
 +    EXPECT_EQ(FirstUSR.str(),ImportedUSR.str());
++  }
++}
++
++TEST(ObjC3TypeContracts, BorrowedResultImportRejectsErasedOrChangedOwners) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    const std::vector<std::string> Args={"-x","objective-c++",Standard,
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    const std::string Header="typedef borrowed const char *Bytes;";
++    const std::string Declaration=
++        "Bytes exported(id,id) __attribute__((objc_returns_borrowed(owner_index=1)));";
++    auto Source=parse(Header+Declaration,Args);
++    ASSERT_TRUE(Source);ASSERT_FALSE(Source->getDiagnostics().hasErrorOccurred());
++    auto *Function=const_cast<FunctionDecl *>(findFunction(Source->getASTContext(),"exported"));
++    ASSERT_TRUE(Function);
++    for(const std::string &Conflict:{
++        "const char *exported(id,id);",
++        "Bytes exported(id,id);",
++        "Bytes exported(id,id) __attribute__((objc_returns_borrowed(owner_index=0)));"}) {
++      auto Target=parse(Header+Conflict,Args);
++      ASSERT_TRUE(Target);ASSERT_FALSE(Target->getDiagnostics().hasErrorOccurred());
++      ASTImporter Importer(Target->getASTContext(),Target->getFileManager(),
++          Source->getASTContext(),Source->getFileManager(),false);
++      auto Imported=Importer.Import(Function);
++      EXPECT_FALSE(bool(Imported));
++      if(!Imported)llvm::consumeError(Imported.takeError());
++    }
++    for(const std::string &Allowed:{Declaration,std::string("const char *exported(int,int);")}) {
++      auto Target=parse(Header+Allowed,Args);
++      ASSERT_TRUE(Target);ASSERT_FALSE(Target->getDiagnostics().hasErrorOccurred());
++      ASTImporter Importer(Target->getASTContext(),Target->getFileManager(),
++          Source->getASTContext(),Source->getFileManager(),false);
++      auto Imported=Importer.Import(Function);
++      ASSERT_TRUE(bool(Imported));
++      auto *Result=cast<FunctionDecl>(*Imported);
++      EXPECT_EQ(getObjC3BorrowedReturnOwner(Result),getObjC3BorrowedReturnOwner(Function));
++    }
 +  }
 +}
 +

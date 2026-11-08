@@ -1,4 +1,6 @@
 #pragma once
+#include "compile_test_diagnostics.h"
+#include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/CommandLine.h"
@@ -15,12 +17,7 @@
 namespace objc3::clang_foundation::standard_library_test {
 namespace fs=std::filesystem;
 inline void Success(const CompileResult &result) {
-  if(!result.success) {
-    std::cerr<<result.failure<<'\n';
-    for(const auto &d:result.diagnostics)std::cerr<<d.spelling.file<<':'<<d.spelling.line<<": "<<d.message<<'\n';
-    for(const auto &d:result.interface_import_diagnostics)std::cerr<<d.code<<": "<<d.message<<'\n';
-    if(result.interface_artifact)for(const auto &d:result.interface_artifact->diagnostics)std::cerr<<d.code<<": "<<d.message<<'\n';
-  }
+  test::ReportFailure(result);
   assert(result.success);
 }
 inline void Write(const fs::path &path,const std::string &text) {

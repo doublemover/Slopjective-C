@@ -120,6 +120,7 @@ int main(){return check_a() || check_b() || address_a()!=address_b();}
 }
 }
 int main(int argc,char **argv) {
+  test::IsolatedCases cases;
   bool full=false;std::vector<std::string> library_arguments;
   for(int i=1;i<argc;++i)if(std::string(argv[i])=="--full")full=true;else library_arguments.emplace_back(argv[i]);
   llvm::SmallString<128> temporary;
@@ -131,6 +132,7 @@ int main(int argc,char **argv) {
           !(std::string(standard)=="c++23" && ownership==2 && std::string(optimization)=="-O2"))continue;
       const auto label=std::string(standard)+"-"+std::to_string(ownership)+optimization;
       std::cerr<<"STANDARD LIBRARY PROVIDER "<<label<<'\n';
-      Run(root/label,standard,ownership,optimization,library_arguments);
+      cases.Run(label,[&]{Run(root/label,standard,ownership,optimization,library_arguments);});
     }
+  return cases.Finish();
 }

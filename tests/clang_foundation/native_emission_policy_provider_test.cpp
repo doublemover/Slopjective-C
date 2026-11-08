@@ -35,7 +35,7 @@ void CheckIR(const fs::path &path,const std::string &quiet,const std::string &ch
 void Run(const fs::path &root,const char *standard,int ownership,const char *optimization) {
   fs::create_directories(root/"provider");
   auto request=[&](const fs::path &input,const fs::path &output) {
-    auto value=Request(input,output,standard,ownership,optimization,{});
+    auto value=Request(input,output,standard,ownership,optimization,{"-fsanitize=address"});
     value.arguments.push_back("-fstack-protector-all");return value;
   };
   const auto source=root/"provider/module.mm";
@@ -76,13 +76,15 @@ __attribute__((used,noinline)) inline int checked(const int *value){return *valu
   }
   const auto main=root/"main.cpp";
   Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();\nextern \"C\" int override_policy() __asm__(\""+fallback+"\");\nextern \"C\" int override_policy(){return 31;}\nint main(){return check_a() || check_b();}\n");
-  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{});
+  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{"-fsanitize=address"});
 }
 }
 int main() {
+  test::IsolatedCases cases;
   llvm::SmallString<128> temporary;assert(!llvm::sys::fs::createUniqueDirectory("objc3-native-emission-policy",temporary));
   const fs::path root(temporary.c_str());auto cleanup=llvm::scope_exit([&]{fs::remove_all(root);});
   for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}}) {
-    std::cerr<<standard<<" ownership="<<ownership<<'\n';Run(root/(std::string(standard)+"-"+std::to_string(ownership)),standard,ownership,opt);
+    std::cerr<<standard<<" ownership="<<ownership<<'\n';cases.Run(std::string(standard)+"-"+std::to_string(ownership),[&]{Run(root/(std::string(standard)+"-"+std::to_string(ownership)),standard,ownership,opt);});
   }
+  return cases.Finish();
 }

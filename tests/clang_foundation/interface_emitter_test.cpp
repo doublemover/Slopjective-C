@@ -1,3 +1,4 @@
+#include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
 #include "llvm/ADT/ScopeExit.h"
 #include "clang_foundation/module_names.h"
@@ -319,7 +320,10 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
         std::string(language) == "objective-c" ? "-std=c17" : "-std=c++23",
         "-fobjc-version=3",
         "-fobjc-runtime=gnustep-2.2",
-        "--target=x86_64-unknown-linux-gnu"};
+        "--target=x86_64-unknown-linux-gnu",
+        "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    clang::tooling::FileContentMappings files;
+    AddRuntimeInterfaceFiles(files, args);
     auto ast =
         clang::tooling::buildASTFromCodeWithArgs(R"(
       __attribute__((objc_root_class)) @interface PathRoot @end
@@ -342,7 +346,9 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
         emitted.sidecar_json, emitted.source_bytes, supported);
     assert(decoded);
     auto imported = clang::tooling::buildASTFromCodeWithArgs(
-        emitted.source_bytes, args, "relocated.m");
+        emitted.source_bytes, args, "relocated.m", "clang-tool",
+        std::make_shared<clang::PCHContainerOperations>(),
+        clang::tooling::getClangStripDependencyFileAdjuster(), files);
     assert(imported && !imported->getDiagnostics().hasErrorOccurred());
     auto repeated = EmitSemanticInterface(imported->getASTContext(),
                                           "fixture.paths", "test");
@@ -11668,170 +11674,200 @@ void TestBoundedCxxSemanticInterfaces() {
 
 } // namespace
 
+void TestIndependentCxxAndObjCExceptionModes() {
+  for(bool objc:{false,true})for(bool cxx_exceptions:{false,true})
+    for(bool objc_exceptions:{false,true}) {
+      if(!objc && objc_exceptions)continue;
+      std::vector<std::string> args={"-x",objc ? "objective-c++" : "c++",
+          "-std=c++20","--target=x86_64-unknown-linux-gnu","-fno-exceptions",
+          cxx_exceptions ? "-fcxx-exceptions" : "-fno-cxx-exceptions"};
+      if(objc) {
+        args.push_back("-fobjc-runtime=gnustep-2.2");
+        args.push_back(objc_exceptions ? "-fobjc-exceptions" : "-fno-objc-exceptions");
+      }
+      auto source=clang::tooling::buildASTFromCodeWithArgs(
+          "int operation() noexcept;",args,"exception-modes.mm");
+      assert(source && !source->getDiagnostics().hasErrorOccurred());
+      assert(source->getASTContext().getLangOpts().CXXExceptions==cxx_exceptions);
+      assert(source->getASTContext().getLangOpts().ObjCExceptions==objc_exceptions);
+      auto artifact=EmitSemanticInterface(source->getASTContext(),"fixture.exceptions","test");
+      assert(artifact.success);
+      auto replay=clang::tooling::buildASTFromCodeWithArgs(
+          artifact.source_bytes,args,"exception-replay.mm");
+      assert(replay && !replay->getDiagnostics().hasErrorOccurred());
+      auto repeated=EmitSemanticInterface(replay->getASTContext(),"fixture.exceptions","test");
+      assert(repeated.success);
+      assert(artifact.identity.language_profile==repeated.identity.language_profile);
+      assert(artifact.identity.semantic_fingerprint==repeated.identity.semantic_fingerprint);
+    }
+}
+
 int main(int argc,char **argv) {
+  test::IsolatedCases cases;
   if(argc==2) {
     const std::string group=argv[1];
-    if(group=="standard-library-headers") {TestStandardLibraryHeaderContracts();return 0;}
-    if(group=="standard-library-specializations") {TestStandardLibrarySpecializations();return 0;}
+    if(group=="standard-library-headers") {cases.Run("TestStandardLibraryHeaderContracts", TestStandardLibraryHeaderContracts);return cases.Finish();}
+    if(group=="standard-library-specializations") {cases.Run("TestStandardLibrarySpecializations", TestStandardLibrarySpecializations);return cases.Finish();}
     return 2;
   }
   if(argc!=1)return 2;
-  TestPrimitiveAndObjectiveCContractIdentity();
-  TestOrdinaryCDeclarationsRoundTrip();
-  TestStandardLibraryImportsAndInstancetype();
-  TestNativeOwnershipContractsRoundTrip();
-  TestOpaqueKeyPathSignatureRoundTrips();
-  TestKeyPathSubscriptBodies();
-  TestNativeManagedUnionPayloadReplay();
-  TestNativeUnnamedEnumReplay();
-  TestNativeStorageLifetimeReplay();
-  TestNativeUnionKeyPathReplay();
-  TestResourceKeyPathReplay();
-  TestDependentKeyPathLiteralBodies();
-  TestNSObjectStorageCapability();
-  TestBorrowedMemoryAliasReplay();
-  TestSanitizedStandardLibraryReplay();
-  TestNativeLambdaArgumentABIReplay();
-  TestNativeMRCRecordPayloadReplay();
-  TestBorrowedUnionByteStorageReplay();
-  TestBorrowedStaticStorageReplay();
-  TestBorrowedCallableOwnerCapability();
-  TestAutomaticOwnerUnwindReplay();
-  TestBlockMutationPackageReplay();
-  TestBlockProducerTransferReplay();
-  TestBlockMutationReplay();
-  TestDependentExpressionCapabilityScan();
-  TestComputedBlockValuesReplay();
-  TestComputedBlockArrayMemberReplay();
-  TestNativeBlockArrayMemberReplay();
-  TestNativeVirtualSubobjectReplay();
-  TestNativeFunctionTryReplay();
-  TestNativeSubobjectReplay();
-  TestNativeArrayLifetimeReplay();
-  TestNativeAllocationReplay();
-  TestNativeDisposalReplay();
-  TestInitializedOwnerReplay();
-  TestNativeFinallyReplay();
-  TestManagedRuntimeScopeReplay();
-  TestBorrowedReceiverResultReplay();
-  TestBorrowedInteriorStorageReplay();
-  TestAsyncConsumedOwnershipCapability();
-  TestConsumedAndMethodOwnershipRoundTrips();
-  TestUnmodeledAttributesFailClosed();
-  TestCAsyncPhysicalABIRoundTrips();
-  TestCAsyncPhysicalABIImportBoundaries();
-  TestPublishedIsolationBodies();
-  TestPublishedRuntimeDeclarations();
-  TestObjectiveCContainerRoundTrips();
-  TestTypedEffectSemanticInterfacesRoundTrip();
-  TestManagedReturnOwnershipRoundTrips();
-  TestDirectMethodIdentityRoundTrip();
-  TestManagedIvarAndPropertyRoundTrip();
-  TestBoundedCxxSemanticInterfaces();
-  TestCxxClassLifecycles();
-  TestCxxClassStructure();
-  TestCxxClassDispatch();
-  TestCxxNamedNamespaces();
-  TestCxxNestedTypes();
-  TestCxxUsingDeclarations();
-  TestCxxDeclarationExpressions();
-  TestCxxDefinitions();
-  TestCxxDefaultedComparisons();
-  TestCxxOutOfLineDefaulting();
-  TestCxxImmediateDefaulting();
-  TestCxxNamespaceAttributes();
-  TestCxxLambdaExpressions();
-  TestCxxThreadLocalData();
-  TestCxxFriends();
-  TestNativeExportRoots();
-  TestCxxLocalExpressions();
-  TestCxxLocalTypes();
-  TestGenericLocalLambdas();
-  TestGenericLocalContracts();
-  TestCxxUnionValues();
-  TestPublicConcepts();
-  TestPublicFunctionTemplates();
-  TestPublicAliasTemplates();
-  TestFunctionTemplateDeclarations();
-  TestPublicVariableTemplates();
-  TestIncompleteTemplateSpecializations();
-  TestIncompleteTemplateDeclarations();
-  TestPublicClassTemplates();
-  TestClassMemberTemplates();
-  TestClassMemberAliasTemplates();
-  TestFunctionSpecializations();
-  TestVariableSpecializations();
-  TestClassSpecializations();
-  TestPartialClassSpecializations();
-  TestPartialVariableSpecializations();
-  TestExternalVariableSpecializations();
-  TestCInlineDefinitionContract();
-  TestDeclarationOnlyFunctionTemplates();
-  TestNativeAllocatorAndDiagnosticContracts();
-  TestNativeDeclarationAttributes();
-  TestCOverloadableInterfaces();
-  TestUnnamedRecordProjections();
-  TestUnnamedTemplateProjections();
-  TestStandardCoroutineTypesAndTraits();
-  TestCustomCoroutineBodies();
-  TestForeignImportAttributes();
-  TestNestedFactoryTypes();
-  TestLambdaFactoryResults();
-  TestClosureResultProjections();
-  TestFactoryValueArguments();
-  TestGenericFactoryProjections();
-  TestFactoryTemplateArguments();
-  TestFactoryTypeProjections();
-  TestLocalFactoryResults();
-  TestClosureFactories();
-  TestCheckedIsolatedPropertyReplay();
-  TestAsyncIsolatedPropertyReplay();
-  TestMixedCarrierCallReplay();
-  TestNativeByrefStorageReplay();
-  TestNativeBlockAlignmentReplay();
-  TestCppCarrierValueReplay();
-  TestCppCarrierRuntimeReplay();
-  TestCheckedCppRecordResultReplay();
-  TestCppCarrierDefaultStorageReplay();
-  TestCheckedCppMessageReplay();
-  TestAtomicManagedPropertyReplay();
-  TestImplicitCheckedRecordReplay();
-  TestNativeARCRecordPayloadReplay();
-  TestNativeCarrierLambdaReplay();
-  TestMixedCarrierStorageReplay();
-  TestCppCarrierCompositionReplay();
-  TestNativeCppCarrierCallReplay();
-  TestNativeCheckedCppResultReplay();
-  TestIsolatedPropertyReplay();
-  TestOwnedNilResultReplay();
-  TestStrictAsyncProfileReplay();
-  TestNativeDependentAwaitReplay();
-  TestConcurrentBlockValueReplay();
-  TestConcurrentCallableCaptureReplay();
-  TestEffectfulLambdas();
-  TestAddressTemplateArguments();
-  TestTemplateCallableProjections();
-  TestEffectfulTemplateMembers();
-  TestEffectfulFunctionTemplates();
-  TestClosedParentPatterns();
-  TestClosedParentMemberSpecializations();
-  TestDependentMemberPartials();
-  TestConcreteSpecialMemberSpecializations();
-  TestConcreteMemberVariableSpecializations();
-  TestConcreteMemberFunctionSpecializations();
-  TestConcreteMemberClassSpecializations();
-  TestDetachedNestedTemplates();
-  TestDetachedStaticDataTemplates();
-  TestDetachedCallableTemplates();
-  TestLargeExportPolicy();
-  TestTemplateTemplateParameters();
-  TestConcreteNestedTemplates();
-  TestConcreteMemberTemplates();
-  TestVariadicTemplates();
-  TestNestedTemplateTypes();
-  TestTemplateStructure();
-  TestTemplateDeduction();
-  TestCarrierExpressionRoundtrip();
-  TestDeletedAggregateMemberIdentity();
-  return 0;
+  cases.Run("TestIndependentCxxAndObjCExceptionModes",TestIndependentCxxAndObjCExceptionModes);
+  cases.Run("TestPrimitiveAndObjectiveCContractIdentity", TestPrimitiveAndObjectiveCContractIdentity);
+  cases.Run("TestOrdinaryCDeclarationsRoundTrip", TestOrdinaryCDeclarationsRoundTrip);
+  cases.Run("TestStandardLibraryImportsAndInstancetype", TestStandardLibraryImportsAndInstancetype);
+  cases.Run("TestNativeOwnershipContractsRoundTrip", TestNativeOwnershipContractsRoundTrip);
+  cases.Run("TestOpaqueKeyPathSignatureRoundTrips", TestOpaqueKeyPathSignatureRoundTrips);
+  cases.Run("TestKeyPathSubscriptBodies", TestKeyPathSubscriptBodies);
+  cases.Run("TestNativeManagedUnionPayloadReplay", TestNativeManagedUnionPayloadReplay);
+  cases.Run("TestNativeUnnamedEnumReplay", TestNativeUnnamedEnumReplay);
+  cases.Run("TestNativeStorageLifetimeReplay", TestNativeStorageLifetimeReplay);
+  cases.Run("TestNativeUnionKeyPathReplay", TestNativeUnionKeyPathReplay);
+  cases.Run("TestResourceKeyPathReplay", TestResourceKeyPathReplay);
+  cases.Run("TestDependentKeyPathLiteralBodies", TestDependentKeyPathLiteralBodies);
+  cases.Run("TestNSObjectStorageCapability", TestNSObjectStorageCapability);
+  cases.Run("TestBorrowedMemoryAliasReplay", TestBorrowedMemoryAliasReplay);
+  cases.Run("TestSanitizedStandardLibraryReplay", TestSanitizedStandardLibraryReplay);
+  cases.Run("TestNativeLambdaArgumentABIReplay", TestNativeLambdaArgumentABIReplay);
+  cases.Run("TestNativeMRCRecordPayloadReplay", TestNativeMRCRecordPayloadReplay);
+  cases.Run("TestBorrowedUnionByteStorageReplay", TestBorrowedUnionByteStorageReplay);
+  cases.Run("TestBorrowedStaticStorageReplay", TestBorrowedStaticStorageReplay);
+  cases.Run("TestBorrowedCallableOwnerCapability", TestBorrowedCallableOwnerCapability);
+  cases.Run("TestAutomaticOwnerUnwindReplay", TestAutomaticOwnerUnwindReplay);
+  cases.Run("TestBlockMutationPackageReplay", TestBlockMutationPackageReplay);
+  cases.Run("TestBlockProducerTransferReplay", TestBlockProducerTransferReplay);
+  cases.Run("TestBlockMutationReplay", TestBlockMutationReplay);
+  cases.Run("TestDependentExpressionCapabilityScan", TestDependentExpressionCapabilityScan);
+  cases.Run("TestComputedBlockValuesReplay", TestComputedBlockValuesReplay);
+  cases.Run("TestComputedBlockArrayMemberReplay", TestComputedBlockArrayMemberReplay);
+  cases.Run("TestNativeBlockArrayMemberReplay", TestNativeBlockArrayMemberReplay);
+  cases.Run("TestNativeVirtualSubobjectReplay", TestNativeVirtualSubobjectReplay);
+  cases.Run("TestNativeFunctionTryReplay", TestNativeFunctionTryReplay);
+  cases.Run("TestNativeSubobjectReplay", TestNativeSubobjectReplay);
+  cases.Run("TestNativeArrayLifetimeReplay", TestNativeArrayLifetimeReplay);
+  cases.Run("TestNativeAllocationReplay", TestNativeAllocationReplay);
+  cases.Run("TestNativeDisposalReplay", TestNativeDisposalReplay);
+  cases.Run("TestInitializedOwnerReplay", TestInitializedOwnerReplay);
+  cases.Run("TestNativeFinallyReplay", TestNativeFinallyReplay);
+  cases.Run("TestManagedRuntimeScopeReplay", TestManagedRuntimeScopeReplay);
+  cases.Run("TestBorrowedReceiverResultReplay", TestBorrowedReceiverResultReplay);
+  cases.Run("TestBorrowedInteriorStorageReplay", TestBorrowedInteriorStorageReplay);
+  cases.Run("TestAsyncConsumedOwnershipCapability", TestAsyncConsumedOwnershipCapability);
+  cases.Run("TestConsumedAndMethodOwnershipRoundTrips", TestConsumedAndMethodOwnershipRoundTrips);
+  cases.Run("TestUnmodeledAttributesFailClosed", TestUnmodeledAttributesFailClosed);
+  cases.Run("TestCAsyncPhysicalABIRoundTrips", TestCAsyncPhysicalABIRoundTrips);
+  cases.Run("TestCAsyncPhysicalABIImportBoundaries", TestCAsyncPhysicalABIImportBoundaries);
+  cases.Run("TestPublishedIsolationBodies", TestPublishedIsolationBodies);
+  cases.Run("TestPublishedRuntimeDeclarations", TestPublishedRuntimeDeclarations);
+  cases.Run("TestObjectiveCContainerRoundTrips", TestObjectiveCContainerRoundTrips);
+  cases.Run("TestTypedEffectSemanticInterfacesRoundTrip", TestTypedEffectSemanticInterfacesRoundTrip);
+  cases.Run("TestManagedReturnOwnershipRoundTrips", TestManagedReturnOwnershipRoundTrips);
+  cases.Run("TestDirectMethodIdentityRoundTrip", TestDirectMethodIdentityRoundTrip);
+  cases.Run("TestManagedIvarAndPropertyRoundTrip", TestManagedIvarAndPropertyRoundTrip);
+  cases.Run("TestBoundedCxxSemanticInterfaces", TestBoundedCxxSemanticInterfaces);
+  cases.Run("TestCxxClassLifecycles", TestCxxClassLifecycles);
+  cases.Run("TestCxxClassStructure", TestCxxClassStructure);
+  cases.Run("TestCxxClassDispatch", TestCxxClassDispatch);
+  cases.Run("TestCxxNamedNamespaces", TestCxxNamedNamespaces);
+  cases.Run("TestCxxNestedTypes", TestCxxNestedTypes);
+  cases.Run("TestCxxUsingDeclarations", TestCxxUsingDeclarations);
+  cases.Run("TestCxxDeclarationExpressions", TestCxxDeclarationExpressions);
+  cases.Run("TestCxxDefinitions", TestCxxDefinitions);
+  cases.Run("TestCxxDefaultedComparisons", TestCxxDefaultedComparisons);
+  cases.Run("TestCxxOutOfLineDefaulting", TestCxxOutOfLineDefaulting);
+  cases.Run("TestCxxImmediateDefaulting", TestCxxImmediateDefaulting);
+  cases.Run("TestCxxNamespaceAttributes", TestCxxNamespaceAttributes);
+  cases.Run("TestCxxLambdaExpressions", TestCxxLambdaExpressions);
+  cases.Run("TestCxxThreadLocalData", TestCxxThreadLocalData);
+  cases.Run("TestCxxFriends", TestCxxFriends);
+  cases.Run("TestNativeExportRoots", TestNativeExportRoots);
+  cases.Run("TestCxxLocalExpressions", TestCxxLocalExpressions);
+  cases.Run("TestCxxLocalTypes", TestCxxLocalTypes);
+  cases.Run("TestGenericLocalLambdas", TestGenericLocalLambdas);
+  cases.Run("TestGenericLocalContracts", TestGenericLocalContracts);
+  cases.Run("TestCxxUnionValues", TestCxxUnionValues);
+  cases.Run("TestPublicConcepts", TestPublicConcepts);
+  cases.Run("TestPublicFunctionTemplates", TestPublicFunctionTemplates);
+  cases.Run("TestPublicAliasTemplates", TestPublicAliasTemplates);
+  cases.Run("TestFunctionTemplateDeclarations", TestFunctionTemplateDeclarations);
+  cases.Run("TestPublicVariableTemplates", TestPublicVariableTemplates);
+  cases.Run("TestIncompleteTemplateSpecializations", TestIncompleteTemplateSpecializations);
+  cases.Run("TestIncompleteTemplateDeclarations", TestIncompleteTemplateDeclarations);
+  cases.Run("TestPublicClassTemplates", TestPublicClassTemplates);
+  cases.Run("TestClassMemberTemplates", TestClassMemberTemplates);
+  cases.Run("TestClassMemberAliasTemplates", TestClassMemberAliasTemplates);
+  cases.Run("TestFunctionSpecializations", TestFunctionSpecializations);
+  cases.Run("TestVariableSpecializations", TestVariableSpecializations);
+  cases.Run("TestClassSpecializations", TestClassSpecializations);
+  cases.Run("TestPartialClassSpecializations", TestPartialClassSpecializations);
+  cases.Run("TestPartialVariableSpecializations", TestPartialVariableSpecializations);
+  cases.Run("TestExternalVariableSpecializations", TestExternalVariableSpecializations);
+  cases.Run("TestCInlineDefinitionContract", TestCInlineDefinitionContract);
+  cases.Run("TestDeclarationOnlyFunctionTemplates", TestDeclarationOnlyFunctionTemplates);
+  cases.Run("TestNativeAllocatorAndDiagnosticContracts", TestNativeAllocatorAndDiagnosticContracts);
+  cases.Run("TestNativeDeclarationAttributes", TestNativeDeclarationAttributes);
+  cases.Run("TestCOverloadableInterfaces", TestCOverloadableInterfaces);
+  cases.Run("TestUnnamedRecordProjections", TestUnnamedRecordProjections);
+  cases.Run("TestUnnamedTemplateProjections", TestUnnamedTemplateProjections);
+  cases.Run("TestStandardCoroutineTypesAndTraits", TestStandardCoroutineTypesAndTraits);
+  cases.Run("TestCustomCoroutineBodies", TestCustomCoroutineBodies);
+  cases.Run("TestForeignImportAttributes", TestForeignImportAttributes);
+  cases.Run("TestNestedFactoryTypes", TestNestedFactoryTypes);
+  cases.Run("TestLambdaFactoryResults", TestLambdaFactoryResults);
+  cases.Run("TestClosureResultProjections", TestClosureResultProjections);
+  cases.Run("TestFactoryValueArguments", TestFactoryValueArguments);
+  cases.Run("TestGenericFactoryProjections", TestGenericFactoryProjections);
+  cases.Run("TestFactoryTemplateArguments", TestFactoryTemplateArguments);
+  cases.Run("TestFactoryTypeProjections", TestFactoryTypeProjections);
+  cases.Run("TestLocalFactoryResults", TestLocalFactoryResults);
+  cases.Run("TestClosureFactories", TestClosureFactories);
+  cases.Run("TestCheckedIsolatedPropertyReplay", TestCheckedIsolatedPropertyReplay);
+  cases.Run("TestAsyncIsolatedPropertyReplay", TestAsyncIsolatedPropertyReplay);
+  cases.Run("TestMixedCarrierCallReplay", TestMixedCarrierCallReplay);
+  cases.Run("TestNativeByrefStorageReplay", TestNativeByrefStorageReplay);
+  cases.Run("TestNativeBlockAlignmentReplay", TestNativeBlockAlignmentReplay);
+  cases.Run("TestCppCarrierValueReplay", TestCppCarrierValueReplay);
+  cases.Run("TestCppCarrierRuntimeReplay", TestCppCarrierRuntimeReplay);
+  cases.Run("TestCheckedCppRecordResultReplay", TestCheckedCppRecordResultReplay);
+  cases.Run("TestCppCarrierDefaultStorageReplay", TestCppCarrierDefaultStorageReplay);
+  cases.Run("TestCheckedCppMessageReplay", TestCheckedCppMessageReplay);
+  cases.Run("TestAtomicManagedPropertyReplay", TestAtomicManagedPropertyReplay);
+  cases.Run("TestImplicitCheckedRecordReplay", TestImplicitCheckedRecordReplay);
+  cases.Run("TestNativeARCRecordPayloadReplay", TestNativeARCRecordPayloadReplay);
+  cases.Run("TestNativeCarrierLambdaReplay", TestNativeCarrierLambdaReplay);
+  cases.Run("TestMixedCarrierStorageReplay", TestMixedCarrierStorageReplay);
+  cases.Run("TestCppCarrierCompositionReplay", TestCppCarrierCompositionReplay);
+  cases.Run("TestNativeCppCarrierCallReplay", TestNativeCppCarrierCallReplay);
+  cases.Run("TestNativeCheckedCppResultReplay", TestNativeCheckedCppResultReplay);
+  cases.Run("TestIsolatedPropertyReplay", TestIsolatedPropertyReplay);
+  cases.Run("TestOwnedNilResultReplay", TestOwnedNilResultReplay);
+  cases.Run("TestStrictAsyncProfileReplay", TestStrictAsyncProfileReplay);
+  cases.Run("TestNativeDependentAwaitReplay", TestNativeDependentAwaitReplay);
+  cases.Run("TestConcurrentBlockValueReplay", TestConcurrentBlockValueReplay);
+  cases.Run("TestConcurrentCallableCaptureReplay", TestConcurrentCallableCaptureReplay);
+  cases.Run("TestEffectfulLambdas", TestEffectfulLambdas);
+  cases.Run("TestAddressTemplateArguments", TestAddressTemplateArguments);
+  cases.Run("TestTemplateCallableProjections", TestTemplateCallableProjections);
+  cases.Run("TestEffectfulTemplateMembers", TestEffectfulTemplateMembers);
+  cases.Run("TestEffectfulFunctionTemplates", TestEffectfulFunctionTemplates);
+  cases.Run("TestClosedParentPatterns", TestClosedParentPatterns);
+  cases.Run("TestClosedParentMemberSpecializations", TestClosedParentMemberSpecializations);
+  cases.Run("TestDependentMemberPartials", TestDependentMemberPartials);
+  cases.Run("TestConcreteSpecialMemberSpecializations", TestConcreteSpecialMemberSpecializations);
+  cases.Run("TestConcreteMemberVariableSpecializations", TestConcreteMemberVariableSpecializations);
+  cases.Run("TestConcreteMemberFunctionSpecializations", TestConcreteMemberFunctionSpecializations);
+  cases.Run("TestConcreteMemberClassSpecializations", TestConcreteMemberClassSpecializations);
+  cases.Run("TestDetachedNestedTemplates", TestDetachedNestedTemplates);
+  cases.Run("TestDetachedStaticDataTemplates", TestDetachedStaticDataTemplates);
+  cases.Run("TestDetachedCallableTemplates", TestDetachedCallableTemplates);
+  cases.Run("TestLargeExportPolicy", TestLargeExportPolicy);
+  cases.Run("TestTemplateTemplateParameters", TestTemplateTemplateParameters);
+  cases.Run("TestConcreteNestedTemplates", TestConcreteNestedTemplates);
+  cases.Run("TestConcreteMemberTemplates", TestConcreteMemberTemplates);
+  cases.Run("TestVariadicTemplates", TestVariadicTemplates);
+  cases.Run("TestNestedTemplateTypes", TestNestedTemplateTypes);
+  cases.Run("TestTemplateStructure", TestTemplateStructure);
+  cases.Run("TestTemplateDeduction", TestTemplateDeduction);
+  cases.Run("TestCarrierExpressionRoundtrip", TestCarrierExpressionRoundtrip);
+  cases.Run("TestDeletedAggregateMemberIdentity", TestDeletedAggregateMemberIdentity);
+  return cases.Finish();
 }
