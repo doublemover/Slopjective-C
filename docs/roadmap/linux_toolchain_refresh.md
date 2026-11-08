@@ -147,9 +147,12 @@ That preceding source also passes three frontend fuzz campaigns/six controls and
 [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42528858909):
 21 IR/debugger executions, 63 oracle cases and seven controls. Current repaired-source quick gates pass 1,592 tests and 33 subtests, with 111
 explicit capability/platform skips.
-The repaired [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42536848346)
+The repaired [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42537224777)
 and [LLVM/oracle](https://github.com/doublemover/Slopjective-C/actions/runs/42536852949)
-campaigns are running at `87040229e` with producer `5916ec08b8a2 / 0fcb354b`.
+campaigns use producer `5916ec08b8a2 / 0fcb354b`. Release runs at `14a04b4ec`;
+LLVM retains its `87040229e` checkpoint because its inputs are unchanged.
+Exact-source native queues now let repaired work start alongside older coverage
+without cancelling active builds; 86 workflow and 99 Python controls pass.
 Fresh Debian/Ubuntu archive checks follow a passing complete release campaign.
 **SDK 2.62.0 remains the last accepted archive; the replacement is not accepted
 or activated.** The [refresh receipt](../support/linux_toolchain_refresh_progress.json)

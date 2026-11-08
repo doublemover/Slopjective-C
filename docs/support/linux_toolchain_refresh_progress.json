@@ -99,12 +99,12 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "facffee19e95b7b5771dec2695803ae86dd69482",
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
       "status": "PASS",
       "runs": [
-        42536428010,
-        42536427975,
-        42536428273
+        42537219750,
+        42537219682,
+        42537219776
       ],
       "tooling_tests_passed": 1592,
       "tooling_subtests_passed": 33,
@@ -389,28 +389,42 @@
             "3": 128878455772
           }
         }
+      },
+      "repaired_release_waiting_on_old_coverage": {
+        "run": 42536848346,
+        "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+        "status": "CANCELLED_FOR_QUEUE_REPAIR",
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536848346",
+        "reason": "Branch-wide reusable-native concurrency held repaired native work behind an older source-coverage owner; exact-source isolation now starts repaired native owners concurrently without cancelling the older jobs."
       }
     },
     "SDK_release": {
-      "run": 42536848346,
-      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "run": 42537224777,
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536848346"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42537224777"
     },
     "native_assurance": {
-      "run": 42536848346,
-      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "run": 42537224777,
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536848346"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42537224777",
+      "jobs": {
+        "core": 128904209288,
+        "source-coverage": 128904209300,
+        "frontend-fuzz": 128904209267
+      }
     },
     "LLVM_IR_and_debugger": {
       "run": 42536852949,
       "revision": "87040229e577625506a31d9caf70bb8d2765026d",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536852949"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536852949",
+      "source_equivalence": "Subsequent 14a04b4ec changes only native queue isolation, its JavaScript policy controls and documentation. Canonical source, compiler configuration, frontend/runtime and LLVM qualification owners are unchanged; retain the running 87040229e campaign for producer 5916ec08b8a2."
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -567,16 +581,16 @@
       "reassembled_compiler_inputs_bytes": 608002556
     },
     "implementation_analysis": {
-      "run": 42536848346,
-      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "run": 42537224777,
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
       "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42536848346",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42537224777",
       "partition_jobs": {
-        "0": 128903024978,
-        "1": 128903024972,
-        "2": 128903025000,
-        "3": 128903025029
+        "0": 128904192630,
+        "1": 128904192603,
+        "2": 128904192767,
+        "3": 128904192660
       }
     },
     "upstream_repair_checkpoint": {
@@ -707,6 +721,16 @@
       ],
       "artifact": 13638981154,
       "artifact_sha256": "12e3c24fe4c53c479533c34f024971914c51d15e30995b9f0443edf452053b9f"
+    },
+    "native_release_queue": {
+      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
+      "status": "PASS_CONTROLS_AND_HOSTED_CONCURRENCY",
+      "workflow_controls_passed": 86,
+      "focused_Python_controls_passed": 99,
+      "policy": "Preserve active builds; serialize duplicate requests for identical source, isolate repaired revisions",
+      "new_core_job": 128904209288,
+      "older_coverage_job": 128878820091,
+      "both_in_progress_observed": true
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
@@ -737,7 +761,7 @@
       "product SDK archives"
     ],
     "focused_python_tests_passed": 91,
-    "workflow_controls_passed": 84,
+    "workflow_controls_passed": 86,
     "installed_tool_inventories_checked": 5,
     "live_CMake_cache_admission": "PASS",
     "compiler_source_identity_unchanged": true,
