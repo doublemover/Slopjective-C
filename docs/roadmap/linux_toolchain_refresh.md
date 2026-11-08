@@ -87,3 +87,21 @@ Serial qualification builds that program once, checks each real CTest command,
 runs every variant and then reclaims it. Coverage and compiler instrumentation
 use those same owners. Real CMake controls cover profile aliases, Python-wrapped
 execution and failure preservation without requiring a compiler rebuild.
+
+The complete frontend pass now attempts all 50 configured tests: 45 pass and five
+expose downstream failures. Repairs preserve native borrowed-result owner
+conflicts, admitted bounded reference captures, virtual key-path runtime headers,
+explicit sanitizer controls and independent C++/Objective-C exception modes.
+The unnamed-template bridge emission failure still needs complete diagnostics.
+Independent assertion-based cases now run separately, so a failed prerequisite
+stops its case while the rest of the program continues; every case must pass.
+The updated canonical compiler patch/source seal verifies, and 134 focused
+controls pass. Quick CI passes 1,540 tooling tests plus 33 subtests.
+
+The preceding compiler identity passes the three frontend fuzz campaigns and six
+controls. Its coverage, analysis and LLVM campaigns remain active. The next
+core-only diagnostic run is explicitly partial: it cannot satisfy the full
+aggregate or publish an SDK archive. Failure-only compiler inputs and failed
+executables expire after one day and permit local diagnosis without rebuilding
+LLVM. Once the remaining frontend failures are resolved, a complete matching
+release pass is still required before acceptance or activation.

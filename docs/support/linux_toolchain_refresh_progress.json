@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "HOSTED_QUALIFICATION_IN_PROGRESS",
+  "status": "FRONTEND_REPAIRS_AND_TARGETED_DIAGNOSIS",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -9,8 +9,8 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
-    "prepared_tree": "fd0733dae80760dc2a4e8720fda1344c112ab048",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-f2174d730013-70309e04",
+    "prepared_tree": "e4f03c6e908711a56488b0ee75bacb24c270eec5",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
@@ -68,7 +68,8 @@
     "final_build_cost_patch_export_and_pin_tests_passed": 60,
     "shared_frontend_owner_tests_passed": 167,
     "shared_frontend_owner_requires_local_foundation_skips": 3,
-    "isolated_runtime_and_collected_frontend_failure_controls_passed": 215
+    "isolated_runtime_and_collected_frontend_failure_controls_passed": 215,
+    "frontend_failure_isolation_and_native_owner_controls_passed": 134
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
@@ -92,10 +93,10 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+      "revision": "662d72d5e330dedf5699c95ca8867e491a7b6041",
       "status": "PASS",
-      "runs": [42488156110, 42488156282, 42488156189],
-      "tooling_tests_passed": 1536,
+      "runs": [42494603795, 42494603784, 42494603790],
+      "tooling_tests_passed": 1540,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 107
     },
@@ -228,13 +229,13 @@
     "SDK_release": {
       "run": 42488455572,
       "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
-      "status": "IN_PROGRESS",
+      "status": "BLOCKED_CORE_FRONTEND_OTHER_OWNERS_RUNNING",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488455572"
     },
     "native_assurance": {
       "run": 42488455572,
       "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
-      "status": "IN_PROGRESS",
+      "status": "CORE_FAILED_FUZZ_PASSED_COVERAGE_RUNNING",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488455572"
     },
     "LLVM_IR_and_debugger": {
@@ -289,6 +290,42 @@
         }
       },
       "LLVM_MD5_regressions_passed": 4
+    },
+    "core_frontend_checkpoint": {
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
+      "tests_passed": 45,
+      "tests_failed": 5,
+      "all_configured_tests_attempted": true,
+      "artifact_sha256": "fbaad75b436ff1d03a3c41d20769f03abf2e4fca4605ae6ca02cb1fad26fce86",
+      "repairs_pending_native_verification": [
+        "Borrowed callback diagnostic, admitted local reference capture and rejection of an escaping reference capture",
+        "AST import compares ordinary function shape before rejecting changed or erased native borrowed-result owners",
+        "Opaque key-path fixture replays with the pinned virtual runtime headers",
+        "Emission-policy positive control explicitly enables ASan at compile and link",
+        "C++ exception enable/disable flags go to the driver, preserving independent Objective-C exception mode"
+      ],
+      "still_under_investigation": ["Unnamed-template projection bridge interface emission"],
+      "failure_collection": "Independent assertion-based cases now run in separate child processes; all cases still must pass. Failed current compiler inputs and executables are retained for one day, separately from accepted SDK artifacts."
+    },
+    "frontend_fuzz_checkpoint": {
+      "run": 42488455572,
+      "job": 128755480117,
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-802c019b",
+      "status": "PASS",
+      "campaigns": 3,
+      "controls": 6,
+      "commands": 55,
+      "artifact_sha256": "8ef2407ab8892bdda035575696cd6703bae38a125645fd24f586929af93a5ba2"
+    },
+    "core_diagnosis": {
+      "run": 42495087183,
+      "revision": "fd0c7e56d28e05f2b786f9174f17b7a693347678",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-f2174d730013-70309e04",
+      "status": "QUEUED",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42495087183",
+      "scope": "Explicit core-only diagnostic selection. Full aggregate and SDK publication are disabled; this is not full SDK qualification."
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
@@ -308,7 +345,7 @@
     "admission": "Exact restored tool file/mode/link inventory before execution; existing signed Swift publisher seal; pinned Git objects with full fsck",
     "excluded": ["compiler build trees", "product SDK archives"],
     "focused_python_tests_passed": 91,
-    "workflow_controls_passed": 75,
+    "workflow_controls_passed": 81,
     "installed_tool_inventories_checked": 5,
     "live_CMake_cache_admission": "PASS",
     "compiler_source_identity_unchanged": true,
