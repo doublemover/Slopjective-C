@@ -210,6 +210,8 @@ for (const fault of [
   "hidden owner failure",
   "missing native gate",
   "failed archive",
+  "older source blocks repaired source",
+  "discard active source",
 ]) {
   test(`SDK release rejects ${fault}`, () => {
     const owner = yaml.load(native),
@@ -221,6 +223,9 @@ for (const fault of [
     if (fault === "failed archive")
       owner.jobs.native.steps.find((step) => step.with?.name === "objc3c-linux-sdk").if =
         "always()";
+    if (fault === "older source blocks repaired source")
+      owner.concurrency.group = owner.concurrency.group.replace("-${{ github.sha }}", "");
+    if (fault === "discard active source") owner.concurrency["cancel-in-progress"] = true;
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
 }

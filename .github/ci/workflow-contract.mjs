@@ -222,6 +222,8 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     ) ?? [];
   if (
     !Object.hasOwn(native.on, "workflow_call") ||
+    !native.concurrency?.group?.includes("${{ github.sha }}") ||
+    native.concurrency?.["cancel-in-progress"] !== false ||
     JSON.stringify(Object.keys(release.on ?? {})) !== JSON.stringify(["workflow_dispatch"]) ||
     release.permissions?.contents !== "read" ||
     call?.uses !== "./.github/workflows/native-assurance.yml" ||

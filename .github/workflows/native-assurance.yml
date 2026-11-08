@@ -22,9 +22,9 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: linux-native-assurance-${{ github.event.pull_request.number || github.ref }}${{ inputs.diagnostic_core_only && '-core-diagnosis' || '' }}
-  # Finish the active cold compiler build; GitHub keeps the newest pending run.
-  # Each run still qualifies only its own exact source revision.
+  group: linux-native-assurance-${{ github.event.pull_request.number || github.ref }}-${{ github.sha }}${{ inputs.diagnostic_core_only && '-core-diagnosis' || '' }}
+  # Preserve active builds without letting an older coverage owner hold a
+  # repaired source revision. Duplicate requests for the same source serialize.
   cancel-in-progress: false
 jobs:
   diagnostic-transport:
