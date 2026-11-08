@@ -9,8 +9,8 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-345a5b5b3f68-70309e04",
-    "prepared_tree": "ec4334c4d0fdbe2c181b2fced87a3754a343e828",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-26f54d950ec8-70309e04",
+    "prepared_tree": "fd0733dae80760dc2a4e8720fda1344c112ab048",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
@@ -64,7 +64,8 @@
     "clean_host_download_and_bootstrap_controls_passed": 19,
     "download_bootstrap_export_and_revision_mode_controls_passed": 28,
     "foundation_target_admission_export_and_host_pin_tests_passed": 31,
-    "foundation_target_export_cost_and_host_pin_controls_passed": 59
+    "foundation_target_export_cost_and_host_pin_controls_passed": 59,
+    "final_build_cost_patch_export_and_pin_tests_passed": 60
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
@@ -78,7 +79,8 @@
     "Inventory all Ninja targets immediately after configure, before compiling any build group",
     "Quick tooling and documentation provision exact Python through the admitted uv route rather than the failing hosted toolcache asset download; Python/uv drift controls cover both routes",
     "Refresh all three compiler regression expectations exposed by production, sanitizer and coverage selections",
-    "Run every foundation test command after a sibling test failure and require all commands to pass before staging"
+    "Run every foundation test command after a sibling test failure and require all commands to pass before staging",
+    "Retain nullable delete and modeled cleanup acceptance in CFG controls; assert the emitted selected-arm tag comparison"
   ],
   "hosted_validation": {
     "quick_checks": {
@@ -144,25 +146,45 @@
           "status": "FAILED_THREE_STALE_COMPILER_EXPECTATIONS",
           "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469539102"
         }
+      },
+      "registered_cleanup_expectations": {
+        "SDK_release": {
+          "run": 42473442540,
+          "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+          "status": "SUPERSEDED_FOUNDATION_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473442540"
+        },
+        "native_assurance": {
+          "run": 42473442540,
+          "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+          "status": "SUPERSEDED_FOUNDATION_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473442540"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42473446817,
+          "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+          "status": "SUPERSEDED_FOUNDATION_EXPECTATIONS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473446817"
+        }
       }
     },
     "SDK_release": {
-      "run": 42473442540,
-      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+      "run": 42477662743,
+      "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473442540"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
     },
     "native_assurance": {
-      "run": 42473442540,
-      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+      "run": 42477662743,
+      "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473442540"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477662743"
     },
     "LLVM_IR_and_debugger": {
-      "run": 42473446817,
-      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
+      "run": 42477665104,
+      "revision": "3b897e3c7fc7e730d0a4301a1201b9cf61e854ea",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42473446817"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42477665104"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -173,28 +195,24 @@
       "explicit_skips": 107
     },
     "compiler_regression_checkpoint": {
-      "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
+      "revision": "a90f65bbc34e1dd525e814d504e7dcbf9acc5756",
       "production": {
-        "passed": 560,
-        "failed": 3,
+        "passed": 562,
+        "failed": 1,
         "unsupported": 3
       },
-      "ASan_UBSan": {
-        "passed": 558,
-        "failed": 3,
-        "unsupported": 3
+      "native_AST_unit_tests": {
+        "passed": 246,
+        "failed": 2
       },
-      "source_coverage": {
-        "passed": 558,
-        "failed": 3,
-        "unsupported": 3
-      },
+      "other_native_unit_commands_passed": 4,
+      "all_six_test_commands_collected": true,
       "failures": [
-        "carrier-cxx-local-lifetime-rejections.cpp",
-        "native-checked-cxx-optionals.mm",
-        "guard-binding-semantics.mm"
+        "native-checked-cxx-optionals.mm: selected carrier tag is compared against zero, not truncated",
+        "ObjC3ConditionCFG.DeferredCXXOperationsPreserveRegistrationAndHandlers: missing null-delete path",
+        "ObjC3ConditionCFG.DeferredNativeEHRefusesUnmodeledPartialCleanup: seven formerly unsupported cleanup forms are now modeled"
       ],
-      "classification": "Expectations lag supported carrier-copy construction, generic discarded-carrier cleanup and the temporary-destructor diagnostic; updated with positive codegen and isolated selected-arm destruction assertions."
+      "correction": "Check the observed tag comparison, require the exact null-delete path, retain rejection of all four unmodeled temporary forms and admit the seven cleanup forms covered by existing detailed graph-order tests"
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
@@ -234,7 +252,8 @@
         "admitted_tools": 6,
         "source_cache_hits": 3,
         "job_seconds": 101,
-        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42475996283"
+        "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42475996283",
+        "artifact_sha256": "256df427ee61a6258ce3f9d28ed92ce94c0087d71acc6a64353d15151adb09a7"
       },
       "quick": {
         "run": 42475762194,
