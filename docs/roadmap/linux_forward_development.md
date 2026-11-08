@@ -1,5 +1,10 @@
 # Objective-C 3.0 on Linux
 
+The [source 2.142 / System 2.68 implicit-result span](linux_implicit_checked_record_results.md)
+prepares native implicit destructors before checked function/method/Block ABI
+admission and binds declaration-only interfaces to the checked-record v2 reader
+contract. Implementation continues with focused verification and committed spans.
+
 The [source 2.141 / System 2.67 ARC record span](linux_native_arc_record_payloads.md)
 implements native C++ carrier payload records containing ordinary strong/weak/
 Block fields, and protects completed C++ fields while initializer temporaries

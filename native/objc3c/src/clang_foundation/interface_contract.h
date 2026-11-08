@@ -283,9 +283,10 @@ inline constexpr const char *kCppCarrierRuntimeSemantic = "objc3.cxx-carrier-run
 inline bool HasCppCarrierRuntimeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-carrier-runtime:v2;") != std::string::npos;
 }
-inline constexpr const char *kCheckedCppRecordResultSemantic = "objc3.checked-cxx-record-results.v1";
+inline constexpr const char *kCheckedCppRecordResultSemantic = "objc3.checked-cxx-record-results.v2";
 inline bool HasCheckedCppRecordResultIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";checked-cxx-record-results:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";checked-cxx-record-results:v2;") != std::string::npos ||
+      d.effects.ownership_identity.find(";checked-cxx-record-results:v2;") != std::string::npos;
 }
 inline constexpr const char *kCppCarrierStorageSemantic = "objc3.cxx-carrier-storage.v1";
 inline bool HasCppCarrierStorageIdentity(const InterfaceDeclarationIdentity &d) {

@@ -2544,7 +2544,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationCppCarrierRuntime(representative))
     identity.canonical_type_identity += ";cxx-carrier-runtime:v2;";
   if (HasDeclarationCheckedCppRecordResult(representative))
-    identity.canonical_type_identity += ";checked-cxx-record-results:v1;";
+    identity.canonical_type_identity += ";checked-cxx-record-results:v2;";
   if (HasDeclarationCppCarrierStorage(representative))
     identity.canonical_type_identity += ";cxx-carrier-storage:v1;";
   if (HasDeclarationCheckedCppMessage(representative))

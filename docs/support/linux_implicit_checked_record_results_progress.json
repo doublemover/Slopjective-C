@@ -1,0 +1,35 @@
+{
+  "development_only": true,
+  "source_version": "2.142",
+  "system_version": "2.68",
+  "prepared_source_tree": "9f5f2181664ca9a71fe8d76a5fa7dd62d181a816",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 49,
+    "all_passed": true,
+    "last_full_sweep": "source 2.141: 539 passed, three unsupported"
+  },
+  "ast_controls": 59,
+  "publication_profiles": 2,
+  "production_decoder_exact_replays": 540,
+  "native": {
+    "configurations": 4,
+    "commands": 14,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "profiles": [
+      "C++20 ARC source O0",
+      "C++23 ARC PCH O2 no-elision",
+      "C++23 MRC PCH O2 no-elision",
+      "C++20 ARC source C++-only exception handling"
+    ]
+  },
+  "reader_contract": "objc3.checked-cxx-record-results.v2; canonical and ownership identity markers bind declaration-only signatures",
+  "adjacent_frontend_groups": 5,
+  "full_current_consolidation": "follows the implementation batch"
+}

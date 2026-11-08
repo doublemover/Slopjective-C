@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 141,
+        "minor": 142,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Checked native C++ function/method/Block signatures prepare implicit nontrivial result destructors and resolve their actual exception specifications before ABI admission; declaration-only interfaces require checked-cxx-record-results v2 through canonical or ownership identities; native implicit and ARC-owning result controls preserve success-only construction and failure cleanup, matched SDK pending",
         "Native C++ carrier payload records with ordinary ARC strong/weak/Block fields retain native special-member ownership through copy/move, calls, messages, Blocks, lambda/byref captures and arrays; provisional native C++ field ownership covers throwing initializer-temporary destruction; native-arc-record-payload v1 source-free admission, matched SDK pending",
         "Native C++ carrier lambda value captures and fixed array captures retain Sema-selected payload recipes, closure copy/move special members, partial-capture failure cleanup, generic/dependent capture instantiation and native-carrier-lambda v1 source-free admission; matched SDK pending",
         "Mixed ARC/C++ native carrier records, bases, fixed multidimensional arrays and enclosing Optional/Result payloads retain Sema-selected copy/move/deleted and exception recipes, native special members, selected-prefix rollback, weak fields and native function/message/Block ownership; cxx-carrier-composition v2 hard cutover, matched SDK pending",
@@ -323,12 +324,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 67,
+        "minor": 68,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Checked native C++ function/method/Block signatures prepare implicit nontrivial result destructors and resolve their actual exception specifications before ABI admission; declaration-only interfaces require checked-cxx-record-results v2 through canonical or ownership identities; native implicit and ARC-owning result controls preserve success-only construction and failure cleanup, matched SDK pending",
         "Native C++ carrier payload records with ordinary ARC strong/weak/Block fields retain native special-member ownership through copy/move, calls, messages, Blocks, lambda/byref captures and arrays; provisional native C++ field ownership covers throwing initializer-temporary destruction; native-arc-record-payload v1 source-free admission, matched SDK pending",
         "Native C++ carrier lambda value captures and fixed array captures retain Sema-selected payload recipes, closure copy/move special members, partial-capture failure cleanup, generic/dependent capture instantiation and native-carrier-lambda v1 source-free admission; matched SDK pending",
         "Mixed ARC/C++ native carrier records, bases, fixed multidimensional arrays and enclosing Optional/Result payloads retain Sema-selected copy/move/deleted and exception recipes, native special members, selected-prefix rollback, weak fields and native function/message/Block ownership; cxx-carrier-composition v2 hard cutover, matched SDK pending",

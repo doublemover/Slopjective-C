@@ -349,7 +349,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     if(HasNativeCppCarrierRuntimeType(type))
       AppendNativeContractField(out,";cxx-carrier-runtime:v2;");
     if(HasNativeCheckedCppRecordResultType(type))
-      AppendNativeContractField(out,";checked-cxx-record-results:v1;");
+      AppendNativeContractField(out,";checked-cxx-record-results:v2;");
     if(HasNativeCppCarrierCallType(type))
       AppendNativeContractField(out,";cxx-carrier-call:v2;");
     if (function->hasObjC3BorrowedResult()) {

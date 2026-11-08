@@ -307,6 +307,7 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
 #include "mixed_carrier_storage.h"
 #include "carrier_lambda_storage.h"
 #include "native_arc_record_payloads.h"
+#include "implicit_checked_record_results.h"
 static void property_suite(void) {
   assert(objc3_executor_create(1,&property_caller)==OBJC3_SERVICE_OK);
   assert(objc3_executor_create(1,&property_destination)==OBJC3_SERVICE_OK);
@@ -402,6 +403,7 @@ static void property_suite(void) {
   mixed_carrier_storage_suite(main_object);
   carrier_lambda_storage_suite();
   native_arc_record_payload_suite(main_object);
+  implicit_checked_record_result_suite(main_object);
   carrier_call_suite(main_object);
   assert(objc3_actor_close(property_mailbox)==OBJC3_SERVICE_OK);
   assert(objc3_actor_join(property_mailbox)==OBJC3_SERVICE_OK);
