@@ -6,6 +6,7 @@ import {
   validateImplementationGate,
   validateNativeContainer,
   validateNativeGate,
+  validateNativeRelease,
   validateOptionalLLVM,
   validateQuickChecks,
   validateWorkflowContracts,
@@ -39,9 +40,18 @@ const release = await readFile(
   new URL("../workflows/platform-host-evidence.yml", import.meta.url),
   "utf8",
 );
-const llvmOptional = await readFile(new URL("../workflows/llvm-assurance.yml", import.meta.url), "utf8");
-const toolingQuick = await readFile(new URL("../workflows/task-hygiene.yml", import.meta.url), "utf8");
-const documentationQuick = await readFile(new URL("../workflows/spec-quality.yml", import.meta.url), "utf8");
+const llvmOptional = await readFile(
+  new URL("../workflows/llvm-assurance.yml", import.meta.url),
+  "utf8",
+);
+const toolingQuick = await readFile(
+  new URL("../workflows/task-hygiene.yml", import.meta.url),
+  "utf8",
+);
+const documentationQuick = await readFile(
+  new URL("../workflows/spec-quality.yml", import.meta.url),
+  "utf8",
+);
 
 test("quick PR feedback stays separate from optional compiler qualification", () => {
   validateQuickChecks(toolingQuick, documentationQuick);
@@ -56,13 +66,20 @@ for (const trigger of ["pull_request", "push", "workflow_run"]) {
   });
 }
 
-for (const fault of ["missing PR", "unbounded time", "hidden failure", "cold compiler build", "obsolete feedback"]) {
+for (const fault of [
+  "missing PR",
+  "unbounded time",
+  "hidden failure",
+  "cold compiler build",
+  "obsolete feedback",
+]) {
   test(`quick PR checks reject ${fault}`, () => {
     const workflow = yaml.load(toolingQuick);
     if (fault === "missing PR") delete workflow.on.pull_request;
     if (fault === "unbounded time") workflow.jobs.tooling["timeout-minutes"] = 360;
     if (fault === "hidden failure") workflow.jobs.tooling["continue-on-error"] = true;
-    if (fault === "cold compiler build") workflow.jobs.tooling.steps.push({ run: "python -m scripts.objc3c_assurance run" });
+    if (fault === "cold compiler build")
+      workflow.jobs.tooling.steps.push({ run: "python -m scripts.objc3c_assurance run" });
     if (fault === "obsolete feedback") workflow.concurrency["cancel-in-progress"] = false;
     assert.throws(() => validateQuickChecks(yaml.dump(workflow), documentationQuick));
   });
@@ -71,6 +88,43 @@ for (const fault of ["missing PR", "unbounded time", "hidden failure", "cold com
 test("extended native workflow retains its full receipt-verifying aggregate", () => {
   validateNativeGate(native);
 });
+
+test("manual SDK release reuses a passing native archive", () => {
+  validateNativeRelease(native, release);
+});
+for (const fault of [
+  "automatic release",
+  "conditional owner",
+  "hidden owner failure",
+  "missing native gate",
+  "failed archive",
+]) {
+  test(`SDK release rejects ${fault}`, () => {
+    const owner = yaml.load(native),
+      caller = yaml.load(release);
+    if (fault === "automatic release") caller.on.pull_request = null;
+    if (fault === "conditional owner") caller.jobs.build.if = "success()";
+    if (fault === "hidden owner failure") caller.jobs.build["continue-on-error"] = true;
+    if (fault === "missing native gate") delete owner.on.workflow_call;
+    if (fault === "failed archive")
+      owner.jobs.native.steps.find((step) => step.with?.name === "objc3c-linux-sdk").if =
+        "always()";
+    assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
+  });
+}
+for (const target of ["native-assurance.yml", "platform-host-evidence.yml"]) {
+  test(`unapproved caller cannot indirectly enable ${target}`, () => {
+    const extra = yaml.dump({
+      on: { pull_request: null },
+      jobs: {
+        expensive: {
+          uses: `./.github/workflows/${target}`,
+        },
+      },
+    });
+    assert.throws(() => validateNativeRelease(native, release, { "extra.yml": extra }));
+  });
+}
 
 test("extended implementation analysis retains exact periodic and release gates", () => {
   validateImplementationGate(implementation, release);
@@ -81,16 +135,22 @@ for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of
   ["missing aggregate", "  gate:", "  renamed:"],
   ["conditional aggregate", "    if: always()\n    needs:", "    if: success()\n    needs:"],
   ["automatic expensive PR", "on:\n", "on:\n  pull_request:\n"],
-  ["missing release source", "      source_sha:\n        required: true", "      source_sha:\n        required: false"],
+  [
+    "missing release source",
+    "      source_sha:\n        required: true",
+    "      source_sha:\n        required: false",
+  ],
   ["missing evidence", "if-no-files-found: error", "if-no-files-found: ignore"],
   ["floating action", "@3d3c42e5aac5ba805825da76410c181273ba90b1", "@main"],
   ["release dependency", "", "", "    needs: [build, implementation-analysis]", "    needs: build"],
 ]) {
   test(`implementation workflow rejects ${name}`, () => {
-    assert.throws(() => validateImplementationGate(
-      implementation.replace(workflowBefore ?? "", workflowAfter ?? ""),
-      release.replace(releaseBefore ?? "", releaseAfter ?? ""),
-    ));
+    assert.throws(() =>
+      validateImplementationGate(
+        implementation.replace(workflowBefore ?? "", workflowAfter ?? ""),
+        release.replace(releaseBefore ?? "", releaseAfter ?? ""),
+      ),
+    );
   });
 }
 
@@ -213,7 +273,8 @@ for (const [name, mutate] of [
     "missing coverage shard",
     (files) => {
       files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "shard: [core, frontend-fuzz, source-coverage]", "shard: [core, frontend-fuzz]",
+        "shard: [core, frontend-fuzz, source-coverage]",
+        "shard: [core, frontend-fuzz]",
       );
     },
   ],
@@ -221,7 +282,8 @@ for (const [name, mutate] of [
     "duplicate matrix names",
     (files) => {
       files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "shard: [core, frontend-fuzz, source-coverage]", "shard: [core, core, source-coverage]",
+        "shard: [core, frontend-fuzz, source-coverage]",
+        "shard: [core, core, source-coverage]",
       );
     },
   ],
@@ -229,7 +291,8 @@ for (const [name, mutate] of [
     "periodic aggregate without prerequisites",
     (files) => {
       files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
-        "needs: compiler-closeout", "needs: nonexistent",
+        "needs: compiler-closeout",
+        "needs: nonexistent",
       );
     },
   ],

@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
 import * as yaml from "js-yaml";
@@ -32,13 +32,17 @@ export function validateNativeGate(text) {
     !Object.hasOwn(events, "schedule") ||
     Object.hasOwn(events, "pull_request") ||
     Object.hasOwn(events, "push") ||
-    Object.keys(events).some((name) => !["workflow_dispatch", "schedule"].includes(name)) ||
+    Object.keys(events).some(
+      (name) => !["workflow_dispatch", "schedule", "workflow_call"].includes(name),
+    ) ||
     Object.hasOwn(events, "pull_request_target") ||
     events.pull_request?.paths ||
     events.pull_request?.["paths-ignore"] ||
     workflow.permissions?.contents !== "read"
   ) {
-    throw new Error("Extended native qualification must remain manual/periodic with read-only contents");
+    throw new Error(
+      "Extended native qualification must remain manual/periodic with read-only contents",
+    );
   }
   const gate = workflow.jobs?.gate;
   if (
@@ -61,18 +65,31 @@ export function validateNativeGate(text) {
   );
   validateNativeContainer(workflow.jobs.native);
   const nativeJob = workflow.jobs.native;
-  if (nativeJob.strategy?.["fail-fast"] !== false ||
-      nativeJob.strategy?.matrix?.shard !== "${{ fromJSON(needs.plan.outputs.shards) }}" ||
-      nativeJob.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
-      !execute?.run.includes('--shard "$NATIVE_SHARD"') ||
-      !(gate.steps ?? []).some((step) =>
-        step.run?.includes("scripts.objc3c_assurance verify --sharded") && step.if === "always()") ||
-      !(gate.steps ?? []).some((step) => step.uses?.startsWith("actions/download-artifact@") &&
-        step.with?.pattern?.startsWith("native-results-") && step.with?.["merge-multiple"] === true) ||
-      !(nativeJob.steps ?? []).some((step) => step.if === "always()" &&
+  if (
+    nativeJob.strategy?.["fail-fast"] !== false ||
+    nativeJob.strategy?.matrix?.shard !== "${{ fromJSON(needs.plan.outputs.shards) }}" ||
+    nativeJob.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
+    !execute?.run.includes('--shard "$NATIVE_SHARD"') ||
+    !(gate.steps ?? []).some(
+      (step) =>
+        step.run?.includes("scripts.objc3c_assurance verify --sharded") && step.if === "always()",
+    ) ||
+    !(gate.steps ?? []).some(
+      (step) =>
+        step.uses?.startsWith("actions/download-artifact@") &&
+        step.with?.pattern?.startsWith("native-results-") &&
+        step.with?.["merge-multiple"] === true,
+    ) ||
+    !(nativeJob.steps ?? []).some(
+      (step) =>
+        step.if === "always()" &&
         step.run?.includes("scripts.objc3c_assurance publish") &&
-        step.run.includes('--destination "out/native-assurance/evidence/$NATIVE_SHARD"'))) {
-    throw new Error("Native compiler profiles require independent execution and a complete sharded receipt gate");
+        step.run.includes('--destination "out/native-assurance/evidence/$NATIVE_SHARD"'),
+    )
+  ) {
+    throw new Error(
+      "Native compiler profiles require independent execution and a complete sharded receipt gate",
+    );
   }
   if (!execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"')) {
     throw new Error(
@@ -97,16 +114,61 @@ export function validateNativeGate(text) {
   }
 }
 
+export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
+  validateNativeGate(nativeText);
+  const native = yaml.load(nativeText);
+  const release = yaml.load(releaseText);
+  const call = release.jobs?.build;
+  const install = release.jobs?.install;
+  const archive =
+    native.jobs?.native?.steps?.filter(
+      (step) =>
+        step.with?.name === "objc3c-linux-sdk" && step.uses?.startsWith("actions/upload-artifact@"),
+    ) ?? [];
+  if (
+    !Object.hasOwn(native.on, "workflow_call") ||
+    JSON.stringify(Object.keys(release.on ?? {})) !== JSON.stringify(["workflow_dispatch"]) ||
+    release.permissions?.contents !== "read" ||
+    call?.uses !== "./.github/workflows/native-assurance.yml" ||
+    call.if ||
+    call["continue-on-error"] ||
+    JSON.stringify(install?.needs?.toSorted()) !==
+      JSON.stringify(["build", "implementation-analysis"]) ||
+    archive.length !== 1 ||
+    archive[0].if !== "success() && matrix.shard == 'core'" ||
+    !(install.steps ?? []).some(
+      (step) =>
+        step.uses?.startsWith("actions/download-artifact@") &&
+        step.with?.name === "objc3c-linux-sdk",
+    )
+  ) {
+    throw new Error(
+      "SDK release must manually reuse passing native qualification and its exact archive",
+    );
+  }
+  for (const [name, text] of Object.entries(workflows)) {
+    if (name === "platform-host-evidence.yml") continue;
+    for (const job of Object.values(yaml.load(text).jobs ?? {})) {
+      if (/\/(?:native-assurance|platform-host-evidence)\.yml(?:@|$)/.test(job.uses ?? ""))
+        throw new Error("Only the manual SDK release may call extended native qualification");
+    }
+  }
+}
+
 export function validateImplementationGate(text, releaseText) {
   const workflow = yaml.load(text);
   if (workflow.concurrency?.["cancel-in-progress"] !== false || !workflow.concurrency?.group) {
-    throw new Error("Implementation analysis must finish its active cold build and queue the newest revision");
+    throw new Error(
+      "Implementation analysis must finish its active cold build and queue the newest revision",
+    );
   }
   const events = workflow.on ?? {};
   if (
     Object.hasOwn(events, "pull_request") ||
     Object.hasOwn(events, "push") ||
-    Object.keys(events).some((name) => !["workflow_dispatch", "schedule", "workflow_call"].includes(name)) ||
+    Object.keys(events).some(
+      (name) => !["workflow_dispatch", "schedule", "workflow_call"].includes(name),
+    ) ||
     !Object.hasOwn(events, "schedule") ||
     !Object.hasOwn(events, "workflow_dispatch") ||
     !events.workflow_call?.inputs?.source_sha?.required ||
@@ -130,7 +192,9 @@ export function validateImplementationGate(text, releaseText) {
         step.if === "always()",
     )
   ) {
-    throw new Error("Implementation aggregate must always verify both exact-revision prerequisites");
+    throw new Error(
+      "Implementation aggregate must always verify both exact-revision prerequisites",
+    );
   }
   const analysis = workflow.jobs?.analysis;
   const execute = (analysis?.steps ?? []).find((step) =>
@@ -141,7 +205,9 @@ export function validateImplementationGate(text, releaseText) {
     analysis?.["continue-on-error"] ||
     !execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"')
   ) {
-    throw new Error("Implementation analysis must execute the selected trusted checkout without normalizing failure");
+    throw new Error(
+      "Implementation analysis must execute the selected trusted checkout without normalizing failure",
+    );
   }
   for (const id of ["plan", "analysis", "gate"]) {
     const job = workflow.jobs?.[id];
@@ -175,32 +241,59 @@ export function validateImplementationGate(text, releaseText) {
 
 export function validateOptionalLLVM(text) {
   const workflow = yaml.load(text);
-  if (JSON.stringify(Object.keys(workflow.on ?? {})) !== JSON.stringify(["workflow_dispatch"]) ||
-      workflow.permissions?.contents !== "read")
+  if (
+    JSON.stringify(Object.keys(workflow.on ?? {})) !== JSON.stringify(["workflow_dispatch"]) ||
+    workflow.permissions?.contents !== "read"
+  )
     throw new Error("Extended LLVM campaigns must be explicitly requested");
   const job = workflow.jobs?.["llvm-assurance"];
   validateNativeContainer(job ?? {});
-  if (!Number.isInteger(job?.["timeout-minutes"]) || job["timeout-minutes"] > 360 ||
-      job["timeout-minutes"] <= 0 || job["continue-on-error"] ||
-      !(job.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_toolchain.llvm_campaign")) ||
-      !(job.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_toolchain.semantic_oracles")))
+  if (
+    !Number.isInteger(job?.["timeout-minutes"]) ||
+    job["timeout-minutes"] > 360 ||
+    job["timeout-minutes"] <= 0 ||
+    job["continue-on-error"] ||
+    !(job.steps ?? []).some((step) =>
+      step.run?.includes("scripts.objc3c_toolchain.llvm_campaign"),
+    ) ||
+    !(job.steps ?? []).some((step) =>
+      step.run?.includes("scripts.objc3c_toolchain.semantic_oracles"),
+    )
+  )
     throw new Error("Optional LLVM campaigns must retain their bounded real owners");
 }
 
 export function validateQuickChecks(toolingText, documentationText) {
-  for (const [text, id] of [[toolingText, "tooling"], [documentationText, "documentation"]]) {
+  for (const [text, id] of [
+    [toolingText, "tooling"],
+    [documentationText, "documentation"],
+  ]) {
     const workflow = yaml.load(text);
     const events = workflow.on ?? {};
     const job = workflow.jobs?.[id];
-    if (!Object.hasOwn(events, "pull_request") || !Object.hasOwn(events, "push") ||
-        events.pull_request?.paths || events.pull_request?.["paths-ignore"] ||
-        workflow.permissions?.contents !== "read" ||
-        workflow.concurrency?.["cancel-in-progress"] !== true ||
-        !Number.isInteger(job?.["timeout-minutes"]) || job["timeout-minutes"] <= 0 ||
-        job["timeout-minutes"] > 15 || job.if || job["continue-on-error"] ||
-        (job.steps ?? []).some((step) => step["continue-on-error"] ||
-          /scripts\.objc3c_(assurance run|implementation_assurance run|toolchain\.(llvm_campaign|codec_fuzz|compiler_source_coverage))/.test(step.run ?? "")))
-      throw new Error("Quick PR checks must be automatic, bounded and independent of extended compiler builds");
+    if (
+      !Object.hasOwn(events, "pull_request") ||
+      !Object.hasOwn(events, "push") ||
+      events.pull_request?.paths ||
+      events.pull_request?.["paths-ignore"] ||
+      workflow.permissions?.contents !== "read" ||
+      workflow.concurrency?.["cancel-in-progress"] !== true ||
+      !Number.isInteger(job?.["timeout-minutes"]) ||
+      job["timeout-minutes"] <= 0 ||
+      job["timeout-minutes"] > 15 ||
+      job.if ||
+      job["continue-on-error"] ||
+      (job.steps ?? []).some(
+        (step) =>
+          step["continue-on-error"] ||
+          /scripts\.objc3c_(assurance run|implementation_assurance run|toolchain\.(llvm_campaign|codec_fuzz|compiler_source_coverage))/.test(
+            step.run ?? "",
+          ),
+      )
+    )
+      throw new Error(
+        "Quick PR checks must be automatic, bounded and independent of extended compiler builds",
+      );
   }
 }
 
@@ -212,12 +305,17 @@ function concreteJobNames(id, job) {
     throw new Error("Expected a bounded static workload matrix");
   let names = [name];
   for (const [key, values] of Object.entries(matrix)) {
-    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) || !Array.isArray(values) ||
-        values.length === 0 || values.length > 16 ||
-        values.some((value) => typeof value !== "string" || value.includes("${{")))
+    if (
+      !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ||
+      !Array.isArray(values) ||
+      values.length === 0 ||
+      values.length > 16 ||
+      values.some((value) => typeof value !== "string" || value.includes("${{"))
+    )
       throw new Error("Invalid static workload matrix");
-    names = names.flatMap((value) => values.map((item) =>
-      value.replaceAll(`\${{ matrix.${key} }}`, item)));
+    names = names.flatMap((value) =>
+      values.map((item) => value.replaceAll(`\${{ matrix.${key} }}`, item)),
+    );
     if (names.length > 16) throw new Error("Workload matrix exceeds its reviewed bound");
   }
   if (names.some((value) => value.includes("${{")) || new Set(names).size !== names.length)
@@ -248,15 +346,18 @@ export async function validateWorkflowContracts(config, readWorkflow) {
       );
     }
     for (const expected of suite.expectedJobs) {
-      const jobs = Object.entries(workflow.jobs ?? {}).filter(
-        ([id, job]) => concreteJobNames(id, job).includes(expected.name),
+      const jobs = Object.entries(workflow.jobs ?? {}).filter(([id, job]) =>
+        concreteJobNames(id, job).includes(expected.name),
       );
       if (jobs.length !== 1) throw new Error(`Missing or duplicate expected job ${expected.name}`);
       const [id, job] = jobs[0];
-      const receiptGate = job.if === "always()" && (job.steps ?? []).some(
-        (step) => step.run?.includes("scripts.objc3c_assurance verify --sharded") &&
-          step.if === "always()",
-      );
+      const receiptGate =
+        job.if === "always()" &&
+        (job.steps ?? []).some(
+          (step) =>
+            step.run?.includes("scripts.objc3c_assurance verify --sharded") &&
+            step.if === "always()",
+        );
       if ((job.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_assurance run"))) {
         validateNativeContainer(job);
       }
@@ -271,29 +372,47 @@ export async function validateWorkflowContracts(config, readWorkflow) {
       }
       for (const pattern of expected.requiredSteps) {
         const steps = (job.steps ?? []).filter((step) => new RegExp(pattern).test(step.name ?? ""));
-        if (steps.length !== 1 || !steps[0].run ||
-            (steps[0].if && !(receiptGate && steps[0].if === "always()")) ||
-            steps[0]["continue-on-error"]) {
+        if (
+          steps.length !== 1 ||
+          !steps[0].run ||
+          (steps[0].if && !(receiptGate && steps[0].if === "always()")) ||
+          steps[0]["continue-on-error"]
+        ) {
           throw new Error(`Missing or conditional workload step ${pattern}`);
         }
       }
       if (!receiptGate) {
         const gate = workflow.jobs.gate;
         const needs = Array.isArray(gate?.needs) ? gate.needs : [gate?.needs];
-        if (job.strategy?.["fail-fast"] !== false ||
-            job.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
-            !(job.steps ?? []).some((step) => step.run?.includes('run --periodic-sha "$SOURCE_SHA"') &&
-              step.run.includes('--shard "$NATIVE_SHARD"')) ||
-            gate?.if !== "always()" || !needs.includes(id) ||
-            !(gate.steps ?? []).some((step) => step.if === "always()" &&
-              step.run?.includes("scripts.objc3c_assurance verify --sharded"))) {
-          throw new Error(`Workload ${expected.name} lacks independent profiles and a complete receipt verifier`);
+        if (
+          job.strategy?.["fail-fast"] !== false ||
+          job.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
+          !(job.steps ?? []).some(
+            (step) =>
+              step.run?.includes('run --periodic-sha "$SOURCE_SHA"') &&
+              step.run.includes('--shard "$NATIVE_SHARD"'),
+          ) ||
+          gate?.if !== "always()" ||
+          !needs.includes(id) ||
+          !(gate.steps ?? []).some(
+            (step) =>
+              step.if === "always()" &&
+              step.run?.includes("scripts.objc3c_assurance verify --sharded"),
+          )
+        ) {
+          throw new Error(
+            `Workload ${expected.name} lacks independent profiles and a complete receipt verifier`,
+          );
         }
       }
     }
-    const actual = Object.entries(workflow.jobs ?? {}).flatMap(([id, job]) => concreteJobNames(id, job));
-    if (JSON.stringify(actual.toSorted()) !==
-        JSON.stringify(suite.expectedJobs.map((job) => job.name).toSorted()))
+    const actual = Object.entries(workflow.jobs ?? {}).flatMap(([id, job]) =>
+      concreteJobNames(id, job),
+    );
+    if (
+      JSON.stringify(actual.toSorted()) !==
+      JSON.stringify(suite.expectedJobs.map((job) => job.name).toSorted())
+    )
       throw new Error("Configured workload inventory differs from the concrete native jobs");
   }
 }
@@ -302,12 +421,25 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const root = resolve(fileURLToPath(new URL("../workflows/", import.meta.url)));
   const config = JSON.parse(await readFile(new URL("./adaptive-ci.json", import.meta.url), "utf8"));
   await validateWorkflowContracts(config, (name) => readFile(join(root, name), "utf8"));
-  validateNativeGate(await readFile(join(root, "native-assurance.yml"), "utf8"));
+  const allWorkflows = Object.fromEntries(
+    await Promise.all(
+      (await readdir(root))
+        .filter((name) => name.endsWith(".yml"))
+        .map(async (name) => [name, await readFile(join(root, name), "utf8")]),
+    ),
+  );
+  validateNativeRelease(
+    allWorkflows["native-assurance.yml"],
+    allWorkflows["platform-host-evidence.yml"],
+    allWorkflows,
+  );
   validateImplementationGate(
     await readFile(join(root, "implementation-analysis.yml"), "utf8"),
     await readFile(join(root, "platform-host-evidence.yml"), "utf8"),
   );
   validateOptionalLLVM(await readFile(join(root, "llvm-assurance.yml"), "utf8"));
-  validateQuickChecks(await readFile(join(root, "task-hygiene.yml"), "utf8"),
-                      await readFile(join(root, "spec-quality.yml"), "utf8"));
+  validateQuickChecks(
+    await readFile(join(root, "task-hygiene.yml"), "utf8"),
+    await readFile(join(root, "spec-quality.yml"), "utf8"),
+  );
 }
