@@ -9,13 +9,13 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
-    "prepared_tree": "58ab1811696fe17b8ca6b8a5d4d76fa5798ee7cc",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
+    "prepared_tree": "905250cc2c1edf42e59c21061db202c1973eaf93",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
     "activated_product_sdk": false,
-    "patch_digest": "bace3bd39a7e843f83f94add1925ef9ec6f8be18647dba83537e89357c65fadb",
+    "patch_digest": "ecf695f956f6822ddc4fff89190c7abbd749ad44872e9523c73b57b4dcb8975c",
     "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51"
   },
   "language_contracts": {
@@ -98,12 +98,12 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
       "status": "PASS",
       "runs": [
-        42524558363,
-        42524558323,
-        42524558412
+        42528832922,
+        42528832941,
+        42528833086
       ],
       "tooling_tests_passed": 1587,
       "tooling_subtests_passed": 33,
@@ -333,28 +333,40 @@
         "finding_variants": 3,
         "uncompleted_variants": 109,
         "artifact_sha256": "7cf9cc38b4209102161d1556c74f266d0fda0a177ae7764e08c2a0df848eab39"
+      },
+      "global_initializer_dispatch_fixture": {
+        "release_run": 42524566466,
+        "LLVM_run": 42524570448,
+        "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+        "status": "CANCELLED_SUPERSEDED_AFTER_FOUNDATION_FIXTURE_FAILURE",
+        "failing_job": 128865300830,
+        "failure": "New global-initializer regression assumed the driver direct-send default; cc1 defaults to valid GNUstep lookup dispatch. One foundation regression failed; analysis did not start.",
+        "artifact": 13635914224,
+        "artifact_sha256": "bd61c179ccede3d231c632e57ac3ff0acb10dfe935669a460eeb3766da27bb95",
+        "repair": "Explicit lookup/direct dispatch across ARC/MRC and C++20/23; require the actual message result and its owned global store. All eight focused native configurations pass."
       }
     },
     "SDK_release": {
-      "run": 42524566466,
-      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+      "run": 42528854066,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42524566466"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
     },
     "native_assurance": {
-      "run": 42524566466,
-      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+      "run": 42528854066,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42524566466"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066"
     },
     "LLVM_IR_and_debugger": {
-      "run": 42524570448,
-      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+      "run": 42528858909,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42524570448"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528858909"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -511,16 +523,16 @@
       "reassembled_compiler_inputs_bytes": 608002556
     },
     "implementation_analysis": {
-      "run": 42524566466,
-      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
-      "source_build_id": "llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b",
+      "run": 42528854066,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42524566466",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42528854066",
       "partition_jobs": {
-        "0": 128865300773,
-        "1": 128865300922,
-        "2": 128865300818,
-        "3": 128865300830
+        "0": 128878455810,
+        "1": 128878455745,
+        "2": 128878455827,
+        "3": 128878455772
       }
     },
     "upstream_repair_checkpoint": {
@@ -530,10 +542,11 @@
       "expectation_failures": 11,
       "code_generation_crashes": 1,
       "focused_lit_cases_passed": 450,
-      "global_initializer_regression_profiles_passed": 4,
+      "global_initializer_regression_profiles_passed": 8,
       "original_crashing_upstream_case": "PASS: original FileCheck under matching exception flags",
       "source_seal": "PASS",
-      "prepared_tree": "71313f05ea1e73b4aed2f056846951a9e3e70f1f"
+      "prepared_tree": "905250cc2c1edf42e59c21061db202c1973eaf93",
+      "dispatch_controls": "Explicit GNUstep lookup/direct sends across ARC/MRC and C++20/23, with exact call-result ownership and global stores"
     },
     "coverage_repair_checkpoint": {
       "status": "PASS_LOCAL_NATIVE_AND_CONTROLS_FULL_INSTRUMENTED_RETRY_REQUIRED",
@@ -583,6 +596,14 @@
       ],
       "diagnostic_limits": "Standalone driver additionally reports unselected dead-store/LLVM bit-shift diagnostics; this replay is restricted to the previously selected defect checkers and affected Clang units.",
       "focused_tooling_controls_passed": 161
+    },
+    "global_initializer_dispatch_controls": {
+      "status": "PASS_FOCUSED_NATIVE_REPLAY",
+      "configurations": 8,
+      "export_and_upstream_tool_controls_passed": 4,
+      "source_seal": "PASS",
+      "prepared_tree": "905250cc2c1edf42e59c21061db202c1973eaf93",
+      "scope": "Actual corrected code generator with retained diagnostic libraries; complete current-source hosted qualification remains required."
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
@@ -652,11 +673,11 @@
     "all_CI_entry_points": "Native/manual/periodic LLVM owners use the shared host action; quick/documentation/planning owners reuse Python packages; all setup-node callers cache npm and prefer cached downloads",
     "retired_contract": "Remove the unenrolled Windows-era test requiring every workflow command to use npm bridge; native workflow and dependency routing contracts now execute in policy CI",
     "current_revision_cache_reuse": {
-      "revision": "9c675d3ab2891ce60b369ea393baea5d6d78813a",
+      "revision": "9d15bcc9e374096fb4fdaa2c02fdd6007a429404",
       "observation": "GitHub cache API last-access timestamps during new release/LLVM setup",
       "restored_dependency_entries": 8,
       "dependency_keys_unchanged_by_new_compiler_patch": true,
-      "observed_utc": "2026-11-08T17:53:08Z"
+      "observed_utc": "2026-11-08T21:21:05Z"
     }
   }
 }

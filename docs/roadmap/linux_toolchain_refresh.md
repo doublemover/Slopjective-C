@@ -87,8 +87,7 @@ and one Objective-C message crash during C++ global initialization. Exact-fork
 utilities are now explicit prerequisites. Updated expectations retain semantic
 checks for native printing, Block ODR identity and ARC array initialization.
 Installed-consumer and sanitizer checks also pass before that upstream failure.
-The null current-function context is handled explicitly and has four ARC/MRC,
-C++20/23 regressions. All 450 utility/expectation failures pass focused local lit
+The null current-function context is handled explicitly and has eight explicit lookup/direct-send, ARC/MRC, C++20/23 regressions. All 450 utility/expectation failures pass focused local lit
 replay; the formerly crashing upstream case passes its original FileCheck with
 the corrected code generator. These reused-library diagnostics are not SDK
 qualification. The complete canonical patch stack and prepared source seal pass.
@@ -113,7 +112,7 @@ sibling failure; prerequisite failures still stop dependent work, and SDK
 packaging waits until every other required native owner passes.
 
 The candidate now has sealed source identity
-`llvmorg-23.1.5-392dfff97d29-bace3bd39a7e-0fcb354b`. The older full analysis
+`llvmorg-23.1.5-392dfff97d29-ecf695f956f6-0fcb354b`. The older full analysis
 reached its six-hour limit after 206/235 variants: 169 passed, thirty timed out
 and seven reported findings. Those seven units are repaired; focused local
 Static Analyzer replay clears all seventeen reported locations. Six modern
@@ -124,10 +123,17 @@ gate verifies identical inventories/inputs and complete disjoint execution.
 The superseded single-job analysis was stopped after retaining its partial
 proof. No checks or variants were removed.
 
-Current-source [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42524566466)
-and [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42524570448)
-are running at `9d15bcc9e`. All quick gates pass: 1,587 tests and 33 subtests,
-with 111 explicit capability/platform skips. Fresh Debian/Ubuntu archive checks follow those release gates.
+The preceding hosted prerequisite caught a dispatch assumption in the new global
+initializer regression: the driver and `clang -cc1` have different GNUstep
+message defaults. The test now selects lookup and direct sends explicitly and
+checks the actual call result and owned global store. All eight ARC/MRC,
+C++20/23 configurations and four export/upstream-tool controls pass focused
+native replay; the canonical source seal verifies.
+
+Current-source [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42528854066)
+and [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42528858909)
+are running at `6d7fc2ade`. All current-source quick gates pass: 1,587 tests and 33
+subtests, with 111 explicit capability/platform skips. Fresh Debian/Ubuntu archive checks follow those release gates.
 **SDK 2.62.0 remains the last accepted archive; the replacement is not accepted
 or activated.** The [refresh receipt](../support/linux_toolchain_refresh_progress.json)
 records each checkpoint and its scope. New compiler patches continue to reuse
