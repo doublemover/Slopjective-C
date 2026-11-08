@@ -2528,7 +2528,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationMixedCarrierCall(representative))
     identity.canonical_type_identity += ";mixed-carrier-call:v1;";
   if (HasDeclarationCppCarrierRuntime(representative))
-    identity.canonical_type_identity += ";cxx-carrier-runtime:v1;";
+    identity.canonical_type_identity += ";cxx-carrier-runtime:v2;";
   if (HasDeclarationCheckedCppRecordResult(representative))
     identity.canonical_type_identity += ";checked-cxx-record-results:v1;";
   if (HasDeclarationCppCarrierStorage(representative))
@@ -2538,7 +2538,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationCppCarrierComposition(representative))
     identity.canonical_type_identity += ";cxx-carrier-composition:v1;";
   if (HasDeclarationCppCarrierCall(representative))
-    identity.canonical_type_identity += ";cxx-carrier-call:v1;";
+    identity.canonical_type_identity += ";cxx-carrier-call:v2;";
   if (HasDeclarationResourceKeyPathValue(representative))
     identity.canonical_type_identity += ";keypath-resource-values:v1;";
   if (HasDeclarationNullableKeyPathWrite(representative))

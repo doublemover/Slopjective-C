@@ -90,19 +90,10 @@ inline bool ContainsNativeKeyPathResourceValue(clang::QualType type,
 
 // The native call contract applies at direct carrier value boundaries. Pointer
 // and reference views of carriers do not themselves pass ownership by value.
-inline bool IsNativeCppCarrierValue(clang::QualType type,unsigned depth=0) {
-  if(type.isNull() || depth>64)return false;
-  type=type.getCanonicalType();
-  auto payload=[&](clang::QualType value) {
-    if(IsNativeCppCarrierValue(value,depth+1))return true;
-    if(const auto *record=value->getAsCXXRecordDecl())
-      if(const auto *definition=record->getDefinition())return definition->hasNonTrivialDestructor();
-    return false;
-  };
-  if(const auto *optional=type->getAs<clang::ObjC3OptionalType>())return payload(optional->getElementType());
-  if(const auto *result=type->getAs<clang::ObjC3ResultType>())return payload(result->getSuccessType()) || payload(result->getErrorType());
-  return false;
+inline bool IsNativeCppCarrierValue(clang::QualType type) {
+  return !type.isNull() && clang::hasObjC3CarrierCppPayload(type);
 }
+
 inline bool HasNativeCheckedCppRecordResultType(clang::QualType type,unsigned depth=0) {
   if(type.isNull() || depth>64)return false;
   type=type.getCanonicalType();
@@ -311,7 +302,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
   } else if (type->isPointerType() || type->isBlockPointerType() ||
       type->isReferenceType()) {
     if(type->isBlockPointerType() && HasNativeCppCarrierRuntimeType(type))
-      AppendNativeContractField(out,";cxx-carrier-runtime:v1;");
+      AppendNativeContractField(out,";cxx-carrier-runtime:v2;");
     AppendNativeTypeContracts(out, type->getPointeeType(), context,
                               position + ".pointee", depth + 1);
   } else if (const auto *member = type->getAs<clang::MemberPointerType>()) {
@@ -324,11 +315,11 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     if(HasNativeMixedCarrierCallType(type))
       AppendNativeContractField(out,";mixed-carrier-call:v1;");
     if(HasNativeCppCarrierRuntimeType(type))
-      AppendNativeContractField(out,";cxx-carrier-runtime:v1;");
+      AppendNativeContractField(out,";cxx-carrier-runtime:v2;");
     if(HasNativeCheckedCppRecordResultType(type))
       AppendNativeContractField(out,";checked-cxx-record-results:v1;");
     if(HasNativeCppCarrierCallType(type))
-      AppendNativeContractField(out,";cxx-carrier-call:v1;");
+      AppendNativeContractField(out,";cxx-carrier-call:v2;");
     if (function->hasObjC3BorrowedResult()) {
       AppendNativeContractField(out, position + ":borrowed-result");
       AppendNativeContractField(out, ";borrowed-callable-owners:v1;");

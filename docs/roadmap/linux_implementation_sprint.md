@@ -1,11 +1,18 @@
 # Linux implementation sprint
 
+The [source 2.136 / System 2.62 C++ value-call span](linux_cpp_carrier_value_calls.md)
+extends caller-owned carrier construction to trivial-destructor, plain, empty and
+union record payloads, with the `objc3.cxx-carrier-call.v2` hard cutover. Native
+and publication controls are being consolidated while the remaining feature
+batch continues.
+
 The [source 2.135 / System 2.61 mixed-call span](linux_mixed_carrier_calls.md)
 implements ARC/C++ carrier arguments and results through native functions,
 messages and Blocks, with checked propagation, selected-arm cleanup and explicit
-source-free capability admission. All 24 dedicated compiler commands, two
+source-free capability admission. All 25 dedicated compiler commands, two
 publication profiles, 360 production decoder replays and four sanitizer
-configurations / fourteen commands pass; adjacent/full consolidation continues.
+configurations / fourteen commands, all 26 updated frontend groups and all 530
+executable compiler cases pass (three unsupported).
 One matched SDK follows the implementation batch.
 
 The [source 2.134 / System 2.60 runtime-call span](linux_cpp_carrier_runtime_calls.md)

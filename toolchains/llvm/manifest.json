@@ -19,7 +19,7 @@
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
-      "sha256": "04ed44030826f62d128249cfab44dc1466b29e9020041dba709b9e04a0127976"
+      "sha256": "05132ca65d805a83e13b52f1e5cdb71733d3a7d5c4050ed0b70a4e6d351a5455"
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
@@ -27,7 +27,7 @@
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "be519f05627fe8780c90cddc37c2d32800ebff8ad1f05749ab9e9314becda5c8"
+      "sha256": "1d192f60036107a700c559a22f211d23218c80a9f090736f1830b665914df9ba"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",

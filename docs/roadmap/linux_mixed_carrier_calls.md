@@ -26,7 +26,7 @@ nondeleted, nonthrowing C++ destructor requirement. Enclosing records/arrays,
 assignment, allocation, lambda/MRC captures, ownership-aware FFI and larger or
 otherwise unqualified runtime leaves remain separately tracked implementation.
 Extension ABI 24, native frame 1, services 4 and schema 2.2 retain their layouts.
-All 24 dedicated compiler commands, two source-free publication profiles,
+All 25 dedicated compiler commands, two source-free publication profiles,
 360 production decoder replays and four ARC ASan/UBSan configurations / fourteen
 commands pass. Native controls include both active arms, implicit/explicit
 copies and moves, nested/default arms, strong/weak ownership, checked/optional

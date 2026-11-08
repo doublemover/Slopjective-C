@@ -769,6 +769,83 @@ index d638d9772..7f1fefdc6 100644
  		}
  		abort();
  	}
+diff --git a/encoding2.c b/encoding2.c
+index e9c698305..d224e1a2a 100644
+--- a/encoding2.c
++++ b/encoding2.c
+@@ -30,6 +30,43 @@ const char *objc_skip_type_qualifiers (const char *type)
+ 	return type;
+ }
+ 
++/* Versioned opaque C++ storage carries native alignment which cannot be
++ * expressed by ordinary Objective-C primitive fields. This is layout metadata;
++ * it does not grant forwarding/FFI permission to copy or destroy the object. */
++static size_t objc3_storage_number(const char **cursor)
++{
++	const char *p = *cursor;
++	size_t value = 0;
++	if (*p < '0' || *p > '9') abort();
++	if (*p == '0') abort();
++	do {
++		size_t digit = (size_t)(*p++ - '0');
++		if (value > ((size_t)-1 / 8 - digit) / 10) abort();
++		value = value * 10 + digit;
++	} while (*p >= '0' && *p <= '9');
++	*cursor = p;
++	return value;
++}
++
++static const char *objc3_native_storage(const char *type, size_t *size, size_t *alignment)
++{
++	static const char prefix[] = "{__objc3_cxx_storage_v2_s";
++	if (strncmp(type, prefix, sizeof(prefix) - 1)) return NULL;
++	const char *p = type + sizeof(prefix) - 1;
++	size_t bytes = objc3_storage_number(&p);
++	if (p[0] != '_' || p[1] != 'a') abort();
++	p += 2;
++	size_t align = objc3_storage_number(&p);
++	if (align == 0 || (align & (align - 1)) || bytes < align || bytes % align) abort();
++	if (p[0] != '=' || p[1] != '[') abort();
++	p += 2;
++	if (objc3_storage_number(&p) != bytes) abort();
++	if (p[0] != 'c' || p[1] != ']' || p[2] != '}') abort();
++	*size = bytes * 8;
++	*alignment = align * 8;
++	return p + 3;
++}
++
+ static const char *sizeof_type(const char *type, size_t *size);
+ 
+ OBJC_PUBLIC
+@@ -225,6 +262,15 @@ static const char *sizeof_type(const char *type, size_t *size)
+ 		}
+ 		case '{':
+ 		{
++			size_t native_size, native_align;
++			const char *native_end = objc3_native_storage(type, &native_size, &native_align);
++			if (native_end) {
++				size_t remainder = *size % native_align;
++				size_t padding = remainder ? native_align - remainder : 0;
++				if (*size > (size_t)-1 - padding || *size + padding > (size_t)-1 - native_size) abort();
++				*size += padding + native_size;
++				return native_end;
++			}
+ 			const char *t = type;
+ 			parse_struct(&t, (type_parser)sizeof_type, size);
+ 			size_t align = objc_alignof_type(type);
+@@ -320,6 +366,12 @@ static const char *alignof_type(const char *type, size_t *align)
+ 		}
+ 		case '{':
+ 		{
++			size_t native_size, native_align;
++			const char *native_end = objc3_native_storage(type, &native_size, &native_align);
++			if (native_end) {
++				*align = max(*align, native_align);
++				return native_end;
++			}
+ 			const char *t = type;
+ 			parse_struct(&t, (type_parser)alignof_type, align);
+ 			return t;
 diff --git a/fast_paths.m b/fast_paths.m
 index ec2f646a2..97508cbaf 100644
 --- a/fast_paths.m

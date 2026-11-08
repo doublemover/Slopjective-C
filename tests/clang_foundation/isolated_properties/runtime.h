@@ -298,6 +298,8 @@ static objc3_completion property_finish(objc3_task_t *task,int caller_only) {
 #include "carrier_composed_allocations.h"
 #include "cpp_runtime_carriers.h"
 #include "mixed_carrier_calls.h"
+#include "cpp_carrier_values.h"
+#include "native_storage_layout.h"
 static void property_suite(void) {
   assert(objc3_executor_create(1,&property_caller)==OBJC3_SERVICE_OK);
   assert(objc3_executor_create(1,&property_destination)==OBJC3_SERVICE_OK);
@@ -376,8 +378,16 @@ static void property_suite(void) {
   carrier_record_payload_suite();
   carrier_composed_allocation_suite();
   carrier_default_storage_suite(main_object);
+#ifdef __cplusplus
+  carrier_call_stage=14000;
+#endif
   cpp_runtime_carrier_suite(main_object,child);
+#ifdef __cplusplus
+  carrier_call_stage=15000;
+#endif
   mixed_carrier_call_suite(main_object);
+  cpp_carrier_value_suite(main_object);
+  native_storage_layout_suite();
   carrier_call_suite(main_object);
   assert(objc3_actor_close(property_mailbox)==OBJC3_SERVICE_OK);
   assert(objc3_actor_join(property_mailbox)==OBJC3_SERVICE_OK);

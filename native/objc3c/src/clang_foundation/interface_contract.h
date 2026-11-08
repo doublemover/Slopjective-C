@@ -262,9 +262,9 @@ inline constexpr const char *kMixedCarrierCallSemantic = "objc3.mixed-carrier-ca
 inline bool HasMixedCarrierCallIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";mixed-carrier-call:v1;") != std::string::npos;
 }
-inline constexpr const char *kCppCarrierRuntimeSemantic = "objc3.cxx-carrier-runtime.v1";
+inline constexpr const char *kCppCarrierRuntimeSemantic = "objc3.cxx-carrier-runtime.v2";
 inline bool HasCppCarrierRuntimeIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-carrier-runtime:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-carrier-runtime:v2;") != std::string::npos;
 }
 inline constexpr const char *kCheckedCppRecordResultSemantic = "objc3.checked-cxx-record-results.v1";
 inline bool HasCheckedCppRecordResultIdentity(const InterfaceDeclarationIdentity &d) {
@@ -283,10 +283,10 @@ inline bool HasCppCarrierCompositionIdentity(const InterfaceDeclarationIdentity 
   return d.canonical_type_identity.find(";cxx-carrier-composition:v1;") != std::string::npos ||
          d.effects.ownership_identity.find(";cxx-carrier-composition:v1;") != std::string::npos;
 }
-inline constexpr const char *kCppCarrierCallSemantic = "objc3.cxx-carrier-call.v1";
+inline constexpr const char *kCppCarrierCallSemantic = "objc3.cxx-carrier-call.v2";
 inline bool HasCppCarrierCallIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-carrier-call:v1;") != std::string::npos ||
-         d.effects.ownership_identity.find(";cxx-carrier-call:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-carrier-call:v2;") != std::string::npos ||
+         d.effects.ownership_identity.find(";cxx-carrier-call:v2;") != std::string::npos;
 }
 inline constexpr const char *kResourceKeyPathValueSemantic = "objc3.keypath-resource-values.v1";
 inline bool HasResourceKeyPathValueIdentity(const InterfaceDeclarationIdentity &d) {
