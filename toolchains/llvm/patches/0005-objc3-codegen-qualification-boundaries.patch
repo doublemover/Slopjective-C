@@ -37841,21 +37841,32 @@ index 000000000..856161375
 +void scalar_delete(ObjectMaybe *value){delete value;}
 diff --git a/clang/test/ObjC3/CodeGen/global-init-messages.mm b/clang/test/ObjC3/CodeGen/global-init-messages.mm
 new file mode 100644
-index 000000000..24b579db0
+index 000000000..d756b7e72
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/global-init-messages.mm
-@@ -0,0 +1,14 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
+@@ -0,0 +1,25 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=legacy -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,LOOKUP,MRC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,SEND,MRC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=legacy -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,LOOKUP,ARC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,SEND,ARC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=legacy -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,LOOKUP,MRC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,SEND,MRC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=legacy -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,LOOKUP,ARC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,SEND,ARC
 +// Global initialization has no current source function or Objective-C method.
 +// A dynamic class send must not manufacture a super/isolation thunk context.
++// Select dispatch explicitly: driver and cc1 defaults need not match.
 +__attribute__((objc_root_class)) @interface GlobalMaker
 ++ (id)make;
 +@end
 +struct GlobalOwner { id value; };
 +GlobalOwner global_owner{[GlobalMaker make]};
-+// CHECK: define internal void @__cxx_global_var_init
-+// CHECK: call{{.*}}ptr @objc_msgSend
-+// CHECK: store ptr
++// CHECK-LABEL: define internal void @__cxx_global_var_init
++// LOOKUP: call ptr @objc_msg_lookup_sender
++// LOOKUP: [[IMP:%.*]] = load ptr
++// LOOKUP: [[MESSAGE:%.*]] = call{{.*}} ptr [[IMP]](
++// SEND: [[MESSAGE:%.*]] = call{{.*}} ptr @objc_msgSend(
++// ARC: [[OWNED:%.*]] = notail call ptr @llvm.objc.retainAutoreleasedReturnValue(ptr [[MESSAGE]])
++// ARC: store ptr [[OWNED]], ptr @global_owner
++// MRC: store ptr [[MESSAGE]], ptr @global_owner
++// CHECK: ret void
