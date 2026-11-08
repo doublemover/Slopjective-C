@@ -69,7 +69,9 @@
     "shared_frontend_owner_tests_passed": 167,
     "shared_frontend_owner_requires_local_foundation_skips": 3,
     "isolated_runtime_and_collected_frontend_failure_controls_passed": 215,
-    "frontend_failure_isolation_and_native_owner_controls_passed": 134
+    "frontend_failure_isolation_and_native_owner_controls_passed": 134,
+    "actual_debug_archive_command": "PASS: retained executable/link modes and receipts, excluded build objects, verified archive SHA",
+    "forked_native_coverage_control": "PASS: pinned LLVM tools retained all three child branches after profile merging into one raw profile"
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
@@ -93,9 +95,9 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "662d72d5e330dedf5699c95ca8867e491a7b6041",
+      "revision": "d5ce98ef2a02903aa323611c6ecd1448b22a4f38",
       "status": "PASS",
-      "runs": [42494603795, 42494603784, 42494603790],
+      "runs": [42495577561, 42495577501, 42495577590],
       "tooling_tests_passed": 1540,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 107
@@ -229,20 +231,26 @@
     "SDK_release": {
       "run": 42488455572,
       "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
-      "status": "BLOCKED_CORE_FRONTEND_OTHER_OWNERS_RUNNING",
+      "status": "BLOCKED_CORE_AND_COVERAGE_IMPLEMENTATION_ANALYSIS_RUNNING",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488455572"
     },
     "native_assurance": {
       "run": 42488455572,
       "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
-      "status": "CORE_FAILED_FUZZ_PASSED_COVERAGE_RUNNING",
+      "status": "FAILED_CORE_AND_COVERAGE_FUZZ_PASSED",
       "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488455572"
     },
     "LLVM_IR_and_debugger": {
       "run": 42488460689,
       "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
-      "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488460689"
+      "status": "PASS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42488460689",
+      "executions": 21,
+      "semantic_oracle_cases": 63,
+      "semantic_oracle_controls": 7,
+      "artifact_id": 13623759979,
+      "artifact_sha256": "7038fbb90522ec251e3e7aee95970fc40b16965d05ef958887e7518f1ac39a5d",
+      "artifact_digest_provenance": "GitHub artifact API and completed upload log; not locally downloaded"
     },
     "tooling_checkpoint": {
       "revision": "049cfae5be966a899fc31383c8a43efe61172658",
@@ -331,6 +339,16 @@
         "status": "CANCELLED_BEFORE_EXECUTION",
         "reason": "Separate diagnostic concurrency group starts core work alongside existing extended profiles"
       }
+    },
+    "source_coverage_checkpoint": {
+      "run": 42488455572,
+      "job": 128755480096,
+      "revision": "07052fb1f087b406979c9049c8b2ce9896911966",
+      "status": "FAILED_KNOWN_FRONTEND_FIXTURE",
+      "failure": "Opaque key-path fixture reparsed without its pinned virtual runtime-header mapping",
+      "repair_revision": "80b4b5366fc134ad51f2c246ea0311462a230db9",
+      "artifact_sha256": "c63b3eaabb62f14642b9ec9c568c2d89fbf38986444838c100d71e6659d1bd67",
+      "artifact_download_verified": true
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",

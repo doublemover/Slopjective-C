@@ -99,7 +99,10 @@ The updated canonical compiler patch/source seal verifies, and 134 focused
 controls pass. Quick CI passes 1,540 tooling tests plus 33 subtests.
 
 The preceding compiler identity passes the three frontend fuzz campaigns and six
-controls. Its coverage, analysis and LLVM campaigns remain active. The next
+controls. Its LLVM campaign also passes all 21 IR/debugger executions, 63 generated
+semantic-oracle cases and seven controls. Coverage reaches the known missing
+key-path fixture header mapping repaired above; implementation analysis remains
+active. The next
 core-only diagnostic run is explicitly partial: it cannot satisfy the full
 aggregate or publish an SDK archive. Failure-only compiler inputs and failed
 executables expire after one day and permit local diagnosis without rebuilding
