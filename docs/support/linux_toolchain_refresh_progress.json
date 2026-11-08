@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-08",
-  "status": "HOSTED_QUALIFICATION_RETRY_REQUIRED",
+  "status": "HOSTED_QUALIFICATION_IN_PROGRESS",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -63,7 +63,8 @@
     "live_tool_pins_match": true,
     "clean_host_download_and_bootstrap_controls_passed": 19,
     "download_bootstrap_export_and_revision_mode_controls_passed": 28,
-    "foundation_target_admission_export_and_host_pin_tests_passed": 31
+    "foundation_target_admission_export_and_host_pin_tests_passed": 31,
+    "foundation_target_export_cost_and_host_pin_controls_passed": 57
   },
   "CI_repairs": [
     "Periodic revision mode is preserved by native execution and evidence publication",
@@ -74,7 +75,8 @@
     "Immutable official GitHub release-asset fallback retains archive checksums and ccache signature verification",
     "libclang traverses dependent key-path root/value TypeLocs; an installed indexing regression is enrolled in the foundation suite",
     "Restore the explicitly selected LexTests target using upstream distinct-unit-test registration",
-    "Inventory all Ninja targets immediately after configure, before compiling any build group"
+    "Inventory all Ninja targets immediately after configure, before compiling any build group",
+    "Quick tooling and documentation provision exact Python through the admitted uv route rather than the failing hosted toolcache asset download; Python/uv drift controls cover both routes"
   ],
   "hosted_validation": {
     "quick_checks": {
@@ -99,26 +101,54 @@
         "run": 42465618852,
         "status": "FAILED_BEFORE_EXECUTION",
         "previous_build_blocker": "Missing dependent-keypath libclang visitor repaired"
+      },
+      "missing_lexer_target": {
+        "SDK_release": {
+          "run": 42466550171,
+          "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
+          "status": "FAILED_CORE_BUILD_TARGET",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171",
+          "failure": "Upstream merged ordinary Clang unit tests; LexTests was absent. The explicit lexer target and early all-group target admission are now repaired; current-source retry required."
+        },
+        "native_assurance": {
+          "run": 42466550171,
+          "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
+          "status": "FAILED_CORE_BUILD_TARGET",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171"
+        },
+        "LLVM_IR_and_debugger": {
+          "run": 42466553014,
+          "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
+          "status": "IN_PROGRESS",
+          "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466553014"
+        }
       }
     },
     "SDK_release": {
-      "run": 42466550171,
-      "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
-      "status": "FAILED_CORE_BUILD_TARGET",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171",
-      "failure": "Upstream merged ordinary Clang unit tests; LexTests was absent. The explicit lexer target and early all-group target admission are now repaired; current-source retry required."
+      "run": 42469535429,
+      "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469535429"
     },
     "native_assurance": {
-      "run": 42466550171,
-      "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
-      "status": "FAILED_CORE_BUILD_TARGET",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466550171"
+      "run": 42469535429,
+      "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
+      "status": "IN_PROGRESS",
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469535429"
     },
     "LLVM_IR_and_debugger": {
-      "run": 42466553014,
-      "revision": "380cacc2ae341044fea7aab2950981eb81be480c",
+      "run": 42469539102,
+      "revision": "e2daa67770a8cfcf70ad236d9efa7f67c1dbd9ea",
       "status": "IN_PROGRESS",
-      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42466553014"
+      "url": "https://github.com/doublemover/Slopjective-C/actions/runs/42469539102"
+    },
+    "tooling_checkpoint": {
+      "revision": "049cfae5be966a899fc31383c8a43efe61172658",
+      "run": 42469181048,
+      "status": "PASS",
+      "tests_passed": 1499,
+      "subtests_passed": 33,
+      "explicit_skips": 107
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical."

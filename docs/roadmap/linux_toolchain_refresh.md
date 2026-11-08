@@ -41,6 +41,14 @@ The prior LLVM campaign also exposed an undefined libclang visitor for dependent
 key-path types. The visitor now traverses both root and value type locations;
 an indexing regression covers read, write and nested Optional component types.
 
+The first refreshed compiler build also exposed an unavailable `LexTests`
+target: upstream merges ordinary unit suites while this project explicitly
+selects the lexer suite. Its distinct target is restored. The build owner now
+checks every requested group against Ninja's configured target inventory before
+compilation; real Ninja and operational-build controls cover that admission.
+Quick tooling and documentation use the same admitted uv/Python provisioning
+route as development, avoiding repeated hosted Python toolcache download failures.
+
 The hosted release workflow reuses the extended native owner
 for the current compiler, GNU runtime, frontend, installed consumers and one
 sealed archive, then waits for matched
