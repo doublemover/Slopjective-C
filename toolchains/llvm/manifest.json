@@ -11,7 +11,7 @@
   "patches": [
     {
       "file": "0001-objc3-language-mode-and-build-identity.patch",
-      "sha256": "56168d750e80653701eb13dbda54f4e1cb837dfc922581edef7ffc2b43c3842b"
+      "sha256": "499fcb28bc38e71618ddaa1561aaba30f54fc395f92c181be1ef76c3d9f418e3"
     },
     {
       "file": "0002-objc3-native-defer-statement.patch",

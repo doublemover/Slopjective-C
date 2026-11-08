@@ -16,6 +16,7 @@ SOURCE = ROOT / "out/toolchains/objc3-development/src"
 STACK = ROOT / "toolchains/llvm/patches"
 PACKETS = {
     "0001-objc3-language-mode-and-build-identity.patch": [
+        "llvm/utils/lit/lit/TestingConfig.py",
         "clang/include/clang/Basic/CMakeLists.txt",
         "clang/include/clang/Basic/LangOptions.def",
         "clang/include/clang/Basic/ObjC3Foundation.h.in",

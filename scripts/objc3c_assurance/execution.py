@@ -63,18 +63,29 @@ def execute_ctest(build: Path, label: str, directory: Path, command) -> list[dic
 
 
 def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, save):
-    """Collect independent failures; require prerequisites and package only a clean batch."""
+    """Collect independent failures and prepare the private SDK before its consumers.
+
+    The workflow publishes the SDK only after this entire batch passes. Product
+    sanitizer checks consume its sealed candidate, so moving packaging after
+    those checks would create a dependency cycle.
+    """
     from .evidence import artifact, native_files
     failures = []
-    # Packaging is a delivery step; finish every independent check before it.
-    ordered = [row for row in suites if row['id'] != 'package'] + [
-        row for row in suites if row['id'] == 'package']
-    for suite in ordered:
+    names = [row['id'] for row in suites]
+    if 'sanitizer-products' in names and ('package' not in names or
+            names.index('package') > names.index('sanitizer-products')):
+        raise ValueError('sanitizer-products requires an earlier package candidate')
+    passed = set()
+    for suite in suites:
         directory = output / suite['id'];directory.mkdir()
         row = {'id': suite['id'], 'status': 'running', 'executions': [], 'artifacts': []}
         report['suites'].append(row)
         if suite['id'] == 'package' and failures:
             row.update(status='BLOCKED', error='Earlier native checks failed: '+', '.join(failures))
+            save()
+            continue
+        if suite['id'] == 'sanitizer-products' and 'package' not in passed:
+            row.update(status='BLOCKED', error='Private SDK package prerequisite did not pass')
             save()
             continue
         save()
@@ -84,6 +95,7 @@ def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, s
             if not row['executions'] or not row['artifacts']:
                 raise ValueError('native suite produced no execution or artifact inventory')
             row['status'] = 'PASS'
+            passed.add(suite['id'])
         except BaseException as error:
             row['artifacts'] = [artifact(output, path) for path in native_files(directory)]
             row.update(status='FAIL', error=str(error))

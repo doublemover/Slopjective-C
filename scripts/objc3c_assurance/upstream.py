@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from .evidence import digest
 
-UPSTREAM_TOOLS = ('split-file', 'llvm-profdata', 'llvm-lto', 'llvm-lto2',
+UPSTREAM_TOOLS = ('split-file', 'opt', 'llvm-profdata', 'llvm-lto', 'llvm-lto2',
                   'yaml2obj', 'clang-scan-deps')
 
 

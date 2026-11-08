@@ -28,7 +28,8 @@ def test_actual_upstream_tool_build_admits_every_executable(tmp_path, mode):
         with pytest.raises(ValueError,match='missing after build'):prepare_upstream_tools(repo,execute)
     else:
         tools=prepare_upstream_tools(repo,execute)
-        assert set(tools)==set(UPSTREAM_TOOLS) and all(len(value)==64 for value in tools.values())
+        assert set(tools)=={'split-file','opt','llvm-profdata','llvm-lto','llvm-lto2','yaml2obj','clang-scan-deps'}
+        assert all(len(value)==64 for value in tools.values())
         for tool in tools:
             assert subprocess.run([str(build/'bin'/tool)],timeout=5).returncode==37
     assert recorded==['upstream-tools-build']
