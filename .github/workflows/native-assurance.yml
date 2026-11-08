@@ -105,6 +105,34 @@ jobs:
             scripts/qualify_linux_archive.sh
           if-no-files-found: error
           retention-days: 7
+      - name: Retain current compiler inputs for frontend failure diagnosis
+        id: frontend-debug
+        if: failure() && matrix.shard == 'core'
+        shell: bash
+        run: |
+          stage=out/toolchains/objc3-development/stage-linux-x86_64
+          frontend=out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation
+          if [[ ! -f "$stage/bin/clang" || ! -d "$frontend" ]]; then exit 0; fi
+          mkdir -p out/native-assurance/debug
+          inputs=("$stage")
+          while IFS= read -r -d '' binary; do inputs+=("$binary"); done < <(
+            find "$frontend" -maxdepth 1 -type f -executable -name 'objc3*' -print0
+          )
+          for receipt in out/native-assurance/results/foundation out/native-assurance/results/frontend/frontend-tests/qualification.json; do
+            if [[ -e "$receipt" ]]; then inputs+=("$receipt"); fi
+          done
+          tar -I 'zstd -T2 -3' -cf out/native-assurance/debug/compiler-inputs.tar.zst "${inputs[@]}"
+          sha256sum out/native-assurance/debug/compiler-inputs.tar.zst > out/native-assurance/debug/compiler-inputs.sha256
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - name: Preserve one-day unaccepted compiler diagnostics
+        if: failure() && matrix.shard == 'core' && steps.frontend-debug.outputs.ready == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unaccepted-frontend-debug-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/debug/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
       - name: Preserve clean-host setup diagnostics
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
