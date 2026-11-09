@@ -85,6 +85,9 @@ jobs:
           if not rows:
               rows.append(('<artifact>', 'no-failure-record',
                            ['retained artifact contains no structured failure record']))
+          for log in sorted(root.rglob('*.log')):
+              if any(part.endswith('-failure') for part in log.parts) and log not in failed_logs:
+                  failed_logs.append(log)
           for path, status, errors in rows[:20]:
               message = json.dumps({'path': path, 'status': status, 'errors': errors},
                                    sort_keys=True)
