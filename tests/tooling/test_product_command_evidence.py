@@ -14,7 +14,8 @@ from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification
 
 @pytest.mark.parametrize('entry', ['run_linux_feature_batch.py', 'qualify_async_c_abi.py',
                                   'product_evidence.py'])
-def test_installed_helpers_import_without_a_source_checkout(tmp_path, entry):
+@pytest.mark.parametrize('compression_available', [True, False])
+def test_installed_helpers_import_without_a_source_checkout(tmp_path, entry, compression_available):
     sources = Path(__file__).resolve().parents[2] / 'scripts/objc3c_toolchain'
     installed = tmp_path / 'installed'
     installed.mkdir()
@@ -25,7 +26,24 @@ def test_installed_helpers_import_without_a_source_checkout(tmp_path, entry):
         shutil.copyfile(sources / original, installed / name)
     environment = dict(os.environ)
     environment.pop('PYTHONPATH', None)
-    result = subprocess.run([sys.executable, '-B', '-S', str(installed / entry), '--help'],
+    loader = '''
+import importlib.abc
+import runpy
+import sys
+from pathlib import Path
+class NoCompression(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'compression' or fullname.startswith('compression.'):
+            raise ModuleNotFoundError('compression unavailable on fresh host', name=fullname)
+if sys.argv.pop(1) == 'False':
+    sys.meta_path.insert(0, NoCompression())
+entry = sys.argv.pop(1)
+sys.path.insert(0, str(Path(entry).parent))
+sys.argv[0] = entry
+runpy.run_path(entry, run_name='__main__')
+'''
+    result = subprocess.run([sys.executable, '-B', '-S', '-c', loader,
+        str(compression_available), str(installed / entry), '--help'],
         cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
     assert not list(installed.rglob('__pycache__'))

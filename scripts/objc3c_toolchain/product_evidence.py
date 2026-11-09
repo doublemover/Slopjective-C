@@ -6,7 +6,6 @@ project process, including failures, before its temporary workspace disappears.
 from __future__ import annotations
 
 import argparse
-from compression import zstd
 import hashlib
 import json
 import os
@@ -137,6 +136,10 @@ class ProductCommands:
         write_json(self.receipt, self.report)
 
     def retain(self, path):
+        # Ordinary installed SDK helpers also import this owner. Only sanitizer
+        # evidence production/replay requires the development Python zstd API.
+        from compression import zstd
+
         path = Path(path)
         signature = digest(path)
         size = path.stat().st_size
@@ -390,6 +393,8 @@ class ProductCommands:
 
 
 def blob_bytes(root: Path, record):
+    from compression import zstd
+
     root = root.resolve(strict=True)
     relative = Path(record['blob'])
     if (relative.parent != Path('blobs') or
