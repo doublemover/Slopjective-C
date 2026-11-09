@@ -396,6 +396,46 @@ def test_execution_shards_partition_all_selected_suites_and_profile_builds(tmp_p
     assert execution_shards(select(['docs/roadmap/prose.md'], **REV)) == []
 
 
+def test_release_matrix_partitions_the_complete_core_once_after_one_product_producer():
+    from scripts.objc3c_assurance.plan import selected_suites
+    from scripts.objc3c_assurance.release_matrix import CONSUMER_GROUPS, GROUPS
+    plan = select(None, **REV, periodic=True)
+    expected = {row['id'] for row in selected_suites(plan, 'core')}
+    assigned = [suite for suites in GROUPS.values() for suite in suites]
+    assert len(assigned) == len(set(assigned)) and set(assigned) == expected
+    assert GROUPS['product-producer'] == ('package', 'upstream')
+    assert GROUPS['asan-products'] == ('sanitizer-products', 'runtime-schedules')
+    assert set(CONSUMER_GROUPS) == set(GROUPS)-{'product-producer'}
+
+
+def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
+    root = Path(__file__).resolve().parents[2]
+    workflow = (root / '.github/workflows/native-assurance.yml').read_text()
+    assert 'partition: [0, 1, 2, 3, 4, 5, 6, 7]' in workflow
+    assert 'needs: [plan, product-producer]' in workflow
+    assert 'needs: [plan, coverage-producer]' in workflow
+    assert 'Prove complete disjoint core union' in workflow
+    assert 'Prove complete disjoint coverage union' in workflow
+    assert 'coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
+    assert '--package-release /producer/product-producer/package/release.json' in workflow
+
+
+def test_external_exact_package_receipt_unblocks_only_the_product_consumer(tmp_path):
+    from scripts.objc3c_assurance.execution import execute_suites
+    suites = [{'id': 'sanitizer-products'}]
+    with pytest.raises(ValueError, match='earlier package'):
+        execute_suites(suites, output=tmp_path / 'rejected', report={'suites': []},
+                       execute=lambda *_: [], save=lambda: None)
+    output = tmp_path / 'accepted';output.mkdir()
+    report = {'suites': []}
+    def execute(_, directory):
+        (directory / 'qualification.log').write_text('exact package consumer passed')
+        return [{'name': 'consumer', 'status': 'PASS'}]
+    execute_suites(suites, output=output, report=report, execute=execute,
+                   save=lambda: None, prerequisites={'package'})
+    assert report['suites'][0]['status'] == 'PASS'
+
+
 @pytest.mark.parametrize('path', ['scripts/objc3c_assurance/runner.py',
     '.github/workflows/native-assurance.yml', '.github/workflows/adaptive-closeout.yml'])
 def test_orchestration_edits_select_every_affected_native_owner(path):

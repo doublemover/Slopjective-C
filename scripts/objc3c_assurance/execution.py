@@ -62,7 +62,8 @@ def execute_ctest(build: Path, label: str, directory: Path, command) -> list[dic
     return junit(directory / (label + '.xml'), expected=names)
 
 
-def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, save):
+def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, save,
+                   prerequisites: set[str] | None = None):
     """Collect independent failures and prepare the private SDK before its consumers.
 
     The workflow publishes the SDK only after this entire batch passes. Product
@@ -72,10 +73,11 @@ def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, s
     from .evidence import artifact, native_files
     failures = []
     names = [row['id'] for row in suites]
-    if 'sanitizer-products' in names and ('package' not in names or
-            names.index('package') > names.index('sanitizer-products')):
+    prerequisites = set(prerequisites or ())
+    if 'sanitizer-products' in names and ('package' not in names and 'package' not in prerequisites or
+            'package' in names and names.index('package') > names.index('sanitizer-products')):
         raise ValueError('sanitizer-products requires an earlier package candidate')
-    passed = set()
+    passed = set(prerequisites)
     for suite in suites:
         directory = output / suite['id'];directory.mkdir()
         row = {'id': suite['id'], 'status': 'running', 'executions': [], 'artifacts': []}

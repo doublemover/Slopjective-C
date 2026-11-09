@@ -29,6 +29,23 @@ BUILD_TIMEOUT = 3600
 MAX_TEST_TIMEOUT = 900
 
 
+def partition_catalogue(policy: dict, index: int, count: int) -> tuple[list[tuple[str, str]], str]:
+    if (type(count) is not int or count not in (1, 2, 4, 8) or
+            type(index) is not int or not 0 <= index < count):
+        raise ValueError('source coverage partition is outside the bounded matrix')
+    catalogue = [(component, name) for component in ('frontend', 'runtime')
+                 for name in policy.get(component+'_tests', [])]
+    if (not catalogue or len(catalogue) != len(set(catalogue)) or
+            any(not name for _, name in catalogue)):
+        raise ValueError('source coverage catalogue is empty or duplicated')
+    selected = catalogue[index::count]
+    if not selected:
+        raise ValueError('source coverage partition selected no suites')
+    signature = __import__('hashlib').sha256(json.dumps(
+        catalogue, separators=(',', ':')).encode()).hexdigest()
+    return selected, signature
+
+
 def selected_targets(build: Path, component: str, names: list[str]) -> dict[str, str]:
     if component == 'runtime':
         return {name: name + '_test' for name in names}
@@ -189,12 +206,29 @@ def single_profile_binary_id(text: str) -> str:
     return next(iter(values))
 
 
-def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
+def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
+            partition_index=0, partition_count=1, foundation_plan=None):
     repo, output = repo.resolve(strict=True), output.resolve()
-    if output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4):
+    if (output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4) or
+            type(partition_count) is not int or partition_count not in (1, 2, 4, 8) or
+            type(partition_index) is not int or not 0 <= partition_index < partition_count):
         raise ValueError('source coverage requires fresh owned output and bounded jobs')
-    plan = build_plans(repo, host='linux-x86_64',
-                       instrumentation_profile='compiler-source-coverage')['configure']
+    plan = (build_plans(repo, host='linux-x86_64',
+                        instrumentation_profile='compiler-source-coverage')['configure']
+            if foundation_plan is None else foundation_plan)
+    paths = plan.get('paths', {}) if isinstance(plan, dict) else {}
+    host = plan.get('host_environment', {}) if isinstance(plan, dict) else {}
+    selected_bootstrap = Path(host.get('bootstrap_root', '/missing')).resolve()
+    expected_bootstrap = Path(os.environ.get('OBJC3C_BOOTSTRAP_LLVM_ROOT', '/missing')).resolve()
+    if (not isinstance(plan, dict) or
+            plan.get('instrumentation_profile') != 'compiler-source-coverage' or
+            not plan.get('source_build_id') or not plan.get('build_config_digest') or
+            host.get('target_triple') != 'x86_64-unknown-linux-gnu' or
+            selected_bootstrap != expected_bootstrap or
+            any(not isinstance(paths.get(name), str) for name in ('build', 'stage')) or
+            any(not Path(paths[name]).resolve().is_relative_to(repo / 'out')
+                for name in ('build', 'stage'))):
+        raise ValueError('source coverage foundation plan is missing or escaped')
     bootstrap, stage = Path(plan['host_environment']['bootstrap_root']), Path(plan['paths']['stage'])
     resource, runtime = profile_runtime(bootstrap, plan['host_environment']['target_triple'])
     completed = json.loads((Path(plan['paths']['build']) / 'foundation-build-report.json').read_text())
@@ -206,6 +240,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     policy = json.loads(policy_path.read_text())
     if policy.get('schema') != 'objc3c.native-source-coverage-policy.v1' or policy.get('host') != 'linux-x86_64':
         raise ValueError('unreviewed source coverage policy')
+    selected_catalogue, catalogue_sha256 = partition_catalogue(
+        policy, partition_index, partition_count)
     output.mkdir(parents=True);(output / 'logs').mkdir()
     # Linked frontend witnesses embed large instrumented Clang archives. Keep
     # one executable resident and all ephemeral build products on /tmp.
@@ -243,6 +279,9 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         'revision': subprocess.check_output(['git', '-C', repo, 'rev-parse', 'HEAD'], text=True).strip(),
         'scope': 'First-party façade and standalone-runtime denominator linked to the exact isolated patched-compiler source-coverage profile.',
         'policy': policy, 'commands': [], 'suites': [], 'objects': {}, 'inputs': {}, 'eligible': {},
+        'partition': {'index': partition_index, 'count': partition_count,
+                      'catalogue_sha256': catalogue_sha256,
+                      'selected': [[component, name] for component, name in selected_catalogue]},
         'temporary_build_root': str(build_root),
         'build_storage': 'One linked witness resident; temporary build products reclaimed after successful admission or interruption.',
         'raw_profile_limit_bytes_per_suite': FIRST_PARTY_PROFILE_LIMIT,
@@ -335,10 +374,13 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
             run(component+'-configure', configure)
             discovery = json.loads(run(component+'-discovery', ['ctest', '--test-dir', build, '--show-only=json-v1']))
             cases = {row['name']: row for row in discovery['tests']}
-            selected = policy[component+'_tests']
-            if not selected or len(selected) != len(set(selected)) or not set(selected) <= set(cases):
+            complete = policy[component+'_tests']
+            if not complete or len(complete) != len(set(complete)) or not set(complete) <= set(cases):
                 raise ValueError('coverage selected suite is missing, empty or duplicated')
+            selected = [name for owner, name in selected_catalogue if owner == component]
             report['exclusions'][component+'-unselected-tests'] = sorted(set(cases)-set(selected))
+            if not selected:
+                continue
             targets = selected_targets(build, component, selected)
             records = {}
             report['objects'][component] = []
@@ -434,10 +476,12 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 binary.unlink()
                 # The indexed profile and compressed exact raw inputs remain;
                 # transient linked test binaries are reclaimed per shard.
-        if len(report['suites']) != sum(len(policy[key]) for key in ('frontend_tests', 'runtime_tests')):
+        if (len(report['suites']) != len(selected_catalogue) or
+                [(row['component'], row['name']) for row in report['suites']] != selected_catalogue):
             raise ValueError('source coverage is missing a required suite/shard')
-        from scripts.objc3c_assurance.emitter_shards import emitter_partition
-        report['emitter_partition'] = emitter_partition(output, report['suites'])
+        if partition_count == 1:
+            from scripts.objc3c_assurance.emitter_shards import emitter_partition
+            report['emitter_partition'] = emitter_partition(output, report['suites'])
         if any(digest(Path(path)) != value for path, value in frozen.items()):
             raise ValueError('source coverage input/object/tool changed during execution')
         report['status'] = 'PASS'
@@ -462,6 +506,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--jobs', type=int, choices=(1, 2, 3, 4), default=2)
     parser.add_argument('--reuse-build-receipt', type=Path)
+    parser.add_argument('--partition-index', type=int, default=0)
+    parser.add_argument('--partition-count', type=int, choices=(1, 2, 4, 8), default=1)
     result = qualify(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'suites': len(result['suites'])}))
 

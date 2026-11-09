@@ -180,7 +180,8 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     assert 'build-sdk --fetch' not in release
     native = (root / '.github/workflows/native-assurance.yml').read_text()
     assert 'workflow_call:' in native
-    assert "if: success() && matrix.shard == 'core'" in native
+    assert 'product-producer:' in native and 'Preserve qualified SDK archive' in native
+    assert 'needs: [plan, product-producer]' in native
     assert 'name: objc3c-linux-sdk' in native and 'name: objc3c-linux-sdk' in release
     assert 'out/toolchains/sdk-cache/*.tar.zst' in native
     runner = (root / 'scripts/objc3c_implementation_assurance/runner.py').read_text()

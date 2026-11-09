@@ -28,10 +28,10 @@ def blocks(path, module):
                 len(lines[end]) - len(lines[end].lstrip()) > indentation):
             end += 1
         block = textwrap.dedent('\n'.join(lines[index + 1:end]))
-        operation = re.search(r'-m ' + re.escape(module) + r' (plan|run|publish|verify)\b', block)
-        if operation:
-            assert operation[1] not in commands
-            commands[operation[1]] = block
+        operations = set(re.findall(
+            r'-m ' + re.escape(module) + r' (plan|run|publish|verify)\b', block))
+        for operation in operations:
+            commands.setdefault(operation, []).append(block)
     return commands
 
 
@@ -58,24 +58,30 @@ git() { :; }
 ulimit() { :; }
 python3() { "$TEST_PYTHON" "$ARGV_RECORDER" "$@"; }
 '''
-    for operation, command in commands.items():
-        output = tmp_path / (operation + '.jsonl')
-        subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', prefix + command], check=True,
-            env={**os.environ, 'TEST_PYTHON': sys.executable, 'ARGV_RECORDER': str(recorder),
-                 'ARGV_FILE': str(output), 'GITHUB_EVENT_NAME': event, 'GITHUB_SHA': SHA,
-                 'SOURCE_SHA': called_sha, 'NATIVE_SHARD': 'core', 'GITHUB_WORKSPACE': str(tmp_path)},
-            timeout=15)
-        recorded = [json.loads(line) for line in output.read_text().splitlines()]
-        matching = [argv for argv in recorded if module in argv]
-        assert len(matching) == 1
-        argv = matching[0]
-        if module.endswith('implementation_assurance') and called_sha:
-            expected = CALLED_SHA
-        elif event in ('workflow_dispatch', 'schedule'):
-            expected = SHA
-        else:
-            expected = None
-        if expected is None:
-            assert '--periodic-sha' not in argv
-        else:
-            assert argv[argv.index('--periodic-sha') + 1] == expected
+    for operation, variants in commands.items():
+        for index, command in enumerate(variants):
+            output = tmp_path / (operation + '-' + str(index) + '.jsonl')
+            subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', prefix + command], check=True,
+                env={**os.environ, 'TEST_PYTHON': sys.executable, 'ARGV_RECORDER': str(recorder),
+                     'ARGV_FILE': str(output), 'GITHUB_EVENT_NAME': event, 'GITHUB_SHA': SHA,
+                     'SOURCE_SHA': called_sha, 'NATIVE_SHARD': 'core', 'GITHUB_WORKSPACE': str(tmp_path),
+                     'PLAN_RESULT': 'success', 'PRODUCER_RESULT': 'success',
+                     'CONSUMERS_RESULT': 'success', 'FUZZ_RESULT': 'success',
+                     'COVERAGE_PRODUCER_RESULT': 'success',
+                     'COVERAGE_PARTITIONS_RESULT': 'success', 'CORE_RESULT': 'success',
+                     'COVERAGE_RESULT': 'success'},
+                timeout=15)
+            recorded = [json.loads(line) for line in output.read_text().splitlines()]
+            matching = [argv for argv in recorded if module in argv and operation in argv]
+            assert len(matching) == 1
+            argv = matching[0]
+            if module.endswith('implementation_assurance') and called_sha:
+                expected = CALLED_SHA
+            elif event in ('workflow_dispatch', 'schedule'):
+                expected = SHA
+            else:
+                expected = None
+            if expected is None:
+                assert '--periodic-sha' not in argv
+            else:
+                assert argv[argv.index('--periodic-sha') + 1] == expected

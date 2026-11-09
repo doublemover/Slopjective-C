@@ -130,7 +130,8 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
     plan = {'schema': SCHEMA, 'revision': revision, 'changed_paths': paths, 'periodic': periodic,
             'classification': 'prose-only' if docs_only else 'native', 'reasons': reasons,
             'foundation_policy': 'rebuild-required' if foundation_changes else 'verify-and-incrementally-build',
-            'cache_policy': 'no downloaded build products; canonical source seal and build identity required',
+            'cache_policy': ('no cross-run compiler products; same-run producer bundles require the exact '
+                             'source seal, source-build ID and archive hash'),
             'suites': suites}
     return {**plan, 'sha256': signature(plan)}
 

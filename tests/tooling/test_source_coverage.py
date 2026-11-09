@@ -6,10 +6,28 @@ import pytest
 
 from scripts.objc3c_toolchain.source_coverage import (
     binary_ids, compile_inventory, elf_build_id, profile_runtime, raw_profiles, read_export,
-    reclaim_indexed_export, reclaim_raw_profiles, single_profile_binary_id, suite_timeout,
+    partition_catalogue, reclaim_indexed_export, reclaim_raw_profiles,
+    single_profile_binary_id, suite_timeout,
 )
 
 FLAGS = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
+
+
+def test_eight_coverage_partitions_form_one_exact_disjoint_catalogue():
+    policy = {'frontend_tests': ['frontend-'+str(index) for index in range(35)],
+              'runtime_tests': ['runtime-'+str(index) for index in range(10)]}
+    partitions = [partition_catalogue(policy, index, 8) for index in range(8)]
+    signatures = {signature for _, signature in partitions}
+    rows = [row for selected, _ in partitions for row in selected]
+    expected = [(component, name) for component in ('frontend', 'runtime')
+                for name in policy[component+'_tests']]
+    assert len(signatures) == 1
+    assert len(rows) == len(set(rows)) and set(rows) == set(expected)
+    assert max(map(len, (selected for selected, _ in partitions))) - min(
+        map(len, (selected for selected, _ in partitions))) <= 1
+    for index, count in ((-1, 8), (8, 8), (0, 3), (0, 16)):
+        with pytest.raises(ValueError, match='bounded matrix'):
+            partition_catalogue(policy, index, count)
 
 
 def test_instrumented_suite_timeouts_are_reviewed_and_bounded():

@@ -27,9 +27,20 @@ UPSTREAM = ('clang/test/AST', 'clang/test/SemaObjC', 'clang/test/SemaObjCXX',
             'clang/test/Modules', 'clang/test/Driver')
 
 
-def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> dict:
+def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
+        suite_ids: tuple[str, ...] | None = None, product_sdk: Path | None = None,
+        package_release: Path | None = None) -> dict:
     validate(plan)
-    suites = selected_suites(plan, shard)
+    if shard is not None and suite_ids is not None:
+        raise ValueError('native execution cannot combine a canonical shard and an explicit suite partition')
+    if suite_ids is None:
+        suites = selected_suites(plan, shard)
+    else:
+        available = {row['id']: row for row in plan['suites']}
+        if (not suite_ids or len(suite_ids) != len(set(suite_ids)) or
+                any(name not in available for name in suite_ids)):
+            raise ValueError('native suite partition is empty, duplicated or outside the exact plan')
+        suites = [available[name] for name in suite_ids]
     if not suites:
         raise ValueError('native execution requires a nonempty suite selection')
     output = output.resolve()
@@ -41,13 +52,46 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
               'cache': {'restored_build_products': False, 'reason': plan['cache_policy']}}
     if shard is not None:
         report['shard'] = shard
+    if suite_ids is not None:
+        report['suite_partition'] = list(suite_ids)
     environment = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'CCACHE_COMPILERCHECK': 'content'}
     bootstrap = Path(environment['OBJC3C_BOOTSTRAP_LLVM_ROOT']).resolve(strict=True)
-    sdk = repo / 'out/toolchains/objc3-development/stage-linux-x86_64'
+    sdk = ((product_sdk.resolve(strict=True) if product_sdk is not None else
+            repo / 'out/toolchains/objc3-development/stage-linux-x86_64'))
     environment['LD_LIBRARY_PATH'] = str(sdk / 'lib')
     report['bootstrap'] = {'clang_sha256': digest(bootstrap / 'bin/clang'),
                            'linker_sha256': digest(bootstrap / 'bin/ld.lld')}
     shared = {}
+    prerequisites = set()
+
+    def product_identity(prefix: Path, release: dict | None = None) -> dict:
+        receipt = json.loads((prefix / 'objc3-sdk.json').read_text())
+        signatures = (receipt.get('source_build_id'), receipt.get('seal_sha256'),
+                      receipt.get('target'))
+        if (not all(isinstance(value, str) and value for value in signatures) or
+                len(receipt['seal_sha256']) != 64 or
+                any(char not in '0123456789abcdef' for char in receipt['seal_sha256'])):
+            raise ValueError('product SDK receipt is missing its exact source, target or seal identity')
+        result = {'source_build_id': receipt['source_build_id'],
+                  'seal_sha256': receipt['seal_sha256'],
+                  'host_environment': {'target_triple': receipt['target']}}
+        if release is not None:
+            result['archive_sha256'] = release['archive_sha256']
+        return result
+
+    if package_release is not None:
+        package_release = package_release.resolve(strict=True)
+        release = json.loads(package_release.read_text())
+        installed_receipt = sdk / 'objc3-sdk.json'
+        archive_sha256 = release.get('archive_sha256')
+        if (release.get('status') != 'PASS' or not installed_receipt.is_file() or
+                not isinstance(archive_sha256, str) or len(archive_sha256) != 64 or
+                any(char not in '0123456789abcdef' for char in archive_sha256)):
+            raise ValueError('restored product SDK or package receipt differs from the exact source build')
+        release = {**release, 'installed': {**release.get('installed', {}), 'prefix': str(sdk)}}
+        shared['release'] = release
+        prerequisites.add('package')
+        report['product'] = product_identity(sdk, release)
     directory = None
 
     def save():
@@ -127,9 +171,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
                     executions.extend(lit(result) if result.suffix == '.json' else junit(result))
             if foundation['status'] != 'passed' or not executions:
                 raise ValueError('foundation has no passing native execution evidence')
-            configure = build_plans(repo, host='linux-x86_64')['configure']
-            report['product'] = {key: configure[key] for key in
-                                 ('source_build_id', 'source_tree', 'build_config_digest', 'host_environment')}
+            report.setdefault('product', product_identity(sdk))
             return executions
         if name == 'runtime':
             try:
@@ -234,6 +276,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
             if result['status'] != 'PASS':
                 raise ValueError('packaging qualification failed')
             shared['release'] = result
+            report['product'] = product_identity(Path(result['installed']['prefix']), result)
             return package_execution(result)
         if name == 'sanitizer-products':
             from scripts.objc3c_toolchain.sanitizer_products import qualify
@@ -290,17 +333,23 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> di
 
     try:
         save()
-        execute_suites(suites, output=output, report=report, execute=execute, save=save)
+        execute_suites(suites, output=output, report=report, execute=execute, save=save,
+                       prerequisites=prerequisites)
         if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
             raise ValueError('source revision or selection changed during native execution')
         from scripts.objc3c_toolchain.semantic_build_costs import snapshot
-        costs = snapshot(foundations=foundation_receipts(output, suites),
-            installations=[output / 'package/release.json'] if (output / 'package/release.json').is_file() else [])
-        cost_file = output / 'operational-costs.json'
-        write_json(cost_file, costs)
-        report['operational_costs'] = artifact(output, cost_file)
+        foundations = foundation_receipts(output, suites)
+        installations = ([output / 'package/release.json']
+                         if (output / 'package/release.json').is_file() else [])
+        if foundations or installations:
+            costs = snapshot(foundations=foundations, installations=installations)
+            cost_file = output / 'operational-costs.json'
+            write_json(cost_file, costs)
+            report['operational_costs'] = artifact(output, cost_file)
+        elif suite_ids is None:
+            raise ValueError('canonical native shard omitted all operational measurement owners')
         size = sum(value['bytes'] for row in report['suites'] for value in row['artifacts'])
-        size += report['operational_costs']['bytes']
+        size += report.get('operational_costs', {}).get('bytes', 0)
         if size > MAX_BYTES:
             raise ValueError('native evidence exceeds the 256 MiB artifact budget')
         report['status'] = 'PASS'

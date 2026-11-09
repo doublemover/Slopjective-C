@@ -111,23 +111,17 @@ jobs:
           path: out/native-assurance/plan.json
           if-no-files-found: error
           retention-days: 7
-  native:
-    name: Execute Linux compiler and runtime (${{ matrix.shard }})
+  diagnostic-native:
+    name: Diagnose Linux compiler core
     needs: plan
-    if: needs.plan.outputs.native == 'true' && inputs.diagnostic_transport_run == ''
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: ${{ inputs.diagnostic_core_only && fromJSON('["core"]') || fromJSON(needs.plan.outputs.shards) }}
+    if: needs.plan.outputs.native == 'true' && inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
     runs-on: ubuntu-26.04
     container:
       image: debian:13
-      # TSan adjusts its own ASLR layout with personality(2).
       options: --security-opt seccomp=unconfined
     timeout-minutes: 360
     env:
       OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
-      NATIVE_SHARD: ${{ matrix.shard }}
     steps:
       - name: Development prerequisites
         run: |
@@ -141,31 +135,72 @@ jobs:
         with:
           name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
-      - name: Pinned host tools
-        uses: ./.github/actions/linux-host-tools
+      - uses: ./.github/actions/linux-host-tools
         with:
           output: out/native-assurance/startup
-          include_swift: ${{ matrix.shard == 'core' }}
+          include_swift: true
       - name: Require sanitizer process layout support
         run: |
           mkdir -p out
           g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
           out/native-container-control
-      - name: Build and execute selected native surface
+      - name: Execute diagnostic core
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
-          python3 -B -m scripts.objc3c_toolchain check-host-tools --runtime
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
           fi
-          python3 -B -m scripts.objc3c_assurance run --plan out/native-assurance/selection/plan.json --output out/native-assurance/results --shard "$NATIVE_SHARD" "${periodic[@]}"
-      - name: Preserve the qualified SDK archive for release consumers
-        if: success() && matrix.shard == 'core' && !inputs.diagnostic_core_only
+          python3 -B -m scripts.objc3c_assurance run --plan out/native-assurance/selection/plan.json --output out/native-assurance/results --shard core "${periodic[@]}"
+
+  product-producer:
+    name: Build and seal exact Linux SDK producer
+    needs: plan
+    if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
+    runs-on: ubuntu-26.04
+    container:
+      image: debian:13
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup/product-producer
+      - name: Require sanitizer process layout support
+        run: |
+          mkdir -p out
+          g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
+          out/native-container-control
+      - name: Build, qualify and seal the exact SDK
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_assurance.release_matrix run \
+            --plan out/native-assurance/selection/plan.json \
+            --output out/release-matrix/results/product-producer \
+            --group product-producer
+      - name: Preserve qualified SDK archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: objc3c-linux-sdk
@@ -177,89 +212,408 @@ jobs:
             scripts/qualify_linux_archive.sh
           if-no-files-found: error
           retention-days: 7
-      - name: Retain current compiler inputs for frontend failure diagnosis
-        id: frontend-debug
-        if: failure() && matrix.shard == 'core'
-        shell: bash
-        run: |
-          stage=out/toolchains/objc3-development/stage-linux-x86_64
-          frontend=out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation
-          if [[ ! -f "$stage/bin/clang" || ! -d "$frontend" ]]; then exit 0; fi
-          mkdir -p out/native-assurance/debug
-          inputs=("$stage")
-          while IFS= read -r -d '' binary; do inputs+=("$binary"); done < <(
-            find "$frontend" -maxdepth 1 -type f -executable -name 'objc3*' -print0
-          )
-          for receipt in out/native-assurance/results/foundation out/native-assurance/results/frontend/frontend-tests/qualification.json; do
-            if [[ -e "$receipt" ]]; then inputs+=("$receipt"); fi
-          done
-          tar -I 'zstd -T2 -3' -cf out/native-assurance/debug/compiler-inputs.tar.zst "${inputs[@]}"
-          sha256sum out/native-assurance/debug/compiler-inputs.tar.zst > out/native-assurance/debug/compiler-inputs.sha256
-          echo 'ready=true' >> "$GITHUB_OUTPUT"
-      - name: Preserve one-day unaccepted compiler diagnostics
-        if: failure() && matrix.shard == 'core' && steps.frontend-debug.outputs.ready == 'true'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: unaccepted-frontend-debug-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: out/native-assurance/debug/
-          compression-level: 0
-          if-no-files-found: error
-          retention-days: 1
-      - name: Preserve clean-host setup diagnostics
+      - name: Preserve producer evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-startup-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
-          path: out/native-assurance/startup/
+          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
+          path: |
+            out/release-matrix/results/
+            !out/release-matrix/results/**/build/**
+            !out/release-matrix/results/**/isolated-install/**
           if-no-files-found: error
           retention-days: 7
-      - name: Stage durable native evidence
-        if: always()
+
+  product-consumers:
+    name: Qualify exact SDK consumer (${{ matrix.group }})
+    needs: [plan, product-producer]
+    if: needs.plan.outputs.native == 'true' && needs.product-producer.result == 'success' && !inputs.diagnostic_core_only
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: foundation
+            swift: false
+          - group: runtime
+            swift: false
+          - group: frontend
+            swift: false
+          - group: installed-sanitizers
+            swift: false
+          - group: swift
+            swift: true
+          - group: semantic
+            swift: false
+          - group: asan-products
+            swift: false
+    runs-on: ubuntu-26.04
+    container:
+      image: debian:13
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+      RELEASE_GROUP: ${{ matrix.group }}
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: objc3c-linux-sdk
+          path: /release
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
+          path: /producer
+      - uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup/${{ matrix.group }}
+          include_swift: ${{ matrix.swift }}
+      - name: Install the exact producer archive
+        shell: bash
+        run: |
+          archive=$(find /release -name '*.tar.zst' -type f)
+          expected=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' /producer/product-producer/package/release.json)
+          sh /release/scripts/install_objc3c_linux.sh --archive "$archive" --sha256 "$expected" --root /opt/objc3c-product
+      - name: Require sanitizer process layout support
+        run: |
+          mkdir -p out
+          g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
+          out/native-container-control
+      - name: Execute selected product consumers
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_assurance.release_matrix run \
+            --plan out/native-assurance/selection/plan.json \
+            --output "out/release-matrix/results/$RELEASE_GROUP" \
+            --group "$RELEASE_GROUP" \
+            --product-sdk /opt/objc3c-product/current \
+            --package-release /producer/product-producer/package/release.json
+      - name: Preserve consumer evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
+          path: |
+            out/release-matrix/results/
+            !out/release-matrix/results/**/build/**
+            !out/release-matrix/results/**/isolated-install/**
+          if-no-files-found: error
+          retention-days: 7
+
+  independent-native:
+    name: Execute independent native owner (frontend-fuzz)
+    needs: plan
+    if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
+    runs-on: ubuntu-26.04
+    container:
+      image: debian:13
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup/frontend-fuzz
+      - name: Execute fuzz owner
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
+          ulimit -c 0
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
           fi
-          python3 -B -m scripts.objc3c_assurance publish --plan out/native-assurance/selection/plan.json --output out/native-assurance/results --shard "$NATIVE_SHARD" --destination "out/native-assurance/evidence/$NATIVE_SHARD" "${periodic[@]}"
-      - name: Preserve native evidence on success and failure
+          python3 -B -m scripts.objc3c_assurance run \
+            --plan out/native-assurance/selection/plan.json \
+            --output out/native-assurance/results --shard frontend-fuzz "${periodic[@]}"
+      - name: Stage fuzz evidence
+        shell: bash
+        run: |
+          periodic=()
+          if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            periodic=(--periodic-sha "$GITHUB_SHA")
+          fi
+          python3 -B -m scripts.objc3c_assurance publish \
+            --plan out/native-assurance/selection/plan.json \
+            --output out/native-assurance/results --shard frontend-fuzz \
+            --destination out/native-assurance/evidence/frontend-fuzz "${periodic[@]}"
+      - name: Preserve fuzz evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-frontend-fuzz
           path: out/native-assurance/evidence/
           if-no-files-found: error
           retention-days: 7
-  gate:
-    name: Extended Linux native assurance gate
-    if: always() && !inputs.diagnostic_core_only
-    needs: [plan, native]
+
+  coverage-producer:
+    name: Build exact source-coverage compiler producer
+    needs: plan
+    if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
     runs-on: ubuntu-26.04
-    timeout-minutes: 5
+    container:
+      image: debian:13
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup/coverage-producer
+      - name: Build profile and qualify compiler-owned coverage
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_assurance.coverage_matrix produce \
+            --plan out/native-assurance/selection/plan.json \
+            --output out/coverage-matrix/producer \
+            --bundle out/coverage-matrix/profile.tar.zst
+      - name: Preserve exact coverage profile bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            out/coverage-matrix/profile.tar.zst
+            out/coverage-matrix/producer/producer.json
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
+      - name: Preserve producer coverage evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-producer-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/coverage-matrix/producer/
+          if-no-files-found: error
+          retention-days: 7
+
+  coverage-partitions:
+    name: Execute first-party source coverage (partition ${{ matrix.partition }})
+    needs: [plan, coverage-producer]
+    if: needs.plan.outputs.native == 'true' && needs.coverage-producer.result == 'success' && !inputs.diagnostic_core_only
+    strategy:
+      fail-fast: false
+      matrix:
+        partition: [0, 1, 2, 3, 4, 5, 6, 7]
+    runs-on: ubuntu-26.04
+    container:
+      image: debian:13
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 180
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+      COVERAGE_PARTITION: ${{ matrix.partition }}
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/coverage-matrix/profile
+      - uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup/coverage-${{ matrix.partition }}
+      - name: Execute exact first-party coverage partition
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_assurance.coverage_matrix partition \
+            --plan out/native-assurance/selection/plan.json \
+            --producer out/coverage-matrix/profile/producer/producer.json \
+            --bundle out/coverage-matrix/profile/profile.tar.zst \
+            --output "out/coverage-matrix/partitions/$COVERAGE_PARTITION" \
+            --index "$COVERAGE_PARTITION"
+      - name: Preserve coverage partition evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-partition-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.partition }}
+          path: out/coverage-matrix/partitions/
+          if-no-files-found: error
+          retention-days: 7
+
+  core-aggregate:
+    name: Merge exact SDK consumer evidence
+    needs: [plan, product-producer, product-consumers]
+    if: always() && !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.product-producer.result == 'success' && needs.product-consumers.result == 'success'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Read required source classification
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-*
+          merge-multiple: true
+          path: out/release-matrix/partials
+      - name: Prove complete disjoint core union
+        run: |
+          python3 -B -m scripts.objc3c_assurance.release_matrix aggregate \
+            --plan out/native-assurance/selection/plan.json \
+            --partials out/release-matrix/partials \
+            --output out/native-assurance/results
+          periodic=()
+          if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            periodic=(--periodic-sha "$GITHUB_SHA")
+          fi
+          python3 -B -m scripts.objc3c_assurance publish \
+            --plan out/native-assurance/selection/plan.json \
+            --output out/native-assurance/results --shard core \
+            --destination out/native-assurance/evidence/core "${periodic[@]}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-core
+          path: out/native-assurance/evidence/
+          if-no-files-found: error
+          retention-days: 7
+
+  coverage-aggregate:
+    name: Merge all source-coverage partitions
+    needs: [plan, coverage-producer, coverage-partitions]
+    if: always() && !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.coverage-producer.result == 'success' && needs.coverage-partitions.result == 'success'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-producer-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/coverage-matrix/producer-result
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: coverage-partition-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-*
+          merge-multiple: true
+          path: out/coverage-matrix/partitions
+      - name: Prove complete disjoint coverage union
+        run: |
+          python3 -B -m scripts.objc3c_assurance.coverage_matrix aggregate \
+            --plan out/native-assurance/selection/plan.json \
+            --producer-root out/coverage-matrix/producer-result \
+            --partitions-root out/coverage-matrix/partitions \
+            --output out/native-assurance/results
+          periodic=()
+          if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            periodic=(--periodic-sha "$GITHUB_SHA")
+          fi
+          python3 -B -m scripts.objc3c_assurance publish \
+            --plan out/native-assurance/selection/plan.json \
+            --output out/native-assurance/results --shard source-coverage \
+            --destination out/native-assurance/evidence/source-coverage "${periodic[@]}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-source-coverage
+          path: out/native-assurance/evidence/
+          if-no-files-found: error
+          retention-days: 7
+
+  gate:
+    name: Extended Linux native assurance gate
+    if: always() && !inputs.diagnostic_core_only
+    needs: [plan, product-producer, product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: evidence/plan
-      - name: Read required native evidence
-        if: needs.plan.outputs.native == 'true'
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-*
           merge-multiple: true
           path: evidence/results
       - name: Require exact-revision complete passing results
-        if: always()
         env:
-          ASSURANCE_OUTCOMES: '{"plan":"${{ needs.plan.result }}","native":"${{ needs.native.result }}"}'
+          PLAN_RESULT: ${{ needs.plan.result }}
+          PRODUCER_RESULT: ${{ needs.product-producer.result }}
+          CONSUMERS_RESULT: ${{ needs.product-consumers.result }}
+          FUZZ_RESULT: ${{ needs.independent-native.result }}
+          COVERAGE_PRODUCER_RESULT: ${{ needs.coverage-producer.result }}
+          COVERAGE_PARTITIONS_RESULT: ${{ needs.coverage-partitions.result }}
+          CORE_RESULT: ${{ needs.core-aggregate.result }}
+          COVERAGE_RESULT: ${{ needs.coverage-aggregate.result }}
         shell: bash
         run: |
+          for result in "$PRODUCER_RESULT" "$CONSUMERS_RESULT" "$FUZZ_RESULT" "$COVERAGE_PRODUCER_RESULT" "$COVERAGE_PARTITIONS_RESULT" "$CORE_RESULT" "$COVERAGE_RESULT"; do
+            [[ "$result" == success ]]
+          done
+          export ASSURANCE_OUTCOMES="{\"plan\":\"$PLAN_RESULT\",\"native\":\"success\"}"
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
