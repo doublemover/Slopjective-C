@@ -722,6 +722,17 @@
       "artifact": 13638981154,
       "artifact_sha256": "12e3c24fe4c53c479533c34f024971914c51d15e30995b9f0443edf452053b9f"
     },
+    "current_frontend_fuzz_minimizer_repair": {
+      "status": "PASS_FOCUSED_REAL_LIBFUZZER_AND_SANITIZER_CONTROLS_HOSTED_RETRY_REQUIRED",
+      "failed_run": 42537224777,
+      "failed_job": 128904209267,
+      "failure_scope": "Runner rejected libFuzzer's natural zero exit after preserving the injected cleanup fault and reducing it to four bytes",
+      "policy": "Only minimization accepts natural zero, the reviewed injected-fault exit, or a runner-owned bounded timeout; exact marker, artifact bounds, two fresh byte replays and original replay remain mandatory",
+      "focused_fuzz_controls_passed": 14,
+      "native_sanitizer_and_product_evidence_controls_passed": 33,
+      "real_pinned_libfuzzer_natural_completion": "PASS",
+      "sanitizer_policy": "Existing fail-closed ambient-option replacement, paired ASan/UBSan/LSan/TSan controls and actual-product loader/evidence contracts remain unchanged and pass focused native execution"
+    },
     "native_release_queue": {
       "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
       "status": "PASS_CONTROLS_AND_HOSTED_CONCURRENCY",

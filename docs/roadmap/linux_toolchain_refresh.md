@@ -160,6 +160,18 @@ records each checkpoint and its scope. New compiler patches continue to reuse
 all eight dependency cache entries; dependency identity does not depend on
 feature commits.
 
+The current frontend-fuzz owner completed all three discovery campaigns and
+the paired codec fault controls, then exposed a runner-only minimization error:
+libFuzzer preserved the injected frontend cleanup fault, reduced it to four
+bytes and exited zero after it could not shrink it further. Minimization now
+admits that documented natural completion in addition to the exact injected
+fault exit and bounded wall-clock stop. The diagnostic class, nonempty bounded
+artifact, two exact replays and original A/B/A replay remain mandatory. A real
+pinned-libFuzzer regression reproduces the natural exit, and 14 focused fuzz
+controls plus 33 native sanitizer/product-evidence controls pass locally. A
+matched hosted frontend-fuzz retry remains part of the consolidated release
+campaign; no SDK or sanitizer acceptance is inferred from these focused checks.
+
 The preceding hosted coverage reached six passing emitter shards, then its
 seventh exceeded 900 seconds after 16 passing cases. The completed repair now
 uses 32 shards from one bounded policy, with at most six of the 164 cases per

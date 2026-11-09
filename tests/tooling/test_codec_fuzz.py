@@ -1,13 +1,23 @@
 """The paired-codec discovery owner fails closed on weak replay and feedback."""
 import hashlib
 import json
+import os
+from pathlib import Path
+import subprocess
 import sys
 
 import pytest
 
-from scripts.objc3c_toolchain.codec_fuzz import (bounded_command, compact_coverage_log, diagnostic_stream,
-    frontend_replay_result, frontend_target_coverage, patched_frontend_coverage, replay_result, target_coverage,
-    tree_bytes, verify_feedback, verify_foundation_feedback)
+from scripts.objc3c_toolchain.codec_fuzz import (accepted_exit_codes, bounded_command, command_completion,
+    compact_coverage_log, diagnostic_stream, frontend_replay_result, frontend_target_coverage,
+    patched_frontend_coverage, replay_result, target_coverage, tree_bytes, verify_feedback,
+    verify_foundation_feedback)
+from scripts.objc3c_toolchain.sanitizer_policy import strict_environment
+
+BOOTSTRAP = Path(os.environ.get('OBJC3C_BOOTSTRAP_LLVM_ROOT', '/missing-objc3-bootstrap'))
+FUZZ_COMPILER = BOOTSTRAP / 'bin/clang++'
+FUZZ_SYMBOLIZER = BOOTSTRAP / 'bin/llvm-symbolizer'
+FUZZ_READY = FUZZ_COMPILER.is_file() and FUZZ_SYMBOLIZER.is_file()
 
 
 def replay(path):
@@ -88,6 +98,67 @@ def test_live_discovery_budget_stops_artifact_growth(tmp_path):
                           log=log, timeout=3, watched_root=watched, byte_limit=1024)
     assert row['budget_exceeded'] and not row['timed_out'] and row['exit_code'] == 125
     assert tree_bytes(watched) == 8192
+
+
+def test_only_minimization_admits_natural_or_bounded_completion():
+    natural = {'exit_code': 0, 'timed_out': False, 'budget_exceeded': False}
+    fault = {'exit_code': 77, 'timed_out': False, 'budget_exceeded': False}
+    bounded = {'exit_code': 124, 'timed_out': True, 'budget_exceeded': False}
+    assert accepted_exit_codes((0, 77)) == (0, 77)
+    assert command_completion(natural, (0, 77), allow_bounded_timeout=True) == 'natural-process-exit'
+    assert command_completion(fault, (0, 77), allow_bounded_timeout=True) == 'expected-fault-exit'
+    assert command_completion(bounded, (0, 77), allow_bounded_timeout=True) == 'bounded-wall-clock'
+    for row in (
+            {**natural, 'exit_code': 1},
+            {**natural, 'exit_code': 124},
+            {**natural, 'exit_code': 125, 'budget_exceeded': True},
+            {**natural, 'exit_code': -9}):
+        with pytest.raises(ValueError, match='unreviewed disposition'):
+            command_completion(row, (0, 77), allow_bounded_timeout=True)
+    with pytest.raises(ValueError, match='unreviewed disposition'):
+        command_completion(natural, 77, allow_bounded_timeout=True)
+    for invalid in ((), (0, 0), (0, True), ('0',)):
+        with pytest.raises(ValueError, match='unique integer'):
+            accepted_exit_codes(invalid)
+
+
+@pytest.mark.skipif(not FUZZ_READY, reason='requires the pinned libFuzzer compiler and symbolizer')
+def test_real_libfuzzer_natural_minimization_completion_is_admitted(tmp_path):
+    source = tmp_path / 'natural-minimizer.cpp'
+    source.write_text(r'''
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size) {
+  if (size >= 4 && data[0] == '0') {
+    std::fputs("OBJ3_MINIMIZER_CONTROL: injected fault\n", stderr);
+    std::abort();
+  }
+  return 0;
+}
+''')
+    binary = tmp_path / 'natural-minimizer'
+    subprocess.run([FUZZ_COMPILER, '--no-default-config', '-std=c++20', '-g', '-O1',
+        '-fsanitize=fuzzer,address,undefined', '-fno-sanitize-recover=undefined', source,
+        '-o', binary], check=True, capture_output=True, timeout=60)
+    original = tmp_path / 'original';original.write_bytes(b'0' * 16)
+    reduced = tmp_path / 'reduced'
+    environment = strict_environment(FUZZ_COMPILER, FUZZ_SYMBOLIZER)
+    environment['ASAN_OPTIONS'] = ('detect_leaks=1:detect_stack_use_after_return=1:'
+        'halt_on_error=1:abort_on_error=1:exitcode=77:symbolize=1')
+    environment['UBSAN_OPTIONS'] = 'halt_on_error=1:abort_on_error=1:print_stacktrace=1:exitcode=77'
+    log = tmp_path / 'minimize.log'
+    row = bounded_command([binary, '-minimize_crash=1', '-runs=100000', '-max_total_time=10',
+        '-error_exitcode=77', '-timeout_exitcode=78', '-exact_artifact_path='+str(reduced), original],
+        cwd=tmp_path, environment=environment, log=log, timeout=12, watched_root=tmp_path,
+        byte_limit=64 * 1024**2)
+    assert row['exit_code'] == 0 and not row['timed_out']
+    assert command_completion(row, (0, 77), allow_bounded_timeout=True) == 'natural-process-exit'
+    text = log.read_text(errors='replace')
+    assert 'OBJ3_MINIMIZER_CONTROL: injected fault' in text
+    assert 'Done MinimizeCrashInputInternalStep, no crashes found' in text
+    assert reduced.is_file() and 0 < reduced.stat().st_size <= original.stat().st_size
 
 
 def test_successful_coverage_log_compaction_retains_covered_rows_and_full_identity(tmp_path):

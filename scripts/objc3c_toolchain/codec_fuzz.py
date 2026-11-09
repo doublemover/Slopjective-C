@@ -192,6 +192,34 @@ def diagnostic_stream(text, *, coverage_report):
                    if not line.startswith('UNCOVERED_FUNC:'))
 
 
+def accepted_exit_codes(expected):
+    """Normalize the reviewed process dispositions for one fuzzer command."""
+    values = (expected,) if type(expected) is int else tuple(expected)
+    if (not values or any(type(value) is not int for value in values) or
+            len(set(values)) != len(values)):
+        raise ValueError('codec campaign requires unique integer exit dispositions')
+    return values
+
+
+def command_completion(row, expected, *, allow_bounded_timeout=False):
+    """Admit only reviewed exits or the explicit minimization wall-clock bound.
+
+    libFuzzer crash minimization can finish naturally with exit zero after it
+    has written the smallest reproducer it found.  Callers opt into that exit
+    alongside the injected fault disposition; marker, artifact and fresh replay
+    checks remain separate and mandatory.
+    """
+    expected = accepted_exit_codes(expected)
+    bounded = (allow_bounded_timeout and row.get('timed_out') and
+               row.get('exit_code') == 124)
+    if (row.get('budget_exceeded') or (row.get('timed_out') and not bounded) or
+            (row.get('exit_code') not in expected and not bounded)):
+        raise ValueError('codec campaign command has an unreviewed disposition')
+    if bounded:
+        return 'bounded-wall-clock'
+    return 'natural-process-exit' if row['exit_code'] == 0 else 'expected-fault-exit'
+
+
 def bounded_command(argv, *, cwd, environment, log, timeout, watched_root, byte_limit):
     """Run one discovery process with a live wall-clock and retained-byte cap."""
     args = list(map(str, argv));started = time.monotonic();timed_out = budget_exceeded = False
@@ -256,6 +284,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
     def run(name, argv, *, environment=compile_env, expected=0, timeout=120, watched_root=None,
             allow_bounded_timeout=False):
         if any(row['name'] == name for row in report['commands']): raise ValueError('duplicate codec campaign command')
+        expected_codes = accepted_exit_codes(expected)
         if watched_root is not None:
             invoke = bounded_command(argv, cwd=output, environment=environment,
                 log=output / 'logs' / (name+'.log'), timeout=timeout, watched_root=watched_root,
@@ -263,15 +292,17 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         else:
             invoke = command(argv, cwd=output, environment=environment,
                 log=output / 'logs' / (name+'.log'), timeout=timeout)
-        row = {'name': name, 'environment': environment, **invoke}
+        row = {'name': name, 'environment': environment,
+               'accepted_exit_codes': list(expected_codes), **invoke}
         report['commands'].append(row);save()
         text = Path(row['log']).read_text(errors='replace')
-        bounded = allow_bounded_timeout and row['timed_out'] and row['exit_code'] == 124
-        if (row.get('budget_exceeded') or (row['timed_out'] and not bounded) or
-                (row['exit_code'] != expected and not bounded)):
+        try:
+            completion = command_completion(row, expected_codes,
+                                            allow_bounded_timeout=allow_bounded_timeout)
+        except ValueError:
             raise ValueError('codec campaign command failed: '+name+'; see '+row['log'])
         coverage_report = '-print_coverage=1' in map(str, argv)
-        if expected == 0 and not bounded:
+        if expected_codes == (0,) and completion == 'natural-process-exit':
             require_clean_diagnostic(diagnostic_stream(text, coverage_report=coverage_report))
         if 'WARNING: unrecognized flag' in text: raise ValueError('fuzzer ignored an unreviewed option')
         # A fully instrumented LLVM/Clang graph has millions of counters.
@@ -287,7 +318,8 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
                 if compaction['full_log_sha256'] != row['log_sha256']:
                     raise ValueError('coverage log changed before bounded compaction')
                 row.update(compaction)
-        row['status'] = 'PASS';row['bounded_completion'] = 'wall-clock' if bounded else 'process-exit';save()
+        row['status'] = 'PASS';row['completion'] = completion
+        row['bounded_completion'] = 'wall-clock' if completion == 'bounded-wall-clock' else 'process-exit';save()
         return text
     try:
         definitions = frontend_definitions(facade_build)
@@ -504,7 +536,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
             text = run(name+'-minimize', [fault, '-minimize_crash=1', '-runs=100000', '-max_total_time=10',
                 '-error_exitcode=77', '-timeout_exitcode=78',
                 '-exact_artifact_path='+str(reduced), seed_files[0]], environment=discovery,
-                expected=expected_fault_exit, timeout=12, watched_root=root, allow_bounded_timeout=True)
+                expected=(0, expected_fault_exit), timeout=12, watched_root=root, allow_bounded_timeout=True)
             if marker not in text or not reduced.is_file() or not 0 < reduced.stat().st_size <= seed_files[0].stat().st_size:
                 raise ValueError('codec fault minimization lost its exact failure class or size bound')
             reduced_sha = digest(reduced)
@@ -532,7 +564,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         text = run('frontend-cleanup-minimize', [cleanup_fault, '-minimize_crash=1', '-runs=100000',
             '-max_total_time=10', '-error_exitcode=77', '-timeout_exitcode=78',
             '-exact_artifact_path='+str(cleanup_reduced), cleanup_input], environment=discovery,
-            expected=77, timeout=12, watched_root=cleanup_root, allow_bounded_timeout=True)
+            expected=(0, 77), timeout=12, watched_root=cleanup_root, allow_bounded_timeout=True)
         if cleanup_marker not in text or not cleanup_reduced.is_file() or not 0 < cleanup_reduced.stat().st_size <= cleanup_input.stat().st_size:
             raise ValueError('frontend cleanup minimization lost its exact failure class or bound')
         cleanup_sha = digest(cleanup_reduced)
