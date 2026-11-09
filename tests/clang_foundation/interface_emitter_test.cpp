@@ -1670,20 +1670,29 @@ void TestAsyncConsumedOwnershipCapability() {
         }
         #endif
       )";
-      auto emit = [&](llvm::StringRef text, llvm::StringRef file, const std::vector<std::string> &exports) {
-        auto ast = clang::tooling::buildASTFromCodeWithArgs(text, args, file, "clang-tool",
-            std::make_shared<clang::PCHContainerOperations>(),
-            clang::tooling::getClangStripDependencyFileAdjuster(), files);
-        assert(ast && !ast->getDiagnostics().hasErrorOccurred());
-        auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.async.ownership", "test", {}, {}, {}, exports);
+      auto emit_ast = [&](clang::ASTUnit &ast, const std::vector<std::string> &exports) {
+        auto result = EmitSemanticInterface(ast.getASTContext(), "fixture.async.ownership", "test", {}, {}, {}, exports);
         for (const auto &diagnostic : result.diagnostics)
           std::fprintf(stderr, "%s: %s [%s]\n", diagnostic.code.c_str(), diagnostic.message.c_str(), diagnostic.subject.c_str());
         assert(result.success);
         return result;
       };
+      auto parse = [&](llvm::StringRef text, llvm::StringRef file) {
+        auto ast = clang::tooling::buildASTFromCodeWithArgs(text, args, file, "clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(), files);
+        assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        return ast;
+      };
+      auto emit = [&](llvm::StringRef text, llvm::StringRef file, const std::vector<std::string> &exports) {
+        auto ast = parse(text, file);
+        return emit_ast(*ast, exports);
+      };
       const std::vector<std::string> base = {"CFRef", "body_source", "sync_entry", "plain"};
-      auto plain = emit(source, "ownership-private.m", base);
+      auto plain_ast = parse(source, "ownership-private.m");
+      auto plain = emit_ast(*plain_ast, base);
       assert(plain.sidecar_json.find(kAsyncConsumedOwnershipSemantic) == std::string::npos);
+      auto provider_ast = parse(source, "ownership-provider.m");
       std::vector<std::string> consuming_exports = {"consume_signature", "consume_body", "retained_signature", "retained_body", "OwnershipInitializer", "retained_foreign_signature", "borrowed_foreign_signature", "retained_foreign_body"};
       if (std::string(standard) != "c17") {
         consuming_exports.push_back("ordinary_body");
@@ -1699,7 +1708,7 @@ void TestAsyncConsumedOwnershipCapability() {
         if (exported == "retained_foreign_task_body") exports.push_back("retained_foreign_task_signature");
         if (exported == "retained_body") exports.push_back("retained_signature");
         if (exported == "retained_foreign_body") exports.push_back("retained_foreign_signature");
-        auto result = emit(source, "ownership-provider.m", exports);
+        auto result = emit_ast(*provider_ast, exports);
         assert(result.sidecar_json.find(kAsyncConsumedOwnershipSemantic) != std::string::npos);
         auto parsed = llvm::json::parse(result.sidecar_json);
         assert(parsed && parsed->getAsObject());
