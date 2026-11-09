@@ -64,6 +64,7 @@ PACKETS = {
         "clang/lib/AST/ObjC3TypeContracts.cpp",
         "clang/lib/AST/CMakeLists.txt",
         "clang/unittests/AST/ObjC3TypeContractsTest.cpp",
+        "clang/unittests/AST/EmbedTraversalTest.cpp",
     ],
     "0004-objc3-canonical-carriers-and-function-effects.patch": [
         "clang/docs/LibASTMatchersReference.html",

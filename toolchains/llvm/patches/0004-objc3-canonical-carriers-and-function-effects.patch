@@ -20245,10 +20245,10 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..e13ce4db5 100644
+index 81010e046..9f2464838 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,43 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,44 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -20258,6 +20258,7 @@ index 81010e046..e13ce4db5 100644
 +  PARTIAL_SOURCES_INTENDED
 +  ObjC3TypeContractsTest.cpp
 +  ObjC3ASTInfrastructureTest.cpp
++  EmbedTraversalTest.cpp
 +  ObjC3DiagnosticStorageTest.cpp
 +  ObjC3CarrierTypeTest.cpp
 +  ObjC3FunctionEffectTest.cpp

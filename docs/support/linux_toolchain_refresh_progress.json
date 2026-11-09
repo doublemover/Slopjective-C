@@ -9,15 +9,15 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-d1fa89276152-0fcb354b",
-    "prepared_tree": "f3566f424e5585ca54b837346fc8add20ede1788",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-17caa0a0b467-0fcb354b",
+    "prepared_tree": "5d4f75b6dab86c705fe515ad41e705138f015eaf",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
     "activated_product_sdk": false,
-    "patch_digest": "d1fa89276152e3a2fcd6f94c4b5abb7340242bf5c4eb712296f32f1efe2ef089",
+    "patch_digest": "17caa0a0b4675db935284247f40dc3eea07eff072ca9472a0c86e7fbb957900b",
     "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51",
-    "implementation_revision": "Current canonical analysis-repair batch; matched hosted rebuild pending"
+    "implementation_revision": "Complete preceding inventory collected; final embed traversal repair included; matched hosted rebuild pending"
   },
   "language_contracts": {
     "language": "Objective-C 3.0",
@@ -756,6 +756,26 @@
       "native_valid_PCM": "PASS",
       "native_malformed_PCM": "Clean malformed-module diagnostic with rebuilt reader; retained reader crashes on the same one-record mutation",
       "matched_hosted_analysis": "Pending consolidated retry after independent owners finish collecting results"
+    },
+    "complete_preceding_analysis_inventory": {
+      "run": 42528854066,
+      "variants": 235,
+      "passed": 232,
+      "finding_units": 3,
+      "reported_diagnostics": 16,
+      "incomplete_or_timed_out": 0,
+      "last_partition_job": 128878455827,
+      "last_partition_artifact": 13643348644,
+      "last_partition_artifact_sha256": "531413d6ea2c9dd721cc9869c2c6edbac4b58c911124297f1eafc52da194f1c6",
+      "final_finding": "EmbedExpr traversal repeatedly forwards callback/state in a loop",
+      "repair": "Invoke the same callable and state as lvalues for each element; preserve early-stop index behavior",
+      "native_regression": "PASS with repair; FAIL with old forwarding expression",
+      "focused_clang_tidy_use_after_move": "PASS on CGExprAgg.cpp including Expr.h",
+      "focused_tooling_controls_passed": 67,
+      "all_sixteen_reported_locations_clear_in_focused_replay": true,
+      "source_seal": "PASS",
+      "superseded_early_campaigns": [42547168207, 42547171369],
+      "scope": "Complete older inventory collected; fresh exact-source hosted qualification still required"
     },
     "current_completed_LLVM_checkpoint": {
       "status": "PASS",

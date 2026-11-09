@@ -2164,3 +2164,63 @@ index 000000000..28c0b59a0
 +
 +} // namespace clang
 +#endif
+diff --git a/clang/unittests/AST/EmbedTraversalTest.cpp b/clang/unittests/AST/EmbedTraversalTest.cpp
+new file mode 100644
+index 000000000..a002a27fa
+--- /dev/null
++++ b/clang/unittests/AST/EmbedTraversalTest.cpp
+@@ -0,0 +1,54 @@
++//===- EmbedTraversalTest.cpp - Reusable #embed callback state --------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Expr.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++using namespace clang;
++
++TEST(EmbedTraversal, RvalueCallableAndStateAreReusedAsLvalues) {
++  auto AST = tooling::buildASTFromCode("const char bytes[] = \"abc\";");
++  ASSERT_TRUE(AST);
++  auto &Context = AST->getASTContext();
++  auto *Variable = cast<VarDecl>(*Context.getTranslationUnitDecl()->noload_lookup(
++      &Context.Idents.get("bytes")).begin());
++  EmbedDataStorage Data{cast<StringLiteral>(Variable->getInit()), "bytes"};
++  EmbedExpr Expression(Context, {}, &Data, 0, 3);
++  struct State {
++    unsigned Calls = 0;
++    unsigned Sum = 0;
++  } State;
++  struct Callback {
++    bool operator()(IntegerLiteral *Value, unsigned Index, struct State &State) & {
++      EXPECT_EQ(Index, 7u + State.Calls);
++      ++State.Calls;
++      State.Sum += Value->getValue().getZExtValue();
++      return true;
++    }
++    bool operator()(IntegerLiteral *, unsigned, struct State &&) && {
++      ADD_FAILURE() << "traversal consumed its reusable callable and state";
++      return false;
++    }
++  } Callback;
++  unsigned Index = 7;
++  EXPECT_TRUE(Expression.doForEachDataElement(std::move(Callback), Index,
++                                             std::move(State)));
++  EXPECT_EQ(State.Calls, 3u);
++  EXPECT_EQ(State.Sum, unsigned('a' + 'b' + 'c'));
++  EXPECT_EQ(Index, 10u);
++
++  unsigned Calls = 0;
++  Index = 0;
++  EXPECT_FALSE(Expression.doForEachDataElement(
++      [&](IntegerLiteral *, unsigned) { return ++Calls < 2; }, Index));
++  EXPECT_EQ(Calls, 2u);
++  EXPECT_EQ(Index, 1u);
++}

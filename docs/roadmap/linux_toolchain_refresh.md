@@ -112,7 +112,7 @@ sibling failure; prerequisite failures stop dependent work. Sanitizer products c
 private SDK candidate; delivery waits until every required native owner passes.
 
 The candidate now has sealed source identity
-`llvmorg-23.1.5-392dfff97d29-d1fa89276152-0fcb354b`. The older full analysis
+`llvmorg-23.1.5-392dfff97d29-17caa0a0b467-0fcb354b`. The older full analysis
 reached its six-hour limit after 206/235 variants: 169 passed, thirty timed out
 and seven reported findings. Those seven units are repaired; focused local
 Static Analyzer replay clears all seventeen reported locations. Six modern
@@ -202,3 +202,13 @@ now passes all 21 IR/debugger executions, 63 semantic-oracle cases and seven
 controls. This remains evidence for that compiler checkpoint. Independent
 native and analysis owners continue collecting results before a consolidated
 retry containing the reader/capture, fuzzer and 32-shard coverage repairs.
+
+The last preceding analysis partition completes all 76 variants, passing 75 and
+finding repeated callback forwarding in `EmbedExpr`. The complete earlier
+inventory is now accounted for: **235 variants, 232 passing, three finding units,
+sixteen diagnostics and no incomplete/time-limited variants**. Traversal now
+reuses callback and state as lvalues; a real native regression passes with the
+repair and fails with the original forwarding expression, including exact index
+and early-stop checks. Focused Clang-Tidy replay clears this last finding, and
+67 tooling controls pass. The early `d4b982744` qualification was stopped during
+setup so its replacement includes every finding from the complete inventory.

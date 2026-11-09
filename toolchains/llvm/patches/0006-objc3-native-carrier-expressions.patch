@@ -23,7 +23,7 @@ index 3a3c86842..913b6a1a3 100644
  } // namespace clang
  #endif
 diff --git a/clang/include/clang/AST/Expr.h b/clang/include/clang/AST/Expr.h
-index 53107e279..d8e4cdb96 100644
+index 53107e279..35fa58e61 100644
 --- a/clang/include/clang/AST/Expr.h
 +++ b/clang/include/clang/AST/Expr.h
 @@ -16,6 +16,8 @@
@@ -261,6 +261,19 @@ index 53107e279..d8e4cdb96 100644
  class ChooseExpr : public Expr {
    enum { COND, LHS, RHS, END_EXPR };
    Stmt* SubExprs[END_EXPR]; // Left/Middle/Right hand sides.
+@@ -5254,8 +5468,10 @@ public:
+   bool doForEachDataElement(Call &&C, unsigned &StartingIndexInArray,
+                             Targs &&...Fargs) const {
+     for (auto It : underlying_data_elements()) {
+-      if (!std::invoke(std::forward<Call>(C), const_cast<IntegerLiteral *>(It),
+-                       StartingIndexInArray, std::forward<Targs>(Fargs)...))
++      // A traversal reuses the same callable and state for every element.
++      // Forwarding them here can consume an rvalue again on later iterations.
++      if (!std::invoke(C, const_cast<IntegerLiteral *>(It),
++                       StartingIndexInArray, Fargs...))
+         return false;
+       StartingIndexInArray++;
+     }
 diff --git a/clang/include/clang/Basic/StmtNodes.td b/clang/include/clang/Basic/StmtNodes.td
 index f5fa397c9..88fdb0a46 100644
 --- a/clang/include/clang/Basic/StmtNodes.td
