@@ -128,14 +128,21 @@ add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Opts.inc"
     "${_scan_source}/Opts.td" -o "${CMAKE_CURRENT_BINARY_DIR}/Opts.inc"
   DEPENDS "${_scan_source}/Opts.td" "${_tablegen}"
   VERBATIM)
-add_executable(clang-scan-deps "${_scan_source}/ClangScanDeps.cpp"
+set(_objc3_scan_deps_target clang-scan-deps)
+# A sealed Clang build tree exports its own clang-scan-deps target. Keep the
+# product scanner distinct while retaining the installed executable name.
+if(TARGET clang-scan-deps)
+  set(_objc3_scan_deps_target objc3c-clang-scan-deps)
+endif()
+add_executable(${_objc3_scan_deps_target} "${_scan_source}/ClangScanDeps.cpp"
   scan_deps_main.cpp "${CMAKE_CURRENT_BINARY_DIR}/Opts.inc")
-target_include_directories(clang-scan-deps SYSTEM PRIVATE
+set_target_properties(${_objc3_scan_deps_target} PROPERTIES OUTPUT_NAME clang-scan-deps)
+target_include_directories(${_objc3_scan_deps_target} SYSTEM PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}" ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-target_compile_features(clang-scan-deps PRIVATE cxx_std_20)
-target_link_libraries(clang-scan-deps PRIVATE objc3c_build_defaults clangAST clangBasic clangDependencyScanning
+target_compile_features(${_objc3_scan_deps_target} PRIVATE cxx_std_20)
+target_link_libraries(${_objc3_scan_deps_target} PRIVATE objc3c_build_defaults clangAST clangBasic clangDependencyScanning
   clangDriver clangFrontend clangLex clangSerialization clangTooling ${_objc3_native_codegen})
-install(TARGETS clang-scan-deps RUNTIME DESTINATION bin)
+install(TARGETS ${_objc3_scan_deps_target} RUNTIME DESTINATION bin)
 
 # The runtime can also be built independently of the compiler SDK.
 add_subdirectory(../runtime "${CMAKE_CURRENT_BINARY_DIR}/runtime")

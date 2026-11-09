@@ -133,7 +133,7 @@ def qualify(sdk: Path, output: Path) -> dict:
         execute('pch-application', executable)
         if not (len(report['executions']) == 17):
             raise ValueError('installed qualification contract failed: qualify-heap-carriers.py:126')
-        if not (len(report['rejections']) == 12):
+        if len(report['rejections']) != 7 or len(report['admissions']) != 5:
             raise ValueError('installed qualification contract failed: qualify-heap-carriers.py:127')
         if not (len(report['interfaces']) == 4):
             raise ValueError('installed qualification contract failed: qualify-heap-carriers.py:128')

@@ -251,6 +251,14 @@ inline StandardLibraryHeaderManifest ReadStandardLibraryHeaderManifest(
   if(cache)if(auto found=cache->preprocessors.find(&context);found!=cache->preprocessors.end())preprocessor=found->second;
   if(!preprocessor){result.valid=false;return result;}
   const auto &source=context.getSourceManager();std::set<std::string> headers;
+  // PCM source entries are lazy. Inventory the complete imported file set,
+  // rather than whichever locations an earlier AST traversal happened to load.
+  if(context.getLangOpts().ClangModules)
+    for(unsigned i=0;i<source.loaded_sloc_entry_size();++i) {
+      bool invalid=false;
+      (void)source.getLoadedSLocEntry(i,&invalid);
+      if(invalid)result.valid=false;
+    }
   for(auto it=source.fileinfo_begin();it!=source.fileinfo_end();++it) {
     if(!it->second->OrigEntry)continue;
     const auto file=source.translateFile(*it->second->OrigEntry);

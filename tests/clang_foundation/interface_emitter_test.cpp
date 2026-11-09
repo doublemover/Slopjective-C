@@ -4244,12 +4244,17 @@ void TestCustomCoroutineBodies() {
   const auto header=std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/custom_coroutines.h";
   std::ifstream input(header);assert(input);
   const std::string source((std::istreambuf_iterator<char>(input)),{});
-  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+  llvm::SmallString<128> temporary;
+  assert(!llvm::sys::fs::createUniqueDirectory("objc3-coroutine-modules",temporary));
+  const std::filesystem::path module_cache(temporary.str().str());
+  auto cleanup=llvm::scope_exit([&]{std::filesystem::remove_all(module_cache);});
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) for(bool modules:{false,true}) {
     auto emit=[&](const std::string &text,const char *filename="custom-coroutines.mm",
                   const std::vector<std::string> &exports=std::vector<std::string>{"NativeCustomCoroutines"}) {
-      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,
-          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR},filename);
+      std::vector<std::string> arguments={"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      if(modules)arguments.insert(arguments.end(),{"-fmodules","-fmodules-cache-path="+module_cache.string()});
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,arguments,filename);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.custom_coroutines","test",{}));
       return EmitSemanticInterface(ast->getASTContext(),"fixture.custom_coroutines","test",{},{},{},exports,{},&ast->getPreprocessor());

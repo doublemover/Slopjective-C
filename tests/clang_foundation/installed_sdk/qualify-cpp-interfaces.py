@@ -200,7 +200,7 @@ def qualify(sdk: Path, output: Path) -> dict:
             obj = output / ('rejected-visibility-' + str(case) + '.o')
             run('rejected-visibility-' + str(case), [*import_command('c++20', directory, identity,
                 'cpp-data-import-rejected.mm', obj), '-DCASE=' + str(case)], expected=1)
-        if len(report['executions']) != 14 or len(report['rejections']) != 16:
+        if len(report['executions']) != 14 or len(report['rejections']) != 8 or len(report['admissions']) != 8:
             raise ValueError('C++ interface execution/rejection inventory is incomplete')
         if len(report['commands']) != 117:
             raise ValueError('C++ interface command inventory is incomplete')

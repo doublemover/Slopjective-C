@@ -184,23 +184,21 @@ static void method_results(objc3_executor_t *executor) {
   assert(native_method_destructions() == before + 4);
   {
     NativeAsyncMethod *nil = (NativeAsyncMethod *)0;
-    (void)[nil value:state mode:0]; // Ignored nil result still destroys a valid empty carrier.
+    (void)[nil value:state mode:0]; // Discarding a lazy zero-valued nil task releases its frame.
     (void)[nil direct:42];
-    bool caught = false;
-    try { auto result = [nil value:state mode:0].start(executor); }
-    catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
-    assert(caught); caught = false;
-    try { auto result = [nil direct:42].start(executor); }
-    catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
-    assert(caught);
+    auto ordinary = [nil value:state mode:0].start(executor);
+    auto direct = [nil direct:42].start(executor);
+    pump(executor);
+    assert(ordinary.result() == 0 && direct.result() == 0);
   }
   for (bool checked : {false, true}) {
     auto awaited = method_nil_await(state, checked).start(executor);
     pump(executor);
+    if (!checked) { assert(awaited.result() == 0); continue; }
     bool caught = false;
     try { (void)awaited.result(); }
     catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
-    assert(caught); // Optionalization must not consume a native start failure.
+    assert(caught); // Optionalization must not consume a nonzeroable result's service failure.
   }
   assert(state->entered == state->destroyed);
 }

@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,32 @@ import pytest
 from scripts.objc3c_toolchain.package import MANIFEST, SCHEMA, _digest, inventory, normalize_permissions, verify_sdk
 
 pytestmark = pytest.mark.skipif(os.name != "posix", reason="Linux SDK filesystem seal qualification")
+
+
+@pytest.mark.parametrize('suite', ['record-carriers', 'heap-carriers', 'cpp-interfaces'])
+def test_installed_positive_and_negative_inventory_matches_release_owner(suite):
+    root = Path(__file__).resolve().parents[2]
+    producer = ast.parse((root / 'scripts/objc3c_toolchain/package.py').read_text())
+    assignment = next(node for node in ast.walk(producer) if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == 'suites' for target in node.targets))
+    contract = next(counts for _, name, counts in ast.literal_eval(assignment.value) if name == suite)
+    consumer = ast.parse((root / 'tests/clang_foundation/installed_sdk' /
+        ('qualify-' + suite + '.py')).read_text())
+    limits = {}
+    for node in ast.walk(consumer):
+        if not (isinstance(node, ast.Compare) and len(node.comparators) == 1
+                and isinstance(node.comparators[0], ast.Constant)):
+            continue
+        call = node.left
+        if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+                and call.func.id == 'len' and len(call.args) == 1):
+            continue
+        item = call.args[0]
+        if (isinstance(item, ast.Subscript) and isinstance(item.value, ast.Name)
+                and item.value.id == 'report' and isinstance(item.slice, ast.Constant)):
+            limits.setdefault(item.slice.value, set()).add(node.comparators[0].value)
+    for field in ('admissions', 'rejections'):
+        assert limits.get(field) == {contract[field]}, (suite, field, limits.get(field), contract[field])
 
 
 def sealed(tmp_path):

@@ -131,7 +131,7 @@ def qualify(sdk: Path, output: Path) -> dict:
         execute('pch-application', executable)
         if not (len(report['executions']) == 17):
             raise ValueError('installed qualification contract failed: qualify-record-carriers.py:124')
-        if not (len(report['rejections']) == 10):
+        if len(report['rejections']) != 8 or len(report['admissions']) != 2:
             raise ValueError('installed qualification contract failed: qualify-record-carriers.py:125')
         if not (len(report['interfaces']) == 4):
             raise ValueError('installed qualification contract failed: qualify-record-carriers.py:126')

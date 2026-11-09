@@ -4,6 +4,7 @@
 #include "clang/Basic/Sanitizers.h"
 #include "clang/Lex/DirectoryLookup.h"
 #include "clang/Lex/HeaderSearch.h"
+#include "clang/Lex/HeaderSearchOptions.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Lex/PreprocessorOptions.h"
 #include "llvm/ADT/SmallString.h"
@@ -36,6 +37,11 @@ inline void AppendInterfaceHeaderSearchArguments(const clang::Preprocessor &prep
   else arguments.push_back(predefines.find("#define __OPTIMIZE__ ")!=std::string::npos?"-O2":"-O0");
   if(predefines.find("#define __NO_INLINE__ ")!=std::string::npos)arguments.push_back("-fno-inline");
   const auto &language=preprocessor.getLangOpts();
+  if(language.ClangModules) {
+    arguments.push_back("-fmodules");
+    const auto &cache=search.getHeaderSearchOpts().ModuleCachePath;
+    if(!cache.empty())arguments.push_back("-fmodules-cache-path="+cache);
+  }
   if(language.PICLevel)arguments.push_back(language.PIE
       ? (language.PICLevel==2?"-fPIE":"-fpie") : (language.PICLevel==2?"-fPIC":"-fpic"));
   else arguments.insert(arguments.end(),{"-fno-pic","-fno-pie"});
