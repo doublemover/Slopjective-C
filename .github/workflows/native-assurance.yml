@@ -47,8 +47,22 @@ jobs:
           import json
           from pathlib import Path
 
+          root = Path('out/diagnostic-transport/input')
           rows = []
-          for path in sorted(Path('out/diagnostic-transport/input').rglob('*.json')):
+          failed_logs = []
+
+          def commands(value):
+              if isinstance(value, dict):
+                  if value.get('log') and (value.get('exit_code') not in (None, 0) or
+                                           value.get('timed_out') is True):
+                      yield value
+                  for child in value.values():
+                      yield from commands(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      yield from commands(child)
+
+          for path in sorted(root.rglob('*.json')):
               try:
                   value = json.loads(path.read_text())
               except (OSError, ValueError):
@@ -59,7 +73,15 @@ jobs:
                         if value.get(name)]
               errors.extend(value.get('cleanup_errors') or [])
               if value.get('status') in ('FAIL', 'failed') or errors:
-                  rows.append((path.as_posix(), value.get('status'), errors))
+                  rows.append((path.as_posix(), value.get('status'),
+                               [str(error)[:1200] for error in errors]))
+              for command in commands(value):
+                  original = Path(str(command['log']))
+                  candidates = ([path.parent / original] if not original.is_absolute() else [])
+                  candidates.extend(root.rglob(original.name))
+                  log = next((candidate for candidate in candidates if candidate.is_file()), None)
+                  if log and log not in failed_logs:
+                      failed_logs.append(log)
           if not rows:
               rows.append(('<artifact>', 'no-failure-record',
                            ['retained artifact contains no structured failure record']))
@@ -68,6 +90,11 @@ jobs:
                                    sort_keys=True)
               escaped = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print('::error title=Retained assurance diagnostic::' + escaped)
+          for log in failed_logs[:20]:
+              lines = [line for line in log.read_text(errors='replace').splitlines() if line.strip()]
+              message = json.dumps({'log': log.as_posix(), 'tail': lines[-30:]}, sort_keys=True)
+              escaped = message[-5000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::error title=Failed native command log::' + escaped)
           PY
       - name: Retain exact payload hashes and split bounded parts
         env:
