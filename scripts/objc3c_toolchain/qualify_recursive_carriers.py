@@ -22,6 +22,42 @@ else:
     from sdk_example import environment
 
 
+def compilation_controls(arc: bool, *, records=False):
+    """Current feature admission and genuine rejected operations, kept explicit."""
+    if records:
+        return {
+            'ASSIGNMENT': 'deleted', 'DEFAULT': 'deleted',
+            'OMITTED': 'native C++ carrier', 'EMPTY': 'native C++ carrier',
+            'VOLATILE': 'volatile storage of native C++ carrier field',
+            'PACKED': 'native C++ carrier record field initialization',
+            'BLOCK_ABI': 'runtime callable type encoding',
+            'OBJC_ABI': 'Objective-C runtime type encoding',
+            **dict.fromkeys(('UNION', 'ARRAY', 'MIXED')),
+        }
+    controls = {
+        'PRIVATE': 'has private destructor', 'DELETED_COPY': 'deleted constructor',
+        'VOLATILE': 'volatile carrier copy and move construction is not supported',
+        'CXX_NEW': 'nontrivial carrier allocation or storage reuse',
+        'CXX_PLACEMENT': 'nontrivial carrier allocation or storage reuse',
+        **dict.fromkeys(('CALL_ABI', 'CXX_DELETE', 'ARC_RECORD')),
+    }
+    if arc:
+        controls.update({
+            'MIXED_ASSIGNMENT': 'ARC carrier assignment',
+            'MIXED_CALL_ABI': 'by-value call ABI',
+            'MIXED_ARRAY': 'ARC array local initialization',
+            'MIXED_RECORD': 'mixed ARC/C++ carrier enclosing storage',
+            'MIXED_LAMBDA': 'mixed ARC/C++ carrier local initialization',
+            **dict.fromkeys(('MIXED_NEW', 'MIXED_NEW_VALUE', 'MIXED_NEW_ARRAY', 'MIXED_PLACEMENT'),
+                            'nontrivial carrier allocation or storage reuse'),
+            'MIXED_DELETE': 'nontrivial carrier dynamic destruction',
+        })
+        controls['MIXED_VOLATILE'] = 'volatile carrier copy and move construction is not supported'
+    else:
+        controls['MIXED_MRC'] = 'not supported in an Objective-C 3 value carrier'
+    return controls
+
+
 def qualify(sdk: Path, output: Path) -> dict:
     sdk, output = sdk.resolve(), output.resolve()
     packages.disjoint(output, sdk)
@@ -29,6 +65,7 @@ def qualify(sdk: Path, output: Path) -> dict:
     receipt = output / 'qualification.json'
     report = {'schema': 'objc3c.installed-recursive-carriers.v1', 'status': 'running',
               'commands': [], 'configurations': [], 'executions': 0, 'rejections': 0,
+              'compile_admissions': 0,
               'profile_conformance_claimed': False,
               'scope': ['direct nested C++ carrier construction and destruction',
                         'recursive selected-arm copy/move and const move',
@@ -195,71 +232,34 @@ def qualify(sdk: Path, output: Path) -> dict:
                         '-fno-elide-constructors', source / 'records-provider.mm',
                         source / 'records-main.mm', '-o', executable], cwd=client)
                     execute(name + '-records-driver-execute', executable, client)
-                    rejections = {
-                        'PRIVATE': 'has private destructor',
-                        'DELETED_COPY': 'deleted constructor',
-                        'CALL_ABI': 'by-value call ABI',
-                        'VOLATILE': 'volatile carrier copy and move construction is not supported',
-                        'CXX_NEW': 'nontrivial carrier allocation or storage reuse',
-                        'CXX_PLACEMENT': 'nontrivial carrier allocation or storage reuse',
-                        'CXX_DELETE': 'nontrivial carrier dynamic destruction',
-                    }
                     if arc:
-                        rejections['ARC_RECORD'] = 'not supported in an Objective-C 3 value carrier'
-                        rejections.update({
-                            'MIXED_ASSIGNMENT': 'ARC carrier assignment',
-                            'MIXED_CALL_ABI': 'by-value call ABI',
-                            'MIXED_ARRAY': 'ARC array local initialization',
-                            'MIXED_VOLATILE': 'volatile carrier copy and move construction is not supported',
-                            'MIXED_RECORD': 'mixed ARC/C++ carrier enclosing storage',
-                            'MIXED_LAMBDA': 'mixed ARC/C++ carrier local initialization',
-                            'MIXED_NEW': 'nontrivial carrier allocation or storage reuse',
-                            'MIXED_NEW_VALUE': 'nontrivial carrier allocation or storage reuse',
-                            'MIXED_NEW_ARRAY': 'nontrivial carrier allocation or storage reuse',
-                            'MIXED_PLACEMENT': 'nontrivial carrier allocation or storage reuse',
-                            'MIXED_DELETE': 'nontrivial carrier dynamic destruction',
-                        })
                         executable = client / (name + '-mixed-driver')
                         run(name + '-mixed-driver-compile', [frontend, *flags, '-O2',
                             source / 'mixed-provider.mm', source / 'mixed-main.mm',
                             '-o', executable], cwd=client)
                         execute(name + '-mixed-driver-execute', executable, client)
-                    else:
-                        rejections['MIXED_MRC'] = 'not supported in an Objective-C 3 value carrier'
-                    for macro, diagnostic in rejections.items():
-                        rejected = client / (name + '-' + macro + '.o')
-                        log = run(name + '-reject-' + macro, [*common, '-x', 'objective-c++',
-                            '-DREJECT_' + macro, '-c', source / 'rejections.mm', '-o', rejected],
-                            cwd=client, expected_exit_code=1)
-                        if diagnostic not in log or rejected.exists():
-                            raise ValueError(f'rejection {macro} lost its diagnostic or emitted an object')
-                        report['rejections'] += 1
-                    record_rejections = {
-                        'ASSIGNMENT': 'deleted',
-                        'DEFAULT': 'deleted',
-                        'OMITTED': 'native C++ carrier',
-                        'EMPTY': 'native C++ carrier',
-                        'PACKED': 'native C++ carrier record field initialization',
-                        'VOLATILE': 'volatile storage of native C++ carrier field',
-                        'UNION': 'native C++ carrier record field initialization',
-                        'ARRAY': 'deleted',
-                        'BLOCK_ABI': 'runtime callable type encoding',
-                        'OBJC_ABI': 'Objective-C runtime type encoding',
-                        'MIXED': 'native C++ carrier record field initialization',
-                    }
-                    for macro, diagnostic in record_rejections.items():
-                        rejected = client / (name + '-records-' + macro + '.o')
-                        log = run(name + '-records-reject-' + macro,
-                            [*common, '-x', 'objective-c++', '-DREJECT_RECORD_' + macro,
-                             '-c', source / 'records-rejections.mm', '-o', rejected],
-                            cwd=client, expected_exit_code=1)
-                        if diagnostic not in log or rejected.exists():
-                            raise ValueError(f'record rejection {macro} lost its diagnostic or emitted an object')
-                        report['rejections'] += 1
+                    for records in (False, True):
+                        for macro, diagnostic in compilation_controls(arc, records=records).items():
+                            label = name + ('-records-' if records else '-')
+                            label += ('reject-' if diagnostic else 'admit-') + macro
+                            object_file = client / (label + '.o')
+                            log = run(label, [*common, '-x', 'objective-c++',
+                                '-DREJECT_' + ('RECORD_' if records else '') + macro,
+                                '-c', source / ('records-rejections.mm' if records else 'rejections.mm'),
+                                '-o', object_file], cwd=client,
+                                expected_exit_code=1 if diagnostic else 0)
+                            if diagnostic:
+                                if diagnostic not in log or object_file.exists():
+                                    raise ValueError(f'rejection {macro} lost its diagnostic or emitted an object')
+                                report['rejections'] += 1
+                            else:
+                                if not object_file.is_file() or not object_file.stat().st_size:
+                                    raise ValueError(f'admitted operation {macro} did not emit an object')
+                                report['compile_admissions'] += 1
         if hashes != {str(path): packages.digest(path) for path in inputs}:
             raise ValueError('installed recursive carrier inputs changed during execution')
         if (len(report['configurations']), report['executions'], report['rejections'],
-                len(report['commands'])) != (8, 70, 98, 331):
+                report['compile_admissions'], len(report['commands'])) != (8, 70, 76, 24, 333):
             raise ValueError('installed recursive carrier execution matrix is incomplete')
         report.update(status='PASS', temporary_artifacts_reclaimed=True,
                       commands_passed=len(report['commands']))

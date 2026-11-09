@@ -24,6 +24,21 @@ else:
 
 MODULE = 'fixture.TypedKeyPaths'
 SEMANTIC = 'objc3.typed-keypaths.v1'
+CXX_OPERATIONS = ('read', 'write', 'readonly', 'metadata', 'packed_read', 'all_read', 'all_write',
+    'braced_write', 'literal_count_path', 'literal_read_count', 'literal_checked_path',
+    'typed_read', 'typed_write', 'typed_narrow', 'typed_make')
+
+
+def prepare_workspace(sdk, root, language, standard, ownership, fixtures=None):
+    workspace = prepare(sdk, root, language, standard, ownership,
+                        fixture='typed-keypath-packages', fixture_root=fixtures)
+    if '++' in language:
+        package = root / 'provider/package.json'
+        document = json.loads(package.read_text())
+        document['exports'] += ['PackageDependentPaths::' + name
+            for name in (*CXX_OPERATIONS, 'TypedHolder')]
+        packages.write_json(package, document)
+    return workspace
 
 
 def check_metadata(metadata: dict, *, dependent_applications=False) -> None:
@@ -52,8 +67,7 @@ def check_metadata(metadata: dict, *, dependent_applications=False) -> None:
             raise ValueError('typed key-path interface lost generic field contracts')
         if 'objc3.keypath-dependent-literals.v1' not in metadata['required_semantics']:
             raise ValueError('typed key-path interface lost dependent literal semantics')
-        for operation in ('read', 'write', 'readonly', 'metadata', 'packed_read', 'all_read', 'all_write',
-                          'braced_write', 'literal_count_path', 'literal_read_count', 'literal_checked_path', 'typed_read', 'typed_write', 'typed_narrow', 'typed_make'):
+        for operation in CXX_OPERATIONS:
             name = 'PackageDependentPaths::'+operation
             if declarations.get(name, {}).get('kind') != 'FunctionTemplate':
                 raise ValueError('typed key-path interface lost dependent application: '+name)
@@ -72,8 +86,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
                  ownership: str, optimization: str, fixtures: Path | None) -> dict:
     label = '-'.join((language, standard, ownership, optimization))
     with case_workspace(output, label) as root:
-        workspace = prepare(sdk, root / 'sources', language, standard, ownership,
-                            fixture='typed-keypath-packages', fixture_root=fixtures)
+        workspace = prepare_workspace(sdk, root / 'sources', language, standard, ownership, fixtures)
         built = root / 'built'
         first = build_graph(sdk, workspace, built, optimization)
         repeated = build_graph(sdk, workspace, built, optimization)

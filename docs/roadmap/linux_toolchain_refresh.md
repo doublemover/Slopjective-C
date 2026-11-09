@@ -112,7 +112,7 @@ sibling failure; prerequisite failures stop dependent work. Sanitizer products c
 private SDK candidate; delivery waits until every required native owner passes.
 
 The candidate now has sealed source identity
-`llvmorg-23.1.5-392dfff97d29-17caa0a0b467-0fcb354b`. The older full analysis
+`llvmorg-23.1.5-392dfff97d29-08d925b118b2-0fcb354b`. The older full analysis
 reached its six-hour limit after 206/235 variants: 169 passed, thirty timed out
 and seven reported findings. Those seven units are repaired; focused local
 Static Analyzer replay clears all seventeen reported locations. Six modern
@@ -212,3 +212,21 @@ repair and fails with the original forwarding expression, including exact index
 and early-stop checks. Focused Clang-Tidy replay clears this last finding, and
 67 tooling controls pass. The early `d4b982744` qualification was stopped during
 setup so its replacement includes every finding from the complete inventory.
+
+The repaired preceding native core now passes all foundation, runtime, frontend,
+installed, sanitizer, upstream, Swift, semantic workload and runtime-schedule
+owners. Its complete upstream selection passes 4,158 cases with 220 unsupported
+and three expected failures. Packaging then exposes stale recursive-carrier
+rejection expectations and missing checked/dependent keypath exports. Object
+emission also reveals an unresolved destructor exception-specification query.
+These are repaired together: native storage admission prepares destructor specs,
+ABI predicates guard unresolved specs, the recursive matrix requires 24 emitted
+objects and 76 genuine rejections alongside 70 runtime executions, and the
+typed-keypath fixture exports every consumed C/C++ root. All installed owners
+now run under the existing bounded budget before any failed candidate is
+rejected. Eight native allocation/spec controls and 192 focused controls
+(including all 100 native compile controls through rebuilt Sema/ABI objects)
+pass; another focused selection passes 328 with four explicit capability skips.
+Complete matching packaging, product sanitizers and fresh archive installation
+remain required. The earlier 32-shard repair also covers the preceding repeated
+eight-shard coverage timeout; it is not a new uncovered failure class.

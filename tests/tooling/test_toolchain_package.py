@@ -138,10 +138,17 @@ def test_release_failure_joins_other_gates_and_preserves_their_evidence(tmp_path
                         str(tmp_path / 'qualification.json')], check=True, timeout=10)
         return {'status': 'PASS'}
 
+    def queued():
+        subprocess.run([sys.executable, '-B', '-c',
+                        'import pathlib,sys; pathlib.Path(sys.argv[1]).write_text("PASS")',
+                        str(tmp_path / 'queued.json')], check=True, timeout=10)
+        return {'status': 'PASS'}
+
     with pytest.raises(ValueError, match='import: failed source import; see import.log'):
         _run_qualifications({'import': failed, 'calls': completed,
-                             'queued': lambda: pytest.fail('started after failure')}, 2)
+                             'queued': queued}, 2)
     assert (tmp_path / 'qualification.json').read_text() == 'PASS'
+    assert (tmp_path / 'queued.json').read_text() == 'PASS'
 
 
 @pytest.mark.parametrize('damage', ['status', 'seal', 'count', 'command'])

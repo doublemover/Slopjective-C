@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-09",
-  "status": "ANALYSIS_READER_AND_CAPTURE_REPAIRS_COLLECTING_RUNNING_NATIVE_RESULTS",
+  "status": "SDK_PACKAGE_FIXTURES_AND_ALLOCATION_REPAIRS_READY_FOR_MATCHED_QUALIFICATION",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -9,15 +9,15 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-17caa0a0b467-0fcb354b",
-    "prepared_tree": "5d4f75b6dab86c705fe515ad41e705138f015eaf",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-0fcb354b",
+    "prepared_tree": "170f4d1824b2f0da14b711b361ab03cba940281d",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
     "activated_product_sdk": false,
-    "patch_digest": "17caa0a0b4675db935284247f40dc3eea07eff072ca9472a0c86e7fbb957900b",
+    "patch_digest": "08d925b118b2a694150712edd6ba2baf0c82a7f04b84acd5a6e8d300b04e2d32",
     "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51",
-    "implementation_revision": "Complete preceding inventory collected; final embed traversal repair included; matched hosted rebuild pending"
+    "implementation_revision": "SDK package fixture and allocation-spec repair batch; all previous analysis/fuzzer/coverage repairs included"
   },
   "language_contracts": {
     "language": "Objective-C 3.0",
@@ -776,6 +776,27 @@
       "source_seal": "PASS",
       "superseded_early_campaigns": [42547168207, 42547171369],
       "scope": "Complete older inventory collected; fresh exact-source hosted qualification still required"
+    },
+    "SDK_package_fixture_and_allocation_repair": {
+      "preceding_run": 42537224777,
+      "preceding_core_job": 128904209288,
+      "artifact": 13643862509,
+      "artifact_sha256": "76745a4569b186f9653b8598728472db59ece6fdedafa790d6385a7171cabde0",
+      "preceding_passing_owners": ["foundation", "runtime", "frontend", "installed", "sanitizers", "upstream", "swift-consumer", "semantic-workloads", "runtime-schedules"],
+      "preceding_upstream": {"passed": 4158, "unsupported": 220, "expectedly_failed": 3},
+      "repairs": [
+        "Resolve payload destructor exception specifications before native carrier allocation/deletion admission; guard unresolved specifications in pure and mixed ABI predicates",
+        "Require actual object generation for current recursive carrier admissions while preserving genuine exact-diagnostic rejections",
+        "Export all three checked keypath helpers and the sixteen C++ template roots used by the typed package consumer",
+        "Drain every independent installed SDK gate under the existing worker budget before rejecting any failed candidate"
+      ],
+      "recursive_carrier_matrix": {"runtime_executions": 70, "object_generation_admissions": 24, "exact_rejections": 76, "commands": 333},
+      "focused_tooling_with_native_emission_adapter": {"passed": 192, "scope": "Includes all 100 ARC/MRC C++20/C++23 compile controls using rebuilt Sema/ABI objects with retained libraries and the pinned IR backend; not SDK qualification"},
+      "allocation_native_controls_passed": 8,
+      "broader_focused_tooling": {"passed": 328, "capability_skips": 4},
+      "source_seal": "PASS",
+      "superseded_campaigns": [42547976619, 42547981394],
+      "retained_boundary": "Complete matched SDK packaging, product sanitizers and fresh-host archive checks still required"
     },
     "current_completed_LLVM_checkpoint": {
       "status": "PASS",

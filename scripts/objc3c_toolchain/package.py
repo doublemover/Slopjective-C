@@ -71,8 +71,9 @@ def _run_qualifications(tasks: dict, workers: int) -> dict:
 
     results, failures = {}, []
     remaining = iter(tasks.items())
-    # Drain already running gates and preserve their evidence on failure. Stop
-    # starting more work against a candidate that already needs repair.
+    # Complete independent owners under one bounded worker budget so one stale
+    # fixture cannot hide the remaining SDK defects behind another full build.
+    # Every owner still has to pass before an archive can be published.
     with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
         active = {}
 
@@ -93,8 +94,7 @@ def _run_qualifications(tasks: dict, workers: int) -> dict:
                     results[name] = future.result()
                 except Exception as error:
                     failures.append(f'{name}: {error}')
-            if not failures:
-                fill()
+            fill()
     if failures:
         skipped = len(tasks) - len(results) - len(failures)
         raise ValueError('installed SDK qualification failed: ' + '; '.join(failures)

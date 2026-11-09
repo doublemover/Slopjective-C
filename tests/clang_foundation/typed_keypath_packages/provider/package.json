@@ -18,7 +18,10 @@
     "PackagePathBits",
     "package_bits_path",
     "package_indexed_update",
-    "package_nullable_path"
+    "package_nullable_path",
+    "package_checked_scalar_path",
+    "package_checked_record_path",
+    "package_checked_read"
   ],
   "dependencies": []
 }

@@ -8608,10 +8608,10 @@ index 000000000..0b4e60866
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..4c9d1eff7
+index 000000000..7ae940df0
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,925 @@
+@@ -0,0 +1,927 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -9054,7 +9054,9 @@ index 000000000..4c9d1eff7
 +        if(Field && !Self(Self,Field->getType(),Depth+1))return false;
 +    } else if(const auto *RD=T->getAsCXXRecordDecl();RD && RD->hasNonTrivialDestructor()) {
 +      const auto *Dtor=RD->getDestructor();
-+      return Dtor && Dtor->getType()->castAs<FunctionProtoType>()->isNothrow();
++      const auto *Prototype = Dtor ? Dtor->getType()->getAs<FunctionProtoType>() : nullptr;
++      return Prototype && !isUnresolvedExceptionSpec(Prototype->getExceptionSpecType()) &&
++             Prototype->isNothrow();
 +    }
 +    return true;
 +  };
@@ -26994,10 +26996,10 @@ index 1769ab00e..7e388914c 100644
  
 diff --git a/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp b/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
 new file mode 100644
-index 000000000..f9e4475bd
+index 000000000..6e7bd8be3
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
-@@ -0,0 +1,339 @@
+@@ -0,0 +1,341 @@
 +//===--- CGObjC3MixedCarriers.cpp - Mixed ARC/C++ carrier locals -----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
@@ -27206,8 +27208,10 @@ index 000000000..f9e4475bd
 +        if(Field && !Self(Self,Field->getType(),Depth+1))return false;
 +    }else if(const auto *Record=T->getAsCXXRecordDecl();Record && Record->hasNonTrivialDestructor()) {
 +      const auto *Destructor=Record->getDestructor();
++      const auto *Prototype = Destructor ? Destructor->getType()->getAs<FunctionProtoType>() : nullptr;
 +      return Destructor && !Destructor->isDeleted() &&
-+          Destructor->getType()->castAs<FunctionProtoType>()->isNothrow();
++          Prototype && !isUnresolvedExceptionSpec(Prototype->getExceptionSpecType()) &&
++          Prototype->isNothrow();
 +    }
 +    return true;
 +  };
@@ -37870,3 +37874,30 @@ index 000000000..d756b7e72
 +// ARC: store ptr [[OWNED]], ptr @global_owner
 +// MRC: store ptr [[MESSAGE]], ptr @global_owner
 +// CHECK: ret void
+diff --git a/clang/test/ObjC3/CodeGen/carrier-storage-destructor-spec.mm b/clang/test/ObjC3/CodeGen/carrier-storage-destructor-spec.mm
+new file mode 100644
+index 000000000..e994ab7d3
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-storage-destructor-spec.mm
+@@ -0,0 +1,21 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DINVALID_RESULT -emit-llvm -o /dev/null -verify %s
++
++// A declaration-only destructor still has a lazily evaluated exception spec.
++// Empty allocation must resolve it before querying the native carrier ABI.
++struct Value { ~Value(); };
++using Inner = Optional(Value);
++using Tree = Result(Inner, Inner);
++#ifdef INVALID_RESULT
++Tree *invalid() { return new Tree{}; } // expected-error {{nontrivial carrier allocation or storage reuse}}
++#else
++// expected-no-diagnostics
++Inner *empty() { return new Inner{}; }
++void destroy(Tree *value) { delete value; }
++// CHECK-LABEL: define{{.*}} @_Z5emptyv
++// CHECK: call{{.*}} @_Znwm
++// CHECK-LABEL: define{{.*}} @_Z7destroy
++#endif
