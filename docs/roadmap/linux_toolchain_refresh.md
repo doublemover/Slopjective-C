@@ -230,3 +230,6 @@ pass; another focused selection passes 328 with four explicit capability skips.
 Complete matching packaging, product sanitizers and fresh archive installation
 remain required. The earlier 32-shard repair also covers the preceding repeated
 eight-shard coverage timeout; it is not a new uncovered failure class.
+The public keypath version macros now agree with the implemented module
+inventory at 2.12.0; six standard-library controls include inventory/header
+version agreement so future module bumps cannot silently leave stale macros.

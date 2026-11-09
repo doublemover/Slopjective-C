@@ -796,6 +796,8 @@
       "broader_focused_tooling": {"passed": 328, "capability_skips": 4},
       "source_seal": "PASS",
       "superseded_campaigns": [42547976619, 42547981394],
+      "keypath_public_version": "2.12.0; public macros now agree with the implemented module inventory",
+      "stdlib_version_controls_passed": 6,
       "retained_boundary": "Complete matched SDK packaging, product sanitizers and fresh-host archive checks still required"
     },
     "current_completed_LLVM_checkpoint": {
