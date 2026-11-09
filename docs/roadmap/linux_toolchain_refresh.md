@@ -145,7 +145,7 @@ the repaired complete qualification.
 
 That preceding source also passes three frontend fuzz campaigns/six controls and
 [LLVM/oracle assurance](https://github.com/doublemover/Slopjective-C/actions/runs/42528858909):
-21 IR/debugger executions, 63 oracle cases and seven controls. Current repaired-source quick gates pass 1,592 tests and 33 subtests, with 111
+21 IR/debugger executions, 63 oracle cases and seven controls. Current repaired-source quick gates pass 1,600 tests and 33 subtests, with 112
 explicit capability/platform skips.
 The repaired [release/native and four-part analysis](https://github.com/doublemover/Slopjective-C/actions/runs/42537224777)
 and [LLVM/oracle](https://github.com/doublemover/Slopjective-C/actions/runs/42536852949)
@@ -178,7 +178,7 @@ uses 32 shards from one bounded policy, with at most six of the 164 cases per
 command. CMake registration, explicit native index/count arguments and terminal
 proof share that count. All 32 native commands pass with the unchanged catalogue
 hash; six invalid CLI controls and 136 focused checks pass. Current quick CI
-passes 1,599 tests plus 33 subtests with 111 explicit capability/platform skips.
+passes 1,600 tests plus 33 subtests with 112 explicit capability/platform skips.
 This native replay does not replace complete instrumented qualification. The
 running `14a04b4ec` product and analysis campaign continues to collect independent
 results before the final consolidated coverage retry. Its preceding analysis
