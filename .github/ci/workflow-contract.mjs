@@ -18,10 +18,30 @@ export function validateDependencyRouting(workflows) {
     "adaptive-closeout.yml",
   ]) {
     const workflow = yaml.load(workflows[name]);
-    const setup = Object.values(workflow.jobs)
-      .flatMap((job) => job.steps ?? [])
-      .filter((step) => step.name === "Pinned host tools");
-    if (setup.length !== 1 || setup[0].uses !== "./.github/actions/linux-host-tools")
+    const owners =
+      name === "native-assurance.yml"
+        ? [
+            "diagnostic-native",
+            "product-producer",
+            "product-consumers",
+            "independent-native",
+            "coverage-producer",
+            "coverage-partitions",
+          ]
+        : Object.entries(workflow.jobs ?? {})
+            .filter(([, job]) =>
+              (job.steps ?? []).some((step) => step.name === "Pinned host tools"),
+            )
+            .map(([id]) => id);
+    if (
+      !owners.length ||
+      owners.some(
+        (id) =>
+          (workflow.jobs?.[id]?.steps ?? []).filter(
+            (step) => step.uses === "./.github/actions/linux-host-tools",
+          ).length !== 1,
+      )
+    )
       throw new Error(`${name} must reuse the shared pinned dependency setup`);
   }
   for (const name of ["task-hygiene.yml", "spec-quality.yml", "planning-lint.yml"]) {
@@ -115,7 +135,6 @@ export function validateNativeGate(text) {
       "Extended native qualification must remain manual/periodic with read-only contents",
     );
   }
-  const gate = workflow.jobs?.gate;
   const diagnosis = events.workflow_dispatch?.inputs?.diagnostic_core_only;
   if (
     diagnosis?.type !== "boolean" ||
@@ -125,74 +144,194 @@ export function validateNativeGate(text) {
       "${{ inputs.diagnostic_core_only && 'Linux core diagnosis (partial surface)' || 'Extended Linux native assurance' }}"
   )
     throw new Error("Core diagnosis must be explicit, partial, and unavailable to release callers");
+
+  const jobs = workflow.jobs ?? {};
+  const gate = jobs.gate;
+  const requiredGateNeeds = [
+    "core-aggregate",
+    "coverage-aggregate",
+    "coverage-partitions",
+    "coverage-producer",
+    "independent-native",
+    "plan",
+    "product-consumers",
+    "product-producer",
+  ];
   if (
     gate?.name !== "Extended Linux native assurance gate" ||
     gate.if !== "always() && !inputs.diagnostic_core_only" ||
-    JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["native", "plan"]) ||
+    JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(requiredGateNeeds) ||
     gate["continue-on-error"]
-  ) {
-    throw new Error("Native aggregate must always evaluate both required prerequisites");
-  }
+  )
+    throw new Error("Native aggregate must always evaluate every required prerequisite");
+
+  const diagnostic = jobs["diagnostic-native"];
+  const producer = jobs["product-producer"];
+  const consumers = jobs["product-consumers"];
+  const independent = jobs["independent-native"];
+  const coverageProducer = jobs["coverage-producer"];
+  const coveragePartitions = jobs["coverage-partitions"];
+  const coreAggregate = jobs["core-aggregate"];
+  const coverageAggregate = jobs["coverage-aggregate"];
+  const transport = jobs["diagnostic-transport"];
+  const fullOwnerCondition =
+    "needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''";
   if (
-    !(gate.steps ?? []).some(
-      (step) => step.run?.includes("scripts.objc3c_assurance verify") && step.if === "always()",
-    )
-  ) {
-    throw new Error("Native aggregate must validate exact-revision receipt contents");
-  }
-  const execute = workflow.jobs.native.steps.find((step) =>
-    step.run?.includes("scripts.objc3c_assurance run"),
-  );
-  validateNativeContainer(workflow.jobs.native);
-  const nativeJob = workflow.jobs.native;
-  const transport = workflow.jobs["diagnostic-transport"];
-  if (
-    nativeJob.if !==
-      "needs.plan.outputs.native == 'true' && inputs.diagnostic_transport_run == ''" ||
+    diagnostic?.if !==
+      "needs.plan.outputs.native == 'true' && inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''" ||
+    producer?.if !== fullOwnerCondition ||
+    independent?.if !== fullOwnerCondition ||
+    coverageProducer?.if !== fullOwnerCondition ||
     events.workflow_dispatch.inputs.diagnostic_transport_run?.default !== "" ||
     events.workflow_dispatch.inputs.diagnostic_transport_artifact?.default !== "" ||
     transport?.if !== "inputs.diagnostic_core_only && inputs.diagnostic_transport_run != ''" ||
     events.workflow_call?.inputs?.diagnostic_transport_run ||
     events.workflow_call?.inputs?.diagnostic_transport_artifact ||
-    transport["timeout-minutes"] !== 15
+    transport?.["timeout-minutes"] !== 15
   )
     throw new Error(
       "Artifact transport must be bounded, explicit and separate from compiler execution",
     );
+
+  const productGroups = (consumers?.strategy?.matrix?.include ?? []).map(
+    (entry) => entry.group,
+  );
+  const consumerRun = (consumers?.steps ?? []).find((step) =>
+    step.run?.includes("scripts.objc3c_assurance.release_matrix run"),
+  );
+  const fuzzRun = (independent?.steps ?? []).find((step) =>
+    step.run?.includes("scripts.objc3c_assurance run"),
+  );
+  const coverageRun = (coveragePartitions?.steps ?? []).find((step) =>
+    step.run?.includes("scripts.objc3c_assurance.coverage_matrix partition"),
+  );
   if (
-    nativeJob.strategy?.["fail-fast"] !== false ||
-    nativeJob.strategy?.matrix?.shard !==
-      "${{ inputs.diagnostic_core_only && fromJSON('[\"core\"]') || fromJSON(needs.plan.outputs.shards) }}" ||
-    nativeJob.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
-    !execute?.run.includes('--shard "$NATIVE_SHARD"') ||
-    !(gate.steps ?? []).some(
+    consumers?.strategy?.["fail-fast"] !== false ||
+    JSON.stringify(productGroups) !==
+      JSON.stringify([
+        "foundation",
+        "runtime",
+        "frontend",
+        "installed-sanitizers",
+        "swift",
+        "semantic",
+        "asan-products",
+      ]) ||
+    JSON.stringify(consumers.needs?.toSorted()) !==
+      JSON.stringify(["plan", "product-producer"]) ||
+    !consumers.if?.includes("needs.product-producer.result == 'success'") ||
+    consumers.env?.RELEASE_GROUP !== "${{ matrix.group }}" ||
+    !consumerRun?.run.includes('--group "$RELEASE_GROUP"') ||
+    coveragePartitions?.strategy?.["fail-fast"] !== false ||
+    JSON.stringify(coveragePartitions?.strategy?.matrix?.partition) !==
+      JSON.stringify([0, 1, 2, 3, 4, 5, 6, 7]) ||
+    JSON.stringify(coveragePartitions.needs?.toSorted()) !==
+      JSON.stringify(["coverage-producer", "plan"]) ||
+    !coveragePartitions.if?.includes("needs.coverage-producer.result == 'success'") ||
+    coveragePartitions.env?.COVERAGE_PARTITION !== "${{ matrix.partition }}" ||
+    !coverageRun?.run.includes('--index "$COVERAGE_PARTITION"') ||
+    !fuzzRun?.run.includes("--shard frontend-fuzz")
+  )
+    throw new Error("Native owners must retain their complete independent execution matrices");
+
+  if (
+    JSON.stringify(coreAggregate?.needs?.toSorted()) !==
+      JSON.stringify(["plan", "product-consumers", "product-producer"]) ||
+    !(coreAggregate?.steps ?? []).some(
       (step) =>
-        step.run?.includes("scripts.objc3c_assurance verify --sharded") && step.if === "always()",
+        step.run?.includes("scripts.objc3c_assurance.release_matrix aggregate") &&
+        step.run.includes("--shard core") &&
+        step.run.includes("evidence/core"),
+    ) ||
+    !(coreAggregate?.steps ?? []).some(
+      (step) =>
+        step.uses?.startsWith("actions/download-artifact@") &&
+        step.with?.pattern?.startsWith("native-partial-") &&
+        step.with?.["merge-multiple"] === true,
+    ) ||
+    JSON.stringify(coverageAggregate?.needs?.toSorted()) !==
+      JSON.stringify(["coverage-partitions", "coverage-producer", "plan"]) ||
+    !(coverageAggregate?.steps ?? []).some(
+      (step) =>
+        step.run?.includes("scripts.objc3c_assurance.coverage_matrix aggregate") &&
+        step.run.includes("--shard source-coverage") &&
+        step.run.includes("evidence/source-coverage"),
+    ) ||
+    !(coverageAggregate?.steps ?? []).some(
+      (step) =>
+        step.uses?.startsWith("actions/download-artifact@") &&
+        step.with?.pattern?.startsWith("coverage-partition-") &&
+        step.with?.["merge-multiple"] === true,
+    )
+  )
+    throw new Error("Native aggregate jobs must prove complete disjoint owner unions");
+
+  const verifier = (gate?.steps ?? []).find((step) =>
+    step.run?.includes("scripts.objc3c_assurance verify --sharded"),
+  );
+  const resultVariables = [
+    "PRODUCER_RESULT",
+    "CONSUMERS_RESULT",
+    "FUZZ_RESULT",
+    "COVERAGE_PRODUCER_RESULT",
+    "COVERAGE_PARTITIONS_RESULT",
+    "CORE_RESULT",
+    "COVERAGE_RESULT",
+  ];
+  if (
+    !verifier ||
+    resultVariables.some(
+      (name) => verifier.env?.[name] === undefined || !verifier.run.includes(`\"$${name}\"`),
     ) ||
     !(gate.steps ?? []).some(
       (step) =>
         step.uses?.startsWith("actions/download-artifact@") &&
         step.with?.pattern?.startsWith("native-results-") &&
         step.with?.["merge-multiple"] === true,
-    ) ||
-    !(nativeJob.steps ?? []).some(
-      (step) =>
-        step.if === "always()" &&
-        step.run?.includes("scripts.objc3c_assurance publish") &&
-        step.run.includes('--destination "out/native-assurance/evidence/$NATIVE_SHARD"'),
     )
-  ) {
-    throw new Error(
-      "Native compiler profiles require independent execution and a complete sharded receipt gate",
-    );
+  )
+    throw new Error("Native terminal gate must reject missing owners and incomplete receipts");
+
+  const executionJobs = [
+    diagnostic,
+    producer,
+    consumers,
+    independent,
+    coverageProducer,
+    coveragePartitions,
+  ];
+  if (
+    executionJobs.some(
+      (job) =>
+        !(job?.steps ?? []).some((step) =>
+          step.run?.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"'),
+        ),
+    )
+  )
+    throw new Error("Activated container execution must trust only its exact checked-out workspace");
+  for (const job of [diagnostic, producer, consumers]) validateNativeContainer(job ?? {});
+  for (const job of executionJobs) {
+    if (
+      job?.container?.image !== "debian:13" ||
+      job?.container?.options !== "--security-opt seccomp=unconfined"
+    )
+      throw new Error("Native execution must retain its bounded Debian container");
   }
-  if (!execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"')) {
-    throw new Error(
-      "Activated container execution must trust only its exact checked-out workspace",
-    );
-  }
-  for (const id of ["plan", "native", "gate", "diagnostic-transport"]) {
-    const job = workflow.jobs?.[id];
+
+  for (const id of [
+    "diagnostic-transport",
+    "plan",
+    "diagnostic-native",
+    "product-producer",
+    "product-consumers",
+    "independent-native",
+    "coverage-producer",
+    "coverage-partitions",
+    "core-aggregate",
+    "coverage-aggregate",
+    "gate",
+  ]) {
+    const job = jobs[id];
     if (!job || job["continue-on-error"])
       throw new Error(`Missing or failure-normalizing native job ${id}`);
     for (const step of job.steps ?? []) {
@@ -202,9 +341,8 @@ export function validateNativeGate(text) {
       if (
         step.uses?.startsWith("actions/upload-artifact@") &&
         (step.with?.["if-no-files-found"] !== "error" || !(step.with?.["retention-days"] <= 7))
-      ) {
+      )
         throw new Error("Mandatory native evidence must fail closed with bounded retention");
-      }
     }
   }
 }
@@ -216,7 +354,7 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
   const call = release.jobs?.build;
   const install = release.jobs?.install;
   const archive =
-    native.jobs?.native?.steps?.filter(
+    native.jobs?.["product-producer"]?.steps?.filter(
       (step) =>
         step.with?.name === "objc3c-linux-sdk" && step.uses?.startsWith("actions/upload-artifact@"),
     ) ?? [];
@@ -233,7 +371,7 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     JSON.stringify(install?.needs?.toSorted()) !==
       JSON.stringify(["build", "implementation-analysis"]) ||
     archive.length !== 1 ||
-    archive[0].if !== "success() && matrix.shard == 'core' && !inputs.diagnostic_core_only" ||
+    archive[0].if ||
     !(install.steps ?? []).some(
       (step) =>
         step.uses?.startsWith("actions/download-artifact@") &&

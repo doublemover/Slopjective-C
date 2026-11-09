@@ -194,13 +194,14 @@ for (const fault of [
       owner.on.workflow_dispatch.inputs.diagnostic_core_only.default = true;
     if (fault === "hidden partial scope") delete owner["run-name"];
     if (fault === "partial default matrix")
-      owner.jobs.native.strategy.matrix.shard = "${{ fromJSON('[\"core\"]') }}";
+      owner.jobs["coverage-partitions"].strategy.matrix.partition = [0];
     if (fault === "partial release input")
       owner.on.workflow_call = { inputs: { diagnostic_core_only: { type: "boolean" } } };
     if (fault === "partial release caller") caller.jobs.build.with = { diagnostic_core_only: true };
     if (fault === "partial SDK publication")
-      owner.jobs.native.steps.find((step) => step.with?.name === "objc3c-linux-sdk").if =
-        "success() && matrix.shard == 'core'";
+      owner.jobs["product-producer"].steps.find(
+        (step) => step.with?.name === "objc3c-linux-sdk",
+      ).if = "success()";
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
 }
@@ -221,8 +222,9 @@ for (const fault of [
     if (fault === "hidden owner failure") caller.jobs.build["continue-on-error"] = true;
     if (fault === "missing native gate") delete owner.on.workflow_call;
     if (fault === "failed archive")
-      owner.jobs.native.steps.find((step) => step.with?.name === "objc3c-linux-sdk").if =
-        "always()";
+      owner.jobs["product-producer"].steps.find(
+        (step) => step.with?.name === "objc3c-linux-sdk",
+      ).if = "always()";
     if (fault === "older source blocks repaired source")
       owner.concurrency.group = owner.concurrency.group.replace("-${{ github.sha }}", "");
     if (fault === "discard active source") owner.concurrency["cancel-in-progress"] = true;
@@ -233,7 +235,7 @@ for (const fault of ["compiler overlaps transport", "implicit transport", "unbou
   test(`artifact transport rejects ${fault}`, () => {
     const owner = yaml.load(native);
     if (fault === "compiler overlaps transport")
-      owner.jobs.native.if = "needs.plan.outputs.native == 'true'";
+      owner.jobs["product-producer"].if = "needs.plan.outputs.native == 'true'";
     if (fault === "implicit transport") owner.jobs["diagnostic-transport"].if = "always()";
     if (fault === "unbounded transport")
       owner.jobs["diagnostic-transport"]["timeout-minutes"] = 360;
@@ -285,7 +287,7 @@ for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of
 test("native containers admit TSan personality and debugger process controls", async () => {
   const llvm = await readFile(new URL("../workflows/llvm-assurance.yml", import.meta.url), "utf8");
   for (const [text, name] of [
-    [native, "native"],
+    [native, "diagnostic-native"],
     [workflows["adaptive-closeout.yml"], "compiler-closeout"],
     [llvm, "llvm-assurance"],
   ]) {
@@ -310,7 +312,11 @@ for (const [name, before, after] of [
   ],
   ["automatic expensive PR", "on:\n", "on:\n  pull_request:\n"],
   ["privileged PR trigger", "on:\n", "on:\n  pull_request_target:\n"],
-  ["missing dependency", "    needs: [plan, native]", "    needs: [plan]"],
+  [
+    "missing dependency",
+    "    needs: [plan, product-producer, product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]",
+    "    needs: [plan, product-producer]",
+  ],
   ["missing artifact normalized", "if-no-files-found: error", "if-no-files-found: ignore"],
   [
     "missing activated checkout trust",
@@ -319,7 +325,7 @@ for (const [name, before, after] of [
   ],
   ["cancelled sibling shard", "      fail-fast: false", "      fail-fast: true"],
   ["unsharded verification", "verify --sharded", "verify"],
-  ["unpartitioned execution", '--shard "$NATIVE_SHARD"', ""],
+  ["unpartitioned execution", '--index "$COVERAGE_PARTITION"', ""],
   ["overwriting merged receipts", "merge-multiple: true", "merge-multiple: false"],
   ["floating action", "@3d3c42e5aac5ba805825da76410c181273ba90b1", "@main"],
 ]) {
