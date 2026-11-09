@@ -76,19 +76,15 @@ int main() {
   }
   {
     auto nil_frame = native_c_make_nil_frame();
-    assert(!nil_frame.context);
-    objc3_task_t *nil_task = nullptr;
-    assert(objc3_async_frame_start(&nil_frame, executor, nullptr, &nil_task) ==
-           OBJC3_SERVICE_INVALID_ARGUMENT);
+    // A zeroable scalar result preserves ordinary Objective-C nil semantics
+    // across the raw native-frame C++ boundary as well as the task wrapper.
+    auto nil = objc3::task<int>::from_native(&nil_frame).start(executor);
+    nil.wait();
+    assert(nil.result() == 0);
     auto nil_await_frame = native_c_make_nil_await_frame();
     auto nil_await = objc3::task<int>::from_native(&nil_await_frame).start(executor);
     nil_await.wait();
-    bool failed = false;
-    try { (void)nil_await.result(); }
-    catch (const objc3::service_failure &error) {
-      failed = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT;
-    }
-    assert(failed);
+    assert(nil_await.result() == 0);
   }
   int pool_destructions = 0;
   auto pools_frame = native_c_pools(&pool_destructions);

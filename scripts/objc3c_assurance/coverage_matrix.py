@@ -12,10 +12,11 @@ import sys
 from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.build import build_foundation
 from scripts.objc3c_toolchain.compiler_source_coverage import qualify as compiler_coverage
-from scripts.objc3c_toolchain.core import build_plans
+from scripts.objc3c_toolchain.core import build_plans, verify_development
 from scripts.objc3c_toolchain.coverage_controls import qualify as coverage_controls
 from scripts.objc3c_toolchain.semantic_build_costs import snapshot
-from scripts.objc3c_toolchain.source_coverage import qualify as first_party_coverage
+from scripts.objc3c_toolchain.source_coverage import (
+    qualify as first_party_coverage, validate_foundation_identity)
 from .emitter_shards import emitter_partition
 from .evidence import MAX_BYTES, SCHEMA, aggregate, artifact, junit, native_files, suite_results
 from .plan import from_checkout, selected_suites, validate
@@ -77,21 +78,48 @@ def produce(repo: Path, plan: dict, output: Path, bundle: Path) -> dict:
         raise ValueError('coverage producer controls or compiler denominator did not pass')
 
     stage = Path(configured['paths']['stage']).resolve(strict=True)
-    build_receipt = Path(configured['paths']['build']).resolve(strict=True) / 'foundation-build-report.json'
+    build = Path(configured['paths']['build']).resolve(strict=True)
+    source_root = Path(configured['paths']['source']).resolve(strict=True)
+    build_receipt = build / 'foundation-build-report.json'
+    portable_inputs = [
+        build / 'bin/llvm-tblgen',
+        source_root / 'clang/tools/clang-scan-deps/ClangScanDeps.cpp',
+        source_root / 'clang/tools/clang-scan-deps/Opts.td',
+        source_root / 'llvm/include/llvm/Option/OptParser.td',
+    ]
+    for path in portable_inputs:
+        path.resolve(strict=True)
+        if not path.is_file() or path.is_symlink():
+            raise ValueError('coverage profile portable build input is not a regular file')
     relative_stage = stage.relative_to(repo)
     relative_receipt = build_receipt.relative_to(repo)
+    relative_inputs = [path.relative_to(repo) for path in portable_inputs]
     bundle.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(['tar', '-I', 'zstd -T2 -3', '-cf', str(bundle), '-C', str(repo),
-                    str(relative_stage), str(relative_receipt)], check=True)
+                    str(relative_stage), str(relative_receipt),
+                    *map(str, relative_inputs)], check=True)
+    source = verify_development(repo)
+    foundation_identity = {
+        'schema': 'objc3c.portable-foundation-identity.v1',
+        'profile': PROFILE,
+        'source_build_id': configured['source_build_id'],
+        'build_config_digest': configured['build_config_digest'],
+        'upstream_commit': source['upstream_commit'],
+        'patch_digest': source['patch_digest'],
+        'paths': configured['paths'],
+        'instrumentation': configured['instrumentation'],
+    }
     report = {'schema': 'objc3c.coverage-profile-producer.v1', 'status': 'PASS',
               'revision': plan['revision'], 'plan_sha256': plan['sha256'],
               'source_build_id': configured['source_build_id'],
               'build_config_digest': configured['build_config_digest'],
               'foundation_plan': configured,
+              'foundation_identity': foundation_identity,
               'profile': PROFILE, 'partitions': PARTITIONS,
               'bundle': {'path': str(bundle), 'sha256': digest(bundle),
                          'bytes': bundle.stat().st_size,
-                         'members': [str(relative_stage), str(relative_receipt)]},
+                         'members': [str(relative_stage), str(relative_receipt),
+                                     *map(str, relative_inputs)]},
               'foundation_source_identity': foundation['source_identity'],
               'compiler_suites': len(compiler['suites']),
               'controls': len(controls['controls']), 'merge_regressions': 4}
@@ -106,6 +134,7 @@ def restore(repo: Path, plan: dict, producer: Path, bundle: Path) -> dict:
     bundle = bundle.resolve(strict=True)
     report = json.loads(producer.read_text())
     configured = report.get('foundation_plan', {})
+    identity = report.get('foundation_identity')
     if (report.get('schema') != 'objc3c.coverage-profile-producer.v1' or
             report.get('status') != 'PASS' or report.get('revision') != plan['revision'] or
             report.get('plan_sha256') != plan['sha256'] or report.get('profile') != PROFILE or
@@ -115,6 +144,7 @@ def restore(repo: Path, plan: dict, producer: Path, bundle: Path) -> dict:
             report.get('bundle', {}).get('sha256') != digest(bundle) or
             report['bundle'].get('bytes') != bundle.stat().st_size):
         raise ValueError('coverage profile bundle is stale, substituted or incomplete')
+    validate_foundation_identity(repo, configured, identity)
     stage = Path(configured['paths']['stage'])
     receipt = Path(configured['paths']['build']) / 'foundation-build-report.json'
     if stage.exists() or receipt.exists():
@@ -138,7 +168,8 @@ def run_partition(repo: Path, plan: dict, producer: Path, bundle: Path,
     profile = restore(repo, plan, producer, bundle)
     result = first_party_coverage(repo, output, jobs=2, partition_index=index,
                                   partition_count=PARTITIONS,
-                                  foundation_plan=profile['foundation_plan'])
+                                  foundation_plan=profile['foundation_plan'],
+                                  foundation_identity=profile['foundation_identity'])
     result['profile_bundle'] = {'sha256': profile['bundle']['sha256'],
                                 'source_build_id': profile['source_build_id'],
                                 'build_config_digest': profile['build_config_digest']}

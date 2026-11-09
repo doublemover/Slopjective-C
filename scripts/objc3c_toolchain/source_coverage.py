@@ -206,8 +206,25 @@ def single_profile_binary_id(text: str) -> str:
     return next(iter(values))
 
 
+def validate_foundation_identity(repo, plan, identity):
+    manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
+    if (not isinstance(identity, dict) or
+            identity.get('schema') != 'objc3c.portable-foundation-identity.v1' or
+            identity.get('profile') != 'compiler-source-coverage' or
+            identity.get('source_build_id') != plan.get('source_build_id') or
+            identity.get('build_config_digest') != plan.get('build_config_digest') or
+            identity.get('paths') != plan.get('paths') or
+            identity.get('instrumentation') != plan.get('instrumentation') or
+            identity.get('upstream_commit') != manifest['upstream']['commit'] or
+            not isinstance(identity.get('patch_digest'), str) or
+            not re.fullmatch('[0-9a-f]{64}', identity['patch_digest'])):
+        raise ValueError('portable coverage foundation identity is stale or incomplete')
+    return identity
+
+
 def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
-            partition_index=0, partition_count=1, foundation_plan=None):
+            partition_index=0, partition_count=1, foundation_plan=None,
+            foundation_identity=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     if (output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4) or
             type(partition_count) is not int or partition_count not in (1, 2, 4, 8) or
@@ -229,6 +246,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
             any(not Path(paths[name]).resolve().is_relative_to(repo / 'out')
                 for name in ('build', 'stage'))):
         raise ValueError('source coverage foundation plan is missing or escaped')
+    if foundation_identity is not None:
+        foundation_identity = validate_foundation_identity(repo, plan, foundation_identity)
     bootstrap, stage = Path(plan['host_environment']['bootstrap_root']), Path(plan['paths']['stage'])
     resource, runtime = profile_runtime(bootstrap, plan['host_environment']['target_triple'])
     completed = json.loads((Path(plan['paths']['build']) / 'foundation-build-report.json').read_text())
@@ -243,6 +262,10 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
     selected_catalogue, catalogue_sha256 = partition_catalogue(
         policy, partition_index, partition_count)
     output.mkdir(parents=True);(output / 'logs').mkdir()
+    identity_path = None
+    if foundation_identity is not None:
+        identity_path = output / 'foundation-identity.json'
+        write_json(identity_path, foundation_identity)
     # Linked frontend witnesses embed large instrumented Clang archives. Keep
     # one executable resident and all ephemeral build products on /tmp.
     reused = None
@@ -299,6 +322,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
     for path in [Path(__file__), policy_path, *sorted((repo / 'native/objc3c').rglob('*.cmake')),
                  *sorted((repo / 'native/objc3c').rglob('CMakeLists.txt')), compiler, *tools.values(), runtime]:
         frozen[str(path)] = digest(path)
+    if identity_path is not None:
+        frozen[str(identity_path)] = digest(identity_path)
     def save():
         report['seconds'] = round(time.monotonic()-started, 6)
         write_json(output / 'qualification.json', report)
@@ -371,6 +396,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
                 configure += ['-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
                               '-DOBJC3_LIBOBJC2_BUILD_DIR='+dependency['root'],
                               '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE=compiler-source-coverage']
+                if identity_path is not None:
+                    configure.append('-DOBJC3C_FOUNDATION_IDENTITY_FILE='+str(identity_path))
             run(component+'-configure', configure)
             discovery = json.loads(run(component+'-discovery', ['ctest', '--test-dir', build, '--show-only=json-v1']))
             cases = {row['name']: row for row in discovery['tests']}

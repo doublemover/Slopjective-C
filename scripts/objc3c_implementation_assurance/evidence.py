@@ -296,8 +296,11 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     if (indices != set(range(count)) or len(signatures)!=1 or
             len(results)!=len(set(results)) or set(results)!=set(variants)):
         raise ValueError('implementation partitions do not cover the complete selected inventory once')
-    if total > MAX_BYTES:
-        raise ValueError('combined implementation partition evidence exceeds its artifact budget')
+    # Every independently uploaded partition is already bounded above. The
+    # terminal verifier reads all eight retained owners and therefore admits
+    # their aggregate budget rather than applying one partition's cap twice.
+    if total > MAX_BYTES * count:
+        raise ValueError('combined implementation partition evidence exceeds its matrix budget')
     return {'status':'PASS', 'classification':plan['selection'], 'revision':plan['revision'],
             'partitions':count, 'analyzed_variants':len(results), 'artifact_bytes':total,
             'inventory_sha256':hashlib.sha256(json.dumps(logical,sort_keys=True).encode()).hexdigest()}

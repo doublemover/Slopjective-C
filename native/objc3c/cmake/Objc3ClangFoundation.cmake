@@ -15,30 +15,53 @@ if (NOT _objc3_llvm_within_sdk OR NOT _objc3_clang_within_sdk)
 endif()
 get_filename_component(_objc3_repo "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-execute_process(
-  COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain verify-development
-  WORKING_DIRECTORY "${_objc3_repo}"
-  RESULT_VARIABLE _objc3_verify_exit
-  OUTPUT_VARIABLE _objc3_source_identity
-  ERROR_VARIABLE _objc3_verify_error)
-if (NOT _objc3_verify_exit EQUAL 0)
-  message(FATAL_ERROR "Clang source seal rejected: ${_objc3_verify_error}")
+if(OBJC3C_FOUNDATION_IDENTITY_FILE)
+  file(REAL_PATH "${OBJC3C_FOUNDATION_IDENTITY_FILE}" _objc3_identity_file)
+  file(REAL_PATH "${_objc3_repo}/out" _objc3_output_root)
+  cmake_path(IS_PREFIX _objc3_output_root "${_objc3_identity_file}" NORMALIZE
+    _objc3_identity_owned)
+  if(NOT _objc3_identity_owned OR NOT EXISTS "${_objc3_identity_file}")
+    message(FATAL_ERROR "Portable Clang identity must be a retained repository output")
+  endif()
+  file(READ "${_objc3_identity_file}" _objc3_source_identity)
+  string(JSON _objc3_identity_schema GET "${_objc3_source_identity}" schema)
+  string(JSON _objc3_identity_profile GET "${_objc3_source_identity}" profile)
+  if(NOT _objc3_identity_schema STREQUAL "objc3c.portable-foundation-identity.v1" OR
+      NOT _objc3_identity_profile STREQUAL "compiler-source-coverage" OR
+      NOT "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}" STREQUAL "${_objc3_identity_profile}")
+    message(FATAL_ERROR "Portable Clang identity is outside the coverage consumer contract")
+  endif()
+else()
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain verify-development
+    WORKING_DIRECTORY "${_objc3_repo}"
+    RESULT_VARIABLE _objc3_verify_exit
+    OUTPUT_VARIABLE _objc3_source_identity
+    ERROR_VARIABLE _objc3_verify_error)
+  if (NOT _objc3_verify_exit EQUAL 0)
+    message(FATAL_ERROR "Clang source seal rejected: ${_objc3_verify_error}")
+  endif()
 endif()
 string(JSON OBJC3C_FOUNDATION_PATCH_DIGEST GET "${_objc3_source_identity}" patch_digest)
 string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_source_identity}" build_config_digest)
 if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
-  execute_process(
-    COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain build-plan
-      --repo "${_objc3_repo}" --host linux-x86_64 configure
-      --instrumentation-profile "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}"
-    WORKING_DIRECTORY "${_objc3_repo}"
-    RESULT_VARIABLE _objc3_profile_exit OUTPUT_VARIABLE _objc3_profile
-    ERROR_VARIABLE _objc3_profile_error)
-  if(NOT _objc3_profile_exit EQUAL 0)
-    message(FATAL_ERROR "Compiler instrumentation profile rejected: ${_objc3_profile_error}")
+  if(OBJC3C_FOUNDATION_IDENTITY_FILE)
+    set(_objc3_profile_kind source-coverage)
+    set(_objc3_profile "${_objc3_source_identity}")
+  else()
+    execute_process(
+      COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain build-plan
+        --repo "${_objc3_repo}" --host linux-x86_64 configure
+        --instrumentation-profile "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}"
+      WORKING_DIRECTORY "${_objc3_repo}"
+      RESULT_VARIABLE _objc3_profile_exit OUTPUT_VARIABLE _objc3_profile
+      ERROR_VARIABLE _objc3_profile_error)
+    if(NOT _objc3_profile_exit EQUAL 0)
+      message(FATAL_ERROR "Compiler instrumentation profile rejected: ${_objc3_profile_error}")
+    endif()
+    string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_profile}" build_config_digest)
+    string(JSON _objc3_profile_kind GET "${_objc3_profile}" instrumentation kind)
   endif()
-  string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_profile}" build_config_digest)
-  string(JSON _objc3_profile_kind GET "${_objc3_profile}" instrumentation kind)
   if(_objc3_profile_kind STREQUAL "sanitizer" OR _objc3_profile_kind STREQUAL "fuzzer")
     string(JSON _objc3_profile_sanitizer GET "${_objc3_profile}" instrumentation facade_sanitizer)
     if(NOT _objc3_profile_sanitizer STREQUAL "address,undefined")

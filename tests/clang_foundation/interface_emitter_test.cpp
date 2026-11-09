@@ -4082,6 +4082,14 @@ namespace NativeStandard {
     assert(first.source_bytes.find("#include <vector>")!=std::string::npos);
     auto replay=emit(first.source_bytes,"standard-library-replay.mm");
     assert(replay.success && replay.source_bytes==first.source_bytes && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto focused=emit("#include <array>\n#include <vector>\nnamespace NativeStandard {std::vector<int> values();}",
+                      "focused-standard-library-provider.mm");
+    assert(focused.success);
+    assert(focused.source_bytes.find("#include <vector>")!=std::string::npos);
+    assert(focused.source_bytes.find("#include <array>")!=std::string::npos);
+    auto focused_replay=emit(focused.source_bytes,"focused-standard-library-replay.mm");
+    assert(focused_replay.success && focused_replay.source_bytes==focused.source_bytes &&
+           focused_replay.identity.semantic_fingerprint==focused.identity.semantic_fingerprint);
     if(mode==0 && std::string(standard)=="c++20") {
     auto relocated=emit("\n\n"+includes+declarations,"relocated-standard-library.mm");
     assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
@@ -4102,6 +4110,11 @@ namespace NativeStandard {
     assert(owner!=decoded->declarations.end());
     std::vector<std::string> headers;assert(ReadCxxStandardLibraryHeaders(*owner,headers));
     assert(std::find(headers.begin(),headers.end(),"string")!=headers.end());
+    auto header_digest=[&](const std::string &name) {
+      const auto at=owner->canonical_type_identity.find(name+"=");assert(at!=std::string::npos);
+      return owner->canonical_type_identity.substr(at+name.size()+1,64);
+    };
+    assert(header_digest("array")!=header_digest("vector"));
     auto missing=*decoded;std::erase(missing.required_semantics,kCxxStandardLibrarySemantic);
     auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
     for(int corruption=0;corruption!=3;++corruption) {

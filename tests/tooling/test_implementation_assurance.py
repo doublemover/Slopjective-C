@@ -146,6 +146,20 @@ def test_complete_analysis_bundle_is_admitted_after_relocation(tmp_path, periodi
     assert result['status'] == 'PASS' and result['analyzed_variants'] == (3 if periodic else 2)
 
 
+def test_partitioned_analysis_uses_one_evidence_budget_per_worker(tmp_path, monkeypatch):
+    plan, _ = passing_bundle(tmp_path, periodic=True)
+    sizes = []
+    for directory in tmp_path.iterdir():
+        receipt = json.loads((directory / 'result.json').read_text())
+        sizes.append(sum(row['bytes'] for row in receipt['artifacts']))
+    per_worker = max(sizes)
+    assert sum(sizes) > per_worker
+    monkeypatch.setattr(evidence, 'MAX_BYTES', per_worker)
+    result = evidence.aggregate(plan, tmp_path,
+        outcomes={'plan': 'success', 'analysis': 'success'}, tested=REV['tested'])
+    assert result['artifact_bytes'] == sum(sizes) and result['partitions'] == 8
+
+
 @pytest.mark.parametrize('fault', ['cleanup', 'artifact', 'control', 'finding', 'outcome'])
 def test_incomplete_analysis_bundle_fails_closed(tmp_path, fault):
     plan, report = passing_bundle(tmp_path)

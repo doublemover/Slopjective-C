@@ -2345,13 +2345,14 @@ bool ReadInterfaceDeclarationIdentity(
       identity.canonical_type_identity+=";cxx-coroutine-bodies:v1;";
     if(arguments.HasStandardLibraryReferences) {
       if(!arguments.StandardHeaders.valid)return false;
-      std::string contents;for(const auto &entry:arguments.StandardHeaders.contents)
-        contents+=std::to_string(entry.size())+":"+entry;
-      const auto digest=ComputeInterfaceSourceSha256(contents);
       identity.canonical_type_identity+=std::string(kCxxStandardLibraryMarker)+"headers[";
       bool first=true;for(const auto &header:arguments.StandardHeaders.headers) {
+        const auto found=arguments.StandardHeaders.public_contents.find(header);
+        if(found==arguments.StandardHeaders.public_contents.end() || found->second.empty())return false;
+        std::string contents;for(const auto &entry:found->second)
+          contents+=std::to_string(entry.size())+":"+entry;
         if(!first)identity.canonical_type_identity+=",";first=false;
-        identity.canonical_type_identity+=header+"="+digest;
+        identity.canonical_type_identity+=header+"="+ComputeInterfaceSourceSha256(contents);
       }
       identity.canonical_type_identity+="];";
     }

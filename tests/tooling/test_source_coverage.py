@@ -1,5 +1,6 @@
 """Coverage completeness is independent of attractive percentages."""
 import json
+from pathlib import Path
 import shlex
 
 import pytest
@@ -7,10 +8,34 @@ import pytest
 from scripts.objc3c_toolchain.source_coverage import (
     binary_ids, compile_inventory, elf_build_id, profile_runtime, raw_profiles, read_export,
     partition_catalogue, reclaim_indexed_export, reclaim_raw_profiles,
-    single_profile_binary_id, suite_timeout,
+    single_profile_binary_id, suite_timeout, validate_foundation_identity,
 )
 
 FLAGS = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
+
+
+def test_portable_foundation_identity_replaces_only_the_exact_coverage_source_tree():
+    root = Path(__file__).resolve().parents[2]
+    manifest = json.loads((root / 'toolchains/llvm/manifest.json').read_text())
+    plan = {'source_build_id': 'exact-source', 'build_config_digest': 'b' * 64,
+            'paths': {'build': '/owned/build'},
+            'instrumentation': {'kind': 'source-coverage'}}
+    identity = {'schema': 'objc3c.portable-foundation-identity.v1',
+                'profile': 'compiler-source-coverage',
+                'source_build_id': 'exact-source', 'build_config_digest': 'b' * 64,
+                'paths': plan['paths'], 'instrumentation': plan['instrumentation'],
+                'upstream_commit': manifest['upstream']['commit'], 'patch_digest': 'c' * 64}
+    assert validate_foundation_identity(root, plan, identity) == identity
+    for field, value in (('profile', 'compiler-asan-ubsan'),
+                         ('source_build_id', 'other-source'),
+                         ('build_config_digest', 'd' * 64),
+                         ('paths', {'build': '/substituted'}),
+                         ('instrumentation', {'kind': 'sanitizer'}),
+                         ('upstream_commit', 'e' * 40),
+                         ('patch_digest', 'short')):
+        damaged = {**identity, field: value}
+        with pytest.raises(ValueError, match='portable coverage'):
+            validate_foundation_identity(root, plan, damaged)
 
 
 def test_eight_coverage_partitions_form_one_exact_disjoint_catalogue():

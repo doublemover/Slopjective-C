@@ -78,6 +78,7 @@ inline bool IsStandardLibraryDeclaration(const clang::NamedDecl *declaration,
 struct StandardLibraryHeaderManifest {
   std::vector<std::string> headers;
   std::set<std::string> contents;
+  std::map<std::string,std::set<std::string>> public_contents;
   bool valid=true;
 };
 // An emission/import operation observes a stable header prelude. Cache its
@@ -269,13 +270,23 @@ inline StandardLibraryHeaderManifest ReadStandardLibraryHeaderManifest(
     if(over_budget)result.valid=false;
     if(!source.isInSystemHeader(location) || !included)continue;
     const auto name=llvm::sys::path::filename(source.getFilename(location)).str();
-    if(IsStandardLibraryHeaderName(name))headers.insert(name);
+    const bool public_header=IsStandardLibraryHeaderName(name);
+    if(public_header)headers.insert(name);
     bool invalid=false;auto bytes=source.getBufferData(file,&invalid);
     if(invalid){result.valid=false;continue;}
     const auto key=name+"="+ComputeInterfaceSourceSha256(bytes);
     result.contents.insert(key);
-    result.contents.insert(key+"@configuration="+StandardHeaderMacroProfile(
-        const_cast<clang::Preprocessor &>(*preprocessor),file,bytes));
+    const auto configured=key+"@configuration="+StandardHeaderMacroProfile(
+        const_cast<clang::Preprocessor &>(*preprocessor),file,bytes);
+    result.contents.insert(configured);
+    // Declaration identities bind each public header independently. The full
+    // closure remains in `contents` for provider/consumer admission, while
+    // this public inventory makes a canonical reparse independent of extra
+    // internal headers loaded by the producer translation unit or module cache.
+    if(public_header) {
+      result.public_contents[name].insert(key);
+      result.public_contents[name].insert(configured);
+    }
   }
   result.headers.assign(headers.begin(),headers.end());
   result.valid &= !result.headers.empty() && result.headers.size()<=128 && !result.contents.empty();
