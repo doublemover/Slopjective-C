@@ -1043,7 +1043,8 @@
       "callback_static_analysis_diagnostics": 0,
       "old_importer_has_undefined_helpers": true,
       "old_callback_fails_LLVM_verification": true,
-      "old_early_member_naming_fails": true
+      "old_early_member_naming_fails": true,
+      "module_names_nested_named_ancestors": 24
     },
     "fuzz": {
       "run": 42551751093,

@@ -15,7 +15,6 @@
 #include "clang/Basic/SourceManager.h"
 #include "llvm/Support/VirtualFileSystem.h"
 #include <filesystem>
-#include <vector>
 
 namespace objc3::clang_foundation {
 std::string BuildModuleOwnedName(const std::string &module,
@@ -431,13 +430,14 @@ public:
     // Sema reports an inline member before its enclosing record reaches the
     // top-level consumer. Projected unnamed-member identities include their
     // named outer owner's ABI: establish that owner before naming the member.
-    std::vector<clang::CXXRecordDecl *> ancestors;
     for (auto *scope=decl->getDeclContext(); scope; scope=scope->getParent())
       if (auto *parent=llvm::dyn_cast<clang::CXXRecordDecl>(scope);
-          parent && parent->getIdentifier())
-        ancestors.push_back(parent);
-    for (auto i=ancestors.rbegin();i!=ancestors.rend();++i)
-      if (!VisitNamedDecl(*i)) return false;
+          parent && parent->getIdentifier()) {
+        // The nearest named parent recursively establishes the whole chain.
+        // Visiting every ancestor here would repeat that work exponentially.
+        if (!VisitNamedDecl(parent)) return false;
+        break;
+      }
     const auto stable_id = ReadInterfaceDeclarationStableId(decl);
     if (stable_id.empty())
       return Error(decl,

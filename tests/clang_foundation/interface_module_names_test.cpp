@@ -114,7 +114,13 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     int module_global = 42;
     int implementation_helper(void) { return 1; }
   )";
-  if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx)
+  if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
+    // Early callbacks can precede many named owners. Establish each ancestor
+    // once per chain rather than recursively revisiting all its predecessors.
+    for (unsigned depth=0;depth<24;++depth)
+      *r.source_text += "struct DeepOwned"+std::to_string(depth)+" {";
+    *r.source_text += "struct {int get() const {return 42;}} child;";
+    for (unsigned depth=0;depth<24;++depth) *r.source_text += "};";
     *r.source_text += R"(
       int NamedFamily::Value::get() const { return n; }
       int NamedScope::increment(Point point) { return point.n + 1; }
@@ -141,6 +147,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
         return b.get() + derived.get() + copied.n;
       }
     )";
+  }
   if (r.objc3)
     *r.source_text += R"(
     @protocol Root

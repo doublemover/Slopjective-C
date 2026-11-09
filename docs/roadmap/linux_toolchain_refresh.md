@@ -259,3 +259,9 @@ native capability skips; focused callback analysis is clear. Normal installed
 helpers also load with Debian Python 3.13 because zstd is needed only for sanitizer
 evidence. Matching release qualification, product sanitizers and fresh-host
 archive delivery remain required before acceptance.
+
+The module-name regression also includes 24 nested named owners around an inline
+member in an unnamed record. Establishing only the nearest named ancestor keeps
+parent-chain admission proportional to nesting depth rather than recursively
+revisiting every predecessor. The native module-name suite passes all nine
+configurations with that deeper control.
