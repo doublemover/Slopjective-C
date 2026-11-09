@@ -92,10 +92,10 @@ replay; the formerly crashing upstream case passes its original FileCheck with
 the corrected code generator. These reused-library diagnostics are not SDK
 qualification. The complete canonical patch stack and prepared source seal pass.
 
-The current sealed source passes **three frontend fuzz campaigns and six
+The preceding sealed source passes **three frontend fuzz campaigns and six
 controls**, plus **21 LLVM IR/debugger executions, 63 semantic-oracle cases and
 seven controls**. First-party coverage exceeded its 300-second emitter deadline
-after two cases. Coverage now runs the entire emitter catalogue through eight
+after two cases. Coverage now runs the entire emitter catalogue through 32
 bounded shards, each with a 900-second instrumented deadline. The producer and
 terminal verifier require all shards, identical catalogues, disjoint complete
 case execution and one executable identity from retained native JUnit. The
@@ -103,7 +103,7 @@ ordinary core still runs the complete unsplit suite. Coverage profiles now merge
 by binary build identity and module signature across fork and exec, avoiding a
 full shared-compiler profile copy for every process. Real native controls verify
 all child and exec branches survive the merge under the existing storage bound.
-All eight native shard commands pass; the retained JUnit independently verifies
+All 32 native shard commands pass; the retained JUnit independently verifies
 all 164 cases. CTest output retention is explicitly bounded so its default
 1-KiB passed-test truncation cannot erase that proof. Forty-six focused
 coverage/tool controls, 125 export/owner/revision controls and five real native
@@ -159,3 +159,15 @@ or activated.** The [refresh receipt](../support/linux_toolchain_refresh_progres
 records each checkpoint and its scope. New compiler patches continue to reuse
 all eight dependency cache entries; dependency identity does not depend on
 feature commits.
+
+The preceding hosted coverage reached six passing emitter shards, then its
+seventh exceeded 900 seconds after 16 passing cases. The completed repair now
+uses 32 shards from one bounded policy, with at most six of the 164 cases per
+command. CMake registration, explicit native index/count arguments and terminal
+proof share that count. All 32 native commands pass with the unchanged catalogue
+hash; six invalid CLI controls and 136 focused checks pass. Current quick CI
+passes 1,599 tests plus 33 subtests with 111 explicit capability/platform skips.
+This native replay does not replace complete instrumented qualification. The
+running `14a04b4ec` product and analysis campaign continues to collect independent
+results before the final consolidated coverage retry. Its preceding analysis
+partition 0 passes all 52 assigned fresh variants of the 235-variant inventory.

@@ -15,10 +15,12 @@ python3 -B -m scripts.objc3c_toolchain.coverage_controls \
   --output out/source-coverage-reader-controls
 ```
 
-The source-owned policy selects thirteen frontend and eight runtime CTests.
-Eight frontend CTests partition the complete emitter catalogue by ordinal; the
+The source-owned policy selects 37 frontend and eight runtime CTests.
+Thirty-two frontend CTests partition the complete emitter catalogue by ordinal; the
 other five retain their ordinary selection. The uninstrumented core still runs
-the full emitter suite as one program. Actual Ninja commands, compilation
+the full emitter suite as one program. The policy owns the shard count; CMake,
+the native binary arguments and retained-evidence verifier consume it together.
+Changing the count does not require another native CLI implementation change. Actual Ninja commands, compilation
 databases and dependency closures own object provenance. Each object must contain coverage counters/data/mappings and the
 required flags. Every eligible first-party implementation/header file remains
 visible, including uninstantiated headers. Tests have separate profile roots
@@ -40,8 +42,9 @@ than hide discarded code in a percentage. Per-file region/branch/function/line
 summaries and uncovered branch records remain separate for every test/config.
 No whole-language or repository-wide sufficiency percentage is generated.
 
-The historical initial pilot passed its fourteen suites. The expanded
-current-source hosted run remains pending. All eight current native emitter
+The historical initial pilot passed its fourteen suites. The preceding hosted run passed shards 0..5 but shard 6 exceeded 900 seconds
+after 16 passing cases. The 32-shard policy bounds the current catalogue to at
+most six cases per command. Complete instrumented qualification remains pending. All 32 current native emitter
 shards pass local diagnostics and cover all 164 cases. Every shard must retain
 its identical full catalogue, exact disjoint assigned executions/passes and the
 same executable hash. Both producer and terminal verifier recompute this proof

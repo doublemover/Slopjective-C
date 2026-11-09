@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
-  "date": "2026-11-08",
-  "status": "CURRENT_SOURCE_QUALIFICATION_IN_PROGRESS",
+  "date": "2026-11-09",
+  "status": "COVERAGE_REPAIR_PUSHED_COLLECTING_RUNNING_NATIVE_AND_ANALYSIS",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -17,7 +17,7 @@
     "activated_product_sdk": false,
     "patch_digest": "5916ec08b8a2715e43d644055e72c7c28699d0963c6194cec290b6724d035fdb",
     "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51",
-    "implementation_revision": "facffee19e95b7b5771dec2695803ae86dd69482"
+    "implementation_revision": "f8092721796602998956cc584d9d61fccae0ce26"
   },
   "language_contracts": {
     "language": "Objective-C 3.0",
@@ -99,14 +99,14 @@
   ],
   "hosted_validation": {
     "quick_checks": {
-      "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
+      "revision": "f8092721796602998956cc584d9d61fccae0ce26",
       "status": "PASS",
       "runs": [
-        42537219750,
-        42537219682,
-        42537219776
+        42540236496,
+        42540236521,
+        42540236481
       ],
-      "tooling_tests_passed": 1592,
+      "tooling_tests_passed": 1599,
       "tooling_subtests_passed": 33,
       "tooling_explicit_skips": 111
     },
@@ -731,6 +731,41 @@
       "new_core_job": 128904209288,
       "older_coverage_job": 128878820091,
       "both_in_progress_observed": true
+    },
+    "coverage_budget_repair": {
+      "status": "PASS_FOCUSED_NATIVE_REPLAY_HOSTED_RETRY_REQUIRED",
+      "revision": "f8092721796602998956cc584d9d61fccae0ce26",
+      "preceding_run": 42528854066,
+      "preceding_job": 128878820091,
+      "artifact": 13640760679,
+      "artifact_sha256": "5db013487c9af8b5f40c912ff46eac11c7e4e50e380f93e2a9bbbf91fe25760b",
+      "failure": "Shards 0..5 passed; shard 6 exceeded its 900-second CTest deadline after 16 passing cases. No complete instrumented coverage receipt was produced.",
+      "policy_shards": 32,
+      "maximum_cases_per_shard": 6,
+      "deadline_seconds_unchanged": 900,
+      "first_party_selected_suites": 45,
+      "policy_projection": "One bounded policy count drives native CTest registration, explicit index/count arguments and the producer/terminal completeness verifier.",
+      "native_partition": {
+        "shards": 32,
+        "cases": 164,
+        "catalogue_sha256": "db28296b0d3a5ee9a0db76764a132aed5998d8fa55535ff215ac76b5d1fba8ef"
+      },
+      "native_scope": "Changed native CLI with retained f217 diagnostic libraries and canonical printer overlay; not complete instrumented SDK qualification.",
+      "invalid_native_CLI_controls_passed": 6,
+      "focused_controls_passed": 136,
+      "remaining": "Collect running native product/analysis results, then complete the new coverage policy in one consolidated retry."
+    },
+    "preceding_analysis_partition_0": {
+      "run": 42528854066,
+      "job": 128878455810,
+      "revision": "6d7fc2ade1101a5954257966623b5dd310f6167d",
+      "status": "PASS",
+      "assigned_variants": 52,
+      "fresh_native_executions": 52,
+      "complete_inventory_variants": 235,
+      "artifact": 13639818320,
+      "artifact_sha256": "340b03030d9a8f5cc0705c5daae459ff3ad1ddcf60a5634f75f767f37cd75f3c",
+      "scope": "One complete partition; three other partitions and the terminal union gate remain pending."
     }
   },
   "acceptance_policy": "Promote and activate the candidate only after matching compiler/frontend/runtime, implementation-analysis and fresh Debian/Ubuntu archive qualification pass. Historical receipts remain historical.",
