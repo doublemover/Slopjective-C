@@ -16565,7 +16565,7 @@ index 000000000..9dedbba25
 +      Old->getPatternLoc(), Old->getGuardLoc(), Old->getDelimiterLoc());
 +}
 diff --git a/clang/lib/Serialization/ASTReader.cpp b/clang/lib/Serialization/ASTReader.cpp
-index 1a437f3eb..fdfe5b43a 100644
+index 1a437f3eb..ff6255636 100644
 --- a/clang/lib/Serialization/ASTReader.cpp
 +++ b/clang/lib/Serialization/ASTReader.cpp
 @@ -55,6 +55,7 @@
@@ -16643,7 +16643,48 @@ index 1a437f3eb..fdfe5b43a 100644
      case IMPORT: {
        // Validate the AST before processing any imports (otherwise, untangling
        // them can be error-prone and expensive).  A module will have a name and
-@@ -7426,7 +7464,10 @@ QualType ASTReader::readTypeRecord(TypeID ID) {
+@@ -6397,6 +6435,19 @@ Module *ASTReader::getSubmodule(uint32_t GlobalID) {
+     }
+     auto Kind = static_cast<SubmoduleRecordTypes>(MaybeKind.get());
+ 
++    // Attributes belong to a definition. Corrupt offsets or record codes must
++    // not turn a missing definition into a null Module dereference.
++    if ((!CurrentModule && Kind != SUBMODULE_DEFINITION) ||
++        (CurrentModule && Kind == SUBMODULE_DEFINITION) ||
++        ((Kind == SUBMODULE_REQUIRES || Kind == SUBMODULE_LINK_LIBRARY ||
++          Kind == SUBMODULE_CONFLICT || Kind == SUBMODULE_CHILD) &&
++         Record.empty()) ||
++        (Kind == SUBMODULE_EXPORTS && Record.size() % 2 != 0)) {
++      Error(llvm::createStringError(std::errc::illegal_byte_sequence,
++                                   "malformed module definition"));
++      return nullptr;
++    }
++
+     switch (Kind) {
+     case SUBMODULE_END:
+       if (!CurrentModule) {
+@@ -6407,7 +6458,7 @@ Module *ASTReader::getSubmodule(uint32_t GlobalID) {
+       return CurrentModule;
+ 
+     case SUBMODULE_DEFINITION: {
+-      if (Record.size() < 13) {
++      if (Record.size() < 15) {
+         Error(llvm::createStringError(std::errc::illegal_byte_sequence,
+                                       "malformed module definition"));
+         return nullptr;
+@@ -6442,6 +6493,11 @@ Module *ASTReader::getSubmodule(uint32_t GlobalID) {
+ 
+       CurrentModule = std::invoke(CreateModule, &ModMap, Name, ParentModule,
+                                   IsFramework, IsExplicit);
++      if (!CurrentModule) {
++        Error(llvm::createStringError(std::errc::illegal_byte_sequence,
++                                     "malformed module definition"));
++        return nullptr;
++      }
+ 
+       if (!ParentModule) {
+         if ([[maybe_unused]] const ModuleFileKey *CurFileKey =
+@@ -7426,7 +7482,10 @@ QualType ASTReader::readTypeRecord(TypeID ID) {
    }
  
    serialization::AbstractTypeReader<ASTRecordReader> TypeReader(Record);
@@ -16655,7 +16696,7 @@ index 1a437f3eb..fdfe5b43a 100644
  }
  
  namespace clang {
-@@ -7485,6 +7526,31 @@ void TypeLocReader::VisitComplexTypeLoc(ComplexTypeLoc TL) {
+@@ -7485,6 +7544,31 @@ void TypeLocReader::VisitComplexTypeLoc(ComplexTypeLoc TL) {
    TL.setNameLoc(readSourceLocation());
  }
  
@@ -16687,7 +16728,7 @@ index 1a437f3eb..fdfe5b43a 100644
  void TypeLocReader::VisitPointerTypeLoc(PointerTypeLoc TL) {
    TL.setStarLoc(readSourceLocation());
  }
-@@ -7595,6 +7661,10 @@ void TypeLocReader::VisitFunctionTypeLoc(FunctionTypeLoc TL) {
+@@ -7595,6 +7679,10 @@ void TypeLocReader::VisitFunctionTypeLoc(FunctionTypeLoc TL) {
    TL.setRParenLoc(readSourceLocation());
    TL.setExceptionSpecRange(readSourceRange());
    TL.setLocalRangeEnd(readSourceLocation());
@@ -44497,7 +44538,7 @@ index 000000000..1122bbb29
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..bf3cb7c9a
+index 000000000..37ad7af81
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 @@ -0,0 +1,6308 @@
@@ -49598,7 +49639,7 @@ index 000000000..bf3cb7c9a
 +    else if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation)) Count = Message->getNumArgs();
 +    else if (const auto *Construction = dyn_cast<CXXConstructExpr>(Invocation)) Count = Construction->getNumArgs();
 +    auto Invalidate = [&](Storage Target, bool MutatesOwner = false) {
-+      if (IsOwnerSummary && SummaryCaptures.count(Target.first)) {
++      if (IsOwnerSummary && Target.first && SummaryCaptures.count(Target.first)) {
 +        QualType CaptureType = Target.first->getType().getNonReferenceType();
 +        const auto *Record = CaptureType->getAsCXXRecordDecl();
 +        if (CaptureType->isRecordType() && (!Record || !Record->isLambda()))
@@ -62063,7 +62104,7 @@ index 000000000..6d437680a
 +  (void)typed_read_mutable_ref(read);
 +}
 diff --git a/clang/lib/Serialization/MultiOnDiskHashTable.h b/clang/lib/Serialization/MultiOnDiskHashTable.h
-index a179016d4..dbd6f2e4a 100644
+index a179016d4..50ed738e9 100644
 --- a/clang/lib/Serialization/MultiOnDiskHashTable.h
 +++ b/clang/lib/Serialization/MultiOnDiskHashTable.h
 @@ -31,6 +31,7 @@
@@ -62098,6 +62139,22 @@ index a179016d4..dbd6f2e4a 100644
    }
  
  public:
+@@ -217,10 +224,11 @@ public:
+         OnDiskTable::HashTable::readNumBucketsAndEntries(Buckets);
+ 
+     // Register the table.
+-    Table NewTable = new OnDiskTable(File, NumBucketsAndEntries.first,
+-                                     NumBucketsAndEntries.second,
+-                                     Buckets, Ptr, Data, std::move(InfoObj));
+-    Tables.push_back(NewTable.getOpaqueValue());
++    auto NewTable = std::make_unique<OnDiskTable>(
++        File, NumBucketsAndEntries.first, NumBucketsAndEntries.second,
++        Buckets, Ptr, Data, std::move(InfoObj));
++    Tables.push_back(Table(NewTable.get()).getOpaqueValue());
++    (void)NewTable.release();
+   }
+ 
+   /// Find and read the lookup results for \p EKey.
 diff --git a/clang/test/ObjC3/Sema/native-cf-isolation-errors.m b/clang/test/ObjC3/Sema/native-cf-isolation-errors.m
 new file mode 100644
 index 000000000..16250ea15
@@ -69762,3 +69819,143 @@ index 37e1416d5..2c7448eae 100644
  #else
  __attribute__((ns_returns_retained)) id (^invalidBlockRedecl)(void);
  id (^invalidBlockRedecl)(void);
+diff --git a/clang/test/Modules/Inputs/malformed-submodule.py b/clang/test/Modules/Inputs/malformed-submodule.py
+new file mode 100644
+index 000000000..057f292e8
+--- /dev/null
++++ b/clang/test/Modules/Inputs/malformed-submodule.py
+@@ -0,0 +1,112 @@
++"""Change a real PCM definition abbreviation into an attribute, in place.
++
++Keep every bit offset and block length intact so the production lazy module
++reader, rather than an unrelated container check, diagnoses the missing owner.
++"""
++import sys
++from pathlib import Path
++
++
++class Bits:
++    def __init__(self, data):
++        self.data, self.pos = data, 32
++        self.shared = {}
++
++    def read(self, count):
++        value = 0
++        for shift in range(count):
++            value |= ((self.data[self.pos // 8] >> (self.pos % 8)) & 1) << shift
++            self.pos += 1
++        return value
++
++    def vbr(self, width):
++        value, shift = 0, 0
++        while True:
++            chunk = self.read(width)
++            value |= (chunk & ((1 << (width - 1)) - 1)) << shift
++            if chunk < 1 << (width - 1):
++                return value
++            shift += width - 1
++
++    def align(self):
++        self.pos = (self.pos + 31) // 32 * 32
++
++    def operand(self, op):
++        kind, width, _ = op
++        if kind == 0:
++            return width
++        if kind == 1:
++            return self.read(width)
++        if kind == 2:
++            return self.vbr(width)
++        if kind == 4:
++            return self.read(6)
++        raise ValueError('unexpected scalar encoding')
++
++    def block(self, block, width, end):
++        abbrevs = list(self.shared.get(block, []))
++        owner = None
++        while self.pos < end:
++            code = self.read(width)
++            if code == 0:
++                self.align()
++                return False
++            if code == 1:
++                child, child_width = self.vbr(8), self.vbr(4)
++                self.align()
++                words = self.read(32)
++                child_end = self.pos + words * 32
++                if child in (0, 8, 13):
++                    if self.block(child, child_width, child_end):
++                        return True
++                self.pos = child_end
++                continue
++            if code == 2:
++                ops = []
++                for _ in range(self.vbr(5)):
++                    if self.read(1):
++                        offset = self.pos
++                        ops.append((0, self.vbr(8), offset))
++                    else:
++                        kind = self.read(3)
++                        ops.append((kind, self.vbr(5) if kind in (1, 2) else 0, None))
++                if block == 13 and ops[0][:2] == (0, 1):
++                    offset = ops[0][2]
++                    # SUBMODULE_DEFINITION=1 -> SUBMODULE_TOPHEADER=4; both
++                    # fit in the same single VBR8 group.
++                    for shift in range(8):
++                        bit = offset + shift
++                        self.data[bit // 8] &= ~(1 << (bit % 8))
++                        self.data[bit // 8] |= ((4 >> shift) & 1) << (bit % 8)
++                    return True
++                (self.shared.setdefault(owner, []) if block == 0 else abbrevs).append(ops)
++                continue
++            if code == 3:
++                record = self.vbr(6)
++                values = [self.vbr(6) for _ in range(self.vbr(6))]
++            else:
++                values, index = [], 0
++                ops = abbrevs[code - 4]
++                while index < len(ops):
++                    op = ops[index]
++                    if op[0] == 3:
++                        index += 1
++                        values.extend(self.operand(ops[index]) for _ in range(self.vbr(6)))
++                    elif op[0] == 5:
++                        size = self.vbr(6)
++                        self.align()
++                        self.pos += size * 8
++                        self.align()
++                    else:
++                        values.append(self.operand(op))
++                    index += 1
++                record, *values = values
++            if block == 0 and record == 1:
++                owner = values[0]
++        return False
++
++
++data = bytearray(Path(sys.argv[1]).read_bytes())
++assert data[:4] == b'CPCH'
++assert Bits(data).block(None, 2, len(data) * 8), 'missing definition abbreviation'
++Path(sys.argv[2]).write_bytes(data)
+diff --git a/clang/test/Modules/malformed-submodule.m b/clang/test/Modules/malformed-submodule.m
+new file mode 100644
+index 000000000..fa67e0498
+--- /dev/null
++++ b/clang/test/Modules/malformed-submodule.m
+@@ -0,0 +1,16 @@
++// RUN: split-file %s %t
++// RUN: %clang_cc1 -x objective-c -fmodules -emit-module -fmodule-name=Owner %t/module.modulemap -o %t/valid.pcm
++// RUN: %clang_cc1 -x objective-c -fmodules -fmodule-file=%t/valid.pcm -fsyntax-only %t/use.m
++// RUN: %python %S/Inputs/malformed-submodule.py %t/valid.pcm %t/bad.pcm
++// RUN: not %clang_cc1 -x objective-c -fmodules -fmodule-file=%t/bad.pcm -fsyntax-only %t/use.m 2>&1 | FileCheck %s
++// CHECK-NOT: PLEASE submit a bug report
++// CHECK: malformed module definition
++// CHECK-NOT: PLEASE submit a bug report
++
++//--- module.modulemap
++module Owner { header "owner.h" export * }
++//--- owner.h
++int owned(void);
++//--- use.m
++@import Owner;
++int use(void) { return owned(); }

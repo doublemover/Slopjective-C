@@ -72,6 +72,8 @@ PACKETS = {
         "clang/test/AST/ast-print-cconv-preserve.cpp",
         "clang/test/AST/ast-print-method-decl.cpp",
         "clang/test/Modules/odr_hash-blocks.cpp",
+        "clang/test/Modules/malformed-submodule.m",
+        "clang/test/Modules/Inputs/malformed-submodule.py",
         "clang/test/PCH/objc_stmts.m",
         "clang/test/SemaObjC/attr-ns_returns_retained.m",
         "clang/include/clang/AST/StableExpressionProfile.h",

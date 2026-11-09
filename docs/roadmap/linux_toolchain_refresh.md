@@ -112,7 +112,7 @@ sibling failure; prerequisite failures stop dependent work. Sanitizer products c
 private SDK candidate; delivery waits until every required native owner passes.
 
 The candidate now has sealed source identity
-`llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b`. The older full analysis
+`llvmorg-23.1.5-392dfff97d29-d1fa89276152-0fcb354b`. The older full analysis
 reached its six-hour limit after 206/235 variants: 169 passed, thirty timed out
 and seven reported findings. Those seven units are repaired; focused local
 Static Analyzer replay clears all seventeen reported locations. Six modern
@@ -183,3 +183,22 @@ This native replay does not replace complete instrumented qualification. The
 running `14a04b4ec` product and analysis campaign continues to collect independent
 results before the final consolidated coverage retry. Its preceding analysis
 partition 0 passes all 52 assigned fresh variants of the 235-variant inventory.
+
+The preceding complete analysis partition 1 also passes all 50 assigned variants.
+Partition 3 completes all 57, passing 55 and reporting fifteen diagnostics in
+two units. Those reveal a nullable borrowed-capture root, module attributes read
+before their definition, and exception-unsafe lookup-table publication. The
+canonical repairs preserve unknown-memory invalidation, validate module record
+ordering and payload bounds, and retain unique ownership until publication.
+A new native regression changes one definition code in an otherwise valid PCM:
+the retained reader crashes, while the rebuilt reader accepts the valid control
+and diagnoses the mutated input. Fifty-two focused tooling controls pass; the
+new source seal verifies. Focused Static Analyzer replay completes both units
+without diagnostics, clearing all fifteen reported locations. Matched hosted
+analysis remains required.
+
+The `5916ec08b8a2` [LLVM checkpoint](https://github.com/doublemover/Slopjective-C/actions/runs/42536852949)
+now passes all 21 IR/debugger executions, 63 semantic-oracle cases and seven
+controls. This remains evidence for that compiler checkpoint. Independent
+native and analysis owners continue collecting results before a consolidated
+retry containing the reader/capture, fuzzer and 32-shard coverage repairs.

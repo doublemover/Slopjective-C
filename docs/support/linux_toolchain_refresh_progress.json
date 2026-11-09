@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-09",
-  "status": "COVERAGE_REPAIR_PUSHED_COLLECTING_RUNNING_NATIVE_AND_ANALYSIS",
+  "status": "ANALYSIS_READER_AND_CAPTURE_REPAIRS_COLLECTING_RUNNING_NATIVE_RESULTS",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -9,15 +9,15 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
-    "prepared_tree": "af4bb535063d95a62b3201df0a6b92152a411908",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-d1fa89276152-0fcb354b",
+    "prepared_tree": "f3566f424e5585ca54b837346fc8add20ede1788",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
     "activated_product_sdk": false,
-    "patch_digest": "5916ec08b8a2715e43d644055e72c7c28699d0963c6194cec290b6724d035fdb",
+    "patch_digest": "d1fa89276152e3a2fcd6f94c4b5abb7340242bf5c4eb712296f32f1efe2ef089",
     "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51",
-    "implementation_revision": "f8092721796602998956cc584d9d61fccae0ce26"
+    "implementation_revision": "Current canonical analysis-repair batch; matched hosted rebuild pending"
   },
   "language_contracts": {
     "language": "Objective-C 3.0",
@@ -732,6 +732,43 @@
       "native_sanitizer_and_product_evidence_controls_passed": 33,
       "real_pinned_libfuzzer_natural_completion": "PASS",
       "sanitizer_policy": "Existing fail-closed ambient-option replacement, paired ASan/UBSan/LSan/TSan controls and actual-product loader/evidence contracts remain unchanged and pass focused native execution"
+    },
+    "analysis_reader_and_capture_repair": {
+      "preceding_run": 42528854066,
+      "preceding_job": 128878455772,
+      "completed_variants": 57,
+      "passed_variants": 55,
+      "finding_units": 2,
+      "diagnostics": 15,
+      "repairs": [
+        "Guard a nullable borrowed-summary root without skipping unknown-memory owner/target invalidation",
+        "Require a submodule definition before attributes; validate all fifteen definition fields and scalar/export payload cardinality; reject null module creation",
+        "Keep newly decoded on-disk lookup tables under unique ownership until opaque-vector publication succeeds"
+      ],
+      "source_seal": "PASS",
+      "focused_tooling_controls_passed": 52,
+      "focused_static_analyzer": {
+        "SemaObjC3Borrowed.cpp": "PASS; no diagnostics; 96.78 seconds",
+        "ASTReader.cpp_including_MultiOnDiskHashTable.h": "PASS; no diagnostics; 167.02 seconds",
+        "reported_locations_cleared": 15,
+        "scope": "All selected Static Analyzer checks in retained-library local replay; complete matched hosted analysis remains required"
+      },
+      "native_valid_PCM": "PASS",
+      "native_malformed_PCM": "Clean malformed-module diagnostic with rebuilt reader; retained reader crashes on the same one-record mutation",
+      "matched_hosted_analysis": "Pending consolidated retry after independent owners finish collecting results"
+    },
+    "current_completed_LLVM_checkpoint": {
+      "status": "PASS",
+      "run": 42536852949,
+      "job": 128902948174,
+      "revision": "87040229e577625506a31d9caf70bb8d2765026d",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-5916ec08b8a2-0fcb354b",
+      "IR_and_debugger_executions": 21,
+      "semantic_oracle_cases": 63,
+      "controls": 7,
+      "artifact": 13643320355,
+      "artifact_sha256": "2324f9191d610a1eb75899fdd20c12e4e01d36a36dadfa0d93af15bc9d753eb2",
+      "scope": "Passing preceding compiler checkpoint; new reader/capture repairs require their matching hosted campaign"
     },
     "native_release_queue": {
       "revision": "14a04b4ecf5102e3ce08b27b7f85d4992cdac425",
