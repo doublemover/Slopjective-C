@@ -1174,12 +1174,67 @@
         "diagnostics": 0,
         "timed_out": 0,
         "incomplete": 0
+      },
+      {
+        "run": 42551751093,
+        "job": 128948763804,
+        "artifact": 13652565375,
+        "artifact_sha256": "dae49e4770ceff889d20f80944b663b55b515416a32ac116c1449ab5efaf2fe2",
+        "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+        "status": "PASS",
+        "partition": {
+          "count": 4,
+          "index": 3
+        },
+        "inventory_variants": 235,
+        "analyzed_variants": 57,
+        "diagnostics": 0,
+        "timed_out": 0,
+        "incomplete": 0
       }
     ],
-    "analysis_remaining_partitions": [
-      3
-    ],
-    "coverage_status": "running",
-    "replacement_archive_accepted": false
+    "analysis_remaining_partitions": [],
+    "coverage_status": "PASS",
+    "replacement_archive_accepted": false,
+    "analysis_total_passed": 235,
+    "coverage": {
+      "run": 42551751093,
+      "job": 128948758113,
+      "artifact": 13652615529,
+      "artifact_sha256": "01f78fb393a390431773cc7ac41aa24ee02f6f88af886087636b55204649cb57",
+      "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-07b7bed9",
+      "status": "PASS",
+      "emitter_partition": {
+        "cases": 164,
+        "catalogue_sha256": "db28296b0d3a5ee9a0db76764a132aed5998d8fa55535ff215ac76b5d1fba8ef",
+        "shards": 32
+      },
+      "first_party_suites": 45,
+      "compiler_suites": 5,
+      "controls": [
+        {
+          "name": "concurrent-process-profile-isolation",
+          "status": "PASS"
+        },
+        {
+          "name": "zero-hit-and-targeted-recovery-branch",
+          "status": "PASS"
+        },
+        {
+          "name": "wrong-binary",
+          "status": "PASS"
+        },
+        {
+          "name": "missing-profile",
+          "status": "PASS"
+        },
+        {
+          "name": "corrupt-profile",
+          "status": "PASS"
+        }
+      ]
+    }
   }
 }

@@ -240,8 +240,10 @@ All nine other native owners pass, including 572 compiler regressions, 462 nativ
 units, 50 frontend programs and 4,159 upstream cases (220 unsupported and three
 expected failures). Fuzz qualification passes three campaigns and six controls;
 matched LLVM qualification passes 21 IR/debugger executions, 63 oracle cases and
-seven controls. Three analysis partitions pass 178 variants without diagnostics
-or timeouts; the remaining partition and coverage continue collecting evidence.
+seven controls. All four analysis partitions pass the complete 235-variant inventory without
+diagnostics, timeouts or incomplete results. Source coverage passes all 32 emitter
+shards over the unchanged 164-case catalogue, 45 first-party suites, five patched
+compiler suites and five detector controls.
 
 The consolidated repair emits imported private keypath descriptors/accessors,
 establishes named ancestor ABI owners before early inline-member callbacks,
