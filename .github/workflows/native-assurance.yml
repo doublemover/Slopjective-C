@@ -40,6 +40,35 @@ jobs:
           run-id: ${{ inputs.diagnostic_transport_run }}
           github-token: ${{ github.token }}
           path: out/diagnostic-transport/input
+      - name: Report retained failure diagnostics
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          rows = []
+          for path in sorted(Path('out/diagnostic-transport/input').rglob('*.json')):
+              try:
+                  value = json.loads(path.read_text())
+              except (OSError, ValueError):
+                  continue
+              if not isinstance(value, dict):
+                  continue
+              errors = [value.get(name) for name in ('error', 'diagnostic_error')
+                        if value.get(name)]
+              errors.extend(value.get('cleanup_errors') or [])
+              if value.get('status') in ('FAIL', 'failed') or errors:
+                  rows.append((path.as_posix(), value.get('status'), errors))
+          if not rows:
+              rows.append(('<artifact>', 'no-failure-record',
+                           ['retained artifact contains no structured failure record']))
+          for path, status, errors in rows[:20]:
+              message = json.dumps({'path': path, 'status': status, 'errors': errors},
+                                   sort_keys=True)
+              escaped = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::error title=Retained assurance diagnostic::' + escaped)
+          PY
       - name: Retain exact payload hashes and split bounded parts
         env:
           SOURCE_RUN: ${{ inputs.diagnostic_transport_run }}
