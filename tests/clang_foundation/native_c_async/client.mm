@@ -80,12 +80,9 @@ int main() {
     empty.result();
     auto nil_task = nil_frame().start(executor);
     nil_task.wait();
-    bool service = false;
-    try { (void)nil_task.result(); }
-    catch (const objc3::service_failure &error) {
-      service = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT;
-    }
-    assert(service);
+    // An unchecked message returning a zeroable scalar keeps Objective-C nil
+    // semantics even when it is awaited through a native task.
+    assert(nil_task.result() == 0);
     int pool_destructions = 0;
     auto pools = pool_frames(&pool_destructions).start(executor);
     pools.wait();
