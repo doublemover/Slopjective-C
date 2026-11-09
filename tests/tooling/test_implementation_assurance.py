@@ -8,6 +8,7 @@ import pytest
 from scripts.objc3c_implementation_assurance import evidence
 from scripts.objc3c_implementation_assurance.plan import select, validate
 from scripts.objc3c_toolchain.analysis_checkpoint import analysis_argv
+from scripts.objc3c_toolchain.analysis_partition import FULL_PARTITIONS
 from scripts.objc3c_toolchain.implementation_analysis import checker_configuration
 
 REV = dict(head='a'*40, base='b'*40, tested='c'*40)
@@ -39,9 +40,9 @@ def passing_bundle(tmp_path, *, periodic=False, partition=None):
     from scripts.objc3c_toolchain.analysis_partition import partition_spec, partition_rows
     tmp_path.mkdir(parents=True, exist_ok=True)
     if periodic and partition is None:
-        for index in range(4):
+        for index in range(FULL_PARTITIONS):
             plan, _ = passing_bundle(tmp_path / ('part-'+str(index)), periodic=True,
-                                     partition=partition_spec(index,4))
+                                     partition=partition_spec(index,FULL_PARTITIONS))
         return plan, None
     plan = select(['native/objc3c/src/runtime/service.cpp'], **REV, periodic=periodic)
     analysis = tmp_path / 'analysis';analysis.mkdir()

@@ -1,11 +1,11 @@
 """Stable bounded partitions of the complete dependency-selected TU inventory."""
 import re
 
-FULL_PARTITIONS = 4
+FULL_PARTITIONS = 8
 
 
 def partition_spec(index=0, count=1):
-    if (type(index) is not int or type(count) is not int or count not in (1, 2, 4) or
+    if (type(index) is not int or type(count) is not int or count not in (1, 2, 4, 8) or
             not 0 <= index < count):
         raise ValueError('analysis requires a valid bounded partition')
     return {'index': index, 'count': count}

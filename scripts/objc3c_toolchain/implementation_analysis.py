@@ -597,7 +597,7 @@ def main():
     parser.add_argument('--jobs', type=int, choices=(1, 2, 3, 4), default=2)
     parser.add_argument('--resume', type=Path, action='append', default=[])
     parser.add_argument('--partition-index', type=int, default=0)
-    parser.add_argument('--partition-count', type=int, choices=(1, 2, 4), default=1)
+    parser.add_argument('--partition-count', type=int, choices=(1, 2, 4, 8), default=1)
     result = qualify(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'analyzed_variants': result['analyzed_variants']}))
 

@@ -4,18 +4,19 @@ import shutil
 
 import pytest
 
-from scripts.objc3c_toolchain.analysis_partition import partition_rows, partition_spec
+from scripts.objc3c_toolchain.analysis_partition import FULL_PARTITIONS, partition_rows, partition_spec
 from scripts.objc3c_implementation_assurance import evidence
 from test_implementation_assurance import passing_bundle, REV
 
 
 def test_native_variant_partitions_cover_uneven_catalogue_once():
     rows=[{'identity':f'{value:064x}'} for value in range(235)]
-    shards=[partition_rows(rows,partition_spec(index,4)) for index in range(4)]
+    shards=[partition_rows(rows,partition_spec(index,FULL_PARTITIONS))
+            for index in range(FULL_PARTITIONS)]
     assert sorted(row['identity'] for shard in shards for row in shard)==[row['identity'] for row in rows]
-    assert {len(shard) for shard in shards}=={58,59}
+    assert {len(shard) for shard in shards}=={29,30}
     assert partition_rows(rows)==rows
-    for index,count in ((True,4),(-1,4),(4,4),(0,0),(0,8)):
+    for index,count in ((True,4),(-1,4),(4,4),(0,0),(0,16)):
         with pytest.raises(ValueError):partition_spec(index,count)
 
 
@@ -41,7 +42,8 @@ def test_relocated_partition_gate_requires_all_current_inputs_and_every_action(t
     if fault:
         with pytest.raises(ValueError):call()
     else:
-        assert call()['status']=='PASS' and call()['analyzed_variants']==3 and call()['partitions']==4
+        assert (call()['status']=='PASS' and call()['analyzed_variants']==3 and
+                call()['partitions']==FULL_PARTITIONS)
 
 
 def test_compiler_and_native_budgets_follow_actual_source_ownership(tmp_path):

@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        partition: [0, 1, 2, 3]
+        partition: [0, 1, 2, 3, 4, 5, 6, 7]
     needs: plan
     if: needs.plan.outputs.analysis == 'true'
     runs-on: ubuntu-26.04
