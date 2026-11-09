@@ -11700,14 +11700,14 @@ void TestIndependentCxxAndObjCExceptionModes() {
 int main(int argc,char **argv) {
   unsigned shard = 0, shards = 1;
   if(argc==2) {
-    const std::string group=argv[1];
+    llvm::StringRef group=argv[1];
     test::IsolatedCases cases;
     if(group=="standard-library-headers") {cases.Run("TestStandardLibraryHeaderContracts", TestStandardLibraryHeaderContracts);return cases.Finish();}
     if(group=="standard-library-specializations") {cases.Run("TestStandardLibrarySpecializations", TestStandardLibrarySpecializations);return cases.Finish();}
-    shards = 8;
-    for(; shard < shards; ++shard)
-      if(group == "coverage-shard-" + std::to_string(shard))break;
-    if(shard == shards)return 2;
+    if(!group.consume_front("coverage-shard-"))return 2;
+    auto [index, count] = group.split("-of-");
+    if(index.getAsInteger(10, shard) || count.getAsInteger(10, shards) ||
+       shards < 8 || shards > 64 || shard >= shards)return 2;
   }
   if(argc!=1 && argc!=2)return 2;
   test::IsolatedCases cases(shard, shards);

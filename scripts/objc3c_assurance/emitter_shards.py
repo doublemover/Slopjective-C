@@ -1,5 +1,6 @@
 """Verify that bounded coverage shards execute the entire emitter catalogue once."""
 import hashlib
+import json
 from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
@@ -7,7 +8,21 @@ import xml.etree.ElementTree as ET
 from .evidence import junit
 
 CTEST_OUTPUT_LIMIT = 16 * 1024**2
-SHARDS = 8
+
+
+def shard_count(policy: dict) -> int:
+    count = policy.get('emitter_shards')
+    if type(count) is not int or not 8 <= count <= 64:
+        raise ValueError('emitter coverage requires 8..64 bounded shards')
+    selected = [name for name in policy.get('frontend_tests', [])
+                if name.startswith('objc3_interface_emitter_coverage_')]
+    if selected != [f'objc3_interface_emitter_coverage_{index}' for index in range(count)]:
+        raise ValueError('emitter coverage policy must select every shard exactly once')
+    return count
+
+
+SHARDS = shard_count(json.loads((Path(__file__).resolve().parents[2] /
+    'toolchains/llvm/source-coverage.json').read_text()))
 EMITTER_TESTS = tuple(f'objc3_interface_emitter_coverage_{index}' for index in range(SHARDS))
 
 
