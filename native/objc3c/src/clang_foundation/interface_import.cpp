@@ -367,13 +367,20 @@ public:
   const std::set<const clang::VarDecl *> *ExistingVariables = nullptr;
   std::vector<clang::NamedDecl *> Definitions;
   void Imported(clang::Decl *from, clang::Decl *to) override {
+    const auto *named=llvm::dyn_cast<clang::NamedDecl>(from);
+    // Key-path literals carry private descriptor/accessor definitions. They
+    // are reconstructed in the interface AST and must reach CodeGen together
+    // with imported inline bodies that reference them.
+    const bool keypath_helper=named && named->isImplicit() &&
+        named->getIdentifier() && named->getName().starts_with("__objc3_keypath_");
     auto *variable=llvm::dyn_cast<clang::VarDecl>(to);
     const auto *source_variable=llvm::dyn_cast<clang::VarDecl>(from);
     if (variable && source_variable && !source_variable->getDescribedVarTemplate() &&
         !llvm::isa<clang::VarTemplatePartialSpecializationDecl>(source_variable) &&
         variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
         source_variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
-        variable->hasGlobalStorage() && variable->isInline() &&
+        variable->hasGlobalStorage() && (variable->isInline() ||
+            (keypath_helper && source_variable->getStorageClass()==clang::SC_Static)) &&
         !variable->getDeclContext()->isDependentContext() &&
         !variable->getType()->isDependentType() &&
         !ExistingVariables->count(variable->getCanonicalDecl()))
@@ -385,6 +392,7 @@ public:
         function->doesThisDeclarationHaveABody() &&
         !function->isDependentContext() &&
         (function->isInlined() ||
+         (keypath_helper && source->getStorageClass()==clang::SC_Static) ||
          function->getTemplateSpecializationKind()==clang::TSK_ImplicitInstantiation ||
          function->hasAttr<clang::ObjC3IsolationThunkAttr>()) &&
         !Existing->count(function->getCanonicalDecl()))

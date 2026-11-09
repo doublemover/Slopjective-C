@@ -292,8 +292,9 @@ template <class T, class Promise> struct result_storage {
     __objc3_foreign_adopt = adopt;
   }
   ~result_storage() {
-    if (__objc3_foreign_ops && value)
-      __objc3_foreign_ops->destroy(&*value);
+    if constexpr (__is_pointer(stored_type))
+      if (__objc3_foreign_ops && value)
+        __objc3_foreign_ops->destroy(&*value);
   }
   template <class U> void return_value(U &&result) {
     if constexpr (__is_pointer(stored_type)) {

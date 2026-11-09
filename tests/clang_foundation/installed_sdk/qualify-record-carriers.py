@@ -24,7 +24,7 @@ def qualify(sdk: Path, output: Path) -> dict:
         shutil.copyfile(Path(__file__).parent / name, sources / name)
     report = {'schema': 'objc3c.installed-record-carriers.v1', 'status': 'running',
               'sdk_seal': json.loads((sdk / 'objc3-sdk.json').read_text())['seal_sha256'],
-              'commands': [], 'executions': [], 'rejections': [], 'interfaces': [],
+              'commands': [], 'executions': [], 'rejections': [], 'admissions': [], 'interfaces': [],
               'source_hashes': {name: hashlib.sha256((sources / name).read_bytes()).hexdigest()
                                 for name in names}}
     path = output / 'qualification.json'
@@ -103,9 +103,17 @@ def qualify(sdk: Path, output: Path) -> dict:
         for language in ('objective-c', 'objective-c++'):
             for case in (1, 2, 3, 4, 5):
                 key = language + '-rejected-' + str(case)
+                admitted = case == 3  # Native atomic managed-record properties.
+                obj = output / (key + '.o')
                 run(key, [compiler, *flags(language, 'O0'), '-DCASE=' + str(case),
-                          '-c', 'carrier-record-rejected.m', '-o', output / 'rejected.o'], expected=1)
+                          '-c', 'carrier-record-rejected.m', '-o', obj], expected=0 if admitted else 1)
+                if admitted:
+                    if not obj.is_file() or not obj.read_bytes().startswith(b'\x7fELF'):
+                        raise ValueError(key + ' did not emit its admitted native object')
+                    report['admissions'].append({'language': language, 'case': case})
+                    continue
                 text = (output / (key + '.log')).read_text()
+                if obj.exists(): raise ValueError(key + ' published a rejected object')
                 if 'error:' not in text or any(word in text for word in ('PLEASE submit a bug report', 'Assertion failed')):
                     raise ValueError(key + ' failed without a source diagnostic')
                 report['rejections'].append({'language': language, 'case': case})

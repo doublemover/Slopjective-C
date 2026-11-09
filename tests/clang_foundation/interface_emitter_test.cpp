@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -1792,6 +1793,38 @@ void TestKeyPathSubscriptBodies() {
       assert(emitted.sidecar_json.find("objc3.keypath-subscripts.v1")!=std::string::npos);
       assert(emitted.sidecar_json.find("objc3.keypath-nullable-writes.v1")!=std::string::npos);
       assert(emitted.sidecar_json.find("objc3.keypath-checked-reads.v1")!=std::string::npos);
+      // Parsing a replayed inline body is insufficient: its private literal
+      // descriptors and accessors must also be emitted into the consumer.
+      llvm::SmallString<128> temporary;
+      assert(!llvm::sys::fs::createUniqueDirectory("objc3-keypath-definitions",temporary));
+      const std::filesystem::path root(temporary.str().str());
+      auto cleanup=llvm::scope_exit([&]{std::filesystem::remove_all(root);});
+      const auto header=root/"objc3c/runtime/objc3_keypath.h";
+      std::filesystem::create_directories(header.parent_path());
+      {std::ofstream out(header);out<<RuntimeKeyPathHeaderSource().str();}
+      const auto interface=root/"fixture.indexed.objc3i";
+      {std::ofstream out(interface);out<<emitted.source_bytes;}
+      {std::ofstream out(interface.string()+".json");out<<emitted.sidecar_json;}
+      InterfaceImportInput input;input.source_path=interface.string();input.locked_identity=emitted.identity;
+      CompileRequest request;request.input_path=(root/"consumer.mm").string();
+      request.source_text="int imported_paths(IndexedRoot *root) {return explicit_literal(root)+checked_literal(root);}\n";
+      request.language=BaseLanguage::ObjectiveCxx;request.objc3=true;request.arc=arc;
+      request.objc_runtime="gnustep-2.2";request.target_triple="x86_64-unknown-linux-gnu";
+      request.arguments={std::string("-std=")+standard,"-O0","-I"+root.string(),
+          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      request.imported_interfaces={input};request.emit=EmitKind::LLVM;
+      request.output_path=(root/"consumer.ll").string();
+      const auto compiled=Compile(request);
+      for(const auto &d:compiled.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+      assert(compiled.success);
+      std::ifstream ir_file(request.output_path);
+      const std::string ir((std::istreambuf_iterator<char>(ir_file)),{});
+      assert(ir.find("__objc3_keypath_get")!=std::string::npos);
+      assert(ir.find("__objc3_keypath_descriptor")!=std::string::npos);
+      std::istringstream lines(ir);std::string line;
+      while(std::getline(lines,line))
+        if(line.find("__objc3_keypath_")!=std::string::npos)
+          assert(!line.starts_with("declare ") && line.find(" = external ")==std::string::npos);
       const std::vector<llvm::StringRef> supported={"objc3.typed-keypaths.v1","objc3.keypath-checked-reads.v1",
           "objc3.keypath-subscripts.v1","objc3.keypath-nullable-writes.v1","objc3.canonical-function-effects.v1","objc3.cxx-data-interfaces.v1",
           "objc3.cxx-definitions.v1","objc3.native-ownership-contracts.v1"};

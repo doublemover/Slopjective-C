@@ -28648,10 +28648,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..50332198d
+index 000000000..2283afe00
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1729 @@
+@@ -0,0 +1,1730 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -29268,6 +29268,7 @@ index 000000000..50332198d
 +  CGM.SetInternalFunctionAttributes(GlobalDecl(), F, FI);
 +  CodeGenFunction CGF(CGM);
 +  CGF.StartFunction(GlobalDecl(), Ctx.VoidTy, F, FI, Args);
++  auto Debug = ApplyDebugLocation::CreateArtificial(CGF);
 +  llvm::Value *Frame = CGF.Builder.CreateLoad(
 +      CGF.GetAddrOfLocalVar(Args[Destroy ? 0 : 1]));
 +  llvm::Value *Owner = nullptr;
@@ -37901,3 +37902,23 @@ index 000000000..e994ab7d3
 +// CHECK: call{{.*}} @_Znwm
 +// CHECK-LABEL: define{{.*}} @_Z7destroy
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-c-async-debug-callback.mm b/clang/test/ObjC3/CodeGen/native-c-async-debug-callback.mm
+new file mode 100644
+index 000000000..3bd45b7d1
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-c-async-debug-callback.mm
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -debug-info-kind=standalone -dwarf-version=5 -emit-llvm -o %t %s
++// RUN: FileCheck %s < %t
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -debug-info-kind=standalone -dwarf-version=5 -emit-obj -o %t.o %s
++#include "Inputs/native-c-async-frame.h"
++struct objc3_error;
++inline int __objc3_async_capture_current_exception(objc3_error **) noexcept {
++  return 0;
++}
++extern "C" int debug_frame() __objc3_async_frame { return 42; }
++
++// Generated resume callbacks can call an inlinable native exception hook.
++// Such calls need a location in their artificial callback scope, even at O0.
++// CHECK-LABEL: define internal void @__objc3_c_async_resume
++// CHECK: call{{.*}}__objc3_async_capture_current_exception{{.*}}!dbg

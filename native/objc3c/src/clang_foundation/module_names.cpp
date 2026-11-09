@@ -15,6 +15,7 @@
 #include "clang/Basic/SourceManager.h"
 #include "llvm/Support/VirtualFileSystem.h"
 #include <filesystem>
+#include <vector>
 
 namespace objc3::clang_foundation {
 std::string BuildModuleOwnedName(const std::string &module,
@@ -427,6 +428,16 @@ public:
       return Error(
           decl,
           "a module with owned names cannot define the platform entry point");
+    // Sema reports an inline member before its enclosing record reaches the
+    // top-level consumer. Projected unnamed-member identities include their
+    // named outer owner's ABI: establish that owner before naming the member.
+    std::vector<clang::CXXRecordDecl *> ancestors;
+    for (auto *scope=decl->getDeclContext(); scope; scope=scope->getParent())
+      if (auto *parent=llvm::dyn_cast<clang::CXXRecordDecl>(scope);
+          parent && parent->getIdentifier())
+        ancestors.push_back(parent);
+    for (auto i=ancestors.rbegin();i!=ancestors.rend();++i)
+      if (!VisitNamedDecl(*i)) return false;
     const auto stable_id = ReadInterfaceDeclarationStableId(decl);
     if (stable_id.empty())
       return Error(decl,

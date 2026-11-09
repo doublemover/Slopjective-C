@@ -1,7 +1,7 @@
 {
   "schema": "objc3c.linux-toolchain-refresh.v1",
   "date": "2026-11-09",
-  "status": "SDK_PACKAGE_FIXTURES_AND_ALLOCATION_REPAIRS_READY_FOR_MATCHED_QUALIFICATION",
+  "status": "SDK_FULL_INSTALLED_GATE_REPAIRS_READY_FOR_MATCHED_QUALIFICATION",
   "last_accepted_sdk": {
     "version": "2.62.0",
     "extension_abi_revision": 21,
@@ -9,15 +9,15 @@
   },
   "candidate_sdk": {
     "version": "2.153.0",
-    "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-0fcb354b",
-    "prepared_tree": "170f4d1824b2f0da14b711b361ab03cba940281d",
+    "source_build_id": "llvmorg-23.1.5-392dfff97d29-d002916d9e72-0fcb354b",
+    "prepared_tree": "ecae3c5ac3aed83a93c9f11c4c26a5e479ba80a1",
     "llvm": "23.1.5",
     "llvm_commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
     "matched_archive_accepted": false,
     "activated_product_sdk": false,
-    "patch_digest": "08d925b118b2a694150712edd6ba2baf0c82a7f04b84acd5a6e8d300b04e2d32",
+    "patch_digest": "d002916d9e7284f92fc2783b7ccdd89ae3ee46167222340ffe404a22bd066985",
     "build_config_digest": "0fcb354b0eef54dd93207bf95fdf45495781fba490b357b4d836ea6f1fc33d51",
-    "implementation_revision": "SDK package fixture and allocation-spec repair batch; all previous analysis/fuzzer/coverage repairs included"
+    "implementation_revision": "SDK installed keypath definitions, early projected module ownership, const task storage, callback debug scopes and current admission contracts"
   },
   "language_contracts": {
     "language": "Objective-C 3.0",
@@ -774,7 +774,10 @@
       "focused_tooling_controls_passed": 67,
       "all_sixteen_reported_locations_clear_in_focused_replay": true,
       "source_seal": "PASS",
-      "superseded_early_campaigns": [42547168207, 42547171369],
+      "superseded_early_campaigns": [
+        42547168207,
+        42547171369
+      ],
       "scope": "Complete older inventory collected; fresh exact-source hosted qualification still required"
     },
     "SDK_package_fixture_and_allocation_repair": {
@@ -782,20 +785,48 @@
       "preceding_core_job": 128904209288,
       "artifact": 13643862509,
       "artifact_sha256": "76745a4569b186f9653b8598728472db59ece6fdedafa790d6385a7171cabde0",
-      "preceding_passing_owners": ["foundation", "runtime", "frontend", "installed", "sanitizers", "upstream", "swift-consumer", "semantic-workloads", "runtime-schedules"],
-      "preceding_upstream": {"passed": 4158, "unsupported": 220, "expectedly_failed": 3},
+      "preceding_passing_owners": [
+        "foundation",
+        "runtime",
+        "frontend",
+        "installed",
+        "sanitizers",
+        "upstream",
+        "swift-consumer",
+        "semantic-workloads",
+        "runtime-schedules"
+      ],
+      "preceding_upstream": {
+        "passed": 4158,
+        "unsupported": 220,
+        "expectedly_failed": 3
+      },
       "repairs": [
         "Resolve payload destructor exception specifications before native carrier allocation/deletion admission; guard unresolved specifications in pure and mixed ABI predicates",
         "Require actual object generation for current recursive carrier admissions while preserving genuine exact-diagnostic rejections",
         "Export all three checked keypath helpers and the sixteen C++ template roots used by the typed package consumer",
         "Drain every independent installed SDK gate under the existing worker budget before rejecting any failed candidate"
       ],
-      "recursive_carrier_matrix": {"runtime_executions": 70, "object_generation_admissions": 24, "exact_rejections": 76, "commands": 333},
-      "focused_tooling_with_native_emission_adapter": {"passed": 192, "scope": "Includes all 100 ARC/MRC C++20/C++23 compile controls using rebuilt Sema/ABI objects with retained libraries and the pinned IR backend; not SDK qualification"},
+      "recursive_carrier_matrix": {
+        "runtime_executions": 70,
+        "object_generation_admissions": 24,
+        "exact_rejections": 76,
+        "commands": 333
+      },
+      "focused_tooling_with_native_emission_adapter": {
+        "passed": 192,
+        "scope": "Includes all 100 ARC/MRC C++20/C++23 compile controls using rebuilt Sema/ABI objects with retained libraries and the pinned IR backend; not SDK qualification"
+      },
       "allocation_native_controls_passed": 8,
-      "broader_focused_tooling": {"passed": 328, "capability_skips": 4},
+      "broader_focused_tooling": {
+        "passed": 328,
+        "capability_skips": 4
+      },
       "source_seal": "PASS",
-      "superseded_campaigns": [42547976619, 42547981394],
+      "superseded_campaigns": [
+        42547976619,
+        42547981394
+      ],
       "keypath_public_version": "2.12.0; public macros now agree with the implemented module inventory",
       "stdlib_version_controls_passed": 6,
       "retained_boundary": "Complete matched SDK packaging, product sanitizers and fresh-host archive checks still required"
@@ -932,5 +963,223 @@
       "dependency_keys_unchanged_by_new_compiler_patch": true,
       "observed_utc": "2026-11-08T22:13:26.474672Z"
     }
+  },
+  "SDK_full_installed_gate_repairs": {
+    "qualified_checkpoint": "909ed84269e10706abcd2627b9500933f9a64e7f",
+    "release_run": 42551751093,
+    "LLVM_run": 42551755792,
+    "compiler_patch_digest": "08d925b118b2a694150712edd6ba2baf0c82a7f04b84acd5a6e8d300b04e2d32",
+    "core_artifact": {
+      "id": 13650842537,
+      "sha256": "37fc8859fceb4f485dc52973032902b08c9c17778240c45a846d85b35cc75c9a",
+      "bytes": 59306698
+    },
+    "native_owners_passed": [
+      "foundation",
+      "runtime",
+      "frontend",
+      "installed",
+      "sanitizers",
+      "upstream",
+      "swift-consumer",
+      "semantic-workloads",
+      "runtime-schedules"
+    ],
+    "foundation": {
+      "compiler_regressions_passed": 572,
+      "native_units_passed": 462,
+      "unsupported": 3
+    },
+    "upstream": {
+      "passed": 4159,
+      "unsupported": 220,
+      "expected_failures": 3
+    },
+    "packaging": {
+      "independent_gates": 33,
+      "passed": 26,
+      "failed": 7,
+      "later_gates_not_started": 0,
+      "failed_gates": [
+        "typed_keypath_packages",
+        "native_async",
+        "native_async_packages",
+        "native_features",
+        "record_carriers",
+        "heap_carriers",
+        "cxx_interfaces"
+      ]
+    },
+    "blocked": "Product sanitizer qualification requires a passing private SDK package",
+    "repairs": [
+      "Queue imported private keypath descriptor/accessor definitions for consumer code generation",
+      "Establish named ancestor ABI owners before Sema reports an inline member in an unnamed record",
+      "Instantiate foreign pointer destruction only for pointer task storage, preserving const C++ value results",
+      "Keep generated native frame callbacks in an artificial debug location scope for inlinable exception-hook calls",
+      "Require current positive native object/interface admissions alongside remaining precise rejections",
+      "Load Python zstd only for sanitizer evidence retention/replay; normal installed helpers work with distribution Python"
+    ],
+    "admission_counts": {
+      "record": {
+        "native_objects": 2,
+        "rejections": 8
+      },
+      "heap": {
+        "native_objects": 5,
+        "rejections": 7
+      },
+      "cxx_interfaces": {
+        "interfaces": 8,
+        "rejections": 8
+      }
+    },
+    "focused": {
+      "tooling_passed": 340,
+      "native_capability_skips": 4,
+      "module_names_native_configurations": 9,
+      "keypath_IR_configurations": 4,
+      "async_callback_IR_configurations": 4,
+      "const_task_IR_configurations": 2,
+      "callback_static_analysis_diagnostics": 0,
+      "old_importer_has_undefined_helpers": true,
+      "old_callback_fails_LLVM_verification": true,
+      "old_early_member_naming_fails": true
+    },
+    "fuzz": {
+      "run": 42551751093,
+      "job": 128948758143,
+      "artifact": 13649730391,
+      "artifact_sha256": "ac98aee2a844c542a3b7ce3ee6ba50cf94deb647ba765875e4d478575d927d55",
+      "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-802c019b",
+      "status": "PASS",
+      "campaigns": [
+        {
+          "strategy": "raw-dictionary",
+          "status": "PASS",
+          "executions": 17069
+        },
+        {
+          "strategy": "structured-pair",
+          "status": "PASS",
+          "executions": 12088
+        },
+        {
+          "strategy": "frontend-syntax-sema",
+          "status": "PASS",
+          "executions": 311
+        }
+      ],
+      "controls": [
+        {
+          "name": "mandatory-and-persistent-reset-replay",
+          "status": "PASS"
+        },
+        {
+          "name": "frontend-exact-persistent-reset-replay",
+          "status": "PASS"
+        },
+        {
+          "name": "property-fault-detected-reduced-and-replayed",
+          "status": "PASS",
+          "original_bytes": 934,
+          "reduced_bytes": 861,
+          "stable_replays": 2
+        },
+        {
+          "name": "boundary-fault-detected-reduced-and-replayed",
+          "status": "PASS",
+          "original_bytes": 934,
+          "reduced_bytes": 860,
+          "stable_replays": 2
+        },
+        {
+          "name": "frontend-result-cleanup-fault-detected-reduced-and-replayed",
+          "status": "PASS",
+          "original_bytes": 36,
+          "reduced_bytes": 4,
+          "stable_replays": 2
+        },
+        {
+          "name": "omitted-production-decoder-feedback-rejected",
+          "status": "PASS"
+        }
+      ]
+    },
+    "LLVM": {
+      "run": 42551755792,
+      "job": 128948878061,
+      "artifact": 13650235463,
+      "artifact_sha256": "85d6adc4cc7212862adf7ec5732361410e108b1d6b0734edc3c60799dea46052",
+      "artifact_bytes": 187909307,
+      "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+      "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+      "status": "PASS",
+      "IR_and_debugger_executions": 21,
+      "oracle_cases": 63,
+      "oracle_controls": 7
+    },
+    "analysis_completed": [
+      {
+        "run": 42551751093,
+        "job": 128948763870,
+        "artifact": 13651630749,
+        "artifact_sha256": "5cae28ccf12d03f8edb98fbf317824b220363135c6f168ad79aebacde8ee95f0",
+        "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+        "status": "PASS",
+        "partition": {
+          "count": 4,
+          "index": 0
+        },
+        "inventory_variants": 235,
+        "analyzed_variants": 52,
+        "diagnostics": 0,
+        "timed_out": 0,
+        "incomplete": 0
+      },
+      {
+        "run": 42551751093,
+        "job": 128948763747,
+        "artifact": 13650152527,
+        "artifact_sha256": "e43ad4ae3b38a2811566f6f0549f00fb042956547e6ea08b50f582a6690f1574",
+        "artifact_bytes": 3378694,
+        "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+        "status": "PASS",
+        "partition": {
+          "count": 4,
+          "index": 1
+        },
+        "inventory_variants": 235,
+        "analyzed_variants": 51,
+        "diagnostics": 0,
+        "incomplete": 0,
+        "timed_out": 0
+      },
+      {
+        "run": 42551751093,
+        "job": 128948763839,
+        "artifact": 13651418386,
+        "artifact_sha256": "d746b679872afd091eddc49013006d88bf458da95408237db5b715c34f78a28e",
+        "source": "909ed84269e10706abcd2627b9500933f9a64e7f",
+        "source_build_id": "llvmorg-23.1.5-392dfff97d29-08d925b118b2-49025fa3",
+        "status": "PASS",
+        "partition": {
+          "count": 4,
+          "index": 2
+        },
+        "inventory_variants": 235,
+        "analyzed_variants": 75,
+        "diagnostics": 0,
+        "timed_out": 0,
+        "incomplete": 0
+      }
+    ],
+    "analysis_remaining_partitions": [
+      3
+    ],
+    "coverage_status": "running",
+    "replacement_archive_accepted": false
   }
 }

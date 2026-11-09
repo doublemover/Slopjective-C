@@ -112,7 +112,7 @@ sibling failure; prerequisite failures stop dependent work. Sanitizer products c
 private SDK candidate; delivery waits until every required native owner passes.
 
 The candidate now has sealed source identity
-`llvmorg-23.1.5-392dfff97d29-08d925b118b2-0fcb354b`. The older full analysis
+`llvmorg-23.1.5-392dfff97d29-d002916d9e72-0fcb354b`. The older full analysis
 reached its six-hour limit after 206/235 variants: 169 passed, thirty timed out
 and seven reported findings. Those seven units are repaired; focused local
 Static Analyzer replay clears all seventeen reported locations. Six modern
@@ -233,3 +233,27 @@ eight-shard coverage timeout; it is not a new uncovered failure class.
 The public keypath version macros now agree with the implemented module
 inventory at 2.12.0; six standard-library controls include inventory/header
 version agreement so future module bumps cannot silently leave stale macros.
+
+The complete installed packaging inventory at `909ed8426` now runs all 33
+independent gates: 26 pass and seven expose remaining integration problems.
+All nine other native owners pass, including 572 compiler regressions, 462 native
+units, 50 frontend programs and 4,159 upstream cases (220 unsupported and three
+expected failures). Fuzz qualification passes three campaigns and six controls;
+matched LLVM qualification passes 21 IR/debugger executions, 63 oracle cases and
+seven controls. Three analysis partitions pass 178 variants without diagnostics
+or timeouts; the remaining partition and coverage continue collecting evidence.
+
+The consolidated repair emits imported private keypath descriptors/accessors,
+establishes named ancestor ABI owners before early inline-member callbacks,
+limits foreign task destruction to pointer storage, and gives generated async
+callbacks an artificial debug scope. Installed controls now require seven real
+ELF object admissions and eight published C++ interfaces alongside their
+remaining rejections; exact receipt counts also require those positive controls.
+The repaired native module-name suite passes nine configurations; four imported
+keypath IR configurations, four callback debug controls and two const-result
+coroutine configurations pass. Each compiler/import/naming failure has an old-code
+negative control. A focused selection passes 340 tooling tests with four explicit
+native capability skips; focused callback analysis is clear. Normal installed
+helpers also load with Debian Python 3.13 because zstd is needed only for sanitizer
+evidence. Matching release qualification, product sanitizers and fresh-host
+archive delivery remain required before acceptance.

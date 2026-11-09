@@ -367,9 +367,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         ('installed_nested_calls', 'nested-carrier-calls', {'executions': 9, 'commands': 65, 'forced_failures': 6}),
         ('installed_captured_carriers', 'captured-carriers', {'executions': 9, 'commands': 77, 'forced_failures': 6}),
         ('installed_array_carriers', 'array-carriers', {'executions': 9, 'commands': 77, 'forced_failures': 6, 'rejections': 6}),
-        ('installed_record_carriers', 'record-carriers', {'executions': 17, 'commands': 109, 'rejections': 10}),
-        ('installed_heap_carriers', 'heap-carriers', {'executions': 17, 'commands': 111, 'rejections': 12}),
-        ('installed_cxx_interfaces', 'cpp-interfaces', {'executions': 14, 'commands': 118, 'rejections': 16}),
+        ('installed_record_carriers', 'record-carriers', {'executions': 17, 'commands': 109, 'rejections': 8, 'admissions': 2}),
+        ('installed_heap_carriers', 'heap-carriers', {'executions': 17, 'commands': 111, 'rejections': 7, 'admissions': 5}),
+        ('installed_cxx_interfaces', 'cpp-interfaces', {'executions': 14, 'commands': 118, 'rejections': 8, 'admissions': 8}),
     )
     for key, suite, counts in suites:
         tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),

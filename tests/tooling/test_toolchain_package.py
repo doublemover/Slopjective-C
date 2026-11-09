@@ -151,7 +151,7 @@ def test_release_failure_joins_other_gates_and_preserves_their_evidence(tmp_path
     assert (tmp_path / 'queued.json').read_text() == 'PASS'
 
 
-@pytest.mark.parametrize('damage', ['status', 'seal', 'count', 'command'])
+@pytest.mark.parametrize('damage', ['status', 'seal', 'count', 'admissions', 'command'])
 def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, damage):
     from scripts.objc3c_toolchain.package import _qualify_call_suite
 
@@ -159,6 +159,7 @@ def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, 
     examples = sdk / 'share/objc3c/examples/native'
     examples.mkdir(parents=True)
     evidence = {'status': 'PASS', 'sdk_seal': 'sealed', 'executions': [{}],
+                'admissions': [{}],
                 'commands': [{'exit_code': 0, 'expected_exit_code': 0}]}
     if damage == 'status':
         evidence['status'] = 'FAIL'
@@ -166,6 +167,8 @@ def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, 
         evidence['sdk_seal'] = 'other'
     elif damage == 'count':
         evidence['executions'] = []
+    elif damage == 'admissions':
+        evidence['admissions'] = []
     else:
         evidence['commands'][0]['exit_code'] = 1
     (examples / 'qualify-probe.py').write_text(
@@ -173,4 +176,4 @@ def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, 
         'output = pathlib.Path(sys.argv[sys.argv.index("--output-dir") + 1])\n'
         f'(output / "qualification.json").write_text({json.dumps(evidence)!r})\n')
     with pytest.raises(ValueError, match='receipt is incomplete'):
-        _qualify_call_suite(sdk, tmp_path / 'evidence', 'sealed', 'probe', {'executions': 1})
+        _qualify_call_suite(sdk, tmp_path / 'evidence', 'sealed', 'probe', {'executions': 1, 'admissions': 1})

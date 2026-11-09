@@ -37,6 +37,12 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     #define OWNED_HELPER(name) int name(void) { return 0; }
     OWNED_HELPER(header_helper)
     #ifdef __cplusplus
+    struct EarlyProjectedOwner {
+      struct { int value; int get() const { return value; } } child;
+    };
+    inline int early_projected_value() {
+      return EarlyProjectedOwner{{42}}.child.get();
+    }
     inline int private_initializer() { return 1; }
     template<class T> T private_template(T value) {
       static int local_bias = private_initializer();
