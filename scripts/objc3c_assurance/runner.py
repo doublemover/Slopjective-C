@@ -266,6 +266,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             return result['summaries'] + imports['summaries']
         if name == 'package':
             from scripts.objc3c_toolchain.linux_sdk import build_sdk
+            from scripts.objc3c_toolchain.semantic_build_costs import bounded_installation_receipt
             from .package_evidence import preserve, snapshot
             before = snapshot(repo)
             try:
@@ -275,6 +276,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             write_json(directory / 'release.json', result)
             if result['status'] != 'PASS':
                 raise ValueError('packaging qualification failed')
+            write_json(directory / 'installation-cost.json', bounded_installation_receipt(result))
             shared['release'] = result
             report['product'] = product_identity(Path(result['installed']['prefix']), result)
             return package_execution(result)
@@ -339,8 +341,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             raise ValueError('source revision or selection changed during native execution')
         from scripts.objc3c_toolchain.semantic_build_costs import snapshot
         foundations = foundation_receipts(output, suites)
-        installations = ([output / 'package/release.json']
-                         if (output / 'package/release.json').is_file() else [])
+        installations = ([output / 'package/installation-cost.json']
+                         if (output / 'package/installation-cost.json').is_file() else [])
         if foundations or installations:
             costs = snapshot(foundations=foundations, installations=installations)
             cost_file = output / 'operational-costs.json'

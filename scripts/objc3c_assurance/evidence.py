@@ -377,7 +377,7 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
         raise ValueError('native operational measurements are missing or changed')
     observed = json.loads(cost_file.read_text())
     expected_costs = snapshot(foundations=foundation_receipts(root, suites),
-        installations=[root / 'package/release.json'] if 'package' in expected else [])
+        installations=[root / 'package/installation-cost.json'] if 'package' in expected else [])
     if observed != expected_costs:
         raise ValueError('native operational measurements differ from actual owner receipts')
     total += saved_costs['bytes']

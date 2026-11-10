@@ -45,6 +45,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import json
+          import re
           from pathlib import Path
 
           root = Path('out/diagnostic-transport/input')
@@ -93,9 +94,20 @@ jobs:
                                    sort_keys=True)
               escaped = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print('::error title=Retained assurance diagnostic::' + escaped)
+          receipt_names = {'release.json', 'foundation.json', 'installation-cost.json'}
+          receipts = [{'path': path.as_posix(), 'bytes': path.lstat().st_size,
+                       'symlink': path.is_symlink(), 'regular': path.is_file()}
+                      for path in sorted(root.rglob('*')) if path.name in receipt_names]
+          if receipts:
+              message = json.dumps({'operational_receipts': receipts[:40]}, sort_keys=True)
+              escaped = message[-5000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::notice title=Retained operational receipt inventory::' + escaped)
           for log in failed_logs[:20]:
               lines = [line for line in log.read_text(errors='replace').splitlines() if line.strip()]
-              message = json.dumps({'log': log.as_posix(), 'tail': lines[-30:]}, sort_keys=True)
+              pattern = re.compile(r'(^|[^A-Z])(CASE|PASS|FAIL)([^A-Z]|$)|assert|error:|fatal|signal|sanitizer|timed? ?out', re.I)
+              relevant = [line[:1000] for line in lines if pattern.search(line)]
+              message = json.dumps({'log': log.as_posix(), 'relevant': relevant[-80:],
+                                    'tail': lines[-20:]}, sort_keys=True)
               escaped = message[-5000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print('::error title=Failed native command log::' + escaped)
           PY

@@ -145,6 +145,37 @@ def installation_record(path):
         'cache_scope': 'Existing prefixes still decode and verify the admitted archive; no zero-work reuse claim.'}
 
 
+def bounded_installation_receipt(release: dict) -> dict:
+    """Project the release onto the immutable fields needed for cost evidence.
+
+    A complete SDK release contains the full build and qualification history and
+    can legitimately exceed the receipt reader's bounded-input limit.  Cost
+    aggregation only needs the admitted archive identity and the installer-owned
+    measurement, so retain that exact subset instead of weakening the limit.
+    """
+    if not isinstance(release, dict):
+        raise ValueError('SDK release receipt must be an object')
+    installed = release.get('installed')
+    if not isinstance(installed, dict):
+        raise ValueError('SDK release omitted its installation receipt')
+    cost = installed.get('cost')
+    if not isinstance(cost, dict):
+        raise ValueError('SDK release omitted its installation cost')
+    receipt = {'status': release.get('status'),
+               'archive_sha256': release.get('archive_sha256'),
+               'archive_bytes': release.get('archive_bytes'),
+               'source_build_id': release.get('source_build_id'),
+               'seal_sha256': release.get('seal_sha256'),
+               'installed': installed}
+    # Validate the same cross-field contract without first serializing an
+    # untrusted, potentially unbounded release object.
+    if (receipt['status'] != 'PASS' or installed.get('status') != 'PASS' or
+            any(receipt[key] != cost.get(key) for key in
+                ('archive_sha256', 'archive_bytes', 'source_build_id', 'seal_sha256'))):
+        raise ValueError('SDK release and installation cost identities differ')
+    return receipt
+
+
 def snapshot(*, foundations=(), installations=()):
     foundations, installations = list(foundations), list(installations)
     if not 0 < len(foundations)+len(installations) <= 64:

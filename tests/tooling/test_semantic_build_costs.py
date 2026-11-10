@@ -164,6 +164,31 @@ def test_real_archive_admission_and_existing_prefix_readmission_have_distinct_ph
     assert len(report['groups']) == 2 and all(row['decision'] == 'observations-only-no-performance-pass' for row in report['groups'])
 
 
+def test_large_sdk_release_projects_to_a_bounded_exact_installation_receipt(tmp_path):
+    cost = {'schema': 'objc3c.sdk-install-cost.v1', 'archive_sha256': 'a' * 64,
+            'archive_bytes': 4096, 'source_build_id': 'current-source',
+            'seal_sha256': 'b' * 64,
+            'host': {'system': 'Linux', 'decoder': {'sha256': 'c' * 64}},
+            'prefix_reused': False,
+            'phases_seconds': {name: .1 for name in owner.INSTALL_PHASES},
+            'elapsed_seconds': 1.0}
+    installed = {'status': 'PASS', 'activated': True, 'seal_sha256': cost['seal_sha256'],
+                 'cleanup_warnings': [], 'cost': cost}
+    release = {'status': 'PASS', 'archive_sha256': cost['archive_sha256'],
+               'archive_bytes': cost['archive_bytes'],
+               'source_build_id': cost['source_build_id'],
+               'seal_sha256': cost['seal_sha256'], 'installed': installed,
+               'complete_qualification_history': 'x' * (9 * 1024 * 1024)}
+    receipt = owner.bounded_installation_receipt(release)
+    path = tmp_path / 'installation-cost.json'
+    path.write_text(json.dumps(receipt))
+    assert path.stat().st_size < 8 * 1024**2
+    assert owner.installation_record(path)['context']['archive_sha256'] == 'a' * 64
+    release['archive_sha256'] = 'f' * 64
+    with pytest.raises(ValueError, match='identities differ'):
+        owner.bounded_installation_receipt(release)
+
+
 @pytest.mark.parametrize('fault', ['inactive', 'missing-phase', 'bad-duration', 'wrong-seal', 'wrong-archive', 'false-reuse', 'interval'])
 def test_installation_costs_require_complete_archive_bound_actual_intervals(installation_receipt, fault):
     path, _, report, _ = installation_receipt

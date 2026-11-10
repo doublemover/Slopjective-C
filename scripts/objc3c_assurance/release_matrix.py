@@ -123,7 +123,7 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
 
     ordered = [records[name] for name in expected]
     costs = snapshot(foundations=foundation_receipts(output, expected_suites),
-                     installations=[output / 'package/release.json'])
+                     installations=[output / 'package/installation-cost.json'])
     write_json(output / 'operational-costs.json', costs)
     report = {'schema': SCHEMA, 'status': 'PASS', 'revision': plan['revision'],
               'plan_sha256': plan['sha256'], 'shard': 'core', 'suites': ordered,
