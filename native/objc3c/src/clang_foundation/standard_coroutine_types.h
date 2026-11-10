@@ -24,6 +24,37 @@ inline bool IsStandardCoroutineDeclaration(const clang::NamedDecl *declaration,
     }
   return false;
 }
+
+// Header ownership is deliberately broader than identity ownership. Every
+// declaration physically supplied by <coroutine> must be resolved from the
+// consumer's native header, but only the actual coroutine API should add the
+// cxx-standard-coroutines identity marker. Standard-library implementations
+// may redeclare unrelated generic facilities in this header; libstdc++, for
+// example, forward declares std::hash before hash<coroutine_handle<T>>.
+inline bool IsStandardCoroutineIdentityDeclaration(
+    const clang::NamedDecl *declaration,const clang::ASTContext &context) {
+  if (!IsStandardCoroutineDeclaration(declaration,context)) return false;
+  for (const clang::NamedDecl *owner=declaration;owner;
+       owner=llvm::dyn_cast<clang::NamedDecl>(owner->getDeclContext())) {
+    const auto name=owner->getName();
+    if (name=="coroutine_traits" || name=="coroutine_handle" ||
+        name=="suspend_always" || name=="suspend_never" ||
+        name=="noop_coroutine_promise" || name=="noop_coroutine_handle" ||
+        name=="noop_coroutine" || name.starts_with("__coroutine"))
+      return true;
+    if (name=="hash")
+      if (const auto *hash=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(owner)) {
+        const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(hash);
+        if (!partial)
+          partial=hash->getSpecializedTemplateOrPartial()
+              .dyn_cast<clang::ClassTemplatePartialSpecializationDecl *>();
+        if (partial && IsStandardCoroutineDeclaration(partial,context))
+          return true;
+      }
+    if (llvm::isa<clang::NamespaceDecl>(owner)) break;
+  }
+  return false;
+}
 inline bool IsStandardCoroutineNamespace(const clang::NamespaceDecl *space,
                                          const clang::ASTContext &context) {
   const auto *root=space;
@@ -74,7 +105,7 @@ inline const clang::NamedDecl *CoroutineTraitsReturnOwner(const clang::NamedDecl
 }
 inline const clang::NamedDecl *StandardCoroutineHeaderOwner(const clang::NamedDecl *declaration,
                                                             const clang::ASTContext &context) {
-  if (IsStandardCoroutineDeclaration(declaration,context)) return declaration;
+  if (IsStandardCoroutineIdentityDeclaration(declaration,context)) return declaration;
   for (const auto *current=declaration;current;current=llvm::dyn_cast<clang::NamedDecl>(current->getDeclContext()))
     if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(current)) {
       const auto *pattern=record->getSpecializedTemplate();

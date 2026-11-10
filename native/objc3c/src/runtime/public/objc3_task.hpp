@@ -1014,25 +1014,34 @@ public:
 };
 #endif
 
+template<class Work> struct owned_callable_context {
+  callable_storage<Work> work;
+  objc3_async_frame inner{};
+  explicit owned_callable_context(Work &&value):work(std::move(value)) {}
+  ~owned_callable_context(){(void)objc3_async_frame_dispose(&inner);}
+  static void resume(objc3_task_t *owner,void *opaque) {
+    auto *context=static_cast<owned_callable_context *>(opaque);
+    context->inner.resume(owner,context->inner.context);
+  }
+  static void destroy(void *opaque) noexcept {
+    delete static_cast<owned_callable_context *>(opaque);
+  }
+};
+
+template<class Context> struct owned_callable_context_owner {
+  Context *pointer;
+  explicit owned_callable_context_owner(Context *value):pointer(value) {}
+  owned_callable_context_owner(const owned_callable_context_owner &)=delete;
+  ~owned_callable_context_owner(){delete pointer;}
+  void release() noexcept {pointer=nullptr;}
+};
+
 template<class Task,class Work> Task own_callable_as(Work work) {
   static_assert(std::is_nothrow_destructible_v<Work>,
       "spawned callable destruction must not throw");
-  struct Context {
-    callable_storage<Work> work;
-    objc3_async_frame inner{};
-    explicit Context(Work &&value):work(std::move(value)) {}
-    ~Context(){(void)objc3_async_frame_dispose(&inner);}
-    static void resume(objc3_task_t *owner,void *opaque) {
-      auto *context=static_cast<Context *>(opaque);
-      context->inner.resume(owner,context->inner.context);
-    }
-    static void destroy(void *opaque) noexcept {delete static_cast<Context *>(opaque);}
-  };
+  using Context=owned_callable_context<Work>;
   auto *context=new Context(std::move(work));
-  struct Owner {
-    Context *pointer;
-    ~Owner(){delete pointer;}
-  } owner{context};
+  owned_callable_context_owner<Context> owner(context);
   if constexpr(std::is_same_v<decltype(context->work.get()()),objc3_async_frame>)
     context->inner=context->work.get()();
   else context->inner=std::move(context->work.get()()).release_native();
@@ -1043,7 +1052,7 @@ template<class Task,class Work> Task own_callable_as(Work work) {
   objc3_async_frame frame{sizeof(objc3_async_frame),OBJC3_ASYNC_ABI_VERSION,
       context,Context::resume,Context::destroy,context->inner.result_type};
   auto result=Task::from_native(&frame);
-  owner.pointer=nullptr;
+  owner.release();
   return result;
 }
 }

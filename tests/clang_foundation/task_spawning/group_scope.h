@@ -216,12 +216,23 @@ static void group_scope_witnesses(objc3_executor_t *source) {
         assert(state.completed == 1 && state.exited == 1);
       } else completion = join_completion(source, state.parent);
       assert(state.child_destroyed == 1);
-      if (mode != 4) assert(completion.kind == (mode == 1 ? OBJC3_COMPLETION_ERROR :
-                                (mode == 2 || mode == 6) ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS));
+      if (mode != 4) assert(completion.kind ==
+          ((mode == 1 || mode == 6) ? OBJC3_COMPLETION_ERROR :
+           mode == 2 ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS));
       if (!mode || mode == 5) assert(*(const int *)completion.payload == 42);
       if (mode == 1) {
         assert(objc3_error_payload(completion.error));
         assert(*(void * const *)objc3_error_payload(completion.error) == (__bridge void *)owner);
+      }
+      if (mode == 6) {
+        // An untyped foreign exception has no sound typed payload.  The native
+        // frame boundary reports a service error rather than fabricating task
+        // cancellation or exposing the foreign exception object as Error.
+        objc3_service_status status = OBJC3_SERVICE_OK;
+        assert(completion.error &&
+               objc3_async_error_get_service(completion.error, &status) ==
+                   OBJC3_SERVICE_OK &&
+               status == OBJC3_SERVICE_INVALID_ARGUMENT);
       }
 #if __has_feature(objc_arc)
       if (mode == 3) {

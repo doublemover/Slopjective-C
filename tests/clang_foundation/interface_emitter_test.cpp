@@ -3831,8 +3831,14 @@ void TestUnnamedTemplateProjections() {
 
 
 void TestOpaqueStandardLibrarySpecializations() {
+  llvm::SmallString<256> temporary;
+  assert(!llvm::sys::fs::createUniqueDirectory("objc3-opaque-standard",temporary));
+  const auto root=std::filesystem::path(temporary.c_str());
+  auto cleanup=llvm::scope_exit([&]{std::filesystem::remove_all(root);});
   for(const char *standard:{"c++20","c++23"}) {
-    std::vector<std::string> args={"-xc++",std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    std::vector<std::string> args={"-xobjective-c++",std::string("-std=")+standard,
+        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc",
+        "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     auto emit=[&](const std::string &source,const char *file="opaque-standard.cpp") {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       ast->getDiagnostics().getClient()->BeginSourceFile(ast->getLangOpts(),&ast->getPreprocessor());
@@ -3859,17 +3865,43 @@ void TestOpaqueStandardLibrarySpecializations() {
       }
     )";
     auto first=emit(source);assert(first.success);
+    auto capabilities=SupportedSemanticInterfaceCapabilities();
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,capabilities);assert(decoded);
+    const auto box_hash=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &row){return row.qualified_name=="NativeOpaqueStandard::BoxHash";});
+    assert(box_hash!=decoded->declarations.end());
+    assert(!HasCxxStandardCoroutineIdentity(*box_hash));
+    assert(box_hash->canonical_type_identity.find(
+        ";cxx-namespaces:v1;scope=c:@N@NativeOpaqueStandard:inline=0;")!=std::string::npos);
     auto replay=emit(first.source_bytes,"opaque-standard-replay.cpp");
     assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
     auto moved=emit("\n\n"+source,"moved-opaque-standard.cpp");
     assert(moved.success && moved.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
-    auto capabilities=SupportedSemanticInterfaceCapabilities();
-    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,capabilities);assert(decoded);
     unsigned opaque=0;
     for(const auto &row:decoded->declarations)if(HasCxxIncompleteTemplateIdentity(row)) {
       ++opaque;assert(row.kind=="ClassTemplateSpecialization" || row.kind=="ClassTemplatePartialSpecialization");
     }
     assert(opaque==2);
+    const auto module_root=root/standard;std::filesystem::create_directory(module_root);
+    const auto interface=module_root/(std::string(standard)+".objc3i");
+    {std::ofstream out(interface);out<<first.source_bytes;}
+    {std::ofstream out(interface.string()+".json");out<<first.sidecar_json;}
+    CompileRequest request;
+    request.input_path=(module_root/"consumer.mm").string();
+    request.source_text="#include <coroutine>\n@import fixture.opaque_standard;\n"
+        "NativeOpaqueStandard::BoxHash *consume_box_hash(NativeOpaqueStandard::BoxHash *value){return value;}\n";
+    request.language=BaseLanguage::ObjectiveCxx;request.objc3=true;request.arc=true;
+    request.objc_runtime="gnustep-2.2";request.target_triple="x86_64-unknown-linux-gnu";
+    request.arguments={std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    request.source_directed_imports=true;request.interface_search_paths={module_root.string()};
+    InterfaceModuleRequest module;module.canonical_name=first.identity.canonical_name;
+    module.locked_identity=first.identity;module.initially_visible=false;
+    request.module_imports={module};request.emit=EmitKind::Object;
+    request.output_path=(module_root/"consumer.o").string();
+    auto consumer=Compile(request);
+    if(!consumer.success)std::fprintf(stderr,"OPAQUE STANDARD CONSUMER %s\n",consumer.failure.c_str());
+    for(const auto &d:consumer.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+    assert(consumer.success && std::filesystem::exists(request.output_path));
     assert(emit(first.source_bytes+R"(
       static_assert(!__is_complete_type(NativeOpaqueStandard::Hash));
       static_assert(!__is_complete_type(NativeOpaqueStandard::BoxHash));

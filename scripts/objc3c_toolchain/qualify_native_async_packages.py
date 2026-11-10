@@ -411,10 +411,13 @@ def check_cpp_metadata(metadata):
             'NativeCallableProjections::partial','NativeCallableProjections::stored'}<=projection_names):
         raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeCallableProjections::Callback','NativeCallableProjections::FrameCallback',")
 
-    if not ({row['qualified_name'] for row in effectful_members}=={
+    effectful_member_names={row['qualified_name'] for row in effectful_members}
+    if not (effectful_member_names=={
         'NativeEffectMembers::Family','NativeEffectMembers::Concrete',
-        'NativeCallableProjections::Family','NativeCallableProjections::Concrete'}):
-        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in effectful_members}=={")
+        'NativeCallableProjections::Family','NativeCallableProjections::Concrete',
+        'NativeExplicitStorage::MemberEntries'}):
+        raise ValueError('effectful template-member inventory differs: '+
+                         ', '.join(sorted(effectful_member_names)))
     for name,abi in [('Callback','cxx-task-v1'),('FrameCallback','c-frame-v1'),
                      ('Member','cxx-task-v1'),('callback','cxx-task-v1'),('member','cxx-task-v1')]:
         row=next(row for row in projections if row['qualified_name']=='NativeCallableProjections::'+name)
@@ -425,13 +428,18 @@ def check_cpp_metadata(metadata):
                          ';cxx-effectful-function-templates:v1;' in row.get('canonical_type_identity','')]
     if not ('objc3.cxx-effectful-function-templates.v1' in metadata['required_semantics']):
         raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-effectful-function-templates.v1' in metadata['required_semantics']")
-    if not ({row['qualified_name'] for row in effectful_templates}=={
+    effectful_template_names={row['qualified_name'] for row in effectful_templates}
+    if not (effectful_template_names=={
         'NativeEffectTemplates::task','NativeEffectTemplates::frame',
         'NativeEffectTemplates::checked','NativeEffectTemplates::checked_task',
         'NativeCallableProjections::task','NativeCallableProjections::frame',
         'NativeCallableProjections::provider','NativeCallableProjections::dependent',
-        'NativeCallableProjections::dependent_task'}):
-        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in effectful_templates}=={")
+        'NativeCallableProjections::dependent_task',
+        'NativeExplicitStorage::factory_frame','NativeExplicitStorage::generic',
+        'NativeExplicitStorage::member_generic','NativeExplicitStorage::raw_factory_group',
+        'NativeExplicitStorage::task_generic'}):
+        raise ValueError('effectful function-template inventory differs: '+
+                         ', '.join(sorted(effectful_template_names)))
     closed_patterns=[row for row in metadata['declarations']
                      if ';cxx-closed-parent-patterns:v1;' in row.get('canonical_type_identity','')]
     if not ('objc3.cxx-closed-parent-patterns.v1' in metadata['required_semantics']):
@@ -495,29 +503,43 @@ def check_cpp_metadata(metadata):
         raise ValueError('C++ package lost detached callable owner definitions')
     external_variables=[row for row in metadata['declarations']
                  if ';cxx-variable-specialization-storage:v1;' in row.get('canonical_type_identity','')]
+    external_variable_names={row['qualified_name'] for row in external_variables}
     if ('objc3.cxx-variable-specialization-storage.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in external_variables}!={'native_external_object','native_external_special','native_external_tls','native_zero_special','NativeCallableProjections::stored'}):
-        raise ValueError('C++ package lost explicit specialization storage delivery contracts')
+            external_variable_names!={'native_external_object','native_external_special','native_external_tls','native_zero_special',
+                'NativeCallableProjections::stored','NativeIncompleteTemplates::local',
+                'NativeIncompleteTemplates::selected','NativeIncompleteTemplates::selected_local',
+                'NativeIncompleteTemplates::value'}):
+        raise ValueError('explicit specialization storage inventory differs: '+
+                         ', '.join(sorted(external_variable_names)))
     partial_variables=[row for row in metadata['declarations']
                  if ';cxx-variable-partial-specializations:v1;' in row.get('canonical_type_identity','')]
+    partial_variable_names={row['qualified_name'] for row in partial_variables}
     if ('objc3.cxx-variable-partial-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in partial_variables}!={'native_partial_shared','native_partial_tls','native_partial_count','native_partial_width','native_partial_auto','native_partial_size','native_partial_ordinary','NativeCallableProjections::partial','NativeDeclarationAttributes::partial'}):
-        raise ValueError('C++ package lost partial variable specialization owner contracts')
+            partial_variable_names!={'native_partial_shared','native_partial_tls','native_partial_count','native_partial_width','native_partial_auto','native_partial_size','native_partial_ordinary','NativeCallableProjections::partial','NativeDeclarationAttributes::partial','NativeIncompleteTemplates::selected','NativeIncompleteTemplates::selected_local'}):
+        raise ValueError('partial variable-specialization inventory differs: '+
+                         ', '.join(sorted(partial_variable_names)))
     partial_classes=[row for row in metadata['declarations']
                  if ';cxx-class-partial-specializations:v1;' in row.get('canonical_type_identity','')]
+    partial_class_names={row['qualified_name'] for row in partial_classes}
     if ('objc3.cxx-class-partial-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Projected','NativeUnnamedTemplateProjections::Box'}):
-        raise ValueError('C++ package lost partial class specialization owner contracts')
+            partial_class_names!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Projected','NativeUnnamedTemplateProjections::Box','NativeIncompleteTemplates::Selection'}):
+        raise ValueError('partial class-specialization inventory differs: '+
+                         ', '.join(sorted(partial_class_names)))
     class_specializations=[row for row in metadata['declarations']
                  if ';cxx-class-specializations:v1;' in row.get('canonical_type_identity','')]
+    class_specialization_names={row['qualified_name'] for row in class_specializations}
     if ('objc3.cxx-class-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Special','NativeDeclarationAttributes::Projected','NativeUnnamedTemplateProjections::Box'}):
-        raise ValueError('C++ package lost explicit class specialization owner contracts')
+            class_specialization_names!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Special','NativeDeclarationAttributes::Projected','NativeUnnamedTemplateProjections::Box','NativeIncompleteTemplates::Selection'}):
+        raise ValueError('class-specialization inventory differs: '+
+                         ', '.join(sorted(class_specialization_names)))
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
-            len(variable_specializations)!=13 or len({row['native_symbol_name'] for row in variable_specializations})!=13):
-        raise ValueError('C++ package lost exact explicit variable specialization bindings')
+            len(variable_specializations)!=17 or len({row['native_symbol_name'] for row in variable_specializations})!=17):
+        raise ValueError('explicit variable-specialization binding inventory differs: '
+                         f'rows={len(variable_specializations)}, symbols='
+                         f'{len({row["native_symbol_name"] for row in variable_specializations})}, names='+
+                         ', '.join(sorted(row['qualified_name'] for row in variable_specializations)))
     specialized=[row for row in metadata['declarations']
                  if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or

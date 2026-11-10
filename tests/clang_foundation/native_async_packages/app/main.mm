@@ -928,7 +928,6 @@ int main() {
       native_unnamed_virtual(40)!=42 || native_unnamed_bridge(40)!=126) return 111;
   if (native_published_local_type(40)!=42 || native_local_type_bridge(40)!=42 ||
       native_local_lambda(40)!=42) return 98;
-  auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
   {
     objc3_executor_t *main_executor=nullptr;
@@ -947,6 +946,7 @@ int main() {
     if(!complete || checked.result()!=42)return 258;
   }
 
+  auto pending = native_module_value(41).start(executor);
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||
       executed != 2 || pending.result() != 42)
     return 2;

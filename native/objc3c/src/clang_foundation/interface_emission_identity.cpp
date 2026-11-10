@@ -2808,7 +2808,22 @@ bool ReadInterfaceDeclarationIdentity(
   std::vector<const clang::NamespaceDecl *> scopes;
   if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
     scopes.push_back(space);
-  for (const auto *dc = declaration->getDeclContext(); dc; dc = dc->getParent())
+  // An implicit standard-library specialization can carry the namespace of
+  // its point of instantiation as its DeclContext.  That context is incidental:
+  // importing the same specialization commonly reconstructs it under the
+  // primary template's namespace instead.  Anchor the namespace contract to
+  // the primary template, whose identity is already part of the specialization
+  // contract, so provider and consumer describe the same exported declaration.
+  const clang::DeclContext *namespace_context = declaration->getDeclContext();
+  if (const auto *record =
+          llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration);
+      record && IsPublishedStandardSpecialization(record))
+    namespace_context = record->getSpecializedTemplate()->getDeclContext();
+  else if (const auto *variable =
+               llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
+           variable && IsStandardLibrarySpecialization(variable))
+    namespace_context = variable->getSpecializedTemplate()->getDeclContext();
+  for (const auto *dc = namespace_context; dc; dc = dc->getParent())
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(dc))
       scopes.push_back(space);
   if (!scopes.empty()) {
