@@ -22,6 +22,11 @@ def select(repo: Path, name: str, host: str, base_build: dict, sealed: dict, ups
     kind = profile.get('kind')
     if kind in ('sanitizer', 'fuzzer'):
         if (cmake.get('LLVM_USE_SANITIZER') != 'Address;Undefined' or
+                any(cmake.get(key) != 'ON' for key in
+                    ('LLVM_BUILD_LLVM_DYLIB', 'LLVM_LINK_LLVM_DYLIB', 'CLANG_LINK_CLANG_DYLIB')) or
+                any('-Wl,--disable-new-dtags' not in shlex.split(cmake.get(key, ''))
+                    for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS',
+                                'CMAKE_MODULE_LINKER_FLAGS')) or
                 shlex.split(cmake.get('LLVM_UBSAN_FLAGS', '')) != [
                     '-fsanitize=undefined', '-fno-sanitize=function,vptr',
                     '-fno-sanitize-recover=undefined'] or

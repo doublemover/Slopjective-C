@@ -91,8 +91,12 @@ class SanitizerQualification:
         self.fixtures = Path(__file__).with_name('native_sanitizer_controls')
         if not self.fixtures.is_dir():
             self.fixtures = Path(__file__).resolve().parents[2] / 'tests/tooling/fixtures/native_sanitizer_controls'
+        compiler_library = self.compiler.parent.parent / 'lib'
+        library_dirs = ([compiler_library] if self.compiler.parent.name == 'bin' and
+                        compiler_library.is_dir() else [])
+        library_dirs += [path.parent for path in self.libraries if '.so' in path.name]
         self.environment = strict_environment(self.compiler, self.symbolizer,
-            library_dirs=[path.parent for path in self.libraries if '.so' in path.name], base=base_environment)
+            library_dirs=library_dirs, base=base_environment)
         if any(self.environment.get(name) != value for name, value in OPTIONS.items()):
             raise ValueError('strict sanitizer options were weakened or replaced')
         permitted = {*ENVIRONMENT_ALLOWLIST, *OPTIONS, 'LC_ALL', 'SOURCE_DATE_EPOCH',

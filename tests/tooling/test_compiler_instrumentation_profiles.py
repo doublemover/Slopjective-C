@@ -84,6 +84,9 @@ def test_profile_identity_is_distinct_stable_and_preserves_ordinary_inputs(owned
     assert first['build_config_digest'] != sealed['build_config_digest']
     assert first['configuration_inputs'].items() >= sealed['configuration_inputs'].items()
     assert first['cmake']['LLVM_USE_SANITIZER'] == 'Address;Undefined'
+    assert all('-Wl,--disable-new-dtags' in first['cmake'][key]
+               for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS',
+                           'CMAKE_MODULE_LINKER_FLAGS'))
     assert first['build']['assertions'] and first['build']['rtti'] and first['build']['eh']
     assert {'clang-cpp', 'LLVM', 'llvm-nm'} <= set(first['build']['distribution_components'])
     owner = repo / 'scripts/objc3c_toolchain/instrumentation_profiles.py'
@@ -100,6 +103,9 @@ def test_fuzzer_profile_instruments_the_compiler_graph_without_linking_an_engine
     assert profile['cmake']['LLVM_USE_SANITIZER'] == 'Address;Undefined'
     assert '-fsanitize=fuzzer-no-link' in profile['cmake']['CMAKE_CXX_FLAGS_RELEASE']
     assert '-fsanitize=fuzzer' not in profile['cmake']['CMAKE_CXX_FLAGS_RELEASE'].split()
+    assert all('-Wl,--disable-new-dtags' in profile['cmake'][key]
+               for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS',
+                           'CMAKE_MODULE_LINKER_FLAGS'))
     assert {'clang', 'clang-cpp', 'LLVM'} <= set(profile['build']['build_targets'])
 
 
@@ -140,7 +146,7 @@ def test_source_coverage_profile_owns_lit_support_tools(owned):
                            'CMAKE_MODULE_LINKER_FLAGS'))
 
 
-@pytest.mark.parametrize('mutation', ['recovery', 'disabled-asan', 'wrong-subject',
+@pytest.mark.parametrize('mutation', ['recovery', 'disabled-asan', 'mixed-linkage', 'wrong-subject',
                                      'disabled-assertions', 'unknown-profile', 'duplicate-target'])
 def test_invalid_or_weakened_profile_is_rejected(owned, mutation):
     repo, manifest, sealed = owned
@@ -152,6 +158,8 @@ def test_invalid_or_weakened_profile_is_rejected(owned, mutation):
         recipe['cmake']['LLVM_UBSAN_FLAGS'] = '-fsanitize-recover=undefined'
     elif mutation == 'disabled-asan':
         recipe['cmake']['LLVM_USE_SANITIZER'] = 'Undefined'
+    elif mutation == 'mixed-linkage':
+        recipe['cmake']['LLVM_LINK_LLVM_DYLIB'] = 'OFF'
     elif mutation == 'wrong-subject':
         recipe['subject'] = 'emitted-client'
     elif mutation == 'disabled-assertions':

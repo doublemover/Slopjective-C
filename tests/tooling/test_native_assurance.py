@@ -485,6 +485,48 @@ def test_instrumented_foundation_identity_is_derived_without_a_source_checkout()
         '/out/toolchains/objc3-development/stage-linux-x86_64-compiler-asan-ubsan')
 
 
+def test_instrumented_foundation_stage_replaces_ambient_loader_selection(tmp_path, monkeypatch):
+    from scripts.objc3c_assurance.instrumented_foundation import _stage_environment
+    stage = tmp_path / 'stage';(stage / 'bin').mkdir(parents=True);(stage / 'lib').mkdir()
+    bootstrap = tmp_path / 'bootstrap';(bootstrap / 'bin').mkdir(parents=True)
+    (bootstrap / 'bin/llvm-symbolizer').write_bytes(b'symbolizer')
+    monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(bootstrap))
+    monkeypatch.setenv('LD_LIBRARY_PATH', '/foreign/llvm/lib')
+    monkeypatch.setenv('LD_PRELOAD', '/foreign/inject.so')
+    environment = _stage_environment(stage)
+    assert environment['LD_LIBRARY_PATH'] == str(stage / 'lib')
+    assert environment['LLVM_SYMBOLIZER_PATH'] == str(bootstrap / 'bin/llvm-symbolizer')
+    assert not {'LD_PRELOAD', 'LD_AUDIT'} & set(environment)
+
+
+def test_instrumented_foundation_rejects_foreign_loaded_llvm(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from scripts.objc3c_assurance.instrumented_foundation import _validate_stage_execution
+    stage = tmp_path / 'stage';(stage / 'bin').mkdir(parents=True);(stage / 'lib').mkdir()
+    llvm = stage / 'lib/libLLVM.so.23';clang = stage / 'lib/libclang-cpp.so.23'
+    llvm.write_bytes(b'llvm');clang.write_bytes(b'clang')
+    foreign = tmp_path / 'foreign/libLLVM.so.23';foreign.parent.mkdir();foreign.write_bytes(b'foreign')
+
+    def loader(argv, **_):
+        name = Path(argv[-1]).name
+        selected = [llvm, clang] if name.startswith('clang') else [llvm]
+        return ''.join(f'{path.name} => {path} (0x1)\n' for path in selected)
+
+    monkeypatch.setattr('scripts.objc3c_assurance.instrumented_foundation.subprocess.check_output', loader)
+    monkeypatch.setattr('scripts.objc3c_assurance.instrumented_foundation.subprocess.run',
+                        lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout='version\n'))
+    versions = _validate_stage_execution(stage, [llvm, clang], {'LD_LIBRARY_PATH': str(stage / 'lib')})
+    assert set(versions) == {'clang', 'clang++', 'ld.lld', 'llvm-nm', 'llvm-ar'}
+
+    def substituted(argv, **kwargs):
+        output = loader(argv, **kwargs)
+        return output.replace(str(llvm), str(foreign), 1) if Path(argv[-1]).name == 'clang' else output
+
+    monkeypatch.setattr('scripts.objc3c_assurance.instrumented_foundation.subprocess.check_output', substituted)
+    with pytest.raises(ValueError, match='foreign LLVM libraries: clang'):
+        _validate_stage_execution(stage, [llvm, clang], {'LD_LIBRARY_PATH': str(stage / 'lib')})
+
+
 def test_external_exact_package_receipt_unblocks_only_the_product_consumer(tmp_path):
     from scripts.objc3c_assurance.execution import execute_suites
     suites = [{'id': 'sanitizer-products'}]

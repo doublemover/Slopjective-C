@@ -56,8 +56,9 @@ def test_detection_requires_its_class_site_and_exact_failure_exit(detector):
 
 @pytest.fixture
 def unexecuted_policy(tmp_path, monkeypatch):
-    compiler = tmp_path / 'compiler'; compiler.write_bytes(b'compiler')
-    (tmp_path / 'ld.lld').write_bytes(b'linker')
+    compiler = tmp_path / 'bin/compiler'; compiler.parent.mkdir();compiler.write_bytes(b'compiler')
+    (compiler.parent / 'ld.lld').write_bytes(b'linker')
+    (tmp_path / 'lib').mkdir()
     symbolizer = tmp_path / 'symbolizer'; symbolizer.write_bytes(b'symbolizer'); symbolizer.chmod(0o700)
     resource = tmp_path / 'resources'; (resource / 'include').mkdir(parents=True)
     (resource / 'include/stddef.h').write_bytes(b'header')
@@ -68,6 +69,7 @@ def unexecuted_policy(tmp_path, monkeypatch):
 
 def test_configuration_and_runtime_mutation_invalidate_controls(unexecuted_policy):
     gate = unexecuted_policy
+    assert gate.environment['LD_LIBRARY_PATH'] == str(gate.compiler.parent.parent / 'lib')
     with pytest.raises(ValueError, match='no detector controls'):
         gate.finalize()
     gate.environment['ASAN_OPTIONS'] = 'detect_leaks=0'

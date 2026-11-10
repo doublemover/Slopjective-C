@@ -22,8 +22,8 @@ def identity(value: dict) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def runpath(data: bytes) -> tuple[int, str]:
-    """Locate only DT_RUNPATH in a Linux ELF64 image (no code/data masking)."""
+def runpath(data: bytes) -> tuple[str, int, str]:
+    """Locate exactly one DT_RPATH or DT_RUNPATH in a Linux ELF64 image."""
     if data[:6] != b'\x7fELF\x02\x01' or len(data) < 64:
         raise ValueError('development tools require little-endian ELF64')
     offset = struct.unpack_from('<Q', data, 40)[0]
@@ -40,24 +40,25 @@ def runpath(data: bytes) -> tuple[int, str]:
         strings = sections[section[6]]
         for index in range(section[4], section[4]+section[5], 16):
             tag, value = struct.unpack_from('<QQ', data, index)
-            if tag == 29:
+            if tag in (15, 29):
                 start = strings[4]+value
                 end = data.find(b'\0', start, strings[4]+strings[5])
                 if value >= strings[5] or end < start:
                     raise ValueError('invalid ELF RUNPATH string')
-                found.append((start, data[start:end].decode('ascii')))
+                found.append(('RPATH' if tag == 15 else 'RUNPATH', start,
+                              data[start:end].decode('ascii')))
     if len(found) != 1:
-        raise ValueError('expected one owned ELF RUNPATH')
+        raise ValueError('expected one owned ELF runtime search path')
     return found[0]
 
 
 def verify_installation(canonical: Path, installed: Path, build: Path) -> dict:
     """CMake edits RUNPATH at install time; admit exactly that byte transition."""
     old, new = canonical.read_bytes(), installed.read_bytes()
-    position, before = runpath(old)
-    destination, after = runpath(new)
+    before_tag, position, before = runpath(old)
+    after_tag, destination, after = runpath(new)
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
-    if (len(old) != len(new) or position != destination or after != expected or
+    if (len(old) != len(new) or before_tag != after_tag or position != destination or after != expected or
             before not in (expected+':', expected+':'+str(build / 'lib')+':')):
         raise ValueError('unowned LLVM install-time ELF RUNPATH transition')
     # The overwritten tail must be zeros, not arbitrary hidden changes. Every
@@ -66,7 +67,8 @@ def verify_installation(canonical: Path, installed: Path, build: Path) -> dict:
     if canonical_bytes != new:
         raise ValueError('installed LLVM differs outside its exact CMake RUNPATH edit')
     return {'build_sha256': hashlib.sha256(old).hexdigest(), 'installed_sha256': hashlib.sha256(new).hexdigest(),
-            'runpath_before': before, 'runpath_after': after, 'status': 'PASS'}
+            'dynamic_tag': after_tag, 'runpath_before': before, 'runpath_after': after,
+            'status': 'PASS'}
 
 
 def foundation(repo: Path) -> tuple[dict, dict]:

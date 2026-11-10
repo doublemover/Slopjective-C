@@ -13,6 +13,7 @@ from scripts.objc3c_toolchain.binary_packages import installed_shared_library, w
 from scripts.objc3c_toolchain.build import build_foundation
 from scripts.objc3c_toolchain.core import build_plans, planned_development_identity
 from scripts.objc3c_toolchain.instrumentation_profiles import select
+from scripts.objc3c_toolchain.sanitizer_policy import strict_environment
 from .plan import from_checkout, validate
 
 PROFILE = 'compiler-asan-ubsan'
@@ -78,9 +79,56 @@ def _consumer_products(stage: Path) -> list[Path]:
     return paths
 
 
+def _stage_environment(stage: Path) -> dict[str, str]:
+    bootstrap_value = os.environ.get('OBJC3C_BOOTSTRAP_LLVM_ROOT')
+    if not bootstrap_value:
+        raise ValueError('instrumented foundation requires its explicit bootstrap LLVM root')
+    symbolizer = (Path(bootstrap_value) / 'bin/llvm-symbolizer').resolve(strict=True)
+    return strict_environment(stage / 'bin/clang', symbolizer, library_dirs=(stage / 'lib',))
+
+
+def _validate_stage_execution(stage: Path, paths: list[Path],
+                              environment: dict[str, str]) -> dict[str, str]:
+    libraries = {path.resolve(strict=True) for path in paths
+                 if path.name.startswith(('libLLVM.so', 'libclang-cpp.so'))}
+    if len(libraries) != 2:
+        raise ValueError('instrumented foundation requires exact LLVM and Clang shared libraries')
+    loader = Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True)
+    required_by_tool = {
+        'clang': libraries,
+        'clang++': libraries,
+        'llvm-nm': {path for path in libraries if path.name.startswith('libLLVM.so')},
+        'llvm-ar': {path for path in libraries if path.name.startswith('libLLVM.so')},
+    }
+    for name, required in required_by_tool.items():
+        binary = stage / 'bin' / name
+        output = subprocess.check_output([loader, '--list', binary], env=environment,
+                                         text=True, timeout=30)
+        loaded = set()
+        for line in output.splitlines():
+            value = line.split(' => ', 1)[-1].strip().rsplit(' (0x', 1)[0]
+            if value.startswith('/'):
+                loaded.add(Path(value).resolve(strict=True))
+        selected = {path for path in loaded
+                    if path.name.startswith(('libLLVM.so', 'libclang-cpp.so'))}
+        if 'not found' in output or not required.issubset(loaded) or selected != required:
+            raise ValueError('instrumented foundation executable loaded foreign LLVM libraries: '+name)
+    versions = {}
+    for name in ('clang', 'clang++', 'ld.lld', 'llvm-nm', 'llvm-ar'):
+        result = subprocess.run([stage / 'bin' / name, '--version'], env=environment,
+                                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                timeout=30)
+        if result.returncode:
+            raise ValueError(f'instrumented foundation executable failed ({name}, exit '
+                             f'{result.returncode}):\n{result.stdout}')
+        versions[name] = result.stdout
+    return versions
+
+
 def _identity(portable: dict, stage: Path) -> dict:
     paths = _consumer_products(stage)
-    version = subprocess.check_output([stage / 'bin/clang', '--version'], text=True, timeout=30)
+    environment = _stage_environment(stage)
+    version = _validate_stage_execution(stage, paths, environment)['clang']
     if ('ObjC3-patches='+portable['patch_digest'] not in version or
             'ObjC3-config='+portable['build_config_digest'] not in version):
         raise ValueError('instrumented compiler version differs from its exact source/configuration')

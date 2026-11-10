@@ -147,7 +147,7 @@ def test_interruption_kills_and_reaps_the_detached_command_session(tmp_path, mon
     assert killed == [process.pid] and process.calls == 2
 
 
-def elf(runpath: str, capacity: int) -> bytes:
+def elf(runpath: str, capacity: int, tag: int = 29) -> bytes:
     """Small ELF64 with dynamic/string sections, plus observable code payload."""
     data = bytearray(512)
     data[:6] = b'\x7fELF\x02\x01'
@@ -155,7 +155,7 @@ def elf(runpath: str, capacity: int) -> bytes:
     struct.pack_into('<HH', data, 58, 64, 3)
     struct.pack_into('<IIQQQQIIQQ', data, 128, 0, 6, 0, 0, 256, 32, 2, 0, 8, 16)
     struct.pack_into('<IIQQQQIIQQ', data, 192, 0, 3, 0, 0, 288, capacity, 0, 0, 1, 0)
-    struct.pack_into('<QQ', data, 256, 29, 0)
+    struct.pack_into('<QQ', data, 256, tag, 0)
     data[288:288+len(runpath)] = runpath.encode()
     data[-16:] = b'code-must-match!!'
     return bytes(data)
@@ -176,6 +176,16 @@ def test_install_identity_allows_only_exact_cmake_runpath_transition(tmp_path):
     installed.write_bytes(elf('/tmp/unowned', 160))
     with pytest.raises(ValueError, match='RUNPATH transition'):
         verify_installation(canonical, installed, tmp_path / 'build')
+
+
+def test_install_identity_preserves_old_dtag_rpath_precedence(tmp_path):
+    expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
+    before = expected+':'+str(tmp_path / 'build/lib')+':'
+    canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
+    canonical.write_bytes(elf(before, 160, 15))
+    installed.write_bytes(elf(expected, 160, 15))
+    result = verify_installation(canonical, installed, tmp_path / 'build')
+    assert result['status'] == 'PASS' and result['dynamic_tag'] == 'RPATH'
 
 
 def test_clean_foundation_admission_does_not_require_unbuilt_development_tools(tmp_path, monkeypatch):

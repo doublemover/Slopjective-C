@@ -101,7 +101,8 @@ class RuntimeProfiles:
             raise ValueError('positive runtime build parallelism is required')
         disjoint(self.output, self.repo / 'native', self.compiler_root, self.resource)
         self.tools = _tools(self.compiler_root, self.resource)
-        self.environment = strict_environment(self.tools['compiler'], self.tools['symbolizer'])
+        self.environment = strict_environment(self.tools['compiler'], self.tools['symbolizer'],
+                                              library_dirs=(self.compiler_root / 'lib',))
         self.environment['PATH'] = os.pathsep.join(dict.fromkeys([
             str(self.tools['cmake'].parent), str(self.tools['ninja'].parent),
             *self.environment['PATH'].split(os.pathsep)]))

@@ -16,6 +16,9 @@
         "CLANG_LINK_CLANG_DYLIB": "ON",
         "CMAKE_C_FLAGS_RELEASE": "-O1 -DNDEBUG",
         "CMAKE_CXX_FLAGS_RELEASE": "-O1 -DNDEBUG",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,--disable-new-dtags",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--disable-new-dtags",
+        "CMAKE_MODULE_LINKER_FLAGS": "-Wl,--disable-new-dtags",
         "LLVM_UBSAN_FLAGS": "-fsanitize=undefined -fno-sanitize=function,vptr -fno-sanitize-recover=undefined"
       },
       "build_target_groups": [
@@ -64,9 +67,9 @@
         "CLANG_LINK_CLANG_DYLIB": "ON",
         "CMAKE_C_FLAGS_RELEASE": "-O1 -gline-tables-only -DNDEBUG -fsanitize=fuzzer-no-link",
         "CMAKE_CXX_FLAGS_RELEASE": "-O1 -gline-tables-only -DNDEBUG -fsanitize=fuzzer-no-link",
-        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=fuzzer-no-link",
-        "CMAKE_SHARED_LINKER_FLAGS": "-fsanitize=fuzzer-no-link",
-        "CMAKE_MODULE_LINKER_FLAGS": "-fsanitize=fuzzer-no-link",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=fuzzer-no-link -Wl,--disable-new-dtags",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fsanitize=fuzzer-no-link -Wl,--disable-new-dtags",
+        "CMAKE_MODULE_LINKER_FLAGS": "-fsanitize=fuzzer-no-link -Wl,--disable-new-dtags",
         "LLVM_UBSAN_FLAGS": "-fsanitize=undefined -fno-sanitize=function,vptr -fno-sanitize-recover=undefined"
       },
       "build_target_groups": [
