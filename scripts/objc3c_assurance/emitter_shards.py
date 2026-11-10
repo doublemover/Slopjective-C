@@ -28,12 +28,15 @@ EMITTER_TESTS = tuple(f'objc3_interface_emitter_coverage_{index}' for index in r
 
 def emitter_partition(root: Path, suites: list[dict]) -> dict:
     catalogue = None
-    binaries = set()
+    binaries = {}
     for index, name in enumerate(EMITTER_TESTS):
         rows = [row for row in suites if row.get('component') == 'frontend' and row.get('name') == name]
         if len(rows) != 1 or rows[0].get('status') != 'PASS':
             raise ValueError('emitter coverage shard is missing or duplicated')
-        binaries.add(rows[0]['binary_sha256'])
+        owner = rows[0].get('coverage_partition', 'single-build')
+        if owner != 'single-build' and (type(owner) is not int or not 0 <= owner < 8):
+            raise ValueError('emitter coverage shard has an invalid matrix owner')
+        binaries.setdefault(owner, set()).add(rows[0]['binary_sha256'])
         path = root / 'suites' / ('frontend-'+name) / 'tests.xml'
         junit(path, expected={name})
         text = '\n'.join(node.text or '' for node in ET.parse(path).iter('system-out'))
@@ -49,7 +52,8 @@ def emitter_partition(root: Path, suites: list[dict]) -> dict:
         if catalogue is not None and names != catalogue:
             raise ValueError('emitter coverage shards have different catalogues')
         catalogue = names
-    if len(binaries) != 1:
-        raise ValueError('emitter coverage shards executed different binaries')
+    if any(len(values) != 1 for values in binaries.values()):
+        raise ValueError('emitter coverage shards executed different binaries within one build owner')
     return {'shards': SHARDS, 'cases': len(catalogue),
+            'binary_owners': len(binaries),
             'catalogue_sha256': hashlib.sha256(('\n'.join(catalogue)+'\n').encode()).hexdigest()}

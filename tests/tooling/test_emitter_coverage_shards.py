@@ -74,6 +74,28 @@ int main(int argc, char **argv) {
         assert emitter_partition(tmp_path,rows)['cases']==2 * SHARDS + 3
 
 
+def test_matrix_builds_may_have_distinct_binaries_but_each_owner_is_exact(tmp_path):
+    catalogue = [f'TestCase{index}' for index in range(2 * SHARDS + 3)]
+    rows = []
+    for index, name in enumerate(EMITTER_TESTS):
+        text = ''.join(f'CATALOG {ordinal} {case}\n' for ordinal, case in enumerate(catalogue))
+        text += ''.join(f'CASE {case}\nPASS {case}\n' for case in catalogue[index::SHARDS])
+        text += f'SHARD {index}/{SHARDS}\n'
+        suite = ET.Element('testsuite', tests='1', failures='0')
+        test = ET.SubElement(suite, 'testcase', name=name)
+        ET.SubElement(test, 'system-out').text = text
+        path = tmp_path / 'suites' / ('frontend-'+name) / 'tests.xml'
+        path.parent.mkdir(parents=True);ET.ElementTree(suite).write(path)
+        owner = index % 2
+        rows.append({'name': name, 'component': 'frontend', 'status': 'PASS',
+                     'coverage_partition': owner, 'binary_sha256': str(owner) * 64})
+    result = emitter_partition(tmp_path, rows)
+    assert result['binary_owners'] == 2
+    rows[2]['binary_sha256'] = 'f' * 64
+    with pytest.raises(ValueError, match='within one build owner'):
+        emitter_partition(tmp_path, rows)
+
+
 @pytest.mark.parametrize('mutation', [None, 'bool', 'small', 'large', 'missing', 'duplicate'])
 def test_policy_count_and_complete_selected_inventory_are_one_contract(mutation):
     policy = {'emitter_shards': SHARDS, 'frontend_tests': list(EMITTER_TESTS)}

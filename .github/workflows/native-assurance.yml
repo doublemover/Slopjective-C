@@ -250,7 +250,7 @@ jobs:
   diagnostic-native:
     name: Diagnose Linux compiler core
     needs: plan
-    if: needs.plan.outputs.native == 'true' && inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
+    if: needs.plan.outputs.native == 'true' && inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' && inputs.diagnostic_coverage_run == ''
     runs-on: ubuntu-26.04
     container:
       image: debian:13

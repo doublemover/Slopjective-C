@@ -235,7 +235,12 @@ def aggregate_partitions(repo: Path, plan: dict, producer_root: Path,
             if not source.is_dir():
                 raise ValueError('coverage partition omitted suite evidence: '+repr(key))
             shutil.copytree(source, first_party / 'suites' / source.name)
-            suites[key] = row
+            # Each matrix consumer links its own path-dependent ELF image. The
+            # producer/profile identity above proves common inputs; retain the
+            # partition owner so emitter completeness can require one binary
+            # within every independent link graph without demanding bytewise
+            # equality across different build roots.
+            suites[key] = {**row, 'coverage_partition': index}
     policy = reports[0]['policy']
     catalogue = [(component, name) for component in ('frontend', 'runtime')
                  for name in policy[component+'_tests']]
