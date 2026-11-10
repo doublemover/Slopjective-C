@@ -27,6 +27,17 @@ def identity(manifest: dict) -> str:
                                      separators=(',', ':')).encode()).hexdigest()
 
 
+def complete_root_files(root: Path) -> list[Path]:
+    """Enumerate every regular header input below one driver search root.
+
+    Depfiles only expose the branch selected by the discovery preprocessor
+    invocation. Platform headers can include different ``bits/`` and ``sys/``
+    leaves under optimization, language-mode, feature-test, and sanitizer
+    macros, so an installed SDK must retain the complete checked search root.
+    """
+    return sorted(path for path in root.rglob('*') if path.is_file())
+
+
 def _run(compiler: Path, arguments: list[str], *, source='') -> subprocess.CompletedProcess:
     environment = {**os.environ, 'LC_ALL': 'C'}
     companion = str(compiler.parent.parent / 'lib')
@@ -109,10 +120,9 @@ def discover(compiler: Path) -> dict:
         if role is None:
             raise ValueError(f'compiler search root has no cc1 classification: {root}')
         description.append({'index': index, 'role': role})
-        if cxx and not builtin:
-            for path in sorted(root.rglob('*')):
-                if path.is_file():
-                    add(path, f'roots/{index:02d}/' + path.relative_to(root).as_posix())
+        if not builtin and role in ('cxx', 'system', 'externc'):
+            for path in complete_root_files(root):
+                add(path, f'roots/{index:02d}/' + path.relative_to(root).as_posix())
     for path in reached:
         found = False
         for index, root in enumerate(roots):

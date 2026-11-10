@@ -148,11 +148,13 @@ export function validateNativeGate(text) {
   const jobs = workflow.jobs ?? {};
   const gate = jobs.gate;
   const requiredGateNeeds = [
+    "asan-foundation-producer",
     "core-aggregate",
     "coverage-aggregate",
     "coverage-partitions",
     "coverage-producer",
     "independent-native",
+    "instrumented-product-consumers",
     "plan",
     "product-consumers",
     "product-producer",
@@ -168,6 +170,8 @@ export function validateNativeGate(text) {
   const diagnostic = jobs["diagnostic-native"];
   const producer = jobs["product-producer"];
   const consumers = jobs["product-consumers"];
+  const asanProducer = jobs["asan-foundation-producer"];
+  const instrumentedConsumers = jobs["instrumented-product-consumers"];
   const independent = jobs["independent-native"];
   const coverageProducer = jobs["coverage-producer"];
   const coveragePartitions = jobs["coverage-partitions"];
@@ -178,8 +182,9 @@ export function validateNativeGate(text) {
     "needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''";
   if (
     diagnostic?.if !==
-      "needs.plan.outputs.native == 'true' && inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''" ||
+      "needs.plan.outputs.native == 'true' && inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' && inputs.diagnostic_coverage_run == ''" ||
     producer?.if !== fullOwnerCondition ||
+    asanProducer?.if !== fullOwnerCondition ||
     independent?.if !== fullOwnerCondition ||
     coverageProducer?.if !== fullOwnerCondition ||
     events.workflow_dispatch.inputs.diagnostic_transport_run?.default !== "" ||
@@ -196,6 +201,7 @@ export function validateNativeGate(text) {
   const productGroups = (consumers?.strategy?.matrix?.include ?? []).map(
     (entry) => entry.group,
   );
+  const instrumentedGroups = instrumentedConsumers?.strategy?.matrix?.group ?? [];
   const consumerRun = (consumers?.steps ?? []).find((step) =>
     step.run?.includes("scripts.objc3c_assurance.release_matrix run"),
   );
@@ -215,13 +221,25 @@ export function validateNativeGate(text) {
         "installed-sanitizers",
         "swift",
         "semantic",
-        "asan-products",
       ]) ||
     JSON.stringify(consumers.needs?.toSorted()) !==
       JSON.stringify(["plan", "product-producer"]) ||
     !consumers.if?.includes("needs.product-producer.result == 'success'") ||
     consumers.env?.RELEASE_GROUP !== "${{ matrix.group }}" ||
     !consumerRun?.run.includes('--group "$RELEASE_GROUP"') ||
+    instrumentedConsumers?.strategy?.["fail-fast"] !== false ||
+    JSON.stringify(instrumentedGroups) !==
+      JSON.stringify(["asan-products", "runtime-schedules"]) ||
+    JSON.stringify(instrumentedConsumers?.needs?.toSorted()) !==
+      JSON.stringify(["asan-foundation-producer", "plan", "product-producer"]) ||
+    !instrumentedConsumers?.if?.includes("needs.asan-foundation-producer.result == 'success'") ||
+    instrumentedConsumers?.env?.RELEASE_GROUP !== "${{ matrix.group }}" ||
+    !(instrumentedConsumers?.steps ?? []).some(
+      (step) => step.run?.includes("scripts.objc3c_assurance.instrumented_foundation restore"),
+    ) ||
+    !(instrumentedConsumers?.steps ?? []).some(
+      (step) => step.run?.includes('--group "$RELEASE_GROUP"'),
+    ) ||
     coveragePartitions?.strategy?.["fail-fast"] !== false ||
     JSON.stringify(coveragePartitions?.strategy?.matrix?.partition) !==
       JSON.stringify([0, 1, 2, 3, 4, 5, 6, 7]) ||
@@ -236,7 +254,13 @@ export function validateNativeGate(text) {
 
   if (
     JSON.stringify(coreAggregate?.needs?.toSorted()) !==
-      JSON.stringify(["plan", "product-consumers", "product-producer"]) ||
+      JSON.stringify([
+        "asan-foundation-producer",
+        "instrumented-product-consumers",
+        "plan",
+        "product-consumers",
+        "product-producer",
+      ]) ||
     !(coreAggregate?.steps ?? []).some(
       (step) =>
         step.run?.includes("scripts.objc3c_assurance.release_matrix aggregate") &&
@@ -272,6 +296,8 @@ export function validateNativeGate(text) {
   const resultVariables = [
     "PRODUCER_RESULT",
     "CONSUMERS_RESULT",
+    "ASAN_PRODUCER_RESULT",
+    "INSTRUMENTED_CONSUMERS_RESULT",
     "FUZZ_RESULT",
     "COVERAGE_PRODUCER_RESULT",
     "COVERAGE_PARTITIONS_RESULT",
@@ -296,6 +322,8 @@ export function validateNativeGate(text) {
     diagnostic,
     producer,
     consumers,
+    asanProducer,
+    instrumentedConsumers,
     independent,
     coverageProducer,
     coveragePartitions,
@@ -309,7 +337,8 @@ export function validateNativeGate(text) {
     )
   )
     throw new Error("Activated container execution must trust only its exact checked-out workspace");
-  for (const job of [diagnostic, producer, consumers]) validateNativeContainer(job ?? {});
+  for (const job of [diagnostic, producer, consumers, asanProducer, instrumentedConsumers])
+    validateNativeContainer(job ?? {});
   for (const job of executionJobs) {
     if (
       job?.container?.image !== "debian:13" ||
@@ -319,11 +348,14 @@ export function validateNativeGate(text) {
   }
 
   for (const id of [
+    "diagnostic-coverage-aggregate",
     "diagnostic-transport",
     "plan",
     "diagnostic-native",
     "product-producer",
     "product-consumers",
+    "asan-foundation-producer",
+    "instrumented-product-consumers",
     "independent-native",
     "coverage-producer",
     "coverage-partitions",
@@ -338,6 +370,12 @@ export function validateNativeGate(text) {
       if (step["continue-on-error"]) throw new Error("Native failures must remain failures");
       if (step.uses && !pinnedAction(step.uses))
         throw new Error("Native actions must be SHA-pinned");
+      if (
+        step.uses?.startsWith("actions/download-artifact@") &&
+        Object.hasOwn(step.with ?? {}, "merge-multiple") &&
+        step.with["merge-multiple"] !== true
+      )
+        throw new Error("Native artifact unions must never overwrite sibling receipts");
       if (
         step.uses?.startsWith("actions/upload-artifact@") &&
         (step.with?.["if-no-files-found"] !== "error" || !(step.with?.["retention-days"] <= 7))

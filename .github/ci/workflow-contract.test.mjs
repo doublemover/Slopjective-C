@@ -314,7 +314,7 @@ for (const [name, before, after] of [
   ["privileged PR trigger", "on:\n", "on:\n  pull_request_target:\n"],
   [
     "missing dependency",
-    "    needs: [plan, product-producer, product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]",
+    "    needs: [plan, product-producer, product-consumers, asan-foundation-producer, instrumented-product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]",
     "    needs: [plan, product-producer]",
   ],
   ["missing artifact normalized", "if-no-files-found: error", "if-no-files-found: ignore"],

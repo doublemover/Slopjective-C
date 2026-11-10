@@ -96,3 +96,17 @@ def test_dependency_spelling_preserves_search_roots_through_platform_symlinks(tm
     depfile.write_text(f'headers: {spelled}\n')
     assert dependencies(depfile, tmp_path) == [outside / 'types.h']
     assert dependencies(depfile, tmp_path, preserve_spelling=True) == [spelled]
+
+
+def test_complete_native_root_includes_macro_selected_nested_headers(tmp_path):
+    root = tmp_path / 'include'
+    (root / 'bits').mkdir(parents=True)
+    (root / 'stdlib.h').write_text('#include <bits/stdlib-bsearch.h>\n')
+    conditional = root / 'bits/stdlib-bsearch.h'
+    conditional.write_text('// selected only by optimized glibc consumers\n')
+    (root / 'sys').mkdir()
+    architecture = root / 'sys/platform.h'
+    architecture.write_text('// selected by target feature macros\n')
+    files = headers.complete_root_files(root)
+    assert files == sorted(files)
+    assert set(files) == {conditional, architecture, root / 'stdlib.h'}

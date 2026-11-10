@@ -478,6 +478,11 @@ jobs:
       - uses: ./.github/actions/linux-host-tools
         with:
           output: out/native-assurance/startup/asan-foundation-producer
+      - name: Require sanitizer process layout support
+        run: |
+          mkdir -p out
+          g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
+          out/native-container-control
       - name: Build and qualify exact sanitizer compiler
         shell: bash
         run: |
