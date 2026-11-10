@@ -294,7 +294,11 @@ int main(void) {
       hop_cxx_packet_fail_move(failed_move);
       frame = hop_cxx_packet_roundtrip(caller);
       task = start(&frame);
-      assert(finish(task).kind == OBJC3_COMPLETION_CANCELLED);
+      objc3_completion failed = finish(task);
+      if(failed.kind != OBJC3_COMPLETION_ERROR || !failed.error)
+        fprintf(stderr,"throwing move ordinal=%d completion=%d error=%p payload=%p\n",
+                failed_move,failed.kind,(void *)failed.error,failed.payload);
+      assert(failed.kind == OBJC3_COMPLETION_ERROR && failed.error);
       objc3_task_release(task);
       for (unsigned step = 0; step != 1000000 && hop_cxx_packet_live() != 0; ++step)
         sched_yield();
@@ -478,7 +482,9 @@ int main(void) {
           assert(hop_snapshot_arguments()==1);objc3_task_request_cancel(task);
         }
         objc3_completion completion=finish(task);
-        if(kind>=4 || mode==1)assert(completion.kind==OBJC3_COMPLETION_CANCELLED);
+        if(kind>=4)
+          assert(completion.kind==OBJC3_COMPLETION_ERROR && completion.error);
+        else if(mode==1)assert(completion.kind==OBJC3_COMPLETION_CANCELLED);
         else if(mode==2) {
           objc3_service_status service=OBJC3_SERVICE_OK;
           assert(completion.kind==OBJC3_COMPLETION_ERROR);
@@ -1178,7 +1184,8 @@ int main(void) {
     hop_consumed_reset(0);
     frame = hop_consumed_roundtrip(12, caller);
     task = start(&frame);
-    assert(finish(task).kind == OBJC3_COMPLETION_CANCELLED);
+    objc3_completion thrown_argument = finish(task);
+    assert(thrown_argument.kind == OBJC3_COMPLETION_ERROR && thrown_argument.error);
     assert(hop_consumed_arguments() == 1 && hop_consumed_entries() == 0);
     objc3_task_release(task);
     for (unsigned step = 0; step != 1000000 &&

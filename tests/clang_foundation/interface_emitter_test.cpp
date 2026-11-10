@@ -3980,7 +3980,8 @@ inline constexpr int total(Key value) {
       }
     }
     const auto name=std::string(standard)+"-"+std::to_string(mode);
-    const auto interface=root/(name+".objc3i");
+    const auto mode_root=root/name;std::filesystem::create_directory(mode_root);
+    const auto interface=mode_root/(name+".objc3i");
     {std::ofstream out(interface);out<<first.source_bytes;}
     {std::ofstream out(interface.string()+".json");out<<first.sidecar_json;}
     InterfaceImportInput input;input.source_path=interface.string();input.locked_identity=first.identity;
@@ -4007,6 +4008,18 @@ unsigned long standard_specialization_client() {
     if(!consumer.success)std::fprintf(stderr,"STANDARD SPECIALIZATION CONSUMER %s\n",consumer.failure.c_str());
     for(const auto &d:consumer.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
     assert(consumer.success);
+    if(objc) {
+      auto directed=request;directed.imported_interfaces.clear();
+      directed.source_directed_imports=true;directed.interface_search_paths={mode_root.string()};
+      InterfaceModuleRequest module;module.canonical_name=first.identity.canonical_name;
+      module.locked_identity=first.identity;module.initially_visible=false;
+      directed.module_imports={module};
+      directed.source_text="@import fixture.standard_specializations;\n"+*request.source_text;
+      directed.output_path=(root/(name+"-directed.o")).string();
+      auto result=Compile(directed);
+      if(!result.success)std::fprintf(stderr,"STANDARD SPECIALIZATION DIRECTED %s\n",result.failure.c_str());
+      assert(result.success && std::filesystem::exists(directed.output_path));
+    }
   }
 }
 

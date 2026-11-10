@@ -233,7 +233,9 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
         continue;
       const bool tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                        decl.kind == "Enum";
-      const std::string key = HasCxxCoroutineTraitsSpecializationIdentity(decl)
+      const std::string key = HasCxxStandardLibrarySpecializationIdentity(decl)
+          ? "standard-library-specialization:" + decl.stable_id
+          : HasCxxCoroutineTraitsSpecializationIdentity(decl)
           ? "coroutine-traits-specialization:" + decl.stable_id
           : HasCxxVariableSpecializationIdentity(decl)
           ? "variable-specialization:" + decl.stable_id
