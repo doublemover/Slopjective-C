@@ -40,7 +40,7 @@
         "clang/test/Parser/cxx2b-init-statement.cpp"
       ],
       "excluded_distribution_components": ["clangd", "clang-format", "lldb", "lldb-server", "liblldb"],
-      "additional_distribution_components": ["LLVM", "clang-cpp"],
+      "additional_distribution_components": ["LLVM", "clang-cpp", "llvm-nm"],
       "boundaries": [
         "This profile instruments Clang/LLVM and the embedding graph; emitted-client and complete-runtime instrumentation are separate subjects.",
         "LLVM uses its supported undefined-behavior profile with function/vptr checks excluded for upstream erased callback/type representations; ASan and the remaining UBSan checks stay enabled without recovery.",

@@ -60,6 +60,13 @@ def select(repo: Path, name: str, host: str, base_build: dict, sealed: dict, ups
     build['distribution_components'] = list(dict.fromkeys([
         *(target for target in base_build['distribution_components'] if target not in excluded),
         *profile['additional_distribution_components']]))
+    if kind == 'sanitizer':
+        required_distribution = {'clang', 'lld', 'clang-resource-headers', 'clang-cmake-exports',
+                                 'cmake-exports', 'llvm-ar', 'llvm-nm', 'LLVM', 'clang-cpp'}
+        missing = sorted(required_distribution - set(build['distribution_components']))
+        if missing:
+            raise ValueError('compiler sanitizer distribution omits required consumer components: '+
+                             ', '.join(missing))
     inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
               for path in (source, owner)}
     inputs = {**sealed['configuration_inputs'], **inputs}

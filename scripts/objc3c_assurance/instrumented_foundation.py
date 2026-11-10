@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -15,6 +16,18 @@ from scripts.objc3c_toolchain.instrumentation_profiles import select
 from .plan import from_checkout, validate
 
 PROFILE = 'compiler-asan-ubsan'
+TRANSPORT_MARKER = 'objc3-instrumented-foundation.json'
+
+CONSUMER_PRODUCTS = (
+    'bin/clang',
+    'bin/clang++',
+    'bin/ld.lld',
+    'bin/llvm-nm',
+    'bin/llvm-ar',
+    'lib/cmake/llvm/LLVMConfig.cmake',
+    'lib/cmake/clang/ClangConfig.cmake',
+    'lib/clang/23/include/stddef.h',
+)
 
 
 def digest(path: Path) -> str:
@@ -40,14 +53,33 @@ def _portable_identity(repo: Path) -> dict:
             'paths': {'stage': str(stage)}, 'instrumentation': profile['recipe']}
 
 
+def _consumer_products(stage: Path) -> list[Path]:
+    """Return the exact stage surface consumed by the two downstream owners."""
+    stage = stage.resolve(strict=True)
+    paths, missing = [], []
+    for relative in CONSUMER_PRODUCTS:
+        path = stage / relative
+        try:
+            selected = path.resolve(strict=True)
+            if not selected.is_relative_to(stage) or not selected.is_file():
+                raise ValueError
+            if relative.startswith('bin/') and not os.access(selected, os.X_OK):
+                raise ValueError
+            paths.append(selected)
+        except (FileNotFoundError, OSError, RuntimeError, ValueError):
+            missing.append(relative)
+    for name in ('libLLVM.so', 'libclang-cpp.so'):
+        try:
+            paths.append(installed_shared_library(stage / 'lib', name))
+        except (FileNotFoundError, OSError, RuntimeError, ValueError):
+            missing.append('lib/'+name)
+    if missing:
+        raise ValueError('instrumented foundation omitted consumer prerequisites: '+', '.join(missing))
+    return paths
+
+
 def _identity(portable: dict, stage: Path) -> dict:
-    paths = [stage / 'bin' / name for name in
-             ('clang', 'clang++', 'ld.lld', 'llvm-nm', 'llvm-readobj', 'llvm-dwarfdump')]
-    paths += [installed_shared_library(stage / 'lib', name)
-              for name in ('libLLVM.so', 'libclang-cpp.so')]
-    paths.append(stage / 'lib/clang/23/include/stddef.h')
-    if any(path is None or not Path(path).is_file() for path in paths):
-        raise ValueError('instrumented foundation omitted a required compiler product')
+    paths = _consumer_products(stage)
     version = subprocess.check_output([stage / 'bin/clang', '--version'], text=True, timeout=30)
     if ('ObjC3-patches='+portable['patch_digest'] not in version or
             'ObjC3-config='+portable['build_config_digest'] not in version):
@@ -58,6 +90,20 @@ def _identity(portable: dict, stage: Path) -> dict:
             'files': {str(Path(path).relative_to(stage)): digest(Path(path)) for path in paths}}
 
 
+def _retain_foundation_evidence(repo: Path, configured: dict | None, evidence: Path) -> None:
+    build = (Path(configured['paths']['build']) if configured is not None else
+             repo / 'out/toolchains/objc3-development/build-linux-x86_64-compiler-asan-ubsan')
+    receipt = build / 'foundation-build-report.json'
+    if not receipt.is_file():
+        return
+    shutil.copyfile(receipt, evidence / 'foundation.json')
+    report = json.loads(receipt.read_text())
+    for index, phase in enumerate(report.get('phases', [])):
+        log = Path(phase.get('log', ''))
+        if log.is_file():
+            shutil.copyfile(log, evidence / ('phase-'+str(index)+'.log'))
+
+
 def produce(repo: Path, plan: dict, output: Path, bundle: Path) -> dict:
     validate(plan);_require_checkout(repo, plan)
     output, bundle = output.resolve(), bundle.resolve()
@@ -66,34 +112,39 @@ def produce(repo: Path, plan: dict, output: Path, bundle: Path) -> dict:
         raise ValueError('instrumented foundation producer requires fresh owned outputs')
     output.mkdir(parents=True)
     evidence = output / 'foundation';evidence.mkdir()
-    foundation = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
-                                  instrumentation_profile=PROFILE, test_results=evidence)
-    configured = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)['configure']
-    portable = _portable_identity(repo)
-    stage = Path(configured['paths']['stage']).resolve(strict=True)
-    if (configured['source_build_id'] != portable['source_build_id'] or
-            configured['build_config_digest'] != portable['build_config_digest'] or
-            str(stage) != portable['paths']['stage'] or
-            configured['instrumentation'] != portable['instrumentation']):
-        raise ValueError('instrumented producer plan differs from its portable identity')
-    if foundation.get('status') != 'passed':
-        raise ValueError('instrumented foundation producer did not pass')
-    receipt = Path(configured['paths']['build']) / 'foundation-build-report.json'
-    shutil.copyfile(receipt, evidence / 'foundation.json')
-    for index, phase in enumerate(foundation['phases']):
-        shutil.copyfile(phase['log'], evidence / ('phase-'+str(index)+'.log'))
-    identity = _identity(portable, stage)
-    relative = stage.relative_to(repo)
-    bundle.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(['tar', '-I', 'zstd -T2 -3', '-cf', bundle, '-C', repo, str(relative)], check=True)
-    report = {'schema': 'objc3c.instrumented-foundation-bundle.v1', 'status': 'PASS',
-              'revision': plan['revision'], 'plan_sha256': plan['sha256'],
-              'identity': identity, 'foundation_identity': portable,
-              'bundle': {'sha256': digest(bundle), 'bytes': bundle.stat().st_size,
-                         'root': str(relative)}}
+    configured = None
+    report = {'schema': 'objc3c.instrumented-foundation-bundle.v1', 'status': 'RUNNING',
+              'revision': plan['revision'], 'plan_sha256': plan['sha256']}
     write_json(output / 'producer.json', report)
-    write_json(output / 'foundation-identity.json', portable)
-    return report
+    try:
+        foundation = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+                                      instrumentation_profile=PROFILE, test_results=evidence)
+        configured = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)['configure']
+        portable = _portable_identity(repo)
+        stage = Path(configured['paths']['stage']).resolve(strict=True)
+        if (configured['source_build_id'] != portable['source_build_id'] or
+                configured['build_config_digest'] != portable['build_config_digest'] or
+                str(stage) != portable['paths']['stage'] or
+                configured['instrumentation'] != portable['instrumentation']):
+            raise ValueError('instrumented producer plan differs from its portable identity')
+        if foundation.get('status') != 'passed':
+            raise ValueError('instrumented foundation producer did not pass')
+        identity = _identity(portable, stage)
+        relative = stage.relative_to(repo)
+        bundle.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(['tar', '-I', 'zstd -T2 -3', '-cf', bundle, '-C', repo, str(relative)], check=True)
+        report.update(status='PASS', identity=identity, foundation_identity=portable,
+                      bundle={'sha256': digest(bundle), 'bytes': bundle.stat().st_size,
+                              'root': str(relative)})
+        write_json(output / 'producer.json', report)
+        write_json(output / 'foundation-identity.json', portable)
+        return report
+    except BaseException as error:
+        report.update(status='FAIL', error=f'{type(error).__name__}: {error}')
+        write_json(output / 'producer.json', report)
+        raise
+    finally:
+        _retain_foundation_evidence(repo, configured, evidence)
 
 
 def restore(repo: Path, plan: dict, producer: Path, bundle: Path) -> dict:
@@ -118,10 +169,12 @@ def restore(repo: Path, plan: dict, producer: Path, bundle: Path) -> dict:
                            not (name.rstrip('/') == root or name.startswith(root+'/'))
                            for name in members)):
         raise ValueError('instrumented foundation bundle contains an escaped or unowned member')
+    if root+'/'+TRANSPORT_MARKER in (name.rstrip('/') for name in members):
+        raise ValueError('instrumented foundation bundle contains its unbound transport marker')
     subprocess.run(['tar', '-I', 'zstd', '-xf', bundle, '-C', repo], check=True)
     if _identity(portable, stage) != report['identity']:
         raise ValueError('restored instrumented foundation differs from its producer identity')
-    marker = stage / 'objc3-instrumented-foundation.json'
+    marker = stage / TRANSPORT_MARKER
     write_json(marker, report)
     return report
 

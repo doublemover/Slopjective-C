@@ -85,7 +85,7 @@ def test_profile_identity_is_distinct_stable_and_preserves_ordinary_inputs(owned
     assert first['configuration_inputs'].items() >= sealed['configuration_inputs'].items()
     assert first['cmake']['LLVM_USE_SANITIZER'] == 'Address;Undefined'
     assert first['build']['assertions'] and first['build']['rtti'] and first['build']['eh']
-    assert 'clang-cpp' in first['build']['distribution_components']
+    assert {'clang-cpp', 'LLVM', 'llvm-nm'} <= set(first['build']['distribution_components'])
     owner = repo / 'scripts/objc3c_toolchain/instrumentation_profiles.py'
     owner.write_text(owner.read_text() + '\n# recipe owner changed\n')
     assert select(owned)['build_config_digest'] != first['build_config_digest']
@@ -117,6 +117,16 @@ def test_fuzzer_and_source_coverage_profiles_reject_weakened_instrumentation(own
     path.write_text(json.dumps(document))
     with pytest.raises(ValueError, match='source coverage'):
         profiles.select(repo, COVERAGE_NAME, 'linux-x86_64', manifest['build'], sealed, manifest['upstream'])
+
+
+def test_sanitizer_profile_rejects_a_built_tool_omitted_from_the_stage(owned):
+    repo, manifest, sealed = owned
+    path = repo / 'toolchains/llvm/instrumentation-profiles.json'
+    document = json.loads(path.read_text())
+    document['profiles'][NAME]['additional_distribution_components'].remove('llvm-nm')
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match='distribution omits.*llvm-nm'):
+        profiles.select(repo, NAME, 'linux-x86_64', manifest['build'], sealed, manifest['upstream'])
 
 
 def test_source_coverage_profile_owns_lit_support_tools(owned):

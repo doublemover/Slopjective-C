@@ -178,6 +178,23 @@ export function validateNativeGate(text) {
   const coreAggregate = jobs["core-aggregate"];
   const coverageAggregate = jobs["coverage-aggregate"];
   const transport = jobs["diagnostic-transport"];
+  const foundationBundle = (asanProducer?.steps ?? []).find(
+    (step) => step.name === "Preserve exact sanitizer compiler bundle",
+  );
+  const foundationDiagnostics = (asanProducer?.steps ?? []).find(
+    (step) => step.name === "Preserve sanitizer compiler diagnostics",
+  );
+  if (
+    foundationBundle?.if ||
+    !foundationBundle?.with?.path?.includes("out/instrumented-foundation/profile.tar.zst") ||
+    foundationBundle.with?.["if-no-files-found"] !== "error" ||
+    foundationDiagnostics?.if !== "always()" ||
+    !foundationDiagnostics?.with?.name?.startsWith("asan-foundation-diagnostics-") ||
+    !foundationDiagnostics?.with?.path?.includes("producer/producer.json") ||
+    foundationDiagnostics.with.path.includes("profile.tar.zst") ||
+    foundationDiagnostics.with?.["if-no-files-found"] !== "error"
+  )
+    throw new Error("Sanitizer producer must publish success bytes and always retain failure evidence");
   const fullOwnerCondition =
     "needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''";
   if (

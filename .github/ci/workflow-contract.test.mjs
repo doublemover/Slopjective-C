@@ -176,6 +176,23 @@ test("extended native workflow retains its full receipt-verifying aggregate", ()
   validateNativeGate(native);
 });
 
+for (const fault of ["missing diagnostics", "conditional diagnostics", "failure bundle"]) {
+  test(`sanitizer producer rejects ${fault}`, () => {
+    const owner = yaml.load(native);
+    const steps = owner.jobs["asan-foundation-producer"].steps;
+    const diagnostics = steps.find(
+      (step) => step.name === "Preserve sanitizer compiler diagnostics",
+    );
+    const bundle = steps.find(
+      (step) => step.name === "Preserve exact sanitizer compiler bundle",
+    );
+    if (fault === "missing diagnostics") steps.splice(steps.indexOf(diagnostics), 1);
+    if (fault === "conditional diagnostics") diagnostics.if = "success()";
+    if (fault === "failure bundle") bundle.if = "always()";
+    assert.throws(() => validateNativeGate(yaml.dump(owner)));
+  });
+}
+
 test("manual SDK release reuses a passing native archive", () => {
   validateNativeRelease(native, release);
 });
