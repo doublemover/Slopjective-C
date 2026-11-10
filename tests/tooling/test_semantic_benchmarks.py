@@ -266,6 +266,7 @@ def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_he
     stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
     for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'lib/libLLVM.so.23.1', 'lib/libclang-cpp.so.23.1',
         'lib/libobjc.so.4.6', 'lib/libobjc3_runtime_services.a', 'lib/clang/23/include/stddef.h',
+        'lib/clang/23/lib/linux/libclang_rt.builtins.a', 'bin/clang.cfg', 'bin/clang++.cfg',
         'include/objc3c/runtime/objc3_collections.h'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
     (stage / 'lib/libobjc.so').symlink_to('libobjc.so.4.6')
@@ -287,6 +288,8 @@ def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_he
     assert (prefix / 'lib/libclang-cpp.so').resolve() == prefix / 'lib/libclang-cpp.so.23.1'
     assert (prefix / 'lib/libobjc.so').resolve() == prefix / 'lib/libobjc.so.4.6'
     assert (stage / 'bin/clang').stat().st_ino == (prefix / 'bin/clang').stat().st_ino
+    assert (prefix / 'lib/clang/23/lib/linux/libclang_rt.builtins.a').is_file()
+    assert (prefix / 'bin/clang++.cfg').read_text() == (stage / 'bin/clang++.cfg').read_text()
     with pytest.raises(ValueError, match='fresh independent'):
         prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu')
 
@@ -294,8 +297,8 @@ def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_he
 def test_development_benchmark_prefix_accepts_a_static_compiler_stage(tmp_path):
     from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix
     stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
-    for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'lib/libobjc.so.4.6',
-        'lib/libobjc3_runtime_services.a', 'lib/clang/23/include/stddef.h',
+    for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'bin/clang++.cfg', 'lib/libobjc.so.4.6',
+        'lib/libobjc3_runtime_services.a', 'lib/clang/23/include/stddef.h', 'lib/clang/23/lib/linux/runtime.a',
         'include/objc3c/runtime/objc3_collections.h'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
     (stage / 'lib/libobjc.so').symlink_to('libobjc.so.4.6')
@@ -310,6 +313,7 @@ def test_development_benchmark_prefix_copies_across_filesystems(tmp_path, monkey
     stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
     for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'lib/libobjc.so.4.6',
         'lib/libobjc3_runtime_services.a', 'lib/clang/23/include/stddef.h',
+        'lib/clang/23/lib/linux/runtime.a',
         'include/objc3c/runtime/objc3_collections.h'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
     (stage / 'lib/libobjc.so').symlink_to('libobjc.so.4.6')
@@ -319,6 +323,18 @@ def test_development_benchmark_prefix_copies_across_filesystems(tmp_path, monkey
     assert result['source_build_id'] == 'copied-build'
     assert (prefix / 'bin/clang').read_bytes() == (stage / 'bin/clang').read_bytes()
     assert (prefix / 'bin/clang').stat().st_ino != (stage / 'bin/clang').stat().st_ino
+    assert (prefix / 'lib/clang/23/lib/linux/runtime.a').is_file()
+
+
+def test_development_graph_copy_falls_back_across_filesystems(tmp_path, monkeypatch):
+    import errno
+    from scripts.objc3c_toolchain import development_graph
+    source, destination = tmp_path / 'source', tmp_path / 'destination'
+    source.write_bytes(b'exact development graph input')
+    monkeypatch.setattr(development_graph.os, 'link',
+        lambda *_: (_ for _ in ()).throw(OSError(errno.EXDEV, 'cross-device')))
+    development_graph._link_or_copy(source, destination)
+    assert destination.read_bytes() == source.read_bytes()
 
 
 @pytest.mark.parametrize('path', ['stdlib/include/objc3/ObjC3Map.h', 'native/objc3c/src/runtime/stdlib/collections_service.cpp',

@@ -164,6 +164,20 @@ def _identity(manifest: dict[str, Any], patches: list[tuple[str, Path, str]], pr
     }
 
 
+def planned_development_identity(repo: Path, *, manifest_path: Path | None = None) -> dict[str, Any]:
+    """Return the locked source/configuration identity without preparing LLVM.
+
+    Artifact consumers use this to authenticate a producer-built toolchain from
+    the checked-in manifest and patch bytes. It deliberately does not admit a
+    source checkout or claim that one exists.
+    """
+    repo = repo.resolve()
+    manifest_path = manifest_path or repo / "toolchains" / "llvm" / "manifest.json"
+    manifest, base = _load_manifest(manifest_path)
+    patches = _series(manifest, repo, base, pristine=False)
+    return _identity(manifest, patches, False, repo)
+
+
 def _identity_path(source: Path) -> Path:
     return source / ".objc3c-prepared-source.json"
 

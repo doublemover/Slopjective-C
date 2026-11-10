@@ -27,9 +27,9 @@ if(OBJC3C_FOUNDATION_IDENTITY_FILE)
   string(JSON _objc3_identity_schema GET "${_objc3_source_identity}" schema)
   string(JSON _objc3_identity_profile GET "${_objc3_source_identity}" profile)
   if(NOT _objc3_identity_schema STREQUAL "objc3c.portable-foundation-identity.v1" OR
-      NOT _objc3_identity_profile STREQUAL "compiler-source-coverage" OR
+      NOT _objc3_identity_profile MATCHES "^compiler-(source-coverage|asan-ubsan|fuzz-asan-ubsan)$" OR
       NOT "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}" STREQUAL "${_objc3_identity_profile}")
-    message(FATAL_ERROR "Portable Clang identity is outside the coverage consumer contract")
+    message(FATAL_ERROR "Portable Clang identity is outside the instrumented consumer contract")
   endif()
 elseif(EXISTS "${_objc3_sdk}/objc3-sdk.json" AND
        EXISTS "${_objc3_sdk}/share/objc3c/verify-sdk.py")
@@ -64,8 +64,8 @@ string(JSON OBJC3C_FOUNDATION_PATCH_DIGEST GET "${_objc3_source_identity}" patch
 string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_source_identity}" build_config_digest)
 if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
   if(OBJC3C_FOUNDATION_IDENTITY_FILE)
-    set(_objc3_profile_kind source-coverage)
     set(_objc3_profile "${_objc3_source_identity}")
+    string(JSON _objc3_profile_kind GET "${_objc3_profile}" instrumentation kind)
   else()
     execute_process(
       COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain build-plan

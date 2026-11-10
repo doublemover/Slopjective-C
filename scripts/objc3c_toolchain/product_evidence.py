@@ -211,13 +211,16 @@ class ProductCommands:
         return identity
 
     def view(self, work):
-        files, links = {}, {}
+        files, links, derived = {}, {}, {}
         for path in sorted(work.rglob('*')):
             if path.is_symlink():
                 links[str(path)] = str(path.resolve(strict=True))
-            elif path.is_file() and (path.suffix in SOURCE | ARTIFACT or path.name == 'module.modulemap'):
+            elif path.is_file() and (path.suffix in SOURCE or path.name == 'module.modulemap'):
                 files[str(path)] = self.retain(path)
-        return {'files': files, 'symlinks': links}
+            elif path.is_file() and path.suffix in ARTIFACT:
+                derived[str(path)] = {'sha256': self.signature(path), 'bytes': path.stat().st_size,
+                                      'mode': path.stat().st_mode & 0o777}
+        return {'files': files, 'symlinks': links, 'derived_artifacts': derived}
 
     def loader(self, gate, name, binary, work, required):
         log = self.output / (name+'-loader.log')
@@ -266,10 +269,14 @@ class ProductCommands:
                     continue
                 path = (work / arg).resolve()
                 if path.is_file() and index > 0 and args[index-1] not in OUTPUT_FLAGS | {'-include', '-include-pch', '-imacros'}:
-                    if path.suffix in SOURCE or (path.suffix in ARTIFACT and str(path) not in gate.inputs):
+                    if path.suffix in SOURCE:
                         row['inputs']['files'][str(path)] = self.retain(path)
                         if path.suffix in {'.c', '.cc', '.cpp', '.cxx', '.m', '.mm', '.objc3', '.h', '.hpp', '.objc3i'}:
                             sources.append(path)
+                    elif path.suffix in ARTIFACT and str(path) not in gate.inputs:
+                        row.setdefault('derived_inputs', {})[str(path)] = {
+                            'sha256': self.signature(path), 'bytes': path.stat().st_size,
+                            'mode': path.stat().st_mode & 0o777}
                 if args[index-1] == '--module-search-path' and path.is_dir():
                     view = self.view(path)
                     for key in ('files', 'symlinks'):

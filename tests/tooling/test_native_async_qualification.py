@@ -7,6 +7,7 @@ import pytest
 from scripts.objc3c_toolchain import qualify_native_async as qualification
 from scripts.objc3c_toolchain import qualify_native_async_sanitizers as sanitizers
 from scripts.objc3c_toolchain import qualify_native_async_packages as native_packages
+from scripts.objc3c_toolchain import run_linux_factory_batch as factory_batch
 
 
 def test_native_async_matrix_covers_objcpp_standards_and_ownership():
@@ -172,3 +173,16 @@ def test_checked_async_package_requires_combined_typed_effect():
         {'effects': {'async': False, 'throws': True, 'throws_kind': 'typed'}}])
     assert not native_packages.has_checked_async({
         'async': True, 'throws': True, 'throws_kind': 'untyped'})
+
+
+def test_focused_factory_exports_cover_every_checked_namespace():
+    assert set(factory_batch.FOCUSED_EXPORTS) == {
+        'NativeClosureFactories', 'NativeFactoryTypeProjections',
+        'NativeFactoryTemplateArguments', 'NativeGenericFactoryProjections',
+        'NativeFactoryValueArguments', 'NativeClosureResultProjections',
+        'NativeLambdaFactoryResults', 'NativeNestedFactoryTypes',
+        'NativeForeignAttributes', 'NativeCustomCoroutines',
+        'NativeDeclarationAttributes', 'NativeStandardCoroutines',
+        'NativeUnnamedTemplateProjections', 'NativeIncompleteTemplates',
+        'NativeUnnamedRecordProjections',
+    }

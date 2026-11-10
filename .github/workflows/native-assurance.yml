@@ -141,7 +141,9 @@ jobs:
                   rows.append((path.as_posix() + '#' + pointer, status, errors))
               for command in commands(value):
                   original = Path(str(command['log']))
-                  candidates = ([path.parent / original] if not original.is_absolute() else [])
+                  candidates = [path.parent / original.name]
+                  if not original.is_absolute():
+                      candidates.insert(0, path.parent / original)
                   candidates.extend(root.rglob(original.name))
                   log = next((candidate for candidate in candidates if candidate.is_file()), None)
                   if log and log not in failed_logs:
@@ -380,8 +382,6 @@ jobs:
             swift: true
           - group: semantic
             swift: false
-          - group: asan-products
-            swift: false
     runs-on: ubuntu-26.04
     container:
       image: debian:13
@@ -440,6 +440,150 @@ jobs:
             --product-sdk /opt/objc3c-product/current \
             --package-release /producer/product-producer/package/release.json
       - name: Preserve consumer evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
+          path: |
+            out/release-matrix/results/
+            !out/release-matrix/results/**/build/**
+            !out/release-matrix/results/**/isolated-install/**
+          if-no-files-found: error
+          retention-days: 7
+
+  asan-foundation-producer:
+    name: Build exact sanitizer compiler producer
+    needs: plan
+    if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
+    runs-on: ubuntu-26.04
+    container:
+      image: debian:13
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup/asan-foundation-producer
+      - name: Build and qualify exact sanitizer compiler
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_assurance.instrumented_foundation produce \
+            --plan out/native-assurance/selection/plan.json \
+            --output out/instrumented-foundation/producer \
+            --bundle out/instrumented-foundation/profile.tar.zst
+      - name: Preserve exact sanitizer compiler bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: asan-foundation-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            out/instrumented-foundation/profile.tar.zst
+            out/instrumented-foundation/producer/producer.json
+            out/instrumented-foundation/producer/foundation-identity.json
+            out/instrumented-foundation/producer/foundation/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
+
+  instrumented-product-consumers:
+    name: Qualify restored sanitizer consumer (${{ matrix.group }})
+    needs: [plan, product-producer, asan-foundation-producer]
+    if: needs.plan.outputs.native == 'true' && needs.product-producer.result == 'success' && needs.asan-foundation-producer.result == 'success' && !inputs.diagnostic_core_only
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [asan-products, runtime-schedules]
+    runs-on: ubuntu-26.04
+    container:
+      image: debian:13
+      options: --security-opt seccomp=unconfined
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+      RELEASE_GROUP: ${{ matrix.group }}
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/native-assurance/selection
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: objc3c-linux-sdk
+          path: /release
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
+          path: /producer
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: asan-foundation-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/instrumented-foundation/restored
+      - uses: ./.github/actions/linux-host-tools
+        with:
+          output: out/native-assurance/startup/${{ matrix.group }}
+      - name: Restore exact sanitizer compiler
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
+          python3 -B -m scripts.objc3c_assurance.instrumented_foundation restore \
+            --plan out/native-assurance/selection/plan.json \
+            --producer out/instrumented-foundation/restored/producer/producer.json \
+            --bundle out/instrumented-foundation/restored/profile.tar.zst
+      - name: Install the exact producer archive
+        shell: bash
+        run: |
+          archive=$(find /release -name '*.tar.zst' -type f)
+          expected=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' /producer/product-producer/package/release.json)
+          sh /release/scripts/install_objc3c_linux.sh --archive "$archive" --sha256 "$expected" --root /opt/objc3c-product
+      - name: Require sanitizer process layout support
+        run: |
+          mkdir -p out
+          g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
+          out/native-container-control
+      - name: Execute selected instrumented consumer
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
+          export OBJC3C_ASAN_FOUNDATION_RECEIPT="$GITHUB_WORKSPACE/out/toolchains/objc3-development/stage-linux-x86_64-compiler-asan-ubsan/objc3-instrumented-foundation.json"
+          export OBJC3C_ASAN_FOUNDATION_EVIDENCE="$GITHUB_WORKSPACE/out/instrumented-foundation/restored/producer/foundation"
+          export OBJC3C_ASAN_FOUNDATION_IDENTITY="$GITHUB_WORKSPACE/out/instrumented-foundation/restored/producer/foundation-identity.json"
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_assurance.release_matrix run \
+            --plan out/native-assurance/selection/plan.json \
+            --output "out/release-matrix/results/$RELEASE_GROUP" \
+            --group "$RELEASE_GROUP" \
+            --product-sdk /opt/objc3c-product/current \
+            --package-release /producer/product-producer/package/release.json
+      - name: Preserve instrumented consumer evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -629,8 +773,8 @@ jobs:
 
   core-aggregate:
     name: Merge exact SDK consumer evidence
-    needs: [plan, product-producer, product-consumers]
-    if: always() && !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.product-producer.result == 'success' && needs.product-consumers.result == 'success'
+    needs: [plan, product-producer, product-consumers, asan-foundation-producer, instrumented-product-consumers]
+    if: always() && !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.product-producer.result == 'success' && needs.product-consumers.result == 'success' && needs.asan-foundation-producer.result == 'success' && needs.instrumented-product-consumers.result == 'success'
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
@@ -717,7 +861,7 @@ jobs:
   gate:
     name: Extended Linux native assurance gate
     if: always() && !inputs.diagnostic_core_only
-    needs: [plan, product-producer, product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]
+    needs: [plan, product-producer, product-consumers, asan-foundation-producer, instrumented-product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
@@ -739,6 +883,8 @@ jobs:
           PLAN_RESULT: ${{ needs.plan.result }}
           PRODUCER_RESULT: ${{ needs.product-producer.result }}
           CONSUMERS_RESULT: ${{ needs.product-consumers.result }}
+          ASAN_PRODUCER_RESULT: ${{ needs.asan-foundation-producer.result }}
+          INSTRUMENTED_CONSUMERS_RESULT: ${{ needs.instrumented-product-consumers.result }}
           FUZZ_RESULT: ${{ needs.independent-native.result }}
           COVERAGE_PRODUCER_RESULT: ${{ needs.coverage-producer.result }}
           COVERAGE_PARTITIONS_RESULT: ${{ needs.coverage-partitions.result }}
@@ -746,7 +892,7 @@ jobs:
           COVERAGE_RESULT: ${{ needs.coverage-aggregate.result }}
         shell: bash
         run: |
-          for result in "$PRODUCER_RESULT" "$CONSUMERS_RESULT" "$FUZZ_RESULT" "$COVERAGE_PRODUCER_RESULT" "$COVERAGE_PARTITIONS_RESULT" "$CORE_RESULT" "$COVERAGE_RESULT"; do
+          for result in "$PRODUCER_RESULT" "$CONSUMERS_RESULT" "$ASAN_PRODUCER_RESULT" "$INSTRUMENTED_CONSUMERS_RESULT" "$FUZZ_RESULT" "$COVERAGE_PRODUCER_RESULT" "$COVERAGE_PARTITIONS_RESULT" "$CORE_RESULT" "$COVERAGE_RESULT"; do
             [[ "$result" == success ]]
           done
           export ASSURANCE_OUTCOMES="{\"plan\":\"$PLAN_RESULT\",\"native\":\"success\"}"

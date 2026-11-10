@@ -237,7 +237,8 @@ def test_foreign_contract_changes_require_the_existing_native_ci_consumer(path):
 def test_development_pilot_prefix_seals_only_current_native_tools_without_an_archive(tmp_path):
     stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
     for relative in ('bin/clang', 'bin/objc3c', 'lib/libLLVM.so.23.1', 'lib/libclang-cpp.so.23.1',
-                     'lib/clang/23/include/stddef.h'):
+                     'lib/clang/23/include/stddef.h', 'lib/clang/23/lib/linux/libclang_rt.builtins.a',
+                     'bin/clang.cfg', 'bin/clang++.cfg'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
     value = owner.prepare_compiler_prefix(stage, prefix, source_build_id='current-build',
                                            target='x86_64-unknown-linux-gnu')
@@ -245,6 +246,8 @@ def test_development_pilot_prefix_seals_only_current_native_tools_without_an_arc
     assert (prefix / 'bin/clang').stat().st_ino == (stage / 'bin/clang').stat().st_ino
     assert (prefix / 'lib/libLLVM.so').resolve() == prefix / 'lib/libLLVM.so.23.1'
     assert (prefix / 'lib/libclang-cpp.so').resolve() == prefix / 'lib/libclang-cpp.so.23.1'
+    assert (prefix / 'lib/clang/23/lib/linux/libclang_rt.builtins.a').is_file()
+    assert (prefix / 'bin/clang.cfg').read_text() == (stage / 'bin/clang.cfg').read_text()
     with pytest.raises(ValueError, match='fresh independent'):
         owner.prepare_compiler_prefix(stage, prefix, source_build_id='current-build', target='target')
 
@@ -262,7 +265,8 @@ def test_development_pilot_prefix_accepts_a_static_compiler_stage(tmp_path):
 
 def test_development_pilot_prefix_copies_across_filesystems(tmp_path, monkeypatch):
     stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
-    for relative in ('bin/clang', 'bin/objc3c', 'lib/clang/23/include/stddef.h'):
+    for relative in ('bin/clang', 'bin/objc3c', 'bin/clang.cfg',
+                     'lib/clang/23/include/stddef.h', 'lib/clang/23/lib/linux/runtime.a'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
     monkeypatch.setattr(owner.os, 'link', lambda *_: (_ for _ in ()).throw(OSError(errno.EXDEV, 'cross-device')))
     value = owner.prepare_compiler_prefix(stage, prefix, source_build_id='copied-build',
@@ -270,3 +274,4 @@ def test_development_pilot_prefix_copies_across_filesystems(tmp_path, monkeypatc
     assert value['source_build_id'] == 'copied-build'
     assert (prefix / 'bin/clang').read_bytes() == (stage / 'bin/clang').read_bytes()
     assert (prefix / 'bin/clang').stat().st_ino != (stage / 'bin/clang').stat().st_ino
+    assert (prefix / 'lib/clang/23/lib/linux/runtime.a').is_file()

@@ -88,10 +88,13 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 not isinstance(archive_sha256, str) or len(archive_sha256) != 64 or
                 any(char not in '0123456789abcdef' for char in archive_sha256)):
             raise ValueError('restored product SDK or package receipt differs from the exact source build')
+        installed = verify_sdk(sdk, release.get('seal_sha256'))
         release = {**release, 'installed': {**release.get('installed', {}), 'prefix': str(sdk)}}
         shared['release'] = release
         prerequisites.add('package')
         report['product'] = product_identity(sdk, release)
+        if installed['source_build_id'] != report['product']['source_build_id']:
+            raise ValueError('installed SDK inventory differs from the producer source build')
     directory = None
 
     def save():
@@ -111,7 +114,19 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             save()
 
     def profile_foundation(profile):
+        if profile in shared and shared[profile].get('restored'):
+            return Path(shared[profile]['prefix'])
         if profile not in shared:
+            restored = environment.get('OBJC3C_ASAN_FOUNDATION_RECEIPT')
+            if profile == 'compiler-asan-ubsan' and restored:
+                from .instrumented_foundation import admit
+                retained = Path(environment['OBJC3C_ASAN_FOUNDATION_EVIDENCE']).resolve(strict=True)
+                evidence = directory / 'foundations' / profile
+                shutil.copytree(retained, evidence)
+                identity = Path(environment['OBJC3C_ASAN_FOUNDATION_IDENTITY'])
+                shared[profile] = {'status': 'passed', 'restored': True,
+                    'prefix': str(admit(repo, Path(restored), identity))}
+                return Path(shared[profile]['prefix'])
             evidence = directory / 'foundations' / profile
             try:
                 shared[profile] = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
@@ -138,7 +153,9 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         command(key+'-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
             f'-DOBJC3C_CLANG_FOUNDATION_ROOT={foundation}',
             f'-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE={profile}',
-            '-DBUILD_TESTING=OFF',
+            *([f'-DOBJC3C_FOUNDATION_IDENTITY_FILE={environment["OBJC3C_ASAN_FOUNDATION_IDENTITY"]}']
+              if profile == 'compiler-asan-ubsan' and environment.get('OBJC3C_ASAN_FOUNDATION_IDENTITY') else []),
+            '-DOBJC3C_BUILD_SCAN_DEPS=OFF', '-DBUILD_TESTING=OFF',
             f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}', '-DCMAKE_BUILD_TYPE=Release',
             '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', f'-DPython3_EXECUTABLE={sys.executable}'],
             environment_override=profile_environment)
@@ -197,19 +214,18 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 f'-DOBJC3_ROBIN_MAP_SOURCE_DIR={runtime["robin_map_source"]}', '-DBUILD_TESTING=ON'])
             command('build', ['cmake', '--build', build, '--parallel', '2'])
             tests = execute_ctest(build, 'runtime-ctest', directory, command)
-            command('install', ['cmake', '--install', build, '--prefix', sdk])
             return tests
         if name == 'frontend':
             build = repo / 'out/toolchains/objc3-facade/build-linux-x86_64'
             command('configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
                 f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
-                f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DBUILD_TESTING=ON'])
+                f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
+                '-DOBJC3C_BUILD_SCAN_DEPS=OFF', '-DBUILD_TESTING=ON'])
             jobs = build_plans(repo, host='linux-x86_64')['configure']['host_environment']['resource_limits']['compile_jobs']
-            command('build', ['cmake', '--build', build, '--target', 'objc3c', 'clang-scan-deps', '--parallel', str(jobs)])
+            command('build', ['cmake', '--build', build, '--target', 'objc3c', '--parallel', str(jobs)])
             tests = frontend_tests(build, directory / 'frontend-tests', command, jobs=jobs)
             for row in tests['tests']:
                 junit(directory / ('frontend-' + row['name'] + '-ctest.xml'), expected={row['name']})
-            command('install', ['cmake', '--install', build, '--prefix', sdk])
             return tests['tests']
         if name == 'installed':
             result = qualify_installed(repo, sdk, directory / 'installed-tests')
@@ -337,6 +353,14 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         save()
         execute_suites(suites, output=output, report=report, execute=execute, save=save,
                        prerequisites=prerequisites)
+        if package_release is not None:
+            verified = verify_sdk(sdk, report['product']['seal_sha256'])
+            if verified['source_build_id'] != report['product']['source_build_id']:
+                raise ValueError('product consumer changed the sealed SDK source identity')
+        restored = environment.get('OBJC3C_ASAN_FOUNDATION_RECEIPT')
+        if restored:
+            from .instrumented_foundation import admit
+            admit(repo, Path(restored), Path(environment['OBJC3C_ASAN_FOUNDATION_IDENTITY']))
         if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
             raise ValueError('source revision or selection changed during native execution')
         from scripts.objc3c_toolchain.semantic_build_costs import snapshot

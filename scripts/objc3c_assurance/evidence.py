@@ -314,11 +314,15 @@ def suite_results(root: Path, name: str) -> list[dict]:
         from .emitter_shards import EMITTER_TESTS, emitter_partition
         if (native.get('emitter_partition') != emitter_partition(directory / 'first-party', native['suites'])):
             raise ValueError('emitter coverage partition proof changed')
+        compiler_units = compiler.get('executed_unit_binary_ids', {})
+        compiler_suite_names = {row.get('name') for row in compiler.get('suites', [])}
+        expected_compiler_suites = {'ObjC3-lit', *(Path(path).name for path in compiler_units)}
         if (len(controls.get('controls', [])) != 5 or
                 len(native.get('suites', [])) != 13 + len(EMITTER_TESTS) or
                 any(not any(value.get('state') == 'executed' for value in row.get('source_coverage', {}).values())
                     for row in native['suites']) or
-                len(compiler.get('suites', [])) != 4 or not compiler.get('eligible') or
+                not compiler_units or compiler_suite_names != expected_compiler_suites or
+                len(compiler.get('suites', [])) != len(expected_compiler_suites) or not compiler.get('eligible') or
                 not any(row.get('state') == 'executed' for row in compiler.get('source_coverage', {}).values()) or
                 not compiler.get('binary_ids') or not native.get('temporary_build_reclaimed')):
             raise ValueError('first-party/patched compiler source coverage is incomplete')

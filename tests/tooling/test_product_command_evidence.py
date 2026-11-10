@@ -109,6 +109,10 @@ def test_actual_command_header_loader_and_binary_evidence_survives_workspace_rem
     compile_row = products.report['commands'][0]
     assert str(header) in compile_row['headers'] and str(source) in compile_row['headers']
     assert blob_bytes(products.output, compile_row['headers'][str(header)]) == header.read_bytes()
+    link_row = products.report['commands'][1]
+    assert str(work / 'main.o') in link_row['derived_inputs']
+    assert 'blob' not in link_row['derived_inputs'][str(work / 'main.o')]
+    assert str(work / 'program') in link_row['after']['derived_artifacts']
     assert '-MD' in compile_row['argv'] and '-MF' in compile_row['argv']
     shutil.rmtree(work)
     assert products.finalize() == receipt

@@ -99,6 +99,8 @@ endif()
 
 # CMake's C++20 module scanning must use this SDK, including on fresh hosts.
 # Build the upstream tool against the same qualified Clang/LLVM libraries.
+option(OBJC3C_BUILD_SCAN_DEPS "Build the development clang-scan-deps tool" ON)
+if(OBJC3C_BUILD_SCAN_DEPS)
 set(_scan_source "${_objc3_repo}/out/toolchains/objc3-development/src/clang/tools/clang-scan-deps")
 set(_tablegen "${_objc3_repo}/out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen")
 set(OBJC3C_TABLEGEN "" CACHE FILEPATH "Explicit same-version LLVM TableGen for frontend development")
@@ -143,6 +145,7 @@ target_compile_features(${_objc3_scan_deps_target} PRIVATE cxx_std_20)
 target_link_libraries(${_objc3_scan_deps_target} PRIVATE objc3c_build_defaults clangAST clangBasic clangDependencyScanning
   clangDriver clangFrontend clangLex clangSerialization clangTooling ${_objc3_native_codegen})
 install(TARGETS ${_objc3_scan_deps_target} RUNTIME DESTINATION bin)
+endif()
 
 # The runtime can also be built independently of the compiler SDK.
 add_subdirectory(../runtime "${CMAKE_CURRENT_BINARY_DIR}/runtime")

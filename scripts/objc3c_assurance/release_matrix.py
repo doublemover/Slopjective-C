@@ -24,7 +24,8 @@ GROUPS = {
     'installed-sanitizers': ('installed', 'sanitizers'),
     'swift': ('swift-consumer',),
     'semantic': ('semantic-workloads',),
-    'asan-products': ('sanitizer-products', 'runtime-schedules'),
+    'asan-products': ('sanitizer-products',),
+    'runtime-schedules': ('runtime-schedules',),
 }
 CONSUMER_GROUPS = tuple(name for name in GROUPS if name != 'product-producer')
 

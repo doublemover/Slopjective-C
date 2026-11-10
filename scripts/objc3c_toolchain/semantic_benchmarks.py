@@ -201,8 +201,12 @@ def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False, ser
         destination_name = name if name == 'libobjc3_runtime_services.a' else source.name
         link(source, prefix / 'lib' / destination_name)
         if destination_name != name: (prefix / 'lib' / name).symlink_to(destination_name)
-    for name in ('lib/clang/23/include', 'include/objc3c/runtime'):
+    for name in ('lib/clang/23', 'include/objc3c/runtime'):
         shutil.copytree(stage / name, prefix / name, copy_function=_link_or_copy)
+    for name in ('clang.cfg', 'clang++.cfg'):
+        source = stage / 'bin' / name
+        if source.is_file() and not source.is_symlink():
+            link(source, prefix / 'bin' / name)
     if imports:
         link(stage / 'bin/objc3c', prefix / 'bin/objc3c')
         shutil.copytree(stage / 'include/objc', prefix / 'include/objc', copy_function=_link_or_copy)

@@ -20,6 +20,16 @@ from .qualify_native_async_packages import check_cpp_metadata, check_factory_met
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE = 'fixture.NativeAsync'
+FOCUSED_EXPORTS = (
+    'NativeClosureFactories', 'NativeFactoryTypeProjections',
+    'NativeFactoryTemplateArguments', 'NativeGenericFactoryProjections',
+    'NativeFactoryValueArguments', 'NativeClosureResultProjections',
+    'NativeLambdaFactoryResults', 'NativeNestedFactoryTypes',
+    'NativeForeignAttributes', 'NativeCustomCoroutines',
+    'NativeDeclarationAttributes', 'NativeStandardCoroutines',
+    'NativeUnnamedTemplateProjections', 'NativeIncompleteTemplates',
+    'NativeUnnamedRecordProjections',
+)
 
 
 def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
@@ -122,12 +132,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                 (include / 'objc3c/runtime').symlink_to(headers, target_is_directory=True)
                 (include / 'objc3').symlink_to(ROOT / 'stdlib/include/objc3', target_is_directory=True)
                 config = json.loads((source / 'provider/package.json').read_text())
-                exports = config['exports'] if full else [
-                    'NativeClosureFactories', 'NativeFactoryTypeProjections',
-                    'NativeFactoryTemplateArguments', 'NativeGenericFactoryProjections',
-                    'NativeFactoryValueArguments', 'NativeClosureResultProjections',
-                    'NativeLambdaFactoryResults', 'NativeNestedFactoryTypes',
-                    'NativeForeignAttributes', 'NativeCustomCoroutines', 'NativeDeclarationAttributes', 'NativeStandardCoroutines', 'NativeUnnamedTemplateProjections']
+                exports = config['exports'] if full else list(FOCUSED_EXPORTS)
                 built = work / 'built'
                 module = built / 'modules' / MODULE
                 module.mkdir(parents=True)

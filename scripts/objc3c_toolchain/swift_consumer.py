@@ -55,8 +55,12 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
         _link_or_copy(source, prefix / 'lib' / source.name)
         if source.name != name:
             (prefix / 'lib' / name).symlink_to(source.name)
-    shutil.copytree(stage / 'lib/clang/23/include', prefix / 'lib/clang/23/include',
+    shutil.copytree(stage / 'lib/clang/23', prefix / 'lib/clang/23',
                     copy_function=_link_or_copy)
+    for name in ('clang.cfg', 'clang++.cfg'):
+        source = stage / 'bin' / name
+        if source.is_file() and not source.is_symlink():
+            _link_or_copy(source, prefix / 'bin' / name)
     receipt = {'schema': SCHEMA, 'source_build_id': source_build_id, 'target': target,
         'purpose': 'Development-only native C/Swift compiler tools; no packaged SDK qualification',
         'files': inventory(prefix)}

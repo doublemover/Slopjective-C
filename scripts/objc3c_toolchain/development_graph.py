@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,16 @@ from .qualify_source_graph import qualify, qualify_case
 from .qualify_source_modules import qualify as qualify_managed
 
 
+def _link_or_copy(source, destination):
+    source = Path(source).resolve(strict=True)
+    try:
+        os.link(source, destination)
+    except OSError as error:
+        if error.errno != errno.EXDEV:
+            raise
+        shutil.copy2(source, destination)
+
+
 def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runtime: Path) -> dict:
     plan, _ = foundation(repo)
     stage = Path(plan['paths']['stage'])
@@ -24,7 +35,7 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
 
     def link(source, destination):
         destination.parent.mkdir(parents=True, exist_ok=True)
-        os.link(source.resolve(strict=True), destination)
+        _link_or_copy(source, destination)
 
     for name in ('clang', 'clang++', 'ld.lld', 'llvm-dwarfdump', 'llvm-readobj'):
         link(stage / 'bin' / name, prefix / 'bin' / name)
@@ -38,11 +49,15 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
     if actual.name != 'libobjc.so':
         (prefix / 'lib/libobjc.so').symlink_to(actual.name)
     link(services, prefix / 'lib/libobjc3_runtime_services.a')
-    for source, target in ((stage / 'lib/clang/23/include', 'lib/clang/23/include'),
+    for source, target in ((stage / 'lib/clang/23', 'lib/clang/23'),
                            (repo / 'stdlib/include', 'include'),
                            (repo / 'native/objc3c/src/runtime/public', 'include/objc3c/runtime'),
                            (objc_runtime.parent.parent / 'include/objc', 'include/objc')):
-        shutil.copytree(source, prefix / target, copy_function=os.link, dirs_exist_ok=True)
+        shutil.copytree(source, prefix / target, copy_function=_link_or_copy, dirs_exist_ok=True)
+    for name in ('clang.cfg', 'clang++.cfg'):
+        source = stage / 'bin' / name
+        if source.is_file() and not source.is_symlink():
+            link(source, prefix / 'bin' / name)
     builder = prefix / 'share/objc3c/source-build'
     builder.mkdir(parents=True)
     for source, name in (('source_graph.py', 'build.py'), ('sdk_example.py', 'sdk_example.py')):

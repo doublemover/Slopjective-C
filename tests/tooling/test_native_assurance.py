@@ -8,6 +8,7 @@ import shutil
 import zipfile
 import sys
 import time
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -78,6 +79,52 @@ def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_a
     source = (Path(__file__).resolve().parents[2] /
               'scripts/objc3c_assurance/runner.py').read_text()
     assert "command('archive-install'" not in source
+
+
+def test_product_consumers_keep_the_exact_sdk_immutable_and_skip_development_scanner():
+    source = (Path(__file__).resolve().parents[2] /
+              'scripts/objc3c_assurance/runner.py').read_text()
+    assert "verify_sdk(sdk, report['product']['seal_sha256'])" in source
+    assert "'-DOBJC3C_BUILD_SCAN_DEPS=OFF'" in source
+    assert "'objc3c', 'clang-scan-deps'" not in source
+    assert "command('install', ['cmake', '--install', build, '--prefix', sdk])" not in source
+
+
+def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_path, monkeypatch):
+    from scripts.objc3c_assurance import emitter_shards
+    root = tmp_path / 'source-coverage'
+    root.mkdir()
+    suite = ET.Element('testsuite', tests='4', failures='0')
+    for index in range(4):
+        ET.SubElement(suite, 'testcase', name='merge-'+str(index))
+    ET.ElementTree(suite).write(root / 'profile-merge-regressions.xml')
+    (root / 'controls').mkdir();(root / 'first-party').mkdir();(root / 'compiler').mkdir()
+    (root / 'controls/qualification.json').write_text(json.dumps({
+        'status': 'PASS', 'controls': [{'status': 'PASS'} for _ in range(5)]}))
+    native_suites = [{'name': 'native-'+str(index), 'component': 'frontend', 'status': 'PASS',
+                      'source_coverage': {'source.cpp': {'state': 'executed'}}} for index in range(13)]
+    (root / 'first-party/qualification.json').write_text(json.dumps({
+        'status': 'PASS', 'emitter_partition': {'proof': 'exact'}, 'suites': native_suites,
+        'temporary_build_reclaimed': True}))
+    units = {'/build/bin/unit-'+str(index): 'a'*40 for index in range(5)}
+    compiler_suites = [{'name': 'ObjC3-lit', 'status': 'PASS'}] + [
+        {'name': Path(path).name, 'status': 'PASS'} for path in units]
+    (root / 'compiler/qualification.json').write_text(json.dumps({
+        'status': 'PASS', 'suites': compiler_suites, 'executed_unit_binary_ids': units,
+        'eligible': {'clang/lib/source.cpp': 'a'*64},
+        'source_coverage': {'clang/lib/source.cpp': {'state': 'executed'}},
+        'binary_ids': ['b'*40]}))
+    monkeypatch.setattr(emitter_shards, 'EMITTER_TESTS', ())
+    monkeypatch.setattr(emitter_shards, 'emitter_partition', lambda *_: {'proof': 'exact'})
+    assert len(evidence.suite_results(tmp_path, 'source-coverage')) == 2 + 13 + 6
+    compiler_suites.pop()
+    (root / 'compiler/qualification.json').write_text(json.dumps({
+        'status': 'PASS', 'suites': compiler_suites, 'executed_unit_binary_ids': units,
+        'eligible': {'clang/lib/source.cpp': 'a'*64},
+        'source_coverage': {'clang/lib/source.cpp': {'state': 'executed'}},
+        'binary_ids': ['b'*40]}))
+    with pytest.raises(ValueError, match='source coverage is incomplete'):
+        evidence.suite_results(tmp_path, 'source-coverage')
 
 
 def test_package_terminal_inventory_matches_producer_after_artifact_relocation(tmp_path):
@@ -404,7 +451,8 @@ def test_release_matrix_partitions_the_complete_core_once_after_one_product_prod
     assigned = [suite for suites in GROUPS.values() for suite in suites]
     assert len(assigned) == len(set(assigned)) and set(assigned) == expected
     assert GROUPS['product-producer'] == ('package', 'upstream')
-    assert GROUPS['asan-products'] == ('sanitizer-products', 'runtime-schedules')
+    assert GROUPS['asan-products'] == ('sanitizer-products',)
+    assert GROUPS['runtime-schedules'] == ('runtime-schedules',)
     assert set(CONSUMER_GROUPS) == set(GROUPS)-{'product-producer'}
 
 
@@ -413,11 +461,28 @@ def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
     workflow = (root / '.github/workflows/native-assurance.yml').read_text()
     assert 'partition: [0, 1, 2, 3, 4, 5, 6, 7]' in workflow
     assert 'needs: [plan, product-producer]' in workflow
+    assert 'needs: [plan, product-producer, asan-foundation-producer]' in workflow
     assert 'needs: [plan, coverage-producer]' in workflow
     assert 'Prove complete disjoint core union' in workflow
     assert 'Prove complete disjoint coverage union' in workflow
     assert 'coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
     assert '--package-release /producer/product-producer/package/release.json' in workflow
+    assert 'OBJC3C_ASAN_FOUNDATION_IDENTITY' in workflow
+
+
+def test_instrumented_foundation_identity_is_derived_without_a_source_checkout():
+    from scripts.objc3c_assurance.instrumented_foundation import PROFILE, _portable_identity
+    from scripts.objc3c_toolchain.core import planned_development_identity
+    root = Path(__file__).resolve().parents[2]
+    source = planned_development_identity(root)
+    identity = _portable_identity(root)
+    assert identity['schema'] == 'objc3c.portable-foundation-identity.v1'
+    assert identity['profile'] == PROFILE == 'compiler-asan-ubsan'
+    assert identity['upstream_commit'] == source['upstream_commit']
+    assert identity['patch_digest'] == source['patch_digest']
+    assert identity['instrumentation']['kind'] == 'sanitizer'
+    assert identity['paths']['stage'].endswith(
+        '/out/toolchains/objc3-development/stage-linux-x86_64-compiler-asan-ubsan')
 
 
 def test_external_exact_package_receipt_unblocks_only_the_product_consumer(tmp_path):
