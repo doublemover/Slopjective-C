@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 from pathlib import Path
@@ -27,6 +28,16 @@ NEGATIVES = {
 }
 
 
+def _link_or_copy(source, destination):
+    source = Path(source).resolve(strict=True)
+    try:
+        os.link(source, destination)
+    except OSError as error:
+        if error.errno != errno.EXDEV:
+            raise
+        shutil.copy2(source, destination)
+
+
 def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
     """Seal the two built tools and resources for this C pilot, without an archive."""
     stage = stage.resolve(strict=True)
@@ -35,16 +46,17 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
     prefix.mkdir(parents=True)
     for name in ('clang', 'objc3c'):
         (prefix / 'bin').mkdir(exist_ok=True)
-        os.link((stage / 'bin' / name).resolve(strict=True), prefix / 'bin' / name)
+        _link_or_copy(stage / 'bin' / name, prefix / 'bin' / name)
     (prefix / 'lib').mkdir()
     for name in ('libLLVM.so', 'libclang-cpp.so'):
         source = find_installed_shared_library(stage / 'lib', name)
         if source is None:
             continue
-        os.link(source, prefix / 'lib' / source.name)
+        _link_or_copy(source, prefix / 'lib' / source.name)
         if source.name != name:
             (prefix / 'lib' / name).symlink_to(source.name)
-    shutil.copytree(stage / 'lib/clang/23/include', prefix / 'lib/clang/23/include', copy_function=os.link)
+    shutil.copytree(stage / 'lib/clang/23/include', prefix / 'lib/clang/23/include',
+                    copy_function=_link_or_copy)
     receipt = {'schema': SCHEMA, 'source_build_id': source_build_id, 'target': target,
         'purpose': 'Development-only native C/Swift compiler tools; no packaged SDK qualification',
         'files': inventory(prefix)}

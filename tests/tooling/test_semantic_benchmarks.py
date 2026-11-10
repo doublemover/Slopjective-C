@@ -1,5 +1,6 @@
 """Defend current semantic benchmark work counts, sampling and failure bounds."""
 import json
+import errno
 import os
 import sys
 from pathlib import Path
@@ -302,6 +303,22 @@ def test_development_benchmark_prefix_accepts_a_static_compiler_stage(tmp_path):
     assert result['source_build_id'] == 'static-build'
     assert not (prefix / 'lib/libLLVM.so').exists()
     assert not (prefix / 'lib/libclang-cpp.so').exists()
+
+
+def test_development_benchmark_prefix_copies_across_filesystems(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import semantic_benchmarks as owner
+    stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
+    for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'lib/libobjc.so.4.6',
+        'lib/libobjc3_runtime_services.a', 'lib/clang/23/include/stddef.h',
+        'include/objc3c/runtime/objc3_collections.h'):
+        path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
+    (stage / 'lib/libobjc.so').symlink_to('libobjc.so.4.6')
+    monkeypatch.setattr(owner.os, 'link', lambda *_: (_ for _ in ()).throw(OSError(errno.EXDEV, 'cross-device')))
+    result = owner.prepare_prefix(stage, prefix, source_build_id='copied-build',
+                                  target='x86_64-unknown-linux-gnu')
+    assert result['source_build_id'] == 'copied-build'
+    assert (prefix / 'bin/clang').read_bytes() == (stage / 'bin/clang').read_bytes()
+    assert (prefix / 'bin/clang').stat().st_ino != (stage / 'bin/clang').stat().st_ino
 
 
 @pytest.mark.parametrize('path', ['stdlib/include/objc3/ObjC3Map.h', 'native/objc3c/src/runtime/stdlib/collections_service.cpp',

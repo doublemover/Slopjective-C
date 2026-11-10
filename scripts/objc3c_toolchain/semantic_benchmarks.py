@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import math
 import os
@@ -23,6 +24,16 @@ from .sanitizer_policy import require_clean_diagnostic
 
 SCALES = (32, 256, 2048)
 ROUNDS, SEED = 16, 17
+
+
+def _link_or_copy(source, destination):
+    source = Path(source).resolve(strict=True)
+    try:
+        os.link(source, destination)
+    except OSError as error:
+        if error.errno != errno.EXDEV:
+            raise
+        shutil.copy2(source, destination)
 
 
 def workload_names(version=1):
@@ -176,7 +187,7 @@ def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False, ser
     prefix.mkdir(parents=True)
     def link(source, destination):
         destination.parent.mkdir(parents=True, exist_ok=True)
-        os.link(source.resolve(strict=True), destination)
+        _link_or_copy(source, destination)
     for name in ('clang', 'clang++', 'ld.lld'):
         link(stage / 'bin' / name, prefix / 'bin' / name)
     for name in ('libLLVM.so', 'libclang-cpp.so', 'libobjc.so', 'libobjc3_runtime_services.a'):
@@ -191,10 +202,10 @@ def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False, ser
         link(source, prefix / 'lib' / destination_name)
         if destination_name != name: (prefix / 'lib' / name).symlink_to(destination_name)
     for name in ('lib/clang/23/include', 'include/objc3c/runtime'):
-        shutil.copytree(stage / name, prefix / name, copy_function=os.link)
+        shutil.copytree(stage / name, prefix / name, copy_function=_link_or_copy)
     if imports:
         link(stage / 'bin/objc3c', prefix / 'bin/objc3c')
-        shutil.copytree(stage / 'include/objc', prefix / 'include/objc', copy_function=os.link)
+        shutil.copytree(stage / 'include/objc', prefix / 'include/objc', copy_function=_link_or_copy)
         verifier = prefix / 'share/objc3c/verify-sdk.py'
         verifier.parent.mkdir(parents=True)
         shutil.copyfile(Path(__file__).with_name('package.py'), verifier)

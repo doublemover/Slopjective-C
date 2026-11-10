@@ -1,5 +1,6 @@
 """Independent Swift admission, exact header use and anti-green controls."""
 import copy
+import errno
 import hashlib
 import json
 import os
@@ -257,3 +258,15 @@ def test_development_pilot_prefix_accepts_a_static_compiler_stage(tmp_path):
     assert value['source_build_id'] == 'static-build'
     assert not (prefix / 'lib/libLLVM.so').exists()
     assert not (prefix / 'lib/libclang-cpp.so').exists()
+
+
+def test_development_pilot_prefix_copies_across_filesystems(tmp_path, monkeypatch):
+    stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
+    for relative in ('bin/clang', 'bin/objc3c', 'lib/clang/23/include/stddef.h'):
+        path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
+    monkeypatch.setattr(owner.os, 'link', lambda *_: (_ for _ in ()).throw(OSError(errno.EXDEV, 'cross-device')))
+    value = owner.prepare_compiler_prefix(stage, prefix, source_build_id='copied-build',
+                                           target='x86_64-unknown-linux-gnu')
+    assert value['source_build_id'] == 'copied-build'
+    assert (prefix / 'bin/clang').read_bytes() == (stage / 'bin/clang').read_bytes()
+    assert (prefix / 'bin/clang').stat().st_ino != (stage / 'bin/clang').stat().st_ino

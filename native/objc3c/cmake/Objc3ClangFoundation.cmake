@@ -31,6 +31,24 @@ if(OBJC3C_FOUNDATION_IDENTITY_FILE)
       NOT "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}" STREQUAL "${_objc3_identity_profile}")
     message(FATAL_ERROR "Portable Clang identity is outside the coverage consumer contract")
   endif()
+elseif(EXISTS "${_objc3_sdk}/objc3-sdk.json" AND
+       EXISTS "${_objc3_sdk}/share/objc3c/verify-sdk.py")
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -B "${_objc3_sdk}/share/objc3c/verify-sdk.py"
+      "${_objc3_sdk}"
+    RESULT_VARIABLE _objc3_verify_exit
+    OUTPUT_VARIABLE _objc3_verify_output
+    ERROR_VARIABLE _objc3_verify_error)
+  if(NOT _objc3_verify_exit EQUAL 0)
+    message(FATAL_ERROR "Installed Clang SDK seal rejected: ${_objc3_verify_error}")
+  endif()
+  file(READ "${_objc3_sdk}/objc3-sdk.json" _objc3_source_identity)
+  string(JSON _objc3_identity_schema GET "${_objc3_source_identity}" schema)
+  string(JSON _objc3_identity_upstream GET "${_objc3_source_identity}" upstream_commit)
+  if(NOT _objc3_identity_schema STREQUAL "objc3.sdk.v2" OR
+     NOT _objc3_identity_upstream STREQUAL "392dfff97d29b59d77e5cac6d4b6ef2585fe7117")
+    message(FATAL_ERROR "Installed Clang SDK identity is outside the pinned foundation contract")
+  endif()
 else()
   execute_process(
     COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain verify-development

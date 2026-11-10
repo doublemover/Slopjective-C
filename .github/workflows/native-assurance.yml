@@ -17,6 +17,14 @@ on:
         description: Exact artifact name from diagnostic_transport_run
         type: string
         default: ''
+      diagnostic_coverage_run:
+        description: Reproduce an existing coverage aggregate from retained same-run artifacts
+        type: string
+        default: ''
+      diagnostic_coverage_sha:
+        description: Exact source SHA owned by diagnostic_coverage_run
+        type: string
+        default: ''
   workflow_call:
 permissions:
   contents: read
@@ -27,6 +35,52 @@ concurrency:
   # repaired source revision. Duplicate requests for the same source serialize.
   cancel-in-progress: false
 jobs:
+  diagnostic-coverage-aggregate:
+    name: Reproduce retained source-coverage aggregate (no compiler execution)
+    if: inputs.diagnostic_core_only && inputs.diagnostic_coverage_run != '' && inputs.diagnostic_coverage_sha != ''
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.diagnostic_coverage_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: native-plan-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.diagnostic_coverage_run }}-1
+          run-id: ${{ inputs.diagnostic_coverage_run }}
+          github-token: ${{ github.token }}
+          path: out/native-assurance/selection
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-producer-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.diagnostic_coverage_run }}-1
+          run-id: ${{ inputs.diagnostic_coverage_run }}
+          github-token: ${{ github.token }}
+          path: out/coverage-matrix/producer-result
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: coverage-partition-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.diagnostic_coverage_run }}-1-*
+          run-id: ${{ inputs.diagnostic_coverage_run }}
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: out/coverage-matrix/partitions
+      - name: Reproduce exact aggregate failure
+        shell: bash
+        run: |
+          set +e
+          python3 -B -m scripts.objc3c_assurance.coverage_matrix aggregate \
+            --plan out/native-assurance/selection/plan.json \
+            --producer-root out/coverage-matrix/producer-result \
+            --partitions-root out/coverage-matrix/partitions \
+            --output out/native-assurance/results
+          status=$?
+          if [[ "$status" == 0 ]]; then
+            echo '::notice title=Retained coverage aggregate::Exact retained aggregate passed'
+          else
+            echo "::error title=Retained coverage aggregate::Exact retained aggregate exited $status"
+          fi
+
   diagnostic-transport:
     name: Split existing artifact for bounded download (no compiler execution)
     if: inputs.diagnostic_core_only && inputs.diagnostic_transport_run != ''

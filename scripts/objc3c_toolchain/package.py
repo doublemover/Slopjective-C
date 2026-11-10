@@ -289,6 +289,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     normalize_permissions(prefix)
     data = {'schema': SCHEMA, 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],
+            'build_config_digest': source['build_config_digest'],
             'target': toolchain['target_triple'],
             'linux_abi': {name: json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']['linux-x86_64'][name]
                           for name in ('glibc_minimum', 'libstdcxx_symbol_minimum')},
