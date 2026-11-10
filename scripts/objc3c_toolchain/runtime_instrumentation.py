@@ -72,6 +72,25 @@ def used_receipts(profiles, optimizations):
     return [row for row in profiles.receipts() if row.get('optimization') in optimizations]
 
 
+def _installed_header_isolation(compiler_root: Path) -> tuple[list[str], list[Path]]:
+    """Prevent an explicit bootstrap resource from re-entering SDK defaults.
+
+    An installed compiler config owns the SDK resource and system header roots.
+    Runtime instrumentation deliberately selects a bootstrap sanitizer resource,
+    so Clang's implicit resource search must be disabled while the config's
+    explicit roots remain active.  Development compilers without an installed
+    config retain their ordinary implicit header search.
+    """
+    config = compiler_root / 'bin/clang++.cfg'
+    if config.is_symlink():
+        raise ValueError('installed compiler configuration must be a regular file')
+    if not config.exists():
+        return [], []
+    if not config.is_file():
+        raise ValueError('installed compiler configuration must be a regular file')
+    return ['-nostdinc'], [config.resolve(strict=True)]
+
+
 class RuntimeProfiles:
     """One immutable set per qualification; each configuration has its own tree."""
     def __init__(self, repo: Path, compiler_root: Path, resource: Path, output: Path, *, jobs=2):
@@ -146,6 +165,8 @@ class RuntimeProfiles:
         inputs = [path for path in source.rglob('*') if path.is_file() and
                   (path.suffix in ('.cpp', '.h', '.hpp', '.mm') or path.name == 'CMakeLists.txt')]
         inputs += [Path(__file__), *self.tools.values()]
+        header_flags, header_inputs = _installed_header_isolation(self.compiler_root)
+        inputs += header_inputs
         lock = self.repo / 'out/.objc3-gnustep-instrumentation.lock'
         lock.parent.mkdir(parents=True, exist_ok=True)
         with lock.open('a') as held:
@@ -184,7 +205,8 @@ class RuntimeProfiles:
         try:
             flags = ' '.join(shlex.quote(value) for value in [
                 '-'+optimization, '-g', '-fsanitize='+sanitizer, '-fno-sanitize-recover=undefined',
-                '-fno-omit-frame-pointer', '-resource-dir', str(self.resource), '-fuse-ld=lld'])
+                '-fno-omit-frame-pointer', '-resource-dir', str(self.resource), *header_flags,
+                '-fuse-ld=lld'])
             run('configure', [self.tools['cmake'], '-S', source, '-B', build, '-G', 'Ninja',
                 '-DBUILD_TESTING=OFF', '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
                 '-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',

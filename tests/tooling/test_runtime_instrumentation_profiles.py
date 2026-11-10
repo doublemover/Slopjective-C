@@ -94,3 +94,18 @@ def test_dependency_symbol_probe_uses_owned_environment(tmp_path, monkeypatch):
     monkeypatch.setattr(profiles.subprocess, 'check_output', probe)
     profiles._matching_objc_runtime(library, 'address,undefined', tmp_path / 'nm', environment=environment)
     assert len(calls) == 1
+
+
+def test_installed_compiler_config_isolates_explicit_sanitizer_resource(tmp_path):
+    compiler = tmp_path / 'sdk'
+    (compiler / 'bin').mkdir(parents=True)
+    config = compiler / 'bin/clang++.cfg'
+    config.write_text('-nostdinc++\n-isystem "<CFGDIR>/../owned-system"\n')
+    flags, inputs = profiles._installed_header_isolation(compiler)
+    assert flags == ['-nostdinc']
+    assert inputs == [config.resolve()]
+    config.unlink()
+    assert profiles._installed_header_isolation(compiler) == ([], [])
+    config.symlink_to(tmp_path / 'outside')
+    with pytest.raises(ValueError, match='regular file'):
+        profiles._installed_header_isolation(compiler)

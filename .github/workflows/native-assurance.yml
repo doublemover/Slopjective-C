@@ -63,6 +63,19 @@ jobs:
                   for child in value:
                       yield from commands(child)
 
+          def failures(value, pointer='$'):
+              if isinstance(value, dict):
+                  errors = [value.get(name) for name in ('error', 'diagnostic_error')
+                            if value.get(name)]
+                  errors.extend(value.get('cleanup_errors') or [])
+                  if value.get('status') in ('FAIL', 'failed') or errors:
+                      yield pointer, value.get('status'), [str(error)[:1200] for error in errors]
+                  for key, child in value.items():
+                      yield from failures(child, pointer + '/' + str(key).replace('~', '~0').replace('/', '~1'))
+              elif isinstance(value, list):
+                  for index, child in enumerate(value):
+                      yield from failures(child, pointer + '/' + str(index))
+
           for path in sorted(root.rglob('*.json')):
               try:
                   value = json.loads(path.read_text())
@@ -70,12 +83,8 @@ jobs:
                   continue
               if not isinstance(value, dict):
                   continue
-              errors = [value.get(name) for name in ('error', 'diagnostic_error')
-                        if value.get(name)]
-              errors.extend(value.get('cleanup_errors') or [])
-              if value.get('status') in ('FAIL', 'failed') or errors:
-                  rows.append((path.as_posix(), value.get('status'),
-                               [str(error)[:1200] for error in errors]))
+              for pointer, status, errors in failures(value):
+                  rows.append((path.as_posix() + '#' + pointer, status, errors))
               for command in commands(value):
                   original = Path(str(command['log']))
                   candidates = ([path.parent / original] if not original.is_absolute() else [])
@@ -106,10 +115,12 @@ jobs:
               lines = [line for line in log.read_text(errors='replace').splitlines() if line.strip()]
               pattern = re.compile(r'(^|[^A-Z])(CASE|PASS|FAIL)([^A-Z]|$)|assert|error:|fatal|signal|sanitizer|timed? ?out', re.I)
               relevant = [line[:1000] for line in lines if pattern.search(line)]
-              message = json.dumps({'log': log.as_posix(), 'relevant': relevant[-80:],
-                                    'tail': lines[-20:]}, sort_keys=True)
-              escaped = message[-5000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
-              print('::error title=Failed native command log::' + escaped)
+              selected = relevant[-80:] or lines[-20:]
+              for offset in range(0, len(selected), 5):
+                  message = json.dumps({'log': log.as_posix(), 'lines': selected[offset:offset+5]},
+                                       sort_keys=True)
+                  escaped = message[-5000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                  print('::error title=Failed native command log::' + escaped)
           PY
       - name: Retain exact payload hashes and split bounded parts
         env:
