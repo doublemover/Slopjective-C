@@ -5,6 +5,7 @@
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/runtime_interface_types.h"
+#include "clang_foundation/standard_library_headers.h"
 
 #include <algorithm>
 #include <cassert>
@@ -4024,6 +4025,23 @@ unsigned long standard_specialization_client() {
 }
 
 void TestStandardLibraryHeaderContracts() {
+  {
+    StandardLibraryHeaderManifest provider,consumer;
+    provider.headers=consumer.headers={"array","vector"};
+    provider.public_contents={{"array",{"array=bytes","array=config"}},
+                              {"vector",{"vector=bytes","vector=config"}}};
+    consumer.public_contents=provider.public_contents;
+    // A different internal closure is admissible when every declared public
+    // header contract remains byte-for-byte and configuration identical.
+    provider.contents={"detail=bytes@configuration=provider"};
+    consumer.contents={"detail=bytes@configuration=consumer"};
+    assert(MatchesStandardLibraryHeaderManifest(provider,consumer));
+    consumer.public_contents["vector"]={"vector=bytes","vector=other-config"};
+    assert(!MatchesStandardLibraryHeaderManifest(provider,consumer));
+    consumer.public_contents=provider.public_contents;
+    consumer.headers={"array"};
+    assert(!MatchesStandardLibraryHeaderManifest(provider,consumer));
+  }
   const std::string includes=R"(#include <algorithm>
 #include <any>
 #include <array>

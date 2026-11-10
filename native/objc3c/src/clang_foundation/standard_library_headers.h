@@ -81,6 +81,27 @@ struct StandardLibraryHeaderManifest {
   std::map<std::string,std::set<std::string>> public_contents;
   bool valid=true;
 };
+inline bool MatchesStandardLibraryHeaderManifest(
+    const StandardLibraryHeaderManifest &expected,
+    const StandardLibraryHeaderManifest &actual) {
+  if(!expected.valid || !actual.valid ||
+     !std::includes(actual.headers.begin(),actual.headers.end(),
+                    expected.headers.begin(),expected.headers.end()))return false;
+  // Canonical source replay must reproduce every public header's bytes and
+  // configuration. It need not reproduce the producer translation unit's
+  // incidental internal include closure: include guards, modules and an
+  // earlier public include can legitimately change which implementation
+  // headers are entered without changing any public declaration contract.
+  for(const auto &header:expected.headers) {
+    const auto required=expected.public_contents.find(header);
+    const auto observed=actual.public_contents.find(header);
+    if(required==expected.public_contents.end() || required->second.empty() ||
+       observed==actual.public_contents.end() ||
+       !std::includes(observed->second.begin(),observed->second.end(),
+                      required->second.begin(),required->second.end()))return false;
+  }
+  return true;
+}
 // An emission/import operation observes a stable header prelude. Cache its
 // content inventory for that operation, never across AST lifetimes or parser
 // operations: ASTContext addresses can be reused and later includes can grow

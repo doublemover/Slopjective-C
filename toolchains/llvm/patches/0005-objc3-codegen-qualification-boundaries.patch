@@ -28648,10 +28648,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..2283afe00
+index 000000000..bfa5660f4
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1730 @@
+@@ -0,0 +1,1737 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -30219,6 +30219,13 @@ index 000000000..2283afe00
 +    return;
 +  }
 +  Builder.CreateStore(Builder.getInt32(0), Data.Kind);
++  // Complete the source full expression while its return site still has an
++  // insertion point. In particular, a direct Block result can install an EH
++  // rollback guard for owned captures. Letting the C++ scope destructors run
++  // after EmitBranchThroughCleanup would deactivate that guard after the
++  // branch cleared the insertion point, leaving detached cleanup IR.
++  ExpressionScope.ForceCleanup();
++  CaptureRollback.finish();
 +  EmitBranchThroughCleanup(Data.Final);
 +}
 +
@@ -31179,19 +31186,23 @@ index 000000000..b26225326
 +}
 diff --git a/clang/test/ObjC3/CodeGen/native-c-async-definitions.m b/clang/test/ObjC3/CodeGen/native-c-async-definitions.m
 new file mode 100644
-index 000000000..9cd87216f
+index 000000000..299b4e8cb
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-c-async-definitions.m
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,105 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -fobjc-arc-exceptions -fobjc3-profile=compatibility -fobjc3-strict-concurrency -emit-llvm -o /dev/null %s
 +#include "Inputs/native-c-async-frame.h"
 +@protocol Error @end
 +@protocol NativeError <Error> @end
 +struct Pair { int left; double right; };
 +struct __attribute__((aligned(256))) Wide { unsigned char bytes[256]; };
 +typedef int (^Callback)(int);
++typedef int (^Reader)(void);
 +extern void cleanup(int *);
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface CaptureOwner <Sendable> @end
 +// CHECK-LABEL: define{{.*}} void @leaf(
 +// CHECK: llvm.coro.id
 +// CHECK: llvm.coro.align.i64
@@ -31240,6 +31251,11 @@ index 000000000..9cd87216f
 +Callback block(int value) __objc3_async {
 +  int extra = __objc3_await leaf(2);
 +  return ^(int delta) { return value + extra + delta; };
++}
++// An owned capture in a directly returned ARC Block installs an EH rollback
++// guard. Its deactivation must be emitted before the async return branches.
++Reader owned_block(CaptureOwner *owner) __objc3_async_frame {
++  return ^int { return owner != 0; };
 +}
 +// CHECK-LABEL: define{{.*}} void @raise(
 +// CHECK: __objc3_task_error_create

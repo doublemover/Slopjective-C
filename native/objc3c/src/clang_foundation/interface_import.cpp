@@ -866,12 +866,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
                               const clang::ASTContext &consumer) {
     const auto &expected = manifest(provider);
     const auto &actual = manifest(consumer);
-    const bool matches=expected.valid && actual.valid &&
-        std::includes(actual.headers.begin(), actual.headers.end(),
-                      expected.headers.begin(), expected.headers.end()) &&
-        std::includes(actual.contents.begin(), actual.contents.end(),
-                      expected.contents.begin(), expected.contents.end());
-    return matches;
+    return MatchesStandardLibraryHeaderManifest(expected,actual);
   };
   for (const auto &module : impl_->modules)
     if (std::any_of(module.sidecar.declarations.begin(), module.sidecar.declarations.end(),
