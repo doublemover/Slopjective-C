@@ -36,7 +36,16 @@ inline bool IsStandardCoroutineIdentityDeclaration(
   if (!IsStandardCoroutineDeclaration(declaration,context)) return false;
   for (const clang::NamedDecl *owner=declaration;owner;
        owner=llvm::dyn_cast<clang::NamedDecl>(owner->getDeclContext())) {
-    const auto name=owner->getName();
+    // NamedDecl also covers constructors, destructors, conversion functions,
+    // and operators.  getName() is only valid for identifier declarations and
+    // asserts in LLVM assertion builds for those other DeclarationName kinds.
+    // They cannot name a standard coroutine facility, so skip them explicitly.
+    const auto *identifier=owner->getIdentifier();
+    if (!identifier) {
+      if (llvm::isa<clang::NamespaceDecl>(owner)) break;
+      continue;
+    }
+    const auto name=identifier->getName();
     if (name=="coroutine_traits" || name=="coroutine_handle" ||
         name=="suspend_always" || name=="suspend_never" ||
         name=="noop_coroutine_promise" || name=="noop_coroutine_handle" ||

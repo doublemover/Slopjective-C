@@ -5,6 +5,7 @@
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/runtime_interface_types.h"
+#include "clang_foundation/standard_coroutine_types.h"
 #include "clang_foundation/standard_library_headers.h"
 
 #include <algorithm>
@@ -4282,6 +4283,21 @@ void TestStandardCoroutineTypesAndTraits() {
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
            "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR},filename);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      struct CoroutineNames final : clang::RecursiveASTVisitor<CoroutineNames> {
+        const clang::ASTContext &context;
+        unsigned declarations=0, non_identifiers=0;
+        explicit CoroutineNames(const clang::ASTContext &context):context(context) {}
+        bool VisitNamedDecl(clang::NamedDecl *declaration) {
+          if (!IsStandardCoroutineDeclaration(declaration,context)) return true;
+          ++declarations;
+          if (!declaration->getIdentifier()) ++non_identifiers;
+          (void)IsStandardCoroutineIdentityDeclaration(declaration,context);
+          return true;
+        }
+      } names(ast->getASTContext());
+      names.TraverseDecl(ast->getASTContext().getTranslationUnitDecl());
+      if (text.find("#include <coroutine>")!=std::string::npos)
+        assert(names.declarations && names.non_identifiers);
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.standard_coroutines","test",{}));
       return EmitSemanticInterface(ast->getASTContext(),"fixture.standard_coroutines","test",{},{},{},{"NativeStandardCoroutines"});
     };
