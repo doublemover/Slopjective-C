@@ -510,6 +510,18 @@ def test_release_consumer_preflight_failure_retains_uploadable_receipt(tmp_path,
     assert receipt['error'] == 'ValueError: seal mismatch'
 
 
+def test_release_consumer_parallelism_does_not_require_producer_source_tree(tmp_path):
+    from scripts.objc3c_assurance.runner import _consumer_compile_jobs
+    repo = tmp_path / 'repo';(repo / 'toolchains/llvm').mkdir(parents=True)
+    (repo / 'toolchains/llvm/manifest.json').write_text(json.dumps({
+        'build': {'compile_jobs': 8, 'link_jobs': 4}}))
+
+    jobs = _consumer_compile_jobs(repo)
+
+    assert 1 <= jobs <= 8
+    assert not (repo / 'out/toolchains/objc3-development/src').exists()
+
+
 def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
     root = Path(__file__).resolve().parents[2]
     workflow = (root / '.github/workflows/native-assurance.yml').read_text()

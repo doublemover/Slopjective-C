@@ -28,6 +28,13 @@ UPSTREAM = ('clang/test/AST', 'clang/test/SemaObjC', 'clang/test/SemaObjCXX',
             'clang/test/Modules', 'clang/test/Driver')
 
 
+def _consumer_compile_jobs(repo: Path) -> int:
+    """Size an installed-SDK consumer without requiring producer build state."""
+    from scripts.objc3c_toolchain.host import resource_limits
+    manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
+    return resource_limits(manifest['build'])['compile_jobs']
+
+
 def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         suite_ids: tuple[str, ...] | None = None, product_sdk: Path | None = None,
         package_release: Path | None = None) -> dict:
@@ -237,7 +244,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
                 f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
                 '-DOBJC3C_BUILD_SCAN_DEPS=OFF', '-DBUILD_TESTING=ON'])
-            jobs = build_plans(repo, host='linux-x86_64')['configure']['host_environment']['resource_limits']['compile_jobs']
+            jobs = _consumer_compile_jobs(repo)
             command('build', ['cmake', '--build', build, '--target', 'objc3c', '--parallel', str(jobs)])
             tests = frontend_tests(build, directory / 'frontend-tests', command, jobs=jobs)
             for row in tests['tests']:
