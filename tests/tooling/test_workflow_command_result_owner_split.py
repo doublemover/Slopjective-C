@@ -9,9 +9,11 @@ from scripts.objc3c_workflow.command_result_completion import completed_action
 from scripts.objc3c_workflow.command_result_output import emit_result_error
 from scripts.objc3c_workflow.command_result_policy import (
     COMMAND_RESULT_ACCEPTED_EXIT_CODE,
-    COMMAND_RESULT_ERROR_STREAM_OWNER,
     COMMAND_RESULT_POLICY_OWNER,
     COMMAND_RESULT_REJECTED_EXIT_CODE,
+)
+from scripts.objc3c_workflow.command_result_diagnostics import (
+    COMMAND_RESULT_ERROR_STREAM_OWNER,
     extra_arguments_result_message,
     unknown_action_result_message,
 )

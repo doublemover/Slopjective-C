@@ -1,0 +1,264 @@
+{
+  "schema": "objc3c.linux-native-declaration-attributes-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "implementation_commit": "bccaba7dab74d7dda7a15ded2d42eeb729f7d8b1",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-da88e905dd10-00b75dc3",
+  "compiler_patch_digest": "da88e905dd1008ec8ededf957527bade506d6d66e632303cb037a5fe1929ade3",
+  "frontend_input_sha256": "3b0bc9ff2b40cd7c6b6cc75a6c01e44298aa253ff6a18be72b7acaa7927e0bb7",
+  "concurrency_module_version": "2.89.0",
+  "required_semantics": [
+    "objc3.native-declaration-attributes.v1"
+  ],
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/CMakeLists.txt",
+      "sha256": "fc3cb3c741b1f41468580ca492c55a29da10f9aa5ca8d4572413e7f386d1f640"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/compile_session.cpp",
+      "sha256": "9aacd84a033625db3996f1b9d764282a95ab1c9228c6177bca6c62a0f521e224"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "c2ec742d7ec370283ffbd59c52dbce1f74cc7ac3b5caefa615b93e797f39a613"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.h",
+      "sha256": "539aa2bd541baf69f31e5c76dce4fdbed0e82b2c927117d81e500bbfbcaf33d0"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.cpp",
+      "sha256": "33eca070e76586d1686c203a5d3f29fbdc8670796336edcef0b61bfd86c7b175"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_codec.cpp",
+      "sha256": "a197a0eb6740193ef02e7dc508836f83efb012cd952a235629a05cdea26025d7"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_artifact_io.cpp",
+      "sha256": "6850f08cd5d2120088f160697595ecdefbf04befaad5cf8931f43767ae2aa803"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.h",
+      "sha256": "4ec623b797da596bf20b8acbe4438525f2fc294431ddfbb76c7ee3985f8d0bc4"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.cpp",
+      "sha256": "a11ce802f3071a10080444334b37831f7458cc2bc5ceca358cc899545aa6efb9"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.h",
+      "sha256": "ffd647d943b7b71edb28564cd449f1284107b6350bacd9210825f539ae421344"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.cpp",
+      "sha256": "f59b61a604a4e3cd967f5d1e87b148b1588f7d3607ea8cf4dd89498e2f2b593d"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/export_development_patches.py",
+      "sha256": "f0247abbc7ca1bd2a42b118d6f57370405303ec625e1bfbd91945dceffad20e1"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/run_linux_factory_batch.py",
+      "sha256": "139ac873d2d25d068616359c7c334d21aaa13836f24dfb0fbeb90944c2cfd171"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "05cc5222f5800ff2d6aaf7e08fcfeaed6e1307ac4a3cc86280f19577bf58c658"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "f68c52e2c451b5950919613ffd5c0720711170a3fb630ebc6800c575963f64f7"
+    },
+    {
+      "path": "tests/clang_foundation/interface_import_test.cpp",
+      "sha256": "b3ca5b186e9882af8b058b8651a37c22edec32ff73bd8a08736570725141dd7f"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/custom_coroutines.h",
+      "sha256": "93fa3bd49c00729ce56ffb6469f7c6ae2bc5b1480e606efd5e34ed3f605c8752"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "5d76cf75c990db76b28d11ce5f98783463072ea8270e467805678a64d8fd85aa"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/package.json",
+      "sha256": "5e5eeee0309481627e254fccf521c0a67b15db332b2fc0d0f07d390af517fcbd"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory_package_checks.h",
+      "sha256": "3d77f6bfa42b36923f3d579280bc452af2b3b8e82d85157197caa3a2aa885f61"
+    },
+    {
+      "path": "toolchains/llvm/manifest.json",
+      "sha256": "3b16021b6adb166d785c2e131dbc96837a1d2b06a7cbba03da1b32e565f836ab"
+    },
+    {
+      "path": "toolchains/llvm/patches/0002-objc3-native-defer-statement.patch",
+      "sha256": "adc4f7359387b047a16ad706bbbe30382153101ebe9f9fcf445664daee99a7e6"
+    },
+    {
+      "path": "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch",
+      "sha256": "e7a7c3795d04eefeb718ecb6ed7adbbaa8acab424effcf8436fbef75f3cb2128"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/declaration_attributes.h",
+      "sha256": "88e445a6e6802748f2465755ea6e2744d3fbfc5505f739eeb0b83009efebb425"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "2af12ec889eeff1639c5f687482b4bfcd12b25cd0a3e62ffa9c4a00a6e7cd5ea"
+    }
+  ],
+  "verification": {
+    "frontend_suites": 33,
+    "native_unit_tests": 236,
+    "native_compiler_regressions_passed": 412,
+    "native_compiler_regressions_unsupported": 3,
+    "focused_tooling_tests": 27,
+    "packed_aligned_field_storage_and_calling_abi": true,
+    "dependent_expression_type_alignment_and_private_dependency_rejection": true,
+    "nontrivial_no_unique_address_lifetimes": true,
+    "template_owner_partial_explicit_and_member_attributes": true,
+    "canonical_attribute_order_and_distinct_repeated_foreign_payloads": true,
+    "omitted_optional_expression_type_argument_comparison": true,
+    "noreturn_function_type_and_escaped_diagnostic_messages": true,
+    "packed_coroutine_result_values": true,
+    "provider_hidden_symbol_visibility": true,
+    "source_free_runtime_configurations": 32,
+    "source_free_commands": 224,
+    "full_fixture_smoke_configurations": 3,
+    "full_fixture_smoke_commands": 21,
+    "package_checks": [
+      {
+        "mode": "normal",
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "af67dbf319e23f4f94f1c122b01c8b2e29b79ed8836dc8b4d80fc31f589c303d",
+        "report": "out/native-validation/native-attributes-optional-packages-normal/qualification.json"
+      },
+      {
+        "mode": "eager",
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "af67dbf319e23f4f94f1c122b01c8b2e29b79ed8836dc8b4d80fc31f589c303d",
+        "report": "out/native-validation/native-attributes-optional-packages-eager/qualification.json"
+      },
+      {
+        "mode": "asan",
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "55cde0db50dafc063ba06ec8d242310c4c38880ada68cccb975021b7bd83bc45",
+        "report": "out/native-validation/native-attributes-optional-packages-asan/qualification.json"
+      },
+      {
+        "mode": "tsan",
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "4464274069ce94fae38d990f475c802b338262bb335b210778a6bc0621305fed",
+        "report": "out/native-validation/native-attributes-optional-packages-tsan/qualification.json"
+      },
+      {
+        "mode": "full-normal",
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "af67dbf319e23f4f94f1c122b01c8b2e29b79ed8836dc8b4d80fc31f589c303d",
+        "report": "out/native-validation/native-attributes-optional-full-packages-normal/qualification.json"
+      },
+      {
+        "mode": "full-asan",
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "55cde0db50dafc063ba06ec8d242310c4c38880ada68cccb975021b7bd83bc45",
+        "report": "out/native-validation/native-attributes-optional-full-packages-asan/qualification.json"
+      },
+      {
+        "mode": "full-tsan",
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "4464274069ce94fae38d990f475c802b338262bb335b210778a6bc0621305fed",
+        "report": "out/native-validation/native-attributes-optional-full-packages-tsan/qualification.json"
+      }
+    ],
+    "reports": [
+      {
+        "path": "out/native-attributes-optional-native-check-0.log",
+        "sha256": "99d9514c362b3a64d94c66b9a146b585a5fd01bc46f5fdda64c35254e70181f7"
+      },
+      {
+        "path": "out/native-attributes-optional-native-check-1.log",
+        "sha256": "7db16d65a8af4b08948b3f66047960729963f64a76836a2f71e61d9b2b24d2b5"
+      },
+      {
+        "path": "out/native-attributes-optional-native-check-2.log",
+        "sha256": "b0e2ed7f0b3ba533a2cd25197b6bf11286b9edf3d7c45de3bd9caba914082c71"
+      },
+      {
+        "path": "out/native-attributes-optional-native-check-3.log",
+        "sha256": "b5165c4ec5d6f127090311006d6c5d369d35b59c2601223cbe0fdeeffbc10601"
+      },
+      {
+        "path": "out/native-attributes-optional-native-check-4.log",
+        "sha256": "4eab6d266aa0fa9b135da66660ee7734a9b6ff965e7d8af23882bc9d738eb140"
+      },
+      {
+        "path": "out/native-attributes-optional-frontend.log",
+        "sha256": "bc2475dc6ae4a88a6b1409100cf7761532c39599bd134763bd8b4c5b81b04a8c"
+      },
+      {
+        "path": "out/native-attributes-optional-tooling.log",
+        "sha256": "0f1e99db51ad0852bf3c2c74d173e2083ef6dcf5dc77d0d1e3de49fc547f1559"
+      },
+      {
+        "path": "out/native-attributes-optional-native-seal.json",
+        "sha256": "9c78cbd7b9b1c7b4a6025f205fa5ecd249dff293e8bd3a0cd25426c521d8011b"
+      },
+      {
+        "path": "out/native-validation/native-attributes-optional-packages-normal/qualification.json",
+        "sha256": "085414c329380197fe527e370e74db721bd36966f454edeac7e09019c586f289"
+      },
+      {
+        "path": "out/native-validation/native-attributes-optional-packages-eager/qualification.json",
+        "sha256": "491af2e6512550b999e361640a692558216fa0386e9e8c4bac19b9f65626160a"
+      },
+      {
+        "path": "out/native-validation/native-attributes-optional-packages-asan/qualification.json",
+        "sha256": "401a48395623cbcd55f1011f19ef94de27b17a0c450d7cb31c00d81d09a0c5d5"
+      },
+      {
+        "path": "out/native-validation/native-attributes-optional-packages-tsan/qualification.json",
+        "sha256": "a778aeb7402c28cf47ff1e06b213effdd5c49593522c9d63f189f6d0163499f1"
+      },
+      {
+        "path": "out/native-validation/native-attributes-optional-full-packages-normal/qualification.json",
+        "sha256": "3a04f024796fa09e0bd71643792ce697f6851fe19de66f348d1480c3423d4fbd"
+      },
+      {
+        "path": "out/native-validation/native-attributes-optional-full-packages-asan/qualification.json",
+        "sha256": "4e7f4b9cb5cfa5566e284078041e9f4860bbc96973414da46134923df5e94566"
+      },
+      {
+        "path": "out/native-validation/native-attributes-optional-full-packages-tsan/qualification.json",
+        "sha256": "59fe4a64792f5a105c089b345ac9926d12f504c57d509ecb893839ee27b22204"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "scope": [
+    "Final reports bind the native optional-argument comparison fix and recursive attribute import; earlier failed package reports are retained and excluded from acceptance.",
+    "Instrumented service and GNUstep runtime archives are reused unchanged from the combined sprint. Package reports bind actual binary and source/checker inputs.",
+    "Full async fixture executions are three smoke configurations, not the complete full-fixture cross-product. Historical 2.87 feature/runtime matrices and SDK 2.62 archive qualification remain separate evidence."
+  ],
+  "remaining": [
+    "Public standard-library coroutine signature types and external coroutine_traits specialization publication",
+    "Remaining dependent unnamed-type/lookup projections and unmodeled declaration attributes, calling conventions and allocator/format contracts",
+    "Remaining ownership, structured concurrency, isolation, key-path, language/library and profile implementation",
+    "Native Linux AArch64 implementation and qualification on a native host",
+    "Coordinated post-2.62 SDK delivery"
+  ]
+}

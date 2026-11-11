@@ -2,6 +2,8 @@
 #include "runtime/stdlib/stdlib_service_contract.h"
 
 #include <algorithm>
+#include <atomic>
+#include <unordered_map>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -14,12 +16,52 @@ namespace storage = objc3c::runtime::stdlib_runtime;
 
 namespace {
 struct MapEntryV2 { std::int32_t key = 0; std::int32_t value = 0; };
+#ifdef OBJC3_RUNTIME_I32_INDEX_TESTING
+std::atomic<uint64_t> index_hash_calls{0}, index_equal_calls{0};
+#endif
+struct I32Hash {
+  std::size_t operator()(std::int32_t value) const noexcept {
+#ifdef OBJC3_RUNTIME_I32_INDEX_TESTING
+    ++index_hash_calls;
+#endif
+    return std::hash<std::int32_t>{}(value);
+  }
+};
+struct I32Equal {
+  bool operator()(std::int32_t left, std::int32_t right) const noexcept {
+#ifdef OBJC3_RUNTIME_I32_INDEX_TESTING
+    ++index_equal_calls;
+#endif
+    return left == right;
+  }
+};
+using I32Index = std::unordered_map<std::int32_t, std::size_t, I32Hash, I32Equal>;
+// Average constant-time membership/append, with ordered payloads retained in
+// their existing vectors. Ordered removal repairs shifted slots in O(N).
+template <class T>
+void AppendIndexed(std::vector<T> &values, I32Index &index,
+                   std::int32_t key, T value) {
+  values.push_back(value);
+  try { index.emplace(key, values.size() - 1); }
+  catch (...) { values.pop_back(); throw; }
+}
+template <class T, class Key>
+void EraseIndexed(std::vector<T> &values, I32Index &index,
+                  I32Index::iterator found, Key key) {
+  const auto position = found->second;
+  index.erase(found);
+  values.erase(values.begin() + position);
+  for (std::size_t i = position; i < values.size(); ++i)
+    index.find(key(values[i]))->second = i;
+}
+
 struct CollectionV2Value {
   std::mutex mutex;
   std::uint32_t kind = 0;
   std::uint64_t mutation_generation = 0;
   std::vector<std::int32_t> values;
   std::vector<MapEntryV2> entries;
+  std::unique_ptr<I32Index> key_index;
   void *owner_handle = nullptr;
   std::uint32_t owner_kind = 0;
   void *owner_registry = nullptr;
@@ -494,6 +536,7 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_create(
   *out_map = nullptr;
   try {
     auto value = std::make_unique<CollectionV2Value>();
+    value->key_index = std::make_unique<I32Index>();
     void *handle = nullptr;
     const int status = StoreCollectionV2(std::move(value), kMapI32I32V2Kind,
                                          &handle);
@@ -530,8 +573,7 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_contains(
   const bool found = CollectionV2Storage().With(map, kMapI32I32V2Kind,
       [&](CollectionV2Value &record) {
         std::lock_guard<std::mutex> lock(record.mutex);
-        *out_found = std::any_of(record.entries.begin(), record.entries.end(),
-            [key](const MapEntryV2 &entry) { return entry.key == key; });
+        *out_found = record.key_index->find(key) != record.key_index->end();
       });
   return found ? OBJC3_STDLIB_V2_OK : CollectionV2RegistryStatus(
       CollectionV2Storage().Inspect(map, kMapI32I32V2Kind));
@@ -547,11 +589,10 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_get(
   const bool found = CollectionV2Storage().With(map, kMapI32I32V2Kind,
       [&](CollectionV2Value &record) {
         std::lock_guard<std::mutex> lock(record.mutex);
-        auto item = std::find_if(record.entries.begin(), record.entries.end(),
-            [key](const MapEntryV2 &entry) { return entry.key == key; });
-        if (item != record.entries.end()) {
+        auto item = record.key_index->find(key);
+        if (item != record.key_index->end()) {
           *out_found = 1;
-          *out_value = item->value;
+          *out_value = record.entries[item->second].value;
         }
       });
   return found ? OBJC3_STDLIB_V2_OK : CollectionV2RegistryStatus(
@@ -566,11 +607,10 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_insert_count(
   const bool found = CollectionV2Storage().With(map, kMapI32I32V2Kind,
       [&](CollectionV2Value &record) {
         std::lock_guard<std::mutex> lock(record.mutex);
-        auto item = std::find_if(record.entries.begin(), record.entries.end(),
-            [key](const MapEntryV2 &entry) { return entry.key == key; });
-        if (item != record.entries.end()) {
-          if (item->value != value) {
-            item->value = value;
+        auto item = record.key_index->find(key);
+        if (item != record.key_index->end()) {
+          if (record.entries[item->second].value != value) {
+            record.entries[item->second].value = value;
             ++record.mutation_generation;
           }
           *out_count = record.entries.size();
@@ -581,7 +621,7 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_insert_count(
           return;
         }
         try {
-          record.entries.push_back(MapEntryV2{key, value});
+          AppendIndexed(record.entries, *record.key_index, key, MapEntryV2{key, value});
           ++record.mutation_generation;
           *out_count = record.entries.size();
         } catch (const std::bad_alloc &) {
@@ -605,10 +645,10 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_remove(
   const bool found = CollectionV2Storage().With(map, kMapI32I32V2Kind,
       [&](CollectionV2Value &record) {
         std::lock_guard<std::mutex> lock(record.mutex);
-        auto item = std::find_if(record.entries.begin(), record.entries.end(),
-            [key](const MapEntryV2 &entry) { return entry.key == key; });
-        if (item != record.entries.end()) {
-          record.entries.erase(item);
+        auto item = record.key_index->find(key);
+        if (item != record.key_index->end()) {
+          EraseIndexed(record.entries, *record.key_index, item,
+                       [](const MapEntryV2 &entry) { return entry.key; });
           *out_removed = 1;
           ++record.mutation_generation;
         }
@@ -696,6 +736,7 @@ extern "C" int objc3_runtime_stdlib_set_i32_v2_create(
   *out_set = nullptr;
   try {
     auto value = std::make_unique<CollectionV2Value>();
+    value->key_index = std::make_unique<I32Index>();
     void *handle = nullptr;
     const int status = StoreCollectionV2(std::move(value), kSetI32V2Kind,
                                          &handle);
@@ -732,8 +773,7 @@ extern "C" int objc3_runtime_stdlib_set_i32_v2_contains(
   const bool found = CollectionV2Storage().With(set, kSetI32V2Kind,
       [&](CollectionV2Value &record) {
         std::lock_guard<std::mutex> lock(record.mutex);
-        *out_found = std::find(record.values.begin(), record.values.end(), value)
-                     != record.values.end();
+        *out_found = record.key_index->find(value) != record.key_index->end();
       });
   return found ? OBJC3_STDLIB_V2_OK : CollectionV2RegistryStatus(
       CollectionV2Storage().Inspect(set, kSetI32V2Kind));
@@ -747,14 +787,13 @@ extern "C" int objc3_runtime_stdlib_set_i32_v2_insert(
   const bool found = CollectionV2Storage().With(set, kSetI32V2Kind,
       [&](CollectionV2Value &record) {
         std::lock_guard<std::mutex> lock(record.mutex);
-        if (std::find(record.values.begin(), record.values.end(), value) !=
-            record.values.end()) return;
+        if (record.key_index->find(value) != record.key_index->end()) return;
         if (record.values.size() >= kCollectionV2MaxElements) {
           status = OBJC3_STDLIB_V2_CAPACITY_EXCEEDED;
           return;
         }
         try {
-          record.values.push_back(value);
+          AppendIndexed(record.values, *record.key_index, value, value);
           ++record.mutation_generation;
           *out_inserted = 1;
         } catch (const std::bad_alloc &) {
@@ -772,9 +811,10 @@ extern "C" int objc3_runtime_stdlib_set_i32_v2_remove(
   const bool found = CollectionV2Storage().With(set, kSetI32V2Kind,
       [&](CollectionV2Value &record) {
         std::lock_guard<std::mutex> lock(record.mutex);
-        auto item = std::find(record.values.begin(), record.values.end(), value);
-        if (item != record.values.end()) {
-          record.values.erase(item);
+        auto item = record.key_index->find(value);
+        if (item != record.key_index->end()) {
+          EraseIndexed(record.values, *record.key_index, item,
+                       [](std::int32_t entry) { return entry; });
           ++record.mutation_generation;
           *out_removed = 1;
         }
@@ -817,3 +857,9 @@ extern "C" int objc3_runtime_stdlib_set_i32_v2_iterator(
   *out_iterator = static_cast<objc3_iterator_i32_v2_t>(handle);
   return OBJC3_STDLIB_V2_OK;
 }
+
+#ifdef OBJC3_RUNTIME_I32_INDEX_TESTING
+extern "C" void objc3_test_i32_index_reset() { index_hash_calls = 0; index_equal_calls = 0; }
+extern "C" uint64_t objc3_test_i32_index_hash_calls() { return index_hash_calls.load(); }
+extern "C" uint64_t objc3_test_i32_index_equal_calls() { return index_equal_calls.load(); }
+#endif

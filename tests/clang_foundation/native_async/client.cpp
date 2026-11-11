@@ -184,23 +184,21 @@ static void method_results(objc3_executor_t *executor) {
   assert(native_method_destructions() == before + 4);
   {
     NativeAsyncMethod *nil = (NativeAsyncMethod *)0;
-    (void)[nil value:state mode:0]; // Ignored nil result still destroys a valid empty carrier.
+    (void)[nil value:state mode:0]; // Discarding a lazy zero-valued nil task releases its frame.
     (void)[nil direct:42];
-    bool caught = false;
-    try { auto result = [nil value:state mode:0].start(executor); }
-    catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
-    assert(caught); caught = false;
-    try { auto result = [nil direct:42].start(executor); }
-    catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
-    assert(caught);
+    auto ordinary = [nil value:state mode:0].start(executor);
+    auto direct = [nil direct:42].start(executor);
+    pump(executor);
+    assert(ordinary.result() == 0 && direct.result() == 0);
   }
   for (bool checked : {false, true}) {
     auto awaited = method_nil_await(state, checked).start(executor);
     pump(executor);
+    if (!checked) { assert(awaited.result() == 0); continue; }
     bool caught = false;
     try { (void)awaited.result(); }
     catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
-    assert(caught); // Optionalization must not consume a native start failure.
+    assert(caught); // Optionalization must not consume a nonzeroable result's service failure.
   }
   assert(state->entered == state->destroyed);
 }
@@ -740,6 +738,7 @@ int main() {
   objc3_task_group_t *group = nullptr;
   assert(objc3_task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
   const auto before_hopped = native_object_destructions();
+  const auto before_created = native_actor_owned_creations();
   std::vector<objc3::task_handle<int>> hopped;
   for (unsigned index = 0; index != 32; ++index) {
     auto value = native_actor_owned(first, second, index % 2).start_on(first);
@@ -759,7 +758,11 @@ int main() {
     } catch (const objc3::task_cancelled &) {
     }
   }
-  assert(native_object_destructions() == before_hopped + 32);
+  // Group failure can cancel a sibling before its lazy body starts. Only
+  // entered bodies construct this owner; join must destroy every such owner.
+  const auto created = native_actor_owned_creations() - before_created;
+  assert(created > 0 && created <= 32);
+  assert(native_object_destructions() == before_hopped + created);
   hopped.clear();
   const auto before_results = native_result_destructions();
   std::vector<objc3::task_handle<NativeAsyncResult *>> objects;
@@ -841,5 +844,7 @@ int main() {
   objc3_executor_release(other);
   objc3_executor_release(executor);
   pool_slices();
+  assert(native_lexical_pool_witnesses());
+  assert(native_actor_object_association());
 #endif
 }

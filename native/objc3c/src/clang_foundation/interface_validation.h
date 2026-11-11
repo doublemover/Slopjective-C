@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "clang_foundation/interface_contract.h"
+#include "clang_foundation/interface_resource_limits.h"
 
 namespace objc3::clang_foundation {
 
@@ -29,6 +30,7 @@ struct InterfaceDependencyGraphResult {
 };
 
 [[nodiscard]] InterfaceDependencyGraphResult ResolveInterfaceDependencyGraph(
-    const std::vector<InterfaceDependencyNode> &nodes);
+    const std::vector<InterfaceDependencyNode> &nodes,
+    const InterfaceResourceLimits &limits = {});
 
 }  // namespace objc3::clang_foundation

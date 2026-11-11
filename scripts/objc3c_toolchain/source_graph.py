@@ -13,13 +13,14 @@ import sys
 import time
 
 if __package__:
-    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, write_json
+    from .sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, discover_lookup, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 else:
     # Standalone helpers live in a sealed, possibly user-owned SDK. Keep
     # bytecode out of that installation without changing library callers.
     sys.dont_write_bytecode = True
-    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, write_json
+    from sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, discover_lookup, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 
+MAX_EXPORT_NAMES = 4096
 WORKSPACE = 'objc3c.source-workspace.v4'
 PACKAGE = 'objc3c.source-package.v4'
 REPORT = 'objc3c.source-graph-build.v4'
@@ -89,7 +90,7 @@ def validate_provider(config: dict) -> None:
 
 
 def validate_exports(values) -> list[str]:
-    if (not isinstance(values, list) or not values or len(values) > 256 or
+    if (not isinstance(values, list) or not values or len(values) > MAX_EXPORT_NAMES or
             any(not isinstance(name, str) or not name or len(name.encode('utf-8')) > 256 or
                 any(ord(char) < 33 or ord(char) == 127 for char in name) for name in values) or
             len(set(values)) != len(values) or ('*' in values and len(values) != 1)):
@@ -205,8 +206,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     env.pop('LD_AUDIT', None)
 
     def verify():
-        subprocess.run([sys.executable, '-B', str(sdk / 'share/objc3c/verify-sdk.py'), str(sdk)],
-                       env=env, check=True, capture_output=True, timeout=120)
+        verify_installed_sdk(sdk, env=env)
 
     verify()
     sdk_data = json.loads((sdk / 'objc3-sdk.json').read_text())
@@ -219,7 +219,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     inputs = {name: source_inputs(config['root']) for name, config in configs.items()}
     inputs[APP] = source_inputs(app['root'])
     recipe = hashes([Path(__file__), Path(__file__).with_name('sdk_example.py')])
-    nodes, identities = {}, {}
+    nodes, identities, lookup_inputs, lookup_flags, lookup_modules, lookup_interfaces = {}, {}, {}, {}, {}, {}
     directories = {name: output / 'modules' / name for name in graph['order']}
     paths = {name: directories[name] / (name + '.objc3i') for name in directories}
     for directory in directories.values():
@@ -251,6 +251,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         # Every transitive artifact is physically available, while only direct
         # roots and native re-export edges grant semantic visibility.
         imported_inputs = []
+        closure = set()
         if direct:
             if config['language'] != 'c++':
                 command.append('--source-imports')
@@ -281,14 +282,21 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         if name != APP:
             for declaration in config['exports']:
                 command += ['--export-declaration', declaration]
-        command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']), '-fblocks', '-' + optimization,
+        command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']),
+                    *native_module_compile_flags(config['language'], output), '-fblocks', '-' + optimization,
                     '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
+        flags = command[command.index('--') + 1:]
+        lookup_flags[name] = flags
+        lookup_modules[name] = sorted(closure)
+        lookup_interfaces[name] = [path for path in imported_inputs if path.suffix == ".objc3i"]
+        lookup_inputs[name] = discover_lookup(sdk, config, flags, target, output, directory, env, lookup_modules[name], lookup_interfaces[name])
         # A source implementation edit rebuilds that package. Importers depend
         # on interface contents rather than the implementation object bytes.
         imported_hashes = hashes(imported_inputs)
         key = hashlib.sha256(json.dumps({'sdk_seal': seal, 'recipe': recipe, 'argv': command,
-              'sources': inputs[name], 'imports': imported_hashes, 'locks': direct}, sort_keys=True).encode()).hexdigest()
+              'sources': inputs[name], 'imports': imported_hashes, 'locks': direct,
+              'header_lookup': lookup_inputs[name]}, sort_keys=True).encode()).hexdigest()
         saved = previous.get(name, {})
         tick = time.monotonic()
         if reusable(saved, key):
@@ -296,11 +304,16 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         else:
             report_path.unlink(missing_ok=True)
             log = directory / 'compile.log'
+            outcome = directory / 'compile-result.json'
+            outcome.unlink(missing_ok=True)
             with log.open('w') as stream:
-                subprocess.run(command, cwd=output, env=env, stdout=stream, stderr=subprocess.STDOUT,
-                               check=True, timeout=180)
+                completed = subprocess.run(command, cwd=output, env=env, stdout=stream,
+                                           stderr=subprocess.STDOUT, check=False, timeout=180)
+            outcome.write_text(json.dumps({'argv': command, 'exit_code': completed.returncode}) + '\n')
+            completed.check_returncode()
             tracked = dependencies(depfile, output) + list(map(Path, inputs[name])) + imported_inputs
             nodes[name] = {'key': key, 'reused': False, 'argv': command,
+                           'header_lookup': lookup_inputs[name],
                            'outputs': hashes(products), 'dependencies': hashes(tracked)}
         nodes[name]['elapsed_seconds'] = round(time.monotonic() - tick, 6)
         if name != APP:
@@ -327,7 +340,8 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     if hashes(graph['manifests']) != {str(path): sha for path, sha in graph['manifests'].items()}:
         raise ValueError('workspace/package manifests changed during compilation')
     for name, config in [*configs.items(), (APP, app)]:
-        if source_inputs(config['root']) != inputs[name] or not reusable(nodes[name], nodes[name]['key']):
+        if (source_inputs(config['root']) != inputs[name] or not reusable(nodes[name], nodes[name]['key'])
+                or discover_lookup(sdk, config, lookup_flags[name], target, output, directories[name], env, lookup_modules[name], lookup_interfaces[name]) != lookup_inputs[name]):
             raise ValueError(f'package inputs or products changed during compilation: {name}')
     verify()
     # Relocatable installation inventory: identities and direct visibility locks

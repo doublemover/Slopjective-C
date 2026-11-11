@@ -1,18 +1,32 @@
 # Linux shared async frame and result ABI
 
-Extension ABI 20 and task service ABI 4 introduce a common lazy frame carrier
-and typed completion contract for C17, Objective-C 3.0 (C17 base mode) and C++20/23. Rebuild
-compilers, headers, objects, PCH files, semantic interfaces and packages together.
-The task header requires the qualified compiler's type-identity builtin.
+The common lazy frame carrier and typed completion contract use task service
+ABI 4 and frame ABI 1. The current native extension is ABI 21 with semantic
+interface schema 2.1. Compilers, headers, objects, PCH files, semantic interfaces
+and packages are delivered together; the task header requires the qualified
+compiler's type-identity builtin.
 
-This milestone supplies the runtime boundary for native Objective-C async
-lowering. Objective-C 3.0 (C17 base mode) providers in this milestone implement resume callbacks
-in C; the reserved async syntax still requires Objective-C++ (C++20/23 mode). Public
-async/await and actor capability predicates remain reserved.
+Native [C async definitions](linux_native_c_definitions.md) now implement
+functions, methods and Blocks with frame-resident values, owned results/errors,
+cleanup and child awaits. [Task/group handle adapters](linux_async_handle_joins.md)
+bridge existing retained handles into those definitions and C++ lazy tasks.
+[Native C group iteration](linux_native_group_iteration.md) adds owned optional
+results with compiler-defined layout and copy/destruction operations.
+[Native C-frame group scopes](linux_native_group_scopes.md) preserve staged
+results/errors through implicit shielded cleanup and forced abandonment. The
+current SDK passes all 33 installed gates, including shared-frame source-free
+consumers, native C/C++ execution and debugger checks. The
+[current receipt](../support/linux_cxx_frame_value_acceptance.json) records
+that delivery and its fresh-distribution status. Public async/actor predicates
+and full profile conformance remain reserved.
 
-## Delivered SDK — 2026-10-21
+The snapshots and interrupted acceptance below describe their October 21 inputs.
+They are historical evidence, not the current release checklist. The
+[Linux roadmap](linux_forward_development.md) records remaining implementation.
 
-The current local SDK was rebuilt from `3fe616aa2` in 1,431 seconds and activated
+## Historical SDK delivery — 2026-10-21
+
+The October 21 local SDK was rebuilt from `3fe616aa2` in 1,431 seconds and activated
 with seal `0098f5c514798351a5900755a85ba8508e96c6fe51e06d31af01bfec0a419703`.
 It includes the actor fairness, autorelease boundary and package CLI fixes.
 The [delivery receipt](../support/linux_sdk_refresh_acceptance.json) records the
@@ -65,6 +79,17 @@ The existing task scheduler owns successful starts. It serializes resumes,
 preserves actor destinations, wakes cancellation and destroys frames exactly
 once. A private child can inherit its parent's destination through the same C
 API used by C++ awaits.
+
+`objc3_async_frame_spawn_in_group` starts a structured child on the current
+task's destination and registers group membership before publishing its first
+resume. Descendant admission, cancellation ancestry and group closure are checked
+before any body runs. Failure clears the task output and preserves the caller's
+owned frame for retry or disposal. A failed queue publication leaves a cancelled,
+frame-less group member, so group observers remain joinable without taking the
+caller's frame. The C++ `task<T>::start_child(group)` uses this same operation.
+The reserved scope-body variant is restricted to the current compiler-owned root
+and preserves callback error handling during automatic sibling-failure cancellation.
+Explicit cancellation still applies to that body.
 
 ## Typed completions
 
@@ -189,7 +214,7 @@ Native integration evidence is in
 These generated outputs stay outside Git; the identities above identify the
 local results rather than claiming the archive has been uploaded to GitHub.
 
-### Interrupted and pending acceptance
+### Historical interrupted acceptance
 
 The final acceptance run was stopped during `native-async-sanitizers`, before
 that suite produced its final receipt. Partial logs are retained, but this
@@ -201,13 +226,14 @@ acceptance for the final archive above.
 An earlier coroutine sanitizer run failed to link because its build driver
 omitted `services/objc_task_error.cpp`, which now supplies shared object/Block
 reference operations. Commit `62fcbbfac` corrected that driver; focused ARC
-ASan/UBSan and MRC TSan checks passed. Full final-archive qualification of this
-fix remains pending. Commit `e6412ec2b` then normalized the two C17 fixture JSON
+ASan/UBSan and MRC TSan checks passed. Full qualification for that historical
+archive was still pending at the pause. Commit `e6412ec2b` then normalized the two C17 fixture JSON
 files before the successful final SDK build.
 
-The previously planned release acceptance work remains incomplete evidence.
-Focused runtime, sanitizer, tooling and onboarding checks have resumed; those
-checks do not relabel the earlier archive as a newly qualified release:
+That stopped run remains incomplete evidence for its original archive. Later
+source/runtime/SDK acceptance is recorded separately by the current receipt; it
+does not relabel this older artifact. At interruption, the remaining checklist
+was:
 
 1. Complete the final archive's 114 sanitizer configurations and the checked
    ABI, regression and post-hop debugger checks.
@@ -222,23 +248,20 @@ Local interrupted-run status and logs remain under `out/async-c-abi/acceptance/`
 `out/async-c-abi/stopped-at-user-request.json` records the stopped process tree.
 No acceptance finalizer or automatic closeout is running.
 
-### Subsequent compiler work
+### Subsequent compiler implementation
 
-Native Objective-C 3.0 (C17 base mode) async syntax lowering still needs its own AST/Sema/CodeGen
-implementation for functions, methods and Blocks, with frame-resident values,
-cleanup, checked errors and ownership across suspension. Removing the C++
-language guard alone would not supply that implementation. Public await-required
-calls, recognized child/detached/group spawning and compiler actor isolation
-remain later milestones; public async/actor predicates stay reserved.
+The later native C definition milestone supplies AST, Sema and code generation
+for functions, methods and Blocks, including suspension-safe ownership and
+checked errors. Recognized spawn APIs, admitted isolation entry forms and native
+task/group joins are implemented and covered by the current SDK gates. These
+bounded surfaces do not promote public async/actor predicates or complete
+profiles. Native C group-result iteration and compiler-owned C-frame and C++
+task-coroutine scopes are delivered by the current SDK. Other remaining forms
+are tracked in the current Linux roadmap.
+Native Linux AArch64 implementation and qualification also remain open; the
+recorded native-host evidence is Linux x86-64.
 
-One unverified follow-up is to check type identities for same-named module-owned
-Objective-C classes and protocols. Read-only inspection found that native type
-mangling uses source names while module ownership supplies runtime names. No
-reproducer was run, so this is an investigation item rather than a confirmed
-defect. Native AArch64 qualification also requires a separate native host; this
-milestone's host evidence is Linux x86-64.
-
-### Workspace and development state
+### Workspace state at the historical pause
 
 The 32 GiB filesystem is now approximately 29% used, with 22 GiB available.
 Cleanup removed 33 superseded SDK archives, the obsolete Linux 22 checkpoint,

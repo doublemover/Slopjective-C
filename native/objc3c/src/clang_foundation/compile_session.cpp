@@ -1,11 +1,16 @@
 #include "clang_foundation/compile_session.h"
+#include "interface_reparse_options.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/sdk_identity.h"
 #include "clang_foundation/source_identity.h"
+#include "clang_foundation/runtime_interface_types.h"
 
 #include "clang_foundation/ast_contract_consumer.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/interface_source_import_bridge.h"
+#include "clang_foundation/module_names.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/Attr.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LangStandard.h"
@@ -95,6 +100,19 @@ class Diagnostics final : public clang::DiagnosticConsumer {
 };
 
 
+// Parse the exact pinned runtime header before eager AST merging. Its guard
+// also protects a later explicit SDK include in the consumer. A separate marker
+// file lets the parser finish the header and its linkage scope before importing.
+constexpr const char *kEagerRuntimeHeader =
+    "/__objc3_import_runtime/objc3_runtime_services.h";
+constexpr const char *kEagerKeyPathHeader =
+    "/__objc3_import_runtime/objc3_keypath.h";
+constexpr const char *kEagerTaskHeader =
+    "/__objc3_import_runtime/objc3_task.hpp";
+constexpr const char *kEagerRuntimePrelude =
+    "/__objc3_import_runtime/prelude.h";
+constexpr const char *kEagerRuntimeReady = "__objc3_import_runtime_ready";
+
 class InterfaceImportConsumer final : public clang::ASTConsumer {
 public:
   InterfaceImportConsumer(InterfaceImportSession *session, clang::CompilerInstance &compiler,
@@ -107,6 +125,11 @@ public:
   void Initialize(clang::ASTContext &context) override {
     const auto &language = context.getLangOpts();
     const auto &predefines = compiler_.getPreprocessorOpts();
+    if (session_ && (session_->RequiresRuntimeHeader() || session_->RequiresKeyPathHeader() || session_->RequiresCoroutineHeader() || !session_->StandardLibraryHeaders().empty())) {
+      deferred_context_ = &context;
+      waiting_for_runtime_ = true;
+      return;
+    }
     if (session_ && language.ObjC && language.CPlusPlus &&
         (language.ObjCAutoRefCount || language.ObjCWeak) &&
         predefines.UsePredefines &&
@@ -120,18 +143,28 @@ public:
   }
 
   bool HandleTopLevelDecl(clang::DeclGroupRef declarations) override {
+    // All multiplexed consumers have initialized before the first parse event.
+    if (lookup_) lookup_->RegisterInlineDefinitions();
     if (deferred_context_)
-      for (const auto *declaration : declarations)
-        if (const auto *space =
-                llvm::dyn_cast<clang::NamespaceDecl>(declaration);
-            space && space->getName() == "std" &&
-            deferred_context_->getSourceManager().isWrittenInBuiltinFile(
-                space->getLocation())) {
+      for (const auto *declaration : declarations) {
+        bool ready = false;
+        if (waiting_for_runtime_) {
+          const auto *named = llvm::dyn_cast<clang::NamedDecl>(declaration);
+          ready = named && named->getIdentifier() && named->getName() == kEagerRuntimeReady &&
+              deferred_context_->getSourceManager().getFilename(named->getLocation()) == kEagerRuntimePrelude;
+        } else if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration)) {
+          ready = space->getName() == "std" &&
+              deferred_context_->getSourceManager().isWrittenInBuiltinFile(space->getLocation());
+        }
+        if (ready) {
           auto *context = deferred_context_;
           deferred_context_ = nullptr;
+          waiting_for_runtime_ = false;
           ImportDeclarations(*context);
+          if (lookup_) lookup_->RegisterInlineDefinitions();
           break;
         }
+      }
     return true;
   }
 
@@ -141,7 +174,7 @@ public:
       return;
     }
     auto imported = session_->ImportInto(context, compiler_.getFileManager(),
-                                        request_.source_directed_imports);
+                                        request_.source_directed_imports,{},nullptr,&compiler_.getPreprocessor());
     result_.interface_import_diagnostics = imported.diagnostics;
     if (!imported.success) {
       std::string message;
@@ -156,18 +189,24 @@ public:
       context.getDiagnostics().Report(id) << result_.failure;
       return;
     }
-    result_.imported_declarations = imported.imported_declarations;
-    result_.resolved_interface_dependencies =
-        std::move(imported.direct_dependencies);
-    result_.interface_dependency_order = std::move(imported.dependency_order);
-    result_.resolved_module_identities = std::move(imported.resolved_modules);
     result_.resolved_interface_sources = session_->GetSourceArtifacts();
     if (lookup_ && !request_.module_imports.empty()) {
-      lookup_->ConfigureSourceRegistry(request_.module_imports, imported,
+      auto registry = request_.module_imports;
+      // Resolution already checked the invocation-completed lock identities.
+      // The source bridge must compare those same complete identities.
+      for (auto &entry : registry)
+        for (const auto &identity : imported.resolved_modules)
+          if (entry.canonical_name == identity.canonical_name)
+            entry.locked_identity = identity;
+      lookup_->ConfigureSourceRegistry(registry, imported,
                                        result_.resolved_interface_sources);
-      if (compiler_.hasSema())
-        lookup_->InitializeSema(compiler_.getSema());
+      if (compiler_.hasSema()) lookup_->InitializeSema(compiler_.getSema());
     }
+    result_.imported_declarations = imported.imported_declarations;
+    result_.resolved_interface_dependencies = std::move(imported.direct_dependencies);
+    result_.interface_dependency_order = std::move(imported.dependency_order);
+    result_.resolved_module_identities = std::move(imported.resolved_modules);
+    if (lookup_) lookup_->QueueInlineDefinitions(imported.inline_definitions);
     if (request_.source_directed_imports) {
       source_scoped_ = true;
       return;
@@ -182,9 +221,10 @@ public:
   }
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
+    if (lookup_) lookup_->RegisterInlineDefinitions();
     if (deferred_context_) {
       result_.failure =
-          "The compiler ARC prelude did not complete before interface import";
+          "The required compiler/runtime prelude did not complete before interface import";
       auto id = context.getDiagnostics().getCustomDiagID(
           clang::DiagnosticsEngine::Error, "%0");
       context.getDiagnostics().Report(id) << result_.failure;
@@ -212,6 +252,65 @@ private:
   CompileResult &result_;
   bool source_scoped_ = false;
   clang::ASTContext *deferred_context_ = nullptr;
+  bool waiting_for_runtime_ = false;
+};
+
+// A semantic module owns one provider definition for each public C inline
+// function. Consumers replay ISO inline bodies. Change storage only while the
+// backend observes the provider declaration, preserving the source AST seen by
+// Sema, identity generation and the other consumers.
+struct CInlineProviderState {
+  const CompileRequest &request;
+  clang::ASTContext *context=nullptr;
+  std::string source_root;
+  std::vector<std::vector<std::pair<clang::FunctionDecl *,clang::StorageClass>>> saved;
+  explicit CInlineProviderState(const CompileRequest &request):request(request) {}
+  void Initialize(clang::ASTContext &value) {
+    context=&value;
+    source_root=NormalizeModuleSourceRoot(value,request.module_source_root);
+  }
+  void Enter(clang::DeclGroupRef group) {
+    saved.emplace_back();
+    if (!context || context->getLangOpts().CPlusPlus || !request.module_owned_names ||
+        request.emit==EmitKind::Syntax) return;
+    for(auto *declaration:group) {
+      auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      if (!function || !function->doesThisDeclarationHaveABody() ||
+          !function->isInlined() || !function->isExternallyVisible() ||
+          !IsModuleOwnedSource(*context,function->getLocation(),source_root)) continue;
+      if (context->getLangOpts().GNUInline || function->hasAttr<clang::GNUInlineAttr>()) {
+        const auto id=context->getDiagnostics().getCustomDiagID(clang::DiagnosticsEngine::Error,
+            "semantic C inline providers require ISO inline semantics");
+        context->getDiagnostics().Report(function->getLocation(),id);
+        continue;
+      }
+      saved.back().emplace_back(function,function->getStorageClass());
+      function->setStorageClass(clang::SC_Extern);
+    }
+  }
+  void Leave() {
+    assert(!saved.empty());
+    for(auto [function,storage]:saved.back())function->setStorageClass(storage);
+    saved.pop_back();
+  }
+};
+
+class CInlineProviderConsumer final : public clang::ASTConsumer {
+  std::shared_ptr<CInlineProviderState> state_;
+  bool enter_;
+public:
+  CInlineProviderConsumer(std::shared_ptr<CInlineProviderState> state,bool enter)
+      :state_(std::move(state)),enter_(enter) {}
+  void Initialize(clang::ASTContext &context) override {
+    if(enter_)state_->Initialize(context);
+  }
+  bool HandleTopLevelDecl(clang::DeclGroupRef group) override {
+    if(enter_)state_->Enter(group);else state_->Leave();
+    return true;
+  }
+  void HandleInlineFunctionDefinition(clang::FunctionDecl *function) override {
+    if(enter_)state_->Enter(clang::DeclGroupRef(function));else state_->Leave();
+  }
 };
 template <typename NativeAction>
 class ContractAction final : public NativeAction {
@@ -242,14 +341,23 @@ class ContractAction final : public NativeAction {
       clang::CompilerInstance &compiler, llvm::StringRef input) override {
     auto native = NativeAction::CreateASTConsumer(compiler, input);
     if (!native) return nullptr;
+    if (lookup_source_) lookup_source_->SetDefinitionConsumer(native.get());
     std::vector<std::unique_ptr<clang::ASTConsumer>> consumers;
     // BackendConsumer may clear the AST in HandleTranslationUnit before
     // emitting the native module. Observe that same AST while it is alive.
     if (imports_ || request_.source_directed_imports)
       consumers.push_back(std::make_unique<InterfaceImportConsumer>(
           imports_, compiler, lookup_source_, request_, result_));
-    consumers.push_back(MakeContractConsumer(request_, result_));
+    consumers.push_back(MakeContractConsumer(request_, result_, &compiler.getPreprocessor()));
+    std::shared_ptr<CInlineProviderState> c_inline;
+    if(request_.module_owned_names && request_.emit!=EmitKind::Syntax &&
+        (request_.language==BaseLanguage::C || request_.language==BaseLanguage::ObjectiveC)) {
+      c_inline=std::make_shared<CInlineProviderState>(request_);
+      consumers.push_back(std::make_unique<CInlineProviderConsumer>(c_inline,true));
+    }
     consumers.push_back(std::move(native));
+    if(c_inline)
+      consumers.push_back(std::make_unique<CInlineProviderConsumer>(std::move(c_inline),false));
     return std::make_unique<clang::MultiplexConsumer>(std::move(consumers));
   }
  private:
@@ -305,13 +413,26 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       target.runtime_abi += language.ObjCAutoRefCount ? ";arc" : ";manual-reference-counting";
       target.extension_abi = std::string("objc3-extension-abi-") +
           std::to_string(CLANG_OBJC3_EXTENSION_ABI_REVISION) + ":" +
-          CLANG_OBJC3_PATCH_DIGEST;
+          clang::getObjC3PatchDigest().str();
       target.language_revision = language.ObjC3
           ? std::to_string(language.ObjC3Revision) : "objc3-disabled";
       static constexpr const char *profiles[] = {
           "compatibility", "strict", "strict-concurrency", "strict-system"};
       const auto profile_index = static_cast<unsigned>(language.ObjC3Profile);
-      target.language_profile = ReadInterfaceLanguageProfile(language);
+      // Admission happens before the real frontend instance creates its AST.
+      // Derive the same adjusted target from the exact consumer invocation.
+      clang::CompilerInstance target_instance(invocation);
+      // Diagnostic warning mappings read through this VFS even before an AST
+      // exists. Match Tooling's compiler initialization order, including its
+      // overlay files and working directory, rather than bind a null VFS.
+      target_instance.setVirtualFileSystem(files->getVirtualFileSystemPtr());
+      target_instance.setFileManager(files);
+      target_instance.createDiagnostics(diagnostics, false);
+      if (!target_instance.createTarget()) {
+        result_.failure = "Cannot derive the consumer primitive/target ABI";
+        return false;
+      }
+      target.language_profile = ReadInterfaceLanguageProfile(language, target_instance.getTarget());
       target.objc = language.ObjC;
       target.objc3 = language.ObjC3;
       target.arc = language.ObjCAutoRefCount;
@@ -327,6 +448,12 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           : (language.CPlusPlus ? "c++" : "c");
       target.ast_arguments = BuildInterfaceASTArguments(
           result_.driver_arguments, import_language, standard.getName(), target);
+      // Driver configuration files can supply SDK header roots without those
+      // flags appearing in the caller's argv. Reparse against the completed
+      // invocation's effective lookup configuration, including its macros.
+      target_instance.createSourceManager();
+      target_instance.createPreprocessor(clang::TU_Complete);
+      AppendInterfaceHeaderSearchArguments(target_instance.getPreprocessor(),target.ast_arguments);
       auto working_directory = files->getVirtualFileSystem().getCurrentWorkingDirectory();
       if (!working_directory) {
         result_.failure = "Cannot determine interface import working directory: " +
@@ -385,9 +512,6 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           result_.failure = "Declared module imports require search paths and cannot be mixed with resolved artifact inputs";
           return false;
         }
-        if (request_.source_directed_imports)
-          return FrontendActionFactory::runInvocation(std::move(invocation), files,
-              std::move(containers), diagnostics);
         auto declared = request_.module_imports;
         for (auto &module : declared) {
           if (request_.source_directed_imports)
@@ -401,6 +525,26 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           if (identity.extension_abi.empty()) identity.extension_abi = target.extension_abi;
           if (identity.language_revision.empty()) identity.language_revision = target.language_revision;
           if (identity.language_profile.empty()) identity.language_profile = target.language_profile;
+        }
+        if (request_.source_directed_imports) {
+          // Prepare compiler-owned protocol declarations before on-demand AST
+          // merging. No provider declaration becomes visible here. Keep unused
+          // invalid registry entries deferred until their source directive.
+          auto headers=ResolveInterfaceModules(search_paths,declared,target);
+          bool needs_coroutine=headers.success && headers.requires_coroutine_header;
+          std::set<std::string> standard_headers(headers.standard_library_headers.begin(),headers.standard_library_headers.end());
+          if(!headers.success)for(const auto &module:declared) {
+            auto selected=ResolveInterfaceModules(search_paths,{module},target);
+            if(selected.success) {
+              needs_coroutine |= selected.requires_coroutine_header;
+              standard_headers.insert(selected.standard_library_headers.begin(),selected.standard_library_headers.end());
+            }
+          }
+          if(needs_coroutine)standard_headers.insert("coroutine");
+          auto &includes=invocation->getPreprocessorOpts().Includes;
+          includes.insert(includes.begin(),standard_headers.begin(),standard_headers.end());
+          return FrontendActionFactory::runInvocation(std::move(invocation), files,
+              std::move(containers), diagnostics);
         }
         auto resolution = ResolveInterfaceModules(
             search_paths, declared, target);
@@ -439,6 +583,31 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
         }
         return false;
       }
+    }
+    if (import_session_ && (import_session_->RequiresRuntimeHeader() ||
+                            import_session_->RequiresKeyPathHeader() || import_session_->RequiresCoroutineHeader() || !import_session_->StandardLibraryHeaders().empty())) {
+      auto &preprocessor = invocation->getPreprocessorOpts();
+      std::string prelude;
+      for(const auto &header:import_session_->StandardLibraryHeaders())prelude+="#include <"+header+">\n";
+      if (import_session_->RequiresCoroutineHeader()) prelude+="#include <coroutine>\n";
+      if (import_session_->RequiresRuntimeHeader()) {
+        preprocessor.addRemappedFile(kEagerRuntimeHeader,
+            llvm::MemoryBuffer::getMemBufferCopy(RuntimeInterfaceHeaderSource(),kEagerRuntimeHeader).release());
+        const bool needs_task=import_session_->RequiresTaskHeader();
+        if (needs_task)
+          preprocessor.addRemappedFile(kEagerTaskHeader,
+              llvm::MemoryBuffer::getMemBufferCopy(RuntimeTaskHeaderSource(),kEagerTaskHeader).release());
+        prelude+=std::string("#include \"")+(needs_task?kEagerTaskHeader:kEagerRuntimeHeader)+"\"\n";
+      }
+      if (import_session_->RequiresKeyPathHeader()) {
+        preprocessor.addRemappedFile(kEagerKeyPathHeader,
+            llvm::MemoryBuffer::getMemBufferCopy(RuntimeKeyPathHeaderSource(),kEagerKeyPathHeader).release());
+        prelude+=std::string("#include \"")+kEagerKeyPathHeader+"\"\n";
+      }
+      prelude+=std::string("typedef void ")+kEagerRuntimeReady+";\n";
+      preprocessor.addRemappedFile(kEagerRuntimePrelude,
+          llvm::MemoryBuffer::getMemBufferCopy(prelude,kEagerRuntimePrelude).release());
+      preprocessor.Includes.insert(preprocessor.Includes.begin(),kEagerRuntimePrelude);
     }
     return FrontendActionFactory::runInvocation(std::move(invocation), files,
                                                std::move(containers), diagnostics);
@@ -549,6 +718,7 @@ void BuildDependencyRecord(const CompileRequest &request,
             ",\"native_symbol_name\":" + JsonQuote(decl.native_symbol_name) +
             ",\"type\":" + JsonQuote(decl.canonical_type_identity) +
             ",\"async\":" + (decl.effects.is_async ? "true" : "false") +
+            ",\"async_abi_identity\":" + JsonQuote(decl.effects.async_abi_identity) +
             ",\"throws_kind\":" + JsonQuote(decl.effects.throws_kind) +
             ",\"error_type\":" + JsonQuote(decl.effects.error_type_identity) +
             '}';
@@ -582,6 +752,8 @@ CompileResult Compile(const CompileRequest &request) {
     result.failure = "Linked Clang libraries differ from the sealed compiler SDK";
     return result;
   }
+  if(!VerifyNativeHeaderConfiguration(result.compiler_driver_path,result.resource_directory,result.failure))
+    return result;
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
   if (request.module_owned_names &&

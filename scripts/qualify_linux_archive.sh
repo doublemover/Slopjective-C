@@ -3,7 +3,7 @@
 set -eu
 qualification_scope=${4:-full}
 case "$qualification_scope" in
-  full|task-destinations|stdlib|match-results) ;;
+  full|task-destinations|stdlib|match-results|defer-control-flow|native-features|cxx-class-packages) ;;
   *) printf 'Unknown Linux qualification scope: %s\n' "$qualification_scope" >&2; exit 2 ;;
 esac
 archive=$1
@@ -13,7 +13,7 @@ printf '%s  %s\n' "$expected_sha" "$archive" | sha256sum -c -
 # Provision the small installer prerequisites before inspecting the archive.
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  python3 python3-venv zstd g++ libc6-dev libzstd-dev zlib1g-dev libssl-dev passwd util-linux
+  python3 python3-venv zstd g++ libc6-dev libzstd-dev zlib1g-dev libssl-dev passwd util-linux curl ca-certificates xz-utils
 umask 077
 scratch=$(mktemp -d)
 trap 'rm -rf -- "$scratch"' EXIT
@@ -55,8 +55,10 @@ PY
 python3 -m venv "$scratch/cmake"
 cmake_version=$(python3 -c 'import json,os; print(json.load(open(os.environ["OBJC3C_SDK_ROOT"]+"/objc3-sdk.json"))["host_tools"]["cmake"])')
 ninja_version=$(python3 -c 'import json,os; print(json.load(open(os.environ["OBJC3C_SDK_ROOT"]+"/objc3-sdk.json"))["host_tools"]["ninja"])')
-"$scratch/cmake/bin/pip" install "cmake==$cmake_version" "ninja==$ninja_version"
-export PATH="$scratch/cmake/bin:$PATH"
+"$scratch/cmake/bin/pip" install "ninja==$ninja_version"
+bash "$OBJC3C_SDK_ROOT/share/objc3c/install-cmake-linux.sh" "$scratch/cmake-release"
+test "$("$scratch/cmake-release/bin/cmake" --version | head -n 1)" = "cmake version $cmake_version"
+export PATH="$scratch/cmake-release/bin:$scratch/cmake/bin:$PATH"
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$OBJC3C_SDK_ROOT" \
   -DCMAKE_CXX_COMPILER="$OBJC3C_SDK_ROOT/bin/clang++" -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
 cmake --build build --parallel 2
@@ -89,12 +91,29 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_stdlib.py" --outp
 if [ "$qualification_scope" = full ] || [ "$qualification_scope" = match-results ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_match_results.py" --output-dir ./match-result-evidence
 fi
-if [ "$qualification_scope" = full ] || [ "$qualification_scope" = task-destinations ]; then
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = defer-control-flow ] || [ "$qualification_scope" = native-features ]; then
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_defer_control_flow.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output ./defer-control-flow-evidence
+fi
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = task-destinations ] || [ "$qualification_scope" = native-features ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_structured_runtime.py" --output-dir ./structured-runtime-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_task_coroutines.py" --output-dir ./task-coroutine-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_async_c_abi.py" --output-dir ./async-c-abi-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async.py" --output-dir ./native-async-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
+fi
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = native-features ]; then
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/run_linux_compiler_witnesses.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./compiler-witness-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_typed_keypath_packages.py" \
+  --output-dir ./typed-keypath-package-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/run_linux_feature_batch.py" \
+  "$OBJC3C_SDK_ROOT" ./native-feature-evidence \
+  --fixtures "$OBJC3C_SDK_ROOT/share/objc3c/examples/linux-features"
+for native_suite in guard_bindings optional_access recursive_carriers carrier_debugger; do
+  python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_$native_suite.py" \
+    --sdk-root "$OBJC3C_SDK_ROOT" --output "./$native_suite-evidence"
+done
 fi
 if [ "$qualification_scope" = full ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
@@ -132,13 +151,24 @@ for optimization in O0 O2; do
 done
 "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./carrier-transfer
 fi
+if [ "$qualification_scope" = cxx-class-packages ]; then
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-cpp-interfaces.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./cxx-interface-evidence
+fi
 "$OBJC3C_SDK_ROOT/bin/lldb" --batch -o 'settings set target.disable-aslr false' \
   -o 'breakpoint set --name main' -o run -o 'expression -- cleanup_order + 42' -o continue ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
 if [ "$qualification_scope" = full ]; then
   printf 'Unprivileged Linux SDK consumer: PASS\n'
+elif [ "$qualification_scope" = cxx-class-packages ]; then
+  printf 'Unprivileged Linux C++ class package consumer: PASS\n'
+elif [ "$qualification_scope" = native-features ]; then
+  printf 'Unprivileged Linux native feature consumer: PASS\n'
 elif [ "$qualification_scope" = match-results ]; then
   printf 'Unprivileged Linux native match consumer: PASS\n'
+elif [ "$qualification_scope" = defer-control-flow ]; then
+  printf 'Unprivileged Linux deferred cleanup consumer: PASS\n'
 elif [ "$qualification_scope" = stdlib ]; then
   printf 'Unprivileged Linux native standard-library consumer: PASS\n'
 else
@@ -147,8 +177,14 @@ fi
 SH
 if [ "$qualification_scope" = full ]; then
   printf 'Fresh Linux archive qualification: PASS\n'
+elif [ "$qualification_scope" = cxx-class-packages ]; then
+  printf 'Fresh Linux C++ class package qualification: PASS\n'
+elif [ "$qualification_scope" = native-features ]; then
+  printf 'Fresh Linux native feature qualification: PASS\n'
 elif [ "$qualification_scope" = match-results ]; then
   printf 'Fresh Linux native match qualification: PASS\n'
+elif [ "$qualification_scope" = defer-control-flow ]; then
+  printf 'Fresh Linux deferred cleanup qualification: PASS\n'
 elif [ "$qualification_scope" = stdlib ]; then
   printf 'Fresh Linux native standard-library qualification: PASS\n'
 else

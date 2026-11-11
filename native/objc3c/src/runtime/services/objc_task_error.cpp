@@ -69,9 +69,15 @@ objc3_async_reference_ops(objc3_async_result_kind kind) {
 
 extern "C" objc3_error_t *__objc3_task_error_create(void *owned) noexcept {
   objc3_error_t *error = nullptr;
-  if (owned)
-    (void)objc3_error_create(&owned, &object_ops, &error);
+  const auto status = owned ? objc3_error_create(&owned, &object_ops, &error)
+                            : OBJC3_SERVICE_INVALID_ARGUMENT;
   objc3_error_object_release(owned);
+  // The bridge consumes its native +1 even when boxing cannot allocate. Keep
+  // failure distinct from genuine cancellation using allocation-free transport.
+  if (status != OBJC3_SERVICE_OK &&
+      objc3_async_error_create_service(status, &error) != OBJC3_SERVICE_OK)
+    __builtin_trap();
+  if (!error) __builtin_trap();
   return error;
 }
 

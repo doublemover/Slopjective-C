@@ -1,6 +1,6 @@
 # Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors {#part-7}
 
-_Working draft v0.11 — last updated 2026-02-27_
+_Working draft v0.11 — last updated 2026-11-07_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -81,6 +81,29 @@ Async is part of a block’s type:
 
 - `R (^)(Args) async`
 - `R (^)(Args)` (sync)
+
+### 7.2.4 Nil receivers and async results {#part-7-2-4}
+
+An ordinary async message to a nil receiver shall preserve the declared async
+result type. Receiver and argument expressions are evaluated once in the
+ordinary order, and consuming arguments retain their ordinary nil-receiver
+cleanup obligations. The method body is not entered.
+This rule also applies when an awaited synchronous isolated method is entered
+through an implicit async operation. A nil receiver is handled before any actor
+or executor entry; an ordinary nil argument to a free function is unaffected.
+
+Scalar, object and void results retain ordinary Objective-C nil-result behavior.
+A structural record may supply a zero result only when its fields and bases
+require no reference binding, resource ownership, user construction or default
+member initialization. Other record results, and resource-managed results or
+subobjects, shall produce a checked native failure when the async operation
+executes. They shall not fabricate a C++ value, active resource owner or borrowed
+reference. This native failure is distinct from a declared checked-error domain.
+
+Creating or abandoning a lazy result shall not construct or destroy its logical
+result value. Cancellation before execution retains the cancellation outcome and
+cleanup rules in [§7.6](#part-7-6). Optional message sends retain their separate
+nil short-circuit behavior.
 
 ---
 
@@ -468,6 +491,31 @@ async void f(Counter *c) {
 
 Within actor-isolated code already executing on the actor’s executor, `await` is not required for isolated member access unless the member is explicitly `async`.
 
+#### 7.7.2.2 Property expressions across isolation domains {#part-7-7-2-2}
+
+An awaited property expression with synchronous accessors evaluates its receiver
+and explicit right-hand operand once on the caller, preserving their ordinary
+evaluation order. Each transported value is an independent snapshot; later
+operand effects cannot change an already captured value or invalidate its owned
+storage. C++ class operands use their ordinary typed construction order: when
+native property assignment has no captured result, receiver evaluation precedes
+setter-argument construction. Copy/move construction and partial initialization
+retain their language-defined effects and cleanup. Nontrivial or move-only setter
+values do not invent a non-void assignment result. The accessor sequence executes
+in the required isolation domain.
+
+A compound assignment or increment/decrement performs its getter, computation
+and setter without an intervening suspension. Its result retains ordinary
+property assignment and prefix/postfix value semantics. Every invoked accessor
+shall have compatible isolation requirements. Class and `super` properties
+retain their selected accessor and lexical dispatch contracts. Actor accessors
+may require a compatible backing executor as in [§7.4](#part-7-4).
+
+Nil reads follow [§7.2.4](#part-7-2-4). A nil assignment may return its already
+valid right-hand value; it shall not fabricate a getter result. Nil operations
+require no actor or executor entry. Cancellation or abandonment before accessor
+entry retains ordinary argument ownership and shall not invoke an accessor.
+
 ### 7.7.3 Reentrancy {#part-7-7-3}
 
 Actor execution is reentrant at suspension points.
@@ -649,6 +697,27 @@ When calling an `async throws` function, both effects must be handled:
 - `try` handles the throws effect (may throw).
 
 A conforming implementation shall accept `try await f(...)` as the canonical order.
+
+#### 7.9.1.1 Native exception boundaries {#part-7-9-1-1}
+
+A native exception escaping a task body or an awaited isolated synchronous entry
+shall not unwind through the runtime's C resume callback. Source handlers and
+lexical cleanup run before terminal publication. A representable native exception
+is retained in an owned error carrier; a matching C++ task consumer rethrows that
+exception with its dynamic type and identity. This transport does not introduce a
+checked `throws` effect into a source declaration.
+
+The task cancellation exception retains the cancellation outcome. Other native
+exceptions shall not be relabeled cancellation. A foreign exception without a
+representable owned carrier produces an invalid-argument service error. Failure
+to allocate its owned payload produces the corresponding service error using an
+allocation-independent error owner. Existing owned task errors preserve their
+native error identity. Frame-owned C++ values require nonthrowing destruction;
+ordinary constructor failure retains partial-initialization cleanup.
+
+Potentially throwing C++ isolation entries require enabled C++ exception handling
+and the qualified SDK exception bridge. The compiler shall diagnose admission
+without those contracts rather than allowing an exception across a C callback.
 
 ### 7.9.2 `defer` and scope cleanup across suspension {#part-7-9-2}
 

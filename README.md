@@ -12,8 +12,8 @@ installed example from the [showcase catalog](showcase/README.md).
 
 The authoritative versions are in
 [`toolchains/llvm/manifest.json`](toolchains/llvm/manifest.json). The current
-foundation is LLVM 23.1.3. Development requires Python 3.15.0, Node 26.12.0,
-npm 12.2.1, CMake 4.4.4 and Ninja 1.13.2. A compiler cache is recommended.
+foundation is LLVM 23.1.5. Development requires Python 3.15.0, Node 26.13.0,
+npm 12.2.2, CMake 4.4.5 and Ninja 1.13.2. A compiler cache is recommended.
 Native SDK development also needs the system OpenSSL 3.5+, zlib and zstd
 development headers.
 PowerShell is not part of the Linux compiler build or qualification pipeline.
@@ -348,7 +348,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_match_results_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_defer_scope_release_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.

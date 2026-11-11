@@ -13,6 +13,36 @@ import pytest
 from scripts.objc3c_toolchain import binary_packages as packages
 
 
+def test_installed_shared_library_accepts_one_versioned_soname_without_a_development_link(tmp_path):
+    library = tmp_path / 'libLLVM.so.23.1'
+    library.write_bytes(b'current LLVM')
+    assert packages.installed_shared_library(tmp_path, 'libLLVM.so') == library
+
+    (tmp_path / 'libLLVM.so.23').symlink_to(library.name)
+    assert packages.installed_shared_library(tmp_path, 'libLLVM.so') == library
+
+
+def test_installed_shared_library_rejects_ambiguous_missing_and_escaped_products(tmp_path):
+    assert packages.find_installed_shared_library(tmp_path, 'libLLVM.so') is None
+    with pytest.raises(ValueError, match='missing or ambiguous'):
+        packages.installed_shared_library(tmp_path, 'libLLVM.so')
+    for version in ('23.1', '24.0'):
+        (tmp_path / ('libLLVM.so.' + version)).write_bytes(version.encode())
+    with pytest.raises(ValueError, match='missing or ambiguous'):
+        packages.installed_shared_library(tmp_path, 'libLLVM.so')
+    outside = tmp_path.parent / 'libLLVM.so.25.0'
+    outside.write_bytes(b'outside')
+    (tmp_path / 'libLLVM.so').symlink_to(outside)
+    with pytest.raises(ValueError, match='escapes'):
+        packages.installed_shared_library(tmp_path, 'libLLVM.so')
+
+
+def test_optional_installed_shared_library_rejects_broken_links(tmp_path):
+    (tmp_path / 'libLLVM.so').symlink_to('missing.so.23')
+    with pytest.raises(ValueError, match='broken link'):
+        packages.find_installed_shared_library(tmp_path, 'libLLVM.so')
+
+
 def package_cli(tmp_path, root_mode, command):
     repo = Path(__file__).resolve().parents[2]
     env = {**os.environ, 'PYTHONPATH': str(repo)}
@@ -76,7 +106,7 @@ def bundle(tmp_path):
         native_dependencies = [{'module': next(row['module'] for row in rows if row['module']['canonical_name'] == edge['name']),
                                 'public_import': edge['visibility'] == 'public',
                                 'reexported': edge['visibility'] == 'public'} for edge in dependencies]
-        (directory / (name + '.objc3i.json')).write_text(json.dumps({'schema_id':'objc3c.semantic-interface.v2','schema_major':2,'ownership_projection':'','module': identity, 'dependencies': native_dependencies}))
+        (directory / (name + '.objc3i.json')).write_text(json.dumps({'schema_id':'objc3c.semantic-interface.v2','schema_major':2,'schema_minor':2,'declarations':[{'kind':'Function','qualified_name':'api','export_root':'api'}],'ownership_projection':'','module': identity, 'dependencies': native_dependencies}))
         rows.append({'language': 'objective-c++', 'standard': 'c++20', 'ownership': 'arc', 'provider_ownership': 'arc', 'exports': ['*'],
                      'module': identity, 'dependencies': dependencies,
                      'artifacts': {path.relative_to(root).as_posix(): packages.digest(path) for path in directory.iterdir()}})
@@ -94,9 +124,9 @@ def test_selected_exports_bind_native_public_roots(bundle, tmp_path, damage):
         name = row['module']['canonical_name']
         path = source / f'modules/{name}/{name}.objc3i.json'
         sidecar = json.loads(path.read_text())
-        sidecar['declarations'] = [{'kind': 'Typedef', 'qualified_name': 'Answer'},
-                                   {'kind': 'Function', 'qualified_name': 'answer'},
-                                   {'kind': 'Field', 'qualified_name': 'member'}]
+        sidecar['declarations'] = [{'kind': 'Typedef', 'qualified_name': 'Answer', 'export_root': 'Answer'},
+                                   {'kind': 'Function', 'qualified_name': 'answer', 'export_root': 'answer'},
+                                   {'kind': 'Field', 'qualified_name': 'member', 'export_root': 'Answer'}]
         path.write_text(json.dumps(sidecar))
         row['artifacts'][str(path.relative_to(source))] = packages.digest(path)
     row = manifest['packages'][0]
@@ -390,3 +420,60 @@ def test_recomputed_package_identity_cannot_erase_projection_contract(bundle, tm
     with pytest.raises(ValueError, match='projection|ownership'):
         packages.install(root, expected, tmp_path / 'rejected')
     assert not (tmp_path / 'rejected').exists()
+
+
+@pytest.mark.parametrize('damage', [None, 'omitted-namespace', 'unselected-root',
+                                   'missing-owner', 'missing-contract', 'old-interface'])
+def test_scoped_native_export_roots(bundle, tmp_path, damage):
+    source, manifest, _ = bundle
+    for row in manifest['packages']:
+        row['exports'] = ['@using-enum:Api::Kind', '@using:Api', 'Api', 'Short']
+        name = row['module']['canonical_name']
+        path = source / f'modules/{name}/{name}.objc3i.json'
+        sidecar = json.loads(path.read_text())
+        sidecar['declarations'] = [
+            {'kind': kind, 'qualified_name': name, 'export_root': root}
+            for kind, name, root in [
+                ('Namespace', 'Api', 'Api'),
+                ('CXXRecord', 'Api::Box', 'Api::Box'),
+                ('Var', 'Api::Box::counter', 'Api::Box'),
+                ('Function', 'hidden_friend', 'Api::Box'),
+                ('Namespace', 'Api::v1', 'Api::v1'),
+                ('Function', 'Api::v1::value', 'Api::v1::value'),
+                ('Enum', 'Api::Kind', 'Api::Kind'),
+                ('Using', 'Api::alias', 'Api::alias'),
+                ('NamespaceAlias', 'Short', 'Short'),
+                ('UsingDirective', '@using:Api', '@using:Api'),
+                ('UsingEnum', '@using-enum:Api::Kind', '@using-enum:Api::Kind'),
+            ]]
+        if damage == 'omitted-namespace': row['exports'].remove('Api')
+        elif damage == 'unselected-root':
+            sidecar['declarations'].append(
+                {'kind': 'Function', 'qualified_name': 'hidden', 'export_root': 'hidden'})
+        elif damage == 'missing-owner': sidecar['declarations'][3]['export_root'] = 'Absent'
+        elif damage == 'missing-contract': del sidecar['declarations'][3]['export_root']
+        elif damage == 'old-interface': sidecar['schema_minor'] = 1
+        path.write_text(json.dumps(sidecar))
+        row['artifacts'][str(path.relative_to(source))] = packages.digest(path)
+    (source / 'package.json').write_text(json.dumps(manifest))
+    identity = packages.content_hash(manifest)
+    if damage:
+        with pytest.raises(ValueError, match='exports'):
+            packages.install(source, identity, tmp_path / 'store')
+    else:
+        assert packages.install(source, identity, tmp_path / 'store')['status'] == 'PASS'
+
+
+def test_namespace_ancestors_do_not_expand_leaf_export_policy(bundle, tmp_path):
+    source, manifest, _ = bundle
+    for row in manifest['packages']:
+        row['exports'] = ['Api::value']
+        path = source / f"modules/{row['module']['canonical_name']}/{row['module']['canonical_name']}.objc3i.json"
+        sidecar = json.loads(path.read_text())
+        sidecar['declarations'] = [
+            {'kind': 'Namespace', 'qualified_name': 'Api', 'export_root': 'Api'},
+            {'kind': 'Function', 'qualified_name': 'Api::value', 'export_root': 'Api::value'}]
+        path.write_text(json.dumps(sidecar))
+        row['artifacts'][str(path.relative_to(source))] = packages.digest(path)
+    (source / 'package.json').write_text(json.dumps(manifest))
+    assert packages.install(source, packages.content_hash(manifest), tmp_path / 'store')['status'] == 'PASS'

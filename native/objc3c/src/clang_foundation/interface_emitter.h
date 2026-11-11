@@ -7,17 +7,45 @@
 #include "llvm/ADT/StringRef.h"
 
 namespace clang {
+class ClassTemplateSpecializationDecl;
+class FunctionDecl;
+class VarTemplateSpecializationDecl;
 class ASTContext;
 class NamedDecl;
 class LangOptions;
+class TargetInfo;
+class Preprocessor;
 }
 
 namespace objc3::clang_foundation {
 
+// Authored out-of-line generic callables carried by a complete record owner.
+[[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedCallableTemplateDefinitions(
+    const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedStaticDataTemplateDefinitions(
+    const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::NamedDecl *> ReadClosedParentPatterns(const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::NamedDecl *> ReadClosedParentMemberSpecializations(const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::NamedDecl *> ReadDependentMemberPartials(const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedNestedTemplateDefinitions(
+    const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::ClassTemplateSpecializationDecl *> ReadConcreteMemberClassSpecializations(
+    const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::FunctionDecl *> ReadConcreteMemberFunctionSpecializations(
+    const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::VarTemplateSpecializationDecl *> ReadConcreteMemberVariableSpecializations(
+    const clang::NamedDecl *owner);
+
 // Exact parser dialect, standard and ownership mode used by providers and
 // importers.
 [[nodiscard]] std::string
-ReadInterfaceLanguageProfile(const clang::LangOptions &language);
+ReadInterfaceLanguageProfile(const clang::ASTContext &context);
+[[nodiscard]] std::string ReadInterfaceLanguageProfile(
+    const clang::LangOptions &language, const clang::TargetInfo &target);
+
+// Native declaration owning the selected export policy of a row.
+[[nodiscard]] std::string
+ReadInterfaceExportRoot(const clang::NamedDecl *declaration);
 
 // SPI applies to a complete exported root, including its native members.
 [[nodiscard]] std::string
@@ -44,7 +72,8 @@ ReadInterfaceSPIGroup(const clang::NamedDecl *declaration);
     const std::vector<InterfaceSourceArtifact> &dependency_sources = {},
     llvm::StringRef ownership_projection = {},
     const std::vector<std::string> &exports = {},
-    const std::string &source_root = {});
+    const std::string &source_root = {},
+    const clang::Preprocessor *preprocessor = nullptr);
 
 // Emit a distinct consumer-mode interface, retaining the canonical producer
 // proof. The native object remains compiled under the producer's ownership.
@@ -53,6 +82,7 @@ ReadInterfaceSPIGroup(const clang::NamedDecl *declaration);
     llvm::StringRef package_identity, bool consumer_arc,
     const std::vector<InterfaceDependency> &dependencies = {},
     const std::vector<std::string> &exports = {},
-    const std::string &source_root = {});
+    const std::string &source_root = {},
+    const clang::Preprocessor *preprocessor = nullptr);
 
 }  // namespace objc3::clang_foundation

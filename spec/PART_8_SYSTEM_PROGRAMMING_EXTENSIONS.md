@@ -141,6 +141,11 @@ Objective‑C 3.0 introduces type annotations usable on typedefs:
 - `@resource_family(Name)`
 - `@invalid(X)`
 
+The canonical header forms are `objc_requires_cleanup(F)`,
+`objc_resource_family(Name)` and `objc_invalid(X)`, each enclosed in
+`__attribute__((...))`; see [B.8.7](#b-8-7). Contracts survive typedef/using
+aliases and interface serialization without changing the underlying scalar ABI.
+
 In strict-system mode, the compiler shall diagnose:
 
 - forgetting to cleanup values of types with `@requires_cleanup`,
@@ -313,6 +318,21 @@ Rules in strict-system mode:
 - borrowed pointers shall not be stored into globals, heap storage, or escaping blocks without explicit unsafe escape.
 - borrowed pointers derived from a non-stable owner require explicit lifetime control (`withLifetime`/`keepAlive`) or automatic owner materialization with a warning.
 
+#### 8.7.1.1 Inline storage and native references
+
+Taking an address into an Objective-C object's inline ivar storage, including
+array decay and nested inline native record/array fields, derives a loan from
+that object. A pointer or reference field does not establish that relationship
+for the separate storage it names. The inferred loan obeys the same escape,
+owner stability and explicit lifetime rules as a declared borrowed acquisition.
+
+A native reference to such storage carries the referent's address lifetime.
+Copying the reference binding or a record containing it preserves that
+obligation. Copying an independent scalar or plain value from the region does
+not carry its address lifetime. Reference captures retain address obligations;
+value captures follow the copied value. Builtin address-taking preserves the
+referent's ownership facts without a mutation effect.
+
 ### 8.7.2 `@returns_borrowed(owner: N)` {#part-8-7-2}
 
 Functions may declare borrowed return relationships, enabling the compiler to enforce owner lifetime.
@@ -320,6 +340,22 @@ Functions may declare borrowed return relationships, enabling the compiler to en
 **Canonical header spelling (illustrative):**
 
 - `__attribute__((objc_returns_borrowed(owner_index=N)))` on the function/return.
+
+#### 8.7.2.1 Native receiver-owned results
+
+An Objective-C method or property declared `objc_returns_inner_pointer` promises
+that its pointer or native reference result is tied to the receiver's lifetime.
+Strict System preserves that obligation through ordinary messages, property
+reads, reference/address aliases and native copies that retain references.
+An implementation shall satisfy the receiver relationship or return independently
+stable storage. Copying a plain value from the view produces independent data.
+A formal-owner borrowed return annotation and receiver-owner annotation shall
+not give the same declaration conflicting ownership relationships.
+
+An async method shall not expose a receiver-owned result through an owned task
+carrier. An isolated entry shall not transfer such a result across an actor or
+executor boundary based on the raw pointer's scalar Sendable classification.
+An independent owned copy may be produced within the isolated operation instead.
 
 ### 8.7.3 Enforcement model (normative in strict-system) {#part-8-7-3}
 
@@ -330,6 +366,118 @@ Strict-system conformance requires a front-end borrowed-pointer escape checker t
 - capable of diagnosing all required escaping-use cases in [§8.7.4](#part-8-7-4) without requiring an opt-in whole-program analyzer run.
 
 Additional interprocedural/static-analyzer checks are recommended, but they are additive and shall not replace required front-end enforcement.
+
+#### 8.7.3.1 Managed native runtime scopes
+
+The lifetime proof shall account for native pool and synchronization cleanup in
+the order used by native lowering. A synchronization operand is evaluated once;
+an ARC receiver snapshot remains owned through unlock. MRC synchronization does
+not itself establish an extra ownership claim. Pending native autoreleases are
+consumed when their owning pool drains, preserving independently proved retains
+and lifetime pins. A synchronous native pool's normal-only cleanup shall not be
+treated as an exception cleanup. Native async pool drains and reopenings shall
+be represented at actual suspension, including their exceptional exits.
+
+Suspension while holding a synchronization monitor is ill-formed. An await
+proved not to suspend does not cross that boundary. Scope cleanup that can end
+an owner shall be included when checking a borrowed return or subsequent use.
+
+A native `@finally` action surrounds both its protected body and handlers.
+The proof shall include finalizer effects before an outgoing borrowed result or
+subsequent use is admitted. A finalizer's own return, throw or outward jump
+replaces the pending transfer; it shall not be modeled as a defer destructor
+that terminates on a second exception. Handler binding cleanup precedes the
+finalizer, while enclosing independent owner claims retain their own scopes.
+
+#### 8.7.3.2 Completed initialization ownership
+
+An ownership claim acquired by a completed managed field or capture slot shall
+remain available while later initializers execute. Failure shall unwind the
+completed prefix before enclosing cleanup, without applying whole-object
+destruction to an incomplete object. Successful completion shall preserve those
+claims in the completed storage. Proofs shall use the identities and ownership
+state captured when each initializer actually evaluates, including native capture
+initialization order. A later binding replacement shall not erase an independent
+completed claim; an already expired source shall not become valid through an
+unproved ownership copy.
+
+Native disposal proofs shall include mandatory deallocation after a scalar C++
+destructor throws, before enclosing cleanup. A null delete operand shall evaluate
+once and bypass destruction and deallocation; a noreturn destructor shall not
+make the null path unreachable. Disposal shall preserve the native exception and
+termination boundaries while checking any owner lifetimes affected by cleanup.
+
+A failed constructor shall clean up only completed subobjects and then invoke
+matching deallocation for storage successfully allocated by its new-expression.
+An allocation failure shall not invoke that deallocator. Array disposal shall
+complete the remaining element prefix after a first destructor exception and
+then deallocate before propagation; a second escaping destructor exception
+terminates. An empty array skips element destruction while retaining array
+deallocation. A borrowed pointer does not confer scalar or array deallocation
+ownership.
+
+The element-prefix destruction and secondary-exception rules apply to automatic
+arrays as well as heap arrays. A failed array construction destroys only completed
+elements, with native termination if that prefix cleanup throws. A zero-length
+array evaluates no element constructor arguments or element destructor, including
+noreturn element operations.
+
+Native constructor failure cleanup shall distinguish completed subobjects from
+an initializer that failed. Destructor return shall run implicit member/base
+cleanup after leaving handlers in its body. Exception cleanup obligations apply
+while native propagation continues: noexcept and secondary-exception termination
+retain their native unwind boundaries, and a lifetime proof shall not infer
+cleanup that native termination bypasses.
+
+Once a delegating constructor's target completes, failure in its body destroys
+the complete object; target failure shall not destroy an incomplete whole object.
+Constructor/destructor function-try handlers observe completed subobject cleanup,
+including implicit destructor epilogues. Falling off those handlers implicitly
+rethrows; a destructor handler may return without repeating subobject destruction.
+
+Complete-object and base-object constructor/destructor paths shall preserve
+virtual-base ownership. A base constructor does not evaluate ignored virtual
+initializers, including their argument side effects. Its cleanup shall not destroy
+virtual bases owned by the most-derived object. Abstract constructor bodies use
+that base-object rule. Indirect anonymous-union initialization registers only
+the successfully constructed active member; the parent destructor shall not add
+implicit whole-union destruction to user-authored active-arm cleanup.
+
+A failed strong Block member-array copy shall destroy only previously initialized
+elements and completed earlier subobjects. A complete field is registered only
+after its elements initialize. Null/default elements perform no heap copy; weak
+storage retains its distinct nonowning initialization and cleanup semantics.
+
+Nested member arrays initialize scalar leaves in native row-major order. Value
+evaluation precedes a strong destination copy; failure in either operation shall
+not register that destination. Sequenced/conditional computations, scalar-only
+literal captures and stable native member/index reads preserve that separation,
+including strong local bindings and consumed arguments. Managed capture storage,
+weak-load temporaries and resource-bearing producers require their own cleanup
+regions; scalar-value admission shall not erase those obligations.
+
+A strong Block assignment shall finish RHS evaluation and ownership acquisition
+before evaluating the destination address. Failure before the store preserves
+the old destination. If address evaluation throws after ownership acquisition,
+the newly retained value shall be released before lexical cleanup. Successful
+storage transfers that ownership without a second release. A null assignment
+performs no heap copy. Borrowed and nullable proofs shall distinguish these
+failure boundaries from successful mutation.
+
+A direct retained or reclaimed Block producer result shall be adopted by its
+strong destination without inventing an additional heap copy. Failed production
+does not initialize that destination. Produced assignment values remain owned
+across destination evaluation. Default member initializers obey the same prefix
+registration and failure rules. Direct consumed calls may adopt a sole prepared
+argument; ownership-bearing work in other argument/temporary regions requires
+its own complete cleanup model.
+
+A native catch handler observes owner state after protected-region cleanup,
+including catch-all and scalar/reference exception bindings. A successful strong
+Block binding owns its copied captures; a failed heap copy does not initialize
+or destroy that destination binding. Closure analysis shall discover inferred
+inline-storage and receiver-result loans even when their native pointer type
+has no explicit borrowed spelling.
 
 ### 8.7.4 Escaping-use trigger points and minimum diagnostics (normative) {#part-8-7-4}
 

@@ -50,6 +50,10 @@ int objc3_runtime_stdlib_iterator_i32_v2_next(
     objc3_iterator_i32_v2_t iterator, int *out_has_value,
     int32_t *out_value);
 
+/* Concrete i32 map/set membership and append use a private integer hash index
+ * with expected average constant-time lookup. Ordered removal repairs shifted
+ * slots in O(N). Duplicate set insertion and unchanged map values preserve
+ * iterator validity; allocation failure publishes neither payload nor index. */
 int objc3_runtime_stdlib_map_i32_i32_v2_create(
     objc3_map_i32_i32_v2_t *out_map);
 int objc3_runtime_stdlib_map_i32_i32_v2_release(

@@ -73,6 +73,11 @@ void release_internal(Actor *actor) noexcept {
     delete actor;
 }
 
+struct ActorOperationLease final {
+  Actor *actor;
+  ~ActorOperationLease() { release_internal(actor); }
+};
+
 struct ActorExecutionScope {
   Actor *previous_actor;
   explicit ActorExecutionScope(Actor *actor) noexcept
@@ -195,6 +200,17 @@ objc3_executor_t *actor_executor(Actor *actor) noexcept {
   return actor ? actor->executor : nullptr;
 }
 
+bool actor_is_closed(Actor *actor) noexcept {
+  std::lock_guard<std::mutex> lock(actor->mutex);
+  return actor->closed;
+}
+
+bool actor_is_closed_and_quiescent(Actor *actor) noexcept {
+  std::lock_guard<std::mutex> lock(actor->mutex);
+  return actor->closed && actor->mailbox.empty() && !actor->active &&
+         !actor->drain_scheduled;
+}
+
 objc3_service_status actor_enqueue(Actor *actor, ActorJob job, void *context,
                                   ActorContextDestroy destroy,
                                   ActorHopFacts *out_facts) {
@@ -266,13 +282,15 @@ objc3_service_status actor_cancel(Actor *actor) {
 
 objc3_service_status actor_join(Actor *actor) {
   if (!actor) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (!retain_internal(actor)) return OBJC3_SERVICE_NOT_READY;
+  ActorOperationLease operation{actor};
   if (current_actor == actor) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(actor->mutex);
   if (!actor->closed) return OBJC3_SERVICE_NOT_READY;
   const bool pending = !actor->mailbox.empty() || actor->active ||
                        actor->drain_scheduled;
   if (pending && (actor->executor->manual ||
-                  executor_is_current_identity(actor->executor->identity)))
+                  executor_current_identity() != 0))
       return OBJC3_SERVICE_NOT_READY;
   actor->changed.wait(lock, [actor] {
     return actor->mailbox.empty() && !actor->active && !actor->drain_scheduled;

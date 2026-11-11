@@ -1,4 +1,4 @@
 *.md text eol=lf
-*.patch whitespace=-blank-at-eol
+*.patch whitespace=-blank-at-eol,-blank-at-eof
 scripts/objc3c_toolchain_runtime/patches/*.patch whitespace=-blank-at-eol,-space-before-tab
 tests/tooling/fixtures/native/library_cli_parity/**/*.ll text eol=lf

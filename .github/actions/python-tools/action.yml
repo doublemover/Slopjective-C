@@ -1,0 +1,63 @@
+name: Pinned Python and CMake dependency caches
+description: Reuse interpreter and package downloads and admit the checksum-pinned CMake prefix.
+runs:
+  using: composite
+  steps:
+    - name: Plan quick dependency cache identities
+      id: keys
+      shell: bash
+      run: |
+        python3 -B -m scripts.objc3c_toolchain.dependency_cache plan --quick \
+          --root "$RUNNER_TEMP" --plan "$RUNNER_TEMP/objc3-quick-dependencies.json" --github-output "$GITHUB_OUTPUT"
+    - name: Restore interpreter dependencies
+      id: restore_interpreter
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.interpreter_paths }}
+        key: ${{ steps.keys.outputs.interpreter_key }}
+    - name: Restore python_packages dependencies
+      id: restore_python_packages
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.python_packages_paths }}
+        key: ${{ steps.keys.outputs.python_packages_key }}
+    - name: Restore cmake dependencies
+      id: restore_cmake
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.cmake_paths }}
+        key: ${{ steps.keys.outputs.cmake_key }}
+    - name: Admit the restored CMake prefix
+      shell: bash
+      run: python3 -B -m scripts.objc3c_toolchain.dependency_cache admit --plan "$RUNNER_TEMP/objc3-quick-dependencies.json"
+    - name: Provision exact Python, packages and CMake
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zstd
+        bootstrap="$RUNNER_TEMP/objc3-tooling-bootstrap"
+        python3 -m venv "$bootstrap"
+        "$bootstrap/bin/python" -m pip install uv==0.13.7
+        "$bootstrap/bin/uv" sync --locked --group dev --python 3.15.0
+        bash scripts/objc3c_toolchain/cmake_linux.sh "$RUNNER_TEMP/objc3-tooling-cmake"
+        echo "$bootstrap/bin" >> "$GITHUB_PATH"
+        echo "$RUNNER_TEMP/objc3-tooling-cmake/bin" >> "$GITHUB_PATH"
+        python3 -B -m scripts.objc3c_toolchain.dependency_cache seal --plan "$RUNNER_TEMP/objc3-quick-dependencies.json"
+    - name: Publish interpreter cache miss
+      if: steps.restore_interpreter.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.interpreter_paths }}
+        key: ${{ steps.keys.outputs.interpreter_key }}
+    - name: Publish python_packages cache miss
+      if: steps.restore_python_packages.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.python_packages_paths }}
+        key: ${{ steps.keys.outputs.python_packages_key }}
+    - name: Publish cmake cache miss
+      if: steps.restore_cmake.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.cmake_paths }}
+        key: ${{ steps.keys.outputs.cmake_key }}

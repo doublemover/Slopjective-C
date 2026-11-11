@@ -1,0 +1,35 @@
+{
+  "schema": "objc3c.swift-consumer-toolchain.v1",
+  "version": "6.4.2",
+  "host": "debian13-x86_64",
+  "archive_url": "https://download.swift.org/swift-6.4.2-release/debian13/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE-debian13.tar.gz",
+  "archive_sha256": "8b6fde775b7cfc7a3758739d8abb09bb6fba519c6532d6b1a47faff791646c64",
+  "archive_bytes": 1122816308,
+  "signature_sha256": "3a02212b9a49926a4a5744c1f3624c6ad59976d11b531b70ef47d7997b28d3f3",
+  "signing_fingerprint": "52BB7E3DE28A71BE22EC05FFEF80A866B47A981F",
+  "public_key": "toolchains/swift/signing-key.asc",
+  "public_key_sha256": "6310f9267c7f889a83cb0498dcd647c675586e5327b77d9d4fb0537dc2ee098d",
+  "key_origin_url": "https://www.swift.org/keys/all-keys.asc",
+  "archive_root": "swift-6.4.2-RELEASE-debian13",
+  "bin": [
+    "swift",
+    "swiftc",
+    "swift-driver",
+    "swift-frontend",
+    "swift-autolink-extract",
+    "clang",
+    "clang-21",
+    "ld.lld",
+    "lld"
+  ],
+  "library_directories": ["usr/lib/clang", "usr/lib/swift"],
+  "excluded_directories": [
+    "usr/lib/swift/pm",
+    "usr/lib/swift/embedded",
+    "usr/lib/swift/FrameworkABIBaseline",
+    "usr/lib/swift/migrator"
+  ],
+  "library_files": ["usr/lib/libswiftDemangle.so"],
+  "purpose": "Independent stock Swift consumer; text C headers only, no product PCH/AST or compiler/runtime substitution.",
+  "selected_manifest_sha256": "8afeb82716604908e026e83e0ae12559632df6422f1e6c9776b48c8a8ac94634"
+}

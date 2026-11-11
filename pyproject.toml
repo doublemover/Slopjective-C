@@ -6,12 +6,12 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-  "pip==26.2.1",
-  "uv==0.13.1",
-  "pytest==9.1.1",
+  "pip==26.3",
+  "uv==0.13.7",
+  "pytest==9.2.0",
   "jsonschema==4.26.0",
-  "cmake==4.4.4",
   "ninja==1.13.2",
+  "ruff==0.14.5",
 ]
 
 [tool.objc3c.workflow]

@@ -12,6 +12,8 @@ import subprocess
 from scripts.objc3c_toolchain.package import verify_sdk
 from scripts.objc3c_toolchain.qualify_ownership_projections import prepare
 from scripts.objc3c_toolchain.binary_packages import disjoint
+from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+from scripts.objc3c_toolchain.product_evidence import ProductCommands
 
 
 def digest(path: Path) -> str:
@@ -41,8 +43,11 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
                                   for path in sorted(fixture.rglob('*')) if path.is_file()},
         'harness_sha256': digest(Path(__file__)), 'commands': [], 'executions': [],
     }
-    environment = {**os.environ, 'LD_LIBRARY_PATH': str(sdk / 'lib'),
-                   'ASAN_OPTIONS': 'detect_leaks=1:halt_on_error=1'}
+    policy = SanitizerQualification(sdk / 'bin/clang', resource, output / 'detector-controls',
+        'address', libraries=(sdk / 'lib/libobjc.so', sdk / 'lib/libobjc3_runtime_services.a'),
+        additional_inputs=(Path(__file__),))
+    environment = policy.environment
+    products = None
 
     def save():
         temporary = output / '.summary.tmp'
@@ -52,23 +57,19 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
     def run(key, phase, command, cwd):
         command = list(map(str, command))
         log = output / (key + '-' + phase + '.log')
-        with log.open('w') as stream:
-            result = subprocess.run(command, cwd=cwd, env=environment, stdout=stream,
-                                    stderr=subprocess.STDOUT, timeout=180, check=False)
-        report['commands'].append({'configuration': key, 'phase': phase, 'command': command,
-                                   'exit_code': result.returncode, 'log': str(log),
-                                   'log_sha256': digest(log)})
+        products.record(policy, key+'-'+phase, command, report['commands'], cwd=cwd, log=log)
         save()
-        if result.returncode:
-            raise RuntimeError(f'{phase} failed; inspect {log}')
 
     save()
     try:
+        products = ProductCommands(output / 'product-evidence', sources=(fixture, sdk / 'include', Path(__file__)))
         compiler = sdk / 'bin/objc3c'
         for language, standard in [('objective-c', 'c17'), ('objective-c++', 'c++20'),
                                     ('objective-c++', 'c++23')]:
             for consumer in ('arc', 'mrc'):
                 for optimization in ('O0', 'O2'):
+                    policy.ensure_controls(optimization)
+                    report['sanitizer_policy'] = policy.receipt()
                     key = '-'.join((language, standard, consumer, optimization))
                     root = output / key
                     root.mkdir()
@@ -81,7 +82,7 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
                     objects = []
                     flags = ['--no-default-config', '-std=' + standard, '-fblocks',
                              '-' + optimization, '-g', '-fstandalone-debug', '-fexceptions',
-                             '-fobjc-arc-exceptions', '-fsanitize=address',
+                             '-fobjc-arc-exceptions', '-fsanitize=address', '-fno-sanitize-recover=undefined',
                              '-resource-dir', resource, '-isystem', sdk / 'include']
                     for part, name, package, mode in [
                         ('provider', 'fixture.Ownership', 'ownership-v1', provider),
@@ -128,6 +129,8 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
         if len(report['executions']) != 12 or len(report['commands']) != 72:
             raise ValueError('incomplete ownership sanitizer qualification')
         verify_sdk(sdk, manifest['seal_sha256'])
+        report['sanitizer_policy'] = policy.finalize()
+        report['product_evidence'] = products.finalize()
         report['status'] = 'PASS'
     except BaseException as error:
         report.update(status='FAIL', error=str(error))

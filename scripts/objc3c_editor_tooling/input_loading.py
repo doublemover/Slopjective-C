@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file

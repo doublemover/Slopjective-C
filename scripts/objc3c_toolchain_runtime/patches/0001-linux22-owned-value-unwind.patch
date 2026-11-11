@@ -11,11 +11,621 @@ index 3f0733757..e6b303498 100644
  
  list(APPEND libobjc_CXX_SRCS ${libobjcxx_CXX_SRCS})
  target_sources(objc PRIVATE ${libobjc_CXX_SRCS})
+diff --git a/arc.mm b/arc.mm
+index fbba14c03..86d2eb76b 100644
+--- a/arc.mm
++++ b/arc.mm
+@@ -91,12 +91,6 @@ extern "C"
+ }
+ #endif
+ 
+-@interface NSAutoreleasePool
+-+ (Class)class;
+-+ (id)new;
+-- (void)release;
+-@end
+-
+ #define POOL_SIZE (4096 / sizeof(void*) - (2 * sizeof(void*)))
+ /**
+  * Structure used for ARC-managed autorelease pools.  This structure should be
+@@ -125,7 +119,6 @@ struct arc_autorelease_pool
+ struct arc_tls
+ {
+ 	struct arc_autorelease_pool *pool;
+-	id returnRetained;
+ };
+ 
+ /**
+@@ -211,32 +204,16 @@ static void emptyPool(struct arc_tls *tls, void *stop)
+ #ifdef arc_tls_store
+ static TLS_CALLBACK(cleanupPools)(struct arc_tls* tls)
+ {
+-	if (tls->returnRetained)
+-	{
+-		release(tls->returnRetained);
+-		tls->returnRetained = nil;
+-	}
+ 	if (NULL != tls->pool)
+ 	{
+ 		emptyPool(tls, NULL);
+ 		assert(NULL == tls->pool);
+ 	}
+-	if (tls->returnRetained)
+-	{
+-		cleanupPools(tls);
+-	}
+ 	free(tls);
+ }
+ #endif
+ 
+ 
+-static Class AutoreleasePool;
+-static IMP NewAutoreleasePool;
+-static IMP DeleteAutoreleasePool;
+-static IMP AutoreleaseAdd;
+-
+-static BOOL useARCAutoreleasePool;
+-
+ static const long refcount_shift = 1;
+ /**
+  * We use the top bit of the reference count to indicate whether an object has
+@@ -317,13 +294,13 @@ static inline BOOL isPersistentObject(id obj)
+ 	}
+ 	// Persistent objects are persistent.  Safe to access isa directly here
+ 	// because we've already handled the small object case separately.
+-	return objc_test_class_flag(obj->isa, objc_class_flag_permanent_instances);
++	return objc_test_class_flag(classForObject(obj), objc_class_flag_permanent_instances);
+ }
+ 
+ static inline id retain(id obj, BOOL isWeak)
+ {
+ 	if (isPersistentObject(obj)) { return obj; }
+-	Class cls = obj->isa;
++	Class cls = classForObject(obj);
+ 	if (UNLIKELY(objc_test_class_flag(cls, objc_class_flag_is_block)))
+ 	{
+ 		return Block_copy(obj);
+@@ -383,7 +360,7 @@ extern "C" OBJC_PUBLIC void objc_release_fast_np(id obj)
+ static inline void release(id obj)
+ {
+ 	if (isPersistentObject(obj)) { return; }
+-	Class cls = obj->isa;
++	Class cls = classForObject(obj);
+ 	if (UNLIKELY(objc_test_class_flag(cls, objc_class_flag_is_block)))
+ 	{
+ 		if (cls == static_cast<void*>(&_NSConcreteStackBlock))
+@@ -401,64 +378,24 @@ static inline void release(id obj)
+ 	return ManualRetainReleaseMessage(obj, release, void(*)(id, SEL));
+ }
+ 
+-static inline void initAutorelease(void)
+-{
+-	if (Nil == AutoreleasePool)
+-	{
+-		AutoreleasePool = objc_getClass("NSAutoreleasePool");
+-		if (Nil == AutoreleasePool)
+-		{
+-			useARCAutoreleasePool = YES;
+-		}
+-		else
+-		{
+-			useARCAutoreleasePool = (0 != class_getInstanceMethod(AutoreleasePool,
+-			                                                      SELECTOR(_ARCCompatibleAutoreleasePool)));
+-			if (!useARCAutoreleasePool)
+-			{
+-				[AutoreleasePool class];
+-				NewAutoreleasePool = class_getMethodImplementation(object_getClass(AutoreleasePool),
+-				                                                   SELECTOR(new));
+-				DeleteAutoreleasePool = class_getMethodImplementation(AutoreleasePool,
+-				                                                      SELECTOR(release));
+-				AutoreleaseAdd = class_getMethodImplementation(object_getClass(AutoreleasePool),
+-				                                               SELECTOR(addObject:));
+-			}
+-		}
+-	}
+-}
+-
++// GNUstep 2.2 uses native per-thread ARC pools exclusively. Switching a
++// process-global mode after class lookup races with concurrent callbacks and
++// makes live token interpretation depend on later Foundation loading.
+ static inline id autorelease(id obj)
+ {
+-	//fprintf(stderr, "Autoreleasing %p\n", obj);
+-	if (useARCAutoreleasePool)
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	struct arc_autorelease_pool *pool = tls->pool;
++	if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+ 	{
+-		struct arc_tls *tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			struct arc_autorelease_pool *pool = tls->pool;
+-			if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+-			{
+-				pool = new_zeroed<struct arc_autorelease_pool>();
+-				pool->previous = tls->pool;
+-				pool->insert = pool->pool;
+-				tls->pool = pool;
+-			}
+-			*pool->insert = obj;
+-			pool->insert++;
+-			return obj;
+-		}
++		pool = new_zeroed<struct arc_autorelease_pool>();
++		if (NULL == pool) { abort(); }
++		pool->previous = tls->pool;
++		pool->insert = pool->pool;
++		tls->pool = pool;
+ 	}
+-	if (objc_test_class_flag(classForObject(obj), objc_class_flag_fast_arc))
+-	{
+-		initAutorelease();
+-		if (0 != AutoreleaseAdd)
+-		{
+-			AutoreleaseAdd(AutoreleasePool, SELECTOR(addObject:), obj);
+-		}
+-		return obj;
+-	}
+-	return ManualRetainReleaseMessage(obj, autorelease, id(*)(id, SEL));
++	*pool->insert++ = obj;
++	return obj;
+ }
+ 
+ extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_np(void)
+@@ -498,58 +435,24 @@ extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_for_object_np(id
+ 
+ extern "C" OBJC_PUBLIC void *objc_autoreleasePoolPush(void)
+ {
+-	initAutorelease();
+-	struct arc_tls* tls = getARCThreadData();
+-	// If there is an object in the return-retained slot, then we need to
+-	// promote it to the real autorelease pool BEFORE pushing the new
+-	// autorelease pool.  If we don't, then it may be prematurely autoreleased.
+-	if ((NULL != tls) && (nil != tls->returnRetained))
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	struct arc_autorelease_pool *pool = tls->pool;
++	if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+ 	{
+-		autorelease(tls->returnRetained);
+-		tls->returnRetained = nil;
++		pool = new_zeroed<struct arc_autorelease_pool>();
++		if (NULL == pool) { abort(); }
++		pool->previous = tls->pool;
++		pool->insert = pool->pool;
++		tls->pool = pool;
+ 	}
+-	if (useARCAutoreleasePool)
+-	{
+-		if (NULL != tls)
+-		{
+-			struct arc_autorelease_pool *pool = tls->pool;
+-			if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+-			{
+-				pool = new_zeroed<struct arc_autorelease_pool>();
+-				pool->previous = tls->pool;
+-				pool->insert = pool->pool;
+-				tls->pool = pool;
+-			}
+-			// If there is no autorelease pool allocated for this thread, then
+-			// we lazily allocate one the first time something is autoreleased.
+-			return (NULL != tls->pool) ? tls->pool->insert : NULL;
+-		}
+-	}
+-	initAutorelease();
+-	if (0 == NewAutoreleasePool) { return NULL; }
+-	return NewAutoreleasePool(AutoreleasePool, SELECTOR(new));
++	return tls->pool->insert;
+ }
+ extern "C" OBJC_PUBLIC void objc_autoreleasePoolPop(void *pool)
+ {
+-	if (useARCAutoreleasePool)
+-	{
+-		struct arc_tls* tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			if (NULL != tls->pool)
+-			{
+-				emptyPool(tls, pool);
+-			}
+-			return;
+-		}
+-	}
+-	DeleteAutoreleasePool(static_cast<id>(pool), SELECTOR(release));
+-	struct arc_tls* tls = getARCThreadData();
+-	if (tls && tls->returnRetained)
+-	{
+-		release(tls->returnRetained);
+-		tls->returnRetained = nil;
+-	}
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	if (NULL != tls->pool) { emptyPool(tls, pool); }
+ }
+ 
+ extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
+@@ -563,47 +466,19 @@ extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
+ 
+ extern "C" OBJC_PUBLIC id objc_autoreleaseReturnValue(id obj)
+ {
+-	if (!useARCAutoreleasePool) 
+-	{
+-		struct arc_tls* tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			objc_autorelease(tls->returnRetained);
+-			tls->returnRetained = obj;
+-			return obj;
+-		}
+-	}
+ 	return objc_autorelease(obj);
+ }
+ 
+ extern "C" OBJC_PUBLIC id objc_retainAutoreleasedReturnValue(id obj)
+ {
+-	// If the previous object was released  with objc_autoreleaseReturnValue()
+-	// just before return, then it will not have actually been autoreleased.
+-	// Instead, it will have been stored in TLS.  We just remove it from TLS
+-	// and undo the fake autorelease.
+-	//
+-	// If the object was not returned with objc_autoreleaseReturnValue() then
+-	// we actually autorelease the fake object. and then retain the argument.
+-	// In tis case, this is equivalent to objc_retain().
+-	struct arc_tls* tls = getARCThreadData();
+-	if (NULL != tls)
++	if (nil == obj) { return nil; }
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL != tls && NULL != tls->pool &&
++	    tls->pool->insert > tls->pool->pool &&
++	    *(tls->pool->insert - 1) == obj)
+ 	{
+-		// If we're using our own autorelease pool, just pop the object from the top
+-		if (useARCAutoreleasePool)
+-		{
+-			if ((NULL != tls->pool) &&
+-			    (*(tls->pool->insert-1) == obj))
+-			{
+-				tls->pool->insert--;
+-				return obj;
+-			}
+-		}
+-		else if (obj == tls->returnRetained)
+-		{
+-			tls->returnRetained = NULL;
+-			return obj;
+-		}
++		tls->pool->insert--;
++		return obj;
+ 	}
+ 	return objc_retain(obj);
+ }
+@@ -775,8 +650,9 @@ extern "C" void* block_load_weak(void *block);
+ static BOOL setObjectHasWeakRefs(id obj)
+ {
+ 	BOOL isGlobalObject = isPersistentObject(obj);
+-	Class cls = isGlobalObject ? Nil : obj->isa;
+-	if (obj && cls && objc_test_class_flag(cls, objc_class_flag_fast_arc))
++	Class cls = isGlobalObject ? Nil : classForObject(obj);
++	if (obj && cls && !objc_test_class_flag(cls, objc_class_flag_is_block) &&
++	    objc_test_class_flag(cls, objc_class_flag_fast_arc))
+ 	{
+ 		uintptr_t *refCount = ((uintptr_t*)obj) - 1;
+ 		if (obj)
+@@ -889,7 +765,9 @@ extern "C" OBJC_PUBLIC id objc_storeWeak(id *addr, id obj)
+ extern "C" OBJC_PUBLIC BOOL objc_delete_weak_refs(id obj)
+ {
+ 	LOCK_FOR_SCOPE(&weakRefLock);
+-	if (objc_test_class_flag(classForObject(obj), objc_class_flag_fast_arc))
++	Class cls = classForObject(obj);
++	if (!objc_test_class_flag(cls, objc_class_flag_is_block) &&
++	    objc_test_class_flag(cls, objc_class_flag_fast_arc))
+ 	{
+ 		// Don't proceed if the object isn't deallocating.
+ 		uintptr_t *refCount = ((uintptr_t*)obj) - 1;
+@@ -1044,8 +922,10 @@ extern "C" OBJC_PUBLIC id objc_initWeak(id *addr, id obj)
+ 		*addr = obj;
+ 		return obj;
+ 	}
+-	// If the object is being deallocated return nil.
+-	if (object_getRetainCount_np(obj) == 0)
++	// Blocks keep their reference count in the Block header, not before isa.
++	Class cls = classForObject(obj);
++	if (objc_test_class_flag(cls, objc_class_flag_is_block) ?
++	    _Block_isDeallocating(obj) : object_getRetainCount_np(obj) == 0)
+ 	{
+ 		*addr = nil;
+ 		return nil;
+diff --git a/associate.m b/associate.m
+index 2b987f99d..3d5492fd2 100644
+--- a/associate.m
++++ b/associate.m
+@@ -190,7 +190,7 @@ static void deallocHiddenClass(id obj, SEL _cmd);
+ 
+ static inline Class findHiddenClass(id obj)
+ {
+-	Class cls = obj->isa;
++	Class cls = classForObject(obj);
+ 	while (Nil != cls && 
+ 	       !objc_test_class_flag(cls, objc_class_flag_assoc_class))
+ 	{
+@@ -228,8 +228,8 @@ static Class allocateHiddenClass(Class superclass)
+ 
+ static inline Class initHiddenClassForObject(id obj)
+ {
+-	Class hiddenClass = allocateHiddenClass(obj->isa); 
+-	assert(!class_isMetaClass(obj->isa));
++	Class hiddenClass = allocateHiddenClass(classForObject(obj));
++	assert(!class_isMetaClass(classForObject(obj)));
+ 	static SEL cxx_destruct;
+ 	if (NULL == cxx_destruct)
+ 	{
+@@ -238,7 +238,11 @@ static inline Class initHiddenClassForObject(id obj)
+ 	const char *types = sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8";
+ 	class_addMethod(hiddenClass, cxx_destruct,
+ 		(IMP)deallocHiddenClass, types);
+-	obj->isa = hiddenClass;
++	// Publish an association class with its inherited ARC policy already set.
++	// The first retain/release consults this bit before installing its dtable;
++	// otherwise a native ARC root is incorrectly sent an MRC retain message.
++	checkARCAccessorsSlow(hiddenClass);
++	publishObjectClass(obj, hiddenClass);
+ 	return hiddenClass;
+ }
+ 
+@@ -274,7 +278,7 @@ static void deallocHiddenClass(id obj, SEL _cmd)
+ 			sub = sub->sibling_class;
+ 		}
+ 	}
+-	obj->isa = hiddenClass->super_class;
++	publishObjectClass(obj, hiddenClass->super_class);
+ 	// Free the introspection structures:
+ 	freeMethodLists(hiddenClass);
+ 	freeIvarLists(hiddenClass);
+@@ -284,7 +288,7 @@ static void deallocHiddenClass(id obj, SEL _cmd)
+ 
+ static struct reference_list* referenceListForObject(id object, BOOL create)
+ {
+-	if (class_isMetaClass(object->isa))
++	if (class_isMetaClass(classForObject(object)))
+ 	{
+ 		Class cls = (Class)object;
+ 		if ((NULL == cls->extra_data) && create)
+@@ -349,11 +353,11 @@ id objc_getAssociatedObject(id object, const void *key)
+ 		}
+ 		return r->object;
+ 	}
+-	if (class_isMetaClass(object->isa))
++	if (class_isMetaClass(classForObject(object)))
+ 	{
+ 		return nil;
+ 	}
+-	Class cls = object->isa;
++	Class cls = classForObject(object);
+ 	while (Nil != cls)
+ 	{
+ 		while (Nil != cls && 
+@@ -426,9 +430,9 @@ int objc_sync_exit(id object)
+ static Class hiddenClassForObject(id object)
+ {
+ 	if (isSmallObject(object)) { return nil; }
+-	if (class_isMetaClass(object->isa))
++	if (class_isMetaClass(classForObject(object)))
+ 	{
+-		return object->isa;
++		return classForObject(object);
+ 	}
+ 	Class hiddenClass = findHiddenClass(object);
+ 	if (NULL == hiddenClass)
+@@ -464,7 +468,7 @@ id object_clone_np(id object)
+ 	// Make sure that the prototype has a hidden class, so that methods added
+ 	// to it will appear in the clone.
+ 	referenceListForObject(object, YES);
+-	id new = class_createInstance(object->isa, 0);
++	id new = class_createInstance(classForObject(object), 0);
+ 	Class hiddenClass = initHiddenClassForObject(new);
+ 	struct reference_list *list = object_getIndexedIvars(hiddenClass);
+ 	INIT_LOCK(list->lock);
+diff --git a/blocks_runtime.h b/blocks_runtime.h
+index f69490ae9..3bdaaae08 100644
+--- a/blocks_runtime.h
++++ b/blocks_runtime.h
+@@ -7,6 +7,8 @@ enum block_flags
+ 	 * The block descriptor contains copy and dispose helpers.
+ 	 */
+ 	BLOCK_HAS_COPY_DISPOSE = (1 << 25),
++	/** Byref-only: the initial stack isa word carries native byte alignment. */
++	BLOCK_BYREF_OBJC3_ALIGNED = (1 << 26),
+ 	/**
+ 	 * The helpers have C++ code.
+ 	 */
+@@ -91,8 +93,9 @@ struct Block_descriptor_basic
+ struct block_byref_obj
+ {
+ 	/**
+-	 * Class pointer.  Currently unused and always NULL.  Could be used in the
+-	 * future to support introspection.
++	 * Stack cells normally use NULL. BLOCK_BYREF_OBJC3_ALIGNED cells carry
++	 * their required byte alignment until publication replaces it with the
++	 * heap-cell identity.
+ 	 */
+ 	void *isa;
+ 	/**
 diff --git a/blocks_runtime.m b/blocks_runtime.m
-index 91ab85d94..39b18d208 100644
+index 91ab85d94..4c3046b99 100644
 --- a/blocks_runtime.m
 +++ b/blocks_runtime.m
-@@ -252,7 +252,18 @@ OBJC_PUBLIC void *_Block_copy(const void *src)
+@@ -64,52 +64,27 @@ OBJC_PUBLIC const char * _Block_signature(void *b)
+ 
+ static int increment24(int *ref)
+ {
+-	int old = *ref;
+-	int val = old & BLOCK_REFCOUNT_MASK;
+-	if (val == BLOCK_REFCOUNT_MASK)
+-	{
+-		return val;
+-	}
+-	assert(val < BLOCK_REFCOUNT_MASK);
+-	if (!__sync_bool_compare_and_swap(ref, old, old+1))
+-	{
+-		return increment24(ref);
++	int old = __atomic_load_n(ref, __ATOMIC_RELAXED);
++	for (;;) {
++		int value = old & BLOCK_REFCOUNT_MASK;
++		if (value == BLOCK_REFCOUNT_MASK) return value;
++		if (__atomic_compare_exchange_n(ref, &old, old + 1, false,
++		    __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) return value + 1;
+ 	}
+-	return val + 1;
+ }
+ 
+ static int decrement24(int *ref)
+ {
+-	int old = *ref;
+-	int val = old & BLOCK_REFCOUNT_MASK;
+-	if (val == BLOCK_REFCOUNT_MASK)
+-	{
+-		return val;
+-	}
+-	assert(val > 0);
+-	if (!__sync_bool_compare_and_swap(ref, old, old-1))
+-	{
+-		return decrement24(ref);
++	int old = __atomic_load_n(ref, __ATOMIC_RELAXED);
++	for (;;) {
++		int value = old & BLOCK_REFCOUNT_MASK;
++		if (value == BLOCK_REFCOUNT_MASK) return value;
++		assert(value > 0);
++		if (__atomic_compare_exchange_n(ref, &old, old - 1, false,
++		    __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) return value - 1;
+ 	}
+-	return val - 1;
+ }
+ 
+-// This is a really ugly hack that works around a buggy register allocator in
+-// GCC.  Compiling nontrivial code using __sync_bool_compare_and_swap() with
+-// GCC (4.2.1, at least), causes the register allocator to run out of registers
+-// and fall over and die.  We work around this by wrapping this CAS in a
+-// function, which means the register allocator can trivially handle it.  Do
+-// not remove the noinline attribute - without it, gcc will inline it early on
+-// and then crash later.
+-#ifndef __clang__
+-__attribute__((noinline))
+-static int cas(void *ptr, void *old, void *new)
+-{
+-	return __sync_bool_compare_and_swap((void**)ptr, old, new);
+-}
+-#define __sync_bool_compare_and_swap cas
+-#endif
+-
+ /* Certain field types require runtime assistance when being copied to the
+  * heap.  The following function is used to copy fields of types: blocks,
+  * pointers to byref structures, and objects (including
+@@ -130,19 +105,33 @@ OBJC_PUBLIC void _Block_object_assign(void *destAddr, const void *object, const
+ 		{
+ 			struct block_byref_obj *src = (struct block_byref_obj *)object;
+ 			struct block_byref_obj **dst = destAddr;
+-			src = src->forwarding;
++			src = __atomic_load_n(&src->forwarding, __ATOMIC_ACQUIRE);
++			int source_flags = __atomic_load_n(&src->flags, __ATOMIC_ACQUIRE);
+ 
+-			if ((src->flags & BLOCK_REFCOUNT_MASK) == 0)
++			if ((source_flags & BLOCK_REFCOUNT_MASK) == 0)
+ 			{
+-				*dst = gc->malloc(src->size);
+-				memcpy(*dst, src, src->size);
++				if (src->size < (int)(sizeof(void*) * 2 + sizeof(int) * 2)) abort();
++				if (IS_SET(source_flags, BLOCK_BYREF_OBJC3_ALIGNED)) {
++					size_t alignment = (size_t)src->isa;
++					if (alignment <= 16 || (alignment & (alignment - 1)) || !gc->malloc_aligned) abort();
++					*dst = gc->malloc_aligned(alignment, (size_t)src->size);
++				} else {
++					*dst = gc->malloc((size_t)src->size);
++				}
++				// This void ABI cannot publish a usable reference on allocation failure.
++				if (!*dst) abort();
++				memcpy(*dst, src, (size_t)src->size);
+ 				(*dst)->isa = _HeapBlockByRef;
+ 				// Refcount must be two; one for the copy and one for the
+ 				// on-stack version that will point to it.
+ 				(*dst)->flags += 2;
+-				if (IS_SET(src->flags, BLOCK_HAS_COPY_DISPOSE))
++				if (IS_SET(source_flags, BLOCK_HAS_COPY_DISPOSE))
+ 				{
+-					src->byref_keep(*dst, src);
++					BOOL initialized = NO;
++					@try { src->byref_keep(*dst, src); initialized = YES; }
++					@finally {
++						if (!initialized) { gc->free(*dst); *dst = NULL; }
++					}
+ 				}
+ 				(*dst)->forwarding = *dst;
+ 				// Concurrency.  If we try copying the same byref structure
+@@ -155,12 +144,13 @@ OBJC_PUBLIC void _Block_object_assign(void *destAddr, const void *object, const
+ 				// other thread created.
+ 				if (!__sync_bool_compare_and_swap(&src->forwarding, src, *dst))
+ 				{
+-					if((size_t)src->size >= sizeof(struct block_byref_obj))
+-					{
+-						src->byref_dispose(*dst);
+-					}
+-					gc->free(*dst);
+-					*dst = src->forwarding;
++					@try {
++						if (IS_SET(source_flags, BLOCK_HAS_COPY_DISPOSE) && src->byref_dispose)
++							src->byref_dispose(*dst);
++					} @finally { gc->free(*dst); *dst = NULL; }
++					*dst = __atomic_load_n(&src->forwarding, __ATOMIC_ACQUIRE);
++					// The losing copy now owns a reference to the published cell.
++					increment24(&(*dst)->flags);
+ 				}
+ 			}
+ 			else
+@@ -205,17 +195,17 @@ OBJC_PUBLIC void _Block_object_dispose(const void *object, const int flags)
+ 		{
+ 			struct block_byref_obj *src =
+ 				(struct block_byref_obj*)object;
+-			src = src->forwarding;
++			src = __atomic_load_n(&src->forwarding, __ATOMIC_ACQUIRE);
++			int source_flags = __atomic_load_n(&src->flags, __ATOMIC_ACQUIRE);
+ 			if (src->isa == _HeapBlockByRef)
+ 			{
+-				int refcount = (src->flags & BLOCK_REFCOUNT_MASK) == 0 ? 0 : decrement24(&src->flags);
++				int refcount = (source_flags & BLOCK_REFCOUNT_MASK) == 0 ? 0 : decrement24(&src->flags);
+ 				if (refcount == 0)
+ 				{
+-					if(IS_SET(src->flags, BLOCK_HAS_COPY_DISPOSE) && (0 != src->byref_dispose))
+-					{
+-						src->byref_dispose(src);
+-					}
+-					gc->free(src);
++					@try {
++						if(IS_SET(source_flags, BLOCK_HAS_COPY_DISPOSE) && src->byref_dispose)
++							src->byref_dispose(src);
++					} @finally { gc->free(src); }
+ 				}
+ 			}
+ 		}
+@@ -247,12 +237,36 @@ OBJC_PUBLIC void *_Block_copy(const void *src)
+ 	// If the block is Global, there's no need to copy it on the heap.
+ 	if(self->isa == &_NSConcreteStackBlock)
+ 	{
+-		ret = gc->malloc(self->descriptor->size);
++		// ObjC3 native descriptors use a versioned reserved word to carry
++		// alignment beyond malloc's guarantee. Reference counts remain in
++		// the distinct Block header word, including repeated heap copies.
++		unsigned long layout = self->descriptor->reserved;
++		if (sizeof(layout) == 8 && (layout >> 32) == 0x4f334241UL) {
++			size_t alignment = (size_t)(layout & 0xffffffffUL);
++			if (alignment <= 16 || (alignment & (alignment - 1)) ||
++			    self->descriptor->size < sizeof(struct Block_layout)) abort();
++			if (!gc->malloc_aligned) return NULL;
++			ret = gc->malloc_aligned(alignment, self->descriptor->size);
++		} else {
++			ret = gc->malloc(self->descriptor->size);
++		}
++		if (!ret) return NULL;
+ 		memcpy(ret, self, self->descriptor->size);
  		ret->isa = &_NSConcreteMallocBlock;
  		if(self->flags & BLOCK_HAS_COPY_DISPOSE)
  		{
@@ -35,13 +645,95 @@ index 91ab85d94..39b18d208 100644
  		}
  		// We don't need any atomic operations here, because on-stack blocks
  		// can not be aliased across threads (unless you've done something
-@@ -321,4 +332,4 @@ OBJC_PUBLIC bool _Block_tryRetain(const void* arg)
+@@ -285,10 +299,13 @@ OBJC_PUBLIC void _Block_release(const void *src)
+ 	{
+ 		if (__sync_sub_and_fetch(&self->reserved, 1) == 0)
+ 		{
+-			if(self->flags & BLOCK_HAS_COPY_DISPOSE)
+-				self->descriptor->dispose_helper(self);
+-			objc_delete_weak_refs((id)self);
+-			gc->free(self);
++			@try {
++				if(self->flags & BLOCK_HAS_COPY_DISPOSE)
++					self->descriptor->dispose_helper(self);
++			} @finally {
++				objc_delete_weak_refs((id)self);
++				gc->free(self);
++			}
+ 		}
+ 	}
+ }
+@@ -321,4 +338,4 @@ OBJC_PUBLIC bool _Block_tryRetain(const void* arg)
  		newVal = __sync_val_compare_and_swap(refCountPtr, refCountVal, newVal + 1);
  	} while (newVal != refCountVal);
  	return true;
 -}
 \ No newline at end of file
 +}
+diff --git a/class.h b/class.h
+index 081feab48..f879fa60f 100644
+--- a/class.h
++++ b/class.h
+@@ -374,20 +374,20 @@ enum objc_class_flags
+ };
+ 
+ /**
+- * Sets the specific class flag.  Note: This is not atomic.
++ * Sets a class flag without racing concurrent ARC / dispatch readers.
+  */
+ static inline void objc_set_class_flag(Class aClass,
+                                        enum objc_class_flags flag)
+ {
+-	aClass->info |= (unsigned long)flag;
++	__atomic_fetch_or(&aClass->info, (unsigned long)flag, __ATOMIC_ACQ_REL);
+ }
+ /**
+- * Unsets the specific class flag.  Note: This is not atomic.
++ * Unsets a class flag without losing concurrent flag publications.
+  */
+ static inline void objc_clear_class_flag(Class aClass,
+                                          enum objc_class_flags flag)
+ {
+-	aClass->info &= ~(unsigned long)flag;
++	__atomic_fetch_and(&aClass->info, ~(unsigned long)flag, __ATOMIC_ACQ_REL);
+ }
+ /**
+  * Checks whether a specific class flag is set.
+@@ -395,7 +395,7 @@ static inline void objc_clear_class_flag(Class aClass,
+ static inline BOOL objc_test_class_flag(Class aClass,
+                                         enum objc_class_flags flag)
+ {
+-	return (aClass->info & (unsigned long)flag) == (unsigned long)flag;
++	return (__atomic_load_n(&aClass->info, __ATOMIC_ACQUIRE) & (unsigned long)flag) == (unsigned long)flag;
+ }
+ 
+ 
+@@ -439,7 +439,24 @@ static inline Class classForObject(id obj)
+ 			return SmallObjectClasses[(addr & OBJC_SMALL_OBJECT_MASK)];
+ 		}
+ 	}
+-	return obj->isa;
++	// Association classes are installed on live objects. Acquire their complete
++	// inherited ARC policy and method metadata from the release publication.
++	Class isa;
++	__atomic_load(&obj->isa, &isa, __ATOMIC_ACQUIRE);
++	return isa;
++}
++
++// Generic atomic builtins accept Objective-C Class values in Objective-C and
++// Objective-C++ as well as their C pointer representation.
++static inline void publishObjectClass(id object, Class cls)
++{
++	__atomic_store(&object->isa, &cls, __ATOMIC_RELEASE);
++}
++static inline Class exchangeObjectClass(id object, Class cls)
++{
++	Class previous;
++	__atomic_exchange(&object->isa, &cls, &previous, __ATOMIC_ACQ_REL);
++	return previous;
+ }
+ 
+ static inline BOOL classIsOrInherits(Class cls, Class base)
 diff --git a/dtable.c b/dtable.c
 index a6f164172..4b2a9c4d5 100644
 --- a/dtable.c
@@ -169,6 +861,32 @@ index a6f164172..4b2a9c4d5 100644
  
  	struct objc_method *initializeSlot = skipMeta ? 0 :
  			objc_dtable_lookup(dtable, initializeSel->index);
+diff --git a/dwarf_eh.h b/dwarf_eh.h
+index e06a58557..131bf32ce 100644
+--- a/dwarf_eh.h
++++ b/dwarf_eh.h
+@@ -105,7 +105,7 @@ static uint64_t read_leb128(unsigned char** data, int *b)
+ 		// Get the base 128 digit 
+ 		digit = (**data) & 0x7f;
+ 		// Add it to the current value
+-		uleb += digit << bit;
++		uleb += (uint64_t)digit << bit;
+ 		// Increase the shift value
+ 		bit += 7;
+ 		// Proceed to the next octet
+@@ -131,10 +131,10 @@ static int64_t read_sleb128(unsigned char** data)
+ 	// Read as if it's signed
+ 	uint64_t uleb = read_leb128(data, &bits);
+ 	// If the most significant bit read is 1, then we need to sign extend it
+-	if (uleb >> (bits-1) == 1)
++	if (bits < 64 && (uleb >> (bits-1)) == 1)
+ 	{
+ 		// Sign extend by setting all bits in front of it to 1
+-		uleb |= ((int64_t)-1) << bits;
++		uleb |= UINT64_MAX << bits;
+ 	}
+ 	return (int64_t)uleb;
+ }
 diff --git a/eh_personality.c b/eh_personality.c
 index d638d9772..7f1fefdc6 100644
 --- a/eh_personality.c
@@ -291,6 +1009,163 @@ index d638d9772..7f1fefdc6 100644
  		}
  		abort();
  	}
+diff --git a/encoding2.c b/encoding2.c
+index e9c698305..f0a3a385e 100644
+--- a/encoding2.c
++++ b/encoding2.c
+@@ -30,6 +30,43 @@ const char *objc_skip_type_qualifiers (const char *type)
+ 	return type;
+ }
+ 
++/* Versioned opaque C++ storage carries native alignment which cannot be
++ * expressed by ordinary Objective-C primitive fields. This is layout metadata;
++ * it does not grant forwarding/FFI permission to copy or destroy the object. */
++static size_t objc3_storage_number(const char **cursor)
++{
++	const char *p = *cursor;
++	size_t value = 0;
++	if (*p < '0' || *p > '9') abort();
++	if (*p == '0') abort();
++	do {
++		size_t digit = (size_t)(*p++ - '0');
++		if (value > ((size_t)-1 / 8 - digit) / 10) abort();
++		value = value * 10 + digit;
++	} while (*p >= '0' && *p <= '9');
++	*cursor = p;
++	return value;
++}
++
++static const char *objc3_native_storage(const char *type, size_t *size, size_t *alignment)
++{
++	static const char prefix[] = "{__objc3_cxx_storage_v2_s";
++	if (strncmp(type, prefix, sizeof(prefix) - 1)) return NULL;
++	const char *p = type + sizeof(prefix) - 1;
++	size_t bytes = objc3_storage_number(&p);
++	if (p[0] != '_' || p[1] != 'a') abort();
++	p += 2;
++	size_t align = objc3_storage_number(&p);
++	if (align == 0 || (align & (align - 1)) || bytes < align || bytes % align) abort();
++	if (p[0] != '=' || p[1] != '[') abort();
++	p += 2;
++	if (objc3_storage_number(&p) != bytes) abort();
++	if (p[0] != 'c' || p[1] != ']' || p[2] != '}') abort();
++	*size = bytes * 8;
++	*alignment = align * 8;
++	return p + 3;
++}
++
+ static const char *sizeof_type(const char *type, size_t *size);
+ 
+ OBJC_PUBLIC
+@@ -81,6 +118,21 @@ static const char * findParameterStart(const char *types, unsigned int index)
+ 
+ 
+ typedef const char *(*type_parser)(const char*, void*);
++static const char *sizeof_callback(const char *type, void *context)
++{
++	return sizeof_type(type, context);
++}
++static const char *sizeof_union_field(const char *type, size_t *size);
++static const char *union_size_callback(const char *type, void *context)
++{
++	return sizeof_union_field(type, context);
++}
++static const char *alignof_type(const char *type, size_t *align);
++static const char *alignment_callback(const char *type, void *context)
++{
++	return alignof_type(type, context);
++}
++
+ 
+ static int parse_array(const char **type, type_parser callback, void *context)
+ {
+@@ -225,8 +277,17 @@ static const char *sizeof_type(const char *type, size_t *size)
+ 		}
+ 		case '{':
+ 		{
++			size_t native_size, native_align;
++			const char *native_end = objc3_native_storage(type, &native_size, &native_align);
++			if (native_end) {
++				size_t remainder = *size % native_align;
++				size_t padding = remainder ? native_align - remainder : 0;
++				if (*size > (size_t)-1 - padding || *size + padding > (size_t)-1 - native_size) abort();
++				*size += padding + native_size;
++				return native_end;
++			}
+ 			const char *t = type;
+-			parse_struct(&t, (type_parser)sizeof_type, size);
++			parse_struct(&t, sizeof_callback, size);
+ 			size_t align = objc_alignof_type(type);
+ 			round_up(size, align * 8);
+ 			return t;
+@@ -236,7 +297,7 @@ static const char *sizeof_type(const char *type, size_t *size)
+ 			const char *t = type;
+ 			size_t element_size = 0;
+ 			// FIXME: aligned size
+-			int element_count = parse_array(&t, (type_parser)sizeof_type, &element_size);
++			int element_count = parse_array(&t, sizeof_callback, &element_size);
+ 			(*size) += element_size * element_count;
+ 			return t;
+ 		}
+@@ -244,7 +305,7 @@ static const char *sizeof_type(const char *type, size_t *size)
+ 		{
+ 			const char *t = type;
+ 			size_t union_size = 0;
+-			parse_union(&t, (type_parser)sizeof_union_field, &union_size);
++			parse_union(&t, union_size_callback, &union_size);
+ 			*size += union_size;
+ 			return t;
+ 		}
+@@ -320,20 +381,26 @@ static const char *alignof_type(const char *type, size_t *align)
+ 		}
+ 		case '{':
+ 		{
++			size_t native_size, native_align;
++			const char *native_end = objc3_native_storage(type, &native_size, &native_align);
++			if (native_end) {
++				*align = max(*align, native_align);
++				return native_end;
++			}
+ 			const char *t = type;
+-			parse_struct(&t, (type_parser)alignof_type, align);
++			parse_struct(&t, alignment_callback, align);
+ 			return t;
+ 		}
+ 		case '(':
+ 		{
+ 			const char *t = type;
+-			parse_union(&t, (type_parser)alignof_type, align);
++			parse_union(&t, alignment_callback, align);
+ 			return t;
+ 		}
+ 		case '[':
+ 		{
+ 			const char *t = type;
+-			parse_array(&t, (type_parser)alignof_type, align);
++			parse_array(&t, alignment_callback, align);
+ 			return t;
+ 		}
+ 		case 'b':
+@@ -522,8 +589,9 @@ void objc_layout_structure (const char *type,
+ 	layout->type = 0;
+ }
+ 
+-static const char *layout_structure_callback(const char *type, struct objc_struct_layout *layout)
++static const char *layout_structure_callback(const char *type, void *context)
+ {
++	struct objc_struct_layout *layout = context;
+ 	size_t align = 0;
+ 	size_t size = 0;
+ 	const char *end = sizeof_type(type, &size);
+@@ -554,7 +622,7 @@ BOOL objc_layout_structure_next_member(struct objc_struct_layout *layout)
+ 	layout->record_align = 0;
+ 	layout->prev_type = layout->type;
+ 	const char *type = layout->original_type;
+-	parse_struct(&type, (type_parser)layout_structure_callback, layout);
++	parse_struct(&type, layout_structure_callback, layout);
+ 	//printf("Calculated: (%s) %s %d %d\n", layout->original_type, layout->type, layout->record_size, layout->record_align);
+ 	//printf("old start %s, new start %s\n", end, layout->type);
+ 	return layout->type != end;
 diff --git a/fast_paths.m b/fast_paths.m
 index ec2f646a2..97508cbaf 100644
 --- a/fast_paths.m
@@ -331,7 +1206,7 @@ index ec2f646a2..97508cbaf 100644
  	// an instance of cls.
  	cls = classForObject(instance);
 diff --git a/gc_none.c b/gc_none.c
-index f263f37ba..29cb171eb 100644
+index f263f37ba..2cf4137c7 100644
 --- a/gc_none.c
 +++ b/gc_none.c
 @@ -8,7 +8,12 @@
@@ -356,6 +1231,43 @@ index f263f37ba..29cb171eb 100644
  	return (id)(addr + 1);
  }
  
+@@ -35,6 +41,15 @@ static void *alloc(size_t size)
+ 	return calloc(size, 1);
+ }
+ 
++static void *alloc_aligned(size_t alignment, size_t size)
++{
++	void *storage = NULL;
++	if (alignment < sizeof(void*) || (alignment & (alignment - 1)) ||
++	    posix_memalign(&storage, alignment, size) != 0) return NULL;
++	memset(storage, 0, size);
++	return storage;
++}
++
+ void objc_registerThreadWithCollector(void) {}
+ void objc_unregisterThreadWithCollector(void) {}
+ void objc_assertRegisteredThreadWithCollector() {}
+@@ -44,6 +59,7 @@ PRIVATE struct gc_ops gc_ops_none =
+ 	.allocate_class = allocate_class,
+ 	.free_object    = free_object,
+ 	.malloc         = alloc,
++	.malloc_aligned = alloc_aligned,
+ 	.free           = free
+ };
+ PRIVATE struct gc_ops *gc = &gc_ops_none;
+diff --git a/gc_ops.h b/gc_ops.h
+index 153b4b507..43605e5ba 100644
+--- a/gc_ops.h
++++ b/gc_ops.h
+@@ -23,6 +23,8 @@ struct gc_ops
+ 	 * memory that it returns.
+ 	 */
+ 	void* (*malloc)(size_t);
++	/** Native aligned Block storage; NULL when the collector cannot supply it. */
++	void* (*malloc_aligned)(size_t, size_t);
+ 	/**
+ 	 * Frees some memory that was previously used to store pointers.
+ 	 */
 diff --git a/loader.c b/loader.c
 index 449d7a7ce..18d026dc6 100644
 --- a/loader.c
@@ -380,6 +1292,20 @@ index 541c31eee..adf23f784 100644
  
  /**
   * Initialise the protocol tables.
+diff --git a/objc/blocks_private.h b/objc/blocks_private.h
+index 8fd8ab8d9..c8c4845c9 100644
+--- a/objc/blocks_private.h
++++ b/objc/blocks_private.h
+@@ -24,7 +24,8 @@
+ struct Block_descriptor
+ {
+ 	/**
+-	 * Reserved for future use.  Currently always 0.
++	 * Zero for ordinary descriptors. ObjC3 native aligned descriptors use
++	 * high word 0x4f334241 and a power-of-two byte alignment in the low word.
+ 	 */
+ 	unsigned long int reserved;
+ 	/** Size of the block. */
 diff --git a/objcxx_eh.cc b/objcxx_eh.cc
 index 8ef5baf33..a1f588e86 100644
 --- a/objcxx_eh.cc
@@ -487,8 +1413,75 @@ index 5ac70a39d..c151ab2c5 100644
  /**
   * The GNU C++ exception personality function, provided by libsupc++ (GNU) or
   * libcxxrt (PathScale).
+diff --git a/properties.m b/properties.m
+index 7c3dcc31f..ac90f80f2 100644
+--- a/properties.m
++++ b/properties.m
+@@ -127,13 +127,19 @@ OBJC_PUBLIC
+ void objc_copyCppObjectAtomic(void *dest, const void *src,
+                               void (*copyHelper) (void *dest, const void *source))
+ {
+-	volatile int *lock = lock_for_pointer(src < dest ? src : dest);
+-	volatile int *lock2 = lock_for_pointer(src < dest ? dest : src);
++	volatile int *lock = lock_for_pointer(src);
++	volatile int *lock2 = lock_for_pointer(dest);
++	// Order the actual lock slots, not the unrelated source object addresses.
++	if ((uintptr_t)lock > (uintptr_t)lock2) {
++		volatile int *swap = lock; lock = lock2; lock2 = swap;
++	}
+ 	lock_spinlock(lock);
+-	lock_spinlock(lock2);
+-	copyHelper(dest, src);
+-	unlock_spinlock(lock);
+-	unlock_spinlock(lock2);
++	if (lock2 != lock) lock_spinlock(lock2);
++	@try { copyHelper(dest, src); }
++	@finally {
++		if (lock2 != lock) unlock_spinlock(lock2);
++		unlock_spinlock(lock);
++	}
+ }
+ 
+ OBJC_PUBLIC
+@@ -142,8 +148,8 @@ void objc_getCppObjectAtomic(void *dest, const void *src,
+ {
+ 	volatile int *lock = lock_for_pointer(src);
+ 	lock_spinlock(lock);
+-	copyHelper(dest, src);
+-	unlock_spinlock(lock);
++	@try { copyHelper(dest, src); }
++	@finally { unlock_spinlock(lock); }
+ }
+ 
+ OBJC_PUBLIC
+@@ -152,8 +158,23 @@ void objc_setCppObjectAtomic(void *dest, const void *src,
+ {
+ 	volatile int *lock = lock_for_pointer(dest);
+ 	lock_spinlock(lock);
+-	copyHelper(dest, src);
+-	unlock_spinlock(lock);
++	@try { copyHelper(dest, src); }
++	@finally { unlock_spinlock(lock); }
++}
++
++// Managed moves cannot allocate or invoke payload constructors. The accessor
++// owns both temporary regions and destroys the replaced value after unlocking.
++OBJC_PUBLIC
++void objc3_swapManagedPropertyAtomic(void *slot, void *replaced, void *incoming,
++                                    void (*moveHelper)(void *, void *))
++{
++	volatile int *lock = lock_for_pointer(slot);
++	lock_spinlock(lock);
++	@try {
++		moveHelper(replaced, slot);
++		moveHelper(slot, incoming);
++	}
++	@finally { unlock_spinlock(lock); }
+ }
+ 
+ /**
 diff --git a/runtime.c b/runtime.c
-index be03c3f70..8f52a9c73 100644
+index be03c3f70..c05a5719f 100644
 --- a/runtime.c
 +++ b/runtime.c
 @@ -28,16 +28,13 @@ void objc_send_initialize(id object);
@@ -509,7 +1502,13 @@ index be03c3f70..8f52a9c73 100644
  	while (cls)
  	{
  		// If we're deallocating a class with a hidden class, then the
-@@ -51,6 +48,34 @@ PRIVATE void call_cxx_destruct(id obj)
+@@ -46,11 +43,39 @@ PRIVATE void call_cxx_destruct(id obj)
+ 		cls = cls->super_class;
+ 		if (currentClass->cxx_destruct)
+ 		{
+-			currentClass->cxx_destruct(obj, cxx_destruct);
++			((void (*)(id, SEL))currentClass->cxx_destruct)(obj, cxx_destruct);
+ 		}
  	}
  }
  
@@ -555,7 +1554,8 @@ index be03c3f70..8f52a9c73 100644
 +		{ cls->super_class, obj };
  	if (cls->cxx_construct)
  	{
- 		cls->cxx_construct(obj, cxx_construct);
+-		cls->cxx_construct(obj, cxx_construct);
++		((id (*)(id, SEL))cls->cxx_construct)(obj, cxx_construct);
  	}
 +	cleanup.completed_superclass = Nil;
  }
@@ -565,15 +1565,27 @@ index be03c3f70..8f52a9c73 100644
  	// its isa pointer!
  	if (cls->instance_size < sizeof(Class)) { return nil; }
  	id obj = gc->allocate_class(cls, extraBytes);
+-	obj->isa = cls;
 +	if (obj == nil) { return nil; }
 +	id allocation __attribute__((cleanup(free_failed_construction))) = obj;
- 	obj->isa = cls;
++	publishObjectClass(obj, cls);
  	checkARCAccessorsSlow(cls);
  	call_cxx_construct(obj);
 +	allocation = nil;
  	return obj;
  }
  
+@@ -820,9 +854,7 @@ Class object_setClass(id obj, Class cls)
+ 	CHECK_ARG(obj);
+ 	// If this is a small object, then don't set its class.
+ 	if (isSmallObject(obj)) { return classForObject(obj); }
+-	Class oldClass =  obj->isa;
+-	obj->isa = cls;
+-	return oldClass;
++	return exchangeObjectClass(obj, cls);
+ }
+ 
+ const char *object_getClassName(id obj)
 diff --git a/selector_table.cc b/selector_table.cc
 index 3723ad57f..89e0c99e1 100644
 --- a/selector_table.cc
@@ -635,3 +1647,27 @@ index 3723ad57f..89e0c99e1 100644
  	LockGuard g{selector_table_lock};
  	copy = selector_lookup(aSel.name, aSel.types);
  	if (nullptr != copy && selector_identical(aSel, copy))
+diff --git a/spinlock.h b/spinlock.h
+index 2efec4755..10c2ef518 100644
+--- a/spinlock.h
++++ b/spinlock.h
+@@ -38,16 +38,12 @@ static inline volatile int *lock_for_pointer(const void *ptr)
+ }
+ 
+ /**
+- * Unlocks the spinlock.  This is not an atomic operation.  We are only ever
+- * modifying the lowest bit of the spinlock word, so it doesn't matter if this
+- * is two writes because there is no contention among the high bit.  There is
+- * no possibility of contention among calls to this, because it may only be
+- * called by the thread owning the spin lock.
++ * Release the lock word atomically. This pairs with the compare/exchange
++ * acquisition and keeps every concurrent lock-word access atomic.
+  */
+ inline static void unlock_spinlock(volatile int *spinlock)
+ {
+-	__sync_synchronize();
+-	*spinlock = 0;
++	__atomic_store_n(spinlock, 0, __ATOMIC_RELEASE);
+ }
+ /**
+  * Attempts to lock a spinlock.  This is heavily optimised for the uncontended

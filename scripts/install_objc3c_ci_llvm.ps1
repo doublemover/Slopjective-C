@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
-  $Version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "23.1.3" }
+  $Version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "23.1.5" }
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -54,10 +54,10 @@ function Test-Objc3cRequiredLlvmTools {
   return (Test-Path -LiteralPath (Join-Path $LlvmRoot "lib/libclang.lib") -PathType Leaf)
 }
 
-if ($Version -ne "23.1.3") {
+if ($Version -ne "23.1.5") {
   throw "no verified Windows release checksum configured for LLVM $Version"
 }
-$archiveSha256 = "9ee6a2192fbb30c776415af529927f76ca6b5d1d55699bb1315f9878e610b5b8"
+$archiveSha256 = "62fdada7f6fa2b73856486dfbbdba3d2c1882991621615bcb55c60207611c6d4"
 $archiveStem = "clang+llvm-$Version-x86_64-pc-windows-msvc"
 $installRoot = Join-Path $resolvedInstallParent "llvm-$Version-msvc"
 $archive = Join-Path $resolvedInstallParent "$archiveStem.tar.xz"

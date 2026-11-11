@@ -1,0 +1,253 @@
+{
+  "schema": "objc3c.linux-guard-ast-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-22",
+  "scope": "private native condition AST, binding semantics/ownership lowering and mandatory-exit foundation in the admitted development compiler",
+  "implementation_commit": "503b1d2bc17d71bd132cf92f92ce539a2393a3e7",
+  "compiler_binding": "admitted-development",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-686e86262b48-fd761312",
+  "patch_digest": "686e86262b489ed8da24cfc0e3f44d11a23eb7a6e979296373aa43e53b9dafed",
+  "compiler_sha256": "6b7453898ed3fccfca922bf807a1e0ba2bc2a1886d00a04f499a57f6ce968704",
+  "ast_tests_sha256": "32ed89966e43f3cca411e59806b8c13608d0f3b5925a1ca14caf561a67cef976",
+  "guard_source_syntax_admitted": false,
+  "profile_conformance_claimed": false,
+  "installed_sdk_rebuilt_for_this_milestone": true,
+  "verification": {
+    "clang_regressions_passed": 232,
+    "clang_regressions_unsupported": 3,
+    "ast_contract_tests_passed": 84,
+    "production_guard_exit_cases": 53,
+    "focused_tooling_tests_passed": 8,
+    "compiler_clangd_lldb_rebuilt": true,
+    "native_ast_consumers": [
+      "recursive traversal with/without implicit declarations",
+      "source printing",
+      "semantic profiling",
+      "structural comparison",
+      "cross-context import",
+      "save/reload serialization"
+    ],
+    "serialization_cases": [
+      "immutable/mutable bindings",
+      "implicit source snapshots",
+      "ordered conditions",
+      "native sibling statements after guard",
+      "if-binding with absent else",
+      "payload aliases and nullable/nonnull annotations"
+    ],
+    "runtime": {
+      "verified_native_modules": 404,
+      "configurations_passed": 404,
+      "commands_passed": 909,
+      "standards": [
+        "c17",
+        "c++20",
+        "c++23"
+      ],
+      "optimization": [
+        "O0",
+        "O2"
+      ],
+      "plain_payload_ownership_modes": [
+        "ARC",
+        "MRC"
+      ],
+      "cpp_payload_ownership_modes": [
+        "MRC"
+      ],
+      "expected_cpp_exception_scenarios_executed": 164,
+      "payloads": [
+        "plain integer",
+        "C++ record with nontrivial copy/destruction",
+        "Objective-C objects (ARC)",
+        "captured Blocks (ARC)"
+      ],
+      "cases": [
+        "Some(0) and None",
+        "single source evaluation",
+        "mutable binding",
+        "guard continuation",
+        "if-binding branches",
+        "failed snapshot construction",
+        "failed binding construction",
+        "throwing binding initializer temporary",
+        "throwing source initializer temporary",
+        "throwing snapshot destructor",
+        "two ordered bindings",
+        "mixed binding/Bool/binding guard conditions",
+        "binding-only multi-binding if conditions",
+        "failure short circuits later sources",
+        "later sources read earlier bindings",
+        "source mutation preserves independent binding",
+        "source temporaries/snapshots survive binding construction",
+        "cleanup completes before later conditions and else",
+        "successful bindings destroy in reverse order",
+        "later constructor/temporary failure destroys completed prefixes",
+        "GNU statement-expression result values and cleanup lifetimes",
+        "instantiated guard/if templates with native owned construction and ordered prefix cleanup",
+        "immutable and mutable managed bindings",
+        "direct nullable reference versus tagged optional presence",
+        "source owners cleared after independent binding initialization",
+        "zeroed weak objects and Blocks",
+        "Some(nil) remains present",
+        "Objective-C exception cleanup releases binding and captures",
+        "defer before final managed guard releases on normal/exceptional exit",
+        "failed later binding releases prefix before else and outer deferred action",
+        "if-binding actions register only after all conditions succeed",
+        "native exception in a later managed source unwinds only the completed prefix"
+      ],
+      "module_input": "maintained native AST CodeGen tests; public parsing is disabled",
+      "executable_model": "non-PIE private native AST modules",
+      "runtime_sdk_seal": "184b163ea997412606ef3614ba0f3be55179298c3e1699de461fcb52263c3f6f",
+      "runtime_library_sha256": "c2cce11d1c7ff3f41dc7e1a44765e5098c97340cb52d9aad5e502521c66be2d1",
+      "temporary_artifacts_reclaimed": true,
+      "frontend_optimization": [
+        "O0",
+        "O2"
+      ],
+      "frontend_backend_optimization_matched": true,
+      "expected_objc_exception_scenarios_executed": 312,
+      "managed_source_ownership": [
+        "strong",
+        "weak",
+        "unsafe_unretained"
+      ]
+    },
+    "temporary_ast_files_reclaimed_on_success": true,
+    "scope_integration": [
+      "completed function/method/Block checking after labels resolve",
+      "compound and implicit source-region ownership",
+      "jump protection across successful bindings",
+      "unbraced sibling-branch isolation",
+      "native variable-bypass detection",
+      "dependent template initialization and declaration remapping"
+    ],
+    "native_cfg": {
+      "condition_branching": true,
+      "all_runtime_fixture_cfgs_built": true,
+      "ordered_plain_and_cpp_path_cases": 10,
+      "nested_mandatory_exit_cases": 2,
+      "caught_carrier_destruction_cases": 2,
+      "checked_initializer_failure_case": true,
+      "cases": [
+        "failure short circuits later condition sources",
+        "completed bindings destroy before else",
+        "snapshots finish before subsequent conditions",
+        "guard bindings remain active through native source continuation",
+        "if bindings end at then boundary",
+        "reverse successful binding destruction",
+        "selected carrier copy arms and conditional temporary cleanup",
+        "lexically caught carrier destruction on return and outward goto",
+        "checked initializer failure excludes the uninitialized local"
+      ],
+      "cfg_element_words": 2,
+      "cfg_kind_bits": 5,
+      "supported_host_pointer_bits": 64,
+      "static_analyzer_conformance_claimed": false,
+      "deferred_cleanup": {
+        "normal_and_checked_trace_cases": 66,
+        "cases": [
+          "registration does not execute body",
+          "LIFO normal exit",
+          "early return before later registration",
+          "nested scopes",
+          "break/continue",
+          "scope-exiting goto",
+          "copied cleanup local labels and backpatches",
+          "deferred noreturn call",
+          "noreturn call before registration",
+          "matched/unmatched typed dispatch",
+          "catch-all checked handler",
+          "registered actions run before their lexical native handler",
+          "local catches during native unwinding",
+          "escaping second exceptions terminate",
+          "unknown outward goto executes pending actions"
+        ],
+        "native_exception_unwind_qualified": "bounded calls/messages/explicit native throws",
+        "computed_and_asm_goto_qualified": false,
+        "arc_release_ordering_qualified": false,
+        "guard_exit_proof_admitted_with_defer": "bounded native CFG only",
+        "bounded_native_exception_exit_proof_cases": 22,
+        "bounded_native_exception_trace_cases": 3
+      }
+    },
+    "defer_source_runtime": {
+      "status": "PASS",
+      "compiler_binding": "admitted-development-source",
+      "defer_source_syntax_admitted": true,
+      "guard_source_syntax_admitted": false,
+      "arc_release_ordering_qualified": true,
+      "arc_qualified_storage": [
+        "strong objects and Blocks",
+        "strong arrays",
+        "escaping __block ownership",
+        "optional carriers and carrier arrays",
+        "C records and pure C++ aggregates",
+        "nested managed carrier records"
+      ],
+      "arc_scope_cases": [
+        "normal/return/native and checked failure",
+        "forward/backward goto",
+        "nested scopes and loop break/continue",
+        "assignment and explicit owner clearing",
+        "C++ destructor and cleanup-attribute action ordering",
+        "deferred local jumps and catches",
+        "methods/Blocks/lambdas/templates",
+        "VLA storage and stack restoration"
+      ],
+      "native_arc_cleanup_cfg_qualified": false,
+      "expected_objc_terminations": 24,
+      "expected_cpp_terminations": 16,
+      "commands_passed": 100,
+      "configurations_passed": 24,
+      "pch_variable_liveness": "all"
+    },
+    "defer_codegen_regressions": [
+      "independent labels, local declarations and VLA state per cleanup copy",
+      "preserve original exception/selector across local catch in EH cleanup",
+      "return reachability after deferred cleanup",
+      "address-taken deferred labels diagnosed"
+    ],
+    "arc_scope_release_model": {
+      "source_scope_release_queue": true,
+      "native_action_order_preserved": true,
+      "partial_exit_flush_after_native_cleanup_chain": true,
+      "transfer_identity_excludes_local_jumps_in_cleanup_bodies": true,
+      "precise_strong_source_lifetimes": true,
+      "lifetime_markers_fake_use_and_vla_stack_restore_queued": true,
+      "uninitialized_and_other_cleanup_copies_excluded_by_pending_flags": true,
+      "stored_addresses_preserve_ssa_dominance": true,
+      "native_arc_cleanup_cfg_qualified": false
+    },
+    "sdk_packaging_tooling_tests_passed": 41,
+    "analysis_diagnostic_regressions": [
+      "checked handler runtime initialization survives dataflow/PCH",
+      "synthetic native unwind exits are not ordinary fallthrough",
+      "genuine uninitialized locals and missing return remain errors"
+    ],
+    "native_async_development_overlay": {
+      "commands_passed": 104,
+      "report_sha256": "1def12beb988eeac68b18cbd9a2eddc5bfac1cb97212154da329371de1f73e6f"
+    }
+  },
+  "foundation_report_sha256": "4e8b95975c6a91e1f18398fb718e84d831bd46ac554cf04d64c918dda23efcde",
+  "runtime_report_sha256": "6d570ad5beb42e0c50368998a496e08d1af6f709740072a7a670018183d01481",
+  "ast_consumer_test_sha256": "2873894a083ee48f5afaaed2043184bbc7ff40a3a31890f3d8e813f6253a6af6",
+  "ast_codegen_test_sha256": "c7d0b29c36e6e0e85cac2ffc8855f1378354aec4c2bec6e7c73ddd52cc2a4572",
+  "qualification_script_sha256": "c415ff847f137dcf0510b0d5a0abc2a2a38bc5f4570df0fe816b5a33f2293204",
+  "reproduce_runtime": "python -B -m scripts.objc3c_native_validation.condition_ast",
+  "remaining_work": [
+    "C++ construction/destruction, ARC and runtime cleanup in deferred native unwind CFG",
+    "complete ordered managed-prefix failure and nested managed binding qualification",
+    "contextual parser admission, recovery and nullable flow refinements",
+    "guard source/PCH/interface/debugger runtime gates and SDK delivery"
+  ],
+  "activated_sdk_receipt": "docs/support/linux_defer_scope_release_acceptance.json",
+  "scope_test_sha256": "eaf10b31302d5e440a91436136057b717668f003a1e4aff9985b0c71f5abb0cd",
+  "defer_source_inputs_sha256": {
+    "scripts/objc3c_native_validation/defer_source.py": "d3ab922ac042ba9ec83ae04abe8aa5b2cfe25b07dd29ce63c6d34c98b86765e3",
+    "tests/clang_foundation/defer_control_flow/runtime.h": "2232d303b9518333d07f093c315a9d3471648f9c1d2267f47367756440cfbeba",
+    "tests/clang_foundation/defer_control_flow/main.m": "c5c062dd6abfc65ccaddea24a47af1a636c22b5b6da112ea8a395299dc4840aa"
+  },
+  "installed_sdk_public_guard_qualified": false
+}

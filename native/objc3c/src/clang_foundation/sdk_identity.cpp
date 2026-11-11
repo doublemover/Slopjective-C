@@ -47,6 +47,28 @@ bool HashFile(const std::filesystem::path &path, std::string &hash) {
 }
 } // namespace
 
+bool VerifyNativeHeaderConfiguration(const std::string &driver,
+                                     const std::string &resources,
+                                     std::string &error) {
+  namespace fs=std::filesystem;
+  try {
+    const auto bundle=fs::path(resources)/"objc3-native-headers";
+    if(!fs::exists(bundle))return true;
+    for(const char *name:{"clang.cfg","clang++.cfg"}) {
+      std::string expected,actual;
+      if(!HashFile(bundle/name,expected) ||
+          !HashFile(fs::path(driver).parent_path()/name,actual) || expected!=actual) {
+        error="SDK native header driver configuration differs from its resource bundle: "+std::string(name);
+        return false;
+      }
+    }
+    return true;
+  } catch(const fs::filesystem_error &exception) {
+    error="Cannot resolve SDK native header configuration: "+std::string(exception.what());
+    return false;
+  }
+}
+
 bool VerifyRelocatedSDK(const std::string &root, const std::string &driver_hash,
                         const std::string &resource_hash, std::string &driver,
                         std::string &resources, std::string &error) {
@@ -88,6 +110,7 @@ bool VerifyRelocatedSDK(const std::string &root, const std::string &driver_hash,
       error = "Relocated SDK resources differ from the sealed compiler SDK";
       return false;
     }
+    if(!VerifyNativeHeaderConfiguration(executable.string(),resource.string(),error))return false;
     driver = executable.string();
     resources = resource.string();
     return true;

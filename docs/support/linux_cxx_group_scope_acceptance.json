@@ -1,0 +1,525 @@
+{
+  "schema": "objc3c.linux-cxx-group-scope-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-26",
+  "scope": "Linux x86-64 / GNUstep 2.2 compiler-owned C++ task-coroutine group scopes, with_task_group callback ownership and cleanup-lease abandonment across C/C++ scopes",
+  "qualified_source_checkpoint": "f40ac6e9e76397f8259527243131160388a4e1f9",
+  "implementation_commits": [
+    "f4cb5cccb515bc14b9908ff20f1ea6a9f9219eda",
+    "dc23730a6486d1ebe31dd0e2a9f8c05f9abe60a7",
+    "90d221c0a2a927e45f17be903e76ae2eaec4d8d7",
+    "f40ac6e9e76397f8259527243131160388a4e1f9"
+  ],
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-ab6d9020b67f-00b75dc3",
+  "compiler_patch_digest": "ab6d9020b67f2adc382936d1a7c80c09c894d916719bf96c8f4340b6b61c78ab",
+  "concurrency_module_version": "2.4.0",
+  "extension_abi_revision": 21,
+  "semantic_interface_schema": "2.1",
+  "runtime_service_abi": 4,
+  "async_frame_abi": 1,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "runtime_profile": {
+    "target_triple": "x86_64-unknown-linux-gnu",
+    "runtime_family": "libobjc2",
+    "runtime_release": "2.3",
+    "runtime_commit": "e877e782fb965c4e870d2ecf6aff58dddc6290ae",
+    "objc_abi_flag": "-fobjc-runtime=gnustep-2.2",
+    "blocks_provider": "libobjc2-embedded",
+    "runtime_build_with_clang_cl": false,
+    "foundation_required_for_runtime_fixture": false,
+    "runtime_source": "https://github.com/gnustep/libobjc2.git",
+    "robin_map_release": "v1.4.1",
+    "robin_map_commit": "bd14e6830a1474fed9d2d03f5c3b0683d818d540",
+    "robin_map_source": "https://github.com/Tessil/robin-map.git",
+    "llvm_stage0_version": "23.1.3",
+    "llvm_stage0_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+    "cmake_version": "4.4.4",
+    "ninja_version": "1.13.2",
+    "runtime_build_drivers": ["clang", "clang++"],
+    "runtime_linker": "ld.lld",
+    "runtime_generator": "Ninja",
+    "glibc_minimum": "2.41",
+    "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33",
+    "source_patches": [
+      {
+        "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
+        "sha256": "fbff619f599ef104406ad17921fd00f1dfe90762372b87cfaf9762a62412edaf"
+      }
+    ],
+    "autorelease_pool_policy": "native-arc-only"
+  },
+  "verification": {
+    "source_overlay_matrices": [
+      {
+        "name": "cxx-scope-spawn-normal",
+        "report": {
+          "path": "out/native-validation/cxx-scope-spawn-normal/batch.json",
+          "sha256": "67642ef736809c3aa133b12a571ee99f30753dc1b70b86a743bb3372305d7a70"
+        },
+        "status": "PASS",
+        "configurations": 24,
+        "commands": 108,
+        "sanitizer": null,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "runtime_library_sha256": "eb1c10cdcae1b2dcdd3360da4350b91764fa685ff4a9f49fd277d38e1815a642",
+        "objc_runtime_sha256": "8ab759733e70db5d8f0ff2cec657e03a3fe5761dbc1f310088b09c6c20d542c1"
+      },
+      {
+        "name": "cxx-scope-spawn-asan",
+        "report": {
+          "path": "out/native-validation/cxx-scope-spawn-asan/batch.json",
+          "sha256": "d74d1f6ed47cec9dedfca68b99fa7cd1392ded61fe00e848a1b4faff005bb50a"
+        },
+        "status": "PASS",
+        "configurations": 24,
+        "commands": 108,
+        "sanitizer": "address,undefined",
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "runtime_library_sha256": "b697dd314f91347fa9010620ca7932745c86e1d85a932a9637daeeeeaababc03",
+        "objc_runtime_sha256": "902d18ac74adbfeed6c3d8a860aa41709b73e5d4473b48bf33aec523fd991cfc"
+      },
+      {
+        "name": "cxx-scope-spawn-tsan",
+        "report": {
+          "path": "out/native-validation/cxx-scope-spawn-tsan/batch.json",
+          "sha256": "5c24cb00f1cf8ac2ed982685d4e620d2e9cfb324beede39a5a408a9a29de7f83"
+        },
+        "status": "PASS",
+        "configurations": 24,
+        "commands": 108,
+        "sanitizer": "thread",
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "runtime_library_sha256": "a6346d2682f263025cc8abb62cd054eed3e7735fd5ed7535fab4ac7aa3931c4e",
+        "objc_runtime_sha256": "63aafeff52101da79aca6a29d66391ef1382049c8384a768ef8766237f2f32a4"
+      },
+      {
+        "name": "cxx-scope-coroutines-normal",
+        "report": {
+          "path": "out/native-validation/cxx-scope-coroutines-normal/qualification.json",
+          "sha256": "cafe88f1ed87d746c115d4f2eb5c04c0fbb4a97b9ae6aa272d1b062f3f0a1d73"
+        },
+        "status": "PASS",
+        "configurations": 12,
+        "commands": 114,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "objc_runtime_sha256": "8ab759733e70db5d8f0ff2cec657e03a3fe5761dbc1f310088b09c6c20d542c1",
+        "runtime_library_sha256": "eb1c10cdcae1b2dcdd3360da4350b91764fa685ff4a9f49fd277d38e1815a642",
+        "runtime_binding": "development-overlay"
+      },
+      {
+        "name": "cxx-scope-coroutines-asan",
+        "report": {
+          "path": "out/native-validation/cxx-scope-coroutines-asan/qualification.json",
+          "sha256": "57ad1a5af3268ae3fda200ed335954ad80eec123886d3bb2a00f59053a21921b"
+        },
+        "status": "PASS",
+        "configurations": 6,
+        "commands": 30,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "objc_runtime_sha256": "902d18ac74adbfeed6c3d8a860aa41709b73e5d4473b48bf33aec523fd991cfc",
+        "instrumentation": "native coroutine provider/client, task/group await, quiescence, executor, group, actor, value/error services"
+      },
+      {
+        "name": "cxx-scope-coroutines-tsan",
+        "report": {
+          "path": "out/native-validation/cxx-scope-coroutines-tsan/qualification.json",
+          "sha256": "7002c5e9bbd3a2996e8384b8b12d50e918d6a583f89840f26f9adf3b5753b3be"
+        },
+        "status": "PASS",
+        "configurations": 6,
+        "commands": 30,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "objc_runtime_sha256": "63aafeff52101da79aca6a29d66391ef1382049c8384a768ef8766237f2f32a4",
+        "instrumentation": "native coroutine provider/client, task/group await, quiescence, executor, group, actor, value/error services"
+      },
+      {
+        "name": "cxx-scope-c-abi-asan",
+        "report": {
+          "path": "out/native-validation/cxx-scope-c-abi-asan/qualification.json",
+          "sha256": "973062658b1c9e6d006672149984ed8513e93662a749842d6e047f01a769474f"
+        },
+        "status": "PASS",
+        "configurations": 20,
+        "commands": 128,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "objc_runtime_sha256": "902d18ac74adbfeed6c3d8a860aa41709b73e5d4473b48bf33aec523fd991cfc",
+        "runtime_library_sha256": "b697dd314f91347fa9010620ca7932745c86e1d85a932a9637daeeeeaababc03",
+        "runtime_binding": "development-overlay",
+        "sanitizer": "address,undefined"
+      },
+      {
+        "name": "cxx-scope-c-abi-tsan",
+        "report": {
+          "path": "out/native-validation/cxx-scope-c-abi-tsan/qualification.json",
+          "sha256": "e8af4cc7d7d0525099eb9c607433cd1d2f85d247151b671673feef460ca009eb"
+        },
+        "status": "PASS",
+        "configurations": 20,
+        "commands": 128,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "objc_runtime_sha256": "63aafeff52101da79aca6a29d66391ef1382049c8384a768ef8766237f2f32a4",
+        "runtime_library_sha256": "a6346d2682f263025cc8abb62cd054eed3e7735fd5ed7535fab4ac7aa3931c4e",
+        "runtime_binding": "development-overlay",
+        "sanitizer": "thread"
+      },
+      {
+        "name": "cxx-scope-native-async-asan",
+        "report": {
+          "path": "out/native-validation/cxx-scope-native-async-asan/qualification.json",
+          "sha256": "7905bd1097fdc0875b4494462a935b41f3ae7d5d0ce87b896aef5dbf74ac125b"
+        },
+        "status": "PASS",
+        "configurations": 8,
+        "commands": 40,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "objc_runtime_sha256": "902d18ac74adbfeed6c3d8a860aa41709b73e5d4473b48bf33aec523fd991cfc",
+        "instrumentation": "Objective-C++ native async provider/client in all ARC/MRC pairs and C++ task, executor, group, actor, value/error services"
+      },
+      {
+        "name": "cxx-scope-native-async-tsan",
+        "report": {
+          "path": "out/native-validation/cxx-scope-native-async-tsan/qualification.json",
+          "sha256": "f94e331c1951c941acb6b934967015914484df4f5887742b8439da44a6ba65d6"
+        },
+        "status": "PASS",
+        "configurations": 8,
+        "commands": 40,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "objc_runtime_sha256": "63aafeff52101da79aca6a29d66391ef1382049c8384a768ef8766237f2f32a4",
+        "instrumentation": "Objective-C++ native async provider/client in all ARC/MRC pairs and C++ task, executor, group, actor, value/error services"
+      },
+      {
+        "name": "cxx-scope-structured-sanitizers",
+        "report": {
+          "path": "out/native-validation/cxx-scope-structured-sanitizers/qualification.json",
+          "sha256": "ef0d000e3d3e54e4ba689dbe92333121a37408bf50592e384fd59848399a7ca4"
+        },
+        "status": "PASS",
+        "configurations": 4,
+        "commands": 8,
+        "compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+        "instrumentation": "task, executor, group, actor, public API, value/error services and threaded client"
+      }
+    ],
+    "source_overlay_scope": "Final development compiler, source runtime/headers/fixtures and native ARC-only GNU runtime. GNU libobjc, project services and clients are instrumented together in the GNU-backed sanitizer matrices; structured service-only witnesses do not require libobjc. Installed and fresh-distribution artifacts are bound separately. The normal overlay reports identify the previous SDK as the unchanged GNU libobjc provider; their compiler, headers and project service library use explicit development overrides, not that SDK compiler/services.",
+    "source_overlay_compiler_sha256": "7d499daa3405acd3f89299221efd420cc2924c537140ca81d04de8f56eda0272",
+    "gnu_runtime_variants": [
+      {
+        "sanitizer": "normal",
+        "report": {
+          "path": "out/toolchains/linux-sdk-builds/db54c885a1ce71f77c535fb5b9067b20685dcd182334121131170c04a1f3e235/runtime-report.json",
+          "sha256": "800aa2c6ccd7d90d2716fa12459b9c517ee4dc7c901fa59049b08317bc4d50ad"
+        },
+        "build_key": "815f777834c3148d16ca02f1fbecd292bbaabdf096b61ef70f0a2b4dc643b01b",
+        "libobjc_sha256": "8ab759733e70db5d8f0ff2cec657e03a3fe5761dbc1f310088b09c6c20d542c1"
+      },
+      {
+        "sanitizer": "address,undefined",
+        "report": {
+          "path": "out/session/handle-join-libobjc-asan-native-pools.json",
+          "sha256": "a67d67e8ea564358cf1c5f8ec98edefc54c4dbc33a722a80b48b748664dd3d58"
+        },
+        "build_key": "ca50ca2839808c59843ca6ce79bb96647fa0cfcd3915671eb45077d00be99746",
+        "libobjc_sha256": "902d18ac74adbfeed6c3d8a860aa41709b73e5d4473b48bf33aec523fd991cfc"
+      },
+      {
+        "sanitizer": "thread",
+        "report": {
+          "path": "out/session/handle-join-libobjc-tsan-native-pools.json",
+          "sha256": "4d3c565814a8d2c5bd2acd42ad3fad2a8469a28a2e20d276da8e18e4fa119b5a"
+        },
+        "build_key": "2bcdee2f897c7f7c11f06ce81bb0e16fbcc180ed28baf673dff9e7067162ddb7",
+        "libobjc_sha256": "63aafeff52101da79aca6a29d66391ef1382049c8384a768ef8766237f2f32a4"
+      }
+    ],
+    "gnu_runtime_variant_reuse": "Unchanged pinned GNU native-arc-only code and previously built normal/ASanUBSan/TSan variants; current project services and clients rebuilt and rerun. Superseded normal SDK artifacts can be reclaimed after the new delivery while their reports and hashes remain.",
+    "standalone_runtime_suites": [
+      {
+        "mode": "normal",
+        "suites_passed": 5,
+        "log": {
+          "path": "out/session/cxx-scope-runtime-normal-tests.log",
+          "sha256": "5c28322257aa6b2799ada96c0e791c9b7901c0713429e47a292d57c392b7f90a"
+        }
+      },
+      {
+        "mode": "address,undefined",
+        "suites_passed": 5,
+        "log": {
+          "path": "out/session/cxx-scope-runtime-asan-tests.log",
+          "sha256": "3434c22d68f6051723734fd01bd05c65e68ea3a6b9841b9b2a8f5d7939d8cbe5"
+        }
+      },
+      {
+        "mode": "thread",
+        "suites_passed": 5,
+        "log": {
+          "path": "out/session/cxx-scope-runtime-tsan-tests.log",
+          "sha256": "9d521ee039096c90d2a7aa1277aa837c902c7c561f6c80f33fed884379fda736"
+        }
+      }
+    ],
+    "compiler_focused_regressions": {
+      "passed": 3,
+      "log": {
+        "path": "out/session/cxx-scope-compiler-preflight.log",
+        "sha256": "810fb3f3430df87a3f30a7738560c9767aa717ae3349137d153b3638359f7fa8"
+      }
+    },
+    "tooling_preflight": {
+      "passed": 15,
+      "log": {
+        "path": "out/session/cxx-scope-tooling-preflight.log",
+        "sha256": "c64f5b5a039bd470b2f1aa42ed9561ce9dfd732cf57c57f757bf9fcb9df24eaa"
+      }
+    },
+    "tooling": {
+      "passed": 22,
+      "log": {
+        "path": "out/session/cxx-scope-tooling-final.log",
+        "sha256": "1792955b00d35ac47a25afe581ffe481b8a49574b8469df644d95b6544bb15e3"
+      }
+    },
+    "foundation": {
+      "report": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261026T044648.676028Z/report.json",
+        "sha256": "c631d1172ad3e1ae15b05e6f3a22826ecbc7c567545a2f059a43935a51ad6730"
+      },
+      "regressions_passed": 364,
+      "objc3_regressions_passed": 361,
+      "unsupported": 3,
+      "native_contract_tests_passed": {
+        "ast": 104,
+        "matchers": 5,
+        "dynamic_matchers": 41,
+        "clangd": 16
+      },
+      "reuse": false,
+      "scope": "Rebuilt compiler/editor/debugger/contract targets and reran all enrolled compiler and native contract suites."
+    },
+    "compiler_binary_scope": "Source reports bind the development ELF; SDK/fresh reports bind the installed ELF. CMake installation rewrites the build RUNPATH; both use the same sealed compiler source identity.",
+    "source_overlay_totals": {
+      "configurations": 156,
+      "commands": 842,
+      "standalone_suites_included": false,
+      "overlapping_sdk_gates_included": false
+    },
+    "installed_gates": {
+      "installed_compiler_witnesses": "PASS",
+      "installed_typed_keypath_packages": "PASS",
+      "installed_recursive_carriers": "PASS",
+      "installed_async_c_abi": "PASS",
+      "installed_stdlib": "PASS",
+      "installed_match_results": "PASS",
+      "installed_task_coroutines": "PASS",
+      "installed_native_async": "PASS",
+      "installed_carrier_debugger": "PASS",
+      "installed_optional_access": "PASS",
+      "installed_guard_bindings": "PASS",
+      "installed_defer_control_flow": "PASS",
+      "installed_source_modules": "PASS",
+      "installed_source_graph": "PASS",
+      "installed_binary_packages": "PASS",
+      "installed_ownership_projections": "PASS",
+      "installed_public_surfaces": "PASS",
+      "installed_api_availability": "PASS",
+      "installed_module_spi": "PASS",
+      "installed_module_names": "PASS",
+      "installed_structured_runtime": "PASS",
+      "installed_native_features": "PASS",
+      "installed_native_async_packages": "PASS",
+      "installed_carrier_calls": "PASS",
+      "installed_runtime_carrier_calls": "PASS",
+      "installed_managed_throws": "PASS",
+      "installed_direct_calls": "PASS",
+      "installed_nested_calls": "PASS",
+      "installed_captured_carriers": "PASS",
+      "installed_array_carriers": "PASS",
+      "installed_record_carriers": "PASS",
+      "installed_heap_carriers": "PASS",
+      "installed_cxx_interfaces": "PASS"
+    },
+    "installed_native_features": {
+      "status": "pass",
+      "commands": 942,
+      "cases": 168
+    },
+    "installed_compiler_witnesses": {
+      "status": "PASS",
+      "commands": 153,
+      "cases": 24,
+      "executions": 24,
+      "rejections": 24
+    },
+    "installed_typed_keypath_packages": {
+      "status": "PASS",
+      "cases": 12,
+      "executions": 36,
+      "rejections": 12
+    },
+    "installed_async_c_abi": {
+      "status": "PASS",
+      "commands": 138,
+      "cases": 20,
+      "executions": 20
+    },
+    "installed_task_coroutines": {
+      "status": "PASS",
+      "commands": 114,
+      "cases": 12,
+      "executions": 12
+    },
+    "installed_native_async": {
+      "status": "PASS",
+      "commands": 104,
+      "cases": 16,
+      "executions": 16
+    },
+    "installed_structured_runtime": {
+      "status": "PASS",
+      "commands": 88,
+      "cases": 22,
+      "executions": 22
+    },
+    "installed_native_async_packages": {
+      "status": "PASS",
+      "cases": 12,
+      "executions": 36,
+      "native_c_scope_cases": 4,
+      "native_cxx_scope_cases": 8
+    },
+    "facade_suites_passed": 32,
+    "installed_consumer_checks": {
+      "report": {
+        "path": "out/toolchains/linux-sdk-builds/e8dad5b034eb09a51ed61dfaf02cd9f1d73709e95c3f96591061cadf1b7129e7/installed-qualification/summary.json",
+        "sha256": "7e9651626ef88910acfb8a717c0b14f6574e3224ad002e0da0cadb3cad4ba501"
+      },
+      "passed": 37
+    },
+    "shipped_gnu_runtime": {
+      "build_report": {
+        "path": "out/toolchains/linux-sdk-builds/e8dad5b034eb09a51ed61dfaf02cd9f1d73709e95c3f96591061cadf1b7129e7/runtime-report.json",
+        "sha256": "6369ba4d0b0756f9c5c60c3b24966ee63c8d471f02983dd5c8de2149c82be926"
+      },
+      "client_log": {
+        "path": "out/toolchains/linux-sdk-builds/e8dad5b034eb09a51ed61dfaf02cd9f1d73709e95c3f96591061cadf1b7129e7/runtime-tests.log",
+        "sha256": "d970b71ae2eb03e914264e8b6f7dc278a77b3ff7165eba0a15afff414e58fa81"
+      },
+      "client_tests_passed": 9,
+      "native_arc_only": true
+    },
+    "native_integration": {
+      "report": {
+        "path": "out/native-validation/linux-sdk-20261026T045414448102Z/summary.json",
+        "sha256": "0db7e1073dc4a63055d0d2901fe8df7994f7bca09f134e08273fa8f12fe7f330"
+      },
+      "selected_nodes": 13,
+      "runtime_count": 76
+    },
+    "documentation_authority_onboarding": {
+      "passed": 12,
+      "log": {
+        "path": "out/session/cxx-scope-documentation-final.log",
+        "sha256": "72516163bf025765baea35619e90d0b5418248f5eed1cf4faef2061134dfe0d6"
+      }
+    }
+  },
+  "qualified_source_inputs": {
+    "native/objc3c/src/runtime/concurrency/service_group.cpp": "2e257daef2f0f40cbfe2a3abd10fe336573df94ad1ee810d535af7c343d12d2e",
+    "native/objc3c/src/runtime/concurrency/service_internal.h": "b0d82e273af8c59b80634b5d2253e54b94567f5ef78901dcc176e7d59895801f",
+    "native/objc3c/src/runtime/concurrency/service_task.cpp": "1243b28944ebacdbe99ef28dde836853842e9c45c1d46649b9dbf1fd2b360a55",
+    "native/objc3c/src/runtime/public/objc3_task.hpp": "73bc7d856c85f8ede848f2bbbcb0cd2dfeb312c96039e8abda598f3c1ef2aa68",
+    "stdlib/include/objc3/concurrency.h": "c6c7c9d118f9390349b55eabd1056d0369bfa6bc48fd229cedd4f713ad987c7b",
+    "stdlib/module_inventory.json": "44d01896159327488e8c23965a39e89b2f6fc8ad377a2b8fbf12a4298f562618",
+    "scripts/objc3c_toolchain/qualify_task_coroutines.py": "1c27375790163eb8f1c11b1b4fb9fc41fa35607fe9b78e710438b22cefdaba62",
+    "scripts/objc3c_toolchain/qualify_task_coroutine_sanitizers.py": "f6f400e5ee40df85252372af9b3c1e21943c00f125093395689f7a494d9afd8b",
+    "scripts/objc3c_toolchain/qualify_native_async_packages.py": "d66cf16c2431a4f3d4bca11e954ab5e83ab7857943a3b390726ab3c2aee869b1",
+    "tests/tooling/test_task_coroutine_qualification.py": "1de748cbbd92795d0bc98611d648b995cf37130f8c765e2bbcc00863d81a901e",
+    "tests/clang_foundation/structured_runtime/contract.c": "9e60f746e8be2462d85d43e5c7775650e205e7c08bf2f1beb5c526ae307171d3",
+    "tests/clang_foundation/task_coroutines/group_await.cpp": "b1ae415ab18193af2bcb4308db1593bbac4a5b87578615a11ff1fd7fc24abdfa",
+    "tests/clang_foundation/task_spawning/contract.mm": "10b5112b6ddd21a785f90076b2e120391731f795a54322f72b8fc9ec6bafc9e4",
+    "tests/clang_foundation/native_async_packages/provider/module.mm": "45444928f5fe36a3cd2a1616b772fa28e667dabb3511797f9124f7caca9345d2",
+    "tests/clang_foundation/native_async_packages/provider/package.json": "80daab9d7b820f92d1ff58222ec028d87d5c21a4d947238856f58cd1f4a25791",
+    "tests/clang_foundation/native_async_packages/app/main.mm": "156228c695e8f90746959d8cb141ae76f2be5cba94afd07e5de8bebeb2f4bc45",
+    "toolchains/llvm/manifest.json": "89a6f2be86ea5a6241f29e0f79b3b32cb9d682f549f6603aaf92d6beaf285ff2",
+    "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch": "7826fcb9c0c3479206919ff49bdf8ac3ad378ef9b430b2bac3d2899e38f3cc10",
+    "toolchains/llvm/patches/0005-objc3-codegen-qualification-boundaries.patch": "9926b6042ceab0f37a324b3989b2e90e63ff8aa11c278ad3841a6f293ce6dd38",
+    "native/objc3c/src/clang_foundation/CMakeLists.txt": "4845850af29f3dc811fa42c5d50866aaf51770dc89597fd6b35916b73682068b",
+    "native/objc3c/src/runtime/concurrency/service_group.h": "4e005bd999c4128b4f4c0a773867ed256de5bb3999e3e4d20cd43b75be6ca504",
+    "native/objc3c/src/runtime/public/objc3_runtime_services.h": "92dbcdc88ab651c56c2283c23fb78c2805e228a2e14bd8699a67b6d18b9ced45",
+    "tests/clang_foundation/async_c_frame_packages/provider/module.m": "66da5cac02c6cb3503dba2fa761130c7c000b6df06ec028e1e46e651a3acb30e",
+    "tests/clang_foundation/task_spawning/group_scope.h": "dde17569627516b41521deb5d80674cca686ee91e1bab924483445e6324683e1"
+  },
+  "remaining_implementation": [
+    "Remaining abstract group/capture forms and full-profile admission beyond the delivered bounded task/group APIs",
+    "Nontrivial C++ parameters/results in compiler-defined explicit C-frame ABI and dynamic stack storage",
+    "Remaining ownership/isolation/keypath/type-system/package/profile specification surfaces",
+    "Native Linux AArch64 implementation and qualification"
+  ],
+  "sdk": {
+    "input_identity": "e8dad5b034eb09a51ed61dfaf02cd9f1d73709e95c3f96591061cadf1b7129e7",
+    "release_receipt": {
+      "path": "out/toolchains/linux-sdk-builds/e8dad5b034eb09a51ed61dfaf02cd9f1d73709e95c3f96591061cadf1b7129e7/release.json",
+      "sha256": "5386078bfd5f5c5d3748d5451b7a5779f266937ff3d0eceb52c6b264eb99e947"
+    },
+    "seal_sha256": "d71eb5e0f3d4584e86c994beff3109110cb2a4a048a0e499d031f18353e9f2d9",
+    "archive": "llvmorg-23.1.3-0d261d1ca552-ab6d9020b67f-00b75dc3-linux-x86_64-d71eb5e0f3d4584e.tar.zst",
+    "archive_sha256": "8a096012088870d7f4f3ed24f09dc0a2b531e17720ea8fffe2e57403a18a9606",
+    "archive_bytes": 435337062,
+    "installed_manifest_sha256": "3c8fc422c8b785bf637eb485e2c36496e0917e4d506af2bd473352b6b97bfd7b",
+    "compiler_sha256": "4987a165e9892f48c75634fa9ef4b7f666ed8268bbbc432515d76a731a662e27",
+    "frontend_sha256": "81fa68bad5aaa5a89800a776ddb15f7f23f04f2a0c8ab7efa9e4c564e515f5f6",
+    "gnu_runtime_sha256": "8b4b0632d1cbd9ae73400d98400d932eda0fc07796556120e8e138d97c4cfdcb",
+    "runtime_services_sha256": "34bb79e6716eec9a6774d74811183a992743d63c57ebd9d07ad9fda9e449edb1"
+  },
+  "publication": {
+    "build_candidate_reclaimed": true,
+    "frontend_test_executable_bytes_reclaimed": 3143746832,
+    "foundation_cache_hit": false,
+    "source_inputs_frozen_through_packaging": true,
+    "development_paths_rebound_to_current_sdk": true,
+    "development_rebind_log": {
+      "path": "out/session/cxx-scope-development-rebind.log",
+      "sha256": "41505f4ad0a3b7d21aa508ab8073825323e959c1f552ae75abb53b835b568fae"
+    },
+    "superseded_artifact_cleanup": {
+      "path": "out/session/cxx-scope-delivery-cleanup.json",
+      "sha256": "744f8c00711797faae696a585318ce80162864c15e484c9bf68a599a3ad07e3f"
+    },
+    "retained_sdk_installations": 1,
+    "retained_sdk_archives": 1
+  },
+  "fresh_distributions": {
+    "report": {
+      "path": "out/native-validation/cxx-scope-fresh-linux/qualification.json",
+      "sha256": "74a30fed4777cceb960025b1a77d33dc0f95ad000637cbdcc979c9964bdd3911"
+    },
+    "scope": "native-features",
+    "qualifier_sha256": "55ae50e328c9bf5fd0db196402635ab4458128a30bdb1088e8148a7de83b35d3",
+    "distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "container": "objc3-features-debian13-effabab67181",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "5b58d196b7f1360a014a4129d7c9ada8d02e4b3ca30b22f21b27709c497c0525",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "container": "objc3-features-ubuntu2604-b6b8227c7178",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "495c955fceb0c1cadc3c3c1fd4a14738f928ac2668f15044d71ae436ba652e35",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      }
+    ]
+  }
+}

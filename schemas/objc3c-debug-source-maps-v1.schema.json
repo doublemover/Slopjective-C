@@ -106,18 +106,24 @@
     },
     "inline_frames": {
       "type": "object",
+      "required": ["contract_id", "frames", "native_ranges", "chains", "failures"],
       "properties": {
+        "contract_id": {"const": "objc3c.inline-frames.v1"},
         "frames": {
-          "type": "array"
+          "type": "array",
+          "items": {"$ref": "#/$defs/inlineFrame"}
         },
         "native_ranges": {
-          "type": "array"
+          "type": "array",
+          "items": {"$ref": "#/$defs/nativeInlineRange"}
         },
         "chains": {
-          "type": "array"
+          "type": "array",
+          "items": {"$ref": "#/$defs/inlineDebugChain"}
         },
         "failures": {
-          "type": "array"
+          "type": "array",
+          "items": {"$ref": "#/$defs/inlineFrameFailure"}
         }
       },
       "additionalProperties": false
@@ -149,6 +155,82 @@
           "type": "integer",
           "minimum": 1
         }
+      },
+      "additionalProperties": false
+    },
+    "nativeRange": {
+      "type": "object",
+      "required": ["start_offset", "end_offset"],
+      "properties": {
+        "start_offset": {"type": "integer", "minimum": 0},
+        "end_offset": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "inlineFrame": {
+      "type": "object",
+      "required": [
+        "frame_id", "caller_source_map_entry_id", "callee_source_map_entry_id",
+        "original_caller_span", "callsite_span", "inlined_callsite_span", "callee_body_span",
+        "stepping_policy", "imported_debug_map_entry_id", "emitted_debug_map_entry_id",
+        "optimized_ir_source_correlation_id", "optimized_ir_anchor", "optimized_source_map_entry_id",
+        "caller_runtime_anchor_id", "callee_runtime_anchor_id", "optimization_proof_id",
+        "emitted_ir_anchor", "emitted_native_symbol"
+      ],
+      "properties": {
+        "frame_id": {"type": "string", "minLength": 1},
+        "caller_source_map_entry_id": {"type": "string", "minLength": 1},
+        "callee_source_map_entry_id": {"type": "string", "minLength": 1},
+        "original_caller_span": {"$ref": "#/$defs/sourceRange"},
+        "callsite_span": {"$ref": "#/$defs/sourceRange"},
+        "inlined_callsite_span": {"$ref": "#/$defs/sourceRange"},
+        "callee_body_span": {"$ref": "#/$defs/sourceRange"},
+        "stepping_policy": {"enum": ["step-into-callee-step-out-caller", "step-over-inline-callee"]},
+        "imported_debug_map_entry_id": {"type": "string", "minLength": 1},
+        "emitted_debug_map_entry_id": {"type": "string", "minLength": 1},
+        "optimized_ir_source_correlation_id": {"type": "string", "minLength": 1},
+        "optimized_ir_anchor": {"type": "string", "minLength": 1},
+        "optimized_source_map_entry_id": {"type": "string", "minLength": 1},
+        "caller_runtime_anchor_id": {"type": "string", "minLength": 1},
+        "callee_runtime_anchor_id": {"type": "string", "minLength": 1},
+        "optimization_proof_id": {"type": "string", "minLength": 1},
+        "emitted_ir_anchor": {"type": "string", "minLength": 1},
+        "emitted_native_symbol": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "nativeInlineRange": {
+      "type": "object",
+      "required": ["range_id", "frame_id", "artifact_symbol_id", "native_range", "nesting_depth"],
+      "properties": {
+        "range_id": {"type": "string", "minLength": 1},
+        "frame_id": {"type": "string", "minLength": 1},
+        "artifact_symbol_id": {"type": "string", "minLength": 1},
+        "native_range": {"$ref": "#/$defs/nativeRange"},
+        "nesting_depth": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "inlineDebugChain": {
+      "type": "object",
+      "required": ["chain_id", "outer_frame_id", "inner_frame_id", "optimization_proof_id", "ordering_index"],
+      "properties": {
+        "chain_id": {"type": "string", "minLength": 1},
+        "outer_frame_id": {"type": "string", "minLength": 1},
+        "inner_frame_id": {"type": "string", "minLength": 1},
+        "optimization_proof_id": {"type": "string", "minLength": 1},
+        "ordering_index": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "inlineFrameFailure": {
+      "type": "object",
+      "required": ["failure_id", "native_range", "failure_code", "missing_identity"],
+      "properties": {
+        "failure_id": {"type": "string", "minLength": 1},
+        "native_range": {"$ref": "#/$defs/nativeRange"},
+        "failure_code": {"type": "string", "minLength": 1},
+        "missing_identity": {"type": "string", "minLength": 1}
       },
       "additionalProperties": false
     },

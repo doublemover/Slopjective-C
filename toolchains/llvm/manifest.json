@@ -3,42 +3,42 @@
   "upstream": {
     "name": "llvm-project",
     "url": "https://github.com/llvm/llvm-project.git",
-    "tag": "llvmorg-23.1.3",
-    "tag_object": "856f0005e57023e63664c560a829c620360ea1f1",
-    "commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc"
+    "tag": "llvmorg-23.1.5",
+    "tag_object": "604d7ddfacefc074968a9ba0d88c667ab31b42bd",
+    "commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117"
   },
   "patch_series": "toolchains/llvm/patches/series",
   "patches": [
     {
       "file": "0001-objc3-language-mode-and-build-identity.patch",
-      "sha256": "a04d7fb43fa19772f107b3ca3f322337cead60dcbc23e70145368b12ce189c36"
+      "sha256": "499fcb28bc38e71618ddaa1561aaba30f54fc395f92c181be1ef76c3d9f418e3"
     },
     {
       "file": "0002-objc3-native-defer-statement.patch",
-      "sha256": "3e32587e5c7dc2dbee1a00b33c47982b8c25ec2d88fb42772d0bb697aadb9b94"
+      "sha256": "c12dc0c42c5015597b842660db33afc2edff5f80965190680748b333981c8e46"
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
-      "sha256": "6b2cfef9245d3fc8ac898aaa0825baf94d8b62c0d134a9dae8bf7319d31a409a"
+      "sha256": "261f34a3a83bce71d175bbdab4d08de63ceb93debeab2d38b32e977de0fd174a"
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "f24705e03d48a5dde4263e9062321651041ee6c03a1bd3ebb3e0c1765e9a252c"
+      "sha256": "5c16e2b22285ce38df57c492685a68773e4070d7735479168ddcea36960b2c08"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "18495d5adc591d99f003c150b06b7562d8a4962d813461c3b5719e21934593e1"
+      "sha256": "d017af7805470da23e8a1e58ce6090b125fe761753dd3f687a0e75dd114c37b6"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
-      "sha256": "c6e726f2478940c24ea2692a136147eca43859e63e92237d828e3ace0a0dd842"
+      "sha256": "d824f1fa662b26e40d0791795614b79df14302b7b92d63d1e2b0b4c050a8db9f"
     },
     {
       "file": "0007-objc3-linux-debugger-runtime-contracts.patch",
-      "sha256": "93d00723db8f3bc8f85f35ab4b5de097bb5ac0a2dbb123ad9783e7ccd3db6d81"
+      "sha256": "f9e30d34421ebc756a4787dcfff7046ecbe20eba02e71afa37b031c54b2bc9c7"
     }
   ],
-  "pristine_baseline_build_id": "llvmorg-23.1.3-0d261d1ca552-pristine-v1",
+  "pristine_baseline_build_id": "llvmorg-23.1.5-392dfff97d29-pristine-v1",
   "build": {
     "generator": "Ninja",
     "configuration": "Release",
@@ -78,8 +78,14 @@
       "clangFrontend",
       "clangDriver",
       "ObjC3TypeContractsTests",
+      "ObjC3MatchersTests",
+      "DynamicASTMatchersTests",
+      "ObjC3SourceToolsTests",
+      "LexTests",
       "clangd",
       "clang-format",
+      "clang-query",
+      "c-index-test",
       "lldb",
       "lldb-server",
       "llvm-dwarfdump"
@@ -116,14 +122,20 @@
       {
         "name": "native_type_contract_tests",
         "targets": [
-          "ObjC3TypeContractsTests"
+          "ObjC3TypeContractsTests",
+          "ObjC3MatchersTests",
+          "DynamicASTMatchersTests",
+          "ObjC3SourceToolsTests",
+          "LexTests"
         ]
       },
       {
         "name": "native_editor_tools",
         "targets": [
           "clangd",
-          "clang-format"
+          "clang-format",
+          "clang-query",
+          "c-index-test"
         ]
       },
       {
@@ -256,21 +268,43 @@
     "compile_jobs": 4,
     "link_jobs": 1,
     "test_binaries": [
-      "tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"
+      "tools/clang/unittests/AST/ObjC3TypeContractsTests.exe",
+      "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
+      "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests",
+      "tools/clang/tools/extra/clangd/unittests/ObjC3SourceToolsTests",
+      "tools/clang/unittests/Lex/LexTests"
     ],
-    "clangd_tidy_checks": false
+    "clangd_tidy_checks": false,
+    "additional_test_suites": [
+      "clang/test/Index/objc3-condition-cursors.mm",
+      "clang/test/Index/objc3-dependent-keypath-cursors.mm",
+      "clang/test/Index/objc3-native-expression-cursors.mm",
+      "clang-tools-extra/test/clang-query/objc3-conditions.mm",
+      "clang/test/Parser/lambda-attr.cu",
+      "clang/test/Parser/cxx1z-init-statement.cpp",
+      "clang/test/Parser/cxx2a-init-statement.cpp",
+      "clang/test/Parser/cxx2b-init-statement.cpp",
+      "clang/test/CodeGenCXX/mangle-concept.cpp",
+      "clang/test/AST/ast-dump-template-name.cpp",
+      "clang/test/SemaCXX/cxx20-decomposition.cpp",
+      "clang/test/SemaCXX/constant-expression-cxx2a.cpp",
+      "clang/test/SemaCXX/constant-expression-cxx2b.cpp",
+      "clang/test/SemaTemplate/matrix-type.cpp",
+      "clang/test/SemaCXX/matrix-type-operators.cpp",
+      "clang/test/SemaCXX/matrix-type-builtins.cpp"
+    ]
   },
   "host_tools": {
     "python": "3.15.0",
-    "node": "26.12.0",
-    "npm": "12.2.1",
+    "node": "26.13.0",
+    "npm": "12.2.2",
     "powershell": "7.6.7",
-    "cmake": "4.4.4",
+    "cmake": "4.4.5",
     "ninja": "1.13.2",
     "ccache": "4.14.2",
-    "uv": "0.13.1",
-    "pip": "26.2.1",
-    "pytest": "9.1.1",
+    "uv": "0.13.7",
+    "pip": "26.3",
+    "pytest": "9.2.0",
     "jsonschema": "4.26.0"
   },
   "ci_actions": {
@@ -299,8 +333,8 @@
       "commit": "949feb2413d6458794dcd2491c4babbbce0c15c1"
     },
     "actions/setup-python": {
-      "tag": "v7.0.0",
-      "commit": "5fda3b95a4ea91299a34e894583c3862153e4b97"
+      "commit": "6d4fd22b20465ccc0f7354476588e8df7c9ca0e0",
+      "tag": "v7.1.0"
     },
     "actions/upload-artifact": {
       "tag": "v7.0.2",
@@ -313,6 +347,14 @@
     "actions/download-artifact": {
       "tag": "v8.0.2",
       "commit": "9000827ccba6bdab643e8b6fd33ac0654aef8333"
+    },
+    "actions/cache/restore": {
+      "tag": "v6.1.0",
+      "commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
+    },
+    "actions/cache/save": {
+      "tag": "v6.1.0",
+      "commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
     }
   }
 }

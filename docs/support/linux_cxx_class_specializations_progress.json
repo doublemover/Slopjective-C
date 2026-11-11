@@ -1,0 +1,84 @@
+{
+  "schema": "objc3c.linux-cxx-class-specializations-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-3109b05a08e0-00b75dc3",
+  "compiler_patch_digest": "3109b05a08e09d6c51b8e3bb0cc396be658480ac5351f98bd4415a81d63be484",
+  "native_fix_checkpoint": "4157e40b79098d92051cbfb53fd0a3d03b0c9e16",
+  "frontend_input_sha256": "96747fa9964a3f53ebd8b200fda787f4a3fb5ecf48fece5dd8b3b1b58a1d3d51",
+  "concurrency_module_version": "2.59.0",
+  "required_semantics": [
+    "objc3.cxx-class-specializations.v1"
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "native_import_tests_passed": 6,
+    "native_import_dialects": [
+      "c++20",
+      "c++23"
+    ],
+    "alias_abi_source_pch_regression": "PASS",
+    "emitter_suite": "PASS",
+    "tooling_tests_passed": 19,
+    "source_free_runtime_configurations": 16,
+    "source_free_commands": 80,
+    "transports": [
+      "source-directed",
+      "eager"
+    ],
+    "function_and_variable_lookup_rejections": 16,
+    "provider_source_removed": true,
+    "specialization_virtual_lifetimes_and_shared_state": true,
+    "specialization_only_capability_discovery": true,
+    "reports": [
+      {
+        "path": "out/class-specialization-native-build.json",
+        "sha256": "9df6d194904f26f27841be4d37819e2fbdaea829059643c3303153c5c29099e0"
+      },
+      {
+        "path": "out/class-specialization-native-focused-import.log",
+        "sha256": "494922b844f6dcd8fd63427febee114952a4cb5ae356b3f93dbf0aa4e75beb80"
+      },
+      {
+        "path": "out/class-specialization-native-focused-codegen.log",
+        "sha256": "2a7fb05511d4b5a98ed92522c1e7597cc7f73128bd5852127e625e9239c186f9"
+      },
+      {
+        "path": "out/class-specialization-final-build.log",
+        "sha256": "58099fcdee03b45314418024ba6e3a74410989a7c26f772611ba19ff3d083e12"
+      },
+      {
+        "path": "out/class-specialization-capability-build.log",
+        "sha256": "f9d4e2f54310af97134dafaae9a195c49f6ec5193857a75ea038edc6746b4687"
+      },
+      {
+        "path": "out/class-specialization-emitter-test.log",
+        "sha256": "d64db93bb485591f3911ffaced156022ee900f35c1f2a005f9128ee5c30a186d"
+      },
+      {
+        "path": "out/class-specialization-tooling.log",
+        "sha256": "02e00edbe6415cf1d548ef7fb53b67e37c4abd29397b00075c6feb0d48b5f2c5"
+      },
+      {
+        "path": "out/native-validation/class-specialization-packages-normal/qualification.json",
+        "sha256": "74c401afc019a5b0eee38f82dbe5c20458a9d7cb99b96d0b07fe04e946ddb998"
+      },
+      {
+        "path": "out/native-validation/class-specialization-packages-normal-eager/qualification.json",
+        "sha256": "502326045e3c52bcb3e28e1e22d9edb0395ebbed5c186d9f8b7c3f44affa0edc"
+      },
+      {
+        "path": "out/class-specialization-docs-lint.log",
+        "sha256": "0ba61ad35548478fc23fc1657dc9ac85d7f5f7e9c4f3028271e10beb1af60fb5"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.52.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Combined compiler/frontend/tooling/sanitizer validation for source 2.53 and later",
+    "Coordinated SDK delivery after the implementation batch"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

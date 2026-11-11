@@ -1,0 +1,104 @@
+{
+  "schema": "objc3c.linux-mixed-carrier-captures-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "24d3d8fa5fb479b2d8e89e426eee9b3654526e75",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-3cdc95ee9f6d-00b75dc3",
+  "concurrency_module_version": "2.26.0",
+  "scope": [
+    "Explicit ARC mixed carrier creation/copy/move with native C++ and strong/weak pointer leaves",
+    "Separate capture destruction partitions sharing a frozen active-leaf selection",
+    "Native destructor actions precede earlier defers; implicit managed releases follow source defers",
+    "Owned mixed match snapshots, nested guard bindings and failed construction/heap-copy cleanup"
+  ],
+  "native": {
+    "lit_passed": 373,
+    "lit_unsupported": 3,
+    "unit_passed": 179,
+    "report": {
+      "path": "out/mixed-carrier-captures-native-tests.json",
+      "sha256": "1ec5554e0dd7fd96371aa903cff231adae22c9cc7516c6f5df5bdf9b68e9262e"
+    }
+  },
+  "frontend": {
+    "suites_passed": ["explicit_capture_lists"],
+    "log": {
+      "path": "out/mixed-carrier-captures-facade-test.log",
+      "sha256": "e93e89da745395922d92745603697a2df56fa4042be10987699a35256f10fd2b"
+    }
+  },
+  "runtime_matrices": [
+    {
+      "mode": "normal",
+      "configurations": 24,
+      "commands": 126,
+      "report": {
+        "path": "out/native-validation/mixed-carrier-captures-final-normal/batch.json",
+        "sha256": "dde9b56bdefbf105d3b7b730021e4e477a1e9db93d1000cf2960e8235ece21d6"
+      }
+    },
+    {
+      "mode": "asan",
+      "configurations": 24,
+      "commands": 126,
+      "report": {
+        "path": "out/native-validation/mixed-carrier-captures-final-asan/batch.json",
+        "sha256": "5ed1d023ae509ef91e27efdd9fc0d4db5c95c63cc77901958327d2daeff067ec"
+      }
+    }
+  ],
+  "source_free_cpp_packages": {
+    "configurations": 8,
+    "commands": 32,
+    "axes": [
+      "C++20/C++23",
+      "ARC/MRC package owners",
+      "O0/O2",
+      "provider source removed",
+      "consumer object linked first"
+    ],
+    "note": "Mixed implementation is ARC-only; the MRC package branch exercises the explicit fallback in the witness.",
+    "report": {
+      "path": "out/native-validation/mixed-carrier-captures-package-normal/qualification.json",
+      "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+    }
+  },
+  "delivery": {
+    "accepted_sdk": "2.9.0",
+    "new_archive_built": false
+  },
+  "remaining": [
+    "Implicit mixed Block and C++ lambda captures, MRC mixed ownership and unqualified carrier leaf shapes",
+    "Throwing resource disposal, foreign/raw return staging and remaining exceptional/profile ownership",
+    "Installed SDK/archive cutover and native AArch64 qualification"
+  ],
+  "source_inputs": [
+    {
+      "path": "toolchains/llvm/manifest.json",
+      "sha256": "ecd329e1a86819a06708e04deba8f0542bc3470094abf3b315e0328a24cbf5dc"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists/runtime.h",
+      "sha256": "ed44b1ee0e54fc57a935d89720a073f823fb110403dba5b6f67535ecc85c0629"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists/exceptions.mm",
+      "sha256": "cc8a22cdbac5cc8936077a44fa3ce442bacec75fc1ca4615c7e47be966e4a988"
+    },
+    {
+      "path": "tests/clang_foundation/explicit_capture_lists_test.cpp",
+      "sha256": "1ce49aa6d6b41d20f235a3785da8382fe995622e7f5dc91c5311044daa7970bc"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "1ce8bb5784869aa4d9697acb5911f38933cc45e6b5c9fc8389c7f8cd45b66976"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/main.mm",
+      "sha256": "6e87497bd66929b3d3243d3f50043a1d48a96051b8890a056d061abd64d6526e"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "6219475a1087cbb455e371e413e83fd25d48fcceaa56eec2b8f799b1f4393438"
+    }
+  ]
+}

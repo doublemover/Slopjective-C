@@ -221,8 +221,12 @@ int RunCompiler(int argc, char **argv) {
   if (!result.success)
     std::cerr << result.failure << '\n';
   if (result.interface_artifact) {
-    for (const auto &diagnostic : result.interface_artifact->diagnostics)
-      std::cerr << diagnostic.code << ": " << diagnostic.message << '\n';
+    for (const auto &diagnostic : result.interface_artifact->diagnostics) {
+      std::cerr << diagnostic.code << ": " << diagnostic.message;
+      if (!diagnostic.subject.empty())
+        std::cerr << " [" << diagnostic.subject << ']';
+      std::cerr << '\n';
+    }
   }
   return result.success ? 0 : 1;
 }

@@ -1,0 +1,54 @@
+{
+  "schema": "objc3c.linux-cxx-concrete-member-template-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-42e3e65408b1-00b75dc3",
+  "compiler_patch_digest": "42e3e65408b1bb47e1c8bde2639b958cb9f56e283653e9586304a50d2887dad9",
+  "native_fix_checkpoint": "9c0e11c7d4d93606ba85e70fd3a32c9f301191f5",
+  "frontend_input_sha256": "b47fac32504c9aa60b5a3fe42b0df0ef45d3b995d09e2518faf146e01c0071b5",
+  "concurrency_module_version": "2.54.0",
+  "required_semantic": "objc3.cxx-concrete-member-templates.v1",
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "focused_native_import_tests": 2,
+    "native_import_dialects": [
+      "c++20",
+      "c++23"
+    ],
+    "emitter_suite": "PASS",
+    "source_free_runtime_configurations": 8,
+    "source_free_runtime_commands": 32,
+    "provider_source_removed": true,
+    "shared_state_and_independent_worker_tls": true,
+    "reports": [
+      {
+        "path": "out/concrete-member-template-native-build.json",
+        "sha256": "ecbdcd9805a20a519e4645b03f90dea12dabb9df758fa6e00b655ea3039d0655"
+      },
+      {
+        "path": "out/concrete-member-template-native-focused-import.log",
+        "sha256": "2fc8e7b3ffbd9ae67efc7bd9165afe4933412067d30934c310eb0162afda4516"
+      },
+      {
+        "path": "out/concrete-member-template-tls-build.log",
+        "sha256": "e5b56db6c5b53a58fb6375e5a968ea7ad5e2bb311e53f2031371fea0567d5896"
+      },
+      {
+        "path": "out/concrete-member-template-emitter-test.log",
+        "sha256": "c4853c29ef64019d872c909fd8de1efec99508ca78ca089a9213b798cac4666c"
+      },
+      {
+        "path": "out/native-validation/concrete-member-template-packages-normal/qualification.json",
+        "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.52.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Combined compiler/frontend/tooling/sanitizer validation for source 2.53 and later",
+    "Coordinated SDK delivery after the next implementation batch"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

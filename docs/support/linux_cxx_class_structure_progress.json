@@ -1,0 +1,137 @@
+{
+  "schema": "objc3c.linux-cxx-class-structure-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "source_checkpoint": "737828186e7756223965fb2e2eb8560e8f1f530b",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-e926e2771bde-00b75dc3",
+  "compiler_patch_digest": "e926e2771bdef966e56a78adf3130becac7fc62992f688019489ea5f424f067c",
+  "concurrency_module_version": "2.9.0",
+  "required_semantics": ["objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1"],
+  "extension_abi": 21,
+  "interface_schema": "2.1",
+  "runtime_service_abi": 4,
+  "frame_abi": 1,
+  "scope": "Nonvirtual single/multiple/empty bases, base order/access/layout identity, in-class defaulted special members, stable implicit defaulting contracts, native importer/printer repairs, and derived native-frame values/receivers",
+  "source_inputs": {
+    "native/objc3c/src/clang_foundation/interface_artifact_io.cpp": "86c2a54e39f4c158c67875bea96860c4266f42cbd2631a292f11ceee14e5899b",
+    "native/objc3c/src/clang_foundation/interface_codec.cpp": "dd4d64ca78ac4d647d252bb71f49494fda1ec08385ffacb612fb1ac8e40768a9",
+    "native/objc3c/src/clang_foundation/interface_contract.cpp": "999c6debcfc2eebc5600947d8fb66082c095f2253ef03be938f62b9a6548646e",
+    "native/objc3c/src/clang_foundation/interface_contract.h": "2c27293044c5b60620068f1214289748ccb0c28818eb3ce822a0ec040958f695",
+    "native/objc3c/src/clang_foundation/interface_emitter.cpp": "b85954f688c0e966f5313772321d213461b5b8d526aa458331b8a67cd560fb7b",
+    "native/objc3c/src/clang_foundation/interface_import.cpp": "82d2cb548e3aa3af91f973b8e56bec9d6786f9828a0f6ada9a498b834abad299",
+    "native/objc3c/src/clang_foundation/interface_module_resolver.cpp": "befdb92311b69a57b58aac7d6f951a52b1edbb10134f053e2c85f0c9f83c1031",
+    "scripts/objc3c_toolchain/qualify_native_async_packages.py": "1aeb85177c9cc5bb8df483f7d56cda2868b1194cfaea88954af8d0b2994f354d",
+    "stdlib/module_inventory.json": "938cebfd82d713c814408b7c65e2f157c29a4adf81a706de16754bd31c9006a0",
+    "tests/clang_foundation/installed_sdk/cpp-data-rejected.mm": "193ac1a49dcb4a677d6517b25aaa2b8a174d0090fd741ba779bb2d673d82c511",
+    "tests/clang_foundation/interface_emitter_test.cpp": "c89d6e02fd5331e62ba1881dbaf9d363289a6f5af5fd6ea216afe3e766606495",
+    "tests/clang_foundation/interface_import_test.cpp": "babd092421dc8691b0be375ce98c3926981e93126e922e82fe3bf7b713c05e09",
+    "tests/clang_foundation/interface_module_names_test.cpp": "7904966ffdef805aa2c2b336f0fca03cc4cc2771e307a0b721031dbab0c3c294",
+    "tests/clang_foundation/native_async_packages/app/main.mm": "3c656d0e0c9ae2b95a2bf63ea2858b5491cd166e52b968733b029a0fe88deb17",
+    "tests/clang_foundation/native_async_packages/provider/module.mm": "a8e40fe28b83f9f5d44c73d49116bf6b4fad4993bc4324a770224a6243f74b46",
+    "tests/clang_foundation/native_async_packages/provider/package.json": "d9a5746d72bc13522febfdb470d28258eb01f402886df87b39be25b9e1d66a0d",
+    "toolchains/llvm/manifest.json": "03d67971c46583a8a09158b36a278ec74745d7c30aef279de902597e5dffb9d0",
+    "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch": "fc0e00de4317f23a92770d25cf2f3cf6c65b69e3ec405d58065a61604ad8455d"
+  },
+  "source_binary_snapshot": {
+    "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c": "a0cd06e4fe2b9184855288554892f919992c5a7652e19892ac1e35a9f9e4c929",
+    "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang": "968f7b5a232f652c2088afef94513c11461662fccf74be0137063b434a9b3659",
+    "out/runtime-development/libobjc3_runtime_services.a": "eb1c10cdcae1b2dcdd3360da4350b91764fa685ff4a9f49fd277d38e1815a642",
+    "out/runtime-sanitized/libobjc3_runtime_services.a": "b697dd314f91347fa9010620ca7932745c86e1d85a932a9637daeeeeaababc03",
+    "out/runtime-tsan/libobjc3_runtime_services.a": "a6346d2682f263025cc8abb62cd054eed3e7735fd5ed7535fab4ac7aa3931c4e"
+  },
+  "validation": {
+    "foundation": {
+      "report": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261026T213128.108910Z/report.json",
+        "sha256": "9bcf425336f7ce7a098b6b06b89dbf61cd7249f578aaff82f9c281b776c65bca"
+      },
+      "compiler_regressions_passed": 371,
+      "objc3_regressions_passed": 368,
+      "unsupported": 3,
+      "native_contracts": {
+        "ast": 105,
+        "matchers": 5,
+        "dynamic_matchers": 41,
+        "clangd": 16
+      }
+    },
+    "facade": {
+      "suites_passed": 32,
+      "report": {
+        "path": "out/native-validation/cxx-structure-facade/qualification.json",
+        "sha256": "e93bdba49aa30bcb94ad888c35d0e2c628155025c4a13c7365c34deb2fe46231"
+      },
+      "commands": {
+        "path": "out/native-validation/cxx-structure-facade/commands.json",
+        "sha256": "d564fc0f04d235fa1feb23c35fb60379e6c728553582d9f17cd3ea728de1628f"
+      }
+    },
+    "source_free_preflights": [
+      {
+        "mode": "normal",
+        "cases": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/cxx-structure-source-normal/qualification.json",
+          "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+        }
+      },
+      {
+        "mode": "asan",
+        "cases": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/cxx-structure-source-asan/qualification.json",
+          "sha256": "77e4911004d4fc3473e124b6845c272be53e4e63045f2e6114a75584a346e669"
+        }
+      },
+      {
+        "mode": "tsan",
+        "cases": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/cxx-structure-source-tsan/qualification.json",
+          "sha256": "fac3c696e94ee3d29d242ac1798ad8713e41e2719111688f3536e2a517eec414"
+        }
+      }
+    ],
+    "source_free_totals": {
+      "cases": 24,
+      "commands": 96
+    },
+    "preflight_scope": "Provider sources removed before consumer compilation. Runtime headers and normal GNU are from accepted 2.8.1; unchanged service archives and sanitizer GNU variants are reused. This is source validation, not immutable package or archive delivery.",
+    "publication_rejections": {
+      "cases": 14,
+      "report": {
+        "path": "out/native-validation/cxx-structure-rejections/qualification.json",
+        "sha256": "1ca78c13929a9ee1466fe06549d93c921d948a3973aefe5dd87f9fe62f998bf7"
+      }
+    },
+    "tooling": {
+      "passed": 29,
+      "log": {
+        "path": "out/cxx-structure-tooling.log",
+        "sha256": "b7c9ab21c03d028b9db789c489cb31ef8520f5a0505b5b81d01d6f94d93dd7a4"
+      }
+    }
+  },
+  "active_sdk": {
+    "changed": false,
+    "version": "2.8.1",
+    "acceptance": {
+      "path": "docs/support/linux_cxx_deleted_member_acceptance.json",
+      "sha256": "7b930c23ade95efadaa1c1ede94e6a3940cd16ffa37b5c7f8f1f0495745310ab"
+    },
+    "seal": "4e8f6d3b77b5b36a6b1ed95d468321d4d3cd7656f64b77ebb9e98335bbbb6f09"
+  },
+  "deferred_delivery_checks": [
+    "Build and install the 2.9 SDK and run all installed qualification gates",
+    "Publish/install/relocate immutable class packages with the expanded provider/consumer fixtures",
+    "Qualify the exact archive on fresh Debian 13 and Ubuntu 26.04 in the focused class/package scope"
+  ],
+  "remaining_implementation": [
+    "Virtual bases and virtual dispatch in semantic packages",
+    "Concrete inline/constexpr/template bodies, member initializers, default arguments and nested declarations",
+    "Broader Objective-C 3.0 specification/profile work and native Linux AArch64"
+  ],
+  "profile_conformance_claimed": false
+}

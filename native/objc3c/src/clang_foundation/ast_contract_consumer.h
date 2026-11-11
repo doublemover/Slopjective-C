@@ -4,7 +4,10 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang_foundation/compile_session.h"
 
+namespace clang {class Preprocessor;}
+
 namespace objc3::clang_foundation {
 std::unique_ptr<clang::ASTConsumer> MakeContractConsumer(
-    const CompileRequest &request, CompileResult &result);
+    const CompileRequest &request, CompileResult &result,
+    const clang::Preprocessor *preprocessor);
 }

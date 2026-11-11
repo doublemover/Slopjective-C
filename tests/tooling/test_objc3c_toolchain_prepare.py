@@ -89,6 +89,8 @@ def make_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Pa
     base = repo / "toolchains" / "llvm"
     patches = base / "patches"
     patches.mkdir(parents=True)
+    (base / "cmake").mkdir()
+    (base / "cmake/ObjC3LLVMCache.cmake").write_text("set(LLVM_ENABLE_ASSERTIONS ON CACHE BOOL \"\" FORCE)\n")
     cache = repo / "out" / "toolchains" / "upstream-cache.git"
     cache.parent.mkdir(parents=True)
     git("init", "--bare", str(cache))
@@ -128,6 +130,7 @@ def make_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Pa
         "build": {
             "generator": "Ninja",
             "configuration": "Release",
+            "assertions": True, "rtti": True, "eh": True,
             "windows_sdk_version": "synthetic-sdk",
             "windows_crt": "MD",
             "projects": ["clang", "lld", "clang-tools-extra"],
@@ -194,7 +197,7 @@ def test_verify_rejects_wrong_base_even_when_tree_digest_matches(tmp_path: Path,
 def test_prepare_rejects_partial_existing_tree_without_overwriting(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, manifest, _ = make_repo(tmp_path, monkeypatch)
     data = json.loads(manifest.read_text(encoding="utf-8"))
-    expected = core._identity(data, [("0001-change.patch", manifest.parent / "patches" / "0001-change.patch", data["patches"][0]["sha256"])], False)
+    expected = core._identity(data, [("0001-change.patch", manifest.parent / "patches" / "0001-change.patch", data["patches"][0]["sha256"])], False, repo)
     source = repo / "out" / "toolchains" / expected["build_id"] / "src"
     source.mkdir(parents=True)
     (source / "important.txt").write_text("preserve", encoding="utf-8")
@@ -314,3 +317,50 @@ def test_build_plan_carries_pinned_patch_and_windows_sdk_identity(tmp_path: Path
     components = json.loads(manifest.read_text(encoding="utf-8"))["build"]["distribution_components"]
     assert "clang-libraries" in components
     assert "lld" in components
+
+
+def test_cache_bytes_and_new_fragments_invalidate_seal_but_documents_do_not(tmp_path, monkeypatch):
+    repo, manifest, patch = make_repo(tmp_path, monkeypatch)
+    source = make_development_source(repo, manifest, patch)
+    before = core.seal_development(repo, manifest_path=manifest, source_dir=source)
+    (repo / 'README.md').write_text('unrelated documentation')
+    assert core.verify_development(repo, manifest_path=manifest, source_dir=source) == before
+    cache = repo / 'toolchains/llvm/cmake/ObjC3LLVMCache.cmake'
+    stamp = cache.stat()
+    cache.write_bytes(cache.read_bytes().replace(b' ON ', b'OFF '))
+    os.utime(cache, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    with pytest.raises(ToolchainError, match='build configuration'):
+        core.verify_development(repo, manifest_path=manifest, source_dir=source)
+    changed = core.seal_development(repo, manifest_path=manifest, source_dir=source)
+    assert changed['build_config_digest'] != before['build_config_digest']
+    assert changed['build_id'] != before['build_id']
+    fragment = cache.with_name('profile-options.cmake')
+    fragment.write_text('set(LLVM_ENABLE_EH ON)')
+    with pytest.raises(ToolchainError, match='build configuration'):
+        core.verify_development(repo, manifest_path=manifest, source_dir=source)
+
+
+@pytest.mark.parametrize('case', ['missing', 'file-link', 'directory-link', 'legacy'])
+def test_configuration_admission_rejects_missing_linked_or_legacy_inputs(tmp_path, monkeypatch, case):
+    repo, manifest, patch = make_repo(tmp_path, monkeypatch)
+    source = make_development_source(repo, manifest, patch)
+    core.seal_development(repo, manifest_path=manifest, source_dir=source)
+    cache = repo / 'toolchains/llvm/cmake/ObjC3LLVMCache.cmake'
+    if case == 'missing':
+        cache.unlink()
+    elif case == 'file-link':
+        target = repo / 'outside.cmake'
+        cache.rename(target)
+        cache.symlink_to(target)
+    elif case == 'directory-link':
+        target = repo / 'outside'
+        cache.parent.rename(target)
+        cache.parent.symlink_to(target, target_is_directory=True)
+    else:
+        marker = source / '.objc3c-prepared-source.json'
+        data = json.loads(marker.read_text())
+        data.pop('configuration_inputs')
+        data['schema_version'] = 1
+        marker.write_text(json.dumps(data))
+    with pytest.raises(ToolchainError, match='configuration|symlink'):
+        core.verify_development(repo, manifest_path=manifest, source_dir=source)

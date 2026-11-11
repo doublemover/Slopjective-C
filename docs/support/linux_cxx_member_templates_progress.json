@@ -1,0 +1,72 @@
+{
+  "schema": "objc3c.linux-cxx-member-templates-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "fc5427b24",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-e3a8265bfbc5-00b75dc3",
+  "compiler_patch_digest": "e3a8265bfbc5947295b3ce5ca2718980bc0a1efe242392450d720b932c444124",
+  "concurrency_module_version": "2.50.0",
+  "interface_schema": "2.2",
+  "scope": [
+    "In-class member function templates in public primary classes, including converting constructors, constraints/defaults, operators, packs and dependent noexcept",
+    "Native auto/reference deduction, returned closures and exact nontrivial captured lifetime counts",
+    "Shared member-specialization static storage across provider and source-free consumer",
+    "Class-owned publication and native ABI mangling, exact class/function argument dependency checks and required member-template capability",
+    "Native requires-expression bodies preserve expression ownership without introducing lexical record members"
+  ],
+  "verification": {
+    "native_ast_contract_tests_passed": 138,
+    "optimized_frontend_suites_passed": 2,
+    "source_free_package_configurations_passed": 16,
+    "source_free_package_commands_passed": 64,
+    "source_free_package_modes": [
+      "normal",
+      "normal-eager"
+    ],
+    "reports": [
+      {
+        "path": "out/class-member-templates-foundation-build.json",
+        "bytes": 6576,
+        "sha256": "54b809cddf601ec50a9d7eacb6a0a616ab51d06474ee1129d8f5a63f7c4af985"
+      },
+      {
+        "path": "out/class-member-templates-verify.json",
+        "bytes": 7444,
+        "sha256": "ed519b3fd9b08f45a720a1121fd5a8bb6857af0ac55774f7d657e5b4d80ce7aa"
+      },
+      {
+        "path": "out/class-member-templates-native-ast.log",
+        "bytes": 34648,
+        "sha256": "0373ad68461201b4c690600999f00fe4e33f98ab7d30bd2924b1032d81937d49"
+      },
+      {
+        "path": "out/class-member-templates-focused-frontend-tests.log",
+        "bytes": 81240,
+        "sha256": "cf9bb2702c142d9940eb6cb1f055999ccb825891403dc1b9b50f5154e4cb0a6a"
+      },
+      {
+        "path": "out/class-member-templates-focused-exports.log",
+        "bytes": 32433,
+        "sha256": "fe2c42356e05ae085120dfad7f8e4d4ca06d297e6e95dbb6c5dd43fe65e11fd5"
+      },
+      {
+        "path": "out/native-validation/class-member-templates-packages-normal/qualification.json",
+        "bytes": 4559,
+        "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+      },
+      {
+        "path": "out/native-validation/class-member-templates-packages-normal-eager/qualification.json",
+        "bytes": 4549,
+        "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9"
+      }
+    ]
+  },
+  "deferred": [
+    "Combined broader native/frontend/tooling and sanitizer checks after the implementation batch",
+    "Coordinated SDK rebuild/archive and installed-host qualification"
+  ],
+  "accepted_sdk": "2.33.0",
+  "sdk_rebuilt": false,
+  "full_profile_conformance": false,
+  "native_aarch64_qualified": false
+}

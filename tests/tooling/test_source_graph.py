@@ -20,6 +20,13 @@ def test_export_selection_is_canonical():
     assert validate_exports(['answer', 'API']) == ['API', 'answer']
     assert validate_exports(['*']) == ['*']
 
+
+def test_export_policy_supports_large_library_boundaries():
+    names = ['export_' + str(index) for index in range(4096)]
+    assert validate_exports(names) == sorted(names)
+    with pytest.raises(ValueError, match='exports'):
+        validate_exports([*names, 'one_too_many'])
+
 FIXTURE = Path(__file__).resolve().parents[1] / 'clang_foundation/source_graph'
 
 
@@ -289,3 +296,89 @@ def test_spi_grants_are_canonical_without_mutating_the_lock():
     assert canonical[0]['spi'] == ['Diagnostics', 'Testing']
     assert edge['spi'] == ['Testing', 'Diagnostics']
     assert canonical != [edge]
+
+
+@pytest.mark.parametrize('case', ['optional', 'shadow', 'include-next'])
+def test_fresh_header_discovery_detects_changes_outside_source_root(tmp_path, case):
+    import os
+    import subprocess
+    from scripts.objc3c_toolchain.source_graph import discover_lookup
+    compiler = shutil.which('clang')
+    if not compiler:
+        pytest.skip('header discovery control requires Clang')
+    sdk = tmp_path / 'sdk'
+    (sdk / 'bin').mkdir(parents=True)
+    (sdk / 'bin/clang').symlink_to(compiler)
+    source = tmp_path / 'source/main.cpp'
+    source.parent.mkdir()
+    external = tmp_path / 'external'
+    earlier, later = external / 'earlier', external / 'later'
+    earlier.mkdir(parents=True)
+    later.mkdir()
+    if case == 'optional':
+        source.write_text('#if __has_include("optional.h")\n#include "optional.h"\n#else\nint answer = 40;\n#endif\n')
+        new = earlier / 'optional.h'
+    elif case == 'shadow':
+        source.write_text('#include "value.h"\n')
+        (later / 'value.h').write_text('int answer = 40;\n')
+        new = earlier / 'value.h'
+    else:
+        source.write_text('#include "value.h"\n')
+        (earlier / 'value.h').write_text('#include_next "optional.h"\n')
+        # Create a third, lower-priority root to witness include_next shadowing.
+        final = external / 'final'
+        final.mkdir()
+        (final / 'optional.h').write_text('int answer = 40;\n')
+        new = later / 'optional.h'
+    flags = ['-std=c++20', '-I'+str(earlier), '-I'+str(later)]
+    if case == 'include-next':
+        flags.append('-I'+str(final))
+    flags += ['-MD', '-MF', str(tmp_path / 'unused.d')]
+    config = {'input': source, 'language': 'c++', 'ownership': 'none'}
+    output = tmp_path / 'build'
+    output.mkdir()
+    def lookup():
+        return discover_lookup(sdk, config, flags, 'x86_64-unknown-linux-gnu', output, output, os.environ)
+    before = lookup()
+    assert lookup() == before
+    new.write_text('int answer = 42;\n')
+    after = lookup()
+    assert after != before
+    assert str(new) in after[str(source)]['dependencies']
+    assert lookup() == after
+    new.unlink()
+    assert lookup() == before
+
+
+def test_transitive_interface_lookup_replays_virtual_aliases_with_stable_dependencies(tmp_path):
+    import os
+    from scripts.objc3c_toolchain.source_graph import discover_lookup
+    compiler = shutil.which('clang')
+    if not compiler:
+        pytest.skip('interface lookup control requires Clang')
+    sdk = tmp_path / 'sdk'
+    (sdk / 'bin').mkdir(parents=True)
+    (sdk / 'bin/clang').symlink_to(compiler)
+    source = tmp_path / 'main.cpp'
+    source.write_text('int main() { return 0; }\n')
+    external = tmp_path / "interfaces with 'quotes"
+    leaf, left, top = [external / name / (name+'.objc3i') for name in ('Leaf', 'Left', 'Top')]
+    for path in (leaf, left, top):
+        path.parent.mkdir(parents=True)
+    header = external / 'definition.h'
+    header.write_text('#define ANSWER 40\n')
+    leaf.write_text('#pragma once\n#include "'+str(header)+'"\nint leaf = ANSWER;\n')
+    left.write_text('#include "__objc3_imports/m-'+b'Leaf'.hex()+'.objc3i"\n')
+    top.write_text('#include "__objc3_imports/m-'+b'Left'.hex()+'.objc3i"\n')
+    output = tmp_path / 'build'
+    output.mkdir()
+    config = {'input': source, 'language': 'c++', 'ownership': 'none'}
+    def lookup():
+        return discover_lookup(sdk, config, ['-std=c++20', '-MD'], 'x86_64-unknown-linux-gnu',
+                               output, output, os.environ, interfaces=[leaf, left, top])
+    before = lookup()
+    assert lookup() == before
+    assert {str(leaf), str(left), str(top), str(header)} <= set(before[str(top)]['dependencies'])
+    assert all('.lookup-' not in path for row in before.values() for path in row['dependencies'])
+    header.write_text('#define ANSWER 42\n')
+    assert lookup() != before

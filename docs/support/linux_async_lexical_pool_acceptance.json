@@ -1,0 +1,192 @@
+{
+  "schema": "objc3c.linux-async-lexical-pool-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-25",
+  "scope": "Linux x86-64 / GNUstep 2.2 C++ coroutine lexical pools and expanded compiler/package witness delivery",
+  "compiler_implementation_commit": "0ed4f80af7f40be9cf7517ea87391cef88caf7aa",
+  "distribution_implementation_commit": "93fafa10cdb47b4155b4cbe93ace98b8b52c24d5",
+  "host_cache_fix_commit": "96a72d7562cdf5ce786977cb2108b2569b10c902",
+  "qualified_source_checkpoint": "30983aec908d5c3f03b08bf42a18fd62c56592c3",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-e4f1a276e662-00b75dc3",
+  "patch_digest": "e4f1a276e66202f77c9aa74eabdc643c56a7a453bd1c4fc56d3da95688711a3c",
+  "extension_abi_revision": 21,
+  "semantic_interface_schema": "2.1",
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "sdk": {
+    "input_identity": "46198f7899522120250f57d5884943d5602f22bf9cac4af7c6d199c68a6074b8",
+    "release_receipt": {
+      "path": "out/toolchains/linux-sdk-builds/46198f7899522120250f57d5884943d5602f22bf9cac4af7c6d199c68a6074b8/release.json",
+      "sha256": "6db8a50c2ce0fc1133110c0e27f94cb333e0eb9f01351bb2642ea3855c1751cc"
+    },
+    "seal_sha256": "c929e57a21e1e192fba1805401021b9d7cfa85cc5e20993e6d8fc1cedfb173d1",
+    "archive": "llvmorg-23.1.3-0d261d1ca552-e4f1a276e662-00b75dc3-linux-x86_64-c929e57a21e1e192.tar.zst",
+    "archive_sha256": "c68e1f321db01c3de9d0c09f03ed483ac4449d46211a72cb7d487940ff64595e",
+    "archive_bytes": 435210510,
+    "installed_manifest_sha256": "abbe8bd4172576e5eccbddb01ca258bcec74dfa2059621d12fa295ff23be5642",
+    "compiler_sha256": "1213c946e5fd971e80c54e78b263a20bd06c75fea504c0d713ac2522fd308910",
+    "frontend_sha256": "d70e73c5a542354da844fea17b278456f72da3770b8ade20db556ac70ddc9f8b"
+  },
+  "verification": {
+    "foundation": {
+      "report": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261025T160302.561098Z/report.json",
+        "sha256": "f89c6506614cad9ad2e9fee3cf5a79ac828e351f63a0d253f501ad431cc66e4a"
+      },
+      "regressions_passed": 356,
+      "objc3_regressions_passed": 353,
+      "unsupported": 3,
+      "native_contract_tests_passed": {
+        "ast": 104,
+        "matchers": 5,
+        "dynamic_matchers": 41,
+        "clangd": 16
+      }
+    },
+    "facade_suites_passed": 32,
+    "gnustep_runtime_tests_passed": 8,
+    "installed_consumer_checks_passed": 37,
+    "native_integration": {
+      "report": {
+        "path": "out/native-validation/linux-sdk-20261025T160943507255Z/summary.json",
+        "sha256": "774454956f788b9a2ecad9a3c5b57754be1fc9f8928f0301f1d62f0402657103"
+      },
+      "selected_nodes": 13,
+      "runtime_count": 76
+    },
+    "installed_gates": {
+      "installed_api_availability": "PASS",
+      "installed_array_carriers": "PASS",
+      "installed_async_c_abi": "PASS",
+      "installed_binary_packages": "PASS",
+      "installed_captured_carriers": "PASS",
+      "installed_carrier_calls": "PASS",
+      "installed_carrier_debugger": "PASS",
+      "installed_compiler_witnesses": "PASS",
+      "installed_cxx_interfaces": "PASS",
+      "installed_defer_control_flow": "PASS",
+      "installed_direct_calls": "PASS",
+      "installed_guard_bindings": "PASS",
+      "installed_heap_carriers": "PASS",
+      "installed_managed_throws": "PASS",
+      "installed_match_results": "PASS",
+      "installed_module_names": "PASS",
+      "installed_module_spi": "PASS",
+      "installed_native_async": "PASS",
+      "installed_native_async_packages": "PASS",
+      "installed_native_features": "PASS",
+      "installed_nested_calls": "PASS",
+      "installed_optional_access": "PASS",
+      "installed_ownership_projections": "PASS",
+      "installed_public_surfaces": "PASS",
+      "installed_record_carriers": "PASS",
+      "installed_recursive_carriers": "PASS",
+      "installed_runtime_carrier_calls": "PASS",
+      "installed_source_graph": "PASS",
+      "installed_source_modules": "PASS",
+      "installed_stdlib": "PASS",
+      "installed_structured_runtime": "PASS",
+      "installed_task_coroutines": "PASS",
+      "installed_typed_keypath_packages": "PASS"
+    },
+    "native_feature_configurations": 168,
+    "native_feature_commands": 942,
+    "compiler_witnesses": {
+      "commands": 153,
+      "executions": 24,
+      "rejections": 24
+    },
+    "typed_keypath_packages": {
+      "modes": 12,
+      "executions": 36,
+      "readonly_rejections": 12
+    },
+    "native_cpp_async": {
+      "configurations": 16,
+      "commands": 104
+    },
+    "native_cpp_async_sanitizers": {
+      "report": {
+        "path": "out/native-validation/cxx-pools-native-sanitizers/qualification.json",
+        "sha256": "020138aa69a26753dea0fb4117049c2dece166dcae1b0869d46c62f4f154b2cc"
+      },
+      "configurations": 16,
+      "commands": 80,
+      "compiler_sha256": "6af95830035f82e814bf56dee3663dd614fd6d9b0e933b1244b6346d6505466f",
+      "instrumentation": "ASan/UBSan and TSan; Objective-C++ provider/client in all ARC/MRC pairs plus task/runtime services; GNU libobjc loaded as shipped"
+    },
+    "delivery_tooling": {
+      "tests_passed": 44,
+      "log": {
+        "path": "out/session/compiler-witness-tooling-final.log",
+        "sha256": "f22ec26bf1bb47d33d5afb3bbc016d8b2bc824eae1dad7f3209218ca2aabf2d7"
+      }
+    },
+    "documentation_authority_onboarding": {
+      "tests_passed": 12,
+      "log": {
+        "path": "out/session/coverage-documentation-checks-final.log",
+        "sha256": "5afd2863f7a8c2e74e8678fa46919808f7766cd2df885d3cae01020de54055e1"
+      }
+    }
+  },
+  "fresh_distributions": {
+    "report": {
+      "path": "out/native-validation/cxx-pools-fresh-linux/qualification.json",
+      "sha256": "519cd223a455b6448b1a9a5edef99bec93bd678708b4043b95070cac39847a56"
+    },
+    "scope": "native-features",
+    "qualifier_sha256": "55ae50e328c9bf5fd0db196402635ab4458128a30bdb1088e8148a7de83b35d3",
+    "qualifier_commit": "93fafa10cdb47b4155b4cbe93ace98b8b52c24d5",
+    "distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "container": "objc3-features-debian13-1f1e90796d26",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "e056795dec870d40baa4bee195f4f20e990717e602c31a1e2e9c8798516de5c5",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "container": "objc3-features-ubuntu2604-450756620748",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "bc696460b5a91594766035831b4310e79e05285343e5761ccb77c4f4932d20a3",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      }
+    ]
+  },
+  "publication": {
+    "input_reconciliation": {
+      "path": "out/toolchains/linux-sdk-builds/46198f7899522120250f57d5884943d5602f22bf9cac4af7c6d199c68a6074b8/publication-input-reconciliation.json",
+      "sha256": "e3bd729ae3fec28030801faa036e4b3d333e679f78915b35f6a608f40d1bc606"
+    },
+    "live_cache_fix_verification": {
+      "path": "out/session/filecheck-foundation-live-check.json",
+      "sha256": "001b4ab8ddd83cea972c2454ae3499ee8f9331ac8d3359cfc51fea4aa75b9946"
+    },
+    "scope": "All frozen inputs matched the original identity after excluding project-packaged FileCheck from the foundation signature. The already qualified archive was installed without repeating the 33 gates."
+  },
+  "post_publication_source_changes": {
+    "host_only": "FileCheck foundation classification and its regression tests.",
+    "inventory_formatting": "Source and installed library inventories have equal parsed JSON; canonical hash is recorded in the live cache-fix report.",
+    "delivered_compiler_runtime_fixtures_changed": false
+  },
+  "earlier_instrumentation": {
+    "receipt": "linux_native_feature_integration_acceptance.json",
+    "source_build_id": "llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3",
+    "scope": "Broader five-family ASan/UBSan and TSan matrices and standalone/structured/task-group/C-frame sanitizer suites retain their recorded source identities."
+  },
+  "limitations": [
+    "This validates admitted implemented features, not full specification or profile conformance.",
+    "Fresh distributions run the recorded native-feature consumer scope; the host runs all 33 installed gates.",
+    "Native Linux AArch64 and the remaining implementation roadmap are open."
+  ]
+}

@@ -1,0 +1,332 @@
+{
+  "schema": "objc3c.linux-cxx-class-lifecycle-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-26",
+  "scope": "Linux x86-64 / GNUstep 2.2 bounded nonvirtual C++ class semantic packages, private/mutable layout, out-of-line lifecycle/conversion members, deleted declarations, owned constructor/destructor ABI variants, nontrivial native-frame results and move-only class parameters",
+  "qualified_source_checkpoint": "020f4d5d0d1bac79b6a140a7ce60950500772fc9",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-5c304c44df6d-00b75dc3",
+  "compiler_patch_digest": "5c304c44df6d470bf9e6d4f2b190b85e6af2d2cda0aec18849620478ad34cad3",
+  "concurrency_module_version": "2.8.0",
+  "required_semantic_capability": "objc3.cxx-class-lifecycles.v1",
+  "extension_abi_revision": 21,
+  "semantic_interface_schema": "2.1",
+  "runtime_service_abi": 4,
+  "async_frame_abi": 1,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "runtime_profile": {
+    "target_triple": "x86_64-unknown-linux-gnu",
+    "runtime_family": "libobjc2",
+    "runtime_release": "2.3",
+    "runtime_commit": "e877e782fb965c4e870d2ecf6aff58dddc6290ae",
+    "objc_abi_flag": "-fobjc-runtime=gnustep-2.2",
+    "blocks_provider": "libobjc2-embedded",
+    "runtime_build_with_clang_cl": false,
+    "foundation_required_for_runtime_fixture": false,
+    "runtime_source": "https://github.com/gnustep/libobjc2.git",
+    "robin_map_release": "v1.4.1",
+    "robin_map_commit": "bd14e6830a1474fed9d2d03f5c3b0683d818d540",
+    "robin_map_source": "https://github.com/Tessil/robin-map.git",
+    "llvm_stage0_version": "23.1.3",
+    "llvm_stage0_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+    "cmake_version": "4.4.4",
+    "ninja_version": "1.13.2",
+    "runtime_build_drivers": ["clang", "clang++"],
+    "runtime_linker": "ld.lld",
+    "runtime_generator": "Ninja",
+    "glibc_minimum": "2.41",
+    "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33",
+    "source_patches": [
+      {
+        "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
+        "sha256": "fbff619f599ef104406ad17921fd00f1dfe90762372b87cfaf9762a62412edaf"
+      }
+    ],
+    "autorelease_pool_policy": "native-arc-only"
+  },
+  "verification": {
+    "source_lifecycle_preflights": [
+      {
+        "mode": "normal",
+        "status": "PASS",
+        "configurations": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/cxx-lifecycle-source-normal/qualification.json",
+          "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+        }
+      },
+      {
+        "mode": "asan",
+        "status": "PASS",
+        "configurations": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/cxx-lifecycle-source-asan/qualification.json",
+          "sha256": "77e4911004d4fc3473e124b6845c272be53e4e63045f2e6114a75584a346e669"
+        }
+      },
+      {
+        "mode": "tsan",
+        "status": "PASS",
+        "configurations": 8,
+        "commands": 32,
+        "report": {
+          "path": "out/native-validation/cxx-lifecycle-source-tsan/qualification.json",
+          "sha256": "fac3c696e94ee3d29d242ac1798ad8713e41e2719111688f3536e2a517eec414"
+        }
+      }
+    ],
+    "source_lifecycle_preflight_totals": {
+      "configurations": 24,
+      "commands": 96
+    },
+    "source_preflight_scope": "Development compiler with accepted 2.7 SDK headers and normal GNU runtime; unchanged service archives and sanitizer GNU variants reused. Normal preflight preceded the overload regression and inventory update; ASan/UBSan and TSan used the final semantic implementation before formatting. These preflights are separate from exact-source installed and archive qualification.",
+    "source_preflight_binary_snapshot": {
+      "path": "out/session/cxx-lifecycle-source-binaries.json",
+      "sha256": "a997210dbfdbc45ee47bdd4b0f9055183329b2541798fbff253e57fce3270fee"
+    },
+    "prior_service_acceptance": {
+      "path": "docs/support/linux_cxx_frame_borrow_acceptance.json",
+      "sha256": "7f59a9a3d55c13a01bf9c2e8f506ac0dd4894dc29ec02c4efe9cb4326a0c023d"
+    },
+    "compiler_focused_regressions": {
+      "passed": 1,
+      "log": {
+        "path": "out/cxx-lifecycle-focused.log",
+        "sha256": "c13eaceb2288376fbe7db415ae5894f3ba77978b86f586e8d24ab76a3fe177f4"
+      }
+    },
+    "installed_rejection_repair": {
+      "passed": 2,
+      "report": {
+        "path": "out/native-validation/cxx-lifecycle-rejection-repair/qualification.json",
+        "sha256": "e1e555e14990329a2e1ecca92d14d30f0c4f69dac85477fa991346748ec542fd"
+      }
+    },
+    "facade_focused_suites": {
+      "passed": 4,
+      "log": {
+        "path": "out/cxx-lifecycle-last-tests.log",
+        "sha256": "e3f09125bd60115874cf0328dff77b4b5b868147e0525deee53c466af7f35bdb"
+      }
+    },
+    "tooling": {
+      "passed": 22,
+      "log": {
+        "path": "out/cxx-lifecycle-tooling.log",
+        "sha256": "398f82d33280ecd36ba0df12d04038fa0bb6114ccafc8f72d48213ee43427c8e"
+      }
+    },
+    "foundation": {
+      "report": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261026T191716.832422Z/report.json",
+        "sha256": "3aa4523b70800d0ea922546b437bb646996e3b8f8b996b46c9a35f6471d08e12"
+      },
+      "regressions_passed": 370,
+      "objc3_regressions_passed": 367,
+      "unsupported": 3,
+      "native_contract_tests_passed": {
+        "ast": 104,
+        "matchers": 5,
+        "dynamic_matchers": 41,
+        "clangd": 16
+      },
+      "reuse": false
+    },
+    "installed_gates": {
+      "installed_compiler_witnesses": "PASS",
+      "installed_typed_keypath_packages": "PASS",
+      "installed_recursive_carriers": "PASS",
+      "installed_async_c_abi": "PASS",
+      "installed_stdlib": "PASS",
+      "installed_match_results": "PASS",
+      "installed_task_coroutines": "PASS",
+      "installed_native_async": "PASS",
+      "installed_carrier_debugger": "PASS",
+      "installed_optional_access": "PASS",
+      "installed_guard_bindings": "PASS",
+      "installed_defer_control_flow": "PASS",
+      "installed_source_modules": "PASS",
+      "installed_source_graph": "PASS",
+      "installed_binary_packages": "PASS",
+      "installed_ownership_projections": "PASS",
+      "installed_public_surfaces": "PASS",
+      "installed_api_availability": "PASS",
+      "installed_module_spi": "PASS",
+      "installed_module_names": "PASS",
+      "installed_structured_runtime": "PASS",
+      "installed_native_features": "PASS",
+      "installed_native_async_packages": "PASS",
+      "installed_carrier_calls": "PASS",
+      "installed_runtime_carrier_calls": "PASS",
+      "installed_managed_throws": "PASS",
+      "installed_direct_calls": "PASS",
+      "installed_nested_calls": "PASS",
+      "installed_captured_carriers": "PASS",
+      "installed_array_carriers": "PASS",
+      "installed_record_carriers": "PASS",
+      "installed_heap_carriers": "PASS",
+      "installed_cxx_interfaces": "PASS"
+    },
+    "installed_native_features": {
+      "status": "pass",
+      "commands": 966,
+      "cases": 168
+    },
+    "installed_compiler_witnesses": {
+      "status": "PASS",
+      "commands": 153,
+      "cases": 24,
+      "executions": 24,
+      "rejections": 24
+    },
+    "installed_typed_keypath_packages": {
+      "status": "PASS",
+      "cases": 12,
+      "executions": 36,
+      "rejections": 12
+    },
+    "installed_native_async_packages": {
+      "status": "PASS",
+      "cases": 12,
+      "executions": 36,
+      "cxx_lifecycle_modes": 8,
+      "c_frame_modes": 4,
+      "provider_source_removed": true,
+      "relocated": true,
+      "provider_compilations": 0
+    },
+    "facade_suites_passed": 32,
+    "installed_consumer_checks": {
+      "report": {
+        "path": "out/toolchains/linux-sdk-builds/0222a456f1202aadc136340bcc68b4dd6a185700f60b660e8aa29db479610338/installed-qualification/summary.json",
+        "sha256": "bcf7443f3b68eb35702daffb3b070cc669cb371d7a1485baf9b197eff25a3a59"
+      },
+      "passed": 37
+    },
+    "shipped_gnu_runtime": {
+      "build_report": {
+        "path": "out/toolchains/linux-sdk-builds/0222a456f1202aadc136340bcc68b4dd6a185700f60b660e8aa29db479610338/runtime-report.json",
+        "sha256": "33a3b4e44bc9edd766899e9b40709e98a95ec8f955245e6b435a0642d6d190b8"
+      },
+      "client_log": {
+        "path": "out/toolchains/linux-sdk-builds/0222a456f1202aadc136340bcc68b4dd6a185700f60b660e8aa29db479610338/runtime-tests.log",
+        "sha256": "98a951983427820951429e4ad519dd4523177243d87a6cc2aff6171f0d338e1c"
+      },
+      "client_tests_passed": 9,
+      "native_arc_only": true
+    },
+    "native_integration": {
+      "report": {
+        "path": "out/native-validation/linux-sdk-20261026T192248759305Z/summary.json",
+        "sha256": "7fec8b48c4253f06f5181049fac0f47acfa38f2b2a5b9b669eadb14a4e730ac2"
+      },
+      "selected_nodes": 13,
+      "runtime_count": 76
+    },
+    "documentation_authority_onboarding": {
+      "passed": 12,
+      "overlaps_targeted_tooling_scope": true,
+      "log": {
+        "path": "out/session/cxx-lifecycle-final-authority.log",
+        "sha256": "e9b29f42e72804aedf5a269d4507aafa7270b39400c6923bbb014d8a335fe788"
+      }
+    }
+  },
+  "qualified_source_inputs": {
+    "scripts/objc3c_toolchain/qualify_native_async_packages.py": "1636f1e7d45940023f4ab29d2c9c6612ea2eb351c253ea0b39e23216ae8a6b2a",
+    "stdlib/module_inventory.json": "5a8a48d323acdb4a67c10484ec30bded532cdc32360d6d571b2e122736bef443",
+    "tests/clang_foundation/interface_emitter_test.cpp": "212f3e57f4981ea98d22702f32d1395e611666f44db9419252ac2f6c4ba5daaa",
+    "tests/clang_foundation/interface_import_test.cpp": "a55b92702936578f2e03a2525e9b958cacb8e1d721863f1464a4593cd5842079",
+    "tests/clang_foundation/interface_module_names_test.cpp": "c628e622cfabaaa71615bcbe8c3610e89d73d1882f47d4d53c00bccd7c22301a",
+    "tests/clang_foundation/installed_sdk/cpp-data-rejected.mm": "6f8d39ab06de80d8ca0ab4a71b5a624b4cbf27d58c457fe4cc97cc7c28d4e002",
+    "tests/clang_foundation/native_async_packages/provider/module.mm": "5b421af8075aee9e8eebf01e6a359b43c743e5648d41ba798ac9a5f3680fb305",
+    "tests/clang_foundation/native_async_packages/provider/package.json": "98c017ea27d3f56f699dd7a2906b74f405294859ce0afa18dbcf2c24b72472a8",
+    "tests/clang_foundation/native_async_packages/app/main.mm": "5bdce2596d7098bef8b7fb08ddf5d978d6c58a15c0ba7884e688546abb429d50",
+    "toolchains/llvm/manifest.json": "b0bad6c43e98a979cf55e575df050e0fb44f219e2401249d9fe0614d8d29d854",
+    "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch": "324c85b3d4ee2dcf1159864dfdc0268f5b0c429dbbdae9bcda39cda2441ef8b5",
+    "toolchains/llvm/patches/0005-objc3-codegen-qualification-boundaries.patch": "345c8fffc1b7a1f91d75911dd64349361946e3b70bf2aaf5b4b53944031064fb",
+    "native/objc3c/src/clang_foundation/interface_artifact_io.cpp": "053300012ec3f4831caec9163648ec47310d26881b9ca894643b4f6d99790aae",
+    "native/objc3c/src/clang_foundation/interface_codec.cpp": "6da9327efd761daeb31a74579384651b632b63e954613a01982d790a4f7f320e",
+    "native/objc3c/src/clang_foundation/interface_contract.cpp": "783ecc304ea6d235bc2bb7d8003eaaed506ba276f0a176e605b46f56bd114507",
+    "native/objc3c/src/clang_foundation/interface_contract.h": "696d554a16e1dd812d72cbe924e5975f42fe5a8f0bbb6a264afc8cc7f40dea5a",
+    "native/objc3c/src/clang_foundation/interface_emitter.cpp": "666b4578fd2dfcb44f78d7e6470b370da2fd6664bb10c6945ee5a8d526644c1b",
+    "native/objc3c/src/clang_foundation/interface_import.cpp": "d3536adc215ec1639b2af73bdde9e10629af2571d62b6893b0202c4645b2727d",
+    "native/objc3c/src/clang_foundation/interface_module_resolver.cpp": "10a354a8f3bea89d7323dccc2a3d60ea362b8a92e9aa4f8fe27c85004e44c984",
+    "native/objc3c/src/clang_foundation/interface_source_import_bridge.cpp": "86bc5d912f8080addb02792eb3e5d260737da03c4498e3f99e42a13072f0d63f",
+    "native/objc3c/src/clang_foundation/module_names.cpp": "fa404a1431c3a2ba3d4a173de535521b1fe147c287efcb73ccf01205afca5bc2"
+  },
+  "implementation_commits": ["85f794025", "020f4d5d0"],
+  "input_reconciliation": {
+    "path": "out/toolchains/linux-sdk-builds/096a4ab5e28923790e0eb9395e67c1ea0b1f4de9cf4079ceccd1f3fae19575b7/input-reconciliation.json",
+    "sha256": "d59f1a2ff9b4f9fb0a9efbdaf09cd8958adef584f36ec97c301d3cc35bfca2cb"
+  },
+  "sdk": {
+    "input_identity": "0222a456f1202aadc136340bcc68b4dd6a185700f60b660e8aa29db479610338",
+    "release_receipt": {
+      "path": "out/toolchains/linux-sdk-builds/0222a456f1202aadc136340bcc68b4dd6a185700f60b660e8aa29db479610338/release.json",
+      "sha256": "2858968f29cf0381af037975c4b784f32aebf34260a0ad6027db2a040fd2e6d3"
+    },
+    "seal_sha256": "5292ae426db50dbdec2a2fb77a2fbab7b08b8481df97897dacd061e6a4fc8444",
+    "archive": "llvmorg-23.1.3-0d261d1ca552-5c304c44df6d-00b75dc3-linux-x86_64-5292ae426db50dbd.tar.zst",
+    "archive_sha256": "3d5bd048bab911e0042e0b2bd01d821c87f1582bffb3cd68d2141291a1c908da",
+    "archive_bytes": 435415796,
+    "installed_manifest_sha256": "11f7c0b5ae46215a0bdcf2bae33ba77ac1da82b0641c35ce9e651bcf1fd691f0",
+    "compiler_sha256": "bdb6542dff1f94f7a21719a520dd37f30df0f01fb5343dd7bfc64e73a0be3913",
+    "frontend_sha256": "47f9a8e1c3dfcbe176f3fe6ac07a33879ac99f27729e278fc1d7f1263b2444bd",
+    "gnu_runtime_sha256": "c17c68bbcf528fc08fd7e34aa83aa0efa134327d432927abf23b85a33f28726d",
+    "runtime_services_sha256": "34bb79e6716eec9a6774d74811183a992743d63c57ebd9d07ad9fda9e449edb1"
+  },
+  "fresh_distributions": {
+    "report": {
+      "path": "out/native-validation/cxx-lifecycle-fresh-linux/qualification.json",
+      "sha256": "2b74446957c67a05095df42bf9feace8a8a65887051c8da80bf1d6a7162c03d4"
+    },
+    "scope": "native-features",
+    "qualifier_sha256": "55ae50e328c9bf5fd0db196402635ab4458128a30bdb1088e8148a7de83b35d3",
+    "distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "27a02ef1ee148256dfb280cb60a10596a275b75a7374ae4fe9785ca415f71611",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "016c6ba04f084335161767892366cd2bc4a8daac46e22e5a5ff77d0a930eb728",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      }
+    ]
+  },
+  "publication": {
+    "build_candidate_reclaimed": true,
+    "frontend_test_executable_bytes_reclaimed": 3147065408,
+    "foundation_cache_hit": false,
+    "source_inputs_frozen_through_packaging": true,
+    "development_paths_rebound_to_current_sdk": true,
+    "development_rebind_log": {
+      "path": "out/session/cxx-lifecycle-development-rebind.log",
+      "sha256": "e05acfec6fe3e57463d176a83754eb6c3cfd249b2d17b38d2126d567a4b56d71"
+    },
+    "superseded_artifact_cleanup": {
+      "path": "out/session/cxx-lifecycle-delivery-cleanup.json",
+      "sha256": "652dde3e0189340b2903c7094d56ba54596f4b250b440d47daa0f32438817f16"
+    },
+    "retained_sdk_installations": 1,
+    "retained_sdk_archives": 1
+  },
+  "remaining_implementation": [
+    "C++ inheritance, virtual dispatch, concrete inline/defaulted/constexpr/template members, member initializers, nested declarations and default arguments in semantic packages",
+    "Remaining abstract group-library, ownership/isolation/keypath/type/package/profile specification surfaces and native Linux AArch64"
+  ]
+}

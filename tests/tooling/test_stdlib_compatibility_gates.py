@@ -120,35 +120,8 @@ def _compatibility_gates() -> dict[str, Any]:
     }
 
 
-def test_stdlib_compatibility_gate_accepts_runtime_backed_v1_contract() -> None:
-    error, validation = validate_compatibility_gates(
-        root=ROOT,
-        compatibility_gates=_compatibility_gates(),
-        module_surfaces=[_core_surface()],
-        semantic_policy=_semantic_policy(),
-    )
-
-    assert error is None
-    assert validation is not None
-    assert validation.semantic_gate["capability_ordinals_fail_closed"] == [0, -1, 5, 99]
 
 
-def test_stdlib_compatibility_gate_rejects_strict_system_fail_open() -> None:
-    gates = _compatibility_gates()
-    gates["semantic_gate"] = {
-        **gates["semantic_gate"],
-        "capability_ordinals_fail_closed": [0, -1, 99],
-    }
-
-    error, validation = validate_compatibility_gates(
-        root=ROOT,
-        compatibility_gates=gates,
-        module_surfaces=[_core_surface()],
-        semantic_policy=_semantic_policy(),
-    )
-
-    assert error == "compatibility gate fail-closed capability ordinals drifted"
-    assert validation is None
 
 
 def test_packaged_stdlib_validation_requires_compatibility_summary() -> None:

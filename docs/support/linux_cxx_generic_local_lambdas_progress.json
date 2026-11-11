@@ -1,0 +1,134 @@
+{
+  "schema": "objc3c.linux-generic-local-lambdas-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "c1ce0390dcb72b040c938a1325d3f2ed19e43cd8",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-f25adb992252-00b75dc3",
+  "compiler_patch_digest": "f25adb99225242bef7c87a5ead314b8289e470813bdbf34ba461da3e38b69b69",
+  "frontend_input_sha256": "05b8cfcb45fd6a3a6eac50749d8cf466a43bf0f4fa5e08058f36eb3855848b62",
+  "concurrency_module_version": "2.39.0",
+  "system_module_version": "2.14.0",
+  "keypath_module_version": "2.3.0",
+  "interface_schema": "2.2",
+  "extension_abi": 21,
+  "scope": [
+    "Closed generic lambdas in concrete published bodies, class/default/member initializers and constant data",
+    "Sorted type/integral/null/pack specialization keys, lexical template parameters and complete concrete body dependencies; private resolved overloads fail closed",
+    "Required generic-local/lambda capabilities agree across encoding, decoding, module validation, loading, resolution and import",
+    "Native parameter declaration printing preserves packs/defaults/attributes and consteval/static operators; native import retains call specializations needed by generic invokers",
+    "Function-pointer parameter identity excludes source-only prototype variables while preserving actual function, lambda and Block bindings",
+    "Pure C++20/23 source-free object consumers and ARC/MRC O0/O2 runtime packages cover captures, mutable state, empty/variadic packs, integral arguments, defaults, nested/immediate/constant evaluation, function-pointer conversion, named records and C++23 static operators"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/generic-locals-foundation-build.json",
+      "sha256": "bc1558b45f32a37516dcbbe5d2a54fe6c9838ae654d763fcf129ef47d28a7309",
+      "bytes": 6520
+    },
+    "source_verification": {
+      "path": "out/generic-locals-source-verification.json",
+      "sha256": "0ac7e579de78a6dfabf1a01ae23a4a71a7d5da84b2e556f0a6d70b6be74912d8",
+      "bytes": 7444
+    },
+    "compiler_regressions_passed": 406,
+    "platform_cases_unsupported": 3,
+    "native_unit_tests_passed": 192,
+    "native_report": {
+      "path": "out/generic-locals-native-batch.json",
+      "sha256": "a23097cfdda31678637beae81c918658a1b4759bae38cbbcecba7708fb0fd533",
+      "bytes": 1996
+    },
+    "native_logs": [
+      {
+        "path": "out/generic-locals-native-0.log",
+        "sha256": "25054e28034886e7b9bc711631a3701b17454c24e80fbbd355a41be90693e6b9",
+        "bytes": 6698
+      },
+      {
+        "path": "out/generic-locals-native-1.log",
+        "sha256": "5f0c7f199bacf33b62691b258310e263116e86b23e139bf3c2ab0710a4fb11fa",
+        "bytes": 33180
+      },
+      {
+        "path": "out/generic-locals-native-2.log",
+        "sha256": "2d0de81520c4296213f2ca418e08c8c049b5f486a2fc4dfa692383336b9eb5da",
+        "bytes": 1113
+      },
+      {
+        "path": "out/generic-locals-native-3.log",
+        "sha256": "44178749a961c094d3c643dbbde633e75dc1ec5fce4516e16f934754c3ea8925",
+        "bytes": 4601
+      },
+      {
+        "path": "out/generic-locals-native-4.log",
+        "sha256": "bf401b3bb05d235dd02fc9f81079a5924090858dcc273894144ad08c92647cf1",
+        "bytes": 5152
+      }
+    ],
+    "frontend_suites_passed": 33,
+    "tooling_tests_passed": 332,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "frontend_checkpoint": {
+      "path": "out/generic-locals-frontend-checkpoint.json",
+      "sha256": "7ace059df1fecc49cc161943847617331c4bee60939eeb92e2aa396d67156fba",
+      "bytes": 1135
+    },
+    "compiled_binaries": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "aa1eba38b807f3efd0a8c8df3de2d3a02e591ef026314e98c4276db48cc6773a",
+        "bytes": 201434384
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/generic-locals-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa",
+            "bytes": 4559
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/generic-locals-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9",
+            "bytes": 4549
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/generic-locals-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109",
+            "bytes": 4557
+          }
+        }
+      ]
+    },
+    "prior_complete_runtime_matrices": "docs/support/linux_keypath_subscripts_progress.json"
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  },
+  "remaining": [
+    "Constrained/dependent-noexcept/effectful generic lambdas and structural/declaration/template non-type arguments; local/unnamed specialization argument types",
+    "Public templates and escaping closure types; remaining C++ package contracts",
+    "Broader ownership, isolation, structured runtime, language/library/profile implementation and coordinated SDK delivery",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ]
+}

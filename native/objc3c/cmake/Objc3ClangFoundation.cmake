@@ -4,7 +4,7 @@ endif()
 file(REAL_PATH "${OBJC3C_CLANG_FOUNDATION_ROOT}" _objc3_sdk)
 set(LLVM_DIR "${_objc3_sdk}/lib/cmake/llvm")
 set(Clang_DIR "${_objc3_sdk}/lib/cmake/clang")
-find_package(LLVM 23.1.3 EXACT REQUIRED CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
+find_package(LLVM 23.1.5 EXACT REQUIRED CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
 find_package(Clang REQUIRED CONFIG PATHS "${Clang_DIR}" NO_DEFAULT_PATH)
 file(REAL_PATH "${LLVM_DIR}" _objc3_llvm_config)
 file(REAL_PATH "${Clang_DIR}" _objc3_clang_config)
@@ -15,16 +15,123 @@ if (NOT _objc3_llvm_within_sdk OR NOT _objc3_clang_within_sdk)
 endif()
 get_filename_component(_objc3_repo "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-execute_process(
-  COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain verify-development
-  WORKING_DIRECTORY "${_objc3_repo}"
-  RESULT_VARIABLE _objc3_verify_exit
-  OUTPUT_VARIABLE _objc3_source_identity
-  ERROR_VARIABLE _objc3_verify_error)
-if (NOT _objc3_verify_exit EQUAL 0)
-  message(FATAL_ERROR "Clang source seal rejected: ${_objc3_verify_error}")
+if(OBJC3C_FOUNDATION_IDENTITY_FILE)
+  file(REAL_PATH "${OBJC3C_FOUNDATION_IDENTITY_FILE}" _objc3_identity_file)
+  file(REAL_PATH "${_objc3_repo}/out" _objc3_output_root)
+  cmake_path(IS_PREFIX _objc3_output_root "${_objc3_identity_file}" NORMALIZE
+    _objc3_identity_owned)
+  if(NOT _objc3_identity_owned OR NOT EXISTS "${_objc3_identity_file}")
+    message(FATAL_ERROR "Portable Clang identity must be a retained repository output")
+  endif()
+  file(READ "${_objc3_identity_file}" _objc3_source_identity)
+  string(JSON _objc3_identity_schema GET "${_objc3_source_identity}" schema)
+  string(JSON _objc3_identity_profile GET "${_objc3_source_identity}" profile)
+  if(NOT _objc3_identity_schema STREQUAL "objc3c.portable-foundation-identity.v1" OR
+      NOT _objc3_identity_profile MATCHES "^compiler-(source-coverage|asan-ubsan|fuzz-asan-ubsan)$" OR
+      NOT "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}" STREQUAL "${_objc3_identity_profile}")
+    message(FATAL_ERROR "Portable Clang identity is outside the instrumented consumer contract")
+  endif()
+elseif(EXISTS "${_objc3_sdk}/objc3-sdk.json" AND
+       EXISTS "${_objc3_sdk}/share/objc3c/verify-sdk.py")
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -B "${_objc3_sdk}/share/objc3c/verify-sdk.py"
+      "${_objc3_sdk}"
+    RESULT_VARIABLE _objc3_verify_exit
+    OUTPUT_VARIABLE _objc3_verify_output
+    ERROR_VARIABLE _objc3_verify_error)
+  if(NOT _objc3_verify_exit EQUAL 0)
+    message(FATAL_ERROR "Installed Clang SDK seal rejected: ${_objc3_verify_error}")
+  endif()
+  file(READ "${_objc3_sdk}/objc3-sdk.json" _objc3_source_identity)
+  string(JSON _objc3_identity_schema GET "${_objc3_source_identity}" schema)
+  string(JSON _objc3_identity_upstream GET "${_objc3_source_identity}" upstream_commit)
+  if(NOT _objc3_identity_schema STREQUAL "objc3.sdk.v2" OR
+     NOT _objc3_identity_upstream STREQUAL "392dfff97d29b59d77e5cac6d4b6ef2585fe7117")
+    message(FATAL_ERROR "Installed Clang SDK identity is outside the pinned foundation contract")
+  endif()
+else()
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain verify-development
+    WORKING_DIRECTORY "${_objc3_repo}"
+    RESULT_VARIABLE _objc3_verify_exit
+    OUTPUT_VARIABLE _objc3_source_identity
+    ERROR_VARIABLE _objc3_verify_error)
+  if (NOT _objc3_verify_exit EQUAL 0)
+    message(FATAL_ERROR "Clang source seal rejected: ${_objc3_verify_error}")
+  endif()
 endif()
 string(JSON OBJC3C_FOUNDATION_PATCH_DIGEST GET "${_objc3_source_identity}" patch_digest)
+string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_source_identity}" build_config_digest)
+if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
+  if(OBJC3C_FOUNDATION_IDENTITY_FILE)
+    set(_objc3_profile "${_objc3_source_identity}")
+    string(JSON _objc3_profile_kind GET "${_objc3_profile}" instrumentation kind)
+  else()
+    execute_process(
+      COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain build-plan
+        --repo "${_objc3_repo}" --host linux-x86_64 configure
+        --instrumentation-profile "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}"
+      WORKING_DIRECTORY "${_objc3_repo}"
+      RESULT_VARIABLE _objc3_profile_exit OUTPUT_VARIABLE _objc3_profile
+      ERROR_VARIABLE _objc3_profile_error)
+    if(NOT _objc3_profile_exit EQUAL 0)
+      message(FATAL_ERROR "Compiler instrumentation profile rejected: ${_objc3_profile_error}")
+    endif()
+    string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_profile}" build_config_digest)
+    string(JSON _objc3_profile_kind GET "${_objc3_profile}" instrumentation kind)
+  endif()
+  if(_objc3_profile_kind STREQUAL "sanitizer" OR _objc3_profile_kind STREQUAL "fuzzer")
+    string(JSON _objc3_profile_sanitizer GET "${_objc3_profile}" instrumentation facade_sanitizer)
+    if(NOT _objc3_profile_sanitizer STREQUAL "address,undefined")
+      message(FATAL_ERROR "Unrecognized compiler embedding sanitizer contract")
+    endif()
+    set(OBJC3C_COMPILER_INSTRUMENTATION_FLAGS
+      -O1 -gline-tables-only -fno-omit-frame-pointer
+      "-fsanitize=${_objc3_profile_sanitizer}" -fno-sanitize=function,vptr
+      -fno-sanitize-recover=undefined)
+    if(_objc3_profile_kind STREQUAL "fuzzer")
+      list(APPEND OBJC3C_COMPILER_INSTRUMENTATION_FLAGS -fsanitize=fuzzer-no-link)
+    endif()
+    target_compile_options(objc3c_build_defaults INTERFACE
+      ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS})
+    target_link_options(objc3c_build_defaults INTERFACE
+      "-fsanitize=${_objc3_profile_sanitizer}" -fno-sanitize=function,vptr
+      -fno-sanitize-recover=undefined)
+    if(_objc3_profile_kind STREQUAL "fuzzer")
+      target_link_options(objc3c_build_defaults INTERFACE -fsanitize=fuzzer-no-link)
+    endif()
+  elseif(_objc3_profile_kind STREQUAL "source-coverage")
+    set(OBJC3C_COMPILER_INSTRUMENTATION_FLAGS
+      -O1 -gline-tables-only -fprofile-instr-generate -fcoverage-mapping
+      -fprofile-update=atomic)
+    target_compile_options(objc3c_build_defaults INTERFACE
+      ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS})
+    target_link_options(objc3c_build_defaults INTERFACE -fprofile-instr-generate)
+  else()
+    message(FATAL_ERROR "Unrecognized compiler embedding instrumentation contract")
+  endif()
+  file(WRITE "${CMAKE_BINARY_DIR}/compiler-instrumentation-plan.json" "${_objc3_profile}")
+  message(STATUS "Compiler implementation instrumentation: ${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}")
+endif()
+
+# Custom product-compiler invocations are outside compile_commands.json. Keep
+# their source/object ownership beside CTest's canonical target inventory so
+# instrumentation verification cannot silently omit these translation units.
+function(objc3c_register_custom_object source object)
+  set(_row "{}")
+  foreach(_field IN ITEMS file output)
+    if(_field STREQUAL "file")
+      set(_value "${source}")
+    else()
+      set(_value "${object}")
+    endif()
+    string(REPLACE "\\" "\\\\" _value "${_value}")
+    string(REPLACE "\"" "\\\"" _value "${_value}")
+    string(JSON _row SET "${_row}" "${_field}" "\"${_value}\"")
+  endforeach()
+  set_property(GLOBAL APPEND PROPERTY OBJC3C_CUSTOM_COMPILE_ROWS "${_row}")
+endfunction()
+
 unset(_objc3_identity_header)
 unset(_objc3_identity_header CACHE)
 find_file(_objc3_identity_header ObjC3Foundation.h
@@ -32,8 +139,16 @@ find_file(_objc3_identity_header ObjC3Foundation.h
         "${_objc3_sdk}/tools/clang/include/clang/Basic"
   NO_DEFAULT_PATH REQUIRED)
 file(READ "${_objc3_identity_header}" _objc3_compiled_identity)
-if (NOT _objc3_compiled_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
-    NOT _objc3_compiled_identity MATCHES "${OBJC3C_FOUNDATION_PATCH_DIGEST}")
+unset(_objc3_build_identity_header)
+unset(_objc3_build_identity_header CACHE)
+find_file(_objc3_build_identity_header ObjC3BuildIdentity.h
+  PATHS "${_objc3_sdk}/include/clang/Basic"
+        "${_objc3_sdk}/tools/clang/include/clang/Basic"
+  NO_DEFAULT_PATH REQUIRED)
+file(READ "${_objc3_build_identity_header}" _objc3_compiled_stamp)
+if (NOT _objc3_compiled_identity MATCHES "392dfff97d29b59d77e5cac6d4b6ef2585fe7117" OR
+    NOT _objc3_compiled_stamp MATCHES "${OBJC3C_FOUNDATION_PATCH_DIGEST}" OR
+    NOT _objc3_compiled_stamp MATCHES "${OBJC3C_FOUNDATION_CONFIG_DIGEST}")
   message(FATAL_ERROR "Clang headers do not match the pinned source and patch stack")
 endif()
 unset(OBJC3C_FOUNDATION_DRIVER)
@@ -50,8 +165,9 @@ execute_process(
   OUTPUT_VARIABLE _objc3_driver_identity
   ERROR_VARIABLE _objc3_driver_error)
 if (NOT _objc3_driver_exit EQUAL 0 OR
-    NOT _objc3_driver_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
-    NOT _objc3_driver_identity MATCHES "ObjC3-patches=${OBJC3C_FOUNDATION_PATCH_DIGEST}")
+    NOT _objc3_driver_identity MATCHES "392dfff97d29b59d77e5cac6d4b6ef2585fe7117" OR
+    NOT _objc3_driver_identity MATCHES "ObjC3-patches=${OBJC3C_FOUNDATION_PATCH_DIGEST}" OR
+    NOT _objc3_driver_identity MATCHES "ObjC3-config=${OBJC3C_FOUNDATION_CONFIG_DIGEST}")
   message(FATAL_ERROR "Clang executable does not match the sealed source and SDK headers: ${_objc3_driver_error}")
 endif()
 set(OBJC3C_FOUNDATION_RESOURCE_DIR "${_objc3_sdk}/lib/clang/23")

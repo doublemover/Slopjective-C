@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="${OBJC3C_CI_LLVM_VERSION:-23.1.3}"
-if [[ "$version" != 23.1.3 ]]; then
+version="${OBJC3C_CI_LLVM_VERSION:-23.1.5}"
+if [[ "$version" != 23.1.5 ]]; then
   echo "no verified Linux release checksum configured for LLVM $version" >&2
   exit 1
 fi
@@ -15,7 +15,7 @@ if [[ ! -x "$llvm_root/bin/llvm-config" ]]; then
   trap 'rm -f -- "$archive"' EXIT
   curl -fsSL --retry 3 --max-filesize 2300000000 \
     "https://github.com/llvm/llvm-project/releases/download/llvmorg-$version/LLVM-$version-Linux-X64.tar.xz" -o "$archive"
-  printf '%s  %s\n' ca9fe385a5d9e2d88132dc0e23a00e9f87f38fa75f67207b5e457d208e71d013 "$archive" | sha256sum -c -
+  printf '%s  %s\n' f72edb0b36580ece7f52e23858f00c18fad4e87395ea7ad05d7e55c39f8fc78a "$archive" | sha256sum -c -
   mkdir -p "$llvm_root"
   tar -xJf "$archive" -C "$llvm_root" --strip-components=1
   rm -f "$archive"

@@ -32,11 +32,17 @@ def qualify(sdk: Path, output: Path) -> dict:
 
             def run(name, expected):
                 log_path = output / f'{optimization}-{name}.log'
-                with log_path.open('w') as log:
-                    subprocess.run([os.sys.executable, '-B', str(example / 'build.py'),
-                        '--source-dir', str(sources), '--output-dir', str(build),
-                        '--optimization', optimization], cwd=client, stdout=log,
-                        stderr=subprocess.STDOUT, check=True, timeout=180)
+                try:
+                    with log_path.open('w') as log:
+                        subprocess.run([os.sys.executable, '-B', str(example / 'build.py'),
+                            '--source-dir', str(sources), '--output-dir', str(build),
+                            '--optimization', optimization], cwd=client, stdout=log,
+                            stderr=subprocess.STDOUT, check=True, timeout=180)
+                except subprocess.SubprocessError:
+                    lookup = build / 'lookup.log'
+                    if lookup.is_file():
+                        shutil.copyfile(lookup, output / f'{optimization}-{name}-lookup.log')
+                    raise
                 report = json.loads((build / 'build-report.json').read_text())
                 actual = {stage for stage, row in report['stages'].items() if row['reused']}
                 if actual != set(expected):
@@ -103,12 +109,41 @@ def qualify(sdk: Path, output: Path) -> dict:
                 command += ['--', '--no-default-config', '-fblocks', '-' + optimization]
                 result = subprocess.run(command, cwd=client, capture_output=True, text=True, timeout=180)
                 (output / f'{optimization}-reject-{case}.log').write_text(result.stdout + result.stderr)
-                if result.returncode == 0 or code not in result.stderr or obj.exists() or deps.exists():
+                if result.returncode != 1 or code not in result.stderr or obj.exists() or deps.exists():
                     raise ValueError(f'{optimization} {case}: invalid import did not fail atomically with {code}')
                 negative.append({'optimization': optimization, 'case': case,
                                  'exit_code': result.returncode, 'diagnostic': code, 'outputs_absent': True})
             if dependency_record['modules'][0]['fingerprint'] != identity['semantic_fingerprint']:
                 raise ValueError('dependency lock did not update after the API edit')
+            # These headers live outside source membership/old depfiles. Fresh
+            # preprocessing must notice both negative lookup and priority changes.
+            probe = b'\n#if __has_include("../early/route.h")\n#include "../early/route.h"\n#else\n#include "../late/route.h"\n#endif\n'
+            late, early = client / 'late', client / 'early'
+            late.mkdir(exist_ok=True)
+            early.mkdir(exist_ok=True)
+            (early / 'route.h').unlink(missing_ok=True)
+            external = late / 'route.h'
+            external.write_text('#define PRIVATE_ROUTE 1\n')
+            provider.write_bytes(provider.read_bytes() + probe)
+            run('external-lookup-baseline', ('arc-interface', 'consumer'))
+            run('external-lookup-warm', all_stages)
+            stamp = external.stat()
+            external.write_text('#define PRIVATE_ROUTE 2\n')
+            os.utime(external, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+            run('external-header-preserved-mtime', ('arc-interface', 'consumer'))
+            (early / 'route.h').write_text('#define PRIVATE_ROUTE 3\n')
+            run('new-earlier-header', ('arc-interface', 'consumer'))
+            (early / 'route.h').unlink()
+            run('removed-earlier-header', ('arc-interface', 'consumer'))
+            # Repeat the negative lookup in the actual managed consumer too.
+            main = sources / 'main.m'
+            main.write_bytes(main.read_bytes() + b'\n#if __has_include("../consumer-extra.h")\n#include "../consumer-extra.h"\n#endif\n')
+            run('consumer-lookup-baseline', ('provider', 'arc-interface'))
+            run('consumer-lookup-warm', all_stages)
+            (client / 'consumer-extra.h').write_text('#define PRIVATE_CONSUMER 1\n')
+            run('new-consumer-header', ('provider', 'arc-interface'))
+            (client / 'consumer-extra.h').unlink()
+            run('removed-consumer-header', ('provider', 'arc-interface'))
     result = {'schema': 'objc3c.installed-source-modules.v1', 'status': 'PASS',
               'sdk_seal': records[0]['sdk_seal'], 'outside_checkout': True,
               'builds': records, 'rejected_imports': negative,

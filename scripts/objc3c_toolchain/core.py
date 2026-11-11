@@ -18,9 +18,9 @@ class ToolchainError(RuntimeError):
 
 
 PINNED_UPSTREAM = {
-    "tag": "llvmorg-23.1.3",
-    "tag_object": "856f0005e57023e63664c560a829c620360ea1f1",
-    "commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+    "tag": "llvmorg-23.1.5",
+    "tag_object": "604d7ddfacefc074968a9ba0d88c667ab31b42bd",
+    "commit": "392dfff97d29b59d77e5cac6d4b6ef2585fe7117",
 }
 
 
@@ -120,17 +120,38 @@ def _series(manifest: dict[str, Any], repo: Path, base: Path, *, pristine: bool)
     return patches
 
 
-def _identity(manifest: dict[str, Any], patches: list[tuple[str, Path, str]], pristine: bool) -> dict[str, Any]:
+def configuration_inputs(repo: Path) -> dict[str, str]:
+    """Exact bytes of the owned foundation CMake input directory.
+
+    All repository-owned initial-cache fragments must live under this root;
+    adding an include there automatically joins the configuration inventory.
+    Symlinks are rejected, including links in directory components.
+    """
+    repo = repo.resolve()
+    root = repo / 'toolchains/llvm/cmake'
+    primary = root / 'ObjC3LLVMCache.cmake'
+    if not primary.is_file():
+        raise ToolchainError('foundation configuration input missing: toolchains/llvm/cmake/ObjC3LLVMCache.cmake')
+    for path in [*root.parents][:3] + [root, *root.rglob('*')]:
+        if path.is_symlink():
+            raise ToolchainError(f'foundation configuration input must not be a symlink: {path}')
+    return {path.relative_to(repo).as_posix(): _sha256(path)
+            for path in sorted(root.rglob('*')) if path.is_file()}
+
+
+def _identity(manifest: dict[str, Any], patches: list[tuple[str, Path, str]], pristine: bool, repo: Path) -> dict[str, Any]:
     upstream = manifest["upstream"]
     patch_rows = [{"file": name, "sha256": digest} for name, _, digest in patches]
     patch_digest = hashlib.sha256(json.dumps(patch_rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    build_digest = hashlib.sha256(json.dumps(manifest["build"], sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    config_inputs = configuration_inputs(repo)
+    build_digest = hashlib.sha256(json.dumps({"build": manifest["build"], "configuration_inputs": config_inputs}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     if pristine:
         build_id = f"{manifest['pristine_baseline_build_id']}-{build_digest[:8]}"
     else:
         build_id = f"{upstream['tag']}-{upstream['commit'][:12]}-{patch_digest[:12]}-{build_digest[:8]}"
     return {
-        "schema_version": 1,
+        "schema_version": 2,
+        "configuration_inputs": config_inputs,
         "build_id": build_id,
         "upstream_tag": upstream["tag"],
         "upstream_tag_object": upstream["tag_object"],
@@ -141,6 +162,20 @@ def _identity(manifest: dict[str, Any], patches: list[tuple[str, Path, str]], pr
         "pristine_baseline": pristine,
         "build": manifest["build"],
     }
+
+
+def planned_development_identity(repo: Path, *, manifest_path: Path | None = None) -> dict[str, Any]:
+    """Return the locked source/configuration identity without preparing LLVM.
+
+    Artifact consumers use this to authenticate a producer-built toolchain from
+    the checked-in manifest and patch bytes. It deliberately does not admit a
+    source checkout or claim that one exists.
+    """
+    repo = repo.resolve()
+    manifest_path = manifest_path or repo / "toolchains" / "llvm" / "manifest.json"
+    manifest, base = _load_manifest(manifest_path)
+    patches = _series(manifest, repo, base, pristine=False)
+    return _identity(manifest, patches, False, repo)
 
 
 def _identity_path(source: Path) -> Path:
@@ -181,7 +216,7 @@ def _development_tree(source: Path, commit: str,
 def _development_identity(source: Path, repo: Path, manifest_path: Path) -> tuple[dict[str, Any], dict[str, Any], list[tuple[str, Path, str]], str]:
     manifest, base = _load_manifest(manifest_path)
     patches = _series(manifest, repo, base, pristine=False)
-    expected = _identity(manifest, patches, False)
+    expected = _identity(manifest, patches, False, repo)
     if not source.is_relative_to((repo / "out" / "toolchains").resolve()):
         raise ToolchainError("development source must remain under repo/out/toolchains")
     head = _run(["git", "rev-parse", "HEAD"], cwd=source)
@@ -308,7 +343,8 @@ def _windows_build_environment(manifest: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_plans(repo: Path, *, manifest_path: Path | None = None,
-                source_dir: Path | None = None, host: str | None = None) -> dict[str, dict[str, Any]]:
+                source_dir: Path | None = None, host: str | None = None,
+                instrumentation_profile: str | None = None) -> dict[str, dict[str, Any]]:
     """Identify one sealed build session and all its commands; never execute them."""
     repo = repo.resolve()
     manifest_path = manifest_path or repo / "toolchains" / "llvm" / "manifest.json"
@@ -327,7 +363,20 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     else:
         raise ToolchainError(f"unsupported foundation host: {host}")
     build = manifest["build"]
+    profile = None
+    if instrumentation_profile is not None:
+        from .instrumentation_profiles import select
+        try:
+            profile = select(repo, instrumentation_profile, host, build, sealed, manifest['upstream'])
+        except (ValueError, KeyError, OSError) as error:
+            raise ToolchainError(str(error)) from error
+        build = profile['build']
+        sealed = {**sealed, 'build_id': profile['source_build_id'],
+                  'build_config_digest': profile['build_config_digest'],
+                  'configuration_inputs': profile['configuration_inputs']}
     output_suffix = "" if host == "windows-x86_64" else "-" + host
+    if profile:
+        output_suffix += "-"+profile["name"]
     build_dir = repo / "out" / "toolchains" / "objc3-development" / ("build" + output_suffix)
     stage_dir = repo / "out" / "toolchains" / "objc3-development" / ("stage" + output_suffix)
     source_id = sealed["build_id"]
@@ -337,8 +386,13 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     cl_path = Path(environment.get("cl_path", environment.get("clang_path", ""))).as_posix()
     link_path = Path(environment["link_path"]).as_posix()
     cmake_cache = (repo / "toolchains" / "llvm" / "cmake" / "ObjC3LLVMCache.cmake").as_posix()
+    configuration_trace = build_dir / "foundation-configuration-trace.jsonl"
+    trace_options = ["--trace-expand", "--trace-format=json-v1",
+                     "--trace-redirect=" + str(configuration_trace)]
+    trace_options += ["--trace-source=" + str(repo / name)
+                      for name in sealed["configuration_inputs"] if name.endswith('.cmake')]
     configure = [
-        "cmake", "-S", llvm_source, "-B", build_path, "-G", "Ninja",
+        "cmake", *trace_options, "-S", llvm_source, "-B", build_path, "-G", "Ninja",
         "-C", cmake_cache,
         f"-DCMAKE_C_COMPILER={cl_path}",
         f"-DCMAKE_CXX_COMPILER={Path(environment.get('clangxx_path', cl_path)).as_posix()}",
@@ -355,6 +409,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         "-DCLANG_INCLUDE_TESTS=ON",
         "-DLLVM_INSTALL_UTILS=OFF",
         f"-DCLANG_OBJC3_PATCH_DIGEST={sealed['patch_digest']}",
+        f"-DCLANG_OBJC3_CONFIG_DIGEST={sealed['build_config_digest']}",
         f"-DCMAKE_JOB_POOLS=objc3_link={build['link_jobs']}",
         "-DCMAKE_JOB_POOL_LINK=objc3_link",
     ]
@@ -369,6 +424,8 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         if environment.get("ccache_path"):
             configure += [f"-DCMAKE_C_COMPILER_LAUNCHER={environment['ccache_path']}",
                           f"-DCMAKE_CXX_COMPILER_LAUNCHER={environment['ccache_path']}"]
+    if profile:
+        configure += [f'-D{key}={value}' for key, value in profile['cmake'].items()]
     target_groups = build.get("build_target_groups")
     if not isinstance(target_groups, list) or not target_groups:
         raise ToolchainError("build.build_target_groups must define ordered nonempty target groups")
@@ -385,6 +442,16 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     test_path = (source / build["test_suite"]).as_posix()
     test_cmd = [environment["python_executable"], "-B", test_runner, "-sv", "--show-unsupported", "-j",
                 str(min(jobs["compile_jobs"], 4)), test_path]
+    additional_suites = build.get("additional_test_suites", [])
+    if not isinstance(additional_suites, list):
+        raise ToolchainError("additional_test_suites must be a list of relative paths")
+    for relative in additional_suites:
+        if not isinstance(relative, str) or not relative:
+            raise ToolchainError("additional test suite paths must be nonempty strings")
+        suite = (source / relative).resolve()
+        if not suite.is_relative_to(source.resolve()):
+            raise ToolchainError("additional test suite paths must remain within the source")
+        test_cmd.append(suite.as_posix())
     test_follow_ups = []
     test_binaries = build.get("test_binaries", [])
     if not isinstance(test_binaries, list):
@@ -406,6 +473,18 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         "source_build_id": source_id,
         "source_tree": sealed["tree_sha256"],
         "build_config_digest": sealed["build_config_digest"],
+        "configuration_inputs": sealed["configuration_inputs"],
+        "configuration_trace": str(configuration_trace),
+        "configuration_root": str(repo),
+        "effective_configuration": {
+            "CMAKE_BUILD_TYPE": build["configuration"],
+            "LLVM_ENABLE_ASSERTIONS": "ON" if build["assertions"] else "OFF",
+            "LLVM_ENABLE_RTTI": "ON" if build["rtti"] else "OFF",
+            "LLVM_ENABLE_EH": "ON" if build["eh"] else "OFF",
+            "LLVM_TARGETS_TO_BUILD": ";".join(build["targets"]),
+            "LLVM_ENABLE_PROJECTS": ";".join(build["projects"]),
+            "CLANG_OBJC3_CONFIG_DIGEST": sealed["build_config_digest"],
+        },
         "host_environment": environment,
         "paths": {"source": str(source), "llvm_source": llvm_source, "build": build_path, "stage": stage_path},
         "include_roots": {
@@ -414,6 +493,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
             "build_generated": (build_dir / "include").as_posix(),
             "build_clang_generated": (build_dir / "tools" / "clang" / "include").as_posix(),
             "objc3_foundation_header": (build_dir / "tools" / "clang" / "include" / "clang" / "Basic" / "ObjC3Foundation.h").as_posix(),
+            "objc3_build_identity_header": (build_dir / "tools" / "clang" / "include" / "clang" / "Basic" / "ObjC3BuildIdentity.h").as_posix(),
         },
         "sdk_consumers": {
             "build_tree_LLVM_DIR": _artifact_identity(build_dir / "lib" / "cmake" / "llvm"),
@@ -424,6 +504,10 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
             "resource_dir": _artifact_identity(stage_dir / "lib" / "clang" / "23"),
         },
     }
+    if profile:
+        common['instrumentation_profile'] = profile['name']
+        common['instrumentation'] = profile['recipe']
+        common['effective_configuration'].update(profile['cmake'])
     plans = {}
     for phase, command in commands.items():
         identity_payload = {**common, "phase": phase, "command": command}
@@ -432,8 +516,14 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         elif phase == "test":
             identity_payload["follow_up_commands"] = test_follow_ups
             # lit workers launch new Python processes, which do not inherit -B.
-            # Record the environment required to keep the sealed source unchanged.
+            # Record the environment required to keep the sealed source
+            # unchanged. Linux test binaries must resolve their matching
+            # build-tree LLVM/Clang DSOs even when the caller has an unrelated
+            # bootstrap or SDK in LD_LIBRARY_PATH.
             identity_payload["command_environment"] = {"PYTHONDONTWRITEBYTECODE": "1"}
+            if host == "linux-x86_64":
+                identity_payload["command_environment"]["LD_LIBRARY_PATH"] = (
+                    build_dir / "lib").as_posix()
         identity_payload["identity"] = hashlib.sha256(
             json.dumps(identity_payload, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
@@ -468,7 +558,7 @@ def prepare(repo: Path, *, manifest_path: Path | None = None, fetch: bool = Fals
     manifest_path = manifest_path or repo / "toolchains" / "llvm" / "manifest.json"
     manifest, base = _load_manifest(manifest_path)
     patches = _series(manifest, repo, base, pristine=pristine)
-    expected = _identity(manifest, patches, pristine)
+    expected = _identity(manifest, patches, pristine, repo)
     source = (source_dir or repo / "out" / "toolchains" / expected["build_id"] / "src").resolve()
     output_root = (repo / "out" / "toolchains").resolve()
     if not source.is_relative_to(output_root):
@@ -486,24 +576,13 @@ def prepare(repo: Path, *, manifest_path: Path | None = None, fetch: bool = Fals
     try:
         remote = manifest["upstream"]["url"]
         commit = expected["upstream_commit"]
-        if fetch:
-            _run(["git", "init", str(checkout)])
-            _run(["git", "-C", str(checkout), "remote", "add", "origin", remote])
-            tag = expected["upstream_tag"]
-            _run(["git", "-C", str(checkout), "fetch", "--depth", "1", "origin", f"refs/tags/{tag}:refs/tags/{tag}"])
-            tag_object = _run(["git", "-C", str(checkout), "rev-parse", tag])
-            if tag_object != expected["upstream_tag_object"]:
-                raise ToolchainError(f"fetched tag object {tag_object}; expected {expected['upstream_tag_object']}")
-            peeled = _run(["git", "-C", str(checkout), "rev-parse", f"{tag}^{{commit}}"])
-            if peeled != commit:
-                raise ToolchainError(f"pinned tag resolves to {peeled}; expected {commit}")
-            _run(["git", "-C", str(checkout), "checkout", "--detach", commit])
-        else:
-            cache = (repo / "out" / "toolchains" / "upstream-cache.git").resolve()
-            if not cache.exists():
-                raise ToolchainError(f"missing local upstream cache {cache}; run prepare --fetch to acquire pinned source")
-            _run(["git", "clone", "--no-checkout", str(cache), str(checkout)])
-            _run(["git", "checkout", "--detach", commit], cwd=checkout)
+        from .source_cache import checkout as cached_checkout, SourceCacheError
+        try:
+            cached_checkout(repo / 'out/toolchains/upstream-cache.git', checkout,
+                url=remote, tag=expected['upstream_tag'], commit=commit,
+                tag_object=expected['upstream_tag_object'], fetch=fetch)
+        except SourceCacheError as error:
+            raise ToolchainError(str(error)) from error
         head = _run(["git", "rev-parse", "HEAD"], cwd=checkout)
         if head != commit:
             raise ToolchainError(f"fetched wrong upstream base {head}; expected {commit}")
@@ -521,8 +600,10 @@ def prepare(repo: Path, *, manifest_path: Path | None = None, fetch: bool = Fals
 
 
 def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
-               source_dir: Path | None = None, host: str | None = None) -> dict[str, Any]:
+               source_dir: Path | None = None, host: str | None = None,
+               instrumentation_profile: str | None = None) -> dict[str, Any]:
     """Return one identified command plan; standalone calls reverify all inputs."""
     if phase not in {"configure", "build", "test", "stage"}:
         raise ToolchainError(f"unsupported build phase: {phase}")
-    return build_plans(repo, manifest_path=manifest_path, source_dir=source_dir, host=host)[phase]
+    return build_plans(repo, manifest_path=manifest_path, source_dir=source_dir, host=host,
+                       instrumentation_profile=instrumentation_profile)[phase]

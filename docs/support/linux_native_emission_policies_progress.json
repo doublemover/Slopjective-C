@@ -1,0 +1,52 @@
+{
+  "development_only": true,
+  "source_version": "2.149",
+  "system_version": "2.75",
+  "prepared_source_tree": "56f4f2cf164717186e3dc25e726c93c11bf2623c",
+  "extension_abi": 24,
+  "compiler_identity_resealed": false,
+  "matched_sdk_produced": false,
+  "compiler": {
+    "dedicated_commands": 24,
+    "full_sweep": {
+      "discovered": 550,
+      "passed": 547,
+      "unsupported": 3,
+      "before_final_idempotent_printer_repair": true
+    },
+    "final_focused_commands": 42,
+    "final_focused_tests": 2,
+    "all_passed": true
+  },
+  "ast_controls": 64,
+  "publication_profiles": 6,
+  "adjacent_frontend_groups": 16,
+  "production_decoder_exact_replays": 680,
+  "production_decoder_families": 34,
+  "native": {
+    "configurations": 3,
+    "compile_ir_link_execution_operations": 27,
+    "consumers_per_provider": 2,
+    "provider_source_removed_before_consumption": true,
+    "all_passed": true,
+    "sanitizers": [
+      "address",
+      "undefined"
+    ],
+    "controls": [
+      "provider and consumer IR policy retention",
+      "instrumented ordinary control",
+      "strong symbol overrides weak implementation in two consumers"
+    ]
+  },
+  "reader_contract": "objc3.native-emission-policies.v1",
+  "regressions": [
+    "canonical extern placement around native attributes",
+    "stable local attribute ordering in body identity",
+    "idempotent inherited used/retain flags",
+    "exact source-byte replay across native attribute inheritance",
+    "weak inline and virtual helper exclusions in borrowed-result proofs"
+  ],
+  "all_focused_checks_passed": true,
+  "full_current_consolidation": "full matched analysis and SDK follow remaining feature implementation"
+}

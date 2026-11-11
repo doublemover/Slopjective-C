@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -6,6 +7,7 @@ import pytest
 from scripts.objc3c_toolchain import qualify_native_async as qualification
 from scripts.objc3c_toolchain import qualify_native_async_sanitizers as sanitizers
 from scripts.objc3c_toolchain import qualify_native_async_packages as native_packages
+from scripts.objc3c_toolchain import run_linux_factory_batch as factory_batch
 
 
 def test_native_async_matrix_covers_objcpp_standards_and_ownership():
@@ -79,6 +81,47 @@ def test_native_async_package_failure_replaces_stale_success(tmp_path, monkeypat
     assert report['sdk_seal'] == 'a' * 64
 
 
+def _mock_canonical_profiles(monkeypatch, output):
+    archive = output / 'canonical-services.a'
+    dependency = output / 'libobjc.so'
+    archive.write_bytes(b'qualified test archive')
+    dependency.write_bytes(b'qualified test dependency')
+    selected, controls = [], []
+
+    class Profiles:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get(self, mode, optimization, *, objc_runtime=None):
+            selected.append((mode, optimization, objc_runtime))
+            return SimpleNamespace(archive=archive, objc_runtime=dependency)
+
+    class Policy:
+        environment = {'OBJC3_TEST_STRICT_POLICY': 'owned'}
+
+        def __init__(self, *args, libraries, **kwargs):
+            assert libraries == (archive, dependency)
+
+        def ensure_controls(self, optimization):
+            controls.append(optimization)
+
+    monkeypatch.setattr(sanitizers, 'RuntimeProfiles', Profiles)
+    monkeypatch.setattr(sanitizers, 'SanitizerQualification', Policy)
+    class Products:
+        def __init__(self, *args, **kwargs): pass
+        def record(self, gate, name, argv, rows, *, cwd, log):
+            with log.open('w') as stream:
+                result = sanitizers.subprocess.run(list(map(str, argv)), cwd=cwd,
+                    env=gate.environment, stdout=stream, stderr=sanitizers.subprocess.STDOUT)
+            rows.append({'name': name, 'exit_code': result.returncode,
+                         'log_sha256': sanitizers.digest(log)})
+            if result.returncode:
+                raise ValueError('native async product failed: '+name)
+        def finalize(self): pytest.fail('failed owner reached product promotion')
+    monkeypatch.setattr(sanitizers, 'ProductCommands', Products)
+    return selected, controls, archive, dependency
+
+
 @pytest.mark.parametrize("failed_command", [0, 1])
 def test_native_async_sanitizer_failure_preserves_report(tmp_path, monkeypatch, failed_command):
     compiler, resources, output = (tmp_path / name for name in ('compiler', 'resources', 'output'))
@@ -87,31 +130,38 @@ def test_native_async_sanitizer_failure_preserves_report(tmp_path, monkeypatch, 
     output.mkdir()
     receipt = output / 'qualification.json'
     receipt.write_text('{"status":"PASS"}')
-    calls = []
-    workspaces = []
+    selected, controls, archive, dependency = _mock_canonical_profiles(monkeypatch, output)
+    calls, workspaces = [], []
 
     def run(argv, **kwargs):
+        assert controls == ['O0']
+        assert kwargs['env'] == {'OBJC3_TEST_STRICT_POLICY': 'owned'}
         calls.append(argv)
         kwargs['stdout'].write('forced native async sanitizer failure\n')
-        if kwargs.get('cwd'):
-            workspaces.append(kwargs['cwd'].parent)
-            (kwargs['cwd'] / 'partial.o').write_bytes(b'partial object')
+        obj = Path(argv[argv.index('-o') + 1])
+        workspaces.append(obj.parent.parent)
+        obj.write_bytes(b'partial object')
         return SimpleNamespace(returncode=int(len(calls) > failed_command))
 
     monkeypatch.setattr(sanitizers.subprocess, 'run', run)
+    monkeypatch.setattr(sanitizers, 'execution_configurations',
+                        lambda: [('address,undefined', 'O0', 'arc', 'arc')])
     with pytest.raises(ValueError, match='address-undefined-O0-arc-'):
         sanitizers.qualify(tmp_path, compiler, resources, output)
     report = json.loads(receipt.read_text())
     assert report['status'] == 'FAIL' and not report['executions']
+    assert selected == [('address,undefined', 'O0', None)]
     assert len(calls) == failed_command + 1
-    assert '-fsanitize=address,undefined' in calls[0]
-    assert '-fobjc-version=3' not in calls[0]
-    if failed_command:
-        assert '-fobjc-version=3' in calls[1] and 'objective-c++' in calls[1]
+    for command in calls:
+        assert '-fsanitize=address,undefined' in command
+        assert '-fno-sanitize-recover=undefined' in command
+        assert '-fobjc-version=3' in command and 'objective-c++' in command
     assert workspaces and all(path != output for path in workspaces)
     assert all(not path.exists() for path in workspaces)
-    log = output / report['commands'][-1]['name']
-    assert report['commands'][-1]['log_sha256'] == sanitizers.digest(log.with_suffix('.log'))
+    assert archive.is_file() and dependency.is_file()
+    log = output / (report['commands'][-1]['name'] + '.log')
+    assert report['commands'][-1]['exit_code'] == 1
+    assert report['commands'][-1]['log_sha256'] == sanitizers.digest(log)
 
 
 def test_checked_async_package_requires_combined_typed_effect():
@@ -123,3 +173,16 @@ def test_checked_async_package_requires_combined_typed_effect():
         {'effects': {'async': False, 'throws': True, 'throws_kind': 'typed'}}])
     assert not native_packages.has_checked_async({
         'async': True, 'throws': True, 'throws_kind': 'untyped'})
+
+
+def test_focused_factory_exports_cover_every_checked_namespace():
+    assert set(factory_batch.FOCUSED_EXPORTS) == {
+        'NativeClosureFactories', 'NativeFactoryTypeProjections',
+        'NativeFactoryTemplateArguments', 'NativeGenericFactoryProjections',
+        'NativeFactoryValueArguments', 'NativeClosureResultProjections',
+        'NativeLambdaFactoryResults', 'NativeNestedFactoryTypes',
+        'NativeForeignAttributes', 'NativeCustomCoroutines',
+        'NativeDeclarationAttributes', 'NativeStandardCoroutines',
+        'NativeUnnamedTemplateProjections', 'NativeIncompleteTemplates',
+        'NativeUnnamedRecordProjections',
+    }

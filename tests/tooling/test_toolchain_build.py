@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import shutil
 from types import SimpleNamespace
 
 import pytest
@@ -18,10 +19,14 @@ def runner(tmp_path, monkeypatch):
     def plan(repo, *, phase, **kwargs):
         return {'paths': {'build': str(directory)}, 'identity': phase + '-identity',
                 'source_build_id': 'qualified-source', 'source_tree': 'tree',
+                'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'},
                 'build_config_digest': 'config', 'host_environment': {'compiler': 'original'},
                 'command': [phase], 'follow_up_commands': [[phase, 'follow-up']],
                 'command_environment': {'QUALIFIED_BUILD': 'yes'}}
     monkeypatch.setattr(build, 'build_plans', lambda repo, **kwargs: {phase: plan(repo, phase=phase) for phase in ('configure', 'build', 'test', 'stage')})
+    monkeypatch.setattr(build, 'verify_build_targets', lambda configure, selected: {'required_targets': ['compiler']})
+    directory.mkdir()
+    (directory / "CMakeCache.txt").write_text("LLVM_ENABLE_ASSERTIONS:BOOL=ON\n")
     calls = []
     def run(command, **kwargs):
         calls.append((command, kwargs['env']))
@@ -54,6 +59,56 @@ def test_failed_phase_stops_before_tests_and_records_failure(runner, monkeypatch
     assert all(command[0] not in ('test', 'stage') for command, _ in calls)
 
 
+@pytest.mark.parametrize('failed_command', [0, 1])
+def test_test_failure_collects_every_sibling_result_and_prevents_staging(runner, monkeypatch, failed_command):
+    repo, directory, calls = runner
+    def run(command, **kwargs):
+        calls.append((command, kwargs['env']))
+        failed = command[0] == 'test' and int(len(command) > 1) == failed_command
+        return SimpleNamespace(returncode=7 if failed else 0)
+    monkeypatch.setattr(build.subprocess, 'run', run)
+    with pytest.raises(ToolchainError, match='foundation test commands failed'):
+        build.build_foundation(repo, stage=True)
+    report = json.loads((directory / 'foundation-build-report.json').read_text())
+    assert report['status'] == 'failed'
+    assert [phase['exit_code'] for phase in report['phases'] if phase['phase'] == 'test'] == (
+        [7, 0] if failed_command == 0 else [0, 7])
+    assert len([command for command, _ in calls if command[0] == 'test']) == 2
+    assert all(command[0] != 'stage' for command, _ in calls)
+
+
+def test_missing_later_group_target_stops_before_any_compilation(runner, monkeypatch):
+    repo, directory, calls = runner
+    def missing(configure, selected):
+        raise ToolchainError('foundation configured build targets are missing: LexTests')
+    monkeypatch.setattr(build, 'verify_build_targets', missing)
+    with pytest.raises(ToolchainError, match='targets are missing: LexTests'):
+        build.build_foundation(repo)
+    assert all(command[0] == 'configure' for command, _ in calls)
+    assert json.loads((directory / 'foundation-build-report.json').read_text())['status'] == 'failed'
+
+
+@pytest.mark.parametrize('missing', [False, True])
+def test_real_ninja_inventory_admits_all_groups_without_running_commands(tmp_path, missing):
+    ninja = shutil.which('ninja')
+    assert ninja, 'the pinned development toolchain requires Ninja'
+    (tmp_path / 'build.ninja').write_text(
+        'rule compiler\n  command = touch compiled\n'
+        'build compiler: compiler\nbuild LexTests: compiler\n')
+    configure = {'paths': {'build': str(tmp_path)}, 'host_environment': {'ninja_path': ninja}}
+    selected = {'command': ['cmake', '--build', str(tmp_path), '--target', 'compiler', '--parallel', '2'],
+        'follow_up_commands': [['cmake', '--build', str(tmp_path), '--target',
+            'MissingTests' if missing else 'LexTests', '--parallel', '2']]}
+    if missing:
+        with pytest.raises(ToolchainError, match='targets are missing: MissingTests'):
+            build.verify_build_targets(configure, selected)
+    else:
+        report = build.verify_build_targets(configure, selected)
+        assert report['required_targets'] == ['compiler', 'LexTests']
+        assert report['configured_target_count'] == 2
+    assert not (tmp_path / 'compiled').exists()
+
+
 @pytest.mark.parametrize("field", ["source_tree", "source_build_id", "build_config_digest", "host_environment"])
 def test_source_or_compiler_change_during_build_invalidates_report(runner, monkeypatch, field):
     repo, directory, _ = runner
@@ -81,3 +136,48 @@ def test_foundation_lock_preserves_an_active_build_and_releases_after_failure(tm
             raise RuntimeError('build failure')
     with build.foundation_lock(tmp_path):
         pass
+
+
+@pytest.mark.parametrize('value', ['OFF', '', 'on'])
+def test_effective_cache_must_match_intended_configuration(tmp_path, value):
+    cache = tmp_path / 'CMakeCache.txt'
+    cache.write_text('LLVM_ENABLE_ASSERTIONS:BOOL=' + value + '\n')
+    with pytest.raises(ToolchainError, match='effective configuration mismatch.*LLVM_ENABLE_ASSERTIONS'):
+        build.verify_effective_configuration({'paths': {'build': str(tmp_path)},
+            'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'}})
+
+
+@pytest.mark.parametrize('outside', [False, True])
+def test_cmake_executed_include_must_belong_to_configuration_inventory(tmp_path, outside):
+    import subprocess
+    root = tmp_path / 'repo'
+    directory = root / 'toolchains/llvm/cmake'
+    directory.mkdir(parents=True)
+    primary = directory / 'ObjC3LLVMCache.cmake'
+    fragment = (root if outside else directory) / 'profile.cmake'
+    fragment.write_text('set(LLVM_ENABLE_ASSERTIONS ON CACHE BOOL "" FORCE)\n')
+    primary.write_text('include("' + str(fragment) + '")\n')
+    trace = tmp_path / 'trace.jsonl'
+    subprocess.run(['cmake', '--trace-expand', '--trace-format=json-v1',
+                    '--trace-redirect='+str(trace), '--trace-source='+str(primary),
+                    '--trace-source='+str(fragment), '-P', str(primary)],
+                   check=True, capture_output=True)
+    plan = {'configuration_root': str(root), 'configuration_trace': str(trace),
+            'configuration_inputs': {'toolchains/llvm/cmake/ObjC3LLVMCache.cmake': 'hash'}}
+    if not outside:
+        plan['configuration_inputs']['toolchains/llvm/cmake/profile.cmake'] = 'hash'
+        assert len(build.verify_configuration_trace(plan)['executed_inputs']) == 2
+    else:
+        with pytest.raises(ToolchainError, match='outside its configuration inventory'):
+            build.verify_configuration_trace(plan)
+
+
+def test_ci_results_are_requested_from_actual_lit_and_gtest_commands(runner, tmp_path):
+    repo, _, calls = runner
+    report = build.build_foundation(repo, test_results=tmp_path / 'native results')
+    tests = [phase for phase in report['phases'] if phase['phase'] == 'test']
+    assert tests[0]['command'][-2:] == ['--output', str(tmp_path / 'native results/foundation-0.json')]
+    assert tests[1]['command'][-1] == '--gtest_output=xml:' + str(tmp_path / 'native results/foundation-1.xml')
+    assert [phase['test_results'] for phase in tests] == [str(tmp_path / 'native results' / name)
+        for name in ('foundation-0.json', 'foundation-1.xml')]
+    assert all('test_results' not in phase for phase in report['phases'] if phase['phase'] != 'test')

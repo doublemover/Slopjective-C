@@ -61,3 +61,38 @@ def test_qualification_preserves_compiler_budget(tmp_path, jobs):
     sdk.mkdir()
     with pytest.raises(ValueError, match='between 1 and 4'):
         qualification.qualify(sdk, tmp_path / 'output', jobs)
+
+
+MODULE = {'canonical_name': 'fixture.NamesLeft', 'package_identity': 'names-left-v2'}
+OWNER = '__objc3_m_ac7ab79fa89fa353a145ed2bbfc7fb456d2641d5174523db859607c3e689b825_'
+TAG = OWNER + 'a' * 64
+
+
+def test_native_template_names_and_local_guards_keep_their_exact_owner():
+    names = [f'_Z16private_templateB139{TAG}IiET_S0_',
+             f'_ZZ16private_templateB139{TAG}IiET_S0_E10local_bias',
+             f'_ZGVZ16private_templateB139{TAG}IiET_S0_E10local_bias',
+             f'_Z16private_variableB139{TAG}ILi0EE',
+             f'_ZGV16private_variableB139{TAG}ILi0EE']
+    qualification.validate_private_cpp_symbols(
+        '\n'.join('  Name: ' + name + ' (42)' for name in names), MODULE)
+
+
+@pytest.mark.parametrize('name', ['_Z16private_templateIiET_S0_',
+                                  '_Z16private_variableILi0EE',
+                                  '_ZGV16private_variableILi0EE'])
+def test_unowned_template_symbols_cannot_hide_behind_another_owned_symbol(name):
+    with pytest.raises(ValueError, match='lacks its module/package ABI owner'):
+        qualification.validate_private_cpp_symbols('Name: '+TAG+'\nName: '+name, MODULE)
+
+
+@pytest.mark.parametrize('field', ['canonical_name', 'package_identity'])
+def test_template_abi_tag_must_match_both_module_and_package(field):
+    foreign = {**MODULE, field: MODULE[field] + '.other'}
+    with pytest.raises(ValueError, match='lacks its module/package ABI owner'):
+        qualification.validate_private_cpp_symbols('Name: _Z16private_templateB139'+TAG+'IiET_S0_', foreign)
+
+
+def test_concrete_private_symbols_still_require_renaming():
+    with pytest.raises(ValueError, match='namespace declaration retained'):
+        qualification.validate_private_cpp_symbols('Name: _Z26private_namespace_helperB139'+TAG+'v', MODULE)

@@ -1,10 +1,27 @@
 """The installed library gate must preserve evidence and reject stale success."""
 import json
+from pathlib import Path
+import re
 from types import SimpleNamespace
 
 import pytest
 
 from scripts.objc3c_toolchain import qualify_stdlib as qualification
+
+
+@pytest.mark.parametrize('module,prefix', [
+    ('objc3.core', 'OBJC3_STDLIB_VERSION'),
+    ('objc3.keypath', 'OBJC3_KEYPATH_MODULE_SEMVER'),
+])
+def test_public_module_version_macros_match_inventory(module, prefix):
+    stdlib = Path(__file__).resolve().parents[2] / 'stdlib'
+    inventory = json.loads((stdlib / 'module_inventory.json').read_text())
+    owner = next(row for row in inventory['canonical_modules'] if row['module'] == module)
+    header = (stdlib / owner['header']).read_text()
+    for component in ('major', 'minor', 'patch'):
+        value = re.search(r'^#define ' + prefix + '_' + component.upper() +
+                          r' (\d+)u$', header, re.MULTILINE)
+        assert value and int(value[1]) == owner['module_semver'][component], (module, component)
 
 
 @pytest.mark.parametrize('failed_command', (1, 2, 3, 4))
@@ -14,7 +31,7 @@ def test_failed_library_gate_replaces_success_and_reclaims_temporary_files(
     fixture = sdk / 'share/objc3c/examples/stdlib'
     fixture.mkdir(parents=True)
     (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'a' * 64}))
-    for name in ('provider.h', 'provider.m', 'client.m'):
+    for name in ('provider.h', 'provider.m', 'client.m', 'factory-contract.m', 'system-contract.m'):
         (fixture / name).write_text('fixture')
     output = tmp_path / 'evidence'
     output.mkdir()
