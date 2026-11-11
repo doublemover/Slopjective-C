@@ -76,10 +76,12 @@ jobs:
           name: implementation-plan-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/implementation-assurance/selection
       - name: Pinned host tools
+        id: host-tools
         uses: ./.github/actions/linux-host-tools
         with:
           output: out/implementation-assurance/startup
       - name: Build and analyze selected implementation
+        id: analysis-run
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -93,7 +95,7 @@ jobs:
           fi
           python3 -B -m scripts.objc3c_implementation_assurance run --plan out/implementation-assurance/selection/plan.json --output out/implementation-assurance/results --partition-index "$ANALYSIS_PARTITION_INDEX" "${periodic[@]}"
       - name: Preserve setup diagnostics
-        if: always()
+        if: always() && steps.host-tools.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: implementation-startup-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.partition }}
@@ -101,7 +103,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Preserve analysis evidence
-        if: always()
+        if: always() && steps.analysis-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: implementation-results-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.partition }}

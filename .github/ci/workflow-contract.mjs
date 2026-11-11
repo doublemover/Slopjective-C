@@ -188,7 +188,8 @@ export function validateNativeGate(text) {
     foundationBundle?.if ||
     !foundationBundle?.with?.path?.includes("out/instrumented-foundation/profile.tar.zst") ||
     foundationBundle.with?.["if-no-files-found"] !== "error" ||
-    foundationDiagnostics?.if !== "always()" ||
+    foundationDiagnostics?.if !==
+      "always() && steps.asan-foundation-run.outcome != 'skipped'" ||
     !foundationDiagnostics?.with?.name?.startsWith("asan-foundation-diagnostics-") ||
     !foundationDiagnostics?.with?.path?.includes("producer/producer.json") ||
     foundationDiagnostics.with.path.includes("profile.tar.zst") ||
@@ -272,10 +273,29 @@ export function validateNativeGate(text) {
     coveragePartitions.env?.COVERAGE_PARTITION !== "${{ matrix.partition }}" ||
     !coverageRun?.run.includes('--index "$COVERAGE_PARTITION"') ||
     !fuzzRun?.run.includes("--shard frontend-fuzz") ||
-    fuzzPublish?.if !== "always()" ||
-    fuzzEvidence?.if !== "always()"
+    fuzzPublish?.if !== "always() && steps.fuzz-run.outcome != 'skipped'" ||
+    fuzzEvidence?.if !== "always() && steps.fuzz-publish.outcome == 'success'"
   )
     throw new Error("Native owners must retain their complete independent execution matrices");
+
+  for (const [job, runId, evidenceName] of [
+    [producer, "product-producer-run", "Preserve producer evidence"],
+    [consumers, "product-consumer-run", "Preserve consumer evidence"],
+    [asanProducer, "asan-foundation-run", "Preserve sanitizer compiler diagnostics"],
+    [instrumentedConsumers, "instrumented-consumer-run", "Preserve instrumented consumer evidence"],
+    [coverageProducer, "coverage-producer-run", "Preserve producer coverage evidence"],
+    [coveragePartitions, "coverage-partition-run", "Preserve coverage partition evidence"],
+  ]) {
+    const steps = job?.steps ?? [];
+    const owner = steps.find((step) => step.id === runId);
+    const evidence = steps.find((step) => step.name === evidenceName);
+    if (
+      !owner?.run ||
+      evidence?.if !== `always() && steps.${runId}.outcome != 'skipped'` ||
+      !evidence?.uses?.startsWith("actions/upload-artifact@")
+    )
+      throw new Error("Native failure evidence must follow an invoked typed owner");
+  }
 
   if (
     JSON.stringify(coreAggregate?.needs?.toSorted()) !==
@@ -499,10 +519,15 @@ export function validateImplementationGate(text, releaseText) {
   const execute = (analysis?.steps ?? []).find((step) =>
     step.run?.includes("scripts.objc3c_implementation_assurance run"),
   );
+  const evidence = (analysis?.steps ?? []).find(
+    (step) => step.name === "Preserve analysis evidence",
+  );
   if (
     analysis?.if !== "needs.plan.outputs.analysis == 'true'" ||
     analysis?.["continue-on-error"] ||
-    !execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"')
+    execute?.id !== "analysis-run" ||
+    !execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"') ||
+    evidence?.if !== "always() && steps.analysis-run.outcome != 'skipped'"
   ) {
     throw new Error(
       "Implementation analysis must execute the selected trusted checkout without normalizing failure",

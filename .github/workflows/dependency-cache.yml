@@ -31,7 +31,12 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Initialize cache diagnostics
+        run: |
+          mkdir -p out/dependency-cache
+          printf '%s\n' '{"status":"RUNNING","owner":"dependency-cache"}' > out/dependency-cache/workflow-admission.json
       - name: Reuse or provision the current pinned dependencies
+        id: dependency-setup
         uses: ./.github/actions/linux-host-tools
         with:
           output: out/dependency-cache

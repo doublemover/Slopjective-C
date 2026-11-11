@@ -327,6 +327,7 @@ jobs:
           g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
           out/native-container-control
       - name: Build, qualify and seal the exact SDK
+        id: product-producer-run
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -349,7 +350,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Preserve producer evidence
-        if: always()
+        if: always() && steps.product-producer-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
@@ -427,6 +428,7 @@ jobs:
           g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
           out/native-container-control
       - name: Execute selected product consumers
+        id: product-consumer-run
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -439,7 +441,7 @@ jobs:
             --product-sdk /opt/objc3c-product/current \
             --package-release /producer/product-producer/package/release.json
       - name: Preserve consumer evidence
-        if: always()
+        if: always() && steps.product-consumer-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
@@ -483,6 +485,7 @@ jobs:
           g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
           out/native-container-control
       - name: Build and qualify exact sanitizer compiler
+        id: asan-foundation-run
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -505,7 +508,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
       - name: Preserve sanitizer compiler diagnostics
-        if: always()
+        if: always() && steps.asan-foundation-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: asan-foundation-diagnostics-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -582,6 +585,7 @@ jobs:
           g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
           out/native-container-control
       - name: Execute selected instrumented consumer
+        id: instrumented-consumer-run
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -597,7 +601,7 @@ jobs:
             --product-sdk /opt/objc3c-product/current \
             --package-release /producer/product-producer/package/release.json
       - name: Preserve instrumented consumer evidence
-        if: always()
+        if: always() && steps.instrumented-consumer-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
@@ -636,6 +640,7 @@ jobs:
         with:
           output: out/native-assurance/startup/frontend-fuzz
       - name: Execute fuzz owner
+        id: fuzz-run
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -649,7 +654,8 @@ jobs:
             --plan out/native-assurance/selection/plan.json \
             --output out/native-assurance/results --shard frontend-fuzz "${periodic[@]}"
       - name: Stage fuzz evidence
-        if: always()
+        id: fuzz-publish
+        if: always() && steps.fuzz-run.outcome != 'skipped'
         shell: bash
         run: |
           periodic=()
@@ -661,7 +667,7 @@ jobs:
             --output out/native-assurance/results --shard frontend-fuzz \
             --destination out/native-assurance/evidence/frontend-fuzz "${periodic[@]}"
       - name: Preserve fuzz evidence
-        if: always()
+        if: always() && steps.fuzz-publish.outcome == 'success'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-frontend-fuzz
@@ -697,6 +703,7 @@ jobs:
         with:
           output: out/native-assurance/startup/coverage-producer
       - name: Build profile and qualify compiler-owned coverage
+        id: coverage-producer-run
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -717,7 +724,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
       - name: Preserve producer coverage evidence
-        if: always()
+        if: always() && steps.coverage-producer-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-producer-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -762,6 +769,7 @@ jobs:
         with:
           output: out/native-assurance/startup/coverage-${{ matrix.partition }}
       - name: Execute exact first-party coverage partition
+        id: coverage-partition-run
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
@@ -774,7 +782,7 @@ jobs:
             --output "out/coverage-matrix/partitions/$COVERAGE_PARTITION" \
             --index "$COVERAGE_PARTITION"
       - name: Preserve coverage partition evidence
-        if: always()
+        if: always() && steps.coverage-partition-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-partition-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.partition }}
