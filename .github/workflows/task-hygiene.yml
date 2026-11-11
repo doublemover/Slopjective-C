@@ -20,6 +20,8 @@ jobs:
         run: |
           uv run python -m scripts.objc3c_toolchain check-host-tools
           uv run python -m scripts.objc3c_toolchain.generate_features --check
+      - name: Python syntax and undefined names
+        run: uv run ruff check --select F821 scripts tests/tooling
       - name: SDK integrity, installer and native validation owners
         run: >-
           uv run python -m pytest -q -ra

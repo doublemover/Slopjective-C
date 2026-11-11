@@ -456,6 +456,60 @@ def test_release_matrix_partitions_the_complete_core_once_after_one_product_prod
     assert set(CONSUMER_GROUPS) == set(GROUPS)-{'product-producer'}
 
 
+def release_consumer_fixture(tmp_path, monkeypatch):
+    from scripts.objc3c_assurance import runner
+    repo = tmp_path / 'repo';repo.mkdir()
+    bootstrap = tmp_path / 'bootstrap';(bootstrap / 'bin').mkdir(parents=True)
+    (bootstrap / 'bin/clang').write_bytes(b'clang')
+    (bootstrap / 'bin/ld.lld').write_bytes(b'linker')
+    monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(bootstrap))
+    sdk = tmp_path / 'sdk';(sdk / 'lib').mkdir(parents=True)
+    source, seal, archive = 's'*64, 'e'*64, 'a'*64
+    (sdk / 'objc3-sdk.json').write_text(json.dumps({
+        'source_build_id': source, 'seal_sha256': seal,
+        'target': 'x86_64-unknown-linux-gnu'}))
+    release = tmp_path / 'release.json'
+    release.write_text(json.dumps({'status': 'PASS', 'seal_sha256': seal,
+                                    'archive_sha256': archive}))
+    plan = {'revision': dict(REV), 'periodic': True, 'sha256': 'p'*64,
+            'cache_policy': 'fixture', 'suites': [{'id': 'installed'}]}
+    monkeypatch.setattr(runner, 'validate', lambda _: None)
+    monkeypatch.setattr(runner, 'from_checkout', lambda *args, **kwargs: plan)
+    monkeypatch.setattr(runner, 'execute_suites', lambda *args, **kwargs: None)
+    return runner, repo, sdk, release, plan, {'source_build_id': source,
+                                             'seal_sha256': seal}
+
+
+def test_release_consumer_admits_and_rechecks_the_exact_installed_sdk(tmp_path, monkeypatch):
+    runner, repo, sdk, release, plan, installed = release_consumer_fixture(tmp_path, monkeypatch)
+    calls = []
+    monkeypatch.setattr(runner, 'verify_sdk',
+        lambda prefix, seal: calls.append((prefix, seal)) or installed)
+    output = tmp_path / 'result'
+
+    result = runner.run(repo, plan, output, suite_ids=('installed',),
+                        product_sdk=sdk, package_release=release)
+
+    assert result['status'] == 'PASS'
+    assert calls == [(sdk, installed['seal_sha256'])] * 2
+    assert json.loads((output / 'result.json').read_text())['status'] == 'PASS'
+
+
+def test_release_consumer_preflight_failure_retains_uploadable_receipt(tmp_path, monkeypatch):
+    runner, repo, sdk, release, plan, _ = release_consumer_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(runner, 'verify_sdk',
+                        lambda *args: (_ for _ in ()).throw(ValueError('seal mismatch')))
+    output = tmp_path / 'result'
+
+    with pytest.raises(ValueError, match='seal mismatch'):
+        runner.run(repo, plan, output, suite_ids=('installed',),
+                   product_sdk=sdk, package_release=release)
+
+    receipt = json.loads((output / 'result.json').read_text())
+    assert receipt['status'] == 'FAIL'
+    assert receipt['error'] == 'ValueError: seal mismatch'
+
+
 def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
     root = Path(__file__).resolve().parents[2]
     workflow = (root / '.github/workflows/native-assurance.yml').read_text()
@@ -468,6 +522,12 @@ def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
     assert 'coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
     assert '--package-release /producer/product-producer/package/release.json' in workflow
     assert 'OBJC3C_ASAN_FOUNDATION_IDENTITY' in workflow
+
+
+def test_quick_tooling_rejects_python_syntax_and_undefined_names():
+    root = Path(__file__).resolve().parents[2]
+    workflow = (root / '.github/workflows/task-hygiene.yml').read_text()
+    assert 'uv run ruff check --select F821 scripts tests/tooling' in workflow
 
 
 def test_instrumented_foundation_identity_is_derived_without_a_source_checkout():

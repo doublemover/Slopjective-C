@@ -11,6 +11,7 @@ dev = [
   "pytest==9.2.0",
   "jsonschema==4.26.0",
   "ninja==1.13.2",
+  "ruff==0.14.5",
 ]
 
 [tool.objc3c.workflow]

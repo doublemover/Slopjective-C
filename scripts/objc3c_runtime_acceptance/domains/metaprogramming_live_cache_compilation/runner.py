@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import subprocess
 
 from objc3c_runtime_acceptance.fixture_compilation import compile_fixture_with_args
 from objc3c_runtime_acceptance.fixture_compile_runner import run_fixture_compile

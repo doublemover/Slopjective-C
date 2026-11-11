@@ -14,6 +14,7 @@ from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.build import build_foundation
 from scripts.objc3c_toolchain.core import build_plans
 from scripts.objc3c_toolchain.frontend_tests import qualify as frontend_tests
+from scripts.objc3c_toolchain.package import verify_sdk
 from scripts.objc3c_toolchain.qualify_installed import qualify_installed
 from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, package_execution
 from .plan import foundation_receipts, from_checkout, selected_suites, validate
@@ -54,15 +55,33 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         report['shard'] = shard
     if suite_ids is not None:
         report['suite_partition'] = list(suite_ids)
-    environment = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'CCACHE_COMPILERCHECK': 'content'}
-    bootstrap = Path(environment['OBJC3C_BOOTSTRAP_LLVM_ROOT']).resolve(strict=True)
-    sdk = ((product_sdk.resolve(strict=True) if product_sdk is not None else
-            repo / 'out/toolchains/objc3-development/stage-linux-x86_64'))
-    environment['LD_LIBRARY_PATH'] = str(sdk / 'lib')
-    report['bootstrap'] = {'clang_sha256': digest(bootstrap / 'bin/clang'),
-                           'linker_sha256': digest(bootstrap / 'bin/ld.lld')}
-    shared = {}
-    prerequisites = set()
+
+    def save():
+        report['elapsed_seconds'] = round(time.monotonic() - started, 6)
+        # Linux reports ru_maxrss in KiB; include descendant compiler/linker use.
+        report['peak_child_rss_kib'] = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+        disk = shutil.disk_usage(repo)
+        report['disk'] = {'total_bytes': disk.total, 'free_bytes': disk.free}
+        write_json(output / 'result.json', report)
+
+    # The workflow always uploads this root.  Persist it before resolving any
+    # host or product path so an admission failure cannot erase its own
+    # diagnostic and create a second, misleading artifact-upload failure.
+    save()
+    try:
+        environment = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'CCACHE_COMPILERCHECK': 'content'}
+        bootstrap = Path(environment['OBJC3C_BOOTSTRAP_LLVM_ROOT']).resolve(strict=True)
+        sdk = ((product_sdk.resolve(strict=True) if product_sdk is not None else
+                repo / 'out/toolchains/objc3-development/stage-linux-x86_64'))
+        environment['LD_LIBRARY_PATH'] = str(sdk / 'lib')
+        report['bootstrap'] = {'clang_sha256': digest(bootstrap / 'bin/clang'),
+                               'linker_sha256': digest(bootstrap / 'bin/ld.lld')}
+        shared = {}
+        prerequisites = set()
+    except BaseException as error:
+        report.update(status='FAIL', error=f'{type(error).__name__}: {error}')
+        save()
+        raise
 
     def product_identity(prefix: Path, release: dict | None = None) -> dict:
         receipt = json.loads((prefix / 'objc3-sdk.json').read_text())
@@ -79,31 +98,28 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             result['archive_sha256'] = release['archive_sha256']
         return result
 
-    if package_release is not None:
-        package_release = package_release.resolve(strict=True)
-        release = json.loads(package_release.read_text())
-        installed_receipt = sdk / 'objc3-sdk.json'
-        archive_sha256 = release.get('archive_sha256')
-        if (release.get('status') != 'PASS' or not installed_receipt.is_file() or
-                not isinstance(archive_sha256, str) or len(archive_sha256) != 64 or
-                any(char not in '0123456789abcdef' for char in archive_sha256)):
-            raise ValueError('restored product SDK or package receipt differs from the exact source build')
-        installed = verify_sdk(sdk, release.get('seal_sha256'))
-        release = {**release, 'installed': {**release.get('installed', {}), 'prefix': str(sdk)}}
-        shared['release'] = release
-        prerequisites.add('package')
-        report['product'] = product_identity(sdk, release)
-        if installed['source_build_id'] != report['product']['source_build_id']:
-            raise ValueError('installed SDK inventory differs from the producer source build')
+    try:
+        if package_release is not None:
+            package_release = package_release.resolve(strict=True)
+            release = json.loads(package_release.read_text())
+            installed_receipt = sdk / 'objc3-sdk.json'
+            archive_sha256 = release.get('archive_sha256')
+            if (release.get('status') != 'PASS' or not installed_receipt.is_file() or
+                    not isinstance(archive_sha256, str) or len(archive_sha256) != 64 or
+                    any(char not in '0123456789abcdef' for char in archive_sha256)):
+                raise ValueError('restored product SDK or package receipt differs from the exact source build')
+            installed = verify_sdk(sdk, release.get('seal_sha256'))
+            release = {**release, 'installed': {**release.get('installed', {}), 'prefix': str(sdk)}}
+            shared['release'] = release
+            prerequisites.add('package')
+            report['product'] = product_identity(sdk, release)
+            if installed['source_build_id'] != report['product']['source_build_id']:
+                raise ValueError('installed SDK inventory differs from the producer source build')
+    except BaseException as error:
+        report.update(status='FAIL', error=f'{type(error).__name__}: {error}')
+        save()
+        raise
     directory = None
-
-    def save():
-        report['elapsed_seconds'] = round(time.monotonic() - started, 6)
-        # Linux reports ru_maxrss in KiB; include descendant compiler/linker use.
-        report['peak_child_rss_kib'] = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-        disk = shutil.disk_usage(repo)
-        report['disk'] = {'total_bytes': disk.total, 'free_bytes': disk.free}
-        write_json(output / 'result.json', report)
 
     def command(label, argv, *, environment_override=None):
         try:
