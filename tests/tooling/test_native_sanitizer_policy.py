@@ -81,6 +81,30 @@ def test_configuration_and_runtime_mutation_invalidate_controls(unexecuted_polic
         gate.ensure_controls('O2')
 
 
+def test_explicit_qualified_dso_precedes_inferred_compiler_support(tmp_path, monkeypatch):
+    bootstrap = tmp_path / 'bootstrap'
+    compiler = bootstrap / 'bin/clang++'; compiler.parent.mkdir(parents=True)
+    compiler.write_bytes(b'compiler')
+    (compiler.parent / 'ld.lld').write_bytes(b'linker')
+    (bootstrap / 'lib').mkdir()
+    symbolizer = bootstrap / 'bin/llvm-symbolizer'
+    symbolizer.write_bytes(b'symbolizer'); symbolizer.chmod(0o700)
+    resource = bootstrap / 'lib/clang/23'
+    (resource / 'include').mkdir(parents=True)
+    (resource / 'include/stddef.h').write_bytes(b'header')
+    (resource / 'libclang_rt.asan.a').write_bytes(b'runtime')
+    stage = tmp_path / 'instrumented-stage/lib'; stage.mkdir(parents=True)
+    llvm = stage / 'libLLVM.so.23.1'; llvm.write_bytes(b'instrumented')
+    monkeypatch.setattr(policy.subprocess, 'check_output',
+                        lambda *args, **kwargs: 'x86_64-unknown-linux-gnu\n')
+
+    gate = policy.SanitizerQualification(compiler, resource, tmp_path / 'output',
+        'address', libraries=(llvm,), symbolizer=symbolizer)
+
+    assert gate.environment['LD_LIBRARY_PATH'].split(os.pathsep) == [
+        str(stage), str(bootstrap / 'lib')]
+
+
 @pytest.mark.skipif(not NATIVE_READY, reason='requires native Clang and explicit sanitizer resources/symbolizer')
 @pytest.mark.parametrize('sanitizer', ['address,undefined', 'thread'])
 @pytest.mark.parametrize('optimization', ['O0', 'O2'])

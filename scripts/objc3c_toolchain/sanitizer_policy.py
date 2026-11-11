@@ -91,10 +91,18 @@ class SanitizerQualification:
         self.fixtures = Path(__file__).with_name('native_sanitizer_controls')
         if not self.fixtures.is_dir():
             self.fixtures = Path(__file__).resolve().parents[2] / 'tests/tooling/fixtures/native_sanitizer_controls'
+        # Explicit DSOs describe the graph under qualification and therefore
+        # outrank the compiler's inferred support directory.  This matters
+        # when an ordinary bootstrap compiler links or inspects an
+        # instrumented LLVM stage: putting the bootstrap lib directory first
+        # would silently substitute same-SONAME bootstrap DSOs.  The inferred
+        # directory remains the fallback for a compiler that owns its LLVM
+        # support libraries and callers that provide only unrelated runtimes.
+        library_dirs = [path.parent for path in self.libraries if '.so' in path.name]
         compiler_library = self.compiler.parent.parent / 'lib'
-        library_dirs = ([compiler_library] if self.compiler.parent.name == 'bin' and
-                        compiler_library.is_dir() else [])
-        library_dirs += [path.parent for path in self.libraries if '.so' in path.name]
+        if (self.compiler.parent.name == 'bin' and compiler_library.is_dir() and
+                compiler_library not in library_dirs):
+            library_dirs.append(compiler_library)
         self.environment = strict_environment(self.compiler, self.symbolizer,
             library_dirs=library_dirs, base=base_environment)
         if any(self.environment.get(name) != value for name, value in OPTIONS.items()):
