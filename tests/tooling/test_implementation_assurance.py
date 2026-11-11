@@ -333,7 +333,12 @@ def test_analysis_runner_preserves_unowned_work_before_start(lifecycle, tmp_path
         elif fault == 'dirty': source.write_text('int changed;\n')
         with pytest.raises(ValueError): runner.run(repo, plan, output)
     assert marker.read_text() == 'existing development work'
-    assert not (output / 'result.json').exists()
+    if fault == 'linked-output':
+        assert not (output / 'result.json').exists()
+    else:
+        report = json.loads((output / 'result.json').read_text())
+        assert report['status'] == 'FAIL'
+        assert report['temporary_builds_reclaimed'] is True
 
 
 @pytest.mark.parametrize('fault', ['foundation-failure', 'analysis-failure', 'source-mutated', 'diagnostic-failure'])

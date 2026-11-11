@@ -6,12 +6,14 @@ on:
       - ".github/ci/**"
       - ".github/actions/**"
       - ".github/workflows/**"
+      - ".github/actionlint.yaml"
   push:
     branches: [main]
     paths:
       - ".github/ci/**"
       - ".github/actions/**"
       - ".github/workflows/**"
+      - ".github/actionlint.yaml"
 
 permissions:
   contents: read
@@ -32,10 +34,40 @@ jobs:
         with:
           node-version: "26.13.0"
           cache: npm
+      - name: Restore pinned workflow linter
+        id: actionlint-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/objc3-actionlint
+          key: actionlint-v1.7.12-linux-amd64-8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
       - name: Locked workflow parser
         run: |
           npm install --global npm@12.2.2 --prefer-offline --no-audit --no-fund
           npm ci --ignore-scripts --prefer-offline --no-audit --no-fund
+      - name: GitHub workflow syntax, expressions and shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$HOME/.cache/objc3-actionlint"
+          binary="$root/actionlint"
+          if [[ ! -x "$binary" ]]; then
+            mkdir -p "$root/unpack"
+            archive="$root/actionlint_1.7.12_linux_amd64.tar.gz"
+            curl --fail --location --silent --show-error \
+              --output "$archive" \
+              https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+            echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $archive" | sha256sum --check --strict
+            tar -xzf "$archive" -C "$root/unpack"
+            install -m 0755 "$root/unpack/actionlint" "$binary"
+          fi
+          shellcheck=$(command -v shellcheck)
+          "$binary" -shellcheck "$shellcheck"
+      - name: Publish pinned workflow linter
+        if: steps.actionlint-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/objc3-actionlint
+          key: actionlint-v1.7.12-linux-amd64-8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |

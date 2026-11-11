@@ -283,7 +283,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         if name == 'swift-consumer':
             from scripts.objc3c_toolchain.swift_consumer import prepare_compiler_prefix, qualify
             from scripts.objc3c_toolchain.swift_toolchain import install
-            root = Path(environment['OBJC3C_CLOUD_SETUP_ROOT']) / 'swift-6.4.2'
+            swift = json.loads((repo / 'toolchains/swift/manifest.json').read_text())
+            root = Path(environment['OBJC3C_CLOUD_SETUP_ROOT']) / ('swift-' + swift['version'])
             install(repo, root)
             prefix = directory / 'build/compiler-prefix'
             prepare_compiler_prefix(sdk, prefix, source_build_id=report['product']['source_build_id'],

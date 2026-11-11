@@ -47,6 +47,20 @@ def produce(repo: Path, plan: dict, output: Path, bundle: Path) -> dict:
             not bundle.is_relative_to(repo / 'out')):
         raise ValueError('coverage producer requires fresh owned outputs')
     output.mkdir(parents=True)
+    report = {'schema': 'objc3c.coverage-profile-producer.v1', 'status': 'RUNNING',
+              'revision': plan['revision'], 'plan_sha256': plan['sha256'],
+              'profile': PROFILE, 'partitions': PARTITIONS}
+    write_json(output / 'producer.json', report)
+    try:
+        return _produce_profile(repo, plan, output, bundle, report)
+    except BaseException as error:
+        report.update(status='FAIL', error=f'{type(error).__name__}: {error}')
+        write_json(output / 'producer.json', report)
+        raise
+
+
+def _produce_profile(repo: Path, plan: dict, output: Path, bundle: Path,
+                     report: dict) -> dict:
     merge_results = output / 'profile-merge-regressions.xml'
     subprocess.run([sys.executable, '-B', '-m', 'pytest', '-q',
         str(repo / 'tests/tooling/test_source_coverage_profile_merging.py'),
@@ -109,20 +123,16 @@ def produce(repo: Path, plan: dict, output: Path, bundle: Path) -> dict:
         'paths': configured['paths'],
         'instrumentation': configured['instrumentation'],
     }
-    report = {'schema': 'objc3c.coverage-profile-producer.v1', 'status': 'PASS',
-              'revision': plan['revision'], 'plan_sha256': plan['sha256'],
-              'source_build_id': configured['source_build_id'],
-              'build_config_digest': configured['build_config_digest'],
-              'foundation_plan': configured,
-              'foundation_identity': foundation_identity,
-              'profile': PROFILE, 'partitions': PARTITIONS,
-              'bundle': {'path': str(bundle), 'sha256': digest(bundle),
-                         'bytes': bundle.stat().st_size,
-                         'members': [str(relative_stage), str(relative_receipt),
-                                     *map(str, relative_inputs)]},
-              'foundation_source_identity': foundation['source_identity'],
-              'compiler_suites': len(compiler['suites']),
-              'controls': len(controls['controls']), 'merge_regressions': 4}
+    report.update(status='PASS', source_build_id=configured['source_build_id'],
+                  build_config_digest=configured['build_config_digest'],
+                  foundation_plan=configured, foundation_identity=foundation_identity,
+                  bundle={'path': str(bundle), 'sha256': digest(bundle),
+                          'bytes': bundle.stat().st_size,
+                          'members': [str(relative_stage), str(relative_receipt),
+                                      *map(str, relative_inputs)]},
+                  foundation_source_identity=foundation['source_identity'],
+                  compiler_suites=len(compiler['suites']),
+                  controls=len(controls['controls']), merge_regressions=4)
     write_json(output / 'producer.json', report)
     return report
 
@@ -165,16 +175,30 @@ def restore(repo: Path, plan: dict, producer: Path, bundle: Path) -> dict:
 
 def run_partition(repo: Path, plan: dict, producer: Path, bundle: Path,
                   output: Path, index: int) -> dict:
-    profile = restore(repo, plan, producer, bundle)
-    result = first_party_coverage(repo, output, jobs=2, partition_index=index,
-                                  partition_count=PARTITIONS,
-                                  foundation_plan=profile['foundation_plan'],
-                                  foundation_identity=profile['foundation_identity'])
-    result['profile_bundle'] = {'sha256': profile['bundle']['sha256'],
-                                'source_build_id': profile['source_build_id'],
-                                'build_config_digest': profile['build_config_digest']}
-    write_json(output / 'qualification.json', result)
-    return result
+    output = output.resolve()
+    if output.exists() or not output.is_relative_to(repo.resolve() / 'out'):
+        raise ValueError('coverage partition requires fresh owned output')
+    try:
+        profile = restore(repo, plan, producer, bundle)
+        result = first_party_coverage(repo, output, jobs=2, partition_index=index,
+                                      partition_count=PARTITIONS,
+                                      foundation_plan=profile['foundation_plan'],
+                                      foundation_identity=profile['foundation_identity'])
+        result['profile_bundle'] = {'sha256': profile['bundle']['sha256'],
+                                    'source_build_id': profile['source_build_id'],
+                                    'build_config_digest': profile['build_config_digest']}
+        write_json(output / 'qualification.json', result)
+        return result
+    except BaseException as error:
+        output.mkdir(parents=True, exist_ok=True)
+        receipt = output / 'qualification.json'
+        result = (json.loads(receipt.read_text()) if receipt.is_file() else {
+            'schema': 'objc3c.coverage-partition-admission.v1',
+            'revision': plan.get('revision'), 'plan_sha256': plan.get('sha256'),
+            'partition': {'index': index, 'count': PARTITIONS}})
+        result.update(status='FAIL', error=f'{type(error).__name__}: {error}')
+        write_json(receipt, result)
+        raise
 
 
 def _partition_root(root: Path, index: int) -> Path:

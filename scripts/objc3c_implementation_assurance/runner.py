@@ -35,18 +35,32 @@ def owned_path(repo: Path, path: Path) -> Path:
 
 
 def run(repo: Path, plan: dict, output: Path, *, partition_index=0) -> dict:
-    validate(plan)
-    from scripts.objc3c_toolchain.analysis_partition import partition_spec
-    partition = partition_spec(partition_index, plan['analysis_partitions'])
-    if not plan['required']:
-        raise ValueError('unaffected implementation assurance must not execute')
     repo = repo.resolve(strict=True)
     output = owned_path(repo, output)
-    # Keep the canonical lock through database preparation, analysis and cleanup.
-    # The locked builder is used below so it does not reacquire this same lock.
-    owned_path(repo, repo / 'out/toolchains/objc3-development/.foundation-build.lock')
-    with foundation_lock(repo):
-        return _run_locked(repo, plan, output, partition)
+    try:
+        validate(plan)
+        from scripts.objc3c_toolchain.analysis_partition import partition_spec
+        partition = partition_spec(partition_index, plan['analysis_partitions'])
+        if not plan['required']:
+            raise ValueError('unaffected implementation assurance must not execute')
+        # Keep the canonical lock through database preparation, analysis and cleanup.
+        # The locked builder is used below so it does not reacquire this same lock.
+        owned_path(repo, repo / 'out/toolchains/objc3-development/.foundation-build.lock')
+        with foundation_lock(repo):
+            return _run_locked(repo, plan, output, partition)
+    except BaseException as error:
+        if not output.exists():
+            output.mkdir(parents=True)
+            write_json(output / 'result.json', {
+                'schema': SCHEMA, 'status': 'FAIL', 'revision': plan.get('revision'),
+                'plan_sha256': plan.get('sha256'),
+                'analysis_paths': plan.get('analysis_paths', []),
+                'partition': {'index': partition_index,
+                              'count': plan.get('analysis_partitions')},
+                'commands': [], 'artifacts': [],
+                'temporary_builds_reclaimed': True,
+                'error': f'{type(error).__name__}: {error}'})
+        raise
 
 
 def _run_locked(repo: Path, plan: dict, output: Path, partition: dict) -> dict:

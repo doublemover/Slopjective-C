@@ -38,16 +38,28 @@ def _require_checkout(repo: Path, plan: dict) -> None:
 def run_group(repo: Path, plan: dict, output: Path, group: str, *,
               product_sdk: Path | None = None,
               package_release: Path | None = None) -> dict:
-    validate(plan)
-    _require_checkout(repo, plan)
-    suites = GROUPS.get(group)
-    if suites is None:
-        raise ValueError('unknown release matrix group')
-    if group == 'product-producer':
-        if product_sdk is not None or package_release is not None:
-            raise ValueError('the product producer cannot consume a prior product')
-    elif product_sdk is None or package_release is None:
-        raise ValueError('release consumers require the exact installed product and receipt')
+    output = output.resolve()
+    if output.exists() or not output.is_relative_to(repo.resolve() / 'out'):
+        raise ValueError('release matrix group requires fresh owned output')
+    try:
+        validate(plan)
+        _require_checkout(repo, plan)
+        suites = GROUPS.get(group)
+        if suites is None:
+            raise ValueError('unknown release matrix group')
+        if group == 'product-producer':
+            if product_sdk is not None or package_release is not None:
+                raise ValueError('the product producer cannot consume a prior product')
+        elif product_sdk is None or package_release is None:
+            raise ValueError('release consumers require the exact installed product and receipt')
+    except BaseException as error:
+        output.mkdir(parents=True)
+        write_json(output / 'result.json', {
+            'schema': SCHEMA, 'status': 'FAIL', 'revision': plan.get('revision'),
+            'plan_sha256': plan.get('sha256'), 'release_matrix_group': group,
+            'suites': [], 'commands': [],
+            'error': f'{type(error).__name__}: {error}'})
+        raise
     result = run(repo, plan, output, suite_ids=suites, product_sdk=product_sdk,
                  package_release=package_release)
     result['release_matrix_group'] = group

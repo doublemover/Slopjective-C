@@ -79,6 +79,20 @@ for (const name of ["planning-lint.yml", "adaptive-policy-checks.yml"])
 test("every native, quick and planning owner reuses pinned dependency caches", () => {
   validateDependencyRouting(dependencyWorkflows);
 });
+test("workflow changes run the pinned actionlint and ShellCheck integration", () => {
+  const workflow = yaml.load(dependencyWorkflows["adaptive-policy-checks.yml"]);
+  const paths = workflow.on.pull_request.paths;
+  const steps = workflow.jobs.policy.steps;
+  const lint = steps.find((step) => step.name === "GitHub workflow syntax, expressions and shell");
+  const restore = steps.find((step) => step.name === "Restore pinned workflow linter");
+  const save = steps.find((step) => step.name === "Publish pinned workflow linter");
+  assert(paths.includes(".github/actionlint.yaml"));
+  assert.match(restore.uses, /^actions\/cache\/restore@[0-9a-f]{40}$/);
+  assert.match(save.uses, /^actions\/cache\/save@[0-9a-f]{40}$/);
+  assert.match(lint.run, /actionlint_1\.7\.12_linux_amd64\.tar\.gz/);
+  assert.match(lint.run, /8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8/);
+  assert.match(lint.run, /"\$binary"/);
+});
 for (const [name, text] of Object.entries(dependencyWorkflows)) {
   if (!/\.\/\.github\/actions\/(linux-host-tools|python-tools)|cache: npm/.test(text)) continue;
   test(`${name} rejects bypassing dependency reuse`, () => {

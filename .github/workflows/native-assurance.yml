@@ -287,7 +287,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
@@ -332,7 +331,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           python3 -B -m scripts.objc3c_assurance.release_matrix run \
             --plan out/native-assurance/selection/plan.json \
@@ -418,7 +416,9 @@ jobs:
       - name: Install the exact producer archive
         shell: bash
         run: |
-          archive=$(find /release -name '*.tar.zst' -type f)
+          mapfile -d '' archives < <(find /release -name '*.tar.zst' -type f -print0)
+          [[ ${#archives[@]} == 1 ]] || { echo "expected exactly one SDK archive, found ${#archives[@]}" >&2; exit 1; }
+          archive=${archives[0]}
           expected=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' /producer/product-producer/package/release.json)
           sh /release/scripts/install_objc3c_linux.sh --archive "$archive" --sha256 "$expected" --root /opt/objc3c-product
       - name: Require sanitizer process layout support
@@ -431,7 +431,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           python3 -B -m scripts.objc3c_assurance.release_matrix run \
             --plan out/native-assurance/selection/plan.json \
@@ -488,7 +487,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           python3 -B -m scripts.objc3c_assurance.instrumented_foundation produce \
             --plan out/native-assurance/selection/plan.json \
@@ -566,7 +564,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           python3 -B -m scripts.objc3c_assurance.instrumented_foundation restore \
             --plan out/native-assurance/selection/plan.json \
             --producer out/instrumented-foundation/restored/producer/producer.json \
@@ -574,7 +571,9 @@ jobs:
       - name: Install the exact producer archive
         shell: bash
         run: |
-          archive=$(find /release -name '*.tar.zst' -type f)
+          mapfile -d '' archives < <(find /release -name '*.tar.zst' -type f -print0)
+          [[ ${#archives[@]} == 1 ]] || { echo "expected exactly one SDK archive, found ${#archives[@]}" >&2; exit 1; }
+          archive=${archives[0]}
           expected=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive_sha256"])' /producer/product-producer/package/release.json)
           sh /release/scripts/install_objc3c_linux.sh --archive "$archive" --sha256 "$expected" --root /opt/objc3c-product
       - name: Require sanitizer process layout support
@@ -587,7 +586,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           export OBJC3C_ASAN_FOUNDATION_RECEIPT="$GITHUB_WORKSPACE/out/toolchains/objc3-development/stage-linux-x86_64-compiler-asan-ubsan/objc3-instrumented-foundation.json"
           export OBJC3C_ASAN_FOUNDATION_EVIDENCE="$GITHUB_WORKSPACE/out/instrumented-foundation/restored/producer/foundation"
           export OBJC3C_ASAN_FOUNDATION_IDENTITY="$GITHUB_WORKSPACE/out/instrumented-foundation/restored/producer/foundation-identity.json"
@@ -642,7 +640,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
@@ -652,6 +649,7 @@ jobs:
             --plan out/native-assurance/selection/plan.json \
             --output out/native-assurance/results --shard frontend-fuzz "${periodic[@]}"
       - name: Stage fuzz evidence
+        if: always()
         shell: bash
         run: |
           periodic=()
@@ -703,7 +701,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           python3 -B -m scripts.objc3c_assurance.coverage_matrix produce \
             --plan out/native-assurance/selection/plan.json \
@@ -769,7 +766,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           python3 -B -m scripts.objc3c_assurance.coverage_matrix partition \
             --plan out/native-assurance/selection/plan.json \

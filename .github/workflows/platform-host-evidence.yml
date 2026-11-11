@@ -36,7 +36,14 @@ jobs:
       - name: Install, relocate, build, embed, debug and run the shipped archive
         shell: sh
         run: |
-          archive=$(find /release -name '*.tar.zst')
-          receipt=$(find /release -name '*.tar.json')
+          archive_count=$(find /release -name '*.tar.zst' -type f | wc -l)
+          receipt_count=$(find /release -name '*.tar.json' -type f | wc -l)
+          [ "$archive_count" -eq 1 ] && [ "$receipt_count" -eq 1 ] || {
+            echo "expected one archive and one receipt; found $archive_count and $receipt_count" >&2
+            exit 1
+          }
+          archive=$(find /release -name '*.tar.zst' -type f)
+          receipt=$(find /release -name '*.tar.json' -type f)
           expected_sha=$(sed -n 's/ *"archive_sha256": "\([a-f0-9]*\)".*/\1/p' "$receipt")
+          [ "${#expected_sha}" -eq 64 ] || { echo 'archive receipt has no SHA-256' >&2; exit 1; }
           sh /release/scripts/qualify_linux_archive.sh "$archive" "$expected_sha" /opt/objc3c

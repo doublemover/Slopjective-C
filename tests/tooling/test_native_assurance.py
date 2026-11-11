@@ -510,6 +510,26 @@ def test_release_consumer_preflight_failure_retains_uploadable_receipt(tmp_path,
     assert receipt['error'] == 'ValueError: seal mismatch'
 
 
+def test_release_matrix_preflight_failure_retains_uploadable_receipt(tmp_path, monkeypatch):
+    from scripts.objc3c_assurance import release_matrix
+    repo = tmp_path / 'repo';(repo / 'out').mkdir(parents=True)
+    plan = {'revision': dict(REV), 'sha256': 'p' * 64}
+    monkeypatch.setattr(release_matrix, 'validate', lambda _: None)
+    monkeypatch.setattr(release_matrix, '_require_checkout',
+                        lambda *_: (_ for _ in ()).throw(ValueError('revision mismatch')))
+    output = repo / 'out/release-matrix/results/frontend'
+
+    with pytest.raises(ValueError, match='revision mismatch'):
+        release_matrix.run_group(repo, plan, output, 'frontend',
+                                 product_sdk=tmp_path / 'sdk',
+                                 package_release=tmp_path / 'release.json')
+
+    receipt = json.loads((output / 'result.json').read_text())
+    assert receipt['status'] == 'FAIL'
+    assert receipt['release_matrix_group'] == 'frontend'
+    assert receipt['error'] == 'ValueError: revision mismatch'
+
+
 def test_release_consumer_parallelism_does_not_require_producer_source_tree(tmp_path):
     from scripts.objc3c_assurance.runner import _consumer_compile_jobs
     repo = tmp_path / 'repo';(repo / 'toolchains/llvm').mkdir(parents=True)
@@ -520,6 +540,44 @@ def test_release_consumer_parallelism_does_not_require_producer_source_tree(tmp_
 
     assert 1 <= jobs <= 8
     assert not (repo / 'out/toolchains/objc3-development/src').exists()
+
+
+def test_coverage_producer_failure_retains_typed_receipt(tmp_path, monkeypatch):
+    from scripts.objc3c_assurance import coverage_matrix
+    repo = tmp_path / 'repo';(repo / 'out').mkdir(parents=True)
+    plan = {'revision': dict(REV), 'sha256': 'p' * 64}
+    monkeypatch.setattr(coverage_matrix, 'validate', lambda _: None)
+    monkeypatch.setattr(coverage_matrix, '_require_checkout', lambda *_: None)
+    monkeypatch.setattr(coverage_matrix.subprocess, 'run',
+                        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError('pytest failed')))
+    output = repo / 'out/coverage-producer'
+
+    with pytest.raises(RuntimeError, match='pytest failed'):
+        coverage_matrix.produce(repo, plan, output, repo / 'out/profile.tar.zst')
+
+    receipt = json.loads((output / 'producer.json').read_text())
+    assert receipt['schema'] == 'objc3c.coverage-profile-producer.v1'
+    assert receipt['status'] == 'FAIL'
+    assert receipt['error'] == 'RuntimeError: pytest failed'
+
+
+def test_coverage_partition_restore_failure_retains_typed_receipt(tmp_path, monkeypatch):
+    from scripts.objc3c_assurance import coverage_matrix
+    repo = tmp_path / 'repo';(repo / 'out').mkdir(parents=True)
+    plan = {'revision': dict(REV), 'sha256': 'p' * 64}
+    monkeypatch.setattr(coverage_matrix, 'restore',
+                        lambda *args: (_ for _ in ()).throw(FileNotFoundError('profile missing')))
+    output = repo / 'out/partitions/3'
+
+    with pytest.raises(FileNotFoundError, match='profile missing'):
+        coverage_matrix.run_partition(repo, plan, tmp_path / 'producer.json',
+                                      tmp_path / 'profile.tar.zst', output, 3)
+
+    receipt = json.loads((output / 'qualification.json').read_text())
+    assert receipt['schema'] == 'objc3c.coverage-partition-admission.v1'
+    assert receipt['status'] == 'FAIL'
+    assert receipt['partition'] == {'index': 3, 'count': 8}
+    assert receipt['error'] == 'FileNotFoundError: profile missing'
 
 
 def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
@@ -534,12 +592,23 @@ def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
     assert 'coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
     assert '--package-release /producer/product-producer/package/release.json' in workflow
     assert 'OBJC3C_ASAN_FOUNDATION_IDENTITY' in workflow
+    assert workflow.count("mapfile -d '' archives") == 2
 
 
 def test_quick_tooling_rejects_python_syntax_and_undefined_names():
     root = Path(__file__).resolve().parents[2]
     workflow = (root / '.github/workflows/task-hygiene.yml').read_text()
     assert 'uv run ruff check --select F821 scripts tests/tooling' in workflow
+
+
+def test_ci_uses_activated_manifest_owned_tool_roots():
+    root = Path(__file__).resolve().parents[2]
+    workflows = '\n'.join(path.read_text() for path in
+                          sorted((root / '.github/workflows').glob('*.yml')))
+    runner = (root / 'scripts/objc3c_assurance/runner.py').read_text()
+    assert 'export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/' not in workflows
+    assert "('swift-' + swift['version'])" in runner
+    assert "swift-6.4.2" not in runner
 
 
 def test_instrumented_foundation_identity_is_derived_without_a_source_checkout():

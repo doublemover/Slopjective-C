@@ -84,7 +84,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           periodic=()
           if [[ -n "$SOURCE_SHA" ]]; then

@@ -225,6 +225,12 @@ export function validateNativeGate(text) {
   const fuzzRun = (independent?.steps ?? []).find((step) =>
     step.run?.includes("scripts.objc3c_assurance run"),
   );
+  const fuzzPublish = (independent?.steps ?? []).find((step) =>
+    step.run?.includes("scripts.objc3c_assurance publish"),
+  );
+  const fuzzEvidence = (independent?.steps ?? []).find(
+    (step) => step.name === "Preserve fuzz evidence",
+  );
   const coverageRun = (coveragePartitions?.steps ?? []).find((step) =>
     step.run?.includes("scripts.objc3c_assurance.coverage_matrix partition"),
   );
@@ -265,7 +271,9 @@ export function validateNativeGate(text) {
     !coveragePartitions.if?.includes("needs.coverage-producer.result == 'success'") ||
     coveragePartitions.env?.COVERAGE_PARTITION !== "${{ matrix.partition }}" ||
     !coverageRun?.run.includes('--index "$COVERAGE_PARTITION"') ||
-    !fuzzRun?.run.includes("--shard frontend-fuzz")
+    !fuzzRun?.run.includes("--shard frontend-fuzz") ||
+    fuzzPublish?.if !== "always()" ||
+    fuzzEvidence?.if !== "always()"
   )
     throw new Error("Native owners must retain their complete independent execution matrices");
 

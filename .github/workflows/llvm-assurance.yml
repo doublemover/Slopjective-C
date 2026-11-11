@@ -51,7 +51,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           ulimit -c 0
           python3 -B -m scripts.objc3c_toolchain.llvm_campaign --fetch --output out/llvm-assurance
       - name: Execute independent generated semantic oracles
@@ -59,7 +58,6 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.5
           seeds=()
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
             seeds=(--seed-rotation "$GITHUB_SHA")
