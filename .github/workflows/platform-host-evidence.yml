@@ -38,10 +38,10 @@ jobs:
         run: |
           archive_count=$(find /release -name '*.tar.zst' -type f | wc -l)
           receipt_count=$(find /release -name '*.tar.json' -type f | wc -l)
-          [ "$archive_count" -eq 1 ] && [ "$receipt_count" -eq 1 ] || {
+          if [ "$archive_count" -ne 1 ] || [ "$receipt_count" -ne 1 ]; then
             echo "expected one archive and one receipt; found $archive_count and $receipt_count" >&2
             exit 1
-          }
+          fi
           archive=$(find /release -name '*.tar.zst' -type f)
           receipt=$(find /release -name '*.tar.json' -type f)
           expected_sha=$(sed -n 's/ *"archive_sha256": "\([a-f0-9]*\)".*/\1/p' "$receipt")
