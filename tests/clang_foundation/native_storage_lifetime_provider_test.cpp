@@ -88,6 +88,13 @@ inline constexpr StaticCallback static_callback=static_forward_chain;
 inline const char *static_callback_source(StaticCallback const callback,const char *const value){StaticCallback const alias=callback;return alias(value);}
 STATIC_BORROWED
 inline StaticLoan static_callback_view(void *owner){return static_callback_source(static_callback,static_union.bytes);}
+inline StaticCallback static_callback_factory(int choose){switch(choose){case 0:return static_forward;case 1:return static_forward_chain;default:return static_forward_local;}}
+inline StaticCallback static_callback_alias(int choose){StaticCallback const callback=choose?static_forward:static_forward_chain;return callback;}
+STATIC_BORROWED
+inline StaticLoan static_callback_choice_view(void *owner,int choose){return static_callback_source(choose?static_forward:static_forward_chain,static_union.bytes);}
+STATIC_BORROWED
+inline StaticLoan static_callback_factory_view(void *owner,int choose){return (choose?static_callback_factory:static_callback_alias)(choose)(static_union.bytes);}
+
 STATIC_BORROWED
 inline StaticLoan static_forward_view(void *owner,int choose){return static_forward_choice(choose,static_forward_chain(static_union.bytes),static_forward_default());}
 STATIC_BORROWED
@@ -185,6 +192,8 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(static_graph_loop(&ready,3)[0]!='l' || static_graph_loop(&ready,0)[0]!='s' || static_graph_exception(&ready,0)[0]!='s' || static_graph_exception(&ready,1)[0]!='c')return 8;
   if(static_forward_view(&ready,1)[0]!='s' || static_forward_view(&ready,0)[0]!='d')return 9;
   if(static_callback_view(&ready)[0]!='s')return 15;
+  for(int choose=0;choose<3;++choose)if(static_callback_choice_view(&ready,choose)[0]!='s' || static_callback_factory_view(&ready,choose)[0]!='s')return 22;
+
   cleanup_order=0;if(cleaned_record(42,false)!=42 || cleanup_order!=12)return 10;
   cleanup_order=0;bool caught=false;try{(void)cleaned_record(42,true);}catch(int value){caught=value==73;}
   if(!caught || cleanup_order!=12)return 11;

@@ -5,6 +5,13 @@ on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
+The [source 2.158 / System 2.84 callback span](linux_borrowed_callback_factories.md)
+proves bounded sets of callback targets selected by conditionals and returned
+through complete helper graphs, including nested higher-order factories.
+Every reachable target preserves the permanent base, physical ABI and immutable
+binding requirements. Borrowed-result-proofs v5 is a hard reader cutover.
+Complete rebuilt compiler/SDK acceptance remains pending.
+
 The [source 2.157 / System 2.83 task transfer span](linux_task_factory_transfers.md)
 permits factories to return mutable task rvalue references, transferring existing
 unique frame ownership through child, detached and explicit/inferred groups.

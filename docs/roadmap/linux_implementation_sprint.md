@@ -552,3 +552,14 @@ borrowed/const task and raw-frame references before body instantiation. Native
 source-free and direct controls cover factory errors, pre-entry cancellation,
 exact invocation/resumption counts and capture retirement. See
 [task factory transfers](linux_task_factory_transfers.md).
+
+## Source 2.158 / System 2.84 implementation
+
+Permanent borrowed-result proofs now resolve bounded conditional callback sets,
+callback-returning switch/branch helpers and nested higher-order factories.
+The same complete return/CFG proof validates each helper and every eventual
+callback target, using one 4096-unit AST/CFG budget, depth 32 and at most 64
+unique targets per collection. Exact callable type and immutable binding rules
+remain enforced; mutable/unknown/null/replaceable targets, recursion and missing
+returns retain conservative rejection. Borrowed-result-proofs v5 binds the hard
+reader cutover. See [callback factories](linux_borrowed_callback_factories.md).

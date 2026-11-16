@@ -44680,7 +44680,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6365 @@
+@@ -0,0 +1,6429 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49190,38 +49190,107 @@ new file mode 100644
 +        !Result.HasUndefinedBehavior && Result.Val.isLValue() &&
 +        stableStaticLValueBase(Result.Val,Budget);
 +  }
-+  const FunctionDecl *staticFunctionTarget(const Expr *Expression, unsigned Depth,
-+      unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings) const {
-+    if(!Expression || Depth>32 || !Budget || Expression->isTypeDependent() ||
-+        Expression->isValueDependent())return nullptr;
++  const FunctionDecl *staticCallableDefinition(const FunctionDecl *Function,
++                                               const CallExpr *Call) const {
++    if (!Function || !Call) return nullptr;
++    // A cast cannot erase physical calling convention or ownership/effects.
++    QualType Callable = Call->getCallee()->getType();
++    if (!Callable->isPointerType() ||
++        !Context.hasSameType(Callable->getPointeeType(), Function->getType()))
++      return nullptr;
++    const FunctionDecl *Definition = Function->getDefinition();
++    if (!Definition || Definition->isVariadic() ||
++        Definition->hasAttr<WeakAttr>() || Definition->hasAttr<WeakRefAttr>() ||
++        Definition->hasAttr<AliasAttr>() || Definition->hasAttr<IFuncAttr>() ||
++        (Definition->isExternallyVisible() &&
++         (!Actions.getLangOpts().CPlusPlus || !Definition->isInlined())))
++      return nullptr;
++    if (const auto *Method = dyn_cast<CXXMethodDecl>(Definition);
++        Method && !Method->isStatic()) return nullptr;
++    return Definition;
++  }
++  bool staticCallArguments(const FunctionDecl *Definition, const CallExpr *Call,
++      unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings,
++      SmallVectorImpl<StaticReturnBinding> &Arguments) const {
++    if (Call->getNumArgs() != Definition->getNumParams() ||
++        Definition->getNumParams() > Budget) return false;
++    Budget -= Definition->getNumParams();
++    Arguments.append(Bindings.begin(), Bindings.end());
++    for (unsigned I = 0; I < Definition->getNumParams(); ++I)
++      Arguments.emplace_back(Definition->getParamDecl(I), Call->getArg(I));
++    return true;
++  }
++  bool staticFunctionTargets(const Expr *Expression, unsigned Depth,
++      unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings,
++      SmallVectorImpl<const FunctionDecl *> &Targets) const {
++    if (!Expression || Depth > 32 || !Budget || Expression->isTypeDependent() ||
++        Expression->isValueDependent()) return false;
 +    --Budget;
-+    Expression=Expression->IgnoreParenImpCasts();
-+    if(const auto *Constant=dyn_cast<ConstantExpr>(Expression))
-+      return staticFunctionTarget(Constant->getSubExpr(),Depth+1,Budget,Bindings);
-+    if(const auto *Default=dyn_cast<CXXDefaultArgExpr>(Expression))
-+      return staticFunctionTarget(Default->getExpr(),Depth+1,Budget,Bindings);
-+    if(const auto *Address=dyn_cast<UnaryOperator>(Expression);
-+        Address && Address->getOpcode()==UO_AddrOf)
-+      return staticFunctionTarget(Address->getSubExpr(),Depth+1,Budget,Bindings);
-+    if(const auto *Reference=dyn_cast<DeclRefExpr>(Expression)) {
-+      if(const auto *Function=dyn_cast<FunctionDecl>(Reference->getDecl()))return Function;
-+      if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());Variable &&
++    Expression = Expression->IgnoreParenImpCasts();
++    if (const auto *Constant = dyn_cast<ConstantExpr>(Expression))
++      return staticFunctionTargets(Constant->getSubExpr(), Depth+1, Budget, Bindings, Targets);
++    if (const auto *Default = dyn_cast<CXXDefaultArgExpr>(Expression))
++      return staticFunctionTargets(Default->getExpr(), Depth+1, Budget, Bindings, Targets);
++    if (const auto *Address = dyn_cast<UnaryOperator>(Expression);
++        Address && Address->getOpcode() == UO_AddrOf)
++      return staticFunctionTargets(Address->getSubExpr(), Depth+1, Budget, Bindings, Targets);
++    if (const auto *Choice = dyn_cast<AbstractConditionalOperator>(Expression)) {
++      bool Truth;
++      if (!Choice->getCond()->HasSideEffects(Context) &&
++          Choice->getCond()->EvaluateAsBooleanCondition(Truth, Context))
++        return staticFunctionTargets(Truth ? Choice->getTrueExpr() : Choice->getFalseExpr(),
++                                     Depth+1, Budget, Bindings, Targets);
++      return staticFunctionTargets(Choice->getTrueExpr(), Depth+1, Budget, Bindings, Targets) &&
++             staticFunctionTargets(Choice->getFalseExpr(), Depth+1, Budget, Bindings, Targets);
++    }
++    if (const auto *Comma = dyn_cast<BinaryOperator>(Expression);
++        Comma && Comma->getOpcode() == BO_Comma)
++      return staticFunctionTargets(Comma->getRHS(), Depth+1, Budget, Bindings, Targets);
++    if (const auto *Reference = dyn_cast<DeclRefExpr>(Expression)) {
++      if (const auto *Function = dyn_cast<FunctionDecl>(Reference->getDecl())) {
++        Function = Function->getCanonicalDecl();
++        if (!llvm::is_contained(Targets, Function)) {
++          if (Targets.size() >= 64) return false;
++          Targets.push_back(Function);
++        }
++        return true;
++      }
++      if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl()); Variable &&
 +          Variable->getType().isConstQualified() && !Variable->getType().isVolatileQualified() &&
 +          Variable->getType()->isPointerType() &&
 +          Variable->getType()->getPointeeType()->isFunctionType() &&
-+          Variable->getTLSKind()==VarDecl::TLS_None) {
-+        if(const auto *Parameter=dyn_cast<ParmVarDecl>(Variable)) {
-+          for(const auto &Binding:llvm::reverse(Bindings))
-+            if(Binding.first==Parameter)
-+              return staticFunctionTarget(Binding.second,Depth+1,Budget,Bindings);
-+        } else if(Variable->hasInit())
-+          return staticFunctionTarget(Variable->getInit(),Depth+1,Budget,Bindings);
++          Variable->getTLSKind() == VarDecl::TLS_None) {
++        if (const auto *Parameter = dyn_cast<ParmVarDecl>(Variable)) {
++          for (const auto &Binding : llvm::reverse(Bindings))
++            if (Binding.first == Parameter)
++              return staticFunctionTargets(Binding.second, Depth+1, Budget, Bindings, Targets);
++        } else if (Variable->hasInit())
++          return staticFunctionTargets(Variable->getInit(), Depth+1, Budget, Bindings, Targets);
 +      }
 +    }
-+    return nullptr;
++    if (const auto *Call = dyn_cast<CallExpr>(Expression)) {
++      SmallVector<const FunctionDecl *,4> Factories;
++      if (!staticFunctionTargets(Call->getCallee(), Depth+1, Budget, Bindings, Factories) ||
++          Factories.empty()) return false;
++      for (const auto *Factory : Factories) {
++        const auto *Definition = staticCallableDefinition(Factory, Call);
++        if (!Definition) return false;
++        SmallVector<StaticReturnBinding,16> Arguments;
++        if (!staticCallArguments(Definition, Call, Budget, Bindings, Arguments) ||
++            !staticFunctionReturns(Definition, Depth+1, Budget, Arguments,
++              [&](const Expr *Value, unsigned NextDepth, unsigned &Work,
++                  ArrayRef<StaticReturnBinding> Inputs) {
++                return staticFunctionTargets(Value, NextDepth, Work, Inputs, Targets);
++              })) return false;
++      }
++      return !Targets.empty();
++    }
++    return false;
 +  }
-+  bool staticFunctionResult(const FunctionDecl *Function, unsigned Depth,
-+                            unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings) const {
++  template<class Proof>
++  bool staticFunctionReturns(const FunctionDecl *Function, unsigned Depth,
++                            unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings,
++                            Proof Prove) const {
 +    if(!Function || Depth>32 || !Budget || !Function->getBody() ||
 +        Function->isDependentContext() || isa<CoroutineBodyStmt>(Function->getBody()))return false;
 +    // Bound AST and CFG work together. Check actual returns, including GNU
@@ -49241,7 +49310,7 @@ new file mode 100644
 +      if(isa<BlockExpr>(Node))continue;
 +      if(const auto *Return=dyn_cast<ReturnStmt>(Node)) {
 +        HasReturn=true;
-+        if(!staticStorageResultImpl(Return->getRetValue(),Depth+1,Budget,Bindings))return false;
++        if(!Prove(Return->getRetValue(),Depth+1,Budget,Bindings))return false;
 +      }
 +      for(const Stmt *Child:Node->children())Pending.push_back(Child);
 +    }
@@ -49266,6 +49335,14 @@ new file mode 100644
 +      if(!Terminated)return false;
 +    }
 +    return true;
++  }
++  bool staticFunctionResult(const FunctionDecl *Function, unsigned Depth,
++                            unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings) const {
++    return staticFunctionReturns(Function, Depth, Budget, Bindings,
++      [&](const Expr *Value, unsigned NextDepth, unsigned &Work,
++          ArrayRef<StaticReturnBinding> Inputs) {
++        return staticStorageResultImpl(Value, NextDepth, Work, Inputs);
++      });
 +  }
 +  bool staticStorageResultImpl(const Expr *Expression, unsigned Depth,
 +                               unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings) const {
@@ -49337,31 +49414,18 @@ new file mode 100644
 +      // C external inline definitions may differ from the selected external
 +      // definition, whereas C++ inline definitions share their ODR contract.
 +      const auto *Call = dyn_cast<CallExpr>(Expression->IgnoreParenImpCasts());
-+      const FunctionDecl *Function = Call ? Call->getDirectCallee() : nullptr;
-+      if(!Function && Call)
-+        Function=staticFunctionTarget(Call->getCallee(),Depth+1,Budget,Bindings);
-+      // A cast must not use a compatible name to erase physical calling
-+      // convention or callable ownership/effect contracts.
-+      if(Function && Call) {
-+        QualType Callable=Call->getCallee()->getType();
-+        if(!Callable->isPointerType() ||
-+            !Context.hasSameType(Callable->getPointeeType(),Function->getType()))return false;
++      if (!Call) return false;
++      SmallVector<const FunctionDecl *,4> Targets;
++      if (!staticFunctionTargets(Call->getCallee(), Depth+1, Budget, Bindings, Targets) ||
++          Targets.empty()) return false;
++      for (const auto *Function : Targets) {
++        const auto *Definition = staticCallableDefinition(Function, Call);
++        if (!Definition) return false;
++        SmallVector<StaticReturnBinding,16> Arguments;
++        if (!staticCallArguments(Definition, Call, Budget, Bindings, Arguments) ||
++            !staticFunctionResult(Definition, Depth+1, Budget, Arguments)) return false;
 +      }
-+      const FunctionDecl *Definition = Function ? Function->getDefinition() : nullptr;
-+      if (!Definition || Definition->isVariadic() ||
-+          Definition->hasAttr<WeakAttr>() || Definition->hasAttr<WeakRefAttr>() ||
-+          Definition->hasAttr<AliasAttr>() || Definition->hasAttr<IFuncAttr>() ||
-+          (Definition->isExternallyVisible() &&
-+           (!Actions.getLangOpts().CPlusPlus || !Definition->isInlined())))return false;
-+      if (const auto *Method = dyn_cast<CXXMethodDecl>(Definition);
-+          Method && !Method->isStatic())return false;
-+      if(Call->getNumArgs()!=Definition->getNumParams())return false;
-+      SmallVector<StaticReturnBinding,16> Arguments(Bindings.begin(),Bindings.end());
-+      if(Definition->getNumParams()>Budget)return false;
-+      Budget-=Definition->getNumParams();
-+      for(unsigned I=0;I<Definition->getNumParams();++I)
-+        Arguments.emplace_back(Definition->getParamDecl(I),Call->getArg(I));
-+      return staticFunctionResult(Definition,Depth+1,Budget,Arguments);
++      return true;
 +    }
 +    return stableStaticLValueBase(Result.Val,Budget);
 +  }
@@ -59343,7 +59407,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2736 @@
+@@ -0,0 +1,2756 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62077,6 +62141,26 @@ new file mode 100644
 +    std::vector<std::string> Args={"-xobjective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
 +    if(ARC)Args.push_back("-fobjc-arc");
 +    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"task-transfer.mm");
++    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, BorrowedCallbackFactoriesProveEveryTarget) {
++  const char *Source=R"(
++    typedef borrowed const char *Loan;
++    using Callback=const char *(*)(const char *);
++    static const char data[]="permanent";
++    static const char *first(const char *const value){return value;}
++    static const char *second(const char *const value){const char *const alias=value;return alias;}
++    static Callback choose(int flag){switch(flag){case 0:return first;case 1:return second;default:return first;}}
++    static Callback forward(Callback const value){return value;}
++    __attribute__((objc_returns_borrowed(owner_index=0)))
++    Loan use(void *owner,int flag){return forward(choose(flag))(data);}
++  )";
++  for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-xobjective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"callback-factories.mm");
 +    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  }
 +}
@@ -69642,7 +69726,7 @@ diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,86 @@
 +#ifndef OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +#define OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +typedef borrowed const char *StaticGraphLoan;
@@ -69701,6 +69785,17 @@ new file mode 100644
 +static GraphForwardCallback const volatile graph_volatile_callback=graph_forward;
 +static const char *graph_via_thread(const char *const value){return graph_thread_callback(value);}
 +static const char *graph_via_volatile_callback(const char *const value){return graph_volatile_callback(value);}
++static GraphForwardCallback graph_choose_callback(int choose){switch(choose){case 0:return graph_forward;case 1:return graph_forward_chain;default:return graph_forward_local;}}
++static GraphForwardCallback graph_choose_alias(int choose){GraphForwardCallback const callback=choose?graph_forward:graph_forward_chain;return callback;}
++static GraphForwardCallback graph_callback_forward(GraphForwardCallback const callback){return callback;}
++static GraphForwardCallback graph_unknown_callback_factory(int);
++static GraphForwardCallback graph_bad_callback_factory(int choose){if(choose)return graph_forward;return graph_mutable_callback;}
++static GraphForwardCallback graph_missing_callback_factory(int choose){if(choose)return graph_forward;}
++static GraphForwardCallback graph_recursive_callback_factory(int choose){if(choose)return graph_forward;return graph_recursive_callback_factory(choose);}
++static const char *graph_bad_target(const char *value){return graph_unknown();}
++static GraphForwardCallback graph_bad_target_factory(int choose){return choose?graph_forward:graph_bad_target;}
++typedef GraphForwardCallback (*GraphCallbackFactory)(int);
++static GraphCallbackFactory const graph_factory=graph_choose_callback;
 +__attribute__((swiftcall)) static const char *graph_swift_forward(const char *const value){return value;}
 +#ifdef __cplusplus
 +static const char *graph_callback_default(GraphForwardCallback const callback=graph_forward,const char *const value=graph_first){return callback(value);}
@@ -69723,7 +69818,7 @@ diff --git a/clang/test/ObjC3/Sema/borrowed-static-control-flow.m b/clang/test/O
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,101 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
@@ -69809,6 +69904,22 @@ new file mode 100644
 +STATIC_GRAPH StaticGraphLoan static_graph_thread_callback(void *owner){return graph_via_thread(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_volatile_callback(void *owner){return graph_via_volatile_callback(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_callback_abi_cast(void *owner){return ((GraphForwardCallback)graph_swift_forward)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++
++STATIC_GRAPH StaticGraphLoan static_graph_callback_choice(void *owner,int choose){return (choose?graph_forward:graph_forward_chain)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_parameter_choice(void *owner,int choose){return graph_via_callback(choose?graph_forward:graph_forward_chain,graph_union.bytes);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_factory(void *owner,int choose){return graph_choose_callback(choose)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_factory_alias(void *owner,int choose){return graph_choose_alias(choose)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_forwarded_factory(void *owner,int choose){return graph_callback_forward(graph_choose_callback(choose))(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_indirect_factory(void *owner,int choose){return graph_factory(choose)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_choice_factories(void *owner,int choose){return (choose?graph_choose_callback:graph_choose_alias)(choose)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_comma(void *owner,int choose){return (choose++,graph_forward)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_unreachable(void *owner){return (1?graph_forward:graph_mutable_callback)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_null_arm(void *owner,int choose){return (choose?graph_forward:0)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_unknown_factory(void *owner,int choose){return graph_unknown_callback_factory(choose)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_mutable_factory(void *owner,int choose){return graph_bad_callback_factory(choose)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_fallthrough_factory(void *owner,int choose){return graph_missing_callback_factory(choose)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_recursive_factory(void *owner,int choose){return graph_recursive_callback_factory(choose)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_bad_target_factory(void *owner,int choose){return graph_bad_target_factory(choose)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 
 diff --git a/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm b/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm
 new file mode 100644
