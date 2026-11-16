@@ -387,7 +387,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         returns = compile_source(case, work / "return_failures.m", work)
                         execute(case, [returns], work, "-return-cleanup")
                 report["cases"].append({"name": case.name, "status": "pass"})
-            write_json(report_path, report)
+            write_json(report_path, report, compact=True)
         if policy:
             report['product_evidence'] = products.finalize()
             report["sanitizer_policy"] = policy.finalize()
@@ -395,9 +395,9 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
     except (OSError, RuntimeError, ValueError) as error:
         report["status"] = "failed"
         report["error"] = str(error)
-        write_json(report_path, report)
+        write_json(report_path, report, compact=True)
         raise
-    write_json(report_path, report)
+    write_json(report_path, report, compact=True)
     return report
 
 

@@ -220,7 +220,7 @@ def test_sanitizer_product_gate_requires_real_deduplicated_campaign_store(tmp_pa
     report = {'status': 'PASS', 'owners': [{'name': name, 'status': 'PASS'} for name in expected],
         'expected_owners': list(expected), 'runtime_profiles': [{} for _ in range(6)],
         'product_evidence_store': {
-            'schema': 'objc3c.product-evidence-shared-store.v1', 'owners': 13, 'references': 1,
+            'schema': 'objc3c.product-evidence-shared-store.v1', 'owners': 14, 'references': 1,
             'private_bytes': 2, 'stored_bytes': 1, 'deduplicated_bytes': 1, 'path': 'product-evidence-blobs'}}
     receipt = campaign / 'qualification.json';receipt.write_text(json.dumps(report))
     assert len(evidence.suite_results(tmp_path, 'sanitizer-products')) == 13
@@ -243,7 +243,9 @@ def test_actual_shared_product_store_survives_upload_without_private_symlinks(tm
     signature = hashlib.sha256(payload).hexdigest();packed = zstd.compress(payload)
     record = {'blob': 'blobs/'+signature+'.zst', 'sha256': signature, 'bytes': len(payload),
         'encoding': 'zstd', 'stored_bytes': len(packed), 'stored_sha256': hashlib.sha256(packed).hexdigest()}
-    for name in names:
+    evidence_names = [name for name in names if name != 'c-frame-bridge'] + [
+        'c-frame-bridge/address-undefined', 'c-frame-bridge/thread']
+    for name in evidence_names:
         root = campaign / name / 'product-evidence';(root / 'blobs').mkdir(parents=True)
         (root / record['blob']).write_bytes(packed)
         (root / 'qualification.json').write_text(json.dumps({
@@ -262,7 +264,7 @@ def test_actual_shared_product_store_survives_upload_without_private_symlinks(tm
     gate = tmp_path / 'relocated-gate/evidence'
     with zipfile.ZipFile(archive) as contents: contents.extractall(gate)
     assert len(evidence.suite_results(gate, 'sanitizer-products')) == 13
-    for name in names:
+    for name in evidence_names:
         root = gate / 'sanitizer-products/campaign' / name / 'product-evidence'
         assert not (root / 'blobs').exists()
         assert blob_bytes(root, record) == payload
@@ -882,3 +884,54 @@ def test_native_aggregate_recomputes_operational_costs_from_qualified_owner_rece
             result['operational_costs'] = evidence.artifact(tmp_path, path)
             (tmp_path / 'result.json').write_text(json.dumps(result))
     with pytest.raises(ValueError): verify(plan, tmp_path)
+
+
+def test_release_partial_staging_excludes_builds_and_linked_blob_aliases(tmp_path):
+    from scripts.objc3c_assurance.release_matrix import stage_partial
+    root = tmp_path / 'results/asan-products'
+    campaign = root / 'sanitizer-products/campaign'
+    store = campaign / 'product-evidence-blobs'
+    store.mkdir(parents=True)
+    blob = store / ('a' * 64 + '.zst');blob.write_bytes(b'exact replay bytes')
+    owner = campaign / 'structured/product-evidence';owner.mkdir(parents=True)
+    (owner / 'blobs').symlink_to('../../product-evidence-blobs', target_is_directory=True)
+    (owner / 'qualification.json').write_text('{"status":"PASS"}')
+    build = root / 'sanitizer-products/build';build.mkdir()
+    (build / 'compile_commands.json').write_text('unpublished build output')
+    (root / 'result.json').write_text('{"status":"FAIL"}')
+    destination = tmp_path / 'published/asan-products'
+    stage_partial(root, destination)
+    assert (destination / blob.relative_to(root)).read_bytes() == b'exact replay bytes'
+    assert not (destination / owner.relative_to(root) / 'blobs').exists()
+    assert not (destination / 'sanitizer-products/build').exists()
+    assert sum(path.stat().st_size for path in destination.rglob('*.zst')) == len(b'exact replay bytes')
+
+
+def test_sanitizer_replay_has_a_separate_bounded_evidence_allowance():
+    assert evidence.evidence_budget(['frontend']) == 256 * 1024**2
+    assert evidence.evidence_budget(['source-coverage']) == 256 * 1024**2
+    assert evidence.evidence_budget(['sanitizer-products']) == 256 * 1024**2 + 3 * 1024**3
+
+
+def test_debugger_parser_header_matches_the_locked_production_patch_without_checkout(tmp_path):
+    from scripts.objc3c_toolchain.debugger_test_header import HEADER, materialize
+    repo = Path(__file__).resolve().parents[2]
+    generated = materialize(repo, tmp_path / 'headers')
+    applied = tmp_path / 'upstream';applied.mkdir()
+    subprocess.run(['git', 'apply', '--include=' + HEADER,
+                    str(repo / 'toolchains/llvm/patches/0007-objc3-linux-debugger-runtime-contracts.patch')],
+                   cwd=applied, check=True)
+    assert generated.read_bytes() == (applied / HEADER).read_bytes()
+    assert b'ParseObjC3MethodNames' in generated.read_bytes()
+    assert not (tmp_path / 'headers/out').exists()
+
+
+def test_replay_budget_does_not_expand_other_suite_limits():
+    ordinary = {'id': 'frontend', 'artifacts': [{'bytes': evidence.MAX_BYTES + 1}]}
+    replay = {'id': 'sanitizer-products', 'artifacts': [{'bytes': 2 * 1024**3}]}
+    evidence.validate_evidence_sizes([replay])
+    with pytest.raises(ValueError, match='suite artifact budget'):
+        evidence.validate_evidence_sizes([ordinary, replay])
+    replay['artifacts'][0]['bytes'] = evidence.SANITIZER_PRODUCT_BYTES + 1
+    with pytest.raises(ValueError, match='suite artifact budget'):
+        evidence.validate_evidence_sizes([replay])

@@ -8,8 +8,8 @@ import shutil
 
 from scripts.objc3c_toolchain.binary_packages import write_json
 from scripts.objc3c_toolchain.semantic_build_costs import snapshot
-from .evidence import (MAX_BYTES, SCHEMA, aggregate, artifact, native_files,
-                       suite_results)
+from .evidence import (evidence_budget, SCHEMA, aggregate, artifact, native_files,
+                       suite_results, validate_evidence_sizes)
 from .plan import foundation_receipts, from_checkout, selected_suites, validate
 from .runner import run
 
@@ -59,12 +59,34 @@ def run_group(repo: Path, plan: dict, output: Path, group: str, *,
             'plan_sha256': plan.get('sha256'), 'release_matrix_group': group,
             'suites': [], 'commands': [],
             'error': f'{type(error).__name__}: {error}'})
+        stage_partial(output, output.parent.parent / 'evidence' / group)
         raise
-    result = run(repo, plan, output, suite_ids=suites, product_sdk=product_sdk,
-                 package_release=package_release)
-    result['release_matrix_group'] = group
-    write_json(output / 'result.json', result)
-    return result
+    try:
+        result = run(repo, plan, output, suite_ids=suites, product_sdk=product_sdk,
+                     package_release=package_release)
+        result['release_matrix_group'] = group
+        write_json(output / 'result.json', result)
+        return result
+    finally:
+        stage_partial(output, output.parent.parent / 'evidence' / group)
+
+
+def stage_partial(root: Path, destination: Path) -> None:
+    """Publish regular durable evidence only; never upload build trees or links."""
+    destination.mkdir(parents=True, exist_ok=False)
+    files = [root / name for name in ('result.json', 'operational-costs.json')
+             if (root / name).is_file()]
+    for group in GROUPS.values():
+        for suite in group:
+            files.extend(native_files(root / suite))
+    for source in files:
+        target = destination / source.relative_to(root)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        artifact(root, source)
+        try:
+            target.hardlink_to(source)
+        except OSError:
+            shutil.copyfile(source, target)
 
 
 def _partial(root: Path, group: str) -> Path:
@@ -149,7 +171,8 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
     report['operational_costs'] = artifact(output, output / 'operational-costs.json')
     total = sum(saved['bytes'] for row in ordered for saved in row['artifacts'])
     total += report['operational_costs']['bytes']
-    if total > MAX_BYTES:
+    validate_evidence_sizes(ordered, report['operational_costs']['bytes'])
+    if total > evidence_budget(expected):
         raise ValueError('merged core evidence exceeds the native artifact budget')
     write_json(output / 'result.json', report)
     aggregate(plan, output, outcomes={'plan': 'success', 'native': 'success'},

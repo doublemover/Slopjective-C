@@ -372,9 +372,7 @@ jobs:
         with:
           name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
           path: |
-            out/release-matrix/results/
-            !out/release-matrix/results/**/build/**
-            !out/release-matrix/results/**/isolated-install/**
+            out/release-matrix/evidence/
           if-no-files-found: error
           retention-days: 7
 
@@ -463,9 +461,7 @@ jobs:
         with:
           name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
           path: |
-            out/release-matrix/results/
-            !out/release-matrix/results/**/build/**
-            !out/release-matrix/results/**/isolated-install/**
+            out/release-matrix/evidence/
           if-no-files-found: error
           retention-days: 7
 
@@ -623,9 +619,7 @@ jobs:
         with:
           name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
           path: |
-            out/release-matrix/results/
-            !out/release-matrix/results/**/build/**
-            !out/release-matrix/results/**/isolated-install/**
+            out/release-matrix/evidence/
           if-no-files-found: error
           retention-days: 7
 

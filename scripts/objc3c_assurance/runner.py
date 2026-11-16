@@ -16,7 +16,7 @@ from scripts.objc3c_toolchain.core import build_plans
 from scripts.objc3c_toolchain.frontend_tests import qualify as frontend_tests
 from scripts.objc3c_toolchain.package import verify_sdk
 from scripts.objc3c_toolchain.qualify_installed import qualify_installed
-from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, package_execution
+from .evidence import SCHEMA, evidence_budget, validate_evidence_sizes, artifact, digest, junit, lit, package_execution
 from .plan import foundation_receipts, from_checkout, selected_suites, validate
 from .execution import checked_command, execute_ctest, execute_suites
 from .upstream import prepare_upstream_tools
@@ -400,8 +400,9 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             raise ValueError('canonical native shard omitted all operational measurement owners')
         size = sum(value['bytes'] for row in report['suites'] for value in row['artifacts'])
         size += report.get('operational_costs', {}).get('bytes', 0)
-        if size > MAX_BYTES:
-            raise ValueError('native evidence exceeds the 256 MiB artifact budget')
+        validate_evidence_sizes(report['suites'], report.get('operational_costs', {}).get('bytes', 0))
+        if size > evidence_budget([row['id'] for row in suites]):
+            raise ValueError('native evidence exceeds its suite artifact budget')
         report['status'] = 'PASS'
     except BaseException as error:
         report.update(status='FAIL', error=str(error))

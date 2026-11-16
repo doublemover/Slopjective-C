@@ -312,8 +312,18 @@ if (BUILD_TESTING)
   objc3c_add_frontend_test(NAME objc3_ownership_projection COMMAND objc3_ownership_projection_test)
   add_executable(objc3_module_method_names_test
     ../../../../tests/clang_foundation/module_method_names_test.cpp)
+  # The installed SDK has no private LLDB source tree. Read the exact maintained
+  # header from the checksum-locked patch, keeping the test on production bytes.
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  file(GLOB _objc3_debugger_patch_inputs "${_objc3_repo}/toolchains/llvm/patches/*.patch")
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    ${_objc3_debugger_patch_inputs} "${_objc3_repo}/toolchains/llvm/manifest.json"
+    "${_objc3_repo}/scripts/objc3c_toolchain/debugger_test_header.py")
+  execute_process(COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain.debugger_test_header
+    --repo "${_objc3_repo}" --output "${CMAKE_CURRENT_BINARY_DIR}/lldb-test-headers"
+    WORKING_DIRECTORY "${_objc3_repo}" COMMAND_ERROR_IS_FATAL ANY)
   target_include_directories(objc3_module_method_names_test SYSTEM PRIVATE
-    "${_objc3_repo}/out/toolchains/objc3-development/src/lldb/source" ${LLVM_INCLUDE_DIRS})
+    "${CMAKE_CURRENT_BINARY_DIR}/lldb-test-headers" ${LLVM_INCLUDE_DIRS})
   target_link_libraries(objc3_module_method_names_test PRIVATE LLVMSupport)
   objc3c_add_frontend_test(NAME objc3_module_method_names COMMAND objc3_module_method_names_test)
 

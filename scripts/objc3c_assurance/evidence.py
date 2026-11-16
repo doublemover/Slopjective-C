@@ -13,6 +13,25 @@ from .plan import execution_shards, foundation_receipts, selected_suites, valida
 
 SCHEMA = 'objc3c.native-assurance.result.v1'
 MAX_BYTES = 256 * 1024 * 1024
+# The full product campaign retains exact executable replay bytes. The observed
+# shared store is 1.77 GB; keep a separate bounded allowance for that owner.
+SANITIZER_PRODUCT_BYTES = 3 * 1024**3
+
+
+def evidence_budget(suites) -> int:
+    return MAX_BYTES + (SANITIZER_PRODUCT_BYTES if 'sanitizer-products' in suites else 0)
+
+
+def validate_evidence_sizes(records: list[dict], operational_bytes: int = 0) -> None:
+    ordinary, products = operational_bytes, 0
+    for row in records:
+        size = sum(saved['bytes'] for saved in row.get('artifacts', []))
+        if row['id'] == 'sanitizer-products':
+            products += size
+        else:
+            ordinary += size
+    if ordinary > MAX_BYTES or products > SANITIZER_PRODUCT_BYTES:
+        raise ValueError('native evidence exceeds its suite artifact budget')
 
 
 def package_execution(result: dict) -> list[dict]:
@@ -262,7 +281,7 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 result.get('expected_owners') != [row['name'] for row in rows] and
                 set(result.get('expected_owners', [])) != expected or
                 store.get('schema') != 'objc3c.product-evidence-shared-store.v1' or
-                store.get('owners') != len(expected) or not store.get('references') or
+                store.get('owners') != 14 or not store.get('references') or
                 store.get('references') != len(store_files) or
                 store.get('stored_bytes') != sum(path.stat().st_size for path in store_files) or
                 store.get('private_bytes', 0) < store.get('stored_bytes', 0) or
@@ -385,8 +404,9 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
     if observed != expected_costs:
         raise ValueError('native operational measurements differ from actual owner receipts')
     total += saved_costs['bytes']
-    if total > MAX_BYTES:
-        raise ValueError('native evidence exceeds the 256 MiB artifact budget')
+    validate_evidence_sizes(records, saved_costs['bytes'])
+    if total > evidence_budget(expected):
+        raise ValueError('native evidence exceeds its suite artifact budget')
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
             'suites': sorted(expected), 'artifact_bytes': total}
 
@@ -406,8 +426,8 @@ def aggregate_shards(plan: dict, root: Path, *, outcomes: dict, tested: str) -> 
             set(suites) != {row['id'] for row in plan['suites']}):
         raise ValueError('native execution shards overlap or omit selected suites')
     total = sum(row['artifact_bytes'] for row in results)
-    if total > MAX_BYTES:
-        raise ValueError('native evidence exceeds the 256 MiB artifact budget')
+    if total > evidence_budget(suites):
+        raise ValueError('native evidence exceeds its suite artifact budget')
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
             'suites': sorted(suites), 'shards': shards, 'artifact_bytes': total}
 

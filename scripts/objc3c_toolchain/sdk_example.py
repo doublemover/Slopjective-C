@@ -75,12 +75,13 @@ def hashes(paths) -> dict:
     return {str(path): digest(path) for path in sorted(set(paths))}
 
 
-def write_json(path: Path, value: dict) -> None:
+def write_json(path: Path, value: dict, *, compact: bool = False) -> None:
     descriptor, name = tempfile.mkstemp(prefix='.' + path.name, dir=path.parent)
     temporary = Path(name)
     try:
         with os.fdopen(descriptor, 'w') as stream:
-            json.dump(value, stream, indent=2, sort_keys=True)
+            json.dump(value, stream, indent=None if compact else 2, sort_keys=True,
+                      separators=(',', ':') if compact else None)
             stream.write('\n')
         os.replace(temporary, path)
     finally:

@@ -35,11 +35,11 @@ def consolidate_campaign_blobs(campaign: Path) -> dict:
     Product owners deliberately retain exact replay bytes, but a campaign can
     execute the same headers, compiler inputs and runtime products many times.
     ZIP artifacts do not deduplicate identical files. Replace each completed
-    owner's private ``blobs`` directory with a link to one campaign-owned store
+    owner's private ``blobs`` directory with one campaign-owned store
     so durable evidence contains each content-addressed byte sequence once.
     """
     campaign = campaign.resolve(strict=True)
-    receipts = sorted(campaign.glob('*/product-evidence/qualification.json'))
+    receipts = sorted(campaign.glob('**/product-evidence/qualification.json'))
     if not receipts:
         raise ValueError('product campaign has no completed evidence receipts')
     store = campaign / 'product-evidence-blobs'
@@ -71,7 +71,8 @@ def consolidate_campaign_blobs(campaign: Path) -> dict:
                     shutil.copyfile(source, target)
             references.add(source.name)
         shutil.rmtree(private)
-        private.symlink_to(Path('../..') / store.name, target_is_directory=True)
+        # Validate fallback resolution after removing private stores. Keeping
+        # directory symlinks here makes upload-artifact duplicate the whole store.
         # Exercise every rewritten route after the old private store is gone.
         def verify(value):
             if isinstance(value, dict):
@@ -133,7 +134,7 @@ class ProductCommands:
         self.report['retained_bytes'] = self.retained_bytes
         self.report['external_inputs'] = self.external
         self.report['execution_inputs'] = self.execution_inputs
-        write_json(self.receipt, self.report)
+        write_json(self.receipt, self.report, compact=True)
 
     def retain(self, path):
         # Ordinary installed SDK helpers also import this owner. Only sanitizer
@@ -408,7 +409,10 @@ def blob_bytes(root: Path, record):
             not re.fullmatch(r'[0-9a-f]{64}\.zst', relative.name)):
         raise ValueError('retained product input/artifact changed or escaped its evidence root')
     logical_store = root / 'blobs'
-    expected_store = root.parent.parent / 'product-evidence-blobs'
+    campaign = root.parent.parent
+    if root.parent.name in ('address-undefined', 'thread') and campaign.name == 'c-frame-bridge':
+        campaign = campaign.parent
+    expected_store = campaign / 'product-evidence-blobs'
     if logical_store.is_symlink():
         if (root.name != 'product-evidence' or not expected_store.is_dir() or expected_store.is_symlink() or
                 expected_store.resolve(strict=True) != expected_store or

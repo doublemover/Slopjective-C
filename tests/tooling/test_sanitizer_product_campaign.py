@@ -56,7 +56,7 @@ def test_shared_profile_receipts_describe_only_the_owners_actual_optimizations()
 def test_campaign_consolidates_duplicate_replay_bytes_without_rewriting_receipts(tmp_path):
     payloads = (b'shared source bytes', b'owner-specific bytes')
     receipts = []
-    for owner, selected in (('one', payloads), ('two', payloads[:1])):
+    for owner, selected in (('one', payloads), ('c-frame-bridge/thread', payloads[:1])):
         root = tmp_path / owner / 'product-evidence'
         blobs = root / 'blobs';blobs.mkdir(parents=True)
         records = []
@@ -78,7 +78,6 @@ def test_campaign_consolidates_duplicate_replay_bytes_without_rewriting_receipts
     assert len(list((tmp_path / 'product-evidence-blobs').iterdir())) == 2
     for receipt, original, records, selected in receipts:
         assert receipt.read_bytes() == original
-        assert (receipt.parent / 'blobs').is_symlink()
+        assert not (receipt.parent / 'blobs').exists()
         assert [blob_bytes(receipt.parent, row) for row in records] == list(selected)
-        (receipt.parent / 'blobs').unlink()
         assert [blob_bytes(receipt.parent, row) for row in records] == list(selected)
