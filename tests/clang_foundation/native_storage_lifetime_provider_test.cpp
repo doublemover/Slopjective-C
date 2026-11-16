@@ -71,6 +71,27 @@ inline void cleanup_value(int value)noexcept{cleanup_order+=value;}
 inline void cleanup_reference(int &value)noexcept{cleanup_order+=value;value=0;}
 inline int cleaned_value(){int value __attribute__((objc_cleanup(cleanup_value)))=43;return value;}
 inline int cleaned_reference(){int value __attribute__((objc_cleanup(cleanup_reference)))=44;return value;}
+inline int array_closed=0,array_destroyed=0,array_live=0;
+struct ArrayCleanupValue {
+ int value;
+ explicit ArrayCleanupValue(int initial):value(initial){if(initial<0)throw 71;++array_live;}
+ ~ArrayCleanupValue()noexcept{--array_live;array_destroyed=array_destroyed*10+value;}
+};
+inline void close_array_elements(int *value)noexcept{array_closed=value[0]+value[1];}
+inline void close_array_rows(int (*value)[3])noexcept{array_closed=value[0][0]+value[1][2];}
+inline void close_array_address(int (*value)[2])noexcept{array_closed=(*value)[0]+(*value)[1];}
+inline void close_array_reference(int (&value)[2])noexcept{array_closed=value[0]+value[1];}
+inline void close_array_objects(ArrayCleanupValue *value){array_closed=value[0].value+value[1].value;}
+inline void close_array_throw(ArrayCleanupValue *value){close_array_objects(value);throw 81;}
+inline void cleaned_array(){@cleanup(close_array_elements) int values[2]={1,2};(void)values;}
+inline void cleaned_array_rows(){@cleanup(close_array_rows) int values[2][3]={{1,2,3},{4,5,6}};(void)values;}
+inline void cleaned_array_address(){@cleanup(close_array_address) int values[2]={3,4};(void)values;}
+inline void cleaned_array_reference(){@cleanup(close_array_reference) int values[2]={5,6};(void)values;}
+template<class T>inline void close_array_generic(T *values)noexcept{array_closed=static_cast<int>(values[0]+values[1]);}
+template<class T,int N>inline void cleaned_array_generic(T initial){@cleanup(close_array_generic<T>) T values[N]={initial,T(2)};(void)values;}
+inline void cleaned_array_objects(bool unwind,bool fail){@cleanup(close_array_objects) ArrayCleanupValue values[2]={ArrayCleanupValue(1),ArrayCleanupValue(fail?-1:2)};(void)values;if(unwind)throw 79;}
+inline void cleaned_array_throw(){@cleanup(close_array_throw) ArrayCleanupValue values[2]={ArrayCleanupValue(1),ArrayCleanupValue(2)};(void)values;}
+
 inline int resource_closed=0;
 template<class T>void resource_close(T value)noexcept{resource_closed+=static_cast<int>(value);}
 template<class T>void resource_address(T *value)noexcept{resource_closed+=static_cast<int>(*value);*value=-1;}
@@ -230,6 +251,15 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   cleanup_order=0;if(cleaned_auto_dependent(46)!=46 || cleanup_order!=1)return 23;
   cleanup_order=0;if(cleaned_function<int>(47)!=47 || cleanup_order!=1)return 24;
   cleanup_order=0;if(cleaned_function<CleanupValue>(48)!=48 || cleanup_order!=12)return 25;
+  array_closed=0;cleaned_array();if(array_closed!=3)return 33;
+  array_closed=0;cleaned_array_rows();if(array_closed!=7)return 34;
+  array_closed=0;cleaned_array_address();if(array_closed!=7)return 35;
+  array_closed=0;cleaned_array_reference();if(array_closed!=11)return 36;
+  array_closed=0;cleaned_array_generic<long,3>(40);if(array_closed!=42)return 37;
+  array_closed=array_destroyed=array_live=0;cleaned_array_objects(false,false);if(array_closed!=3 || array_destroyed!=21 || array_live)return 38;
+  array_closed=array_destroyed=array_live=0;caught=false;try{cleaned_array_objects(true,false);}catch(int value){caught=value==79;}if(!caught || array_closed!=3 || array_destroyed!=21 || array_live)return 39;
+  array_closed=array_destroyed=array_live=0;caught=false;try{cleaned_array_objects(false,true);}catch(int value){caught=value==71;}if(!caught || array_closed || array_destroyed!=1 || array_live)return 40;
+  array_closed=array_destroyed=array_live=0;caught=false;try{cleaned_array_throw();}catch(int value){caught=value==81;}if(!caught || array_closed!=3 || array_destroyed!=21 || array_live)return 41;
   resource_closed=0;resource_auto(2);resource_dependent(3L);resource_auto_dependent(4);if(resource_closed!=9)return 26;
   resource_closed=0;resource_auto(-1);resource_dependent(-1L);resource_auto_dependent(-1);if(resource_closed)return 27;
   resource_closed=0;resource_operations();if(resource_closed!=8)return 28;

@@ -639,6 +639,13 @@ void TestNativeStorageLifetimeReplay() {
     void release(int *);void release_other(int *);
     inline int cleanup_value() {int value __attribute__((cleanup(release)))=42;return value;}
     template<class T>inline T cleanup_template(T initial) {T value __attribute__((cleanup(release)))=initial;return value;}
+    inline void cleanup_elements(int *value)noexcept{value[0]=0;}
+    inline void cleanup_rows(int (*value)[3])noexcept{value[0][0]=0;}
+    inline int cleanup_array(){@cleanup(cleanup_elements) int values[2]={42,43};return values[0];}
+    inline int cleanup_matrix(){@cleanup(cleanup_rows) int values[2][3]={{42},{43}};return values[0][0];}
+    template<class T>inline void cleanup_array_elements(T *)noexcept{}
+    template<class T,int N>inline T cleanup_array_template(T initial){@cleanup(cleanup_array_elements<T>) T values[N]={initial};return values[0];}
+
     inline void resource_close(int)noexcept{}
     inline void resource_other(int)noexcept{}
     template<class T>inline void resource_function(T)noexcept{}
@@ -665,7 +672,7 @@ void TestNativeStorageLifetimeReplay() {
   auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
   assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeStorageLifetimeSemantic)));
   auto older=supported;std::erase(older,llvm::StringRef(kNativeStorageLifetimeSemantic));
-  older.push_back("objc3.native-storage-lifetime.v3");
+  older.push_back("objc3.native-storage-lifetime.v4");
   auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
   std::erase(decoded->required_semantics,kNativeStorageLifetimeSemantic);
   auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
@@ -695,6 +702,8 @@ void TestNativeStorageLifetimeReplay() {
   auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
    int storage_consumer(){return NativeStorage::local().value+NativeStorage::local_destroyed().value+NativeStorage::local_constant()+NativeStorage::ready+NativeStorage::templated<int>;}
    int cleanup_consumer(){return NativeStorage::cleanup_value()+NativeStorage::cleanup_template(42);}
+   int cleanup_array_consumer(){return NativeStorage::cleanup_array()+NativeStorage::cleanup_matrix()+NativeStorage::cleanup_array_template<int,2>(42);}
+
    void resource_consumer(){NativeStorage::resource_auto(42);NativeStorage::resource_dependent(43L);NativeStorage::resource_auto_dependent(44);}
 
   )",args,"storage-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());

@@ -38352,7 +38352,7 @@ new file mode 100644
 +  auto Parameter = InitializedEntity::InitializeParameter(
 +      S.Context, Function->getParamDecl(0));
 +  auto CanPass = [&](Expr *Argument) {
-+    if (Argument == Value && !Type->isScalarType() &&
++    if (Argument == Value && !Type->isScalarType() && !Type->isArrayType() &&
 +        !(ParameterType->isReferenceType() &&
 +          S.Context.hasSameUnqualifiedType(ParameterType.getNonReferenceType(),
 +                                           Type)))
@@ -59520,7 +59520,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2848 @@
+@@ -0,0 +1,2875 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62367,6 +62367,33 @@ new file mode 100644
 +    std::vector<std::string> Args={Standard,"--target=x86_64-unknown-linux-gnu"};
 +    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,Standard==StringRef("-std=c17")?"labels.c":"labels.cpp");
 +    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, NativeArrayCleanupRetainsDecayAndWholeArrayAddress) {
++  const char *Source=R"(
++    void close_elements(int *);
++    void close_rows(int (*)[3]);
++    void close_address(int (*)[2]);
++    void use(){
++      @cleanup(close_elements) int values[2]={1,2};
++      @cleanup(close_rows) int rows[2][3]={{1},{2}};
++      @cleanup(close_address) int address[2]={3,4};
++    }
++  )";
++  for(const char *Standard:{"-std=c17","-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x",Standard==StringRef("-std=c17")?"objective-c":"objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"array-cleanup.mm");ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    for(const char *Name:{"values","rows","address"}) {
++      const auto *Variable=selectFirst<VarDecl>("storage",match(varDecl(hasName(Name)).bind("storage"),AST->getASTContext()));ASSERT_TRUE(Variable);
++      const auto *Cleanup=Variable->getAttr<ObjCCleanupAttr>();ASSERT_TRUE(Cleanup);ASSERT_TRUE(Cleanup->getCall());
++      EXPECT_EQ(Cleanup->getByAddress(),StringRef(Name)=="address");
++      const auto *Call=dyn_cast<CallExpr>(Cleanup->getCall());ASSERT_TRUE(Call);ASSERT_EQ(Call->getNumArgs(),1U);
++      EXPECT_TRUE(Call->getArg(0)->getType()->isPointerType());
++      const auto *Operand=dyn_cast<OpaqueValueExpr>(Call->getArg(0)->IgnoreParenImpCasts());ASSERT_TRUE(Operand);
++      EXPECT_TRUE(Cleanup->getByAddress()?Operand->getType()->isPointerType():Operand->getType()->isArrayType());
++    }
 +  }
 +}
 
@@ -70878,3 +70905,63 @@ new file mode 100644
 +__attribute__((target("default"))) int unowned_cpu(int) __asm__("ordinary_label"); // expected-error {{multiversioning cannot be combined with attribute 'asm'}}
 +__attribute__((target("default"))) int malformed_cpu(int) __asm__("__objc3_m_gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"); // expected-error {{multiversioning cannot be combined with attribute 'asm'}}
 +__attribute__((target_clones("default","sse4.2"))) int unowned_clones(int) __asm__("ordinary_clones"); // expected-error {{multiversioning cannot be combined with attribute 'asm'}}
+diff --git a/clang/test/ObjC3/Sema/Inputs/array-cleanup.h b/clang/test/ObjC3/Sema/Inputs/array-cleanup.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/array-cleanup.h
+@@ -0,0 +1,20 @@
++#ifndef OBJC3_ARRAY_CLEANUP_H
++#define OBJC3_ARRAY_CLEANUP_H
++void cleanup_elements(int *);
++void cleanup_rows(int (*)[3]);
++void cleanup_array_address(int (*)[2]);
++static void cleanup_fixed_arrays(void) {
++ @cleanup(cleanup_elements) int values[2]={1,2};
++ @cleanup(cleanup_rows) int rows[2][3]={{1,2,3},{4,5,6}};
++ @cleanup(cleanup_array_address) int address[2]={3,4};
++ (void)values;(void)rows;(void)address;
++}
++#ifdef __cplusplus
++void cleanup_array_reference(int (&)[2]);
++inline void cleanup_fixed_reference(){@cleanup(cleanup_array_reference) int values[2]={1,2};(void)values;}
++template<class T>void cleanup_generic_elements(T *)noexcept;
++template<class T,int N>int cleanup_dependent_array(T initial){@cleanup(cleanup_generic_elements<T>) T values[N]={initial};return static_cast<int>(values[0]);}
++struct CleanupArrayTemporary {CleanupArrayTemporary(int *);};
++void cleanup_temporary(CleanupArrayTemporary);
++#endif
++#endif
+diff --git a/clang/test/ObjC3/Sema/array-cleanup.m b/clang/test/ObjC3/Sema/array-cleanup.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/array-cleanup.m
+@@ -0,0 +1,30 @@
++// REQUIRES: x86-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/array-cleanup.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/array-cleanup.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/array-cleanup.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/array-cleanup.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/array-cleanup.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/array-cleanup.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/array-cleanup.h"
++#endif
++void array_cleanup_use(void){cleanup_fixed_arrays();}
++#ifdef __cplusplus
++int array_cleanup_template(){cleanup_fixed_reference();return cleanup_dependent_array<int,2>(42)+cleanup_dependent_array<long,3>(43);}
++void array_cleanup_no_converting_temporary(){@cleanup(cleanup_temporary) int values[2]={1,2};} // expected-error {{unsupported temporary or ARC writeback}}
++#else
++// expected-no-diagnostics
++#endif

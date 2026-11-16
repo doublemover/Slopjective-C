@@ -2738,7 +2738,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationBorrowedResultProof(representative))
     identity.canonical_type_identity+=";borrowed-result-proofs:v5;";
   if (HasDeclarationNativeStorageLifetime(representative))
-    identity.canonical_type_identity += ";native-storage-lifetime:v4;";
+    identity.canonical_type_identity += ";native-storage-lifetime:v5;";
   if (HasDeclarationAtomicManagedProperty(representative))
     identity.canonical_type_identity += ";atomic-managed-properties:v1;";
   if (HasDeclarationNativeLambdaArgumentABI(representative))

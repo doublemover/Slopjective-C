@@ -2216,3 +2216,11 @@ a newly built compiler/SDK; it does not change the last accepted archive.
 [Permanent borrowed-result argument forwarding](linux_borrowed_argument_forwarding.md)
 also composes immutable helper parameters with actual caller arguments under the
 shared return-graph budget and the borrowed-result-proofs v3 reader cutover.
+
+## Source 2.161 fixed-array cleanup
+
+[Fixed-array automatic cleanup](linux_array_automatic_cleanup.md) extends the
+native cleanup path to element/row decay and whole-array reference/address
+callbacks, including dependent shapes and exact partial-construction/exception
+ordering. Native-storage-lifetime v5 requires new readers and rebuilt interfaces;
+SDK archive acceptance remains separate.

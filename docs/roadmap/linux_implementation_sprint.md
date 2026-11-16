@@ -588,3 +588,13 @@ Native-emission-policies v2 also rejects namespace-owned fabricated claims in
 both validator/encoder and decoder. Permanent controls cover publication,
 physical target features, IFUNC resolvers and native runtime dispatch. See
 [CPU target publication](linux_cpu_target_publication.md).
+
+## Source 2.161 / System 2.87 implementation
+
+[Fixed-array cleanup](linux_array_automatic_cleanup.md) admits native element/row
+pointer decay, whole-array addresses and C++ references, including dependent
+bounds. Native callbacks run once after full initialization and before reverse
+ordinary element destruction. Partial construction suppresses the callback;
+throwing callbacks still retire all elements. Native-storage-lifetime v5 binds
+the reader cutover. Compiler/PCH, AST, source-free publication and native lifetime
+controls defend the conversion and lifetime boundaries.
