@@ -54,3 +54,8 @@
 
 "objc3.cxx-virtual-call-expressions.v1"
 ";cxx-virtual-call-expressions:v1;"
+
+"objc3.native-cxx-async-import.v1"
+";native-cxx-async-import:v1;"
+"objc3.cxx-special-member-selection.v1"
+";cxx-special-member-selection:v1;"

@@ -157,6 +157,48 @@ bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationCxxSpecialMemberSelection(const clang::NamedDecl *declaration) {
+  if(!declaration->getASTContext().getLangOpts().CPlusPlus ||
+      llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  struct Selection:clang::DynamicRecursiveASTVisitor {
+    bool found=false;
+    void inspect(const clang::CXXRecordDecl *record) {
+      if(!record || !record->hasDefinition())return;
+      unsigned destructors=0;
+      for(const auto *method:record->getDefinition()->methods()) {
+        found|=method->isIneligibleOrNotSelected();
+        destructors+=llvm::isa<clang::CXXDestructorDecl>(method);
+      }
+      found|=destructors>1;
+    }
+    bool VisitCXXRecordDecl(clang::CXXRecordDecl *record) override {inspect(record);return true;}
+    bool VisitRecordType(clang::RecordType *type) override {inspect(llvm::dyn_cast<clang::CXXRecordDecl>(type->getDecl()));return true;}
+    bool VisitFunctionDecl(clang::FunctionDecl *function) override {found|=function->isIneligibleOrNotSelected();return true;}
+  } selection;
+  selection.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return selection.found;
+}
+
+bool HasDeclarationNativeCxxAsync(const clang::NamedDecl *declaration) {
+  if(!declaration->getASTContext().getLangOpts().CPlusPlus ||
+      llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  struct Async:clang::DynamicRecursiveASTVisitor {
+    bool found=false;
+    bool VisitCoroutineBodyStmt(clang::CoroutineBodyStmt *) override {found=true;return true;}
+    bool VisitObjCMethodDecl(clang::ObjCMethodDecl *method) override {
+      const auto *type=clang::getObjC3CallableFunctionType(method);
+      found|=type && type->getObjC3FunctionEffects().Async;return true;
+    }
+    bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+      if(const auto *method=message->getMethodDecl())VisitObjCMethodDecl(const_cast<clang::ObjCMethodDecl *>(method));
+      return true;
+    }
+    bool VisitFunctionProtoType(clang::FunctionProtoType *type) override {
+      found|=type->getObjC3FunctionEffects().Async;return true;
+    }
+  } async;
+  async.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return async.found;
+}
+
 bool HasDeclarationVirtualCall(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {

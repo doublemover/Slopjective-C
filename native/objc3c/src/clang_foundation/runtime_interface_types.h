@@ -24,6 +24,8 @@ llvm::StringRef RuntimeKeyPathHeaderSource();
 bool IsQualifiedRuntimeTaskHeader(const clang::ASTContext &context);
 bool IsQualifiedRuntimeServiceDeclaration(const clang::NamedDecl *declaration,
                                           const clang::ASTContext &context);
+bool IsQualifiedRuntimeLoweringHook(const clang::NamedDecl *declaration,
+                                    const clang::ASTContext &context);
 bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
                                        const clang::ASTContext &context);
 

@@ -21,6 +21,7 @@
 #include "clang/AST/ASTImporterSharedState.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/DeclContextInternals.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/Diagnostic.h"
@@ -410,6 +411,39 @@ public:
       Definitions.push_back(function);
   }
 };
+
+bool ImportNativeCxxLoweringHooks(DefinitionTrackingImporter &importer,
+    clang::ASTContext &source,InterfaceImportReport &report,llvm::StringRef module) {
+  // Sema instantiates these implicit lowering dependencies, then discards its
+  // temporary call expression. They are not references in the published body;
+  // importing that body alone cannot deliver them to the consumer backend.
+  for(const char *name:{"__objc3_async_frame_capture","__objc3_async_frame_value_ops",
+                       "__objc3_async_frame_result_type","__objc3_async_cf_result_ops",
+                       "__objc3_async_from_frame"})
+    for(auto *declaration:source.getTranslationUnitDecl()->lookup(&source.Idents.get(name))) {
+      const auto *hook=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration);
+      if(!hook || !IsQualifiedRuntimeLoweringHook(hook,source))continue;
+      for(auto *specialization:hook->specializations()) {
+        if(!specialization->doesThisDeclarationHaveABody())continue;
+        if(!IsQualifiedRuntimeLoweringHook(specialization,source)) {
+          Add(report.diagnostics,"O3IFC142","native C++ lowering hook specialization does not belong to the qualified SDK",module);
+          return false;
+        }
+        auto imported=importer.Import(specialization);
+        if(!imported) {
+          Add(report.diagnostics,"O3IFC142",
+              "could not import native C++ lowering hook: "+llvm::toString(imported.takeError()),module);
+          return false;
+        }
+        auto *function=llvm::dyn_cast<clang::FunctionDecl>(*imported);
+        if(!function || !function->hasBody() || !function->getPrimaryTemplate()) {
+          Add(report.diagnostics,"O3IFC143","native C++ lowering hook lost its instantiated definition",module);
+          return false;
+        }
+      }
+    }
+  return true;
+}
 
 bool CheckExportCollisions(
     const std::vector<InterfaceDeclarationIdentity> &declarations,
@@ -1185,6 +1219,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
           report.visible_lookup_declarations.push_back(named);
       }
     }
+    if(!ImportNativeCxxLoweringHooks(*importer,module.ast->getASTContext(),report,
+                                        module.sidecar.module.canonical_name))return report;
     report.dependency_order.push_back(module.sidecar.module.canonical_name);
     auxiliary_definitions.insert(auxiliary_definitions.end(),
         importer->Definitions.begin(),importer->Definitions.end());

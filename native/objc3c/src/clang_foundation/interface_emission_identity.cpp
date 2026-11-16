@@ -2856,6 +2856,10 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationCxxSpecialMemberSelection(representative))
+    identity.canonical_type_identity+=";cxx-special-member-selection:v1;";
+  if (HasDeclarationNativeCxxAsync(representative))
+    identity.canonical_type_identity+=";native-cxx-async-import:v1;";
   if (HasDeclarationVirtualCall(representative))
     identity.canonical_type_identity+=";cxx-virtual-call-expressions:v1;";
   if (HasDeclarationThreadSafetyContract(representative))

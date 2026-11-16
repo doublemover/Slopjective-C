@@ -353,6 +353,8 @@ bool IsPublicContainer(const clang::DeclContext *context,
 bool IsPublishedDeducedFactory(const clang::FunctionDecl *function);
 
 bool IsPublishedThreadSafetyAttribute(const clang::Attr *attribute);
+bool HasDeclarationCxxSpecialMemberSelection(const clang::NamedDecl *declaration);
+bool HasDeclarationNativeCxxAsync(const clang::NamedDecl *declaration);
 bool HasDeclarationVirtualCall(const clang::NamedDecl *declaration);
 bool HasDeclarationThreadSafetyContract(const clang::NamedDecl *declaration);
 bool IsPublishedNativeAttribute(const clang::Attr *attribute);

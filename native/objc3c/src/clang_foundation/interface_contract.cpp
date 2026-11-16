@@ -518,11 +518,23 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
+  const bool special_member_selection=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxSpecialMemberSelectionIdentity);
+  const bool selection_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxSpecialMemberSelectionSemantic)!=sidecar.required_semantics.end();
+  const bool selection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-special-member-selection:v1;")==std::string::npos;});
+  if(special_member_selection!=selection_capability || !selection_owners)
+    Add(result,"O3IFC191","C++ special-member selection identity and required capability must agree",expected.canonical_name);
+  const bool native_cxx_async=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeCxxAsyncImportIdentity);
+  const bool native_async_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeCxxAsyncImportSemantic)!=sidecar.required_semantics.end();
+  const bool native_async_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";native-cxx-async-import:v1;")==std::string::npos;});
+  if(native_cxx_async!=native_async_capability || !native_async_owners)
+    Add(result,"O3IFC190","native C++ async import identity and required capability must agree",expected.canonical_name);
   const bool virtual_calls=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxVirtualCallIdentity);
   const bool virtual_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxVirtualCallSemantic)!=sidecar.required_semantics.end();
   const bool virtual_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
-      [](const auto &d){return !HasCxxVirtualCallIdentity(d) || d.kind!="Namespace";});
-  if(virtual_calls!=virtual_capability || (virtual_capability && !virtual_owners))
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-virtual-call-expressions:v1;")==std::string::npos;});
+  if(virtual_calls!=virtual_capability || !virtual_owners)
     Add(result,"O3IFC189","C++ virtual-call identity and required capability must agree",expected.canonical_name);
   const bool thread_safety=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeThreadSafetyIdentity);
   const bool thread_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeThreadSafetySemantic)!=sidecar.required_semantics.end();

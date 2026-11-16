@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 167,
+        "minor": 168,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Source-free native C++ async imports retain instantiated qualified SDK capture/value/private-result/foreign-promise/nil-conversion dependencies before backend delivery, including optional/variant/expected owning payloads; native-cxx-async-import v1 and special-member-selection v1 reader cutovers, matching SDK pending",
         "Owned task factories may return mutable task rvalue references, transferring their unique frame once across child, detached and explicit/inferred task groups; borrowed/const task and raw-frame references remain rejected. Compiler async-work admission and source-free native lifetime/cancellation controls cover the transfer; matched SDK pending",
         "Owned task/group factories support one-shot rvalue invocation when lvalue invocation is unavailable, preserving move-only storage through inner-frame destruction, pre-entry cancellation, original exceptions and lvalue-overload priority; direct/detached/group/raw-frame and source-free controls are maintained, matched SDK pending",
         "Swift physical calling conventions and context/async-context/error/indirect-result parameter roles retain canonical publication, nested callback identity and AST-import parameter declarations under native-declaration-attributes v3; source-free native register/result controls are maintained, matched SDK pending",
@@ -336,12 +337,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 93,
+        "minor": 94,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native C++ template imports preserve eligible special members and selected prospective destructors, including owning standard-library and custom constrained records; cxx-special-member-selection v1 reader contract, matched SDK pending",
         "Permanent-result proofs admit complete exact C++ method/operator/lambda return graphs, method-produced callback sets and qualified/final virtual targets; unresolved dispatch, member-pointer calls and receiver-derived unknown bases remain rejected. Qualified versus virtual call identity is explicit under cxx-virtual-call-expressions v1; matching SDK pending",
         "Permanent-result proofs support bounded read-only const pointer and known function references, complete local const-reference alias graphs and joined backing-slot writes; alias escape, cast mutation, reference Block captures and unknown/volatile/global mutable inputs remain rejected; borrowed-result-proofs v8 reader cutover, matching SDK pending",
         "Exact native standard-header reuse carries odr-used defaulted special members through consumer Sema and CodeGen, preserving shared_mutex/once_flag constructors, condition-variable destruction and stop-token moves; cxx-standard-library-headers v2 reader cutover; matching SDK pending",

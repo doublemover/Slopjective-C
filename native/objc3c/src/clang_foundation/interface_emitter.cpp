@@ -1087,6 +1087,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kDependentKeyPathLiteralSemantic);
     if (HasCheckedKeyPathReadIdentity(declaration))
       sidecar.required_semantics.push_back(kCheckedKeyPathReadSemantic);
+    if (HasCxxSpecialMemberSelectionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxSpecialMemberSelectionSemantic);
+    if (HasNativeCxxAsyncImportIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeCxxAsyncImportSemantic);
     if (HasCxxVirtualCallIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxVirtualCallSemantic);
     if (HasNativeThreadSafetyIdentity(declaration))

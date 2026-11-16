@@ -233,6 +233,22 @@ bool IsQualifiedRuntimeServiceDeclaration(const clang::NamedDecl *declaration,
   return true;
 }
 
+bool IsQualifiedRuntimeLoweringHook(const clang::NamedDecl *declaration,
+                                    const clang::ASTContext &context) {
+  if(!context.getLangOpts().CPlusPlus || !declaration ||
+      !llvm::isa<clang::FunctionTemplateDecl,clang::FunctionDecl>(declaration))return false;
+  const clang::NamedDecl *pattern=declaration;
+  if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
+    pattern=function->getPrimaryTemplate();if(!pattern)return false;
+  }
+  const auto name=pattern->getQualifiedNameAsString();
+  return (name=="__objc3_async_frame_capture" || name=="__objc3_async_frame_value_ops" ||
+          name=="__objc3_async_frame_result_type" || name=="__objc3_async_cf_result_ops" ||
+          name=="__objc3_async_from_frame") &&
+      DeclarationHeaderMatches(declaration,context,runtime_interface::kTaskHeaderSha256) &&
+      IsQualifiedRuntimeTaskHeader(context);
+}
+
 bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
                                        const clang::ASTContext &context) {
   if (!context.getLangOpts().CPlusPlus || !declaration)

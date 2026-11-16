@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [Source 2.168 / System 2.94 owning standard-library async span](linux_native_standard_owned_async.md)
+imports the qualified SDK's implicit lowering dependencies and preserves C++20
+prospective-destructor selection. Source-free owning optional/variant/expected,
+private result, nil-message and foreign-promise controls defend these boundaries;
+matching SDK consolidation follows the implementation batch.
+
 The [source 2.153 / System 2.79 native MRC and value-construction span](linux_native_mrc_record_payloads.md)
 implements source-owned MRC C++ payload lifetimes, ordinary carrier object
 construction and owned task results. It also preserves owning lambda argument

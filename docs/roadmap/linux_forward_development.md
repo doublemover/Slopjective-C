@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.168 / System 2.94 owning standard-library async span](linux_native_standard_owned_async.md)
+imports the qualified SDK's implicit lowering dependencies and preserves C++20
+prospective-destructor selection. Source-free owning optional/variant/expected,
+private result, nil-message and foreign-promise controls defend these boundaries;
+matching SDK consolidation follows the implementation batch.
+
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
 Source 2.167 / System 2.93 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0

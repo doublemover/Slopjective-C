@@ -91,6 +91,8 @@ int main() {
       {";native-emission-policies:v2;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
+      {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},
+      {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic},
       {";native-cpu-variant:v1;",kNativeEmissionPolicySemantic}}) {
     auto invalid=*decoded;
     InterfaceDeclarationIdentity space{"c:@N@Bad","Namespace","A::Bad","namespace",{}};
@@ -110,6 +112,33 @@ int main() {
         (*row.getAsObject())["canonical_type_identity"]="namespace"+marker;
     assert(Fails(DecodeSemanticInterfaceSidecar(
         llvm::formatv("{0}",*json).str(),source,reader)));
+  }
+  // A legitimate marked function must not hide a forged namespace marker,
+  // with or without the corresponding required-semantics declaration.
+  for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
+      {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
+      {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},
+      {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic}}) {
+    auto legitimate=*decoded;legitimate.declarations.front().canonical_type_identity+=marker;
+    legitimate.required_semantics.push_back(capability);
+    std::vector<llvm::StringRef> reader(std::begin(supported),std::end(supported));reader.push_back(capability);
+    auto encoded_legitimate=EncodeSemanticInterfaceSidecar(legitimate,reader);assert(encoded_legitimate);
+    InterfaceDeclarationIdentity space{"c:@N@Forged","Namespace","A::Forged","namespace"+marker,{}};
+    space.export_root="A::Forged";
+    legitimate.declarations.push_back(space);
+    assert(Fails(EncodeSemanticInterfaceSidecar(legitimate,reader)));
+    legitimate=*decoded;legitimate.declarations.push_back(space);
+    assert(Fails(EncodeSemanticInterfaceSidecar(legitimate,reader)));
+    auto clean=*decoded;clean.declarations.front().canonical_type_identity+=marker;
+    clean.required_semantics.push_back(capability);space.canonical_type_identity="namespace";
+    clean.declarations.push_back(space);
+    auto encoded_clean=EncodeSemanticInterfaceSidecar(clean,reader);assert(encoded_clean);
+    assert(DecodeSemanticInterfaceSidecar(*encoded_clean,source,reader));
+    auto document=llvm::json::parse(*encoded_clean);assert(document);
+    for(auto &row:*document->getAsObject()->getArray("declarations"))
+      if(row.getAsObject()->getString("stable_id")==space.stable_id)
+        (*row.getAsObject())["canonical_type_identity"]="namespace"+marker;
+    assert(Fails(DecodeSemanticInterfaceSidecar(llvm::formatv("{0}",*document).str(),source,reader)));
   }
   assert(decoded->schema_minor == 2);
   assert(decoded->declarations[0].export_root == "A::answer");

@@ -373,12 +373,14 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/native_deduced_group_provider_test.cpp)
   add_executable(objc3_native_emission_policy_provider_test
     ../../../../tests/clang_foundation/native_emission_policy_provider_test.cpp)
+  add_executable(objc3_native_standard_owned_payload_provider_test
+    ../../../../tests/clang_foundation/native_standard_owned_payload_provider_test.cpp)
   add_executable(objc3_native_mrc_record_payload_provider_test
     ../../../../tests/clang_foundation/native_mrc_record_payload_provider_test.cpp)
   add_executable(objc3_native_storage_lifetime_provider_test
     ../../../../tests/clang_foundation/native_storage_lifetime_provider_test.cpp)
   foreach(_standard_library_test IN ITEMS objc3_standard_library_provider_test
-      objc3_standard_library_customization_provider_test objc3_native_storage_lifetime_provider_test objc3_native_emission_policy_provider_test objc3_native_deduced_group_provider_test objc3_native_mrc_record_payload_provider_test)
+      objc3_standard_library_customization_provider_test objc3_native_storage_lifetime_provider_test objc3_native_emission_policy_provider_test objc3_native_deduced_group_provider_test objc3_native_mrc_record_payload_provider_test objc3_native_standard_owned_payload_provider_test)
     target_include_directories(${_standard_library_test} SYSTEM PRIVATE
       ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
     target_link_libraries(${_standard_library_test} PRIVATE objc3c_clang_foundation)
@@ -392,6 +394,26 @@ if (BUILD_TESTING)
     OBJC3_GROUP_TEST_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
     OBJC3_GROUP_TEST_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>")
   add_dependencies(objc3_native_deduced_group_provider_test objc3_runtime_services)
+  target_compile_definitions(objc3_native_standard_owned_payload_provider_test PRIVATE
+    OBJC3_STANDARD_OWNED_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>"
+    OBJC3_STANDARD_OWNED_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
+  add_dependencies(objc3_native_standard_owned_payload_provider_test objc3_runtime_services)
+  foreach(_owned_standard IN ITEMS c++20 c++23)
+    if(_owned_standard STREQUAL "c++20")
+      set(_owned_optimization -O0)
+    else()
+      set(_owned_optimization -O2)
+    endif()
+    foreach(_owned_mode IN ITEMS 1 2)
+      string(REPLACE "++" "xx" _owned_label "${_owned_standard}")
+      set(_owned_name "objc3_native_standard_owned_${_owned_label}_${_owned_mode}")
+      objc3c_add_frontend_test(NAME "${_owned_name}"
+        COMMAND objc3_native_standard_owned_payload_provider_test
+          "${_owned_standard}" "${_owned_mode}" "${_owned_optimization}")
+      set_tests_properties("${_owned_name}" PROPERTIES
+        LABELS "native;standard-library;ownership;extended" TIMEOUT 300)
+    endforeach()
+  endforeach()
   target_compile_definitions(objc3_native_mrc_record_payload_provider_test PRIVATE
     OBJC3_MRC_TEST_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>"
     OBJC3_MRC_TEST_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")

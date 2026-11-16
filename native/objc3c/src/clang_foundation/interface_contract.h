@@ -230,6 +230,14 @@ inline constexpr const char *kBorrowedUnionStorageSemantic = "objc3.borrowed-uni
 inline bool HasBorrowedUnionStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";borrowed-union-byte-storage:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxSpecialMemberSelectionSemantic = "objc3.cxx-special-member-selection.v1";
+inline bool HasCxxSpecialMemberSelectionIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.kind!="Namespace" && d.canonical_type_identity.find(";cxx-special-member-selection:v1;")!=std::string::npos;
+}
+inline constexpr const char *kNativeCxxAsyncImportSemantic = "objc3.native-cxx-async-import.v1";
+inline bool HasNativeCxxAsyncImportIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.kind!="Namespace" && d.canonical_type_identity.find(";native-cxx-async-import:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxVirtualCallSemantic = "objc3.cxx-virtual-call-expressions.v1";
 inline bool HasCxxVirtualCallIdentity(const InterfaceDeclarationIdentity &d) {
   return d.kind!="Namespace" && d.canonical_type_identity.find(";cxx-virtual-call-expressions:v1;") != std::string::npos;
