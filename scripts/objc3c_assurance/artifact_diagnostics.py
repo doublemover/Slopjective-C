@@ -33,7 +33,7 @@ class RemoteZip(io.RawIOBase):
         size = min(self.size - self.position, size if size >= 0 else self.size)
         if size <= 0:
             return b''
-        if size > 16 * 1024**2 or self.transferred + size > 64 * 1024**2:
+        if self.transferred + size > 256 * 1024**2:
             raise ValueError('artifact inspection exceeds its bounded transfer budget')
         request = urllib.request.Request(self.url, headers={
             'Range': f'bytes={self.position}-{self.position + size - 1}'})
