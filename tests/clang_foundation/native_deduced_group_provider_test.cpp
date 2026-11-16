@@ -10,7 +10,7 @@ void Run(const fs::path &root,const char *standard,int ownership,const char *opt
   fs::create_directory_symlink(OBJC3_GROUP_TEST_RUNTIME_HEADERS,root/"include/objc3c/runtime");
   auto request=[&](const fs::path &input,const fs::path &output) {
     auto value=Request(input,output,standard,ownership,optimization,{});
-    value.arguments.insert(value.arguments.end(),{"-fexceptions","-fobjc-exceptions","-fobjc-arc-exceptions","-fcoro-aligned-allocation"});
+    value.arguments.insert(value.arguments.end(),{"-fblocks","-fexceptions","-fobjc-exceptions","-fobjc-arc-exceptions","-fcoro-aligned-allocation"});
     value.arguments.push_back("-I"+(root/"include").string());
     return value;
   };
@@ -52,6 +52,15 @@ struct Factory {
  }
 };
 inline auto rvalue(int value){return objc3::with_task_group(Factory(value));}
+struct TransferFactory {
+ Value owner;
+ objc3::task<int> value;
+ explicit TransferFactory(int initial):owner(initial),value(leaf(initial)){}
+ TransferFactory(const TransferFactory &)=delete;TransferFactory(TransferFactory &&)=default;
+ objc3::task<int> &&operator()(objc3::task_group_handle) & = delete;
+ objc3::task<int> &&operator()(objc3::task_group_handle) && {++entered;return static_cast<objc3::task<int> &&>(value);}
+};
+inline auto transferred(int value){return objc3::with_task_group(TransferFactory(value));}
 }
 )group");
   auto provider=request(source,root/"provider.o");provider.module_owned_names=true;
@@ -99,13 +108,28 @@ inline auto rvalue(int value){return objc3::with_task_group(Factory(value));}
       if(objc3_executor_pump(executor,UINT32_MAX,&ran)!=OBJC3_SERVICE_OK)return 15;
       caught=false;try{(void)cancelled.result();}catch(const objc3::task_cancelled &){caught=true;}
       cancelled={};if(!caught || PublishedGroup::entered!=rvalue_entered || PublishedGroup::live)return 16;
+      auto transferred=PublishedGroup::transferred(46).start(executor);
+      if(objc3_executor_pump(executor,UINT32_MAX,&ran)!=OBJC3_SERVICE_OK || transferred.result()!=46)return 17;
+      transferred={};if(PublishedGroup::live)return 18;
+      const auto transfer_entered=PublishedGroup::entered;
+      auto transfer_cancelled=PublishedGroup::transferred(99).start(executor);transfer_cancelled.cancel();
+      if(objc3_executor_pump(executor,UINT32_MAX,&ran)!=OBJC3_SERVICE_OK)return 19;
+      caught=false;try{(void)transfer_cancelled.result();}catch(const objc3::task_cancelled &){caught=true;}
+      transfer_cancelled={};if(!caught || PublishedGroup::entered!=transfer_entered || PublishedGroup::live)return 20;
       objc3_executor_release(executor);return 0;
     })group");
     auto consumer=request(input,root/(std::string(name)+".o"));
     InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;
     consumer.imported_interfaces={imported};Success(Compile(consumer));
   }
-  const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a() || check_b();}\n");
+  const auto fixtures=fs::path(__FILE__).parent_path();
+  const auto main=root/"main.mm";
+  Write(main,"#include \""+(fixtures/"../../stdlib/include/objc3/concurrency.h").string()+"\"\n"+
+      "#include \""+(fixtures/"task_spawning/task_transfers.h").string()+"\"\n"+
+      "extern \"C\" int check_a();extern \"C\" int check_b();int main(){"+
+      "if(check_a() || check_b())return 1;objc3_executor_t *executor=nullptr;"+
+      "assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);"+
+      "task_transfers::contract(executor);objc3_executor_release(executor);return 0;}\n");
   auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,true,{OBJC3_GROUP_TEST_RUNTIME_LIBRARY,"-pthread"});
 }
 }

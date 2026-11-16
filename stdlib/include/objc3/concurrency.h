@@ -42,12 +42,12 @@
  * parent contracts are the same as direct task/frame spawn. */
 template<class Work> requires requires(Work &work) {objc3::task_detail::invoke_owned(work).release_native();}
 inline auto objc3_task_spawn(Work work) __attribute__((objc_task_spawn)) {
-  using Task=decltype(objc3::task_detail::invoke_owned(work));
+  using Task=std::remove_cvref_t<decltype(objc3::task_detail::invoke_owned(work))>;
   return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).start_child();
 }
 template<class Work> requires requires(Work &work) {objc3::task_detail::invoke_owned(work).release_native();}
 inline auto objc3_task_detached(Work work) __attribute__((objc_task_detached)) {
-  using Task=decltype(objc3::task_detail::invoke_owned(work));
+  using Task=std::remove_cvref_t<decltype(objc3::task_detail::invoke_owned(work))>;
   return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).detach();
 }
 template<class R,class Work> requires requires(Work &work) {
@@ -68,7 +68,7 @@ inline objc3::task_handle<R> objc3_task_detached(Work work) __attribute__((objc_
 template<class Work> requires requires(Work &work) {objc3::task_detail::invoke_owned(work).release_native();}
 inline auto objc3_task_spawn_in_group(objc3::task_group_handle group,Work work)
     __attribute__((objc_task_spawn)) {
-  using Task=decltype(objc3::task_detail::invoke_owned(work));
+  using Task=std::remove_cvref_t<decltype(objc3::task_detail::invoke_owned(work))>;
   return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).start_child(group);
 }
 template<class R,class Work> requires requires(Work &work) {

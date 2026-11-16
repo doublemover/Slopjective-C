@@ -541,3 +541,14 @@ Concrete callback effects, complete storage and no-copy rules remain enforced
 before mandatory ownership/CFG checking. Native-storage-lifetime v3 binds the
 reader cutover; source/PCH, publication, decoder and source-free runtime controls
 cover exact destruction, errors and failed initialization.
+
+## Source 2.157 / System 2.83 implementation
+
+Owned task factories now transfer an existing task returned by mutable rvalue
+reference across child, detached and explicit/inferred group entry. Template
+result normalization retains the concrete task type, and the compiler admits
+this ownership transfer as asynchronous work. Explicit typed groups reject
+borrowed/const task and raw-frame references before body instantiation. Native
+source-free and direct controls cover factory errors, pre-entry cancellation,
+exact invocation/resumption counts and capture retirement. See
+[task factory transfers](linux_task_factory_transfers.md).

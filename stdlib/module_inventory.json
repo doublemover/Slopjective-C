@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 156,
+        "minor": 157,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Owned task factories may return mutable task rvalue references, transferring their unique frame once across child, detached and explicit/inferred task groups; borrowed/const task and raw-frame references remain rejected. Compiler async-work admission and source-free native lifetime/cancellation controls cover the transfer; matched SDK pending",
         "Owned task/group factories support one-shot rvalue invocation when lvalue invocation is unavailable, preserving move-only storage through inner-frame destruction, pre-entry cancellation, original exceptions and lvalue-overload priority; direct/detached/group/raw-frame and source-free controls are maintained, matched SDK pending",
         "Swift physical calling conventions and context/async-context/error/indirect-result parameter roles retain canonical publication, nested callback identity and AST-import parameter declarations under native-declaration-attributes v3; source-free native register/result controls are maintained, matched SDK pending",
         "Native MRC C++ carrier records retain source-owned object/Block special members, including nested and explicit union payloads; ordinary local/temporary/heap/placement/library construction, const-rvalue copying and owned task results preserve native recipes. AST import retains owning lambda argument ABI and valid template overload heads; source-free contracts reject older/missing/invented capability claims. Focused regression controls are maintained; complete matrices and SDK delivery run through consolidated CI.",
@@ -335,7 +336,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 82,
+        "minor": 83,
         "patch": 0
       },
       "header": "include/objc3/system.h",

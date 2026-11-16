@@ -5,6 +5,13 @@ on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
+The [source 2.157 / System 2.83 task transfer span](linux_task_factory_transfers.md)
+permits factories to return mutable task rvalue references, transferring existing
+unique frame ownership through child, detached and explicit/inferred groups.
+Compiler admission preserves the same value-category contract as the runtime
+headers. Borrowed/const task and raw-frame references retain rejection.
+Complete rebuilt compiler/SDK acceptance remains pending.
+
 The [source 2.156 / System 2.82 cleanup span](linux_dependent_automatic_cleanup.md)
 adds dependent template storage/callbacks and deduced automatic storage. Concrete
 instantiation/deduction rebuilds the validated native call before ownership and

@@ -13,6 +13,7 @@
 #include "cxx_frame_borrows.h"
 #include "group_result_deduction.h"
 #include "rvalue_factories.h"
+#include "task_transfers.h"
 
 @protocol Sendable @end
 @protocol SpawnFailure <Error, Sendable> @end
@@ -609,6 +610,7 @@ int main() {
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
   owned_callable_spawn_contract(source);
   rvalue_factories::contract(source);
+  task_transfers::contract(source);
   ManualFrameFactories::contract(source);
   raw_group_adapter_contract(source);
   checked_cxx_scope_exits(source);

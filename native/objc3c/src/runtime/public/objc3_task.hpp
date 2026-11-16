@@ -487,7 +487,7 @@ public:
       __attribute__((objc_task_spawn))
 #endif
   {
-    using Task=decltype(task_detail::invoke_owned(work));
+    using Task=std::remove_cvref_t<decltype(task_detail::invoke_owned(work))>;
     return std::move(task_detail::own_callable_as<Task>(std::move(work))).start_child(*this);
   }
   template<class R,class Work> requires
@@ -1128,11 +1128,12 @@ task<T> with_task_group_owned(Storage work) __attribute__((objc_task_group)) {
     co_return co_await callback;
   }
 }
-// Deduce only an owned task returned by value. A raw native frame erases its
-// logical result type, and a reference to someone else's task transfers no
-// ownership; those forms cannot infer a group result.
+// A task value or mutable rvalue reference grants an owning move. An lvalue
+// reference grants no transfer, and a raw native frame erases the logical result
+// type. Those forms cannot infer a group result.
 template<class Task> struct group_callback_result;
 template<class T> struct group_callback_result<basic_task<T>> {using type=T;};
+template<class T> struct group_callback_result<basic_task<T> &&> {using type=T;};
 template<class Work>
 using group_callback_result_t=typename group_callback_result<
     decltype(invoke_owned(std::declval<Work &>(),std::declval<task_group_handle &>()))>::type;
@@ -1140,6 +1141,10 @@ using group_callback_result_t=typename group_callback_result<
 // Pin the source callable during the ordinary call. A lazy coroutine body
 // cannot acquire a stack Block after its caller has already returned.
 template <class T, class Work>
+requires (requires {typename task_detail::group_callback_result_t<Work>;} ||
+          requires(Work &work,task_group_handle &group) {
+            requires std::is_same_v<decltype(task_detail::invoke_owned(work,group)),objc3_async_frame>;
+          })
 task<T> with_task_group(Work work) {
   return task_detail::with_task_group_owned<T>(
       task_detail::callable_storage<Work>(std::move(work)));

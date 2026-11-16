@@ -51078,10 +51078,9 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..7e5428558
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1762 @@
+@@ -0,0 +1,1771 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -51417,6 +51416,14 @@ index 000000000..7e5428558
 +  if (!Prototype) return false;
 +  if (Prototype->getObjC3FunctionEffects().Async) return true;
 +  QualType Result = Prototype->getReturnType();
++  // A mutable task rvalue transfers its existing owner through release_native.
++  // Borrowed/const task references and raw frame references cannot transfer it.
++  const bool ReferenceResult = Result->isReferenceType();
++  if (ReferenceResult) {
++    if (!Result->isRValueReferenceType()) return false;
++    Result = Result.getNonReferenceType();
++    if (Result.isConstQualified() || Result.isVolatileQualified()) return false;
++  }
 +  const auto *Record = Result->getAsRecordDecl();
 +  if (!Record) return false;
 +  if (Record->getDeclContext()->getRedeclContext()->isTranslationUnit() &&
@@ -51427,7 +51434,8 @@ index 000000000..7e5428558
 +        S.Context.VoidTy, {}, Info)->castAs<FunctionProtoType>();
 +    QualType Frame = S.BuildObjC3AsyncTaskType(FrameFunction,
 +        Record->getLocation(), false);
-+    return !Frame.isNull() && S.Context.hasSameType(Result, Frame);
++    return !ReferenceResult && !Frame.isNull() &&
++           S.Context.hasSameType(Result, Frame);
 +  }
 +  const auto *Class = dyn_cast<CXXRecordDecl>(Record);
 +  return Class && Class->hasDefinition() &&
@@ -59335,7 +59343,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2719 @@
+@@ -0,0 +1,2736 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62053,6 +62061,23 @@ new file mode 100644
 +    EXPECT_EQ(Instances,1U);
 +    const auto *Automatic=selectFirst<FunctionDecl>("auto",match(functionDecl(hasName("automatic")).bind("auto"),Context));
 +    ASSERT_TRUE(Automatic);Check(Automatic);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, MutableTaskRvalueFactoriesAreAsyncWork) {
++  const char *Source=R"(
++    namespace objc3 {template<class T>struct task {struct promise_type;};}
++    struct __attribute__((objc_unsafe_sendable)) Factory {
++      objc3::task<int> &&operator()() &;
++    };
++    template<class Work>objc3::task<int> spawn(Work work) __attribute__((objc_task_spawn)) {return {};}
++    void use(Factory work){spawn(work);}
++  )";
++  for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-xobjective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"task-transfer.mm");
++    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  }
 +}
 
