@@ -994,7 +994,7 @@ public:
           local_contracts.insert("local-alignment:"+NativeAttributeValue(attribute,declaration));
         else if(!attribute->isImplicit() && llvm::isa<clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr>(attribute))
           local_contracts.insert("local-emission-policy:"+NativeAttributeValue(attribute,declaration));
-        else if(!attribute->isImplicit() && llvm::isa<clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr>(attribute))
+        else if(!attribute->isImplicit() && llvm::isa<clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr>(attribute))
           local_contracts.insert("local-storage-lifetime:"+NativeAttributeValue(attribute,declaration));
       }
       for(const auto &contract:local_contracts)Add(contract);
@@ -1489,7 +1489,16 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
   auto add=[&](llvm::StringRef value){key+=";"+std::to_string(value.size())+":"+value.str();};
   if(const auto *section=llvm::dyn_cast<clang::SectionAttr>(attribute))
     add(section->getName());
-  else if(const auto *sanitizers=llvm::dyn_cast<clang::NoSanitizeAttr>(attribute)) {
+  else if(const auto *cleanup=llvm::dyn_cast<clang::CleanupAttr>(attribute)) {
+    add(ReadInterfaceDeclarationStableId(cleanup->getFunctionDecl()));
+    add(CanonicalType(cleanup->getFunctionDecl()->getType(),declaration->getASTContext()));
+  } else if(const auto *cleanup=llvm::dyn_cast<clang::ObjCCleanupAttr>(attribute)) {
+    const auto *reference=llvm::dyn_cast<clang::DeclRefExpr>(cleanup->getClose()->IgnoreParenImpCasts());
+    const auto *function=reference?llvm::dyn_cast<clang::FunctionDecl>(reference->getDecl()):nullptr;
+    add(function?ReadInterfaceDeclarationStableId(function):"!unmodeled-cleanup");
+    if(function)add(CanonicalType(function->getType(),declaration->getASTContext()));
+    add(cleanup->getByAddress()?"address":"value");
+  } else if(const auto *sanitizers=llvm::dyn_cast<clang::NoSanitizeAttr>(attribute)) {
     std::set<std::string> names;
     for(auto name:sanitizers->sanitizers())names.insert(name.str());
     for(const auto &name:names)add(name);
@@ -2664,9 +2673,9 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
   if (HasDeclarationBorrowedResultProof(representative))
-    identity.canonical_type_identity+=";borrowed-result-proofs:v3;";
+    identity.canonical_type_identity+=";borrowed-result-proofs:v4;";
   if (HasDeclarationNativeStorageLifetime(representative))
-    identity.canonical_type_identity += ";native-storage-lifetime:v1;";
+    identity.canonical_type_identity += ";native-storage-lifetime:v2;";
   if (HasDeclarationAtomicManagedProperty(representative))
     identity.canonical_type_identity += ";atomic-managed-properties:v1;";
   if (HasDeclarationNativeLambdaArgumentABI(representative))

@@ -195,6 +195,7 @@ bool HasDeclarationLocalFactoryResult(const clang::NamedDecl *declaration);
 
 bool HasDeclarationLocalType(const clang::NamedDecl *declaration);
 
+bool HasDeclarationNativeCleanup(const clang::NamedDecl *);
 bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedUnionStorage(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration);

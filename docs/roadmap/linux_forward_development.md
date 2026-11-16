@@ -5,6 +5,14 @@ on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
+The [source 2.155 / System 2.81 cleanup span](linux_automatic_cleanup_publication.md)
+preserves native automatic cleanup callbacks and source-free callback declaration
+ownership, and [known callback proofs](linux_borrowed_known_callbacks.md) extend
+permanent borrowed-result forwarding across immutable higher-order/local/global
+function bindings. Native storage v2 and borrowed-result-proofs v4 enforce reader
+cutovers. Focused source/PCH, publication and native execution controls pass;
+complete rebuilt compiler/SDK acceptance remains pending.
+
 The [source 2.154 / System 2.80 implementation span](linux_rvalue_task_factories.md)
 adds owned rvalue-only task factories, [Swift physical ABI publication](linux_swift_physical_abi.md)
 and [permanent borrowed-result argument forwarding](linux_borrowed_argument_forwarding.md).

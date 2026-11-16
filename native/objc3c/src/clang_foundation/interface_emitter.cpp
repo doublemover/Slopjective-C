@@ -511,6 +511,16 @@ private:
 void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
                           clang::ASTContext &context,
                           llvm::raw_ostream &out, bool declaration_only) {
+  const bool has_cleanup=HasDeclarationNativeCleanup(declaration);
+  // Canonical cleanup names are qualified to prevent shadowing or a different
+  // overload set from retargeting the callback. Clang supports that spelling;
+  // suppress only its GCC compatibility warning inside this generated root.
+  if(has_cleanup)
+    out << "#pragma clang diagnostic push\n"
+           "#pragma clang diagnostic ignored \"-Wgcc-compat\"\n";
+  auto restore_cleanup_diagnostics=llvm::scope_exit([&] {
+    if(has_cleanup)out << "#pragma clang diagnostic pop\n";
+  });
   const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
   const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
   const auto original_storage=variable?variable->getStorageClass():clang::SC_None;

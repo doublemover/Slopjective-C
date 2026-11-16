@@ -1,8 +1,10 @@
 #include "clang_foundation/interface_codec.h"
 
 #include <cassert>
+#include <iterator>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "llvm/ADT/ArrayRef.h"
@@ -81,6 +83,30 @@ int main() {
   auto decoded = DecodeSemanticInterfaceSidecar(*encoded, source, supported);
   assert(decoded);
   assert(decoded->schema_major == original.schema_major);
+  // Body-only lifetime/proof capabilities cannot be fabricated on namespace
+  // declarations, even when their marker and required-semantics list agree.
+  for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
+      {";native-storage-lifetime:v2;",kNativeStorageLifetimeSemantic},
+      {";borrowed-result-proofs:v4;",kBorrowedResultProofSemantic}}) {
+    auto invalid=*decoded;
+    InterfaceDeclarationIdentity space{"c:@N@Bad","Namespace","A::Bad","namespace",{}};
+    space.export_root="A::Bad";
+    invalid.declarations.push_back(space);
+    auto valid_namespace=EncodeSemanticInterfaceSidecar(invalid,supported);
+    assert(valid_namespace);
+    invalid.declarations.back().canonical_type_identity+=marker;
+    invalid.required_semantics.push_back(capability);
+    std::vector<llvm::StringRef> reader(std::begin(supported),std::end(supported));
+    reader.push_back(capability);
+    assert(Fails(EncodeSemanticInterfaceSidecar(invalid,reader)));
+    auto json=llvm::json::parse(*valid_namespace);assert(json);
+    json->getAsObject()->getArray("required_semantics")->push_back(capability);
+    for(auto &row:*json->getAsObject()->getArray("declarations"))
+      if(row.getAsObject()->getString("stable_id")=="c:@N@Bad")
+        (*row.getAsObject())["canonical_type_identity"]="namespace"+marker;
+    assert(Fails(DecodeSemanticInterfaceSidecar(
+        llvm::formatv("{0}",*json).str(),source,reader)));
+  }
   assert(decoded->schema_minor == 2);
   assert(decoded->declarations[0].export_root == "A::answer");
   auto changed_root = *decoded;

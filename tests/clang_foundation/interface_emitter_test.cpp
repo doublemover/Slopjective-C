@@ -616,7 +616,7 @@ void TestNativeUnnamedEnumReplay() {
 
 void TestNativeStorageLifetimeReplay() {
  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
-  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-Werror=gcc-compat"};
   if(arc)args.push_back("-fobjc-arc");
   const std::string source=R"(
    namespace NativeStorage {
@@ -634,6 +634,9 @@ void TestNativeStorageLifetimeReplay() {
     inline Owner &local_destroyed() {static __attribute__((always_destroy)) Owner value(48);return value;}
     inline int local_constant() {static constinit int value=49;return value;}
     int plain();
+    void release(int *);void release_other(int *);
+    inline int cleanup_value() {int value __attribute__((cleanup(release)))=42;return value;}
+    template<class T>inline int cleanup_template(T initial) {int value __attribute__((cleanup(release)))=static_cast<int>(initial);return value;}
    }
   )";
   auto emit=[&](const std::string &text,const std::vector<std::string> &names=std::vector<std::string>{"NativeStorage"}) {
@@ -652,6 +655,7 @@ void TestNativeStorageLifetimeReplay() {
   auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
   assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeStorageLifetimeSemantic)));
   auto older=supported;std::erase(older,llvm::StringRef(kNativeStorageLifetimeSemantic));
+  older.push_back("objc3.native-storage-lifetime.v1");
   auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
   std::erase(decoded->required_semantics,kNativeStorageLifetimeSemantic);
   auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
@@ -664,7 +668,8 @@ void TestNativeStorageLifetimeReplay() {
   for(const auto &change:std::vector<std::pair<std::string,std::string>>{
     {"Priority=201","Priority=211"},{"destructor(203)","destructor(213)"},
     {"init_priority(202)","init_priority(212)"},{"no_destroy","always_destroy"},
-    {"constinit int ready","int ready"},{"static __attribute__((no_destroy)) Owner value(47)","static __attribute__((always_destroy)) Owner value(47)"}}) {
+    {"constinit int ready","int ready"},{"static __attribute__((no_destroy)) Owner value(47)","static __attribute__((always_destroy)) Owner value(47)"},
+    {"cleanup(release)","cleanup(release_other)"}}) {
    auto changed=source;auto at=changed.find(change.first);assert(at!=std::string::npos);changed.replace(at,change.first.size(),change.second);
    auto next=emit(changed);assert(next.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
   }
@@ -677,7 +682,11 @@ void TestNativeStorageLifetimeReplay() {
   }
   auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
    int storage_consumer(){return NativeStorage::local().value+NativeStorage::local_destroyed().value+NativeStorage::local_constant()+NativeStorage::ready+NativeStorage::templated<int>;}
+   int cleanup_consumer(){return NativeStorage::cleanup_value()+NativeStorage::cleanup_template(42);}
   )",args,"storage-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
+  auto hidden_ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"hidden-cleanup.mm");assert(hidden_ast);
+  auto hidden=EmitSemanticInterface(hidden_ast->getASTContext(),"fixture.native_storage","test",{},{},{},{"NativeStorage::cleanup_value"});
+  assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
  }
  for(bool arc:{false,true}) {
   std::vector<std::string> args={"-x","objective-c","-std=c17","-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
@@ -1513,6 +1522,11 @@ void TestBorrowedStaticStorageReplay() {
         inline const char *static_forward_chain(const char *const value){return static_forward_local(static_forward(value));}
         inline const char *static_forward_default(const char *const value=static_program_data){return static_forward_chain(value);}
         inline const char *static_forward_choice(int choose,const char *const first,const char *const second){if(choose)return first;return second;}
+        using StaticCallback=const char *(*)(const char *);
+        inline constexpr StaticCallback static_callback=static_forward_chain;
+        inline const char *static_callback_source(StaticCallback const callback,const char *const value){StaticCallback const alias=callback;return alias(value);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_callback_view(void *owner){return static_callback_source(static_callback,static_program_data);}
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_forward_view(void *owner,int choose){return static_forward_choice(choose,static_forward_chain(static_program_data),static_forward_default(static_union_data.bytes));}
         __attribute__((objc_returns_borrowed(owner_index=0)))
@@ -1529,7 +1543,7 @@ void TestBorrowedStaticStorageReplay() {
       auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
       assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedResultProofSemantic)));
       auto older=supported;std::erase(older,llvm::StringRef(kBorrowedResultProofSemantic));
-      older.push_back("objc3.borrowed-result-proofs.v2");
+      older.push_back("objc3.borrowed-result-proofs.v3");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
       std::erase(decoded->required_semantics,kBorrowedResultProofSemantic);
       auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());

@@ -36,6 +36,24 @@ typedef const char *StaticLoan;
 union StaticUnion {char bytes[8];long other;};
 extern const StaticUnion static_union;
 const StaticUnion static_union={{'s','t','a','t','i','c',0}};
+inline int cleanup_order=0;
+struct CleanupValue {
+ int value;
+ explicit CleanupValue(int value):value(value){if(value<0)throw 73;}
+ ~CleanupValue()noexcept{cleanup_order=cleanup_order*10+2;}
+};
+inline void cleanup_record(CleanupValue *)noexcept{cleanup_order=cleanup_order*10+1;}
+inline void cleanup_throw(CleanupValue *){cleanup_order=cleanup_order*10+3;throw 91;}
+inline void cleanup_int(int *value)noexcept{cleanup_order+=*value;}
+inline int cleaned_record(int value,bool fail){CleanupValue object __attribute__((cleanup(cleanup_record)))(value);if(fail)throw 73;return object.value;}
+inline void cleaned_throw(){CleanupValue object __attribute__((cleanup(cleanup_throw)))(42);}
+template<class T>inline int cleaned_template(T initial){int value __attribute__((cleanup(cleanup_int)))=static_cast<int>(initial);return value;}
+#ifdef __OBJC__
+inline void cleanup_value(int value)noexcept{cleanup_order+=value;}
+inline void cleanup_reference(int &value)noexcept{cleanup_order+=value;value=0;}
+inline int cleaned_value(){int value __attribute__((objc_cleanup(cleanup_value)))=43;return value;}
+inline int cleaned_reference(){int value __attribute__((objc_cleanup(cleanup_reference)))=44;return value;}
+#endif
 inline const char *static_source(){return static_union.bytes;}
 inline const char *static_offset(int offset){return static_source()+offset;}
 inline const char *static_branch_source(int choose){if(choose)return static_source();return "alternate";}
@@ -47,6 +65,11 @@ inline const char *static_forward_local(const char *const value){const char *con
 inline const char *static_forward_chain(const char *const value){return static_forward_local(static_forward(value));}
 inline const char *static_forward_default(const char *const value="default"){return static_forward_chain(value);}
 inline const char *static_forward_choice(int choose,const char *const first,const char *const second){if(choose)return first;return second;}
+using StaticCallback=const char *(*)(const char *);
+inline constexpr StaticCallback static_callback=static_forward_chain;
+inline const char *static_callback_source(StaticCallback const callback,const char *const value){StaticCallback const alias=callback;return alias(value);}
+STATIC_BORROWED
+inline StaticLoan static_callback_view(void *owner){return static_callback_source(static_callback,static_union.bytes);}
 STATIC_BORROWED
 inline StaticLoan static_forward_view(void *owner,int choose){return static_forward_choice(choose,static_forward_chain(static_union.bytes),static_forward_default());}
 STATIC_BORROWED
@@ -143,6 +166,19 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(static_graph_view(&ready,1)[0]!='s' || static_graph_view(&ready,0)[0]!='a' || static_graph_switch(&ready,0)[0]!='s' || static_graph_switch(&ready,1)[0]!='a' || static_graph_switch(&ready,2)!=nullptr)return 7;
   if(static_graph_loop(&ready,3)[0]!='l' || static_graph_loop(&ready,0)[0]!='s' || static_graph_exception(&ready,0)[0]!='s' || static_graph_exception(&ready,1)[0]!='c')return 8;
   if(static_forward_view(&ready,1)[0]!='s' || static_forward_view(&ready,0)[0]!='d')return 9;
+  if(static_callback_view(&ready)[0]!='s')return 15;
+  cleanup_order=0;if(cleaned_record(42,false)!=42 || cleanup_order!=12)return 10;
+  cleanup_order=0;bool caught=false;try{(void)cleaned_record(42,true);}catch(int value){caught=value==73;}
+  if(!caught || cleanup_order!=12)return 11;
+  cleanup_order=0;caught=false;try{(void)cleaned_record(-1,false);}catch(int value){caught=value==73;}
+  if(!caught || cleanup_order)return 12;
+  cleanup_order=0;caught=false;try{cleaned_throw();}catch(int value){caught=value==91;}
+  if(!caught || cleanup_order!=32)return 13;
+  cleanup_order=0;if(cleaned_template(42)!=42 || cleanup_order!=42)return 14;
+#ifdef __OBJC__
+  cleanup_order=0;if(cleaned_value()!=43 || cleanup_order!=43)return 16;
+  cleanup_order=0;if(cleaned_reference()!=44 || cleanup_order!=44)return 17;
+#endif
   if(ready!=42 || attribute_ready!=43 || ordered.value!=2 || retained.value!=4 || finalized.value!=5)return 1;
   if(&local_retained()!=&provider_local() || local_finalized().value!=7)return 2;
   pthread_t thread;void *result=(void *)1;

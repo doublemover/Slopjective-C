@@ -514,3 +514,18 @@ checks; complete native/archive acceptance remains separate.
   substitutes const by-value helper parameters within the complete shared-budget
   return proof. Source/PCH positives and conservative negative controls pass;
   borrowed-result-proofs v3 requires rebuilding published bodies.
+
+
+## Source 2.155 / System 2.81 implementation
+
+- [Automatic cleanup publication](linux_automatic_cleanup_publication.md)
+  retains native value/reference/address callbacks, public dependencies,
+  qualified names and exact body identity. C++ callback declarations and
+  argument locations now import into the destination AST. Source-free native
+  controls preserve destructor ordering, original exceptions and failed-init
+  cleanup, including template bodies with fixed local storage.
+- [Known callback proofs](linux_borrowed_known_callbacks.md) follow immutable
+  local/global function pointers and higher-order parameters within the shared
+  bounded return proof. Unknown/mutable/volatile/TLS and incompatible ABI casts
+  retain diagnostics. Native-storage-lifetime v2 and borrowed-result-proofs v4
+  are hard reader cutovers; broader dependent cleanup storage remains open.

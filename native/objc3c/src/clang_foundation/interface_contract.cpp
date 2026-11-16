@@ -528,7 +528,9 @@ InterfaceContractValidation ValidateSemanticInterface(
     Add(result,"O3IFC147","borrowed union byte storage identity and required capability must agree",expected.canonical_name);
   const bool borrowed_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasBorrowedResultProofIdentity);
   const bool borrowed_proof_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedResultProofSemantic)!=sidecar.required_semantics.end();
-  if(borrowed_proofs!=borrowed_proof_capability)
+  const bool borrowed_proof_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasBorrowedResultProofIdentity(d) || d.kind!="Namespace";});
+  if(borrowed_proofs!=borrowed_proof_capability || (borrowed_proof_capability && !borrowed_proof_owners))
     Add(result,"O3IFC145","borrowed result proof identity and required capability must agree",expected.canonical_name);
   const bool native_enums=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeUnnamedEnumIdentity);
   const bool native_enum_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeUnnamedEnumSemantic)!=sidecar.required_semantics.end();
@@ -536,7 +538,9 @@ InterfaceContractValidation ValidateSemanticInterface(
     Add(result,"O3IFC143","native unnamed enum identity and required capability must agree",expected.canonical_name);
   const bool native_storage=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeStorageLifetimeIdentity);
   const bool native_storage_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeStorageLifetimeSemantic)!=sidecar.required_semantics.end();
-  if(native_storage!=native_storage_capability)
+  const bool native_storage_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeStorageLifetimeIdentity(d) || d.kind!="Namespace";});
+  if(native_storage!=native_storage_capability || (native_storage_capability && !native_storage_owners))
     Add(result,"O3IFC142","native storage lifetime identity and required capability must agree",expected.canonical_name);
   const bool atomic_managed=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasAtomicManagedPropertyIdentity);
   const bool atomic_managed_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kAtomicManagedPropertySemantic)!=sidecar.required_semantics.end();

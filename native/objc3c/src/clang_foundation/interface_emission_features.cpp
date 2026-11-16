@@ -183,12 +183,24 @@ bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNativeCleanup(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Cleanup : clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitVarDecl(clang::VarDecl *variable) override {
+        found|=variable->hasAttr<clang::CleanupAttr>() || variable->hasAttr<clang::ObjCCleanupAttr>();return true;
+      }
+    } cleanup;
+    cleanup.TraverseStmt(const_cast<clang::Stmt *>(statement));return cleanup.found;
+  });
+}
+
 bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Storage=[](const clang::NamedDecl *named) {
     if(!named)return false;
     for(const auto *attribute:named->attrs())
-      if(!attribute->isImplicit() && llvm::isa<clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr>(attribute))return true;
+      if(!attribute->isImplicit() && llvm::isa<clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr>(attribute))return true;
     return false;
   };
   struct Declarations : clang::DynamicRecursiveASTVisitor {
