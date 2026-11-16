@@ -271,6 +271,13 @@ bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
   if(name=="task_detail::group_callback_result_t" &&
       llvm::isa<clang::TypeAliasTemplateDecl,clang::TypeAliasDecl>(declaration))
     return true;
+  // Owned spawn/group signatures use this invocation projection to select
+  // lvalue or one-shot rvalue factories. Instantiated decltype/constraints can
+  // name it directly. Admit only this declaration from the exact pinned task
+  // header, after the header and enclosing-definition checks above.
+  if(name=="task_detail::invoke_owned" &&
+      llvm::isa<clang::FunctionTemplateDecl,clang::FunctionDecl>(declaration))
+    return true;
   const auto root=name.take_until([](char c) { return c=='<' || c==':'; });
   static constexpr const char *public_names[]={
       "basic_task", "basic_task_handle", "task", "task_handle",

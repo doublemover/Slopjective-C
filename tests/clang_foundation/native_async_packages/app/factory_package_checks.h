@@ -135,6 +135,13 @@ int factory_package_checks() {
     const int allocated_value=*allocated;Attr::deallocate(allocated);
     if(allocated_value!=42)return 181;
     if(Attr::provider_preserved(contract_value)!=42 || Attr::required_template(&contract_value)!=40)return 180;
+    int swift_context=2;void *swift_error=nullptr;Attr::SwiftPair swift_pair{};
+    if(Attr::invoke_swift(&Attr::swift_context,40,&swift_context)!=42)return 212;
+    Attr::swift_result(&swift_pair,40);
+    if(swift_pair.first!=40 || swift_pair.second!=42)return 213;
+    if(Attr::swift_error(40,&swift_context,&swift_error)!=42 || swift_error)return 214;
+    if(Attr::swift_error(-1,&swift_context,&swift_error)!=0 || swift_error!=&swift_context)return 215;
+    if(Attr::swift_resume(&swift_context)!=2)return 216;
     static_assert(sizeof(Attr::Packet)==5 && alignof(Attr::Packet)==1);
     static_assert(alignof(Attr::FieldAligned)==32 && sizeof(Attr::FieldAligned)==64);
     static_assert(alignof(Attr::Special<int>)==32);

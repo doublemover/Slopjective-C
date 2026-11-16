@@ -234,9 +234,9 @@ inline constexpr const char *kNativeEmissionPolicySemantic = "objc3.native-emiss
 inline bool HasNativeEmissionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-emission-policies:v1;") != std::string::npos;
 }
-inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v2";
+inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v3";
 inline bool HasBorrowedResultProofIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";borrowed-result-proofs:v2;") != std::string::npos;
+  return d.canonical_type_identity.find(";borrowed-result-proofs:v3;") != std::string::npos;
 }
 inline constexpr const char *kBorrowedReceiverResultSemantic = "objc3.borrowed-receiver-results.v1";
 inline bool HasBorrowedReceiverResultIdentity(const InterfaceDeclarationIdentity &d) {
@@ -348,9 +348,10 @@ inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-null
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
 }
-inline constexpr const char *kNativeDeclarationAttributeSemantic = "objc3.native-declaration-attributes.v2";
+inline constexpr const char *kNativeDeclarationAttributeSemantic = "objc3.native-declaration-attributes.v3";
 inline bool HasNativeDeclarationAttributeIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-declaration-attributes:v2;") != std::string::npos;
+  return d.canonical_type_identity.find(";native-declaration-attributes:v3;") != std::string::npos ||
+         d.effects.ownership_identity.find(";native-declaration-attributes:v3;") != std::string::npos;
 }
 inline bool HasCxxCoroutineTraitsSpecializationIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;") != std::string::npos;

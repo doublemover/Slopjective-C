@@ -78,6 +78,60 @@ __attribute__((used,noinline)) inline int checked(const int *value){return *valu
   Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();\nextern \"C\" int override_policy() __asm__(\""+fallback+"\");\nextern \"C\" int override_policy(){return 31;}\nint main(){return check_a() || check_b();}\n");
   auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{"-fsanitize=address"});
 }
+void RunSwiftABI(const fs::path &root,const char *standard,int ownership,const char *optimization) {
+  fs::create_directories(root/"provider");
+  const auto source=root/"provider/module.mm";
+  Write(source,R"swift(
+namespace SwiftABI {
+struct Pair {long first;long second;};
+__attribute__((swiftcall,noinline)) int context(int value,void *state __attribute__((swift_context))) {return value+*static_cast<int *>(state);}
+__attribute__((swiftcall,noinline)) void result(Pair *out __attribute__((swift_indirect_result)),int value) {out->first=value;out->second=value+2;}
+__attribute__((swiftcall,noinline)) void erased(void *out __attribute__((swift_indirect_result)),int value) {auto *pair=static_cast<Pair *>(out);pair->first=value;pair->second=value+2;}
+__attribute__((swiftcall,noinline)) void reference(Pair &out __attribute__((swift_indirect_result)),int value) {out.first=value;out.second=value+2;}
+__attribute__((swiftcall,noinline)) int checked(int value,void *state __attribute__((swift_context)),void **error __attribute__((swift_error_result))) {*error=value<0?state:nullptr;return value<0?0:value+*static_cast<int *>(state);}
+__attribute__((swiftasynccall,noinline)) int resume(void *state __attribute__((swift_async_context))) {return *static_cast<int *>(state);}
+typedef int Callback(int,void * __attribute__((swift_context))) __attribute__((swiftcall));
+inline int invoke(Callback *callback,int value,void *state){return callback(value,state);}
+}
+)swift");
+  auto provider=Request(source,root/"provider.o",standard,ownership,optimization,{});
+  provider.module_owned_names=true;provider.module_source_root=(root/"provider").string();
+  provider.module_name="fixture.SwiftABI";provider.package_identity="swift-abi-v1";
+  provider.interface_exports={"SwiftABI"};provider.emit_semantic_interface=true;
+  auto built=Compile(provider);Success(built);assert(built.interface_artifact && built.interface_artifact->success);
+  const auto artifact=*built.interface_artifact;
+  assert(artifact.sidecar_json.find("objc3.native-declaration-attributes.v3")!=std::string::npos);
+  const auto interface=root/"SwiftABI.objc3i";
+  Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
+  assert(fs::remove(source));
+  for(const char *name:{"a","b"}) {
+    const auto input=root/(std::string("consumer-")+name+".mm");
+    Write(input,"extern \"C\" int check_"+std::string(name)+R"swift((){
+      int state=2;void *error=nullptr;SwiftABI::Pair pair{};
+      if(SwiftABI::invoke(&SwiftABI::context,40,&state)!=42)return 1;
+      SwiftABI::result(&pair,40);if(pair.first!=40 || pair.second!=42)return 2;
+      SwiftABI::erased(&pair,41);if(pair.first!=41 || pair.second!=43)return 5;
+      SwiftABI::reference(pair,42);if(pair.first!=42 || pair.second!=44)return 6;
+      if(SwiftABI::checked(40,&state,&error)!=42 || error)return 3;
+      if(SwiftABI::resume(&state)!=2)return 4;
+      return SwiftABI::checked(-1,&state,&error)!=0 || error!=&state;
+    })swift");
+    auto consumer=Request(input,root/(std::string(name)+".o"),standard,ownership,optimization,{});
+    InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;
+    consumer.imported_interfaces={imported};Success(Compile(consumer));
+    consumer.emit=EmitKind::LLVM;consumer.output_path=(root/(std::string(name)+".ll")).string();Success(Compile(consumer));
+    const auto ir=Read(consumer.output_path);
+    assert(ir.find("swiftcc")!=std::string::npos && ir.find("swiftself")!=std::string::npos);
+    assert(ir.find("swifterror")!=std::string::npos && ir.find("sret(")!=std::string::npos);
+    assert(ir.find("swifttailcc")!=std::string::npos && ir.find("swiftasync")!=std::string::npos);
+    assert(ir.find("sret(ptr)")==std::string::npos);
+    assert(ir.find("sret([0 x i8])")!=std::string::npos);
+  }
+  Write(root/"main.cpp","extern \"C\" int check_a();extern \"C\" int check_b();int main(){int first=check_a();return first?first:check_b();}");
+  auto main=Request(root/"main.cpp",root/"main.o",standard,ownership,optimization,{});Success(Compile(main));
+  LinkAndExecute(root,main.output_path,ownership!=0,{});
+}
+
 }
 int main() {
   test::IsolatedCases cases;
@@ -86,5 +140,7 @@ int main() {
   for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}}) {
     std::cerr<<standard<<" ownership="<<ownership<<'\n';cases.Run(std::string(standard)+"-"+std::to_string(ownership),[&]{Run(root/(std::string(standard)+"-"+std::to_string(ownership)),standard,ownership,opt);});
   }
+  for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}})
+    cases.Run(std::string("swift-")+standard+"-"+std::to_string(ownership),[&]{RunSwiftABI(root/(std::string("swift-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
   return cases.Finish();
 }

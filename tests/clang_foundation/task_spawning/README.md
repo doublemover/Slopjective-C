@@ -44,3 +44,8 @@ checks result types and rejects inference from erased frames or borrowed task
 references; raw-frame callbacks use explicit `<T>`. Manual detached-factory
 controls keep producer storage alive through frame retirement, which can follow
 completion publication. Native exceptions retain their original error identity.
+
+`rvalue_factories.h` extends those executions with move-only, rvalue-only child,
+detached and task-group factories, inferred results and explicit raw-frame
+results. It checks lvalue-overload priority, exact retained-owner retirement,
+factory/body exceptions and cancellation before entry without invocation.

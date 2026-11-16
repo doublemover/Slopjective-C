@@ -411,6 +411,18 @@ public:
 };
 
 namespace task_detail {
+// Owned factories prefer their ordinary lvalue invocation. A factory that only
+// admits rvalue invocation is consumed once, while its storage stays pinned
+// through destruction of the returned coroutine frame.
+template<class Work,class... Arguments>
+requires (requires(Work &work,Arguments &&... arguments) {work(std::forward<Arguments>(arguments)...);} ||
+          requires(Work &work,Arguments &&... arguments) {std::move(work)(std::forward<Arguments>(arguments)...);})
+decltype(auto) invoke_owned(Work &&work,Arguments &&... arguments) {
+  if constexpr(requires {work(std::forward<Arguments>(arguments)...);})
+    return work(std::forward<Arguments>(arguments)...);
+  else return std::move(work)(std::forward<Arguments>(arguments)...);
+}
+
 template<class Task,class Work> Task own_callable_as(Work work);
 }
 
@@ -469,17 +481,17 @@ public:
   }
   // Keep the callable's address stable through the spawned frame's actual
   // destruction, including coroutine lambdas that borrow their closure object.
-  template<class Work> requires requires(Work &work) {work().release_native();}
+  template<class Work> requires requires(Work &work) {task_detail::invoke_owned(work).release_native();}
   auto spawn(Work work) const
 #if defined(__OBJC3__)
       __attribute__((objc_task_spawn))
 #endif
   {
-    using Task=decltype(work());
+    using Task=decltype(task_detail::invoke_owned(work));
     return std::move(task_detail::own_callable_as<Task>(std::move(work))).start_child(*this);
   }
   template<class R,class Work> requires
-      std::is_same_v<decltype(std::declval<Work &>()()),objc3_async_frame>
+      std::is_same_v<decltype(task_detail::invoke_owned(std::declval<Work &>())),objc3_async_frame>
   auto spawn(Work work) const
 #if defined(__OBJC3__)
       __attribute__((objc_task_spawn))
@@ -1042,9 +1054,9 @@ template<class Task,class Work> Task own_callable_as(Work work) {
   using Context=owned_callable_context<Work>;
   auto *context=new Context(std::move(work));
   owned_callable_context_owner<Context> owner(context);
-  if constexpr(std::is_same_v<decltype(context->work.get()()),objc3_async_frame>)
-    context->inner=context->work.get()();
-  else context->inner=std::move(context->work.get()()).release_native();
+  if constexpr(std::is_same_v<decltype(invoke_owned(context->work.get())),objc3_async_frame>)
+    context->inner=invoke_owned(context->work.get());
+  else context->inner=std::move(invoke_owned(context->work.get())).release_native();
   // Admission applies to the producer's carrier, before a valid wrapper can
   // hide its ABI fields. Malformed producers retain responsibility for their
   // unadmitted contexts: dispose intentionally refuses their callbacks.
@@ -1102,11 +1114,11 @@ task<T> with_task_group_owned(Storage work) __attribute__((objc_task_group)) {
   // Awaiting completion alone does not join callback frame/callback cleanup.
   // Registration must precede dispatch, including failed-start paths.
   auto body = [&]() {
-    if constexpr (std::is_same_v<decltype(work.get()(group)),objc3_async_frame>) {
-      auto frame=work.get()(group);
+    if constexpr (std::is_same_v<decltype(invoke_owned(work.get(),group)),objc3_async_frame>) {
+      auto frame=invoke_owned(work.get(),group);
       try {return task<T>::from_native(&frame);}
       catch (...) {(void)objc3_async_frame_dispose(&frame);throw;}
-    } else return work.get()(group);
+    } else return invoke_owned(work.get(),group);
   }();
   auto callback = std::move(body).__objc3_start_group_body(scope);
   if constexpr (std::is_void_v<T>) {
@@ -1123,7 +1135,7 @@ template<class Task> struct group_callback_result;
 template<class T> struct group_callback_result<basic_task<T>> {using type=T;};
 template<class Work>
 using group_callback_result_t=typename group_callback_result<
-    decltype(std::declval<Work &>()(std::declval<task_group_handle &>()))>::type;
+    decltype(invoke_owned(std::declval<Work &>(),std::declval<task_group_handle &>()))>::type;
 } // namespace task_detail
 // Pin the source callable during the ordinary call. A lazy coroutine body
 // cannot acquire a stack Block after its caller has already returned.

@@ -2664,7 +2664,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
   if (HasDeclarationBorrowedResultProof(representative))
-    identity.canonical_type_identity+=";borrowed-result-proofs:v2;";
+    identity.canonical_type_identity+=";borrowed-result-proofs:v3;";
   if (HasDeclarationNativeStorageLifetime(representative))
     identity.canonical_type_identity += ";native-storage-lifetime:v1;";
   if (HasDeclarationAtomicManagedProperty(representative))
@@ -2877,7 +2877,7 @@ bool ReadInterfaceDeclarationIdentity(
   ReadNativeDeclarationContracts(representative, context, identity.effects);
   const auto native_attributes=DeclarationAttributeKey(representative,true);
   if(!native_attributes.empty())
-    identity.canonical_type_identity+=";native-declaration-attributes:v2;contracts="+
+    identity.canonical_type_identity+=";native-declaration-attributes:v3;contracts="+
         ComputeInterfaceSourceSha256(native_attributes)+";";
   const auto foreign_attributes=DeclarationAttributeKey(representative);
   if(!foreign_attributes.empty())

@@ -42,6 +42,13 @@ inline const char *static_branch_source(int choose){if(choose)return static_sour
 inline const char *static_switch_source(int choose){switch(choose){case 0:return static_source();case 1:return "alternate";default:return nullptr;}}
 inline const char *static_loop_source(int count){while(count--){if(count==1)return "loop";}return static_source();}
 inline const char *static_exception_source(int choose){try{if(choose)throw 37;return static_source();}catch(int){return "caught";}}
+inline const char *static_forward(const char *const value){return value;}
+inline const char *static_forward_local(const char *const value){const char *const alias=value;return alias;}
+inline const char *static_forward_chain(const char *const value){return static_forward_local(static_forward(value));}
+inline const char *static_forward_default(const char *const value="default"){return static_forward_chain(value);}
+inline const char *static_forward_choice(int choose,const char *const first,const char *const second){if(choose)return first;return second;}
+STATIC_BORROWED
+inline StaticLoan static_forward_view(void *owner,int choose){return static_forward_choice(choose,static_forward_chain(static_union.bytes),static_forward_default());}
 STATIC_BORROWED
 inline StaticLoan static_graph_view(void *owner,int choose){const char *const value=static_branch_source(choose);return value;}
 STATIC_BORROWED
@@ -135,6 +142,7 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(rebound_union(&attribute_ready,&ready)[0]!='t' || overwritten_union(&ready)!='p' || byte_union(&ready)[0]!='a')return 6;
   if(static_graph_view(&ready,1)[0]!='s' || static_graph_view(&ready,0)[0]!='a' || static_graph_switch(&ready,0)[0]!='s' || static_graph_switch(&ready,1)[0]!='a' || static_graph_switch(&ready,2)!=nullptr)return 7;
   if(static_graph_loop(&ready,3)[0]!='l' || static_graph_loop(&ready,0)[0]!='s' || static_graph_exception(&ready,0)[0]!='s' || static_graph_exception(&ready,1)[0]!='c')return 8;
+  if(static_forward_view(&ready,1)[0]!='s' || static_forward_view(&ready,0)[0]!='d')return 9;
   if(ready!=42 || attribute_ready!=43 || ordered.value!=2 || retained.value!=4 || finalized.value!=5)return 1;
   if(&local_retained()!=&provider_local() || local_finalized().value!=7)return 2;
   pthread_t thread;void *result=(void *)1;

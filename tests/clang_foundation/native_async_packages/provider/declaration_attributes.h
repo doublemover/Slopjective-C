@@ -1,6 +1,17 @@
 #ifndef NATIVE_DECLARATION_ATTRIBUTES_H
 #define NATIVE_DECLARATION_ATTRIBUTES_H
 namespace NativeDeclarationAttributes {
+// Swift's native parameter roles are physical ABI contracts, including indirect
+// results and the distinguished context/error registers.
+struct SwiftPair {long first;long second;};
+__attribute__((swiftcall,noinline)) int swift_context(int value, void *context __attribute__((swift_context)));
+__attribute__((swiftcall,noinline)) void swift_result(SwiftPair *result __attribute__((swift_indirect_result)), int value);
+__attribute__((swiftcall,noinline)) int swift_error(int value, void *context __attribute__((swift_context)), void **error __attribute__((swift_error_result)));
+__attribute__((swiftasynccall,noinline)) int swift_resume(void *context __attribute__((swift_async_context)));
+typedef int SwiftFunction(int, void * __attribute__((swift_context))) __attribute__((swiftcall));
+using SwiftCallback = SwiftFunction *;
+inline int invoke_swift(SwiftCallback callback,int value,void *context) {return callback(value,context);}
+
 struct __attribute__((packed)) Packet {unsigned char code;int value;};
 struct alignas(32) Aligned {int value;};
 struct FieldAligned {char code;alignas(32) int value;};

@@ -5,6 +5,14 @@ on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
+The [source 2.154 / System 2.80 implementation span](linux_rvalue_task_factories.md)
+adds owned rvalue-only task factories, [Swift physical ABI publication](linux_swift_physical_abi.md)
+and [permanent borrowed-result argument forwarding](linux_borrowed_argument_forwarding.md).
+Source/PCH, source-free native, canonical replay and decoder controls pass for
+these changes. Optimized Swift controls also repaired incorrect indirect-result
+`sret` typing. The source span requires a rebuilt compiler and matching SDK;
+the last accepted archive remains unchanged.
+
 The [source 2.153 / System 2.79 native MRC and value-construction span](linux_native_mrc_record_payloads.md)
 implements source-owned MRC C++ payload lifetimes, ordinary carrier object
 construction and owned task results. It also preserves owning lambda argument
@@ -2137,3 +2145,24 @@ tooling tests passing, plus 32 source-free configurations / 224 commands and thr
 full-fixture smoke configurations / 21 commands. SDK 2.62 and runtime binaries are
 unchanged. C overloadable package publication, further predicate/declaration
 forms and the broader implementation categories above remain open.
+
+## Source 2.154 implementation span
+
+[Owned one-shot task factories](linux_rvalue_task_factories.md) extend the
+child/detached/group surface to move-only rvalue-only invocation while retaining
+factory storage through frame retirement, cancellation and failure. The existing
+24 source/PCH spawn configurations pass with the added controls, and all four
+source-free group configurations pass after provider removal.
+
+[Swift physical ABI publication](linux_swift_physical_abi.md) preserves Swift
+calling conventions, callback parameter declarations and physical result/context
+roles under native-declaration-attributes v3. Optimized native controls exposed
+and repaired incorrect `sret(ptr)` typing: typed results use their pointee object
+layout and erased/incomplete buffers retain an opaque byte-buffer layout.
+The three focused source-free native configurations pass, including optimized
+record-pointer, reference and erased-buffer results. This source span requires
+a newly built compiler/SDK; it does not change the last accepted archive.
+
+[Permanent borrowed-result argument forwarding](linux_borrowed_argument_forwarding.md)
+also composes immutable helper parameters with actual caller arguments under the
+shared return-graph budget and the borrowed-result-proofs v3 reader cutover.

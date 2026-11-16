@@ -2032,3 +2032,8 @@ Default *provider_pointer(Default *pointer){return pointer;}
 int &provider_value(){return value<int>;}
 int &provider_local(){return local<int>;}
 }
+
+__attribute__((swiftcall,noinline)) int NativeDeclarationAttributes::swift_context(int value, void *context __attribute__((swift_context))) {return value+*static_cast<int *>(context);}
+__attribute__((swiftcall,noinline)) void NativeDeclarationAttributes::swift_result(SwiftPair *result __attribute__((swift_indirect_result)),int value) {result->first=value;result->second=value+2;}
+__attribute__((swiftcall,noinline)) int NativeDeclarationAttributes::swift_error(int value,void *context __attribute__((swift_context)),void **error __attribute__((swift_error_result))) {*error=value<0?context:nullptr;return value<0?0:value+*static_cast<int *>(context);}
+__attribute__((swiftasynccall,noinline)) int NativeDeclarationAttributes::swift_resume(void *context __attribute__((swift_async_context))) {return *static_cast<int *>(context);}

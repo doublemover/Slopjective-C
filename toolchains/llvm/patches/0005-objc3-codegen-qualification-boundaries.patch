@@ -5507,7 +5507,27 @@ index 08cb9860f..5ca6e7716 100644
              Attrs.addDeadOnReturnAttr(llvm::DeadOnReturnInfo());
          }
        }
-@@ -3325,6 +3466,17 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
+@@ -3247,7 +3388,18 @@
+       // Add 'sret' if we haven't already used it for something, but
+       // only if the result is void.
+       if (!hasUsedSRet && RetTy->isVoidType()) {
+-        Attrs.addStructRetAttr(getTypes().ConvertTypeForMem(ParamType));
++        // The ABI parameter is a pointer/reference to the result object.
++        // sret's type describes that object, not the pointer slot. Using the
++        // slot type lets LLVM discard stores to the actual result at O2.
++        QualType ResultType = ParamType->getPointeeType();
++        // Erased or incomplete buffers have no known memory shape. A sized
++        // zero-byte buffer preserves the physical result register without
++        // inventing a pointer-valued object or imposing a false object layout.
++        llvm::Type *ResultIRType = ResultType->isIncompleteType() ||
++                                          !ResultType->isConstantSizeType()
++                                      ? llvm::ArrayType::get(Int8Ty, 0)
++                                      : getTypes().ConvertTypeForMem(ResultType);
++        Attrs.addStructRetAttr(ResultIRType);
+         hasUsedSRet = true;
+       }
+ 
+@@ -3325,6 +3477,17 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
    for (const llvm::AttrBuilder &Attrs : ArgAttrs)
      ArgAttrSets.push_back(llvm::AttributeSet::get(getLLVMContext(), Attrs));
  
@@ -5525,7 +5545,7 @@ index 08cb9860f..5ca6e7716 100644
    AttrList = llvm::AttributeList::get(
        getLLVMContext(), llvm::AttributeSet::get(getLLVMContext(), FuncAttrs),
        llvm::AttributeSet::get(getLLVMContext(), RetAttrs), ArgAttrSets);
-@@ -4369,6 +4521,38 @@ void CodeGenFunction::EmitFunctionEpilog(
+@@ -4369,6 +4532,38 @@ void CodeGenFunction::EmitFunctionEpilog(
  
    case ABIArgInfo::Extend:
    case ABIArgInfo::Direct:
@@ -5564,7 +5584,7 @@ index 08cb9860f..5ca6e7716 100644
      if (RetAI.getCoerceToType() == ConvertType(RetTy) &&
          RetAI.getDirectOffset() == 0) {
        // The internal return value temp always will have pointer-to-return-type
-@@ -4998,7 +5182,7 @@ void CodeGenFunction::EmitCallArgs(
+@@ -4998,7 +5193,7 @@ void CodeGenFunction::EmitCallArgs(
      const auto *MD = dyn_cast<const ObjCMethodDecl *>(Prototype.P);
      if (MD) {
        IsVariadic = MD->isVariadic();
@@ -5573,7 +5593,7 @@ index 08cb9860f..5ca6e7716 100644
            MD, CGM.getTarget().getTriple().isOSWindows());
        ArgTypes.assign(MD->param_type_begin() + ParamsToSkip,
                        MD->param_type_end());
-@@ -5121,6 +5305,17 @@ void CodeGenFunction::EmitCallArgs(
+@@ -5121,6 +5316,17 @@ void CodeGenFunction::EmitCallArgs(
      // Reverse the writebacks to match the MSVC ABI.
      Args.reverseWritebacks();
    }
@@ -5591,7 +5611,7 @@ index 08cb9860f..5ca6e7716 100644
  }
  
  namespace {
-@@ -5205,6 +5400,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5205,6 +5411,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      return args.add(EmitReferenceBindingToExpr(E), type);
    }
  
@@ -5608,7 +5628,7 @@ index 08cb9860f..5ca6e7716 100644
    bool HasAggregateEvalKind = hasAggregateEvaluationKind(type);
  
    // In the Microsoft C++ ABI, aggregate arguments are destructed by the callee.
-@@ -5227,7 +5432,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5227,7 +5443,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      if (DestroyedInCallee)
        Slot.setExternallyDestructed();
  
@@ -5620,7 +5640,7 @@ index 08cb9860f..5ca6e7716 100644
      RValue RV = Slot.asRValue();
      args.add(RV, type);
  
-@@ -5577,6 +5785,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5577,6 +5796,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
    // FIXME: We no longer need the types from CallArgs; lift up and simplify.
  
    assert(Callee.isOrdinary() || Callee.isVirtual());
@@ -5635,7 +5655,7 @@ index 08cb9860f..5ca6e7716 100644
  
    // Handle struct-return functions by passing a pointer to the
    // location that we would like to return into.
-@@ -5710,6 +5926,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5710,6 +5937,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
      bool ArgHasMaybeUndefAttr =
          IsArgumentMaybeUndef(TargetDecl, CallInfo.getNumRequiredArgs(), ArgNo);
  
@@ -5678,7 +5698,7 @@ index 08cb9860f..5ca6e7716 100644
      switch (ArgInfo.getKind()) {
      case ABIArgInfo::InAlloca: {
        assert(NumIRArgs == 0);
-@@ -5771,9 +6023,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5771,9 +6034,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          //    we cannot force it to be sufficiently aligned.
          // 3. If the argument is byval, but RV is not located in default
          //    or alloca address space.
@@ -5694,7 +5714,7 @@ index 08cb9860f..5ca6e7716 100644
          CharUnits Align = ArgInfo.getIndirectAlign();
          const llvm::DataLayout *TD = &CGM.getDataLayout();
  
-@@ -5788,7 +6043,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5788,7 +6054,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                                               Align.getAsAlign(),
                                               *TD) < Align.getAsAlign()) {
            NeedCopy = true;
@@ -5703,7 +5723,7 @@ index 08cb9860f..5ca6e7716 100644
            auto LV = I->getKnownLValue();
  
            bool isByValOrRef =
-@@ -5917,8 +6172,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5917,8 +6183,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          Src = CreateMemTempWithoutCast(I->Ty, "coerce");
          I->copyInto(*this, Src);
        } else {
@@ -37938,3 +37958,25 @@ index 000000000..3bd45b7d1
 +// Such calls need a location in their artificial callback scope, even at O0.
 +// CHECK-LABEL: define internal void @__objc3_c_async_resume
 +// CHECK: call{{.*}}__objc3_async_capture_current_exception{{.*}}!dbg
+diff --git a/clang/test/ObjC3/CodeGen/swift-indirect-result-layout.cpp b/clang/test/ObjC3/CodeGen/swift-indirect-result-layout.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/swift-indirect-result-layout.cpp
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x c++ -std=c++20 -emit-llvm -O0 -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x c++ -std=c++23 -emit-llvm -O2 -o - %s | FileCheck %s
++struct Pair {long first;long second;};
++// CHECK-LABEL: define{{.*}} swiftcc void @_Z6result
++// CHECK-SAME: sret(%struct.Pair)
++__attribute__((swiftcall)) void result(Pair *out __attribute__((swift_indirect_result)),int value){out->first=value;out->second=value+2;}
++// CHECK-LABEL: define{{.*}} swiftcc void @_Z9reference
++// CHECK-SAME: sret(%struct.Pair)
++__attribute__((swiftcall)) void reference(Pair &out __attribute__((swift_indirect_result)),int value){out.first=value;out.second=value+2;}
++// CHECK-LABEL: define{{.*}} swiftcc void @_Z6erased
++// CHECK-SAME: sret([0 x i8])
++__attribute__((swiftcall)) void erased(void *out __attribute__((swift_indirect_result)),int value){auto *pair=static_cast<Pair *>(out);pair->first=value;pair->second=value+2;}
++struct Opaque;
++__attribute__((swiftcall)) void incomplete(Opaque *out __attribute__((swift_indirect_result)));
++// CHECK-LABEL: define{{.*}} void @_Z6caller
++// CHECK: call swiftcc void @_Z10incomplete{{.*}}sret([0 x i8])
++void caller(Opaque *out){incomplete(out);}

@@ -35,6 +35,23 @@ inline objc3::task<Value> record_leaf(int value){co_await objc3::task_yield;co_r
 inline auto record(int value){return objc3::with_task_group([value](objc3::task_group_handle group)->objc3::task<Value>{auto child=record_leaf(value).start_child(group);co_return co_await child;});}
 inline objc3::task<int> failure_leaf(){throw 777;co_return 0;}
 inline auto failure(){return objc3::with_task_group([](objc3::task_group_handle group)->objc3::task<int>{auto child=failure_leaf().start_child(group);co_return co_await child;});}
+struct __attribute__((objc_unsafe_sendable)) Child {
+ Value owner;
+ explicit Child(int value):owner(value){}
+ Child(const Child &)=delete;Child(Child &&)=default;
+ objc3::task<int> operator()() & = delete;
+ objc3::task<int> operator()() && {co_await objc3::task_yield;co_return owner.value;}
+};
+struct Factory {
+ Value owner;
+ explicit Factory(int value):owner(value){}
+ Factory(const Factory &)=delete;Factory(Factory &&)=default;
+ objc3::task<int> operator()(objc3::task_group_handle) & = delete;
+ objc3::task<int> operator()(objc3::task_group_handle group) && {
+   ++entered;auto child=group.spawn(Child(owner.value));co_return co_await child;
+ }
+};
+inline auto rvalue(int value){return objc3::with_task_group(Factory(value));}
 }
 )group");
   auto provider=request(source,root/"provider.o");provider.module_owned_names=true;
@@ -74,6 +91,14 @@ inline auto failure(){return objc3::with_task_group([](objc3::task_group_handle 
       caught=false;try{(void)stopped.result();}catch(const objc3::task_cancelled &){caught=true;}
       if(!caught || PublishedGroup::entered!=entered)return 11;stopped={};
       if(PublishedGroup::live)return 12;
+      auto rvalue=PublishedGroup::rvalue(45).start(executor);
+      if(objc3_executor_pump(executor,UINT32_MAX,&ran)!=OBJC3_SERVICE_OK || rvalue.result()!=45)return 13;
+      rvalue={};if(PublishedGroup::live)return 14;
+      const auto rvalue_entered=PublishedGroup::entered;
+      auto cancelled=PublishedGroup::rvalue(99).start(executor);cancelled.cancel();
+      if(objc3_executor_pump(executor,UINT32_MAX,&ran)!=OBJC3_SERVICE_OK)return 15;
+      caught=false;try{(void)cancelled.result();}catch(const objc3::task_cancelled &){caught=true;}
+      cancelled={};if(!caught || PublishedGroup::entered!=rvalue_entered || PublishedGroup::live)return 16;
       objc3_executor_release(executor);return 0;
     })group");
     auto consumer=request(input,root/(std::string(name)+".o"));

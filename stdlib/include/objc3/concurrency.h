@@ -40,24 +40,24 @@
 /* C++ callable spawn owns its closure until native frame teardown, not merely
  * until completion publication. Result, cancellation, executor and structured
  * parent contracts are the same as direct task/frame spawn. */
-template<class Work> requires requires(Work &work) {work().release_native();}
+template<class Work> requires requires(Work &work) {objc3::task_detail::invoke_owned(work).release_native();}
 inline auto objc3_task_spawn(Work work) __attribute__((objc_task_spawn)) {
-  using Task=decltype(work());
+  using Task=decltype(objc3::task_detail::invoke_owned(work));
   return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).start_child();
 }
-template<class Work> requires requires(Work &work) {work().release_native();}
+template<class Work> requires requires(Work &work) {objc3::task_detail::invoke_owned(work).release_native();}
 inline auto objc3_task_detached(Work work) __attribute__((objc_task_detached)) {
-  using Task=decltype(work());
+  using Task=decltype(objc3::task_detail::invoke_owned(work));
   return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).detach();
 }
 template<class R,class Work> requires requires(Work &work) {
-  requires std::is_same_v<decltype(work()),objc3_async_frame>;
+  requires std::is_same_v<decltype(objc3::task_detail::invoke_owned(work)),objc3_async_frame>;
 }
 inline objc3::task_handle<R> objc3_task_spawn(Work work) __attribute__((objc_task_spawn)) {
   return std::move(objc3::task_detail::own_callable_as<objc3::task<R>>(std::move(work))).start_child();
 }
 template<class R,class Work> requires requires(Work &work) {
-  requires std::is_same_v<decltype(work()),objc3_async_frame>;
+  requires std::is_same_v<decltype(objc3::task_detail::invoke_owned(work)),objc3_async_frame>;
 }
 inline objc3::task_handle<R> objc3_task_detached(Work work) __attribute__((objc_task_detached)) {
   return std::move(objc3::task_detail::own_callable_as<objc3::task<R>>(std::move(work))).detach();
@@ -65,14 +65,14 @@ inline objc3::task_handle<R> objc3_task_detached(Work work) __attribute__((objc_
 
 /* Register the frame in the selected group before dispatch, while its adapter
  * owns the callable through complete inner-frame teardown. */
-template<class Work> requires requires(Work &work) {work().release_native();}
+template<class Work> requires requires(Work &work) {objc3::task_detail::invoke_owned(work).release_native();}
 inline auto objc3_task_spawn_in_group(objc3::task_group_handle group,Work work)
     __attribute__((objc_task_spawn)) {
-  using Task=decltype(work());
+  using Task=decltype(objc3::task_detail::invoke_owned(work));
   return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).start_child(group);
 }
 template<class R,class Work> requires requires(Work &work) {
-  requires std::is_same_v<decltype(work()),objc3_async_frame>;
+  requires std::is_same_v<decltype(objc3::task_detail::invoke_owned(work)),objc3_async_frame>;
 }
 inline objc3::task_handle<R> objc3_task_spawn_in_group(objc3::task_group_handle group,Work work)
     __attribute__((objc_task_spawn)) {

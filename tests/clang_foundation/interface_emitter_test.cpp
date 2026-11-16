@@ -394,6 +394,14 @@ void TestDeducedTaskGroupReplay() {
     inline objc3::task<int> callback(objc3::task_group_handle group){auto child=leaf(42).start_child(group);co_return co_await child;}
     inline auto make(){return objc3::with_task_group(callback);}
     inline auto captured(int value){return objc3::with_task_group([value](objc3::task_group_handle group)->objc3::task<int>{auto child=leaf(value).start_child(group);co_return co_await child;});}
+    struct Factory {
+      int value;
+      explicit Factory(int value):value(value){}
+      Factory(const Factory &)=delete;Factory(Factory &&)=default;
+      objc3::task<int> operator()(objc3::task_group_handle) & = delete;
+      objc3::task<int> operator()(objc3::task_group_handle group) && {auto child=leaf(value).start_child(group);co_return co_await child;}
+    };
+    inline auto rvalue(int value){return objc3::with_task_group(Factory(value));}
    }
   )";
   auto emit=[&](const std::string &text) {
@@ -420,6 +428,7 @@ void TestDeducedTaskGroupReplay() {
   auto consumer=parse(first.source_bytes+R"(
    static_assert(std::is_same_v<decltype(PublishedGroup::make()),objc3::task<int>>);
    static_assert(std::is_same_v<decltype(PublishedGroup::captured(42)),objc3::task<int>>);
+   static_assert(std::is_same_v<decltype(PublishedGroup::rvalue(42)),objc3::task<int>>);
    objc3::task<int> deduced_group_consumer(){co_return co_await PublishedGroup::captured(42);}
   )");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
  }
@@ -1499,6 +1508,13 @@ void TestBorrowedStaticStorageReplay() {
         inline const char *static_switch_source(int choose){switch(choose){case 0:return static_program_data;case 1:return static_inline_source();default:return 0;}}
         inline const char *static_loop_source(int count){while(count--){if(count==1)return static_inline_source();}return static_program_data;}
         inline const char *static_goto_source(int choose){if(choose)goto other;return static_program_data;other:return static_inline_source();}
+        inline const char *static_forward(const char *const value){return value;}
+        inline const char *static_forward_local(const char *const value){const char *const alias=value;return alias;}
+        inline const char *static_forward_chain(const char *const value){return static_forward_local(static_forward(value));}
+        inline const char *static_forward_default(const char *const value=static_program_data){return static_forward_chain(value);}
+        inline const char *static_forward_choice(int choose,const char *const first,const char *const second){if(choose)return first;return second;}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_forward_view(void *owner,int choose){return static_forward_choice(choose,static_forward_chain(static_program_data),static_forward_default(static_union_data.bytes));}
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_graph_view(void *owner,int choose){return choose?static_branch_source(choose):static_loop_source(choose);}
         __attribute__((objc_returns_borrowed(owner_index=0)))
@@ -1513,6 +1529,7 @@ void TestBorrowedStaticStorageReplay() {
       auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
       assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedResultProofSemantic)));
       auto older=supported;std::erase(older,llvm::StringRef(kBorrowedResultProofSemantic));
+      older.push_back("objc3.borrowed-result-proofs.v2");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
       std::erase(decoded->required_semantics,kBorrowedResultProofSemantic);
       auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
@@ -3604,7 +3621,7 @@ void TestNativeAllocatorAndDiagnosticContracts() {
       auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
       std::vector<llvm::StringRef> supported;
       for(const auto&item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
-      assert(std::find(supported.begin(),supported.end(),llvm::StringRef("objc3.native-declaration-attributes.v2"))!=supported.end());
+      assert(std::find(supported.begin(),supported.end(),llvm::StringRef("objc3.native-declaration-attributes.v3"))!=supported.end());
       auto older=supported;std::erase(older,llvm::StringRef(kNativeDeclarationAttributeSemantic));
       older.push_back("objc3.native-declaration-attributes.v1");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
@@ -3651,7 +3668,7 @@ void TestNativeDeclarationAttributes() {
     assert(first.success);
     for(const auto *spelling:{"packed","alignas","no_unique_address","nodiscard","noinline","always_inline","visibility","pure"})
       assert(first.source_bytes.find(spelling)!=std::string::npos);
-    for(const auto *spelling:{"pass_object_size","pass_dynamic_object_size","lifetimebound","noescape","callback","sentinel","diagnose_if","returns_twice","disable_tail_calls","not_tail_called","nomerge","noduplicate","optnone","leaf"})
+    for(const auto *spelling:{"pass_object_size","pass_dynamic_object_size","lifetimebound","noescape","callback","sentinel","diagnose_if","returns_twice","disable_tail_calls","not_tail_called","nomerge","noduplicate","optnone","leaf","swiftcall","swiftasynccall","swift_context","swift_async_context","swift_error_result","swift_indirect_result"})
       assert(first.source_bytes.find(spelling)!=std::string::npos);
     assert(first.source_bytes.find("nothrow")!=std::string::npos || first.source_bytes.find("noexcept")!=std::string::npos);
     assert(first.source_bytes.find("enable_if")!=std::string::npos);
@@ -3674,6 +3691,17 @@ void TestNativeDeclarationAttributes() {
     for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
     auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
     assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasNativeDeclarationAttributeIdentity)>15);
+    auto old_reader=semantics;
+    std::erase(old_reader,llvm::StringRef(kNativeDeclarationAttributeSemantic));
+    old_reader.push_back("objc3.native-declaration-attributes.v2");
+    auto unsupported=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old_reader);
+    assert(!unsupported);llvm::consumeError(unsupported.takeError());
+    auto swift_changed=source;
+    const std::string context_role=" __attribute__((swift_context))";
+    auto role_at=swift_changed.find(context_role);assert(role_at!=std::string::npos);
+    swift_changed.erase(role_at,context_role.size());
+    auto changed_role=emit(swift_changed);
+    assert(changed_role.success && changed_role.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     auto missing=*decoded;std::erase(missing.required_semantics,kNativeDeclarationAttributeSemantic);
     auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
     auto wrong=*decoded;auto row=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasNativeDeclarationAttributeIdentity);

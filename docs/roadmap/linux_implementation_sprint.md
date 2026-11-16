@@ -493,3 +493,24 @@ commands and three full-fixture smoke configurations / 21 commands. Three platfo
 compiler cases remain unsupported. The final compiler excludes specialization
 rows from ordinary module lookup and matches its current source/catalog identity.
 SDK 2.62 remains unchanged.
+
+## Source 2.154 / System 2.80 implementation
+
+- Owned one-shot task factories now support move-only rvalue-only calls across
+  ordinary/detached/group and raw-frame APIs, with lvalue-call priority and
+  pinned factory retirement. Source/PCH spawn and source-free group controls
+  exercise results, exact destruction, original errors and pre-entry cancellation.
+- Swift physical ABI publication retains context/async-context/error/indirect
+  result roles, nested callback type identity and imported callback parameter
+  declarations. The native declaration contract hard-cuts to v3. CodeGen now
+  gives `sret` its actual result layout, with opaque byte-buffer layout for erased
+  or incomplete results; optimized native controls cover each form.
+
+Details: [factories](linux_rvalue_task_factories.md) and
+[Swift ABI](linux_swift_physical_abi.md). These are development implementation
+checks; complete native/archive acceptance remains separate.
+
+- [Permanent borrowed-result forwarding](linux_borrowed_argument_forwarding.md)
+  substitutes const by-value helper parameters within the complete shared-budget
+  return proof. Source/PCH positives and conservative negative controls pass;
+  borrowed-result-proofs v3 requires rebuilding published bodies.
