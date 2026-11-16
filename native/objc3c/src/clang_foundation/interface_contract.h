@@ -230,6 +230,10 @@ inline constexpr const char *kBorrowedUnionStorageSemantic = "objc3.borrowed-uni
 inline bool HasBorrowedUnionStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";borrowed-union-byte-storage:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxVirtualCallSemantic = "objc3.cxx-virtual-call-expressions.v1";
+inline bool HasCxxVirtualCallIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.kind!="Namespace" && d.canonical_type_identity.find(";cxx-virtual-call-expressions:v1;") != std::string::npos;
+}
 inline constexpr const char *kNativeThreadSafetySemantic = "objc3.native-thread-safety.v1";
 inline bool HasNativeThreadSafetyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-thread-safety:v1;") != std::string::npos;
@@ -238,9 +242,9 @@ inline constexpr const char *kNativeEmissionPolicySemantic = "objc3.native-emiss
 inline bool HasNativeEmissionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-emission-policies:v2;") != std::string::npos;
 }
-inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v7";
+inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v8";
 inline bool HasBorrowedResultProofIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";borrowed-result-proofs:v7;") != std::string::npos;
+  return d.canonical_type_identity.find(";borrowed-result-proofs:v8;") != std::string::npos;
 }
 inline constexpr const char *kBorrowedReceiverResultSemantic = "objc3.borrowed-receiver-results.v1";
 inline bool HasBorrowedReceiverResultIdentity(const InterfaceDeclarationIdentity &d) {

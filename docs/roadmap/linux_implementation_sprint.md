@@ -644,3 +644,10 @@ Published lambda call operators now preserve their native callable and parameter
 contracts, with exact interface identity and the cxx-lambda-expressions v2 reader
 cutover. Real source-free synchronization consumers additionally cover native
 header defaulted-definition delivery. See [scope and checks](linux_native_lambda_contracts.md).
+
+## Source 2.167 / System 2.93 implementation
+
+Read-only reference/alias graphs, exact C++ callable producers and permanent
+pointer-object reference results share the bounded result proof. Qualified
+versus virtual dispatch is bound separately in interface identity. See
+[contracts and controls](linux_permanent_reference_and_method_proofs.md).

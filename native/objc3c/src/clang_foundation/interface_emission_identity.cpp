@@ -1077,6 +1077,14 @@ public:
   bool VisitMemberExpr(clang::MemberExpr *expression) {
     Reference(expression->getMemberDecl()); return true;
   }
+  bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr *expression) {
+    const auto *method=expression->getMethodDecl();
+    if(method && method->isVirtual()) {
+      const auto *member=llvm::dyn_cast<clang::MemberExpr>(expression->getCallee()->IgnoreParenImpCasts());
+      Add("virtual-call-qualified:"+std::to_string(member && member->hasQualifier()));
+    }
+    return true;
+  }
   bool VisitCXXConstructExpr(clang::CXXConstructExpr *expression) {
     Reference(expression->getConstructor()); return true;
   }
@@ -2848,6 +2856,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationVirtualCall(representative))
+    identity.canonical_type_identity+=";cxx-virtual-call-expressions:v1;";
   if (HasDeclarationThreadSafetyContract(representative))
     identity.canonical_type_identity+=";native-thread-safety:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))
@@ -2857,7 +2867,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
   if (HasDeclarationBorrowedResultProof(representative))
-    identity.canonical_type_identity+=";borrowed-result-proofs:v7;";
+    identity.canonical_type_identity+=";borrowed-result-proofs:v8;";
   if (HasDeclarationNativeStorageLifetime(representative))
     identity.canonical_type_identity += ";native-storage-lifetime:v6;";
   if (HasDeclarationAtomicManagedProperty(representative))

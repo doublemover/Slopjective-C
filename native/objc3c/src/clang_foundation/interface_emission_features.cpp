@@ -157,6 +157,19 @@ bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationVirtualCall(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Calls:clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr *call) override {
+        const auto *method=call->getMethodDecl();found|=method && method->isVirtual();return true;
+      }
+    } calls;
+    calls.TraverseStmt(const_cast<clang::Stmt *>(statement));return calls.found;
+  });
+}
+
 bool HasDeclarationThreadSafetyContract(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   struct Contracts:clang::DynamicRecursiveASTVisitor {

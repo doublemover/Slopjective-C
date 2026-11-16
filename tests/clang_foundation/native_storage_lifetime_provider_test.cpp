@@ -153,6 +153,56 @@ inline StaticCallback static_retarget_factory(int choose){StaticCallback callbac
 STATIC_BORROWED
 inline StaticLoan static_retarget_view(void *owner,int choose){return static_retarget_callback(static_retarget_factory(choose),static_retarget_local(choose),choose);}
 
+inline const char *static_reference(const char *const &value){return value;}
+inline const char *static_reference_chain(const char *const &value){const char *const &one=value;const char *const &two=one;return static_reference(two);}
+inline const char *static_reference_callback(StaticCallback const &callback,const char *value){return callback(value);}
+inline const char *static_function_reference(const char *(&callback)(const char *),const char *value){return callback(value);}
+STATIC_BORROWED
+inline StaticLoan static_reference_view(void *owner,int choose){
+  const char *value=static_union.bytes;const char *const &one=value;const char *const &two=one;
+  if(choose)value="reference";return static_reference_chain(two);
+}
+STATIC_BORROWED
+inline StaticLoan static_reference_callback_view(void *owner,int choose){
+  StaticCallback const &callback=choose?static_readonly:static_forward;
+  return static_reference_callback(callback,static_union.bytes);
+}
+STATIC_BORROWED
+inline StaticLoan static_function_reference_view(void *owner){
+  auto &callback=static_forward;return static_function_reference(callback,static_union.bytes);
+}
+struct StaticMethodProducer {
+ const char *read()const{return static_union.bytes;}
+ const char *forward(const char *const &value)const{return static_reference_chain(value);}
+ StaticCallback callback(int choose)const{return choose?static_readonly:static_forward;}
+ const char *operator()(const char *const &value)const{return forward(value);}
+};
+struct StaticFinalMethodProducer final {virtual const char *read(){return static_union.bytes;}};
+struct StaticDispatchBase {virtual const char *read(){return "base";}};
+struct StaticDispatchDerived:StaticDispatchBase {const char *read()override{return "derived";}};
+inline const char *static_dynamic_dispatch(StaticDispatchBase &value){return value.read();}
+inline const char *static_qualified_dispatch(StaticDispatchBase &value){return value.StaticDispatchBase::read();}
+STATIC_BORROWED
+inline StaticLoan static_qualified_method_view(void *owner,StaticDispatchBase &value){return value.StaticDispatchBase::read();}
+STATIC_BORROWED
+inline StaticLoan static_method_view(void *owner,int choose){StaticMethodProducer producer;return choose?producer.read():producer("method");}
+STATIC_BORROWED
+inline StaticLoan static_method_callback_view(void *owner,int choose){return StaticMethodProducer{}.callback(choose)(static_union.bytes);}
+STATIC_BORROWED
+inline StaticLoan static_final_method_view(void *owner,StaticFinalMethodProducer &producer){return producer.read();}
+STATIC_BORROWED
+inline StaticLoan static_lambda_view(void *owner){return [](auto value){return value;}("lambda");}
+inline const char *const static_pointer_object=static_union.bytes;
+inline StaticCallback const static_callback_object=static_forward;
+inline const char *const &static_permanent_pointer_reference(){return static_pointer_object;}
+inline StaticCallback const &static_permanent_callback_reference(){return static_callback_object;}
+inline const char *(&static_permanent_function_reference())(const char *){return static_forward;}
+STATIC_BORROWED
+inline StaticLoan static_permanent_pointer_reference_view(void *owner){return static_permanent_pointer_reference();}
+STATIC_BORROWED
+inline StaticLoan static_permanent_callback_reference_view(void *owner){return static_permanent_callback_reference()(static_union.bytes);}
+STATIC_BORROWED
+inline StaticLoan static_permanent_function_reference_view(void *owner){return static_permanent_function_reference()(static_union.bytes);}
 inline constexpr StaticCallback static_callback=static_forward_chain;
 inline const char *static_callback_source(StaticCallback const callback,const char *const value){StaticCallback const alias=callback;return alias(value);}
 STATIC_BORROWED
@@ -285,6 +335,16 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   cleanup_order=0;if(cleaned_function<int>(47)!=47 || cleanup_order!=1)return 24;
   cleanup_order=0;if(cleaned_function<CleanupValue>(48)!=48 || cleanup_order!=12)return 25;
   if(static_readonly_view(nullptr)[0]!='s')return 51;
+  if(static_reference_view(nullptr,0)[0]!='s' || static_reference_view(nullptr,1)[0]!='r')return 53;
+  if(static_reference_callback_view(nullptr,0)[0]!='s' || static_reference_callback_view(nullptr,1)[0]!='s')return 54;
+  if(static_function_reference_view(nullptr)[0]!='s')return 55;
+  if(static_method_view(nullptr,0)[0]!='m' || static_method_view(nullptr,1)[0]!='s')return 56;
+  if(static_method_callback_view(nullptr,0)[0]!='s' || static_method_callback_view(nullptr,1)[0]!='s')return 57;
+  StaticFinalMethodProducer final_method;
+  if(static_final_method_view(nullptr,final_method)[0]!='s' || static_lambda_view(nullptr)[0]!='l')return 58;
+  StaticDispatchDerived derived;
+  if(static_dynamic_dispatch(derived)[0]!='d' || static_qualified_dispatch(derived)[0]!='b' || static_qualified_method_view(nullptr,derived)[0]!='b')return 59;
+  if(static_permanent_pointer_reference_view(nullptr)[0]!='s' || static_permanent_callback_reference_view(nullptr)[0]!='s' || static_permanent_function_reference_view(nullptr)[0]!='s')return 60;
   if(static_retarget_view(nullptr,0)[0]!='t' || static_retarget_view(nullptr,1)[0]!='e' || static_retarget(static_union.bytes,1)[0]!='e')return 52;
   overload_closed=0;cleaned_overload();if(overload_closed!=51)return 42;
   overload_closed=0;cleaned_overload_address();if(overload_closed!=52)return 43;

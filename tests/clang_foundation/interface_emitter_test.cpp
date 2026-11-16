@@ -1658,6 +1658,48 @@ void TestBorrowedStaticStorageReplay() {
         inline const char *static_retarget_callback(RetargetCallback callback,const char *value,int choose){if(choose)callback=static_readonly;return callback(value);}
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_retarget_view(void *owner,int choose){return static_retarget_callback(static_readonly,static_retarget_alias(choose),choose);}
+        inline const char *static_reference_other(const char *value){return value+1;}
+        inline const char *static_reference(const char *const &value){return value;}
+        inline const char *static_reference_chain(const char *const &value){const char *const &one=value;const char *const &two=one;return static_reference(two);}
+        inline const char *static_reference_callback(RetargetCallback const &callback,const char *value){return callback(value);}
+        inline const char *static_function_reference(const char *(&callback)(const char *),const char *value){return callback(value);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_reference_view(void *owner,int choose){
+          const char *value=static_program_data;const char *const &one=value;const char *const &two=one;
+          if(choose)value=static_union_data.bytes;return static_reference_chain(two);
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_reference_callbacks(void *owner,int choose){
+          RetargetCallback const &callback=choose?static_readonly:static_reference_other;
+          return static_reference_callback(callback,static_union_data.bytes);
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_function_reference_view(void *owner){return static_function_reference(static_reference_other,static_union_data.bytes);}
+        inline const char *const static_pointer_object=static_program_data;
+        inline RetargetCallback const static_callback_object=static_readonly;
+        inline const char *const &static_permanent_pointer_reference(){return static_pointer_object;}
+        inline RetargetCallback const &static_permanent_callback_reference(){return static_callback_object;}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_permanent_pointer_reference_view(void *owner){return static_permanent_pointer_reference();}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_permanent_callback_reference_view(void *owner){return static_permanent_callback_reference()(static_program_data);}
+        struct StaticMethodProducer {
+          const char *read()const{return static_union_data.bytes;}
+          const char *forward(const char *const &value)const{return static_reference_chain(value);}
+          RetargetCallback callback(int choose)const{return choose?static_readonly:static_reference_other;}
+          const char *operator()(const char *const &value)const{return forward(value);}
+        };
+        struct StaticFinalMethodProducer final {virtual const char *read(){return static_program_data;}};
+        struct StaticVirtualMethodProducer {virtual const char *read(){return static_program_data;}};
+        inline const char *static_dispatch_identity(StaticVirtualMethodProducer &value){return value.StaticVirtualMethodProducer::read();}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_method_view(void *owner,int choose){StaticMethodProducer producer;return choose?producer.read():producer(static_program_data);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_method_callback_view(void *owner,int choose){return StaticMethodProducer{}.callback(choose)(static_program_data);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_final_method_view(void *owner,StaticFinalMethodProducer &producer){return producer.read();}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_lambda_view(void *owner){return [](auto value){return value;}(static_program_data);}
         inline const char *static_inline_source(){return static_union_data.bytes;}
         inline const char *static_inline_offset(int offset){return static_inline_source()+offset;}
         inline const char *static_inline_choice(int choose){return choose?static_program_data:static_inline_source();}
@@ -1698,7 +1740,7 @@ void TestBorrowedStaticStorageReplay() {
       auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
       assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedResultProofSemantic)));
       auto older=supported;std::erase(older,llvm::StringRef(kBorrowedResultProofSemantic));
-      older.push_back("objc3.borrowed-result-proofs.v6");
+      older.push_back("objc3.borrowed-result-proofs.v7");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
       std::erase(decoded->required_semantics,kBorrowedResultProofSemantic);
       auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
@@ -1708,6 +1750,19 @@ void TestBorrowedStaticStorageReplay() {
       assert(!llvm::is_contained(invented->required_semantics,std::string(kBorrowedResultProofSemantic)));
       invented->required_semantics.push_back(kBorrowedResultProofSemantic);
       auto invalid_capability=EncodeSemanticInterfaceSidecar(*invented,supported);assert(!invalid_capability);llvm::consumeError(invalid_capability.takeError());
+      if(cxx) {
+        assert(llvm::is_contained(decoded->required_semantics,std::string(kCxxVirtualCallSemantic)));
+        // decoded has had the borrowed capability removed above; independently
+        // decode the untouched artifact for virtual-call admission controls.
+        auto virtual_contract=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(virtual_contract);
+        auto virtual_older=supported;std::erase(virtual_older,llvm::StringRef(kCxxVirtualCallSemantic));
+        auto unsupported=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,virtual_older);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+        std::erase(virtual_contract->required_semantics,kCxxVirtualCallSemantic);
+        auto virtual_missing=EncodeSemanticInterfaceSidecar(*virtual_contract,supported);assert(!virtual_missing);llvm::consumeError(virtual_missing.takeError());
+        auto dynamic=source;auto at=dynamic.find("value.StaticVirtualMethodProducer::read()");assert(at!=std::string::npos);
+        dynamic.replace(at,std::string("value.StaticVirtualMethodProducer::read()").size(),"value.read()");
+        assert(emit(dynamic,"dynamic-member-dispatch.m").identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+      }
       auto replay=emit(first.source_bytes,"replayed-static-borrowed-results.m");
       assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
       auto relocated=emit("\n\n"+source,"relocated-static-borrowed-results.m");
@@ -11384,7 +11439,7 @@ void TestCxxOutOfLineDefaulting() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
       "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-class-dispatch.v1", "objc3.cxx-namespaces.v1",
+      "objc3.cxx-class-dispatch.v1", kCxxVirtualCallSemantic, "objc3.cxx-namespaces.v1",
       "objc3.cxx-declaration-expressions.v1", "objc3.cxx-out-of-line-defaulting.v1",
       "objc3.module-owned-names.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
@@ -11715,7 +11770,7 @@ void TestCxxClassDispatch() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
       "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-class-dispatch.v1"};
+      "objc3.cxx-class-dispatch.v1", kCxxVirtualCallSemantic};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {
         "-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};

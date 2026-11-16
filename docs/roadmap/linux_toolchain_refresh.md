@@ -14,7 +14,7 @@ independent version numbers; no additional ABI revision is invented for this
 release refresh. All provider objects, PCH, interfaces and packages must be
 regenerated against the new source identity.
 
-Development source is now **2.166 / System 2.92 / keypath 2.12**. The later
+Development source is now **2.167 / System 2.93 / keypath 2.12**. The later
 implementation spans require a fresh matching compiler/SDK build and release
 acceptance; the running 2.153 repair campaign cannot qualify those later changes.
 Neither candidate nor source version changes the last accepted archive.

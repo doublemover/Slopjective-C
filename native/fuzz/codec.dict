@@ -48,3 +48,9 @@
 
 "objc3.cxx-standard-library-headers.v2"
 ";cxx-standard-library-headers:v2;"
+
+"objc3.borrowed-result-proofs.v8"
+";borrowed-result-proofs:v8;"
+
+"objc3.cxx-virtual-call-expressions.v1"
+";cxx-virtual-call-expressions:v1;"

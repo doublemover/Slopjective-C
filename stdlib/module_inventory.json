@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 166,
+        "minor": 167,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -336,12 +336,14 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 92,
+        "minor": 93,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Permanent-result proofs admit complete exact C++ method/operator/lambda return graphs, method-produced callback sets and qualified/final virtual targets; unresolved dispatch, member-pointer calls and receiver-derived unknown bases remain rejected. Qualified versus virtual call identity is explicit under cxx-virtual-call-expressions v1; matching SDK pending",
+        "Permanent-result proofs support bounded read-only const pointer and known function references, complete local const-reference alias graphs and joined backing-slot writes; alias escape, cast mutation, reference Block captures and unknown/volatile/global mutable inputs remain rejected; borrowed-result-proofs v8 reader cutover, matching SDK pending",
         "Exact native standard-header reuse carries odr-used defaulted special members through consumer Sema and CodeGen, preserving shared_mutex/once_flag constructors, condition-variable destruction and stop-token moves; cxx-standard-library-headers v2 reader cutover; matching SDK pending",
         "Native lambda callable and parameter contracts preserve thread-safety requirements, diagnostics, native emission and foreign metadata, defaults, constraints and explicit callable forms through canonical replay and source-free import; cxx-lambda-expressions v2 reader cutover; matching SDK pending",
         "Permanent-result proofs conservatively join every initial and assigned pointer/callback value across complete local/helper bodies, admitting known local/by-value retargeting, callback factories and object-pointer base-preserving updates while rejecting unknown writes, escaped/reference/__block/resource slots and replaceable weak/alias globals; shared work/depth/target limits and borrowed-result-proofs v7 govern source-free admission, matched SDK pending",

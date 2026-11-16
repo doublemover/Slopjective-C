@@ -2,7 +2,7 @@
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.166 / System 2.92 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.167 / System 2.93 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2254,3 +2254,10 @@ sets of local/by-value pointer and callback assignments, including factories,
 deferred writes and base-preserving object-pointer updates. Every possible value
 must retain a permanent base; unknown/escaping mutation stays conservative under
 the borrowed-result-proofs v7 reader cutover.
+
+## Source 2.167 reference and callable return proofs
+
+Bounded reference/alias graphs and exact native method/operator/lambda producers
+now retain permanent-result evidence, including immutable static pointer-object
+reference results. Virtual call identity distinguishes qualified base calls from
+runtime dispatch. See [implementation and boundaries](linux_permanent_reference_and_method_proofs.md).

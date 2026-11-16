@@ -518,6 +518,12 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
+  const bool virtual_calls=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxVirtualCallIdentity);
+  const bool virtual_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxVirtualCallSemantic)!=sidecar.required_semantics.end();
+  const bool virtual_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxVirtualCallIdentity(d) || d.kind!="Namespace";});
+  if(virtual_calls!=virtual_capability || (virtual_capability && !virtual_owners))
+    Add(result,"O3IFC189","C++ virtual-call identity and required capability must agree",expected.canonical_name);
   const bool thread_safety=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeThreadSafetyIdentity);
   const bool thread_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeThreadSafetySemantic)!=sidecar.required_semantics.end();
   const bool thread_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

@@ -30,6 +30,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.keypath-subscripts.v1",
     kNativeEmissionPolicySemantic,
     kNativeThreadSafetySemantic,
+    kCxxVirtualCallSemantic,
     kBorrowedUnionStorageSemantic,
     kBorrowedResultProofSemantic,
     kNativeUnnamedEnumSemantic,
@@ -695,6 +696,12 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool virtual_calls=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxVirtualCallIdentity);
+  const bool virtual_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxVirtualCallSemantic)!=sidecar.required_semantics.end();
+  const bool virtual_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxVirtualCallIdentity(d) || d.kind!="Namespace";});
+  if(virtual_calls!=virtual_capability || (virtual_capability && !virtual_owners))
+    return Invalid("C++ virtual-call identity and required capability must agree");
   const bool thread_safety=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeThreadSafetyIdentity);
   const bool thread_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeThreadSafetySemantic)!=sidecar.required_semantics.end();
   const bool thread_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
