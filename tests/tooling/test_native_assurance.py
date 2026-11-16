@@ -935,3 +935,41 @@ def test_replay_budget_does_not_expand_other_suite_limits():
     replay['artifacts'][0]['bytes'] = evidence.SANITIZER_PRODUCT_BYTES + 1
     with pytest.raises(ValueError, match='suite artifact budget'):
         evidence.validate_evidence_sizes([replay])
+
+
+@pytest.mark.parametrize('failure', [None, 'command', 'inventory', 'no-pass'])
+def test_upstream_execution_publishes_terminal_selection_consumable_by_merge(tmp_path, monkeypatch, failure):
+    from scripts.objc3c_assurance import upstream
+    directory = tmp_path / 'upstream'
+    directory.mkdir()
+    tools = {name: 'a'*64 for name in upstream.UPSTREAM_TOOLS}
+    monkeypatch.setattr(upstream, 'prepare_upstream_tools', lambda *_: tools)
+
+    def command(label, argv):
+        assert label == 'upstream-lit'
+        assert json.loads((directory / 'selection.json').read_text())['status'] == 'RUNNING'
+        assert [str(path.relative_to(tmp_path / 'out/toolchains/objc3-development/src'))
+                for path in argv[-len(upstream.UPSTREAM):]] == list(upstream.UPSTREAM)
+        if failure == 'command':
+            raise RuntimeError('native lit failed')
+        rows = [] if failure == 'inventory' else [
+            {'name': 'Clang :: AST/native.cpp', 'code': 'UNSUPPORTED' if failure == 'no-pass' else 'PASS',
+             'output': 'fixture requires an unavailable host capability' if failure == 'no-pass' else ''}]
+        (directory / 'lit.json').write_text(json.dumps({'tests': rows}))
+
+    if failure:
+        with pytest.raises((RuntimeError, ValueError)):
+            upstream.execute_upstream(tmp_path, directory, command)
+        assert json.loads((directory / 'selection.json').read_text())['status'] == 'FAIL'
+        with pytest.raises(ValueError, match='native owner did not pass'):
+            evidence.suite_results(tmp_path, 'upstream')
+        return
+    result = upstream.execute_upstream(tmp_path, directory, command)
+    assert evidence.suite_results(tmp_path, 'upstream') == result
+    selection = json.loads((directory / 'selection.json').read_text())
+    for replacement in ({**selection, 'status': 'RUNNING'},
+                        {**selection, 'selected': list(upstream.UPSTREAM[:-1])},
+                        {**selection, 'tools': {}}):
+        (directory / 'selection.json').write_text(json.dumps(replacement))
+        with pytest.raises(ValueError):
+            evidence.suite_results(tmp_path, 'upstream')

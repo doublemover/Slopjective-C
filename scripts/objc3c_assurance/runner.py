@@ -19,13 +19,8 @@ from scripts.objc3c_toolchain.qualify_installed import qualify_installed
 from .evidence import SCHEMA, evidence_budget, validate_evidence_sizes, artifact, digest, junit, lit, package_execution
 from .plan import foundation_receipts, from_checkout, selected_suites, validate
 from .execution import checked_command, execute_ctest, execute_suites
-from .upstream import prepare_upstream_tools
+from .upstream import UPSTREAM, execute_upstream
 
-# Existing Clang lit taxonomy, confined to touched compiler subsystems. Whole
-# check-clang/check-llvm promotion awaits measured runner cost, not a new cron.
-UPSTREAM = ('clang/test/AST', 'clang/test/SemaObjC', 'clang/test/SemaObjCXX',
-            'clang/test/CodeGenObjC', 'clang/test/CodeGenObjCXX', 'clang/test/PCH',
-            'clang/test/Modules', 'clang/test/Driver')
 
 
 def _consumer_compile_jobs(repo: Path) -> int:
@@ -275,18 +270,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 raise ValueError('actual ASan/UBSan and TSan O0/O2 executions are incomplete')
             return result['executions']
         if name == 'upstream':
-            foundation = repo / 'out/toolchains/objc3-development'
-            # Test prerequisites stay outside the installed SDK distribution.
-            tools = prepare_upstream_tools(repo, command)
-            selected = [foundation / 'src' / name for name in UPSTREAM]
-            write_json(directory / 'selection.json', {'selected': list(UPSTREAM),
-                'tools': tools,
-                'reason': 'unchanged-language regressions across AST/Sema/CodeGen/serialization/driver',
-                'excluded': {'check-clang/check-llvm': 'whole-suite promotion requires measured runner cost; #8283'}})
-            result_file = directory / 'lit.json'
-            command('upstream-lit', [sys.executable, '-B', foundation / 'build-linux-x86_64/bin/llvm-lit',
-                '-sv', '--show-unsupported', '-j', '2', '--output', result_file, *selected])
-            return lit(result_file)
+            return execute_upstream(repo, directory, command)
         if name == 'swift-consumer':
             from scripts.objc3c_toolchain.swift_consumer import prepare_compiler_prefix, qualify
             from scripts.objc3c_toolchain.swift_toolchain import install

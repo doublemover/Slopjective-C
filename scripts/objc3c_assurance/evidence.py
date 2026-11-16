@@ -185,8 +185,10 @@ def suite_results(root: Path, name: str) -> list[dict]:
             raise ValueError('sanitizer execution/control/profile matrix is incomplete')
         return rows
     if name == 'upstream':
-        from .upstream import UPSTREAM_TOOLS
+        from .upstream import UPSTREAM, UPSTREAM_TOOLS
         selection = read('selection.json')
+        if selection.get('selected') != list(UPSTREAM):
+            raise ValueError('upstream selected suite inventory is incomplete')
         tools = selection.get('tools', {})
         if (set(tools) != set(UPSTREAM_TOOLS) or any(
                 not isinstance(value, str) or len(value) != 64 or
