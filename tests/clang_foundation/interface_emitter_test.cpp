@@ -1541,6 +1541,7 @@ void TestBorrowedStaticStorageReplay() {
         const union StaticPublishedUnion static_union_data={{'u','n','i','o','n',0}};
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_union_view(void *owner){return static_union_data.bytes;}
+
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_local_view(void *owner,int choose) {
           const char *const value=choose?static_program_data:static_union_data.bytes;
@@ -1548,6 +1549,11 @@ void TestBorrowedStaticStorageReplay() {
         }
       )";
       if(cxx)source+=R"(
+        inline const char *static_readonly(const char *value){const char *alias=value;const char *other=alias;return other;}
+        inline const char *static_readonly_callback(const char *(*callback)(const char *),const char *value){const char *(*alias)(const char *)=callback;return alias(value);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_readonly_view(void *owner){return static_readonly_callback(static_readonly,static_union_data.bytes);}
+
         inline const char *static_inline_source(){return static_union_data.bytes;}
         inline const char *static_inline_offset(int offset){return static_inline_source()+offset;}
         inline const char *static_inline_choice(int choose){return choose?static_program_data:static_inline_source();}
@@ -1588,7 +1594,7 @@ void TestBorrowedStaticStorageReplay() {
       auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
       assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedResultProofSemantic)));
       auto older=supported;std::erase(older,llvm::StringRef(kBorrowedResultProofSemantic));
-      older.push_back("objc3.borrowed-result-proofs.v4");
+      older.push_back("objc3.borrowed-result-proofs.v5");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
       std::erase(decoded->required_semantics,kBorrowedResultProofSemantic);
       auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());

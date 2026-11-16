@@ -2231,3 +2231,10 @@ SDK archive acceptance remains separate.
 completes ordinary overload ranking, constrained and deduced templates, static
 members and C17 overloadable callbacks. Deferred storage recipes and concrete
 publication retain distinct identities under native-storage-lifetime v6.
+
+## Source 2.163 read-only borrowed bindings
+
+[Read-only pointer and callback binding proofs](linux_readonly_borrowed_bindings.md)
+extend bounded permanent-result analysis to ordinary by-value parameters and local
+aliases without a written top-level const. Shared work bounds, mutation/escape
+gates and the borrowed-result-proofs v6 reader cutover retain owner obligations.

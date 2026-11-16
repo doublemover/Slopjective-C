@@ -44827,7 +44827,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6433 @@
+@@ -0,0 +1,6498 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49360,15 +49360,78 @@ new file mode 100644
 +        Method && !Method->isStatic()) return nullptr;
 +    return Definition;
 +  }
++  bool staticReadOnlyPointerUses(const FunctionDecl *Function,
++      llvm::SmallPtrSetImpl<const VarDecl *> &ReadOnly,unsigned &Budget) const {
++    using Use=std::pair<const Stmt *,const Stmt *>;
++    SmallVector<Use,16> Pending{{Function->getBody(),nullptr}};
++    while (!Pending.empty()) {
++      const auto [Node,Parent]=Pending.pop_back_val();
++      if (!Node) continue;
++      if (!Budget) return false;
++      --Budget;
++      if (const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
++        if (const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
++            Variable && ReadOnly.contains(Variable)) {
++          const auto *Load=dyn_cast_or_null<ImplicitCastExpr>(Parent);
++          if (!Load || Load->getCastKind()!=CK_LValueToRValue)
++            ReadOnly.erase(Variable);
++        }
++      }
++      if (const auto *Lambda=dyn_cast<LambdaExpr>(Node)) {
++        for (const Expr *Initializer:Lambda->capture_inits())
++          Pending.emplace_back(Initializer,Node);
++        continue;
++      }
++      // Blocks copy by-value parameters into independent capture slots.
++      if (isa<BlockExpr>(Node)) continue;
++      const auto *Cast=dyn_cast<ImplicitCastExpr>(Node);
++      const bool Transparent=isa<ParenExpr>(Node) ||
++          (Cast && Cast->getCastKind()==CK_NoOp &&
++           Context.hasSameUnqualifiedType(Cast->getType(),Cast->getSubExpr()->getType()));
++      const Stmt *NextParent=Transparent?Parent:Node;
++      for (const Stmt *Child:Node->children())
++        Pending.emplace_back(Child,NextParent);
++    }
++    return true;
++  }
++  bool staticUnmodifiedLocalPointer(const VarDecl *Variable,unsigned &Budget) const {
++    if (!Variable->hasLocalStorage() || isa<ParmVarDecl>(Variable) ||
++        !Variable->hasInit() || Variable->hasAttr<BlocksAttr>() ||
++        Variable->hasAttr<ObjCResourceAttr>() ||
++        !Variable->getType()->isPointerType() ||
++        Variable->getType().isVolatileQualified()) return false;
++    const auto *Function=dyn_cast<FunctionDecl>(Variable->getDeclContext());
++    if (!Function || !Function->getBody()) return false;
++    llvm::SmallPtrSet<const VarDecl *,1> ReadOnly{Variable};
++    return staticReadOnlyPointerUses(Function,ReadOnly,Budget) && ReadOnly.contains(Variable);
++  }
 +  bool staticCallArguments(const FunctionDecl *Definition, const CallExpr *Call,
 +      unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings,
 +      SmallVectorImpl<StaticReturnBinding> &Arguments) const {
 +    if (Call->getNumArgs() != Definition->getNumParams() ||
 +        Definition->getNumParams() > Budget) return false;
 +    Budget -= Definition->getNumParams();
++    // Ordinary by-value pointer parameters need not spell top-level const.
++    // Admit them only after a bounded whole-body proof that every use reads
++    // their value. Taking/binding their address, assignment, increment, or
++    // reference capture leaves the parameter unbound. A copied pointer/lambda
++    // capture is a snapshot and cannot retarget the original parameter slot.
++    llvm::SmallPtrSet<const VarDecl *,8> ReadOnly;
++    for (const auto *Parameter : Definition->parameters()) {
++      QualType Type=Parameter->getType();
++      if (Type->isPointerType() && !Type.isConstQualified() &&
++          !Type.isVolatileQualified()) ReadOnly.insert(Parameter);
++    }
++    if (!ReadOnly.empty() && !staticReadOnlyPointerUses(Definition,ReadOnly,Budget))
++      return false;
 +    Arguments.append(Bindings.begin(), Bindings.end());
-+    for (unsigned I = 0; I < Definition->getNumParams(); ++I)
-+      Arguments.emplace_back(Definition->getParamDecl(I), Call->getArg(I));
++    for (unsigned I = 0; I < Definition->getNumParams(); ++I) {
++      const auto *Parameter=Definition->getParamDecl(I);
++      QualType Type=Parameter->getType();
++      if (Type->isPointerType() && !Type.isVolatileQualified() &&
++          (Type.isConstQualified() || ReadOnly.contains(Parameter)))
++        Arguments.emplace_back(Parameter,Call->getArg(I));
++    }
 +    return true;
 +  }
 +  bool staticFunctionTargets(const Expr *Expression, unsigned Depth,
@@ -49407,7 +49470,8 @@ new file mode 100644
 +        return true;
 +      }
 +      if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl()); Variable &&
-+          Variable->getType().isConstQualified() && !Variable->getType().isVolatileQualified() &&
++          (Variable->getType().isConstQualified() || isa<ParmVarDecl>(Variable) ||
++           staticUnmodifiedLocalPointer(Variable,Budget)) && !Variable->getType().isVolatileQualified() &&
 +          Variable->getType()->isPointerType() &&
 +          Variable->getType()->getPointeeType()->isFunctionType() &&
 +          Variable->getTLSKind() == VarDecl::TLS_None) {
@@ -49536,16 +49600,17 @@ new file mode 100644
 +    // A pointer lvalue names its slot; only a complete rvalue load can prove
 +    // the pointee. Treating &constantPointer as constantPointer is unsound.
 +    if (!Expression->isPRValue()) return false;
-+    // Immutable local bindings and by-value helper parameters cannot be
-+    // retargeted in a defined program. Reprove the actual call argument using
++    // Immutable local bindings and checked read-only by-value helper parameters
++    // cannot be retargeted during the call. Reprove the actual call argument using
 +    // the caller's binding environment; unknown/global/borrowed owners retain
-+    // their obligations. Mutable, volatile and reference parameters stay open.
++    // their obligations. Written/escaped, volatile and reference parameters stay open.
 +    if(const auto *Load=dyn_cast<ImplicitCastExpr>(Expression);
 +        Load && Load->getCastKind()==CK_LValueToRValue && Load->getType()->isPointerType())
 +      if(const auto *Reference=dyn_cast<DeclRefExpr>(Load->getSubExpr()->IgnoreParenImpCasts()))
 +        if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
 +            Variable && Variable->hasLocalStorage() &&
-+            Variable->getType().isConstQualified() && !Variable->getType().isVolatileQualified() &&
++            (Variable->getType().isConstQualified() || isa<ParmVarDecl>(Variable) ||
++           staticUnmodifiedLocalPointer(Variable,Budget)) && !Variable->getType().isVolatileQualified() &&
 +            !Variable->getType()->isReferenceType()) {
 +          if(const auto *Parameter=dyn_cast<ParmVarDecl>(Variable)) {
 +            for(const auto &Binding:llvm::reverse(Bindings))
@@ -49560,8 +49625,8 @@ new file mode 100644
 +    if (!Expression->EvaluateAsRValue(Result, Context) ||
 +        Result.HasSideEffects || Result.HasUndefinedBehavior || !Result.Val.isLValue()) {
 +      // Inspect statically bound definitions whose complete bounded return graph
-+      // proves permanent bases. Only immutable by-value pointer parameters
-+      // are substituted; references and mutable slots never prove a base.
++      // proves permanent bases. Only immutable or proven read-only by-value pointer parameters
++      // are substituted; references and written/escaped slots never prove a base.
 +      // C external inline definitions may differ from the selected external
 +      // definition, whereas C++ inline definitions share their ODR contract.
 +      const auto *Call = dyn_cast<CallExpr>(Expression->IgnoreParenImpCasts());
@@ -59558,7 +59623,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2917 @@
+@@ -0,0 +1,2939 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62474,6 +62539,28 @@ new file mode 100644
 +      void ASSERT_CALL(const Expr *Call){EXPECT_TRUE(Call);}
 +    } Values(Context);
 +    Values.TraverseDecl(Context.getTranslationUnitDecl());EXPECT_EQ(Values.Deferred,2U);EXPECT_EQ(Values.Concrete,4U);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, ReadOnlyPointerParametersForwardPermanentResults) {
++  const char *Source=R"(
++    static const char data[]="permanent";
++    static const char *direct(const char *value){return value;}
++    static const char *forward(const char *value){const char *alias=direct(value);return alias;}
++    static const char *callback(const char *(*function)(const char *),const char *value){return function(value);}
++    typedef borrowed const char *Loan;
++    __attribute__((objc_returns_borrowed(owner_index=0)))
++    Loan view(void *owner){return callback(forward,data);}
++    #ifdef __cplusplus
++    static const char *copied(const char *value){auto change=[value]()mutable{value="other";};change();return value;}
++    __attribute__((objc_returns_borrowed(owner_index=0)))
++    Loan copy_view(void *owner){return copied(data);}
++    #endif
++  )";
++  for(const char *Standard:{"-std=c17","-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x",Standard==StringRef("-std=c17")?"objective-c":"objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"readonly-forwarding.mm");ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  }
 +}
 
@@ -70038,7 +70125,7 @@ diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,105 @@
 +#ifndef OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +#define OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +typedef borrowed const char *StaticGraphLoan;
@@ -70083,6 +70170,19 @@ new file mode 100644
 +static const char *graph_forward_local(const char *const value){const char *const alias=value;return alias;}
 +static const char *graph_forward_chain(const char *const value){return graph_forward_local(graph_forward(value));}
 +static const char *graph_forward_choice(int choose,const char *const first,const char *const second){if(choose)return first;return second;}
++static const char *graph_readonly(const char *value){return value;}
++static const char *graph_readonly_parens(const char *value){return (value);}
++static const char *graph_readonly_chain(const char *value){return graph_readonly_parens(graph_readonly(value));}
++static const char *graph_readonly_callback(const char *(*callback)(const char *),const char *value){return callback(value);}
++static const char *graph_readonly_offset(const char *value){return value+1;}
++static const char *graph_increment(const char *value){++value;return value;}
++void graph_escape_pointer(const char **);
++static const char *graph_escape_parameter(const char *value){graph_escape_pointer(&value);return value;}
++static const char *graph_readonly_local(const char *value){const char *alias=value;const char *other=alias;return other;}
++static const char *graph_readonly_local_callback(const char *value){const char *(*callback)(const char *)=graph_readonly;return callback(value);}
++static const char *graph_local_written(const char *value){const char *alias=value;alias=graph_unknown();return alias;}
++static const char *graph_local_escaped(const char *value){const char *alias=value;graph_escape_pointer(&alias);return alias;}
++static const char *graph_block_byref(const char *value){__block const char *alias=value;void (^change)(void)=^{alias=graph_unknown();};change();return alias;}
 +static const char *graph_forward_mutable(const char *value){value=graph_unknown();return value;}
 +static const char *graph_forward_volatile(const char *const volatile value){return value;}
 +static const char *graph_forward_recursive(const char *const value){return graph_forward_recursive(value);}
@@ -70119,6 +70219,9 @@ new file mode 100644
 +static const char *graph_forward_reference(const char *const &value){return value;}
 +#endif
 +#ifdef __cplusplus
++static const char *graph_reference_escape(const char *value){const char *&alias=value;alias=graph_unknown();return value;}
++static const char *graph_reference_capture(const char *value){auto change=[&value]{value=graph_unknown();};change();return value;}
++static const char *graph_copy_capture(const char *value){auto change=[value]()mutable{value=graph_unknown();};change();return value;}
 +static const char *graph_nested_lambda(int choose){auto callback=[choose]()->const char *{return graph_unknown();};(void)callback;return choose?graph_first:graph_second;}
 +static const char *graph_throw(int choose){if(choose)throw 37;return graph_first;}
 +static const char *graph_catch(int choose){try{if(choose)throw 37;return graph_first;}catch(int){return graph_second;}}
@@ -70133,7 +70236,7 @@ diff --git a/clang/test/ObjC3/Sema/borrowed-static-control-flow.m b/clang/test/O
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,121 @@
 +// REQUIRES: x86-registered-target
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
@@ -70157,6 +70260,22 @@ new file mode 100644
 +#ifndef FROM_PCH
 +#include "Inputs/borrowed-static-control-flow.h"
 +#endif
++STATIC_GRAPH StaticGraphLoan static_graph_readonly(void *owner){return graph_readonly_chain(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_readonly_callback(void *owner){return graph_readonly_callback(graph_readonly,graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_readonly_offset(void *owner){return graph_readonly_offset(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_readonly_unknown(void *owner,const char *unknown){return graph_readonly(unknown);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_incremented(void *owner){return graph_increment(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_parameter_escaped(void *owner){return graph_escape_parameter(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++#ifdef __cplusplus
++STATIC_GRAPH StaticGraphLoan static_graph_reference_escaped(void *owner){return graph_reference_escape(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_reference_captured(void *owner){return graph_reference_capture(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_copied_capture(void *owner){return graph_copy_capture(graph_first);}
++#endif
++STATIC_GRAPH StaticGraphLoan static_graph_local_snapshot(void *owner){return graph_readonly_local(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_callback_snapshot(void *owner){return graph_readonly_local_callback(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_local_written(void *owner){return graph_local_written(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_local_escaped(void *owner){return graph_local_escaped(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_block_byref(void *owner){return graph_block_byref(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_branch(void *owner,int choose){return graph_branch(choose);}
 +STATIC_GRAPH StaticGraphLoan static_graph_switch(void *owner,int choose){return graph_switch(choose);}
 +STATIC_GRAPH StaticGraphLoan static_graph_loop(void *owner,int count){return graph_loop(count);}

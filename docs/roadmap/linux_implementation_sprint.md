@@ -608,3 +608,13 @@ priority; ambiguity/deletion/access errors cannot select an address fallback.
 Dependent/auto recipes resolve after storage deduction. Concrete source-free
 identity binds selected specializations without counting newly explicit deduced
 arguments twice; native-storage-lifetime v6 enforces reader admission.
+
+## Source 2.163 / System 2.89 implementation
+
+[Read-only borrowed bindings](linux_readonly_borrowed_bindings.md) prove ordinary
+by-value pointer/callback parameters and initialized local aliases using a bounded
+whole-body read-use scan. Actual arguments and initializers then feed the existing
+complete return/target proof. Writes, address/reference escapes, reference
+captures, volatile/global/TLS mutation, `__block` and implicit resource mutation
+retain conservative gates. C++23 implicit moves and copied capture snapshots keep
+native semantics. Borrowed-result-proofs v6 enforces reader admission.

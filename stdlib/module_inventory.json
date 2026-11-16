@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 162,
+        "minor": 163,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -336,12 +336,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 88,
+        "minor": 89,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Permanent borrowed-result proofs admit ordinary read-only by-value pointer/callback parameters and unmodified initialized local pointer/callback aliases after a bounded whole-body use proof; assignment, increment, address/reference escape, reference capture, volatile/TLS/global mutation and __block storage retain rejection; C++23 implicit-move wrappers and copied lambda captures preserve snapshot identity; borrowed-result-proofs v6 reader cutover, matched SDK pending",
         "Native automatic cleanup, local resources and requires_cleanup typedefs select ordinary overloads and deduce function-template callbacks against concrete storage, preferring value calls and trying addresses only after no viable value candidate; ambiguity/deletion/access/effect and no-copy rules remain enforced, dependent/auto recipes rebind after deduction; native-storage-lifetime v6 reader cutover, matched SDK pending",
         "Native fixed-array cleanup admits direct array decay without record copies or converting temporaries, preserving whole-array reference/address callbacks, multidimensional storage, dependent element/bound recipes and callback/destructor exception ordering; native-storage-lifetime v5 reader cutover, matched SDK pending",
         "Native CPU target/clone and minimum-vector-width policies retain canonical publication, ordered feature/width identity, sealed family base names, distinct explicit-variant identities and imported multiversion dispatch state; reserved module labels preserve physical target suffixes/resolvers, ordinary labels retain diagnostics, and borrowed proofs reject single-body assumptions about explicit variants; native-emission-policies v2 reader cutover, matched SDK pending",

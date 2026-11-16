@@ -136,6 +136,10 @@ inline const char *static_branch_source(int choose){if(choose)return static_sour
 inline const char *static_switch_source(int choose){switch(choose){case 0:return static_source();case 1:return "alternate";default:return nullptr;}}
 inline const char *static_loop_source(int count){while(count--){if(count==1)return "loop";}return static_source();}
 inline const char *static_exception_source(int choose){try{if(choose)throw 37;return static_source();}catch(int){return "caught";}}
+inline const char *static_readonly(const char *value){const char *alias=value;const char *other=alias;return other;}
+inline const char *static_readonly_callback(const char *(*callback)(const char *),const char *value){const char *(*alias)(const char *)=callback;return alias(value);}
+STATIC_BORROWED
+inline StaticLoan static_readonly_view(void *owner){return static_readonly_callback(static_readonly,static_union.bytes);}
 inline const char *static_forward(const char *const value){return value;}
 inline const char *static_forward_local(const char *const value){const char *const alias=value;return alias;}
 inline const char *static_forward_chain(const char *const value){return static_forward_local(static_forward(value));}
@@ -273,6 +277,7 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   cleanup_order=0;if(cleaned_auto_dependent(46)!=46 || cleanup_order!=1)return 23;
   cleanup_order=0;if(cleaned_function<int>(47)!=47 || cleanup_order!=1)return 24;
   cleanup_order=0;if(cleaned_function<CleanupValue>(48)!=48 || cleanup_order!=12)return 25;
+  if(static_readonly_view(nullptr)[0]!='s')return 51;
   overload_closed=0;cleaned_overload();if(overload_closed!=51)return 42;
   overload_closed=0;cleaned_overload_address();if(overload_closed!=52)return 43;
   overload_closed=0;cleaned_overload_array();if(overload_closed!=56)return 44;
