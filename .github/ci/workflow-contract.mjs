@@ -253,7 +253,10 @@ export function validateNativeGate(text) {
     !consumerRun?.run.includes('--group "$RELEASE_GROUP"') ||
     instrumentedConsumers?.strategy?.["fail-fast"] !== false ||
     JSON.stringify(instrumentedGroups) !==
-      JSON.stringify(["asan-products", "runtime-schedules"]) ||
+      JSON.stringify([
+        ...Array.from({ length: 8 }, (_, index) => `asan-products-partition-${index}`),
+        "runtime-schedules",
+      ]) ||
     JSON.stringify(instrumentedConsumers?.needs?.toSorted()) !==
       JSON.stringify(["asan-foundation-producer", "plan", "product-producer"]) ||
     !instrumentedConsumers?.if?.includes("needs.asan-foundation-producer.result == 'success'") ||

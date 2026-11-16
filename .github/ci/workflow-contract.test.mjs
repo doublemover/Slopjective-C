@@ -190,6 +190,23 @@ test("extended native workflow retains its full receipt-verifying aggregate", ()
   validateNativeGate(native);
 });
 
+for (const fault of ["missing partition", "duplicate partition", "out-of-range partition",
+  "obsolete single consumer", "missing schedules", "extra consumer"]) {
+  test(`native and release gates reject sanitizer matrix ${fault}`, () => {
+    const owner = yaml.load(native);
+    const groups = owner.jobs["instrumented-product-consumers"].strategy.matrix.group;
+    if (fault === "missing partition") groups.splice(3, 1);
+    if (fault === "duplicate partition") groups[3] = groups[0];
+    if (fault === "out-of-range partition") groups[3] = "asan-products-partition-8";
+    if (fault === "obsolete single consumer") groups.splice(0, groups.length, "asan-products", "runtime-schedules");
+    if (fault === "missing schedules") groups.pop();
+    if (fault === "extra consumer") groups.push("unreviewed-consumer");
+    const changed = yaml.dump(owner);
+    assert.throws(() => validateNativeGate(changed), /complete independent execution matrices/);
+    assert.throws(() => validateNativeRelease(changed, release), /complete independent execution matrices/);
+  });
+}
+
 for (const fault of ["missing diagnostics", "conditional diagnostics", "failure bundle"]) {
   test(`sanitizer producer rejects ${fault}`, () => {
     const owner = yaml.load(native);
