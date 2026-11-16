@@ -45001,7 +45001,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6783 @@
+@@ -0,0 +1,6849 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49465,6 +49465,9 @@ new file mode 100644
 +    return Type->isScalarType() || Type->isVectorType();
 +  }
 +  using StaticReturnBinding = std::pair<const ParmVarDecl *, const Expr *>;
++  bool staticProofPointerType(QualType Type) const {
++    return !Type.isNull() && (Type->isPointerType() || Type->isMemberFunctionPointerType());
++  }
 +  bool staticStorageResult(const Expr *Expression) const {
 +    unsigned Budget = 4096;
 +    return staticStorageResultImpl(Expression, 0, Budget, {});
@@ -49512,19 +49515,35 @@ new file mode 100644
 +        stableStaticLValueBase(Result.Val,Budget);
 +  }
 +  const FunctionDecl *staticCallableDefinition(const FunctionDecl *Function,
-+                                               const CallExpr *Call) const {
++                                               const CallExpr *Call,unsigned &Budget) const {
 +    if (!Function || !Call) return nullptr;
 +    // A cast cannot erase physical calling convention or ownership/effects.
 +    const auto *Method=dyn_cast<CXXMethodDecl>(Function);
 +    bool MemberDispatch=false;
 +    if(const auto *MemberCall=dyn_cast<CXXMemberCallExpr>(Call)) {
-+      const auto *Member=dyn_cast<MemberExpr>(MemberCall->getCallee()->IgnoreParenImpCasts());
-+      const auto *Selected=Member?dyn_cast<CXXMethodDecl>(Member->getMemberDecl()):nullptr;
-+      if(!Method || !Selected || Selected->getCanonicalDecl()!=Method->getCanonicalDecl())return nullptr;
-+      // A qualified call suppresses virtual dispatch. Final declarations and
-+      // methods declared in a final class also select exactly this body.
-+      if(Method->isVirtual() && !Member->hasQualifier() &&
-+          !Method->hasAttr<FinalAttr>() && !Method->getParent()->hasAttr<FinalAttr>())return nullptr;
++      const Expr *Callee=MemberCall->getCallee()->IgnoreParenImpCasts();
++      if(const auto *Member=dyn_cast<MemberExpr>(Callee)) {
++        const auto *Selected=dyn_cast<CXXMethodDecl>(Member->getMemberDecl());
++        if(!Method || !Selected || Selected->getCanonicalDecl()!=Method->getCanonicalDecl())return nullptr;
++        // A qualified call suppresses virtual dispatch. Final declarations and
++        // methods declared in a final class also select exactly this body.
++        if(Method->isVirtual() && !Member->hasQualifier() &&
++            !Method->hasAttr<FinalAttr>() && !Method->getParent()->hasAttr<FinalAttr>())return nullptr;
++      } else {
++        const auto *PointerCall=dyn_cast<BinaryOperator>(Callee);
++        if(!Method || !Method->isImplicitObjectMemberFunction() || !PointerCall ||
++            (PointerCall->getOpcode()!=BO_PtrMemD && PointerCall->getOpcode()!=BO_PtrMemI))return nullptr;
++        const auto *Pointer=PointerCall->getRHS()->getType()->getAs<MemberPointerType>();
++        // Native noexcept-to-potentially-throwing conversion retains the
++        // same physical signature, ownership and Objective-C effects.
++        if(!Pointer || !Context.hasSameFunctionTypeIgnoringExceptionSpec(
++            Pointer->getPointeeType(),Function->getType()))return nullptr;
++        // A member pointer never encodes qualified dispatch. Its complete
++        // target set is proved separately, and virtual calls still need a
++        // final body rather than the method named by the pointer alone.
++        if(Method->isVirtual() && !Method->hasAttr<FinalAttr>() &&
++            !Method->getParent()->hasAttr<FinalAttr>())return nullptr;
++      }
 +      MemberDispatch=true;
 +    }
 +    if(Method && Method->isImplicitObjectMemberFunction() && isa<CXXOperatorCallExpr>(Call)) {
@@ -49541,6 +49560,22 @@ new file mode 100644
 +          !Context.hasSameType(Callable->getPointeeType(), Function->getType()))return nullptr;
 +    }
 +    const FunctionDecl *Definition = Function->getDefinition();
++    if(!Definition && Budget && Function->instantiationIsPending() &&
++        Function->getTemplateSpecializationKind()==TSK_ImplicitInstantiation &&
++        !Function->isDependentContext() && !Function->isInvalidDecl() &&
++        Function!=Callable && !Function->getType()->isDependentType()) {
++      const auto *Pattern=Function->getTemplateInstantiationPattern();
++      if(Pattern && Pattern->hasBody() && !Pattern->isLateTemplateParsed()) {
++        --Budget;
++        // Taking a concrete method-template's address queues its body for the
++        // end of the TU. This proof needs the selected body now; instantiate
++        // only that already odr-used specialization, without draining unrelated
++        // pending work or treating the dependent pattern as the callable body.
++        Actions.InstantiateFunctionDefinition(Call->getExprLoc(),
++            const_cast<FunctionDecl *>(Function),false,false);
++        Definition=Function->getDefinition();
++      }
++    }
 +    // Explicit target variants may have different bodies selected by a
 +    // resolver. A target_clones family compiles this same body for every CPU.
 +    if (Definition && Definition->isMultiVersion() &&
@@ -49602,7 +49637,7 @@ new file mode 100644
 +              Alias->getType()->isReferenceType()) {
 +            const QualType Type=Alias->getType().getNonReferenceType();
 +            if(Type.isVolatileQualified() ||
-+                !(Type->isFunctionType() || (Type->isPointerType() && Type.isConstQualified())))continue;
++                !(Type->isFunctionType() || (staticProofPointerType(Type) && Type.isConstQualified())))continue;
 +            const auto *Reference=dyn_cast<DeclRefExpr>(Alias->getInit()->IgnoreParenImpCasts());
 +            const auto *Origin=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +            if(!Origin)continue;
@@ -49652,20 +49687,29 @@ new file mode 100644
 +              Update && Update->isIncrementDecrementOp() &&
 +              Variable->getType()->getPointeeType()->isObjectType())Supported=true;
 +          if(!Supported)
-+            if(const auto *Call=dyn_cast_or_null<CallExpr>(Parent))
-+              if(const auto *Definition=staticCallableDefinition(Call->getDirectCallee(),Call))
++            if(const auto *Call=dyn_cast_or_null<CallExpr>(Parent)) {
++              SmallVector<const FunctionDecl *,4> Targets;
++              bool ReadOnly=staticCallTargets(Call,Depth+1,Budget,{},Targets) && !Targets.empty();
++              for(const auto *Target:Targets) {
++                const auto *Definition=staticCallableDefinition(Target,Call,Budget);
++                if(!Definition){ReadOnly=false;break;}
++                bool Matched=false;
 +                for(unsigned I=0,Offset=staticCallArgumentOffset(Definition,Call);
 +                    I<Definition->getNumParams() && I+Offset<Call->getNumArgs();++I) {
 +                  if(Call->getArg(I+Offset)->IgnoreParenImpCasts()!=Reference)continue;
 +                  const auto *Parameter=Definition->getParamDecl(I);
 +                  const QualType Type=Parameter->getType().getNonReferenceType();
 +                  if(!Parameter->getType()->isReferenceType() || Type.isVolatileQualified() ||
-+                      !(Type->isFunctionType() || (Type->isPointerType() && Type.isConstQualified())))break;
++                      !(Type->isFunctionType() || (staticProofPointerType(Type) && Type.isConstQualified())))break;
 +                  llvm::SmallPtrSet<const VarDecl *,1> Inputs{Parameter};StaticPointerWrites NestedWrites;
-+                  Supported=staticPointerSlotUses(Definition->getBody(),Inputs,NestedWrites,Budget,Depth+1) &&
++                  Matched=staticPointerSlotUses(Definition->getBody(),Inputs,NestedWrites,Budget,Depth+1) &&
 +                      Inputs.contains(Parameter);
 +                  break;
 +                }
++                ReadOnly&=Matched;if(!ReadOnly)break;
++              }
++              Supported=ReadOnly;
++            }
 +          if(auto Alias=AliasInitializers.find(Reference);
 +              Alias!=AliasInitializers.end() && Slots.contains(Alias->second))Supported=true;
 +          if(!Supported)Slots.erase(Variable);
@@ -49707,7 +49751,7 @@ new file mode 100644
 +    const QualType SlotType=Variable->getType().getNonReferenceType();
 +    const bool Reference=Variable->getType()->isReferenceType();
 +    if(!Variable->hasInit() ||
-+        !(SlotType->isPointerType() || (Reference && SlotType->isFunctionType())) ||
++        !(staticProofPointerType(SlotType) || (Reference && SlotType->isFunctionType())) ||
 +        SlotType.isVolatileQualified() ||
 +        (Reference && ((!SlotType->isFunctionType() && !SlotType.isConstQualified()) ||
 +                       Variable->hasGlobalStorage())) ||
@@ -49746,9 +49790,9 @@ new file mode 100644
 +      const QualType Referent=Type.getNonReferenceType();
 +      const bool ReadOnlyReference=Type->isReferenceType() &&
 +          (Referent->isFunctionType() ||
-+           (Referent->isPointerType() && Referent.isConstQualified()));
++           (staticProofPointerType(Referent) && Referent.isConstQualified()));
 +      if(!Referent.isVolatileQualified() &&
-+          (ReadOnlyReference || (Type->isPointerType() && !Type.isConstQualified())))
++          (ReadOnlyReference || (staticProofPointerType(Type) && !Type.isConstQualified())))
 +        Slots.insert(Parameter);
 +    }
 +    if(!Slots.empty() && !staticPointerSlotUses(Definition->getBody(),Slots,Writes,Budget))return false;
@@ -49759,8 +49803,8 @@ new file mode 100644
 +      if(Type->isReferenceType()) {
 +        if(Referent.isVolatileQualified() || !Slots.contains(Parameter) ||
 +            !(Referent->isFunctionType() ||
-+              (Referent->isPointerType() && Referent.isConstQualified())))continue;
-+      } else if(!Type->isPointerType() || Type.isVolatileQualified() ||
++              (staticProofPointerType(Referent) && Referent.isConstQualified())))continue;
++      } else if(!staticProofPointerType(Type) || Type.isVolatileQualified() ||
 +          (!Type.isConstQualified() && !Slots.contains(Parameter)))continue;
 +      Arguments.emplace_back(Parameter,Call->getArg(I+Offset));
 +      for(const auto *Value:Writes[Parameter])Arguments.emplace_back(Parameter,Value);
@@ -49772,6 +49816,10 @@ new file mode 100644
 +      SmallVectorImpl<const FunctionDecl *> &Targets) const {
 +    if(!Call || Depth>32 || !Budget)return false;
 +    --Budget;
++    if(const auto *MemberCall=dyn_cast<CXXMemberCallExpr>(Call))
++      if(const auto *Member=dyn_cast<BinaryOperator>(MemberCall->getCallee()->IgnoreParenImpCasts());
++          Member && (Member->getOpcode()==BO_PtrMemD || Member->getOpcode()==BO_PtrMemI))
++        return staticFunctionTargets(Member->getRHS(),Depth+1,Budget,Bindings,Targets);
 +    if(const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee());
 +        Method && (Method->isStatic() || Method->isExplicitObjectMemberFunction() ||
 +                   isa<CXXMemberCallExpr,CXXOperatorCallExpr>(Call))) {
@@ -49790,6 +49838,7 @@ new file mode 100644
 +    if (!Expression || Depth > 32 || !Budget || Expression->isTypeDependent() ||
 +        Expression->isValueDependent()) return false;
 +    --Budget;
++    const Expr *NativeExpression=Expression;
 +    Expression = Expression->IgnoreParenImpCasts();
 +    if (const auto *Constant = dyn_cast<ConstantExpr>(Expression))
 +      return staticFunctionTargets(Constant->getSubExpr(), Depth+1, Budget, Bindings, Targets);
@@ -49826,6 +49875,7 @@ new file mode 100644
 +      if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());Variable &&
 +          !Variable->getType().getNonReferenceType().isVolatileQualified() &&
 +          (Variable->getType().getNonReferenceType()->isFunctionPointerType() ||
++           Variable->getType().getNonReferenceType()->isMemberFunctionPointerType() ||
 +           (Variable->getType()->isReferenceType() &&
 +            Variable->getType().getNonReferenceType()->isFunctionType()))) {
 +        if(const auto *Parameter=dyn_cast<ParmVarDecl>(Variable)) {
@@ -49843,12 +49893,28 @@ new file mode 100644
 +      }
 +    }
 +
++    // A constant native member pointer retains its method identity, including
++    // implicit base-to-derived member-pointer conversions. Explicit casts do
++    // not prove the receiver's dynamic subobject and remain outside admission.
++    if(Expression->getType()->isMemberFunctionPointerType() &&
++        !isa<ExplicitCastExpr>(Expression)) {
++      APValue Value;
++      if(NativeExpression->isCXX11ConstantExpr(Context,&Value) && Value.isMemberPointer())
++        if(const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Value.getMemberPointerDecl())) {
++          const FunctionDecl *Target=Method->getCanonicalDecl();
++          if(!llvm::is_contained(Targets,Target)) {
++            if(Targets.size()>=64)return false;
++            Targets.push_back(Target);
++          }
++          return true;
++        }
++    }
 +    if (const auto *Call = dyn_cast<CallExpr>(Expression)) {
 +      SmallVector<const FunctionDecl *,4> Factories;
 +      if (!staticCallTargets(Call, Depth+1, Budget, Bindings, Factories) ||
 +          Factories.empty()) return false;
 +      for (const auto *Factory : Factories) {
-+        const auto *Definition = staticCallableDefinition(Factory, Call);
++        const auto *Definition = staticCallableDefinition(Factory, Call,Budget);
 +        if (!Definition) return false;
 +        SmallVector<StaticReturnBinding,16> Arguments;
 +        if (!staticCallArguments(Definition, Call, Budget, Bindings, Arguments) ||
@@ -49874,7 +49940,7 @@ new file mode 100644
 +    const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +    if(!Variable)return false;
 +    const QualType Type=Variable->getType().getNonReferenceType();
-+    if(!Type->isPointerType() || !Type.isConstQualified() || Type.isVolatileQualified())return false;
++    if(!staticProofPointerType(Type) || !Type.isConstQualified() || Type.isVolatileQualified())return false;
 +    if(Variable->getType()->isReferenceType()) {
 +      if(const auto *Parameter=dyn_cast<ParmVarDecl>(Variable)) {
 +        bool Found=false;
@@ -50094,7 +50160,7 @@ new file mode 100644
 +      if (!staticCallTargets(Call, Depth+1, Budget, Bindings, Targets) ||
 +          Targets.empty()) return false;
 +      for (const auto *Function : Targets) {
-+        const auto *Definition = staticCallableDefinition(Function, Call);
++        const auto *Definition = staticCallableDefinition(Function, Call,Budget);
 +        if (!Definition) return false;
 +        SmallVector<StaticReturnBinding,16> Arguments;
 +        if (!staticCallArguments(Definition, Call, Budget, Bindings, Arguments) ||
@@ -60082,7 +60148,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,3246 @@
+@@ -0,0 +1,3318 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -63327,6 +63393,78 @@ new file mode 100644
 +     if(Own)EXPECT_TRUE(Destructor->doesThisDeclarationHaveABody());
 +    }
 +  EXPECT_EQ(Specializations,2u);
++ }
++}
++
++TEST(ObjC3ASTInfrastructure, MemberPointerReturnGraphsRetainTargetsAndAdjustments) {
++ const char *Source=R"cpp(
++ namespace MemberProofs {
++  static const char text[]="permanent";
++  struct View {
++   const char *nothrow_read(const char *value)const noexcept{return value;}
++   int shift=0;
++   const char *read(const char *value)const{return value+shift;}
++   const char *next(const char *value)const{return value+shift+1;}
++   template<class T>const char *generic(T value)const{return value+shift;}
++  };
++  struct Prefix {long storage[4]{};};struct Derived:Prefix,View {};
++  using Method=const char *(View::*)(const char *)const;
++  inline constexpr Method method=&View::read;
++  struct Cell {Method target;};inline constexpr Cell cell{&View::read};
++  inline Method choose(int n){return n?&View::read:&View::next;}
++  inline Method const &reference(){return method;}
++  inline const char *apply(View &object,Method target,const char *value){return (object.*target)(value);}
++  typedef borrowed const char *Loan;
++  __attribute__((objc_returns_borrowed(owner_index=0)))
++  inline Loan local(void *owner,int choose) {
++   View object;Method selected=method;Method const &one=selected;Method const &two=one;
++   if(choose)selected=&View::next;return (object.*two)(text);
++  }
++  __attribute__((objc_returns_borrowed(owner_index=0)))
++  inline Loan factory(void *owner,View *object,int n){return (object->*choose(n))(text);}
++  __attribute__((objc_returns_borrowed(owner_index=0)))
++  inline Loan binding(void *owner,View &object,int n){return apply(object,choose(n),text);}
++  __attribute__((objc_returns_borrowed(owner_index=0)))
++  inline Loan ref(void *owner,View &object){return (object.*reference())(text);}
++  __attribute__((objc_returns_borrowed(owner_index=0)))
++  inline Loan generic(void *owner,View &object){return (object.*&View::generic<const char *>)(text);}
++  __attribute__((objc_returns_borrowed(owner_index=0)))
++  inline Loan derived(void *owner,Derived &object){const char *(Derived::*target)(const char *)const=&View::read;return (object.*target)(text);}
++  __attribute__((objc_returns_borrowed(owner_index=0)))
++  inline Loan nothrow(void *owner,View &object){Method target=&View::nothrow_read;return (object.*target)(text);}
++  __attribute__((objc_returns_borrowed(owner_index=0)))
++  inline Loan constant_field(void *owner,View &object){return (object.*cell.target)(text);}
++
++ }
++ )cpp";
++ for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++  std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++      "--target=x86_64-unknown-linux-gnu","-fobjc3-profile=strict-system","-fexceptions","-fobjc-exceptions"};
++  if(ARC)Args.push_back("-fobjc-arc");
++  auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"member-source.mm");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"member-target.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  NamespaceDecl *Imported=nullptr;
++  {
++   ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *N=dyn_cast<NamespaceDecl>(D)) {
++    auto Result=Importer.Import(N);ASSERT_TRUE(static_cast<bool>(Result));Imported=dyn_cast<NamespaceDecl>(*Result);
++   }
++  }
++  ASSERT_TRUE(Imported);From.reset();
++  PrintingPolicy Policy(To->getASTContext().getLangOpts());Policy.PolishForDeclaration=true;
++  std::string Printed;llvm::raw_string_ostream Out(Printed);Imported->print(Out,Policy);Out.flush();
++  auto Replay=tooling::buildASTFromCodeWithArgs(Printed,Args,"member-replay.mm");
++  ASSERT_TRUE(Replay);EXPECT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++  struct Calls:RecursiveASTVisitor<Calls> {
++   unsigned Members=0;
++   bool VisitCXXMemberCallExpr(CXXMemberCallExpr *Call) {
++    if(auto *Binary=dyn_cast<BinaryOperator>(Call->getCallee()->IgnoreParenImpCasts()))
++     Members+=Binary->getOpcode()==BO_PtrMemD || Binary->getOpcode()==BO_PtrMemI;
++    return true;
++   }
++  } Visitor;
++  Visitor.TraverseDecl(Replay->getASTContext().getTranslationUnitDecl());EXPECT_GE(Visitor.Members,6u);
 + }
 +}
 
@@ -70891,7 +71029,7 @@ diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,236 @@
 +#ifndef OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +#define OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +typedef borrowed const char *StaticGraphLoan;
@@ -71095,13 +71233,45 @@ new file mode 100644
 +-(const char *)bad __attribute__((objc_returns_inner_pointer));
 +@end
 +
++#ifdef __cplusplus
++struct GraphMemberTargets {
++ const char *nothrow_read(const char *value)const noexcept{return value;}
++ const char *read(const char *value)const{return value;}
++ const char *next(const char *value)const{return value+1;}
++ const char *bad(const char *value)const{return graph_unknown();}
++ const char *reference(const char *const &value)const{return value;}
++ template<class T>const char *generic(T value)const{return value;}
++};
++struct GraphMemberDerived:GraphMemberTargets {};
++using GraphMemberPointer=const char *(GraphMemberTargets::*)(const char *)const;
++static constexpr GraphMemberPointer graph_member_pointer=&GraphMemberTargets::read;
++struct GraphMemberCell {GraphMemberPointer callback;};
++static constexpr GraphMemberCell graph_fixed_member_cell{&GraphMemberTargets::read};
++extern GraphMemberCell graph_mutable_member_cell;
++
++static GraphMemberPointer graph_mutable_member_pointer=&GraphMemberTargets::read;
++static GraphMemberPointer const volatile graph_volatile_member_pointer=&GraphMemberTargets::read;
++static __thread GraphMemberPointer const graph_tls_member_pointer=&GraphMemberTargets::read;
++void graph_escape_member(GraphMemberPointer *);
++static GraphMemberPointer graph_member_factory(int choose){return choose?&GraphMemberTargets::read:&GraphMemberTargets::next;}
++static GraphMemberPointer graph_member_bad_factory(int choose){return choose?&GraphMemberTargets::read:&GraphMemberTargets::bad;}
++static GraphMemberPointer const &graph_member_reference_factory(){return graph_member_pointer;}
++static GraphMemberPointer const &graph_member_dangling_factory(GraphMemberPointer const value){return value;}
++static const char *graph_member_apply(GraphMemberTargets &object,GraphMemberPointer callback,const char *value){return (object.*callback)(value);}
++static const char *graph_member_apply_reference(GraphMemberTargets &object,GraphMemberPointer const &callback,const char *value){return (object.*callback)(value);}
++static const char *graph_member_local(GraphMemberTargets &object,int choose){GraphMemberPointer callback=&GraphMemberTargets::read;if(choose)callback=&GraphMemberTargets::next;return (object.*callback)(graph_first);}
++static const char *graph_member_alias(GraphMemberTargets &object,int choose){GraphMemberPointer callback=&GraphMemberTargets::read;GraphMemberPointer const &one=callback;GraphMemberPointer const &two=one;if(choose)callback=&GraphMemberTargets::next;return (object.*two)(graph_first);}
++static const char *graph_member_escaped(GraphMemberTargets &object){GraphMemberPointer callback=&GraphMemberTargets::read;graph_escape_member(&callback);return (object.*callback)(graph_first);}
++static const char *graph_member_readonly_argument(GraphMemberTargets &object){const char *value=graph_first;return (object.*&GraphMemberTargets::reference)(value);}
++#endif
++
 +#endif
 
 diff --git a/clang/test/ObjC3/Sema/borrowed-static-control-flow.m b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,257 @@
 +// REQUIRES: x86-registered-target
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
@@ -71327,6 +71497,37 @@ new file mode 100644
 +STATIC_GRAPH StaticGraphLoan static_graph_permanent_function_ref_result(void *owner){return graph_permanent_function_reference()(graph_first);}
 +STATIC_GRAPH StaticGraphLoan static_graph_dangling_callback_ref_result(void *owner){return graph_callback_reference_temporary();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_dangling_pointer_ref_result(void *owner){return graph_dangling_pointer_reference(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++#endif
++
++#ifdef __cplusplus
++STATIC_GRAPH StaticGraphLoan static_graph_member_direct(void *owner,GraphMemberTargets &object){return (object.*&GraphMemberTargets::read)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_global(void *owner,GraphMemberTargets *object){return (object->*graph_member_pointer)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_factory(void *owner,GraphMemberTargets &object,int choose){return (object.*graph_member_factory(choose))(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_local(void *owner,GraphMemberTargets &object,int choose){return graph_member_local(object,choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_alias(void *owner,GraphMemberTargets &object,int choose){return graph_member_alias(object,choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_parameter(void *owner,GraphMemberTargets &object,int choose){return graph_member_apply(object,graph_member_factory(choose),graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_reference(void *owner,GraphMemberTargets &object){return graph_member_apply_reference(object,graph_member_pointer,graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_static_reference(void *owner,GraphMemberTargets &object){return (object.*graph_member_reference_factory())(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_readonly(void *owner,GraphMemberTargets &object){return graph_member_readonly_argument(object);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_generic(void *owner,GraphMemberTargets &object){return (object.*&GraphMemberTargets::generic<const char *>)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_derived(void *owner,GraphMemberDerived &object){const char *(GraphMemberDerived::*callback)(const char *)const=&GraphMemberTargets::read;return (object.*callback)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_final(void *owner,GraphFinalProducer &object){return (object.*&GraphFinalProducer::read)();}
++STATIC_GRAPH StaticGraphLoan static_graph_member_bad(void *owner,GraphMemberTargets &object,int choose){return (object.*graph_member_bad_factory(choose))(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_mutable(void *owner,GraphMemberTargets &object){return (object.*graph_mutable_member_pointer)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_volatile(void *owner,GraphMemberTargets &object){return (object.*graph_volatile_member_pointer)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_tls(void *owner,GraphMemberTargets &object){return (object.*graph_tls_member_pointer)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_escape(void *owner,GraphMemberTargets &object){return graph_member_escaped(object);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_dangling(void *owner,GraphMemberTargets &object){return (object.*graph_member_dangling_factory(graph_member_pointer))(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_virtual(void *owner,GraphVirtualProducer &object){return (object.*&GraphVirtualProducer::read)();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_null(void *owner,GraphMemberTargets &object,int choose){GraphMemberPointer callback=choose?graph_member_pointer:nullptr;return (object.*callback)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_cast(void *owner,GraphMemberTargets &object){return (object.*static_cast<GraphMemberPointer>(&GraphMemberTargets::read))(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++#endif
++
++#ifdef __cplusplus
++STATIC_GRAPH StaticGraphLoan static_graph_member_nothrow(void *owner,GraphMemberTargets &object){GraphMemberPointer target=&GraphMemberTargets::nothrow_read;return (object.*target)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_constant_field(void *owner,GraphMemberTargets &object){return (object.*graph_fixed_member_cell.callback)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_member_mutable_field(void *owner,GraphMemberTargets &object){return (object.*graph_mutable_member_cell.callback)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_member_local_field(void *owner,GraphMemberTargets &object){GraphMemberCell cell{&GraphMemberTargets::read};return (object.*cell.callback)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +#endif
 
 diff --git a/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm b/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm

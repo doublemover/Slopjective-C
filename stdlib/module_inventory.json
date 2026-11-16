@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 168,
+        "minor": 169,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -337,12 +337,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 94,
+        "minor": 95,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Permanent pointer/callback return proofs resolve bounded exact native member-function pointer targets, factories, local retargeting, read-only reference aliases, concrete method-template bodies and implicit base adjustments while rejecting unknown/null/escaping/unresolved virtual targets; borrowed-result-proofs v9 reader cutover, matching SDK pending",
         "Native C++ template imports preserve eligible special members and selected prospective destructors, including owning standard-library and custom constrained records; cxx-special-member-selection v1 reader contract, matched SDK pending",
         "Permanent-result proofs admit complete exact C++ method/operator/lambda return graphs, method-produced callback sets and qualified/final virtual targets; unresolved dispatch, member-pointer calls and receiver-derived unknown bases remain rejected. Qualified versus virtual call identity is explicit under cxx-virtual-call-expressions v1; matching SDK pending",
         "Permanent-result proofs support bounded read-only const pointer and known function references, complete local const-reference alias graphs and joined backing-slot writes; alias escape, cast mutation, reference Block captures and unknown/volatile/global mutable inputs remain rejected; borrowed-result-proofs v8 reader cutover, matching SDK pending",

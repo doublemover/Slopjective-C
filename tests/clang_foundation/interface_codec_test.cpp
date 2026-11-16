@@ -47,6 +47,7 @@ int main() {
   assert(capabilities.count(kNativeSubobjectSemantic));
   assert(capabilities.count(kCxxUnnamedTemplateProjectionSemantic));
   assert(capabilities.count("objc3.c-inline-definitions.v1"));
+  assert(!capabilities.count("objc3.borrowed-result-proofs.v8"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v2"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v3"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v4"));
@@ -87,7 +88,7 @@ int main() {
   // declarations, even when their marker and required-semantics list agree.
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
       {";native-storage-lifetime:v6;",kNativeStorageLifetimeSemantic},
-      {";borrowed-result-proofs:v8;",kBorrowedResultProofSemantic},
+      {";borrowed-result-proofs:v9;",kBorrowedResultProofSemantic},
       {";native-emission-policies:v2;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},

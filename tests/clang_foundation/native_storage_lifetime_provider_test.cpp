@@ -192,6 +192,47 @@ STATIC_BORROWED
 inline StaticLoan static_final_method_view(void *owner,StaticFinalMethodProducer &producer){return producer.read();}
 STATIC_BORROWED
 inline StaticLoan static_lambda_view(void *owner){return [](auto value){return value;}("lambda");}
+struct StaticMemberTargets {
+  const char *nothrow_read(const char *value)const noexcept{return value;}
+  int shift=0;
+  const char *read(const char *value)const{return value+shift;}
+  const char *next(const char *value)const{return value+shift+1;}
+  template<class T>const char *generic(T value)const{return value+shift;}
+};
+using StaticMemberPointer=const char *(StaticMemberTargets::*)(const char *)const;
+inline constexpr StaticMemberPointer static_member_pointer=&StaticMemberTargets::read;
+        struct StaticMemberCell {StaticMemberPointer callback;};
+        inline constexpr StaticMemberCell static_member_cell{&StaticMemberTargets::read};
+
+inline StaticMemberPointer static_member_factory(int choose){return choose?&StaticMemberTargets::read:&StaticMemberTargets::next;}
+inline StaticMemberPointer const &static_member_reference(){return static_member_pointer;}
+inline const char *static_member_apply(StaticMemberTargets &object,StaticMemberPointer callback,const char *value){return (object.*callback)(value);}
+STATIC_BORROWED
+inline StaticLoan static_member_view(void *owner,int choose) {
+  StaticMemberTargets object;StaticMemberPointer callback=&StaticMemberTargets::read;
+  StaticMemberPointer const &one=callback;StaticMemberPointer const &two=one;
+  if(choose)callback=&StaticMemberTargets::next;return (object.*two)(static_union.bytes);
+}
+STATIC_BORROWED
+inline StaticLoan static_member_factory_view(void *owner,int choose){StaticMemberTargets object;return static_member_apply(object,static_member_factory(choose),static_union.bytes);}
+STATIC_BORROWED
+inline StaticLoan static_member_reference_view(void *owner){StaticMemberTargets object;return (object.*static_member_reference())(static_union.bytes);}
+STATIC_BORROWED
+inline StaticLoan static_member_generic_view(void *owner){StaticMemberTargets object;return (object.*&StaticMemberTargets::generic<const char *>)(static_union.bytes);}
+        STATIC_BORROWED
+        inline StaticLoan static_member_nothrow_view(void *owner){StaticMemberTargets object;StaticMemberPointer target=&StaticMemberTargets::nothrow_read;return (object.*target)(static_union.bytes);}
+        STATIC_BORROWED
+        inline StaticLoan static_member_constant_field_view(void *owner){StaticMemberTargets object;return (object.*static_member_cell.callback)(static_union.bytes);}
+
+        struct StaticMemberPrefix {long prefix[4]{};};
+        struct StaticMemberDerived:StaticMemberPrefix,StaticMemberTargets {};
+        STATIC_BORROWED
+        inline StaticLoan static_member_derived_view(void *owner) {
+          StaticMemberDerived object;object.shift=1;
+          const char *(StaticMemberDerived::*callback)(const char *)const=&StaticMemberTargets::read;
+          return (object.*callback)(static_union.bytes);
+        }
+
 inline const char *const static_pointer_object=static_union.bytes;
 inline StaticCallback const static_callback_object=static_forward;
 inline const char *const &static_permanent_pointer_reference(){return static_pointer_object;}
@@ -344,6 +385,10 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(static_final_method_view(nullptr,final_method)[0]!='s' || static_lambda_view(nullptr)[0]!='l')return 58;
   StaticDispatchDerived derived;
   if(static_dynamic_dispatch(derived)[0]!='d' || static_qualified_dispatch(derived)[0]!='b' || static_qualified_method_view(nullptr,derived)[0]!='b')return 59;
+  if(static_member_view(nullptr,0)[0]!='s' || static_member_view(nullptr,1)[0]!='t')return 61;
+  if(static_member_factory_view(nullptr,0)[0]!='t' || static_member_factory_view(nullptr,1)[0]!='s')return 62;
+  if(static_member_nothrow_view(nullptr)[0]!='s' || static_member_constant_field_view(nullptr)[0]!='s')return 64;
+  if(static_member_reference_view(nullptr)[0]!='s' || static_member_generic_view(nullptr)[0]!='s' || static_member_derived_view(nullptr)[0]!='t')return 63;
   if(static_permanent_pointer_reference_view(nullptr)[0]!='s' || static_permanent_callback_reference_view(nullptr)[0]!='s' || static_permanent_function_reference_view(nullptr)[0]!='s')return 60;
   if(static_retarget_view(nullptr,0)[0]!='t' || static_retarget_view(nullptr,1)[0]!='e' || static_retarget(static_union.bytes,1)[0]!='e')return 52;
   overload_closed=0;cleaned_overload();if(overload_closed!=51)return 42;
@@ -385,9 +430,14 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
     consumer.imported_interfaces={imported};Success(Compile(consumer));
   }
   const auto main=root/"main.cpp";
-  Write(main,R"(extern "C" int check_a();extern "C" int check_b();
+  Write(main,R"(#include <cstdio>
+extern "C" int check_a();extern "C" int check_b();
 extern "C" void *address_a();extern "C" void *address_b();
-int main(){return check_a() || check_b() || address_a()!=address_b();}
+int main(){
+ const int a=check_a();if(a){std::fprintf(stderr,"storage consumer a: %d\n",a);return 1;}
+ const int b=check_b();if(b){std::fprintf(stderr,"storage consumer b: %d\n",b);return 1;}
+ return address_a()!=address_b();
+}
 )");
   auto entry=request(main,root/"main.o");Success(Compile(entry));
   LinkAndExecute(root,entry.output_path,ownership!=0,flags);

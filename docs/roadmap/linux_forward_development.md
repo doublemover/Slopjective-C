@@ -1,5 +1,11 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.169 / System 2.95 native member-pointer span](linux_native_member_pointer_proofs.md)
+extends bounded permanent-result proofs to known member targets, factories,
+reference aliases, concrete method templates and native receiver adjustments,
+with the borrowed-result-proofs v9 reader cutover. Broader implementation and
+matching SDK consolidation continue.
+
 The [Source 2.168 / System 2.94 owning standard-library async span](linux_native_standard_owned_async.md)
 imports the qualified SDK's implicit lowering dependencies and preserves C++20
 prospective-destructor selection. Source-free owning optional/variant/expected,

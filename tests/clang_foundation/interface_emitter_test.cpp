@@ -1675,6 +1675,47 @@ void TestBorrowedStaticStorageReplay() {
         }
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_function_reference_view(void *owner){return static_function_reference(static_reference_other,static_union_data.bytes);}
+        struct StaticMemberTargets {
+  const char *nothrow_read(const char *value)const noexcept{return value;}
+  int shift=0;
+          const char *read(const char *value)const{return value+shift;}
+          const char *next(const char *value)const{return value+shift+1;}
+          template<class T>const char *generic(T value)const{return value+shift;}
+        };
+        using StaticMemberPointer=const char *(StaticMemberTargets::*)(const char *)const;
+        inline constexpr StaticMemberPointer static_member_pointer=&StaticMemberTargets::read;
+        struct StaticMemberCell {StaticMemberPointer callback;};
+        inline constexpr StaticMemberCell static_member_cell{&StaticMemberTargets::read};
+
+        inline StaticMemberPointer static_member_factory(int choose){return choose?&StaticMemberTargets::read:&StaticMemberTargets::next;}
+        inline StaticMemberPointer const &static_member_reference(){return static_member_pointer;}
+        inline const char *static_member_apply(StaticMemberTargets &object,StaticMemberPointer callback,const char *value){return (object.*callback)(value);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_member_view(void *owner,int choose) {
+          StaticMemberTargets object;StaticMemberPointer callback=&StaticMemberTargets::read;
+          StaticMemberPointer const &one=callback;StaticMemberPointer const &two=one;
+          if(choose)callback=&StaticMemberTargets::next;return (object.*two)(static_program_data);
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_member_factory_view(void *owner,int choose){StaticMemberTargets object;return static_member_apply(object,static_member_factory(choose),static_program_data);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_member_reference_view(void *owner){StaticMemberTargets object;return (object.*static_member_reference())(static_program_data);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_member_generic_view(void *owner){StaticMemberTargets object;return (object.*&StaticMemberTargets::generic<const char *>)(static_program_data);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_member_nothrow_view(void *owner){StaticMemberTargets object;StaticMemberPointer target=&StaticMemberTargets::nothrow_read;return (object.*target)(static_program_data);}
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_member_constant_field_view(void *owner){StaticMemberTargets object;return (object.*static_member_cell.callback)(static_program_data);}
+
+        struct StaticMemberPrefix {long prefix[4]{};};
+        struct StaticMemberDerived:StaticMemberPrefix,StaticMemberTargets {};
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_member_derived_view(void *owner) {
+          StaticMemberDerived object;object.shift=1;
+          const char *(StaticMemberDerived::*callback)(const char *)const=&StaticMemberTargets::read;
+          return (object.*callback)(static_program_data);
+        }
+
         inline const char *const static_pointer_object=static_program_data;
         inline RetargetCallback const static_callback_object=static_readonly;
         inline const char *const &static_permanent_pointer_reference(){return static_pointer_object;}
