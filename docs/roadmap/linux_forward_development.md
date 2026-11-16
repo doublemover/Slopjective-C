@@ -2,7 +2,7 @@
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.164 / System 2.90 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.165 / System 2.91 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2246,3 +2246,11 @@ gates and the borrowed-result-proofs v6 reader cutover retain owner obligations.
 preserves lock capability types, guarded storage and callable lock effects through
 canonical package replay. A dedicated required capability binds native argument,
 mode, ordering and try-lock contracts to downstream admission and analysis.
+
+## Source 2.165 bounded pointer retargeting
+
+[Mutable permanent bindings](linux_mutable_permanent_bindings.md) prove bounded
+sets of local/by-value pointer and callback assignments, including factories,
+deferred writes and base-preserving object-pointer updates. Every possible value
+must retain a permanent base; unknown/escaping mutation stays conservative under
+the borrowed-result-proofs v7 reader cutover.

@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 164,
+        "minor": 165,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -336,12 +336,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 90,
+        "minor": 91,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Permanent-result proofs conservatively join every initial and assigned pointer/callback value across complete local/helper bodies, admitting known local/by-value retargeting, callback factories and object-pointer base-preserving updates while rejecting unknown writes, escaped/reference/__block/resource slots and replaceable weak/alias globals; shared work/depth/target limits and borrowed-result-proofs v7 govern source-free admission, matched SDK pending",
         "Published native thread-safety contracts preserve capability/reentrant/scoped types, guarded storage, lock ordering, shared/exclusive/generic acquire/release, try-lock success, assertions, requirements, exclusions, returned-lock aliases and explicit analysis suppression; typed expression/parameter/template identities and native-thread-safety v1 enforce source-free reader admission, matched SDK pending",
         "Permanent borrowed-result proofs admit ordinary read-only by-value pointer/callback parameters and unmodified initialized local pointer/callback aliases after a bounded whole-body use proof; assignment, increment, address/reference escape, reference capture, volatile/TLS/global mutation and __block storage retain rejection; C++23 implicit-move wrappers and copied lambda captures preserve snapshot identity; borrowed-result-proofs v6 reader cutover, matched SDK pending",
         "Native automatic cleanup, local resources and requires_cleanup typedefs select ordinary overloads and deduce function-template callbacks against concrete storage, preferring value calls and trying addresses only after no viable value candidate; ambiguity/deletion/access/effect and no-copy rules remain enforced, dependent/auto recipes rebind after deduction; native-storage-lifetime v6 reader cutover, matched SDK pending",

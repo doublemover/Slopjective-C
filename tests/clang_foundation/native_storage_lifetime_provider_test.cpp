@@ -136,6 +136,8 @@ inline const char *static_branch_source(int choose){if(choose)return static_sour
 inline const char *static_switch_source(int choose){switch(choose){case 0:return static_source();case 1:return "alternate";default:return nullptr;}}
 inline const char *static_loop_source(int count){while(count--){if(count==1)return "loop";}return static_source();}
 inline const char *static_exception_source(int choose){try{if(choose)throw 37;return static_source();}catch(int){return "caught";}}
+inline const char *static_retarget(const char *value,int choose){if(choose)value="second";value+=1;return value;}
+inline const char *static_retarget_local(int choose){const char *value=static_union.bytes;if(choose)value="second";return ++value;}
 inline const char *static_readonly(const char *value){const char *alias=value;const char *other=alias;return other;}
 inline const char *static_readonly_callback(const char *(*callback)(const char *),const char *value){const char *(*alias)(const char *)=callback;return alias(value);}
 STATIC_BORROWED
@@ -146,6 +148,11 @@ inline const char *static_forward_chain(const char *const value){return static_f
 inline const char *static_forward_default(const char *const value="default"){return static_forward_chain(value);}
 inline const char *static_forward_choice(int choose,const char *const first,const char *const second){if(choose)return first;return second;}
 using StaticCallback=const char *(*)(const char *);
+inline const char *static_retarget_callback(StaticCallback callback,const char *value,int choose){if(choose)callback=static_readonly;return callback(value);}
+inline StaticCallback static_retarget_factory(int choose){StaticCallback callback=static_readonly;if(choose)callback=static_forward_chain;return callback;}
+STATIC_BORROWED
+inline StaticLoan static_retarget_view(void *owner,int choose){return static_retarget_callback(static_retarget_factory(choose),static_retarget_local(choose),choose);}
+
 inline constexpr StaticCallback static_callback=static_forward_chain;
 inline const char *static_callback_source(StaticCallback const callback,const char *const value){StaticCallback const alias=callback;return alias(value);}
 STATIC_BORROWED
@@ -278,6 +285,7 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   cleanup_order=0;if(cleaned_function<int>(47)!=47 || cleanup_order!=1)return 24;
   cleanup_order=0;if(cleaned_function<CleanupValue>(48)!=48 || cleanup_order!=12)return 25;
   if(static_readonly_view(nullptr)[0]!='s')return 51;
+  if(static_retarget_view(nullptr,0)[0]!='t' || static_retarget_view(nullptr,1)[0]!='e' || static_retarget(static_union.bytes,1)[0]!='e')return 52;
   overload_closed=0;cleaned_overload();if(overload_closed!=51)return 42;
   overload_closed=0;cleaned_overload_address();if(overload_closed!=52)return 43;
   overload_closed=0;cleaned_overload_array();if(overload_closed!=56)return 44;

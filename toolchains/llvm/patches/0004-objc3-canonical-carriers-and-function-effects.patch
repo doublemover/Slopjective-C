@@ -44956,7 +44956,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6498 @@
+@@ -0,0 +1,6556 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49489,77 +49489,110 @@ new file mode 100644
 +        Method && !Method->isStatic()) return nullptr;
 +    return Definition;
 +  }
-+  bool staticReadOnlyPointerUses(const FunctionDecl *Function,
-+      llvm::SmallPtrSetImpl<const VarDecl *> &ReadOnly,unsigned &Budget) const {
++  using StaticPointerWrites = llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>>;
++  bool preservesStaticPointerBase(const Expr *Value,const VarDecl *Slot,
++      unsigned &Budget,unsigned Depth=0) const {
++    if(!Budget || Depth>32)return false;
++    --Budget;
++    Value=Value->IgnoreParenImpCasts();
++    if(const auto *Reference=dyn_cast<DeclRefExpr>(Value))return Reference->getDecl()==Slot;
++    if(const auto *Binary=dyn_cast<BinaryOperator>(Value);Binary && Binary->isAdditiveOp() &&
++        Slot->getType()->getPointeeType()->isObjectType()) {
++      if(Binary->getLHS()->getType()->isPointerType() && Binary->getRHS()->getType()->isIntegerType())
++        return preservesStaticPointerBase(Binary->getLHS(),Slot,Budget,Depth+1);
++      if(Binary->getOpcode()==BO_Add && Binary->getRHS()->getType()->isPointerType() && Binary->getLHS()->getType()->isIntegerType())
++        return preservesStaticPointerBase(Binary->getRHS(),Slot,Budget,Depth+1);
++    }
++    return false;
++  }
++  bool staticPointerSlotUses(const Stmt *FunctionBody,
++      llvm::SmallPtrSetImpl<const VarDecl *> &Slots,StaticPointerWrites &Writes,
++      unsigned &Budget) const {
 +    using Use=std::pair<const Stmt *,const Stmt *>;
-+    SmallVector<Use,16> Pending{{Function->getBody(),nullptr}};
-+    while (!Pending.empty()) {
++    SmallVector<Use,16> Pending{{FunctionBody,nullptr}};
++    while(!Pending.empty()) {
 +      const auto [Node,Parent]=Pending.pop_back_val();
-+      if (!Node) continue;
-+      if (!Budget) return false;
++      if(!Node)continue;
++      if(!Budget)return false;
 +      --Budget;
-+      if (const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
-+        if (const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
-+            Variable && ReadOnly.contains(Variable)) {
++      if(const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
++        if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());Variable && Slots.contains(Variable)) {
 +          const auto *Load=dyn_cast_or_null<ImplicitCastExpr>(Parent);
-+          if (!Load || Load->getCastKind()!=CK_LValueToRValue)
-+            ReadOnly.erase(Variable);
++          bool Supported=Load && Load->getCastKind()==CK_LValueToRValue;
++          if(const auto *Assignment=dyn_cast_or_null<BinaryOperator>(Parent);
++              Assignment && Assignment->getLHS()->IgnoreParenImpCasts()==Reference) {
++            if(Assignment->getOpcode()==BO_Assign) {
++              Supported=true;
++              if(!preservesStaticPointerBase(Assignment->getRHS(),Variable,Budget))
++                Writes[Variable].push_back(Assignment->getRHS());
++            } else if((Assignment->getOpcode()==BO_AddAssign || Assignment->getOpcode()==BO_SubAssign) &&
++                      Assignment->getRHS()->getType()->isIntegerType() &&
++                      Variable->getType()->getPointeeType()->isObjectType())Supported=true;
++          }
++          if(const auto *Update=dyn_cast_or_null<UnaryOperator>(Parent);
++              Update && Update->isIncrementDecrementOp() &&
++              Variable->getType()->getPointeeType()->isObjectType())Supported=true;
++          if(!Supported)Slots.erase(Variable);
 +        }
 +      }
-+      if (const auto *Lambda=dyn_cast<LambdaExpr>(Node)) {
-+        for (const Expr *Initializer:Lambda->capture_inits())
-+          Pending.emplace_back(Initializer,Node);
++      if(const auto *Lambda=dyn_cast<LambdaExpr>(Node)) {
++        for(const Expr *Initializer:Lambda->capture_inits())Pending.emplace_back(Initializer,Node);
 +        continue;
 +      }
-+      // Blocks copy by-value parameters into independent capture slots.
-+      if (isa<BlockExpr>(Node)) continue;
++      // A Block copies ordinary by-value slots; __block locals are excluded.
++      if(isa<BlockExpr>(Node))continue;
 +      const auto *Cast=dyn_cast<ImplicitCastExpr>(Node);
 +      const bool Transparent=isa<ParenExpr>(Node) ||
 +          (Cast && Cast->getCastKind()==CK_NoOp &&
 +           Context.hasSameUnqualifiedType(Cast->getType(),Cast->getSubExpr()->getType()));
-+      const Stmt *NextParent=Transparent?Parent:Node;
-+      for (const Stmt *Child:Node->children())
-+        Pending.emplace_back(Child,NextParent);
++      for(const Stmt *Child:Node->children())Pending.emplace_back(Child,Transparent?Parent:Node);
 +    }
 +    return true;
 +  }
-+  bool staticUnmodifiedLocalPointer(const VarDecl *Variable,unsigned &Budget) const {
-+    if (!Variable->hasLocalStorage() || isa<ParmVarDecl>(Variable) ||
-+        !Variable->hasInit() || Variable->hasAttr<BlocksAttr>() ||
-+        Variable->hasAttr<ObjCResourceAttr>() ||
-+        !Variable->getType()->isPointerType() ||
-+        Variable->getType().isVolatileQualified()) return false;
-+    const auto *Function=dyn_cast<FunctionDecl>(Variable->getDeclContext());
-+    if (!Function || !Function->getBody()) return false;
-+    llvm::SmallPtrSet<const VarDecl *,1> ReadOnly{Variable};
-+    return staticReadOnlyPointerUses(Function,ReadOnly,Budget) && ReadOnly.contains(Variable);
-+  }
-+  bool staticCallArguments(const FunctionDecl *Definition, const CallExpr *Call,
-+      unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings,
-+      SmallVectorImpl<StaticReturnBinding> &Arguments) const {
-+    if (Call->getNumArgs() != Definition->getNumParams() ||
-+        Definition->getNumParams() > Budget) return false;
-+    Budget -= Definition->getNumParams();
-+    // Ordinary by-value pointer parameters need not spell top-level const.
-+    // Admit them only after a bounded whole-body proof that every use reads
-+    // their value. Taking/binding their address, assignment, increment, or
-+    // reference capture leaves the parameter unbound. A copied pointer/lambda
-+    // capture is a snapshot and cannot retarget the original parameter slot.
-+    llvm::SmallPtrSet<const VarDecl *,8> ReadOnly;
-+    for (const auto *Parameter : Definition->parameters()) {
-+      QualType Type=Parameter->getType();
-+      if (Type->isPointerType() && !Type.isConstQualified() &&
-+          !Type.isVolatileQualified()) ReadOnly.insert(Parameter);
++  bool staticLocalPointerValues(const VarDecl *Variable,unsigned &Budget,
++      SmallVectorImpl<const Expr *> &Values) const {
++    if(!Variable->hasInit() || !Variable->getType()->isPointerType() ||
++        Variable->getType().isVolatileQualified() || Variable->getTLSKind()!=VarDecl::TLS_None ||
++        Variable->hasAttr<BlocksAttr>() || Variable->hasAttr<ObjCResourceAttr>())return false;
++    if(Variable->hasGlobalStorage()) {
++      if(!Actions.getLangOpts().CPlusPlus && Variable->isExternallyVisible())return false;
++      for(const auto *Redeclaration:Variable->redecls())
++        if(Redeclaration->hasAttr<WeakAttr>() || Redeclaration->hasAttr<WeakRefAttr>() ||
++            Redeclaration->hasAttr<AliasAttr>())return false;
 +    }
-+    if (!ReadOnly.empty() && !staticReadOnlyPointerUses(Definition,ReadOnly,Budget))
-+      return false;
-+    Arguments.append(Bindings.begin(), Bindings.end());
-+    for (unsigned I = 0; I < Definition->getNumParams(); ++I) {
-+      const auto *Parameter=Definition->getParamDecl(I);
++    Values.push_back(Variable->getInit());
++    if(Variable->getType().isConstQualified())return true;
++    if(!Variable->hasLocalStorage() || isa<ParmVarDecl>(Variable))return false;
++    const auto *Owner=Decl::castFromDeclContext(Variable->getDeclContext());
++    const auto *Function=dyn_cast<FunctionDecl>(Owner);
++    // Sema checks the active callable before attaching its body to the Decl.
++    // Use the checker-owned body for its own locals, including ObjC methods
++    // and Blocks, instead of mistaking a pending Decl body for an unknown one.
++    const Stmt *ScopeBody=Owner==Callable?Body:Function?Function->getBody():nullptr;
++    if(!ScopeBody)return false;
++    llvm::SmallPtrSet<const VarDecl *,1> Slots{Variable};StaticPointerWrites Writes;
++    if(!staticPointerSlotUses(ScopeBody,Slots,Writes,Budget) || !Slots.contains(Variable))return false;
++    const auto &Assignments=Writes[Variable];Values.append(Assignments.begin(),Assignments.end());
++    return true;
++  }
++  bool staticCallArguments(const FunctionDecl *Definition,const CallExpr *Call,
++      unsigned &Budget,ArrayRef<StaticReturnBinding> Bindings,
++      SmallVectorImpl<StaticReturnBinding> &Arguments) const {
++    if(Call->getNumArgs()!=Definition->getNumParams() || Definition->getNumParams()>Budget)return false;
++    Budget-=Definition->getNumParams();
++    llvm::SmallPtrSet<const VarDecl *,8> Slots;StaticPointerWrites Writes;
++    for(const auto *Parameter:Definition->parameters()) {
 +      QualType Type=Parameter->getType();
-+      if (Type->isPointerType() && !Type.isVolatileQualified() &&
-+          (Type.isConstQualified() || ReadOnly.contains(Parameter)))
-+        Arguments.emplace_back(Parameter,Call->getArg(I));
++      if(Type->isPointerType() && !Type.isConstQualified() && !Type.isVolatileQualified())Slots.insert(Parameter);
++    }
++    if(!Slots.empty() && !staticPointerSlotUses(Definition->getBody(),Slots,Writes,Budget))return false;
++    Arguments.append(Bindings.begin(),Bindings.end());
++    for(unsigned I=0;I<Definition->getNumParams();++I) {
++      const auto *Parameter=Definition->getParamDecl(I);QualType Type=Parameter->getType();
++      if(!Type->isPointerType() || Type.isVolatileQualified() ||
++          (!Type.isConstQualified() && !Slots.contains(Parameter)))continue;
++      Arguments.emplace_back(Parameter,Call->getArg(I));
++      for(const auto *Value:Writes[Parameter])Arguments.emplace_back(Parameter,Value);
 +    }
 +    return true;
 +  }
@@ -49587,7 +49620,7 @@ new file mode 100644
 +             staticFunctionTargets(Choice->getFalseExpr(), Depth+1, Budget, Bindings, Targets);
 +    }
 +    if (const auto *Comma = dyn_cast<BinaryOperator>(Expression);
-+        Comma && Comma->getOpcode() == BO_Comma)
++        Comma && (Comma->getOpcode() == BO_Comma || Comma->getOpcode() == BO_Assign))
 +      return staticFunctionTargets(Comma->getRHS(), Depth+1, Budget, Bindings, Targets);
 +    if (const auto *Reference = dyn_cast<DeclRefExpr>(Expression)) {
 +      if (const auto *Function = dyn_cast<FunctionDecl>(Reference->getDecl())) {
@@ -49598,20 +49631,23 @@ new file mode 100644
 +        }
 +        return true;
 +      }
-+      if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl()); Variable &&
-+          (Variable->getType().isConstQualified() || isa<ParmVarDecl>(Variable) ||
-+           staticUnmodifiedLocalPointer(Variable,Budget)) && !Variable->getType().isVolatileQualified() &&
-+          Variable->getType()->isPointerType() &&
-+          Variable->getType()->getPointeeType()->isFunctionType() &&
-+          Variable->getTLSKind() == VarDecl::TLS_None) {
-+        if (const auto *Parameter = dyn_cast<ParmVarDecl>(Variable)) {
-+          for (const auto &Binding : llvm::reverse(Bindings))
-+            if (Binding.first == Parameter)
-+              return staticFunctionTargets(Binding.second, Depth+1, Budget, Bindings, Targets);
-+        } else if (Variable->hasInit())
-+          return staticFunctionTargets(Variable->getInit(), Depth+1, Budget, Bindings, Targets);
++      if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());Variable &&
++          Variable->getType()->isFunctionPointerType() && !Variable->getType().isVolatileQualified()) {
++        if(const auto *Parameter=dyn_cast<ParmVarDecl>(Variable)) {
++          bool Found=false;
++          for(const auto &Binding:Bindings)if(Binding.first==Parameter) {
++            Found=true;if(!staticFunctionTargets(Binding.second,Depth+1,Budget,Bindings,Targets))return false;
++          }
++          return Found;
++        }
++        SmallVector<const Expr *,4> Values;
++        if(!staticLocalPointerValues(Variable,Budget,Values))return false;
++        for(const auto *Value:Values)
++          if(!staticFunctionTargets(Value,Depth+1,Budget,Bindings,Targets))return false;
++        return true;
 +      }
 +    }
++
 +    if (const auto *Call = dyn_cast<CallExpr>(Expression)) {
 +      SmallVector<const FunctionDecl *,4> Factories;
 +      if (!staticFunctionTargets(Call->getCallee(), Depth+1, Budget, Bindings, Factories) ||
@@ -49688,6 +49724,27 @@ new file mode 100644
 +        return staticStorageResultImpl(Value, NextDepth, Work, Inputs);
 +      });
 +  }
++  bool staticStorageSlotResult(const Expr *Slot,unsigned Depth,unsigned &Budget,
++      ArrayRef<StaticReturnBinding> Bindings) const {
++    if(!Slot || Depth>32 || !Budget)return false;
++    --Budget;
++    const auto *Reference=dyn_cast<DeclRefExpr>(Slot->IgnoreParenImpCasts());
++    const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
++    if(!Variable || !Variable->hasLocalStorage() || Variable->getType().isVolatileQualified() ||
++        !Variable->getType()->isPointerType())return false;
++    if(const auto *Parameter=dyn_cast<ParmVarDecl>(Variable)) {
++      bool Found=false;
++      for(const auto &Binding:Bindings)if(Binding.first==Parameter) {
++        Found=true;if(!staticStorageResultImpl(Binding.second,Depth+1,Budget,Bindings))return false;
++      }
++      return Found;
++    }
++    SmallVector<const Expr *,4> Values;
++    if(!staticLocalPointerValues(Variable,Budget,Values))return false;
++    for(const auto *Value:Values)
++      if(!staticStorageResultImpl(Value,Depth+1,Budget,Bindings))return false;
++    return true;
++  }
 +  bool staticStorageResultImpl(const Expr *Expression, unsigned Depth,
 +                               unsigned &Budget, ArrayRef<StaticReturnBinding> Bindings) const {
 +    if (!Expression || Depth > 32 || !Budget || Expression->isTypeDependent() || Expression->isValueDependent())
@@ -49708,7 +49765,8 @@ new file mode 100644
 +             staticStorageResultImpl(Conditional->getFalseExpr(), Depth + 1, Budget,Bindings);
 +    }
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(Expression)) {
-+      if (Binary->getOpcode() == BO_Comma)
++      if (Binary->getOpcode() == BO_Comma ||
++          (Binary->getOpcode() == BO_Assign && Expression->isPRValue()))
 +        return staticStorageResultImpl(Binary->getRHS(), Depth + 1, Budget,Bindings);
 +      if (Binary->getType()->isPointerType() && Binary->isAdditiveOp()) {
 +        if (Binary->getLHS()->getType()->isPointerType() &&
@@ -49729,33 +49787,33 @@ new file mode 100644
 +    // A pointer lvalue names its slot; only a complete rvalue load can prove
 +    // the pointee. Treating &constantPointer as constantPointer is unsound.
 +    if (!Expression->isPRValue()) return false;
-+    // Immutable local bindings and checked read-only by-value helper parameters
-+    // cannot be retargeted during the call. Reprove the actual call argument using
-+    // the caller's binding environment; unknown/global/borrowed owners retain
-+    // their obligations. Written/escaped, volatile and reference parameters stay open.
 +    if(const auto *Load=dyn_cast<ImplicitCastExpr>(Expression);
 +        Load && Load->getCastKind()==CK_LValueToRValue && Load->getType()->isPointerType())
-+      if(const auto *Reference=dyn_cast<DeclRefExpr>(Load->getSubExpr()->IgnoreParenImpCasts()))
-+        if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
-+            Variable && Variable->hasLocalStorage() &&
-+            (Variable->getType().isConstQualified() || isa<ParmVarDecl>(Variable) ||
-+           staticUnmodifiedLocalPointer(Variable,Budget)) && !Variable->getType().isVolatileQualified() &&
-+            !Variable->getType()->isReferenceType()) {
-+          if(const auto *Parameter=dyn_cast<ParmVarDecl>(Variable)) {
-+            for(const auto &Binding:llvm::reverse(Bindings))
-+              if(Binding.first==Parameter)
-+                return staticStorageResultImpl(Binding.second,Depth+1,Budget,Bindings);
-+          } else if(Variable->hasInit())
-+            return staticStorageResultImpl(Variable->getInit(),Depth+1,Budget,Bindings);
-+        }
++      if(const auto *Reference=dyn_cast<DeclRefExpr>(Load->getSubExpr()->IgnoreParenImpCasts());
++          Reference && isa<VarDecl>(Reference->getDecl()) &&
++          cast<VarDecl>(Reference->getDecl())->hasLocalStorage())
++        return staticStorageSlotResult(Reference,Depth+1,Budget,Bindings);
++    const Expr *Computed=Expression->IgnoreParenImpCasts();
++    if(const auto *Assignment=dyn_cast<BinaryOperator>(Computed)) {
++      if(Assignment->getOpcode()==BO_Assign)
++        return staticStorageResultImpl(Assignment->getRHS(),Depth+1,Budget,Bindings);
++      if((Assignment->getOpcode()==BO_AddAssign || Assignment->getOpcode()==BO_SubAssign) &&
++          Assignment->getType()->isPointerType() &&
++          Assignment->getType()->getPointeeType()->isObjectType())
++        return staticStorageSlotResult(Assignment->getLHS(),Depth+1,Budget,Bindings);
++    }
++    if(const auto *Update=dyn_cast<UnaryOperator>(Computed);
++        Update && Update->isIncrementDecrementOp() && Update->getType()->isPointerType() &&
++        Update->getType()->getPointeeType()->isObjectType())
++      return staticStorageSlotResult(Update->getSubExpr(),Depth+1,Budget,Bindings);
 +    if(const auto *Default=dyn_cast<CXXDefaultArgExpr>(Expression))
 +      return staticStorageResultImpl(Default->getExpr(),Depth+1,Budget,Bindings);
 +    Expr::EvalResult Result;
 +    if (!Expression->EvaluateAsRValue(Result, Context) ||
 +        Result.HasSideEffects || Result.HasUndefinedBehavior || !Result.Val.isLValue()) {
 +      // Inspect statically bound definitions whose complete bounded return graph
-+      // proves permanent bases. Only immutable or proven read-only by-value pointer parameters
-+      // are substituted; references and written/escaped slots never prove a base.
++      // proves permanent bases. Every bound initial/assigned value must prove its
++      // base; escaped/reference slots and unknown mutation remain unbound.
 +      // C external inline definitions may differ from the selected external
 +      // definition, whereas C++ inline definitions share their ODR contract.
 +      const auto *Call = dyn_cast<CallExpr>(Expression->IgnoreParenImpCasts());
@@ -59752,7 +59810,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,3034 @@
+@@ -0,0 +1,3054 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62785,6 +62843,26 @@ new file mode 100644
 +    for(const auto *Field:Replayed->fields())if(Field->getName()!="mutex") {
 +      EXPECT_TRUE(Field->hasAttr<GuardedByAttr>());EXPECT_TRUE(Field->hasInClassInitializer());
 +    }
++  }
++}
++
++
++TEST(ObjC3ASTInfrastructure, PermanentPointerWritesJoinInitialAndAssignedValues) {
++  const char *Source=R"(
++    static const char first[]="first",second[]="second";
++    static const char *forward(const char *value){if(value)value=second;return ++value;}
++    static const char *plain(const char *value){return value;}
++    typedef const char *(*Callback)(const char *);
++    static const char *call(Callback callback,const char *value,int choose){if(choose)callback=plain;return callback(value);}
++    static Callback factory(int choose){Callback callback=plain;if(choose)callback=forward;return callback;}
++    typedef borrowed const char *Loan;
++    __attribute__((objc_returns_borrowed(owner_index=0)))
++    Loan view(void *owner,int choose){const char *value=first;if(choose)value=second;return call(factory(choose),value,choose);}
++  )";
++  for(const char *Standard:{"-std=c17","-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x",Standard==StringRef("-std=c17")?"objective-c":"objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"permanent-pointer-writes.mm");ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  }
 +}
 
@@ -70349,7 +70427,7 @@ diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,130 @@
 +#ifndef OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +#define OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +typedef borrowed const char *StaticGraphLoan;
@@ -70454,13 +70532,38 @@ new file mode 100644
 +static const char *graph_bad_catch(int choose){try{if(choose)throw 37;return graph_first;}catch(int){return graph_unknown();}}
 +static const char *graph_capture_return(int choose,const char *unknown){auto callback=[value=({if(choose)return unknown;0;})]{return value;};(void)callback;return graph_first;}
 +#endif
++static const char *graph_retarget_parameter(const char *value,int choose){if(choose)value=graph_second;return value;}
++static const char *graph_retarget_local(int choose){const char *value=graph_first;switch(choose){case 0:value=graph_second;break;case 1:value=graph_union.bytes;break;default:break;}return value;}
++static const char *graph_retarget_updates(const char *value){value=value+1;value-=1;++value;value--;return value;}
++static const char *graph_retarget_preincrement(const char *value){return ++value;}
++static const char *graph_retarget_compound(const char *value){return value+=1;}
++static const char *graph_retarget_assignment(const char *value){return value=graph_second;}
++static const char *graph_retarget_callback(GraphForwardCallback callback,const char *value,int choose){if(choose)callback=graph_readonly_local;return callback(value);}
++static GraphForwardCallback graph_retarget_factory(int choose){GraphForwardCallback callback=graph_forward;if(choose)callback=graph_readonly_local;return callback;}
++static const char *graph_retarget_bad_callback(GraphForwardCallback callback,const char *value,int choose){if(choose)callback=graph_bad_target;return callback(value);}
++static const char *graph_retarget_escaped(const char *value){value=graph_second;graph_escape_pointer(&value);return value;}
++static const char *graph_retarget_defer(int choose){const char *value=graph_first;{__objc3_defer {if(choose)value=graph_second;}}return value;}
++static const char *graph_retarget_bad_defer(void){const char *value=graph_first;{__objc3_defer {value=graph_unknown();}}return value;}
++extern GraphForwardCallback const graph_weak_callback __attribute__((weak));
++GraphForwardCallback const graph_weak_callback=graph_forward;
++static const char *graph_retarget_weak(const char *value){return graph_weak_callback(value);}
++
++#ifdef __cplusplus
++static const char *&graph_retarget_reference(const char *&value){return value=graph_second;}
++#endif
++
++__attribute__((objc_root_class)) @interface GraphRetargetOwner
++-(const char *)view:(int)choose __attribute__((objc_returns_inner_pointer));
++-(const char *)bad __attribute__((objc_returns_inner_pointer));
++@end
++
 +#endif
 
 diff --git a/clang/test/ObjC3/Sema/borrowed-static-control-flow.m b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,147 @@
 +// REQUIRES: x86-registered-target
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
@@ -70488,7 +70591,7 @@ new file mode 100644
 +STATIC_GRAPH StaticGraphLoan static_graph_readonly_callback(void *owner){return graph_readonly_callback(graph_readonly,graph_first);}
 +STATIC_GRAPH StaticGraphLoan static_graph_readonly_offset(void *owner){return graph_readonly_offset(graph_first);}
 +STATIC_GRAPH StaticGraphLoan static_graph_readonly_unknown(void *owner,const char *unknown){return graph_readonly(unknown);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
-+STATIC_GRAPH StaticGraphLoan static_graph_incremented(void *owner){return graph_increment(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_incremented(void *owner){return graph_increment(graph_first);}
 +STATIC_GRAPH StaticGraphLoan static_graph_parameter_escaped(void *owner){return graph_escape_parameter(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +#ifdef __cplusplus
 +STATIC_GRAPH StaticGraphLoan static_graph_reference_escaped(void *owner){return graph_reference_escape(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
@@ -70500,6 +70603,19 @@ new file mode 100644
 +STATIC_GRAPH StaticGraphLoan static_graph_local_written(void *owner){return graph_local_written(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_local_escaped(void *owner){return graph_local_escaped(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_block_byref(void *owner){return graph_block_byref(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_parameter(void *owner,int choose){return graph_retarget_parameter(graph_first,choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_local(void *owner,int choose){return graph_retarget_local(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_updates(void *owner){return graph_retarget_updates(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_preincrement(void *owner){return graph_retarget_preincrement(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_compound(void *owner){return graph_retarget_compound(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_assignment(void *owner){return graph_retarget_assignment(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_callback(void *owner,int choose){return graph_retarget_callback(graph_forward,graph_first,choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_factory(void *owner,int choose){return graph_retarget_factory(choose)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_defer(void *owner,int choose){return graph_retarget_defer(choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_bad_callback(void *owner,int choose){return graph_retarget_bad_callback(graph_forward,graph_first,choose);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_escaped(void *owner){return graph_retarget_escaped(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_bad_defer(void *owner){return graph_retarget_bad_defer();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_weak(void *owner){return graph_retarget_weak(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_branch(void *owner,int choose){return graph_branch(choose);}
 +STATIC_GRAPH StaticGraphLoan static_graph_switch(void *owner,int choose){return graph_switch(choose);}
 +STATIC_GRAPH StaticGraphLoan static_graph_loop(void *owner,int count){return graph_loop(count);}
@@ -70582,6 +70698,19 @@ new file mode 100644
 +
 +STATIC_GRAPH StaticGraphLoan static_graph_cpu_variant(void *owner){return graph_cpu_callback(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_cloned_body(void *owner){return graph_cloned_callback(graph_first);}
++
++#ifdef __cplusplus
++STATIC_GRAPH StaticGraphLoan static_graph_retarget_reference(void *owner){const char *value=graph_first;return graph_retarget_reference(value);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++#endif
++
++STATIC_GRAPH StaticGraphLoan static_graph_root_retarget(void *owner,int choose){const char *value=graph_first;if(choose)value=graph_second;return graph_retarget_callback(graph_retarget_factory(choose),value,choose);}
++STATIC_GRAPH StaticGraphLoan static_graph_root_unknown(void *owner){const char *value=graph_first;value=graph_unknown();return value;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++@implementation GraphRetargetOwner
++-(const char *)view:(int)choose {const char *value=graph_first;if(choose)value=graph_second;return value;}
++-(const char *)bad {const char *value=graph_first;value=graph_unknown();return value;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++@end
++void static_graph_block_retarget(void *caller){(void)(^StaticGraphLoan(void *owner,int choose) __attribute__((objc_returns_borrowed(owner_index=0))) {const char *value=graph_first;if(choose)value=graph_second;return value;})(caller,0);}
++void static_graph_block_unknown(void *caller){(void)(^StaticGraphLoan(void *owner) __attribute__((objc_returns_borrowed(owner_index=0))) {const char *value=graph_first;value=graph_unknown();return value;})(caller);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 
 diff --git a/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm b/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm
 new file mode 100644

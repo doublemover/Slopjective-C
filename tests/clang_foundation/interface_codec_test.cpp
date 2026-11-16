@@ -87,7 +87,7 @@ int main() {
   // declarations, even when their marker and required-semantics list agree.
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
       {";native-storage-lifetime:v6;",kNativeStorageLifetimeSemantic},
-      {";borrowed-result-proofs:v6;",kBorrowedResultProofSemantic},
+      {";borrowed-result-proofs:v7;",kBorrowedResultProofSemantic},
       {";native-emission-policies:v2;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";native-cpu-variant:v1;",kNativeEmissionPolicySemantic}}) {

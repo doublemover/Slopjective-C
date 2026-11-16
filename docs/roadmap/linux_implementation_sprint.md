@@ -627,3 +627,13 @@ assert/alias/suppression family, typed expression arguments, lock modes and
 try-lock success values. Canonical scope/order and inherited parameter-name
 rebinding preserve diagnostics through source-free imports. Native-thread-safety
 v1 enforces reader admission without changing physical ABI layouts.
+
+## Source 2.165 / System 2.91 implementation
+
+[Mutable permanent bindings](linux_mutable_permanent_bindings.md) conservatively
+join every initial and assigned local/by-value pointer and callback value.
+Every alternative must prove a permanent base or known target, including helper
+factories and deferred writes. Object-pointer updates preserve their lifetime
+base; escaped/reference slots, unknown writes and replaceable weak/alias globals
+retain rejection. Shared proof work/depth/target bounds and borrowed-result-proofs
+v7 enforce source-free admission without a physical ABI change.
