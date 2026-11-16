@@ -71,6 +71,21 @@ inline void cleanup_value(int value)noexcept{cleanup_order+=value;}
 inline void cleanup_reference(int &value)noexcept{cleanup_order+=value;value=0;}
 inline int cleaned_value(){int value __attribute__((objc_cleanup(cleanup_value)))=43;return value;}
 inline int cleaned_reference(){int value __attribute__((objc_cleanup(cleanup_reference)))=44;return value;}
+inline int resource_closed=0;
+template<class T>void resource_close(T value)noexcept{resource_closed+=static_cast<int>(value);}
+template<class T>void resource_address(T *value)noexcept{resource_closed+=static_cast<int>(*value);*value=-1;}
+template<class T>struct ResourceTraits {static void close(T value)noexcept{resource_close(value);}static constexpr T invalid=static_cast<T>(-1);};
+inline void resource_auto(int initial){@resource(resource_close<int>, invalid: -1) auto value=initial;(void)value;}
+template<class T>inline void resource_dependent(T initial){@resource(ResourceTraits<T>::close, invalid: ResourceTraits<T>::invalid) T value=initial;(void)value;}
+template<class T>inline void resource_auto_dependent(T initial){@resource(resource_address<T>, invalid: -1) auto value=initial;(void)value;}
+inline void resource_operations(){@resource(resource_close<int>, invalid: -1) auto value=3;__builtin_objc3_resource_reset(value,5);__builtin_objc3_resource_discard(value);}
+inline int resource_take(){@resource(resource_close<int>, invalid: -1) auto value=11;return __builtin_objc3_resource_take(value);}
+inline void resource_throw(int value){resource_closed+=value;throw 83;}
+inline void resource_throw_discard(){@resource(resource_throw, invalid: -1) auto value=7;__builtin_objc3_resource_discard(value);}
+inline int resource_acquire(){throw 79;}
+inline void resource_init_failure(){@resource(resource_close<int>, invalid: -1) auto value=resource_acquire();(void)value;}
+inline void resource_unwind(){@resource(resource_close<int>, invalid: -1) auto value=13;(void)value;throw 89;}
+
 #endif
 inline const char *static_source(){return static_union.bytes;}
 inline const char *static_offset(int offset){return static_source()+offset;}
@@ -215,6 +230,14 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   cleanup_order=0;if(cleaned_auto_dependent(46)!=46 || cleanup_order!=1)return 23;
   cleanup_order=0;if(cleaned_function<int>(47)!=47 || cleanup_order!=1)return 24;
   cleanup_order=0;if(cleaned_function<CleanupValue>(48)!=48 || cleanup_order!=12)return 25;
+  resource_closed=0;resource_auto(2);resource_dependent(3L);resource_auto_dependent(4);if(resource_closed!=9)return 26;
+  resource_closed=0;resource_auto(-1);resource_dependent(-1L);resource_auto_dependent(-1);if(resource_closed)return 27;
+  resource_closed=0;resource_operations();if(resource_closed!=8)return 28;
+  resource_closed=0;if(resource_take()!=11 || resource_closed)return 29;
+  resource_closed=0;caught=false;try{resource_throw_discard();}catch(int value){caught=value==83;}if(!caught || resource_closed!=7)return 30;
+  resource_closed=0;caught=false;try{resource_init_failure();}catch(int value){caught=value==79;}if(!caught || resource_closed)return 31;
+  resource_closed=0;caught=false;try{resource_unwind();}catch(int value){caught=value==89;}if(!caught || resource_closed!=13)return 32;
+
 #endif
   if(ready!=42 || attribute_ready!=43 || ordered.value!=2 || retained.value!=4 || finalized.value!=5)return 1;
   if(&local_retained()!=&provider_local() || local_finalized().value!=7)return 2;

@@ -5,6 +5,14 @@ on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
+The [source 2.159 / System 2.85 resource span](linux_native_resource_publication.md)
+publishes local native resource owners and binds concrete dependent/deduced
+handle recipes before mandatory flow checking. Close callbacks, invalid sentinels
+and value/address invocation retain exact source-free identity; explicit function-
+template callbacks resolve consistently across resource typedefs and owners.
+Native-storage-lifetime v4 is a hard reader cutover. Complete rebuilt compiler/SDK
+acceptance remains pending.
+
 The [source 2.158 / System 2.84 callback span](linux_borrowed_callback_factories.md)
 proves bounded sets of callback targets selected by conditionals and returned
 through complete helper graphs, including nested higher-order factories.

@@ -637,6 +637,14 @@ void TestNativeStorageLifetimeReplay() {
     void release(int *);void release_other(int *);
     inline int cleanup_value() {int value __attribute__((cleanup(release)))=42;return value;}
     template<class T>inline T cleanup_template(T initial) {T value __attribute__((cleanup(release)))=initial;return value;}
+    inline void resource_close(int)noexcept{}
+    inline void resource_other(int)noexcept{}
+    template<class T>inline void resource_function(T)noexcept{}
+    template<class T>struct ResourceTraits {static void close(T)noexcept{}static constexpr T invalid=static_cast<T>(-1);};
+    inline void resource_auto(int initial){@resource(resource_close, invalid: -1) auto value=initial;(void)value;}
+    template<class T>inline void resource_dependent(T initial){@resource(ResourceTraits<T>::close, invalid: ResourceTraits<T>::invalid) T value=initial;(void)value;}
+    template<class T>inline void resource_auto_dependent(T initial){@resource(resource_function<T>, invalid: -1) auto value=initial;(void)value;}
+
    }
   )";
   auto emit=[&](const std::string &text,const std::vector<std::string> &names=std::vector<std::string>{"NativeStorage"}) {
@@ -655,7 +663,7 @@ void TestNativeStorageLifetimeReplay() {
   auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
   assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeStorageLifetimeSemantic)));
   auto older=supported;std::erase(older,llvm::StringRef(kNativeStorageLifetimeSemantic));
-  older.push_back("objc3.native-storage-lifetime.v2");
+  older.push_back("objc3.native-storage-lifetime.v3");
   auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
   std::erase(decoded->required_semantics,kNativeStorageLifetimeSemantic);
   auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
@@ -669,7 +677,9 @@ void TestNativeStorageLifetimeReplay() {
     {"Priority=201","Priority=211"},{"destructor(203)","destructor(213)"},
     {"init_priority(202)","init_priority(212)"},{"no_destroy","always_destroy"},
     {"constinit int ready","int ready"},{"static __attribute__((no_destroy)) Owner value(47)","static __attribute__((always_destroy)) Owner value(47)"},
-    {"cleanup(release)","cleanup(release_other)"}}) {
+    {"cleanup(release)","cleanup(release_other)"},
+    {"@resource(resource_close, invalid: -1)","@resource(resource_other, invalid: -1)"},
+    {"@resource(resource_close, invalid: -1)","@resource(resource_close, invalid: -2)"}}) {
    auto changed=source;auto at=changed.find(change.first);assert(at!=std::string::npos);changed.replace(at,change.first.size(),change.second);
    auto next=emit(changed);assert(next.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
   }
@@ -683,10 +693,15 @@ void TestNativeStorageLifetimeReplay() {
   auto consumer=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
    int storage_consumer(){return NativeStorage::local().value+NativeStorage::local_destroyed().value+NativeStorage::local_constant()+NativeStorage::ready+NativeStorage::templated<int>;}
    int cleanup_consumer(){return NativeStorage::cleanup_value()+NativeStorage::cleanup_template(42);}
+   void resource_consumer(){NativeStorage::resource_auto(42);NativeStorage::resource_dependent(43L);NativeStorage::resource_auto_dependent(44);}
+
   )",args,"storage-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
   auto hidden_ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"hidden-cleanup.mm");assert(hidden_ast);
   auto hidden=EmitSemanticInterface(hidden_ast->getASTContext(),"fixture.native_storage","test",{},{},{},{"NativeStorage::cleanup_value"});
   assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  auto hidden_resource=EmitSemanticInterface(hidden_ast->getASTContext(),"fixture.native_storage","test",{},{},{},{"NativeStorage::resource_auto"});
+  assert(!hidden_resource.success && std::any_of(hidden_resource.diagnostics.begin(),hidden_resource.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+
  }
  for(bool arc:{false,true}) {
   std::vector<std::string> args={"-x","objective-c","-std=c17","-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};

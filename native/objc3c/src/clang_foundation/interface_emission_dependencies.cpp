@@ -76,6 +76,8 @@ class TypeDependencyVisitor final
          TraverseType(cleanup->getFunctionDecl()->getType());
        } else if(const auto *cleanup=llvm::dyn_cast<clang::ObjCCleanupAttr>(attribute)) {
          TraverseStmt(cleanup->getClose());
+       } else if(const auto *resource=llvm::dyn_cast<clang::ObjCResourceAttr>(attribute)) {
+         TraverseStmt(resource->getClose());TraverseStmt(resource->getInvalid());
        } else if(llvm::isa<clang::DiagnoseIfAttr,clang::EnableIfAttr>(attribute)) {
          const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute);
          const auto *enabled=llvm::dyn_cast<clang::EnableIfAttr>(attribute);
@@ -622,7 +624,7 @@ class TypeDependencyVisitor final
         if (!attribute->isImplicit() &&
             !(llvm::isa<clang::ParmVarDecl>(variable) &&
               llvm::isa<clang::NSConsumedAttr,clang::CFConsumedAttr>(attribute)) &&
-            !llvm::isa<clang::BlocksAttr,clang::AlignedAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr>(attribute))
+            !llvm::isa<clang::BlocksAttr,clang::AlignedAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr>(attribute))
           UnsupportedExpression("local variable attribute has no publication contract");
     if(body_function_)CheckDeclarationAttributes(variable);
     return true;

@@ -994,7 +994,7 @@ public:
           local_contracts.insert("local-alignment:"+NativeAttributeValue(attribute,declaration));
         else if(!attribute->isImplicit() && llvm::isa<clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr>(attribute))
           local_contracts.insert("local-emission-policy:"+NativeAttributeValue(attribute,declaration));
-        else if(!attribute->isImplicit() && llvm::isa<clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr>(attribute))
+        else if(!attribute->isImplicit() && llvm::isa<clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr>(attribute))
           local_contracts.insert("local-storage-lifetime:"+NativeAttributeValue(attribute,declaration));
       }
       for(const auto &contract:local_contracts)Add(contract);
@@ -1513,6 +1513,25 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
       if(function)add(CanonicalType(function->getType(),declaration->getASTContext()));
       add(cleanup->getByAddress()?"address":"value");
     }
+  } else if(const auto *resource=llvm::dyn_cast<clang::ObjCResourceAttr>(attribute)) {
+    DeclarationExpressionIdentity identity(declaration->getASTContext(),
+        llvm::dyn_cast<clang::FunctionDecl>(declaration->getDeclContext()));
+    auto bind=[&](auto &&self,const clang::DeclContext *scope)->void {
+      if(!scope)return;self(self,scope->getParent());
+      if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+        if(const auto *pattern=record->getDescribedClassTemplate())identity.TemplateParameters(pattern);
+      if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(scope))
+        if(const auto *pattern=function->getDescribedFunctionTemplate())identity.TemplateParameters(pattern);
+    };
+    bind(bind,declaration->getDeclContext());
+    if(resource->getCall()) {
+      const auto *reference=llvm::dyn_cast<clang::DeclRefExpr>(resource->getClose()->IgnoreParenImpCasts());
+      const auto *function=reference?llvm::dyn_cast<clang::FunctionDecl>(reference->getDecl()):nullptr;
+      add(function?ReadInterfaceDeclarationStableId(function):"!unmodeled-resource");
+      if(function)add(CanonicalType(function->getType(),declaration->getASTContext()));
+    } else add(identity.Get(resource->getClose()));
+    add(identity.Get(resource->getInvalid()));
+    add(resource->getCall()?(resource->getByAddress()?"address":"value"):"deferred-resource");
   } else if(const auto *sanitizers=llvm::dyn_cast<clang::NoSanitizeAttr>(attribute)) {
     std::set<std::string> names;
     for(auto name:sanitizers->sanitizers())names.insert(name.str());
@@ -2690,7 +2709,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationBorrowedResultProof(representative))
     identity.canonical_type_identity+=";borrowed-result-proofs:v5;";
   if (HasDeclarationNativeStorageLifetime(representative))
-    identity.canonical_type_identity += ";native-storage-lifetime:v3;";
+    identity.canonical_type_identity += ";native-storage-lifetime:v4;";
   if (HasDeclarationAtomicManagedProperty(representative))
     identity.canonical_type_identity += ";atomic-managed-properties:v1;";
   if (HasDeclarationNativeLambdaArgumentABI(representative))

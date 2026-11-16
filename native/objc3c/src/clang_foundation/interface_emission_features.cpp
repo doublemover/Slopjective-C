@@ -200,7 +200,7 @@ bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration) {
   auto Storage=[](const clang::NamedDecl *named) {
     if(!named)return false;
     for(const auto *attribute:named->attrs())
-      if(!attribute->isImplicit() && llvm::isa<clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr>(attribute))return true;
+      if(!attribute->isImplicit() && llvm::isa<clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr>(attribute))return true;
     return false;
   };
   struct Declarations : clang::DynamicRecursiveASTVisitor {

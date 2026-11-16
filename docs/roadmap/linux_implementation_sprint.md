@@ -563,3 +563,15 @@ unique targets per collection. Exact callable type and immutable binding rules
 remain enforced; mutable/unknown/null/replaceable targets, recursion and missing
 returns retain conservative rejection. Borrowed-result-proofs v5 binds the hard
 reader cutover. See [callback factories](linux_borrowed_callback_factories.md).
+
+## Source 2.159 / System 2.85 implementation
+
+Native resource owners now publish callback/sentinel/invocation identity and
+public dependencies, with qualified canonical callbacks and explicit arguments.
+Dependent/template and auto-deduced handle recipes concretely rebind before
+mandatory resource/ownership/CFG checking. Explicit function-template callbacks
+also work in resource typedef contracts. Native-storage-lifetime v4 rejects older
+readers. Compiler/PCH, AST, publication, decoder and source-free native controls
+cover declaration rejection, sentinel suppression, reset/take/discard, callback
+errors, failed initialization and exceptional scope exits. See
+[native resource publication](linux_native_resource_publication.md).

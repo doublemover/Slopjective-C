@@ -6045,7 +6045,6 @@ index e0b62591a..2ad8208b6 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..2a670fa3f 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,143 @@
@@ -6302,7 +6301,7 @@ index 4be3e977b..2a670fa3f 100644
  }
  
  void TemplateParameterList::print(raw_ostream &Out, const ASTContext &Context,
-@@ -190,30 +200,33 @@ static QualType GetBaseType(QualType T) {
+@@ -190,30 +200,33 @@
    return BaseType;
  }
  
@@ -6345,7 +6344,7 @@ index 4be3e977b..2a670fa3f 100644
      if (isFirst) {
        isFirst = false;
      } else {
-@@ -236,7 +249,7 @@ LLVM_DUMP_METHOD void DeclContext::dumpDeclContext() const {
+@@ -236,7 +249,7 @@
    Printer.VisitDeclContext(const_cast<DeclContext *>(this), /*Indent=*/false);
  }
  
@@ -6354,7 +6353,7 @@ index 4be3e977b..2a670fa3f 100644
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -265,12 +278,119 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -265,12 +278,119 @@
    std::string AttrStr;
    llvm::raw_string_ostream AOut(AttrStr);
    llvm::ListSeparator LS(" ");
@@ -6385,7 +6384,7 @@ index 4be3e977b..2a670fa3f 100644
 +    if (A->isImplicit() ||
 +        (A->isInherited() &&
 +         !(Policy.PolishForDeclaration &&
-+           isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
++           isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SwiftCallAttr, SwiftAsyncCallAttr, SwiftContextAttr, SwiftAsyncContextAttr, SwiftErrorResultAttr, SwiftIndirectResultAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
@@ -6410,7 +6409,7 @@ index 4be3e977b..2a670fa3f 100644
 +    // native attributes when printing a reusable declaration contract.
 +    const auto *SPI = dyn_cast<AnnotateAttr>(A);
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
-+        !isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
++        !isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SwiftCallAttr, SwiftAsyncCallAttr, SwiftContextAttr, SwiftAsyncContextAttr, SwiftErrorResultAttr, SwiftIndirectResultAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
@@ -6477,7 +6476,7 @@ index 4be3e977b..2a670fa3f 100644
      switch (A->getKind()) {
  #define ATTR(X)
  #define PRAGMA_SPELLING_ATTR(X) case attr::X:
-@@ -278,11 +398,166 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -278,11 +398,178 @@
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -6495,7 +6494,7 @@ index 4be3e977b..2a670fa3f 100644
 +              CXX11NoReturnAttr, VisibilityAttr>(A))
 +        APos = AttrPosAsWritten::Left;
 +      if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) && isa<VarDecl>(D) &&
-+          isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr>(A))
++          isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr>(A))
 +        APos = AttrPosAsWritten::Left;
        assert(APos != AttrPosAsWritten::Default &&
               "Default not a valid for an attribute location");
@@ -6520,6 +6519,18 @@ index 4be3e977b..2a670fa3f 100644
 +          Function->printQualifiedName(AOut,Policy);
 +          if(const auto *Arguments=Function->getTemplateSpecializationArgs())
 +            printTemplateArgumentList(AOut,Arguments->asArray(),Policy);
++          AOut << ")))";
++        } else if(const auto *Resource=dyn_cast<ObjCResourceAttr>(A);
++            Resource && (Policy.PolishForDeclaration || Policy.PrintAsCanonical)) {
++          AOut << "__attribute__((objc_resource(close=";
++          const auto *Reference=dyn_cast<DeclRefExpr>(Resource->getClose()->IgnoreParenImpCasts());
++          const auto *Function=Reference?dyn_cast<FunctionDecl>(Reference->getDecl()):nullptr;
++          if(Function) {
++            Function->printQualifiedName(AOut,Policy);
++            if(const auto *Arguments=Function->getTemplateSpecializationArgs())
++              printTemplateArgumentList(AOut,Arguments->asArray(),Policy);
++          } else Resource->getClose()->printPretty(AOut,nullptr,Policy);
++          AOut << ", invalid=";Resource->getInvalid()->printPretty(AOut,nullptr,Policy);
 +          AOut << ")))";
 +        } else if(isa<DiagnoseIfAttr,EnableIfAttr>(A)) {
 +          AOut << PredicateSpelling;
@@ -6645,7 +6656,7 @@ index 4be3e977b..2a670fa3f 100644
        }
        break;
      }
-@@ -348,12 +623,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
+@@ -348,12 +635,11 @@
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -6659,7 +6670,7 @@ index 4be3e977b..2a670fa3f 100644
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -390,16 +664,17 @@ void DeclPrinter::PrintConstructorInitializers(CXXConstructorDecl *CDecl,
+@@ -390,16 +676,17 @@
      }
  
      if (Expr *Init = BMInitializer->getInit()) {
@@ -6682,7 +6693,7 @@ index 4be3e977b..2a670fa3f 100644
        Expr *SimpleInit = nullptr;
        Expr **Args = nullptr;
        unsigned NumArgs = 0;
-@@ -451,7 +726,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -451,7 +738,7 @@
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -6691,7 +6702,7 @@ index 4be3e977b..2a670fa3f 100644
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +746,15 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -471,6 +758,15 @@
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -6707,7 +6718,7 @@ index 4be3e977b..2a670fa3f 100644
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +838,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -554,9 +850,12 @@
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -6722,7 +6733,7 @@ index 4be3e977b..2a670fa3f 100644
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +956,129 @@ static void printExplicitSpecifier(ExplicitSpecifier ES, llvm::raw_ostream &Out,
+@@ -669,45 +968,129 @@
    Out << Proto;
  }
  
@@ -6867,7 +6878,7 @@ index 4be3e977b..2a670fa3f 100644
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +1092,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -721,12 +1104,24 @@
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -6894,7 +6905,7 @@ index 4be3e977b..2a670fa3f 100644
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +1136,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -753,12 +1148,14 @@
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -6911,7 +6922,7 @@ index 4be3e977b..2a670fa3f 100644
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1192,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -807,7 +1204,10 @@
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -6923,7 +6934,7 @@ index 4be3e977b..2a670fa3f 100644
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1206,35 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,17 +1218,35 @@
        }
      }
  
@@ -6964,7 +6975,7 @@ index 4be3e977b..2a670fa3f 100644
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1256,15 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -850,7 +1268,15 @@
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -6981,7 +6992,7 @@ index 4be3e977b..2a670fa3f 100644
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -877,9 +1291,17 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -877,9 +1303,17 @@
          Indentation -= Policy.Indentation;
        }
  
@@ -7002,7 +7013,7 @@ index 4be3e977b..2a670fa3f 100644
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1316,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+@@ -894,19 +1328,15 @@
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -7027,7 +7038,7 @@ index 4be3e977b..2a670fa3f 100644
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -923,8 +1341,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1353,10 @@
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -7040,7 +7051,7 @@ index 4be3e977b..2a670fa3f 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,12 +1364,52 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,12 +1376,52 @@
      Out << ' ' << *Attrs;
  }
  
@@ -7095,7 +7106,7 @@ index 4be3e977b..2a670fa3f 100644
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1419,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -959,9 +1431,10 @@
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -7109,7 +7120,7 @@ index 4be3e977b..2a670fa3f 100644
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1446,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -985,22 +1458,43 @@
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -7157,7 +7168,7 @@ index 4be3e977b..2a670fa3f 100644
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1504,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1022,6 +1516,8 @@
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -7166,7 +7177,7 @@ index 4be3e977b..2a670fa3f 100644
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1513,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1029,9 +1525,7 @@
    }
  }
  
@@ -7177,7 +7188,7 @@ index 4be3e977b..2a670fa3f 100644
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1528,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+@@ -1046,8 +1540,7 @@
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -7187,7 +7198,7 @@ index 4be3e977b..2a670fa3f 100644
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1550,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -1069,6 +1562,8 @@
      Out << "inline ";
  
    Out << "namespace ";
@@ -7196,7 +7207,7 @@ index 4be3e977b..2a670fa3f 100644
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +1578,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
+@@ -1095,6 +1590,9 @@
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -7206,7 +7217,7 @@ index 4be3e977b..2a670fa3f 100644
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +1617,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+@@ -1131,7 +1629,8 @@
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -7216,7 +7227,7 @@ index 4be3e977b..2a670fa3f 100644
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1749,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1262,7 +1761,7 @@
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -7225,7 +7236,7 @@ index 4be3e977b..2a670fa3f 100644
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +1769,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1282,12 +1781,21 @@
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -7248,7 +7259,7 @@ index 4be3e977b..2a670fa3f 100644
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +1798,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1302,7 +1810,11 @@
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -7261,7 +7272,7 @@ index 4be3e977b..2a670fa3f 100644
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +1820,14 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1320,6 +1832,14 @@
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -7276,7 +7287,7 @@ index 4be3e977b..2a670fa3f 100644
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +1885,17 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+@@ -1377,13 +1897,17 @@
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -7297,7 +7308,7 @@ index 4be3e977b..2a670fa3f 100644
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +1910,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+@@ -1398,9 +1922,18 @@
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -7318,7 +7329,7 @@ index 4be3e977b..2a670fa3f 100644
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +1993,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1472,9 +2005,8 @@
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -7330,14 +7341,13 @@ index 4be3e977b..2a670fa3f 100644
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +2003,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1483,8 +2015,22 @@
      Out << name;
  
    if (OMD->isVariadic())
 -      Out << ", ...";
--
 +    Out << ", ...";
-+
+ 
 +  const auto Effects = OMD->getObjC3FunctionEffects();
 +  if (Effects.Async)
 +    Out << (Effects.AsyncFrame ? " __objc3_async_frame" : " __objc3_async");
@@ -7355,7 +7365,7 @@ index 4be3e977b..2a670fa3f 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +2026,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1492,8 +2038,7 @@
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -7365,7 +7375,7 @@ index 4be3e977b..2a670fa3f 100644
      Out << ';';
  }
  
-@@ -1512,8 +2045,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +2057,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -7376,7 +7386,7 @@ index 4be3e977b..2a670fa3f 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2078,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +2090,7 @@
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -7385,7 +7395,7 @@ index 4be3e977b..2a670fa3f 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2091,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +2103,8 @@
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -7395,7 +7405,7 @@ index 4be3e977b..2a670fa3f 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2102,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +2114,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -7407,7 +7417,7 @@ index 4be3e977b..2a670fa3f 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2120,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +2132,8 @@
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -7416,7 +7426,7 @@ index 4be3e977b..2a670fa3f 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2131,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+@@ -1596,7 +2143,8 @@
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -7426,7 +7436,7 @@ index 4be3e977b..2a670fa3f 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2155,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +2167,8 @@
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -7435,7 +7445,7 @@ index 4be3e977b..2a670fa3f 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2165,26 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1627,13 +2177,26 @@
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -7466,7 +7476,7 @@ index 4be3e977b..2a670fa3f 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2196,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +2208,8 @@
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -7477,7 +7487,7 @@ index 4be3e977b..2a670fa3f 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2304,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +2316,14 @@
        }
      }
  
@@ -7499,7 +7509,7 @@ index 4be3e977b..2a670fa3f 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2347,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +2359,14 @@
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -7517,7 +7527,7 @@ index 4be3e977b..2a670fa3f 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2376,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2388,7 @@
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -7526,6 +7536,7 @@ index 4be3e977b..2a670fa3f 100644
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
+
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
 index 172a19f8f..4d90ea9bf 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
@@ -37916,7 +37927,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Res
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,688 @@
+@@ -0,0 +1,739 @@
 +//===--- SemaObjC3Resources.cpp - Native scalar resource ownership
 +//---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -37943,6 +37954,20 @@ new file mode 100644
 +         (Type.getObjCLifetime() == Qualifiers::OCL_None ||
 +          Type.getObjCLifetime() == Qualifiers::OCL_ExplicitNone) &&
 +         !Type->isAtomicType() && Type.getAddressSpace() == LangAS::Default;
++}
++// Resolve a fully specified function-template callback before checking its
++// resource signature. Dependent recipes retain lookup until instantiation.
++ExprResult resolveResourceCallback(Sema &S, Expr *Value) {
++  auto *Lookup = dyn_cast<UnresolvedLookupExpr>(Value->IgnoreParenImpCasts());
++  if (!Lookup || !Lookup->hasExplicitTemplateArgs() || Value->isTypeDependent() ||
++      Value->isValueDependent()) return Value;
++  auto *Selected = S.ResolveSingleFunctionTemplateSpecialization(Lookup, true);
++  if (!Selected) return ExprError();
++  TemplateArgumentListInfo Arguments;
++  Lookup->copyTemplateArgumentsInto(Arguments);
++  return S.BuildDeclRefExpr(Selected, Selected->getType(), VK_LValue,
++      Lookup->getNameInfo(), Lookup->getQualifierLoc(), nullptr,
++      Lookup->getTemplateKeywordLoc(), &Arguments);
 +}
 +} // namespace
 +
@@ -38110,6 +38135,9 @@ new file mode 100644
 +          ObjCInvalidAttr::Create(S.Context, Converted.get(), Attribute));
 +    return;
 +  }
++  auto Resolved = resolveResourceCallback(S, Value);
++  if (Resolved.isInvalid()) {D->setInvalidDecl();return;}
++  Value = Resolved.get();
 +  auto *Reference = dyn_cast<DeclRefExpr>(Value->IgnoreParenImpCasts());
 +  auto *Function =
 +      Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
@@ -38220,17 +38248,9 @@ new file mode 100644
 +           "objc_cleanup requires complete nondependent fixed-size storage");
 +    return;
 +  }
-+  if(auto *Lookup=dyn_cast<UnresolvedLookupExpr>(Close->IgnoreParenImpCasts());
-+      Lookup && Lookup->hasExplicitTemplateArgs() && !Close->isTypeDependent() &&
-+      !Close->isValueDependent()) {
-+    auto *Selected=S.ResolveSingleFunctionTemplateSpecialization(Lookup,true);
-+    if(!Selected){D->setInvalidDecl();return;}
-+    TemplateArgumentListInfo Arguments;
-+    Lookup->copyTemplateArgumentsInto(Arguments);
-+    Close=S.BuildDeclRefExpr(Selected,Selected->getType(),VK_LValue,
-+        Lookup->getNameInfo(),Lookup->getQualifierLoc(),nullptr,
-+        Lookup->getTemplateKeywordLoc(),&Arguments);
-+  }
++  auto Resolved = resolveResourceCallback(S, Close);
++  if (Resolved.isInvalid()) {D->setInvalidDecl();return;}
++  Close = Resolved.get();
 +  auto *Reference = dyn_cast<DeclRefExpr>(Close->IgnoreParenImpCasts());
 +  auto *Function =
 +      Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
@@ -38353,8 +38373,9 @@ new file mode 100644
 +  attachObjC3CleanupAttr(S,Variable,Close,Pattern);
 +}
 +
-+void clang::handleObjC3ResourceAttr(Sema &S, Decl *D,
-+                                    const ParsedAttr &Attribute) {
++namespace {
++void attachObjC3ResourceAttr(Sema &S, Decl *D, Expr *Close, Expr *Invalid,
++                            const AttributeCommonInfo &Attribute) {
 +  auto Reject = [&](SourceLocation Loc, StringRef Message) {
 +    S.Diag(Loc, S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
 +                    DiagnosticIDs::Error, Message));
@@ -38384,25 +38405,24 @@ new file mode 100644
 +    return;
 +  }
 +  QualType HandleType = Variable->getType();
-+  if (!isResourceHandleType(HandleType)) {
++  const bool DeferredType = HandleType->isDependentType() || HandleType->isUndeducedType();
++  if (!DeferredType && !isResourceHandleType(HandleType)) {
 +    Reject(Attribute.getLoc(),
 +           "objc_resource requires a mutable nondependent integer, enum, or "
 +           "ordinary pointer handle; spell its type explicitly");
 +    return;
 +  }
-+  if (Attribute.getNumArgs() != 2 || !Attribute.isArgExpr(0) ||
-+      !Attribute.isArgExpr(1)) {
-+    Reject(Attribute.getLoc(),
-+           "objc_resource requires both 'close=F' and 'invalid=X'");
-+    return;
-+  }
-+  Expr *Close = Attribute.getArgAsExpr(0);
-+  Expr *Invalid = Attribute.getArgAsExpr(1);
++  auto Resolved = resolveResourceCallback(S, Close);
++  if (Resolved.isInvalid()) {D->setInvalidDecl();return;}
++  Close = Resolved.get();
 +  auto *Reference = dyn_cast<DeclRefExpr>(Close->IgnoreParenImpCasts());
 +  auto *Function =
 +      Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
 +  const auto *Prototype =
 +      Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
++  const bool DependentCallback = Close->isTypeDependent() || Close->isValueDependent() ||
++      (Function && Function->isDependentContext());
++  if (!DependentCallback || !Variable->getDeclContext()->isDependentContext()) {
 +  if (!Function || !Prototype || Function->getNumParams() != 1 ||
 +      Prototype->isVariadic() || Function->isDependentContext() ||
 +      (isa<CXXMethodDecl>(Function) &&
@@ -38422,6 +38442,19 @@ new file mode 100644
 +    Reject(Close->getExprLoc(),
 +           "objc_resource close cannot be async or use checked throws; use "
 +           "a synchronous native cleanup function");
++    return;
++  }
++
++  }
++  if (HandleType->isUndeducedType() ||
++      (Variable->getDeclContext()->isDependentContext() &&
++       (DeferredType || DependentCallback || Invalid->isTypeDependent() || Invalid->isValueDependent()))) {
++    Variable->addAttr(ObjCResourceAttr::Create(S.Context, Close, Invalid, false, nullptr, Attribute));
++    Variable->markUsed(S.Context);
++    return;
++  }
++  if (DeferredType) {
++    Reject(Attribute.getLoc(), "objc_resource storage remains dependent after substitution");
 +    return;
 +  }
 +
@@ -38515,6 +38548,22 @@ new file mode 100644
 +  Variable->markUsed(S.Context);
 +}
 +
++} // namespace
++
++void clang::handleObjC3ResourceAttr(Sema &S, Decl *D, const ParsedAttr &Attribute) {
++  if (Attribute.getNumArgs() != 2 || !Attribute.isArgExpr(0) || !Attribute.isArgExpr(1)) {
++    S.Diag(Attribute.getLoc(), S.getDiagnostics().getCustomDiagID(
++        DiagnosticsEngine::Error, "objc_resource requires both 'close=F' and 'invalid=X'"));
++    D->setInvalidDecl();return;
++  }
++  attachObjC3ResourceAttr(S,D,Attribute.getArgAsExpr(0),Attribute.getArgAsExpr(1),Attribute);
++}
++
++void clang::rebuildObjC3ResourceAttr(Sema &S, VarDecl *Variable, Expr *Close,
++                                   Expr *Invalid, const ObjCResourceAttr &Pattern) {
++  attachObjC3ResourceAttr(S,Variable,Close,Invalid,Pattern);
++}
++
 +bool clang::checkObjC3ResourceDeclarations(Sema &S, const Stmt *Body) {
 +  if (!S.getLangOpts().ObjC3 || !Body)
 +    return false;
@@ -38545,6 +38594,19 @@ new file mode 100644
 +      if(!Resolved || !Resolved->getCall()) {
 +        S.Diag(Cleanup->getLocation(),S.getDiagnostics().getCustomDiagID(
 +            DiagnosticsEngine::Error,"objc_cleanup callback contract was not resolved after substitution"));
++        Writable->setInvalidDecl();Invalid=true;continue;
++      }
++    }
++    if (const auto *Resource = Variable->getAttr<ObjCResourceAttr>(); Resource && !Resource->getCall()) {
++      if (Variable->getDeclContext()->isDependentContext() || Variable->isInvalidDecl()) continue;
++      auto *Writable = const_cast<VarDecl *>(Variable);
++      Writable->dropAttr<ObjCResourceAttr>();
++      rebuildObjC3ResourceAttr(S, Writable, Resource->getClose(), Resource->getInvalid(), *Resource);
++      if (Writable->isInvalidDecl()) {Invalid=true;continue;}
++      const auto *Resolved = Writable->getAttr<ObjCResourceAttr>();
++      if (!Resolved || !Resolved->getCall()) {
++        S.Diag(Resource->getLocation(),S.getDiagnostics().getCustomDiagID(
++            DiagnosticsEngine::Error,"objc_resource callback contract was not resolved after substitution"));
 +        Writable->setInvalidDecl();Invalid=true;continue;
 +      }
 +    }
@@ -38610,7 +38672,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Resources.h b/clang/lib/Sema/SemaObjC3Resou
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.h
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,24 @@
 +//===--- SemaObjC3Resources.h - Native scalar resource ownership ---*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3RESOURCES_H
@@ -38623,11 +38685,13 @@ new file mode 100644
 +class VarDecl;
 +class Expr;
 +class ObjCCleanupAttr;
++class ObjCResourceAttr;
 +void handleObjC3RetainableFamilyAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3ResourceTypeAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3CleanupAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void rebuildObjC3CleanupAttr(Sema &, VarDecl *, Expr *, const ObjCCleanupAttr &);
 +void handleObjC3ResourceAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
++void rebuildObjC3ResourceAttr(Sema &, VarDecl *, Expr *, Expr *, const ObjCResourceAttr &);
 +bool checkObjC3ResourceDeclarations(Sema &S, const Stmt *Body);
 +bool checkObjC3NonlocalJumps(Sema &S, const Stmt *Body);
 +bool checkObjC3ResourceFlow(Sema &S, Decl *Callable, Stmt *Body);
@@ -38988,7 +39052,6 @@ index 000000000..c8761fb65
 +}
 diff --git a/clang/test/ObjC3/Sema/resource-ownership.m b/clang/test/ObjC3/Sema/resource-ownership.m
 new file mode 100644
-index 000000000..16884e785
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-ownership.m
 @@ -0,0 +1,65 @@
@@ -39054,7 +39117,7 @@ index 000000000..16884e785
 +}
 +#ifdef __cplusplus
 +template<class T> void dependent_handle(void) {
-+  T value __attribute__((objc_resource(close=close_handle, invalid=0))) = {}; // expected-error {{requires a mutable nondependent integer, enum, or ordinary pointer handle}}
++  T value __attribute__((objc_resource(close=close_handle, invalid=0))) = {};
 +}
 +#endif
 diff --git a/clang/utils/TableGen/ClangAttrEmitter.cpp b/clang/utils/TableGen/ClangAttrEmitter.cpp
@@ -59407,7 +59470,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2756 @@
+@@ -0,0 +1,2790 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62162,6 +62225,40 @@ new file mode 100644
 +    if(ARC)Args.push_back("-fobjc-arc");
 +    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"callback-factories.mm");
 +    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, DependentResourceRebuildsOnlyConcreteInvocations) {
++  const char *Source=R"(
++    template<class T>struct Closer {static void close(T *)noexcept{}static constexpr T invalid=static_cast<T>(-1);};
++    template<class T>void run(){@resource(Closer<T>::close, invalid: Closer<T>::invalid) T slot=42;(void)slot;}
++    void close_int(int)noexcept;
++    void automatic(){@resource(close_int, invalid: -1) auto slot=42;(void)slot;}
++    void use(){run<int>();}
++  )";
++  for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-xobjective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"dependent-resource.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    auto &Context=AST->getASTContext();
++    const auto *Pattern=selectFirst<FunctionTemplateDecl>("run",match(functionTemplateDecl(hasName("run")).bind("run"),Context));ASSERT_TRUE(Pattern);
++    struct Slots : RecursiveASTVisitor<Slots> {
++      SmallVector<const VarDecl *,2> Values;
++      bool VisitVarDecl(VarDecl *D){if(D->getName()=="slot")Values.push_back(D);return true;}
++    } Recipe;
++    Recipe.TraverseStmt(Pattern->getTemplatedDecl()->getBody());ASSERT_EQ(Recipe.Values.size(),1U);
++    const auto *Deferred=Recipe.Values.front()->getAttr<ObjCResourceAttr>();ASSERT_TRUE(Deferred);EXPECT_EQ(Deferred->getCall(),nullptr);
++    unsigned Instances=0;
++    auto Check=[&](const FunctionDecl *Function,bool Address) {
++      Slots Actual;Actual.TraverseStmt(Function->getBody());ASSERT_EQ(Actual.Values.size(),1U);
++      const auto *Resource=Actual.Values.front()->getAttr<ObjCResourceAttr>();ASSERT_TRUE(Resource);ASSERT_TRUE(Resource->getCall());EXPECT_EQ(Resource->getByAddress(),Address);
++      EXPECT_TRUE(Context.hasSameType(Resource->getInvalid()->getType(),Context.IntTy));
++      Expr::EvalResult Invalid;ASSERT_TRUE(Resource->getInvalid()->EvaluateAsInt(Invalid,Context));EXPECT_EQ(Invalid.Val.getInt().getSExtValue(),-1);
++      EXPECT_FALSE(Actual.Values.front()->getType()->isDependentType());
++    };
++    for(const auto *Instance:Pattern->specializations()){Check(Instance,true);++Instances;}EXPECT_EQ(Instances,1U);
++    const auto *Automatic=selectFirst<FunctionDecl>("auto",match(functionDecl(hasName("automatic")).bind("auto"),Context));ASSERT_TRUE(Automatic);Check(Automatic,false);
 +  }
 +}
 
@@ -70492,10 +70589,18 @@ diff --git a/clang/lib/Sema/SemaTemplateInstantiateDecl.cpp b/clang/lib/Sema/Sem
  #include "clang/AST/ASTConsumer.h"
  #include "clang/AST/ASTContext.h"
  #include "clang/AST/ASTMutationListener.h"
-@@ -1036,6 +1037,13 @@
+@@ -1036,6 +1037,21 @@
        continue;
      }
  
++    if (const auto *Resource=dyn_cast<ObjCResourceAttr>(TmplAttr)) {
++      auto Close=SubstExpr(Resource->getClose(),TemplateArgs);
++      auto Invalid=SubstExpr(Resource->getInvalid(),TemplateArgs);
++      if(Close.isInvalid() || Invalid.isInvalid()){New->setInvalidDecl();continue;}
++      rebuildObjC3ResourceAttr(*this,cast<VarDecl>(New),Close.get(),Invalid.get(),*Resource);
++      continue;
++    }
++
 +    if (const auto *Cleanup=dyn_cast<ObjCCleanupAttr>(TmplAttr)) {
 +      auto Close=SubstExpr(Cleanup->getClose(),TemplateArgs);
 +      if(Close.isInvalid()){New->setInvalidDecl();continue;}
@@ -70559,3 +70664,56 @@ new file mode 100644
 +void bad_copy(){DependentCleanup::bad_copy<DependentCleanup::Value>();} // expected-note {{in instantiation}} expected-error@* {{callback cannot accept the value}}
 +void bad_auto(){(void)DependentCleanup::auto_wrong(3.5);} // expected-note {{in instantiation}} expected-error@* {{callback cannot accept the value}}
 +void bad_auto_reference(){int value=1;DependentCleanup::auto_reference(value);} // expected-note {{in instantiation}} expected-error@* {{requires complete nondependent fixed-size storage}}
+diff --git a/clang/test/ObjC3/Sema/Inputs/dependent-resource.h b/clang/test/ObjC3/Sema/Inputs/dependent-resource.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/dependent-resource.h
+@@ -0,0 +1,23 @@
++#ifndef OBJC3_DEPENDENT_RESOURCE_H
++#define OBJC3_DEPENDENT_RESOURCE_H
++namespace DependentResource {
++inline int calls=0;
++inline void close_int(int)noexcept{++calls;}
++inline void close_pointer(int *)noexcept{++calls;}
++template<class T>struct Traits {static void close(T)noexcept{++calls;}static constexpr T invalid=static_cast<T>(-1);};
++template<class T>void close_value(T)noexcept{++calls;}
++template<class T>void close_address(T *)noexcept{++calls;}
++template<class T>void dependent(T initial){@resource(Traits<T>::close, invalid: Traits<T>::invalid) T value=initial;(void)value;}
++template<class T>void address(T initial){@resource(close_address<T>, invalid: -1) T value=initial;(void)value;}
++template<class T>void automatic(T initial){@resource(close_value<T>, invalid: -1) auto value=initial;(void)value;}
++inline void auto_named(){@resource(close_int, invalid: -1) auto value=42;(void)value;}
++template<int Sentinel>void sentinel(int initial){@resource(close_int, invalid: Sentinel) int value=initial;(void)value;}
++typedef int Handle __attribute__((objc_requires_cleanup(close_value<int>),objc_invalid(-1),objc_resource_family(TemplateHandles)));
++inline void typed(){@resource(close_value<int>, invalid: -1) Handle value=42;(void)value;}
++template<class T>void wrong_callback(T initial){@resource(close_pointer, invalid: -1) T value=initial;(void)value;}
++template<class T>void wrong_auto(T initial){@resource(close_int, invalid: -1) auto value=initial;(void)value;}
++template<class T>void wrong_storage(T initial){@resource(close_value<T>, invalid: -1) T value=initial;(void)value;}
++inline int runtime_sentinel();
++template<class T>void wrong_sentinel(T initial){@resource(close_value<T>, invalid: runtime_sentinel()) T value=initial;(void)value;}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/dependent-resource.mm b/clang/test/ObjC3/Sema/dependent-resource.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/dependent-resource.mm
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++-header -emit-pch %S/Inputs/dependent-resource.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++-header -emit-pch %S/Inputs/dependent-resource.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++-header -emit-pch %S/Inputs/dependent-resource.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++-header -emit-pch %S/Inputs/dependent-resource.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/dependent-resource.h"
++#endif
++void good(){using namespace DependentResource;dependent(42);dependent(42L);address(42);automatic(42L);auto_named();sentinel<-1>(42);typed();}
++void bad_callback(){DependentResource::wrong_callback(42L);} // expected-note {{in instantiation}} expected-error@* {{close cannot accept the handle value}}
++void bad_auto(){DependentResource::wrong_auto((int *)0);} // expected-note {{in instantiation}} expected-error@* {{close cannot accept the handle value}}
++void bad_storage(){DependentResource::wrong_storage(42.0);} // expected-note {{in instantiation}} expected-error@* {{requires a mutable nondependent integer}}
++void bad_sentinel(){DependentResource::wrong_sentinel(42);} // expected-note {{in instantiation}} expected-error@* {{invalid sentinel must be constant}}
