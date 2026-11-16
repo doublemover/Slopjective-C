@@ -2224,3 +2224,10 @@ native cleanup path to element/row decay and whole-array reference/address
 callbacks, including dependent shapes and exact partial-construction/exception
 ordering. Native-storage-lifetime v5 requires new readers and rebuilt interfaces;
 SDK archive acceptance remains separate.
+
+## Source 2.162 callback selection
+
+[Cleanup/resource callback selection](linux_cleanup_callback_selection.md)
+completes ordinary overload ranking, constrained and deduced templates, static
+members and C17 overloadable callbacks. Deferred storage recipes and concrete
+publication retain distinct identities under native-storage-lifetime v6.

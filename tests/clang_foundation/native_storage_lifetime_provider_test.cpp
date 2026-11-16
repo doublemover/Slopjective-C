@@ -92,6 +92,28 @@ template<class T,int N>inline void cleaned_array_generic(T initial){@cleanup(clo
 inline void cleaned_array_objects(bool unwind,bool fail){@cleanup(close_array_objects) ArrayCleanupValue values[2]={ArrayCleanupValue(1),ArrayCleanupValue(fail?-1:2)};(void)values;if(unwind)throw 79;}
 inline void cleaned_array_throw(){@cleanup(close_array_throw) ArrayCleanupValue values[2]={ArrayCleanupValue(1),ArrayCleanupValue(2)};(void)values;}
 
+inline int overload_closed=0;
+inline void overload_close(int value)noexcept{overload_closed=value;}
+inline void overload_close(long value)noexcept{overload_closed=static_cast<int>(value)+1;}
+inline void overload_close(int *value)noexcept{overload_closed=*value+2;}
+template<class T>inline void deduced_close(T *value)noexcept{overload_closed=static_cast<int>(*value);}
+template<class T>inline void deduced_resource(T value)noexcept{overload_closed=static_cast<int>(value);}
+template<class T,int N>inline void deduced_array(T (&value)[N])noexcept{overload_closed=static_cast<int>(value[0])+N;}
+template<class T>requires(__is_integral(T)) inline void constrained_close(T *value)noexcept{overload_closed=static_cast<int>(*value);}
+inline void constrained_close(void *)noexcept{overload_closed=-2;}
+struct OverloadedStatic {static void close(int value)noexcept{overload_closed=value;}
+ static void close(long value)noexcept{overload_closed=static_cast<int>(value)+1;}};
+inline void cleaned_overload(){@cleanup(overload_close) int value=51;(void)value;}
+inline void cleaned_overload_address(){@cleanup(deduced_close) long value=52;(void)value;}
+inline void cleaned_overload_array(){@cleanup(deduced_array) int values[3]={53};(void)values;}
+inline void cleaned_overload_constraint(){@cleanup(constrained_close) int value=57;(void)value;}
+inline void cleaned_overload_static(){@cleanup(OverloadedStatic::close) long value=58;(void)value;}
+template<class T>inline void cleaned_overload_dependent(T initial){@cleanup(deduced_close) auto value=initial;(void)value;}
+inline void resource_overload(){@resource(overload_close,invalid:-1) int value=59;(void)value;}
+template<class T>inline void resource_overload_dependent(T initial){@resource(deduced_resource,invalid:-1) auto value=initial;(void)value;}
+@requires_cleanup(overload_close) typedef int OverloadedHandle;
+inline void resource_overload_contract(){@resource(overload_close,invalid:-1) OverloadedHandle value=61;(void)value;}
+
 inline int resource_closed=0;
 template<class T>void resource_close(T value)noexcept{resource_closed+=static_cast<int>(value);}
 template<class T>void resource_address(T *value)noexcept{resource_closed+=static_cast<int>(*value);*value=-1;}
@@ -251,6 +273,15 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   cleanup_order=0;if(cleaned_auto_dependent(46)!=46 || cleanup_order!=1)return 23;
   cleanup_order=0;if(cleaned_function<int>(47)!=47 || cleanup_order!=1)return 24;
   cleanup_order=0;if(cleaned_function<CleanupValue>(48)!=48 || cleanup_order!=12)return 25;
+  overload_closed=0;cleaned_overload();if(overload_closed!=51)return 42;
+  overload_closed=0;cleaned_overload_address();if(overload_closed!=52)return 43;
+  overload_closed=0;cleaned_overload_array();if(overload_closed!=56)return 44;
+  overload_closed=0;cleaned_overload_constraint();if(overload_closed!=57)return 45;
+  overload_closed=0;cleaned_overload_static();if(overload_closed!=59)return 46;
+  overload_closed=0;cleaned_overload_dependent(62L);if(overload_closed!=62)return 47;
+  overload_closed=0;resource_overload();if(overload_closed!=59)return 48;
+  overload_closed=0;resource_overload_dependent(60L);if(overload_closed!=60)return 49;
+  overload_closed=0;resource_overload_contract();if(overload_closed!=61)return 50;
   array_closed=0;cleaned_array();if(array_closed!=3)return 33;
   array_closed=0;cleaned_array_rows();if(array_closed!=7)return 34;
   array_closed=0;cleaned_array_address();if(array_closed!=7)return 35;

@@ -646,6 +646,17 @@ void TestNativeStorageLifetimeReplay() {
     template<class T>inline void cleanup_array_elements(T *)noexcept{}
     template<class T,int N>inline T cleanup_array_template(T initial){@cleanup(cleanup_array_elements<T>) T values[N]={initial};return values[0];}
 
+    inline void overload_close(int)noexcept{}
+    inline void overload_close(long)noexcept{}
+    inline void overload_close(int *)noexcept{}
+    template<class T>inline void inferred_close(T *)noexcept{}
+    template<class T>inline void inferred_resource(T)noexcept{}
+    inline void cleanup_overload(){@cleanup(overload_close) int value=42;(void)value;}
+    template<class T>inline void cleanup_inferred(T initial){@cleanup(inferred_close) auto value=initial;(void)value;}
+    inline void resource_overload(){@resource(overload_close,invalid:-1) int value=43;(void)value;}
+    template<class T>inline void resource_inferred(T initial){@resource(inferred_resource,invalid:-1) auto value=initial;(void)value;}
+    template<class T,int N>inline void inferred_array(T (&)[N])noexcept{}
+    inline void cleanup_inferred_array(){@cleanup(inferred_array) int values[3]={53};(void)values;}
     inline void resource_close(int)noexcept{}
     inline void resource_other(int)noexcept{}
     template<class T>inline void resource_function(T)noexcept{}
@@ -672,7 +683,7 @@ void TestNativeStorageLifetimeReplay() {
   auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
   assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeStorageLifetimeSemantic)));
   auto older=supported;std::erase(older,llvm::StringRef(kNativeStorageLifetimeSemantic));
-  older.push_back("objc3.native-storage-lifetime.v4");
+  older.push_back("objc3.native-storage-lifetime.v5");
   auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
   std::erase(decoded->required_semantics,kNativeStorageLifetimeSemantic);
   auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
@@ -704,6 +715,7 @@ void TestNativeStorageLifetimeReplay() {
    int cleanup_consumer(){return NativeStorage::cleanup_value()+NativeStorage::cleanup_template(42);}
    int cleanup_array_consumer(){return NativeStorage::cleanup_array()+NativeStorage::cleanup_matrix()+NativeStorage::cleanup_array_template<int,2>(42);}
 
+   void overload_consumer(){NativeStorage::cleanup_overload();NativeStorage::cleanup_inferred(44L);NativeStorage::cleanup_inferred_array();NativeStorage::resource_overload();NativeStorage::resource_inferred(45L);}
    void resource_consumer(){NativeStorage::resource_auto(42);NativeStorage::resource_dependent(43L);NativeStorage::resource_auto_dependent(44);}
 
   )",args,"storage-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());

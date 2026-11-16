@@ -981,6 +981,18 @@ public:
       if (!TraverseType(exception)) return false;
     return !type->getNoexceptExpr() || TraverseStmt(type->getNoexceptExpr());
   }
+  bool TraverseObjCCleanupAttr(clang::ObjCCleanupAttr *attribute) {
+    // Concrete native storage identity already binds the selected declaration,
+    // specialization and physical signature. Canonical replay writes deduced
+    // arguments explicitly; traversing their source-only syntax would count
+    // an extra integer/type expression only after replay.
+    return attribute->getCall() ||
+        clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseObjCCleanupAttr(attribute);
+  }
+  bool TraverseObjCResourceAttr(clang::ObjCResourceAttr *attribute) {
+    if (attribute->getCall()) return TraverseStmt(attribute->getInvalid());
+    return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseObjCResourceAttr(attribute);
+  }
   bool VisitVarDecl(clang::VarDecl *declaration) {
     if (declaration->isLocalVarDeclOrParm()) Local(declaration);
     Add(ExpressionType(declaration->getType()));
@@ -2738,7 +2750,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationBorrowedResultProof(representative))
     identity.canonical_type_identity+=";borrowed-result-proofs:v5;";
   if (HasDeclarationNativeStorageLifetime(representative))
-    identity.canonical_type_identity += ";native-storage-lifetime:v5;";
+    identity.canonical_type_identity += ";native-storage-lifetime:v6;";
   if (HasDeclarationAtomicManagedProperty(representative))
     identity.canonical_type_identity += ";atomic-managed-properties:v1;";
   if (HasDeclarationNativeLambdaArgumentABI(representative))

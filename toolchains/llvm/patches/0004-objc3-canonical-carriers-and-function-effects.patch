@@ -37973,7 +37973,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Res
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,739 @@
+@@ -0,0 +1,777 @@
 +//===--- SemaObjC3Resources.cpp - Native scalar resource ownership
 +//---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -37987,6 +37987,7 @@ new file mode 100644
 +#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/ParsedAttr.h"
++#include "clang/Sema/Overload.h"
 +#include "clang/Sema/Sema.h"
 +
 +using namespace clang;
@@ -38001,19 +38002,38 @@ new file mode 100644
 +          Type.getObjCLifetime() == Qualifiers::OCL_ExplicitNone) &&
 +         !Type->isAtomicType() && Type.getAddressSpace() == LangAS::Default;
 +}
-+// Resolve a fully specified function-template callback before checking its
-+// resource signature. Dependent recipes retain lookup until instantiation.
-+ExprResult resolveResourceCallback(Sema &S, Expr *Value) {
++// Resolve ordinary overloads and function-template deduction against the actual
++// storage, using native overload ranking and constraints. Prefer F(value); only
++// an empty viable set permits F(&value). Ambiguous/deleted best candidates must
++// not silently select a different address overload.
++ExprResult resolveResourceCallback(Sema &S, Expr *Value, QualType Storage) {
 +  auto *Lookup = dyn_cast<UnresolvedLookupExpr>(Value->IgnoreParenImpCasts());
-+  if (!Lookup || !Lookup->hasExplicitTemplateArgs() || Value->isTypeDependent() ||
++  if (!Lookup || Storage->isDependentType() ||
++      Storage->isUndeducedType() || Value->isTypeDependent() ||
 +      Value->isValueDependent()) return Value;
-+  auto *Selected = S.ResolveSingleFunctionTemplateSpecialization(Lookup, true);
-+  if (!Selected) return ExprError();
-+  TemplateArgumentListInfo Arguments;
-+  Lookup->copyTemplateArgumentsInto(Arguments);
-+  return S.BuildDeclRefExpr(Selected, Selected->getType(), VK_LValue,
-+      Lookup->getNameInfo(), Lookup->getQualifierLoc(), nullptr,
-+      Lookup->getTemplateKeywordLoc(), &Arguments);
++  auto *Handle = new (S.Context)
++      OpaqueValueExpr(Value->getExprLoc(), Storage, VK_LValue);
++  auto *Address = new (S.Context) OpaqueValueExpr(
++      Value->getExprLoc(), S.Context.getPointerType(Storage), VK_PRValue);
++  for (Expr *Argument : {Handle, Address}) {
++    Expr *Arguments[] = {Argument};
++    OverloadCandidateSet Candidates(Value->getExprLoc(),
++                                    OverloadCandidateSet::CSK_Normal);
++    S.AddOverloadedCallCandidates(Lookup, Arguments, Candidates);
++    OverloadCandidateSet::iterator Best;
++    const auto Result = Candidates.BestViableFunction(S, Value->getExprLoc(), Best);
++    if (Result == OR_No_Viable_Function && Argument == Handle) continue;
++    if (Result != OR_Success) {
++      // Emit the ordinary candidate diagnostics once, on the terminal form.
++      (void)S.BuildCallExpr(nullptr, Value, Value->getExprLoc(), Arguments,
++                            Value->getEndLoc());
++      return ExprError();
++    }
++    if (S.CheckUnresolvedLookupAccess(Lookup, Best->FoundDecl) ==
++        Sema::AR_inaccessible) return ExprError();
++    return S.FixOverloadedFunctionReference(Value, Best->FoundDecl, Best->Function);
++  }
++  llvm_unreachable("both cleanup invocation forms examined");
 +}
 +} // namespace
 +
@@ -38181,7 +38201,7 @@ new file mode 100644
 +          ObjCInvalidAttr::Create(S.Context, Converted.get(), Attribute));
 +    return;
 +  }
-+  auto Resolved = resolveResourceCallback(S, Value);
++  auto Resolved = resolveResourceCallback(S, Value, Type);
 +  if (Resolved.isInvalid()) {D->setInvalidDecl();return;}
 +  Value = Resolved.get();
 +  auto *Reference = dyn_cast<DeclRefExpr>(Value->IgnoreParenImpCasts());
@@ -38294,7 +38314,16 @@ new file mode 100644
 +           "objc_cleanup requires complete nondependent fixed-size storage");
 +    return;
 +  }
-+  auto Resolved = resolveResourceCallback(S, Close);
++  if (Type->isUndeducedType() ||
++      (Variable->getDeclContext()->isDependentContext() &&
++       (Type->isDependentType() || Close->isTypeDependent() ||
++        Close->isValueDependent()))) {
++    Variable->addAttr(ObjCCleanupAttr::Create(S.Context, Close, false, nullptr,
++                                             Attribute));
++    Variable->markUsed(S.Context);
++    return;
++  }
++  auto Resolved = resolveResourceCallback(S, Close, Type);
 +  if (Resolved.isInvalid()) {D->setInvalidDecl();return;}
 +  Close = Resolved.get();
 +  auto *Reference = dyn_cast<DeclRefExpr>(Close->IgnoreParenImpCasts());
@@ -38458,7 +38487,16 @@ new file mode 100644
 +           "ordinary pointer handle; spell its type explicitly");
 +    return;
 +  }
-+  auto Resolved = resolveResourceCallback(S, Close);
++  if (HandleType->isUndeducedType() ||
++      (Variable->getDeclContext()->isDependentContext() &&
++       (DeferredType || Close->isTypeDependent() || Close->isValueDependent() ||
++        Invalid->isTypeDependent() || Invalid->isValueDependent()))) {
++    Variable->addAttr(ObjCResourceAttr::Create(S.Context, Close, Invalid, false,
++                                              nullptr, Attribute));
++    Variable->markUsed(S.Context);
++    return;
++  }
++  auto Resolved = resolveResourceCallback(S, Close, HandleType);
 +  if (Resolved.isInvalid()) {D->setInvalidDecl();return;}
 +  Close = Resolved.get();
 +  auto *Reference = dyn_cast<DeclRefExpr>(Close->IgnoreParenImpCasts());
@@ -59520,7 +59558,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2875 @@
+@@ -0,0 +1,2917 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62394,6 +62432,48 @@ new file mode 100644
 +      const auto *Operand=dyn_cast<OpaqueValueExpr>(Call->getArg(0)->IgnoreParenImpCasts());ASSERT_TRUE(Operand);
 +      EXPECT_TRUE(Cleanup->getByAddress()?Operand->getType()->isPointerType():Operand->getType()->isArrayType());
 +    }
++  }
++}
++
++
++TEST(ObjC3ASTInfrastructure, NativeCleanupOverloadsSelectConcreteStorageAndTemplates) {
++  const char *Source=R"(
++    void close(int);void close(long);void close(int *);
++    template<class T>void address(T *);
++    template<class T>void resource(T);
++    template<class T>void use(T initial){
++      @cleanup(address) auto dependent=initial;
++      @resource(resource,invalid:-1) T handle=initial;
++    }
++    void concrete(){@cleanup(close) int scalar=1;@cleanup(close) long wider=2;use(3);}
++  )";
++  for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"cleanup-selection.mm");ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    auto &Context=AST->getASTContext();
++    struct Storage:RecursiveASTVisitor<Storage> {
++      ASTContext &Context;unsigned Concrete=0,Deferred=0;
++      explicit Storage(ASTContext &Context):Context(Context){}
++      bool shouldVisitTemplateInstantiations()const{return true;}
++      bool VisitVarDecl(VarDecl *V){
++        const Expr *Call=nullptr;bool Address=false;
++        if(auto *A=V->getAttr<ObjCCleanupAttr>()){Call=A->getCall();Address=A->getByAddress();}
++        else if(auto *A=V->getAttr<ObjCResourceAttr>()){Call=A->getCall();Address=A->getByAddress();}
++        else return true;
++        if(V->getType()->isDependentType()){EXPECT_FALSE(Call);++Deferred;return true;}
++        ASSERT_CALL(Call);
++        auto *C=dyn_cast<CallExpr>(Call);EXPECT_TRUE(C);if(!C)return true;
++        auto *F=C->getDirectCallee();EXPECT_TRUE(F);if(!F)return true;
++        auto Parameter=F->getParamDecl(0)->getType();
++        EXPECT_TRUE(Context.hasSameUnqualifiedType(Parameter,Address?Context.getPointerType(V->getType()):V->getType()));
++        if(V->getName()=="dependent") {EXPECT_TRUE(Address);EXPECT_TRUE(F->getPrimaryTemplate());}
++        if(V->getName()=="handle") {EXPECT_FALSE(Address);EXPECT_TRUE(F->getPrimaryTemplate());}
++        ++Concrete;return true;
++      }
++      void ASSERT_CALL(const Expr *Call){EXPECT_TRUE(Call);}
++    } Values(Context);
++    Values.TraverseDecl(Context.getTranslationUnitDecl());EXPECT_EQ(Values.Deferred,2U);EXPECT_EQ(Values.Concrete,4U);
 +  }
 +}
 
@@ -70964,4 +71044,103 @@ new file mode 100644
 +void array_cleanup_no_converting_temporary(){@cleanup(cleanup_temporary) int values[2]={1,2};} // expected-error {{unsupported temporary or ARC writeback}}
 +#else
 +// expected-no-diagnostics
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/callback-selection.h b/clang/test/ObjC3/Sema/Inputs/callback-selection.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/callback-selection.h
+@@ -0,0 +1,40 @@
++#pragma once
++#ifdef __cplusplus
++namespace CallbackSelection {
++inline int selected=0;
++inline void close(int value)noexcept{selected=value;}
++inline void close(long value)noexcept{selected=static_cast<int>(value)+1;}
++inline void close(int *value)noexcept{selected=*value+2;}
++template<class T>void typed(T *value)noexcept{selected=static_cast<int>(*value);}
++template<class T>void handle(T value)noexcept{selected=static_cast<int>(value);}
++template<class T,int N>void array(T (&value)[N])noexcept{selected=static_cast<int>(value[0])+N;}
++template<class T> requires (__is_integral(T))
++void constrained(T *value)noexcept{selected=static_cast<int>(*value);}
++inline void constrained(void *)noexcept{selected=-2;}
++struct StaticClose {static void close(int value)noexcept{selected=value;}
++ static void close(long value)noexcept{selected=static_cast<int>(value)+1;}};
++inline void use(){
++ @cleanup(close) int value=41;
++ @cleanup(typed) long address=42;
++ @cleanup(array) int values[2]={43,44};
++ @cleanup(constrained) int constraint=45;
++ @cleanup(StaticClose::close) long member=46;
++ @resource(close,invalid:-1) int resource=47;
++ @resource(handle,invalid:-1) long deduced=48;
++}
++template<class T>inline void dependent(T initial){
++ @cleanup(typed) T value=initial;
++ @resource(handle,invalid:-1) T resource=initial;
++ @cleanup(close) auto automatic=initial;
++ @resource(close,invalid:-1) auto automatic_resource=initial;
++}
++@requires_cleanup(close) typedef int Handle;
++inline void contracted(){@resource(close,invalid:-1) Handle value=49;}
++}
++#else
++void c_overload(int) __attribute__((overloadable));
++void c_overload(long) __attribute__((overloadable));
++void c_overload(int *) __attribute__((overloadable));
++@requires_cleanup(c_overload) typedef int CHandle;
++inline void c_use(void){@cleanup(c_overload) int value=41;@resource(c_overload,invalid:-1) CHandle handle=42;(void)value;(void)handle;}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/callback-selection.mm b/clang/test/ObjC3/Sema/callback-selection.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/callback-selection.mm
+@@ -0,0 +1,47 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/callback-selection.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/callback-selection.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++-header -emit-pch %S/Inputs/callback-selection.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++-header -emit-pch %S/Inputs/callback-selection.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++-header -emit-pch %S/Inputs/callback-selection.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++-header -emit-pch %S/Inputs/callback-selection.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/callback-selection.h"
++#endif
++#ifdef __cplusplus
++void callback_selection_use(){CallbackSelection::use();CallbackSelection::dependent<int>(42);CallbackSelection::dependent<long>(43);CallbackSelection::contracted();}
++namespace CallbackSelectionNegative {
++void ambiguous(long); // expected-note {{candidate function}}
++void ambiguous(unsigned); // expected-note {{candidate function}}
++void ambiguous(int *);
++void ambiguous_use(){@cleanup(ambiguous) int value=1;} // expected-error {{call to 'ambiguous' is ambiguous}}
++void deleted(int)=delete; // expected-note {{candidate function has been explicitly deleted}}
++void deleted(int *); // expected-note {{candidate function not viable}}
++void deleted_use(){@cleanup(deleted) int value=2;} // expected-error {{call to deleted function 'deleted'}}
++struct Inaccessible {private:
++ static void close(int); // expected-note {{declared private here}}
++ static void close(long);
++};
++void private_use(){@cleanup(Inaccessible::close) int value=3;} // expected-error {{'close' is a private member}}
++template<class T>void copy(T)noexcept{}
++struct Record {int value;};
++void copy_use(){@cleanup(copy) Record value={1};} // expected-error {{without record copying}}
++template<class T>void async(T) __objc3_async;
++void async_use(){@cleanup(async) int value=4;} // expected-error {{callback cannot be async}}
++}
++
++#else
++// expected-no-diagnostics
++void callback_selection_c_use(void){c_use();}
 +#endif

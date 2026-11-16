@@ -598,3 +598,13 @@ ordinary element destruction. Partial construction suppresses the callback;
 throwing callbacks still retire all elements. Native-storage-lifetime v5 binds
 the reader cutover. Compiler/PCH, AST, source-free publication and native lifetime
 controls defend the conversion and lifetime boundaries.
+
+## Source 2.162 / System 2.88 implementation
+
+[Native callback selection](linux_cleanup_callback_selection.md) uses ordinary
+C++ overload ranking, constraints and template deduction, plus C17 overloadable
+callbacks, across cleanup/resource owners and typedef contracts. Value calls take
+priority; ambiguity/deletion/access errors cannot select an address fallback.
+Dependent/auto recipes resolve after storage deduction. Concrete source-free
+identity binds selected specializations without counting newly explicit deduced
+arguments twice; native-storage-lifetime v6 enforces reader admission.
