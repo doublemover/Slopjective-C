@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 155,
+        "minor": 156,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -335,12 +335,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 81,
+        "minor": 82,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native automatic cleanup supports dependent C++ template storage/callbacks and auto deduction through deferred declarative recipes; concrete instantiation/deduction rebuilds and revalidates storage, exact value/reference/address invocation, callback effects and no-copy policy before mandatory flow checking; native-storage-lifetime v3 reader cutover, matched SDK pending",
         "Published native automatic cleanup and C++ cleanup attributes bind the selected callback declaration/type, retain qualified names and native exceptional destruction through source-free replay, enforce public dependencies and require native-storage-lifetime v2; matched SDK pending",
         "Permanent borrowed-result proofs resolve known immutable local/global and by-value higher-order function-pointer bindings while preserving complete return/ABI/ownership validation and shared work limits; unknown/mutable/TLS/replaceable targets remain conservative under borrowed-result-proofs v4, matched SDK pending",
         "Bounded permanent borrowed-result proofs substitute immutable by-value helper parameters with actual caller arguments, composing nested calls/local aliases/branches/defaults while rejecting unknown, mutable/volatile/reference, recursive and budget-exhausted graphs; borrowed-result-proofs v3 hard reader cutover and maintained source/PCH/publication/native controls, matched SDK pending",

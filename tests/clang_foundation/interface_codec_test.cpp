@@ -86,7 +86,7 @@ int main() {
   // Body-only lifetime/proof capabilities cannot be fabricated on namespace
   // declarations, even when their marker and required-semantics list agree.
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
-      {";native-storage-lifetime:v2;",kNativeStorageLifetimeSemantic},
+      {";native-storage-lifetime:v3;",kNativeStorageLifetimeSemantic},
       {";borrowed-result-proofs:v4;",kBorrowedResultProofSemantic}}) {
     auto invalid=*decoded;
     InterfaceDeclarationIdentity space{"c:@N@Bad","Namespace","A::Bad","namespace",{}};

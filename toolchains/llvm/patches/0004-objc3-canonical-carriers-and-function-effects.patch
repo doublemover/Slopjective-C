@@ -37914,10 +37914,9 @@ index 000000000..bd0292ed3
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..67a5fd3d2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,632 @@
+@@ -0,0 +1,688 @@
 +//===--- SemaObjC3Resources.cpp - Native scalar resource ownership
 +//---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -38192,14 +38191,15 @@ index 000000000..67a5fd3d2
 +  }
 +}
 +
-+void clang::handleObjC3CleanupAttr(Sema &S, Decl *D,
-+                                   const ParsedAttr &Attribute) {
++namespace {
++void attachObjC3CleanupAttr(Sema &S, Decl *D, Expr *Close,
++                           const AttributeCommonInfo &Attribute) {
++  auto *Variable=dyn_cast<VarDecl>(D);
 +  auto Reject = [&](SourceLocation Loc, StringRef Message) {
 +    S.Diag(Loc, S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
 +                    DiagnosticIDs::Error, Message));
 +    D->setInvalidDecl();
 +  };
-+  auto *Variable = dyn_cast<VarDecl>(D);
 +  if (!S.getLangOpts().ObjC3 || !Variable || !Variable->isLocalVarDecl() ||
 +      !Variable->hasLocalStorage() || Variable->hasGlobalStorage()) {
 +    Reject(Attribute.getLoc(),
@@ -38213,44 +38213,66 @@ index 000000000..67a5fd3d2
 +    return;
 +  }
 +  QualType Type = Variable->getType();
-+  if (Type->isDependentType() || Type->isVariablyModifiedType() ||
++  if (Type->isVariablyModifiedType() ||
 +      Type->isReferenceType() || Type->isAtomicType() ||
 +      Type.getAddressSpace() != LangAS::Default) {
 +    Reject(Attribute.getLoc(),
 +           "objc_cleanup requires complete nondependent fixed-size storage");
 +    return;
 +  }
-+  if (S.RequireCompleteType(Attribute.getLoc(), Type,
-+                            diag::err_typecheck_decl_incomplete_type)) {
-+    D->setInvalidDecl();
-+    return;
++  if(auto *Lookup=dyn_cast<UnresolvedLookupExpr>(Close->IgnoreParenImpCasts());
++      Lookup && Lookup->hasExplicitTemplateArgs() && !Close->isTypeDependent() &&
++      !Close->isValueDependent()) {
++    auto *Selected=S.ResolveSingleFunctionTemplateSpecialization(Lookup,true);
++    if(!Selected){D->setInvalidDecl();return;}
++    TemplateArgumentListInfo Arguments;
++    Lookup->copyTemplateArgumentsInto(Arguments);
++    Close=S.BuildDeclRefExpr(Selected,Selected->getType(),VK_LValue,
++        Lookup->getNameInfo(),Lookup->getQualifierLoc(),nullptr,
++        Lookup->getTemplateKeywordLoc(),&Arguments);
 +  }
-+  if (Attribute.getNumArgs() != 1 || !Attribute.isArgExpr(0)) {
-+    Reject(Attribute.getLoc(), "objc_cleanup requires one cleanup function");
-+    return;
-+  }
-+  Expr *Close = Attribute.getArgAsExpr(0);
 +  auto *Reference = dyn_cast<DeclRefExpr>(Close->IgnoreParenImpCasts());
 +  auto *Function =
 +      Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
 +  const auto *Prototype =
 +      Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
-+  if (!Function || !Prototype || Function->getNumParams() != 1 ||
-+      Prototype->isVariadic() || Function->isDependentContext() ||
-+      (isa<CXXMethodDecl>(Function) &&
-+       !cast<CXXMethodDecl>(Function)->isStatic()) ||
-+      (!Prototype->getReturnType()->isVoidType() &&
-+       !Prototype->getReturnType()->isScalarType()) ||
-+      Prototype->getReturnType()->isObjCRetainableType()) {
-+    Reject(Close->getExprLoc(),
-+           "objc_cleanup must name a nondependent function with one parameter "
-+           "and an ordinary scalar or void result");
++  const bool DependentCallback=Close->isTypeDependent() || Close->isValueDependent() ||
++      (Function && Function->isDependentContext());
++  if(!DependentCallback || !Variable->getDeclContext()->isDependentContext()) {
++    if (!Function || !Prototype || Function->getNumParams() != 1 ||
++        Prototype->isVariadic() || Function->isDependentContext() ||
++        (isa<CXXMethodDecl>(Function) &&
++         !cast<CXXMethodDecl>(Function)->isStatic()) ||
++        (!Prototype->getReturnType()->isVoidType() &&
++         !Prototype->getReturnType()->isScalarType()) ||
++        Prototype->getReturnType()->isObjCRetainableType()) {
++      Reject(Close->getExprLoc(),
++             "objc_cleanup must name a nondependent function with one parameter "
++             "and an ordinary scalar or void result");
++      return;
++    }
++    const auto &Effects = Prototype->getObjC3FunctionEffects();
++    if (Effects.Async || Effects.Throws != ObjC3ThrowsKind::None) {
++      Reject(Close->getExprLoc(),
++             "objc_cleanup callback cannot be async or use checked throws");
++      return;
++    }
++  }
++  if((Variable->getDeclContext()->isDependentContext() &&
++      (Type->isDependentType() || DependentCallback)) || Type->isUndeducedType()) {
++    // Preserve a declarative recipe, not a guessed value/address invocation.
++    // InstantiateAttrs rebuilds and validates the concrete call before use.
++    Variable->addAttr(ObjCCleanupAttr::Create(S.Context,Close,false,nullptr,Attribute));
++    Variable->markUsed(S.Context);
 +    return;
 +  }
-+  const auto &Effects = Prototype->getObjC3FunctionEffects();
-+  if (Effects.Async || Effects.Throws != ObjC3ThrowsKind::None) {
-+    Reject(Close->getExprLoc(),
-+           "objc_cleanup callback cannot be async or use checked throws");
++  if(Type->isDependentType()) {
++    Reject(Attribute.getLoc(),"objc_cleanup storage remains dependent after substitution");
++    return;
++  }
++  if (S.RequireCompleteType(Attribute.getLoc(), Type,
++                            diag::err_typecheck_decl_incomplete_type)) {
++    D->setInvalidDecl();
 +    return;
 +  }
 +  auto *Value = DeclRefExpr::Create(
@@ -38312,6 +38334,23 @@ index 000000000..67a5fd3d2
 +  Variable->addAttr(ObjCCleanupAttr::Create(S.Context, Close, ByAddress,
 +                                            Call.get(), Attribute.getRange()));
 +  Variable->markUsed(S.Context);
++}
++
++} // namespace
++
++void clang::handleObjC3CleanupAttr(Sema &S, Decl *D,
++                                   const ParsedAttr &Attribute) {
++  if(Attribute.getNumArgs()!=1 || !Attribute.isArgExpr(0)) {
++    S.Diag(Attribute.getLoc(),S.getDiagnostics().getCustomDiagID(
++        DiagnosticsEngine::Error,"objc_cleanup requires one cleanup function"));
++    D->setInvalidDecl();return;
++  }
++  attachObjC3CleanupAttr(S,D,Attribute.getArgAsExpr(0),Attribute);
++}
++
++void clang::rebuildObjC3CleanupAttr(Sema &S, VarDecl *Variable, Expr *Close,
++                                  const ObjCCleanupAttr &Pattern) {
++  attachObjC3CleanupAttr(S,Variable,Close,Pattern);
 +}
 +
 +void clang::handleObjC3ResourceAttr(Sema &S, Decl *D,
@@ -38493,6 +38532,22 @@ index 000000000..67a5fd3d2
 +        const_cast<VarDecl *>(Variable)->setInvalidDecl();
 +        Invalid = true;
 +      }
++    if(const auto *Cleanup=Variable->getAttr<ObjCCleanupAttr>();Cleanup && !Cleanup->getCall()) {
++      if(Variable->getDeclContext()->isDependentContext())continue;
++      if(Variable->isInvalidDecl())continue;
++      // auto/decltype(auto) deduction happens after declaration attributes.
++      // Rebuild only after the initializer has supplied the actual storage type.
++      auto *Writable=const_cast<VarDecl *>(Variable);
++      Writable->dropAttr<ObjCCleanupAttr>();
++      rebuildObjC3CleanupAttr(S,Writable,Cleanup->getClose(),*Cleanup);
++      if(Writable->isInvalidDecl()){Invalid=true;continue;}
++      const auto *Resolved=Writable->getAttr<ObjCCleanupAttr>();
++      if(!Resolved || !Resolved->getCall()) {
++        S.Diag(Cleanup->getLocation(),S.getDiagnostics().getCustomDiagID(
++            DiagnosticsEngine::Error,"objc_cleanup callback contract was not resolved after substitution"));
++        Writable->setInvalidDecl();Invalid=true;continue;
++      }
++    }
 +    const auto *Resource = Variable->getAttr<ObjCResourceAttr>();
 +    if (S.getLangOpts().ObjC3Profile == 3 && !Variable->isInvalidDecl()) {
 +      auto Contract =
@@ -38550,12 +38605,12 @@ index 000000000..67a5fd3d2
 +  }
 +  return Invalid;
 +}
+
 diff --git a/clang/lib/Sema/SemaObjC3Resources.h b/clang/lib/Sema/SemaObjC3Resources.h
 new file mode 100644
-index 000000000..252c4e649
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.h
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,22 @@
 +//===--- SemaObjC3Resources.h - Native scalar resource ownership ---*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3RESOURCES_H
@@ -38565,15 +38620,20 @@ index 000000000..252c4e649
 +class ParsedAttr;
 +class Sema;
 +class Stmt;
++class VarDecl;
++class Expr;
++class ObjCCleanupAttr;
 +void handleObjC3RetainableFamilyAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3ResourceTypeAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3CleanupAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
++void rebuildObjC3CleanupAttr(Sema &, VarDecl *, Expr *, const ObjCCleanupAttr &);
 +void handleObjC3ResourceAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +bool checkObjC3ResourceDeclarations(Sema &S, const Stmt *Body);
 +bool checkObjC3NonlocalJumps(Sema &S, const Stmt *Body);
 +bool checkObjC3ResourceFlow(Sema &S, Decl *Callable, Stmt *Body);
 +} // namespace clang
 +#endif
+
 diff --git a/clang/test/ObjC3/AST/Inputs/resource-ownership.h b/clang/test/ObjC3/AST/Inputs/resource-ownership.h
 new file mode 100644
 index 000000000..19a5c8736
@@ -42451,7 +42511,6 @@ index 000000000..bfc19da5e
 +@end
 diff --git a/clang/test/ObjC3/Sema/cleanup-ownership.m b/clang/test/ObjC3/Sema/cleanup-ownership.m
 new file mode 100644
-index 000000000..ce2514617
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/cleanup-ownership.m
 @@ -0,0 +1,53 @@
@@ -42501,13 +42560,14 @@ index 000000000..ce2514617
 +  @cleanup(converted_reference) int value = 1;
 +}
 +template<class T> void dependent_storage(void) {
-+  @cleanup(close_value) T value = {}; // expected-error {{requires complete nondependent fixed-size storage}}
++  @cleanup(close_value) T value = {};
 +}
 +#else
 +void variable_storage(int size) {
 +  @cleanup(close_address) int values[size]; // expected-error {{requires complete nondependent fixed-size storage}}
 +}
 +#endif
+
 diff --git a/clang/lib/Sema/SemaObjC3NonlocalJumps.cpp b/clang/lib/Sema/SemaObjC3NonlocalJumps.cpp
 new file mode 100644
 index 000000000..4c5f0dba4
@@ -59275,7 +59335,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2669 @@
+@@ -0,0 +1,2719 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -61865,7 +61925,7 @@ new file mode 100644
 +TEST(ObjC3ASTInfrastructure, SwiftCallbackParameterContractsSurviveImport) {
 +  const char *Source=R"(
 +    typedef int Callback(int,void *context __attribute__((swift_context))) __attribute__((swiftcall));
-+    typedef int (__attribute__((swiftcall))*Pointer)(int,void *context __attribute__((swift_context)));
++    typedef int (*Pointer)(int,void *context __attribute__((swift_context))) __attribute__((swiftcall));
 +    __attribute__((swiftcall)) int function(int,void *context __attribute__((swift_context)),void **error __attribute__((swift_error_result)));
 +  )";
 +  for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
@@ -61933,6 +61993,12 @@ new file mode 100644
 +      auto Imported=Importer.Import(Pattern);
 +      if(!Imported){llvm::consumeError(Imported.takeError());FAIL()<<"failed to import cleanup template";}
 +    }
++    const auto *SourceSlot=selectFirst<VarDecl>("slot",match(varDecl(hasName("slot")).bind("slot"),From->getASTContext()));
++    ASSERT_TRUE(SourceSlot);const auto *SourceCleanup=SourceSlot->getAttr<CleanupAttr>();ASSERT_TRUE(SourceCleanup);
++    bool SourceInvalid=false;
++    const char *SourceArgument=From->getSourceManager().getCharacterData(SourceCleanup->getArgLoc(),&SourceInvalid);
++    ASSERT_FALSE(SourceInvalid);
++    const std::string ExpectedArgument=llvm::StringRef(SourceArgument).take_front(16).str();
 +    const auto *Slot=selectFirst<VarDecl>("slot",match(varDecl(hasName("slot")).bind("slot"),To->getASTContext()));
 +    ASSERT_TRUE(Slot);const auto *Cleanup=Slot->getAttr<CleanupAttr>();ASSERT_TRUE(Cleanup);
 +    const auto *Callback=Cleanup->getFunctionDecl();ASSERT_TRUE(Callback);
@@ -61941,8 +62007,52 @@ new file mode 100644
 +        To->getASTContext().getPointerType(To->getASTContext().IntTy)));
 +    From.reset();
 +    const auto &SourceManager=To->getSourceManager();
-+    EXPECT_TRUE(SourceManager.getFilename(Cleanup->getArgLoc()).ends_with("from-cleanup-template.cpp"));
++    bool Invalid=false;
++    const char *Argument=SourceManager.getCharacterData(Cleanup->getArgLoc(),&Invalid);
++    ASSERT_FALSE(Invalid);
++    EXPECT_EQ(llvm::StringRef(Argument).take_front(16),ExpectedArgument);
 +    EXPECT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, DependentCleanupRebuildsOnlyConcreteInvocations) {
++  const char *Source=R"(
++    template<class T>struct Closer {static void close(T *)noexcept{}};
++    template<class T>int run(){@cleanup(Closer<T>::close) T slot(42);return static_cast<int>(slot);}
++    void close_int(int *)noexcept;
++    int automatic(){@cleanup(close_int) auto slot=42;return slot;}
++    int use(){return run<int>();}
++  )";
++  for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-xobjective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system"};
++    if(ARC)Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"dependent-cleanup.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    auto &Context=AST->getASTContext();
++    const auto *Pattern=selectFirst<FunctionTemplateDecl>("run",match(functionTemplateDecl(hasName("run")).bind("run"),Context));
++    ASSERT_TRUE(Pattern);
++    struct Slots : RecursiveASTVisitor<Slots> {
++      SmallVector<const VarDecl *,2> Values;
++      bool VisitVarDecl(VarDecl *D){if(D->getName()=="slot")Values.push_back(D);return true;}
++    } Recipe;
++    Recipe.TraverseStmt(Pattern->getTemplatedDecl()->getBody());
++    ASSERT_EQ(Recipe.Values.size(),1U);
++    const auto *Deferred=Recipe.Values.front()->getAttr<ObjCCleanupAttr>();ASSERT_TRUE(Deferred);
++    EXPECT_EQ(Deferred->getCall(),nullptr);
++    unsigned Instances=0;
++    auto Check=[&](const FunctionDecl *Function) {
++      Slots Actual;Actual.TraverseStmt(Function->getBody());ASSERT_EQ(Actual.Values.size(),1U);
++      const auto *Cleanup=Actual.Values.front()->getAttr<ObjCCleanupAttr>();ASSERT_TRUE(Cleanup);
++      ASSERT_TRUE(Cleanup->getCall());EXPECT_TRUE(Cleanup->getByAddress());
++      const auto *Call=dyn_cast<CallExpr>(Cleanup->getCall());ASSERT_TRUE(Call);
++      const auto *Callback=Call->getDirectCallee();ASSERT_TRUE(Callback);
++      EXPECT_TRUE(Context.hasSameType(Callback->getParamDecl(0)->getType(),Context.getPointerType(Context.IntTy)));
++      EXPECT_FALSE(Actual.Values.front()->getType()->isDependentType());
++    };
++    for(const auto *Instance:Pattern->specializations()){Check(Instance);++Instances;}
++    EXPECT_EQ(Instances,1U);
++    const auto *Automatic=selectFirst<FunctionDecl>("auto",match(functionDecl(hasName("automatic")).bind("auto"),Context));
++    ASSERT_TRUE(Automatic);Check(Automatic);
 +  }
 +}
 
@@ -70235,3 +70345,81 @@ index 000000000..fa67e0498
 +//--- use.m
 +@import Owner;
 +int use(void) { return owned(); }
+diff --git a/clang/lib/Sema/SemaTemplateInstantiateDecl.cpp b/clang/lib/Sema/SemaTemplateInstantiateDecl.cpp
+--- a/clang/lib/Sema/SemaTemplateInstantiateDecl.cpp
++++ b/clang/lib/Sema/SemaTemplateInstantiateDecl.cpp
+@@ -10,6 +10,7 @@
+ //===----------------------------------------------------------------------===/
+ 
+ #include "TreeTransform.h"
++#include "SemaObjC3Resources.h"
+ #include "clang/AST/ASTConsumer.h"
+ #include "clang/AST/ASTContext.h"
+ #include "clang/AST/ASTMutationListener.h"
+@@ -1036,6 +1037,13 @@
+       continue;
+     }
+ 
++    if (const auto *Cleanup=dyn_cast<ObjCCleanupAttr>(TmplAttr)) {
++      auto Close=SubstExpr(Cleanup->getClose(),TemplateArgs);
++      if(Close.isInvalid()){New->setInvalidDecl();continue;}
++      rebuildObjC3CleanupAttr(*this,cast<VarDecl>(New),Close.get(),*Cleanup);
++      continue;
++    }
++
+     if (auto *A = dyn_cast<CleanupAttr>(TmplAttr)) {
+       if (!New->hasAttr<CleanupAttr>()) {
+         auto *NewAttr = A->clone(Context);
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/dependent-cleanup.h b/clang/test/ObjC3/Sema/Inputs/dependent-cleanup.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/dependent-cleanup.h
+@@ -0,0 +1,21 @@
++#ifndef OBJC3_DEPENDENT_CLEANUP_H
++#define OBJC3_DEPENDENT_CLEANUP_H
++namespace DependentCleanup {
++inline int calls=0;
++inline void close_int(int *)noexcept{++calls;}
++template<class T>struct Address {static void close(T *)noexcept{++calls;}};
++template<class T>struct Reference {static void close(T &)noexcept{++calls;}};
++template<class T>struct Copy {static void close(T)noexcept{++calls;}};
++struct Value {int value;explicit Value(int n):value(n){}explicit operator int()const{return value;}~Value()noexcept{}};
++template<class T>int address(int initial){@cleanup(Address<T>::close) T value(initial);return static_cast<int>(value);}
++template<class T>int reference(int initial){@cleanup(Reference<T>::close) T value(initial);return static_cast<int>(value);}
++template<class T>int named(int initial){@cleanup(close_int) T value(initial);return static_cast<int>(value);}
++template<class T>void function_close(T *)noexcept{++calls;}
++template<class T>int explicit_callback(int initial){@cleanup(function_close<T>) T value(initial);return static_cast<int>(value);}
++inline int auto_named(){@cleanup(close_int) auto value=42;return value;}
++template<class T>int auto_dependent(T initial){@cleanup(Address<T>::close) auto value=initial;return static_cast<int>(value);}
++template<class T>int auto_wrong(T initial){@cleanup(close_int) auto value=initial;return static_cast<int>(value);}
++template<class T>void auto_reference(T &initial){@cleanup(close_int) decltype(auto) value=(initial);}
++template<class T>void bad_copy(){@cleanup(Copy<T>::close) T value(42);}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/dependent-cleanup.mm b/clang/test/ObjC3/Sema/dependent-cleanup.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/dependent-cleanup.mm
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++-header -emit-pch %S/Inputs/dependent-cleanup.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++-header -emit-pch %S/Inputs/dependent-cleanup.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++-header -emit-pch %S/Inputs/dependent-cleanup.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -x objective-c++ -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++-header -emit-pch %S/Inputs/dependent-cleanup.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -std=c++23 -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -x objective-c++ -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/dependent-cleanup.h"
++#endif
++int good(){using namespace DependentCleanup;return address<int>(42)+address<Value>(42)+reference<int>(42)+reference<Value>(42)+named<int>(42)+explicit_callback<int>(42)+explicit_callback<Value>(42)+auto_named()+auto_dependent(42);}
++void bad_address(){(void)DependentCleanup::named<double>(42);} // expected-note {{in instantiation}} expected-error@* {{callback cannot accept the value}}
++void bad_copy(){DependentCleanup::bad_copy<DependentCleanup::Value>();} // expected-note {{in instantiation}} expected-error@* {{callback cannot accept the value}}
++void bad_auto(){(void)DependentCleanup::auto_wrong(3.5);} // expected-note {{in instantiation}} expected-error@* {{callback cannot accept the value}}
++void bad_auto_reference(){int value=1;DependentCleanup::auto_reference(value);} // expected-note {{in instantiation}} expected-error@* {{requires complete nondependent fixed-size storage}}

@@ -274,10 +274,10 @@ inline constexpr const char *kNativeUnnamedEnumSemantic = "objc3.native-unnamed-
 inline bool HasNativeUnnamedEnumIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-unnamed-enums:v1;")!=std::string::npos;
 }
-inline constexpr const char *kNativeStorageLifetimeSemantic = "objc3.native-storage-lifetime.v2";
+inline constexpr const char *kNativeStorageLifetimeSemantic = "objc3.native-storage-lifetime.v3";
 inline bool HasNativeStorageLifetimeIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-storage-lifetime:v2;")!=std::string::npos ||
-         d.effects.ownership_identity.find(";native-storage-lifetime:v2;")!=std::string::npos;
+  return d.canonical_type_identity.find(";native-storage-lifetime:v3;")!=std::string::npos ||
+         d.effects.ownership_identity.find(";native-storage-lifetime:v3;")!=std::string::npos;
 }
 inline constexpr const char *kAtomicManagedPropertySemantic = "objc3.atomic-managed-properties.v1";
 inline bool HasAtomicManagedPropertyIdentity(const InterfaceDeclarationIdentity &d) {

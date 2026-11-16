@@ -636,7 +636,7 @@ void TestNativeStorageLifetimeReplay() {
     int plain();
     void release(int *);void release_other(int *);
     inline int cleanup_value() {int value __attribute__((cleanup(release)))=42;return value;}
-    template<class T>inline int cleanup_template(T initial) {int value __attribute__((cleanup(release)))=static_cast<int>(initial);return value;}
+    template<class T>inline T cleanup_template(T initial) {T value __attribute__((cleanup(release)))=initial;return value;}
    }
   )";
   auto emit=[&](const std::string &text,const std::vector<std::string> &names=std::vector<std::string>{"NativeStorage"}) {
@@ -655,7 +655,7 @@ void TestNativeStorageLifetimeReplay() {
   auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
   assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeStorageLifetimeSemantic)));
   auto older=supported;std::erase(older,llvm::StringRef(kNativeStorageLifetimeSemantic));
-  older.push_back("objc3.native-storage-lifetime.v1");
+  older.push_back("objc3.native-storage-lifetime.v2");
   auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
   std::erase(decoded->required_semantics,kNativeStorageLifetimeSemantic);
   auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());

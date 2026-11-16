@@ -5,6 +5,13 @@ on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
+The [source 2.156 / System 2.82 cleanup span](linux_dependent_automatic_cleanup.md)
+adds dependent template storage/callbacks and deduced automatic storage. Concrete
+instantiation/deduction rebuilds the validated native call before ownership and
+CFG checking; source/PCH and source-free runtime controls preserve exact cleanup
+and exceptional ordering. Native-storage-lifetime v3 is a hard reader cutover.
+Complete rebuilt compiler/SDK acceptance remains pending.
+
 The [source 2.155 / System 2.81 cleanup span](linux_automatic_cleanup_publication.md)
 preserves native automatic cleanup callbacks and source-free callback declaration
 ownership, and [known callback proofs](linux_borrowed_known_callbacks.md) extend

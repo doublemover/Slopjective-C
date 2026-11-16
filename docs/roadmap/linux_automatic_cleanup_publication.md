@@ -10,7 +10,8 @@ Canonical printing qualifies callback names and preserves explicit template
 arguments. A diagnostic scope suppresses the GCC compatibility warning caused
 by the generated qualified spelling; the user's source diagnostics remain
 unchanged. Template bodies with concrete local storage preserve the same
-cleanup contract. Dependent native cleanup storage remains a separate boundary.
+cleanup contract. The [Source 2.156 span](linux_dependent_automatic_cleanup.md) subsequently adds
+dependent and deduced storage with concrete instantiation-time revalidation.
 
 AST import now imports a C++ cleanup attribute's callback declaration and
 argument location, rather than cloning pointers into the source AST. This

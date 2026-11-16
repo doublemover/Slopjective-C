@@ -33,5 +33,5 @@
 "objc3.cxx-block-expressions.v3"
 "objc3.borrowed-result-proofs.v4"
 ";borrowed-result-proofs:v4;"
-"objc3.native-storage-lifetime.v2"
-";native-storage-lifetime:v2;"
+"objc3.native-storage-lifetime.v3"
+";native-storage-lifetime:v3;"

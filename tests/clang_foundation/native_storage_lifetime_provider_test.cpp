@@ -41,14 +41,32 @@ struct CleanupValue {
  int value;
  explicit CleanupValue(int value):value(value){if(value<0)throw 73;}
  ~CleanupValue()noexcept{cleanup_order=cleanup_order*10+2;}
+ explicit operator int()const noexcept{return value;}
 };
 inline void cleanup_record(CleanupValue *)noexcept{cleanup_order=cleanup_order*10+1;}
 inline void cleanup_throw(CleanupValue *){cleanup_order=cleanup_order*10+3;throw 91;}
 inline void cleanup_int(int *value)noexcept{cleanup_order+=*value;}
 inline int cleaned_record(int value,bool fail){CleanupValue object __attribute__((cleanup(cleanup_record)))(value);if(fail)throw 73;return object.value;}
 inline void cleaned_throw(){CleanupValue object __attribute__((cleanup(cleanup_throw)))(42);}
-template<class T>inline int cleaned_template(T initial){int value __attribute__((cleanup(cleanup_int)))=static_cast<int>(initial);return value;}
+template<class T>inline T cleaned_template(T initial){T value __attribute__((cleanup(cleanup_int)))=initial;return value;}
 #ifdef __OBJC__
+template<class T>struct GenericCleanup {
+ static void close(T *value)noexcept{cleanup_order=cleanup_order*10+1;}
+};
+template<class T>inline int cleaned_dependent(int initial,bool fail){
+ T value __attribute__((objc_cleanup(GenericCleanup<T>::close)))(initial);
+ if(fail)throw 73;return static_cast<int>(value);
+}
+template<class T>inline void cleanup_function(T *)noexcept{cleanup_order=cleanup_order*10+1;}
+template<class T>inline int cleaned_function(int initial){
+ T value __attribute__((objc_cleanup(cleanup_function<T>)))(initial);
+ return static_cast<int>(value);
+}
+inline int cleaned_auto(){auto value __attribute__((objc_cleanup(cleanup_int)))=45;return value;}
+template<class T>inline int cleaned_auto_dependent(T initial){
+ auto value __attribute__((objc_cleanup(GenericCleanup<T>::close)))=initial;
+ return static_cast<int>(value);
+}
 inline void cleanup_value(int value)noexcept{cleanup_order+=value;}
 inline void cleanup_reference(int &value)noexcept{cleanup_order+=value;value=0;}
 inline int cleaned_value(){int value __attribute__((objc_cleanup(cleanup_value)))=43;return value;}
@@ -178,6 +196,16 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
 #ifdef __OBJC__
   cleanup_order=0;if(cleaned_value()!=43 || cleanup_order!=43)return 16;
   cleanup_order=0;if(cleaned_reference()!=44 || cleanup_order!=44)return 17;
+  cleanup_order=0;if(cleaned_dependent<int>(42,false)!=42 || cleanup_order!=1)return 18;
+  cleanup_order=0;if(cleaned_dependent<CleanupValue>(42,false)!=42 || cleanup_order!=12)return 19;
+  cleanup_order=0;caught=false;try{(void)cleaned_dependent<CleanupValue>(42,true);}catch(int value){caught=value==73;}
+  if(!caught || cleanup_order!=12)return 20;
+  cleanup_order=0;caught=false;try{(void)cleaned_dependent<CleanupValue>(-1,false);}catch(int value){caught=value==73;}
+  if(!caught || cleanup_order)return 21;
+  cleanup_order=0;if(cleaned_auto()!=45 || cleanup_order!=45)return 22;
+  cleanup_order=0;if(cleaned_auto_dependent(46)!=46 || cleanup_order!=1)return 23;
+  cleanup_order=0;if(cleaned_function<int>(47)!=47 || cleanup_order!=1)return 24;
+  cleanup_order=0;if(cleaned_function<CleanupValue>(48)!=48 || cleanup_order!=12)return 25;
 #endif
   if(ready!=42 || attribute_ready!=43 || ordered.value!=2 || retained.value!=4 || finalized.value!=5)return 1;
   if(&local_retained()!=&provider_local() || local_finalized().value!=7)return 2;

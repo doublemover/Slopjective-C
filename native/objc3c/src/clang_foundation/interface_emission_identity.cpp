@@ -1493,11 +1493,26 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     add(ReadInterfaceDeclarationStableId(cleanup->getFunctionDecl()));
     add(CanonicalType(cleanup->getFunctionDecl()->getType(),declaration->getASTContext()));
   } else if(const auto *cleanup=llvm::dyn_cast<clang::ObjCCleanupAttr>(attribute)) {
-    const auto *reference=llvm::dyn_cast<clang::DeclRefExpr>(cleanup->getClose()->IgnoreParenImpCasts());
-    const auto *function=reference?llvm::dyn_cast<clang::FunctionDecl>(reference->getDecl()):nullptr;
-    add(function?ReadInterfaceDeclarationStableId(function):"!unmodeled-cleanup");
-    if(function)add(CanonicalType(function->getType(),declaration->getASTContext()));
-    add(cleanup->getByAddress()?"address":"value");
+    if(!cleanup->getCall()) {
+      add("deferred-cleanup");
+      const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(declaration->getDeclContext());
+      DeclarationExpressionIdentity identity(declaration->getASTContext(),owner);
+      auto bind=[&](auto &&self,const clang::DeclContext *scope)->void {
+        if(!scope)return;self(self,scope->getParent());
+        if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+          if(const auto *pattern=record->getDescribedClassTemplate())identity.TemplateParameters(pattern);
+        if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(scope))
+          if(const auto *pattern=function->getDescribedFunctionTemplate())identity.TemplateParameters(pattern);
+      };
+      bind(bind,declaration->getDeclContext());
+      add(identity.Get(cleanup->getClose()));
+    } else {
+      const auto *reference=llvm::dyn_cast<clang::DeclRefExpr>(cleanup->getClose()->IgnoreParenImpCasts());
+      const auto *function=reference?llvm::dyn_cast<clang::FunctionDecl>(reference->getDecl()):nullptr;
+      add(function?ReadInterfaceDeclarationStableId(function):"!unmodeled-cleanup");
+      if(function)add(CanonicalType(function->getType(),declaration->getASTContext()));
+      add(cleanup->getByAddress()?"address":"value");
+    }
   } else if(const auto *sanitizers=llvm::dyn_cast<clang::NoSanitizeAttr>(attribute)) {
     std::set<std::string> names;
     for(auto name:sanitizers->sanitizers())names.insert(name.str());
@@ -2675,7 +2690,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationBorrowedResultProof(representative))
     identity.canonical_type_identity+=";borrowed-result-proofs:v4;";
   if (HasDeclarationNativeStorageLifetime(representative))
-    identity.canonical_type_identity += ";native-storage-lifetime:v2;";
+    identity.canonical_type_identity += ";native-storage-lifetime:v3;";
   if (HasDeclarationAtomicManagedProperty(representative))
     identity.canonical_type_identity += ";atomic-managed-properties:v1;";
   if (HasDeclarationNativeLambdaArgumentABI(representative))

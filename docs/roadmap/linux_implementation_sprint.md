@@ -529,3 +529,15 @@ checks; complete native/archive acceptance remains separate.
   bounded return proof. Unknown/mutable/volatile/TLS and incompatible ABI casts
   retain diagnostics. Native-storage-lifetime v2 and borrowed-result-proofs v4
   are hard reader cutovers; broader dependent cleanup storage remains open.
+
+
+## Source 2.156 / System 2.82 implementation
+
+[Dependent automatic cleanup](linux_dependent_automatic_cleanup.md) stores
+unevaluated recipes in template patterns, then rebuilds exact value/reference/
+address calls after substitution or auto deduction. Named class-trait and
+explicit function-template callbacks retain their selected declarations.
+Concrete callback effects, complete storage and no-copy rules remain enforced
+before mandatory ownership/CFG checking. Native-storage-lifetime v3 binds the
+reader cutover; source/PCH, publication, decoder and source-free runtime controls
+cover exact destruction, errors and failed initialization.
