@@ -272,16 +272,21 @@ def suite_results(root: Path, name: str) -> list[dict]:
         store = result.get('product_evidence_store', {})
         store_path = directory / 'campaign/product-evidence-blobs'
         store_files = list(store_path.iterdir()) if store_path.is_dir() and not store_path.is_symlink() else []
-        expected = {'structured', 'native-async', 'coroutines', 'c-frame-bridge', 'installed-ownership',
-            *(kind+'-'+sanitizer+'-'+optimization for kind in ('features', 'factories')
-              for sanitizer in ('address-undefined', 'thread') for optimization in ('O0', 'O2'))}
+        from scripts.objc3c_toolchain.sanitizer_partitions import OWNERS, PARTITIONS, select, profiles, evidence_owners
+        index = result.get('partition_index')
+        expected = set(select(index))
+        if index is not None and (result.get('partition_count') != len(PARTITIONS) or
+                result.get('owner_catalogue') != list(OWNERS) or
+                {(row.get('sanitizer'), row.get('optimization')) for row in result.get('runtime_profiles', [])}
+                != set(profiles(expected))):
+            raise ValueError('sanitizer product partition catalogue or profiles changed')
         if (len(rows) != len(expected) or {row['name'] for row in rows} != expected or
                 any(row.get('status') != 'PASS' for row in rows) or
-                len(result.get('runtime_profiles', [])) != 6 or
+                len(result.get('runtime_profiles', [])) != len(profiles(expected)) or
                 result.get('expected_owners') != [row['name'] for row in rows] and
                 set(result.get('expected_owners', [])) != expected or
                 store.get('schema') != 'objc3c.product-evidence-shared-store.v1' or
-                store.get('owners') != 14 or not store.get('references') or
+                store.get('owners') != evidence_owners(expected) or not store.get('references') or
                 store.get('references') != len(store_files) or
                 store.get('stored_bytes') != sum(path.stat().st_size for path in store_files) or
                 store.get('private_bytes', 0) < store.get('stored_bytes', 0) or

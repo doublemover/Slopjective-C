@@ -12,6 +12,7 @@ from .evidence import (evidence_budget, SCHEMA, aggregate, artifact, native_file
                        suite_results, validate_evidence_sizes)
 from .plan import foundation_receipts, from_checkout, selected_suites, validate
 from .runner import run
+from scripts.objc3c_toolchain.sanitizer_partitions import GROUPS as SANITIZER_GROUPS
 
 
 # Packaging owns the exact archive and keeps the matching upstream build tree.
@@ -44,7 +45,8 @@ def run_group(repo: Path, plan: dict, output: Path, group: str, *,
     try:
         validate(plan)
         _require_checkout(repo, plan)
-        suites = GROUPS.get(group)
+        partition = SANITIZER_GROUPS.index(group) if group in SANITIZER_GROUPS else None
+        suites = GROUPS['asan-products'] if partition is not None else GROUPS.get(group)
         if suites is None:
             raise ValueError('unknown release matrix group')
         if group == 'product-producer':
@@ -63,7 +65,7 @@ def run_group(repo: Path, plan: dict, output: Path, group: str, *,
         raise
     try:
         result = run(repo, plan, output, suite_ids=suites, product_sdk=product_sdk,
-                     package_release=package_release)
+                     package_release=package_release, sanitizer_partition=partition)
         result['release_matrix_group'] = group
         write_json(output / 'result.json', result)
         return result
@@ -119,8 +121,10 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
     products = []
     elapsed = 0.0
     peak = 0
+    from .sanitizer_matrix import merge as merge_sanitizers
+    merged_sanitizers = merge_sanitizers(plan, partials, output / '_sanitizer_union', repo=repo)
     for group, suites in GROUPS.items():
-        root = _partial(partials, group)
+        root = merged_sanitizers if group == 'asan-products' and merged_sanitizers else _partial(partials, group)
         receipt = json.loads((root / 'result.json').read_text())
         if (receipt.get('schema') != SCHEMA or receipt.get('status') != 'PASS' or
                 receipt.get('revision') != plan['revision'] or
@@ -156,6 +160,8 @@ def aggregate_core(repo: Path, plan: dict, partials: Path, output: Path) -> dict
     if not products or any(product != products[0] for product in products):
         raise ValueError('release matrix consumers used different compiler product identities')
 
+    if merged_sanitizers:
+        shutil.rmtree(merged_sanitizers)
     ordered = [records[name] for name in expected]
     costs = snapshot(foundations=foundation_receipts(output, expected_suites),
                      installations=[output / 'package/installation-cost.json'])
@@ -187,7 +193,7 @@ def main(argv=None):
     run_parser.add_argument('--repo', type=Path, default=Path.cwd())
     run_parser.add_argument('--plan', type=Path, required=True)
     run_parser.add_argument('--output', type=Path, required=True)
-    run_parser.add_argument('--group', choices=tuple(GROUPS), required=True)
+    run_parser.add_argument('--group', choices=tuple(GROUPS)+SANITIZER_GROUPS, required=True)
     run_parser.add_argument('--product-sdk', type=Path)
     run_parser.add_argument('--package-release', type=Path)
     aggregate_parser = commands.add_parser('aggregate')

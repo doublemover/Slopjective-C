@@ -37,7 +37,7 @@ def _consumer_compile_jobs(repo: Path) -> int:
 
 def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         suite_ids: tuple[str, ...] | None = None, product_sdk: Path | None = None,
-        package_release: Path | None = None) -> dict:
+        package_release: Path | None = None, sanitizer_partition: int | None = None) -> dict:
     validate(plan)
     if shard is not None and suite_ids is not None:
         raise ValueError('native execution cannot combine a canonical shard and an explicit suite partition')
@@ -51,6 +51,11 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         suites = [available[name] for name in suite_ids]
     if not suites:
         raise ValueError('native execution requires a nonempty suite selection')
+    if sanitizer_partition is not None:
+        from scripts.objc3c_toolchain.sanitizer_partitions import select
+        select(sanitizer_partition)
+        if [row['id'] for row in suites] != ['sanitizer-products']:
+            raise ValueError('a sanitizer partition must exclusively own the product suite')
     output = output.resolve()
     # Stale receipts must never be overwritten into a new apparent success.
     output.mkdir(parents=True, exist_ok=False)
@@ -58,6 +63,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
     report = {'schema': SCHEMA, 'status': 'running', 'revision': plan['revision'],
               'plan_sha256': plan['sha256'], 'suites': [], 'commands': [],
               'cache': {'restored_build_products': False, 'reason': plan['cache_policy']}}
+    if sanitizer_partition is not None:
+        report['sanitizer_product_partition'] = sanitizer_partition
     if shard is not None:
         report['shard'] = shard
     if suite_ids is not None:
@@ -326,12 +333,15 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             if not release:
                 raise ValueError('sanitizer product suite requires the selected package suite')
             compiler = profile_foundation('compiler-asan-ubsan')
-            facade = profile_facade('compiler-asan-ubsan') / 'src/clang_foundation/objc3c'
+            from scripts.objc3c_toolchain.sanitizer_partitions import select
+            owners = select(sanitizer_partition)
+            facade = (profile_facade('compiler-asan-ubsan') / 'src/clang_foundation/objc3c'
+                      if any(owner.startswith('factories-') for owner in owners) else None)
             resource_root = Path(subprocess.check_output(
                 [bootstrap / 'bin/clang', '-print-resource-dir'], text=True).strip())
             result = qualify(repo, Path(release['installed']['prefix']), compiler, facade,
-                             resource_root, directory / 'campaign', jobs=2)
-            if result['status'] != 'PASS' or len(result['owners']) != 13:
+                             resource_root, directory / 'campaign', jobs=2, partition=sanitizer_partition)
+            if result['status'] != 'PASS' or len(result['owners']) != len(owners):
                 raise ValueError('complete sanitizer product campaign did not pass')
             return sorted(result['owners'], key=lambda row: row['name'])
         if name == 'runtime-schedules':

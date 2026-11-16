@@ -5,6 +5,13 @@ on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
+The [sanitizer product matrix](linux_sanitizer_product_matrix.md) splits thirteen
+product owners across eight independently restored consumers. Selected runtime
+profiles, factory-only facade builds, exact source/SDK binding and a complete
+disjoint union preserve qualification while removing the serial product job.
+Canonical replay evidence is deduplicated across partitions before publication.
+Full matrix wall-time measurement and SDK acceptance remain pending in CI.
+
 The [source 2.160 / System 2.86 CPU policy span](linux_cpu_target_publication.md)
 publishes native CPU target/clone policies and imports canonical multiversion
 state so source-free consumers preserve runtime-dispatched clone entry points.

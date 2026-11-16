@@ -538,7 +538,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [asan-products, runtime-schedules]
+        group: [asan-products-partition-0, asan-products-partition-1, asan-products-partition-2, asan-products-partition-3, asan-products-partition-4, asan-products-partition-5, asan-products-partition-6, asan-products-partition-7, runtime-schedules]
     runs-on: ubuntu-26.04
     container:
       image: debian:13
