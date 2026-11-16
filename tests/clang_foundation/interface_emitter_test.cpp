@@ -1,3 +1,4 @@
+#include "thread_safety_test_source.h"
 #include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
 #include "llvm/ADT/ScopeExit.h"
@@ -613,6 +614,49 @@ void TestNativeUnnamedEnumReplay() {
     int enum_consumer(){return NativeEnum::choose()+NativeEnum::indirect(NativeEnum::Third);}
    )",args,"enum-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
   }
+ }
+}
+
+void TestNativeThreadSafetyReplay() {
+ for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+  if(arc)args.push_back("-fobjc-arc");
+  const std::string source=kNativeThreadSafetySource;
+  auto emit=[&](const std::string &text){
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-thread-safety.mm");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.thread_safety","test",{}));
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.thread_safety","test");
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  const auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  assert(first.source_bytes==replay.source_bytes);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeThreadSafetySemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeThreadSafetySemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  auto missing=*decoded;std::erase(missing.required_semantics,kNativeThreadSafetySemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+  for(const auto &change:std::vector<std::pair<std::string,std::string>>{{"capability(\"mutex\")","capability(\"rwlock\")"},{"capability(\"mutex\")","shared_capability(\"mutex\")"},{"requires_shared_capability(mutex)","requires_capability(mutex)"},{"try_acquire_capability(true)","try_acquire_capability(false)"},{"acquired_after(first)","acquired_before(first)"}}) {
+   auto changed=source;auto at=changed.find(change.first);assert(at!=std::string::npos);changed.replace(at,change.first.size(),change.second);
+   assert(emit(changed).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+  auto hidden_ast=clang::tooling::buildASTFromCodeWithArgs(source+R"(
+    namespace HiddenLock {inline ThreadSafety::Mutex mutex;}
+    namespace ThreadSafety {void hidden_requirement() __attribute__((requires_capability(HiddenLock::mutex)));}
+  )",args,"private-lock-dependency.mm");assert(hidden_ast && !hidden_ast->getDiagnostics().hasErrorOccurred());
+  auto hidden=EmitSemanticInterface(hidden_ast->getASTContext(),"fixture.thread_safety","test",{},{},{},{"ThreadSafety"});
+  assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  auto checked=args;checked.insert(checked.end(),{"-Wthread-safety","-Werror=thread-safety"});
+  auto good=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+    int use_thread_contract(){ThreadSafety::Counter counter;return ThreadSafety::run(counter);}
+  )",checked,"thread-safe-consumer.mm");assert(good && !good->getDiagnostics().hasErrorOccurred());
+  auto bad=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+    int violate_thread_contract(ThreadSafety::Counter &counter){return counter.read();}
+  )",checked,"thread-unsafe-consumer.mm");assert(bad && bad->getDiagnostics().hasErrorOccurred());
  }
 }
 
@@ -11958,6 +12002,7 @@ int main(int argc,char **argv) {
   cases.Run("TestKeyPathSubscriptBodies", TestKeyPathSubscriptBodies);
   cases.Run("TestNativeManagedUnionPayloadReplay", TestNativeManagedUnionPayloadReplay);
   cases.Run("TestNativeUnnamedEnumReplay", TestNativeUnnamedEnumReplay);
+  cases.Run("TestNativeThreadSafetyReplay", TestNativeThreadSafetyReplay);
   cases.Run("TestNativeStorageLifetimeReplay", TestNativeStorageLifetimeReplay);
   cases.Run("TestNativeUnionKeyPathReplay", TestNativeUnionKeyPathReplay);
   cases.Run("TestResourceKeyPathReplay", TestResourceKeyPathReplay);

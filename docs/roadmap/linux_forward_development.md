@@ -1,7 +1,8 @@
 # Objective-C 3.0 on Linux
 
-The [current SDK/toolchain refresh](linux_toolchain_refresh.md) targets SDK 2.153.0
-on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.0
+The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
+repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
+Source 2.164 / System 2.90 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2238,3 +2239,10 @@ publication retain distinct identities under native-storage-lifetime v6.
 extend bounded permanent-result analysis to ordinary by-value parameters and local
 aliases without a written top-level const. Shared work bounds, mutation/escape
 gates and the borrowed-result-proofs v6 reader cutover retain owner obligations.
+
+## Source 2.164 native lock contracts
+
+[Native thread-safety publication](linux_native_thread_safety_publication.md)
+preserves lock capability types, guarded storage and callable lock effects through
+canonical package replay. A dedicated required capability binds native argument,
+mode, ordering and try-lock contracts to downstream admission and analysis.

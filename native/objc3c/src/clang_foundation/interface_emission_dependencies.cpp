@@ -78,7 +78,8 @@ class TypeDependencyVisitor final
          TraverseStmt(cleanup->getClose());
        } else if(const auto *resource=llvm::dyn_cast<clang::ObjCResourceAttr>(attribute)) {
          TraverseStmt(resource->getClose());TraverseStmt(resource->getInvalid());
-       } else if(llvm::isa<clang::DiagnoseIfAttr,clang::EnableIfAttr>(attribute)) {
+       } else if(IsPublishedThreadSafetyAttribute(attribute) ||
+                 llvm::isa<clang::DiagnoseIfAttr,clang::EnableIfAttr>(attribute)) {
          const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute);
          const auto *enabled=llvm::dyn_cast<clang::EnableIfAttr>(attribute);
          const auto locals=lambda_locals_;
@@ -88,7 +89,9 @@ class TypeDependencyVisitor final
              for(const auto *parameter:redecl->parameters())lambda_locals_.insert(parameter->getCanonicalDecl());
          if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
            for(const auto *parameter:method->parameters())lambda_locals_.insert(parameter->getCanonicalDecl());
-         TraverseStmt(diagnostic?diagnostic->getCond():enabled->getCond());
+         if(IsPublishedThreadSafetyAttribute(attribute))
+           TraverseAttr(const_cast<clang::Attr *>(attribute));
+         else TraverseStmt(diagnostic?diagnostic->getCond():enabled->getCond());
        }
      if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))
        CheckDeclarationAttributes(pattern->getTemplatedDecl());

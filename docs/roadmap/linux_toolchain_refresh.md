@@ -5,7 +5,7 @@ ABI 21. Later source milestones were developed and checked without producing a
 replacement accepted archive. The [historical acceptance receipt](../support/linux_source_batch_2_62_acceptance.json)
 records that delivery; its version has not silently advanced.
 
-The current candidate is **SDK 2.153.0**, with System 2.79 and keypath 2.12,
+The running repair campaign uses **SDK 2.153.0**, with System 2.79 and keypath 2.12,
 rebased onto stable **LLVM 23.1.5**. The complete canonical patch stack applies
 and its prepared source seal verifies. Extension ABI **24** is the newest
 implemented revision. Services ABI **4**, async frame ABI **1**, keypath metadata
@@ -13,6 +13,11 @@ ABI **2** and interface schema **2.2** retain their current layouts. These are
 independent version numbers; no additional ABI revision is invented for this
 release refresh. All provider objects, PCH, interfaces and packages must be
 regenerated against the new source identity.
+
+Development source is now **2.164 / System 2.90 / keypath 2.12**. The later
+implementation spans require a fresh matching compiler/SDK build and release
+acceptance; the running 2.153 repair campaign cannot qualify those later changes.
+Neither candidate nor source version changes the last accepted archive.
 
 The public embedding API already uses **frontend ABI 3** for module-aware
 compilation, including the shipped embedding example. Its embedded base options

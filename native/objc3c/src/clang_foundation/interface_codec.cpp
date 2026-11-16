@@ -29,6 +29,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
     kNativeEmissionPolicySemantic,
+    kNativeThreadSafetySemantic,
     kBorrowedUnionStorageSemantic,
     kBorrowedResultProofSemantic,
     kNativeUnnamedEnumSemantic,
@@ -694,6 +695,12 @@ llvm::Error ValidateForEncoding(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
+  const bool thread_safety=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeThreadSafetyIdentity);
+  const bool thread_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeThreadSafetySemantic)!=sidecar.required_semantics.end();
+  const bool thread_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeThreadSafetyIdentity(d) || d.kind!="Namespace";});
+  if(thread_safety!=thread_capability || (thread_capability && !thread_owners))
+    return Invalid("native thread-safety identity and required capability must agree");
   const bool emission_policy=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeEmissionPolicyIdentity);
   const bool emission_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeEmissionPolicySemantic)!=sidecar.required_semantics.end();
   const bool emission_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

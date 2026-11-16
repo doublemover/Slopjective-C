@@ -518,6 +518,12 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
+  const bool thread_safety=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeThreadSafetyIdentity);
+  const bool thread_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeThreadSafetySemantic)!=sidecar.required_semantics.end();
+  const bool thread_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeThreadSafetyIdentity(d) || d.kind!="Namespace";});
+  if(thread_safety!=thread_capability || (thread_capability && !thread_owners))
+    Add(result,"O3IFC188","native thread-safety identity and required capability must agree",expected.canonical_name);
   const bool emission_policy=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeEmissionPolicyIdentity);
   const bool emission_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeEmissionPolicySemantic)!=sidecar.required_semantics.end();
   const bool emission_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

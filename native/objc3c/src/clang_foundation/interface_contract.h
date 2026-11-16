@@ -230,6 +230,10 @@ inline constexpr const char *kBorrowedUnionStorageSemantic = "objc3.borrowed-uni
 inline bool HasBorrowedUnionStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";borrowed-union-byte-storage:v1;") != std::string::npos;
 }
+inline constexpr const char *kNativeThreadSafetySemantic = "objc3.native-thread-safety.v1";
+inline bool HasNativeThreadSafetyIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-thread-safety:v1;") != std::string::npos;
+}
 inline constexpr const char *kNativeEmissionPolicySemantic = "objc3.native-emission-policies.v2";
 inline bool HasNativeEmissionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-emission-policies:v2;") != std::string::npos;

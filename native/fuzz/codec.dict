@@ -39,3 +39,6 @@
 ";native-emission-policies:v2;"
 ";native-cpu-variant:v1;"
 "@cpu-target@"
+
+"objc3.native-thread-safety.v1"
+";native-thread-safety:v1;"

@@ -1,3 +1,4 @@
+#include "thread_safety_test_source.h"
 #include "standard_library_test_support.h"
 #include "llvm/ADT/ScopeExit.h"
 #include "clang_foundation/interface_codec.h"
@@ -80,6 +81,38 @@ __attribute__((used,noinline)) inline int checked(const int *value){return *valu
   Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();\nextern \"C\" int override_policy() __asm__(\""+fallback+"\");\nextern \"C\" int override_policy(){return 31;}\nint main(){return check_a() || check_b();}\n");
   auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{"-fsanitize=address"});
 }
+void RunThreadSafety(const fs::path &root,const char *standard,int ownership,const char *optimization) {
+ fs::create_directories(root/"provider");
+ auto request=[&](const fs::path &input,const fs::path &output){return Request(input,output,standard,ownership,optimization,{"-Wthread-safety","-Werror=thread-safety"});};
+ const auto source=root/"provider/module.mm";Write(source,kNativeThreadSafetySource);
+ auto provider=request(source,root/"provider.o");provider.module_owned_names=true;provider.module_source_root=(root/"provider").string();provider.module_name="fixture.ThreadSafety";provider.package_identity="thread-safety-v1";provider.interface_exports={"ThreadSafety"};provider.emit_semantic_interface=true;
+ auto built=Compile(provider);Success(built);assert(built.interface_artifact && built.interface_artifact->success);
+ const auto artifact=*built.interface_artifact;assert(artifact.sidecar_json.find(kNativeThreadSafetySemantic)!=std::string::npos);
+ const auto interface=root/"ThreadSafety.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);assert(fs::remove(source));
+ auto imported_request=[&](const fs::path &input,const fs::path &output){auto consumer=request(input,output);InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;consumer.imported_interfaces={imported};return consumer;};
+ for(const char *name:{"a","b"}) {
+  const auto input=root/(std::string("consumer-")+name+".mm");Write(input,"extern \"C\" int check_"+std::string(name)+R"thread((){
+   ThreadSafety::Counter counter;
+   ThreadSafety::acquire(&counter.mutex);counter.bump();int first=counter.read();ThreadSafety::release(&counter.mutex);
+   if(first!=1 || counter.mutex.state!=0)return 1;
+   if(ThreadSafety::run(counter)!=2 || counter.mutex.state!=0)return 2;
+   if(counter.mutex.try_lock()){counter.bump();int value=counter.read();counter.mutex.unlock();if(value!=3)return 3;}
+   {ThreadSafety::Scope guard(counter.mutex);if(counter.read()!=3)return 4;}
+   ThreadSafety::Box<int> box;{ThreadSafety::Scope guard(box.mutex);if(box.read()!=0)return 5;}
+   counter.mutex.lock_shared();int shared=counter.read();counter.mutex.unlock_shared();if(shared!=3)return 6;
+   if(counter.mutex.try_shared()){int shared=counter.read();counter.mutex.unlock_shared();if(shared!=3)return 7;}
+   counter.get_mutex().lock();counter.mutex.assert_held();int asserted=counter.read();counter.mutex.unlock_any();if(asserted!=3)return 8;
+   counter.mutex.lock_shared();counter.mutex.assert_shared();int shared_asserted=counter.read();counter.mutex.unlock_shared();if(shared_asserted!=3)return 9;
+   return counter.mutex.state!=0;
+  })thread");Success(Compile(imported_request(input,root/(std::string(name)+".o"))));
+ }
+ const auto bad=root/"unsafe.mm";Write(bad,"int missing_lock(ThreadSafety::Counter &counter){return counter.read();}");
+ auto rejected=Compile(imported_request(bad,root/"unsafe.o"));assert(!rejected.success);
+ assert(std::any_of(rejected.diagnostics.begin(),rejected.diagnostics.end(),[](const auto &d){return d.message.find("requires holding mutex")!=std::string::npos;}));
+ const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a() || check_b();}");
+ auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{});
+}
+
 void RunSwiftABI(const fs::path &root,const char *standard,int ownership,const char *optimization) {
   fs::create_directories(root/"provider");
   const auto source=root/"provider/module.mm";
@@ -205,5 +238,7 @@ int main() {
     cases.Run(std::string("swift-")+standard+"-"+std::to_string(ownership),[&]{RunSwiftABI(root/(std::string("swift-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
   for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}})
     cases.Run(std::string("target-")+standard+"-"+std::to_string(ownership),[&]{RunTargetPolicy(root/(std::string("target-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
+  for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}})
+    cases.Run(std::string("thread-")+standard+"-"+std::to_string(ownership),[&]{RunThreadSafety(root/(std::string("thread-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
   return cases.Finish();
 }

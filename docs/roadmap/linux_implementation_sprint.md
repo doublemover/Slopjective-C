@@ -618,3 +618,12 @@ complete return/target proof. Writes, address/reference escapes, reference
 captures, volatile/global/TLS mutation, `__block` and implicit resource mutation
 retain conservative gates. C++23 implicit moves and copied capture snapshots keep
 native semantics. Borrowed-result-proofs v6 enforces reader admission.
+
+## Source 2.164 / System 2.90 implementation
+
+[Native thread-safety publication](linux_native_thread_safety_publication.md)
+preserves the complete 17-kind capability/guard/acquire/release/require/order/
+assert/alias/suppression family, typed expression arguments, lock modes and
+try-lock success values. Canonical scope/order and inherited parameter-name
+rebinding preserve diagnostics through source-free imports. Native-thread-safety
+v1 enforces reader admission without changing physical ABI layouts.

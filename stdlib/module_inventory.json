@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 163,
+        "minor": 164,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -336,12 +336,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 89,
+        "minor": 90,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Published native thread-safety contracts preserve capability/reentrant/scoped types, guarded storage, lock ordering, shared/exclusive/generic acquire/release, try-lock success, assertions, requirements, exclusions, returned-lock aliases and explicit analysis suppression; typed expression/parameter/template identities and native-thread-safety v1 enforce source-free reader admission, matched SDK pending",
         "Permanent borrowed-result proofs admit ordinary read-only by-value pointer/callback parameters and unmodified initialized local pointer/callback aliases after a bounded whole-body use proof; assignment, increment, address/reference escape, reference capture, volatile/TLS/global mutation and __block storage retain rejection; C++23 implicit-move wrappers and copied lambda captures preserve snapshot identity; borrowed-result-proofs v6 reader cutover, matched SDK pending",
         "Native automatic cleanup, local resources and requires_cleanup typedefs select ordinary overloads and deduce function-template callbacks against concrete storage, preferring value calls and trying addresses only after no viable value candidate; ambiguity/deletion/access/effect and no-copy rules remain enforced, dependent/auto recipes rebind after deduction; native-storage-lifetime v6 reader cutover, matched SDK pending",
         "Native fixed-array cleanup admits direct array decay without record copies or converting temporaries, preserving whole-array reference/address callbacks, multidimensional storage, dependent element/bound recipes and callback/destructor exception ordering; native-storage-lifetime v5 reader cutover, matched SDK pending",

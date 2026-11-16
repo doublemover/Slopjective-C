@@ -157,6 +157,20 @@ bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationThreadSafetyContract(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  struct Contracts:clang::DynamicRecursiveASTVisitor {
+    bool found=false;
+    bool VisitNamedDecl(clang::NamedDecl *named) override {
+      for(const auto *attribute:named->attrs())
+        found|=!attribute->isImplicit() && IsPublishedThreadSafetyAttribute(attribute);
+      return true;
+    }
+  } contracts;
+  contracts.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  return contracts.found;
+}
+
 bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Policy=[](const clang::NamedDecl *named) {

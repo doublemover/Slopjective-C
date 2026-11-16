@@ -1499,6 +1499,91 @@ std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
 std::string NativeAttributeValue(const clang::Attr *attribute,const clang::NamedDecl *declaration) {
   std::string key=std::to_string(attribute->getKind());
   auto add=[&](llvm::StringRef value){key+=";"+std::to_string(value.size())+":"+value.str();};
+  if(IsPublishedThreadSafetyAttribute(attribute)) {
+    auto expression=[&](const clang::Expr *value) {
+      if(!value){add("none");return;}
+      DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
+      if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
+        for(const auto *parameter:method->parameters())identity.Local(parameter);
+      auto bind=[&](auto &&self,const clang::DeclContext *scope)->void {
+        if(!scope)return;self(self,scope->getParent());
+        if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+          if(const auto *pattern=record->getDescribedClassTemplate())identity.TemplateParameters(pattern);
+        if(const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(scope))
+          for(auto *parameter:*partial->getTemplateParameters())identity.Local(parameter);
+      };
+      bind(bind,declaration->getDeclContext());
+      add(identity.Get(const_cast<clang::Expr *>(value),true));
+    };
+    if(const auto *contract=llvm::dyn_cast<clang::CapabilityAttr>(attribute)) {
+      add(contract->getName());add(contract->isShared()?"shared":"exclusive");
+      return key;
+    }
+    if(llvm::isa<clang::ReentrantCapabilityAttr>(attribute))return key;
+    if(llvm::isa<clang::ScopedLockableAttr>(attribute))return key;
+    if(llvm::isa<clang::GuardedVarAttr>(attribute))return key;
+    if(llvm::isa<clang::PtGuardedVarAttr>(attribute))return key;
+    if(const auto *contract=llvm::dyn_cast<clang::GuardedByAttr>(attribute)) {
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::PtGuardedByAttr>(attribute)) {
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::AcquiredBeforeAttr>(attribute)) {
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      add("delayed");for(const auto *value:contract->delayedArgs())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::AcquiredAfterAttr>(attribute)) {
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      add("delayed");for(const auto *value:contract->delayedArgs())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::AssertCapabilityAttr>(attribute)) {
+      add(contract->isShared()?"shared":"exclusive");
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      add("delayed");for(const auto *value:contract->delayedArgs())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::TryAcquireCapabilityAttr>(attribute)) {
+      add(contract->isShared()?"shared":"exclusive");
+      expression(contract->getSuccessValue());
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      add("delayed");for(const auto *value:contract->delayedArgs())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::AcquireCapabilityAttr>(attribute)) {
+      add(contract->isShared()?"shared":"exclusive");
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      add("delayed");for(const auto *value:contract->delayedArgs())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::ReleaseCapabilityAttr>(attribute)) {
+      add(contract->isShared()?"shared":"exclusive");
+      add(contract->isGeneric()?"generic":"specific");
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      add("delayed");for(const auto *value:contract->delayedArgs())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::RequiresCapabilityAttr>(attribute)) {
+      add(contract->isShared()?"shared":"exclusive");
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      add("delayed");for(const auto *value:contract->delayedArgs())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::LocksExcludedAttr>(attribute)) {
+      add("arguments");for(const auto *value:contract->args())expression(value);
+      add("delayed");for(const auto *value:contract->delayedArgs())expression(value);
+      return key;
+    }
+    if(const auto *contract=llvm::dyn_cast<clang::LockReturnedAttr>(attribute)) {
+      expression(contract->getArg());
+      return key;
+    }
+    if(llvm::isa<clang::NoThreadSafetyAnalysisAttr>(attribute))return key;
+  }
   if(const auto *target=llvm::dyn_cast<clang::TargetAttr>(attribute))
     add(target->getFeaturesStr());
   else if(const auto *clones=llvm::dyn_cast<clang::TargetClonesAttr>(attribute)) {
@@ -2741,6 +2826,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationThreadSafetyContract(representative))
+    identity.canonical_type_identity+=";native-thread-safety:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))
     identity.canonical_type_identity+=";native-emission-policies:v2;";
   if (NativeCPUVariant(representative))

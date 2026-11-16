@@ -89,6 +89,7 @@ int main() {
       {";native-storage-lifetime:v6;",kNativeStorageLifetimeSemantic},
       {";borrowed-result-proofs:v6;",kBorrowedResultProofSemantic},
       {";native-emission-policies:v2;",kNativeEmissionPolicySemantic},
+      {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";native-cpu-variant:v1;",kNativeEmissionPolicySemantic}}) {
     auto invalid=*decoded;
     InterfaceDeclarationIdentity space{"c:@N@Bad","Namespace","A::Bad","namespace",{}};

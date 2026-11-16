@@ -352,6 +352,8 @@ bool IsPublicContainer(const clang::DeclContext *context,
 
 bool IsPublishedDeducedFactory(const clang::FunctionDecl *function);
 
+bool IsPublishedThreadSafetyAttribute(const clang::Attr *attribute);
+bool HasDeclarationThreadSafetyContract(const clang::NamedDecl *declaration);
 bool IsPublishedNativeAttribute(const clang::Attr *attribute);
 bool IsPublishedSemanticAttribute(const clang::Attr *attribute);
 
