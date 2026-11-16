@@ -17,6 +17,16 @@
 #include <filesystem>
 
 namespace objc3::clang_foundation {
+namespace {
+std::string CPUVariantFamilyId(const std::string &identity) {
+  constexpr llvm::StringLiteral marker="@cpu-target@";
+  const auto at=identity.rfind(marker.str());
+  if(at==std::string::npos || identity.size()!=at+marker.size()+64)return identity;
+  for(char c:llvm::StringRef(identity).drop_front(at+marker.size()))
+    if(!((c>='0' && c<='9') || (c>='a' && c<='f')))return identity;
+  return identity.substr(0,at);
+}
+}
 std::string BuildModuleOwnedName(const std::string &module,
                                  const std::string &package,
                                  const std::string &stable_id) {
@@ -51,9 +61,11 @@ bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
   std::string owner = module.canonical_name;
   if (owner.ends_with(".__ownership_producer"))
     owner.resize(owner.size() - std::string(".__ownership_producer").size());
+  const auto family=((declaration.kind=="Function" || declaration.kind=="CXXMethod") && HasNativeEmissionPolicyIdentity(declaration) &&
+      declaration.canonical_type_identity.find(";native-cpu-variant:v1;")!=std::string::npos)
+      ?CPUVariantFamilyId(declaration.stable_id):declaration.stable_id;
   return declaration.native_symbol_name ==
-         BuildModuleOwnedName(owner, module.package_identity,
-                              declaration.stable_id);
+         BuildModuleOwnedName(owner, module.package_identity, family);
 }
 namespace {
 std::filesystem::path SourceFile(const clang::ASTContext &context,
@@ -442,7 +454,9 @@ public:
     if (stable_id.empty())
       return Error(decl,
                    "module-owned declaration has no stable native identity");
-    const auto expected = BuildModuleOwnedName(module_, package_, stable_id);
+    const auto *named_function=llvm::dyn_cast<clang::FunctionDecl>(decl);
+    const auto family=named_function && named_function->isMultiVersion()?CPUVariantFamilyId(stable_id):stable_id;
+    const auto expected = BuildModuleOwnedName(module_, package_, family);
     // A local declaration may refine an SDK ABI (for example a retained-return
     // annotation on class_createInstance). Keep that foreign binding. Defining
     // it here would claim another owner's ABI and must fail.

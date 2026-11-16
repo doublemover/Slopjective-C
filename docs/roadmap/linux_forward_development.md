@@ -5,6 +5,12 @@ on LLVM 23.1.5 and extension ABI 24. The last accepted archive remains SDK 2.62.
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
+The [source 2.160 / System 2.86 CPU policy span](linux_cpu_target_publication.md)
+publishes native CPU target/clone policies and imports canonical multiversion
+state so source-free consumers preserve runtime-dispatched clone entry points.
+Native-emission-policies v2 requires new readers. Complete rebuilt compiler/SDK
+acceptance remains pending.
+
 The [source 2.159 / System 2.85 resource span](linux_native_resource_publication.md)
 publishes local native resource owners and binds concrete dependent/deduced
 handle recipes before mandatory flow checking. Close callbacks, invalid sentinels

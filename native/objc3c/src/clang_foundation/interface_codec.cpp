@@ -696,7 +696,19 @@ llvm::Error ValidateForEncoding(
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
   const bool emission_policy=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeEmissionPolicyIdentity);
   const bool emission_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeEmissionPolicySemantic)!=sidecar.required_semantics.end();
-  if(emission_policy!=emission_policy_capability)
+  const bool emission_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeEmissionPolicyIdentity(d) || d.kind!="Namespace";});
+  const bool cpu_variant_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d) {
+    const bool marked=d.canonical_type_identity.find(";native-cpu-variant:v1;")!=std::string::npos;
+    const auto at=d.stable_id.rfind("@cpu-target@");
+    if(!marked && at==std::string::npos)return true;
+    if(!marked || at==std::string::npos || d.stable_id.size()!=at+12+64 ||
+        (d.kind!="Function" && d.kind!="CXXMethod") || !HasNativeEmissionPolicyIdentity(d))return false;
+    return std::all_of(d.stable_id.begin()+at+12,d.stable_id.end(),[](char c) {
+      return (c>='0' && c<='9') || (c>='a' && c<='f');
+    });
+  });
+  if(emission_policy!=emission_policy_capability || !cpu_variant_owners || (emission_policy_capability && !emission_policy_owners))
     return Invalid("native emission policy identity and required capability must agree");
   const bool borrowed_unions=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasBorrowedUnionStorageIdentity);
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();

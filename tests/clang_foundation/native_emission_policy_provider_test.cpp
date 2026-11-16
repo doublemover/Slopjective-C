@@ -1,5 +1,7 @@
 #include "standard_library_test_support.h"
 #include "llvm/ADT/ScopeExit.h"
+#include "clang_foundation/interface_codec.h"
+#include <set>
 #include <sstream>
 #include <tuple>
 using namespace objc3::clang_foundation;
@@ -132,6 +134,65 @@ inline int invoke(Callback *callback,int value,void *state){return callback(valu
   LinkAndExecute(root,main.output_path,ownership!=0,{});
 }
 
+void RunTargetPolicy(const fs::path &root,const char *standard,int ownership,const char *optimization) {
+  fs::create_directories(root/"provider");
+  auto request=[&](const fs::path &input,const fs::path &output){return Request(input,output,standard,ownership,optimization,{});};
+  const auto source=root/"provider/module.mm";
+  Write(source,R"target(
+namespace TargetPolicy {
+__attribute__((target("sse2"),min_vector_width(128),noinline)) inline int specialized(int value){return value+1;}
+__attribute__((target_clones("default","sse4.2"))) inline int cloned(int value){return value+2;}
+__attribute__((target_clones("default","sse4.2"))) int declared(int);
+__attribute__((target("default"))) inline int default_only(int value){return value+5;}
+__attribute__((target("default"))) inline int versioned(int value){return value+6;}
+__attribute__((target("sse4.2"))) inline int versioned(int value){return value+7;}
+
+template<class T>__attribute__((target("sse2"),min_vector_width(128),noinline)) inline int generic(T value){return static_cast<int>(value)+3;}
+struct Record {__attribute__((target("sse2"),min_vector_width(128),noinline)) int method(int value)const{return value+4;}};
+int external_caller(int value){return specialized(value)+cloned(value)+generic(value)+Record().method(value);}
+}
+)target");
+  auto provider=request(source,root/"provider.o");provider.module_owned_names=true;
+  provider.module_source_root=(root/"provider").string();provider.module_name="fixture.TargetPolicy";
+  provider.package_identity="target-policy-v1";provider.interface_exports={"TargetPolicy"};provider.emit_semantic_interface=true;
+  auto built=Compile(provider);Success(built);assert(built.interface_artifact && built.interface_artifact->success);
+  const auto artifact=*built.interface_artifact;
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,supported);assert(decoded);
+  std::set<std::string> variants,families;
+  for(const auto &declaration:decoded->declarations)if(declaration.qualified_name=="TargetPolicy::versioned") {
+    assert(declaration.canonical_type_identity.find(";native-cpu-variant:v1;")!=std::string::npos);
+    variants.insert(declaration.stable_id);families.insert(declaration.native_symbol_name);
+  }
+  assert(variants.size()==2 && families.size()==1);
+
+  auto check_ir=[&](const fs::path &path) {
+    const auto ir=Read(path);
+    assert(ir.find("ifunc i32")!=std::string::npos);
+    assert(ir.find(".resolver")!=std::string::npos);
+    assert(ir.find("+sse2")!=std::string::npos && ir.find("+sse4.2")!=std::string::npos);
+    assert(ir.find("\"min-legal-vector-width\"=\"128\"")!=std::string::npos);
+  };
+  auto ir=provider;ir.emit=EmitKind::LLVM;ir.output_path=(root/"provider.ll").string();Success(Compile(ir));check_ir(root/"provider.ll");
+  const auto interface=root/"TargetPolicy.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
+  assert(fs::remove(source));
+  for(const char *name:{"a","b"}) {
+    const auto input=root/(std::string("consumer-")+name+".mm");
+    Write(input,"extern \"C\" int check_"+std::string(name)+R"target((){
+      return TargetPolicy::specialized(41)!=42 || TargetPolicy::cloned(40)!=42 ||
+        TargetPolicy::generic(39)!=42 || TargetPolicy::Record().method(38)!=42 ||
+        TargetPolicy::external_caller(1)!=14 || TargetPolicy::default_only(37)!=42 ||
+        TargetPolicy::versioned(36)!=(__builtin_cpu_supports("sse4.2")?43:42);
+    })target");
+    auto consumer=request(input,root/(std::string(name)+".o"));
+    InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;
+    consumer.imported_interfaces={imported};Success(Compile(consumer));
+    consumer.emit=EmitKind::LLVM;consumer.output_path=(root/(std::string(name)+".ll")).string();Success(Compile(consumer));check_ir(root/(std::string(name)+".ll"));
+  }
+  const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a() || check_b();}");
+  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{});
+}
+
 }
 int main() {
   test::IsolatedCases cases;
@@ -142,5 +203,7 @@ int main() {
   }
   for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}})
     cases.Run(std::string("swift-")+standard+"-"+std::to_string(ownership),[&]{RunSwiftABI(root/(std::string("swift-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
+  for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}})
+    cases.Run(std::string("target-")+standard+"-"+std::to_string(ownership),[&]{RunTargetPolicy(root/(std::string("target-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
   return cases.Finish();
 }

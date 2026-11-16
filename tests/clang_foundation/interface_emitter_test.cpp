@@ -444,6 +444,8 @@ void TestNativeEmissionPolicyReplay() {
    int policy_data=17;
    int policy_read(const int *) __attribute__((section(".text.objc3.policy"),used,retain,noinline,no_sanitize("address","undefined"),disable_sanitizer_instrumentation,no_profile_instrument_function,no_instrument_function,no_stack_protector,nodebug));
    inline int policy_read(const int *value){return *value+policy_data;}
+   __attribute__((target("sse2"),min_vector_width(128),noinline)) inline int policy_target(int value){return value+1;}
+   __attribute__((target_clones("default","sse4.2"))) inline int policy_cloned(int value){return value+2;}
   )";
   auto emit=[&](const std::string &text) {
    auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-emission-policy.m");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -459,11 +461,11 @@ void TestNativeEmissionPolicyReplay() {
   const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
   auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
   assert(llvm::is_contained(decoded->required_semantics,std::string(kNativeEmissionPolicySemantic)));
-  auto older=supported;std::erase(older,llvm::StringRef(kNativeEmissionPolicySemantic));
+  auto older=supported;std::erase(older,llvm::StringRef(kNativeEmissionPolicySemantic));older.push_back("objc3.native-emission-policies.v1");
   auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
   std::erase(decoded->required_semantics,kNativeEmissionPolicySemantic);
   auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
-  for(const auto &[before,after]:std::vector<std::pair<std::string,std::string>>{{".text.objc3.policy",".text.objc3.other"},{".data.objc3.policy",".data.objc3.other"},{"\"address\",\"undefined\"","\"address\""},{"disable_sanitizer_instrumentation,",""},{"no_profile_instrument_function,",""},{"no_instrument_function,",""},{"no_stack_protector,",""},{",nodebug",""},{",weak",""},{"used,",""},{"retain,",""}}) {
+  for(const auto &[before,after]:std::vector<std::pair<std::string,std::string>>{{".text.objc3.policy",".text.objc3.other"},{".data.objc3.policy",".data.objc3.other"},{"\"address\",\"undefined\"","\"address\""},{"disable_sanitizer_instrumentation,",""},{"no_profile_instrument_function,",""},{"no_instrument_function,",""},{"no_stack_protector,",""},{",nodebug",""},{",weak",""},{"used,",""},{"retain,",""},{"target(\"sse2\")","target(\"sse4.2\")"},{"min_vector_width(128)","min_vector_width(64)"},{"\"default\",\"sse4.2\"","\"default\",\"popcnt\""}}) {
    auto changed=source;auto at=changed.find(before);assert(at!=std::string::npos);changed.replace(at,before.size(),after);
    assert(emit(changed).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
   }
@@ -2084,7 +2086,7 @@ void TestCOverloadableInterfaces() {
 
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      "__attribute__((target(\"sse4.2\"))) void *target_specific_api(void);\n",
+      "__attribute__((naked)) void unmodeled_naked_api(void);\n",
       {"-x", "c", "-std=c11", "--target=x86_64-unknown-linux-gnu"},
       "attributed_fixture.c");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());

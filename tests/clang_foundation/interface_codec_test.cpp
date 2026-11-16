@@ -87,7 +87,9 @@ int main() {
   // declarations, even when their marker and required-semantics list agree.
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
       {";native-storage-lifetime:v4;",kNativeStorageLifetimeSemantic},
-      {";borrowed-result-proofs:v5;",kBorrowedResultProofSemantic}}) {
+      {";borrowed-result-proofs:v5;",kBorrowedResultProofSemantic},
+      {";native-emission-policies:v2;",kNativeEmissionPolicySemantic},
+      {";native-cpu-variant:v1;",kNativeEmissionPolicySemantic}}) {
     auto invalid=*decoded;
     InterfaceDeclarationIdentity space{"c:@N@Bad","Namespace","A::Bad","namespace",{}};
     space.export_root="A::Bad";

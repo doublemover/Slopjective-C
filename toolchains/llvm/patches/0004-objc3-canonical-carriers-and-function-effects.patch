@@ -2901,7 +2901,6 @@ index 222881154..635cdf63d 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..9236af367 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2915,7 +2914,7 @@ index d743717ad..9236af367 100644
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTImporterSharedState.h"
  #include "clang/AST/ASTLambda.h"
-@@ -107,12 +111,15 @@ namespace clang {
+@@ -107,12 +111,15 @@
    template <class T>
    static SmallVector<Decl *, 2>
    getCanonicalForwardRedeclChain(Redeclarable<T> *D) {
@@ -2934,7 +2933,7 @@ index d743717ad..9236af367 100644
      std::reverse(Redecls.begin(), Redecls.end());
      return Redecls;
    }
-@@ -188,6 +195,7 @@ namespace clang {
+@@ -188,6 +195,7 @@
      // Use this to import pointers of specific type.
      template <typename ImportT>
      [[nodiscard]] Error importInto(ImportT *&To, ImportT *From) {
@@ -2942,7 +2941,7 @@ index d743717ad..9236af367 100644
        auto ToOrErr = Importer.Import(From);
        if (ToOrErr)
          To = cast_or_null<ImportT>(*ToOrErr);
-@@ -320,13 +328,22 @@ namespace clang {
+@@ -320,13 +328,22 @@
        DeclContext *ToDC = ToD->getDeclContext();
        DeclContext *ToLexicalDC = ToD->getLexicalDeclContext();
  
@@ -2967,7 +2966,7 @@ index d743717ad..9236af367 100644
          Visible = true;
        }
  
-@@ -516,6 +533,7 @@ namespace clang {
+@@ -516,6 +533,7 @@
      ExpectedDecl VisitEmptyDecl(EmptyDecl *D);
      ExpectedDecl VisitAccessSpecDecl(AccessSpecDecl *D);
      ExpectedDecl VisitStaticAssertDecl(StaticAssertDecl *D);
@@ -2975,7 +2974,7 @@ index d743717ad..9236af367 100644
      ExpectedDecl VisitCXXExpansionStmtDecl(CXXExpansionStmtDecl *D);
      ExpectedDecl VisitTranslationUnitDecl(TranslationUnitDecl *D);
      ExpectedDecl VisitFileScopeAsmDecl(FileScopeAsmDecl *D);
-@@ -530,7 +548,37 @@ namespace clang {
+@@ -530,7 +548,37 @@
      ExpectedDecl VisitEnumDecl(EnumDecl *D);
      ExpectedDecl VisitRecordDecl(RecordDecl *D);
      ExpectedDecl VisitEnumConstantDecl(EnumConstantDecl *D);
@@ -3013,7 +3012,7 @@ index d743717ad..9236af367 100644
      ExpectedDecl VisitCXXMethodDecl(CXXMethodDecl *D);
      ExpectedDecl VisitCXXConstructorDecl(CXXConstructorDecl *D);
      ExpectedDecl VisitCXXDestructorDecl(CXXDestructorDecl *D);
-@@ -592,6 +640,14 @@ namespace clang {
+@@ -592,6 +640,14 @@
      ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
      ExpectedStmt VisitLabelStmt(LabelStmt *S);
      ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
@@ -3028,7 +3027,7 @@ index d743717ad..9236af367 100644
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -602,6 +658,11 @@ namespace clang {
+@@ -602,6 +658,11 @@
      ExpectedStmt VisitContinueStmt(ContinueStmt *S);
      ExpectedStmt VisitBreakStmt(BreakStmt *S);
      ExpectedStmt VisitReturnStmt(ReturnStmt *S);
@@ -3040,7 +3039,7 @@ index d743717ad..9236af367 100644
      // FIXME: MSAsmStmt
      // FIXME: SEHExceptStmt
      // FIXME: SEHFinallyStmt
-@@ -627,6 +688,18 @@ namespace clang {
+@@ -627,6 +688,18 @@
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
@@ -3059,7 +3058,7 @@ index d743717ad..9236af367 100644
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -644,6 +717,7 @@ namespace clang {
+@@ -644,6 +717,7 @@
      ExpectedStmt VisitCharacterLiteral(CharacterLiteral *E);
      ExpectedStmt VisitStringLiteral(StringLiteral *E);
      ExpectedStmt VisitCompoundLiteralExpr(CompoundLiteralExpr *E);
@@ -3067,7 +3066,7 @@ index d743717ad..9236af367 100644
      ExpectedStmt VisitAtomicExpr(AtomicExpr *E);
      ExpectedStmt VisitAddrLabelExpr(AddrLabelExpr *E);
      ExpectedStmt VisitConstantExpr(ConstantExpr *E);
-@@ -677,6 +751,7 @@ namespace clang {
+@@ -677,6 +751,7 @@
      ExpectedStmt VisitCXXDeleteExpr(CXXDeleteExpr *E);
      ExpectedStmt VisitCXXConstructExpr(CXXConstructExpr *E);
      ExpectedStmt VisitCXXMemberCallExpr(CXXMemberCallExpr *E);
@@ -3075,7 +3074,7 @@ index d743717ad..9236af367 100644
      ExpectedStmt VisitCXXDependentScopeMemberExpr(CXXDependentScopeMemberExpr *E);
      ExpectedStmt VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr *E);
      ExpectedStmt VisitCXXUnresolvedConstructExpr(CXXUnresolvedConstructExpr *E);
-@@ -705,6 +780,7 @@ namespace clang {
+@@ -705,6 +780,7 @@
      ExpectedStmt
      VisitSubstNonTypeTemplateParmPackExpr(SubstNonTypeTemplateParmPackExpr *E);
      ExpectedStmt VisitPseudoObjectExpr(PseudoObjectExpr *E);
@@ -3083,7 +3082,7 @@ index d743717ad..9236af367 100644
      ExpectedStmt VisitCXXParenListInitExpr(CXXParenListInitExpr *E);
      ExpectedStmt VisitCXXExpansionSelectExpr(CXXExpansionSelectExpr *E);
  
-@@ -1426,6 +1502,39 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -1426,6 +1502,39 @@
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -3123,7 +3122,7 @@ index d743717ad..9236af367 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1613,6 +1722,11 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1613,6 +1722,11 @@
    Error Err = Error::success();
    FunctionProtoType::ExtProtoInfo ToEPI;
    ToEPI.ExtInfo = FromEPI.ExtInfo;
@@ -3135,7 +3134,7 @@ index d743717ad..9236af367 100644
    ToEPI.Variadic = FromEPI.Variadic;
    ToEPI.HasTrailingReturn = FromEPI.HasTrailingReturn;
    ToEPI.TypeQuals = FromEPI.TypeQuals;
-@@ -1626,6 +1740,43 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1740,43 @@
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -3179,7 +3178,7 @@ index d743717ad..9236af367 100644
    if (Err)
      return std::move(Err);
  
-@@ -1821,6 +1972,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
+@@ -1821,6 +1972,13 @@
    if (!ToEquivalentTypeOrErr)
      return ToEquivalentTypeOrErr.takeError();
  
@@ -3193,7 +3192,7 @@ index d743717ad..9236af367 100644
    return Importer.getToContext().getAttributedType(
        T->getAttrKind(), *ToModifiedTypeOrErr, *ToEquivalentTypeOrErr,
        T->getAttr());
-@@ -2434,6 +2592,26 @@ ASTNodeImporter::ImportDeclContext(DeclContext *FromDC, bool ForceImport) {
+@@ -2434,6 +2592,26 @@
                                                  ImportedOrErr.takeError());
    }
  
@@ -3220,7 +3219,7 @@ index d743717ad..9236af367 100644
    return ChildErrors;
  }
  
-@@ -2472,6 +2650,7 @@ Error ASTNodeImporter::ImportFieldDeclDefinition(const FieldDecl *From,
+@@ -2472,6 +2650,7 @@
  
  Error ASTNodeImporter::ImportDeclContext(
      Decl *FromD, DeclContext *&ToDC, DeclContext *&ToLexicalDC) {
@@ -3228,7 +3227,7 @@ index d743717ad..9236af367 100644
    auto ToDCOrErr = Importer.ImportContext(FromD->getDeclContext());
    if (!ToDCOrErr)
      return ToDCOrErr.takeError();
-@@ -2517,7 +2696,7 @@ static Error setTypedefNameForAnonDecl(TagDecl *From, TagDecl *To,
+@@ -2517,7 +2696,7 @@
  
  Error ASTNodeImporter::ImportDefinition(
      RecordDecl *From, RecordDecl *To, ImportDefinitionKind Kind) {
@@ -3237,7 +3236,7 @@ index d743717ad..9236af367 100644
      // There are cases in LLDB when we first import a class without its
      // members. The class will have DefinitionData, but no members. Then,
      // importDefinition is called from LLDB, which tries to get the members, so
-@@ -2526,6 +2705,19 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2526,6 +2705,19 @@
      // definition.
      To->setCompleteDefinition(false);
      To->completeDefinition();
@@ -3257,7 +3256,7 @@ index d743717ad..9236af367 100644
    };
  
    if (To->getDefinition() || To->isBeingDefined()) {
-@@ -2537,6 +2729,12 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2537,6 +2729,12 @@
          (To->isLambda() && shouldForceImportDeclContext(Kind))) {
        if (To->isLambda()) {
          auto *FromCXXRD = cast<CXXRecordDecl>(From);
@@ -3270,7 +3269,7 @@ index d743717ad..9236af367 100644
          SmallVector<LambdaCapture, 8> ToCaptures;
          ToCaptures.reserve(FromCXXRD->capture_size());
          for (const auto &FromCapture : FromCXXRD->captures()) {
-@@ -2559,6 +2757,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2757,26 @@
      return Error::success();
    }
  
@@ -3297,7 +3296,7 @@ index d743717ad..9236af367 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -2899,6 +3117,47 @@ ExpectedDecl ASTNodeImporter::VisitStaticAssertDecl(StaticAssertDecl *D) {
+@@ -2899,6 +3117,47 @@
    return ToD;
  }
  
@@ -3345,7 +3344,7 @@ index d743717ad..9236af367 100644
  ExpectedDecl
  ASTNodeImporter::VisitCXXExpansionStmtDecl(CXXExpansionStmtDecl *D) {
    auto DCOrErr = Importer.ImportContext(D->getDeclContext());
-@@ -2938,6 +3197,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2938,6 +3197,13 @@
    if (ToD)
      return ToD;
  
@@ -3359,7 +3358,7 @@ index d743717ad..9236af367 100644
    NamespaceDecl *MergeWithNamespace = nullptr;
    if (!Name) {
      // This is an anonymous namespace. Adopt an existing anonymous
-@@ -2983,12 +3249,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2983,12 +3249,13 @@
      return RBraceLocOrErr.takeError();
  
    // Create the "to" namespace, if needed.
@@ -3375,7 +3374,7 @@ index d743717ad..9236af367 100644
        return ToNamespace;
      ToNamespace->setRBraceLoc(*RBraceLocOrErr);
      ToNamespace->setLexicalDeclContext(LexicalDC);
-@@ -2996,7 +3263,7 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2996,7 +3263,7 @@
  
      // If this is an anonymous namespace, register it as the anonymous
      // namespace within its context.
@@ -3384,7 +3383,7 @@ index d743717ad..9236af367 100644
        if (auto *TU = dyn_cast<TranslationUnitDecl>(DC))
          TU->setAnonymousNamespace(ToNamespace);
        else
-@@ -3004,6 +3271,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -3004,6 +3271,13 @@
      }
    }
    Importer.MapImported(D, ToNamespace);
@@ -3398,7 +3397,7 @@ index d743717ad..9236af367 100644
  
    if (Error Err = ImportDeclContext(D))
      return std::move(Err);
-@@ -3085,7 +3359,18 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
+@@ -3085,7 +3359,18 @@
  
          QualType FromUT = D->getUnderlyingType();
          QualType FoundUT = FoundTypedef->getUnderlyingType();
@@ -3418,7 +3417,7 @@ index d743717ad..9236af367 100644
            // If the underlying declarations are unnamed records these can be
            // imported as different types. We should create a distinct typedef
            // node in this case.
-@@ -3222,6 +3507,8 @@ ASTNodeImporter::VisitTypeAliasTemplateDecl(TypeAliasTemplateDecl *D) {
+@@ -3222,6 +3507,8 @@
      return ToAlias;
  
    ToTemplatedDecl->setDescribedAliasTemplate(ToAlias);
@@ -3427,7 +3426,7 @@ index d743717ad..9236af367 100644
  
    ToAlias->setAccess(D->getAccess());
    ToAlias->setLexicalDeclContext(LexicalDC);
-@@ -3400,6 +3687,24 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3400,6 +3687,24 @@
    if (ToD)
      return ToD;
  
@@ -3452,7 +3451,7 @@ index d743717ad..9236af367 100644
    // Figure out what structure name we're looking for.
    unsigned IDNS = Decl::IDNS_Tag;
    DeclarationName SearchName = Name;
-@@ -3417,7 +3722,16 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3417,7 +3722,16 @@
  
    // We may already have a record of the same name; try to find and match it.
    RecordDecl *PrevDecl = nullptr;
@@ -3470,7 +3469,7 @@ index d743717ad..9236af367 100644
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      auto FoundDecls =
          Importer.findDeclsInToCtx(DC, SearchName);
-@@ -3438,6 +3752,19 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3438,6 +3752,19 @@
            Found = Tag->getDecl();
        }
  
@@ -3490,7 +3489,7 @@ index d743717ad..9236af367 100644
        if (auto *FoundRecord = dyn_cast<RecordDecl>(Found)) {
          // Do not emit false positive diagnostic in case of unnamed
          // struct/union and in case of anonymous structs.  Would be false
-@@ -3456,6 +3783,14 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3456,6 +3783,14 @@
            continue;
  
          if (IsStructuralMatch(D, FoundRecord)) {
@@ -3505,7 +3504,7 @@ index d743717ad..9236af367 100644
            RecordDecl *FoundDef = FoundRecord->getDefinition();
            if (D->isThisDeclarationADefinition() && FoundDef) {
              // FIXME: Structural equivalence check should check for same
-@@ -3463,9 +3798,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3463,9 +3798,7 @@
              Importer.MapImported(D, FoundDef);
              if (const auto *DCXX = dyn_cast<CXXRecordDecl>(D)) {
                auto *FoundCXX = dyn_cast<CXXRecordDecl>(FoundDef);
@@ -3516,7 +3515,7 @@ index d743717ad..9236af367 100644
                  // FoundDef may not have every implicit method that D has
                  // because implicit methods are created only if they are used.
                  if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
-@@ -3525,6 +3858,13 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3525,6 +3858,13 @@
      }
  
      D2 = D2CXX;
@@ -3530,7 +3529,7 @@ index d743717ad..9236af367 100644
      D2->setAccess(D->getAccess());
      D2->setLexicalDeclContext(LexicalDC);
      addDeclToContexts(D, D2);
-@@ -3572,6 +3912,8 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3572,6 +3912,8 @@
    else
      return QualifierLocOrErr.takeError();
  
@@ -3539,7 +3538,7 @@ index d743717ad..9236af367 100644
    if (D->isAnonymousStructOrUnion())
      D2->setAnonymousStructOrUnion(true);
  
-@@ -3996,6 +4338,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
+@@ -3996,6 +4338,72 @@
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -3612,7 +3611,7 @@ index d743717ad..9236af367 100644
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4020,6 +4428,14 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4020,6 +4428,14 @@
      return ToD;
  
    FunctionDecl *FoundByLookup = nullptr;
@@ -3627,7 +3626,7 @@ index d743717ad..9236af367 100644
    FunctionTemplateDecl *FromFT = D->getDescribedFunctionTemplate();
  
    // If this is a function template specialization, then try to find the same
-@@ -4040,7 +4456,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4040,7 +4456,7 @@
    }
    // Try to find a function in our own ("to") context with the same name, same
    // type, and in the same context as the function we're importing.
@@ -3636,9 +3635,32 @@ index d743717ad..9236af367 100644
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary | Decl::IDNS_OrdinaryFriend;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4052,7 +4468,52 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4051,8 +4467,75 @@
+       if (auto *FoundFunction = dyn_cast<FunctionDecl>(FoundDecl)) {
          if (!hasSameVisibilityContextAndLinkage(FoundFunction, D))
            continue;
++        auto Target = [](const FunctionDecl *Function) -> const TargetAttr * {
++          for (const auto *Redecl : Function->redecls())
++            if (const auto *A=Redecl->getAttr<TargetAttr>()) return A;
++          return nullptr;
++        };
++        const auto *FromTarget=Target(D), *ToTarget=Target(FoundFunction);
++        const auto *FromClones=D->getAttr<TargetClonesAttr>();
++        const auto *ToClones=FoundFunction->getAttr<TargetClonesAttr>();
++        if ((FromTarget && ToClones) || (FromClones && ToTarget))
++          return make_error<ASTImportError>(ASTImportError::NameConflict);
++        if (FromClones && ToClones &&
++            (FromClones->featuresStrs_size()!=ToClones->featuresStrs_size() ||
++             !std::equal(FromClones->featuresStrs_begin(),FromClones->featuresStrs_end(),
++                         ToClones->featuresStrs_begin())))
++          return make_error<ASTImportError>(ASTImportError::NameConflict);
++        if (FromTarget && ToTarget &&
++            FromTarget->getFeaturesStr()!=ToTarget->getFeaturesStr()) {
++          // Separate explicit target bodies have identical ordinary types and
++          // native USRs. They are distinct multiversion variants, not redecls.
++          if (D->isMultiVersion() && FoundFunction->isMultiVersion()) continue;
++          return make_error<ASTImportError>(ASTImportError::NameConflict);
++        }
  
 -        if (IsStructuralMatch(D, FoundFunction)) {
 +        // The native function type now retains the borrowed-result owner.
@@ -3690,7 +3712,7 @@ index d743717ad..9236af367 100644
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
            FoundByLookup = FoundFunction;
-@@ -4105,9 +4566,36 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4105,9 +4588,36 @@
                                   FoundByLookup->getDescribedFunctionTemplate());
            }
            return Importer.MapImported(D, FoundByLookup);
@@ -3730,7 +3752,7 @@ index d743717ad..9236af367 100644
          }
        }
      }
-@@ -4120,6 +4608,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4630,7 @@
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -3738,22 +3760,20 @@ index d743717ad..9236af367 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4169,11 +4658,63 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4169,12 +4680,64 @@
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToDefaultLoc = importChecked(Err, D->getDefaultLoc());
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
 -  AssociatedConstraint TrailingRequiresClause = D->getTrailingRequiresClause();
 -  TrailingRequiresClause.ConstraintExpr =
 -      importChecked(Err, TrailingRequiresClause.ConstraintExpr);
--  if (Err)
--    return std::move(Err);
 +  // A requires-expression body belongs to this function. Importing its
 +  // context before the function has a mapping recursively imports the same
 +  // constraint. Create the function first, then restore its complete clause.
 +  AssociatedConstraint TrailingRequiresClause;
-+  if (Err)
-+    return std::move(Err);
-+
+   if (Err)
+     return std::move(Err);
+ 
 +  // The declaration import path uses a trivial function TypeSourceInfo to
 +  // avoid declaration/type cycles. Restore effect locations and the typed
 +  // payload TypeSourceInfo from the original spelling after importing it.
@@ -3804,10 +3824,11 @@ index d743717ad..9236af367 100644
 +      ToFPTL.setObjC3ThrowsPayloadInfo(ToPayloadInfo);
 +    }
 +  }
- 
++
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
-@@ -4284,12 +4825,17 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+   for (auto *P : D->parameters()) {
+@@ -4284,12 +4847,20 @@
    ToFunction->setQualifierInfo(ToQualifierLoc);
    ToFunction->setAccess(D->getAccess());
    ToFunction->setLexicalDeclContext(LexicalDC);
@@ -3816,6 +3837,9 @@ index d743717ad..9236af367 100644
    ToFunction->setVirtualAsWritten(D->isVirtualAsWritten());
    ToFunction->setTrivial(D->isTrivial());
 +  ToFunction->setTrivialForCall(D->isTrivialForCall());
++  // Target-clone dispatch is declaration state, not just an imported attribute.
++  // Keep the shared canonical flag when importing into an existing forward.
++  if (D->isMultiVersion()) ToFunction->setIsMultiVersion();
 +  if (D->isInlined() && !D->isInlineSpecified())
 +    ToFunction->setImplicitlyInline();
    ToFunction->setIsPureVirtual(D->isPureVirtual());
@@ -3826,7 +3850,7 @@ index d743717ad..9236af367 100644
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -4330,6 +4876,36 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4330,6 +4901,36 @@
    }
    ToFunction->setParams(Parameters);
  
@@ -3863,7 +3887,7 @@ index d743717ad..9236af367 100644
    // We need to complete creation of FunctionProtoTypeLoc manually with setting
    // params it refers to.
    if (TInfo) {
-@@ -4386,9 +4962,16 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4386,9 +4987,16 @@
        ToFunction->setType(*TyOrErr);
      else
        return TyOrErr.takeError();
@@ -3882,7 +3906,7 @@ index d743717ad..9236af367 100644
        return TSIOrErr.takeError();
    }
  
-@@ -4440,6 +5023,17 @@ ExpectedDecl ASTNodeImporter::VisitFieldDecl(FieldDecl *D) {
+@@ -4440,6 +5048,17 @@
  
    // Determine whether we've already imported this field.
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
@@ -3900,7 +3924,7 @@ index d743717ad..9236af367 100644
    for (auto *FoundDecl : FoundDecls) {
      if (FieldDecl *FoundField = dyn_cast<FieldDecl>(FoundDecl)) {
        // For anonymous fields, match up by index.
-@@ -4505,6 +5099,14 @@ ExpectedDecl ASTNodeImporter::VisitFieldDecl(FieldDecl *D) {
+@@ -4505,6 +5124,14 @@
    ToField->setAccess(D->getAccess());
    ToField->setLexicalDeclContext(LexicalDC);
    ToField->setImplicit(D->isImplicit());
@@ -3915,7 +3939,7 @@ index d743717ad..9236af367 100644
    if (ToCapturedVLAType)
      ToField->setCapturedVLAType(cast<VariableArrayType>(ToCapturedVLAType));
    LexicalDC->addDeclInternal(ToField);
-@@ -4793,7 +5395,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4793,7 +5420,11 @@
    // Try to find a variable in our own ("to") context with the same name and
    // in the same context as the variable we're importing.
    VarDecl *FoundByLookup = nullptr;
@@ -3928,7 +3952,7 @@ index d743717ad..9236af367 100644
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4802,6 +5408,10 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4802,6 +5433,10 @@
          continue;
  
        if (auto *FoundVar = dyn_cast<VarDecl>(FoundDecl)) {
@@ -3939,7 +3963,7 @@ index d743717ad..9236af367 100644
          if (!hasSameVisibilityContextAndLinkage(FoundVar, D))
            continue;
          if (Importer.IsStructurallyEquivalent(D->getType(),
-@@ -4897,9 +5507,15 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4897,9 +5532,15 @@
    }
  
    ToVar->setTSCSpec(D->getTSCSpec());
@@ -3955,7 +3979,7 @@ index d743717ad..9236af367 100644
    if (D->isInlineSpecified())
      ToVar->setInlineSpecified();
    if (D->isInline())
-@@ -4910,6 +5526,15 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4910,6 +5551,15 @@
      ToVar->setPreviousDecl(Recent);
    }
  
@@ -3971,7 +3995,7 @@ index d743717ad..9236af367 100644
    // Import the described template, if any.
    if (D->getDescribedVarTemplate()) {
      auto ToVTOrErr = import(D->getDescribedVarTemplate());
-@@ -4931,6 +5556,23 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4931,6 +5581,23 @@
    if (Error Err = ImportInitializer(D, ToVar))
      return std::move(Err);
  
@@ -3995,7 +4019,7 @@ index d743717ad..9236af367 100644
    if (D->isConstexpr())
      ToVar->setConstexpr(true);
  
-@@ -5062,6 +5704,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5729,19 @@
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -4015,7 +4039,7 @@ index d743717ad..9236af367 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5779,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5804,7 @@
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -4023,7 +4047,7 @@ index d743717ad..9236af367 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5794,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5819,8 @@
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -4032,7 +4056,7 @@ index d743717ad..9236af367 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5461,6 +6119,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
+@@ -5461,6 +6144,7 @@
      return std::move(Err);
    if (ToD)
      return ToD;
@@ -4040,7 +4064,7 @@ index d743717ad..9236af367 100644
  
    Error Err = Error::success();
    auto ToLoc = importChecked(Err, D->getNameInfo().getLoc());
-@@ -5468,28 +6127,59 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
+@@ -5468,28 +6152,59 @@
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
    if (Err)
      return std::move(Err);
@@ -4108,7 +4132,7 @@ index d743717ad..9236af367 100644
  
    return ImportUsingShadowDecls(D, ToUsing);
  }
-@@ -5517,6 +6207,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
+@@ -5517,6 +6232,7 @@
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -4116,7 +4140,7 @@ index d743717ad..9236af367 100644
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5685,6 +6376,21 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingValueDecl(
+@@ -5685,6 +6401,21 @@
    if (Error Err = ImportDeclarationNameLoc(D->getNameInfo(), NameInfo))
      return std::move(Err);
  
@@ -4138,15 +4162,15 @@ index d743717ad..9236af367 100644
    UnresolvedUsingValueDecl *ToUsingValue;
    if (GetImportedOrCreateDecl(ToUsingValue, D, Importer.getToContext(), DC,
                                ToUsingLoc, ToQualifierLoc, NameInfo,
-@@ -5723,6 +6429,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
-                               ToQualifierLoc, Loc, Name, ToEllipsisLoc))
+@@ -5724,6 +6455,7 @@
      return ToUsing;
  
-+  ToUsing->setAccess(D->getAccess());
    ToUsing->setAccess(D->getAccess());
++  ToUsing->setAccess(D->getAccess());
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
-@@ -5904,6 +6611,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
+ 
+@@ -5904,6 +6636,15 @@
        break;
    }
  
@@ -4162,7 +4186,7 @@ index d743717ad..9236af367 100644
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6792,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
+@@ -6076,6 +6817,9 @@
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -4172,7 +4196,7 @@ index d743717ad..9236af367 100644
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6458,11 +7177,12 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+@@ -6458,11 +7202,12 @@
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -4186,7 +4210,7 @@ index d743717ad..9236af367 100644
    updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
    if (FoundByLookup) {
-@@ -6489,6 +7209,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+@@ -6489,6 +7234,8 @@
      D2->setPreviousDecl(Recent);
    }
  
@@ -4195,7 +4219,7 @@ index d743717ad..9236af367 100644
    return D2;
  }
  
-@@ -6497,6 +7219,9 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateSpecializationDecl(
+@@ -6497,6 +7244,9 @@
    ClassTemplateDecl *ClassTemplate;
    if (Error Err = importInto(ClassTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4205,7 +4229,7 @@ index d743717ad..9236af367 100644
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6508,6 +7233,7 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateSpecializationDecl(
+@@ -6508,6 +7258,7 @@
    if (Error Err =
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
@@ -4213,7 +4237,7 @@ index d743717ad..9236af367 100644
    // Try to find an existing specialization with these template arguments and
    // template parameter list.
    void *InsertPos = nullptr;
-@@ -6711,6 +7437,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6711,6 +7462,11 @@
    SmallVector<NamedDecl *, 4> ConflictingDecls;
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
    VarTemplateDecl *FoundByLookup = nullptr;
@@ -4225,7 +4249,7 @@ index d743717ad..9236af367 100644
    for (auto *FoundDecl : FoundDecls) {
      if (!FoundDecl->isInIdentifierNamespace(Decl::IDNS_Ordinary))
        continue;
-@@ -6740,6 +7471,15 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6740,6 +7496,15 @@
          break;
        }
        ConflictingDecls.push_back(FoundDecl);
@@ -4241,7 +4265,7 @@ index d743717ad..9236af367 100644
      }
    }
  
-@@ -6777,10 +7517,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6777,10 +7542,11 @@
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -4254,7 +4278,7 @@ index d743717ad..9236af367 100644
    if (DC != Importer.getToContext().getTranslationUnitDecl())
      updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
-@@ -6796,6 +7537,7 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6796,6 +7562,7 @@
      ToVarTD->setPreviousDecl(Recent);
    }
  
@@ -4262,7 +4286,7 @@ index d743717ad..9236af367 100644
    return ToVarTD;
  }
  
-@@ -6818,6 +7560,9 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6818,6 +7585,9 @@
    VarTemplateDecl *VarTemplate = nullptr;
    if (Error Err = importInto(VarTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4272,7 +4296,7 @@ index d743717ad..9236af367 100644
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6839,10 +7584,21 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6839,10 +7609,21 @@
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
  
@@ -4298,7 +4322,7 @@ index d743717ad..9236af367 100644
    if (FoundSpecialization) {
      if (IsStructuralMatch(D, FoundSpecialization)) {
        VarDecl *FoundDef = FoundSpecialization->getDefinition();
-@@ -6879,13 +7635,9 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6879,13 +7660,9 @@
    using PartVarSpecDecl = VarTemplatePartialSpecializationDecl;
    // Create a new specialization.
    if (auto *FromPartial = dyn_cast<PartVarSpecDecl>(D)) {
@@ -4313,7 +4337,7 @@ index d743717ad..9236af367 100644
                                  VarTemplate, QualType(), nullptr,
                                  D->getStorageClass(), TemplateArgs))
        return ToPartial;
-@@ -6914,8 +7666,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6914,8 +7691,11 @@
  
    // Update InsertPos, because preceding import calls may have invalidated
    // it by adding new specializations.
@@ -4327,7 +4351,7 @@ index d743717ad..9236af367 100644
  
    QualType T;
    if (Error Err = importInto(T, D->getType()))
-@@ -6935,6 +7690,10 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6935,6 +7715,10 @@
    }
  
    D2->setSpecializationKind(D->getSpecializationKind());
@@ -4338,7 +4362,7 @@ index d743717ad..9236af367 100644
  
    if (D->getTemplateArgsAsWritten())
      D2->setTemplateArgsAsWritten(ToTAInfo);
-@@ -6948,6 +7707,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+@@ -6948,6 +7732,8 @@
      D2->setConstexpr(true);
  
    D2->setAccess(D->getAccess());
@@ -4347,7 +4371,7 @@ index d743717ad..9236af367 100644
  
    if (Error Err = ImportInitializer(D, D2))
      return std::move(Err);
-@@ -6995,7 +7756,10 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -6995,7 +7781,10 @@
        if (auto *FoundTemplate = dyn_cast<FunctionTemplateDecl>(FoundDecl)) {
          if (!hasSameVisibilityContextAndLinkage(FoundTemplate, D))
            continue;
@@ -4359,7 +4383,7 @@ index d743717ad..9236af367 100644
            FunctionTemplateDecl *TemplateWithDef =
                getTemplateDefinition(FoundTemplate);
            if (D->isThisDeclarationADefinition() && TemplateWithDef)
-@@ -7051,17 +7815,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7051,17 +7840,13 @@
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -4381,7 +4405,7 @@ index d743717ad..9236af367 100644
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7836,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7076,6 +7861,15 @@
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -4397,7 +4421,7 @@ index d743717ad..9236af367 100644
    return ToFunc;
  }
  
-@@ -7111,7 +7880,10 @@ ASTNodeImporter::VisitRequiresExprBodyDecl(RequiresExprBodyDecl *D) {
+@@ -7111,7 +7905,10 @@
    if (GetImportedOrCreateDecl(To, D, Importer.getToContext(), DC, RequiresLoc))
      return To;
    To->setLexicalDeclContext(LexicalDC);
@@ -4409,7 +4433,7 @@ index d743717ad..9236af367 100644
    return To;
  }
  
-@@ -7328,6 +8100,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +8125,97 @@
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -4507,7 +4531,7 @@ index d743717ad..9236af367 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +8348,93 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
+@@ -7485,6 +8373,93 @@
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -4601,7 +4625,7 @@ index d743717ad..9236af367 100644
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8725,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8750,178 @@
                  E->getVarargABI());
  }
  
@@ -4780,7 +4804,7 @@ index d743717ad..9236af367 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +9206,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +9231,16 @@
                                 ToLocations);
  }
  
@@ -4797,7 +4821,7 @@ index d743717ad..9236af367 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8132,13 +9264,22 @@ ExpectedStmt ASTNodeImporter::VisitAddrLabelExpr(AddrLabelExpr *E) {
+@@ -8132,13 +9289,22 @@
        ToAmpAmpLoc, ToLabelLoc, ToLabel, ToType);
  }
  ExpectedStmt ASTNodeImporter::VisitConstantExpr(ConstantExpr *E) {
@@ -4827,7 +4851,7 @@ index d743717ad..9236af367 100644
  }
  ExpectedStmt ASTNodeImporter::VisitParenExpr(ParenExpr *E) {
    Error Err = Error::success();
-@@ -8835,6 +9976,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +10001,53 @@
                                     E->getFPFeatures());
  }
  
@@ -4881,7 +4905,7 @@ index d743717ad..9236af367 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9082,7 +10270,9 @@ ASTNodeImporter::VisitUnresolvedLookupExpr(UnresolvedLookupExpr *E) {
+@@ -9082,7 +10295,9 @@
  ExpectedStmt
  ASTNodeImporter::VisitUnresolvedMemberExpr(UnresolvedMemberExpr *E) {
    Error Err = Error::success();
@@ -4892,7 +4916,7 @@ index d743717ad..9236af367 100644
    auto ToOperatorLoc = importChecked(Err, E->getOperatorLoc());
    auto ToQualifierLoc = importChecked(Err, E->getQualifierLoc());
    auto ToTemplateKeywordLoc = importChecked(Err, E->getTemplateKeywordLoc());
-@@ -9163,6 +10353,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
+@@ -9163,6 +10378,16 @@
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -4909,7 +4933,7 @@ index d743717ad..9236af367 100644
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10652,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
+@@ -9452,6 +10677,14 @@
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -4924,7 +4948,7 @@ index d743717ad..9236af367 100644
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10705,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+@@ -9497,6 +10730,21 @@
        E->getIndex(), E->getFinal());
  }
  
@@ -4946,7 +4970,7 @@ index d743717ad..9236af367 100644
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10887,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10912,12 @@
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -4961,7 +4985,7 @@ index d743717ad..9236af367 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10942,211 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10967,211 @@
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -5174,7 +5198,7 @@ index d743717ad..9236af367 100644
  }
  
  namespace {
-@@ -9857,6 +11288,69 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +11313,69 @@
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -5244,7 +5268,7 @@ index d743717ad..9236af367 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -9880,6 +11374,14 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9880,6 +11399,14 @@
      break;
    }
  
@@ -5259,7 +5283,7 @@ index d743717ad..9236af367 100644
    case attr::EnableIf: {
      const auto *From = cast<EnableIfAttr>(FromAttr);
      AI.importAttr(From, AI.importArg(From->getCond()).value(),
-@@ -10123,12 +11625,62 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,12 +11650,62 @@
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -5326,7 +5350,7 @@ index d743717ad..9236af367 100644
          return ToAttrOrErr.takeError();
      }
  
-@@ -10571,6 +12123,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +12148,12 @@
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -5339,7 +5363,7 @@ index d743717ad..9236af367 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +12139,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +12164,9 @@
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -5351,7 +5375,7 @@ index d743717ad..9236af367 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +12151,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +12176,9 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5363,7 +5387,7 @@ index d743717ad..9236af367 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +12163,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +12188,17 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5385,7 +5409,7 @@ index d743717ad..9236af367 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -10823,6 +12381,8 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10823,6 +12406,8 @@
      ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
                 ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
                 FromValue.getArrayInitializedElts());
@@ -5394,7 +5418,7 @@ index d743717ad..9236af367 100644
      break;
    case APValue::Struct:
      Result.MakeStruct(FromValue.getStructNumBases(),
-@@ -10838,7 +12398,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10838,7 +12423,7 @@
      APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
      if (Err)
        return std::move(Err);
@@ -5403,7 +5427,7 @@ index d743717ad..9236af367 100644
      break;
    }
    case APValue::AddrLabelDiff: {
-@@ -10858,10 +12418,10 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10858,10 +12443,10 @@
        return std::move(Err);
      MutableArrayRef<const CXXRecordDecl *> ToPath =
          Result.setMemberPointerUninit(
@@ -5416,7 +5440,7 @@ index d743717ad..9236af367 100644
      for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
           Idx++) {
        const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
-@@ -10912,7 +12472,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+@@ -10912,7 +12497,7 @@
        }
      }
      CharUnits Offset = FromValue.getLValueOffset();
@@ -5425,7 +5449,7 @@ index d743717ad..9236af367 100644
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11006,6 +12566,11 @@ Decl *ASTImporter::MapImported(Decl *From, Decl *To) {
+@@ -11006,6 +12591,11 @@
    // This mapping should be maintained only in this function. Therefore do not
    // check for additional consistency.
    ImportedFromDecls[To] = From;
@@ -5437,7 +5461,7 @@ index d743717ad..9236af367 100644
    // In the case of TypedefNameDecl we create the Decl first and only then we
    // import and set its DeclContext. So, the DC is still not set when we reach
    // here from GetImportedOrCreateDecl.
-@@ -11049,3 +12614,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +12639,16 @@
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -5454,6 +5478,7 @@ index d743717ad..9236af367 100644
 +  return new (Importer.getToContext())
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
+
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
 index e0b62591a..2ad8208b6 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
@@ -6384,7 +6409,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +    if (A->isImplicit() ||
 +        (A->isInherited() &&
 +         !(Policy.PolishForDeclaration &&
-+           isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
++           isa<TargetAttr, TargetClonesAttr, MinVectorWidthAttr, SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SwiftCallAttr, SwiftAsyncCallAttr, SwiftContextAttr, SwiftAsyncContextAttr, SwiftErrorResultAttr, SwiftIndirectResultAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
@@ -6409,7 +6434,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +    // native attributes when printing a reusable declaration contract.
 +    const auto *SPI = dyn_cast<AnnotateAttr>(A);
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
-+        !isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
++        !isa<TargetAttr, TargetClonesAttr, MinVectorWidthAttr, SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SwiftCallAttr, SwiftAsyncCallAttr, SwiftContextAttr, SwiftAsyncContextAttr, SwiftErrorResultAttr, SwiftIndirectResultAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
@@ -6487,14 +6512,14 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +        // location. Its canonical position must not move on the next replay.
 +        APos = AttrPosAsWritten::Right;
 +      if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) && isa<FunctionDecl>(D) &&
-+          isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, SentinelAttr, CallbackAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr,
++          isa<TargetAttr, TargetClonesAttr, MinVectorWidthAttr, SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, SentinelAttr, CallbackAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr,
 +              NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SwiftCallAttr, SwiftAsyncCallAttr, SwiftContextAttr, SwiftAsyncContextAttr, SwiftErrorResultAttr, SwiftIndirectResultAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +              ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr,
 +              CXX11NoReturnAttr, VisibilityAttr>(A))
 +        APos = AttrPosAsWritten::Left;
 +      if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) && isa<VarDecl>(D) &&
-+          isa<SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr>(A))
++          isa<TargetAttr, TargetClonesAttr, MinVectorWidthAttr, SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr>(A))
 +        APos = AttrPosAsWritten::Left;
        assert(APos != AttrPosAsWritten::Default &&
               "Default not a valid for an attribute location");
@@ -11048,7 +11073,6 @@ index 000000000..f4be4eda0
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..2ab82b1c7 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,6 +10,10 @@
@@ -11073,7 +11097,7 @@ index 6a25a799a..2ab82b1c7 100644
  #include "clang/AST/Randstruct.h"
  #include "clang/AST/StmtCXX.h"
  #include "clang/AST/Type.h"
-@@ -429,6 +437,7 @@ ParsedType Sema::getTypeName(const IdentifierInfo &II, SourceLocation NameLoc,
+@@ -429,6 +437,7 @@
      return nullptr;
    case LookupResultKind::NotFoundInCurrentInstantiation:
      if (AllowImplicitTypename == ImplicitTypenameContext::Yes) {
@@ -11081,7 +11105,7 @@ index 6a25a799a..2ab82b1c7 100644
        QualType T = Context.getDependentNameType(ElaboratedTypeKeyword::None,
                                                  SS->getScopeRep(), &II);
        TypeLocBuilder TLB;
-@@ -2046,7 +2055,8 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
+@@ -2046,7 +2055,8 @@
      return false;
  
    if (D->hasAttr<UnusedAttr>() || D->hasAttr<ObjCPreciseLifetimeAttr>() ||
@@ -11091,7 +11115,7 @@ index 6a25a799a..2ab82b1c7 100644
      return false;
  
    if (isa<LabelDecl>(D))
-@@ -2208,7 +2218,9 @@ void Sema::DiagnoseUnusedButSetDecl(const VarDecl *VD,
+@@ -2208,7 +2218,9 @@
                                      DiagReceiverTy DiagReceiver) {
    // If it's not referenced, it can't be set. If it has the Cleanup attribute,
    // it's not really unused.
@@ -11102,7 +11126,7 @@ index 6a25a799a..2ab82b1c7 100644
      return;
  
    //  In C++, `_` variables behave as if they were maybe_unused
-@@ -2648,6 +2660,17 @@ void Sema::MergeTypedefNameDecl(Scope *S, TypedefNameDecl *New,
+@@ -2648,6 +2660,17 @@
      return New->setInvalidDecl();
    }
  
@@ -11120,7 +11144,7 @@ index 6a25a799a..2ab82b1c7 100644
    // If the old declaration is invalid, just give up here.
    if (Old->isInvalidDecl())
      return New->setInvalidDecl();
-@@ -2919,6 +2942,42 @@ static bool mergeDeclAttribute(Sema &S, NamedDecl *D,
+@@ -2919,6 +2942,42 @@
    // "use explicit attribute on decl if present, else use attribute from
    // previous decl", for example if the attribute needs to be consistent
    // between redeclarations, you need to call a custom merge function here.
@@ -11163,7 +11187,7 @@ index 6a25a799a..2ab82b1c7 100644
    InheritableAttr *NewAttr = nullptr;
    if (const auto *AA = dyn_cast<AvailabilityAttr>(Attr)) {
      const IdentifierInfo *InferredPlatformII = nullptr;
-@@ -3774,6 +3833,9 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -3774,6 +3833,9 @@
    if (Old->isInvalidDecl())
      return true;
  
@@ -11173,7 +11197,7 @@ index 6a25a799a..2ab82b1c7 100644
    // Disallow redeclaration of some builtins.
    if (!getASTContext().canBuiltinBeRedeclared(Old)) {
      Diag(New->getLocation(), diag::err_builtin_redeclare) << Old->getDeclName();
-@@ -4025,6 +4087,37 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -4025,6 +4087,37 @@
      return true;
    }
  
@@ -11211,7 +11235,7 @@ index 6a25a799a..2ab82b1c7 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
-@@ -4389,8 +4482,8 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -4389,8 +4482,8 @@
      }
  
      if (Context.typesAreCompatible(OldQType, NewQType)) {
@@ -11222,7 +11246,7 @@ index 6a25a799a..2ab82b1c7 100644
        const FunctionProtoType *OldProto = nullptr;
        if (MergeTypeWithOld && isa<FunctionNoProtoType>(NewFuncType) &&
            (OldProto = dyn_cast<FunctionProtoType>(OldFuncType))) {
-@@ -4545,7 +4638,7 @@ bool Sema::MergeCompatibleFunctionDecls(FunctionDecl *New, FunctionDecl *Old,
+@@ -4545,7 +4638,7 @@
    // was visible.
    QualType Merged = Context.mergeTypes(Old->getType(), New->getType());
    if (!Merged.isNull() && MergeTypeWithOld)
@@ -11231,7 +11255,7 @@ index 6a25a799a..2ab82b1c7 100644
  
    return false;
  }
-@@ -4596,6 +4689,15 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
+@@ -4596,6 +4689,15 @@
    if (New->isInvalidDecl() || Old->isInvalidDecl() || New->getType()->containsErrors() || Old->getType()->containsErrors())
      return;
  
@@ -11247,7 +11271,7 @@ index 6a25a799a..2ab82b1c7 100644
    QualType MergedT;
    if (getLangOpts().CPlusPlus) {
      if (New->getType()->isUndeducedType()) {
-@@ -4675,7 +4777,7 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
+@@ -4675,7 +4777,7 @@
    // Don't actually update the type on the new declaration if the old
    // declaration was an extern declaration in a different scope.
    if (MergeTypeWithOld)
@@ -11256,7 +11280,7 @@ index 6a25a799a..2ab82b1c7 100644
  }
  
  static bool mergeTypeWithPrevious(Sema &S, VarDecl *NewVD, VarDecl *OldVD,
-@@ -9118,6 +9220,8 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
+@@ -9118,6 +9220,8 @@
  
    bool isVM = T->isVariablyModifiedType();
    if (isVM || NewVD->hasAttr<CleanupAttr>() ||
@@ -11265,7 +11289,7 @@ index 6a25a799a..2ab82b1c7 100644
        NewVD->hasAttr<BlocksAttr>())
      setFunctionHasBranchProtectedScope();
  
-@@ -10772,6 +10876,10 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
+@@ -10772,6 +10876,10 @@
              Previous.getResultKind() != LookupResultKind::FoundOverloaded) &&
             "previous declaration set still overloaded");
  
@@ -11276,7 +11300,28 @@ index 6a25a799a..2ab82b1c7 100644
      // Diagnose no-prototype function declarations with calling conventions that
      // don't support variadic calls. Only do this in C and do it after merging
      // possibly prototyped redeclarations.
-@@ -12576,10 +12684,11 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+@@ -11530,6 +11638,20 @@
+ 
+   for (const Attr *A : FD->attrs()) {
+     switch (A->getKind()) {
++    case attr::AsmLabel: {
++      // Native ObjC3 packages seal one assembly base name for the complete
++      // multiversion family. CodeGen appends each target/clone suffix after
++      // that base and retains its resolver. Ordinary user labels keep the
++      // upstream diagnostic; only the reserved exact module-name shape is
++      // admitted for native target and target_clones publication.
++      StringRef Name = cast<AsmLabelAttr>(A)->getLabel();
++      if ((MVKind == MultiVersionKind::Target || MVKind == MultiVersionKind::TargetClones) &&
++          Name.consume_front("__objc3_m_") && Name.size() == 129 && Name[64] == '_' &&
++          llvm::all_of(Name.take_front(64), [](char C) {return llvm::isHexDigit(C);}) &&
++          llvm::all_of(Name.drop_front(65), [](char C) {return llvm::isHexDigit(C);}))
++        break;
++      return Diagnose(S,A);
++    }
+     case attr::CPUDispatch:
+     case attr::CPUSpecific:
+       if (MVKind != MultiVersionKind::CPUDispatch &&
+@@ -12576,10 +12698,11 @@
            Method->isCanonicalDecl()) {
          AddOverriddenMethods(Method->getParent(), Method);
        }
@@ -11290,7 +11335,7 @@ index 6a25a799a..2ab82b1c7 100644
               diag::err_constrained_virtual_method);
  
        if (Method->isStatic())
-@@ -12615,10 +12724,50 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+@@ -12615,10 +12738,50 @@
      // But, issue any diagnostic on the first declaration only.
      if (Previous.empty() && NewFD->isExternC()) {
        QualType R = NewFD->getReturnType();
@@ -11342,7 +11387,7 @@ index 6a25a799a..2ab82b1c7 100644
                 !R->isObjCObjectPointerType())
          Diag(NewFD->getLocation(), diag::warn_return_value_udt) << NewFD << R;
      }
-@@ -13600,6 +13749,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
+@@ -13600,6 +13763,11 @@
      return Super::visitWithKind(PDIK, QT, FD, InNonTrivialUnion);
    }
  
@@ -11354,7 +11399,7 @@ index 6a25a799a..2ab82b1c7 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13666,6 +13820,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
+@@ -13666,6 +13834,11 @@
      return Super::visitWithKind(DK, QT, FD, InNonTrivialUnion);
    }
  
@@ -11366,7 +11411,7 @@ index 6a25a799a..2ab82b1c7 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13731,6 +13890,11 @@ struct DiagNonTrivalCUnionCopyVisitor
+@@ -13731,6 +13904,11 @@
      return Super::visitWithKind(PCK, QT, FD, InNonTrivialUnion);
    }
  
@@ -11378,7 +11423,7 @@ index 6a25a799a..2ab82b1c7 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -14943,9 +15107,69 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -14943,9 +15121,69 @@
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
@@ -11448,7 +11493,7 @@ index 6a25a799a..2ab82b1c7 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -15585,7 +15809,7 @@ Sema::BuildDeclaratorGroup(MutableArrayRef<Decl *> Group) {
+@@ -15585,7 +15823,7 @@
        DeducedType *DT = D->getType()->getContainedDeducedType();
        if (!DT || DT->getDeducedType().isNull())
          continue;
@@ -11457,7 +11502,7 @@ index 6a25a799a..2ab82b1c7 100644
          Deduced = DT->getDeducedType();
          DeducedDecl = D;
        } else if (!Context.hasSameType(DT->getDeducedType(), Deduced)) {
-@@ -16714,6 +16938,39 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16714,6 +16952,39 @@
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
@@ -11497,7 +11542,7 @@ index 6a25a799a..2ab82b1c7 100644
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -16728,10 +16985,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16728,10 +16999,11 @@
    sema::AnalysisBasedWarnings::Policy *ActivePolicy = nullptr;
  
    // If we skip function body, we can't tell if a function is a coroutine.
@@ -11512,7 +11557,7 @@ index 6a25a799a..2ab82b1c7 100644
        CheckCoroutineWrapper(FD);
    }
  
-@@ -20223,7 +20481,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20495,8 @@
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -11522,6 +11567,7 @@ index 6a25a799a..2ab82b1c7 100644
          Record->setArgPassingRestrictions(
              RecordArgPassingKind::CanNeverPassInRegs);
        } else if (PointerAuthQualifier Q = FT.getPointerAuth();
+
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
 index b0669c602..3b5c9bf01 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
@@ -44743,7 +44789,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6429 @@
+@@ -0,0 +1,6433 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49262,6 +49308,10 @@ new file mode 100644
 +        !Context.hasSameType(Callable->getPointeeType(), Function->getType()))
 +      return nullptr;
 +    const FunctionDecl *Definition = Function->getDefinition();
++    // Explicit target variants may have different bodies selected by a
++    // resolver. A target_clones family compiles this same body for every CPU.
++    if (Definition && Definition->isMultiVersion() &&
++        !Definition->hasAttr<TargetClonesAttr>()) return nullptr;
 +    if (!Definition || Definition->isVariadic() ||
 +        Definition->hasAttr<WeakAttr>() || Definition->hasAttr<WeakRefAttr>() ||
 +        Definition->hasAttr<AliasAttr>() || Definition->hasAttr<IFuncAttr>() ||
@@ -59470,7 +59520,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,2790 @@
+@@ -0,0 +1,2848 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62259,6 +62309,64 @@ new file mode 100644
 +    };
 +    for(const auto *Instance:Pattern->specializations()){Check(Instance,true);++Instances;}EXPECT_EQ(Instances,1U);
 +    const auto *Automatic=selectFirst<FunctionDecl>("auto",match(functionDecl(hasName("automatic")).bind("auto"),Context));ASSERT_TRUE(Automatic);Check(Automatic,false);
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, ImportedTargetClonesRetainMultiversionDispatch) {
++  for(bool Forward:{false,true}) {
++    auto From=tooling::buildASTFromCodeWithArgs(
++      "namespace CPU {__attribute__((target_clones(\"default\",\"sse4.2\"))) inline int dispatch(int value){return value+1;}}",
++      {"-std=c++20","--target=x86_64-unknown-linux-gnu"},"target-clones.cpp");
++    auto To=tooling::buildASTFromCodeWithArgs(Forward?"namespace CPU {int dispatch(int);}":"",
++      {"-std=c++20","--target=x86_64-unknown-linux-gnu"},"target-clones-destination.cpp");
++    ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    auto *Function=const_cast<FunctionDecl *>(selectFirst<FunctionDecl>("dispatch",match(functionDecl(hasName("CPU::dispatch")).bind("dispatch"),From->getASTContext())));ASSERT_TRUE(Function);ASSERT_TRUE(Function->isMultiVersion());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++    auto Imported=Importer.Import(Function);ASSERT_TRUE(static_cast<bool>(Imported));
++    auto *Destination=dyn_cast<FunctionDecl>(*Imported);ASSERT_TRUE(Destination);
++    From.reset();EXPECT_TRUE(Destination->isMultiVersion());EXPECT_TRUE(Destination->getCanonicalDecl()->isMultiVersion());
++    const auto *Clones=Destination->getAttr<TargetClonesAttr>();ASSERT_TRUE(Clones);ASSERT_EQ(Clones->featuresStrs_size(),2U);
++    EXPECT_EQ(Clones->getFeatureStr(0),"default");EXPECT_EQ(Clones->getFeatureStr(1),"sse4.2");
++    EXPECT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, ImportedExplicitTargetBodiesRemainDistinct) {
++  for(bool Forward:{false,true}) {
++    auto From=tooling::buildASTFromCodeWithArgs(
++      "namespace CPU {__attribute__((target(\"default\"))) inline int dispatch(int value){return value+1;} __attribute__((target(\"sse4.2\"))) inline int dispatch(int value){return value+2;}}",
++      {"-std=c++20","--target=x86_64-unknown-linux-gnu"},"target-variants.cpp");
++    auto To=tooling::buildASTFromCodeWithArgs(Forward?"namespace CPU {int dispatch(int);}":"",
++      {"-std=c++20","--target=x86_64-unknown-linux-gnu"},"target-variants-destination.cpp");
++    ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++    SmallVector<FunctionDecl *,2> Destinations;
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *N=dyn_cast<NamespaceDecl>(D))
++      for(auto *M:N->decls())if(auto *F=dyn_cast<FunctionDecl>(M)) {
++        auto Imported=Importer.Import(F);ASSERT_TRUE(static_cast<bool>(Imported));
++        auto *Destination=dyn_cast<FunctionDecl>(*Imported);ASSERT_TRUE(Destination);Destinations.push_back(Destination);
++      }
++    ASSERT_EQ(Destinations.size(),2U);EXPECT_NE(Destinations[0]->getCanonicalDecl(),Destinations[1]->getCanonicalDecl());
++    From.reset();
++    for(unsigned I=0;I<2;++I) {
++      EXPECT_TRUE(Destinations[I]->isMultiVersion());const auto *Target=Destinations[I]->getAttr<TargetAttr>();ASSERT_TRUE(Target);
++      EXPECT_EQ(Target->getFeaturesStr(),I?"sse4.2":"default");
++      struct Integers:RecursiveASTVisitor<Integers>{unsigned Value=0;bool VisitIntegerLiteral(IntegerLiteral *E){Value=E->getValue().getZExtValue();return true;}} Values;
++      Values.TraverseStmt(Destinations[I]->getBody());EXPECT_EQ(Values.Value,I+1);
++    }
++    EXPECT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  }
++}
++
++TEST(ObjC3ASTInfrastructure, ReservedModuleLabelsSupportNativeTargetFamilies) {
++  const std::string Label="__objc3_m_"+std::string(64,'a')+"_"+std::string(64,'b');
++  const std::string Source="__attribute__((target(\"default\"))) int dispatch(int) __asm__(\""+Label+"\");"+
++      "__attribute__((target(\"default\"))) int dispatch(int value){return value+1;}"+
++      "__attribute__((target(\"sse4.2\"))) int dispatch(int value){return value+2;}";
++  for(const char *Standard:{"-std=c17","-std=c++20","-std=c++23"}) {
++    std::vector<std::string> Args={Standard,"--target=x86_64-unknown-linux-gnu"};
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,Standard==StringRef("-std=c17")?"labels.c":"labels.cpp");
++    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  }
 +}
 
@@ -69823,7 +69931,7 @@ diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,89 @@
 +#ifndef OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +#define OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +typedef borrowed const char *StaticGraphLoan;
@@ -69893,6 +70001,9 @@ new file mode 100644
 +static GraphForwardCallback graph_bad_target_factory(int choose){return choose?graph_forward:graph_bad_target;}
 +typedef GraphForwardCallback (*GraphCallbackFactory)(int);
 +static GraphCallbackFactory const graph_factory=graph_choose_callback;
++__attribute__((target("default"))) static const char *graph_cpu_callback(const char *const value){return value;}
++__attribute__((target("sse4.2"))) static const char *graph_cpu_callback(const char *const value){return graph_unknown();}
++__attribute__((target_clones("default","sse4.2"))) static const char *graph_cloned_callback(const char *const value){return value;}
 +__attribute__((swiftcall)) static const char *graph_swift_forward(const char *const value){return value;}
 +#ifdef __cplusplus
 +static const char *graph_callback_default(GraphForwardCallback const callback=graph_forward,const char *const value=graph_first){return callback(value);}
@@ -69915,25 +70026,26 @@ diff --git a/clang/test/ObjC3/Sema/borrowed-static-control-flow.m b/clang/test/O
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
-@@ -0,0 +1,101 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-True.pch
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++20-False.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++20-True.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++23-False.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++23-True.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
+@@ -0,0 +1,105 @@
++// REQUIRES: x86-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
 +
 +#ifndef FROM_PCH
 +#include "Inputs/borrowed-static-control-flow.h"
@@ -70017,6 +70129,9 @@ new file mode 100644
 +STATIC_GRAPH StaticGraphLoan static_graph_callback_fallthrough_factory(void *owner,int choose){return graph_missing_callback_factory(choose)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_callback_recursive_factory(void *owner,int choose){return graph_recursive_callback_factory(choose)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_callback_bad_target_factory(void *owner,int choose){return graph_bad_target_factory(choose)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++
++STATIC_GRAPH StaticGraphLoan static_graph_cpu_variant(void *owner){return graph_cpu_callback(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_cloned_body(void *owner){return graph_cloned_callback(graph_first);}
 
 diff --git a/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm b/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm
 new file mode 100644
@@ -70717,3 +70832,49 @@ new file mode 100644
 +void bad_auto(){DependentResource::wrong_auto((int *)0);} // expected-note {{in instantiation}} expected-error@* {{close cannot accept the handle value}}
 +void bad_storage(){DependentResource::wrong_storage(42.0);} // expected-note {{in instantiation}} expected-error@* {{requires a mutable nondependent integer}}
 +void bad_sentinel(){DependentResource::wrong_sentinel(42);} // expected-note {{in instantiation}} expected-error@* {{invalid sentinel must be constant}}
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-cpu-labels.h b/clang/test/ObjC3/Sema/Inputs/native-cpu-labels.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-cpu-labels.h
+@@ -0,0 +1,8 @@
++#ifndef OBJC3_NATIVE_CPU_LABELS_H
++#define OBJC3_NATIVE_CPU_LABELS_H
++__attribute__((target("default"))) static int owned_cpu_variant(int) __asm__("__objc3_m_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
++__attribute__((target("default"))) static int owned_cpu_variant(int value){return value+1;}
++__attribute__((target("sse4.2"))) static int owned_cpu_variant(int value){return value+2;}
++__attribute__((target_clones("default","sse4.2"))) static int owned_cpu_clones(int) __asm__("__objc3_m_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
++__attribute__((target_clones("default","sse4.2"))) static int owned_cpu_clones(int value){return value+3;}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-cpu-labels.m b/clang/test/ObjC3/Sema/native-cpu-labels.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-cpu-labels.m
+@@ -0,0 +1,27 @@
++// REQUIRES: x86-registered-target
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/native-cpu-labels.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/native-cpu-labels.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/native-cpu-labels.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/native-cpu-labels.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/native-cpu-labels.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/native-cpu-labels.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/native-cpu-labels.h"
++#endif
++int use_owned_cpu(int value){return owned_cpu_variant(value)+owned_cpu_clones(value);}
++__attribute__((target("default"))) int unowned_cpu(int) __asm__("ordinary_label"); // expected-error {{multiversioning cannot be combined with attribute 'asm'}}
++__attribute__((target("default"))) int malformed_cpu(int) __asm__("__objc3_m_gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"); // expected-error {{multiversioning cannot be combined with attribute 'asm'}}
++__attribute__((target_clones("default","sse4.2"))) int unowned_clones(int) __asm__("ordinary_clones"); // expected-error {{multiversioning cannot be combined with attribute 'asm'}}

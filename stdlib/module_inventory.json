@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 159,
+        "minor": 160,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -336,12 +336,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 85,
+        "minor": 86,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native CPU target/clone and minimum-vector-width policies retain canonical publication, ordered feature/width identity, sealed family base names, distinct explicit-variant identities and imported multiversion dispatch state; reserved module labels preserve physical target suffixes/resolvers, ordinary labels retain diagnostics, and borrowed proofs reject single-body assumptions about explicit variants; native-emission-policies v2 reader cutover, matched SDK pending",
         "Native resource bodies publish close/sentinel/invocation identity and exact callback dependencies; dependent/template and auto-deduced handles rebuild and validate native resource contracts after substitution/deduction, with explicit function-template close callbacks shared by resource typedefs, automatic cleanup and local resource owners; native-storage-lifetime v4 reader cutover, matched SDK pending",
         "Permanent borrowed-result proofs follow bounded conditional callback target sets and synchronous callback-producing helper graphs; every reachable target and return must prove a permanent base under a shared AST/CFG budget, exact ABI checks and immutable bindings. Unknown/mutable/null/replaceable/recursive/fallthrough targets remain rejected; borrowed-result-proofs v5 reader cutover, matched SDK pending",
         "Native automatic cleanup supports dependent C++ template storage/callbacks and auto deduction through deferred declarative recipes; concrete instantiation/deduction rebuilds and revalidates storage, exact value/reference/address invocation, callback effects and no-copy policy before mandatory flow checking; native-storage-lifetime v3 reader cutover, matched SDK pending",

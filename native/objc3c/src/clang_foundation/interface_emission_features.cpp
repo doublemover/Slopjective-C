@@ -162,7 +162,7 @@ bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration) {
   auto Policy=[](const clang::NamedDecl *named) {
     if(!named)return false;
     for(const auto *attribute:named->attrs())
-      if(!attribute->isImplicit() && llvm::isa<clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr>(attribute))return true;
+      if(!attribute->isImplicit() && llvm::isa<clang::TargetAttr,clang::TargetClonesAttr,clang::MinVectorWidthAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr>(attribute))return true;
     return false;
   };
   struct Declarations : clang::DynamicRecursiveASTVisitor {

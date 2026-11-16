@@ -575,3 +575,16 @@ readers. Compiler/PCH, AST, publication, decoder and source-free native controls
 cover declaration rejection, sentinel suppression, reset/take/discard, callback
 errors, failed initialization and exceptional scope exits. See
 [native resource publication](linux_native_resource_publication.md).
+
+## Source 2.160 / System 2.86 implementation
+
+Native target, target_clones and minimum-vector-width policies now retain
+canonical feature/width values, ordered clone identity and reader admission.
+Explicit CPU variants retain distinct stable identities and one sealed family
+assembly base. Reserved module labels preserve native target suffixes/resolvers;
+ordinary labels retain upstream diagnostics. AST import preserves shared canonical
+multiversion state and distinct bodies through fresh/existing-forward import.
+Native-emission-policies v2 also rejects namespace-owned fabricated claims in
+both validator/encoder and decoder. Permanent controls cover publication,
+physical target features, IFUNC resolvers and native runtime dispatch. See
+[CPU target publication](linux_cpu_target_publication.md).
