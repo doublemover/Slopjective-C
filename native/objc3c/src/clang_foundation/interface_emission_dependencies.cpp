@@ -626,7 +626,7 @@ class TypeDependencyVisitor final
       for (const auto *attribute : variable->attrs())
         if (!attribute->isImplicit() &&
             !(llvm::isa<clang::ParmVarDecl>(variable) &&
-              llvm::isa<clang::NSConsumedAttr,clang::CFConsumedAttr>(attribute)) &&
+              (IsPublishedSemanticAttribute(attribute) || IsForeignImportAttribute(attribute))) &&
             !llvm::isa<clang::BlocksAttr,clang::AlignedAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr>(attribute))
           UnsupportedExpression("local variable attribute has no publication contract");
     if(body_function_)CheckDeclarationAttributes(variable);
@@ -890,6 +890,13 @@ class TypeDependencyVisitor final
         lambda_locals_.insert(capture.getCapturedVar()->getCanonicalDecl());
     auto restore = llvm::scope_exit([&] { lambda_contexts_ = contexts; lambda_locals_ = locals; });
     TraverseType(expression->getCallOperator()->getType());
+    for(const auto *attribute:expression->getCallOperator()->attrs())
+      if(!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) &&
+          !IsForeignImportAttribute(attribute))
+        return UnsupportedExpression("lambda callable attribute has no publication contract");
+    CheckDeclarationAttributes(expression->getCallOperator());
+    for(const auto *parameter:expression->getCallOperator()->parameters())
+      CheckDeclarationAttributes(parameter);
     if (!clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseLambdaExpr(expression,nullptr)) return false;
     for (const auto &body:bodies) {
       lambda_contexts_.insert(body.function->getCanonicalDecl());

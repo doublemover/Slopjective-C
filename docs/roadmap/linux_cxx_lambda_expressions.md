@@ -2,7 +2,7 @@
 
 The concurrency 2.21.0 source milestone publishes local non-generic C++ lambdas in
 inline bodies, default arguments and member initializers under required
-`objc3.cxx-lambda-expressions.v1` semantics. Containing records independently bind
+`objc3.cxx-lambda-expressions.v2` semantics. Containing records independently bind
 closure-bearing members.
 
 Expression identity binds capture kind/defaults, native typed bodies, copied

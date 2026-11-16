@@ -328,7 +328,8 @@ public:
 
 void SeedStandardHeaderDeclarations(clang::ASTImporter &importer,
     clang::ASTContext &source,clang::ASTContext &target,
-    const StandardHeaderDeclarations &target_declarations) {
+    const StandardHeaderDeclarations &target_declarations,
+    std::vector<clang::NamedDecl *> &definitions) {
   StandardHeaderDeclarations from(source);from.TraverseDecl(source.getTranslationUnitDecl());
   auto printed=[](const clang::NamedDecl *declaration,const clang::ASTContext &context) {
     std::string result;llvm::raw_string_ostream out(result);
@@ -357,7 +358,17 @@ void SeedStandardHeaderDeclarations(clang::ASTImporter &importer,
   // chain while their template and function representatives are different
   // written declarations. Recursively seeding children would overwrite an
   // already established mapping to another redeclaration of the same entity.
-  for(auto [left,right]:matched)importer.MapImported(left,right);
+  for(auto [left,right]:matched) {
+    importer.MapImported(left,right);
+    // A checked native defaulted declaration can already exist in the consumer
+    // without its lazily synthesized body. Reusing its AST identity must also
+    // carry the source's actual odr-use into the consumer Sema/CodeGen phase.
+    const auto *source=llvm::dyn_cast<clang::FunctionDecl>(left);
+    auto *target=llvm::dyn_cast<clang::FunctionDecl>(right);
+    if(source && target && source->isUsed() && target->isDefaulted() &&
+        !target->isDeleted() && !target->isDependentContext() &&
+        !target->doesThisDeclarationHaveABody())definitions.push_back(target);
+  }
 }
 
 class DefinitionTrackingImporter final : public clang::ASTImporter {
@@ -955,7 +966,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     importer->ExistingVariables=&existing_definitions.Variables;
     SeedCompilerBuiltinDeclarations(*importer,module.ast->getASTContext(),target_context);
     if(std::any_of(module.sidecar.declarations.begin(),module.sidecar.declarations.end(),HasCxxStandardLibraryIdentity))
-      SeedStandardHeaderDeclarations(*importer,module.ast->getASTContext(),target_context,native_headers);
+      SeedStandardHeaderDeclarations(*importer,module.ast->getASTContext(),target_context,native_headers,importer->Definitions);
     auto *from_tu = module.ast->getASTContext().getTranslationUnitDecl();
     // Use the importer's actual source-to-target mappings. A matching USR in
     // another module or in the consumer does not prove this export imported.

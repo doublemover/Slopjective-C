@@ -878,6 +878,28 @@ public:
     Local(expression->getLambdaClass());
     if (const auto *pattern=expression->getCallOperator()->getDescribedFunctionTemplate())
       for (const auto *parameter:*pattern->getTemplateParameters()) Local(parameter);
+    const auto *method=expression->getCallOperator();
+    Add("lambda-callable:"+ExpressionType(method->getType()));
+    Add("lambda-constexpr:"+std::to_string(method->isConstexpr()));
+    Add("lambda-consteval:"+std::to_string(method->isConsteval()));
+    Add("lambda-static:"+std::to_string(method->isStatic()));
+    auto attributes=[&](const clang::NamedDecl *owner) {
+      std::set<std::string> contracts;
+      for(const auto *attribute:owner->attrs()) {
+        if(attribute->isImplicit())continue;
+        if(IsPublishedSemanticAttribute(attribute))contracts.insert(NativeAttributeValue(attribute,owner));
+        else if(IsForeignImportAttribute(attribute)) {
+          std::string text;llvm::raw_string_ostream out(text);
+          attribute->printPretty(out,context_.getPrintingPolicy());contracts.insert(text);
+        }
+      }
+      for(const auto &contract:contracts)Add("lambda-contract:"+contract);
+    };
+    attributes(method);
+    for(const auto *parameter:method->parameters()) {
+      Local(parameter);attributes(parameter);
+      Add(parameter->hasDefaultArg()?"lambda-default":"lambda-no-default");
+    }
     Add("lambda-capture-default:" + std::to_string(expression->getCaptureDefault()));
     for (const auto &capture : expression->captures()) {
       Add("capture:" + std::to_string(capture.getCaptureKind()));
@@ -2938,7 +2960,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationUnionValue(representative))
     identity.canonical_type_identity += ";cxx-union-values:v1;";
   if (HasDeclarationLambda(representative))
-    identity.canonical_type_identity += ";cxx-lambda-expressions:v1;";
+    identity.canonical_type_identity += ";cxx-lambda-expressions:v2;";
   if (HasDeclarationLocalExpression(representative, true))
     identity.canonical_type_identity += ";cxx-block-expressions:v3;";
   if (HasDeclarationLocalExpression(representative, false))

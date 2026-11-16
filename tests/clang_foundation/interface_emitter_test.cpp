@@ -1,4 +1,5 @@
 #include "thread_safety_test_source.h"
+#include "lambda_contracts_test_source.h"
 #include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
 #include "llvm/ADT/ScopeExit.h"
@@ -614,6 +615,59 @@ void TestNativeUnnamedEnumReplay() {
     int enum_consumer(){return NativeEnum::choose()+NativeEnum::indirect(NativeEnum::Third);}
    )",args,"enum-consumer.mm");assert(consumer && !consumer->getDiagnostics().hasErrorOccurred());
   }
+ }
+}
+
+void TestNativeLambdaContractsReplay() {
+ for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+  if(arc)args.push_back("-fobjc-arc");
+  std::string source=kNativeLambdaContractsSource;
+  if(std::string(standard)=="c++23")source+=R"(namespace LambdaContracts {
+    inline int static_callable(){auto call=[] [[nodiscard]] () static {return 42;};return call();}
+  })";
+  auto emit=[&](const std::string &text){
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-thread-safety.mm");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.lambda_contracts","test",{}));
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.lambda_contracts","test");
+   for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+   assert(result.success);return result;
+  };
+  const auto first=emit(source),replay=emit(first.source_bytes),relocated=emit("\n\n"+source);
+  assert(first.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(first.identity.semantic_fingerprint==relocated.identity.semantic_fingerprint);
+  assert(first.source_bytes==replay.source_bytes);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kCxxLambdaExpressionSemantic)));
+  auto older=supported;std::erase(older,llvm::StringRef(kCxxLambdaExpressionSemantic));
+  auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
+  auto missing=*decoded;std::erase(missing.required_semantics,kCxxLambdaExpressionSemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(missing,supported);assert(!invalid);llvm::consumeError(invalid.takeError());
+  auto changed=source;auto at=changed.find("no_sanitize(\"address\")");assert(at!=std::string::npos);
+  changed.replace(at,std::string("no_sanitize(\"address\")").size(),"no_sanitize(\"undefined\")");
+  assert(emit(changed).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  auto convention=source;at=convention.find("vectorcall,noinline");assert(at!=std::string::npos);
+  convention.replace(at,std::string("vectorcall,noinline").size(),"preserve_most,noinline");
+  assert(emit(convention).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  auto unsupported=clang::tooling::buildASTFromCodeWithArgs(source+R"(
+    namespace LambdaContracts {inline int unmodeled(){auto call=[]() __attribute__((annotate("unmodeled"))){return 42;};return call();}}
+  )",args,"unsupported-lambda-contract.mm");assert(unsupported && !unsupported->getDiagnostics().hasErrorOccurred());
+  auto unsupported_result=EmitSemanticInterface(unsupported->getASTContext(),"fixture.lambda_contracts","test");
+  assert(!unsupported_result.success && std::any_of(unsupported_result.diagnostics.begin(),unsupported_result.diagnostics.end(),[](const auto &d){return d.code=="O3IFC101";}));
+  auto private_lock=clang::tooling::buildASTFromCodeWithArgs(source+R"(
+    namespace HiddenLambdaLock {inline LambdaContracts::Mutex mutex;}
+    namespace LambdaContracts {inline int private_lock(){auto call=[]() __attribute__((requires_capability(HiddenLambdaLock::mutex))){return 42;};return call();}}
+  )",args,"private-lambda-lock.mm");assert(private_lock && !private_lock->getDiagnostics().hasErrorOccurred());
+  auto private_result=EmitSemanticInterface(private_lock->getASTContext(),"fixture.lambda_contracts","test",{},{},{},{"LambdaContracts"});
+  assert(!private_result.success && std::any_of(private_result.diagnostics.begin(),private_result.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  auto checked=args;checked.insert(checked.end(),{"-Wthread-safety","-Werror=thread-safety"});
+  auto good=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+    int use_thread_contract(){return LambdaContracts::checked()+LambdaContracts::defaults()+LambdaContracts::constrained()+LambdaContracts::attributed()+LambdaContracts::swift_contract()+LambdaContracts::vector_contract()+LambdaContracts::diagnosed();}
+  )",checked,"thread-safe-consumer.mm");assert(good && !good->getDiagnostics().hasErrorOccurred());
+  auto bad=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes+R"(
+    int violate_thread_contract(LambdaContracts::State &counter){return counter.read();}
+  )",checked,"thread-unsafe-consumer.mm");assert(bad && bad->getDiagnostics().hasErrorOccurred());
  }
 }
 
@@ -11184,7 +11238,7 @@ void TestCxxLambdaExpressions() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
       "objc3.cxx-declaration-expressions.v1", "objc3.cxx-definitions.v1",
-      "objc3.cxx-lambda-expressions.v1", "objc3.module-owned-names.v1"};
+      "objc3.cxx-lambda-expressions.v2", "objc3.module-owned-names.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -11224,7 +11278,7 @@ void TestCxxLambdaExpressions() {
     assert(different.success && different.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
     auto generic = emit("inline int generic(int n) { return [](auto value) {return value;}(n); }");
     assert(generic.success && generic.sidecar_json.find("objc3.cxx-generic-local-lambdas.v2")!=std::string::npos);
-    std::erase(decoded->required_semantics, "objc3.cxx-lambda-expressions.v1");
+    std::erase(decoded->required_semantics, "objc3.cxx-lambda-expressions.v2");
     decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
     auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
     assert(!erased); llvm::consumeError(erased.takeError());
@@ -12008,6 +12062,7 @@ int main(int argc,char **argv) {
   cases.Run("TestKeyPathSubscriptBodies", TestKeyPathSubscriptBodies);
   cases.Run("TestNativeManagedUnionPayloadReplay", TestNativeManagedUnionPayloadReplay);
   cases.Run("TestNativeUnnamedEnumReplay", TestNativeUnnamedEnumReplay);
+  cases.Run("TestNativeLambdaContractsReplay", TestNativeLambdaContractsReplay);
   cases.Run("TestNativeThreadSafetyReplay", TestNativeThreadSafetyReplay);
   cases.Run("TestNativeStorageLifetimeReplay", TestNativeStorageLifetimeReplay);
   cases.Run("TestNativeUnionKeyPathReplay", TestNativeUnionKeyPathReplay);

@@ -2,7 +2,7 @@
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.165 / System 2.91 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.166 / System 2.92 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

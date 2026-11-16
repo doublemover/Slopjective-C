@@ -1,4 +1,5 @@
 #include "thread_safety_test_source.h"
+#include "lambda_contracts_test_source.h"
 #include "standard_library_test_support.h"
 #include "llvm/ADT/ScopeExit.h"
 #include "clang_foundation/interface_codec.h"
@@ -226,6 +227,42 @@ int external_caller(int value){return specialized(value)+cloned(value)+generic(v
   auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{});
 }
 
+void RunLambdaContracts(const fs::path &root,const char *standard,int ownership,const char *optimization) {
+  fs::create_directories(root/"provider");
+  auto request=[&](const fs::path &input,const fs::path &output){
+    return Request(input,output,standard,ownership,optimization,{"-Wthread-safety","-Werror=thread-safety"});
+  };
+  const auto source=root/"provider/module.mm";
+  Write(source,kNativeLambdaContractsSource);
+  auto provider=request(source,root/"provider.o");provider.module_owned_names=true;
+  provider.module_source_root=(root/"provider").string();provider.module_name="fixture.LambdaContracts";
+  provider.package_identity="native-lambda-contracts-v2";provider.interface_exports={"LambdaContracts"};provider.emit_semantic_interface=true;
+  auto built=Compile(provider);Success(built);assert(built.interface_artifact && built.interface_artifact->success);
+  const auto artifact=*built.interface_artifact;
+  assert(artifact.sidecar_json.find("objc3.cxx-lambda-expressions.v2")!=std::string::npos);
+  const auto interface=root/"LambdaContracts.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
+  assert(fs::remove(source));
+  for(const char *name:{"a","b"}) {
+    const auto input=root/(std::string("consumer-")+name+".mm");
+    Write(input,"extern \"C\" int check_"+std::string(name)+R"lambda((){
+      return LambdaContracts::checked()!=42 || LambdaContracts::defaults()!=42 ||
+        LambdaContracts::constrained()!=42 || LambdaContracts::attributed()!=42 ||
+        LambdaContracts::swift_contract()!=42 || LambdaContracts::vector_contract()!=42 ||
+        LambdaContracts::diagnosed()!=42 || LambdaContracts::immediate()!=42;
+    })lambda");
+    auto consumer=request(input,root/(std::string(name)+".o"));InterfaceImportInput imported;
+    imported.source_path=interface.string();imported.locked_identity=artifact.identity;consumer.imported_interfaces={imported};Success(Compile(consumer));
+    consumer.emit=EmitKind::LLVM;consumer.output_path=(root/(std::string(name)+".ll")).string();
+    consumer.arguments.push_back("-fsanitize=address");Success(Compile(consumer));
+    const auto ir=Read(consumer.output_path);
+    assert(ir.find("call swiftcc")!=std::string::npos);
+    assert(ir.find("call x86_vectorcallcc")!=std::string::npos);
+    assert(ir.find("swiftself")!=std::string::npos);
+  }
+  const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a() || check_b();}");
+  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{});
+}
+
 }
 int main() {
   test::IsolatedCases cases;
@@ -240,5 +277,7 @@ int main() {
     cases.Run(std::string("target-")+standard+"-"+std::to_string(ownership),[&]{RunTargetPolicy(root/(std::string("target-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
   for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}})
     cases.Run(std::string("thread-")+standard+"-"+std::to_string(ownership),[&]{RunThreadSafety(root/(std::string("thread-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
+  for(const auto &[standard,ownership,opt]:std::vector<std::tuple<const char *,int,const char *>>{{"c++20",0,"-O0"},{"c++23",1,"-O2"},{"c++23",2,"-O2"}})
+    cases.Run(std::string("lambda-")+standard+"-"+std::to_string(ownership),[&]{RunLambdaContracts(root/(std::string("lambda-")+standard+"-"+std::to_string(ownership)),standard,ownership,opt);});
   return cases.Finish();
 }

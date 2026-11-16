@@ -426,6 +426,18 @@ if (BUILD_TESTING)
     COMMAND objc3_standard_library_provider_test -D_GLIBCXX_ASSERTIONS=1)
   set_tests_properties(objc3_standard_library_assertions PROPERTIES
     LABELS "native;standard-library;extended" TIMEOUT 600)
+  # Keep synchronization independently scheduled; combining both package
+  # inventories approaches the baseline timeout before compiler instrumentation.
+  objc3c_add_frontend_test(NAME objc3_standard_library_synchronization
+    COMMAND objc3_standard_library_provider_test --synchronization)
+  objc3c_add_frontend_test(NAME objc3_standard_library_synchronization_no_rtti_exceptions
+    COMMAND objc3_standard_library_provider_test --synchronization -fno-exceptions -fno-rtti)
+  objc3c_add_frontend_test(NAME objc3_standard_library_synchronization_assertions
+    COMMAND objc3_standard_library_provider_test --synchronization -D_GLIBCXX_ASSERTIONS=1)
+  set_tests_properties(objc3_standard_library_synchronization
+    objc3_standard_library_synchronization_no_rtti_exceptions
+    objc3_standard_library_synchronization_assertions PROPERTIES
+    LABELS "native;standard-library;extended" TIMEOUT 300)
   set(OBJC3_TEST_LIBCXX_ROOT "" CACHE PATH
     "Optional libc++ installation for native standard-library interoperability tests")
   if(OBJC3_TEST_LIBCXX_ROOT)
@@ -438,6 +450,12 @@ if (BUILD_TESTING)
         -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
         "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
     set_tests_properties(objc3_standard_library_libcxx PROPERTIES
+      LABELS "native;standard-library;extended" TIMEOUT 600)
+    objc3c_add_frontend_test(NAME objc3_standard_library_libcxx_synchronization
+      COMMAND objc3_standard_library_provider_test --synchronization --thread-annotations
+        -stdlib=libc++ -nostdinc++ -isystem "${OBJC3_TEST_LIBCXX_ROOT}/include/c++/v1"
+        "-L${OBJC3_TEST_LIBCXX_ROOT}/lib" "-Wl,-rpath,${OBJC3_TEST_LIBCXX_ROOT}/lib")
+    set_tests_properties(objc3_standard_library_libcxx_synchronization PROPERTIES
       LABELS "native;standard-library;extended" TIMEOUT 600)
     objc3c_add_frontend_test(NAME objc3_standard_library_libcxx_customizations
       COMMAND objc3_standard_library_customization_provider_test

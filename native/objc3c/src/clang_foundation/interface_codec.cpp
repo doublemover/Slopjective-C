@@ -85,7 +85,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.cxx-out-of-line-defaulting.v1",
     "objc3.cxx-immediate-defaulting.v1",
     "objc3.cxx-namespace-attributes.v1",
-    "objc3.cxx-lambda-expressions.v1",
+    "objc3.cxx-lambda-expressions.v2",
     "objc3.cxx-thread-local.v1",
     "objc3.cxx-friends.v1",
     kCxxBlockExpressionSemantic,

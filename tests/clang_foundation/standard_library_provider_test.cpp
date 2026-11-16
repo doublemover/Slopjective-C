@@ -5,6 +5,104 @@ using namespace objc3::clang_foundation;
 using namespace objc3::clang_foundation::standard_library_test;
 namespace fs=std::filesystem;
 namespace {
+void RunSynchronization(const fs::path &root,const char *standard,int ownership,
+    const char *optimization,std::vector<std::string> library_arguments) {
+  library_arguments.push_back("-pthread");
+  library_arguments.push_back("-Wthread-safety");
+  library_arguments.push_back("-Werror=thread-safety");
+  fs::create_directories(root/"provider");
+  auto request=[&](const fs::path &input,const fs::path &output){return Request(input,output,standard,ownership,optimization,library_arguments);};
+  const auto source=root/"provider/module.mm";
+  Write(source,R"sync(
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <shared_mutex>
+#include <stop_token>
+#include <thread>
+namespace NativeSynchronization {
+class __attribute__((capability("mutex"))) Mutex {
+  std::mutex native_;
+public:
+  void lock() __attribute__((acquire_capability(),no_thread_safety_analysis)){native_.lock();}
+  void unlock() __attribute__((release_capability(),no_thread_safety_analysis)){native_.unlock();}
+};
+class __attribute__((scoped_lockable)) Guard {
+  std::unique_lock<Mutex> native_;
+public:
+  explicit Guard(Mutex &mutex) __attribute__((acquire_capability(mutex),no_thread_safety_analysis)):native_(mutex){}
+  ~Guard() __attribute__((release_capability(),no_thread_safety_analysis))=default;
+  void lock() __attribute__((acquire_capability(),no_thread_safety_analysis)){native_.lock();}
+  void unlock() __attribute__((release_capability(),no_thread_safety_analysis)){native_.unlock();}
+};
+struct Counter {
+  Mutex mutex;
+  std::condition_variable_any changed;
+  int value __attribute__((guarded_by(mutex)))=0;
+  int completed __attribute__((guarded_by(mutex)))=0;
+  void add(){Guard guard(mutex);++value;}
+  void finish(){{Guard guard(mutex);++completed;}changed.notify_all();}
+  int read(){Guard guard(mutex);return value;}
+  // The predicate requires the lock that condition_variable_any holds when
+  // invoking it. The scoped adapter models unlock/relock around the wait.
+  void wait() {
+    Guard lock(mutex);changed.wait(lock,[this]() __attribute__((requires_capability(mutex))){return completed==2;});
+  }
+};
+inline int concurrent_total(){
+  Counter counter;
+  {
+    std::jthread waiter([&]{counter.wait();});
+    std::jthread first([&]{for(int i=0;i<32;++i)counter.add();counter.finish();});
+    std::jthread second([&]{for(int i=0;i<32;++i)counter.add();counter.finish();});
+  }
+  return counter.read();
+}
+inline bool stop_callback_once(){
+  std::atomic<int> observed{0};
+  {
+    std::jthread worker([&](std::stop_token token){
+      std::stop_callback callback(token,[&]{observed.fetch_add(1,std::memory_order_relaxed);});
+      while(!token.stop_requested())std::this_thread::yield();
+    });
+  }
+  return observed.load(std::memory_order_relaxed)==1;
+}
+inline int shared_value(){
+  std::shared_mutex mutex;int value=0;
+  {std::unique_lock lock(mutex);value=17;}
+  {std::shared_lock lock(mutex);return value+25;}
+}
+inline std::atomic<int> once_count{0};
+inline int once_value(){
+  static std::once_flag flag;static int value=0;
+  std::call_once(flag,[]{value=42;once_count.fetch_add(1,std::memory_order_relaxed);});
+  return value;
+}
+}
+)sync");
+  auto provider=request(source,root/"provider.o");provider.module_owned_names=true;
+  provider.module_source_root=(root/"provider").string();provider.module_name="fixture.NativeSynchronization";
+  provider.package_identity="native-synchronization-v1";provider.interface_exports={"NativeSynchronization"};provider.emit_semantic_interface=true;
+  auto built=Compile(provider);Success(built);assert(built.interface_artifact && built.interface_artifact->success);
+  const auto artifact=*built.interface_artifact;
+  assert(artifact.sidecar_json.find("objc3.native-thread-safety.v1")!=std::string::npos);
+  const auto interface=root/"NativeSynchronization.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
+  assert(fs::remove(source));
+  for(const char *name:{"a","b"}) {
+    const auto input=root/(std::string("consumer-")+name+".mm");
+    Write(input,"extern \"C\" int check_"+std::string(name)+R"sync((){
+      return NativeSynchronization::concurrent_total()!=64 ||
+        !NativeSynchronization::stop_callback_once() || NativeSynchronization::shared_value()!=42 ||
+        NativeSynchronization::once_value()!=42 || NativeSynchronization::once_count.load(std::memory_order_relaxed)!=1;
+    })sync");
+    auto consumer=request(input,root/(std::string(name)+".o"));InterfaceImportInput imported;
+    imported.source_path=interface.string();imported.locked_identity=artifact.identity;consumer.imported_interfaces={imported};Success(Compile(consumer));
+  }
+  const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a() || check_b();}");
+  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,library_arguments);
+}
+
 void Run(const fs::path &root,const char *standard,int ownership,const char *optimization,
          const std::vector<std::string> &library_arguments) {
   fs::create_directories(root/"provider");
@@ -121,8 +219,8 @@ int main(){return check_a() || check_b() || address_a()!=address_b();}
 }
 int main(int argc,char **argv) {
   test::IsolatedCases cases;
-  bool full=false;std::vector<std::string> library_arguments;
-  for(int i=1;i<argc;++i)if(std::string(argv[i])=="--full")full=true;else library_arguments.emplace_back(argv[i]);
+  bool full=false,synchronization=false,thread_annotations=false;std::vector<std::string> library_arguments;
+  for(int i=1;i<argc;++i)if(std::string(argv[i])=="--full")full=true;else if(std::string(argv[i])=="--synchronization")synchronization=true;else if(std::string(argv[i])=="--thread-annotations")thread_annotations=true;else library_arguments.emplace_back(argv[i]);
   llvm::SmallString<128> temporary;
   assert(!llvm::sys::fs::createUniqueDirectory("objc3-standard-library-provider",temporary));
   const fs::path root(temporary.c_str());auto cleanup=llvm::scope_exit([&]{fs::remove_all(root);});
@@ -132,7 +230,13 @@ int main(int argc,char **argv) {
           !(std::string(standard)=="c++23" && ownership==2 && std::string(optimization)=="-O2"))continue;
       const auto label=std::string(standard)+"-"+std::to_string(ownership)+optimization;
       std::cerr<<"STANDARD LIBRARY PROVIDER "<<label<<'\n';
-      cases.Run(label,[&]{Run(root/label,standard,ownership,optimization,library_arguments);});
+      if(!synchronization)
+        cases.Run(label,[&]{Run(root/label,standard,ownership,optimization,library_arguments);});
+      else cases.Run("sync-"+label,[&]{RunSynchronization(root/("sync-"+label),standard,ownership,optimization,library_arguments);});
+      if(synchronization && thread_annotations) {
+        auto annotated=library_arguments;annotated.push_back("-D_LIBCPP_ENABLE_THREAD_SAFETY_ANNOTATIONS=1");
+        cases.Run("sync-annotated-"+label,[&]{RunSynchronization(root/("sync-annotated-"+label),standard,ownership,optimization,annotated);});
+      }
     }
   return cases.Finish();
 }

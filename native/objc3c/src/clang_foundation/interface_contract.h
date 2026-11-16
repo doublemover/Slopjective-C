@@ -139,9 +139,9 @@ inline constexpr const char *kCxxNamespaceAttributeSemantic =
 inline bool HasCxxNamespaceAttributeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-namespace-attributes:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxLambdaExpressionSemantic = "objc3.cxx-lambda-expressions.v1";
+inline constexpr const char *kCxxLambdaExpressionSemantic = "objc3.cxx-lambda-expressions.v2";
 inline bool HasCxxLambdaExpressionIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-lambda-expressions:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-lambda-expressions:v2;") != std::string::npos;
 }
 inline constexpr const char *kCxxThreadLocalSemantic = "objc3.cxx-thread-local.v1";
 inline bool HasCxxThreadLocalIdentity(const InterfaceDeclarationIdentity &d) {
@@ -368,8 +368,8 @@ inline constexpr const char *kCxxStandardLibrarySpecializationSemantic = "objc3.
 inline bool HasCxxStandardLibrarySpecializationIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-standard-library-specializations:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxStandardLibrarySemantic = "objc3.cxx-standard-library-headers.v1";
-inline constexpr const char *kCxxStandardLibraryMarker = ";cxx-standard-library-headers:v1;";
+inline constexpr const char *kCxxStandardLibrarySemantic = "objc3.cxx-standard-library-headers.v2";
+inline constexpr const char *kCxxStandardLibraryMarker = ";cxx-standard-library-headers:v2;";
 inline bool IsStandardLibraryHeaderName(const std::string &name) {
   static const std::string names = "|algorithm|any|array|atomic|barrier|bit|bitset|cassert|cctype|cerrno|cfenv|cfloat|charconv|chrono|cinttypes|climits|clocale|cmath|codecvt|compare|complex|concepts|condition_variable|coroutine|csetjmp|csignal|cstdarg|cstddef|cstdint|cstdio|cstdlib|cstring|ctime|cuchar|cwchar|cwctype|deque|exception|execution|expected|filesystem|flat_map|flat_set|format|forward_list|fstream|functional|future|generator|initializer_list|iomanip|ios|iosfwd|iostream|istream|iterator|latch|limits|list|map|mdspan|memory|memory_resource|mutex|new|numbers|numeric|optional|ostream|print|queue|random|ranges|ratio|regex|scope|scoped_allocator|semaphore|set|shared_mutex|source_location|span|spanstream|sstream|stack|stacktrace|stdexcept|stdfloat|stop_token|streambuf|string|string_view|strstream|syncstream|system_error|thread|tuple|type_traits|typeindex|typeinfo|unordered_map|unordered_set|utility|valarray|variant|vector|version|";
   return !name.empty() && name.find('|') == std::string::npos && names.find("|" + name + "|") != std::string::npos;

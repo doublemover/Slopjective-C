@@ -637,3 +637,10 @@ factories and deferred writes. Object-pointer updates preserve their lifetime
 base; escaped/reference slots, unknown writes and replaceable weak/alias globals
 retain rejection. Shared proof work/depth/target bounds and borrowed-result-proofs
 v7 enforce source-free admission without a physical ABI change.
+
+## Source 2.166 / System 2.92 implementation
+
+Published lambda call operators now preserve their native callable and parameter
+contracts, with exact interface identity and the cxx-lambda-expressions v2 reader
+cutover. Real source-free synchronization consumers additionally cover native
+header defaulted-definition delivery. See [scope and checks](linux_native_lambda_contracts.md).

@@ -192,8 +192,13 @@ void InterfaceSourceImportBridge::RegisterInlineDefinitions() {
   auto pending = std::move(pending_inline_definitions_);
   pending_inline_definitions_.clear();
   for (auto *declaration : pending)
-    if (registered_inline_definitions_.insert(declaration->getCanonicalDecl()).second)
+    if (registered_inline_definitions_.insert(declaration->getCanonicalDecl()).second) {
+      if(auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+          sema_ && function && function->isDefaulted() &&
+          !function->doesThisDeclarationHaveABody())
+        sema_->MarkFunctionReferenced(function->getLocation(),function);
       definition_consumer_->HandleTopLevelDecl(clang::DeclGroupRef(declaration));
+    }
 }
 
 bool InterfaceSourceImportBridge::IsRegistered(

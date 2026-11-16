@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 165,
+        "minor": 166,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -336,12 +336,14 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 91,
+        "minor": 92,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Exact native standard-header reuse carries odr-used defaulted special members through consumer Sema and CodeGen, preserving shared_mutex/once_flag constructors, condition-variable destruction and stop-token moves; cxx-standard-library-headers v2 reader cutover; matching SDK pending",
+        "Native lambda callable and parameter contracts preserve thread-safety requirements, diagnostics, native emission and foreign metadata, defaults, constraints and explicit callable forms through canonical replay and source-free import; cxx-lambda-expressions v2 reader cutover; matching SDK pending",
         "Permanent-result proofs conservatively join every initial and assigned pointer/callback value across complete local/helper bodies, admitting known local/by-value retargeting, callback factories and object-pointer base-preserving updates while rejecting unknown writes, escaped/reference/__block/resource slots and replaceable weak/alias globals; shared work/depth/target limits and borrowed-result-proofs v7 govern source-free admission, matched SDK pending",
         "Published native thread-safety contracts preserve capability/reentrant/scoped types, guarded storage, lock ordering, shared/exclusive/generic acquire/release, try-lock success, assertions, requirements, exclusions, returned-lock aliases and explicit analysis suppression; typed expression/parameter/template identities and native-thread-safety v1 enforce source-free reader admission, matched SDK pending",
         "Permanent borrowed-result proofs admit ordinary read-only by-value pointer/callback parameters and unmodified initialized local pointer/callback aliases after a bounded whole-body use proof; assignment, increment, address/reference escape, reference capture, volatile/TLS/global mutation and __block storage retain rejection; C++23 implicit-move wrappers and copied lambda captures preserve snapshot identity; borrowed-result-proofs v6 reader cutover, matched SDK pending",

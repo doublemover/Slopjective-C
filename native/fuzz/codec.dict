@@ -42,3 +42,9 @@
 
 "objc3.native-thread-safety.v1"
 ";native-thread-safety:v1;"
+
+"objc3.cxx-lambda-expressions.v2"
+";cxx-lambda-expressions:v2;"
+
+"objc3.cxx-standard-library-headers.v2"
+";cxx-standard-library-headers:v2;"

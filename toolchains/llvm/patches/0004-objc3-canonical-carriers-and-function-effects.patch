@@ -6072,7 +6072,7 @@ index e0b62591a..2ad8208b6 100644
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
-@@ -19,133 +19,220 @@
+@@ -19,133 +19,253 @@
  #include "clang/AST/DeclVisitor.h"
  #include "clang/AST/Expr.h"
  #include "clang/AST/ExprCXX.h"
@@ -6090,6 +6090,9 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +#include "llvm/Support/SaveAndRestore.h"
  #include "llvm/Support/raw_ostream.h"
  using namespace clang;
++namespace clang {
++void printObjC3LambdaAttributes(const CXXMethodDecl *, const PrintingPolicy &, raw_ostream &, bool);
++}
  
  namespace {
 -  class DeclPrinter : public DeclVisitor<DeclPrinter> {
@@ -6276,6 +6279,35 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +  }
 +  Out << ")))";
 +}
++// Function-type ABI attributes do not necessarily have declaration Attr nodes.
++void printObjC3FunctionTypeAttributes(const FunctionDecl *D,
++    const PrintingPolicy &Policy,raw_ostream &Out) {
++  // Calling-convention attributes can live only in FunctionType::ExtInfo,
++  // with no declaration Attr node to print. Preserve the callable ABI just as
++  // the noreturn type bit below; type aliases already use the type printer.
++  if (Policy.PolishForDeclaration || Policy.PrintAsCanonical) {
++    StringRef Convention;
++    bool HasAttribute=false;
++    switch (D->getType()->castAs<FunctionType>()->getCallConv()) {
++    case CC_Swift:Convention="swiftcall";HasAttribute=D->hasAttr<SwiftCallAttr>();break;
++    case CC_SwiftAsync:Convention="swiftasynccall";HasAttribute=D->hasAttr<SwiftAsyncCallAttr>();break;
++    case CC_PreserveMost:Convention="preserve_most";HasAttribute=D->hasAttr<PreserveMostAttr>();break;
++    case CC_PreserveAll:Convention="preserve_all";HasAttribute=D->hasAttr<PreserveAllAttr>();break;
++    case CC_PreserveNone:Convention="preserve_none";HasAttribute=D->hasAttr<PreserveNoneAttr>();break;
++    case CC_X86RegCall:Convention="regcall";HasAttribute=D->hasAttr<RegCallAttr>();break;
++    case CC_X86VectorCall:Convention="vectorcall";HasAttribute=D->hasAttr<VectorCallAttr>();break;
++    case CC_X86_64SysV:Convention="sysv_abi";HasAttribute=D->hasAttr<SysVABIAttr>();break;
++    default:break;
++    }
++    if (!Convention.empty() && !HasAttribute) Out << "__attribute__((" << Convention << ")) ";
++  }
++
++  if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) &&
++      D->getType()->castAs<FunctionType>()->getNoReturnAttr() &&
++      !D->hasAttr<NoReturnAttr>() && !D->hasAttr<CXX11NoReturnAttr>())
++    Out << "__attribute__((noreturn)) ";
++
++}
 +class DeclPrinter : public DeclVisitor<DeclPrinter> {
 +  raw_ostream &Out;
 +  PrintingPolicy Policy;
@@ -6379,7 +6411,8 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +  enum class AttrPosAsWritten { Default = 0, Left, Right };
 +  std::optional<std::string>
 +  prettyPrintAttributes(const Decl *D,
-+                        AttrPosAsWritten Pos = AttrPosAsWritten::Default);
++                        AttrPosAsWritten Pos = AttrPosAsWritten::Default,
++                        std::optional<bool> LambdaFront = std::nullopt);
 +
 +  void prettyPrintPragmas(Decl *D);
 +  void printDeclType(QualType T, StringRef DeclName, bool Pack = false);
@@ -6402,7 +6435,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void TemplateParameterList::print(raw_ostream &Out, const ASTContext &Context,
-@@ -190,30 +277,33 @@
+@@ -190,30 +310,33 @@
    return BaseType;
  }
  
@@ -6445,7 +6478,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      if (isFirst) {
        isFirst = false;
      } else {
-@@ -236,7 +326,7 @@
+@@ -236,7 +359,7 @@
    Printer.VisitDeclContext(const_cast<DeclContext *>(this), /*Indent=*/false);
  }
  
@@ -6454,7 +6487,16 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -265,12 +355,131 @@
+@@ -258,19 +381,141 @@
+ 
+ std::optional<std::string>
+ DeclPrinter::prettyPrintAttributes(const Decl *D,
+-                                   AttrPosAsWritten Pos /*=Default*/) {
++                                   AttrPosAsWritten Pos /*=Default*/,
++                                   std::optional<bool> LambdaFront) {
+   if (Policy.SuppressDeclAttributes || !D->hasAttrs())
+     return std::nullopt;
+ 
    std::string AttrStr;
    llvm::raw_string_ostream AOut(AttrStr);
    llvm::ListSeparator LS(" ");
@@ -6481,6 +6523,8 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +      return L->getKind() < R->getKind();
 +    });
 +  for (const auto *A : Attributes) {
++    if (LambdaFront && *LambdaFront != (A->isCXX11Attribute() || A->isDeclspecAttribute()))
++      continue;
 +    if (isa<VarDecl>(D) && isa<BlocksAttr>(A))
 +      continue; // Printed as its native __block storage spelling.
 +    if (A->isImplicit() ||
@@ -6589,7 +6633,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      switch (A->getKind()) {
  #define ATTR(X)
  #define PRAGMA_SPELLING_ATTR(X) case attr::X:
-@@ -278,11 +487,189 @@
+@@ -278,11 +523,189 @@
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -6780,7 +6824,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        }
        break;
      }
-@@ -348,12 +735,11 @@
+@@ -348,12 +771,11 @@
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -6794,7 +6838,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -390,16 +776,17 @@
+@@ -390,16 +812,17 @@
      }
  
      if (Expr *Init = BMInitializer->getInit()) {
@@ -6817,7 +6861,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Expr *SimpleInit = nullptr;
        Expr **Args = nullptr;
        unsigned NumArgs = 0;
-@@ -451,7 +838,7 @@
+@@ -451,7 +874,7 @@
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -6826,7 +6870,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +858,15 @@
+@@ -471,6 +894,15 @@
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -6842,7 +6886,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +950,12 @@
+@@ -554,9 +986,12 @@
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -6857,7 +6901,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +1068,129 @@
+@@ -669,45 +1104,106 @@
    Out << Proto;
  }
  
@@ -6926,30 +6970,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        printTemplateParameters(TPL);
    }
  
-+  // Calling-convention attributes can live only in FunctionType::ExtInfo,
-+  // with no declaration Attr node to print. Preserve the callable ABI just as
-+  // the noreturn type bit below; type aliases already use the type printer.
-+  if (Policy.PolishForDeclaration || Policy.PrintAsCanonical) {
-+    StringRef Convention;
-+    bool HasAttribute=false;
-+    switch (D->getType()->castAs<FunctionType>()->getCallConv()) {
-+    case CC_Swift:Convention="swiftcall";HasAttribute=D->hasAttr<SwiftCallAttr>();break;
-+    case CC_SwiftAsync:Convention="swiftasynccall";HasAttribute=D->hasAttr<SwiftAsyncCallAttr>();break;
-+    case CC_PreserveMost:Convention="preserve_most";HasAttribute=D->hasAttr<PreserveMostAttr>();break;
-+    case CC_PreserveAll:Convention="preserve_all";HasAttribute=D->hasAttr<PreserveAllAttr>();break;
-+    case CC_PreserveNone:Convention="preserve_none";HasAttribute=D->hasAttr<PreserveNoneAttr>();break;
-+    case CC_X86RegCall:Convention="regcall";HasAttribute=D->hasAttr<RegCallAttr>();break;
-+    case CC_X86VectorCall:Convention="vectorcall";HasAttribute=D->hasAttr<VectorCallAttr>();break;
-+    case CC_X86_64SysV:Convention="sysv_abi";HasAttribute=D->hasAttr<SysVABIAttr>();break;
-+    default:break;
-+    }
-+    if (!Convention.empty() && !HasAttribute) Out << "__attribute__((" << Convention << ")) ";
-+  }
-+
-+  if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) &&
-+      D->getType()->castAs<FunctionType>()->getNoReturnAttr() &&
-+      !D->hasAttr<NoReturnAttr>() && !D->hasAttr<CXX11NoReturnAttr>())
-+    Out << "__attribute__((noreturn)) ";
++  printObjC3FunctionTypeAttributes(D,Policy,Out);
 +
    CXXConstructorDecl *CDecl = dyn_cast<CXXConstructorDecl>(D);
    CXXConversionDecl *ConversionDecl = dyn_cast<CXXConversionDecl>(D);
@@ -7002,7 +7023,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +1204,24 @@
+@@ -721,12 +1217,24 @@
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -7029,7 +7050,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +1248,14 @@
+@@ -753,12 +1261,14 @@
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -7046,7 +7067,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1304,10 @@
+@@ -807,7 +1317,10 @@
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -7058,7 +7079,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1318,35 @@
+@@ -818,17 +1331,35 @@
        }
      }
  
@@ -7099,7 +7120,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1368,15 @@
+@@ -850,7 +1381,15 @@
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -7116,7 +7137,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -877,9 +1403,17 @@
+@@ -877,9 +1416,17 @@
          Indentation -= Policy.Indentation;
        }
  
@@ -7137,7 +7158,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1428,15 @@
+@@ -894,19 +1441,15 @@
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -7162,7 +7183,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -917,14 +1447,22 @@
+@@ -917,14 +1460,22 @@
  
  void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    prettyPrintPragmas(D);
@@ -7187,7 +7208,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -932,6 +1470,9 @@
+@@ -932,6 +1483,9 @@
                                    &Context);
    }
  
@@ -7197,7 +7218,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Expr *Init = D->getInClassInitializer();
    if (!Policy.SuppressInitializers && Init) {
      if (D->getInClassInitStyle() == ICIS_ListInit)
-@@ -940,16 +1481,57 @@
+@@ -940,16 +1494,57 @@
        Out << " = ";
      Init->printPretty(Out, nullptr, Policy, Indentation, "\n", &Context);
    }
@@ -7260,7 +7281,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1541,10 @@
+@@ -959,9 +1554,10 @@
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -7274,7 +7295,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1568,43 @@
+@@ -985,22 +1581,43 @@
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -7322,7 +7343,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1626,8 @@
+@@ -1022,6 +1639,8 @@
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -7331,7 +7352,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1635,7 @@
+@@ -1029,9 +1648,7 @@
    }
  }
  
@@ -7342,7 +7363,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1650,7 @@
+@@ -1046,8 +1663,7 @@
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -7352,7 +7373,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1672,8 @@
+@@ -1069,6 +1685,8 @@
      Out << "inline ";
  
    Out << "namespace ";
@@ -7361,7 +7382,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +1700,9 @@
+@@ -1095,6 +1713,9 @@
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -7371,7 +7392,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +1739,8 @@
+@@ -1131,7 +1752,8 @@
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -7381,7 +7402,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1871,7 @@
+@@ -1262,7 +1884,7 @@
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -7390,7 +7411,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +1891,21 @@
+@@ -1282,12 +1904,21 @@
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -7413,7 +7434,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +1920,11 @@
+@@ -1302,7 +1933,11 @@
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -7426,7 +7447,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +1942,14 @@
+@@ -1320,6 +1955,14 @@
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -7441,7 +7462,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +2007,17 @@
+@@ -1377,13 +2020,17 @@
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -7462,7 +7483,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +2032,18 @@
+@@ -1398,9 +2045,18 @@
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -7483,7 +7504,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +2115,8 @@
+@@ -1472,9 +2128,8 @@
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -7495,7 +7516,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +2125,22 @@
+@@ -1483,8 +2138,22 @@
      Out << name;
  
    if (OMD->isVariadic())
@@ -7519,7 +7540,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +2148,7 @@
+@@ -1492,8 +2161,7 @@
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -7529,7 +7550,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << ';';
  }
  
-@@ -1512,8 +2167,8 @@
+@@ -1512,8 +2180,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -7540,7 +7561,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2200,7 @@
+@@ -1545,7 +2213,7 @@
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -7549,7 +7570,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2213,8 @@
+@@ -1558,7 +2226,8 @@
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -7559,7 +7580,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2224,8 @@
+@@ -1568,9 +2237,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -7571,7 +7592,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2242,8 @@
+@@ -1587,6 +2255,8 @@
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -7580,7 +7601,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2253,8 @@
+@@ -1596,7 +2266,8 @@
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -7590,7 +7611,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2277,8 @@
+@@ -1619,6 +2290,8 @@
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -7599,7 +7620,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2287,26 @@
+@@ -1627,13 +2300,26 @@
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -7630,7 +7651,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2318,8 @@
+@@ -1645,8 +2331,8 @@
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -7641,7 +7662,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2426,14 @@
+@@ -1753,15 +2439,14 @@
        }
      }
  
@@ -7663,7 +7684,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2469,14 @@
+@@ -1797,11 +2482,14 @@
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -7681,7 +7702,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2498,7 @@
+@@ -1823,7 +2511,7 @@
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -7690,6 +7711,25 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
+@@ -2023,3 +2711,18 @@
+     }
+   }
+ }
++
++// Reuse the native declaration normalization for lambda call operators.
++// Standard declaration attributes precede the parameter clause; GNU callable
++// attributes follow it, where parameter-dependent contracts remain in scope.
++void clang::printObjC3LambdaAttributes(const CXXMethodDecl *Method,
++    const PrintingPolicy &Policy, raw_ostream &Out, bool Front) {
++  if(!Front) {
++    auto TypePolicy=Policy;TypePolicy.PrintAsCanonical=true;
++    Out << ' ';printObjC3FunctionTypeAttributes(Method,TypePolicy,Out);
++  }
++  DeclPrinter Printer(Out, Policy, Method->getASTContext());
++  if (auto Attributes=Printer.prettyPrintAttributes(Method,
++          DeclPrinter::AttrPosAsWritten::Default, Front);
++      Attributes && !Attributes->empty()) Out << ' ' << *Attributes;
++}
 
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
 index 172a19f8f..4d90ea9bf 100644
@@ -59810,7 +59850,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,3054 @@
+@@ -0,0 +1,3130 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -62864,6 +62904,82 @@ new file mode 100644
 +    if(ARC)Args.push_back("-fobjc-arc");
 +    auto AST=tooling::buildASTFromCodeWithArgs(Source,Args,"permanent-pointer-writes.mm");ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  }
++}
++
++TEST(ObjC3ASTInfrastructure, LambdaContractsSurviveImportAndCanonicalReplay) {
++ const char *Source=R"lambda(
++namespace LambdaContracts {
++class __attribute__((capability("mutex"))) Mutex {
++public:
++  void lock() __attribute__((acquire_capability())) {}
++  void unlock() __attribute__((release_capability())) {}
++};
++struct State {
++  Mutex mutex;
++  int value __attribute__((guarded_by(mutex)))=42;
++  int read() __attribute__((requires_capability(mutex))) {
++    auto predicate=[this]() __attribute__((requires_capability(mutex))) {return value;};
++    return predicate();
++  }
++};
++inline int checked(){State state;state.mutex.lock();int result=state.read();state.mutex.unlock();return result;}
++inline constexpr int defaults(){
++  auto add=[](int value=40) constexpr noexcept -> int {return value+2;};
++  return add();
++}
++inline int constrained(){
++  auto add=[]<class T>(T value) requires(sizeof(T)==sizeof(int)){return value+2;};
++  return add(40);
++}
++inline int attributed(){
++  auto identity=[](int value __attribute__((unused))) __attribute__((noinline,no_sanitize("address"))) {return value;};
++  return identity(42);
++}
++inline int swift_contract(){
++  auto call=[](void *context __attribute__((swift_context)),int value) __attribute__((swiftcall,noinline)){return value;};
++  return call(nullptr,42);
++}
++inline int vector_contract(){
++  auto call=[](int value) __attribute__((vectorcall,noinline)){return value;};return call(42);
++}
++inline int diagnosed(){
++  auto call=[](int value) __attribute__((diagnose_if(value<0,"negative","error"))){return value;};return call(42);
++}
++inline constexpr int immediate(){return []() consteval {return 42;}();}
++static_assert(defaults()==42 && immediate()==42);
++}
++)lambda";
++ for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++  std::vector<std::string> Args={Standard,"-Wthread-safety","-Werror=thread-safety"};
++  std::string Text=Source;
++  if(StringRef(Standard)=="-std=c++23")Text+=R"(namespace LambdaContracts {
++    inline int static_callable(){auto call=[] [[nodiscard]] () static {return 42;};return call();}
++  })";
++  auto From=tooling::buildASTFromCodeWithArgs(Text,Args,"lambda-source.cpp");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"lambda-destination.cpp");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  NamespaceDecl *Imported=nullptr;
++  {
++   ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *N=dyn_cast<NamespaceDecl>(D)) {
++    auto Result=Importer.Import(N);ASSERT_TRUE(static_cast<bool>(Result));Imported=dyn_cast<NamespaceDecl>(*Result);
++   }
++  }
++  ASSERT_TRUE(Imported);From.reset();
++  PrintingPolicy Policy(To->getASTContext().getLangOpts());Policy.PolishForDeclaration=true;
++  std::string Printed;llvm::raw_string_ostream Out(Printed);Imported->print(Out,Policy);Out.flush();
++  for(const char *Contract:{"requires_capability","noinline","no_sanitize","unused","consteval","requires","= 40","swiftcall","swift_context","vectorcall","diagnose_if"})
++   EXPECT_NE(Printed.find(Contract),std::string::npos)<<Contract;
++  auto Replay=tooling::buildASTFromCodeWithArgs(Printed,Args,"lambda-replay.cpp");ASSERT_TRUE(Replay);EXPECT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++  if(StringRef(Standard)=="-std=c++23") {
++   EXPECT_NE(Printed.find("nodiscard"),std::string::npos);
++   struct StaticCall:RecursiveASTVisitor<StaticCall> {
++    bool Found=false;
++    bool VisitLambdaExpr(LambdaExpr *Expression){Found|=Expression->getCallOperator()->isStatic();return true;}
++   } Visitor;
++   Visitor.TraverseDecl(Replay->getASTContext().getTranslationUnitDecl());EXPECT_TRUE(Visitor.Found);
++  }
++ }
 +}
 
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
@@ -71701,3 +71817,38 @@ new file mode 100644
 +void thread_generic_release(ThreadSafety::Counter &counter){counter.mutex.lock();counter.bump();counter.mutex.unlock_any();}
 +void thread_bad_order(){ThreadSafety::second.lock();ThreadSafety::first.lock();ThreadSafety::first.unlock();ThreadSafety::second.unlock();} // expected-warning {{must be acquired before}}
 +void thread_unchecked(ThreadSafety::Counter &counter) __attribute__((no_thread_safety_analysis)){counter.bump();}
+
+diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
+--- a/clang/lib/AST/StmtPrinter.cpp
++++ b/clang/lib/AST/StmtPrinter.cpp
+@@ -59,6 +59,9 @@
+ #include <string>
+ 
+ using namespace clang;
++namespace clang {
++void printObjC3LambdaAttributes(const CXXMethodDecl *, const PrintingPolicy &, raw_ostream &, bool);
++}
+ 
+ //===----------------------------------------------------------------------===//
+ // StmtPrinter Visitor
+@@ -2800,9 +2803,10 @@
+   }
+ 
+   CXXMethodDecl *Method = Node->getCallOperator();
++  printObjC3LambdaAttributes(Method, Policy, OS, true);
+   const auto LambdaEffects=Method->getType()->castAs<FunctionProtoType>()->getObjC3FunctionEffects();
+   const bool HasObjC3Effects=LambdaEffects.Async || LambdaEffects.Throws!=ObjC3ThrowsKind::None;
+-  if (Node->hasExplicitParameters() || Method->isConsteval() || Method->isStatic() || HasObjC3Effects) {
++  if (Node->hasExplicitParameters() || Method->isConsteval() || Method->isStatic() || HasObjC3Effects || Method->hasAttrs()) {
+     OS << '(';
+     NeedComma = false;
+     for (const auto *P : Method->parameters()) {
+@@ -2831,7 +2835,7 @@
+     auto *Proto = Method->getType()->castAs<FunctionProtoType>();
+     Proto->printExceptionSpecification(OS, Policy);
+ 
+-    // FIXME: Attributes
++    printObjC3LambdaAttributes(Method, Policy, OS, false);
+ 
+     // Print the trailing return type if it was specified in the source.
+     if (Node->hasExplicitResultType()) {
