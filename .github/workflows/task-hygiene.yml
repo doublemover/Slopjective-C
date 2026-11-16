@@ -62,6 +62,7 @@ jobs:
           tests/tooling/test_runtime_schedule_model.py
           tests/tooling/test_llvm_ir_assurance.py
           tests/tooling/test_semantic_oracles.py
+          tests/tooling/test_semantic_source_feedback.py
           tests/tooling/test_semantic_benchmarks.py
           tests/tooling/test_semantic_runtime_workloads.py
           tests/tooling/test_semantic_ownership_workloads.py

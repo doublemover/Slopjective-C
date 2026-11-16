@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [paired compiler-source feedback driver](linux_semantic_source_feedback.md)
+implements the remaining #8288 generation experiment using the qualified coverage
+compiler, independent model controls, counterbalanced bounded windows and compact
+source-point evidence. Current-source execution remains in SDK/CI consolidation;
+uniform generation remains the default.
+
 The [Source 2.169 / System 2.95 native member-pointer span](linux_native_member_pointer_proofs.md)
 extends bounded permanent-result proofs to known member targets, factories,
 reference aliases, concrete method templates and native receiver adjustments,

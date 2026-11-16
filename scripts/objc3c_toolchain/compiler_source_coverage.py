@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import os
 from pathlib import Path
@@ -21,6 +22,40 @@ FLAGS = ('-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=ato
 EXPORT_FLAGS = ('--check-binary-ids', '--skip-expansions', '--skip-functions')
 PATCH_FILE = re.compile(r'^\+\+\+ b/((?:clang|llvm)/\S+)$')
 HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
+
+
+def selected_tools(repo: Path) -> tuple[dict, dict, dict]:
+    """Reuse the completed coverage compiler for source-feedback experiments."""
+    from .build import verify_effective_configuration
+    from .llvm_tools import verify_installation
+    from .sanitizer_policy import strict_environment
+
+    plans = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)
+    plan = plans['configure']
+    build, stage = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage'))
+    receipt = json.loads((build / 'foundation-build-report.json').read_text())
+    phases = receipt.get('phases', [])
+    expected = {phase: 1 + len(plans[phase].get('follow_up_commands', []))
+                for phase in ('configure', 'build', 'test', 'stage')}
+    if (receipt.get('status') != 'passed' or receipt.get('source_identity') != plan['source_build_id'] or
+            Counter(row.get('phase') for row in phases) != expected or
+            any(row.get('exit_code') != 0 for row in phases)):
+        raise ValueError('source feedback requires a complete matching coverage foundation')
+    # Historical phase-plan IDs also include then-existing consumer directories
+    # and runner resource observations. Source/configuration identity and the
+    # effective CMake state bind this reuse; recomputing those historical IDs
+    # after staging would reject a valid freshly completed build.
+    verify_effective_configuration(plan)
+    tools = {name: stage / 'bin' / name for name in
+             ('clang', 'clang++', 'ld.lld', 'llvm-cov', 'llvm-profdata', 'llvm-readobj')}
+    for name, installed in tools.items():
+        verify_installation((build / 'bin' / name).resolve(strict=True), installed, build)
+    for name in ('libLLVM.so', 'libclang-cpp.so'):
+        verify_installation(build / 'lib' / name, installed_shared_library(stage / 'lib', name), build)
+    bootstrap = Path(plan['host_environment']['bootstrap_root'])
+    environment = strict_environment(tools['clang'], bootstrap / 'bin/llvm-symbolizer')
+    environment['LLVM_PROFILE_FILE'] = os.devnull
+    return plan, tools, environment
 
 
 def require_binary_ids(observed: set[str], *, required: set[str], allowed: set[str], kind: str) -> None:

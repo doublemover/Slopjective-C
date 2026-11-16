@@ -58,12 +58,21 @@ def shrink(program, predicate, expected_class: str):
 
 
 class Campaign:
-    def __init__(self, repo: Path, output: Path, facade: Path, services: Path, runtime: Path):
+    def __init__(self, repo: Path, output: Path, facade: Path | None, services: Path, runtime: Path,
+                 *, compiler_profile='compiler-asan-ubsan'):
         self.repo, self.output = repo, output
-        self.foundation, self.tools, environment = selected(repo)
-        self.facade, self.services, self.runtime = facade.resolve(strict=True), services.resolve(strict=True), runtime.resolve(strict=True)
+        if compiler_profile == 'compiler-source-coverage' and facade is None:
+            from .compiler_source_coverage import selected_tools
+            self.foundation, self.tools, environment = selected_tools(repo)
+        elif compiler_profile == 'compiler-asan-ubsan' and facade is not None:
+            self.foundation, self.tools, environment = selected(repo)
+        else:
+            raise ValueError('semantic campaigns require their exact compiler profile and transport')
+        self.facade = facade.resolve(strict=True) if facade is not None else None
+        self.services, self.runtime = services.resolve(strict=True), runtime.resolve(strict=True)
         self.report = {'schema': 'objc3c.generated-semantic-oracles.v2', 'status': 'running',
             'model_version': VERSION, 'source_build_id': self.foundation['source_build_id'],
+            'source_tree': self.foundation['source_tree'], 'compiler_profile': compiler_profile,
             'build_config_digest': self.foundation['build_config_digest'],
             'permitted_environment': environment,
             'bounds': {'operations': 64, 'logical_allocations': 32, 'seeds': 8,
@@ -88,7 +97,7 @@ class Campaign:
         stage = Path(self.foundation['paths']['stage'])
         self.inputs = {str(path): digest(path) for path in [Path(__file__),
             Path(__file__).with_name('semantic_model.py'), Path(__file__).with_name('semantic_sources.py'),
-            self.facade, self.services, self.runtime, *self.tools.values(),
+            *([self.facade] if self.facade else []), self.services, self.runtime, *self.tools.values(),
             *(installed_shared_library(stage / 'lib', name)
               for name in ('libLLVM.so', 'libclang-cpp.so'))]}
         for name in ('llvm_ir_execution.py', 'compiler_instrumentation.py', 'llvm_tools.py',
@@ -100,7 +109,7 @@ class Campaign:
         libraries = [installed_shared_library(stage / 'lib', name)
                      for name in ('libLLVM.so', 'libclang-cpp.so')]
         self.report['compiler_graphs'] = {}
-        for name, binary in (('clang', self.tools['clang++']), ('facade', self.facade)):
+        for name, binary in [('clang', self.tools['clang++']), *([('facade', self.facade)] if self.facade else [])]:
             graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), libraries,
                 required=tuple(libraries) if name == 'clang' else (libraries[0],),
                 run=lambda suffix, argv, name=name: self.run(name+'-'+suffix, argv))
@@ -137,6 +146,8 @@ class Campaign:
 
     def _case(self, name, program, *, transport='source', optimization='O2', standard='c++20',
              relation='', mutant='', bias=0, expected_mismatch=None, probe=False, sanitized=False):
+        if self.facade is None and transport != 'source':
+            raise ValueError('compiler source-feedback campaigns support only explicit source transport')
         work = self.output / name
         source_bundle(program, work, transport=transport, relation=relation, mutant=mutant, bias=bias,
             optimization=optimization, standard=standard, sanitized=sanitized, expected_mismatch=expected_mismatch)

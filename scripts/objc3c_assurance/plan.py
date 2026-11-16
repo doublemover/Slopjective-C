@@ -42,6 +42,7 @@ FUZZ = FOUNDATION + ('native/fuzz/', 'scripts/objc3c_toolchain/codec_fuzz.py',
     'native/objc3c/src/clang_foundation/interface_')
 COVERAGE = FOUNDATION + ('scripts/objc3c_toolchain/source_coverage.py',
     'scripts/objc3c_toolchain/compiler_source_coverage.py',
+    'scripts/objc3c_toolchain/semantic_source_feedback.py',
     'scripts/objc3c_toolchain/coverage_controls.py', 'toolchains/llvm/source-coverage.json')
 
 
