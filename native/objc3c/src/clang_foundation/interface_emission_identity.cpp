@@ -977,6 +977,9 @@ public:
     for(const auto &state:states)Add("native-state-contract:"+state);
     return true;
   }
+  bool VisitIfStmt(clang::IfStmt *branch) {
+    Add("if-kind:"+std::to_string(static_cast<unsigned>(branch->getStatementKind())));return true;
+  }
   bool VisitStmt(clang::Stmt *statement) {
     Add(statement->getStmtClassName()); return true;
   }
@@ -1900,9 +1903,12 @@ const clang::FunctionDecl *PublishedFriendFunction(const clang::FriendDecl *decl
 }
 
 bool IsConcreteFriend(const clang::FriendDecl *declaration) {
-  if (declaration->isPackExpansion() || declaration->getFriendTypeNumTemplateParameterLists())
+  if (declaration->isUnsupportedFriend() || declaration->isPackExpansion() ||
+      declaration->getFriendTypeNumTemplateParameterLists())
     return false;
   if (const auto *type = declaration->getFriendType()) return !type->getType().isNull();
+  if(const auto *pattern=llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(declaration->getFriendDecl()))
+    return IsBoundedNestedTemplateParameters(pattern->getTemplateParameters());
   const auto *function=PublishedFriendFunction(declaration);
   if(!function || function->getPrimaryTemplate())return false;
   if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(declaration->getFriendDecl()))
@@ -2030,7 +2036,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
              ? ";cxx-class-partial-specializations:v1;" : "") +
         (members.deduced ? ";cxx-template-deduction:v1;" : "") +
         (members.effectful ? ";cxx-effectful-template-members:v1;" : "") +
-        (members.friends ? ";cxx-friends:v2;" : "") +
+        (members.friends ? ";cxx-friends:v3;" : "") +
         (members.functions ? ";cxx-member-templates:v1;" : "") +
         (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;" : "") +
         (members.variables ? ";cxx-variable-templates:v1;" : "") +
@@ -3040,6 +3046,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-cpu-variant:v1;";
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
+  if (HasDeclarationConstantEvaluationControl(representative))
+    identity.canonical_type_identity+=";cxx-constant-evaluation-control:v1;";
   if (HasDeclarationManualFamilyCallProof(representative))
     identity.canonical_type_identity+=";manual-family-call-proofs:v1;";
   if (HasDeclarationBorrowedResultProof(representative))
@@ -3135,7 +3143,7 @@ bool ReadInterfaceDeclarationIdentity(
     friend_function=pattern->getTemplatedDecl();
   if (const auto *function=friend_function)
     if (const auto *owner = FriendOwner(function); owner && !IsInClassDefaultedComparison(function))
-      identity.canonical_type_identity += ";cxx-friends:v2;owner=" +
+      identity.canonical_type_identity += ";cxx-friends:v3;owner=" +
           ReadInterfaceDeclarationStableId(owner) + ";deleted=" +
           std::to_string(function->isDeleted()) + ";lookup=" +
           std::to_string(function->getIdentifierNamespace()) + ";";

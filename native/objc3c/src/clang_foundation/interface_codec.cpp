@@ -35,6 +35,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kBorrowedUnionStorageSemantic,
     kBorrowedResultProofSemantic,
     kManualFamilyCallProofSemantic,
+    kCxxConstantEvaluationControlSemantic,
     kNativeUnnamedEnumSemantic,
     kNativeStorageLifetimeSemantic,
     kAtomicManagedPropertySemantic,
@@ -90,7 +91,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.cxx-namespace-attributes.v1",
     "objc3.cxx-lambda-expressions.v2",
     "objc3.cxx-thread-local.v1",
-    "objc3.cxx-friends.v2",
+    "objc3.cxx-friends.v3",
     kCxxBlockExpressionSemantic,
     "objc3.cxx-statement-expressions.v1",
     "objc3.cxx-local-types.v1",
@@ -760,6 +761,12 @@ llvm::Error ValidateForEncoding(
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
   if(borrowed_unions!=borrowed_union_capability)
     return Invalid("borrowed union byte storage identity and required capability must agree");
+  const bool constant_control=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxConstantEvaluationControlIdentity);
+  const bool constant_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConstantEvaluationControlSemantic)!=sidecar.required_semantics.end();
+  const bool constant_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxConstantEvaluationControlIdentity(d) || d.kind!="Namespace";});
+  if(constant_control!=constant_capability || !constant_owners)
+    return Invalid("C++ constant-evaluation control identity and required capability must agree");
   const bool manual_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasManualFamilyCallProofIdentity);
   const bool manual_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kManualFamilyCallProofSemantic)!=sidecar.required_semantics.end();
   const bool manual_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

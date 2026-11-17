@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 180,
+        "minor": 181,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Source-free class-template friendship preserves ordinary/constrained/variadic/template-template and non-type heads, exact specialization access and cyclic nominal identity across ordinary/primary/partial/nested classes; constexpr/consteval branches retain native printing and typed identity under cxx-friends v3 and cxx-constant-evaluation-control v1; matching SDK acceptance pending",
         "Source-free constrained/variadic hidden friends, delayed definitions and dependent friend types preserve native ADL, private access and export/SPI policy across ordinary, primary/partial and nested class-template graphs; instantiated functions and their template primaries share one template ABI owner under cxx-friends v2; complete SDK acceptance pending",
         "Native typestate and open/closed/flag-enum contracts retain every state, transition, parameter/return obligation and published-local annotation across C++ templates and source-free imports; canonical state sets/spellings share identity under native-declaration-attributes v6; complete SDK acceptance pending",
         "Bounded indirect retainable-family calls preserve definite common holds, possible releases and deferred effects across aliases, immutable fields and callback factories; exceptional paths keep completed claims and possible consumption without acquiring a failed retain. Inline family-owned record buffers retain their exact root lifetime. Manual-family-call-proofs v1 and borrowed-result-proofs v13 require current readers; matching SDK pending",
@@ -343,12 +344,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 106,
+        "minor": 107,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Source-free class-template friendship preserves ordinary/constrained/variadic/template-template and non-type heads, exact specialization access and cyclic nominal identity across ordinary/primary/partial/nested classes; constexpr/consteval branches retain native printing and typed identity under cxx-friends v3 and cxx-constant-evaluation-control v1; matching SDK acceptance pending",
         "Native Linux AArch64 compiler/runtime/SDK plans, owned-carrier AAPCS64 ABI, architecture-bound bootstrap caches and installer admission, ARM CPU target-version/vector PCS publication and compiler-rt builtins delivery; native-emission-policies v3 reader cutover; native ARM64 SDK qualification pending",
         "Bounded read-only pointer/function/member-pointer reference results forward through nested exact helpers when loaded immediately or returned to the result proof; active-caller mutable slots retain every write while escaped aliases/address/reference captures and dangling callee slots remain rejected; borrowed-result-proofs v12 cutover (source; matching SDK pending)",
         "Named inline namespace/class-static lambda factories bind local record/enum, nested closure and generic result owners to the exact variable plus concrete callable arguments; projected aliases, nominal import matching, distinct overloaded symbols and deduced-return placeholder shapes preserve identity and export-policy dependencies, with cxx-inline-closure-objects v3 hard cutover (source; matching SDK pending)",

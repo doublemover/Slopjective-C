@@ -54,7 +54,9 @@ int main() {
   assert(!capabilities.count("objc3.borrowed-result-proofs.v12"));
   assert(capabilities.count(kManualFamilyCallProofSemantic));
   assert(capabilities.count(kCxxFriendSemantic));
+  assert(capabilities.count(kCxxConstantEvaluationControlSemantic));
   assert(!capabilities.count("objc3.cxx-friends.v1"));
+  assert(!capabilities.count("objc3.cxx-friends.v2"));
   assert(capabilities.count("objc3.cxx-class-templates.v2"));
   assert(!capabilities.count("objc3.cxx-class-templates.v1"));
   assert(!capabilities.count("objc3.native-declaration-attributes.v3"));
@@ -106,7 +108,8 @@ int main() {
       {";native-storage-lifetime:v6;",kNativeStorageLifetimeSemantic},
       {";borrowed-result-proofs:v13;",kBorrowedResultProofSemantic},
       {";manual-family-call-proofs:v1;",kManualFamilyCallProofSemantic},
-      {";cxx-friends:v2;",kCxxFriendSemantic},
+      {";cxx-friends:v3;",kCxxFriendSemantic},
+      {";cxx-constant-evaluation-control:v1;",kCxxConstantEvaluationControlSemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},

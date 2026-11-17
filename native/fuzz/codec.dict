@@ -68,5 +68,8 @@
 "objc3.manual-family-call-proofs.v1"
 ";manual-family-call-proofs:v1;"
 
-"objc3.cxx-friends.v2"
-";cxx-friends:v2;"
+"objc3.cxx-friends.v3"
+";cxx-friends:v3;"
+
+"objc3.cxx-constant-evaluation-control.v1"
+";cxx-constant-evaluation-control:v1;"

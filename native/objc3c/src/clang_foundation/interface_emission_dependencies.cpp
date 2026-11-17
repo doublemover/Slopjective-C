@@ -509,6 +509,8 @@ class TypeDependencyVisitor final
                 AddDiagnostic(result_,"O3IFC157","shared friend owners require the same SPI policy",function->getQualifiedNameAsString());
             }
         if(const auto *type=friend_decl->getFriendType())TraverseTypeLoc(type->getTypeLoc());
+        else if(const auto *pattern=llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(friend_decl->getFriendDecl()))
+          CheckExpressionReference(pattern);
         else if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(friend_decl->getFriendDecl()))
           CheckFunctionTemplate(pattern);
         else if(const auto *function=PublishedFriendFunction(friend_decl)) {
@@ -1215,6 +1217,11 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
       variable && IsStandardLibrarySpecialization(variable))visitor.CheckStandardVariable(variable);
   if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
       HasDirectMemberTemplates(record)) visitor.CheckTemplateRecord(record);
+  if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(declaration))
+    if(const auto *definition=record->getDefinition())
+      for(const auto *friend_decl:definition->friends())
+        if(const auto *pattern=llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(friend_decl->getFriendDecl()))
+          visitor.CheckExpressionReference(pattern);
   for (const auto *pattern:ClosedParentPatterns(declaration)) {
     if (const auto *record=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern)) visitor.CheckClassTemplate(record);
     else if (const auto *function=llvm::dyn_cast<clang::FunctionTemplateDecl>(pattern)) visitor.CheckFunctionTemplate(function);

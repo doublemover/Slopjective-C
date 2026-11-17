@@ -380,7 +380,13 @@ class InterfaceCollector final
     // Preserve declaration/redeclaration order, including incomplete tag
     // declarations needed by signatures that precede the eventual definition.
     // The sidecar still records one semantic identity per USR below.
-    if ((IsTopLevel(declaration) || IsOutOfLineDefaultedDefinition(declaration)) &&
+    const bool class_template_friend=llvm::isa<clang::ClassTemplateDecl>(declaration) &&
+        declaration->getLexicalDeclContext()->isRecord() && !declaration->getDeclContext()->isRecord();
+    // The enclosing record already prints this friend template declaration.
+    // Emitting it again as a namespace root adds another forward declaration
+    // on every canonical replay and can change namespace lookup prematurely.
+    if (!class_template_friend &&
+        (IsTopLevel(declaration) || IsOutOfLineDefaultedDefinition(declaration)) &&
         (!FriendOwner(declaration) ||
          (llvm::isa<clang::FunctionDecl,clang::FunctionTemplateDecl>(declaration) &&
           !declaration->getLexicalDeclContext()->isRecord())) &&
@@ -1106,6 +1112,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeEmissionPolicySemantic);
     if (HasBorrowedUnionStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kBorrowedUnionStorageSemantic);
+    if(HasCxxConstantEvaluationControlIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxConstantEvaluationControlSemantic);
     if (HasManualFamilyCallProofIdentity(declaration))
       sidecar.required_semantics.push_back(kManualFamilyCallProofSemantic);
     if (HasBorrowedResultProofIdentity(declaration))

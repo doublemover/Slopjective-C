@@ -124,8 +124,12 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     for (const auto *member : record->getDefinition()->decls()) {
       if (member->isImplicit()) continue;
       const clang::NamedDecl *named = llvm::dyn_cast<clang::NamedDecl>(member);
-      if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member))
+      if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member)) {
         named = friend_decl->getFriendDecl();
+        // A class-template friendship declares a dependency, not a copy of
+        // that template's bodies inside this record's publication context.
+        if(!llvm::isa_and_nonnull<clang::FunctionDecl,clang::FunctionTemplateDecl>(named))continue;
+      }
       if (named && llvm::isa<clang::FieldDecl, clang::FunctionDecl, clang::VarDecl, clang::CXXRecordDecl, clang::TemplateDecl>(named) &&
           HasPublishedExpression(named, contains)) return true;
     }
@@ -156,6 +160,19 @@ bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   if (llvm::isa<clang::NamespaceDecl>(declaration)) return false;
   return HasPublishedExpression(declaration, [](const clang::Stmt *, const clang::NamedDecl *owner) {
     return owner->hasAttr<clang::ObjCReturnsBorrowedAttr>();
+  });
+}
+
+bool HasDeclarationConstantEvaluationControl(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Branches:clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitIfStmt(clang::IfStmt *branch) override {
+        found|=branch->isConstexpr() || branch->isConsteval();return true;
+      }
+    } branches;
+    branches.TraverseStmt(const_cast<clang::Stmt *>(statement));return branches.found;
   });
 }
 
@@ -1877,6 +1894,12 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
       if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member)) {
         if (const auto *type = friend_decl->getFriendType()) {
           friends.insert("type=" + CanonicalType(type->getType(), context));
+        } else if(const auto *pattern=llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(friend_decl->getFriendDecl())) {
+          // Friendship grants access to a template identity and its head,
+          // never recursively to its definition (which can name this class).
+          friends.insert("class-template="+ReadInterfaceDeclarationStableId(pattern)+
+              ":native="+ReadNativeSymbolName(pattern)+
+              ":head="+FunctionTemplateHeadContract(pattern,context));
         } else if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(friend_decl->getFriendDecl())) {
           friends.insert("function-template="+ReadInterfaceDeclarationStableId(pattern)+
               ":contract="+DeclarationTypeIdentity(pattern,context));
@@ -1895,7 +1918,7 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
                   ? FunctionDefinitionContract(function, context) : "declaration"));
         }
       }
-    if (!friends.empty()) out << ";cxx-friends:v2;";
+    if (!friends.empty()) out << ";cxx-friends:v3;";
     for (const auto &friend_identity : friends) out << "friend=" << friend_identity << ';';
   }
   if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);

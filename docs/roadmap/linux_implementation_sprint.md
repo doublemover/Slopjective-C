@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.181 / System 2.107 class-friend span](linux_native_class_template_friends.md)
+publishes class-template friendship, fixes cyclic nominal imports and preserves
+constexpr/consteval branch semantics through canonical source-free replay.
+
 The [Source 2.180 / System 2.106 friend-template span](linux_native_friend_templates.md)
 publishes constrained/variadic and dependent friends through ordinary, partial
 and nested template graphs, preserving native ADL, private access and ABI owners.

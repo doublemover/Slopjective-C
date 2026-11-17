@@ -580,6 +580,12 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
   if(borrowed_unions!=borrowed_union_capability)
     Add(result,"O3IFC147","borrowed union byte storage identity and required capability must agree",expected.canonical_name);
+  const bool constant_control=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxConstantEvaluationControlIdentity);
+  const bool constant_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConstantEvaluationControlSemantic)!=sidecar.required_semantics.end();
+  const bool constant_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxConstantEvaluationControlIdentity(d) || d.kind!="Namespace";});
+  if(constant_control!=constant_capability || !constant_owners)
+    Add(result,"O3IFC145","C++ constant-evaluation control identity and required capability must agree",expected.canonical_name);
   const bool manual_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasManualFamilyCallProofIdentity);
   const bool manual_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kManualFamilyCallProofSemantic)!=sidecar.required_semantics.end();
   const bool manual_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

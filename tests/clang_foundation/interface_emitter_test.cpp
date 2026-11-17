@@ -11547,7 +11547,7 @@ void TestCxxFriends() {
     assert(emit("struct V { template<class T> friend int generic(T); };").success);
     assert(!emit("struct __attribute__((annotate(\"objc3.spi:Testing\"))) A {friend int shared();}; "
                  "struct B {friend int shared();};").success);
-    std::erase(decoded->required_semantics,"objc3.cxx-friends.v2");
+    std::erase(decoded->required_semantics,"objc3.cxx-friends.v3");
     decoded->module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
     auto erased=EncodeSemanticInterfaceSidecar(*decoded,semantics);
     assert(!erased); llvm::consumeError(erased.takeError());
