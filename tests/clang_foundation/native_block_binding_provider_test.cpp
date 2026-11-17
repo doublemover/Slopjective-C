@@ -8,6 +8,7 @@ namespace {
 constexpr const char *External=R"blocks(
 #include <objc3c/runtime/objc3_runtime_services.h>
 @protocol Sendable @end
+__attribute__((objc_root_class)) @interface BindingUnsafe @end
 
 typedef void (^BindingWork)(void) __objc3_async_frame;
 extern "C" objc3_task_t *binding_start(BindingWork,objc3_executor_t *) __attribute__((objc_task_detached));
@@ -24,6 +25,11 @@ __attribute__((objc_root_class)) @interface BindingOwner<Sendable> {
 + (id)new;
 @end
 namespace BindingModule {
+inline BindingWork project_reference(BindingWork __strong &work){return work;}
+inline BindingWork project(BindingWork work){return work;}
+inline BindingWork choose_work(unsigned choose,BindingWork left,BindingWork right){if(choose)return left;return right;}
+inline BindingWork nested_work(unsigned choose,BindingWork left,BindingWork right){const BindingWork work=choose_work(choose,left,right);return choose?project(work):right;}
+inline BindingWork const global_work=^void(void) __objc3_async_frame {};
 inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned shape,
                            unsigned *destroyed,unsigned *ran,unsigned *deferred) {
  BindingOwner *one=[BindingOwner new],*two=[BindingOwner new];
@@ -48,6 +54,11 @@ inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned s
  BindingWork work=alias;if(shape==1)work=nested;
  if(shape==2)work=choose?first:second;
  if(shape==3){work=(BindingWork)0;work=selected;}
+ if(shape==4)work=choose_work(choose,first,second);
+ if(shape==5)work=nested_work(choose,first,second);
+ if(shape==6){const BindingWork immutable=project(work);work=project(immutable);}
+ if(shape==7)work=project_reference(selected);
+ if(shape==8)work=global_work;
  objc3_task_t *task=binding_start(work,executor);
 #if !__has_feature(objc_arc)
  binding_release((__bridge void *)one);binding_release((__bridge void *)two);
@@ -61,10 +72,10 @@ constexpr const char *Consumer=R"blocks(
 #include <assert.h>
 static int execute(void) {
  objc3_executor_t *executor=nullptr;assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);
- for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=4;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
+ for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=9;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
   unsigned destroyed=0,ran=0,deferred=0;
   objc3_task_t *task=BindingModule::start(executor,choose,shape,&destroyed,&ran,&deferred);
-  assert(task && destroyed==1 && ran==0 && deferred==0);
+  assert(task && destroyed==(shape==8?2u:1u) && ran==0 && deferred==0);
   if(cancel)objc3_task_request_cancel(task);
   uint32_t executed=0;assert(objc3_executor_pump(executor,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);
   objc3_task_group_t *group=nullptr;assert(objc3_task_group_create(nullptr,&group)==OBJC3_SERVICE_OK);
@@ -72,7 +83,7 @@ static int execute(void) {
   assert(objc3_task_group_join(group)==OBJC3_SERVICE_OK);
   objc3_completion completion={sizeof(completion),OBJC3_SERVICE_ABI_VERSION};assert(objc3_task_get_completion(task,&completion)==OBJC3_SERVICE_OK);
   assert(completion.kind==(cancel?OBJC3_COMPLETION_CANCELLED:OBJC3_COMPLETION_SUCCESS));
-  assert(destroyed==2 && ran==(cancel?0u:choose?1u:2u) && deferred==(cancel?0u:1u));
+  assert(destroyed==2 && ran==(cancel || shape==8?0u:choose?1u:2u) && deferred==(cancel || shape==8?0u:1u));
   objc3_task_release(task);objc3_task_group_release(group);
  }
  objc3_executor_release(executor);return 0;
@@ -97,8 +108,8 @@ extern "C" objc3_task_t *binding_start(BindingWork work,objc3_executor_t *execut
  if(objc3_async_frame_start(&frame,executor,nullptr,&task)!=OBJC3_SERVICE_OK)(void)objc3_async_frame_dispose(&frame);
  return task;
 }
-extern "C" int check_a();extern "C" int check_b();
-int main(){return check_a()||check_b();}
+extern "C" int check_a();extern "C" int check_b();extern "C" int check_c();extern "C" int check_d();
+int main(){return check_a()||check_b()||check_c()||check_d();}
 )blocks";
 void Run(const fs::path &root,const char *standard,int ownership) {
  fs::create_directories(root/"provider");fs::create_directories(root/"include/objc3c");
@@ -125,12 +136,31 @@ void Run(const fs::path &root,const char *standard,int ownership) {
  publish(Source);assert(fs::remove(source));
  const auto interface=root/"BlockBindings.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
  InterfaceImportInput dependency;dependency.source_path=interface.string();dependency.locked_identity=artifact.identity;
- for(const char *name:{"a","b"}){
-  const auto input=root/(std::string(name)+".mm");Write(input,std::string(Consumer)+"extern \"C\" int check_"+name+"(){return execute();}");
-  auto value=request(input,root/(std::string(name)+".o"));value.imported_interfaces={external,dependency};Success(Compile(value));
+ for(const char *name:{"a","b","c","d"}){
+  const bool directed=*name=='c' || *name=='d';
+  const auto input=root/(std::string(name)+".mm");
+  std::string prefix;
+  if(directed)prefix="#include <objc3c/runtime/objc3_runtime_services.h>\n@import fixture.BlockBindingABI;\n#include \"provider/"+BuildInterfaceIncludePath(external.locked_identity.canonical_name)+"\"\n@import fixture.BlockBindings;\n";
+  Write(input,prefix+Consumer+"extern \"C\" int check_"+name+"(){return execute();}");
+  auto value=request(input,root/(std::string(name)+".o"));
+  if(!directed)value.imported_interfaces={external,dependency};
+  else {
+   value.source_directed_imports=true;value.interface_search_paths={root.string()};
+   for(const auto &identity:{external.locked_identity,dependency.locked_identity}){
+    InterfaceModuleRequest module;module.canonical_name=identity.canonical_name;module.locked_identity=identity;module.initially_visible=false;value.module_imports.push_back(module);
+   }
+  }
+  Success(Compile(value));
+ }
+ for(const char *body:{
+  "void rejected(unsigned choose,BindingUnsafe *object){BindingWork bad=^void(void) __objc3_async_frame {(void)object;};BindingWork safe=^void(void) __objc3_async_frame {};binding_start(BindingModule::choose_work(choose,bad,safe),nullptr);}",
+  "void rejected(unsigned choose,BindingUnsafe *object){BindingWork bad=^void(void) __objc3_async_frame {(void)object;};BindingWork safe=^void(void) __objc3_async_frame {};binding_start(BindingModule::nested_work(choose,safe,bad),nullptr);}",
+  "void rejected(BindingWork unknown){binding_start(BindingModule::project(unknown),nullptr);}"}) {
+  const auto input=root/"bad.mm";Write(input,body);auto value=request(input,root/"bad.o");value.imported_interfaces={external,dependency};auto result=Compile(value);assert(!result.success);
+  bool matched=false;for(const auto &diagnostic:result.diagnostics)matched|=diagnostic.message.find("non-Sendable type")!=std::string::npos || diagnostic.message.find("cannot prove Sendable captures")!=std::string::npos;assert(matched);
  }
  const auto main=root/"main.mm";Write(main,Main);auto entry=request(main,root/"main.o");entry.imported_interfaces={external,dependency};Success(Compile(entry));
- LinkAndExecute(root,entry.output_path,true,{OBJC3_BLOCK_BINDING_RUNTIME_LIBRARY,"-pthread"});
+ LinkAndExecute(root,entry.output_path,true,{(root/"c.o").string(),(root/"d.o").string(),OBJC3_BLOCK_BINDING_RUNTIME_LIBRARY,"-pthread"});
 }
 }
 int main(){

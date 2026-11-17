@@ -1,6 +1,7 @@
 #include "clang_foundation/compile_session.h"
 #include "interface_reparse_options.h"
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/interface_include_guard.h"
 #include "clang_foundation/sdk_identity.h"
 #include "clang_foundation/source_identity.h"
 #include "clang_foundation/runtime_interface_types.h"
@@ -191,7 +192,8 @@ public:
       context.getDiagnostics().Report(id) << result_.failure;
       return;
     }
-    result_.resolved_interface_sources = session_->GetSourceArtifacts();
+    if(result_.resolved_interface_sources.empty())
+      result_.resolved_interface_sources = session_->GetSourceArtifacts();
     if (lookup_ && !request_.module_imports.empty()) {
       auto registry = request_.module_imports;
       // Resolution already checked the invocation-completed lock identities.
@@ -612,6 +614,24 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       preprocessor.addRemappedFile(kEagerRuntimePrelude,
           llvm::MemoryBuffer::getMemBufferCopy(prelude,kEagerRuntimePrelude).release());
       preprocessor.Includes.insert(preprocessor.Includes.begin(),kEagerRuntimePrelude);
+    }
+    if(import_session_) {
+      result_.resolved_interface_sources=import_session_->GetSourceArtifacts();
+      std::string guards;
+      for(const auto &source:result_.resolved_interface_sources) {
+        const auto guard=ReadCanonicalInterfaceIncludeGuard(source.source_bytes);
+        if(!guard.empty())guards+="#define "+guard+"\n";
+      }
+      if(!guards.empty()) {
+        // Parser lookahead can enter a dependency include before the deferred
+        // AST-import callback runs. Establish the admitted guards before any
+        // source tokens, without putting them in user -D/reparse arguments.
+        constexpr const char *path="/__objc3_admitted_interface_guards.h";
+        auto &preprocessor=invocation->getPreprocessorOpts();
+        preprocessor.addRemappedFile(path,
+            llvm::MemoryBuffer::getMemBufferCopy(guards,path).release());
+        preprocessor.Includes.insert(preprocessor.Includes.begin(),path);
+      }
     }
     return FrontendActionFactory::runInvocation(std::move(invocation), files,
                                                std::move(containers), diagnostics);

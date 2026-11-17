@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.203 / System 2.129 Block-helper span](linux_native_block_helper_projections.md)
+preserves actual work-item capture environments through closed native helper
+chains and immutable internal/inline global bindings.
+
 The [Source 2.202 / System 2.128 template-policy import span](linux_native_template_policy_imports.md)
 binds complete callable declarations and authored class/method policies during
 native equivalence and whole-record import.
@@ -155,7 +159,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.202 / System 2.128 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.203 / System 2.129 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

@@ -101,13 +101,15 @@ public:
 
   // Imports validated Clang declarations into the supplied target translation
   // unit before its source is parsed, so ordinary Sema lookup sees them.
+  // A supplied target preprocessor also records admitted canonical include
+  // guards, preventing textual copies from redeclaring imported AST nodes.
   [[nodiscard]] InterfaceImportReport ImportInto(
       clang::ASTContext &target_context,
       clang::FileManager &target_file_manager,
       bool source_scoped_visibility = false,
       std::shared_ptr<clang::ASTImporterSharedState> shared_state = {},
       const StandardLibraryHeaderManifest *native_header_prelude = nullptr,
-      const clang::Preprocessor *native_preprocessor = nullptr,
+      clang::Preprocessor *native_preprocessor = nullptr,
       unsigned native_asm_dialect = 0);
 
   [[nodiscard]] std::vector<InterfaceSourceArtifact>

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.203 / System 2.129 Block-helper span](linux_native_block_helper_projections.md)
+preserves actual work-item capture environments through closed native helper
+chains and immutable internal/inline global bindings.
+
 The [Source 2.202 / System 2.128 template-policy import span](linux_native_template_policy_imports.md)
 binds complete callable declarations and authored class/method policies during
 native equivalence and whole-record import.

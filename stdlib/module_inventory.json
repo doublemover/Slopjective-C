@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 202,
+        "minor": 203,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed native Block-returning helper chains preserve the union of actual caller environments through bounded pure branches, immutable local aliases and nested selections; immutable internal/inline global Block definitions retain capture proofs, while mutable/external/weak/open factories remain unproved; content-bound canonical guards, pre-token admitted guard preludes and pre-semicolon source import admission prevent duplicate native/textual dependency definitions; matching SDK acceptance pending",
         "Native function-template structural equivalence compares complete callable declarations instead of only function types; complete authored records bind bare/conditional explicit policies, template heads and class/method final state, rejecting conflicting imports in both directions; matching SDK acceptance pending",
         "Bounded native helper argument unions preserve every possible scalar/reference source through branches, switches, conditional expressions, nested projections and immutable aliases; multi-cell reference writes and escapes update all possible caller bindings, including captures and high argument positions; unrelated condition/ignored arguments remain reads; matching SDK acceptance pending",
         "Native nested/member deduction guides publish separate class-owned identities through ordinary, dependent and pack-enclosing record graphs; guide v2 binds access, lexical template heads and associated requirements without creating runtime entries; complete-record import compares written guide sets and policies; matching SDK acceptance pending",
@@ -365,12 +366,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 128,
+        "minor": 129,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed native Block-returning helper chains preserve the union of actual caller environments through bounded pure branches, immutable local aliases and nested selections; immutable internal/inline global Block definitions retain capture proofs, while mutable/external/weak/open factories remain unproved; content-bound canonical guards, pre-token admitted guard preludes and pre-semicolon source import admission prevent duplicate native/textual dependency definitions; matching SDK acceptance pending",
         "Native function-template structural equivalence compares complete callable declarations instead of only function types; complete authored records bind bare/conditional explicit policies, template heads and class/method final state, rejecting conflicting imports in both directions; matching SDK acceptance pending",
         "Bounded native helper argument unions preserve every possible scalar/reference source through branches, switches, conditional expressions, nested projections and immutable aliases; multi-cell reference writes and escapes update all possible caller bindings, including captures and high argument positions; unrelated condition/ignored arguments remain reads; matching SDK acceptance pending",
         "Native nested/member deduction guides publish separate class-owned identities through ordinary, dependent and pack-enclosing record graphs; guide v2 binds access, lexical template heads and associated requirements without creating runtime entries; complete-record import compares written guide sets and policies; matching SDK acceptance pending",

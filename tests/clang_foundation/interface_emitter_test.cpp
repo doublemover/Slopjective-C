@@ -177,6 +177,34 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
       {"Object", "Box", "Sub"});
 }
 
+void TestCanonicalInterfaceIncludeGuards() {
+ for(const char *language:{"c","objective-c","c++","objective-c++"}) {
+  const bool cpp=std::string(language).find("++")!=std::string::npos;
+  const bool objc=std::string(language).find("objective")!=std::string::npos;
+  std::vector<std::string> args={"-x",language,cpp?"-std=c++20":"-std=c17","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
+  if(objc)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"});
+  std::string text="struct GuardedRecord{int value;};enum GuardedKind{GuardedCase=42};";
+  if(objc)text+="__attribute__((objc_root_class)) @interface GuardedObject @end";
+  auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"guard-source.mm");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+  auto artifact=EmitSemanticInterface(ast->getASTContext(),"fixture.IncludeGuards","guard-package");assert(artifact.success);
+  const auto marker=artifact.source_bytes.find("#ifndef __OBJC3_INTERFACE_");assert(marker!=std::string::npos);
+  auto replay_ast=clang::tooling::buildASTFromCodeWithArgs(artifact.source_bytes,args,"guard-replay.mm");assert(replay_ast && !replay_ast->getDiagnostics().hasErrorOccurred());
+  auto replay=EmitSemanticInterface(replay_ast->getASTContext(),"fixture.IncludeGuards","guard-package");assert(replay.success && replay.source_bytes==artifact.source_bytes && replay.identity.semantic_fingerprint==artifact.identity.semantic_fingerprint);
+  auto duplicate=[&](const std::string &header){
+   return clang::tooling::buildASTFromCodeWithArgs("#include \"/guard/copy-a.h\"\n#include \"/guard/copy-b.h\"\n",args,"guard-consumer.mm","clang-tool",std::make_shared<clang::PCHContainerOperations>(),clang::tooling::getClangStripDependencyFileAdjuster(),{{"/guard/copy-a.h",header},{"/guard/copy-b.h",header}});
+  };
+  auto once=duplicate(artifact.source_bytes);assert(once && !once->getDiagnostics().hasErrorOccurred());
+  std::string unguarded;std::istringstream lines(artifact.source_bytes);std::string line;
+  while(std::getline(lines,line))if(!line.starts_with("#ifndef __OBJC3_INTERFACE_") && !line.starts_with("#define __OBJC3_INTERFACE_") && !line.starts_with("#endif // __OBJC3_INTERFACE_"))unguarded+=line+'\n';
+  auto broken=duplicate(unguarded);assert(broken && broken->getDiagnostics().hasErrorOccurred());
+  auto different_ast=clang::tooling::buildASTFromCodeWithArgs("struct OtherGuardedRecord{long value;};",args,"guard-other.mm");assert(different_ast && !different_ast->getDiagnostics().hasErrorOccurred());
+  auto different=EmitSemanticInterface(different_ast->getASTContext(),"fixture.OtherGuards","other-package");assert(different.success);
+  const auto left=artifact.source_bytes.substr(marker,artifact.source_bytes.find('\n',marker)-marker);
+  const auto right_at=different.source_bytes.find("#ifndef __OBJC3_INTERFACE_");assert(right_at!=std::string::npos);
+  assert(left!=different.source_bytes.substr(right_at,different.source_bytes.find('\n',right_at)-right_at));
+ }
+}
+
 void TestOrdinaryCDeclarationsRoundTrip() {
   constexpr llvm::StringRef source =
       "typedef struct Point { int x; int y; } Point;\n"
@@ -12458,6 +12486,7 @@ int main(int argc,char **argv) {
   cases.Run("TestNativeFrameExceptionReplay",TestNativeFrameExceptionReplay);
   cases.Run("TestIndependentCxxAndObjCExceptionModes",TestIndependentCxxAndObjCExceptionModes);
   cases.Run("TestPrimitiveAndObjectiveCContractIdentity", TestPrimitiveAndObjectiveCContractIdentity);
+  cases.Run("TestCanonicalInterfaceIncludeGuards", TestCanonicalInterfaceIncludeGuards);
   cases.Run("TestOrdinaryCDeclarationsRoundTrip", TestOrdinaryCDeclarationsRoundTrip);
   cases.Run("TestStandardLibraryImportsAndInstancetype", TestStandardLibraryImportsAndInstancetype);
   cases.Run("TestNativeOwnershipContractsRoundTrip", TestNativeOwnershipContractsRoundTrip);

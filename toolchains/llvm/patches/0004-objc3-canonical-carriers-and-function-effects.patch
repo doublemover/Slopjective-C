@@ -11818,7 +11818,6 @@ index 1477fc38b..42e2dd14e 100644
    if (!TrySkipAttributes())
      return TPResult::Ambiguous;
 diff --git a/clang/lib/Parse/Parser.cpp b/clang/lib/Parse/Parser.cpp
-index 5e1fd4df1..a33d03262 100644
 --- a/clang/lib/Parse/Parser.cpp
 +++ b/clang/lib/Parse/Parser.cpp
 @@ -10,6 +10,9 @@
@@ -11831,7 +11830,7 @@ index 5e1fd4df1..a33d03262 100644
  #include "clang/Parse/Parser.h"
  #include "clang/AST/ASTConsumer.h"
  #include "clang/AST/ASTContext.h"
-@@ -855,7 +858,20 @@ Parser::ParseExternalDeclaration(ParsedAttributes &Attrs,
+@@ -855,7 +858,20 @@
      SingleDecl = Actions.ActOnFileScopeAsmDecl(Result.get(), StartLoc, EndLoc);
      break;
    }
@@ -11852,14 +11851,14 @@ index 5e1fd4df1..a33d03262 100644
      return ParseObjCAtDirectives(Attrs, DeclSpecAttrs);
    case tok::minus:
    case tok::plus:
-@@ -2520,13 +2536,41 @@ Decl *Parser::ParseModuleImport(SourceLocation AtLoc,
-   if (SeenError)
-     return nullptr;
+@@ -2506,6 +2522,29 @@
+     break;
+   }
  
 +  // ObjC3 source imports are registry-backed and position-sensitive. Let a
 +  // non-claiming extension source fall through to native @import; once a
 +  // registry claims the canonical name, do not silently change loaders.
-+  if (IsObjCAtImport && getLangOpts().ObjC3 && !HeaderUnit && !IsPartition &&
++  if (!SeenError && Tok.is(tok::semi) && IsObjCAtImport && getLangOpts().ObjC3 && !HeaderUnit && !IsPartition &&
 +      !Path.empty()) {
 +    llvm::SmallString<128> CanonicalName;
 +    for (const IdentifierLoc &Component : Path) {
@@ -11869,13 +11868,23 @@ index 5e1fd4df1..a33d03262 100644
 +    }
 +    if (ExternalSemaSource *Source = Actions.getExternalSource()) {
 +      auto Result = Source->HandleObjC3SourceImport(CanonicalName, ImportLoc);
-+      if (Result == ObjC3SourceImportResult::Handled)
++      if (Result != ObjC3SourceImportResult::NotHandled) {
++        // Complete native admission (including include guards) before lexing
++        // a following textual dependency. Consuming the semicolon can process
++        // that include before the next parser callback.
++        ConsumeToken();
 +        return nullptr;
-+      if (Result == ObjC3SourceImportResult::Error)
-+        return nullptr;
++      }
 +    }
 +  }
 +
+   bool LexedSemi = false;
+   if (getLangOpts().CPlusPlusModules)
+     LexedSemi =
+@@ -2520,13 +2559,21 @@
+   if (SeenError)
+     return nullptr;
+ 
 +  // The ObjC3 registry can service imports independently of Clang modules.
 +  // An unclaimed Objective-C import retains the ordinary modules gate.
 +  if (IsObjCAtImport && !getLangOpts().Modules &&
@@ -11895,6 +11904,7 @@ index 5e1fd4df1..a33d03262 100644
    if (Import.isInvalid())
      return nullptr;
  
+
 diff --git a/clang/lib/Sema/CMakeLists.txt b/clang/lib/Sema/CMakeLists.txt
 index ef729e22c..ccf09d124 100644
 --- a/clang/lib/Sema/CMakeLists.txt
@@ -53642,7 +53652,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,2548 @@
+@@ -0,0 +1,2574 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53937,10 +53947,10 @@ new file mode 100644
 +// Nested projections share budgets and reject recursive definition graphs.
 +std::optional<ArgumentProjection> argumentProjectionImpl(
 +    const CallExpr *Call,ASTContext &Context,unsigned &Budget,unsigned Depth,
-+    llvm::SmallPtrSetImpl<const FunctionDecl *> &Active) {
++    llvm::SmallPtrSetImpl<const FunctionDecl *> &Active,bool BlockValues) {
 +  if(!Call || !Budget || Depth>16 || Call->getNumArgs()>32)return std::nullopt;
 +  --Budget;
-+  if(standardReferenceView(Call))return ArgumentProjection{1,true};
++  if(!BlockValues && standardReferenceView(Call))return ArgumentProjection{1,true};
 +  const auto *Function=Call->getDirectCallee();
 +  if(!Function || isa<CXXMethodDecl>(Function) || Function->isVariadic() ||
 +      Function->isMultiVersion() || Function->isNoReturn() ||
@@ -53959,7 +53969,8 @@ new file mode 100644
 +  QualType Result=Function->getReturnType();
 +  // A dependent pattern can omit a selected user conversion/copy until its
 +  // instantiation. Scalar/reference results cannot hide aggregate return work.
-+  if(!Result->isReferenceType() &&
++  if(BlockValues && !Result->isBlockPointerType())return std::nullopt;
++  if(!Result->isReferenceType() && !(BlockValues && Result->isBlockPointerType()) &&
 +      (!Result->isScalarType() || Result->isObjCRetainableType() ||
 +       isObjC3NSObjectStorageType(Result)))return std::nullopt;
 +  for(const auto *Parameter:Function->parameters()) {
@@ -53967,7 +53978,7 @@ new file mode 100644
 +    if(managedTransferStorage(Parameter) || Parameter->hasAttr<NSConsumedAttr>() ||
 +        Parameter->hasAttr<CFConsumedAttr>() || getObjC3ResourceTypeContract(Context,Type).Cleanup)
 +      return std::nullopt;
-+    if(!Type->isReferenceType() &&
++    if(!Type->isReferenceType() && !(BlockValues && Type->isBlockPointerType()) &&
 +        (!Type->isScalarType() || Type->isObjCRetainableType() ||
 +         isObjC3NSObjectStorageType(Type)))return std::nullopt;
 +  }
@@ -53990,6 +54001,8 @@ new file mode 100644
 +    if(!Value || !Budget || Level>64)return std::nullopt;
 +    --Budget;Value=Value->IgnoreParens();
 +    if(RequireAlias && !Value->isGLValue())return std::nullopt;
++    if(BlockValues)if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(Value))
++      return Self(Self,Cleanup->getSubExpr(),Level+1,RequireAlias);
 +    if(const auto *Cast=dyn_cast<CastExpr>(Value)) {
 +      if(Cast->getCastKind()==CK_IntegralToBoolean || Cast->getCastKind()==CK_PointerToBoolean ||
 +          Cast->getCastKind()==CK_MemberPointerToBoolean || Cast->getCastKind()==CK_FloatingToBoolean)
@@ -54013,7 +54026,7 @@ new file mode 100644
 +    if(const auto *Generic=dyn_cast<GenericSelectionExpr>(Value);Generic && !Generic->isResultDependent())
 +      return Self(Self,Generic->getResultExpr(),Level+1,RequireAlias);
 +    if(const auto *Nested=dyn_cast<CallExpr>(Value)) {
-+      auto Projection=argumentProjectionImpl(Nested,Context,Budget,Depth+1,Active);
++      auto Projection=argumentProjectionImpl(Nested,Context,Budget,Depth+1,Active,BlockValues);
 +      if(!Projection || (RequireAlias && !Projection->Aliases))return std::nullopt;
 +      unsigned Sources=0;
 +      for(unsigned I=0;I!=Nested->getNumArgs();++I) {
@@ -54078,7 +54091,8 @@ new file mode 100644
 +        const bool Alias=Type->isReferenceType();
 +        if((!Alias && (!Type.isConstQualified() || !Type->isScalarType())) ||
 +            Type.getNonReferenceType().isVolatileQualified() || Type.getNonReferenceType()->isAtomicType() ||
-+            Type.getNonReferenceType()->isObjCRetainableType() ||
++            (Type.getNonReferenceType()->isObjCRetainableType() &&
++             !(BlockValues && Type.getNonReferenceType()->isBlockPointerType())) ||
 +            isObjC3NSObjectStorageType(Type.getNonReferenceType()) ||
 +            getObjC3ResourceTypeContract(Context,Type.getNonReferenceType()).Cleanup)return std::nullopt;
 +        auto Source=Resolve(Resolve,Variable->getInit(),0,Alias);
@@ -54146,10 +54160,10 @@ new file mode 100644
 +  if(!Flow || *Flow!=Returned || !Selected)return std::nullopt;
 +  return ArgumentProjection{Selected,Call->isGLValue()};
 +}
-+std::optional<ArgumentProjection> argumentProjection(const CallExpr *Call,ASTContext &Context) {
++std::optional<ArgumentProjection> argumentProjection(const CallExpr *Call,ASTContext &Context,bool BlockValues=false) {
 +  unsigned Budget=256;
 +  llvm::SmallPtrSet<const FunctionDecl *,16> Active;
-+  return argumentProjectionImpl(Call,Context,Budget,0,Active);
++  return argumentProjectionImpl(Call,Context,Budget,0,Active,BlockValues);
 +}
 +// Storage cleanup is a value contract even when its scalar type has no
 +// resource typedef sugar. Preserve it through bounded value-preserving views
@@ -54494,8 +54508,17 @@ new file mode 100644
 +  }
 +
 +  bool collectBinding(const VarDecl *Variable, unsigned Depth) {
-+    if (!Variable || !Variable->isLocalVarDecl() || !Variable->hasInit() ||
++    if (!Variable || !Variable->hasInit() ||
 +        Variable->getType().isVolatileQualified() || Depth>64)return false;
++    if(!Variable->isLocalVarDecl()) {
++      // Only immutable definitions with a closed native binding can supply
++      // a global environment. An external declaration or replaceable symbol
++      // does not prove the initializer that will execute.
++      if(!Variable->hasGlobalStorage() || !Variable->getType().isConstQualified() ||
++          (Variable->isExternallyVisible() && !Variable->isInline()) ||
++          Variable->hasAttr<WeakAttr>() || Variable->hasAttr<WeakRefAttr>() ||
++          Variable->hasAttr<WeakImportAttr>() || Variable->hasAttr<SelectAnyAttr>())return false;
++    }
 +    if (CompleteBindings.contains(Variable))return true;
 +    if (!ActiveBindings.insert(Variable).second)return true;
 +    llvm::SaveAndRestore<const VarDecl *> Owner(InitializerOwner,nullptr);
@@ -54548,6 +54571,13 @@ new file mode 100644
 +                         (Role==Read && Cast->isGLValue() && Cast->getCastKind()==CK_NoOp);
 +        Pending.push_back({Cast->getSubExpr(),Reads?Read:Unknown});continue;
 +      }
++      if(const auto *Call=dyn_cast<CallExpr>(Node))
++        if(argumentProjection(Call,Context,true)) {
++          // The complete helper proof forbids parameter writes/escapes. Even
++          // a reference argument is a read of its caller's Block environment.
++          for(const auto *Argument:Call->arguments())Pending.push_back({Argument,Read});
++          continue;
++        }
 +      if (const auto *Conditional=dyn_cast<AbstractConditionalOperator>(Node)) {
 +        Pending.push_back({Conditional->getCond(),Unknown});
 +        Pending.push_back({Conditional->getTrueExpr(),Role==Read?Read:Unknown});
@@ -54629,6 +54659,12 @@ new file mode 100644
 +        return !Body->body_empty() &&
 +               collect(dyn_cast<Expr>(Body->body_back()), Depth + 1);
 +      }
++      if(const auto *Call=dyn_cast<CallExpr>(E))
++        if(auto Projection=argumentProjection(Call,Context,true)) {
++          for(unsigned I=0;I!=Call->getNumArgs();++I)
++            if(Projection->selects(I) && !collect(Call->getArg(I),Depth+1))return false;
++          return true;
++        }
 +      const auto *Reference = dyn_cast<DeclRefExpr>(E);
 +      const auto *Variable = Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
 +      return collectBinding(Variable,Depth);
@@ -78145,3 +78181,83 @@ new file mode 100644
 + return __objc3_await managed_remote(managed_select_high(choose,first,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,last)); // expected-error {{cleanup-managed concurrent value}}
 +}
 +#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-block-helper-projections.h b/clang/test/ObjC3/Sema/Inputs/native-block-helper-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-block-helper-projections.h
+@@ -0,0 +1,17 @@
++#ifndef OBJC3_NATIVE_BLOCK_HELPER_PROJECTIONS_H
++#define OBJC3_NATIVE_BLOCK_HELPER_PROJECTIONS_H
++#include "mutable-block-bindings.h"
++static inline BindingWork binding_identity(BindingWork work){return work;}
++static inline BindingWork binding_ignore(BindingWork work,BindingWork ignored){return work;}
++static inline BindingWork binding_select(int choose,BindingWork left,BindingWork right){if(choose)return left;return right;}
++static inline BindingWork binding_nested(int choose,BindingWork left,BindingWork right){const BindingWork selected=binding_select(choose,left,right);return choose?binding_identity(selected):right;}
++static inline BindingWork binding_switch(int choose,BindingWork left,BindingWork right){switch(choose){case 0:return left;case 1:return right;default:return binding_identity(left);}}
++static BindingWork const binding_global=^void(void) __objc3_async_frame {};
++static inline void binding_helper_ordinary(int choose){BindingWork first=^void(void) __objc3_async_frame {};BindingWork second=^void(void) __objc3_async_frame {};(void)binding_detached(binding_nested(choose,first,second));(void)binding_detached(binding_switch(choose,first,second));(void)binding_detached(binding_global);}
++#ifdef __cplusplus
++static inline BindingWork binding_reference(BindingWork __strong &work){return work;}
++static inline void binding_reference_ordinary(){BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(binding_reference(work));}
++inline BindingWork const binding_inline_global=^void(void) __objc3_async_frame {};
++inline void binding_inline_global_ordinary(){(void)binding_detached(binding_inline_global);}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-block-helper-projections.m b/clang/test/ObjC3/Sema/native-block-helper-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-block-helper-projections.m
+@@ -0,0 +1,51 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-block-helper-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-block-helper-projections.h"
++void binding_helper_non_sendable(int choose,UnsafeBlockObject *object){
++ BindingWork first=^void(void) __objc3_async_frame {(void)object;};
++ BindingWork second=^void(void) __objc3_async_frame {};
++ (void)binding_detached(binding_select(choose,first,second)); // expected-error {{non-Sendable type}}
++ (void)binding_detached(binding_select(choose,second,first)); // expected-error {{non-Sendable type}}
++}
++void binding_helper_unknown(int choose,BindingWork unknown){
++ BindingWork known=^void(void) __objc3_async_frame {};
++ (void)binding_detached(binding_nested(choose,known,unknown)); // expected-error {{cannot prove Sendable captures}}
++}
++extern BindingWork const binding_external;
++void binding_helper_external(void){(void)binding_detached(binding_external);} // expected-error {{cannot prove Sendable captures}}
++static BindingWork binding_mutable_global=^void(void) __objc3_async_frame {};
++void binding_helper_mutable_global(void){(void)binding_detached(binding_mutable_global);} // expected-error {{cannot prove Sendable captures}}
++#ifdef __cplusplus
++extern
++#endif
++BindingWork const binding_weak_global __attribute__((weak))=^void(void) __objc3_async_frame {};
++void binding_helper_weak_global(void){(void)binding_detached(binding_weak_global);} // expected-error {{cannot prove Sendable captures}}
++static inline BindingWork binding_recursive(BindingWork work){return binding_recursive(work);}
++void binding_helper_recursive(void){(void)binding_detached(binding_recursive(binding_global));} // expected-error {{cannot prove Sendable captures}}
++void binding_helper_modify(BindingWork *);
++static inline BindingWork binding_impure(BindingWork work){binding_helper_modify(&work);return work;}
++void binding_helper_impure(void){(void)binding_detached(binding_impure(binding_global));} // expected-error {{cannot prove Sendable captures}}
++#if __has_feature(objc_arc)
++static inline BindingWork binding_captured_parameter(UnsafeBlockObject *object){return ^void(void) __objc3_async_frame {(void)object;};}
++void binding_helper_open_factory(UnsafeBlockObject *object){(void)binding_detached(binding_captured_parameter(object));} // expected-error {{cannot prove Sendable captures}}
++#endif
++BindingWork binding_open_factory(void);
++void binding_helper_unresolved_factory(void){(void)binding_detached(binding_open_factory());} // expected-error {{cannot prove Sendable captures}}
++
++void binding_helper_ignored_environment(BindingWork unknown){(void)binding_detached(binding_ignore(binding_global,unknown));}
++void helper_resource_close(int);
++int helper_resource_open(void);
++void binding_helper_managed_capture(int choose){
++ int descriptor __attribute__((objc_resource(close=helper_resource_close,invalid=-1)))=helper_resource_open();
++ int copied=descriptor;
++ BindingWork owned=^void(void) __objc3_async_frame {(void)copied;};
++ BindingWork empty=^void(void) __objc3_async_frame {};
++ (void)binding_detached(binding_select(choose,owned,empty)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_select(choose,empty,owned)); // expected-error {{cleanup-managed capture}}
++}

@@ -12,6 +12,9 @@
 
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/interface_include_guard.h"
+#include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/MacroInfo.h"
 #include "clang_foundation/interface_validation.h"
 #include "clang_foundation/runtime_interface_types.h"
 #include "standard_library_headers.h"
@@ -871,7 +874,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     bool source_scoped_visibility,
     std::shared_ptr<clang::ASTImporterSharedState> shared_state,
     const StandardLibraryHeaderManifest *native_header_prelude,
-    const clang::Preprocessor *native_preprocessor,
+    clang::Preprocessor *native_preprocessor,
     unsigned native_asm_dialect) {
   StandardLibraryHeaderCache standard_header_cache(&target_context,native_preprocessor);
   if(native_header_prelude)
@@ -1335,6 +1338,14 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   std::erase_if(report.inline_definitions, [&](const auto *declaration) {
     return !registered_definitions.insert(declaration->getCanonicalDecl()).second;
   });
+  if(native_preprocessor)for(auto index:impl_->import_order) {
+    const auto guard=ReadCanonicalInterfaceIncludeGuard(impl_->modules[index].source_bytes);
+    if(guard.empty())continue;
+    auto *identifier=native_preprocessor->getIdentifierInfo(guard);
+    if(native_preprocessor->isMacroDefined(identifier))continue;
+    auto *macro=native_preprocessor->AllocateMacroInfo(clang::SourceLocation());
+    native_preprocessor->appendDefMacroDirective(identifier,macro);
+  }
   report.success = true;
   return report;
 }

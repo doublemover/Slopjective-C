@@ -7,6 +7,7 @@
 #include "clang/Lex/HeaderSearch.h"
 #include "clang/Lex/DirectoryLookup.h"
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/interface_include_guard.h"
 #include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/native_contract_identity.h"
 #include "clang_foundation/interface_module_resolver.h"
@@ -995,8 +996,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   collector.ValidateSelection();
   if (!result.diagnostics.empty()) return result;
 
-  result.source_bytes = "/* Generated canonical Clang interface. */\n#pragma once\n";
-  llvm::raw_string_ostream source(result.source_bytes);
+  std::string canonical_body;
+  llvm::raw_string_ostream source(canonical_body);
   std::set<std::string> standard_headers;
   for(auto *root:collector.RootDeclarations())
     for(const auto &header:NeededStandardLibraryHeaders(root,context))standard_headers.insert(header);
@@ -1031,6 +1032,11 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     PrintRootDeclaration(declaration, context, source);
   }
   source.flush();
+  // The same admitted dependency can be materialized at several physical
+  // paths. pragma once identifies files, not their canonical declaration body.
+  // A content-bound guard also keeps distinct package/ownership variants apart
+  // and remains stable when the same declarations are replayed or re-exported.
+  result.source_bytes=WrapCanonicalInterfaceSource(canonical_body);
   if (!result.diagnostics.empty()) {
     result.source_bytes.clear();
     return result;
