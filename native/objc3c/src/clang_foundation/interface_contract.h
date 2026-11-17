@@ -230,9 +230,9 @@ inline constexpr const char *kBorrowedUnionStorageSemantic = "objc3.borrowed-uni
 inline bool HasBorrowedUnionStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";borrowed-union-byte-storage:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxInlineClosureObjectSemantic = "objc3.cxx-inline-closure-objects.v1";
+inline constexpr const char *kCxxInlineClosureObjectSemantic = "objc3.cxx-inline-closure-objects.v2";
 inline bool HasCxxInlineClosureObjectIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-inline-closure-objects:v1;")!=std::string::npos;
+  return d.canonical_type_identity.find(";cxx-inline-closure-objects:v2;")!=std::string::npos;
 }
 inline constexpr const char *kCxxBaseAdjustmentSemantic = "objc3.cxx-base-adjustment-expressions.v1";
 inline bool HasCxxBaseAdjustmentIdentity(const InterfaceDeclarationIdentity &d) {

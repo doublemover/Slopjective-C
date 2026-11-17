@@ -1102,11 +1102,17 @@ const clang::VarDecl *InlineClosureObjectOrigin(const clang::TagDecl *tag) {
   if(!closure || !closure->isLambda())return nullptr;
   const auto *object=llvm::dyn_cast_or_null<clang::VarDecl>(closure->getLambdaContextDecl());
   if(!object || !(object=object->getDefinition()) || !object->isInline() ||
-      !object->isExternallyVisible() || !object->hasInit() || !IsTopLevel(object) ||
+      !object->isExternallyVisible() || !object->hasInit() ||
+      (!IsTopLevel(object) && (!object->isStaticDataMember() ||
+       !IsPublishedType(llvm::cast<clang::CXXRecordDecl>(object->getDeclContext())) ||
+       object->getDeclContext()->isDependentContext())) ||
       object->getType()->isDependentType() || object->getDescribedVarTemplate() ||
       llvm::isa<clang::VarTemplateSpecializationDecl>(object) ||
       !PublishesVariableInitializer(object))return nullptr;
-  const auto *initializer=llvm::dyn_cast<clang::LambdaExpr>(object->getInit()->IgnoreParenImpCasts());
+  // Owning init-captures wrap the same direct lambda in temporary cleanup
+  // nodes. Preserve that lambda's stable variable owner without admitting a
+  // different constructor/call expression as the closure definition.
+  const auto *initializer=llvm::dyn_cast<clang::LambdaExpr>(object->getInit()->IgnoreImplicit());
   return initializer && initializer->getLambdaClass()->getCanonicalDecl()==closure->getCanonicalDecl()
       ? object : nullptr;
 }

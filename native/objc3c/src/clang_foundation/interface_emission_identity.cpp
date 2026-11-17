@@ -2861,7 +2861,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
   if (HasDeclarationInlineClosureObject(representative))
-    identity.canonical_type_identity+=";cxx-inline-closure-objects:v1;";
+    identity.canonical_type_identity+=";cxx-inline-closure-objects:v2;";
   if (HasDeclarationCxxBaseAdjustment(representative))
     identity.canonical_type_identity+=";cxx-base-adjustment-expressions:v1;";
   if (HasDeclarationCxxSpecialMemberSelection(representative))

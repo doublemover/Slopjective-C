@@ -1600,6 +1600,70 @@ void TestBorrowedUnionByteStorageReplay() {
   }
 }
 
+
+void TestInlineClosureObjectStorage() {
+ for(const char *standard:{"-std=c++20","-std=c++23"})for(int ownership:{0,1,2}) {
+  std::vector<std::string> args={"-x",ownership?"objective-c++":"c++",standard,"--target=x86_64-unknown-linux-gnu"};
+  if(ownership){args.push_back("-fobjc-version=3");args.push_back("-fobjc-runtime=gnustep-2.2");}
+  if(ownership==2)args.push_back("-fobjc-arc");
+  auto emit=[&](const std::string &code,const char *file,const std::vector<std::string> &exports=std::vector<std::string>{}) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(code,args,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.inline_closures","test",{}));
+   return EmitSemanticInterface(ast->getASTContext(),"fixture.inline_closures","test",{},{},{},exports);
+  };
+  const std::string source=R"closures(
+namespace InlineClosureObjects {
+inline int alive=0,created=0,destroyed=0,copies=0,moves=0;
+inline bool fail_copy=false;
+struct Token {
+ int value;
+ explicit Token(int n):value(n){if(n<0)throw 81;++alive;++created;}
+ Token(const Token &other):value(other.value){if(fail_copy)throw 79;++alive;++created;++copies;}
+ Token(Token &&other)noexcept:value(other.value){other.value=-1;++alive;++created;++moves;}
+ ~Token(){--alive;++destroyed;}
+};
+struct Shutdown {~Shutdown(){if(alive || created!=destroyed)__builtin_trap();}};
+inline Shutdown shutdown __attribute__((init_priority(200),always_destroy));
+inline auto owned __attribute__((always_destroy))=[token=Token(40)](int delta){return token.value+delta;};
+inline auto copied __attribute__((always_destroy))=owned;
+struct Unique {
+ Token value;
+ explicit Unique(int n):value(n){}
+ Unique(const Unique &)=delete;Unique(Unique &&)=default;
+};
+inline auto unique __attribute__((always_destroy))=[token=Unique(41)]{return token.value.value;};
+inline auto generic __attribute__((always_destroy))=[token=Token(42)](auto delta){if(delta<0)throw delta;return token.value+delta;};
+inline auto mutable_state=[value=10](int delta)mutable{return value+=delta;};
+inline thread_local auto thread_owned __attribute__((always_destroy))=[token=Token(30)](int delta){return token.value+delta;};
+struct Owners {
+ inline static auto state=[value=4](int delta)mutable{return value+=delta;};
+ inline static auto owned __attribute__((always_destroy))=[token=Token(43)](int delta){return token.value+delta;};
+};
+using OwnedType=decltype(owned);using MemberOwnedType=decltype(Owners::owned);
+inline const OwnedType &reference(){return owned;}
+inline int generic_instantiations(){return generic(1)+generic(2L);}
+inline void failed_capture(){auto value=[first=Token(1),second=Token(-1)]{return first.value+second.value;};(void)value;}
+}
+)closures";
+  auto first=emit(source,"inline-closures.cpp");
+  for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(first.success);
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
+  assert(llvm::is_contained(decoded->required_semantics,std::string(kCxxInlineClosureObjectSemantic)));
+  auto old=supported;std::erase(old,llvm::StringRef(kCxxInlineClosureObjectSemantic));old.push_back("objc3.cxx-inline-closure-objects.v1");
+  auto unsupported=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!unsupported);llvm::consumeError(unsupported.takeError());
+  std::erase(decoded->required_semantics,kCxxInlineClosureObjectSemantic);
+  auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
+  auto replay=emit(first.source_bytes,"replayed-inline-closures.cpp");assert(replay.success && replay.source_bytes==first.source_bytes && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+  auto moved=emit("\n\n"+source,"relocated-inline-closures.cpp");assert(moved.success && moved.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+  auto changed=source;auto offset=changed.find("token=Token(40)");assert(offset!=std::string::npos);changed.replace(offset,std::string("token=Token(40)").size(),"token=Token(44)");
+  auto other=emit(changed,"changed-inline-closures.cpp");assert(other.success && other.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  auto hidden=emit("namespace HiddenClosures {inline constexpr auto hidden=[] {return 42;};using Exposed=decltype(hidden);}","hidden-closure.cpp",{"HiddenClosures::Exposed"});assert(!hidden.success);
+  auto noninline=emit("namespace HiddenClosures {constexpr auto hidden=[] {return 42;};using Exposed=decltype(hidden);}","noninline-closure.cpp");assert(!noninline.success);
+ }
+}
+
 void TestBorrowedStaticStorageReplay() {
   for(const char *standard:{"c17","c++20","c++23"}) {
     const bool cxx=std::string(standard)!="c17";
@@ -12272,6 +12336,7 @@ int main(int argc,char **argv) {
   cases.Run("TestNativeLambdaArgumentABIReplay", TestNativeLambdaArgumentABIReplay);
   cases.Run("TestNativeMRCRecordPayloadReplay", TestNativeMRCRecordPayloadReplay);
   cases.Run("TestBorrowedUnionByteStorageReplay", TestBorrowedUnionByteStorageReplay);
+  cases.Run("TestInlineClosureObjectStorage", TestInlineClosureObjectStorage);
   cases.Run("TestBorrowedStaticStorageReplay", TestBorrowedStaticStorageReplay);
   cases.Run("TestBorrowedCallableOwnerCapability", TestBorrowedCallableOwnerCapability);
   cases.Run("TestAutomaticOwnerUnwindReplay", TestAutomaticOwnerUnwindReplay);

@@ -60524,7 +60524,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,3460 @@
+@@ -0,0 +1,3531 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -63983,6 +63983,77 @@ new file mode 100644
 +  } Visitor;
 +  Visitor.TraverseDecl(Replay->getASTContext().getTranslationUnitDecl());
 +  EXPECT_GE(Visitor.Members,5u);EXPECT_GE(Visitor.Closures,4u);
++ }
++}
++
++TEST(ObjC3ASTInfrastructure, OwningInlineClosureObjectsRetainNativeContextsAndStorage) {
++ const char *Source=R"cpp(
++
++namespace InlineClosureObjects {
++inline int alive=0,created=0,destroyed=0,copies=0,moves=0;
++inline bool fail_copy=false;
++struct Token {
++ int value;
++ explicit Token(int n):value(n){if(n<0)throw 81;++alive;++created;}
++ Token(const Token &other):value(other.value){if(fail_copy)throw 79;++alive;++created;++copies;}
++ Token(Token &&other)noexcept:value(other.value){other.value=-1;++alive;++created;++moves;}
++ ~Token(){--alive;++destroyed;}
++};
++struct Shutdown {~Shutdown(){if(alive || created!=destroyed)__builtin_trap();}};
++inline Shutdown shutdown __attribute__((init_priority(200),always_destroy));
++inline auto owned __attribute__((always_destroy))=[token=Token(40)](int delta){return token.value+delta;};
++inline auto copied __attribute__((always_destroy))=owned;
++struct Unique {
++ Token value;
++ explicit Unique(int n):value(n){}
++ Unique(const Unique &)=delete;Unique(Unique &&)=default;
++};
++inline auto unique __attribute__((always_destroy))=[token=Unique(41)]{return token.value.value;};
++inline auto generic __attribute__((always_destroy))=[token=Token(42)](auto delta){if(delta<0)throw delta;return token.value+delta;};
++inline auto mutable_state=[value=10](int delta)mutable{return value+=delta;};
++inline thread_local auto thread_owned __attribute__((always_destroy))=[token=Token(30)](int delta){return token.value+delta;};
++struct Owners {
++ inline static auto state=[value=4](int delta)mutable{return value+=delta;};
++ inline static auto owned __attribute__((always_destroy))=[token=Token(43)](int delta){return token.value+delta;};
++};
++using OwnedType=decltype(owned);using MemberOwnedType=decltype(Owners::owned);
++inline const OwnedType &reference(){return owned;}
++inline int generic_instantiations(){return generic(1)+generic(2L);}
++inline void failed_capture(){auto value=[first=Token(1),second=Token(-1)]{return first.value+second.value;};(void)value;}
++}
++
++ )cpp";
++ for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++  std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++      "--target=x86_64-unknown-linux-gnu","-fobjc3-profile=strict-system","-fexceptions","-fobjc-exceptions"};
++  if(ARC)Args.push_back("-fobjc-arc");
++  auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"member-source.mm");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"member-target.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  NamespaceDecl *Imported=nullptr;
++  {
++   ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *N=dyn_cast<NamespaceDecl>(D)) {
++    auto Result=Importer.Import(N);ASSERT_TRUE(static_cast<bool>(Result));Imported=dyn_cast<NamespaceDecl>(*Result);
++   }
++  }
++  ASSERT_TRUE(Imported);From.reset();
++  PrintingPolicy Policy(To->getASTContext().getLangOpts());Policy.PolishForDeclaration=true;
++  std::string Printed;llvm::raw_string_ostream Out(Printed);Imported->print(Out,Policy);Out.flush();
++  auto Replay=tooling::buildASTFromCodeWithArgs(Printed,Args,"member-replay.mm");
++  ASSERT_TRUE(Replay);EXPECT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++  struct Closures:RecursiveASTVisitor<Closures> {
++   unsigned Count=0,NamedContexts=0;
++   bool VisitLambdaExpr(LambdaExpr *Value) {
++    ++Count;
++    const auto *Record=Value->getLambdaClass();
++    EXPECT_EQ(Record->capture_size(),Value->capture_size());
++    NamedContexts+=isa_and_nonnull<VarDecl>(Record->getLambdaContextDecl());
++    return true;
++   }
++  } Visitor;
++  Visitor.TraverseDecl(Replay->getASTContext().getTranslationUnitDecl());
++  EXPECT_GE(Visitor.Count,8u);EXPECT_GE(Visitor.NamedContexts,7u);
 + }
 +}
 

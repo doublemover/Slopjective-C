@@ -111,6 +111,40 @@ STATIC_BORROWED inline StaticLoan member(void *owner){Target object;return (obje
 STATIC_BORROWED inline StaticLoan local_slot(void *owner){const char *const slot=text;return forward_slot(slot);}
 }
 
+
+namespace InlineClosureObjects {
+inline int alive=0,created=0,destroyed=0,copies=0,moves=0;
+inline bool fail_copy=false;
+struct Token {
+ int value;
+ explicit Token(int n):value(n){if(n<0)throw 81;++alive;++created;}
+ Token(const Token &other):value(other.value){if(fail_copy)throw 79;++alive;++created;++copies;}
+ Token(Token &&other)noexcept:value(other.value){other.value=-1;++alive;++created;++moves;}
+ ~Token(){--alive;++destroyed;}
+};
+struct Shutdown {~Shutdown(){if(alive || created!=destroyed)__builtin_trap();}};
+inline Shutdown shutdown __attribute__((init_priority(200),always_destroy));
+inline auto owned __attribute__((always_destroy))=[token=Token(40)](int delta){return token.value+delta;};
+inline auto copied __attribute__((always_destroy))=owned;
+struct Unique {
+ Token value;
+ explicit Unique(int n):value(n){}
+ Unique(const Unique &)=delete;Unique(Unique &&)=default;
+};
+inline auto unique __attribute__((always_destroy))=[token=Unique(41)]{return token.value.value;};
+inline auto generic __attribute__((always_destroy))=[token=Token(42)](auto delta){if(delta<0)throw delta;return token.value+delta;};
+inline auto mutable_state=[value=10](int delta)mutable{return value+=delta;};
+inline thread_local auto thread_owned __attribute__((always_destroy))=[token=Token(30)](int delta){return token.value+delta;};
+struct Owners {
+ inline static auto state=[value=4](int delta)mutable{return value+=delta;};
+ inline static auto owned __attribute__((always_destroy))=[token=Token(43)](int delta){return token.value+delta;};
+};
+using OwnedType=decltype(owned);using MemberOwnedType=decltype(Owners::owned);
+inline const OwnedType &reference(){return owned;}
+inline int generic_instantiations(){return generic(1)+generic(2L);}
+inline void failed_capture(){auto value=[first=Token(1),second=Token(-1)]{return first.value+second.value;};(void)value;}
+}
+
 inline int cleanup_order=0;
 struct CleanupValue {
  int value;
@@ -472,6 +506,22 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(ReferenceProofs::captured(nullptr)[0]!='r' || ReferenceProofs::nested_captured(nullptr)[0]!='r' || ReferenceProofs::local_captured(nullptr)[0]!='r' || ReferenceProofs::local_nested_captured(nullptr)[0]!='r')return 71;
   if(ReferenceProofs::callback(nullptr)[0]!='r' || ReferenceProofs::member(nullptr)[0]!='r' || ReferenceProofs::local_slot(nullptr)[0]!='r')return 72;
   if(ReferenceProofs::observations-previous_reference_observations!=15 || &ReferenceProofs::stored.reference()!=&ReferenceProofs::stored.value)return 73;
+  namespace Closures=InlineClosureObjects;
+  if(Closures::owned(2)!=42 || Closures::copied(3)!=43 || Closures::unique()!=41 || Closures::thread_owned(2)!=32 || Closures::Owners::owned(1)!=44 || Closures::generic_instantiations()!=87)return 74;
+  if(Closures::alive!=6 || &Closures::reference()!=&Closures::owned)return 75;
+  const int old_copies=Closures::copies,old_moves=Closures::moves,old_created=Closures::created,old_destroyed=Closures::destroyed;
+  {auto copy=Closures::owned;if(copy(2)!=42 || Closures::alive!=7)return 76;
+   {auto moved=static_cast<decltype(copy)&&>(copy);if(moved(2)!=42 || copy(0)!=-1 || Closures::alive!=8)return 77;}}
+  if(Closures::alive!=6 || Closures::copies!=old_copies+1 || Closures::moves!=old_moves+1 || Closures::created!=old_created+2 || Closures::destroyed!=old_destroyed+2)return 78;
+  bool copy_failed=false;Closures::fail_copy=true;try{auto copy=Closures::owned;(void)copy;}catch(int value){copy_failed=value==79;}Closures::fail_copy=false;
+  if(!copy_failed || Closures::alive!=6 || Closures::copies!=old_copies+1)return 79;
+  bool capture_failed=false;try{Closures::failed_capture();}catch(int value){capture_failed=value==81;}
+  if(!capture_failed || Closures::alive!=6 || Closures::created!=old_created+3 || Closures::destroyed!=old_destroyed+3)return 80;
+  bool generic_failed=false;try{Closures::generic(-17);}catch(int value){generic_failed=value==-17;}
+  if(!generic_failed || Closures::alive!=6)return 81;
+  const int previous_state=Closures::mutable_state(0),previous_member_state=Closures::Owners::state(0);
+  if(Closures::mutable_state(2)!=previous_state+2 || Closures::Owners::state(3)!=previous_member_state+3)return 82;
+  static_assert(!__is_constructible(decltype(Closures::unique),const decltype(Closures::unique)&));
   if(static_member_view(nullptr,0)[0]!='s' || static_member_view(nullptr,1)[0]!='t')return 61;
   if(static_member_factory_view(nullptr,0)[0]!='t' || static_member_factory_view(nullptr,1)[0]!='s')return 62;
   if(static_member_nothrow_view(nullptr)[0]!='s' || static_member_constant_field_view(nullptr)[0]!='s')return 64;
@@ -511,7 +561,9 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(pthread_create(&thread,nullptr,worker,nullptr) || pthread_join(thread,&result) || result)return 3;
   return 0;
 }
-)storage"+"extern \"C\" void *address_"+name+"(){return &StorageLifetime::local_retained();}\n");
+)storage"+"extern \"C\" void *address_"+name+"(){return &StorageLifetime::local_retained();}\n"+
+       "extern \"C\" void *closure_address_"+name+"(){return &StorageLifetime::InlineClosureObjects::owned;}\n"+
+       "extern \"C\" void *tls_closure_address_"+name+"(){return &StorageLifetime::InlineClosureObjects::thread_owned;}\n");
     auto consumer=request(consumer_source,root/(std::string(name)+".o"));
     InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;
     consumer.imported_interfaces={imported};Success(Compile(consumer));
@@ -520,10 +572,12 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   Write(main,R"(#include <cstdio>
 extern "C" int check_a();extern "C" int check_b();
 extern "C" void *address_a();extern "C" void *address_b();
+extern "C" void *closure_address_a();extern "C" void *closure_address_b();
+extern "C" void *tls_closure_address_a();extern "C" void *tls_closure_address_b();
 int main(){
  const int a=check_a();if(a){std::fprintf(stderr,"storage consumer a: %d\n",a);return 1;}
  const int b=check_b();if(b){std::fprintf(stderr,"storage consumer b: %d\n",b);return 1;}
- return address_a()!=address_b();
+ return address_a()!=address_b() || closure_address_a()!=closure_address_b() || tls_closure_address_a()!=tls_closure_address_b();
 }
 )");
   auto entry=request(main,root/"main.o");Success(Compile(entry));
