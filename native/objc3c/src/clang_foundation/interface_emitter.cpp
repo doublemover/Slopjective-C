@@ -1130,6 +1130,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeLifetimeAnnotationSemantic);
     if(HasNativeExternalBindingIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeExternalBindingSemantic);
+    if(HasNativeObjectPolicyIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeObjectPolicySemantic);
     if(HasNativeObjectExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeObjectExpressionSemantic);
     if(HasNativeFunctionPolicyIdentity(declaration))

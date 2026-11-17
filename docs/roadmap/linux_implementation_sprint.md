@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.196 / System 2.122 native object-policy span](linux_native_object_policies.md)
+publishes Objective-C initializer, method-family, superclass, property/protocol,
+boxing and lifetime contracts with native import and explicit reader admission.
+
 The [Source 2.195 / System 2.121 argument-projection span](linux_native_argument_projections.md)
 retains cleanup provenance through bounded native value/reference helper chains
 and preserves selected caller storage without spuriously escaping unused inputs.

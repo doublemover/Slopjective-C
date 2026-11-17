@@ -1723,6 +1723,9 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     for(const auto &name:native)add(name);
     return key;
   }
+  if(const auto *family=llvm::dyn_cast<clang::ObjCMethodFamilyAttr>(attribute)) {
+    add(clang::ObjCMethodFamilyAttr::ConvertFamilyKindToStr(family->getFamily()));return key;
+  }
   if(const auto *state=llvm::dyn_cast<clang::ConsumableAttr>(attribute))
     add(clang::ConsumableAttr::ConvertConsumedStateToStr(state->getDefaultState()));
   else if(const auto *state=llvm::dyn_cast<clang::CallableWhenAttr>(attribute)) {
@@ -3222,6 +3225,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-function-effects:v1;";
   if (HasDeclarationNativeLifetime(representative))
     identity.canonical_type_identity+=";native-lifetime-annotations:v1;";
+  if(HasDeclarationNativeObjectPolicy(representative))
+    identity.canonical_type_identity+=";native-object-policies:v1;";
   if(HasDeclarationNativeObjectExpressions(representative))
     identity.canonical_type_identity+=";native-object-expressions:v2;";
   if (HasDeclarationNativeFunctionPolicy(representative))

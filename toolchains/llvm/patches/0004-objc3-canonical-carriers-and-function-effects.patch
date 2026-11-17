@@ -2914,7 +2914,15 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTImporterSharedState.h"
  #include "clang/AST/ASTLambda.h"
-@@ -107,12 +111,15 @@
+@@ -58,6 +62,7 @@
+ #include "llvm/ADT/DenseMap.h"
+ #include "llvm/ADT/STLExtras.h"
+ #include "llvm/ADT/ScopeExit.h"
++#include "llvm/ADT/StringMap.h"
+ #include "llvm/ADT/SmallVector.h"
+ #include "llvm/Support/ErrorHandling.h"
+ #include "llvm/Support/MemoryBuffer.h"
+@@ -107,12 +112,15 @@
    template <class T>
    static SmallVector<Decl *, 2>
    getCanonicalForwardRedeclChain(Redeclarable<T> *D) {
@@ -2933,7 +2941,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      std::reverse(Redecls.begin(), Redecls.end());
      return Redecls;
    }
-@@ -188,6 +195,7 @@
+@@ -188,6 +196,7 @@
      // Use this to import pointers of specific type.
      template <typename ImportT>
      [[nodiscard]] Error importInto(ImportT *&To, ImportT *From) {
@@ -2941,7 +2949,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        auto ToOrErr = Importer.Import(From);
        if (ToOrErr)
          To = cast_or_null<ImportT>(*ToOrErr);
-@@ -320,13 +328,22 @@
+@@ -320,13 +329,22 @@
        DeclContext *ToDC = ToD->getDeclContext();
        DeclContext *ToLexicalDC = ToD->getLexicalDeclContext();
  
@@ -2966,7 +2974,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          Visible = true;
        }
  
-@@ -516,6 +533,7 @@
+@@ -516,6 +534,7 @@
      ExpectedDecl VisitEmptyDecl(EmptyDecl *D);
      ExpectedDecl VisitAccessSpecDecl(AccessSpecDecl *D);
      ExpectedDecl VisitStaticAssertDecl(StaticAssertDecl *D);
@@ -2974,7 +2982,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedDecl VisitCXXExpansionStmtDecl(CXXExpansionStmtDecl *D);
      ExpectedDecl VisitTranslationUnitDecl(TranslationUnitDecl *D);
      ExpectedDecl VisitFileScopeAsmDecl(FileScopeAsmDecl *D);
-@@ -530,7 +548,37 @@
+@@ -530,7 +549,37 @@
      ExpectedDecl VisitEnumDecl(EnumDecl *D);
      ExpectedDecl VisitRecordDecl(RecordDecl *D);
      ExpectedDecl VisitEnumConstantDecl(EnumConstantDecl *D);
@@ -3012,7 +3020,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedDecl VisitCXXMethodDecl(CXXMethodDecl *D);
      ExpectedDecl VisitCXXConstructorDecl(CXXConstructorDecl *D);
      ExpectedDecl VisitCXXDestructorDecl(CXXDestructorDecl *D);
-@@ -592,6 +640,14 @@
+@@ -592,6 +641,14 @@
      ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
      ExpectedStmt VisitLabelStmt(LabelStmt *S);
      ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
@@ -3027,7 +3035,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -602,6 +658,11 @@
+@@ -602,6 +659,11 @@
      ExpectedStmt VisitContinueStmt(ContinueStmt *S);
      ExpectedStmt VisitBreakStmt(BreakStmt *S);
      ExpectedStmt VisitReturnStmt(ReturnStmt *S);
@@ -3039,7 +3047,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      // FIXME: MSAsmStmt
      // FIXME: SEHExceptStmt
      // FIXME: SEHFinallyStmt
-@@ -627,6 +688,18 @@
+@@ -627,6 +689,18 @@
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
@@ -3058,7 +3066,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -644,6 +717,7 @@
+@@ -644,6 +718,7 @@
      ExpectedStmt VisitCharacterLiteral(CharacterLiteral *E);
      ExpectedStmt VisitStringLiteral(StringLiteral *E);
      ExpectedStmt VisitCompoundLiteralExpr(CompoundLiteralExpr *E);
@@ -3066,7 +3074,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedStmt VisitAtomicExpr(AtomicExpr *E);
      ExpectedStmt VisitAddrLabelExpr(AddrLabelExpr *E);
      ExpectedStmt VisitConstantExpr(ConstantExpr *E);
-@@ -677,6 +751,21 @@
+@@ -677,6 +752,21 @@
      ExpectedStmt VisitCXXDeleteExpr(CXXDeleteExpr *E);
      ExpectedStmt VisitCXXConstructExpr(CXXConstructExpr *E);
      ExpectedStmt VisitCXXMemberCallExpr(CXXMemberCallExpr *E);
@@ -3088,7 +3096,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedStmt VisitCXXDependentScopeMemberExpr(CXXDependentScopeMemberExpr *E);
      ExpectedStmt VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr *E);
      ExpectedStmt VisitCXXUnresolvedConstructExpr(CXXUnresolvedConstructExpr *E);
-@@ -705,6 +794,7 @@
+@@ -705,6 +795,7 @@
      ExpectedStmt
      VisitSubstNonTypeTemplateParmPackExpr(SubstNonTypeTemplateParmPackExpr *E);
      ExpectedStmt VisitPseudoObjectExpr(PseudoObjectExpr *E);
@@ -3096,7 +3104,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedStmt VisitCXXParenListInitExpr(CXXParenListInitExpr *E);
      ExpectedStmt VisitCXXExpansionSelectExpr(CXXExpansionSelectExpr *E);
  
-@@ -1426,6 +1516,39 @@
+@@ -1426,6 +1517,39 @@
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -3136,7 +3144,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1613,6 +1736,11 @@
+@@ -1613,6 +1737,11 @@
    Error Err = Error::success();
    FunctionProtoType::ExtProtoInfo ToEPI;
    ToEPI.ExtInfo = FromEPI.ExtInfo;
@@ -3148,7 +3156,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToEPI.Variadic = FromEPI.Variadic;
    ToEPI.HasTrailingReturn = FromEPI.HasTrailingReturn;
    ToEPI.TypeQuals = FromEPI.TypeQuals;
-@@ -1626,6 +1754,52 @@
+@@ -1626,6 +1755,52 @@
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -3201,7 +3209,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (Err)
      return std::move(Err);
  
-@@ -1821,6 +1995,13 @@
+@@ -1821,6 +1996,13 @@
    if (!ToEquivalentTypeOrErr)
      return ToEquivalentTypeOrErr.takeError();
  
@@ -3215,7 +3223,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return Importer.getToContext().getAttributedType(
        T->getAttrKind(), *ToModifiedTypeOrErr, *ToEquivalentTypeOrErr,
        T->getAttr());
-@@ -2434,6 +2615,26 @@
+@@ -2434,6 +2616,26 @@
                                                  ImportedOrErr.takeError());
    }
  
@@ -3242,7 +3250,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ChildErrors;
  }
  
-@@ -2472,6 +2673,7 @@
+@@ -2472,6 +2674,7 @@
  
  Error ASTNodeImporter::ImportDeclContext(
      Decl *FromD, DeclContext *&ToDC, DeclContext *&ToLexicalDC) {
@@ -3250,7 +3258,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToDCOrErr = Importer.ImportContext(FromD->getDeclContext());
    if (!ToDCOrErr)
      return ToDCOrErr.takeError();
-@@ -2517,7 +2719,7 @@
+@@ -2517,7 +2720,7 @@
  
  Error ASTNodeImporter::ImportDefinition(
      RecordDecl *From, RecordDecl *To, ImportDefinitionKind Kind) {
@@ -3259,7 +3267,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      // There are cases in LLDB when we first import a class without its
      // members. The class will have DefinitionData, but no members. Then,
      // importDefinition is called from LLDB, which tries to get the members, so
-@@ -2526,6 +2728,19 @@
+@@ -2526,6 +2729,19 @@
      // definition.
      To->setCompleteDefinition(false);
      To->completeDefinition();
@@ -3279,7 +3287,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    };
  
    if (To->getDefinition() || To->isBeingDefined()) {
-@@ -2537,6 +2752,12 @@
+@@ -2537,6 +2753,12 @@
          (To->isLambda() && shouldForceImportDeclContext(Kind))) {
        if (To->isLambda()) {
          auto *FromCXXRD = cast<CXXRecordDecl>(From);
@@ -3292,7 +3300,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          SmallVector<LambdaCapture, 8> ToCaptures;
          ToCaptures.reserve(FromCXXRD->capture_size());
          for (const auto &FromCapture : FromCXXRD->captures()) {
-@@ -2559,6 +2780,26 @@
+@@ -2559,6 +2781,26 @@
      return Error::success();
    }
  
@@ -3319,7 +3327,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -2734,8 +2975,30 @@
+@@ -2734,8 +2976,30 @@
                                      : StructuralEquivalenceKind::Default;
  }
  
@@ -3350,7 +3358,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Eliminate a potential failure point where we attempt to re-import
    // something we're trying to import while completing ToRecord.
    Decl *ToOrigin = Importer.GetOriginalDecl(To);
-@@ -2899,6 +3162,47 @@
+@@ -2899,6 +3163,47 @@
    return ToD;
  }
  
@@ -3398,7 +3406,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedDecl
  ASTNodeImporter::VisitCXXExpansionStmtDecl(CXXExpansionStmtDecl *D) {
    auto DCOrErr = Importer.ImportContext(D->getDeclContext());
-@@ -2938,6 +3242,13 @@
+@@ -2938,6 +3243,13 @@
    if (ToD)
      return ToD;
  
@@ -3412,7 +3420,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    NamespaceDecl *MergeWithNamespace = nullptr;
    if (!Name) {
      // This is an anonymous namespace. Adopt an existing anonymous
-@@ -2983,12 +3294,13 @@
+@@ -2983,12 +3295,13 @@
      return RBraceLocOrErr.takeError();
  
    // Create the "to" namespace, if needed.
@@ -3428,7 +3436,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        return ToNamespace;
      ToNamespace->setRBraceLoc(*RBraceLocOrErr);
      ToNamespace->setLexicalDeclContext(LexicalDC);
-@@ -2996,7 +3308,7 @@
+@@ -2996,7 +3309,7 @@
  
      // If this is an anonymous namespace, register it as the anonymous
      // namespace within its context.
@@ -3437,7 +3445,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        if (auto *TU = dyn_cast<TranslationUnitDecl>(DC))
          TU->setAnonymousNamespace(ToNamespace);
        else
-@@ -3004,6 +3316,13 @@
+@@ -3004,6 +3317,13 @@
      }
    }
    Importer.MapImported(D, ToNamespace);
@@ -3451,7 +3459,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (Error Err = ImportDeclContext(D))
      return std::move(Err);
-@@ -3085,7 +3404,18 @@
+@@ -3085,7 +3405,18 @@
  
          QualType FromUT = D->getUnderlyingType();
          QualType FoundUT = FoundTypedef->getUnderlyingType();
@@ -3471,7 +3479,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            // If the underlying declarations are unnamed records these can be
            // imported as different types. We should create a distinct typedef
            // node in this case.
-@@ -3222,6 +3552,8 @@
+@@ -3222,6 +3553,8 @@
      return ToAlias;
  
    ToTemplatedDecl->setDescribedAliasTemplate(ToAlias);
@@ -3480,7 +3488,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    ToAlias->setAccess(D->getAccess());
    ToAlias->setLexicalDeclContext(LexicalDC);
-@@ -3400,6 +3732,24 @@
+@@ -3400,6 +3733,24 @@
    if (ToD)
      return ToD;
  
@@ -3505,7 +3513,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Figure out what structure name we're looking for.
    unsigned IDNS = Decl::IDNS_Tag;
    DeclarationName SearchName = Name;
-@@ -3417,7 +3767,16 @@
+@@ -3417,7 +3768,16 @@
  
    // We may already have a record of the same name; try to find and match it.
    RecordDecl *PrevDecl = nullptr;
@@ -3523,7 +3531,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      auto FoundDecls =
          Importer.findDeclsInToCtx(DC, SearchName);
-@@ -3438,6 +3797,19 @@
+@@ -3438,6 +3798,19 @@
            Found = Tag->getDecl();
        }
  
@@ -3543,7 +3551,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        if (auto *FoundRecord = dyn_cast<RecordDecl>(Found)) {
          // Do not emit false positive diagnostic in case of unnamed
          // struct/union and in case of anonymous structs.  Would be false
-@@ -3456,6 +3828,14 @@
+@@ -3456,6 +3829,14 @@
            continue;
  
          if (IsStructuralMatch(D, FoundRecord)) {
@@ -3558,7 +3566,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            RecordDecl *FoundDef = FoundRecord->getDefinition();
            if (D->isThisDeclarationADefinition() && FoundDef) {
              // FIXME: Structural equivalence check should check for same
-@@ -3463,9 +3843,7 @@
+@@ -3463,9 +3844,7 @@
              Importer.MapImported(D, FoundDef);
              if (const auto *DCXX = dyn_cast<CXXRecordDecl>(D)) {
                auto *FoundCXX = dyn_cast<CXXRecordDecl>(FoundDef);
@@ -3569,7 +3577,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
                  // FoundDef may not have every implicit method that D has
                  // because implicit methods are created only if they are used.
                  if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
-@@ -3508,13 +3886,6 @@
+@@ -3508,13 +3887,6 @@
                DC, *TInfoOrErr, Loc, DCXX->getLambdaDependencyKind(),
                DCXX->isGenericLambda(), DCXX->getLambdaCaptureDefault()))
          return D2CXX;
@@ -3583,7 +3591,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        D2CXX->setLambdaNumbering(DCXX->getLambdaNumbering());
      } else {
        if (GetImportedOrCreateDecl(D2CXX, D, Importer.getToContext(),
-@@ -3525,6 +3896,13 @@
+@@ -3525,6 +3897,13 @@
      }
  
      D2 = D2CXX;
@@ -3597,7 +3605,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      D2->setAccess(D->getAccess());
      D2->setLexicalDeclContext(LexicalDC);
      addDeclToContexts(D, D2);
-@@ -3572,6 +3950,8 @@
+@@ -3572,6 +3951,8 @@
    else
      return QualifierLocOrErr.takeError();
  
@@ -3606,7 +3614,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isAnonymousStructOrUnion())
      D2->setAnonymousStructOrUnion(true);
  
-@@ -3579,6 +3959,18 @@
+@@ -3579,6 +3960,18 @@
      if (Error Err = ImportDefinition(D, D2, IDK_Default))
        return std::move(Err);
  
@@ -3625,7 +3633,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return D2;
  }
  
-@@ -3996,6 +4388,72 @@
+@@ -3996,6 +4389,72 @@
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -3698,7 +3706,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4020,6 +4478,14 @@
+@@ -4020,6 +4479,14 @@
      return ToD;
  
    FunctionDecl *FoundByLookup = nullptr;
@@ -3713,7 +3721,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    FunctionTemplateDecl *FromFT = D->getDescribedFunctionTemplate();
  
    // If this is a function template specialization, then try to find the same
-@@ -4040,7 +4506,7 @@
+@@ -4040,7 +4507,7 @@
    }
    // Try to find a function in our own ("to") context with the same name, same
    // type, and in the same context as the function we're importing.
@@ -3722,7 +3730,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary | Decl::IDNS_OrdinaryFriend;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4049,10 +4515,82 @@
+@@ -4049,10 +4516,82 @@
          continue;
  
        if (auto *FoundFunction = dyn_cast<FunctionDecl>(FoundDecl)) {
@@ -3806,7 +3814,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
            FoundByLookup = FoundFunction;
-@@ -4061,8 +4599,12 @@
+@@ -4061,8 +4600,12 @@
          // FIXME: Check for overloading more carefully, e.g., by boosting
          // Sema::IsOverload out to the AST library.
  
@@ -3821,7 +3829,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            continue;
  
          // Complain about inconsistent function types.
-@@ -4105,9 +4647,36 @@
+@@ -4105,9 +4648,36 @@
                                   FoundByLookup->getDescribedFunctionTemplate());
            }
            return Importer.MapImported(D, FoundByLookup);
@@ -3861,7 +3869,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          }
        }
      }
-@@ -4120,6 +4689,7 @@
+@@ -4120,6 +4690,7 @@
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -3869,7 +3877,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4154,8 +4724,12 @@
+@@ -4154,8 +4725,12 @@
        FromEPI = DefaultEPI;
        UsedDifferentProtoType = true;
      }
@@ -3883,7 +3891,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      FromTSI = Importer.getFromContext().getTrivialTypeSourceInfo(
          FromTy, D->getBeginLoc());
    }
-@@ -4169,12 +4743,64 @@
+@@ -4169,12 +4744,64 @@
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToDefaultLoc = importChecked(Err, D->getDefaultLoc());
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
@@ -3951,7 +3959,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -4284,12 +4910,25 @@
+@@ -4284,12 +4911,25 @@
    ToFunction->setQualifierInfo(ToQualifierLoc);
    ToFunction->setAccess(D->getAccess());
    ToFunction->setLexicalDeclContext(LexicalDC);
@@ -3978,7 +3986,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -4330,6 +4969,36 @@
+@@ -4330,6 +4970,36 @@
    }
    ToFunction->setParams(Parameters);
  
@@ -4015,7 +4023,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // We need to complete creation of FunctionProtoTypeLoc manually with setting
    // params it refers to.
    if (TInfo) {
-@@ -4386,9 +5055,16 @@
+@@ -4386,9 +5056,16 @@
        ToFunction->setType(*TyOrErr);
      else
        return TyOrErr.takeError();
@@ -4034,7 +4042,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        return TSIOrErr.takeError();
    }
  
-@@ -4440,6 +5116,17 @@
+@@ -4440,6 +5117,17 @@
  
    // Determine whether we've already imported this field.
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
@@ -4052,7 +4060,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    for (auto *FoundDecl : FoundDecls) {
      if (FieldDecl *FoundField = dyn_cast<FieldDecl>(FoundDecl)) {
        // For anonymous fields, match up by index.
-@@ -4505,6 +5192,14 @@
+@@ -4505,6 +5193,14 @@
    ToField->setAccess(D->getAccess());
    ToField->setLexicalDeclContext(LexicalDC);
    ToField->setImplicit(D->isImplicit());
@@ -4067,7 +4075,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (ToCapturedVLAType)
      ToField->setCapturedVLAType(cast<VariableArrayType>(ToCapturedVLAType));
    LexicalDC->addDeclInternal(ToField);
-@@ -4793,7 +5488,11 @@
+@@ -4793,7 +5489,11 @@
    // Try to find a variable in our own ("to") context with the same name and
    // in the same context as the variable we're importing.
    VarDecl *FoundByLookup = nullptr;
@@ -4080,7 +4088,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4802,6 +5501,10 @@
+@@ -4802,6 +5502,10 @@
          continue;
  
        if (auto *FoundVar = dyn_cast<VarDecl>(FoundDecl)) {
@@ -4091,7 +4099,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          if (!hasSameVisibilityContextAndLinkage(FoundVar, D))
            continue;
          if (Importer.IsStructurallyEquivalent(D->getType(),
-@@ -4897,9 +5600,15 @@
+@@ -4897,9 +5601,15 @@
    }
  
    ToVar->setTSCSpec(D->getTSCSpec());
@@ -4107,7 +4115,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isInlineSpecified())
      ToVar->setInlineSpecified();
    if (D->isInline())
-@@ -4910,6 +5619,15 @@
+@@ -4910,6 +5620,15 @@
      ToVar->setPreviousDecl(Recent);
    }
  
@@ -4123,7 +4131,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Import the described template, if any.
    if (D->getDescribedVarTemplate()) {
      auto ToVTOrErr = import(D->getDescribedVarTemplate());
-@@ -4931,6 +5649,23 @@
+@@ -4931,6 +5650,23 @@
    if (Error Err = ImportInitializer(D, ToVar))
      return std::move(Err);
  
@@ -4147,13 +4155,47 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isConstexpr())
      ToVar->setConstexpr(true);
  
-@@ -5062,6 +5797,19 @@
+@@ -5045,6 +5781,32 @@
+   return ToParm;
+ }
+ 
++// These declaration policies affect consumer diagnostics, boxing or runtime
++// participation. A matching spelling must not merge away a different contract.
++template<class... Policies>
++static bool sameObjCDeclarationPolicies(const Decl *From,const Decl *To) {
++  return (... && (From->hasAttr<Policies>()==To->hasAttr<Policies>()));
++}
++
++static bool sameObjCMethodPolicies(const ObjCMethodDecl *From,const ObjCMethodDecl *To) {
++  return sameObjCDeclarationPolicies<ObjCDesignatedInitializerAttr,ObjCRequiresSuperAttr>(From,To) &&
++      From->getMethodFamily()==To->getMethodFamily();
++}
++static bool sameObjCMemberPolicies(const ObjCContainerDecl *From,const ObjCContainerDecl *To) {
++  // Selectors own context-local identifiers. Compare framed selector spellings
++  // rather than querying one AST's method table with another AST's pointers.
++  auto Key=[](const ObjCMethodDecl *Method) {
++    return std::string(Method->isInstanceMethod()?"-":"+")+Method->getSelector().getAsString();
++  };
++  llvm::StringMap<const ObjCMethodDecl *> Methods;
++  for(const auto *Method:To->methods())Methods[Key(Method)]=Method;
++  for(const auto *Method:From->methods()) {
++    auto Existing=Methods.find(Key(Method));
++    if(Existing!=Methods.end() && !sameObjCMethodPolicies(Method,Existing->second))return false;
++  }
++  return true;
++}
++
+ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+   // Import the major distinguishing characteristics of a method.
+   DeclContext *DC, *LexicalDC;
+@@ -5062,6 +5824,20 @@
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
 +      if (!sameObjC3BorrowedSignature(Importer.getFromContext(), D,
 +                                      Importer.getToContext(), FoundMethod) ||
-+          !haveSameObjC3Isolation(D, FoundMethod))
++          !haveSameObjC3Isolation(D, FoundMethod) ||
++          !sameObjCMethodPolicies(D,FoundMethod))
 +        return make_error<ASTImportError>(ASTImportError::NameConflict);
 +
 +      // Effect identity cannot be erased when merging an imported method.
@@ -4167,7 +4209,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5872,7 @@
+@@ -5124,6 +5900,7 @@
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -4175,7 +4217,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5887,8 @@
+@@ -5138,6 +5915,8 @@
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -4184,7 +4226,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5170,9 +5921,26 @@
+@@ -5170,9 +5949,26 @@
    // Implicit params are declared when Sema encounters the definition but this
    // never happens when the method is imported. Manually declare the implicit
    // params now that the MethodDecl knows its class interface.
@@ -4214,7 +4256,20 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    return ToMethod;
  }
-@@ -5461,6 +6229,7 @@
+@@ -5381,6 +6177,12 @@
+       break;
+   }
+ 
++  if(MergeWithProtocol && D->hasDefinition() && MergeWithProtocol->hasDefinition() &&
++      (!sameObjCDeclarationPolicies<ObjCExplicitProtocolImplAttr,
++          ObjCNonRuntimeProtocolAttr>(D,MergeWithProtocol) ||
++       !sameObjCMemberPolicies(D->getDefinition(),MergeWithProtocol->getDefinition())))
++    return make_error<ASTImportError>(ASTImportError::NameConflict);
++
+   ObjCProtocolDecl *ToProto = MergeWithProtocol;
+   if (!ToProto) {
+     auto ToAtBeginLocOrErr = import(D->getAtStartLoc());
+@@ -5461,6 +6263,7 @@
      return std::move(Err);
    if (ToD)
      return ToD;
@@ -4222,7 +4277,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    Error Err = Error::success();
    auto ToLoc = importChecked(Err, D->getNameInfo().getLoc());
-@@ -5468,28 +6237,59 @@
+@@ -5468,28 +6271,59 @@
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
    if (Err)
      return std::move(Err);
@@ -4290,7 +4345,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    return ImportUsingShadowDecls(D, ToUsing);
  }
-@@ -5517,6 +6317,7 @@
+@@ -5517,6 +6351,7 @@
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -4298,7 +4353,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5685,6 +6486,21 @@
+@@ -5685,6 +6520,21 @@
    if (Error Err = ImportDeclarationNameLoc(D->getNameInfo(), NameInfo))
      return std::move(Err);
  
@@ -4320,7 +4375,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    UnresolvedUsingValueDecl *ToUsingValue;
    if (GetImportedOrCreateDecl(ToUsingValue, D, Importer.getToContext(), DC,
                                ToUsingLoc, ToQualifierLoc, NameInfo,
-@@ -5724,6 +6540,7 @@
+@@ -5724,6 +6574,7 @@
      return ToUsing;
  
    ToUsing->setAccess(D->getAccess());
@@ -4328,7 +4383,15 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
  
-@@ -5872,6 +6689,12 @@
+@@ -5785,6 +6636,7 @@
+ 
+   // Start the definition.
+   To->startDefinition();
++  if(From->hasDesignatedInitializers())To->setHasDesignatedInitializers();
+ 
+   // If this class has a superclass, import it.
+   if (From->getSuperClass()) {
+@@ -5872,6 +6724,12 @@
  }
  
  ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
@@ -4341,7 +4404,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // If this class has a definition in the translation unit we're coming from,
    // but this particular declaration is not that definition, import the
    // definition and map to that.
-@@ -5904,6 +6727,15 @@
+@@ -5904,6 +6762,20 @@
        break;
    }
  
@@ -4350,6 +4413,11 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
 +  if (MergeWithIface && D->hasDefinition() && MergeWithIface->hasDefinition() &&
 +      (isObjC3Actor(D) != isObjC3Actor(MergeWithIface) ||
 +       !haveSameObjC3Isolation(D, MergeWithIface) ||
++       D->hasDesignatedInitializers()!=MergeWithIface->hasDesignatedInitializers() ||
++       !sameObjCMemberPolicies(D->getDefinition(),MergeWithIface->getDefinition()) ||
++       !sameObjCDeclarationPolicies<ObjCSubclassingRestrictedAttr,
++           ObjCRequiresPropertyDefsAttr,ObjCNonLazyClassAttr,
++           ObjCRuntimeVisibleAttr>(D,MergeWithIface) ||
 +       D->hasAttr<ObjCUnsafeSendableAttr>() !=
 +           MergeWithIface->hasAttr<ObjCUnsafeSendableAttr>()))
 +    return make_error<ASTImportError>(ASTImportError::NameConflict);
@@ -4357,7 +4425,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6908,9 @@
+@@ -6076,6 +6948,9 @@
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -4367,7 +4435,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6087,7 +6922,15 @@
+@@ -6087,7 +6962,15 @@
          return make_error<ASTImportError>(ASTImportError::NameConflict);
        }
  
@@ -4384,7 +4452,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
        // Consider these properties to be equivalent.
        Importer.MapImported(D, FoundProp);
-@@ -6397,8 +7240,27 @@
+@@ -6397,8 +7280,27 @@
          bool IgnoreTemplateParmDepth =
              (FoundTemplate->getFriendObjectKind() != Decl::FOK_None) !=
              (D->getFriendObjectKind() != Decl::FOK_None);
@@ -4414,7 +4482,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            if (DependentFriend || IsDependentFriend(FoundTemplate))
              continue;
  
-@@ -6458,11 +7320,12 @@
+@@ -6458,11 +7360,12 @@
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -4428,7 +4496,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
    if (FoundByLookup) {
-@@ -6489,6 +7352,8 @@
+@@ -6489,6 +7392,8 @@
      D2->setPreviousDecl(Recent);
    }
  
@@ -4437,7 +4505,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return D2;
  }
  
-@@ -6497,6 +7362,9 @@
+@@ -6497,6 +7402,9 @@
    ClassTemplateDecl *ClassTemplate;
    if (Error Err = importInto(ClassTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4447,7 +4515,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6508,6 +7376,7 @@
+@@ -6508,6 +7416,7 @@
    if (Error Err =
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
@@ -4455,7 +4523,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Try to find an existing specialization with these template arguments and
    // template parameter list.
    void *InsertPos = nullptr;
-@@ -6711,6 +7580,11 @@
+@@ -6711,6 +7620,11 @@
    SmallVector<NamedDecl *, 4> ConflictingDecls;
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
    VarTemplateDecl *FoundByLookup = nullptr;
@@ -4467,7 +4535,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    for (auto *FoundDecl : FoundDecls) {
      if (!FoundDecl->isInIdentifierNamespace(Decl::IDNS_Ordinary))
        continue;
-@@ -6740,6 +7614,15 @@
+@@ -6740,6 +7654,15 @@
          break;
        }
        ConflictingDecls.push_back(FoundDecl);
@@ -4483,7 +4551,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      }
    }
  
-@@ -6777,10 +7660,11 @@
+@@ -6777,10 +7700,11 @@
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -4496,7 +4564,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (DC != Importer.getToContext().getTranslationUnitDecl())
      updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
-@@ -6796,6 +7680,7 @@
+@@ -6796,6 +7720,7 @@
      ToVarTD->setPreviousDecl(Recent);
    }
  
@@ -4504,7 +4572,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ToVarTD;
  }
  
-@@ -6818,6 +7703,9 @@
+@@ -6818,6 +7743,9 @@
    VarTemplateDecl *VarTemplate = nullptr;
    if (Error Err = importInto(VarTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4514,7 +4582,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6839,10 +7727,21 @@
+@@ -6839,10 +7767,21 @@
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
  
@@ -4540,7 +4608,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (FoundSpecialization) {
      if (IsStructuralMatch(D, FoundSpecialization)) {
        VarDecl *FoundDef = FoundSpecialization->getDefinition();
-@@ -6879,13 +7778,9 @@
+@@ -6879,13 +7818,9 @@
    using PartVarSpecDecl = VarTemplatePartialSpecializationDecl;
    // Create a new specialization.
    if (auto *FromPartial = dyn_cast<PartVarSpecDecl>(D)) {
@@ -4555,7 +4623,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
                                  VarTemplate, QualType(), nullptr,
                                  D->getStorageClass(), TemplateArgs))
        return ToPartial;
-@@ -6914,8 +7809,11 @@
+@@ -6914,8 +7849,11 @@
  
    // Update InsertPos, because preceding import calls may have invalidated
    // it by adding new specializations.
@@ -4569,7 +4637,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    QualType T;
    if (Error Err = importInto(T, D->getType()))
-@@ -6935,6 +7833,10 @@
+@@ -6935,6 +7873,10 @@
    }
  
    D2->setSpecializationKind(D->getSpecializationKind());
@@ -4580,7 +4648,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (D->getTemplateArgsAsWritten())
      D2->setTemplateArgsAsWritten(ToTAInfo);
-@@ -6948,6 +7850,8 @@
+@@ -6948,6 +7890,8 @@
      D2->setConstexpr(true);
  
    D2->setAccess(D->getAccess());
@@ -4589,7 +4657,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (Error Err = ImportInitializer(D, D2))
      return std::move(Err);
-@@ -6995,7 +7899,10 @@
+@@ -6995,7 +7939,10 @@
        if (auto *FoundTemplate = dyn_cast<FunctionTemplateDecl>(FoundDecl)) {
          if (!hasSameVisibilityContextAndLinkage(FoundTemplate, D))
            continue;
@@ -4601,7 +4669,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            FunctionTemplateDecl *TemplateWithDef =
                getTemplateDefinition(FoundTemplate);
            if (D->isThisDeclarationADefinition() && TemplateWithDef)
-@@ -7051,17 +7958,13 @@
+@@ -7051,17 +7998,13 @@
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -4623,7 +4691,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7979,15 @@
+@@ -7076,6 +8019,15 @@
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -4639,7 +4707,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ToFunc;
  }
  
-@@ -7111,7 +8023,10 @@
+@@ -7111,7 +8063,10 @@
    if (GetImportedOrCreateDecl(To, D, Importer.getToContext(), DC, RequiresLoc))
      return To;
    To->setLexicalDeclContext(LexicalDC);
@@ -4651,7 +4719,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return To;
  }
  
-@@ -7328,6 +8243,97 @@
+@@ -7328,6 +8283,97 @@
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -4749,7 +4817,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +8491,93 @@
+@@ -7485,6 +8531,93 @@
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -4843,7 +4911,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8868,178 @@
+@@ -7775,6 +8908,178 @@
                  E->getVarargABI());
  }
  
@@ -5022,7 +5090,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +9349,16 @@
+@@ -8084,6 +9389,16 @@
                                 ToLocations);
  }
  
@@ -5039,7 +5107,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8132,13 +9407,22 @@
+@@ -8132,13 +9447,22 @@
        ToAmpAmpLoc, ToLabelLoc, ToLabel, ToType);
  }
  ExpectedStmt ASTNodeImporter::VisitConstantExpr(ConstantExpr *E) {
@@ -5069,7 +5137,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  ExpectedStmt ASTNodeImporter::VisitParenExpr(ParenExpr *E) {
    Error Err = Error::success();
-@@ -8333,8 +9617,10 @@
+@@ -8333,8 +9657,10 @@
    if (Err)
      return std::move(Err);
  
@@ -5081,7 +5149,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  
  ExpectedStmt ASTNodeImporter::VisitArraySubscriptExpr(ArraySubscriptExpr *E) {
-@@ -8835,6 +10121,237 @@
+@@ -8835,6 +10161,237 @@
                                     E->getFPFeatures());
  }
  
@@ -5319,7 +5387,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9082,7 +10599,9 @@
+@@ -9082,7 +10639,9 @@
  ExpectedStmt
  ASTNodeImporter::VisitUnresolvedMemberExpr(UnresolvedMemberExpr *E) {
    Error Err = Error::success();
@@ -5330,7 +5398,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToOperatorLoc = importChecked(Err, E->getOperatorLoc());
    auto ToQualifierLoc = importChecked(Err, E->getQualifierLoc());
    auto ToTemplateKeywordLoc = importChecked(Err, E->getTemplateKeywordLoc());
-@@ -9163,6 +10682,16 @@
+@@ -9163,6 +10722,16 @@
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -5347,7 +5415,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10981,14 @@
+@@ -9452,6 +11021,14 @@
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -5362,7 +5430,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +11034,21 @@
+@@ -9497,6 +11074,21 @@
        E->getIndex(), E->getFinal());
  }
  
@@ -5384,7 +5452,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +11216,12 @@
+@@ -9664,8 +11256,12 @@
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -5399,7 +5467,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +11271,219 @@
+@@ -9715,7 +11311,219 @@
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -5620,7 +5688,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  
  namespace {
-@@ -9834,12 +11602,21 @@
+@@ -9834,12 +11642,21 @@
      assert(!ToAttr && "Use one AttrImporter to import one Attribute object.");
  
      SourceRange ToRange = NImporter.importChecked(Err, FromAttr->getRange());
@@ -5644,7 +5712,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    }
  
    // Get the result of the previous import attempt (can be used only once).
-@@ -9857,6 +11634,119 @@
+@@ -9857,6 +11674,119 @@
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -5764,7 +5832,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -9880,6 +11770,14 @@
+@@ -9880,6 +11810,14 @@
      break;
    }
  
@@ -5779,7 +5847,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    case attr::EnableIf: {
      const auto *From = cast<EnableIfAttr>(FromAttr);
      AI.importAttr(From, AI.importArg(From->getCond()).value(),
-@@ -10123,12 +12021,62 @@
+@@ -10123,12 +12061,62 @@
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -5846,7 +5914,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          return ToAttrOrErr.takeError();
      }
  
-@@ -10571,6 +12519,12 @@
+@@ -10571,6 +12559,12 @@
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -5859,7 +5927,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +12535,9 @@
+@@ -10581,9 +12575,9 @@
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -5871,7 +5939,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +12547,9 @@
+@@ -10593,9 +12587,9 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5883,7 +5951,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +12559,17 @@
+@@ -10605,17 +12599,17 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5905,7 +5973,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -10823,6 +12777,8 @@
+@@ -10823,6 +12817,8 @@
      ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
                 ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
                 FromValue.getArrayInitializedElts());
@@ -5914,7 +5982,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      break;
    case APValue::Struct:
      Result.MakeStruct(FromValue.getStructNumBases(),
-@@ -10838,7 +12794,7 @@
+@@ -10838,7 +12834,7 @@
      APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
      if (Err)
        return std::move(Err);
@@ -5923,7 +5991,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      break;
    }
    case APValue::AddrLabelDiff: {
-@@ -10858,10 +12814,10 @@
+@@ -10858,10 +12854,10 @@
        return std::move(Err);
      MutableArrayRef<const CXXRecordDecl *> ToPath =
          Result.setMemberPointerUninit(
@@ -5936,7 +6004,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
           Idx++) {
        const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
-@@ -10912,7 +12868,7 @@
+@@ -10912,7 +12908,7 @@
        }
      }
      CharUnits Offset = FromValue.getLValueOffset();
@@ -5945,7 +6013,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11006,6 +12962,11 @@
+@@ -11006,6 +13002,11 @@
    // This mapping should be maintained only in this function. Therefore do not
    // check for additional consistency.
    ImportedFromDecls[To] = From;
@@ -5957,7 +6025,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // In the case of TypedefNameDecl we create the Decl first and only then we
    // import and set its DeclContext. So, the DC is still not set when we reach
    // here from GetImportedOrCreateDecl.
-@@ -11049,3 +13010,16 @@
+@@ -11049,3 +13050,16 @@
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -6537,10 +6605,11 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    bool PropertiesEqual =
        Method1->isInstanceMethod() == Method2->isInstanceMethod() &&
        Method1->isVariadic() == Method2->isVariadic() &&
-@@ -2600,6 +2995,17 @@
+@@ -2600,6 +2995,18 @@
                                       Decl *D1, Decl *D2) {
    // FIXME: Check for known structural equivalences via a callback of some sort.
  
++  if(D1->hasAttr<ObjCBoxableAttr>()!=D2->hasAttr<ObjCBoxableAttr>())return false;
 +  if (D1->hasAttr<ObjCUnsafeSendableAttr>() !=
 +      D2->hasAttr<ObjCUnsafeSendableAttr>()) return false;
 +  if (const auto *P1 = dyn_cast<ObjCPropertyDecl>(D1)) {
@@ -6555,7 +6624,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
-@@ -2784,8 +3190,24 @@
+@@ -2784,8 +3191,24 @@
      Decl *D1, Decl *D2) {
  
    // Kind mismatch.
@@ -7074,7 +7143,33 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -256,21 +444,275 @@
+@@ -250,27 +438,332 @@
+   if (ALoc.isInvalid() || DLoc.isInvalid())
+     return DeclPrinter::AttrPosAsWritten::Left;
+ 
+-  if (C.getSourceManager().isBeforeInTranslationUnit(ALoc, DLoc))
++  const auto &SM=C.getSourceManager();
++  const auto AFile=SM.getFileID(SM.getExpansionLoc(ALoc));
++  const auto DFile=SM.getFileID(SM.getExpansionLoc(DLoc));
++  if(AFile!=DFile) {
++    // An imported definition can complete a forward declaration from another
++    // independently rooted file. SourceManager cannot order unrelated roots.
++    // Keep the safe prefix position without discarding either source range.
++    auto Root=[&](FileID File) {
++      for(unsigned Depth=0;File.isValid() && Depth!=256;++Depth) {
++        auto Include=SM.getIncludeLoc(File);
++        if(Include.isInvalid())return File;
++        File=SM.getFileID(SM.getExpansionLoc(Include));
++      }
++      return FileID{};
++    };
++    auto ARoot=Root(AFile),DRoot=Root(DFile);
++    if(ARoot.isInvalid() || DRoot.isInvalid() || ARoot!=DRoot)
++      return DeclPrinter::AttrPosAsWritten::Left;
++  }
++  if (SM.isBeforeInTranslationUnit(ALoc, DLoc))
+     return DeclPrinter::AttrPosAsWritten::Left;
+ 
    return DeclPrinter::AttrPosAsWritten::Right;
  }
  
@@ -7188,6 +7283,25 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +}
 +} // namespace
 +
++namespace {
++const char *nativeObjectPolicySpelling(const Attr *Attribute) {
++  switch(Attribute->getKind()) {
++  case attr::ObjCMethodFamily:return "objc_method_family";
++  case attr::ObjCDesignatedInitializer:return "objc_designated_initializer";
++  case attr::ObjCRequiresSuper:return "objc_requires_super";
++  case attr::ObjCSubclassingRestricted:return "objc_subclassing_restricted";
++  case attr::ObjCRequiresPropertyDefs:return "objc_requires_property_definitions";
++  case attr::ObjCExplicitProtocolImpl:return "objc_protocol_requires_explicit_implementation";
++  case attr::ObjCNonRuntimeProtocol:return "objc_non_runtime_protocol";
++  case attr::ObjCBoxable:return "objc_boxable";
++  case attr::ObjCPreciseLifetime:return "objc_precise_lifetime";
++  case attr::ObjCNonLazyClass:return "objc_nonlazy_class";
++  case attr::ObjCRuntimeVisible:return "objc_runtime_visible";
++  default:return nullptr;
++  }
++}
++} // namespace
++
  std::optional<std::string>
  DeclPrinter::prettyPrintAttributes(const Decl *D,
 -                                   AttrPosAsWritten Pos /*=Default*/) {
@@ -7206,6 +7320,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +  llvm::StringSet<> PrintedFunctionPolicies;
 +  llvm::StringSet<> PrintedLifetimeContracts;
 +  llvm::SmallSet<unsigned,8> PrintedEmissionFlags;
++  llvm::SmallSet<unsigned,16> PrintedObjectPolicies;
 +  SmallVector<const Attr *, 8> Attributes(D->attr_begin(), D->attr_end());
 +  if (Policy.PolishForDeclaration || Policy.PrintAsCanonical)
 +    llvm::stable_sort(Attributes, [D](const Attr *L, const Attr *R) {
@@ -7226,7 +7341,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +  for (const auto *A : Attributes) {
 +    bool Front = A->isCXX11Attribute() || A->isDeclspecAttribute();
 +    if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) &&
-+        isObjC3FunctionPolicyAttribute(A)) Front = false;
++        (isObjC3FunctionPolicyAttribute(A) || nativeObjectPolicySpelling(A))) Front = false;
 +    if (LambdaFront && *LambdaFront != Front) continue;
 +    if (isa<VarDecl>(D) && isa<BlocksAttr>(A))
 +      continue; // Printed as its native __block storage spelling.
@@ -7238,7 +7353,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +    if (A->isImplicit() ||
 +        (A->isInherited() &&
 +         !(Policy.PolishForDeclaration &&
-+           (isObjC3FunctionPolicyAttribute(A) || isa<OwnerAttr,PointerAttr,LifetimeCaptureByAttr>(A) || isObjC3TypestateAttribute(A) || isObjC3ThreadSafetyAttribute(A) || isa<AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr, ErrorAttr, AArch64VectorPcsAttr, AArch64SVEPcsAttr, TargetAttr, TargetVersionAttr, TargetClonesAttr, MinVectorWidthAttr, SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, OwnerAttr, PointerAttr, LifetimeCaptureByAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
++           (nativeObjectPolicySpelling(A) || isObjC3FunctionPolicyAttribute(A) || isa<OwnerAttr,PointerAttr,LifetimeCaptureByAttr>(A) || isObjC3TypestateAttribute(A) || isObjC3ThreadSafetyAttribute(A) || isa<AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr, ErrorAttr, AArch64VectorPcsAttr, AArch64SVEPcsAttr, TargetAttr, TargetVersionAttr, TargetClonesAttr, MinVectorWidthAttr, SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, OwnerAttr, PointerAttr, LifetimeCaptureByAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
 +               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, CFReturnsRetainedAttr, CFReturnsNotRetainedAttr, OwnershipAttr, ArgumentWithTypeTagAttr, TypeTagForDatatypeAttr, FormatMatchesAttr, DiagnoseAsBuiltinAttr, RestrictAttr, SwiftCallAttr, SwiftAsyncCallAttr, SwiftContextAttr, SwiftAsyncContextAttr, SwiftErrorResultAttr, SwiftIndirectResultAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
@@ -7274,7 +7389,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +    // Availability changes whether clients can name or call an API. Keep its
 +    // native attributes when printing a reusable declaration contract.
 +    const auto *SPI = dyn_cast<AnnotateAttr>(A);
-+    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
++    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() && !nativeObjectPolicySpelling(A) &&
 +        !isObjC3ThreadSafetyAttribute(A) && !isObjC3TypestateAttribute(A) &&
 +        !isObjC3FunctionPolicyAttribute(A) &&
 +        !isa<DeprecatedAttr, UnavailableAttr, AvailabilityAttr, ErrorAttr, AArch64VectorPcsAttr, AArch64SVEPcsAttr, TargetAttr, TargetVersionAttr, TargetClonesAttr, MinVectorWidthAttr, SectionAttr, UsedAttr, RetainAttr, WeakAttr, NoSanitizeAttr, DisableSanitizerInstrumentationAttr, NoProfileFunctionAttr, NoInstrumentFunctionAttr, NoStackProtectorAttr, NoDebugAttr, ConstructorAttr, DestructorAttr, InitPriorityAttr, ConstInitAttr, NoDestroyAttr, AlwaysDestroyAttr, CleanupAttr, ObjCCleanupAttr, ObjCResourceAttr, PassObjectSizeAttr, OwnerAttr, PointerAttr, LifetimeCaptureByAttr, LifetimeBoundAttr, NoEscapeAttr, SentinelAttr, CallbackAttr, DiagnoseIfAttr, EnableIfAttr, OverloadableAttr, ReturnsTwiceAttr, NoThrowAttr, DisableTailCallsAttr, NotTailCalledAttr, NoMergeAttr, NoDuplicateAttr, OptimizeNoneAttr, LeafAttr, AlignedAttr, PackedAttr, NoUniqueAddressAttr, TrivialABIAttr, VisibilityAttr, TypeVisibilityAttr,
@@ -7304,6 +7419,18 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +           (isa<ConceptDecl>(D) && SPI->getAnnotation().starts_with("objc3.concept-owner:"))) &&
 +          SPI->args_size() == 0))
        continue;
++    if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) &&
++        nativeObjectPolicySpelling(A)) {
++      if(Pos!=AttrPosAsWritten::Default && Pos!=AttrPosAsWritten::Left)continue;
++      if(PrintedObjectPolicies.insert(A->getKind()).second) {
++        AOut << LS << "__attribute__((" << nativeObjectPolicySpelling(A);
++        if(const auto *Family=dyn_cast<ObjCMethodFamilyAttr>(A))
++          AOut << '(' << ObjCMethodFamilyAttr::ConvertFamilyKindToStr(Family->getFamily()) << ')';
++        AOut << "))";
++      }
++      continue;
++    }
++
 +    std::string PredicateSpelling;
 +    if(isa<DiagnoseIfAttr,EnableIfAttr>(A)) {
 +      const auto *Diagnostic=dyn_cast<DiagnoseIfAttr>(A);
@@ -7354,7 +7481,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      switch (A->getKind()) {
  #define ATTR(X)
  #define PRAGMA_SPELLING_ATTR(X) case attr::X:
-@@ -278,11 +720,226 @@
+@@ -278,11 +771,226 @@
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -7582,7 +7709,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        }
        break;
      }
-@@ -348,12 +1005,11 @@
+@@ -348,12 +1056,11 @@
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -7596,7 +7723,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -390,16 +1046,17 @@
+@@ -390,16 +1097,17 @@
      }
  
      if (Expr *Init = BMInitializer->getInit()) {
@@ -7619,7 +7746,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Expr *SimpleInit = nullptr;
        Expr **Args = nullptr;
        unsigned NumArgs = 0;
-@@ -451,7 +1108,7 @@
+@@ -451,7 +1159,7 @@
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -7628,7 +7755,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +1128,15 @@
+@@ -471,6 +1179,15 @@
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -7644,7 +7771,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +1220,12 @@
+@@ -554,9 +1271,12 @@
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -7659,7 +7786,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +1338,106 @@
+@@ -669,45 +1389,106 @@
    Out << Proto;
  }
  
@@ -7781,7 +7908,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +1451,24 @@
+@@ -721,12 +1502,24 @@
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -7808,7 +7935,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +1495,14 @@
+@@ -753,12 +1546,14 @@
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -7825,7 +7952,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1551,10 @@
+@@ -807,7 +1602,10 @@
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -7837,7 +7964,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1565,53 @@
+@@ -818,17 +1616,53 @@
        }
      }
  
@@ -7896,7 +8023,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1633,15 @@
+@@ -850,7 +1684,15 @@
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -7913,7 +8040,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -877,9 +1668,17 @@
+@@ -877,9 +1719,17 @@
          Indentation -= Policy.Indentation;
        }
  
@@ -7934,7 +8061,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,21 +1693,29 @@
+@@ -894,21 +1744,29 @@
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -7976,7 +8103,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    }
  
    if (D->isPackExpansion())
-@@ -917,14 +1724,22 @@
+@@ -917,14 +1775,22 @@
  
  void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    prettyPrintPragmas(D);
@@ -8001,7 +8128,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -932,6 +1747,9 @@
+@@ -932,6 +1798,9 @@
                                    &Context);
    }
  
@@ -8011,7 +8138,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Expr *Init = D->getInClassInitializer();
    if (!Policy.SuppressInitializers && Init) {
      if (D->getInClassInitStyle() == ICIS_ListInit)
-@@ -940,16 +1758,57 @@
+@@ -940,16 +1809,57 @@
        Out << " = ";
      Init->printPretty(Out, nullptr, Policy, Indentation, "\n", &Context);
    }
@@ -8074,7 +8201,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1818,10 @@
+@@ -959,9 +1869,10 @@
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -8088,7 +8215,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1845,46 @@
+@@ -985,22 +1896,46 @@
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -8139,7 +8266,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1906,8 @@
+@@ -1022,6 +1957,8 @@
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -8148,7 +8275,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1915,7 @@
+@@ -1029,9 +1966,7 @@
    }
  }
  
@@ -8159,7 +8286,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1930,7 @@
+@@ -1046,8 +1981,7 @@
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -8169,7 +8296,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1952,8 @@
+@@ -1069,6 +2003,8 @@
      Out << "inline ";
  
    Out << "namespace ";
@@ -8178,7 +8305,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +1980,9 @@
+@@ -1095,6 +2031,9 @@
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -8188,7 +8315,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +2019,8 @@
+@@ -1131,7 +2070,8 @@
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -8198,7 +8325,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +2151,7 @@
+@@ -1262,7 +2202,7 @@
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -8207,7 +8334,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +2171,21 @@
+@@ -1282,12 +2222,21 @@
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -8230,7 +8357,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +2200,11 @@
+@@ -1302,7 +2251,11 @@
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -8243,7 +8370,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +2222,14 @@
+@@ -1320,6 +2273,14 @@
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -8258,7 +8385,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +2287,17 @@
+@@ -1377,13 +2338,17 @@
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -8279,7 +8406,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +2312,18 @@
+@@ -1398,9 +2363,18 @@
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -8300,7 +8427,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +2395,8 @@
+@@ -1472,9 +2446,8 @@
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -8312,7 +8439,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +2405,22 @@
+@@ -1483,8 +2456,22 @@
      Out << name;
  
    if (OMD->isVariadic())
@@ -8336,7 +8463,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +2428,7 @@
+@@ -1492,8 +2479,7 @@
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -8346,7 +8473,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << ';';
  }
  
-@@ -1512,8 +2447,8 @@
+@@ -1512,8 +2498,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8357,7 +8484,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2480,7 @@
+@@ -1545,7 +2531,7 @@
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -8366,7 +8493,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2493,8 @@
+@@ -1558,7 +2544,8 @@
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8376,7 +8503,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2504,8 @@
+@@ -1568,9 +2555,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8388,7 +8515,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2522,8 @@
+@@ -1587,6 +2573,8 @@
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -8397,7 +8524,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2533,8 @@
+@@ -1596,7 +2584,8 @@
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8407,7 +8534,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2557,8 @@
+@@ -1619,6 +2608,8 @@
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -8416,7 +8543,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2567,26 @@
+@@ -1627,13 +2618,26 @@
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -8447,7 +8574,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2598,8 @@
+@@ -1645,8 +2649,8 @@
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -8458,7 +8585,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2706,14 @@
+@@ -1753,15 +2757,14 @@
        }
      }
  
@@ -8480,7 +8607,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2749,14 @@
+@@ -1797,11 +2800,14 @@
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -8498,7 +8625,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2778,7 @@
+@@ -1823,7 +2829,7 @@
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -8507,7 +8634,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
-@@ -2023,3 +2978,18 @@
+@@ -2023,3 +3029,18 @@
      }
    }
  }
@@ -10111,7 +10238,6 @@ index 8dd120f52..01c123394 100644
    ParsePragma.cpp
    ParseStmt.cpp
 diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
-index 6262e8b20..279f7f8e1 100644
 --- a/clang/lib/Parse/ParseDecl.cpp
 +++ b/clang/lib/Parse/ParseDecl.cpp
 @@ -10,6 +10,7 @@
@@ -10159,7 +10285,22 @@ index 6262e8b20..279f7f8e1 100644
  //===----------------------------------------------------------------------===//
  // C99 6.7: Declarations.
  //===----------------------------------------------------------------------===//
-@@ -645,7 +676,87 @@ void Parser::ParseGNUAttributeArgs(
+@@ -502,6 +533,14 @@
+   if (ChangeKWThisToIdent && Tok.is(tok::kw_this))
+     Tok.setKind(tok::identifier);
+ 
++  // The native new family is an enum identifier, including in Objective-C++.
++  // Reclassify only this known attribute operand; ordinary new expressions and
++  // arguments of unrelated attributes retain their C++ keyword grammar.
++  if (Tok.is(tok::kw_new) &&
++      ParsedAttr::getParsedKind(AttrName, ScopeName, Form.getSyntax()) ==
++          ParsedAttr::AT_ObjCMethodFamily)
++    Tok.setKind(tok::identifier);
++
+   ArgsVector ArgExprs;
+   if (Tok.is(tok::identifier)) {
+     // If this attribute wants an 'identifier' argument, make it so.
+@@ -645,7 +684,87 @@
    ParsedAttr::Kind AttrKind =
        ParsedAttr::getParsedKind(AttrName, ScopeName, Form.getSyntax());
  
@@ -10248,7 +10389,7 @@ index 6262e8b20..279f7f8e1 100644
      ParseAvailabilityAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc, ScopeName,
                                 ScopeLoc, Form);
      return;
-@@ -1243,6 +1354,80 @@ VersionTuple Parser::ParseVersionTuple(SourceRange &Range) {
+@@ -1243,6 +1362,80 @@
    return VersionTuple(Major, Minor, Subminor);
  }
  
@@ -10329,7 +10470,7 @@ index 6262e8b20..279f7f8e1 100644
  void Parser::ParseAvailabilityAttribute(
      IdentifierInfo &Availability, SourceLocation AvailabilityLoc,
      ParsedAttributes &attrs, SourceLocation *endLoc, IdentifierInfo *ScopeName,
-@@ -3445,6 +3630,28 @@ void Parser::ParseDeclarationSpecifiers(
+@@ -3445,6 +3638,28 @@
          (TemplateInfo.Kind == ParsedTemplateKind::ExplicitInstantiation ||
           TemplateInfo.Kind == ParsedTemplateKind::ExplicitSpecialization);
  
@@ -10358,7 +10499,7 @@ index 6262e8b20..279f7f8e1 100644
      switch (Tok.getKind()) {
      default:
        if (Tok.isRegularKeywordAttribute())
-@@ -3775,12 +3982,40 @@ void Parser::ParseDeclarationSpecifiers(
+@@ -3775,12 +3990,40 @@
      case tok::kw_decltype:
      case tok::identifier:
      ParseIdentifier: {
@@ -10399,7 +10540,7 @@ index 6262e8b20..279f7f8e1 100644
        // If the token is an identifier named "__declspec" and Microsoft
        // extensions are not enabled, it is likely that there will be cascading
        // parse errors if this really is a __declspec attribute. Attempt to
-@@ -5643,6 +5878,13 @@ bool Parser::isKnownToBeTypeSpecifier(const Token &Tok) const {
+@@ -5643,6 +5886,13 @@
  }
  
  bool Parser::isTypeSpecifierQualifier(const Token &Tok) {
@@ -10413,7 +10554,7 @@ index 6262e8b20..279f7f8e1 100644
    switch (Tok.getKind()) {
    default: return false;
  
-@@ -5826,6 +6068,16 @@ Parser::DeclGroupPtrTy Parser::ParseTopLevelStmtDecl() {
+@@ -5826,6 +6076,16 @@
  bool Parser::isDeclarationSpecifier(
      ImplicitTypenameContext AllowImplicitTypename,
      bool DisambiguatingWithExpression) {
@@ -10430,7 +10571,7 @@ index 6262e8b20..279f7f8e1 100644
    switch (Tok.getKind()) {
    default: return false;
  
-@@ -6827,7 +7079,12 @@ void Parser::ParseDirectDeclarator(Declarator &D) {
+@@ -6827,7 +7087,12 @@
        DiagnoseIdentifier = NextToken().isOneOf(tok::comma, tok::semi);
      else if ((D.getContext() == DeclaratorContext::TrailingReturn ||
                D.getContext() == DeclaratorContext::TrailingReturnVar) &&
@@ -10444,7 +10585,7 @@ index 6262e8b20..279f7f8e1 100644
        DiagnoseIdentifier = NextToken().isOneOf(
            tok::comma, tok::semi, tok::equal, tok::l_brace, tok::kw_try);
      if (DiagnoseIdentifier) {
-@@ -7305,6 +7562,15 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7305,6 +7570,15 @@
    SmallVector<SourceRange, 2> DynamicExceptionRanges;
    ExprResult NoexceptExpr;
    CachedTokens *ExceptionSpecTokens = nullptr;
@@ -10460,7 +10601,7 @@ index 6262e8b20..279f7f8e1 100644
    ParsedAttributes FnAttrs(AttrFactory);
    TypeResult TrailingReturnType;
    SourceLocation TrailingReturnTypeLoc;
-@@ -7431,11 +7697,29 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7431,11 +7705,29 @@
          TrailingReturnTypeLoc = Range.getBegin();
          EndLoc = Range.getEnd();
        }
@@ -10490,7 +10631,7 @@ index 6262e8b20..279f7f8e1 100644
    // Collect non-parameter declarations from the prototype if this is a function
    // declaration. They will be moved into the scope of the function. Only do
    // this in C and not C++, where the decls will continue to live in the
-@@ -7470,10 +7754,99 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7470,10 +7762,99 @@
                      NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
                      ExceptionSpecTokens, DeclsInPrototype, StartLoc,
                      LocalEndLoc, D, TrailingReturnType, TrailingReturnTypeLoc,
@@ -10591,6 +10732,7 @@ index 6262e8b20..279f7f8e1 100644
  bool Parser::ParseRefQualifier(bool &RefQualifierIsLValueRef,
                                 SourceLocation &RefQualifierLoc) {
    if (Tok.isOneOf(tok::amp, tok::ampamp)) {
+
 diff --git a/clang/lib/Parse/ParseObjC3Match.cpp b/clang/lib/Parse/ParseObjC3Match.cpp
 new file mode 100644
 index 000000000..6a84c44ec
@@ -76513,9 +76655,10 @@ diff --git a/clang/unittests/AST/ObjC3NativeObjectImportTest.cpp b/clang/unittes
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3NativeObjectImportTest.cpp
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,351 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
++#include "clang/AST/Attr.h"
 +#include "clang/AST/ASTImporter.h"
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
@@ -76773,6 +76916,97 @@ new file mode 100644
 +      for(auto *E:Imported){EXPECT_EQ(E->hasVersion(),Version);EXPECT_TRUE(To->getASTContext().hasSameType(E->getType(),To->getASTContext().BoolTy));EXPECT_TRUE(E->getBeginLoc().isValid());}
 +    }
 +}
++
++TEST(ObjC3ASTInfrastructure, NativeObjectPoliciesRetainDeclarationStateAndRejectErasure) {
++ const char *Source=R"policies(
++ __attribute__((objc_protocol_requires_explicit_implementation)) @protocol PolicyExplicit
++ - (int)required;
++ @end
++ __attribute__((objc_non_runtime_protocol)) @protocol PolicyStatic - (int)typed; @end
++ __attribute__((objc_root_class,objc_requires_property_definitions)) @interface PolicyRoot
++ - (id)init __attribute__((objc_designated_initializer));
++ - (void)refresh __attribute__((objc_requires_super));
++ + (id)make __attribute__((objc_method_family(new)));
++ + (id)create __attribute__((objc_method_family(alloc)));
++ - (id)clone __attribute__((objc_method_family(copy)));
++ - (id)mutableClone __attribute__((objc_method_family(mutableCopy)));
++ - (id)initializeRoot __attribute__((objc_method_family(init)));
++ + (id)newBorrow __attribute__((objc_method_family(none)));
++ @end
++ __attribute__((objc_subclassing_restricted)) @interface PolicyLeaf:PolicyRoot @end
++ __attribute__((objc_nonlazy_class)) @interface PolicyEager:PolicyRoot @end
++ __attribute__((objc_runtime_visible)) @interface PolicyVisible:PolicyRoot @end
++ struct __attribute__((objc_boxable)) PolicyBox {int value;};
++ inline int policy_precise(PolicyRoot *object){id value __attribute__((objc_precise_lifetime))=object;return value!=0;}
++ )policies";
++ for(const char *Language:{"objective-c","objective-c++"})for(bool Arc:{false,true}) {
++  std::vector<std::string> Args={"-x",Language,std::string("-std=")+(std::string(Language)=="objective-c"?"c17":"c++20"),"--target=x86_64-unknown-linux-gnu","-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++  if(Arc)Args.push_back("-fobjc-arc");
++  auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"policies-source.mm");
++  auto To=tooling::buildASTFromCodeWithArgs("@class PolicyRoot,PolicyLeaf;@protocol PolicyExplicit;",Args,"policies-target.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  {ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(!D->isImplicit()) {
++    auto Imported=Importer.Import(D);if(!Imported){FAIL()<<llvm::toString(Imported.takeError());}
++   }}
++  From.reset();unsigned Policies=0;
++  for(auto *D:To->getASTContext().getTranslationUnitDecl()->decls()) {
++   if(const auto *Interface=dyn_cast<ObjCInterfaceDecl>(D);Interface && Interface->isThisDeclarationADefinition()) {
++    const auto Name=Interface->getName();
++    if(Name=="PolicyRoot") {++Policies;EXPECT_TRUE(Interface->hasAttr<ObjCRequiresPropertyDefsAttr>());EXPECT_TRUE(Interface->hasDesignatedInitializers());
++     unsigned Methods=0;for(const auto *Method:Interface->methods()){
++      if(Method->getSelector().getAsString()=="init"){++Methods;EXPECT_TRUE(Method->hasAttr<ObjCDesignatedInitializerAttr>());}
++      if(Method->getSelector().getAsString()=="refresh"){++Methods;EXPECT_TRUE(Method->hasAttr<ObjCRequiresSuperAttr>());}}
++     EXPECT_EQ(Methods,2u);
++     unsigned Families=0;for(const auto *Method:Interface->methods())if(const auto *Family=Method->getAttr<ObjCMethodFamilyAttr>()){
++      ++Families;const auto Name=Method->getSelector().getAsString();
++      EXPECT_EQ(std::string(ObjCMethodFamilyAttr::ConvertFamilyKindToStr(Family->getFamily())),
++          Name=="make"?"new":Name=="create"?"alloc":Name=="clone"?"copy":Name=="mutableClone"?"mutableCopy":Name=="initializeRoot"?"init":"none");
++      EXPECT_EQ(Method->getMethodFamily(),Name=="make"?OMF_new:Name=="create"?OMF_alloc:Name=="clone"?OMF_copy:Name=="mutableClone"?OMF_mutableCopy:Name=="initializeRoot"?OMF_init:OMF_None);}
++     EXPECT_EQ(Families,6u);}
++    if(Name=="PolicyLeaf"){++Policies;EXPECT_TRUE(Interface->hasAttr<ObjCSubclassingRestrictedAttr>());}
++    if(Name=="PolicyEager"){++Policies;EXPECT_TRUE(Interface->hasAttr<ObjCNonLazyClassAttr>());}
++    if(Name=="PolicyVisible"){++Policies;EXPECT_TRUE(Interface->hasAttr<ObjCRuntimeVisibleAttr>());}
++   }
++   if(const auto *Protocol=dyn_cast<ObjCProtocolDecl>(D);Protocol && Protocol->isThisDeclarationADefinition()) {
++    if(Protocol->getName()=="PolicyExplicit"){++Policies;EXPECT_TRUE(Protocol->hasAttr<ObjCExplicitProtocolImplAttr>());}
++    if(Protocol->getName()=="PolicyStatic"){++Policies;EXPECT_TRUE(Protocol->hasAttr<ObjCNonRuntimeProtocolAttr>());}
++   }
++   if(const auto *Record=dyn_cast<RecordDecl>(D);Record && Record->getName()=="PolicyBox") {++Policies;EXPECT_TRUE(Record->hasAttr<ObjCBoxableAttr>());}
++  }
++  EXPECT_EQ(Policies,7u);
++  PrintingPolicy Policy(To->getASTContext().getLangOpts());Policy.PrintAsCanonical=true;
++  std::string Canonical;llvm::raw_string_ostream Printed(Canonical);
++  for(auto *D:To->getASTContext().getTranslationUnitDecl()->decls())if(!D->isImplicit()) {
++    const auto *Named=dyn_cast<NamedDecl>(D);if(!Named || !Named->getIdentifier())continue;
++    if(!Named->getName().starts_with("Policy") && Named->getName()!="policy_precise")continue;
++    if(const auto *Interface=dyn_cast<ObjCInterfaceDecl>(D);Interface && !Interface->isThisDeclarationADefinition())continue;
++    if(const auto *Protocol=dyn_cast<ObjCProtocolDecl>(D);Protocol && !Protocol->isThisDeclarationADefinition())continue;
++    D->print(Printed,Policy);
++    if(!isa<ObjCInterfaceDecl,ObjCProtocolDecl>(D))Printed<<';';Printed<<'\n';
++  }
++  auto Reparsed=tooling::buildASTFromCodeWithArgs(Canonical,Args,"policies-reparsed.mm");
++  ASSERT_TRUE(Reparsed);EXPECT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred())<<Canonical;
++ }
++ for(const auto &Declarations:std::vector<std::pair<std::string,std::string>>{
++     {"__attribute__((objc_root_class)) @interface MergePolicy -(id)init __attribute__((objc_designated_initializer));@end","__attribute__((objc_root_class)) @interface MergePolicy -(id)init;@end"},
++     {"__attribute__((objc_root_class)) @interface MergePolicy -(void)refresh __attribute__((objc_requires_super));@end","__attribute__((objc_root_class)) @interface MergePolicy -(void)refresh;@end"},
++     {"__attribute__((objc_root_class,objc_subclassing_restricted)) @interface MergePolicy @end","__attribute__((objc_root_class)) @interface MergePolicy @end"},
++     {"__attribute__((objc_root_class,objc_requires_property_definitions)) @interface MergePolicy @end","__attribute__((objc_root_class)) @interface MergePolicy @end"},
++     {"__attribute__((objc_protocol_requires_explicit_implementation)) @protocol MergePolicy @end","@protocol MergePolicy @end"},
++     {"__attribute__((objc_non_runtime_protocol)) @protocol MergePolicy @end","@protocol MergePolicy @end"},
++     {"__attribute__((objc_root_class)) @interface MergePolicy +(id)make __attribute__((objc_method_family(new)));@end","__attribute__((objc_root_class)) @interface MergePolicy +(id)make __attribute__((objc_method_family(none)));@end"},
++     {"struct __attribute__((objc_boxable)) MergePolicy{int value;};","struct MergePolicy{int value;};"}})for(bool Reverse:{false,true}){
++  std::vector<std::string> Args={"-x","objective-c++","-std=c++20","-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++  auto From=tooling::buildASTFromCodeWithArgs(Reverse?Declarations.second:Declarations.first,Args,"policy-merge-source.mm");
++  auto To=tooling::buildASTFromCodeWithArgs(Reverse?Declarations.first:Declarations.second,Args,"policy-merge-target.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());ASSERT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++  bool Rejected=false;for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(!D->isImplicit()){
++   auto Imported=Importer.Import(D);if(!Imported){llvm::consumeError(Imported.takeError());Rejected=true;}}
++  EXPECT_TRUE(Rejected)<<Declarations.first;
++ }
++}
 
 diff --git a/clang/test/ObjC3/Sema/Inputs/mutable-managed-values.h b/clang/test/ObjC3/Sema/Inputs/mutable-managed-values.h
 new file mode 100644
@@ -77023,3 +77257,52 @@ new file mode 100644
 + return __objc3_await managed_remote(managed_recursive_reference(value)); // expected-error {{cleanup-managed concurrent value}}
 +}
 +#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-object-policies.h b/clang/test/ObjC3/Sema/Inputs/native-object-policies.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-object-policies.h
+@@ -0,0 +1,27 @@
++#ifndef OBJC3_NATIVE_OBJECT_POLICIES_H
++#define OBJC3_NATIVE_OBJECT_POLICIES_H
++
++ __attribute__((objc_protocol_requires_explicit_implementation)) @protocol PolicyExplicit
++ - (int)required;
++ @end
++ __attribute__((objc_non_runtime_protocol)) @protocol PolicyStatic - (int)typed; @end
++ __attribute__((objc_root_class,objc_requires_property_definitions)) @interface PolicyRoot
++ - (id)init __attribute__((objc_designated_initializer));
++ - (void)refresh __attribute__((objc_requires_super));
++ + (id)make __attribute__((objc_method_family(new)));
++ + (id)create __attribute__((objc_method_family(alloc)));
++ - (id)clone __attribute__((objc_method_family(copy)));
++ - (id)mutableClone __attribute__((objc_method_family(mutableCopy)));
++ - (id)initializeRoot __attribute__((objc_method_family(init)));
++ + (id)newBorrow __attribute__((objc_method_family(none)));
++ @end
++ __attribute__((objc_subclassing_restricted)) @interface PolicyLeaf:PolicyRoot @end
++ __attribute__((objc_nonlazy_class)) @interface PolicyEager:PolicyRoot @end
++ __attribute__((objc_runtime_visible)) @interface PolicyVisible:PolicyRoot @end
++ struct __attribute__((objc_boxable)) PolicyBox {int value;};
++ inline int policy_precise(PolicyRoot *object){id value __attribute__((objc_precise_lifetime))=object;return value!=0;}
++ 
++#ifdef __cplusplus
++inline int policy_new_expression(){int *value=new int(42);int result=*value;delete value;return result;}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-object-policies.m b/clang/test/ObjC3/Sema/native-object-policies.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-object-policies.m
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch -o %t.pch %S/Inputs/native-object-policies.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t.pch -fsyntax-only -verify %s
++// expected-no-diagnostics
++#include "Inputs/native-object-policies.h"

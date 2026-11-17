@@ -42,6 +42,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kNativeFunctionPolicySemantic,
     kNativeLifetimeAnnotationSemantic,
     kNativeExternalBindingSemantic,
+    kNativeObjectPolicySemantic,
     kNativeObjectExpressionSemantic,
     kNativeFunctionEffectSemantic,
     kNativeUnnamedEnumSemantic,
@@ -767,6 +768,12 @@ llvm::Error ValidateForEncoding(
       [](const auto &d){return !HasNativeFunctionEffectIdentity(d) || IsNativeFunctionEffectOwner(d);});
   if(function_effects!=function_effect_capability || !function_effect_owners)
     return Invalid("native function effect identity and required capability must agree");
+  const bool object_policies=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeObjectPolicyIdentity);
+  const bool object_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeObjectPolicySemantic)!=sidecar.required_semantics.end();
+  const bool object_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeObjectPolicyIdentity(d) || IsNativeObjectPolicyOwner(d);});
+  if(object_policies!=object_policy_capability || !object_policy_owners)
+    return Invalid("native object policy identity and required capability must agree");
   const bool object_expressions=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeObjectExpressionIdentity);
   const bool object_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeObjectExpressionSemantic)!=sidecar.required_semantics.end();
   const bool object_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

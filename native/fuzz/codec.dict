@@ -93,3 +93,5 @@
 ";native-external-binding:v1;symbol="
 "objc3.native-object-expressions.v2"
 ";native-object-expressions:v2;"
+"objc3.native-object-policies.v1"
+";native-object-policies:v1;"

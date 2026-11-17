@@ -63,7 +63,8 @@
     "objc3_native_block_binding_provider",
     "objc3_native_external_binding_provider",
     "objc3_native_object_expression_provider",
-    "objc3_native_availability_provider"
+    "objc3_native_availability_provider",
+    "objc3_native_object_policy_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",
