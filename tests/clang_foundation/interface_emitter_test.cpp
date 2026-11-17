@@ -4158,7 +4158,7 @@ void TestNativeAllocatorAndDiagnosticContracts() {
       auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
       std::vector<llvm::StringRef> supported;
       for(const auto&item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
-      assert(std::find(supported.begin(),supported.end(),llvm::StringRef("objc3.native-declaration-attributes.v4"))!=supported.end());
+      assert(std::find(supported.begin(),supported.end(),llvm::StringRef("objc3.native-declaration-attributes.v5"))!=supported.end());
       auto older=supported;std::erase(older,llvm::StringRef(kNativeDeclarationAttributeSemantic));
       older.push_back("objc3.native-declaration-attributes.v1");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);

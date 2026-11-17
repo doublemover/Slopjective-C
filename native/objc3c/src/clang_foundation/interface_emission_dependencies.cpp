@@ -1338,8 +1338,7 @@ bool IsBoundedClassMemberTemplate(const clang::FunctionTemplateDecl *pattern) {
   if (!IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   for (const auto *attribute : method->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
-      if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
-          ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
+      if (!HasOnlyNativeAbiTags(tag) && !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(pattern))) return false;
     } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   for (const auto *parameter : method->parameters())
     for (const auto *attribute : parameter->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
@@ -1368,7 +1367,7 @@ bool IsBoundedVariablePartial(const clang::VarTemplatePartialSpecializationDecl 
        partial->getStorageClass()!=clang::SC_Extern && !partial->isStaticDataMember())) return false;
   for (const auto *attribute:partial->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
-      if(tag->tags_size()!=1 || ReadNativeSymbolName(partial)!=*tag->tags_begin()) return false;
+      if(!HasOnlyNativeAbiTags(tag) && !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(partial))) return false;
     } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   return true;
 }
@@ -1379,8 +1378,7 @@ bool IsBoundedClassMemberVariable(const clang::VarTemplateDecl *pattern) {
       !variable->isStaticDataMember()) return false;
   for (const auto *attribute:variable->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
-      if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
-          ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
+      if (!HasOnlyNativeAbiTags(tag) && !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(pattern))) return false;
     } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   return true;
 }
@@ -1404,8 +1402,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
                record->getDescribedClassTemplate()->getCanonicalDecl()!=pattern->getCanonicalDecl()) return false;
     for (const auto *attribute:record->attrs())
       if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
-        if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
-            ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
+        if (!HasOnlyNativeAbiTags(tag) && !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(pattern))) return false;
       } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
     return true;
   }
@@ -1421,8 +1418,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
   if (body->isDynamicClass() && !body->getASTContext().getLangOpts().RTTI) return false;
   for (const auto *attribute : body->attrs()) {
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
-      if (!pattern || tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
-          ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
+      if (!HasOnlyNativeAbiTags(tag) && (!pattern || !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(pattern)))) return false;
     } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute) && !llvm::isa<clang::FinalAttr>(attribute)) return false;
   }
   for (const auto *member : body->decls()) {
@@ -1488,7 +1484,7 @@ bool IsBoundedConcreteMemberFunctionSpecialization(const clang::FunctionDecl *fu
       (function->isInlined() && !function->getDefinition())) return false;
   for (const auto *attribute:function->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
-      if (tag->tags_size()!=1 || ReadNativeSymbolName(function->getPrimaryTemplate())!=*tag->tags_begin()) return false;
+      if (!HasOnlyNativeAbiTags(tag) && !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(function->getPrimaryTemplate()))) return false;
     } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   for (const auto *parameter:function->parameters())
     for (const auto *attribute:parameter->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
@@ -1505,7 +1501,7 @@ bool IsBoundedConcreteMemberVariableSpecialization(const clang::VarTemplateSpeci
   if (variable->getType()->isDependentType()) return false;
   for (const auto *attribute:variable->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
-      if (tag->tags_size()!=1 || ReadNativeSymbolName(variable->getSpecializedTemplate())!=*tag->tags_begin()) return false;
+      if (!HasOnlyNativeAbiTags(tag) && !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(variable->getSpecializedTemplate()))) return false;
     } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
   std::string key;
   for (const auto &argument:variable->getTemplateArgs().asArray())
@@ -1706,8 +1702,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       for (const auto *partial:PublishedVariablePartials(pattern)) supported &= IsBoundedVariablePartial(partial);
       for (const auto *attribute:variable->attrs())
         if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute))
-          supported &= tag->tags_size()==1 && tag->tags_begin()->starts_with("__objc3_m_") &&
-              ReadNativeSymbolName(pattern)==*tag->tags_begin();
+          supported &= HasOnlyNativeAbiTags(tag) || HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(pattern));
         else supported &= (attribute->isImplicit() || IsPublishedSemanticAttribute(attribute) || IsForeignImportAttribute(attribute));
     }
     if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
@@ -1727,9 +1722,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
           !function->isDefaulted();
       for (const auto *attribute : function->attrs()) {
         if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute))
-          supported &= tag->tags_size() == 1 &&
-              tag->tags_begin()->starts_with("__objc3_m_") &&
-              ReadNativeSymbolName(pattern) == *tag->tags_begin();
+          supported &= HasOnlyNativeAbiTags(tag) || HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(pattern));
         else
           supported &= (attribute->isImplicit() || IsPublishedSemanticAttribute(attribute) || IsForeignImportAttribute(attribute)) ||
               llvm::isa<clang::DeprecatedAttr, clang::UnavailableAttr,

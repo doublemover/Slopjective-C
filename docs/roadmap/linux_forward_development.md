@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.177 / System 2.103 ABI-tag span](linux_native_abi_tag_packages.md)
+preserves native vendor ABI tags alongside the reserved module owner across
+complete template/specialization and native class graphs.
+
 The [Source 2.176 / System 2.102 union-template span](linux_native_union_template_packages.md)
 publishes native union templates, specialization graphs and explicit active-arm
 lifetimes with the cxx-class-templates v2 reader cutover.
@@ -55,7 +59,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.176 / System 2.102 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.177 / System 2.103 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

@@ -713,3 +713,11 @@ strings. The v4 declaration-attribute reader cutover and source-free native
 regression fixture cover metadata changes and consumer diagnostics. See
 [the implementation record](linux_native_api_diagnostics.md). Matched SDK
 consolidation and broader remaining implementation continue.
+
+## Source 2.177 / System 2.103: native vendor ABI tags
+
+All seven naming paths preserve native tag sets alongside one reserved module
+owner. Source-free class/template/specialization, native call, vtable/RTTI and
+foreign-owner controls cover the native-declaration-attributes v5 reader cutover.
+See [the implementation record](linux_native_abi_tag_packages.md). Matched SDK
+qualification and unrelated feature gaps remain pending.

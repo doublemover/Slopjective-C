@@ -1561,6 +1561,12 @@ static std::string NativeDiagnosticAttributeValue(const clang::Attr *attribute) 
 std::string NativeAttributeValue(const clang::Attr *attribute,const clang::NamedDecl *declaration) {
   std::string key=std::to_string(attribute->getKind());
   auto add=[&](llvm::StringRef value){key+=";"+std::to_string(value.size())+":"+value.str();};
+  if(const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
+    std::set<std::string> native;
+    for(auto name:tag->tags())if(!name.starts_with("__objc3_m_"))native.insert(name.str());
+    for(const auto &name:native)add(name);
+    return key;
+  }
   if(auto diagnostic=NativeDiagnosticAttributeValue(attribute);!diagnostic.empty()) {
     add(diagnostic);return key;
   }
@@ -3202,7 +3208,7 @@ bool ReadInterfaceDeclarationIdentity(
   ReadNativeDeclarationContracts(representative, context, identity.effects);
   const auto native_attributes=DeclarationAttributeKey(representative,true);
   if(!native_attributes.empty())
-    identity.canonical_type_identity+=";native-declaration-attributes:v4;contracts="+
+    identity.canonical_type_identity+=";native-declaration-attributes:v5;contracts="+
         ComputeInterfaceSourceSha256(native_attributes)+";";
   const auto foreign_attributes=DeclarationAttributeKey(representative);
   if(!foreign_attributes.empty())

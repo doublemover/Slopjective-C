@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 176,
+        "minor": 177,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native vendor ABI tags coexist with a single reserved module owner across class/function/variable templates and specializations; complete canonical tags bind source-free declarations and physical native mangling under native-declaration-attributes v5; matched SDK pending",
         "Public native union templates retain primary/partial/explicit/nested declarations, native union layout, active-arm user-provided special members and source-free ABI under cxx-class-templates v2; qualification is bound to the matching source SDK",
         "Native C++ nested/template/member/alias/enumerator and published-local availability/deprecation/error/warning contracts retain canonical diagnostic payloads and source-free admission under native-declaration-attributes v4; qualified SDK consolidation pending",
         "Source-free native C++ async imports retain instantiated qualified SDK capture/value/private-result/foreign-promise/nil-conversion dependencies before backend delivery, including optional/variant/expected owning payloads; native-cxx-async-import v1 and special-member-selection v1 reader cutovers, matching SDK pending",
@@ -339,7 +340,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 102,
+        "minor": 103,
         "patch": 0
       },
       "header": "include/objc3/system.h",

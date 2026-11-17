@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -205,23 +206,11 @@ void Success(const CompileResult &r) {
   }
   assert(r.success);
 }
-const std::vector<llvm::StringRef> semantics = {
-    "objc3.canonical-function-effects.v1",
-    "objc3.native-carrier-types.v1",
-    "objc3.native-return-ownership.v1",
-    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",
-    "objc3.cxx-member-interfaces.v1",
-    "objc3.cxx-class-lifecycles.v1",
-    "objc3.cxx-class-structure.v1",
-    "objc3.cxx-class-dispatch.v1",
-    "objc3.cxx-namespaces.v1",
-    "objc3.cxx-nested-types.v1",
-    "objc3.cxx-using.v1",
-    "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",
-    "objc3.api-partitions.v1",
-    "objc3.module-owned-names.v1"};
+const std::vector<llvm::StringRef> semantics = [] {
+  const auto &catalog=SupportedSemanticInterfaceCapabilities();
+  return std::vector<llvm::StringRef>(catalog.begin(),catalog.end());
+}();
+
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
   auto request = Request(root, language, standard, arc);
@@ -232,7 +221,10 @@ void Check(const fs::path &root, BaseLanguage language,
   auto sidecar = DecodeSemanticInterfaceSidecar(
       built.interface_artifact->sidecar_json,
       built.interface_artifact->source_bytes, semantics);
-  assert(sidecar);
+  if(!sidecar) {
+    std::cerr<<llvm::toString(sidecar.takeError())<<'\n';
+    std::abort();
+  }
   for (const auto &d : sidecar->declarations) {
     if (d.kind == "CXXRecord" || d.kind == "Function" || IsCxxMemberDeclarationKind(d.kind) ||
         d.kind == "Var" || d.kind == "ObjCInterface" ||
@@ -414,6 +406,9 @@ void Check(const fs::path &root, BaseLanguage language,
     conflict.source_text =
         "struct __attribute__((abi_tag(\"foreign_tag\"))) Tagged { int n; };";
     conflict.interface_exports = {"Tagged"};
+    Success(Compile(conflict));
+    conflict.source_text =
+        "struct __attribute__((abi_tag(\"foreign_tag\",\"__objc3_m_foreign\"))) Tagged { int n; };";
     assert(!Compile(conflict).success);
     std::ofstream(root / "foreign-template.h") << "template<class T> T foreign_template(T n);\n";
     auto foreign_template=foreign;

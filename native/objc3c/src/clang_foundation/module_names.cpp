@@ -13,7 +13,9 @@
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/VirtualFileSystem.h"
+#include <algorithm>
 #include <filesystem>
 
 namespace objc3::clang_foundation {
@@ -120,6 +122,25 @@ bool IsModuleOwnedSource(const clang::ASTContext &context,
   return !relative.empty() && !relative.is_absolute() &&
          *relative.begin() != "..";
 }
+std::string ReadModuleOwnedAbiTag(const clang::AbiTagAttr *attribute) {
+  std::string owner;
+  if(attribute)
+    for(auto tag:attribute->tags())
+      if(tag.starts_with("__objc3_m_")) {
+        if(!owner.empty() && owner!=tag)return {};
+        owner=tag.str();
+      }
+  return owner;
+}
+bool HasModuleOwnedAbiTag(const clang::AbiTagAttr *attribute,const std::string &expected) {
+  return !expected.empty() && ReadModuleOwnedAbiTag(attribute)==expected;
+}
+bool HasOnlyNativeAbiTags(const clang::AbiTagAttr *attribute) {
+  if(!attribute || !attribute->tags_size())return false;
+  return std::all_of(attribute->tags_begin(),attribute->tags_end(),
+      [](llvm::StringRef tag){return !tag.starts_with("__objc3_m_");});
+}
+
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
   if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))
     return ReadNativeSymbolName(specialization->getSpecializedTemplate());
@@ -150,9 +171,8 @@ std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
     declaration = pattern->getTemplatedDecl();
   if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
     if (variable->getDescribedVarTemplate())
-      if (const auto *tag = variable->getAttr<clang::AbiTagAttr>();
-          tag && tag->tags_size()==1 && tag->tags_begin()->starts_with("__objc3_m_"))
-        return tag->tags_begin()->str();
+      if (auto owner=ReadModuleOwnedAbiTag(variable->getAttr<clang::AbiTagAttr>()); !owner.empty())
+        return owner;
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     declaration = pattern->getTemplatedDecl();
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
@@ -166,18 +186,15 @@ std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
     }
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     if (function->getDescribedFunctionTemplate())
-      if (const auto *tag = function->getAttr<clang::AbiTagAttr>();
-          tag && tag->tags_size() == 1 && tag->tags_begin()->starts_with("__objc3_m_"))
-        return tag->tags_begin()->str();
+      if (auto owner=ReadModuleOwnedAbiTag(function->getAttr<clang::AbiTagAttr>()); !owner.empty())
+        return owner;
   if (const auto *label = declaration->getAttr<clang::AsmLabelAttr>())
     return label->getLabel().str();
   if (const auto *name = declaration->getAttr<clang::ObjCRuntimeNameAttr>())
     return name->getMetadataName().str();
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration))
-    if (const auto *tag = record->getCanonicalDecl()->getAttr<clang::AbiTagAttr>();
-        tag && tag->tags_size() == 1 &&
-        tag->tags_begin()->starts_with("__objc3_m_"))
-      return tag->tags_begin()->str();
+    if (auto owner=ReadModuleOwnedAbiTag(record->getCanonicalDecl()->getAttr<clang::AbiTagAttr>()); !owner.empty())
+        return owner;
   if (llvm::isa<clang::ObjCCategoryDecl>(declaration))
     for (const auto *a : declaration->specific_attrs<clang::AnnotateAttr>())
       if (a->getAnnotation().starts_with("objc3.module-name:"))
@@ -226,6 +243,23 @@ bool ApplyCxxConceptOwners(clang::ASTContext &context,
   return visitor.TraverseDecl(context.getTranslationUnitDecl());
 }
 namespace {
+bool setModuleOwnedAbiTag(clang::ASTContext &context,clang::NamedDecl *declaration,
+                           llvm::StringRef expected) {
+  llvm::SmallVector<llvm::StringRef,4> tags;
+  for(const auto *attribute:declaration->specific_attrs<clang::AbiTagAttr>())
+    for(auto tag:attribute->tags()) {
+      if(tag.starts_with("__objc3_m_") && tag!=expected)return false;
+      tags.push_back(tag);
+    }
+  tags.push_back(context.Idents.get(expected).getName());
+  std::sort(tags.begin(),tags.end());tags.erase(std::unique(tags.begin(),tags.end()),tags.end());
+  declaration->dropAttr<clang::AbiTagAttr>();
+  // Publish the complete effective contract on every redeclaration, including
+  // inherited vendor tags. Never let a foreign reserved tag acquire this owner.
+  declaration->addAttr(clang::AbiTagAttr::Create(context,tags.data(),tags.size(),
+                                               declaration->getSourceRange()));
+  return true;
+}
 class NamingVisitor : public clang::RecursiveASTVisitor<NamingVisitor> {
 public:
   NamingVisitor(clang::ASTContext &context, const std::string &module,
@@ -307,13 +341,8 @@ public:
       for (auto *redecl : record->redecls()) {
         if (!redecl->isImplicit() && !IsModuleOwnedSource(context_, redecl->getLocation(), source_root_))
           return Error(decl, "module-owned class template redeclares a foreign ABI");
-        if (const auto *tag = redecl->getAttr<clang::AbiTagAttr>()) {
-          if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
-            return Error(decl, "class template ABI tag conflicts with its owning module");
-        } else {
-          llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
-          redecl->addAttr(clang::AbiTagAttr::Create(context_, &owned_tag, 1, redecl->getSourceRange()));
-        }
+        if (!setModuleOwnedAbiTag(context_, redecl, expected))
+          return Error(decl, "class template ABI tag conflicts with its owning module");
       }
       return true;
     }
@@ -325,13 +354,8 @@ public:
       for (auto *redecl:specialization->redecls()) {
         if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
           return Error(decl,"explicit class specialization redeclares a foreign ABI");
-        if (const auto *tag=redecl->getAttr<clang::AbiTagAttr>()) {
-          if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
-            return Error(decl,"explicit class specialization conflicts with its primary owner");
-        } else {
-          llvm::StringRef owned=context_.Idents.get(expected).getName();
-          redecl->addAttr(clang::AbiTagAttr::Create(context_,&owned,1,redecl->getSourceRange()));
-        }
+        if (!setModuleOwnedAbiTag(context_, redecl, expected))
+          return Error(decl, "explicit class specialization conflicts with its primary owner");
       }
       return true;
     }
@@ -353,13 +377,8 @@ public:
               return Error(decl,"member function specialization redeclares a foreign ABI");
             if (redecl->hasAttr<clang::AsmLabelAttr>())
               return Error(decl,"member function specialization cannot replace its primary native ABI");
-            if (const auto *tag=redecl->getAttr<clang::AbiTagAttr>()) {
-              if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
-                return Error(decl,"member function specialization conflicts with its primary ABI owner");
-            } else {
-              llvm::StringRef owned=context_.Idents.get(expected).getName();
-              redecl->addAttr(clang::AbiTagAttr::Create(context_,&owned,1,redecl->getSourceRange()));
-            }
+            if (!setModuleOwnedAbiTag(context_, redecl, expected))
+              return Error(decl, "member function specialization conflicts with its primary ABI owner");
           }
           return true;
         }
@@ -376,14 +395,8 @@ public:
         for (auto *redecl : function->redecls()) {
           if (redecl->hasAttr<clang::AsmLabelAttr>())
             return Error(decl, "function template cannot carry a concrete asm label");
-          if (const auto *tag = redecl->getAttr<clang::AbiTagAttr>()) {
-            if (tag->tags_size() != 1 || *tag->tags_begin() != expected)
-              return Error(decl, "function template ABI tag conflicts with its owning module");
-          } else {
-            llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
-            redecl->addAttr(clang::AbiTagAttr::Create(
-                context_, &owned_tag, 1, redecl->getSourceRange()));
-          }
+          if (!setModuleOwnedAbiTag(context_, redecl, expected))
+            return Error(decl, "function template ABI tag conflicts with its owning module");
         }
         return true;
       }
@@ -400,13 +413,8 @@ public:
               return Error(decl,"member variable specialization redeclares a foreign ABI");
             if (redecl->hasAttr<clang::AsmLabelAttr>())
               return Error(decl,"member variable specialization cannot replace its primary native ABI");
-            if (const auto *tag=redecl->getAttr<clang::AbiTagAttr>()) {
-              if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
-                return Error(decl,"member variable specialization conflicts with its primary ABI owner");
-            } else {
-              llvm::StringRef owned=context_.Idents.get(expected).getName();
-              redecl->addAttr(clang::AbiTagAttr::Create(context_,&owned,1,redecl->getSourceRange()));
-            }
+            if (!setModuleOwnedAbiTag(context_, redecl, expected))
+              return Error(decl, "member variable specialization conflicts with its primary ABI owner");
           }
           return true;
         }
@@ -424,13 +432,8 @@ public:
             return Error(decl,"module-owned variable template redeclares a foreign ABI");
           if (redecl->hasAttr<clang::AsmLabelAttr>())
             return Error(decl,"variable template cannot carry a concrete asm label");
-          if (const auto *tag = redecl->getAttr<clang::AbiTagAttr>()) {
-            if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
-              return Error(decl,"variable template ABI tag conflicts with its owning module");
-          } else {
-            llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
-            redecl->addAttr(clang::AbiTagAttr::Create(context_, &owned_tag, 1, redecl->getSourceRange()));
-          }
+          if (!setModuleOwnedAbiTag(context_, redecl, expected))
+            return Error(decl, "variable template ABI tag conflicts with its owning module");
         }
         return true;
       }
@@ -503,14 +506,8 @@ public:
     }
     if (record) {
       for (auto *redecl : record->redecls()) {
-        if (const auto *tag = redecl->getAttr<clang::AbiTagAttr>()) {
-          if (tag->tags_size() != 1 || *tag->tags_begin() != expected)
-            return Error(decl, "explicit type ABI tag conflicts with its owning module");
-        } else {
-          llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
-          redecl->addAttr(clang::AbiTagAttr::Create(
-              context_, &owned_tag, 1, redecl->getSourceRange()));
-        }
+        if (!setModuleOwnedAbiTag(context_, redecl, expected))
+          return Error(decl, "explicit type ABI tag conflicts with its owning module");
       }
       return true;
     }

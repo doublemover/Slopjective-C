@@ -54,7 +54,8 @@ int main() {
   assert(capabilities.count("objc3.cxx-class-templates.v2"));
   assert(!capabilities.count("objc3.cxx-class-templates.v1"));
   assert(!capabilities.count("objc3.native-declaration-attributes.v3"));
-  assert(capabilities.count("objc3.native-declaration-attributes.v4"));
+  assert(capabilities.count("objc3.native-declaration-attributes.v5"));
+  assert(!capabilities.count("objc3.native-declaration-attributes.v4"));
   assert(!capabilities.count("objc3.cxx-inline-closure-objects.v1"));
   assert(!capabilities.count("objc3.cxx-inline-closure-objects.v2"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v2"));

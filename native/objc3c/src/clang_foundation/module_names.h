@@ -3,6 +3,7 @@
 #include <string>
 namespace clang {
 class ASTContext;
+class AbiTagAttr;
 class Decl;
 class NamedDecl;
 class SourceLocation;
@@ -21,6 +22,11 @@ bool IsModuleOwnedSource(const clang::ASTContext &context,
                          clang::SourceLocation location,
                          const std::string &root = {});
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration);
+// Native vendor tags coexist with one distinct reserved module owner.
+std::string ReadModuleOwnedAbiTag(const clang::AbiTagAttr *attribute);
+bool HasModuleOwnedAbiTag(const clang::AbiTagAttr *attribute,
+                          const std::string &expected);
+bool HasOnlyNativeAbiTags(const clang::AbiTagAttr *attribute);
 std::string ReadCxxConceptOwner(const clang::NamedDecl *declaration);
 bool ApplyCxxConceptOwners(clang::ASTContext &context,
                           const std::string &module,

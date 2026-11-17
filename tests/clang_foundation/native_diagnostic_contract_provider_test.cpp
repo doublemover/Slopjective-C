@@ -161,7 +161,7 @@ void Run(const fs::path &root,const char *standard,int ownership) {
   std::vector<llvm::StringRef> reader;
   for(const auto &capability:SupportedSemanticInterfaceCapabilities())
     if(capability!=kNativeDeclarationAttributeSemantic)reader.push_back(capability);
-  reader.push_back("objc3.native-declaration-attributes.v3");
+  reader.push_back("objc3.native-declaration-attributes.v4");
   auto unsupported=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,reader);
   assert(!unsupported);llvm::consumeError(unsupported.takeError());
   // A sidecar cannot silently drop the requirement while retaining its marker.

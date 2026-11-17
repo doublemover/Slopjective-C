@@ -318,9 +318,7 @@ class InterfaceCollector final
         continue;
       if (llvm::isa<clang::CXXRecordDecl>(declaration)) {
         if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute);
-            tag && tag->tags_size() == 1 &&
-            tag->tags_begin()->starts_with("__objc3_m_") &&
-            ReadNativeSymbolName(declaration) == *tag->tags_begin())
+            tag && (HasOnlyNativeAbiTags(tag) || HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(declaration))))
           continue;
         if (llvm::isa<clang::FinalAttr>(attribute))
           continue;
