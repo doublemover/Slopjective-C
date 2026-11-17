@@ -1,0 +1,165 @@
+diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
+--- a/clang/lib/AST/ObjC3TypeContracts.cpp
++++ b/clang/lib/AST/ObjC3TypeContracts.cpp
+@@ -476,7 +476,7 @@
+   const auto &Triple = Ctx.getTargetInfo().getTriple();
+   const auto &Lang = Ctx.getLangOpts();
+   if (Type.isNull() || Type.isVolatileQualified() ||
+-      Triple.getArch() != llvm::Triple::x86_64 || !Triple.isOSLinux() ||
++      (Triple.getArch() != llvm::Triple::x86_64 && Triple.getArch() != llvm::Triple::aarch64) || !Triple.isOSLinux() ||
+       !Triple.isGNUEnvironment() ||
+       Lang.ObjCRuntime.getKind() != ObjCRuntime::GNUstep ||
+       Lang.ObjCRuntime.getVersion() != VersionTuple(2, 2))
+diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
+--- a/clang/lib/CodeGen/CGBlocks.cpp
++++ b/clang/lib/CodeGen/CGBlocks.cpp
+@@ -158,7 +158,7 @@
+ 
+ static bool usesObjC3AlignedBlockStorage(CodeGenModule &CGM,const CGBlockInfo &Info) {
+   const auto &Triple=CGM.getTarget().getTriple();
+-  return CGM.getLangOpts().ObjC3 && Triple.getArch()==llvm::Triple::x86_64 &&
++  return CGM.getLangOpts().ObjC3 && (Triple.getArch()==llvm::Triple::x86_64 || Triple.getArch()==llvm::Triple::aarch64) &&
+       Triple.isOSLinux() && Triple.isGNUEnvironment() &&
+       CGM.getLangOpts().ObjCRuntime.getAsString()=="gnustep-2.2" &&
+       Info.BlockAlign>CharUnits::fromQuantity(16);
+@@ -3218,7 +3218,7 @@
+ 
+   const auto &Triple=CGM.getTarget().getTriple();
+   CharUnits ByrefAlignment=getBlockByrefInfo(&D).ByrefAlignment;
+-  bool NativeAligned=getLangOpts().ObjC3 && Triple.getArch()==llvm::Triple::x86_64 &&
++  bool NativeAligned=getLangOpts().ObjC3 && (Triple.getArch()==llvm::Triple::x86_64 || Triple.getArch()==llvm::Triple::aarch64) &&
+       Triple.isOSLinux() && Triple.isGNUEnvironment() &&
+       getLangOpts().ObjCRuntime.getAsString()=="gnustep-2.2" && ByrefAlignment>CharUnits::fromQuantity(16);
+   uint64_t isa=NativeAligned ? uint64_t(ByrefAlignment.getQuantity()) : type.isObjCGCWeak() ? 1 : 0;
+diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
+--- a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
++++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
+@@ -415,7 +415,7 @@
+ bool CodeGen::supportsObjC3CarrierARCCallABI(CodeGenModule &CGM,
+                                            QualType CarrierType) {
+   const auto &Triple = CGM.getTarget().getTriple();
+-  return Triple.getArch() == llvm::Triple::x86_64 && Triple.isOSLinux() &&
++  return (Triple.getArch() == llvm::Triple::x86_64 || Triple.getArch() == llvm::Triple::aarch64) && Triple.isOSLinux() &&
+          Triple.isGNUEnvironment() &&
+          CGM.getTarget().getCXXABI().isItaniumFamily() &&
+          !CarrierType.isVolatileQualified() &&
+@@ -426,7 +426,7 @@
+                                             QualType Type) {
+   const auto &Triple=CGM.getTarget().getTriple();
+   if (!CGM.getLangOpts().CPlusPlus || Type.isNull() ||
+-      Triple.getArch()!=llvm::Triple::x86_64 || !Triple.isOSLinux() ||
++      (Triple.getArch()!=llvm::Triple::x86_64 && Triple.getArch()!=llvm::Triple::aarch64) || !Triple.isOSLinux() ||
+       !Triple.isGNUEnvironment() || !CGM.getTarget().getCXXABI().isItaniumFamily() ||
+       Type.isVolatileQualified() || hasObjC3CarrierManagedPayload(Type) ||
+       !supportsObjC3CarrierCppLocalLifetime(CGM,Type) ||
+diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
+--- a/clang/lib/CodeGen/CGObjC3Carriers.cpp
++++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
+@@ -1074,17 +1074,18 @@
+ }
+ } // namespace
+ 
+-static bool supportsQualifiedX64CarrierABI(CodeGenModule &CGM,
++static bool supportsQualifiedNativeCarrierABI(CodeGenModule &CGM,
+                                            QualType CarrierType) {
+   ASTContext &Ctx = CGM.getContext();
+   const llvm::Triple &Triple = CGM.getTarget().getTriple();
+-  const bool Windows = Triple.getVendor() == llvm::Triple::PC &&
++  const bool Windows = Triple.getArch() == llvm::Triple::x86_64 &&
++                       Triple.getVendor() == llvm::Triple::PC &&
+                        Triple.isKnownWindowsMSVCEnvironment() &&
+                        CGM.getTarget().getCXXABI().isMicrosoft();
+   const bool Linux = Triple.isOSLinux() && Triple.isGNUEnvironment() &&
+                      CGM.getTarget().getCXXABI().isItaniumFamily();
+   if ((Ctx.getLangOpts().CPlusPlus && !Linux) ||
+-      Triple.getArch() != llvm::Triple::x86_64 || (!Windows && !Linux))
++      (Triple.getArch() != llvm::Triple::x86_64 && Triple.getArch() != llvm::Triple::aarch64) || (!Windows && !Linux))
+     return false;
+ 
+   auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
+@@ -1121,7 +1122,7 @@
+     CGM.getTypes().registerObjC3ARCCarrierABIRecord(ABIType);
+     return true;
+   }
+-  if (!supportsQualifiedX64CarrierABI(CGM, SourceType))
++  if (!supportsQualifiedNativeCarrierABI(CGM, SourceType))
+     return false;
+   auto Info = Ctx.getObjC3CarrierRepresentationType(SourceType);
+   ABIType = Ctx.getQualifiedType(Info.Type, SourceType.getQualifiers());
+diff --git a/clang/lib/CodeGen/Targets/AArch64.cpp b/clang/lib/CodeGen/Targets/AArch64.cpp
+--- a/clang/lib/CodeGen/Targets/AArch64.cpp
++++ b/clang/lib/CodeGen/Targets/AArch64.cpp
+@@ -374,6 +374,13 @@
+                                                 unsigned &NSRN,
+                                                 unsigned &NPRN) const {
+   Ty = useFirstFieldIfTransparentUnion(Ty);
++  if (CGT.isObjC3ARCCarrierABIRecord(Ty)) {
++    // Owned carrier arguments borrow an initialized caller-owned object.
++    // Preserve its address even after the eight GPR argument slots fill:
++    // byval copies would relocate weak storage and read inactive union bytes.
++    return getNaturalAlignIndirect(Ty, getDataLayout().getAllocaAddrSpace(),
++                                   /*ByVal=*/false);
++  }
+ 
+   if (IsVariadicFn && getTarget().getTriple().isWindowsArm64EC()) {
+     // Arm64EC varargs functions use the x86_64 classification rules,
+@@ -548,6 +555,10 @@
+ 
+ ABIArgInfo AArch64ABIInfo::classifyReturnType(QualType RetTy,
+                                               bool IsVariadicFn) const {
++  // AAPCS64 lowers this sret pointer through x8, independently of argument
++  // register allocation. Only explicitly registered owned projections qualify.
++  if (CGT.isObjC3ARCCarrierABIRecord(RetTy))
++    return getNaturalAlignIndirect(RetTy, getDataLayout().getAllocaAddrSpace());
+   if (RetTy->isVoidType())
+     return ABIArgInfo::getIgnore();
+ 
+diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
+--- a/clang/lib/Sema/SemaChecking.cpp
++++ b/clang/lib/Sema/SemaChecking.cpp
+@@ -3067,7 +3067,7 @@
+     if (!getLangOpts().ObjC3 || !getLangOpts().ObjC ||
+         getLangOpts().CPlusPlus ||
+         getLangOpts().ObjCRuntime.getAsString() != "gnustep-2.2" ||
+-        !Triple.isOSLinux() || Triple.getArch() != llvm::Triple::x86_64 ||
++        !Triple.isOSLinux() || (Triple.getArch() != llvm::Triple::x86_64 && Triple.getArch() != llvm::Triple::aarch64) ||
+         Type.isNull() || !Type->getAs<ObjC3OptionalType>() ||
+         Type.isConstQualified() || Type.isVolatileQualified() ||
+         Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized ||
+diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
+--- a/clang/lib/Sema/SemaDecl.cpp
++++ b/clang/lib/Sema/SemaDecl.cpp
+@@ -11643,9 +11643,10 @@
+       // multiversion family. CodeGen appends each target/clone suffix after
+       // that base and retains its resolver. Ordinary user labels keep the
+       // upstream diagnostic; only the reserved exact module-name shape is
+-      // admitted for native target and target_clones publication.
++      // admitted for native target, target_version and target_clones publication.
+       StringRef Name = cast<AsmLabelAttr>(A)->getLabel();
+-      if ((MVKind == MultiVersionKind::Target || MVKind == MultiVersionKind::TargetClones) &&
++      if ((MVKind == MultiVersionKind::Target || MVKind == MultiVersionKind::TargetVersion ||
++           MVKind == MultiVersionKind::TargetClones) &&
+           Name.consume_front("__objc3_m_") && Name.size() == 129 && Name[64] == '_' &&
+           llvm::all_of(Name.take_front(64), [](char C) {return llvm::isHexDigit(C);}) &&
+           llvm::all_of(Name.drop_front(65), [](char C) {return llvm::isHexDigit(C);}))
+@@ -12742,7 +12743,7 @@
+       const auto &Triple = Context.getTargetInfo().getTriple();
+       if (getLangOpts().ObjC3 &&
+           Triple.isOSLinux() && Triple.isGNUEnvironment() &&
+-          Triple.getArch() == llvm::Triple::x86_64 &&
++          (Triple.getArch() == llvm::Triple::x86_64 || Triple.getArch() == llvm::Triple::aarch64) &&
+           getLangOpts().ObjCRuntime.getAsString() == "gnustep-2.2") {
+         unsigned Budget = 256;
+         auto Compatible = [&](auto &&Self, QualType T, unsigned Depth) -> bool {
+diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
+--- a/clang/lib/Sema/SemaObjC3Effects.cpp
++++ b/clang/lib/Sema/SemaObjC3Effects.cpp
+@@ -152,7 +152,7 @@
+       getLangOpts().ObjCRuntime.getAsString() != "gnustep-2.2" ||
+       Context.getTargetInfo().getPointerWidth(LangAS::Default) != 64 ||
+       !Triple.isOSLinux() ||
+-      Triple.getArch() != llvm::Triple::x86_64 || Function->isVariadic() ||
++      (Triple.getArch() != llvm::Triple::x86_64 && Triple.getArch() != llvm::Triple::aarch64) || Function->isVariadic() ||
+       Function->getCallConv() != CC_C ||
+       Function->getReturnType()->isReferenceType() ||
+       Function->getReturnType().isVolatileQualified() ||

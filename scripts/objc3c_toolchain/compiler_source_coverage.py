@@ -1,6 +1,8 @@
 """Measure patched Clang/LLVM source coverage from the isolated coverage profile."""
 from __future__ import annotations
 
+from .linux_host import native_linux_host
+
 import argparse
 from collections import Counter
 import json
@@ -21,7 +23,7 @@ PROFILE = 'compiler-source-coverage'
 FLAGS = ('-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic')
 EXPORT_FLAGS = ('--check-binary-ids', '--skip-expansions', '--skip-functions')
 PATCH_FILE = re.compile(r'^\+\+\+ b/((?:clang|llvm)/\S+)$')
-HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
+HUNK = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
 
 
 def selected_tools(repo: Path) -> tuple[dict, dict, dict]:
@@ -30,7 +32,7 @@ def selected_tools(repo: Path) -> tuple[dict, dict, dict]:
     from .llvm_tools import verify_installation
     from .sanitizer_policy import strict_environment
 
-    plans = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)
+    plans = build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)
     plan = plans['configure']
     build, stage = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage'))
     receipt = json.loads((build / 'foundation-build-report.json').read_text())
@@ -86,31 +88,58 @@ def select_coverage_profiles(profile_ids: dict[Path, str], expected_ids: set[str
     return selected, [path for path in profile_ids if path not in selected]
 
 
+def remap_patch_ranges(previous: list[list[int]], hunks: list[tuple[int, int, int, int]]) -> list[list[int]]:
+    """Carry earlier patch ownership into the final stack's line coordinates."""
+    result = []
+    for start, end in previous:
+        cursor, shift = start, 0
+        for old_start, old_count, new_start, new_count in hunks:
+            # A zero-count old hunk inserts after its line-number anchor.
+            boundary = old_start if old_count else old_start + 1
+            if cursor < boundary:
+                before = min(end, boundary - 1)
+                if cursor <= before:
+                    result.append([cursor + shift, before + shift])
+                cursor = max(cursor, before + 1)
+            if cursor > end:
+                break
+            # Covered old hunk lines are superseded by this hunk's complete
+            # new range, including its context. Deleted lines cease to exist.
+            cursor = max(cursor, boundary + old_count)
+            shift += new_count - old_count
+        if cursor <= end:
+            result.append([cursor + shift, end + shift])
+    result.extend([start, start + count - 1] for _, _, start, count in hunks if count)
+    return merged_ranges(result)
+
+
 def patched_inventory(repo: Path, source: Path) -> tuple[dict, dict]:
-    """Return immutable patched sources and new-line ranges from the patch stack."""
+    """Bind patched sources and hunk ranges in final, ordered-stack coordinates."""
     files, ranges = {}, {}
     for patch in sorted((repo / 'toolchains/llvm/patches').glob('*.patch')):
-        current = None
+        current, hunks = None, []
+        def finish():
+            if current:
+                ranges[current] = remap_patch_ranges(ranges.get(current, []), hunks)
         for line in patch.read_text(errors='strict').splitlines():
-            matched = PATCH_FILE.match(line)
-            if matched:
-                current = matched[1]
-                candidate = source / current
-                if (candidate.is_file() and candidate.suffix in ('.c', '.cc', '.cpp', '.h', '.inc') and
-                        current.startswith(('clang/lib/', 'clang/include/'))):
-                    files[current] = digest(candidate)
-                    ranges.setdefault(current, [])
-                else:
-                    current = None
+            if line.startswith('+++ '):
+                finish()
+                current, hunks = None, []
+                matched = PATCH_FILE.match(line)
+                if matched:
+                    name = matched[1]
+                    candidate = source / name
+                    if (candidate.is_file() and candidate.suffix in ('.c', '.cc', '.cpp', '.h', '.inc') and
+                            name.startswith(('clang/lib/', 'clang/include/'))):
+                        current = name
+                        files[current] = digest(candidate)
                 continue
             hunk = HUNK.match(line)
             if current and hunk:
-                start, count = int(hunk[1]), int(hunk[2] or 1)
-                if count:
-                    ranges[current].append([start, start + count - 1])
+                hunks.append(tuple(int(value or 1) for value in hunk.groups()))
+        finish()
     if not files or not any(name.endswith('.cpp') for name in files):
         raise ValueError('patched compiler source inventory is empty')
-    ranges = {name: merged_ranges(value) for name, value in ranges.items()}
     return dict(sorted(files.items())), dict(sorted(ranges.items()))
 
 
@@ -205,7 +234,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4):
         raise ValueError('compiler source coverage requires fresh owned output and bounded jobs')
-    plan = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)['configure']
+    plan = build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)['configure']
     build, stage, source = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage', 'source'))
     foundation = json.loads((build / 'foundation-build-report.json').read_text())
     if (foundation.get('status') != 'passed' or foundation.get('source_identity') != plan['source_build_id'] or

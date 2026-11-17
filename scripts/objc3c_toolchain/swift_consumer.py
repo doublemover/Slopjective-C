@@ -1,6 +1,9 @@
 """Qualify unchanged native interface text with an independent pinned Swift importer."""
 from __future__ import annotations
 
+from .linux_host import HOSTS, native_loader, native_target
+
+
 import argparse
 import errno
 import json
@@ -72,8 +75,8 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
 
 def row_manifest(path):
     value = json.loads(path.read_text())
-    if (value.get('schema') != 'objc3c.swift-consumer-rows.v1' or
-            value.get('target') != 'x86_64-unknown-linux-gnu' or value.get('module') != 'ForeignAPI' or
+    if (value.get('schema') != 'objc3c.swift-consumer-rows.v2' or
+            value.get('targets') != [entry[1] for entry in HOSTS.values()] or value.get('module') != 'ForeignAPI' or
             not value.get('rows') or len(value['rows']) != len(REQUIRED_ROWS) or
             {row.get('id'): row.get('declaration') for row in value['rows']} != REQUIRED_ROWS or
             any(row.get('required') is not True for row in value['rows'])):
@@ -81,7 +84,7 @@ def row_manifest(path):
     if not value.get('unqualified') or any(row.get('status') not in ('unsupported', 'metadata-preserved', 'blocked')
                                          or not row.get('reason') for row in value['unqualified']):
         raise ValueError('Swift consumer requires explicit unqualified boundaries')
-    return value
+    return {**value, 'target': native_target()}
 
 
 def import_evidence(depfile, work, header, module_map):
@@ -141,7 +144,7 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
         row['status'] = 'PASS';save()
         return text
     swiftc, frontend = [swift_root / 'usr/bin' / name for name in ('swiftc', 'swift-frontend')]
-    loader = Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True)
+    loader = native_loader()
     try:
         version = run('swift-version', [swiftc, '--version'], foreign=True)
         info = json.loads(run('swift-target-info', [swiftc, '-print-target-info'], foreign=True))

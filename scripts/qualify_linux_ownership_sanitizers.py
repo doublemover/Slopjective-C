@@ -1,6 +1,8 @@
 """Qualify installed Linux ARC/MRC projections with AddressSanitizer and LSan."""
 from __future__ import annotations
 
+from scripts.objc3c_toolchain.linux_host import native_target
+
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -25,7 +27,7 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
     sdk, resource, output = sdk.resolve(strict=True), resource.resolve(strict=True), output.resolve()
     disjoint(output, sdk, resource)
     manifest = verify_sdk(sdk)
-    runtimes = sorted((resource / 'lib/x86_64-unknown-linux-gnu').glob('libclang_rt.asan*.a'))
+    runtimes = sorted((resource / 'lib' / native_target()).glob('libclang_rt.asan*.a'))
     if not runtimes or not (resource / 'include/stddef.h').is_file():
         raise ValueError('a Clang resource directory with Linux x86-64 ASan runtimes is required')
     # A new directory prevents a failed invocation from leaving a stale PASS.

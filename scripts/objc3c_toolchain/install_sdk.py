@@ -23,6 +23,27 @@ def file_hash(path: Path) -> str:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def admit_native_sdk(prefix: Path, data: dict) -> None:
+    # Keep the downloaded installer self-contained: no checkout or product
+    # module may be imported before its archive/seal has been admitted.
+    machines = {'x86_64': ('x86_64-unknown-linux-gnu', 62),
+                'amd64': ('x86_64-unknown-linux-gnu', 62),
+                'aarch64': ('aarch64-unknown-linux-gnu', 183),
+                'arm64': ('aarch64-unknown-linux-gnu', 183)}
+    selected = machines.get(platform.machine().lower())
+    if platform.system() != 'Linux' or selected is None or data.get('target') != selected[0]:
+        raise ValueError('SDK target differs from the native Linux architecture')
+    for name, row in data['files'].items():
+        if row['kind'] != 'file':
+            continue
+        with (prefix / name).open('rb') as stream:
+            header = stream.read(64)
+        if header[:4] == b'\x7fELF' and (len(header) != 64 or
+                header[:6] != b'\x7fELF\x02\x01' or
+                int.from_bytes(header[18:20], 'little') != selected[1]):
+            raise ValueError('SDK ELF member differs from the native Linux architecture: ' + name)
+
+
 def verify(prefix: Path, *, verifier: Path | None = None) -> dict:
     # Loading a module through importlib writes __pycache__ unless the parent
     # happens to use -B. A verifier must never mutate the sealed installation.
@@ -84,8 +105,8 @@ export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
 def install(archive: Path, expected_sha256: str, root: Path) -> dict:
     started = time.monotonic()
     costs = {}
-    if platform.system() != 'Linux' or platform.machine() != 'x86_64':
-        raise ValueError('this SDK requires native Linux x86-64')
+    if platform.system() != 'Linux' or platform.machine().lower() not in ('x86_64', 'amd64', 'aarch64', 'arm64'):
+        raise ValueError('this SDK requires native Linux x86-64 or AArch64')
     archive = archive.resolve(strict=True)
     root = root.expanduser().resolve()
     if len(expected_sha256) != 64 or file_hash(archive) != expected_sha256.lower():
@@ -138,6 +159,7 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
                 if not directory.is_symlink() and directory.is_dir():
                     directory.chmod(0o755)
             data = verify(candidate)
+            admit_native_sdk(candidate, data)
             prefix = root / 'sdks' / data['seal_sha256']
             prefix.parent.mkdir(exist_ok=True)
             prefix.parent.chmod(0o755)

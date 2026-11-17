@@ -35,8 +35,8 @@
 ";borrowed-result-proofs:v7;"
 "objc3.native-storage-lifetime.v6"
 ";native-storage-lifetime:v6;"
-"objc3.native-emission-policies.v2"
-";native-emission-policies:v2;"
+"objc3.native-emission-policies.v3"
+";native-emission-policies:v3;"
 ";native-cpu-variant:v1;"
 "@cpu-target@"
 
@@ -63,3 +63,4 @@
 ";cxx-base-adjustment-expressions:v1;"
 "objc3.cxx-inline-closure-objects.v3"
 ";cxx-inline-closure-objects:v3;"
+"@cpu-version@"

@@ -5,6 +5,11 @@ on:
     - cron: "37 5 * * 0"
   workflow_dispatch:
     inputs:
+      linux_host:
+        description: Native compiler and SDK architecture
+        type: choice
+        options: [linux-x86_64, linux-aarch64]
+        default: linux-x86_64
       diagnostic_core_only:
         description: Diagnose the core frontend only; no full gate or SDK publication
         type: boolean
@@ -30,11 +35,18 @@ on:
         type: string
         default: ''
   workflow_call:
+    inputs:
+      linux_host:
+        description: Native compiler and SDK architecture
+        type: string
+        default: linux-x86_64
+env:
+  OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
 permissions:
   contents: read
   actions: read
 concurrency:
-  group: linux-native-assurance-${{ github.event.pull_request.number || github.ref }}-${{ github.sha }}${{ inputs.diagnostic_core_only && '-core-diagnosis' || '' }}
+  group: ${{ inputs.linux_host || 'linux-x86_64' }}-linux-native-assurance-${{ github.event.pull_request.number || github.ref }}-${{ github.sha }}${{ inputs.diagnostic_core_only && '-core-diagnosis' || '' }}
   # Preserve active builds without letting an older coverage owner hold a
   # repaired source revision. Duplicate requests for the same source serialize.
   cancel-in-progress: false
@@ -42,7 +54,7 @@ jobs:
   diagnostic-coverage-aggregate:
     name: Reproduce retained source-coverage aggregate (no compiler execution)
     if: inputs.diagnostic_core_only && inputs.diagnostic_coverage_run != '' && inputs.diagnostic_coverage_sha != ''
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,19 +64,19 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.diagnostic_coverage_run }}-1
+          name: native-plan-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ inputs.diagnostic_coverage_run }}-1
           run-id: ${{ inputs.diagnostic_coverage_run }}
           github-token: ${{ github.token }}
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: coverage-producer-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.diagnostic_coverage_run }}-1
+          name: coverage-producer-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ inputs.diagnostic_coverage_run }}-1
           run-id: ${{ inputs.diagnostic_coverage_run }}
           github-token: ${{ github.token }}
           path: out/coverage-matrix/producer-result
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: coverage-partition-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.diagnostic_coverage_run }}-1-*
+          pattern: coverage-partition-${{ inputs.diagnostic_coverage_sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ inputs.diagnostic_coverage_run }}-1-*
           run-id: ${{ inputs.diagnostic_coverage_run }}
           github-token: ${{ github.token }}
           merge-multiple: true
@@ -88,7 +100,7 @@ jobs:
   diagnostic-transport:
     name: Split existing artifact for bounded download (no compiler execution)
     if: inputs.diagnostic_core_only && inputs.diagnostic_transport_run != ''
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -202,7 +214,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !inputs.diagnostic_transport_inventory }}
         with:
-          name: diagnostic-download-${{ github.run_id }}-part0
+          name: diagnostic-download-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-part0
           path: |
             out/diagnostic-transport/parts/payload.part0
             out/diagnostic-transport/parts/manifest.json
@@ -212,7 +224,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !inputs.diagnostic_transport_inventory }}
         with:
-          name: diagnostic-download-${{ github.run_id }}-part1
+          name: diagnostic-download-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-part1
           path: |
             out/diagnostic-transport/parts/payload.part1
             out/diagnostic-transport/parts/manifest.json
@@ -222,7 +234,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !inputs.diagnostic_transport_inventory }}
         with:
-          name: diagnostic-download-${{ github.run_id }}-part2
+          name: diagnostic-download-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-part2
           path: |
             out/diagnostic-transport/parts/payload.part2
             out/diagnostic-transport/parts/manifest.json
@@ -232,7 +244,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !inputs.diagnostic_transport_inventory }}
         with:
-          name: diagnostic-download-${{ github.run_id }}-part3
+          name: diagnostic-download-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-part3
           path: |
             out/diagnostic-transport/parts/payload.part3
             out/diagnostic-transport/parts/manifest.json
@@ -241,7 +253,7 @@ jobs:
           retention-days: 1
   plan:
     name: Classify exact source revision
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 5
     outputs:
       native: ${{ steps.plan.outputs.native }}
@@ -254,6 +266,7 @@ jobs:
       - id: plan
         shell: bash
         run: |
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
@@ -262,7 +275,7 @@ jobs:
       - name: Preserve source classification
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/plan.json
           if-no-files-found: error
           retention-days: 7
@@ -270,7 +283,7 @@ jobs:
     name: Diagnose Linux compiler core
     needs: plan
     if: needs.plan.outputs.native == 'true' && inputs.diagnostic_core_only && inputs.diagnostic_transport_run == '' && inputs.diagnostic_coverage_run == ''
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -288,7 +301,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: ./.github/actions/linux-host-tools
         with:
@@ -305,6 +318,7 @@ jobs:
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           ulimit -c 0
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
@@ -315,7 +329,7 @@ jobs:
     name: Build and seal exact Linux SDK producer
     needs: plan
     if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -333,7 +347,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: ./.github/actions/linux-host-tools
         with:
@@ -357,7 +371,7 @@ jobs:
       - name: Preserve qualified SDK archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: objc3c-linux-sdk
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
           path: |
             out/toolchains/sdk-cache/*.tar.zst
             out/toolchains/sdk-cache/*.tar.json
@@ -370,7 +384,7 @@ jobs:
         if: always() && steps.product-producer-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
+          name: native-partial-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
           path: |
             out/release-matrix/evidence/
           if-no-files-found: error
@@ -396,7 +410,7 @@ jobs:
             swift: true
           - group: semantic
             swift: false
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -415,15 +429,15 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
           path: /release
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
+          name: native-partial-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
           path: /producer
       - uses: ./.github/actions/linux-host-tools
         with:
@@ -459,7 +473,7 @@ jobs:
         if: always() && steps.product-consumer-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
+          name: native-partial-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
           path: |
             out/release-matrix/evidence/
           if-no-files-found: error
@@ -469,7 +483,7 @@ jobs:
     name: Build exact sanitizer compiler producer
     needs: plan
     if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -487,7 +501,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: ./.github/actions/linux-host-tools
         with:
@@ -511,7 +525,7 @@ jobs:
       - name: Preserve exact sanitizer compiler bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: asan-foundation-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: asan-foundation-profile-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             out/instrumented-foundation/profile.tar.zst
             out/instrumented-foundation/producer/producer.json
@@ -524,7 +538,7 @@ jobs:
         if: always() && steps.asan-foundation-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: asan-foundation-diagnostics-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: asan-foundation-diagnostics-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             out/instrumented-foundation/producer/producer.json
             out/instrumented-foundation/producer/foundation/
@@ -539,7 +553,7 @@ jobs:
       fail-fast: false
       matrix:
         group: [asan-products-partition-0, asan-products-partition-1, asan-products-partition-2, asan-products-partition-3, asan-products-partition-4, asan-products-partition-5, asan-products-partition-6, asan-products-partition-7, runtime-schedules]
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -558,19 +572,19 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
           path: /release
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
+          name: native-partial-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-product-producer
           path: /producer
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: asan-foundation-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: asan-foundation-profile-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/instrumented-foundation/restored
       - uses: ./.github/actions/linux-host-tools
         with:
@@ -603,7 +617,7 @@ jobs:
         run: |
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          export OBJC3C_ASAN_FOUNDATION_RECEIPT="$GITHUB_WORKSPACE/out/toolchains/objc3-development/stage-linux-x86_64-compiler-asan-ubsan/objc3-instrumented-foundation.json"
+          export OBJC3C_ASAN_FOUNDATION_RECEIPT="$GITHUB_WORKSPACE/out/toolchains/objc3-development/stage-${OBJC3C_NATIVE_HOST}-compiler-asan-ubsan/objc3-instrumented-foundation.json"
           export OBJC3C_ASAN_FOUNDATION_EVIDENCE="$GITHUB_WORKSPACE/out/instrumented-foundation/restored/producer/foundation"
           export OBJC3C_ASAN_FOUNDATION_IDENTITY="$GITHUB_WORKSPACE/out/instrumented-foundation/restored/producer/foundation-identity.json"
           ulimit -c 0
@@ -617,7 +631,7 @@ jobs:
         if: always() && steps.instrumented-consumer-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
+          name: native-partial-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
           path: |
             out/release-matrix/evidence/
           if-no-files-found: error
@@ -627,7 +641,7 @@ jobs:
     name: Execute independent native owner (frontend-fuzz)
     needs: plan
     if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -645,7 +659,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: ./.github/actions/linux-host-tools
         with:
@@ -657,6 +671,7 @@ jobs:
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           ulimit -c 0
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
@@ -669,6 +684,7 @@ jobs:
         if: always() && steps.fuzz-run.outcome != 'skipped'
         shell: bash
         run: |
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
@@ -681,7 +697,7 @@ jobs:
         if: always() && steps.fuzz-publish.outcome == 'success'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-frontend-fuzz
+          name: native-results-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-frontend-fuzz
           path: out/native-assurance/evidence/
           if-no-files-found: error
           retention-days: 7
@@ -690,7 +706,7 @@ jobs:
     name: Build exact source-coverage compiler producer
     needs: plan
     if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -708,7 +724,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: ./.github/actions/linux-host-tools
         with:
@@ -727,7 +743,7 @@ jobs:
       - name: Preserve exact coverage profile bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: coverage-profile-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             out/coverage-matrix/profile.tar.zst
             out/coverage-matrix/producer/producer.json
@@ -738,7 +754,7 @@ jobs:
         if: always() && steps.coverage-producer-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: coverage-producer-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: coverage-producer-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/coverage-matrix/producer/
           if-no-files-found: error
           retention-days: 7
@@ -751,7 +767,7 @@ jobs:
       fail-fast: false
       matrix:
         partition: [0, 1, 2, 3, 4, 5, 6, 7]
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -770,11 +786,11 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: coverage-profile-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/coverage-matrix/profile
       - uses: ./.github/actions/linux-host-tools
         with:
@@ -796,7 +812,7 @@ jobs:
         if: always() && steps.coverage-partition-run.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: coverage-partition-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.partition }}
+          name: coverage-partition-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.partition }}
           path: out/coverage-matrix/partitions/
           if-no-files-found: error
           retention-days: 7
@@ -805,7 +821,7 @@ jobs:
     name: Merge exact SDK consumer evidence
     needs: [plan, product-producer, product-consumers, asan-foundation-producer, instrumented-product-consumers]
     if: always() && !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.product-producer.result == 'success' && needs.product-consumers.result == 'success' && needs.asan-foundation-producer.result == 'success' && needs.instrumented-product-consumers.result == 'success'
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -814,11 +830,11 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: native-partial-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-*
+          pattern: native-partial-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-*
           merge-multiple: true
           path: out/release-matrix/partials
       - name: Prove complete disjoint core union
@@ -827,6 +843,7 @@ jobs:
             --plan out/native-assurance/selection/plan.json \
             --partials out/release-matrix/partials \
             --output out/native-assurance/results
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
@@ -837,7 +854,7 @@ jobs:
             --destination out/native-assurance/evidence/core "${periodic[@]}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-core
+          name: native-results-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-core
           path: out/native-assurance/evidence/
           if-no-files-found: error
           retention-days: 7
@@ -846,7 +863,7 @@ jobs:
     name: Merge all source-coverage partitions
     needs: [plan, coverage-producer, coverage-partitions]
     if: always() && !inputs.diagnostic_core_only && needs.plan.result == 'success' && needs.coverage-producer.result == 'success' && needs.coverage-partitions.result == 'success'
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -855,15 +872,15 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: coverage-producer-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: coverage-producer-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/coverage-matrix/producer-result
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: coverage-partition-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-*
+          pattern: coverage-partition-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-*
           merge-multiple: true
           path: out/coverage-matrix/partitions
       - name: Prove complete disjoint coverage union
@@ -873,6 +890,7 @@ jobs:
             --producer-root out/coverage-matrix/producer-result \
             --partitions-root out/coverage-matrix/partitions \
             --output out/native-assurance/results
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
@@ -883,7 +901,7 @@ jobs:
             --destination out/native-assurance/evidence/source-coverage "${periodic[@]}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-source-coverage
+          name: native-results-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-source-coverage
           path: out/native-assurance/evidence/
           if-no-files-found: error
           retention-days: 7
@@ -892,7 +910,7 @@ jobs:
     name: Extended Linux native assurance gate
     if: always() && !inputs.diagnostic_core_only
     needs: [plan, product-producer, product-consumers, asan-foundation-producer, instrumented-product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -901,11 +919,11 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: native-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-plan-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: evidence/plan
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: native-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-*
+          pattern: native-results-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-*
           merge-multiple: true
           path: evidence/results
       - name: Require exact-revision complete passing results
@@ -926,6 +944,7 @@ jobs:
             [[ "$result" == success ]]
           done
           export ASSURANCE_OUTCOMES="{\"plan\":\"$PLAN_RESULT\",\"native\":\"success\"}"
+          python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")

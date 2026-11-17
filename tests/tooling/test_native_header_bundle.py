@@ -6,6 +6,7 @@ import pytest
 
 from scripts.objc3c_toolchain import native_headers as headers
 from scripts.objc3c_toolchain.sdk_example import dependencies
+from scripts.objc3c_toolchain.linux_host import native_target
 
 
 def plan(tmp_path):
@@ -18,7 +19,7 @@ def plan(tmp_path):
         path.write_text(text)
         records[name] = {'sha256': headers.digest(path), 'bytes': path.stat().st_size}
         sources[name] = str(path)
-    manifest = {'schema': headers.SCHEMA, 'resource_version': '23',
+    manifest = {'schema': headers.SCHEMA, 'resource_version': '23', 'target': native_target(),
                 'roots': [{'index': 0, 'role': 'cxx'}, {'index': 1, 'role': 'resource'},
                           {'index': 2, 'role': 'externc'}], 'files': records}
     return {'sha256': headers.identity(manifest), 'manifest': manifest, 'sources': sources}
@@ -110,3 +111,16 @@ def test_complete_native_root_includes_macro_selected_nested_headers(tmp_path):
     files = headers.complete_root_files(root)
     assert files == sorted(files)
     assert set(files) == {conditional, architecture, root / 'stdlib.h'}
+
+
+@pytest.mark.parametrize('target,enabled',[('x86_64-unknown-linux-gnu',False),('aarch64-unknown-linux-gnu',True)])
+def test_native_arm_sdk_enables_matching_compiler_rt_dispatch_by_default(tmp_path,target,enabled):
+    value=plan(tmp_path);value['manifest']['target']=target
+    assert ('--rtlib=compiler-rt' in headers.configuration(value['manifest'])) is enabled
+
+
+def test_foreign_header_plan_cannot_be_installed_on_this_native_host(tmp_path):
+    value=plan(tmp_path)
+    value['manifest']['target']='aarch64-unknown-linux-gnu' if native_target().startswith('x86') else 'x86_64-unknown-linux-gnu'
+    value['sha256']=headers.identity(value['manifest'])
+    with pytest.raises(ValueError,match='plan identity'):headers.materialize(tmp_path/'sdk',value)

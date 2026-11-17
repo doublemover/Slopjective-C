@@ -1,6 +1,8 @@
 """Build once, execute eight coverage partitions, and prove their exact union."""
 from __future__ import annotations
 
+from scripts.objc3c_toolchain.linux_host import native_linux_host
+
 import argparse
 import hashlib
 import json
@@ -36,7 +38,7 @@ def digest(path: Path) -> str:
 
 
 def _profile_plan(repo: Path) -> dict:
-    return build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)['configure']
+    return build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)['configure']
 
 
 def produce(repo: Path, plan: dict, output: Path, bundle: Path) -> dict:
@@ -71,7 +73,7 @@ def _produce_profile(repo: Path, plan: dict, output: Path, bundle: Path,
     evidence = output / 'foundations' / PROFILE
     evidence.mkdir(parents=True)
     try:
-        foundation = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+        foundation = build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
                                       instrumentation_profile=PROFILE, test_results=evidence)
     finally:
         configured = _profile_plan(repo)

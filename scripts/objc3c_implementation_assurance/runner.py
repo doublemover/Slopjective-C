@@ -1,6 +1,8 @@
 """Build the exact fork and run implementation analysis outside the long native lane."""
 from __future__ import annotations
 
+from scripts.objc3c_toolchain.linux_host import native_linux_host
+
 import json
 import os
 from pathlib import Path
@@ -73,9 +75,9 @@ def _run_locked(repo: Path, plan: dict, output: Path, partition: dict) -> dict:
     runtime_build = build_root / 'runtime'
     tool_build = build_root / 'tool'
     foundation_root = repo / 'out/toolchains/objc3-development'
-    foundation_build = foundation_root / ('build-linux-x86_64-'+PROFILE)
+    foundation_build = foundation_root / ('build-'+native_linux_host()+'-'+PROFILE)
     temporary = [build_root, foundation_root / 'src', foundation_build,
-                 foundation_root / ('stage-linux-x86_64-'+PROFILE)]
+                 foundation_root / ('stage-'+native_linux_host()+'-'+PROFILE)]
     for path in temporary:
         owned_path(repo, path)
         if path.exists():
@@ -125,10 +127,10 @@ def _run_locked(repo: Path, plan: dict, output: Path, partition: dict) -> dict:
 
     try:
         save()
-        foundation = _build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+        foundation = _build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
                                       instrumentation_profile=PROFILE,
                                       test_results=output / 'foundation')
-        configuration = build_plans(repo, host='linux-x86_64',
+        configuration = build_plans(repo, host=native_linux_host(),
                                     instrumentation_profile=PROFILE)['configure']
         preserve_foundation()
         if foundation.get('status') != 'passed':

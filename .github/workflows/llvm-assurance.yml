@@ -2,15 +2,22 @@ name: Extended LLVM IR and optimized debugger assurance
 on:
   workflow_dispatch:
     inputs:
+      linux_host:
+        description: Native compiler and SDK architecture
+        type: choice
+        options: [linux-x86_64, linux-aarch64]
+        default: linux-x86_64
       dependency_cache:
         description: Run only dependency setup checks instead of the compiler campaign
         type: choice
         options: [compiler, any, warm]
         default: compiler
+env:
+  OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
 permissions:
   contents: read
 concurrency:
-  group: linux-llvm-assurance-${{ github.event.pull_request.number || github.ref }}-${{ inputs.dependency_cache || 'compiler' }}
+  group: ${{ inputs.linux_host || 'linux-x86_64' }}-linux-llvm-assurance-${{ github.event.pull_request.number || github.ref }}-${{ inputs.dependency_cache || 'compiler' }}
   cancel-in-progress: false
 jobs:
   dependency-cache:
@@ -18,10 +25,11 @@ jobs:
     uses: ./.github/workflows/dependency-cache.yml
     with:
       expectation: ${{ inputs.dependency_cache }}
+      linux_host: ${{ inputs.linux_host }}
   llvm-assurance:
     if: inputs.dependency_cache != 'any' && inputs.dependency_cache != 'warm'
     name: Execute matched LLVM IR and optimized debug controls
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
       options: --security-opt seccomp=unconfined
@@ -67,7 +75,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: llvm-assurance-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: llvm-assurance-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             out/llvm-startup/
             out/llvm-assurance/**/*.json

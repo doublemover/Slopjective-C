@@ -7,6 +7,8 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 
+from scripts.objc3c_toolchain.linux_host import native_linux_host
+
 SCHEMA = 'objc3c.native-assurance.plan.v1'
 SHA = re.compile(r'[0-9a-f]{40}')
 PROTECTED_DOCS = ('docs/contracts/', 'docs/support/', 'docs/specs/', 'docs/fixtures/')
@@ -15,7 +17,8 @@ RUNTIME = ('native/objc3c/src/runtime/', 'scripts/objc3c_toolchain_runtime/',
 PACKAGE = ('scripts/install_objc3c_linux.sh', 'scripts/qualify_linux_archive.sh',
            'scripts/objc3c_toolchain/install_sdk.py', 'scripts/objc3c_toolchain/package.py',
            'scripts/objc3c_toolchain/linux_sdk.py', 'tests/clang_foundation/installed_sdk/')
-FOUNDATION = ('toolchains/llvm/', 'scripts/objc3c_toolchain/core.py',
+FOUNDATION = ('toolchains/llvm/', 'toolchains/linux-hosts.json',
+              'scripts/objc3c_toolchain/linux_host.py', 'scripts/objc3c_toolchain/core.py',
               'scripts/objc3c_toolchain/build.py', 'scripts/objc3c_toolchain/host.py',
               'scripts/objc3c_toolchain/instrumentation_profiles.py')
 SWIFT = FOUNDATION + ('toolchains/swift/', 'tests/foreign/swift_consumer/',
@@ -83,7 +86,7 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
 
     def add(name, execution, owner):
         suites.append({'id': name, 'execution': execution, 'owner': owner,
-                       'host': 'linux-x86_64', 'artifacts': 'content-hashed native results and command logs'})
+                       'host': native_linux_host(), 'artifacts': 'content-hashed native results and command logs'})
 
     if not docs_only:
         add('foundation', ['native-compile', 'native-execute', 'expected-rejection'],

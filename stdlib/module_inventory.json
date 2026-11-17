@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 174,
+        "minor": 175,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -337,12 +337,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 100,
+        "minor": 101,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native Linux AArch64 compiler/runtime/SDK plans, owned-carrier AAPCS64 ABI, architecture-bound bootstrap caches and installer admission, ARM CPU target-version/vector PCS publication and compiler-rt builtins delivery; native-emission-policies v3 reader cutover; native ARM64 SDK qualification pending",
         "Bounded read-only pointer/function/member-pointer reference results forward through nested exact helpers when loaded immediately or returned to the result proof; active-caller mutable slots retain every write while escaped aliases/address/reference captures and dangling callee slots remain rejected; borrowed-result-proofs v12 cutover (source; matching SDK pending)",
         "Named inline namespace/class-static lambda factories bind local record/enum, nested closure and generic result owners to the exact variable plus concrete callable arguments; projected aliases, nominal import matching, distinct overloaded symbols and deduced-return placeholder shapes preserve identity and export-policy dependencies, with cxx-inline-closure-objects v3 hard cutover (source; matching SDK pending)",
         "Inline namespace and concrete class-static closure objects retain owning init-capture cleanup wrappers and stable type owners, including mutable/generic and TLS object forms, copies and native storage policies; cxx-inline-closure-objects v2 hard cutover (source; matching SDK pending)",

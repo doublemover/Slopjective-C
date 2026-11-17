@@ -591,7 +591,7 @@ def test_release_workflow_fans_out_exact_product_and_coverage_consumers():
     assert 'needs: [plan, coverage-producer]' in workflow
     assert 'Prove complete disjoint core union' in workflow
     assert 'Prove complete disjoint coverage union' in workflow
-    assert 'coverage-profile-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}' in workflow
+    assert "coverage-profile-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}" in workflow
     assert '--package-release /producer/product-producer/package/release.json' in workflow
     assert 'OBJC3C_ASAN_FOUNDATION_IDENTITY' in workflow
     assert workflow.count("mapfile -d '' archives") == 2

@@ -2,24 +2,35 @@ name: Linux dependency cache qualification
 on:
   workflow_call:
     inputs:
+      linux_host:
+        description: Native compiler and SDK architecture
+        type: string
+        default: linux-x86_64
       expectation:
         type: string
         required: true
   workflow_dispatch:
     inputs:
+      linux_host:
+        description: Native compiler and SDK architecture
+        type: choice
+        options: [linux-x86_64, linux-aarch64]
+        default: linux-x86_64
       expectation:
         description: Require a fully warm tool and source cache
         type: choice
         options: [any, warm]
         default: any
+env:
+  OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
 permissions:
   contents: read
 concurrency:
-  group: linux-dependency-cache-${{ github.ref }}
+  group: ${{ inputs.linux_host || 'linux-x86_64' }}-linux-dependency-cache-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   dependencies:
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
     timeout-minutes: 30
@@ -65,7 +76,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: dependency-cache-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: dependency-cache-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/dependency-cache/
           if-no-files-found: error
           retention-days: 7

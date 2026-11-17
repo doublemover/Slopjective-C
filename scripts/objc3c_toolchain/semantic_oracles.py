@@ -1,6 +1,9 @@
 """Compare generated native ObjC3 programs with an independent semantic model."""
 from __future__ import annotations
 
+from .linux_host import native_linux_host, native_loader, native_target
+
+
 import argparse
 from dataclasses import asdict
 import hashlib
@@ -78,8 +81,8 @@ class Campaign:
             'bounds': {'operations': 64, 'logical_allocations': 32, 'seeds': 8,
                        'process_timeout_seconds': 180,
                        'shared_executor_limits': self.foundation['host_environment']['resource_limits']},
-            'profile': {'host': 'linux-x86_64', 'language': 'objective-c++', 'standards': ['c++20', 'c++23'],
-                        'ownership': 'arc', 'target': 'x86_64-unknown-linux-gnu'},
+            'profile': {'host': native_linux_host(), 'language': 'objective-c++', 'standards': ['c++20', 'c++23'],
+                        'ownership': 'arc', 'target': native_target()},
             'cases': [], 'controls': [],
             'eligibility_counts': {'eligible': 0, 'unsupported': 0, 'generator-invalid': 0},
             'outcome_counts': {'clean': 0, 'expected-control-mismatch': 0, 'mismatch': 0,
@@ -90,7 +93,7 @@ class Campaign:
                 'No move-from observations, signed overflow, unspecified effect order or floating-point equivalences.']}
         self.executor = Execution(output, environment, self.report, timeout=180)
         self.run = self.executor.run
-        self.flags = ['--no-default-config', '--target=x86_64-unknown-linux-gnu', '-x', 'objective-c++',
+        self.flags = ['--no-default-config', '--target='+native_target(), '-x', 'objective-c++',
             '-fobjc-version=3', '-fobjc-runtime=gnustep-2.2', '-fobjc-arc', '-fobjc-arc-exceptions',
             '-fexceptions', '-fobjc-exceptions', '-fblocks', '-UNDEBUG',
             '-isystem', str(self.runtime.parent.parent / 'include')]
@@ -110,7 +113,7 @@ class Campaign:
                      for name in ('libLLVM.so', 'libclang-cpp.so')]
         self.report['compiler_graphs'] = {}
         for name, binary in [('clang', self.tools['clang++']), *([('facade', self.facade)] if self.facade else [])]:
-            graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), libraries,
+            graph = loaded_graph(binary, native_loader(), libraries,
                 required=tuple(libraries) if name == 'clang' else (libraries[0],),
                 run=lambda suffix, argv, name=name: self.run(name+'-'+suffix, argv))
             self.report['compiler_graphs'][name] = graph
@@ -202,7 +205,7 @@ class Campaign:
         self.run(name+'-link', [self.tools['clang++'], '--no-default-config', '-fuse-ld=lld',
             '-O2', *sanitizer_flags, *(['-flto=thin'] if optimization == 'thinlto' else []), po, co, self.services,
             self.runtime, '-pthread', '-Wl,-rpath,'+str(self.runtime.parent), '-o', binary], outputs=[binary])
-        graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+        graph = loaded_graph(binary, native_loader(), [],
             run=lambda suffix, argv: self.run(name+'-'+suffix, argv))
         self.inputs.update(graph['libraries'])
         output = self.run(name+'-execute', [binary], stage='runtime-oracle')

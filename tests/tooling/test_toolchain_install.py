@@ -9,6 +9,7 @@ import tarfile
 import pytest
 
 from scripts.objc3c_toolchain import package
+from scripts.objc3c_toolchain.linux_host import native_target
 from scripts.objc3c_toolchain.install_sdk import file_hash, install
 
 pytestmark = pytest.mark.skipif(not shutil.which('zstd'), reason='installer needs zstd')
@@ -23,7 +24,7 @@ def release(tmp_path: Path, compiler='compiler'):
     verifier.parent.mkdir(parents=True)
     shutil.copyfile(package.__file__, verifier)
     package.normalize_permissions(prefix)
-    data = {'schema': package.SCHEMA, 'source_build_id': 'test-release', 'files': package.inventory(prefix)}
+    data = {'schema': package.SCHEMA, 'source_build_id': 'test-release', 'target': native_target(), 'files': package.inventory(prefix)}
     data['seal_sha256'] = package._digest(data)
     (prefix / package.MANIFEST).write_text(json.dumps(data))
     (prefix / package.MANIFEST).chmod(0o644)

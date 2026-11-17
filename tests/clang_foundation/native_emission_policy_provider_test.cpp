@@ -170,19 +170,35 @@ inline int invoke(Callback *callback,int value,void *state){return callback(valu
 
 void RunTargetPolicy(const fs::path &root,const char *standard,int ownership,const char *optimization) {
   fs::create_directories(root/"provider");
-  auto request=[&](const fs::path &input,const fs::path &output){return Request(input,output,standard,ownership,optimization,{});};
+  std::vector<std::string> native_flags;
+#if defined(__aarch64__)
+  // Clang enables AArch64 function multiversioning with its native compiler-rt resolver.
+  native_flags.push_back("--rtlib=compiler-rt");
+#endif
+  auto request=[&](const fs::path &input,const fs::path &output){return Request(input,output,standard,ownership,optimization,native_flags);};
   const auto source=root/"provider/module.mm";
   Write(source,R"target(
+#if defined(__aarch64__)
+#define POLICY_BASE "neon"
+#define POLICY_CLONE "sve"
+#define POLICY_DEFAULT target_version("default")
+#define POLICY_VERSION target_version("sve")
+#else
+#define POLICY_BASE "sse2"
+#define POLICY_CLONE "sse4.2"
+#define POLICY_DEFAULT target("default")
+#define POLICY_VERSION target("sse4.2")
+#endif
 namespace TargetPolicy {
-__attribute__((target("sse2"),min_vector_width(128),noinline)) inline int specialized(int value){return value+1;}
-__attribute__((target_clones("default","sse4.2"))) inline int cloned(int value){return value+2;}
-__attribute__((target_clones("default","sse4.2"))) int declared(int);
-__attribute__((target("default"))) inline int default_only(int value){return value+5;}
-__attribute__((target("default"))) inline int versioned(int value){return value+6;}
-__attribute__((target("sse4.2"))) inline int versioned(int value){return value+7;}
+__attribute__((target(POLICY_BASE),min_vector_width(128),noinline)) inline int specialized(int value){return value+1;}
+__attribute__((target_clones("default",POLICY_CLONE))) inline int cloned(int value){return value+2;}
+__attribute__((target_clones("default",POLICY_CLONE))) int declared(int);
+__attribute__((POLICY_DEFAULT)) inline int default_only(int value){return value+5;}
+__attribute__((POLICY_DEFAULT)) inline int versioned(int value){return value+6;}
+__attribute__((POLICY_VERSION)) inline int versioned(int value){return value+7;}
 
-template<class T>__attribute__((target("sse2"),min_vector_width(128),noinline)) inline int generic(T value){return static_cast<int>(value)+3;}
-struct Record {__attribute__((target("sse2"),min_vector_width(128),noinline)) int method(int value)const{return value+4;}};
+template<class T>__attribute__((target(POLICY_BASE),min_vector_width(128),noinline)) inline int generic(T value){return static_cast<int>(value)+3;}
+struct Record {__attribute__((target(POLICY_BASE),min_vector_width(128),noinline)) int method(int value)const{return value+4;}};
 int external_caller(int value){return specialized(value)+cloned(value)+generic(value)+Record().method(value);}
 }
 )target");
@@ -204,8 +220,12 @@ int external_caller(int value){return specialized(value)+cloned(value)+generic(v
     const auto ir=Read(path);
     assert(ir.find("ifunc i32")!=std::string::npos);
     assert(ir.find(".resolver")!=std::string::npos);
+#if defined(__aarch64__)
+    assert(ir.find("+neon")!=std::string::npos && ir.find("+sve")!=std::string::npos);
+#else
     assert(ir.find("+sse2")!=std::string::npos && ir.find("+sse4.2")!=std::string::npos);
     assert(ir.find("\"min-legal-vector-width\"=\"128\"")!=std::string::npos);
+#endif
   };
   auto ir=provider;ir.emit=EmitKind::LLVM;ir.output_path=(root/"provider.ll").string();Success(Compile(ir));check_ir(root/"provider.ll");
   const auto interface=root/"TargetPolicy.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
@@ -216,7 +236,13 @@ int external_caller(int value){return specialized(value)+cloned(value)+generic(v
       return TargetPolicy::specialized(41)!=42 || TargetPolicy::cloned(40)!=42 ||
         TargetPolicy::generic(39)!=42 || TargetPolicy::Record().method(38)!=42 ||
         TargetPolicy::external_caller(1)!=14 || TargetPolicy::default_only(37)!=42 ||
-        TargetPolicy::versioned(36)!=(__builtin_cpu_supports("sse4.2")?43:42);
+        TargetPolicy::versioned(36)!=(__builtin_cpu_supports(
+#if defined(__aarch64__)
+          "sve"
+#else
+          "sse4.2"
+#endif
+        )?43:42);
     })target");
     auto consumer=request(input,root/(std::string(name)+".o"));
     InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;
@@ -224,7 +250,7 @@ int external_caller(int value){return specialized(value)+cloned(value)+generic(v
     consumer.emit=EmitKind::LLVM;consumer.output_path=(root/(std::string(name)+".ll")).string();Success(Compile(consumer));check_ir(root/(std::string(name)+".ll"));
   }
   const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a() || check_b();}");
-  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{});
+  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,native_flags);
 }
 
 void RunLambdaContracts(const fs::path &root,const char *standard,int ownership,const char *optimization) {
@@ -256,7 +282,11 @@ void RunLambdaContracts(const fs::path &root,const char *standard,int ownership,
     consumer.arguments.push_back("-fsanitize=address");Success(Compile(consumer));
     const auto ir=Read(consumer.output_path);
     assert(ir.find("call swiftcc")!=std::string::npos);
+#if defined(__aarch64__)
+    assert(ir.find("call aarch64_vector_pcs")!=std::string::npos);
+#else
     assert(ir.find("call x86_vectorcallcc")!=std::string::npos);
+#endif
     assert(ir.find("swiftself")!=std::string::npos);
   }
   const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a() || check_b();}");

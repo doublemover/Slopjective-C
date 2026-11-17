@@ -793,6 +793,11 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
     args.insert(args.end(), {"-Xclang", "-target-cpu", "-Xclang", target.getTargetOpts().CPU});
   if (!target.getTargetOpts().ABI.empty())
     args.insert(args.end(), {"-Xclang", "-target-abi", "-Xclang", target.getTargetOpts().ABI});
+  // Clang's driver disables AArch64 FMV when it selects libgcc, even when a
+  // later -Xclang feature requests it. Preserve the producer's effective FMV
+  // language context during canonical interface reparsing.
+  if (target.getTriple().getArch() == llvm::Triple::aarch64 && target.hasFeature("fmv"))
+    args.push_back("--rtlib=compiler-rt");
   for (const auto &feature : target.getTargetOpts().FeaturesAsWritten)
     args.insert(args.end(), {"-Xclang", "-target-feature", "-Xclang", feature});
   if (lang.PackStruct) args.push_back("-fpack-struct=" + std::to_string(lang.PackStruct));
@@ -1437,8 +1442,8 @@ bool ProjectionMode(const clang::ASTContext &context) {
   return supported_standard && lang.ObjC && lang.ObjC3 &&
          lang.ObjCRuntime.getAsString() == "gnustep-2.2" &&
          static_cast<unsigned>(lang.ObjC3Profile) == 0 &&
-         context.getTargetInfo().getTriple().str() ==
-             "x86_64-unknown-linux-gnu";
+         (context.getTargetInfo().getTriple().str() == "x86_64-unknown-linux-gnu" ||
+          context.getTargetInfo().getTriple().str() == "aarch64-unknown-linux-gnu");
 }
 
 bool ProjectionType(clang::QualType type, bool result) {

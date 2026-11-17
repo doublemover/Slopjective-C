@@ -1,3 +1,4 @@
+#include "llvm/TargetParser/Host.h"
 #include "FrontendTarget.h"
 #include "clang_foundation/frontend_api.h"
 
@@ -79,7 +80,8 @@ FrontendObservation Frontend(const std::uint8_t *data, std::size_t size) {
       objc3c_frontend_v3_spi_grant grant{"Fuzz.Dependency", "Testing"};
       options.base.language = 2 + (data[0] & 1);
       options.base.objc3 = 1;
-      options.base.target_triple = "x86_64-unknown-linux-gnu";
+      static const std::string native_target = llvm::sys::getDefaultTargetTriple();
+      options.base.target_triple = native_target.c_str();
       options.base.objc_runtime = "gnustep-2.2";
       options.interface_search_paths = search_paths.data();
       options.interface_search_path_count = search_paths.size();

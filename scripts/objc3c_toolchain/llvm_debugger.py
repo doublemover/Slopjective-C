@@ -1,6 +1,9 @@
 """Build/admit an isolated LLDB consumer of the qualified compiler foundation."""
 from __future__ import annotations
 
+from .linux_host import native_loader, native_target
+
+
 import argparse
 import json
 from pathlib import Path
@@ -33,7 +36,7 @@ def plan(repo: Path) -> dict:
     bootstrap = Path(foundation['host_environment']['bootstrap_root'])
     tablegen = (build / 'bin/llvm-tblgen').resolve(strict=True)
     tablegen_library = (build / 'lib/libLLVMTableGen.a').resolve(strict=True)
-    sanitizer_library = (bootstrap / 'lib/clang/23/lib/x86_64-unknown-linux-gnu/libclang_rt.asan.so').resolve(strict=True)
+    sanitizer_library = (bootstrap / 'lib/clang/23/lib' / native_target() / 'libclang_rt.asan.so').resolve(strict=True)
     link_flags = '-shared-libasan -L'+str(build / 'lib')+' -Wl,-rpath,'+str(sanitizer_library.parent)
     argv = [foundation['host_environment']['cmake_path'], '-S', str(source / 'lldb'), '-B', str(root), '-G', 'Ninja',
         '-DCMAKE_C_COMPILER='+str(bootstrap / 'bin/clang'), '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'),
@@ -78,7 +81,7 @@ def qualify_shared_sanitizer_route(*, output: Path, run, compiler: Path,
         sanitizer: Path, libraries: list[Path]) -> list[dict]:
     """Prove the shared-ASan link route with clean and detecting controls."""
     fixtures = Path(__file__).resolve().parents[2] / 'tests/tooling/fixtures/native_sanitizer_controls'
-    flags = ['--no-default-config', '--driver-mode=g++', '--target=x86_64-unknown-linux-gnu',
+    flags = ['--no-default-config', '--driver-mode=g++', '--target='+native_target(),
              '-std=c++20', '-O1', '-g', '-fno-omit-frame-pointer',
              '-fno-sanitize-recover=undefined', '-fsanitize=address,undefined',
              '-shared-libasan', '-fuse-ld=lld', '-pthread',
@@ -95,7 +98,7 @@ def qualify_shared_sanitizer_route(*, output: Path, run, compiler: Path,
                 *(['-DOBJC3_DETECTOR_BAD=1'] if bad else []), source,
                 '-Wl,--no-as-needed', *libraries, '-Wl,--as-needed', '-o', binary],
                 outputs=[binary])
-            graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(),
+            graph = loaded_graph(binary, native_loader(),
                 [*libraries, sanitizer], required=(*libraries, sanitizer),
                 run=lambda suffix, cmd, name=name: run(name+'-'+suffix, cmd))
             diagnostic = run(name+'-execute', [binary, *DETECTORS[detector][3]],
@@ -181,7 +184,7 @@ def qualify(repo: Path, output: Path, *, jobs=3, tools_receipt: Path | None = No
         report['tools'] = {}
         for name in configuration['targets']:
             tool = build / 'bin' / name
-            graph = loaded_graph(tool, Path('/lib64/ld-linux-x86-64.so.2').resolve(), libraries,
+            graph = loaded_graph(tool, native_loader(), libraries,
                 required=(libraries[0], libraries[-1]), run=lambda suffix, cmd, name=name: run(name+'-'+suffix, cmd))
             version = run(name+'-version', [tool, 'version' if name == 'lldb-server' else '--version'])
             report['tools'][name] = {'path': str(tool), 'sha256': digest(tool), 'version': version, 'loaded_graph': graph}

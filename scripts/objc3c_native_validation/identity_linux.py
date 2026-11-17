@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from scripts.objc3c_toolchain.facade import facade_identity
+from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target, native_loader, require_elf
 
 from .identity import (
     SCHEMA, NativeToolchainError, _Inputs, _required_file, _resource_digest,
@@ -22,23 +23,23 @@ def _add_compiler_identity_headers(inputs: _Inputs, sdk: Path, seal: dict) -> No
 
 
 def resolve_linux_toolchain(repo: Path, *, require_editor: bool = False) -> dict:
+    host = native_linux_host()
     seal = _verify_seal(repo)
     manifest_path = repo / "toolchains/llvm/manifest.json"
     profile_path = repo / "scripts/objc3c_toolchain_runtime/runtime-profile.json"
     manifest = json.loads(manifest_path.read_text())
-    profile = json.loads(profile_path.read_text())["profiles"]["linux-x86_64"]
-    if profile["target_triple"] != "x86_64-unknown-linux-gnu":
+    profile = json.loads(profile_path.read_text())["profiles"][host]
+    if profile["target_triple"] != native_target():
         raise NativeToolchainError("Linux runtime profile has an unsupported target")
-    sdk = Path(os.environ.get("OBJC3C_CLANG_FOUNDATION_ROOT", str(repo / "out/toolchains/objc3-development/stage-linux-x86_64"))).resolve()
+    sdk = Path(os.environ.get("OBJC3C_CLANG_FOUNDATION_ROOT", str(repo / ("out/toolchains/objc3-development/stage-" + host)))).resolve()
     runtime_source = repo / "out/toolchains/libobjc2-v2.3/src"
     robin_source = repo / f"out/toolchains/robin-map-{profile['robin_map_release']}/src"
-    stage = repo / "out/toolchains/libobjc2-v2.3/build-linux-x86_64/stage"
     installed_runtime = (sdk / "lib/libobjc.so").is_file() and (sdk / "include/objc/objc-config.h").is_file()
     if not installed_runtime:
         raise NativeToolchainError('a complete installed runtime is required; run build-sdk')
     stage = sdk
     installed_profile = sdk / 'share/objc3c/runtime/runtime-profile.json'
-    if json.loads(installed_profile.read_text())['profiles']['linux-x86_64'] != profile:
+    if json.loads(installed_profile.read_text())['profiles'][host] != profile:
         raise NativeToolchainError('installed runtime profile differs from the current qualified pin')
     environment = {key: os.environ[key] for key in ("PATH", "LANG", "LC_ALL", "TMPDIR") if key in os.environ}
     environment["LD_LIBRARY_PATH"] = os.pathsep.join((str(sdk / "lib"), str(stage / "lib")))
@@ -85,7 +86,7 @@ def resolve_linux_toolchain(repo: Path, *, require_editor: bool = False) -> dict
             raise NativeToolchainError(f"{filename} differs from the pinned LLVM version")
         inputs.add_file(path, name)
         tools[name], versions[name] = str(path), version
-    facade = (repo / "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c").resolve()
+    facade = (repo / ("out/toolchains/objc3-facade/build-" + host) / "src/clang_foundation/objc3c").resolve()
     if (sdk / "bin/objc3c").is_file():
         facade = (sdk / "bin/objc3c").resolve()
     inputs.add_file(facade, "native facade executable", (marker, seal["upstream_commit"],
@@ -108,12 +109,13 @@ def resolve_linux_toolchain(repo: Path, *, require_editor: bool = False) -> dict
         inputs.add_tree(Path(directory))
     inputs.add_file(Path("/etc/os-release"), "Linux distribution ABI")
     for binary in {*(Path(path) for path in tools.values()), facade, library}:
-        for word in _run(["ldd", str(binary)], environment=admission_environment).split():
+        require_elf(binary)
+        for word in _run([str(native_loader()), "--list", str(binary)], environment=admission_environment).split():
             candidate = Path(word)
             if candidate.is_absolute() and candidate.is_file():
                 inputs.add_file(candidate.resolve(), "Linux loader dependency")
     snapshot = {"schema": SCHEMA, "schema_version": 1, "repo": str(repo),
-                "platform": "linux-x86_64", "target_triple": profile["target_triple"],
+                "platform": host, "target_triple": profile["target_triple"],
                 "sdk_build_id": seal["build_id"], "patch_digest": seal["patch_digest"],
                 "source_seal": seal, "tools": tools, "tool_versions": versions,
                 "resource_dir": str(resource_dir.resolve()), "resource_sha256": resource_sha,

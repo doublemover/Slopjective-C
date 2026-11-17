@@ -6,6 +6,8 @@ Resource rejection and timeout are explicit incomplete results, not qualificatio
 """
 from __future__ import annotations
 
+from .linux_host import native_linux_host
+
 import argparse
 import json
 from pathlib import Path
@@ -52,7 +54,7 @@ def plan(repo: Path) -> dict:
             document.get('cmake') != {'LLVM_ENABLE_EXPENSIVE_CHECKS': 'ON'} or
             document.get('targets') != ['clang', 'opt', 'llc', 'llvm-dis']):
         raise ValueError('unreviewed expensive-check pilot preset')
-    base = build_plans(repo, host='linux-x86_64', instrumentation_profile=document['base_profile'])['configure']
+    base = build_plans(repo, host=native_linux_host(), instrumentation_profile=document['base_profile'])['configure']
     completed = json.loads((Path(base['paths']['build']) / 'foundation-build-report.json').read_text())
     if completed.get('status') != 'passed' or completed.get('source_identity') != base['source_build_id']:
         raise ValueError('resource estimate requires a completed matching comparable foundation')

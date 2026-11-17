@@ -5,6 +5,8 @@ Candidates run in private scratch directories; original evidence is never edited
 """
 from __future__ import annotations
 
+from .linux_host import native_target
+
 import argparse
 import json
 import os
@@ -113,7 +115,7 @@ def semantic_spec(tools: dict, environment: dict, *, expected_exit: int, inputs=
         {'name': 'input-verifier', 'argv': [str(tools['opt']), '-passes=verify', '-disable-output', '{input}']},
         {'name': 'optimizer', 'argv': [str(tools['opt']), '-passes=default<O2>', '-verify-each', '{input}',
                                      '-o', '{work}/optimized.bc'], 'outputs': ['{work}/optimized.bc']},
-        {'name': 'backend', 'argv': [str(tools['llc']), '-verify-machineinstrs', '-O2', '-relocation-model=pic',
+        {'name': 'backend', 'argv': [str(tools['llc']), '-verify-machineinstrs', '-O2', '-relocation-model=pic', '-mtriple='+native_target(),
                                    '-filetype=obj', '{work}/optimized.bc', '-o', '{work}/candidate.o'],
          'outputs': ['{work}/candidate.o']},
         {'name': 'link', 'argv': [str(tools['clang++']), '--no-default-config', '-fuse-ld=lld',

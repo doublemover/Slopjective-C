@@ -141,6 +141,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
 
     # Imports stay inside this producer so the installed verifier needs only
     # Python's standard library and never needs a source checkout.
+    from .linux_host import native_linux_host
     from .core import verify_development
     from .facade import facade_identity
     from scripts.objc3c_native_validation.identity import verify_toolchain_snapshot
@@ -158,7 +159,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         raise ValueError('SDK packaging requires a complete successful Linux native validation report')
     context = json.loads(Path(report['context_path']).read_text())
     toolchain = context['toolchain']
-    if toolchain['platform'] != 'linux-x86_64' or Path(toolchain['tools']['facade']).parent != prefix / 'bin':
+    if toolchain['platform'] != native_linux_host() or Path(toolchain['tools']['facade']).parent != prefix / 'bin':
         raise ValueError('qualify the installed SDK frontend before packaging')
     verify_toolchain_snapshot(toolchain)
     identities = compute_node_identities(plan, input_root=repo,
@@ -196,6 +197,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_source_graph.py', 'qualify.py'),
                                 ('binary_packages.py', 'binary_packages.py'),
                                 ('sanitizer_policy.py', 'sanitizer_policy.py'),
+                                ('linux_host.py', 'linux_host.py'),
                                 ('llvm_ir_execution.py', 'llvm_ir_execution.py'),
                                 ('product_evidence.py', 'product_evidence.py'),
                                 ('qualify_binary_packages.py', 'qualify_binary_packages.py'),
@@ -277,21 +279,22 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     shutil.copyfile(Path(__file__), verifier)
     shutil.copyfile(Path(__file__).with_name('install_sdk.py'), prefix / 'share/objc3c/install-sdk.py')
     shutil.copyfile(repo / 'scripts/install_objc3c_linux.sh', prefix / 'share/objc3c/install-linux.sh')
-    runtime_profile = json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']['linux-x86_64']
+    runtime_profile = json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles'][native_linux_host()]
     robin_license = repo / f"out/toolchains/robin-map-{runtime_profile['robin_map_release']}/src/LICENSE"
     license_dir = prefix / 'share/licenses/robin-map'
     license_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(robin_license, license_dir / 'LICENSE')
-    shutil.copy2(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck',
+    shutil.copy2(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/FileCheck',
                  prefix / 'bin/FileCheck')
     shutil.copyfile(Path(__file__).with_name('cmake_linux.sh'),
                     prefix / 'share/objc3c/install-cmake-linux.sh')
+    shutil.copyfile(repo / 'toolchains/linux-hosts.json', prefix / 'share/objc3c/linux-hosts.json')
     normalize_permissions(prefix)
     data = {'schema': SCHEMA, 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],
             'build_config_digest': source['build_config_digest'],
             'target': toolchain['target_triple'],
-            'linux_abi': {name: json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']['linux-x86_64'][name]
+            'linux_abi': {name: json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles'][native_linux_host()][name]
                           for name in ('glibc_minimum', 'libstdcxx_symbol_minimum')},
             'host_tools': json.loads((repo / 'toolchains/llvm/manifest.json').read_text())['host_tools'],
             'frontend_inputs': facade_identity(repo)['sha256'],
@@ -392,7 +395,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     qualification = _run_qualifications(
         {name: partial(qualify_frozen_sdk, task) for name, task in tasks.items()}, workers)
     cache_dir.mkdir(parents=True, exist_ok=True)
-    archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
+    archive = cache_dir / (source['build_id'] + '-' + native_linux_host() + '-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
         receipt = json.loads(archive.with_suffix('.json').read_text())
         if receipt['archive_sha256'] != _file_hash(archive):
@@ -416,7 +419,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         Path(temporary).unlink(missing_ok=True)
     receipt = {'archive': str(archive), 'archive_sha256': _file_hash(archive),
                'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
-               'source_build_id': source['build_id'],
+               'source_build_id': source['build_id'], 'target': toolchain['target_triple'],
+               'host': native_linux_host(),
                'qualification_parallelism': {'compiler_budget': budget,
                     'installed_gates': workers, 'graph_cases': graph_jobs, 'projection_cases': 1, 'surface_cases': 1, 'availability_cases': 1, 'spi_cases': 1, 'names_cases': 1}, **qualification}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')

@@ -1,6 +1,8 @@
 """Real coverage reader controls for binary identity, missing data and recovery."""
 from __future__ import annotations
 
+from .linux_host import native_linux_host
+
 import argparse
 import json
 import os
@@ -19,7 +21,7 @@ def qualify(repo, output):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('coverage controls require fresh owned output')
-    plan = build_plans(repo, host='linux-x86_64',
+    plan = build_plans(repo, host=native_linux_host(),
                        instrumentation_profile='compiler-source-coverage')['configure']
     bootstrap, stage = Path(plan['host_environment']['bootstrap_root']), Path(plan['paths']['stage'])
     resource, runtime = profile_runtime(bootstrap, plan['host_environment']['target_triple'])

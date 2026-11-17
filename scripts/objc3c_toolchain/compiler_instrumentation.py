@@ -1,6 +1,9 @@
 """Qualify the isolated compiler implementation, independently of client checks."""
 from __future__ import annotations
 
+from .linux_host import native_linux_host, native_target
+
+
 import argparse
 import hashlib
 from datetime import datetime, timezone
@@ -307,7 +310,7 @@ def verify_owned_shared_libraries(build: Path, libraries: list[Path], records: l
             # LLVM's CMake install removes its build-library search entry and
             # reserved trailing ':'. Reproduce that transform on a disposable
             # copy; every other ELF byte must still match the canonical output.
-            rpath = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
+            rpath = '$ORIGIN/../lib:$ORIGIN/../lib/' + native_target()
             # Preserve argv[0]: llvm-readelf is a personality symlink to
             # llvm-readobj, whose default output uses a different format.
             readelf = Path(shutil.which('llvm-readelf') or '')
@@ -435,7 +438,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
     output = output.resolve()
     if output.exists():
         raise ValueError('compiler instrumentation requires a fresh evidence directory')
-    plans = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)
+    plans = build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)
     plan = plans['configure']
     build, stage, source = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage', 'source'))
     # Refuse output locations that can overwrite inputs or the ordinary SDK.
@@ -620,7 +623,7 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         for graph in report['loaded_graphs'].values():
             if any(digest(Path(path)) != value for path, value in graph['libraries'].items()):
                 raise ValueError('loaded compiler dependency changed during qualification')
-        final = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)['configure']
+        final = build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)['configure']
         if (final['source_build_id'] != plan['source_build_id'] or
                 final['host_environment'] != plan['host_environment']):
             raise ValueError('compiler source/profile/bootstrap changed during qualification')
@@ -641,7 +644,7 @@ def build_and_qualify(repo: Path, *, profile=PROFILE, fetch=False) -> dict:
     if profile != PROFILE:
         raise ValueError('unknown compiler implementation instrumentation profile')
     from .build import build_foundation
-    build_foundation(repo, host='linux-x86_64', fetch=fetch, stage=True,
+    build_foundation(repo, host=native_linux_host(), fetch=fetch, stage=True,
                      instrumentation_profile=profile)
     name = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ') + '-' + str(os.getpid())
     output = repo / 'out/compiler-instrumentation' / name

@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.175 / System 2.101 native AArch64 span](linux_aarch64_native_implementation.md)
+connects compiler ABI, runtime, architecture-pinned tools/caches, package delivery
+and native CI. ARM SDK qualification and fresh-host acceptance remain pending.
+
 The [Source 2.174 / System 2.100 consumed reference span](linux_consumed_reference_results.md)
 extends bounded nested reference producers and active-caller mutable slots while
 preserving alias/address/capture escape checks.
@@ -43,7 +47,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.174 / System 2.100 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.175 / System 2.101 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

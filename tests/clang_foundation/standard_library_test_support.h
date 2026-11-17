@@ -1,4 +1,5 @@
 #pragma once
+#include "native_target_test_support.h"
 #include "compile_test_diagnostics.h"
 #include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
@@ -47,7 +48,7 @@ inline CompileRequest Request(const fs::path &input,const fs::path &output,
     const std::vector<std::string> &library_arguments) {
   const bool objc=ownership!=0;
   CompileRequest value;value.input_path=input.string();value.output_path=output.string();
-  value.emit=EmitKind::Object;value.target_triple="x86_64-unknown-linux-gnu";
+  value.emit=EmitKind::Object;value.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
   value.language=objc?BaseLanguage::ObjectiveCxx:BaseLanguage::Cxx;
   value.objc3=objc;value.arc=ownership==2;if(objc)value.objc_runtime="gnustep-2.2";
   value.arguments={std::string("-std=")+standard,optimization,"-resource-dir=" OBJC3_STANDARD_LIBRARY_TEST_RESOURCE_DIR};

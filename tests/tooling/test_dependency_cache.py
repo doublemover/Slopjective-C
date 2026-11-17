@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def repo(tmp_path):
     root = tmp_path / 'repo'
     for name in ('toolchains/llvm/manifest.json', 'toolchains/swift/manifest.json',
+                 'toolchains/linux-hosts.json', 'toolchains/swift/signing-key.asc',
                  'scripts/setup_cloud_environment.sh', 'scripts/objc3c_toolchain/cmake_linux.sh',
                  'scripts/objc3c_toolchain_runtime/runtime-profile.json', 'uv.lock', 'package-lock.json'):
         path = root / name;path.parent.mkdir(parents=True, exist_ok=True)
@@ -40,6 +41,13 @@ def test_tool_update_invalidates_only_its_own_prefix(repo, tmp_path):
     before = keys(owner.layout(repo, root, include_swift=True))
     path = repo / 'toolchains/llvm/manifest.json';value = json.loads(path.read_text())
     value['host_tools']['cmake'] = '4.4.6';path.write_text(json.dumps(value))
+    path = repo / 'toolchains/linux-hosts.json';value = json.loads(path.read_text())
+    value['versions']['cmake'] = '4.4.6'
+    for host in value['hosts'].values():
+        host['prefixes']['cmake'] = host['prefixes']['cmake'].replace('4.4.5', '4.4.6')
+        host['assets']['cmake']['url'] = host['assets']['cmake']['url'].replace('4.4.5', '4.4.6')
+        host['assets']['cmake']['sha256'] = 'a' * 64
+    path.write_text(json.dumps(value))
     after = keys(owner.layout(repo, root, include_swift=True))
     assert {name for name in before if before[name] != after[name]} == {'cmake'}
 

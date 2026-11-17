@@ -32,7 +32,13 @@ inline int swift_contract(){
   return call(nullptr,42);
 }
 inline int vector_contract(){
-  auto call=[](int value) __attribute__((vectorcall,noinline)){return value;};return call(42);
+  auto call=[](int value) __attribute__((
+#if defined(__aarch64__)
+    aarch64_vector_pcs,
+#else
+    vectorcall,
+#endif
+    noinline)){return value;};return call(42);
 }
 inline int diagnosed(){
   auto call=[](int value) __attribute__((diagnose_if(value<0,"negative","error"))){return value;};return call(42);

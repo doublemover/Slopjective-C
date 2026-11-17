@@ -1,6 +1,9 @@
 """Analyze actual native/maintained-Clang compilation variants with matched tools."""
 from __future__ import annotations
 
+from .linux_host import HOSTS, native_loader
+
+
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 import json
@@ -335,8 +338,8 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         raise ValueError('analysis tool build requires its own owned repository output')
     policy_path = repo / 'toolchains/llvm/implementation-analysis.json'
     policy = json.loads(policy_path.read_text())
-    if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v1' or
-            policy.get('host') != 'linux-x86_64' or policy.get('tool') != 'objc3-clang-tidy' or
+    if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v2' or
+            policy.get('hosts') != list(HOSTS) or policy.get('tool') != 'objc3-clang-tidy' or
             policy.get('warnings_as_errors') != '*' or policy.get('baseline') != [] or
             policy.get('profile_checks') is not True or
             policy.get('translation_unit_timeout_seconds') != 600 or
@@ -387,7 +390,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                                         build / 'lib' / name,
                                         installed_shared_library(stage / 'lib', name), build)
                                         for name in ('libLLVM.so', 'libclang-cpp.so')}
-        report['tool_graph'] = loaded_graph(tool, Path('/lib64/ld-linux-x86-64.so.2').resolve(), libraries,
+        report['tool_graph'] = loaded_graph(tool, native_loader(), libraries,
             required=tuple(libraries), run=lambda name, argv: run('tool-'+name, argv))
         report['tool'] = {'path': str(tool), 'sha256': digest(tool), 'version': run('tool-version', [tool, '--version'])}
         checker_text = run('checker-inventory', [tool, '--list-checks', '--checks=*'])

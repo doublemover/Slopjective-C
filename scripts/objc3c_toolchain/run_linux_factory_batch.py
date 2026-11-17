@@ -5,6 +5,8 @@ qualify an SDK archive. Immutable package checks use a development-input lock.
 """
 from __future__ import annotations
 
+from .linux_host import native_target
+
 import argparse
 import json
 import os
@@ -139,7 +141,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                 interface = module / (MODULE + '.objc3i')
                 provider = module / 'module.o'
                 mode = ['--objc3', '--objcxx', '--runtime', 'gnustep-2.2',
-                        '--target', 'x86_64-unknown-linux-gnu', '--sdk-root', str(foundation)]
+                        '--target', native_target(), '--sdk-root', str(foundation)]
                 if ownership == 'arc':
                     mode.append('--arc')
                 flags = ['--no-default-config', *instrumentation,
@@ -178,7 +180,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                                                 for line in visibility.splitlines()):
                     raise ValueError('native declaration attribute lost provider symbol visibility')
                 manifest = {'schema': packages.SCHEMA, 'sdk_seal': development_lock,
-                    'target': 'x86_64-unknown-linux-gnu', 'optimization': optimization,
+                    'target': native_target(), 'optimization': optimization,
                     'packages': [{'language': 'objective-c++', 'standard': standard,
                         'ownership': ownership, 'provider_ownership': ownership,
                         'exports': sorted(exports), 'module': metadata['module'],

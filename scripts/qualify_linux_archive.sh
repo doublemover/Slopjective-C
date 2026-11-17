@@ -56,7 +56,8 @@ python3 -m venv "$scratch/cmake"
 cmake_version=$(python3 -c 'import json,os; print(json.load(open(os.environ["OBJC3C_SDK_ROOT"]+"/objc3-sdk.json"))["host_tools"]["cmake"])')
 ninja_version=$(python3 -c 'import json,os; print(json.load(open(os.environ["OBJC3C_SDK_ROOT"]+"/objc3-sdk.json"))["host_tools"]["ninja"])')
 "$scratch/cmake/bin/pip" install "ninja==$ninja_version"
-bash "$OBJC3C_SDK_ROOT/share/objc3c/install-cmake-linux.sh" "$scratch/cmake-release"
+bash "$OBJC3C_SDK_ROOT/share/objc3c/install-cmake-linux.sh" "$scratch/cmake-release" \
+  "$OBJC3C_SDK_ROOT/share/objc3c/linux-hosts.json"
 test "$("$scratch/cmake-release/bin/cmake" --version | head -n 1)" = "cmake version $cmake_version"
 export PATH="$scratch/cmake-release/bin:$scratch/cmake/bin:$PATH"
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$OBJC3C_SDK_ROOT" \

@@ -12,9 +12,10 @@ import subprocess
 import tempfile
 
 from .sdk_example import dependencies
+from .linux_host import HOSTS, native_target
 
 BUNDLE = 'objc3-native-headers'
-SCHEMA = 'objc3c.native-standard-headers.v1'
+SCHEMA = 'objc3c.native-standard-headers.v2'
 
 
 def digest(path: Path) -> str:
@@ -54,6 +55,9 @@ def _run(compiler: Path, arguments: list[str], *, source='') -> subprocess.Compl
 def discover(compiler: Path) -> dict:
     """Read the actual driver search order; copy C++ trees and reached C files."""
     compiler = compiler.absolute()
+    target = _run(compiler, ['-dumpmachine']).stdout.strip()
+    if target != native_target():
+        raise ValueError('native header compiler differs from the native Linux target')
     resource = Path(_run(compiler, ['-print-resource-dir']).stdout.strip()).resolve(strict=True)
     if not re.fullmatch(r'[0-9][0-9A-Za-z.+_-]{0,47}', resource.name):
         raise ValueError('unsupported compiler resource directory version')
@@ -145,7 +149,7 @@ def discover(compiler: Path) -> dict:
             add(path, 'licenses/' + path.parent.name + '-copyright')
     if sum(row['bytes'] for row in records.values()) > 128 * 1024 * 1024:
         raise ValueError('native header bundle exceeds its byte budget')
-    manifest = {'schema': SCHEMA, 'resource_version': resource.name,
+    manifest = {'schema': SCHEMA, 'resource_version': resource.name, 'target': target,
                 'roots': description, 'files': records}
     return {'sha256': identity(manifest), 'manifest': manifest, 'sources': sources}
 
@@ -155,7 +159,13 @@ def configuration(manifest: dict) -> str:
     if not isinstance(version, str) or not re.fullmatch(r'[0-9][0-9A-Za-z.+_-]{0,47}', version):
         raise ValueError('unsupported compiler resource directory version')
     base = f'<CFGDIR>/../lib/clang/{version}'
+    if manifest.get('target') not in {value[1] for value in HOSTS.values()}:
+        raise ValueError('native header target is not an admitted Linux architecture')
     lines = ['# Native standard headers shipped with this Objective-C 3 SDK.', '-nostdinc++']
+    if manifest['target'] == 'aarch64-unknown-linux-gnu':
+        # ARM function multiversioning uses compiler-rt resolver support. The
+        # SDK builder stages and hashes those matching native builtins next.
+        lines.append('--rtlib=compiler-rt')
     for root in manifest['roots']:
         role = root['role']
         if (role not in ('cxx', 'system', 'externc', 'user', 'resource') or
@@ -173,7 +183,8 @@ def configuration(manifest: dict) -> str:
 def materialize(prefix: Path, plan: dict) -> dict:
     """Install one checked header bundle without retaining an intermediate copy."""
     manifest = plan['manifest']
-    if manifest['schema'] != SCHEMA or identity(manifest) != plan['sha256']:
+    if (manifest['schema'] != SCHEMA or identity(manifest) != plan['sha256'] or
+            manifest.get('target') != native_target()):
         raise ValueError('native header plan identity differs')
     config = configuration(manifest)
     resource = prefix / 'lib/clang' / manifest['resource_version']

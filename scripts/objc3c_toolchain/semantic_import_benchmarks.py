@@ -1,6 +1,9 @@
 """Separate source, PCH, source-free interface and incremental build measurements."""
 from __future__ import annotations
 
+from .linux_host import native_loader, native_target
+
+
 import argparse
 import hashlib
 import json
@@ -282,7 +285,7 @@ class Measurement:
                 self.link(name+'-'+temperature+'-link', po, co, binary, phase='link-'+temperature, **context)
                 if 'runtime_loader' not in self.report['sdk']:
                     self.report['sdk']['runtime_loader'] = loaded_graph(binary,
-                        Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                        native_loader(), [],
                         run=lambda suffix, argv: Path(self.run('runtime-'+suffix, argv)['log']).read_text())
                 executed = self.run(name+'-'+temperature+'-execute', [binary], phase='execute-'+temperature, **context)
                 executed['semantic_result'] = semantic_output(Path(executed['log']).read_text(), scale)
@@ -346,14 +349,14 @@ class Measurement:
 def measure(repo, output, *, sdk, repetitions=3, scales=(32,), source_graph=False, budget_seconds=600):
     repo, sdk, output = Path(repo).resolve(strict=True), Path(sdk).resolve(strict=True), Path(output).resolve()
     scales = tuple(scales)
-    if (platform.system() != 'Linux' or platform.machine() != 'x86_64' or output.exists() or
+    if (platform.system() != 'Linux' or platform.machine().lower() not in ('x86_64', 'amd64', 'aarch64', 'arm64') or output.exists() or
             not output.is_relative_to(repo / 'out') or type(repetitions) is not int or not 3 <= repetitions <= 15 or
             not scales or len(scales) != len(set(scales)) or any(type(n) is not int or n not in SCALES for n in scales) or
             type(budget_seconds) is not int or not 60 <= budget_seconds <= 3600 or
             sdk.is_relative_to(output) or output.is_relative_to(sdk)):
         raise ValueError('import measurement requires fresh owned Linux output, reviewed scales and 3..15 repetitions')
     manifest = verify_sdk(sdk)
-    if manifest['target'] != 'x86_64-unknown-linux-gnu': raise ValueError('unsupported import benchmark SDK target')
+    if manifest['target'] != native_target(): raise ValueError('unsupported import benchmark SDK target')
     for name in ('bin/clang', 'bin/clang++', 'bin/objc3c', 'bin/ld.lld', 'lib/libobjc.so',
                  'lib/libobjc3_runtime_services.a'):
         if not (sdk / name).is_file(): raise ValueError('incomplete import benchmark SDK: '+name)
@@ -383,7 +386,7 @@ def measure(repo, output, *, sdk, repetitions=3, scales=(32,), source_graph=Fals
         report['sdk']['loaders'] = {}
         for name in ('clang', 'objc3c'):
             report['sdk']['loaders'][name] = loaded_graph(sdk / 'bin' / name,
-                Path('/lib64/ld-linux-x86-64.so.2').resolve(), libraries,
+                native_loader(), libraries,
                 run=lambda suffix, argv, name=name: Path(owner.run('loader-'+name+'-'+suffix, argv)['log']).read_text())
         report['sdk']['instrumentation'] = {}
         for name, path in [('compiler', libraries[-1] if libraries else sdk / 'bin/clang'),

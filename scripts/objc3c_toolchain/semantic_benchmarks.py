@@ -1,6 +1,9 @@
 """Advisory Linux ObjC3 frontend and sustained runtime workload measurements."""
 from __future__ import annotations
 
+from .linux_host import native_loader, native_target
+
+
 import argparse
 import errno
 import json
@@ -222,13 +225,13 @@ def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False, ser
 
 def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_runtime=False):
     repo, output = repo.resolve(strict=True), output.resolve()
-    if (platform.system() != 'Linux' or platform.machine() != 'x86_64' or
+    if (platform.system() != 'Linux' or platform.machine().lower() not in ('x86_64', 'amd64', 'aarch64', 'arm64') or
             type(repetitions) is not int or not 3 <= repetitions <= 15 or
             output.exists() or not output.is_relative_to(repo / 'out')):
-        raise ValueError('benchmark needs native Linux x86-64, fresh owned output and 3..15 samples')
+        raise ValueError('benchmark needs native Linux x86-64 or AArch64, fresh owned output and 3..15 samples')
     prefixes = [Path(value).resolve(strict=True) for value in ([baseline_sdk] if baseline_sdk else [])+[sdk]]
     manifests = [verify_sdk(prefix) for prefix in prefixes]
-    if {value['target'] for value in manifests} != {'x86_64-unknown-linux-gnu'}:
+    if {value['target'] for value in manifests} != {native_target()}:
         raise ValueError('benchmark SDK target contexts differ')
     output.mkdir(parents=True)
     fixture = repo / 'tests/benchmarks/collections.cpp'
@@ -303,7 +306,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
             if markers['libobjc3_runtime_services.a'] or markers['libobjc.so']:
                 raise ValueError('ordinary runtime timing cannot use an instrumented service archive or Objective-C runtime')
             report['sdks'][index]['compiler_loader'] = loaded_graph(compiler,
-                Path('/lib64/ld-linux-x86-64.so.2').resolve(),
+                native_loader(),
                 compiler_libraries,
                 run=lambda name, argv: Path(run('sdk-'+str(index)+'-compiler-'+name, argv, state)['log']).read_text())
             runtime_source = root / 'collections.cpp';runtime_source.write_bytes(fixture.read_bytes())
@@ -314,7 +317,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                 prefix / 'lib/libobjc3_runtime_services.a', prefix / 'lib/libobjc.so',
                 '-pthread', '-Wl,-rpath,'+str(prefix / 'lib'), '-o', binary], state)
             report['sdks'][index]['runtime_loader'] = loaded_graph(binary,
-                Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                native_loader(), [],
                 run=lambda name, argv: Path(run('sdk-'+str(index)+'-runtime-'+name, argv, state)['log']).read_text())
             if extended_runtime:
                 extra_source = root / 'runtime_workloads.cpp'
@@ -326,7 +329,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                     extra_obj, prefix / 'lib/libobjc3_runtime_services.a', prefix / 'lib/libobjc.so',
                     '-pthread', '-Wl,-rpath,'+str(prefix / 'lib'), '-o', extra_binary], state)
                 report['sdks'][index]['extended_runtime_loader'] = loaded_graph(extra_binary,
-                    Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                    native_loader(), [],
                     run=lambda name, argv: Path(run('sdk-'+str(index)+'-extended-runtime-'+name,
                                                    argv, state)['log']).read_text())
                 frozen.update(report['sdks'][index]['extended_runtime_loader']['libraries'])
@@ -341,7 +344,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                     run(f'sdk-{index}-{family}-link', [compiler, '--no-default-config', '-fuse-ld=lld',
                         obj, prefix / 'lib/libobjc.so', '-pthread', '-Wl,-rpath,'+str(prefix / 'lib'),
                         '-o', owned_binary], state)
-                    graph = loaded_graph(owned_binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                    graph = loaded_graph(owned_binary, native_loader(), [],
                         required=((prefix / 'lib/libobjc.so').resolve(strict=True),),
                         run=lambda name, argv, family=family: Path(run(f'sdk-{index}-{family}-'+name, argv, state)['log']).read_text())
                     report['sdks'][index]['ownership_loaders'][family] = graph
@@ -354,7 +357,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                 run(f'sdk-{index}-task-frame-link', [compiler, '--no-default-config', '-fuse-ld=lld',
                     task_object, prefix / 'lib/libobjc3_runtime_services.a', prefix / 'lib/libobjc.so',
                     '-pthread', '-Wl,-rpath,'+str(prefix / 'lib'), '-o', task_binary], state)
-                graph = loaded_graph(task_binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                graph = loaded_graph(task_binary, native_loader(), [],
                     run=lambda name, argv: Path(run(f'sdk-{index}-task-frame-'+name, argv, state)['log']).read_text())
                 report['sdks'][index]['generated_task_loader'] = graph;frozen.update(graph['libraries'])
                 for family in FAMILIES:

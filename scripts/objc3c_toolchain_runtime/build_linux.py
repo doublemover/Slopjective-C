@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if not __package__:
     sys.path.insert(0, str(ROOT))
 from scripts.objc3c_toolchain_runtime.source_patches import prepare_source, verify_source
+from scripts.objc3c_toolchain.linux_host import native_linux_host, require_elf
 
 
 def checkout(path: Path, url: str, revision: str, tag: str, fetch: bool, *, allow_owned_changes=False) -> None:
@@ -45,10 +46,13 @@ def main(argv: list[str] | None = None) -> int:
     if sys.platform != "linux" or args.jobs < 1 or not args.compiler_root:
         parser.error("native Linux, a compiler root, and a positive job count are required")
     repo = args.repo.resolve()
-    profile = json.loads((repo / "scripts/objc3c_toolchain_runtime/runtime-profile.json").read_text())["profiles"]["linux-x86_64"]
+    native_host = native_linux_host()
+    profile = json.loads((repo / "scripts/objc3c_toolchain_runtime/runtime-profile.json").read_text())["profiles"][native_host]
     source = repo / "out/toolchains/libobjc2-v2.3/src"
     robin = repo / f"out/toolchains/robin-map-{profile['robin_map_release']}/src"
     bin_dir = args.compiler_root.resolve() / "bin"
+    for tool in ('clang', 'clang++', 'ld.lld'):
+        require_elf(bin_dir / tool)
     with (bin_dir / 'clang').open('rb') as compiler:
         compiler_sha256 = hashlib.file_digest(compiler, 'sha256').hexdigest()
     configuration = {'compiler_root': str(args.compiler_root.resolve()), 'profile': profile, 'compiler_sha256': compiler_sha256,
@@ -65,9 +69,9 @@ def main(argv: list[str] | None = None) -> int:
             sanitizer_runtime_sha256={str(path.relative_to(resource_root)):
                 hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(runtime_files)})
     build_key = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
-    build = repo / "out/toolchains/libobjc2-v2.3/build-linux-x86_64" / build_key
+    build = repo / ("out/toolchains/libobjc2-v2.3/build-" + native_host) / build_key
     stage = build / "stage"
-    report = {"status": "running", "profile": "linux-x86_64", "commands": [],
+    report = {"status": "running", "profile": native_host, "commands": [],
               "started_utc": datetime.now(timezone.utc).isoformat(),
               "configuration": configuration, "build_key": build_key, "source_commit": profile["runtime_commit"], "robin_map_commit": profile["robin_map_commit"]}
     try:
@@ -91,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
             configure += ["-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -fsanitize=" + args.sanitizer]
         commands = [
             [sys.executable, "-B", str(repo / "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"),
-             "--profile", "linux-x86_64", "--source", str(source),
+             "--profile", native_host, "--source", str(source),
              "--robin-map-source", str(robin), "--bin-dir", str(bin_dir)],
             configure, ["cmake", "--build", str(build), "--parallel", str(args.jobs)],
             ["cmake", "--install", str(build), "--prefix", str(stage)],
@@ -106,6 +110,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError(f"runtime step {index} exited {result.returncode}; see {build / f'step-{index}.log'}")
         if not (stage / "lib/libobjc.so").is_file():
             raise ValueError("runtime installation did not produce lib/libobjc.so")
+        require_elf(stage / "lib/libobjc.so")
         verify_source(repo, source, profile)
         checkout(robin, profile["robin_map_source"], profile["robin_map_commit"], profile["robin_map_release"], False)
         report.update(status="passed", stage=str(stage), robin_map_source=str(robin))

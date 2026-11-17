@@ -1,4 +1,6 @@
 """Build the exact-fork utilities required by the selected upstream lit suites."""
+
+from scripts.objc3c_toolchain.linux_host import native_linux_host
 import os
 import sys
 from pathlib import Path
@@ -11,7 +13,7 @@ UPSTREAM_TOOLS = ('split-file', 'opt', 'llvm-profdata', 'llvm-lto', 'llvm-lto2',
 
 def prepare_upstream_tools(repo: Path, command) -> dict:
     """Build and identify the exact-fork utilities required by selected lit suites."""
-    build = repo / 'out/toolchains/objc3-development/build-linux-x86_64'
+    build = repo / ('out/toolchains/objc3-development/build-' + native_linux_host())
     command('upstream-tools-build', ['cmake', '--build', build, '--target',
             *UPSTREAM_TOOLS, '--parallel', '4'])
     missing = [tool for tool in UPSTREAM_TOOLS
@@ -43,7 +45,7 @@ def execute_upstream(repo: Path, directory: Path, command) -> list[dict]:
         write_json(receipt, selection)
         result_file = directory / 'lit.json'
         command('upstream-lit', [sys.executable, '-B',
-            foundation / 'build-linux-x86_64/bin/llvm-lit', '-sv',
+            foundation / ('build-' + native_linux_host() + '/bin/llvm-lit'), '-sv',
             '--show-unsupported', '-j', '2', '--output', result_file,
             *(foundation / 'src' / name for name in UPSTREAM)])
         results = lit(result_file)

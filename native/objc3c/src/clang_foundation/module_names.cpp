@@ -19,12 +19,14 @@
 namespace objc3::clang_foundation {
 namespace {
 std::string CPUVariantFamilyId(const std::string &identity) {
-  constexpr llvm::StringLiteral marker="@cpu-target@";
-  const auto at=identity.rfind(marker.str());
-  if(at==std::string::npos || identity.size()!=at+marker.size()+64)return identity;
-  for(char c:llvm::StringRef(identity).drop_front(at+marker.size()))
-    if(!((c>='0' && c<='9') || (c>='a' && c<='f')))return identity;
-  return identity.substr(0,at);
+  for(llvm::StringRef marker:{"@cpu-target@","@cpu-version@"}) {
+    const auto at=identity.rfind(marker.str());
+    if(at==std::string::npos || identity.size()!=at+marker.size()+64)continue;
+    for(char c:llvm::StringRef(identity).drop_front(at+marker.size()))
+      if(!((c>='0' && c<='9') || (c>='a' && c<='f')))return identity;
+    return identity.substr(0,at);
+  }
+  return identity;
 }
 }
 std::string BuildModuleOwnedName(const std::string &module,

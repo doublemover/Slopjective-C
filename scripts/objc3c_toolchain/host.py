@@ -12,10 +12,17 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .linux_host import host_identity, require_elf
 
-def _output(command: list[str]) -> str:
+
+def _output(command: list[str], *, library_root: Path | None = None) -> str:
+    environment = None
+    if library_root is not None:
+        environment = {key: value for key, value in os.environ.items()
+                       if key not in ('LD_LIBRARY_PATH', 'LD_PRELOAD', 'LD_AUDIT')}
+        environment['LD_LIBRARY_PATH'] = str(library_root / 'lib')
     return subprocess.check_output(command, text=True, stderr=subprocess.STDOUT,
-                                   timeout=30).strip()
+                                   timeout=30, env=environment).strip()
 
 
 def _digest(path: Path) -> str:
@@ -45,9 +52,8 @@ def resource_limits(build: dict[str, Any]) -> dict[str, int]:
             "link_jobs": max(1, min(build["link_jobs"], usable // (6 * gib)))}
 
 
-def linux_environment(manifest: dict[str, Any]) -> dict[str, Any]:
-    if sys.platform != "linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
-        raise ValueError("Linux foundation requires a native Linux x86-64 host")
+def linux_environment(manifest: dict[str, Any], host: str | None = None) -> dict[str, Any]:
+    identity = host_identity(host, require_native=True)
     expected = manifest["upstream"]["tag"].removeprefix("llvmorg-")
     root_value = os.environ.get("OBJC3C_BOOTSTRAP_LLVM_ROOT") or os.environ.get("OBJC3C_LLVM_ROOT") or os.environ.get("LLVM_ROOT")
     root = Path(root_value).resolve() if root_value else None
@@ -57,14 +63,16 @@ def linux_environment(manifest: dict[str, Any]) -> dict[str, Any]:
         if not found or not Path(found).is_file():
             raise ValueError(f"Linux foundation requires {tool} from LLVM {expected}")
         paths[tool] = Path(found).absolute()
+        require_elf(paths[tool], identity['host'])
     roots = {path.resolve().parent.parent for path in paths.values()}
     if len(roots) != 1:
         raise ValueError("Linux bootstrap tools must resolve from one coherent LLVM root")
-    if _output([str(paths["llvm-config"]), "--version"]) != expected:
+    bootstrap_root = next(iter(roots))
+    if _output([str(paths["llvm-config"]), "--version"], library_root=bootstrap_root) != expected:
         raise ValueError(f"Linux bootstrap LLVM must be exactly {expected}")
     tool_versions = {}
     for name in ("clang", "clang++", "ld.lld"):
-        text = _output([str(paths[name]), "--version"])
+        text = _output([str(paths[name]), "--version"], library_root=bootstrap_root)
         if not re.search(r"(?<![\d.])" + re.escape(expected) + r"(?![\d.])", text):
             raise ValueError(f"Linux bootstrap {name} must be exactly {expected}")
         tool_versions[name] = text
@@ -80,7 +88,7 @@ def linux_environment(manifest: dict[str, Any]) -> dict[str, Any]:
     if required_python and python_version != f"Python {required_python}":
         raise ValueError(f"Python {required_python} is required; found {python_version}")
     ccache = shutil.which("ccache")
-    return {"host_toolset": "Clang/LLD", "target_triple": "x86_64-unknown-linux-gnu",
+    return {"host_toolset": "Clang/LLD", **identity,
             "clang_path": str(paths["clang"]), "clangxx_path": str(paths["clang++"]),
             "link_path": str(paths["ld.lld"]), "bootstrap_root": str(next(iter(roots))),
             "clang_sha256": _digest(paths["clang"]),

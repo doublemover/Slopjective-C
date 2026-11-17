@@ -241,8 +241,12 @@ bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Policy=[](const clang::NamedDecl *named) {
     if(!named)return false;
+    if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(named)) {
+      const auto convention=function->getType()->castAs<clang::FunctionType>()->getCallConv();
+      if(convention==clang::CC_AArch64VectorCall || convention==clang::CC_AArch64SVEPCS)return true;
+    }
     for(const auto *attribute:named->attrs())
-      if(!attribute->isImplicit() && llvm::isa<clang::TargetAttr,clang::TargetClonesAttr,clang::MinVectorWidthAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr>(attribute))return true;
+      if(!attribute->isImplicit() && llvm::isa<clang::AArch64VectorPcsAttr,clang::AArch64SVEPcsAttr,clang::TargetAttr,clang::TargetVersionAttr,clang::TargetClonesAttr,clang::MinVectorWidthAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr>(attribute))return true;
     return false;
   };
   struct Declarations : clang::DynamicRecursiveASTVisitor {
@@ -258,6 +262,7 @@ bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration) {
       decltype(Policy) &policy;bool found=false;
       explicit Locals(decltype(Policy) &policy):policy(policy) {}
       bool VisitVarDecl(clang::VarDecl *variable) override{found|=policy(variable);return true;}
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) override{found|=policy(expression->getCallOperator());return true;}
     } locals(Policy);
     locals.TraverseStmt(const_cast<clang::Stmt *>(statement));return locals.found;
   });
@@ -406,7 +411,7 @@ bool HasDeclarationNativeCarrierLambda(const clang::NamedDecl *declaration) {
 
 bool HasDeclarationNativeByrefStorage(const clang::NamedDecl *declaration) {
   const auto &context=declaration->getASTContext();const auto &triple=context.getTargetInfo().getTriple();
-  if(!context.getLangOpts().ObjC3 || triple.getArch()!=llvm::Triple::x86_64 ||
+  if(!context.getLangOpts().ObjC3 || (triple.getArch()!=llvm::Triple::x86_64 && triple.getArch()!=llvm::Triple::aarch64) ||
       !triple.isOSLinux() || !triple.isGNUEnvironment() ||
       context.getLangOpts().ObjCRuntime.getAsString()!="gnustep-2.2")return false;
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
@@ -423,7 +428,7 @@ bool HasDeclarationNativeByrefStorage(const clang::NamedDecl *declaration) {
 
 bool HasDeclarationNativeBlockAlignment(const clang::NamedDecl *declaration) {
   auto &context=declaration->getASTContext();const auto &triple=context.getTargetInfo().getTriple();
-  if(!context.getLangOpts().ObjC3 || triple.getArch()!=llvm::Triple::x86_64 ||
+  if(!context.getLangOpts().ObjC3 || (triple.getArch()!=llvm::Triple::x86_64 && triple.getArch()!=llvm::Triple::aarch64) ||
       !triple.isOSLinux() || !triple.isGNUEnvironment() ||
       context.getLangOpts().ObjCRuntime.getAsString()!="gnustep-2.2")return false;
   return HasPublishedExpression(declaration,[&](const clang::Stmt *statement) {

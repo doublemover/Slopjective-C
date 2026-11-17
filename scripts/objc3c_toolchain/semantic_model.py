@@ -1,6 +1,8 @@
 """Independent, bounded value/lifetime model for defined ObjC3 programs."""
 from __future__ import annotations
 
+from .linux_host import native_target
+
 from dataclasses import asdict, dataclass
 import hashlib
 import itertools
@@ -59,7 +61,7 @@ def eligibility(program, *, transport='source', optimization='O2', standard='c++
     operations = [asdict(op) for op in program]
     return {'schema': 'objc3c.semantic-eligibility.v2', 'model_version': VERSION, 'generator_version': VERSION,
         'program_sha256': hashlib.sha256(json.dumps(operations, sort_keys=True).encode()).hexdigest(),
-        'profile': {'target': 'x86_64-unknown-linux-gnu', 'int_bits': 32, 'pointer_bits': 64,
+        'profile': {'target': native_target(), 'int_bits': 32, 'pointer_bits': 64,
             'runtime': 'gnustep-2.2', 'language_revision': 3, 'language': 'objective-c++',
             'standard': standard, 'ownership': 'arc', 'transport': transport,
             'optimization': optimization, 'generated_sanitizers': 'address,undefined' if sanitized else None},

@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/AST/Attr.h"
@@ -45,7 +46,7 @@ CompileRequest request(const fs::path &Root, const std::string &Source,
   R.arc = ARC;
   R.profile = SemanticProfile::StrictSystem;
   R.objc_runtime = "gnustep-2.2";
-  R.target_triple = "x86_64-unknown-linux-gnu";
+  R.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   R.arguments = {std::string("-std=") + Standard, "-fblocks"};
   return R;
 }
@@ -188,7 +189,7 @@ std::unique_ptr<clang::ASTUnit> parse(const std::string &Source,
   std::vector<std::string> Arguments{
       "-x", "objective-c++", "-std=c++20", "-fobjc-version=3", "-fblocks",
       "-fobjc-arc", "-fobjc-runtime=gnustep-2.2",
-      "--target=x86_64-unknown-linux-gnu"};
+      "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   Arguments.insert(Arguments.end(), Extra.begin(), Extra.end());
   auto Unit = clang::tooling::buildASTFromCodeWithArgs(Source, Arguments, Path.string());
   assert(Unit && !Unit->getDiagnostics().hasErrorOccurred());

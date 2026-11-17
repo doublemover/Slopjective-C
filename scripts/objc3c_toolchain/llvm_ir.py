@@ -5,6 +5,9 @@ The additional split opt/llc route is recorded separately, never called an SDK.
 """
 from __future__ import annotations
 
+from .linux_host import HOSTS, native_loader, native_target
+
+
 import argparse
 import json
 from pathlib import Path
@@ -24,8 +27,8 @@ from .llvm_tools import identity, qualify as qualify_tools, selected, verify_rec
 def corpus(repo: Path) -> dict:
     document = json.loads((repo / 'toolchains/llvm/ir-corpus.json').read_text())
     rows = document['cases']
-    if (document.get('schema') != 'objc3c.llvm-ir-corpus.v1' or
-            document.get('target') != 'x86_64-unknown-linux-gnu' or not rows or
+    if (document.get('schema') != 'objc3c.llvm-ir-corpus.v2' or
+            document.get('targets') != [value[1] for value in HOSTS.values()] or not rows or
             len({row['name'] for row in rows}) != len(rows) or
             set(document['families']) != {'carriers', 'calls', 'cleanup', 'async', 'keypaths'} or
             {name for row in rows for name in row['families']} != set(document['families'])):
@@ -49,7 +52,7 @@ def corpus(repo: Path) -> dict:
                 raise ValueError('missing or escaped authored IR witness')
     if {row['transport'] for row in rows} != {'source', 'pch', 'interface'}:
         raise ValueError('IR corpus lost source, PCH or semantic-interface coverage')
-    return document
+    return {**document, 'target': native_target()}
 
 
 def module_facts(text: str, target: str, *, require_optimizable=False) -> dict:
@@ -179,7 +182,7 @@ def qualify(repo: Path, output: Path, *, runtime: Path, objc_runtime: Path,
         # Imported source runs inside the already qualified embedding facade.
         libraries = [installed_shared_library(stage / 'lib', name)
                      for name in ('libLLVM.so', 'libclang-cpp.so')]
-        loaded_graph(facade, Path('/lib64/ld-linux-x86-64.so.2').resolve(),
+        loaded_graph(facade, native_loader(),
             libraries, required=(libraries[0],),
             run=lambda name, cmd: run('facade-'+name, cmd))
         headers = repo / 'native/objc3c/src/runtime/public'
@@ -310,7 +313,7 @@ def qualify(repo: Path, output: Path, *, runtime: Path, objc_runtime: Path,
                                 stage='input-verifier')
                         row['thinlto_ir'] = {str(path.relative_to(output)): digest(path) for path in saved}
                     # Loader identity is checked before executing the real oracle.
-                    graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                    graph = loaded_graph(binary, native_loader(), [],
                         required=(objc_runtime,), run=lambda suffix, cmd, route=route:
                         run(name+'-'+route+'-'+suffix, cmd))
                     run(name+'-'+route+'-oracle', [binary], stage='runtime-oracle')

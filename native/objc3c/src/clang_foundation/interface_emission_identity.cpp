@@ -1620,6 +1620,8 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
   }
   if(const auto *target=llvm::dyn_cast<clang::TargetAttr>(attribute))
     add(target->getFeaturesStr());
+  else if(const auto *version=llvm::dyn_cast<clang::TargetVersionAttr>(attribute))
+    add(version->getNamesStr());
   else if(const auto *clones=llvm::dyn_cast<clang::TargetClonesAttr>(attribute)) {
     for(auto features:clones->featuresStrs())add(features);
   }
@@ -2433,20 +2435,23 @@ static std::string ProjectedCallableKey(const clang::FunctionDecl *function) {
   return name+"@"+ComputeInterfaceSourceSha256(CanonicalType(signature,context)+deduction);
 }
 
-static const clang::TargetAttr *NativeCPUVariant(const clang::NamedDecl *declaration) {
+static const clang::Attr *NativeCPUVariant(const clang::NamedDecl *declaration) {
   const auto *function=llvm::dyn_cast_or_null<clang::FunctionDecl>(declaration);
   if(!function || !function->isMultiVersion())return nullptr;
   if(const auto *definition=function->getDefinition()) {
     if(definition->hasAttr<clang::TargetClonesAttr>())return nullptr;
     if(const auto *target=definition->getAttr<clang::TargetAttr>())return target;
+    if(const auto *version=definition->getAttr<clang::TargetVersionAttr>())return version;
   }
   if(const auto *latest=function->getMostRecentDecl()) {
     if(latest->hasAttr<clang::TargetClonesAttr>())return nullptr;
     if(const auto *target=latest->getAttr<clang::TargetAttr>())return target;
+    if(const auto *version=latest->getAttr<clang::TargetVersionAttr>())return version;
   }
   for(const auto *redecl:function->redecls()) {
     if(redecl->hasAttr<clang::TargetClonesAttr>())return nullptr;
     if(const auto *target=redecl->getAttr<clang::TargetAttr>())return target;
+    if(const auto *version=redecl->getAttr<clang::TargetVersionAttr>())return version;
   }
   return nullptr;
 }
@@ -2581,8 +2586,12 @@ std::string ReadInterfaceDeclarationStableId(
     for(const auto &target:targets) key+=std::to_string(target.size())+":"+target;
     return usr.str().str()+"@targets@"+ComputeInterfaceSourceSha256(key);
   }
-  if(const auto *target=NativeCPUVariant(declaration))
-    return usr.str().str()+"@cpu-target@"+ComputeInterfaceSourceSha256(target->getFeaturesStr());
+  if(const auto *variant=NativeCPUVariant(declaration)) {
+    if(const auto *target=llvm::dyn_cast<clang::TargetAttr>(variant))
+      return usr.str().str()+"@cpu-target@"+ComputeInterfaceSourceSha256(target->getFeaturesStr());
+    const auto *version=llvm::cast<clang::TargetVersionAttr>(variant);
+    return usr.str().str()+"@cpu-version@"+ComputeInterfaceSourceSha256(version->getNamesStr());
+  }
   return usr.str().str();
 }
 
@@ -2942,7 +2951,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationThreadSafetyContract(representative))
     identity.canonical_type_identity+=";native-thread-safety:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))
-    identity.canonical_type_identity+=";native-emission-policies:v2;";
+    identity.canonical_type_identity+=";native-emission-policies:v3;";
   if (NativeCPUVariant(representative))
     identity.canonical_type_identity+=";native-cpu-variant:v1;";
   if (HasDeclarationBorrowedUnionStorage(representative))

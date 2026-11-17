@@ -1,6 +1,5 @@
 {
-  "schema": "objc3c.implementation-analysis-policy.v1",
-  "host": "linux-x86_64",
+  "schema": "objc3c.implementation-analysis-policy.v2",
   "tool": "objc3-clang-tidy",
   "checks": [
     "clang-analyzer-core.CallAndMessage",
@@ -27,5 +26,9 @@
     "native/objc3c/src/clang_foundation/interface_emission_features.cpp": 1800,
     "native/objc3c/src/clang_foundation/interface_emission_identity.cpp": 1800
   },
-  "maintained_translation_unit_timeout_seconds": 3600
+  "maintained_translation_unit_timeout_seconds": 3600,
+  "hosts": [
+    "linux-x86_64",
+    "linux-aarch64"
+  ]
 }

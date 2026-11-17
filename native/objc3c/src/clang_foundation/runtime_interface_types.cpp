@@ -221,7 +221,8 @@ bool IsQualifiedRuntimeServiceDeclaration(const clang::NamedDecl *declaration,
   if (!llvm::StringRef(name).starts_with("objc3_") &&
       !llvm::StringRef(name).starts_with("OBJC3_")) return false;
   if (!context.getTargetInfo().getTriple().isOSLinux() ||
-      context.getTargetInfo().getTriple().getArch()!=llvm::Triple::x86_64 ||
+      (context.getTargetInfo().getTriple().getArch()!=llvm::Triple::x86_64 &&
+       context.getTargetInfo().getTriple().getArch()!=llvm::Triple::aarch64) ||
       !DeclarationHeaderMatches(declaration,context,runtime_interface::kHeaderSha256))
     return false;
   if (!ServiceContractMatches(context)) return false;
@@ -342,7 +343,7 @@ void AddRuntimeInterfaceFiles(
 bool IsQualifiedRuntimeFrameType(const clang::NamedDecl *declaration,
                                  const clang::ASTContext &constant_context) {
   const auto &triple = constant_context.getTargetInfo().getTriple();
-  if (!triple.isOSLinux() || triple.getArch() != llvm::Triple::x86_64 ||
+  if (!triple.isOSLinux() || (triple.getArch() != llvm::Triple::x86_64 && triple.getArch() != llvm::Triple::aarch64) ||
       !HeaderMatches(declaration, constant_context) ||
       declaration->getQualifiedNameAsString() != "objc3_async_frame")
     return false;

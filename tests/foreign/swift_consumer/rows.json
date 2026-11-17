@@ -1,13 +1,32 @@
 {
-  "schema": "objc3c.swift-consumer-rows.v1",
+  "schema": "objc3c.swift-consumer-rows.v2",
   "module": "ForeignAPI",
-  "target": "x86_64-unknown-linux-gnu",
   "rows": [
-    { "id": "renamed-primitive", "declaration": "objc3_swift_value", "required": true },
-    { "id": "nonnull-pointer", "declaration": "objc3_swift_read", "required": true },
-    { "id": "newtype", "declaration": "ObjC3SwiftAmount", "required": true },
-    { "id": "opaque-c-lifetime", "declaration": "ObjC3SwiftToken", "required": true },
-    { "id": "availability", "declaration": "objc3_swift_unavailable", "required": true }
+    {
+      "id": "renamed-primitive",
+      "declaration": "objc3_swift_value",
+      "required": true
+    },
+    {
+      "id": "nonnull-pointer",
+      "declaration": "objc3_swift_read",
+      "required": true
+    },
+    {
+      "id": "newtype",
+      "declaration": "ObjC3SwiftAmount",
+      "required": true
+    },
+    {
+      "id": "opaque-c-lifetime",
+      "declaration": "ObjC3SwiftToken",
+      "required": true
+    },
+    {
+      "id": "availability",
+      "declaration": "objc3_swift_unavailable",
+      "required": true
+    }
   ],
   "unqualified": [
     {
@@ -25,5 +44,9 @@
       "status": "unsupported",
       "reason": "Swift owns an independent Clang importer; product serialized AST/PCH inputs are not interchangeable."
     }
+  ],
+  "targets": [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu"
   ]
 }

@@ -1,6 +1,8 @@
 """Run the bounded native LLVM IR/debug campaign without packaging an SDK."""
 from __future__ import annotations
 
+from .linux_host import native_linux_host
+
 import argparse
 import json
 from pathlib import Path
@@ -54,10 +56,10 @@ def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3) ->
         write_json(output / 'qualification.json', report)
         if not prepared:
             try:
-                build_foundation(repo, host='linux-x86_64', fetch=fetch, stage=True,
+                build_foundation(repo, host=native_linux_host(), fetch=fetch, stage=True,
                                  instrumentation_profile='compiler-asan-ubsan')
             finally:
-                receipt = repo / 'out/toolchains/objc3-development/build-linux-x86_64-compiler-asan-ubsan/foundation-build-report.json'
+                receipt = repo / ('out/toolchains/objc3-development/build-' + native_linux_host() + '-compiler-asan-ubsan/foundation-build-report.json')
                 if receipt.is_file():
                     saved = json.loads(receipt.read_text())
                     evidence = output / 'foundation'

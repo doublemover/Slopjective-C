@@ -102,7 +102,8 @@ endif()
 option(OBJC3C_BUILD_SCAN_DEPS "Build the development clang-scan-deps tool" ON)
 if(OBJC3C_BUILD_SCAN_DEPS)
 set(_scan_source "${_objc3_repo}/out/toolchains/objc3-development/src/clang/tools/clang-scan-deps")
-set(_tablegen "${_objc3_repo}/out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen")
+include("${_objc3_repo}/native/objc3c/cmake/Objc3LinuxHost.cmake")
+set(_tablegen "${_objc3_repo}/out/toolchains/objc3-development/build-${OBJC3_LINUX_NATIVE_HOST}/bin/llvm-tblgen")
 set(OBJC3C_TABLEGEN "" CACHE FILEPATH "Explicit same-version LLVM TableGen for frontend development")
 if(OBJC3C_TABLEGEN)
   if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
@@ -220,6 +221,13 @@ if (BUILD_TESTING)
   add_executable(objc3_keypath_service_test ../../tests/keypath_service_test.cpp)
   target_link_libraries(objc3_keypath_service_test PRIVATE objc3_runtime_services)
   objc3c_add_frontend_test(NAME objc3_keypath_service COMMAND objc3_keypath_service_test)
+  add_executable(objc3_aarch64_native_abi_test
+    ../../../../tests/clang_foundation/aarch64_native_abi_test.cpp)
+  target_include_directories(objc3_aarch64_native_abi_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_aarch64_native_abi_test PRIVATE
+    objc3c_clang_foundation objc3c_build_defaults)
+  objc3c_add_frontend_test(NAME objc3_aarch64_native_abi COMMAND objc3_aarch64_native_abi_test)
   add_executable(objc3_keypath_native_ast_test
     ../../../../tests/clang_foundation/keypath_native_ast_test.cpp)
   target_compile_definitions(objc3_keypath_native_ast_test PRIVATE

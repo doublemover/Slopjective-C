@@ -6,6 +6,11 @@ suppression/option file is admitted; an exploratory run is not qualification.
 """
 from __future__ import annotations
 
+if __package__:
+    from .linux_host import native_loader, native_target
+else:
+    from linux_host import native_loader, native_target
+
 import hashlib
 import json
 import os
@@ -86,7 +91,7 @@ class SanitizerQualification:
             (self.compiler.parent / 'ld.lld', self.symbolizer.parent / 'ld.lld') if path.is_file()), None)
         if self.linker is None:
             raise ValueError('the selected compiler route requires an owned LLD linker')
-        self.loader = Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True)
+        self.loader = native_loader()
         self.output, self.sanitizer = output.resolve(), sanitizer
         self.fixtures = Path(__file__).with_name('native_sanitizer_controls')
         if not self.fixtures.is_dir():
@@ -118,8 +123,8 @@ class SanitizerQualification:
             raise ValueError('explicit Linux sanitizer resources are required')
         target = subprocess.check_output([self.compiler, '--no-default-config', '-dumpmachine'],
             env=self.environment, text=True, timeout=30).strip()
-        if target not in ('x86_64-unknown-linux-gnu', 'x86_64-pc-linux-gnu'):
-            raise ValueError('detector controls require the native Linux x86-64 lane')
+        if target.replace('-pc-linux-', '-unknown-linux-') != native_target():
+            raise ValueError('detector controls require the selected native Linux architecture')
         self.target = target
         sources = list(self.fixtures.glob('*.cpp'))
         if len(sources) != 4:

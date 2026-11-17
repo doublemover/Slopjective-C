@@ -254,9 +254,9 @@ inline constexpr const char *kNativeThreadSafetySemantic = "objc3.native-thread-
 inline bool HasNativeThreadSafetyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-thread-safety:v1;") != std::string::npos;
 }
-inline constexpr const char *kNativeEmissionPolicySemantic = "objc3.native-emission-policies.v2";
+inline constexpr const char *kNativeEmissionPolicySemantic = "objc3.native-emission-policies.v3";
 inline bool HasNativeEmissionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-emission-policies:v2;") != std::string::npos;
+  return d.canonical_type_identity.find(";native-emission-policies:v3;") != std::string::npos;
 }
 inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v12";
 inline bool HasBorrowedResultProofIdentity(const InterfaceDeclarationIdentity &d) {

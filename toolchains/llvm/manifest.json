@@ -11,7 +11,7 @@
   "patches": [
     {
       "file": "0001-objc3-language-mode-and-build-identity.patch",
-      "sha256": "499fcb28bc38e71618ddaa1561aaba30f54fc395f92c181be1ef76c3d9f418e3"
+      "sha256": "34e339d4e60c6f4d8fc0dc8d90ed3a3a95866db5bd15cd77df4486c1a037ff02"
     },
     {
       "file": "0002-objc3-native-defer-statement.patch",
@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "cb9a234714464167c7d6eceaff0f94b0e4f28735ded6f4d0bbac9bec721b7284"
+      "sha256": "42d60a3c9932ed7ca83e94a93d3ace6ff4c96d262eceed34a76fff61ae633d7b"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
@@ -36,6 +36,10 @@
     {
       "file": "0007-objc3-linux-debugger-runtime-contracts.patch",
       "sha256": "f9e30d34421ebc756a4787dcfff7046ecbe20eba02e71afa37b031c54b2bc9c7"
+    },
+    {
+      "file": "0008-objc3-linux-aarch64-native-contracts.patch",
+      "sha256": "1648400c1342341ce0d174fe059d3ff54f5b11d7275f78b246594f2ee93edff5"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-23.1.5-392dfff97d29-pristine-v1",
@@ -50,7 +54,8 @@
     "rtti": true,
     "eh": true,
     "targets": [
-      "X86"
+      "X86",
+      "AArch64"
     ],
     "projects": [
       "clang",
@@ -166,6 +171,11 @@
       "lldb-server",
       "llvm-dwarfdump",
       "liblldb",
+      "LLVMAArch64AsmParser",
+      "LLVMAArch64CodeGen",
+      "LLVMAArch64Desc",
+      "LLVMAArch64Info",
+      "LLVMAArch64Utils",
       "LLVMABI",
       "LLVMAggressiveInstCombine",
       "LLVMAnalysis",

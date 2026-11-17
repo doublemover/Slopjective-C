@@ -1,6 +1,8 @@
 """Build one sanitizer compiler and restore it into independent consumers."""
 from __future__ import annotations
 
+from scripts.objc3c_toolchain.linux_host import native_linux_host, native_loader
+
 import argparse
 import hashlib
 import json
@@ -43,9 +45,9 @@ def _require_checkout(repo: Path, plan: dict) -> None:
 
 def _portable_identity(repo: Path) -> dict:
     source = planned_development_identity(repo)
-    profile = select(repo, PROFILE, 'linux-x86_64', source['build'], source,
+    profile = select(repo, PROFILE, native_linux_host(), source['build'], source,
                      {'tag': source['upstream_tag'], 'commit': source['upstream_commit']})
-    stage = repo / 'out/toolchains/objc3-development/stage-linux-x86_64-compiler-asan-ubsan'
+    stage = repo / ('out/toolchains/objc3-development/stage-' + native_linux_host() + '-compiler-asan-ubsan')
     return {'schema': 'objc3c.portable-foundation-identity.v1',
             'profile': PROFILE, 'source_build_id': profile['source_build_id'],
             'build_config_digest': profile['build_config_digest'],
@@ -93,7 +95,7 @@ def _validate_stage_execution(stage: Path, paths: list[Path],
                  if path.name.startswith(('libLLVM.so', 'libclang-cpp.so'))}
     if len(libraries) != 2:
         raise ValueError('instrumented foundation requires exact LLVM and Clang shared libraries')
-    loader = Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True)
+    loader = native_loader()
     required_by_tool = {
         'clang': libraries,
         'clang++': libraries,
@@ -140,7 +142,7 @@ def _identity(portable: dict, stage: Path) -> dict:
 
 def _retain_foundation_evidence(repo: Path, configured: dict | None, evidence: Path) -> None:
     build = (Path(configured['paths']['build']) if configured is not None else
-             repo / 'out/toolchains/objc3-development/build-linux-x86_64-compiler-asan-ubsan')
+             repo / ('out/toolchains/objc3-development/build-' + native_linux_host() + '-compiler-asan-ubsan'))
     receipt = build / 'foundation-build-report.json'
     if not receipt.is_file():
         return
@@ -165,9 +167,9 @@ def produce(repo: Path, plan: dict, output: Path, bundle: Path) -> dict:
               'revision': plan['revision'], 'plan_sha256': plan['sha256']}
     write_json(output / 'producer.json', report)
     try:
-        foundation = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+        foundation = build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
                                       instrumentation_profile=PROFILE, test_results=evidence)
-        configured = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)['configure']
+        configured = build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)['configure']
         portable = _portable_identity(repo)
         stage = Path(configured['paths']['stage']).resolve(strict=True)
         if (configured['source_build_id'] != portable['source_build_id'] or

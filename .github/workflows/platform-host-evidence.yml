@@ -1,13 +1,21 @@
 name: Linux SDK release qualification
 on:
   workflow_dispatch:
+    inputs:
+      linux_host:
+        description: Native compiler and SDK architecture
+        type: choice
+        options: [linux-x86_64, linux-aarch64]
+        default: linux-x86_64
+env:
+  OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
 permissions:
   contents: read
   actions: read
 concurrency:
   # A completed native build must not hold a repaired revision behind an older
   # analysis job. Each release still builds and checks its own exact revision.
-  group: linux-sdk-release-${{ github.sha }}
+  group: ${{ inputs.linux_host || 'linux-x86_64' }}-linux-sdk-release-${{ github.sha }}
   cancel-in-progress: false
 jobs:
   implementation-analysis:
@@ -15,12 +23,15 @@ jobs:
     uses: ./.github/workflows/implementation-analysis.yml
     with:
       source_sha: ${{ github.sha }}
+      linux_host: ${{ inputs.linux_host }}
   build:
     name: Current native qualification and SDK archive
     uses: ./.github/workflows/native-assurance.yml
+    with:
+      linux_host: ${{ inputs.linux_host }}
   install:
     needs: [build, implementation-analysis]
-    runs-on: ubuntu-26.04
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,7 +42,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
           path: /release
       - name: Install, relocate, build, embed, debug and run the shipped archive
         shell: sh

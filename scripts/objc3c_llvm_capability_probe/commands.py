@@ -72,6 +72,8 @@ def default_object_emission_target_triple() -> str:
         return "x86_64-pc-windows-msvc"
     if system == "linux" and machine in {"amd64", "x86_64"}:
         return "x86_64-unknown-linux-gnu"
+    if system == "linux" and machine in {"aarch64", "arm64"}:
+        return "aarch64-unknown-linux-gnu"
     if system == "darwin" and machine in {"arm64", "aarch64"}:
         return "aarch64-apple-darwin"
     return f"{machine or 'unknown'}-unknown-{system or 'unknown'}"

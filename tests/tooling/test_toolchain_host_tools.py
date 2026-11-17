@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
-    for name in ("toolchains/llvm/manifest.json", ".python-version", ".node-version",
+    for name in ("toolchains/llvm/manifest.json", "toolchains/linux-hosts.json", ".python-version", ".node-version",
                  "package.json", "pyproject.toml", "README.md", ".github/workflows/spec-quality.yml",
                  ".github/actions/python-tools/action.yml",
                  "scripts/objc3c_toolchain/cmake_linux.sh", "native/analysis/CMakeLists.txt", "native/fuzz/CMakeLists.txt",
@@ -90,3 +90,15 @@ def test_cpu_and_memory_limits_bound_compilers_and_linkers(monkeypatch) -> None:
     assert limits["compile_jobs"] == 2
     assert limits["link_jobs"] == 1
     assert limits["memory_bytes"] == 8 * 1024 ** 3
+
+
+def test_bootstrap_queries_do_not_load_an_activated_product_llvm(monkeypatch, tmp_path):
+    monkeypatch.setenv('LD_LIBRARY_PATH', '/another-sdk/lib')
+    monkeypatch.setenv('LD_PRELOAD', '/another-sdk/interposer.so')
+    monkeypatch.setenv('LD_AUDIT', '/another-sdk/audit.so')
+    def query(argv, **kwargs):
+        assert kwargs['env']['LD_LIBRARY_PATH'] == str(tmp_path / 'lib')
+        assert not {'LD_PRELOAD', 'LD_AUDIT'} & kwargs['env'].keys()
+        return 'matching bootstrap\n'
+    monkeypatch.setattr(host.subprocess, 'check_output', query)
+    assert host._output(['/bootstrap/bin/clang', '--version'], library_root=tmp_path) == 'matching bootstrap'

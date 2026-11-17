@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
+import re
 import shutil
 import subprocess
 import tarfile
@@ -14,17 +15,29 @@ import tempfile
 from urllib.request import urlopen
 
 from .binary_packages import digest, write_json
+from .linux_host import HOSTS, host_identity, native_linux_host, require_elf
 
 
-def policy(repo):
+def policy(repo, *, host=None):
     path = repo / 'toolchains/swift/manifest.json'
-    value = json.loads(path.read_text())
-    if (value.get('schema') != 'objc3c.swift-consumer-toolchain.v1' or
-            value.get('host') != 'debian13-x86_64' or value.get('version') != '6.4.2' or
-            value.get('signing_fingerprint') != '52BB7E3DE28A71BE22EC05FFEF80A866B47A981F' or
-            not value['archive_url'].startswith('https://download.swift.org/') or
-            digest(repo / value['public_key']) != value['public_key_sha256']):
+    document = json.loads(path.read_text())
+    selected = host_identity(host)['host']
+    if (document.get('schema') != 'objc3c.swift-consumer-toolchain.v2' or
+            set(document.get('hosts', {})) != set(HOSTS) or document.get('version') != '6.4.2' or
+            document.get('signing_fingerprint') != '52BB7E3DE28A71BE22EC05FFEF80A866B47A981F' or
+            digest(repo / document['public_key']) != document['public_key_sha256']):
         raise ValueError('unreviewed Swift consumer toolchain/key policy')
+    value = {key: value for key, value in document.items() if key != 'hosts'}
+    value.update(document['hosts'][selected], host=selected)
+    suffix = 'debian13' + ('-aarch64' if selected == 'linux-aarch64' else '')
+    root = 'swift-' + value['version'] + '-RELEASE-' + suffix
+    expected = ('https://download.swift.org/swift-' + value['version'] + '-release/' + suffix +
+                '/swift-' + value['version'] + '-RELEASE/' + root + '.tar.gz')
+    if (value.get('archive_url') != expected or value.get('archive_root') != root or
+            type(value.get('archive_bytes')) is not int or not 0 < value['archive_bytes'] < 2 * 1024**3 or
+            any(not re.fullmatch('[0-9a-f]{64}', value.get(key, '')) for key in
+                ('archive_sha256', 'signature_sha256', 'selected_manifest_sha256'))):
+        raise ValueError('unreviewed Swift consumer architecture/archive policy')
     return value, hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
@@ -35,9 +48,9 @@ def environment(root):
 
 def require_host():
     release = platform.freedesktop_os_release()
-    if (platform.system() != 'Linux' or platform.machine() != 'x86_64' or
-            release.get('ID') != 'debian' or release.get('VERSION_ID') != '13'):
-        raise ValueError('Swift consumer requires the admitted Debian 13 Linux x86-64 host')
+    native_linux_host()
+    if release.get('ID') != 'debian' or release.get('VERSION_ID') != '13':
+        raise ValueError('Swift consumer requires an admitted Debian 13 native Linux host')
     return {'system': platform.system(), 'machine': platform.machine(), 'os_release': release}
 
 
@@ -114,6 +127,8 @@ def verify(repo, root):
                 if name not in ('signature-0.log', 'signature-1.log')}
     if hashlib.sha256(json.dumps(selected, sort_keys=True, separators=(',', ':')).encode()).hexdigest() != pin['selected_manifest_sha256']:
         raise ValueError('Swift consumer file inventory differs from the signed publisher pin')
+    for name in pin['bin']:
+        require_elf(root / 'usr/bin' / name)
     return receipt
 
 
@@ -151,6 +166,8 @@ def install(repo, root, *, archive=None):
             for name in pin['bin']:
                 if not (destination / 'usr/bin' / name).is_file():
                     raise ValueError('selected Swift tool was not installed: '+name)
+            for name in pin['bin']:
+                require_elf(destination / 'usr/bin' / name)
             for index in range(2):
                 shutil.copyfile(work / ('signature-'+str(index)+'.log'), destination / ('signature-'+str(index)+'.log'))
             files = {str(path.relative_to(destination)):

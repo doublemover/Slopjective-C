@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/runtime_interface_types.h"
@@ -38,7 +39,7 @@ CompileRequest Request(const fs::path &input,BaseLanguage language,bool arc,cons
   request.objc3=language==BaseLanguage::ObjectiveC;
   request.arc=arc;
   if(request.objc3)request.objc_runtime="gnustep-2.2";
-  request.target_triple="x86_64-unknown-linux-gnu";
+  request.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
   request.arguments={"-std=c17",optimization};
   request.emit=EmitKind::Object;
   return request;

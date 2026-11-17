@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "authority": "schemas/objc3-language-capabilities.json",
-  "authority_sha256": "1b85a8496f1475722a673176af8aac51e3633764afab463486b593c121768659",
+  "authority_sha256": "9224a3e769aac9037356ba5164a71cd792211e88d4635955caa6882e66e5a3fe",
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
   "extension_abi_revision": 24,
@@ -14,6 +14,19 @@
       "qualified_targets": [
         {
           "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/CodeGen/public-defer.c",
+            "carriers:expression:clang:defer-public-runtime:O0",
+            "carriers:expression:clang:defer-public-runtime:O2",
+            "native-package:consumer-eager",
+            "native-package:consumer-source",
+            "editor:qualification"
+          ]
+        },
+        {
+          "triple": "aarch64-unknown-linux-gnu",
           "runtime": "gnustep-2.2",
           "profile": "compatibility",
           "evidence": [
@@ -48,6 +61,18 @@
             "installed-public-carrier-call-storage-and-package-suites",
             "editor:qualification"
           ]
+        },
+        {
+          "triple": "aarch64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-carriers.mm",
+            "clang/test/ObjC3/AST/public-carriers-print.mm",
+            "clang/test/ObjC3/LanguageMode/public-carriers-feature.m",
+            "installed-public-carrier-call-storage-and-package-suites",
+            "editor:qualification"
+          ]
         }
       ],
       "feature_query": "objc3_optionals",
@@ -61,6 +86,18 @@
       "qualified_targets": [
         {
           "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-carriers.mm",
+            "clang/test/ObjC3/AST/public-carriers-print.mm",
+            "clang/test/ObjC3/LanguageMode/public-carriers-feature.m",
+            "installed-public-carrier-call-storage-and-package-suites",
+            "editor:qualification"
+          ]
+        },
+        {
+          "triple": "aarch64-unknown-linux-gnu",
           "runtime": "gnustep-2.2",
           "profile": "compatibility",
           "evidence": [
@@ -85,6 +122,17 @@
       "qualified_targets": [
         {
           "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-errors.mm",
+            "installed-managed-throws-18-forced-failures",
+            "installed-runtime-direct-nested-record-heap-call-suites",
+            "editor:qualification"
+          ]
+        },
+        {
+          "triple": "aarch64-unknown-linux-gnu",
           "runtime": "gnustep-2.2",
           "profile": "compatibility",
           "evidence": [

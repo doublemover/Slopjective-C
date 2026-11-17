@@ -42,8 +42,12 @@ def _snapshot_digest(snapshot: dict[str, Any]) -> str:
 
 
 def _host_platform() -> str:
-    if sys.platform == "linux" and platform.machine().lower() in {"amd64", "x86_64"}:
-        return "linux-x86_64"
+    if sys.platform == "linux":
+        from scripts.objc3c_toolchain.linux_host import native_linux_host
+        try:
+            return native_linux_host()
+        except ValueError as error:
+            raise NativeToolchainError(str(error)) from error
     if os.name != "nt" or platform.machine().lower() not in {"amd64", "x86_64"}:
         raise NativeToolchainError("native validation currently admits Windows x86-64 only")
     return "windows-x86_64"
@@ -207,7 +211,7 @@ def resolve_toolchain(repo: Path, *, require_editor: bool = False) -> dict[str, 
     """Hash the actual admitted inputs once and return a JSON-serializable snapshot."""
     repo = repo.resolve()
     selected_platform = _host_platform()
-    if selected_platform == "linux-x86_64":
+    if selected_platform in ("linux-x86_64", "linux-aarch64"):
         from .identity_linux import resolve_linux_toolchain
         return resolve_linux_toolchain(repo, require_editor=require_editor)
     seal = _verify_seal(repo)

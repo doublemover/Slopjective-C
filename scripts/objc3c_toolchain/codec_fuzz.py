@@ -1,6 +1,9 @@
 """Bounded paired-sidecar discovery with actual implementation feedback and replay."""
 from __future__ import annotations
 
+from .linux_host import native_linux_host, native_loader, native_target
+
+
 import argparse
 from collections import Counter
 import hashlib
@@ -94,7 +97,7 @@ def verify_foundation_feedback(symbols):
 
 
 def qualified_profile(repo):
-    plan = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)['configure']
+    plan = build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)['configure']
     build, stage = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage'))
     report = json.loads((build / 'foundation-build-report.json').read_text())
     phases = report.get('phases', [])
@@ -372,7 +375,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         interface = import_root / 'Dependency.objc3i'
         run('frontend-import-fixture-build', [facade, provider, '--objc3', '--module', 'Fuzz.Dependency',
             '--package', 'fuzz-dependency-v1', '--emit-interface', interface,
-            '--target', 'x86_64-unknown-linux-gnu', '--runtime', 'gnustep-2.2'], environment=env)
+            '--target', native_target(), '--runtime', 'gnustep-2.2'], environment=env)
         sidecar = Path(str(interface)+'.json')
         identity = json.loads(sidecar.read_text()).get('module', {})
         if (identity.get('canonical_name') != 'Fuzz.Dependency' or
@@ -397,7 +400,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         report['discovery_environment'] = discovery
         for name, binary in binaries.items():
             frozen[str(binary)] = digest(binary)
-            graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(),
+            graph = loaded_graph(binary, native_loader(),
                 [installed_shared_library(stage / 'lib', name)
                  for name in ('libLLVM.so', 'libclang-cpp.so')],
                 run=lambda suffix, argv, name=name: run(name+'-'+suffix, argv, environment=env))

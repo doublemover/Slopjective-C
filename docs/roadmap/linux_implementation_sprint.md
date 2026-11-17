@@ -694,3 +694,11 @@ Read-only reference/alias graphs, exact C++ callable producers and permanent
 pointer-object reference results share the bounded result proof. Qualified
 versus virtual dispatch is bound separately in interface identity. See
 [contracts and controls](linux_permanent_reference_and_method_proofs.md).
+
+
+## Source 2.175 / System 2.101 implementation
+
+Native Linux AArch64 now has compiler/owned-carrier ABI, runtime and header
+admission, pinned bootstrap assets, architecture-separated binary caches, SDK
+builtins/install admission, ARM CPU version/vector PCS publication and native
+CI/release selection. See [implementation and qualification boundary](linux_aarch64_native_implementation.md).

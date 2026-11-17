@@ -1,6 +1,9 @@
 """Measure isolated first-party compiler/runtime source coverage with exact inputs."""
 from __future__ import annotations
 
+from .linux_host import HOSTS, native_linux_host, native_loader, native_target
+
+
 import argparse
 import json
 import os
@@ -230,7 +233,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
             type(partition_count) is not int or partition_count not in (1, 2, 4, 8) or
             type(partition_index) is not int or not 0 <= partition_index < partition_count):
         raise ValueError('source coverage requires fresh owned output and bounded jobs')
-    plan = (build_plans(repo, host='linux-x86_64',
+    plan = (build_plans(repo, host=native_linux_host(),
                         instrumentation_profile='compiler-source-coverage')['configure']
             if foundation_plan is None else foundation_plan)
     paths = plan.get('paths', {}) if isinstance(plan, dict) else {}
@@ -240,7 +243,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
     if (not isinstance(plan, dict) or
             plan.get('instrumentation_profile') != 'compiler-source-coverage' or
             not plan.get('source_build_id') or not plan.get('build_config_digest') or
-            host.get('target_triple') != 'x86_64-unknown-linux-gnu' or
+            host.get('target_triple') != native_target() or
             selected_bootstrap != expected_bootstrap or
             any(not isinstance(paths.get(name), str) for name in ('build', 'stage')) or
             any(not Path(paths[name]).resolve().is_relative_to(repo / 'out')
@@ -257,7 +260,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
         raise ValueError('source coverage requires the complete matching compiler coverage profile')
     policy_path = repo / 'toolchains/llvm/source-coverage.json'
     policy = json.loads(policy_path.read_text())
-    if policy.get('schema') != 'objc3c.native-source-coverage-policy.v1' or policy.get('host') != 'linux-x86_64':
+    if policy.get('schema') != 'objc3c.native-source-coverage-policy.v2' or policy.get('hosts') != list(HOSTS):
         raise ValueError('unreviewed source coverage policy')
     selected_catalogue, catalogue_sha256 = partition_catalogue(
         policy, partition_index, partition_count)
@@ -446,7 +449,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
                 binary_id = elf_build_id(notes)
                 loader_graph = None
                 if component == 'frontend':
-                    loader_graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True),
+                    loader_graph = loaded_graph(binary, native_loader(),
                         libraries, required=libraries,
                         run=lambda suffix, argv, name=name: run('frontend-'+name+'-'+suffix, argv))
                     frozen.update(loader_graph['libraries'])

@@ -61,6 +61,7 @@ int main() {
   assert(!capabilities.count("objc3.automatic-owner-unwind.v1"));
   assert(!capabilities.count("objc3.cxx-unnamed-template-projections.v1"));
   assert(!capabilities.count("objc3.cxx-incomplete-template-declarations.v1"));
+  assert(!capabilities.count("objc3.native-emission-policies.v2"));
   const llvm::StringRef supported[] = {"effects.async.v1", "ownership.v1",
                                        "objc3.async-entry-abi.v5"};
   const llvm::StringRef source = "int answer(void);\n";
@@ -94,7 +95,7 @@ int main() {
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
       {";native-storage-lifetime:v6;",kNativeStorageLifetimeSemantic},
       {";borrowed-result-proofs:v12;",kBorrowedResultProofSemantic},
-      {";native-emission-policies:v2;",kNativeEmissionPolicySemantic},
+      {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
       {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},

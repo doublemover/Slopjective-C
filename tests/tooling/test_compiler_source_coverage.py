@@ -94,3 +94,19 @@ def test_support_tool_profiles_are_excluded_from_compiler_denominator(tmp_path):
     with pytest.raises(ValueError, match='binary identities'):
         select_coverage_profiles({clang: 'clang', support: 'support'},
                                  {'clang', 'library'}, suite='objc3-lit')
+
+
+def test_successive_patch_insertions_and_deletions_keep_final_coverage_coordinates(tmp_path):
+    from scripts.objc3c_toolchain.compiler_source_coverage import remap_patch_ranges
+    # Prefix insertion shifts old ownership, while its new lines also belong
+    # to the maintained stack. This must include a previously owned final line.
+    assert remap_patch_ranges([[3,5]],[(0,0,1,2)]) == [[1,2],[5,7]]
+    assert remap_patch_ranges([[1,10]],[(3,3,3,0)]) == [[1,7]]
+    assert remap_patch_ranges([[2,8]],[(3,2,3,4),(7,1,9,0)]) == [[2,9]]
+    repo, source, _, unit = fixture(tmp_path)
+    unit.write_text('prefix1\nprefix2\nint a;\nint f(){return a;}\nint g(){return f();}\n')
+    later = repo / 'toolchains/llvm/patches/002.patch'
+    later.write_text('--- a/clang/lib/Sema/SemaObjC3.cpp\n+++ b/clang/lib/Sema/SemaObjC3.cpp\n'
+                     '@@ -0,0 +1,2 @@\n+prefix1\n+prefix2\n')
+    _, ranges = patched_inventory(repo,source)
+    assert ranges['clang/lib/Sema/SemaObjC3.cpp'] == [[1,5]]

@@ -10,6 +10,7 @@ import stat
 import subprocess
 
 from . import source_cache
+from .linux_host import load as linux_host
 
 SCHEMA = 'objc3c.linux-dependency-cache.v1'
 
@@ -23,36 +24,44 @@ def identity(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def layout(repo: Path, root: Path, *, include_swift=False):
+def layout(repo: Path, root: Path, *, include_swift=False, host=None):
+    native = linux_host(repo, host)
+    arch = native["machine"]
+    prefixes = native["prefixes"]
+    assets = native["assets"]
+    host_owner = digest(Path(__file__).with_name("linux_host.py"))
     manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
     tools = manifest['host_tools']
     script = repo / 'scripts/setup_cloud_environment.sh'
     def recipe(*functions):
         value = subprocess.check_output(['bash', '-c',
             'source "$1"; shift; declare -f "$@"', 'cache-plan', str(script),
-            'download_file', 'download_verified', 'host_version', *functions], text=True)
+            'download_file', 'download_verified', 'host_version', 'host_asset', 'host_elf',
+            'download_host_asset', *functions], text=True)
         return hashlib.sha256(value.encode()).hexdigest()
     entries = {}
     def add(name, paths, inputs):
-        entries[name] = {'key': 'objc3-deps-v1-debian13-x64-' + name + '-' + identity(inputs),
+        entries[name] = {'key': 'objc3-deps-v2-debian13-' + arch + '-' + name + '-' + identity({**inputs, 'host_owner': host_owner}),
                          'paths': [str(path) for path in paths],
                          'seal': str(root / '.dependency-cache' / (name + '.json'))}
     llvm = manifest['upstream']['tag'].removeprefix('llvmorg-')
-    add('llvm', [root / ('llvm-' + llvm)], {
+    add('llvm', [root / prefixes['llvm']], {
         'recipe': recipe('install_llvm', 'extract_llvm', 'prune_llvm'),
-        'upstream': manifest['upstream']})
+        'upstream': manifest['upstream'], 'asset': assets['llvm']})
     add('python', [root / 'python', root / 'venv315'], {
         'recipe': recipe('install_python'), 'prefix': str(root),
         'versions': {key: tools[key] for key in ('python', 'uv', 'pip')},
         'lock': digest(repo / 'uv.lock')})
-    add('node', [root / ('node-v' + tools['node'] + '-linux-x64')], {
-        'recipe': recipe('install_node'), 'node': tools['node'], 'npm': tools['npm']})
-    add('cmake', [root / ('cmake-' + tools['cmake'] + '-linux-x86_64')], {
+    add('node', [root / prefixes['node']], {
+        'recipe': recipe('install_node'), 'node': tools['node'], 'npm': tools['npm'], 'asset': assets['node']})
+    add('cmake', [root / prefixes['cmake']], {
         'recipe': recipe('install_cmake'), 'installer': digest(script.parent / 'objc3c_toolchain/cmake_linux.sh'),
-        'version': tools['cmake']})
-    add('ccache', [root / ('ccache-' + tools['ccache'] + '-linux-x86_64-glibc')], {
-        'recipe': recipe('install_ccache'), 'version': tools['ccache']})
-    profile = json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']['linux-x86_64']
+        'version': tools['cmake'], 'asset': assets['cmake']})
+    add('ccache', [root / prefixes['ccache']], {
+        'recipe': recipe('install_ccache'), 'version': tools['ccache'], 'assets': {name: assets[name] for name in
+            ('ccache', 'ccache_signature', 'minisign', 'libsodium')},
+        'public_key': native['ccache_minisign_public_key']})
+    profile = json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles'][native['host']]
     sources = [
         {'path': str(repo / 'out/toolchains/upstream-cache.git'),
          'url': manifest['upstream']['url'], 'tag': manifest['upstream']['tag'],
@@ -62,32 +71,36 @@ def layout(repo: Path, root: Path, *, include_swift=False):
         {'path': str(repo / ('out/toolchains/source-cache/robin-map-' + profile['robin_map_release'] + '.git')),
          'url': profile['robin_map_source'], 'tag': profile['robin_map_release'], 'commit': profile['robin_map_commit']},
     ]
-    entries['sources'] = {'key': 'objc3-deps-v1-debian13-x64-sources-' + identity({
+    entries['sources'] = {'key': 'objc3-deps-v2-sources-' + identity({
         'pins': [{key: value for key, value in item.items() if key != 'path'} for item in sources],
         'owner': digest(Path(source_cache.__file__))}), 'paths': [item['path'] for item in sources]}
     # Package caches contain verified download objects, never node_modules or a product SDK.
-    entries['npm'] = {'key': 'objc3-deps-v1-debian13-x64-npm-' + digest(repo / 'package-lock.json'),
+    entries['npm'] = {'key': 'objc3-deps-v2-debian13-' + arch + '-npm-' + digest(repo / 'package-lock.json'),
                       'paths': [str(root / 'npm-cache')]}
     if include_swift:
-        pin = json.loads((repo / 'toolchains/swift/manifest.json').read_text())
-        entries['swift'] = {'key': 'objc3-deps-v1-debian13-x64-swift-' + identity(pin),
+        from .swift_toolchain import policy
+        pin, pin_hash = policy(repo, host=native['host'])
+        entries['swift'] = {'key': 'objc3-deps-v2-debian13-' + arch + '-swift-' + pin_hash,
                             'paths': [str(root / ('swift-' + pin['version']))]}
     return {'schema': SCHEMA, 'root': str(root), 'repo': str(repo),
-            'entries': entries, 'sources': sources, 'include_swift': include_swift}
+            'entries': entries, 'sources': sources, 'include_swift': include_swift, 'host': native['host']}
 
 
-def quick_layout(repo: Path, root: Path):
+def quick_layout(repo: Path, root: Path, *, host=None):
+    native = linux_host(repo, host)
+    prefix = "objc3-deps-v2-ubuntu26-" + native["machine"] + "-"
     tools = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())['host_tools']
     python = identity({key: tools[key] for key in ('python', 'uv')})
     cmake = identity({'version': tools['cmake'],
-        'installer': digest(repo / 'scripts/objc3c_toolchain/cmake_linux.sh')})
+        'installer': digest(repo / 'scripts/objc3c_toolchain/cmake_linux.sh'),
+        'asset': native['assets']['cmake']})
     return {'schema': SCHEMA, 'root': str(root), 'repo': str(repo), 'sources': [],
-        'include_swift': False, 'entries': {
-            'interpreter': {'key': 'objc3-deps-v1-ubuntu26-x64-python-' + python,
+        'include_swift': False, 'host': native['host'], 'entries': {
+            'interpreter': {'key': prefix + 'python-' + python,
                 'paths': [str(Path.home() / '.local/share/uv/python')]},
-            'python_packages': {'key': 'objc3-deps-v1-ubuntu26-x64-python-packages-' + python + '-' + digest(repo / 'uv.lock'),
+            'python_packages': {'key': prefix + 'python-packages-' + python + '-' + digest(repo / 'uv.lock'),
                 'paths': [str(Path.home() / '.cache/uv'), str(Path.home() / '.cache/pip')]},
-            'cmake': {'key': 'objc3-deps-v1-ubuntu26-x64-cmake-' + cmake,
+            'cmake': {'key': prefix + 'cmake-' + cmake,
                 'paths': [str(root / 'objc3-tooling-cmake')],
                 'seal': str(root / 'objc3-tooling-cmake-seal.json')}}}
 
@@ -162,12 +175,13 @@ def main(argv=None):
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--github-output', type=Path)
     parser.add_argument('--include-swift', action='store_true')
+    parser.add_argument('--host', choices=('linux-x86_64', 'linux-aarch64'))
     parser.add_argument('--quick', action='store_true')
     parser.add_argument('--fetch', action='store_true')
     args = parser.parse_args(argv)
     if args.command == 'plan':
-        value = (quick_layout(args.repo.resolve(), args.root.resolve()) if args.quick else
-                 layout(args.repo.resolve(), args.root.resolve(), include_swift=args.include_swift))
+        value = (quick_layout(args.repo.resolve(), args.root.resolve(), host=args.host) if args.quick else
+                 layout(args.repo.resolve(), args.root.resolve(), include_swift=args.include_swift, host=args.host))
         args.plan.write_text(json.dumps(value, indent=2) + '\n')
         if args.github_output:
             with args.github_output.open('a') as output:

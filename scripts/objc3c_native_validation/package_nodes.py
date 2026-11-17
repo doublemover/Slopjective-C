@@ -162,7 +162,7 @@ def _clang_arguments(toolchain: dict[str, Any]) -> list[str]:
     if not directory.is_dir():
         raise ValueError("sealed Clang resource directory is missing")
     flags = ["--", "-std=c17", "-fblocks", "-O2", "-resource-dir", str(directory)]
-    if toolchain.get("platform") != "linux-x86_64":
+    if toolchain.get("platform") not in ("linux-x86_64", "linux-aarch64"):
         flags.append("-fms-runtime-lib=dll")
     return flags
 
@@ -361,7 +361,7 @@ def _consumer(repo: Path, node: dict[str, Any], output: Path, toolchain: dict[st
         _file(object_path, "emitted consumer object")
         data["dependency_record"] = _dependency_record(dependency_path, identity, toolchain)
         linker = _tool(toolchain, "linker")
-        linux = toolchain.get("platform") == "linux-x86_64"
+        linux = toolchain.get("platform") in ("linux-x86_64", "linux-aarch64")
         if not linux and linker.name.lower() != "lld-link.exe":
             raise ValueError("the native MSVC package profile requires the sealed lld-link.exe")
         link_command = [str(_tool(toolchain, "clangxx")), "--target=" + toolchain["target_triple"],

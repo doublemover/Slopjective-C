@@ -351,13 +351,14 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     source = (source_dir or repo / "out" / "toolchains" / "objc3-development" / "src").resolve()
     sealed = verify_development(repo, manifest_path=manifest_path, source_dir=source)
     manifest, _ = _load_manifest(manifest_path)
-    host = host or ("windows-x86_64" if os.name == "nt" else "linux-x86_64")
+    from .linux_host import HOSTS, native_linux_host
+    host = host or ("windows-x86_64" if os.name == "nt" else native_linux_host())
     if host == "windows-x86_64":
         environment = _windows_build_environment(manifest)
-    elif host == "linux-x86_64":
+    elif host in HOSTS:
         from .host import linux_environment
         try:
-            environment = linux_environment(manifest)
+            environment = linux_environment(manifest, host)
         except (ValueError, OSError, subprocess.SubprocessError) as exc:
             raise ToolchainError(str(exc)) from exc
     else:
@@ -414,7 +415,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         "-DCMAKE_JOB_POOL_LINK=objc3_link",
     ]
     jobs = environment.get("resource_limits", build)
-    if host == "linux-x86_64":
+    if host in HOSTS:
         configure = [argument for argument in configure if not argument.startswith((
             "-DCMAKE_SYSTEM_VERSION=", "-DCMAKE_MSVC_RUNTIME_LIBRARY=", "-DLLVM_USE_CRT_RELEASE="))]
         configure += ["-DLLVM_USE_LINKER=lld", "-DLLVM_ENABLE_LLD=OFF",
@@ -457,7 +458,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     if not isinstance(test_binaries, list):
         raise ToolchainError("test_binaries must be a list of relative paths")
     for relative in test_binaries:
-        if host == "linux-x86_64" and relative.endswith(".exe"):
+        if host in HOSTS and relative.endswith(".exe"):
             relative = relative[:-4]
         if not isinstance(relative, str) or not relative:
             raise ToolchainError("test binary paths must be nonempty strings")
@@ -521,7 +522,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
             # build-tree LLVM/Clang DSOs even when the caller has an unrelated
             # bootstrap or SDK in LD_LIBRARY_PATH.
             identity_payload["command_environment"] = {"PYTHONDONTWRITEBYTECODE": "1"}
-            if host == "linux-x86_64":
+            if host in HOSTS:
                 identity_payload["command_environment"]["LD_LIBRARY_PATH"] = (
                     build_dir / "lib").as_posix()
         identity_payload["identity"] = hashlib.sha256(

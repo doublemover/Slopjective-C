@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_import.h"
@@ -110,7 +111,7 @@ template<class T,unsigned long N=0>class span {
   {std::ofstream out(interface.string()+".json");out<<artifact.sidecar_json;assert(out.good());}
   CompileRequest consumer;consumer.input_path=(root/"consumer.cpp").string();
   consumer.source_text="int main(){int value=42;return Public::read(std::native_iterator<int>{&value})+Public::read(7)+Public::storage().read()+Public::deduced()-133;}";
-  consumer.language=BaseLanguage::Cxx;consumer.objc3=false;consumer.arc=false;consumer.target_triple="x86_64-unknown-linux-gnu";
+  consumer.language=BaseLanguage::Cxx;consumer.objc3=false;consumer.arc=false;consumer.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
   consumer.arguments={"-std=c++23","-isystem",root.string()};
   consumer.emit=EmitKind::Object;consumer.output_path=(root/"consumer.o").string();
   InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;

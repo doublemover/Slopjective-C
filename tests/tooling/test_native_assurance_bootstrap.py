@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
 
 import pytest
 
@@ -46,12 +47,14 @@ source "$1/scripts/setup_cloud_environment.sh"
 mkdir -p "$setup_root/bin"
 scratch="$2/scratch"
 mkdir -p "$scratch"
-export EXPECTED_PRIVATE_LIB="$scratch/minisign/usr/lib/x86_64-linux-gnu"
-download_verified() { touch "$2"; }
+export EXPECTED_PRIVATE_LIB="$scratch/minisign/usr/lib/$(host_asset library_triplet)"
+# ELF admission is covered independently; this isolates verifier execution order.
+host_elf() { :; }
+download_host_asset() { touch "$2"; }
 dpkg-deb() {
   if [[ "$2" == *libsodium.deb ]]; then
-    mkdir -p "$3/usr/lib/x86_64-linux-gnu"
-    touch "$3/usr/lib/x86_64-linux-gnu/libsodium.so.23"
+    mkdir -p "$3/usr/lib/$(host_asset library_triplet)"
+    touch "$3/usr/lib/$(host_asset library_triplet)/libsodium.so.23"
   else
     mkdir -p "$3/usr/bin"
     cp "$VERIFIER" "$3/usr/bin/minisign"
@@ -60,9 +63,9 @@ dpkg-deb() {
 curl() { :; }
 tar() {
   touch "$TRACE"
-  mkdir -p "$setup_root/ccache-4.14.2-linux-x86_64-glibc"
-  printf '#!/bin/sh\\nexit 0\\n' > "$setup_root/ccache-4.14.2-linux-x86_64-glibc/ccache"
-  chmod +x "$setup_root/ccache-4.14.2-linux-x86_64-glibc/ccache"
+  mkdir -p "$setup_root/$(host_asset prefixes.ccache)"
+  printf '#!/bin/sh\\nexit 0\\n' > "$setup_root/$(host_asset prefixes.ccache)/ccache"
+  chmod +x "$setup_root/$(host_asset prefixes.ccache)/ccache"
 }
 install_ccache
 '''
@@ -122,8 +125,12 @@ def test_cached_cmake_must_match_the_current_release(tmp_path):
     root = tmp_path / 'cmake'
     (root / 'bin').mkdir(parents=True)
     compiler = root / 'bin/cmake'
-    compiler.write_text('#!/bin/sh\necho "cmake version 4.4.4"\n')
-    compiler.chmod(0o755)
+    cc=shutil.which('cc')
+    if not cc:pytest.skip('requires the distribution native C compiler')
+    source=tmp_path/'old-version.c'
+    source.write_text('#include <stdio.h>\nint main(void){puts("cmake version 4.4.4");}\n')
+    subprocess.run([cc,source,'-o',compiler],check=True,capture_output=True,timeout=30)
+    for name in ('ctest','cpack'):(root/'bin'/name).symlink_to('cmake')
     result = subprocess.run(['bash', str(REPO / 'scripts/objc3c_toolchain/cmake_linux.sh'), str(root)],
                             capture_output=True, text=True, timeout=15)
     assert result.returncode != 0
@@ -150,3 +157,14 @@ printf 'corrupted archive' > "$destination"
     assert result.returncode != 0
     assert not extracted.exists() and not destination.exists()
     assert not list(tmp_path.glob('.cmake-install.*'))
+
+
+def test_cached_cmake_script_is_rejected_before_it_can_execute(tmp_path):
+    root=tmp_path/'cmake';(root/'bin').mkdir(parents=True)
+    marker=tmp_path/'executed'
+    tool=root/'bin/cmake';tool.write_text('#!/bin/sh\ntouch "'+str(marker)+'"\n')
+    tool.chmod(0o755)
+    result=subprocess.run(['bash',str(REPO/'scripts/objc3c_toolchain/cmake_linux.sh'),str(root)],
+                          capture_output=True,text=True,timeout=15)
+    assert result.returncode and 'native ELF architecture' in result.stderr
+    assert not marker.exists()

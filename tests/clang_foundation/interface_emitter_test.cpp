@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "thread_safety_test_source.h"
 #include "lambda_contracts_test_source.h"
 #include "isolated_test_cases.h"
@@ -59,7 +60,7 @@ void ExpectCurrentPublication(Emit emit,const std::string &source) {
 
 void TestPrimitiveAndObjectiveCContractIdentity() {
   auto emit = [](const std::string &source, std::vector<std::string> flags) {
-    flags.push_back("--target=x86_64-unknown-linux-gnu");
+    flags.push_back("--target=" OBJC3_TEST_NATIVE_LINUX_TARGET);
     auto ast = clang::tooling::buildASTFromCodeWithArgs(source, flags, "contract.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.contracts", "contracts");
@@ -185,7 +186,7 @@ void TestOrdinaryCDeclarationsRoundTrip() {
       "typedef struct { int element; } AnonymousAlias;\n"
       "AnonymousAlias use_alias(AnonymousAlias value);\n";
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      source, {"-x", "c", "-std=c11", "--target=x86_64-unknown-linux-gnu"},
+      source, {"-x", "c", "-std=c11", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
       "interface_fixture.c");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
 
@@ -251,7 +252,7 @@ void TestStandardLibraryImportsAndInstancetype() {
                                     : "int exported_value(void);\n");
     auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
-         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu",
+         "-fobjc-runtime=gnustep-2.2", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
          "-fmodules", "-fmodules-cache-path=" + (directory / "cache").string(),
          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR,
          "-I" + directory.string()}, "sdk-module-interface.m");
@@ -279,7 +280,7 @@ void TestNativeOwnershipContractsRoundTrip() {
         std::string(language) == "objective-c" ? "-std=c17" : "-std=c++20",
         "-fobjc-version=3",
         "-fobjc-runtime=gnustep-2.2",
-        "--target=x86_64-unknown-linux-gnu"};
+        "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto ast =
         clang::tooling::buildASTFromCodeWithArgs(R"(
       extern char invalid_storage;
@@ -345,7 +346,7 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
         std::string(language) == "objective-c" ? "-std=c17" : "-std=c++23",
         "-fobjc-version=3",
         "-fobjc-runtime=gnustep-2.2",
-        "--target=x86_64-unknown-linux-gnu",
+        "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
         "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     clang::tooling::FileContentMappings files;
     AddRuntimeInterfaceFiles(files, args);
@@ -385,7 +386,7 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
 
 void TestDeducedTaskGroupReplay() {
  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
-  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fblocks","-fexceptions","-fobjc-exceptions","-fobjc-arc-exceptions","-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fblocks","-fexceptions","-fobjc-exceptions","-fobjc-arc-exceptions","-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
   if(arc)args.push_back("-fobjc-arc");
   clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
   auto parse=[&](const std::string &text){return clang::tooling::buildASTFromCodeWithArgs(text,args,"deduced-group.mm","clang-tool",std::make_shared<clang::PCHContainerOperations>(),clang::tooling::getClangStripDependencyFileAdjuster(),files);};
@@ -497,7 +498,7 @@ void TestNativeEmissionPolicyReplay() {
 
 void TestNativeManagedUnionPayloadReplay() {
  for(const char *standard:{"c++20","c++23"}) {
-  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   const std::string source=R"(
    @protocol Error @end
    namespace NativeUnionPayload {
@@ -843,7 +844,7 @@ void TestNativeUnionKeyPathReplay() {
  for(const char *standard:{"c++20","c++23"}) {
   std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
    "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks",
-   "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+   "-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args);
   args.insert(args.end(),{"-include","objc3c/runtime/objc3_keypath.h"});
   const std::string source=R"(
@@ -911,7 +912,7 @@ void TestResourceKeyPathReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
         "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fexceptions","-fobjc-exceptions",
-        "--target=x86_64-unknown-linux-gnu"};
+        "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args);
     args.insert(args.end(),{"-include","objc3c/runtime/objc3_keypath.h"});
@@ -1014,7 +1015,7 @@ void TestDependentKeyPathLiteralBodies() {
     for (bool arc : {false, true}) {
       std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
           "-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;
       AddRuntimeInterfaceFiles(files,args);
@@ -1177,7 +1178,7 @@ void TestBorrowedMemoryAliasReplay() {
     for (bool arc : {false, true}) {
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if (arc) args.push_back("-fobjc-arc");
       auto parse=[&](const std::string &source,const char *file) {
         return clang::tooling::buildASTFromCodeWithArgs(source,args,file);
@@ -1440,7 +1441,7 @@ void TestBorrowedMemoryAliasReplay() {
 
 void TestSanitizedStandardLibraryReplay() {
  for(const char *sanitizer:{"address","undefined","thread","cfi"}) {
-  std::vector<std::string> args={"-xc++","-std=c++20","--target=x86_64-unknown-linux-gnu",std::string("-fsanitize=")+sanitizer,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+  std::vector<std::string> args={"-xc++","-std=c++20","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,std::string("-fsanitize=")+sanitizer,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
   if(std::string(sanitizer)=="cfi")args.insert(args.end(),{"-flto","-fvisibility=hidden"});
   const std::string source="#include <vector>\nnamespace SanitizedStandard {using Values=std::vector<int>;Values values();inline int size(){return values().size();}inline int storage(){alignas(int) unsigned char bytes[sizeof(int)]={};return sizeof(bytes);}}\n";
   auto emit=[&](const std::string &text) {
@@ -1457,7 +1458,7 @@ void TestSanitizedStandardLibraryReplay() {
 
 void TestNativeLambdaArgumentABIReplay() {
  for(const char *standard:{"c++20","c++23"})for(int ownership:{0,1,2}) {
-  std::vector<std::string> args={"-x",ownership?"objective-c++":"c++",std::string("-std=")+standard,"--target=x86_64-unknown-linux-gnu"};
+  std::vector<std::string> args={"-x",ownership?"objective-c++":"c++",std::string("-std=")+standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   if(ownership)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"});
   if(ownership==2)args.push_back("-fobjc-arc");
   const std::string source=R"(
@@ -1498,7 +1499,7 @@ void TestNativeLambdaArgumentABIReplay() {
 
 void TestNativeMRCRecordPayloadReplay() {
  for(const char *standard:{"c++20","c++23"}) {
-  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks","-fexceptions","--target=x86_64-unknown-linux-gnu"};
+  std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks","-fexceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   const std::string source=R"(
     namespace PublishedMRC {
       id hold(id);void drop(id);
@@ -1545,7 +1546,7 @@ void TestBorrowedUnionByteStorageReplay() {
   for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
     const bool cxx=std::string(standard)!="c17";
     std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
-      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     auto parse=[&](const std::string &source){return clang::tooling::buildASTFromCodeWithArgs(source,args,"union-byte-storage.m");};
     auto emit=[&](const std::string &source) {
@@ -1603,7 +1604,7 @@ void TestBorrowedUnionByteStorageReplay() {
 
 void TestInlineClosureObjectStorage() {
  for(const char *standard:{"-std=c++20","-std=c++23"})for(int ownership:{0,1,2}) {
-  std::vector<std::string> args={"-x",ownership?"objective-c++":"c++",standard,"--target=x86_64-unknown-linux-gnu"};
+  std::vector<std::string> args={"-x",ownership?"objective-c++":"c++",standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   if(ownership){args.push_back("-fobjc-version=3");args.push_back("-fobjc-runtime=gnustep-2.2");}
   if(ownership==2)args.push_back("-fobjc-arc");
   auto emit=[&](const std::string &code,const char *file,const std::vector<std::string> &exports=std::vector<std::string>{}) {
@@ -1739,7 +1740,7 @@ void TestBorrowedStaticStorageReplay() {
     for(bool arc:{false,true}) {
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       auto parse=[&](const std::string &source,const char *file) {
         return clang::tooling::buildASTFromCodeWithArgs(source,args,file);
@@ -2100,7 +2101,7 @@ void TestBorrowedCallableOwnerCapability() {
     for (bool arc : {false, true}) {
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if (arc) args.push_back("-fobjc-arc");
       const std::string source=R"(
         typedef borrowed const char *CallbackBytes;
@@ -2168,7 +2169,7 @@ void TestAsyncConsumedOwnershipCapability() {
     for (bool arc : {false, true}) {
       std::vector<std::string> args = {"-x", std::string(standard) == "c17" ? "objective-c" : "objective-c++",
           std::string("-std=") + standard, "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
-          "--target=x86_64-unknown-linux-gnu", "-fblocks",
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET, "-fblocks",
           "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;
@@ -2303,7 +2304,7 @@ void TestKeyPathSubscriptBodies() {
     for (bool arc : {false, true}) {
       std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
           "-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;
       AddRuntimeInterfaceFiles(files,args);
@@ -2440,7 +2441,7 @@ void TestConsumedAndMethodOwnershipRoundTrips() {
           "-fobjc-version=3",
           "-fobjc-runtime=gnustep-2.2",
           "-fblocks",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if (arc)
         args.push_back("-fobjc-arc");
       auto ast = clang::tooling::buildASTFromCodeWithArgs(
@@ -2517,7 +2518,7 @@ void TestCOverloadableInterfaces() {
   )";
   for (bool objc : {false, true}) {
     std::vector<std::string> flags = {"-x", objc ? "objective-c" : "c", "-std=c17",
-                                    "--target=x86_64-unknown-linux-gnu"};
+                                    "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if (objc) {
       flags.push_back("-fobjc-version=3");
       flags.push_back("-fobjc-runtime=gnustep-2.2");
@@ -2579,7 +2580,7 @@ void TestCOverloadableInterfaces() {
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       "__attribute__((naked)) void unmodeled_naked_api(void);\n",
-      {"-x", "c", "-std=c11", "--target=x86_64-unknown-linux-gnu"},
+      {"-x", "c", "-std=c11", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
       "attributed_fixture.c");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
 
@@ -2607,7 +2608,7 @@ void TestCAsyncPhysicalABIRoundTrips() {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3", "-fblocks",
-         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+         "-fobjc-runtime=gnustep-2.2", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
         "async_frame_interface.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto emitted = EmitSemanticInterface(ast->getASTContext(),
@@ -2649,7 +2650,7 @@ void TestCAsyncPhysicalABIRoundTrips() {
 void TestPublishedIsolationBodies() {
   std::vector<std::string> args={"-x", "objective-c++", "-std=c++20",
       "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
-      "--target=x86_64-unknown-linux-gnu"};
+      "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   clang::tooling::FileContentMappings files;
   AddRuntimeInterfaceFiles(files,args);
   const std::string source=R"(
@@ -2752,7 +2753,7 @@ inline int task_from_frame(int value) __objc3_async {
 void TestPublishedRuntimeDeclarations() {
   std::vector<std::string> args={"-x","objective-c++","-std=c++20",
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-      "--target=x86_64-unknown-linux-gnu","-fcoro-aligned-allocation",
+      "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-fcoro-aligned-allocation",
       "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
   clang::tooling::FileContentMappings files;
   AddRuntimeInterfaceFiles(files,args,true);
@@ -2856,7 +2857,7 @@ void TestCAsyncPhysicalABIImportBoundaries() {
                                      cpp ? "-std=c++20" : "-std=c17",
                                      "-fobjc-version=3",
                                      "-fobjc-runtime=gnustep-2.2",
-                                     "--target=x86_64-unknown-linux-gnu"};
+                                     "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto files = std::make_unique<clang::tooling::FileContentMappings>();
     AddRuntimeInterfaceFiles(*files, args);
     const std::string source =
@@ -2929,7 +2930,7 @@ void TestObjectiveCContainerRoundTrips() {
       "__attribute__((objc_root_class)) @interface Widget\n- "
       "(int)value;\n@end\n",
       {"-x", "objective-c", "-std=gnu11", "-fobjc-runtime=gnustep-2.2",
-       "--target=x86_64-unknown-linux-gnu"},
+       "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
       "objc_fixture.m");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
 
@@ -2959,7 +2960,7 @@ void TestTypedEffectSemanticInterfacesRoundTrip() {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
-         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+         "-fobjc-runtime=gnustep-2.2", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
         "effect_fixture.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.effect",
@@ -2997,7 +2998,7 @@ void TestTypedEffectSemanticInterfacesRoundTrip() {
     auto regenerated_ast = clang::tooling::buildASTFromCodeWithArgs(
         emitted.source_bytes,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
-         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+         "-fobjc-runtime=gnustep-2.2", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
         "relocated-effect-interface.m");
     assert(regenerated_ast &&
            !regenerated_ast->getDiagnostics().hasErrorOccurred());
@@ -3026,7 +3027,7 @@ void TestManagedReturnOwnershipRoundTrips() {
           "-std=c17",
           "-fobjc-version=3",
           "-fobjc-runtime=gnustep-2.2",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if (arc)
         arguments.push_back("-fobjc-arc");
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source, arguments,
@@ -3112,7 +3113,7 @@ void TestDirectMethodIdentityRoundTrip() {
         std::string(direct ? " __attribute__((objc_direct))" : "") + "; @end";
     const std::vector<std::string> args = {
         "-x", "objective-c", "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
-        "--target=x86_64-unknown-linux-gnu"};
+        "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto ast =
         clang::tooling::buildASTFromCodeWithArgs(source, args, "direct.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -3160,7 +3161,7 @@ void TestManagedIvarAndPropertyRoundTrip() {
                                          "-fobjc-version=3",
                                          "-fobjc-arc",
                                          "-fobjc-runtime=gnustep-2.2",
-                                         "--target=x86_64-unknown-linux-gnu"};
+                                         "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   std::string previous;
   for (const char *access : {"@public", "@protected", "@private", "@package"}) {
     const std::string source =
@@ -3202,7 +3203,7 @@ void TestManagedIvarAndPropertyRoundTrip() {
 
 void TestDeletedAggregateMemberIdentity() {
   const std::vector<std::string> args = {"-x", "c++", "-std=c++20",
-                                         "--target=x86_64-unknown-linux-gnu"};
+                                         "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   auto emit = [&](const char *source) {
     auto ast =
         clang::tooling::buildASTFromCodeWithArgs(source, args, "aggregate.cpp");
@@ -3241,7 +3242,7 @@ void TestCxxClassStructure() {
       "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {"-x", "c++", standard,
-                                           "--target=x86_64-unknown-linux-gnu"};
+                                           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit = [&](const std::string &source,
                     const std::vector<std::string> &exports =
                         std::vector<std::string>{}) {
@@ -3345,7 +3346,7 @@ void TestCxxLocalExpressions() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-xc++",standard,"-fblocks","--target=x86_64-unknown-linux-gnu"},"local-expressions.cpp");
+          {"-xc++",standard,"-fblocks","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},"local-expressions.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                   "fixture.locals","test",{}));
@@ -3386,7 +3387,7 @@ void TestCxxLocalTypes() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source, const char *filename = "local-types.cpp") {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-xc++", standard, "--target=x86_64-unknown-linux-gnu"}, filename);
+          {"-xc++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, filename);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),
           ast->getASTContext().getTranslationUnitDecl(), "fixture.localtypes", "test", {}));
@@ -4679,7 +4680,7 @@ namespace NativeStandard {
     std::fprintf(stderr,"STDLIB MODE %s %d\n",standard,mode);
     const bool objc=mode!=0,arc=mode==2;
     std::vector<std::string> args={"-x",objc?"objective-c++":"c++",std::string("-std=")+standard,
-        "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+        "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     if(objc){args.push_back("-fobjc-version=3");args.push_back("-fobjc-runtime=gnustep-2.2");}
     if(arc)args.push_back("-fobjc-arc");
     std::string traits_bytes;
@@ -4839,7 +4840,7 @@ void TestStandardCoroutineTypesAndTraits() {
     auto emit=[&](const std::string &text,const char *filename="standard-coroutines.mm") {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(text,
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR},filename);
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR},filename);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       struct CoroutineNames final : clang::RecursiveASTVisitor<CoroutineNames> {
         const clang::ASTContext &context;
@@ -4911,7 +4912,7 @@ void TestCustomCoroutineBodies() {
     auto emit=[&](const std::string &text,const char *filename="custom-coroutines.mm",
                   const std::vector<std::string> &exports=std::vector<std::string>{"NativeCustomCoroutines"}) {
       std::vector<std::string> arguments={"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if(modules)arguments.insert(arguments.end(),{"-fmodules","-fmodules-cache-path="+module_cache.string()});
       auto ast=clang::tooling::buildASTFromCodeWithArgs(text,arguments,filename);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -5075,7 +5076,7 @@ void TestNestedFactoryTypes() {
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu"},file);
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.nested_factory_types","test",{}));
@@ -5186,7 +5187,7 @@ void TestLambdaFactoryResults() {
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu"},file);
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.lambda_factory_results","test",{}));
@@ -5259,7 +5260,7 @@ void TestClosureResultProjections() {
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu"},file);
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.closure_result_projections","test",{}));
@@ -5332,7 +5333,7 @@ void TestFactoryValueArguments() {
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu"},file);
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.factory_value_arguments","test",{}));
@@ -5407,7 +5408,7 @@ void TestGenericFactoryProjections() {
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu"},file);
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.generic_factory_projections","test",{}));
@@ -5461,7 +5462,7 @@ void TestFactoryTemplateArguments() {
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu"},file);
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.factory_template_arguments","test",{}));
@@ -5528,7 +5529,7 @@ void TestFactoryTypeProjections() {
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
           {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-           "--target=x86_64-unknown-linux-gnu"},file);
+           "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.factory_type_projections","test",{}));
@@ -5589,7 +5590,7 @@ void TestLocalFactoryResults() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="local-factory-results.cpp") {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x","c++",standard,"--target=x86_64-unknown-linux-gnu"},file);
+          {"-x","c++",standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.local_factory_results","test",{}));
@@ -5637,7 +5638,7 @@ void TestClosureFactories() {
   for (const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="closure-factories.cpp") {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x","c++",standard,"--target=x86_64-unknown-linux-gnu"},file);
+          {"-x","c++",standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},file);
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.closure_factories","test",{}));
@@ -5688,7 +5689,7 @@ void TestAutomaticOwnerUnwindReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -5781,7 +5782,7 @@ void TestBlockMutationPackageReplay() {
     const bool cxx=std::string(standard)!="c17";
     std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
         "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks",
-        "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+        "-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     std::ifstream input(std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/block_values.h");assert(input);
     const std::string source((std::istreambuf_iterator<char>(input)),std::istreambuf_iterator<char>());
@@ -5814,7 +5815,7 @@ void TestBlockProducerTransferReplay() {
     const bool cxx=std::string(standard)!="c17";
     std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
         "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks",
-        "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+        "-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       typedef void (^PublishedProducerCallback)(void);
@@ -5862,7 +5863,7 @@ void TestBlockMutationReplay() {
     const bool cxx=std::string(standard)!="c17";
     std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
         "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks",
-        "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+        "-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       typedef void (^PublishedComputedCallback)(void);
@@ -5954,7 +5955,7 @@ void TestComputedBlockValuesReplay() {
     const bool cxx=std::string(standard)!="c17";
     std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
         "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks",
-        "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+        "-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       typedef void (^PublishedComputedCallback)(void);
@@ -5998,7 +5999,7 @@ void TestComputedBlockArrayMemberReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -6148,7 +6149,7 @@ void TestNativeBlockArrayMemberReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -6290,7 +6291,7 @@ void TestNativeVirtualSubobjectReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -6432,7 +6433,7 @@ void TestNativeFunctionTryReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -6540,7 +6541,7 @@ void TestNativeSubobjectReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -6638,7 +6639,7 @@ void TestNativeArrayLifetimeReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -6739,7 +6740,7 @@ void TestNativeAllocationReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -6839,7 +6840,7 @@ void TestNativeDisposalReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -6922,7 +6923,7 @@ void TestInitializedOwnerReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -7020,7 +7021,7 @@ void TestNativeFinallyReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -7121,7 +7122,7 @@ void TestManagedRuntimeScopeReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       args.push_back("-fblocks");args.push_back("-fexceptions");args.push_back("-fobjc-exceptions");
       args.push_back("-fobjc-arc-exceptions");args.push_back("-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR);
@@ -7230,7 +7231,7 @@ void TestBorrowedReceiverResultReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       const std::string source=R"(
         typedef borrowed const char *PublishedReceiverBytes;
@@ -7310,7 +7311,7 @@ void TestBorrowedInteriorStorageReplay() {
       const bool cxx=std::string(standard)!="c17";
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+          "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       const std::string source=R"(
         struct PublishedInteriorPayload {char bytes[4];int scalar;};
@@ -7389,7 +7390,7 @@ void TestBorrowedCatchBindingReplay() {
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
           "-fobjc3-profile=strict-system","-fexceptions","-fobjc-exceptions",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if(arc)args.push_back("-fobjc-arc");
       auto parse=[&](const std::string &text,const char *name) {
         return clang::tooling::buildASTFromCodeWithArgs(text,args,name);
@@ -7445,7 +7446,7 @@ void TestExplicitResourcePropertyReplay() {
     for(bool arc:{false,true}) {
       std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
           "-fobjc-version=3","-fblocks","-fobjc-runtime=gnustep-2.2",
-          "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu",
+          "-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
           "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if(arc)args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
@@ -7543,7 +7544,7 @@ void TestNativeFrameExceptionReplay() {
     for(bool arc:{false,true}) {
       std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
           "-fobjc-version=3","-fblocks","-fobjc-runtime=gnustep-2.2",
-          "-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu",
+          "-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
           "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if(arc)args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
@@ -7614,7 +7615,7 @@ void CheckEffectfulIsolatedPropertyReplay(bool async) {
     const bool cxx=std::string(standard)!="c17";
     std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",std::string("-std=")+standard,
         "-fobjc-version=3","-fblocks","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-concurrency",
-        "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+        "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     if(arc)args.push_back("-fobjc-arc");
     clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
     auto parse=[&](const std::string &text,const char *name) {
@@ -7722,7 +7723,7 @@ void TestMixedCarrierCallReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string prelude=R"(
       @protocol Error @end
@@ -7779,7 +7780,7 @@ void TestNativeByrefStorageReplay() {
  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
   std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
    "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-   "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+   "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   if(arc)args.push_back("-fobjc-arc");
   const std::string source=R"(
    namespace PublishedByref {
@@ -7820,7 +7821,7 @@ void TestNativeByrefStorageReplay() {
  for(bool arc:{false,true}) {
   std::vector<std::string> args={"-x","objective-c","-std=c17",
    "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-   "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+   "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   if(arc)args.push_back("-fobjc-arc");
   const std::string source=R"(
    struct __attribute__((aligned(64))) PublishedCAlignedValue {int value;};
@@ -7861,7 +7862,7 @@ void TestNativeBlockAlignmentReplay() {
  for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
   std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
    "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-   "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+   "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   if(arc)args.push_back("-fobjc-arc");
   const std::string source=R"(
    namespace PublishedAlignedBlock {
@@ -7901,7 +7902,7 @@ void TestNativeBlockAlignmentReplay() {
  for(bool arc:{false,true}) {
   std::vector<std::string> args={"-x","objective-c","-std=c17",
    "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-   "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+   "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   if(arc)args.push_back("-fobjc-arc");
   const std::string source=R"(
    struct __attribute__((aligned(64))) PublishedCAlignedValue {int value;};
@@ -7942,7 +7943,7 @@ void TestCppCarrierValueReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string prelude=R"(
       @protocol Error @end
@@ -8008,7 +8009,7 @@ void TestCppCarrierRuntimeReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string prelude=R"(
       @protocol Error @end
@@ -8065,7 +8066,7 @@ void TestCheckedCppRecordResultReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string prelude=R"(
       @protocol Error @end
@@ -8133,7 +8134,7 @@ void TestCppCarrierDefaultStorageReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string prelude=R"(
       namespace PublishedCheckedMessage {
@@ -8182,7 +8183,7 @@ void TestCheckedCppMessageReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string prelude=R"(
       @protocol Error @end
@@ -8234,7 +8235,7 @@ void TestAtomicManagedPropertyReplay() {
   const bool cpp=std::string(standard)!="c17";
   std::vector<std::string> args={"-x",cpp?"objective-c++":"objective-c",std::string("-std=")+standard,
    "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks",
-   "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+   "-fobjc3-profile=strict-system","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   const std::string source=R"(
    typedef __objc3_optional(id) AtomicMaybe;
    struct AtomicRecord {int generation;AtomicMaybe value;};
@@ -8279,7 +8280,7 @@ void TestImplicitCheckedRecordReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       @protocol Error @end
@@ -8328,7 +8329,7 @@ void TestNativeARCRecordPayloadReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       namespace PublishedARCRecord {
@@ -8382,7 +8383,7 @@ void TestNativeCarrierLambdaReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       namespace PublishedCarrierLambda {
@@ -8428,7 +8429,7 @@ void TestMixedCarrierStorageReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       namespace PublishedMixedStorage {
@@ -8481,7 +8482,7 @@ void TestCppCarrierCompositionReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       namespace PublishedCarrierStorage {
@@ -8534,7 +8535,7 @@ void TestNativeCppCarrierCallReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
       "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system",
-      "-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"};
+      "-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string prelude=R"(
       @protocol Error @end
@@ -8603,7 +8604,7 @@ void TestNativeCheckedCppResultReplay() {
   for(const char *standard:{"c++20","c++23"})for(bool arc:{false,true}) {
     std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
         "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fblocks","-fexceptions","-fobjc-exceptions",
-        "--target=x86_64-unknown-linux-gnu"};
+        "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     if(arc)args.push_back("-fobjc-arc");
     const std::string source=R"(
       @protocol Error @end
@@ -8713,7 +8714,7 @@ void TestIsolatedPropertyReplay() {
     for (bool arc : {false,true}) {
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fblocks",
-          "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+          "-fobjc-runtime=gnustep-2.2","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
           "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
@@ -8810,7 +8811,7 @@ void TestOwnedNilResultReplay() {
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fobjc-version=3","-fblocks",
           "-fobjc-runtime=gnustep-2.2","-fexceptions","-fobjc-exceptions",
-          "--target=x86_64-unknown-linux-gnu",
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
           "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if(arc)args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
@@ -8932,7 +8933,7 @@ void TestStrictAsyncProfileReplay() {
             std::string("-std=")+standard,"-fobjc-version=3","-fblocks",
             "-fobjc-runtime=gnustep-2.2",std::string("-fobjc3-profile=")+profile,
             "-fexceptions","-fobjc-exceptions","-fobjc-arc-exceptions",
-            "--target=x86_64-unknown-linux-gnu",
+            "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
             "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
         if (arc) args.push_back("-fobjc-arc");
         clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,cxx);
@@ -9006,7 +9007,7 @@ void TestNativeDependentAwaitReplay() {
     for(bool arc:{false,true}) {
       std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
           "-fobjc-runtime=gnustep-2.2","-fobjc3-strict-concurrency",
-          "--target=x86_64-unknown-linux-gnu","-fcoro-aligned-allocation",
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-fcoro-aligned-allocation",
           "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if(arc)args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
@@ -9106,7 +9107,7 @@ void TestConcurrentBlockValueReplay() {
       std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
           std::string("-std=")+standard,"-fblocks","-fobjc-version=3",
           "-fobjc-runtime=gnustep-2.2","-fobjc3-strict-concurrency",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args);
       auto parse=[&](const std::string &source,const char *file) {
@@ -9177,7 +9178,7 @@ void TestConcurrentCallableCaptureReplay() {
     for (bool arc : {false, true}) {
       std::vector<std::string> args={"-x","objective-c++",standard,"-fblocks",
           "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-weak",
-          "-fobjc3-strict-concurrency","--target=x86_64-unknown-linux-gnu",
+          "-fobjc3-strict-concurrency","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
           "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
@@ -9238,7 +9239,7 @@ void TestConcurrentCallableCaptureReplay() {
 void TestEffectfulLambdas() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
-        "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+        "-fobjc-runtime=gnustep-2.2","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
         "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
     auto emit=[&](const std::string &source,const char *file="effectful-lambdas.mm") {
@@ -9322,7 +9323,7 @@ namespace Members {
 void TestTemplateCallableProjections() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
-        "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+        "-fobjc-runtime=gnustep-2.2","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
         "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
     auto emit=[&](const std::string &source,const char *file="template-callable-projections.mm") {
@@ -9427,7 +9428,7 @@ namespace Members {
 void TestEffectfulTemplateMembers() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
-        "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+        "-fobjc-runtime=gnustep-2.2","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
         "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
     auto emit=[&](const std::string &source,const char *file="effectful-template-members.mm") {
@@ -9485,7 +9486,7 @@ void TestEffectfulTemplateMembers() {
 void TestEffectfulFunctionTemplates() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
-        "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+        "-fobjc-runtime=gnustep-2.2","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,
         "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
     auto emit=[&](const std::string &source,const char *file="effectful-function-templates.mm") {
@@ -11445,7 +11446,7 @@ void TestCarrierExpressionRoundtrip() {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
           {"-xobjective-c++", standard, "-fobjc-version=3", "-fblocks",
-           "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+           "-fobjc-runtime=gnustep-2.2", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
           "carrier-expressions.mm");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(),
@@ -11482,7 +11483,7 @@ void TestNativeExportRoots() {
         "friend int probe(Box value){return value.n;} }; int value(); "
         "enum class Kind {one}; } namespace Short=Api; using Api::value; "
         "using namespace Api; using enum Api::Kind;",
-        {"-xc++",standard,"--target=x86_64-unknown-linux-gnu"},"export-roots.cpp");
+        {"-xc++",standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},"export-roots.cpp");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto emitted=EmitSemanticInterface(ast->getASTContext(),"fixture.roots","test");
     assert(emitted.success);
@@ -11510,7 +11511,7 @@ void TestCxxFriends() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "friends.cpp");
+          {"-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, "friends.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.friends", "test", {}));
@@ -11555,7 +11556,7 @@ void TestCxxThreadLocalData() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "thread-data.cpp");
+          {"-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, "thread-data.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.threads", "test", {}));
@@ -11603,7 +11604,7 @@ void TestCxxLambdaExpressions() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "closures.cpp");
+          {"-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, "closures.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.closures", "test", {}));
@@ -11654,7 +11655,7 @@ void TestCxxNamespaceAttributes() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "namespace_attributes.cpp");
+          {"-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, "namespace_attributes.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.attributes", "test", {}));
@@ -11709,7 +11710,7 @@ void TestCxxImmediateDefaulting() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "immediate.cpp");
+          {"-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, "immediate.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.immediate", "test", {}));
@@ -11751,7 +11752,7 @@ void TestCxxOutOfLineDefaulting() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "defaulting.cpp");
+          {"-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, "defaulting.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.defaulting", "test", {}));
@@ -11788,7 +11789,7 @@ void TestCxxDefaultedComparisons() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
-          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "comparisons.cpp");
+          {"-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, "comparisons.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.comparisons", "test", {}));
@@ -11829,7 +11830,7 @@ void TestCxxDefaultedComparisons() {
 void TestCxxDefinitions() {
   const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
-    const std::vector<std::string> args = {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
+    const std::vector<std::string> args = {"-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit = [&](const std::string &source,
                     const std::vector<std::string> &exports = std::vector<std::string>{}) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "definitions.cpp");
@@ -11879,7 +11880,7 @@ void TestCxxDeclarationExpressions() {
       "objc3.cxx-declaration-expressions.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {
-        "-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
+        "-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit = [&](const std::string &source,
                     const std::vector<std::string> &exports = std::vector<std::string>{}) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "defaults.cpp");
@@ -11930,7 +11931,7 @@ void TestCxxUsingDeclarations() {
       "objc3.cxx-class-lifecycles.v1","objc3.cxx-class-structure.v1",
       "objc3.cxx-namespaces.v1","objc3.cxx-using.v1"};
   for(const char *standard:{"-std=c++20","-std=c++23"}) {
-    const std::vector<std::string> args={"-x","c++",standard,"--target=x86_64-unknown-linux-gnu"};
+    const std::vector<std::string> args={"-x","c++",standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit=[&](const std::string &source) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"using.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -11965,7 +11966,7 @@ void TestCxxNestedTypes() {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
       "objc3.cxx-class-lifecycles.v1", "objc3.cxx-nested-types.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
-    const std::vector<std::string> args={"-x","c++",standard,"--target=x86_64-unknown-linux-gnu"};
+    const std::vector<std::string> args={"-x","c++",standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit=[&](const std::string &source) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"nested.cpp");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -12008,7 +12009,7 @@ void TestCxxNamedNamespaces() {
       "objc3.cxx-namespaces.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {
-        "-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
+        "-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit = [&](const std::string &source,
                     const std::vector<std::string> &exports = std::vector<std::string>{}) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "namespaces.cpp");
@@ -12079,7 +12080,7 @@ void TestCxxClassDispatch() {
       "objc3.cxx-class-dispatch.v1", kCxxVirtualCallSemantic, kCxxBaseAdjustmentSemantic};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {
-        "-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
+        "-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args,
                                                         "dispatch.cpp");
@@ -12150,7 +12151,7 @@ void TestCxxClassLifecycles() {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
       "objc3.cxx-class-lifecycles.v1"};
   const std::vector<std::string> args = {"-x", "c++", "-std=c++20",
-                                         "--target=x86_64-unknown-linux-gnu"};
+                                         "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   const char *source =
       "class Value { int value; mutable int reads; "
       "int helper() const; public: explicit Value(int); Value(const Value&); "
@@ -12214,7 +12215,7 @@ void TestBoundedCxxSemanticInterfaces() {
           "-std=c++20",
           "-fobjc-version=3",
           "-fobjc-runtime=gnustep-2.2",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       auto ast =
           clang::tooling::buildASTFromCodeWithArgs(source, args, "members.mm");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -12275,7 +12276,7 @@ void TestBoundedCxxSemanticInterfaces() {
             "extern \"C\" Owned owned_echo(Owned);";
       std::vector<std::string> args = {"-x", language,
                                        std::string("-std=") + standard,
-                                       "--target=x86_64-unknown-linux-gnu"};
+                                       "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
       if (objc)
         args.insert(args.end(), {"-fobjc-version=3", "-fobjc-arc",
                                  "-fobjc-runtime=gnustep-2.2"});
@@ -12347,7 +12348,7 @@ void TestBoundedCxxSemanticInterfaces() {
         "struct Public {struct {int n;} value;};"}) {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
-        {"-x", "c++", "-std=c++20", "--target=x86_64-unknown-linux-gnu"},
+        {"-x", "c++", "-std=c++20", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
         "unsupported.cpp");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto emitted = EmitSemanticInterface(ast->getASTContext(),
@@ -12371,7 +12372,7 @@ void TestIndependentCxxAndObjCExceptionModes() {
     for(bool objc_exceptions:{false,true}) {
       if(!objc && objc_exceptions)continue;
       std::vector<std::string> args={"-x",objc ? "objective-c++" : "c++",
-          "-std=c++20","--target=x86_64-unknown-linux-gnu","-fno-exceptions",
+          "-std=c++20","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-fno-exceptions",
           cxx_exceptions ? "-fcxx-exceptions" : "-fno-cxx-exceptions"};
       if(objc) {
         args.push_back("-fobjc-runtime=gnustep-2.2");

@@ -739,11 +739,15 @@ llvm::Error ValidateForEncoding(
       [](const auto &d){return !HasNativeEmissionPolicyIdentity(d) || d.kind!="Namespace";});
   const bool cpu_variant_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d) {
     const bool marked=d.canonical_type_identity.find(";native-cpu-variant:v1;")!=std::string::npos;
-    const auto at=d.stable_id.rfind("@cpu-target@");
+    const auto target=d.stable_id.rfind("@cpu-target@");
+    const auto version=d.stable_id.rfind("@cpu-version@");
+    if(target!=std::string::npos && version!=std::string::npos)return false;
+    const auto at=target!=std::string::npos?target:version;
+    const size_t prefix=target!=std::string::npos?12:13;
     if(!marked && at==std::string::npos)return true;
-    if(!marked || at==std::string::npos || d.stable_id.size()!=at+12+64 ||
+    if(!marked || at==std::string::npos || d.stable_id.size()!=at+prefix+64 ||
         (d.kind!="Function" && d.kind!="CXXMethod") || !HasNativeEmissionPolicyIdentity(d))return false;
-    return std::all_of(d.stable_id.begin()+at+12,d.stable_id.end(),[](char c) {
+    return std::all_of(d.stable_id.begin()+at+prefix,d.stable_id.end(),[](char c) {
       return (c>='0' && c<='9') || (c>='a' && c<='f');
     });
   });

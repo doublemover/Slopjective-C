@@ -69,7 +69,7 @@ if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
   else()
     execute_process(
       COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain build-plan
-        --repo "${_objc3_repo}" --host linux-x86_64 configure
+        --repo "${_objc3_repo}" configure
         --instrumentation-profile "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}"
       WORKING_DIRECTORY "${_objc3_repo}"
       RESULT_VARIABLE _objc3_profile_exit OUTPUT_VARIABLE _objc3_profile

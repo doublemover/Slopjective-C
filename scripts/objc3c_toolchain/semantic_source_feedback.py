@@ -1,6 +1,8 @@
 """Compare uniform and feedback generation against real patch-owned source coverage."""
 from __future__ import annotations
 
+from .linux_host import native_linux_host
+
 import argparse
 from dataclasses import asdict
 import gzip
@@ -110,7 +112,7 @@ class Generator:
 
 
 def admit_baseline(repo: Path, prior: dict, services: Path, runtime: Path) -> dict:
-    normal = build_plans(repo, host='linux-x86_64', instrumentation_profile='compiler-asan-ubsan')['configure']
+    normal = build_plans(repo, host=native_linux_host(), instrumentation_profile='compiler-asan-ubsan')['configure']
     expected = {name: 'cleanup-order' if name in ('defer', 'destructor') else 'value-or-lifetime'
                 for name in ('tag', 'defer', 'destructor', 'provider', 'error')}
     controls = {row.get('name'): row for row in prior.get('controls', [])}

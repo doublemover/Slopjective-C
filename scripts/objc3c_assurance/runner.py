@@ -1,6 +1,8 @@
 """Run canonical native owners without packaging an SDK for ordinary source CI."""
 from __future__ import annotations
 
+from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
+
 import json
 import os
 from pathlib import Path
@@ -81,7 +83,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         environment = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'CCACHE_COMPILERCHECK': 'content'}
         bootstrap = Path(environment['OBJC3C_BOOTSTRAP_LLVM_ROOT']).resolve(strict=True)
         sdk = ((product_sdk.resolve(strict=True) if product_sdk is not None else
-                repo / 'out/toolchains/objc3-development/stage-linux-x86_64'))
+                repo / ('out/toolchains/objc3-development/stage-' + native_linux_host())))
         environment['LD_LIBRARY_PATH'] = str(sdk / 'lib')
         report['bootstrap'] = {'clang_sha256': digest(bootstrap / 'bin/clang'),
                                'linker_sha256': digest(bootstrap / 'bin/ld.lld')}
@@ -96,7 +98,8 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         receipt = json.loads((prefix / 'objc3-sdk.json').read_text())
         signatures = (receipt.get('source_build_id'), receipt.get('seal_sha256'),
                       receipt.get('target'))
-        if (not all(isinstance(value, str) and value for value in signatures) or
+        if (receipt.get('target') != native_target() or
+                not all(isinstance(value, str) and value for value in signatures) or
                 len(receipt['seal_sha256']) != 64 or
                 any(char not in '0123456789abcdef' for char in receipt['seal_sha256'])):
             raise ValueError('product SDK receipt is missing its exact source, target or seal identity')
@@ -154,17 +157,17 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 return Path(shared[profile]['prefix'])
             evidence = directory / 'foundations' / profile
             try:
-                shared[profile] = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+                shared[profile] = build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
                     instrumentation_profile=profile, test_results=evidence)
             finally:
                 receipt = (repo / 'out/toolchains/objc3-development' /
-                    ('build-linux-x86_64-'+profile) / 'foundation-build-report.json')
+                    (('build-' + native_linux_host() + '-')+profile) / 'foundation-build-report.json')
                 if receipt.is_file():
                     saved = json.loads(receipt.read_text())
                     write_json(evidence / 'foundation.json', saved)
                     for index, phase in enumerate(saved['phases']):
                         shutil.copyfile(phase['log'], evidence / ('phase-'+str(index)+'.log'))
-        plan = build_plans(repo, host='linux-x86_64', instrumentation_profile=profile)['configure']
+        plan = build_plans(repo, host=native_linux_host(), instrumentation_profile=profile)['configure']
         return Path(plan['paths']['stage'])
 
     def profile_facade(profile):
@@ -195,12 +198,12 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
         name = suite['id']
         if name == 'foundation':
             try:
-                foundation = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+                foundation = build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
                                               test_results=directory)
             finally:
                 # A failing compile must retain the actual compiler diagnostic,
                 # even though the canonical builder raises before returning.
-                receipt = repo / 'out/toolchains/objc3-development/build-linux-x86_64/foundation-build-report.json'
+                receipt = repo / ('out/toolchains/objc3-development/build-' + native_linux_host() + '/foundation-build-report.json')
                 if receipt.is_file():
                     saved = json.loads(receipt.read_text())
                     write_json(directory / 'foundation.json', saved)
@@ -223,7 +226,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                 receipt = directory / 'runtime.json'
                 if receipt.is_file():
                     saved = json.loads(receipt.read_text())
-                    build = repo / 'out/toolchains/libobjc2-v2.3/build-linux-x86_64' / saved['build_key']
+                    build = repo / ('out/toolchains/libobjc2-v2.3/build-' + native_linux_host()) / saved['build_key']
                     for log in build.glob('step-*.log'):
                         shutil.copyfile(log, directory / log.name)
             runtime = json.loads((directory / 'runtime.json').read_text())
@@ -241,7 +244,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             tests = execute_ctest(build, 'runtime-ctest', directory, command)
             return tests
         if name == 'frontend':
-            build = repo / 'out/toolchains/objc3-facade/build-linux-x86_64'
+            build = repo / ('out/toolchains/objc3-facade/build-' + native_linux_host())
             command('configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
                 f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
                 f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',

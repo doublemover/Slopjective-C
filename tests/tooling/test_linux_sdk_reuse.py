@@ -5,6 +5,15 @@ import json
 import pytest
 
 from scripts.objc3c_toolchain.linux_sdk import copy_foundation, foundation_identity
+from scripts.objc3c_toolchain.linux_host import native_linux_host, native_target
+
+
+@pytest.fixture(autouse=True)
+def independent_runtime_dependency(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import compiler_runtimes
+    monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(tmp_path / 'bootstrap'))
+    monkeypatch.setattr(compiler_runtimes, 'discover', lambda *a: {'sha256': 'builtin-input'})
+    monkeypatch.setattr(compiler_runtimes, 'materialize', lambda *a: {'files': 0})
 
 
 def sdk(tmp_path: Path) -> Path:
@@ -80,9 +89,9 @@ def test_editor_qualification_changes_invalidate_release_reuse(tmp_path, monkeyp
     from scripts.objc3c_native_validation import plan
     repo = tmp_path / 'project'
     fixture = 'tests/tooling/fixtures/objc3_editor/qualification-cases.json'
-    for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json',
-                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen',
-                 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck', fixture):
+    for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json', 'toolchains/linux-hosts.json',
+                 f'out/toolchains/objc3-development/build-{native_linux_host()}/bin/llvm-tblgen',
+                 f'out/toolchains/objc3-development/build-{native_linux_host()}/bin/FileCheck', fixture):
         path = repo / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('initial contents')
@@ -101,9 +110,9 @@ def identity_project(tmp_path, monkeypatch, configure):
     from scripts.objc3c_toolchain import linux_sdk
     from scripts.objc3c_native_validation import plan
     repo = tmp_path / 'project'
-    for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json',
-                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen',
-                 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck'):
+    for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json', 'toolchains/linux-hosts.json',
+                 f'out/toolchains/objc3-development/build-{native_linux_host()}/bin/llvm-tblgen',
+                 f'out/toolchains/objc3-development/build-{native_linux_host()}/bin/FileCheck'):
         path = repo / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('qualified input')
@@ -166,12 +175,12 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     sdk.mkdir()
     monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(sdk))
     monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *a: {
-        'source_build_id': 'llvm-build', 'seal_sha256': 'seal'})
+        'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
     monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {'build_id': 'llvm-build'})
     changed = False
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *a: {
         'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation',
-        'native_headers': {'sha256': 'native-headers'}})
+        'native_headers': {'sha256': 'native-headers'}, 'compiler_runtimes': {'sha256': 'builtin-input'}})
     monkeypatch.setattr(linux_sdk, 'discover_native_headers', lambda *a: {'sha256': 'native-headers'})
     monkeypatch.setattr(linux_sdk, 'materialize_native_headers', lambda *a: {'files': 0})
     monkeypatch.setattr(linux_sdk, 'copy_foundation', lambda _, prefix: prefix.mkdir())
@@ -211,7 +220,7 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
 
 def test_candidate_foundation_reclaims_only_the_verified_stage(tmp_path):
     from scripts.objc3c_toolchain import linux_sdk
-    stage = tmp_path / 'out/toolchains/objc3-development/stage-linux-x86_64'
+    stage = tmp_path / f'out/toolchains/objc3-development/stage-{native_linux_host()}'
     (stage / 'bin').mkdir(parents=True)
     (stage / 'bin/clang').write_bytes(b'qualified foundation')
     prefix = tmp_path / 'candidate'
@@ -224,7 +233,7 @@ def test_candidate_foundation_reclaims_only_the_verified_stage(tmp_path):
 
 def test_damaged_candidate_preserves_its_source_stage(tmp_path):
     from scripts.objc3c_toolchain import linux_sdk
-    stage = tmp_path / 'out/toolchains/objc3-development/stage-linux-x86_64'
+    stage = tmp_path / f'out/toolchains/objc3-development/stage-{native_linux_host()}'
     (stage / 'bin').mkdir(parents=True)
     (stage / 'bin/clang').write_bytes(b'qualified foundation')
     prefix = tmp_path / 'candidate'
@@ -248,7 +257,7 @@ def test_candidate_never_reclaims_an_installed_foundation(tmp_path):
 
 @pytest.mark.parametrize('name', [
     'stdlib/include/objc3/text.h', 'stdlib/module_inventory.json',
-    'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck'])
+    f'out/toolchains/objc3-development/build-{native_linux_host()}/bin/FileCheck'])
 def test_library_and_qualification_tool_edits_invalidate_sdk_reuse(tmp_path, monkeypatch, name):
     from scripts.objc3c_toolchain import linux_sdk
     repo, prefix = identity_project(tmp_path, monkeypatch, {'command': ['cmake']})

@@ -5,6 +5,9 @@ The bundle inventory has its own identity, separate from the foundation ABI.
 """
 from __future__ import annotations
 
+from .linux_host import HOSTS, native_linux_host, native_loader, native_target
+
+
 import hashlib
 import json
 from pathlib import Path
@@ -57,7 +60,7 @@ def verify_installation(canonical: Path, installed: Path, build: Path) -> dict:
     old, new = canonical.read_bytes(), installed.read_bytes()
     before_tag, position, before = runpath(old)
     after_tag, destination, after = runpath(new)
-    expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
+    expected = '$ORIGIN/../lib:$ORIGIN/../lib/' + native_target()
     if (len(old) != len(new) or before_tag != after_tag or position != destination or after != expected or
             before not in (expected+':', expected+':'+str(build / 'lib')+':')):
         raise ValueError('unowned LLVM install-time ELF RUNPATH transition')
@@ -75,14 +78,14 @@ def foundation(repo: Path) -> tuple[dict, dict]:
     """Admit the foundation before its development-only targets exist."""
     inventory = repo / 'toolchains/llvm/assurance-tools.json'
     document = json.loads(inventory.read_text())
-    if (document.get('schema') != 'objc3c.llvm-development-tools.v1' or
-            document.get('host') != 'linux-x86_64' or
+    if (document.get('schema') != 'objc3c.llvm-development-tools.v2' or
+            document.get('hosts') != list(HOSTS) or
             document.get('foundation_profile') != 'compiler-asan-ubsan' or
             document.get('build_targets') != ['opt', 'llvm-dis', 'llvm-reduce'] or
             document.get('foundation_tools') != ['clang', 'clang++', 'llc', 'llvm-dwarfdump', 'ld.lld'] or
             document.get('pipelines') != ['default<O0>', 'default<O2>']):
         raise ValueError('unreviewed LLVM development tool inventory')
-    plan = build_plans(repo, host=document['host'],
+    plan = build_plans(repo, host=native_linux_host(),
                        instrumentation_profile=document['foundation_profile'])['configure']
     build, stage = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage'))
     completed = json.loads((build / 'foundation-build-report.json').read_text())
@@ -169,7 +172,7 @@ def qualify(repo: Path, *, run, receipt: Path | None = None) -> tuple[dict, dict
     owned = verify_owned_archives(archives, records, owners=archive_owners(build, archives, ninja,
         run=lambda name, cmd: run('tools-'+name, cmd)))
     graphs, versions = {}, {}
-    loader = Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True)
+    loader = native_loader()
     for name, tool in tools.items():
         library_root = build if name in document['build_targets'] else stage
         libraries = [(library_root / 'lib' / name).resolve(strict=True)

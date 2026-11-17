@@ -63,13 +63,13 @@ def test_foreign_environment_excludes_product_loader_and_importer_overrides(monk
 
 
 @pytest.mark.parametrize('system,machine,distribution,version', [
-    ('Darwin', 'x86_64', 'debian', '13'), ('Linux', 'aarch64', 'debian', '13'),
+    ('Darwin', 'x86_64', 'debian', '13'), ('Linux', 'riscv64', 'debian', '13'),
     ('Linux', 'x86_64', 'ubuntu', '26.04'), ('Linux', 'x86_64', 'debian', '12')])
 def test_unadmitted_host_is_not_a_semantic_pass(monkeypatch, system, machine, distribution, version):
     monkeypatch.setattr(tools.platform, 'system', lambda: system)
     monkeypatch.setattr(tools.platform, 'machine', lambda: machine)
     monkeypatch.setattr(tools.platform, 'freedesktop_os_release', lambda: {'ID': distribution, 'VERSION_ID': version})
-    with pytest.raises(ValueError, match='admitted Debian'):
+    with pytest.raises(ValueError, match='admitted Debian|native Linux development'):
         tools.require_host()
 
 
@@ -123,7 +123,8 @@ def test_local_swift_seal_cannot_hide_changed_publisher_files(tmp_path, monkeypa
     binary = root / 'swiftc';binary.write_bytes(b'publisher bytes');binary.chmod(0o755)
     (root / 'swift').symlink_to('swiftc')
     files = {'swiftc': {'sha256': tools.digest(binary), 'mode': 0o755}, 'swift': {'link': 'swiftc'}}
-    pin = {'archive_sha256': 'a'*64, 'selected_manifest_sha256': hashlib.sha256(
+    monkeypatch.setattr(tools, 'require_elf', lambda path: None) # Seal mutations are independent of ELF admission.
+    pin = {'archive_sha256': 'a'*64, 'bin': ['swiftc'], 'selected_manifest_sha256': hashlib.sha256(
         json.dumps(files, sort_keys=True, separators=(',', ':')).encode()).hexdigest()}
     monkeypatch.setattr(tools, 'policy', lambda repo: (pin, 'pinned-policy'))
     receipt = {'schema': 'objc3c.swift-consumer-install.v1', 'pin_sha256': 'pinned-policy',

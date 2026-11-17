@@ -8,6 +8,7 @@ import subprocess
 import sys
 
 from .binary_packages import digest
+from .linux_host import native_linux_host, require_elf
 
 
 def prepare(repo: Path, bootstrap: Path, output: Path, *, fetch: bool, jobs: int) -> dict:
@@ -25,7 +26,7 @@ def prepare(repo: Path, bootstrap: Path, output: Path, *, fetch: bool, jobs: int
     if result.returncode or not receipt.is_file():
         raise ValueError('pinned frontend test runtime build failed; see ' + str(log))
     record = json.loads(receipt.read_text())
-    profile = json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']['linux-x86_64']
+    profile = json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles'][native_linux_host()]
     root = Path(record['stage']).resolve(strict=True)
     library = (root / 'lib/libobjc.so').resolve(strict=True)
     if (record.get('status') != 'passed' or record.get('source_commit') != profile['runtime_commit'] or
@@ -34,6 +35,9 @@ def prepare(repo: Path, bootstrap: Path, output: Path, *, fetch: bool, jobs: int
             not root.is_relative_to(repo / 'out/toolchains/libobjc2-v2.3') or
             not library.is_relative_to(root) or not library.is_file()):
         raise ValueError('frontend test runtime differs from its pinned compiler/source inputs')
+    require_elf(library)
+    if record.get('profile') != native_linux_host():
+        raise ValueError('frontend test runtime architecture differs from the native host')
     return {'root': str(root), 'library': str(library), 'library_sha256': digest(library),
             'receipt': str(receipt), 'receipt_sha256': digest(receipt),
             'command': command, 'log': str(log), 'log_sha256': digest(log)}

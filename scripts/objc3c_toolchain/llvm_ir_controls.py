@@ -1,6 +1,8 @@
 """Independent negative controls for execution, debug validation and reduction."""
 from __future__ import annotations
 
+from .linux_host import native_linux_host, native_target
+
 import copy
 import json
 from pathlib import Path
@@ -32,7 +34,7 @@ def qualify(repo: Path, output: Path, tools: dict, environment: dict) -> dict:
             receipt['controls'].append({'name': name, 'status': 'PASS', 'interesting': actual,
                                         'input_sha256': digest(source)})
         unrelated_link = output / 'unresolved.ll'
-        unrelated_link.write_text('target triple = "x86_64-unknown-linux-gnu"\n'
+        unrelated_link.write_text('target triple = "'+native_target()+'"\n'
             'declare i32 @unresolved_control()\n'
             'define i32 @main() { %v = call i32 @unresolved_control()\n ret i32 %v }\n')
         if interesting(spec, unrelated_link, logs=output / 'unrelated-link-failure'):
@@ -70,9 +72,9 @@ def qualify(repo: Path, output: Path, tools: dict, environment: dict) -> dict:
             receipt['controls'].append({'name': name, 'status': 'PASS', 'classification': classification})
         # The assembler input is well formed; only DWARF's unit header is bad.
         assembly, malformed = output / 'malformed-debug.s', output / 'malformed-debug.o'
-        assembly.write_text('.section .debug_info,"",@progbits\n.long 0xfffffffe\n.long 0\n')
+        assembly.write_text('.section .debug_info,"",'+('%' if native_linux_host() == 'linux-aarch64' else '@')+'progbits\n.long 0xfffffffe\n.long 0\n')
         executor.run('malformed-debug-assemble', [tools['clang'], '--no-default-config',
-            '--target=x86_64-unknown-linux-gnu', '-c', assembly, '-o', malformed], outputs=[malformed])
+            '--target='+native_target(), '-c', assembly, '-o', malformed], outputs=[malformed])
         executor.run('malformed-debug-verify', [tools['llvm-dwarfdump'], '--verify', malformed],
                      expected=1, contains=('error:', '.debug_info'))
         receipt['controls'].append({'name': 'malformed-dwarf', 'status': 'PASS'})

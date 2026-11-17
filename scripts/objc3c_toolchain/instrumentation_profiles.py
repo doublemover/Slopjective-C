@@ -11,10 +11,11 @@ def select(repo: Path, name: str, host: str, base_build: dict, sealed: dict, ups
     source = repo / 'toolchains/llvm/instrumentation-profiles.json'
     owner = repo / 'scripts/objc3c_toolchain/instrumentation_profiles.py'
     document = json.loads(source.read_text())
-    if document.get('schema') != 'objc3c.compiler-instrumentation-profiles.v1' or name not in document['profiles']:
+    if document.get('schema') != 'objc3c.compiler-instrumentation-profiles.v2' or name not in document['profiles']:
         raise ValueError('unknown compiler instrumentation profile: '+name)
     profile = document['profiles'][name]
-    if profile['host'] != host or host != 'linux-x86_64' or profile['subject'] != 'compiler-implementation':
+    if (profile.get('hosts') != ['linux-x86_64', 'linux-aarch64'] or
+            host not in profile['hosts'] or profile['subject'] != 'compiler-implementation'):
         raise ValueError('compiler instrumentation requires its declared native Linux host')
     if not all(base_build[key] for key in ('assertions', 'rtti', 'eh')):
         raise ValueError('compiler instrumentation must preserve assertions, RTTI and exceptions')
@@ -75,7 +76,7 @@ def select(repo: Path, name: str, host: str, base_build: dict, sealed: dict, ups
     inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
               for path in (source, owner)}
     inputs = {**sealed['configuration_inputs'], **inputs}
-    recipe = {'build': build, 'configuration_inputs': inputs, 'instrumentation': profile}
+    recipe = {'build': build, 'configuration_inputs': inputs, 'instrumentation': profile, 'host': host}
     identity = hashlib.sha256(json.dumps(recipe, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     build_id = f"{upstream['tag']}-{upstream['commit'][:12]}-{sealed['patch_digest'][:12]}-{identity[:8]}"
     return {'name': name, 'build': build, 'build_config_digest': identity,

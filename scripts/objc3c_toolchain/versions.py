@@ -17,6 +17,11 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
     manifest = json.loads((repo / "toolchains/llvm/manifest.json").read_text())
     tools = manifest["host_tools"]
     errors = []
+    try:
+        from .linux_host import load as load_linux_hosts
+        load_linux_hosts(repo, "linux-x86_64")
+    except (OSError, ValueError, KeyError) as error:
+        errors.append("Linux bootstrap pins: " + str(error))
     for name, filename in (("python", ".python-version"), ("node", ".node-version")):
         if (repo / filename).read_text().strip() != tools[name]:
             errors.append(f"{filename} differs from host_tools.{name}")

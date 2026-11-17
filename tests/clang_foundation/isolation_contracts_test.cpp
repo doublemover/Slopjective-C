@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
@@ -48,7 +49,7 @@ CompileRequest Request(std::string Source, bool Cxx = false, bool Arc = true,
   R.objc3 = true;
   R.arc = Arc;
   R.strict_concurrency = true;
-  R.target_triple = "x86_64-unknown-linux-gnu";
+  R.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   R.objc_runtime = "gnustep-2.2";
   R.arguments = {"-std=" +
                      (Standard.empty() ? (Cxx ? "c++20" : "c17") : Standard),
@@ -91,7 +92,7 @@ std::vector<std::string> ASTArgs(bool Cxx, bool Arc) {
           "-fblocks",
           "-fobjc3-strict-concurrency",
           Arc ? "-fobjc-arc" : "-fno-objc-arc",
-          "--target=x86_64-unknown-linux-gnu"};
+          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
 }
 std::unique_ptr<clang::ASTUnit> Parse(llvm::StringRef Source, bool Cxx = false,
                                       bool Arc = true) {

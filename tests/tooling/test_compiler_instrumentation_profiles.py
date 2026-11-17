@@ -200,3 +200,12 @@ def test_canonical_planner_isolates_all_profile_outputs_and_stamps(owned, monkey
                for cmd in instrumented['test']['follow_up_commands'])
     assert instrumented['test']['command_environment']['LD_LIBRARY_PATH'] == (
         instrumented['test']['paths']['build'] + '/lib')
+
+
+def test_both_native_hosts_receive_distinct_instrumented_compiler_identities(owned):
+    repo, manifest, sealed = owned
+    profiles_by_host = {host: profiles.select(repo, NAME, host, manifest['build'], sealed, manifest['upstream'])
+                        for host in ('linux-x86_64', 'linux-aarch64')}
+    assert profiles_by_host['linux-x86_64']['build_config_digest'] != profiles_by_host['linux-aarch64']['build_config_digest']
+    assert all(set(value['build']['targets']) == {'X86', 'AArch64'} for value in profiles_by_host.values())
+    assert profiles_by_host['linux-x86_64']['cmake'] == profiles_by_host['linux-aarch64']['cmake']

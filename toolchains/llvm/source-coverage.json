@@ -1,6 +1,5 @@
 {
-  "schema": "objc3c.native-source-coverage-policy.v1",
-  "host": "linux-x86_64",
+  "schema": "objc3c.native-source-coverage-policy.v2",
   "compiler_profile": "compiler-source-coverage",
   "compile_flags": [
     "-fprofile-instr-generate",
@@ -44,7 +43,8 @@
     "objc3_interface_emitter_coverage_31",
     "objc3_interface_import_api",
     "objc3_interface_module_resolution",
-    "objc3_interface_artifact_io"
+    "objc3_interface_artifact_io",
+    "objc3_aarch64_native_abi"
   ],
   "runtime_tests": [
     "objc3_task_services",
@@ -92,5 +92,9 @@
     "frontend:objc3_interface_emitter_coverage_31": 900
   },
   "purpose": "Measured first-party and patched-compiler implementation coverage with separate denominators and patch-hunk views. No uncalibrated percentage threshold.",
-  "emitter_shards": 32
+  "emitter_shards": 32,
+  "hosts": [
+    "linux-x86_64",
+    "linux-aarch64"
+  ]
 }
