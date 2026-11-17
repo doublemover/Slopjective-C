@@ -12439,7 +12439,6 @@ index b0669c602..3b5c9bf01 100644
    QualType NewClassTy, OldClassTy;
  
 diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
-index 04ba52809..fc19d89f5 100644
 --- a/clang/lib/Sema/SemaDeclObjC.cpp
 +++ b/clang/lib/Sema/SemaDeclObjC.cpp
 @@ -11,8 +11,13 @@
@@ -12456,7 +12455,7 @@ index 04ba52809..fc19d89f5 100644
  #include "clang/AST/ASTMutationListener.h"
  #include "clang/AST/DeclObjC.h"
  #include "clang/AST/DynamicRecursiveASTVisitor.h"
-@@ -137,8 +142,51 @@ static void diagnoseNoescape(const ParmVarDecl *NewD, const ParmVarDecl *OldD,
+@@ -137,8 +142,51 @@
          << cast<ObjCMethodDecl>(NewD->getDeclContext());
  }
  
@@ -12508,7 +12507,7 @@ index 04ba52809..fc19d89f5 100644
    ASTContext &Context = getASTContext();
    if (Overridden->hasRelatedResultType() &&
        !NewMethod->hasRelatedResultType()) {
-@@ -1290,16 +1338,16 @@ ObjCProtocolDecl *SemaObjC::ActOnStartProtocolInterface(
+@@ -1290,16 +1338,16 @@
    return PDecl;
  }
  
@@ -12528,7 +12527,7 @@ index 04ba52809..fc19d89f5 100644
        UndefinedProtocol = PI;
        return true;
      }
-@@ -1349,7 +1397,7 @@ void SemaObjC::FindProtocolDeclaration(bool WarnOnDeclarations,
+@@ -1349,7 +1397,7 @@
      ObjCProtocolDecl *UndefinedProtocol;
  
      if (WarnOnDeclarations &&
@@ -12537,7 +12536,7 @@ index 04ba52809..fc19d89f5 100644
        Diag(Pair.getLoc(), diag::warn_undef_protocolref)
            << Pair.getIdentifierInfo();
        Diag(UndefinedProtocol->getLocation(), diag::note_protocol_decl_undefined)
-@@ -1479,7 +1527,7 @@ void SemaObjC::actOnObjCTypeArgsOrProtocolQualifiers(
+@@ -1479,7 +1527,7 @@
        // FIXME: Recover nicely in the hidden case.
        ObjCProtocolDecl *forwardDecl = nullptr;
        if (warnOnIncompleteProtocols &&
@@ -12546,7 +12545,7 @@ index 04ba52809..fc19d89f5 100644
          Diag(identifierLocs[i], diag::warn_undef_protocolref)
            << proto->getDeclName();
          Diag(forwardDecl->getLocation(), diag::note_protocol_decl_undefined)
-@@ -2595,6 +2643,7 @@ static bool checkMethodFamilyMismatch(Sema &S, ObjCMethodDecl *impl,
+@@ -2595,6 +2643,7 @@
  void SemaObjC::WarnConflictingTypedMethods(ObjCMethodDecl *ImpMethodDecl,
                                             ObjCMethodDecl *MethodDecl,
                                             bool IsProtocolMethodDecl) {
@@ -12554,7 +12553,7 @@ index 04ba52809..fc19d89f5 100644
    if (getLangOpts().ObjCAutoRefCount &&
        checkMethodFamilyMismatch(SemaRef, ImpMethodDecl, MethodDecl))
      return;
-@@ -3269,6 +3318,8 @@ bool SemaObjC::MatchTwoMethodDeclarations(const ObjCMethodDecl *left,
+@@ -3269,6 +3318,8 @@
                                            const ObjCMethodDecl *right,
                                            MethodMatchStrategy strategy) {
    ASTContext &Context = getASTContext();
@@ -12563,7 +12562,7 @@ index 04ba52809..fc19d89f5 100644
    if (!matchTypes(Context, strategy, left->getReturnType(),
                    right->getReturnType()))
      return false;
-@@ -3600,6 +3651,19 @@ ObjCMethodDecl *SemaObjC::LookupMethodInGlobalPool(Selector Sel, SourceRange R,
+@@ -3600,6 +3651,19 @@
  void SemaObjC::DiagnoseMultipleMethodInGlobalPool(
      SmallVectorImpl<ObjCMethodDecl *> &Methods, Selector Sel, SourceRange R,
      bool receiverIdOrClass) {
@@ -12583,7 +12582,15 @@ index 04ba52809..fc19d89f5 100644
    // We found multiple methods, so we may have to complain.
    bool issueDiagnostic = false, issueError = false;
  
-@@ -4462,6 +4526,7 @@ void SemaObjC::CheckObjCMethodOverrides(ObjCMethodDecl *ObjCMethod,
+@@ -4094,6 +4158,7 @@
+       for (auto *I : CDecl->properties())
+         ProcessPropertyDecl(I);
+     CDecl->setAtEndRange(AtEnd);
++    checkObjC3NonisolatedInteriorResults(SemaRef,CDecl);
+   }
+   if (ObjCImplementationDecl *IC=dyn_cast<ObjCImplementationDecl>(ClassDecl)) {
+     IC->setAtEndRange(AtEnd);
+@@ -4462,6 +4527,7 @@
    // overriding the same method in the interface or its categories.
    bool hasOverriddenMethodsInBaseOrProtocol = false;
    for (ObjCMethodDecl *overridden : overrides) {
@@ -12591,7 +12598,7 @@ index 04ba52809..fc19d89f5 100644
      if (!hasOverriddenMethodsInBaseOrProtocol) {
        if (isa<ObjCProtocolDecl>(overridden->getDeclContext()) ||
            !IsMethodInCurrentClass(overridden) || overridden->isOverriding()) {
-@@ -4788,7 +4853,8 @@ Decl *SemaObjC::ActOnMethodDeclaration(
+@@ -4788,7 +4854,8 @@
      ParmVarDecl **ArgInfo, DeclaratorChunk::ParamInfo *CParamInfo,
      unsigned CNumArgs, // c-style args
      const ParsedAttributesView &AttrList, tok::ObjCKeywordKind MethodDeclKind,
@@ -12601,7 +12608,7 @@ index 04ba52809..fc19d89f5 100644
    ASTContext &Context = getASTContext();
    // Make sure we can establish a context for the method.
    if (!SemaRef.CurContext->isObjCContainer()) {
-@@ -4848,6 +4914,26 @@ Decl *SemaObjC::ActOnMethodDeclaration(
+@@ -4848,6 +4915,26 @@
    }
  
    ObjCMethod->setMethodParams(Context, Params, SelectorLocs);
@@ -12628,6 +12635,7 @@ index 04ba52809..fc19d89f5 100644
    ObjCMethod->setObjCDeclQualifier(
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
+
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
 index 5d4c5ff7d..e87d5b454 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
@@ -52682,7 +52690,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1818 @@
+@@ -0,0 +1,1934 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -52759,6 +52767,11 @@ new file mode 100644
 +  bool Unchecked = false;
 +  bool Borrowed = false;
 +};
++bool carriesManagedResourceValue(ASTContext &, const Expr *);
++bool managedTransferStorage(const ValueDecl *Value) {
++  return Value && (Value->hasAttr<CleanupAttr>() ||
++      Value->hasAttr<ObjCCleanupAttr>() || Value->hasAttr<ObjCResourceAttr>());
++}
 +class SendableClassifier {
 +  ASTContext &C;
 +  llvm::SmallPtrSet<const Type *, 16> Active;
@@ -52859,10 +52872,11 @@ new file mode 100644
 +            };
 +            bool Managed = ManagedVariable(Variable);
 +            if (const auto *InitCapture = dyn_cast<VarDecl>(Variable);
-+                InitCapture && InitCapture->isInitCapture() && InitCapture->hasInit()) {
++                InitCapture && InitCapture->hasInit() &&
++                (InitCapture->isInitCapture() || InitCapture->getType().isConstQualified() ||
++                 InitCapture->getType()->isReferenceType())) {
 +              const Expr *Init = InitCapture->getInit()->IgnoreParenImpCasts();
-+              if (const auto *Reference = dyn_cast<DeclRefExpr>(Init))
-+                Managed |= ManagedVariable(Reference->getDecl());
++              Managed |= carriesManagedResourceValue(C,Init);
 +            }
 +            if (Unowned || Managed) {
 +              bool Admitted = unsafeAdmission(C, CaptureType);
@@ -52947,6 +52961,90 @@ new file mode 100644
 +      }
 +    return E;
 +  }
++}
++// Storage cleanup is a value contract even when its scalar type has no
++// resource typedef sugar. Preserve it through bounded value-preserving views
++// before building a task/isolation snapshot. Explicit wrappers still undergo
++// their ordinary structural/unsafe-Sendable type admission.
++bool carriesManagedResourceValue(ASTContext &Context,const Expr *Expression) {
++  unsigned Budget=128;
++  llvm::SmallPtrSet<const VarDecl *,16> Active;
++  auto Visit=[&](auto &&Recurse,const Expr *E,unsigned Depth)->bool {
++    if(!E || !Budget || Depth>32)return true;
++    --Budget;
++    if(getObjC3ResourceTypeContract(Context,E->getType()).Cleanup)return true;
++    if(const auto *Cast=dyn_cast<CastExpr>(E)) {
++      if(Cast->getCastKind()==CK_IntegralToBoolean ||
++         Cast->getCastKind()==CK_PointerToBoolean ||
++         Cast->getCastKind()==CK_MemberPointerToBoolean ||
++         Cast->getCastKind()==CK_FloatingToBoolean)return false;
++      return Recurse(Recurse,Cast->getSubExpr(),Depth+1);
++    }
++    if(const auto *Paren=dyn_cast<ParenExpr>(E))return Recurse(Recurse,Paren->getSubExpr(),Depth+1);
++    if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(E))
++      return Opaque->getSourceExpr() && Recurse(Recurse,Opaque->getSourceExpr(),Depth+1);
++    if(const auto *Cleanups=dyn_cast<ExprWithCleanups>(E))return Recurse(Recurse,Cleanups->getSubExpr(),Depth+1);
++    if(const auto *Temporary=dyn_cast<MaterializeTemporaryExpr>(E))return Recurse(Recurse,Temporary->getSubExpr(),Depth+1);
++    if(const auto *Temporary=dyn_cast<CXXBindTemporaryExpr>(E))return Recurse(Recurse,Temporary->getSubExpr(),Depth+1);
++    if(const auto *Default=dyn_cast<CXXDefaultArgExpr>(E))return Recurse(Recurse,Default->getExpr(),Depth+1);
++    if(const auto *Default=dyn_cast<CXXDefaultInitExpr>(E))return Recurse(Recurse,Default->getExpr(),Depth+1);
++    if(const auto *Operation=dyn_cast<ObjC3ResourceExpr>(E))
++      return Operation->getKind()==ObjC3ResourceExpr::Kind::Take;
++    if(const auto *Reference=dyn_cast<DeclRefExpr>(E)) {
++      if(managedTransferStorage(Reference->getDecl()))return true;
++      const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
++      if(!Variable || !Variable->hasInit() ||
++          (!Variable->getType().isConstQualified() && !Variable->getType()->isReferenceType()))return false;
++      if(!Active.insert(Variable).second)return true;
++      const bool Managed=Recurse(Recurse,Variable->getInit(),Depth+1);Active.erase(Variable);return Managed;
++    }
++    if(const auto *Member=dyn_cast<MemberExpr>(E))return managedTransferStorage(Member->getMemberDecl());
++    if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E)) {
++      bool Truth;
++      if(!Conditional->getCond()->HasSideEffects(Context) &&
++          Conditional->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++        return Recurse(Recurse,Truth?Conditional->getTrueExpr():Conditional->getFalseExpr(),Depth+1);
++      return Recurse(Recurse,Conditional->getTrueExpr(),Depth+1) ||
++          Recurse(Recurse,Conditional->getFalseExpr(),Depth+1);
++    }
++    if(const auto *Binary=dyn_cast<BinaryOperator>(E)) {
++      if(Binary->getOpcode()==BO_Comma)return Recurse(Recurse,Binary->getRHS(),Depth+1);
++      if(Binary->getOpcode()==BO_Assign)return Recurse(Recurse,Binary->getLHS(),Depth+1) || Recurse(Recurse,Binary->getRHS(),Depth+1);
++    }
++    if(const auto *Unary=dyn_cast<UnaryOperator>(E);Unary && Unary->getOpcode()==UO_Plus)
++      return Recurse(Recurse,Unary->getSubExpr(),Depth+1);
++    if(const auto *Generic=dyn_cast<GenericSelectionExpr>(E);Generic && !Generic->isResultDependent())
++      return Recurse(Recurse,Generic->getResultExpr(),Depth+1);
++    if(const auto *Choice=dyn_cast<ChooseExpr>(E);Choice && !Choice->isConditionDependent())
++      return Recurse(Recurse,Choice->getChosenSubExpr(),Depth+1);
++    if(const auto *Literal=dyn_cast<CompoundLiteralExpr>(E))return Recurse(Recurse,Literal->getInitializer(),Depth+1);
++    if(const auto *List=dyn_cast<InitListExpr>(E)) {
++      for(const auto *Value:List->inits())if(Value && Recurse(Recurse,Value,Depth+1))return true;
++      return false;
++    }
++    if(const auto *Construction=dyn_cast<CXXConstructExpr>(E);
++        Construction && Construction->getConstructor()->isCopyOrMoveConstructor()) {
++      for(const auto *Value:Construction->arguments())if(Recurse(Recurse,Value,Depth+1))return true;
++      return false;
++    }
++    if(const auto *List=dyn_cast<CXXParenListInitExpr>(E)) {
++      for(const auto *Value:List->getInitExprs())if(Value && Recurse(Recurse,Value,Depth+1))return true;
++      return false;
++    }
++    if(const auto *Call=dyn_cast<CallExpr>(E);Call && Call->isGLValue()) {
++      // Native reference forwarders (including move/forward) can preserve a
++      // resource slot without preserving its variable attribute in the type.
++      for(const auto *Value:Call->arguments())if(Recurse(Recurse,Value,Depth+1))return true;
++    }
++    return false;
++  };
++  return Expression && Visit(Visit,Expression,0);
++}
++bool checkTransferValue(Sema &S,const Expr *Value,QualType Type,
++                        StringRef Reason,const Decl *Boundary) {
++  const bool Managed=carriesManagedResourceValue(S.Context,Value);
++  return checkTransfer(S,Type,Value->getExprLoc(),
++      Managed?StringRef("cleanup-managed concurrent value"):Reason,Boundary,Managed);
 +}
 +// Prove every possible capture environment before diagnosing its transfers.
 +// Completed expression nodes are shared across diamonds; active nodes reject
@@ -53263,8 +53361,8 @@ new file mode 100644
 +      Invalid = true;
 +      for (const Expr *Argument : Arguments)
 +        Invalid |=
-+            checkTransfer(S, transferSource(Argument)->getType(),
-+                          Argument->getExprLoc(), "isolated argument", Target);
++            checkTransferValue(S,Argument,transferSource(Argument)->getType(),
++                               "isolated argument",Target);
 +      QualType Result;
 +      ObjC3FunctionEffectInfo Effects;
 +      if (const auto *Method = dyn_cast<ObjCMethodDecl>(Target)) {
@@ -53306,6 +53404,9 @@ new file mode 100644
 +          ++Index;
 +          continue;
 +        }
++        if(carriesManagedResourceValue(S.Context,Argument))
++          Invalid |= checkTransferValue(S,Argument,TransferType,
++                                        "concurrent block value",Target);
 +        SmallVector<const BlockExpr *, 8> Blocks;
 +        if (knownConcurrentBlocks(S.Context, Argument, Blocks)) {
 +          llvm::SmallPtrSet<const BlockDecl *, 8> Active;
@@ -53323,8 +53424,8 @@ new file mode 100644
 +                        "unverified concurrent block capture", Target);
 +        }
 +      } else {
-+        Invalid |= checkTransfer(S, TransferType, Argument->getExprLoc(),
-+                                 "spawned work-item argument", Target);
++        Invalid |= checkTransferValue(S,Argument,TransferType,
++                                      "spawned work-item argument",Target);
 +      }
 +      ++Index;
 +    }
@@ -53446,8 +53547,11 @@ new file mode 100644
 +         (Capture.getCaptureType().getObjCLifetime() == Qualifiers::OCL_ExplicitNone ||
 +          Capture.getCaptureType()->isObjCInertUnsafeUnretainedType() ||
 +          V->getType()->isObjCInertUnsafeUnretainedType()));
-+    bool Managed = V->hasAttr<CleanupAttr>() || V->hasAttr<ObjCCleanupAttr>() ||
-+                   V->hasAttr<ObjCResourceAttr>();
++    bool Managed = managedTransferStorage(V);
++    if(V->hasInit() && (V->getType().isConstQualified() || V->getType()->isReferenceType()))
++      Managed |= carriesManagedResourceValue(S.Context,V->getInit());
++    if(const auto *Initializer=Capture.getObjC3InitExpr())
++      Managed |= carriesManagedResourceValue(S.Context,Initializer);
 +    bool Failed = false;
 +    if (Capture.isByRef() ||
 +        (Managed && !unsafeAdmission(S.Context, V->getType()))) {
@@ -53595,6 +53699,26 @@ new file mode 100644
 +    D->addAttr(ObjCTaskDetachedAttr::Create(S.Context, AL));
 +  if (Kind == 4 && !(Existing & 4))
 +    D->addAttr(ObjCTaskGroupAttr::Create(S.Context, AL));
++}
++
++bool clang::checkObjC3NonisolatedInteriorResults(Sema &S,
++                                                ObjCContainerDecl *Container) {
++  if (!S.getLangOpts().ObjC3 || !Container ||
++      !isObjC3Actor(getObjC3ContainingInterface(Container))) return false;
++  // Attribute order and property accessor synthesis must both be complete.
++  // An unsafe Sendable promise cannot waive the receiver-owned view lifetime.
++  bool Invalid=false;
++  for (auto *Method:Container->instance_methods()) {
++    if (Method->isInvalidDecl() || !isObjC3Nonisolated(Method) ||
++        !Method->hasAttr<ObjCReturnsInnerPointerAttr>()) continue;
++    const bool Strict=strictConcurrency(S);
++    S.Diag(Method->getLocation(),S.getDiagnostics().getCustomDiagID(
++        Strict?DiagnosticsEngine::Error:DiagnosticsEngine::Warning,
++        "nonisolated actor member cannot transfer a receiver-owned interior "
++        "view; return independent owned storage"));
++    if (Strict) {Method->setInvalidDecl();Invalid=true;}
++  }
++  return Invalid;
 +}
 +
 +bool clang::checkObjC3IsolationRedeclaration(Sema &S, Decl *New,
@@ -54395,12 +54519,12 @@ new file mode 100644
 +    Failed |= checkTransfer(*this, SourceReceiver->getType()->getPointeeType(),
 +                            SourceReceiver->getExprLoc(), "shared isolated C++ receiver", Target, true);
 +  else if (SourceReceiver && (!Message || Message->getReceiverKind() != ObjCMessageExpr::SuperClass))
-+    Failed |= checkTransfer(*this, transferSource(SourceReceiver)->getType(),
-+                            SourceReceiver->getExprLoc(), "isolated receiver", Target);
++    Failed |= checkTransferValue(*this,SourceReceiver,transferSource(SourceReceiver)->getType(),
++                                 "isolated receiver",Target);
 +  for (const Expr *Argument : SourceArguments)
 +    Failed |=
-+        checkTransfer(*this, transferSource(Argument)->getType(),
-+                      Argument->getExprLoc(), "isolated argument", Target);
++        checkTransferValue(*this,Argument,transferSource(Argument)->getType(),
++                           "isolated argument",Target);
 +  Failed |=
 +      checkTransfer(*this, FT->getReturnType(), Loc, "isolated result", Target);
 +  if (FT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::Typed)
@@ -54504,10 +54628,9 @@ new file mode 100644
 
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.h b/clang/lib/Sema/SemaObjC3Isolation.h
 new file mode 100644
-index 000000000..ac32b7dd5
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.h
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,24 @@
 +//===--- SemaObjC3Isolation.h - Isolation and transfer checking ---*- C++
 +//-*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54517,6 +54640,7 @@ index 000000000..ac32b7dd5
 +namespace clang {
 +class ASTContext;
 +class BlockExpr;
++class ObjCContainerDecl;
 +class Decl;
 +class ParsedAttr;
 +class Sema;
@@ -54528,8 +54652,10 @@ index 000000000..ac32b7dd5
 +bool checkObjC3ConcurrentBlockCaptures(Sema &, const BlockExpr *,
 +                                       SourceLocation);
 +bool checkObjC3IsolationBody(Sema &, Decl *Callable, Stmt *Body);
++bool checkObjC3NonisolatedInteriorResults(Sema &, ObjCContainerDecl *);
 +} // namespace clang
 +#endif
+
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
 index 000000000..912c48695
@@ -74647,4 +74773,47 @@ new file mode 100644
 + alias=self;
 + return [alias read]; // expected-error {{cross-actor entry requires an explicit await}}
 +}
++@end
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/nonisolated-interior-views.h b/clang/test/ObjC3/Sema/Inputs/nonisolated-interior-views.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/nonisolated-interior-views.h
+@@ -0,0 +1,14 @@
++#ifndef OBJC3_NONISOLATED_INTERIOR_VIEWS_H
++#define OBJC3_NONISOLATED_INTERIOR_VIEWS_H
++__attribute__((objc_root_class)) @interface ViewRoot @end
++actor class ViewActor:ViewRoot
++- (const char *_Nonnull)isolated __attribute__((objc_returns_inner_pointer));
++@property(nonatomic,readonly) const char *_Nonnull isolatedProperty __attribute__((objc_returns_inner_pointer));
++- (const char *_Nonnull)independent __attribute__((objc_nonisolated));
++- (int)stable __attribute__((objc_nonisolated));
++@end
++@interface OrdinaryView:ViewRoot
++- (const char *_Nonnull)bytes __attribute__((objc_returns_inner_pointer));
++@end
++typedef const char *_Nonnull UnsafeView __attribute__((objc_unsafe_sendable));
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/nonisolated-interior-views.m b/clang/test/ObjC3/Sema/nonisolated-interior-views.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/nonisolated-interior-views.m
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/nonisolated-interior-views.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify %s
++#include "Inputs/nonisolated-interior-views.h"
++@interface ViewActor (InteriorResults)
++- (const char *_Nonnull)first __attribute__((objc_nonisolated,objc_returns_inner_pointer)); // expected-error {{nonisolated actor member cannot transfer a receiver-owned interior view}}
++- (const char *_Nonnull)second __attribute__((objc_returns_inner_pointer,objc_nonisolated)); // expected-error {{nonisolated actor member cannot transfer a receiver-owned interior view}}
++@property(nonatomic,readonly) const char *_Nonnull firstProperty __attribute__((objc_nonisolated,objc_returns_inner_pointer)); // expected-error {{nonisolated actor member cannot transfer a receiver-owned interior view}}
++@property(nonatomic,readonly) const char *_Nonnull secondProperty __attribute__((objc_returns_inner_pointer,objc_nonisolated)); // expected-error {{nonisolated actor member cannot transfer a receiver-owned interior view}}
++- (UnsafeView)unchecked __attribute__((objc_nonisolated,objc_returns_inner_pointer)); // expected-error {{nonisolated actor member cannot transfer a receiver-owned interior view}}
++@end
++@interface DerivedView:ViewActor
++- (const char *_Nonnull)derived __attribute__((objc_nonisolated,objc_returns_inner_pointer)); // expected-error {{nonisolated actor member cannot transfer a receiver-owned interior view}}
 +@end

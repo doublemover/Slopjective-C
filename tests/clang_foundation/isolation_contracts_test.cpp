@@ -869,6 +869,47 @@ struct ModulePacket client_packet(Counter *counter, struct ModulePacket packet)
              Named<clang::FunctionDecl>(*Reloaded, "spawn")) == 1);
 }
 
+void CheckManagedBoundaryValues(bool Cxx,bool Arc,const std::string &Standard) {
+  const std::string NoThrow=Cxx?" noexcept":"";
+  std::string Preamble=Root.str()+"\n#include \"objc3_runtime_services.h\"\n";
+  if(Cxx)Preamble+="#include \"objc3_task.hpp\"\n#include <utility>\n";
+  Preamble+="void boundary_close(int)"+NoThrow+";void boundary_cleanup(int *)"+NoThrow+";\n"+
+      "int boundary_scalar(int)"+NoThrow+" __attribute__((objc_executor(main)));\n"+
+      "typedef int BoundaryUnchecked __attribute__((objc_unsafe_sendable));\n"+
+      "int boundary_unchecked(BoundaryUnchecked)"+NoThrow+" __attribute__((objc_executor(main)));\n"+
+      "struct BoundaryPacket {int value;};int boundary_packet(struct BoundaryPacket)"+NoThrow+" __attribute__((objc_executor(main)));\n"+
+      (Cxx?std::string("typedef void (^BoundaryWork)(void) __objc3_async;\n"):
+           std::string("typedef void (*BoundaryWork)(void) __objc3_async_frame;void boundary_work(void) __objc3_async_frame;\n"))+
+      "void *boundary_spawn(BoundaryWork,int) __attribute__((objc_task_spawn));\n";
+  auto Make=[&](const std::string &Body){return Request(Preamble+Body,Cxx,Arc,Standard);};
+  const std::string Open="int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=3;";
+  for(const std::string &Argument:{std::string("h"),std::string("(0,h)"),std::string("flag?h:42"),std::string("take(h)")})
+    Reject(Make("int rejected(int flag) __objc3_async_frame {"+Open+"return __objc3_await boundary_scalar("+Argument+");}"),"cleanup-managed concurrent value");
+  Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"const int alias=h;return __objc3_await boundary_scalar(alias);}"),"cleanup-managed concurrent value");
+  Reject(Make("int rejected(void) __objc3_async_frame {int h __attribute__((cleanup(boundary_cleanup)))=3;return __objc3_await boundary_scalar(h);}"),"cleanup-managed concurrent value");
+  Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_packet("+(Cxx?std::string("BoundaryPacket{h}"):std::string("(struct BoundaryPacket){h}"))+ ");}"),"cleanup-managed concurrent value");
+  Reject(Make("void rejected(void){"+Open+"boundary_spawn("+(Cxx?std::string("^void() __objc3_async {}"):std::string("boundary_work"))+",h);}"),"cleanup-managed concurrent value");
+  if(Cxx) {
+    Reject(Make("void rejected(void){"+Open+"const int alias=h;boundary_spawn(^void() __objc3_async {(void)alias;},0);}"),"cleanup-managed capture");
+    Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"const int &alias=h;return __objc3_await boundary_scalar(alias);}"),"cleanup-managed concurrent value");
+    Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_scalar(std::move(h));}"),"cleanup-managed concurrent value");
+    Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_packet(BoundaryPacket(h));}"),"cleanup-managed concurrent value");
+    Reject(Make("template<class Work>void *boundary_cpp_spawn(Work) __attribute__((objc_task_spawn));void rejected(void){"+Open+"boundary_cpp_spawn([value=take(h)]() __objc3_async {(void)value;});}"),"non-Sendable type");
+  } else {
+    Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_scalar(_Generic(1,int:h,default:42));}"),"cleanup-managed concurrent value");
+  }
+  Success(Compile(Make("int telemetry(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_scalar(h>=0)+__objc3_await boundary_scalar(0?h:42);}")));
+  auto Unsafe=Compile(Make("int admitted(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_unchecked((BoundaryUnchecked)h);}"));Success(Unsafe);assert(Has(Unsafe,"unchecked concurrency transfer"));
+  Success(Compile(Make("int ordinary(void) __objc3_async_frame {const int n=42;return __objc3_await boundary_scalar(n);}")));
+  for(const char *Attributes:{"objc_nonisolated,objc_returns_inner_pointer","objc_returns_inner_pointer,objc_nonisolated"})
+    Reject(Make(std::string("@interface Counter (BadInterior) - (const char *_Nonnull)bytes __attribute__((")+Attributes+"));@end"),"nonisolated actor member cannot transfer a receiver-owned interior view");
+  Reject(Make("@interface Counter (BadProperty) @property(nonatomic,readonly) const char *_Nonnull bytes __attribute__((objc_nonisolated,objc_returns_inner_pointer));@end"),"nonisolated actor member cannot transfer a receiver-owned interior view");
+  Success(Compile(Make("@interface Counter (IndependentPointer) - (const char *_Nonnull)bytes __attribute__((objc_nonisolated));@end")));
+  auto WarningRequest=Make("@interface Counter (WarningView) - (const char *_Nonnull)bytes __attribute__((objc_nonisolated,objc_returns_inner_pointer));@end");
+  WarningRequest.strict_concurrency=false;auto Warning=Compile(WarningRequest);Success(Warning);
+  assert(Has(Warning,"nonisolated actor member cannot transfer a receiver-owned interior view"));
+}
+
 void CheckImportConflicts() {
   for (auto Other : {"global", "named(\"background\")"}) {
     auto From = Parse("__attribute__((objc_executor(main))) int entry(void);");
@@ -905,11 +946,13 @@ void CheckImportConflicts() {
 int main() {
   for (bool Arc : {false, true}) {
     CheckSource(false, Arc, "c17");
+    CheckManagedBoundaryValues(false,Arc,"c17");
     CheckPrintAndPersistence(false, Arc);
     CheckAwaitBoundaries(false, Arc, "c17");
     CheckExecutorEntryIR(false, Arc, "c17");
     for (const std::string Standard : {"c++20", "c++23"}) {
       CheckSource(true, Arc, Standard);
+      CheckManagedBoundaryValues(true,Arc,Standard);
       CheckConcurrentCaptures(Arc, Standard);
       CheckAwaitBoundaries(true, Arc, Standard);
       CheckExecutorEntryIR(true, Arc, Standard);

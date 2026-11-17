@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.187 / System 2.113 managed-boundary span](linux_managed_boundary_values.md)
+retains cleanup-managed value contracts across executor/task snapshots and prevents
+nonisolated actor APIs from exposing receiver-owned interior views.
+
 The [Source 2.186 / System 2.112 native function-policy span](linux_native_function_policies.md)
 preserves definition and optimizer policies through source-free C17/C++ packages,
 including exact builtin, entry-patching, register-clearing and trusted-call contracts.
