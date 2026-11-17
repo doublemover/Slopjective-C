@@ -14,7 +14,8 @@ namespace objc3::clang_foundation {
 std::string BuildModuleOwnedName(const std::string &module,
                                  const std::string &package,
                                  const std::string &stable_id);
-bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
+// Admits exact reserved ownership or a separately framed external ABI binding.
+bool HasValidNativeSymbolName(const InterfaceModuleIdentity &module,
                              const InterfaceDeclarationIdentity &declaration);
 std::string NormalizeModuleSourceRoot(const clang::ASTContext &context,
                                       const std::string &root);

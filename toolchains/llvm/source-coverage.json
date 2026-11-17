@@ -60,7 +60,8 @@
     "objc3_native_boundary_resource_provider",
     "objc3_native_function_effect_provider",
     "objc3_native_lifetime_annotation_provider",
-    "objc3_native_block_binding_provider"
+    "objc3_native_block_binding_provider",
+    "objc3_native_external_binding_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",

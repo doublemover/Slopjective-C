@@ -106,6 +106,13 @@ int main() {
   auto decoded = DecodeSemanticInterfaceSidecar(*encoded, source, supported);
   assert(decoded);
   assert(decoded->schema_major == original.schema_major);
+  // Contract-looking text inside an ordinary type argument remains data.
+  // Only a framed outer binding can claim an external symbol contract.
+  {
+    auto data=*decoded;
+    data.declarations.front().canonical_type_identity="int (Name<\";native-external-binding:v1;symbol=3:ffi;\">)";
+    auto encoded_data=EncodeSemanticInterfaceSidecar(data,supported);assert(encoded_data);
+  }
   // Body-only lifetime/proof capabilities cannot be fabricated on namespace
   // declarations, even when their marker and required-semantics list agree.
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
@@ -120,6 +127,7 @@ int main() {
       {";native-function-policies:v1;",kNativeFunctionPolicySemantic},
       {";native-function-effects:v1;",kNativeFunctionEffectSemantic},
       {";native-lifetime-annotations:v1;",kNativeLifetimeAnnotationSemantic},
+      {";native-external-binding:v1;symbol=3:ffi;",kNativeExternalBindingSemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},

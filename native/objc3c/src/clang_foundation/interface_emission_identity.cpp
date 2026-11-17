@@ -3437,6 +3437,10 @@ bool ReadInterfaceDeclarationIdentity(
   if(!foreign_attributes.empty())
     identity.canonical_type_identity+=";foreign-import-attributes:v1;contracts="+
         ComputeInterfaceSourceSha256(foreign_attributes)+";";
+  if (!identity.native_symbol_name.empty() &&
+      !identity.native_symbol_name.starts_with("__objc3_m_") &&
+      IsNativeExternalBindingOwner(identity))
+    identity.canonical_type_identity=NativeExternalBindingIdentity(identity.native_symbol_name)+identity.canonical_type_identity;
 
   return true;
 }

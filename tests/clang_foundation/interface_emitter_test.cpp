@@ -10458,7 +10458,7 @@ void TestVariableSpecializations() {
     std::set<std::string> ids,symbols;
     for(const auto &d:decoded->declarations) if(HasCxxVariableSpecializationIdentity(d)) {
       assert(d.kind=="VarTemplateSpecialization" && ids.insert(d.stable_id).second && symbols.insert(d.native_symbol_name).second);
-      assert(HasValidModuleOwnedName(decoded->module,d));
+      assert(HasValidNativeSymbolName(decoded->module,d));
     }
     assert(ids.size()==4);
     auto changed=source;changed.replace(changed.find("=42"),3,"=44");
@@ -10512,7 +10512,7 @@ void TestFunctionSpecializations() {
     std::set<std::string> ids,symbols;
     for(const auto &d:decoded->declarations) if(HasCxxFunctionSpecializationIdentity(d)) {
       assert(d.kind=="Function" && ids.insert(d.stable_id).second && symbols.insert(d.native_symbol_name).second);
-      assert(HasValidModuleOwnedName(decoded->module,d));
+      assert(HasValidNativeSymbolName(decoded->module,d));
     }
     assert(ids.size()==5);
     auto changed=source;changed.replace(changed.find("return n+2"),10,"return n+4");

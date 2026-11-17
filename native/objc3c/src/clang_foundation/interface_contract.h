@@ -51,6 +51,7 @@ struct InterfaceDeclarationIdentity {
   InterfaceEffectIdentity effects;
   // Empty for public API. A named SPI group is a required semantic contract.
   std::string spi_group;
+  // Exact reserved module name or explicitly bound foreign ABI symbol.
   std::string native_symbol_name;
   // Native declaration owning this row's export policy. Class members and
   // friend functions bind to their class; namespace descendants retain scope.
@@ -166,6 +167,19 @@ inline bool HasNativeLifetimeAnnotationIdentity(const InterfaceDeclarationIdenti
 }
 inline bool IsNativeLifetimeAnnotationOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d);
+}
+inline constexpr const char *kNativeExternalBindingSemantic = "objc3.native-external-bindings.v1";
+inline constexpr const char *kNativeExternalBindingMarker = ";native-external-binding:v1;symbol=";
+inline bool HasNativeExternalBindingIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.starts_with(kNativeExternalBindingMarker);
+}
+inline bool IsNativeExternalBindingOwner(const InterfaceDeclarationIdentity &d) {
+  return d.kind=="Function" || d.kind=="FunctionTemplate" || IsCxxMemberDeclarationKind(d.kind) ||
+      d.kind=="Var" || d.kind=="VarTemplate" || d.kind=="VarTemplateSpecialization" ||
+      d.kind=="VarTemplatePartialSpecialization" || d.kind=="ObjCInterface" || d.kind=="ObjCProtocol";
+}
+inline std::string NativeExternalBindingIdentity(const std::string &symbol) {
+  return std::string(kNativeExternalBindingMarker)+std::to_string(symbol.size())+":"+symbol+";";
 }
 inline constexpr const char *kNativeFunctionPolicySemantic = "objc3.native-function-policies.v1";
 inline bool HasNativeFunctionPolicyIdentity(const InterfaceDeclarationIdentity &d) {

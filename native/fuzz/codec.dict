@@ -89,3 +89,5 @@
 ";native-function-effects:v1;"
 "objc3.native-lifetime-annotations.v1"
 ";native-lifetime-annotations:v1;"
+"objc3.native-external-bindings.v1"
+";native-external-binding:v1;symbol="

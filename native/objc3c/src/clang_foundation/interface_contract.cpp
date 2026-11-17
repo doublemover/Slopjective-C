@@ -586,6 +586,12 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasNativeFunctionEffectIdentity(d) || IsNativeFunctionEffectOwner(d);});
   if(function_effects!=function_effect_capability || !function_effect_owners)
     Add(result,"O3IFC145","native function effect identity and required capability must agree",expected.canonical_name);
+  const bool external_bindings=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeExternalBindingIdentity);
+  const bool external_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeExternalBindingSemantic)!=sidecar.required_semantics.end();
+  const bool external_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeExternalBindingIdentity(d) || IsNativeExternalBindingOwner(d);});
+  if(external_bindings!=external_capability || !external_owners)
+    Add(result,"O3IFC145","native external binding identity and required capability must agree",expected.canonical_name);
   const bool lifetime_annotations=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeLifetimeAnnotationIdentity);
   const bool lifetime_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeLifetimeAnnotationSemantic)!=sidecar.required_semantics.end();
   const bool lifetime_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
@@ -1285,9 +1291,9 @@ InterfaceContractValidation ValidateSemanticInterface(
         "module-owned names and required capability must agree",
         expected.canonical_name);
   for (const auto &d : sidecar.declarations)
-    if (!HasValidModuleOwnedName(sidecar.module, d))
+    if (!HasValidNativeSymbolName(sidecar.module, d))
       Add(result, "O3IFC020",
-          "native symbol name differs from its module ownership contract",
+          "native symbol name violates its ownership or explicit external binding contract",
           d.stable_id);
   if (std::binary_search(required.begin(), required.end(), "objc3.keypath-subscripts.v1") &&
       !std::binary_search(required.begin(), required.end(), "objc3.typed-keypaths.v1"))

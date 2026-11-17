@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.191 / System 2.117 external-binding span](linux_native_external_bindings.md)
+publishes explicit native function/data/member and Objective-C runtime names,
+including foreign ABI packages consumed through module-owned adapters.
+
 The [Source 2.190 / System 2.116 Block-binding span](linux_mutable_block_bindings.md)
 proves bounded local work-item assignments and nested capture environments, with
 source-free native object retirement and cancellation controls.

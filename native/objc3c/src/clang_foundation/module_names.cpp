@@ -41,8 +41,20 @@ std::string BuildModuleOwnedName(const std::string &module,
          ComputeInterfaceSourceSha256(field(module) + field(package)) + "_" +
          ComputeInterfaceSourceSha256(stable_id);
 }
-bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
+bool HasValidNativeSymbolName(const InterfaceModuleIdentity &module,
                              const InterfaceDeclarationIdentity &declaration) {
+  if (HasNativeExternalBindingIdentity(declaration)) {
+    const auto &symbol=declaration.native_symbol_name;
+    if (!IsNativeExternalBindingOwner(declaration) || symbol.empty() ||
+        symbol.starts_with("__objc3_m_") ||
+        std::any_of(symbol.begin(),symbol.end(),[](unsigned char c){return c<32 || c==127;}))return false;
+    const auto binding=NativeExternalBindingIdentity(symbol);
+    if (!declaration.canonical_type_identity.starts_with(binding))return false;
+    // The outer binding wraps one native type. Marker-looking bytes in either
+    // its length-delimited symbol or its type arguments remain ordinary data.
+    const llvm::StringRef type=llvm::StringRef(declaration.canonical_type_identity).drop_front(binding.size());
+    return !type.empty() && !type.starts_with(kNativeExternalBindingMarker);
+  }
   if (declaration.kind == "Concept") {
     std::string owner = module.canonical_name;
     if (owner.ends_with(".__ownership_producer"))

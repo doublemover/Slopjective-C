@@ -1049,10 +1049,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   for (const auto &d : sidecar.declarations) {
     if (d.native_symbol_name.empty())
       continue;
-    if (!HasValidModuleOwnedName(sidecar.module, d)) {
+    if (!HasValidNativeSymbolName(sidecar.module, d)) {
       AddDiagnostic(
           result, "O3IFC160",
-          "native symbol name differs from its module ownership contract",
+          "native symbol name violates its ownership or explicit external binding contract",
           d.stable_id);
       result.source_bytes.clear();
       return result;
@@ -1128,6 +1128,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeFunctionEffectSemantic);
     if(HasNativeLifetimeAnnotationIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeLifetimeAnnotationSemantic);
+    if(HasNativeExternalBindingIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeExternalBindingSemantic);
     if(HasNativeFunctionPolicyIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeFunctionPolicySemantic);
     if(HasNativeControlFlowIdentity(declaration))
