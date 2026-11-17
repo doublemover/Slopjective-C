@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.200 / System 2.126 member deduction-guide span](linux_native_member_deduction_guides.md)
+publishes nested/dependent guide identities, enclosing template bindings and
+complete-record import policy checks through the guide-v2 reader cutover.
+
 The [Source 2.199 / System 2.125 native control-graph span](linux_native_control_argument_projections.md)
 retains selected caller provenance through bounded branches, switches and
 immutable aliases while preserving conservative unproved-reference diagnostics.

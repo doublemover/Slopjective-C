@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 199,
+        "minor": 200,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native nested/member deduction guides publish separate class-owned identities through ordinary, dependent and pack-enclosing record graphs; guide v2 binds access, lexical template heads and associated requirements without creating runtime entries; complete-record import compares written guide sets and policies; matching SDK acceptance pending",
         "Bounded pure native argument control graphs preserve cleanup provenance and exact reference storage through if/conditional/switch paths, case fallthrough/break, immutable scalar/reference aliases, nested closed helpers and direct dependent returns; every live return must select one caller argument, unknown/ambiguous/mutating paths remain unproved; matching SDK acceptance pending",
         "Native namespace-scope C++ deduction guides inherit class export/SPI ownership without fabricated symbol bindings, retain bare/dependent explicit policies, constraints/defaults, non-type and variadic result graphs, and require exact cxx-deduction-guides v1 reader admission and target-owned structural import; class-template v4 normalizes nested bound parameter names, concept/alias-template v2 bind structured heads, and guide signatures bind type/non-type/pack positions; matching SDK acceptance pending",
         "Native conditional explicit constructor/conversion predicates retain typed lexical template/parameter bindings, exact source-free reader admission and expression-aware import equivalence across ordinary/template/specialized/nested and local factory/closure declarations; ordinary inline out-of-line constructors, conversions, methods and virtual destructors publish complete bodies with separate reader admission; class-template v3 and variable-template v2 contracts normalize partial parameter names and non-type pattern dependencies; matching SDK acceptance pending",
@@ -362,12 +363,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 125,
+        "minor": 126,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native nested/member deduction guides publish separate class-owned identities through ordinary, dependent and pack-enclosing record graphs; guide v2 binds access, lexical template heads and associated requirements without creating runtime entries; complete-record import compares written guide sets and policies; matching SDK acceptance pending",
         "Bounded pure native argument control graphs preserve cleanup provenance and exact reference storage through if/conditional/switch paths, case fallthrough/break, immutable scalar/reference aliases, nested closed helpers and direct dependent returns; every live return must select one caller argument, unknown/ambiguous/mutating paths remain unproved; matching SDK acceptance pending",
         "Native namespace-scope C++ deduction guides inherit class export/SPI ownership without fabricated symbol bindings, retain bare/dependent explicit policies, constraints/defaults, non-type and variadic result graphs, and require exact cxx-deduction-guides v1 reader admission and target-owned structural import; class-template v4 normalizes nested bound parameter names, concept/alias-template v2 bind structured heads, and guide signatures bind type/non-type/pack positions; matching SDK acceptance pending",
         "Native conditional explicit constructor/conversion predicates retain typed lexical template/parameter bindings, exact source-free reader admission and expression-aware import equivalence across ordinary/template/specialized/nested and local factory/closure declarations; ordinary inline out-of-line constructors, conversions, methods and virtual destructors publish complete bodies with separate reader admission; class-template v3 and variable-template v2 contracts normalize partial parameter names and non-type pattern dependencies; matching SDK acceptance pending",

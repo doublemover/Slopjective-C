@@ -168,9 +168,9 @@ inline bool HasNativeLifetimeAnnotationIdentity(const InterfaceDeclarationIdenti
 inline bool IsNativeLifetimeAnnotationOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d);
 }
-inline constexpr const char *kCxxDeductionGuideSemantic = "objc3.cxx-deduction-guides.v1";
+inline constexpr const char *kCxxDeductionGuideSemantic = "objc3.cxx-deduction-guides.v2";
 inline bool HasCxxDeductionGuideIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-deduction-guides:v1;")!=std::string::npos;
+  return d.canonical_type_identity.find(";cxx-deduction-guides:v2;")!=std::string::npos;
 }
 inline bool IsCxxDeductionGuideOwner(const InterfaceDeclarationIdentity &d) {
   return (d.kind=="CXXDeductionGuide" || d.kind=="FunctionTemplate") && d.native_symbol_name.empty();

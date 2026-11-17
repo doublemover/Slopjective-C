@@ -832,6 +832,11 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
       !IsInMainFile(context, declaration->getLocation(), source_root))
     return false;
 
+  if(const auto *guide=NativeDeductionGuide(declaration)) {
+    if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+        function && function->getDescribedFunctionTemplate())return false;
+    return IsPublishedType(guide->getDeducedTemplate());
+  }
   if (llvm::isa<clang::ClassTemplateDecl>(declaration)) return IsTopLevel(declaration);
   if (IsPublishedStandardSpecialization(declaration)) return IsTopLevel(declaration);
   if (TemplatePublicationOwner(declaration)) return false;

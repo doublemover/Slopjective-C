@@ -506,7 +506,7 @@ public:
     };
     bind(bind,head,0);
   }
-  CanonicalTemplateParameterNames(const clang::Decl *root,const clang::ASTContext &context) {
+  CanonicalTemplateParameterNames(const clang::Decl *root,const clang::ASTContext &context,bool enclosing=false) {
     struct Parameters:clang::DynamicRecursiveASTVisitor {
       decltype(saved_) &saved;
       const clang::ASTContext &context;
@@ -521,8 +521,22 @@ public:
       bool VisitTemplateTypeParmDecl(clang::TemplateTypeParmDecl *parameter) {Bind(parameter,parameter->getDepth(),parameter->getIndex());return true;}
       bool VisitNonTypeTemplateParmDecl(clang::NonTypeTemplateParmDecl *parameter) {Bind(parameter,parameter->getDepth(),parameter->getIndex());return true;}
       bool VisitTemplateTemplateParmDecl(clang::TemplateTemplateParmDecl *parameter) {Bind(parameter,parameter->getDepth(),parameter->getIndex());return true;}
+      void Head(const clang::TemplateParameterList *head) {
+        for(auto *parameter:*head) {
+          if(auto *type=llvm::dyn_cast<clang::TemplateTypeParmDecl>(parameter))VisitTemplateTypeParmDecl(type);
+          else if(auto *value=llvm::dyn_cast<clang::NonTypeTemplateParmDecl>(parameter))VisitNonTypeTemplateParmDecl(value);
+          else if(auto *nested=llvm::dyn_cast<clang::TemplateTemplateParmDecl>(parameter)) {
+            VisitTemplateTemplateParmDecl(nested);Head(nested->getTemplateParameters());
+          }
+        }
+      }
     } parameters(saved_,context);
     parameters.TraverseDecl(const_cast<clang::Decl *>(root));
+    if(enclosing)for(const auto *scope=root->getDeclContext();scope;scope=scope->getParent()) {
+      if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+        if(const auto *pattern=record->getDescribedClassTemplate())parameters.Head(pattern->getTemplateParameters());
+      if(const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(scope))parameters.Head(partial->getTemplateParameters());
+    }
   }
   ~CanonicalTemplateParameterNames(){for(auto entry=saved_.rbegin();entry!=saved_.rend();++entry)entry->first->setDeclName(entry->second);}
   CanonicalTemplateParameterNames(const CanonicalTemplateParameterNames &)=delete;
@@ -2371,7 +2385,8 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
       if (members.thread_local_storage) value+=";cxx-thread-local:v1;";
       std::set<std::string> patterns;
       for (const auto *member:cxx->decls())
-        if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(member))
+        if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(member);
+            pattern && !pattern->isImplicit() && !NativeDeductionGuide(pattern))
           patterns.insert(ReadInterfaceDeclarationStableId(pattern)+":access="+
               CxxAccessName(pattern->getAccess())+":"+DeclarationTypeIdentity(pattern,context));
       for (const auto &pattern:patterns) value+="member-template="+pattern+";";
@@ -2412,13 +2427,6 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                 ? ";language-linkage=" + std::to_string(static_cast<unsigned>(
                                              function->getLanguageLinkage()))
                 : "");
-    if(const auto *guide=llvm::dyn_cast<clang::CXXDeductionGuideDecl>(function)) {
-      const auto explicit_specifier=guide->getExplicitSpecifier();
-      identity+=";cxx-deduction-guides:v1;owner="+
-          ReadInterfaceDeclarationStableId(guide->getDeducedTemplate())+
-          ";explicit="+std::string(explicit_specifier.getExpr()?"conditional":
-              explicit_specifier.isExplicit()?"explicit":"implicit")+";";
-    }
     unsigned index = 0;
     for (const auto *parameter : function->parameters()) {
       if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
@@ -2775,6 +2783,21 @@ static const clang::Attr *NativeCPUVariant(const clang::NamedDecl *declaration) 
 std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration) {
   if (!declaration) return {};
+  if(const auto *guide=NativeDeductionGuide(declaration)) {
+    const auto *pattern=guide->getDescribedFunctionTemplate();
+    const clang::NamedDecl *identity=pattern?static_cast<const clang::NamedDecl *>(pattern):guide;
+    llvm::SmallString<128> native;
+    if(clang::index::generateUSRForDecl(identity->getCanonicalDecl(),native))return {};
+    std::string result=native.str().str();
+    // A member guide has no function linkage. Its nominal class/module owner
+    // supplies provenance; an authored filename must not become identity.
+    if(!native.str().starts_with("c:@")) {
+      const auto at=native.str().find('@');if(at==llvm::StringRef::npos)return {};
+      result="c:"+native.str().substr(at).str();
+    }
+    if(pattern)result+="@constraints@"+FunctionTemplateConstraintKey(pattern);
+    return result;
+  }
   // Native primaries can live in inline implementation namespaces. Printed
   // qualification depends on the lookup context (notably libc++ ranges), so
   // use their canonical native identity rather than a display-name key.
@@ -2919,7 +2942,7 @@ bool ReadInterfaceDeclarationIdentity(
   // Guide result types and sizeof... predicates print their pack declarations.
   // Bind those spellings positionally for this guide-owned identity only.
   std::optional<CanonicalTemplateParameterNames> normalized_guide_parameters;
-  if(NativeDeductionGuide(declaration))normalized_guide_parameters.emplace(declaration,context);
+  if(NativeDeductionGuide(declaration))normalized_guide_parameters.emplace(declaration,context,true);
   const auto stable_id = ReadInterfaceDeclarationStableId(declaration);
   if (stable_id.empty()) return false;
   auto *representative = Representative(declaration);
@@ -2936,6 +2959,24 @@ bool ReadInterfaceDeclarationIdentity(
   if(NativeUnnamedEnumeration(representative))
     identity.canonical_type_identity+=";native-unnamed-enums:v1;";
   if (identity.canonical_type_identity.empty()) return false;
+  if(const auto *guide=NativeDeductionGuide(representative)) {
+    const auto explicit_specifier=guide->getExplicitSpecifier();
+    identity.canonical_type_identity+=";cxx-deduction-guides:v2;owner="+
+        ReadInterfaceDeclarationStableId(guide->getDeducedTemplate())+
+        ";access="+CxxAccessName(guide->getAccess())+
+        ";explicit="+std::string(explicit_specifier.getExpr()?"conditional":
+            explicit_specifier.isExplicit()?"explicit":"implicit")+";";
+    if(const auto *constraint=guide->getTrailingRequiresClause().ConstraintExpr) {
+      DeclarationExpressionIdentity requirements(context,guide);
+      for(const auto *scope=guide->getDeclContext();scope;scope=scope->getParent()) {
+        if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+          if(const auto *pattern=record->getDescribedClassTemplate())requirements.TemplateParameters(pattern);
+        if(const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(scope))
+          for(const auto *parameter:*partial->getTemplateParameters())requirements.Local(parameter);
+      }
+      identity.canonical_type_identity+="requires="+requirements.Get(const_cast<clang::Expr *>(constraint),true)+";";
+    }
+  }
   if (HasEffectfulTemplateProjection(representative,context))
     identity.canonical_type_identity+=";cxx-template-callable-projections:v1;";
   if (!llvm::isa<clang::NamespaceDecl>(representative)) {
@@ -3285,6 +3326,9 @@ bool ReadInterfaceDeclarationIdentity(
     std::string predicates;
     auto field=[&](const std::string &value){predicates+=std::to_string(value.size())+":"+value;};
     for(const auto *function:functions) {
+      std::optional<CanonicalTemplateParameterNames> normalized_nested_guide;
+      if(NativeDeductionGuide(function))normalized_nested_guide.emplace(
+          function->getDescribedFunctionTemplate()?static_cast<const clang::Decl *>(function->getDescribedFunctionTemplate()):function,context,true);
       field(function->clang::Decl::getDeclKindName());
       if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function)) {
         const auto *owner=method->getParent();

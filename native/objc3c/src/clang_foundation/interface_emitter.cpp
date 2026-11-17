@@ -171,7 +171,8 @@ class InterfaceCollector final
         root_declarations_.push_back(specialization);
       return true;
     }
-    if (const auto *owner=TemplatePublicationOwner(declaration); owner && owner!=declaration) {
+    if (const auto *owner=TemplatePublicationOwner(declaration);
+        owner && owner!=declaration && !NativeDeductionGuide(declaration)) {
       if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
           function && function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization &&
           IsInMainFile(context_,function->getLocation()) && SelectedExport(function,exports_))

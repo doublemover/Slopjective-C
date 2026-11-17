@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.200 / System 2.126 member deduction-guide span](linux_native_member_deduction_guides.md)
+publishes nested/dependent guide identities, enclosing template bindings and
+complete-record import policy checks through the guide-v2 reader cutover.
+
 The [Source 2.199 / System 2.125 native control-graph span](linux_native_control_argument_projections.md)
 retains selected caller provenance through bounded branches, switches and
 immutable aliases while preserving conservative unproved-reference diagnostics.
@@ -143,7 +147,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.177 / System 2.103 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.200 / System 2.126 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

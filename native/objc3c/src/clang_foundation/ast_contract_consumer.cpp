@@ -69,7 +69,7 @@ class ContractConsumer final : public clang::ASTConsumer,
   }
 
   bool VisitNamedDecl(clang::NamedDecl *decl) {
-    if (decl->isImplicit() || !decl->getIdentifier() || !context_ ||
+    if (decl->isImplicit() || (!decl->getIdentifier() && !NativeDeductionGuide(decl)) || !context_ ||
         !IsModuleOwnedSource(*context_, decl->getLocation(), source_root_))
       return true;
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);

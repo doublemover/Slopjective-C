@@ -1413,6 +1413,23 @@ bool IsBoundedClassMemberAlias(const clang::TypeAliasTemplateDecl *pattern) {
   return true;
 }
 
+static bool IsBoundedNativeDeductionGuide(const clang::NamedDecl *declaration) {
+  const auto *guide=NativeDeductionGuide(declaration);if(!guide)return false;
+  if(const auto *pattern=guide->getDescribedFunctionTemplate();
+      pattern && !IsBoundedNestedTemplateParameters(pattern->getTemplateParameters()))return false;
+  for(const auto *attribute:guide->attrs()) {
+    if(attribute->isImplicit())continue;
+    if(llvm::isa<clang::AsmLabelAttr,clang::AbiTagAttr>(attribute))return false;
+    if(const auto *annotation=llvm::dyn_cast<clang::AnnotateAttr>(attribute);
+        annotation && annotation->getAnnotation().starts_with("objc3.spi:"))return false;
+    if(!IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute))return false;
+  }
+  for(const auto *parameter:guide->parameters())
+    for(const auto *attribute:parameter->attrs())
+      if(!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute))return false;
+  return true;
+}
+
 bool IsBoundedClassMemberTemplate(const clang::FunctionTemplateDecl *pattern) {
   const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(pattern->getTemplatedDecl());
   if (!method) return false;
@@ -1524,6 +1541,10 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
   }
   for (const auto *member : body->decls()) {
     if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member)) continue;
+    if(NativeDeductionGuide(llvm::dyn_cast<clang::NamedDecl>(member))) {
+      if(!IsBoundedNativeDeductionGuide(llvm::cast<clang::NamedDecl>(member)))return false;
+      continue;
+    }
       if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(member);
           specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation) continue;
     if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(member);
@@ -1677,6 +1698,10 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       }
     }
   }
+  if(NativeDeductionGuide(declaration)) {
+    if(IsBoundedNativeDeductionGuide(declaration))return true;
+    AddDiagnostic(result,"O3IFC101","deduction guide exceeds its native signature/attribute contract",declaration->getQualifiedNameAsString());return false;
+  }
   const auto *friend_function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
   if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     friend_function=pattern->getTemplatedDecl();
@@ -1718,6 +1743,9 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     for (const auto *member : record->decls()) {
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl, clang::BlockDecl>(member))
         continue;
+      if(NativeDeductionGuide(llvm::dyn_cast<clang::NamedDecl>(member))) {
+        supported &= IsBoundedNativeDeductionGuide(llvm::cast<clang::NamedDecl>(member));continue;
+      }
       if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) {
         supported &= IsBoundedPublishedClassTemplate(pattern);continue;
       }

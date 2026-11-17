@@ -69,6 +69,7 @@ int main() {
   assert(!capabilities.count("objc3.cxx-variable-templates.v1"));
   assert(capabilities.count(kCxxExplicitSpecifierSemantic));
   assert(capabilities.count(kCxxDeductionGuideSemantic));
+  assert(!capabilities.count("objc3.cxx-deduction-guides.v1"));
   assert(capabilities.count(kCxxConceptSemantic));
   assert(capabilities.count(kCxxAliasTemplateSemantic));
   assert(!capabilities.count("objc3.cxx-concepts.v1"));
@@ -94,9 +95,9 @@ int main() {
   {
     InterfaceDeclarationIdentity guide,pattern;
     guide.stable_id="guide:int";guide.kind="CXXDeductionGuide";
-    guide.canonical_type_identity="auto (int) -> Box<long>;cxx-deduction-guides:v1;owner=Box;explicit=implicit;";
+    guide.canonical_type_identity="auto (int) -> Box<long>;cxx-deduction-guides:v2;owner=Box;explicit=implicit;";
     pattern.stable_id="guide:template";pattern.kind="FunctionTemplate";
-    pattern.canonical_type_identity="template Box<T>;cxx-deduction-guides:v1;owner=Box;explicit=conditional;";
+    pattern.canonical_type_identity="template Box<T>;cxx-deduction-guides:v2;owner=Box;explicit=conditional;";
     assert(CanShareInterfaceFunctionLookup(guide,pattern,true));
     assert(CanShareInterfaceFunctionLookup(pattern,guide,true));
     assert(!CanShareInterfaceFunctionLookup(guide,pattern,false));
