@@ -22,7 +22,7 @@
 "objc3.initialized-owner-prefixes.v1"
 "objc3.native-disposal.v2"
 "objc3.native-allocation-cleanup.v2"
-"objc3.native-declaration-attributes.v5"
+"objc3.native-declaration-attributes.v6"
 "objc3.native-dependent-await.v1"
 "objc3.nsobject-storage.v1"
 "objc3.automatic-owner-unwind.v2"

@@ -361,6 +361,7 @@ bool HasDeclarationCxxSpecialMemberSelection(const clang::NamedDecl *declaration
 bool HasDeclarationNativeCxxAsync(const clang::NamedDecl *declaration);
 bool HasDeclarationVirtualCall(const clang::NamedDecl *declaration);
 bool HasDeclarationThreadSafetyContract(const clang::NamedDecl *declaration);
+bool IsPublishedNativeStateAttribute(const clang::Attr *attribute);
 bool IsPublishedNativeAttribute(const clang::Attr *attribute);
 bool IsPublishedSemanticAttribute(const clang::Attr *attribute);
 

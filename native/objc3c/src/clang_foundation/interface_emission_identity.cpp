@@ -966,6 +966,14 @@ public:
     }
     return true;
   }
+  bool VisitNamedDecl(clang::NamedDecl *declaration) {
+    std::set<std::string> states;
+    for(const auto *attribute:declaration->attrs())
+      if(!attribute->isImplicit() && IsPublishedNativeStateAttribute(attribute))
+        states.insert(NativeAttributeValue(attribute,declaration));
+    for(const auto &state:states)Add("native-state-contract:"+state);
+    return true;
+  }
   bool VisitStmt(clang::Stmt *statement) {
     Add(statement->getStmtClassName()); return true;
   }
@@ -1567,6 +1575,22 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     for(const auto &name:native)add(name);
     return key;
   }
+  if(const auto *state=llvm::dyn_cast<clang::ConsumableAttr>(attribute))
+    add(clang::ConsumableAttr::ConvertConsumedStateToStr(state->getDefaultState()));
+  else if(const auto *state=llvm::dyn_cast<clang::CallableWhenAttr>(attribute)) {
+    std::set<std::string> states;
+    for(auto value:state->callableStates())states.insert(clang::CallableWhenAttr::ConvertConsumedStateToStr(value));
+    for(const auto &value:states)add(value);
+  } else if(const auto *state=llvm::dyn_cast<clang::ParamTypestateAttr>(attribute))
+    add(clang::ParamTypestateAttr::ConvertConsumedStateToStr(state->getParamState()));
+  else if(const auto *state=llvm::dyn_cast<clang::ReturnTypestateAttr>(attribute))
+    add(clang::ReturnTypestateAttr::ConvertConsumedStateToStr(state->getState()));
+  else if(const auto *state=llvm::dyn_cast<clang::SetTypestateAttr>(attribute))
+    add(clang::SetTypestateAttr::ConvertConsumedStateToStr(state->getNewState()));
+  else if(const auto *state=llvm::dyn_cast<clang::TestTypestateAttr>(attribute))
+    add(clang::TestTypestateAttr::ConvertConsumedStateToStr(state->getTestState()));
+  else if(const auto *extensibility=llvm::dyn_cast<clang::EnumExtensibilityAttr>(attribute))
+    add(clang::EnumExtensibilityAttr::ConvertKindToStr(extensibility->getExtensibility()));
   if(auto diagnostic=NativeDiagnosticAttributeValue(attribute);!diagnostic.empty()) {
     add(diagnostic);return key;
   }
@@ -3210,7 +3234,7 @@ bool ReadInterfaceDeclarationIdentity(
   ReadNativeDeclarationContracts(representative, context, identity.effects);
   const auto native_attributes=DeclarationAttributeKey(representative,true);
   if(!native_attributes.empty())
-    identity.canonical_type_identity+=";native-declaration-attributes:v5;contracts="+
+    identity.canonical_type_identity+=";native-declaration-attributes:v6;contracts="+
         ComputeInterfaceSourceSha256(native_attributes)+";";
   const auto foreign_attributes=DeclarationAttributeKey(representative);
   if(!foreign_attributes.empty())

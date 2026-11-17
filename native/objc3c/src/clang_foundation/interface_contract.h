@@ -376,10 +376,10 @@ inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-null
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
 }
-inline constexpr const char *kNativeDeclarationAttributeSemantic = "objc3.native-declaration-attributes.v5";
+inline constexpr const char *kNativeDeclarationAttributeSemantic = "objc3.native-declaration-attributes.v6";
 inline bool HasNativeDeclarationAttributeIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-declaration-attributes:v5;") != std::string::npos ||
-         d.effects.ownership_identity.find(";native-declaration-attributes:v5;") != std::string::npos;
+  return d.canonical_type_identity.find(";native-declaration-attributes:v6;") != std::string::npos ||
+         d.effects.ownership_identity.find(";native-declaration-attributes:v6;") != std::string::npos;
 }
 inline bool HasCxxCoroutineTraitsSpecializationIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;") != std::string::npos;

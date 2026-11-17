@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.179 / System 2.105 native state-contract span](linux_native_typestate_packages.md)
+preserves native typestate transitions, call/parameter/return requirements and
+enum extensibility/flag contracts through source-free C++ package delivery.
+
 The [Source 2.178 / System 2.104 family-claim span](linux_indirect_family_claims.md)
 tracks bounded indirect family operations and normal/exceptional retain counts.
 Inline native record storage inherits its retainable-family owner's lifetime.

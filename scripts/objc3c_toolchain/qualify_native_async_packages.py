@@ -174,7 +174,7 @@ def check_factory_metadata(metadata):
     if not ordinary <= projections:
         raise ValueError('qualify_native_async_packages: ordinary unnamed-record projection metadata is incomplete')
     native_contracts={row['qualified_name'] for row in metadata['declarations']
-                      if ';native-declaration-attributes:v5;' in row.get('canonical_type_identity','')}
+                      if ';native-declaration-attributes:v6;' in row.get('canonical_type_identity','')}
     if not ({'NativeDeclarationAttributes::provider_object_size','NativeDeclarationAttributes::provider_dynamic_size',
             'NativeDeclarationAttributes::lifetime','NativeDeclarationAttributes::noescape',
             'NativeDeclarationAttributes::provider_callback','NativeDeclarationAttributes::provider_sentinel',
@@ -199,9 +199,9 @@ def check_factory_metadata(metadata):
     if not (all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)):
         raise ValueError("qualify_native_async_packages: required semantic check failed: all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)")
     native_attributes={row['qualified_name'] for row in metadata['declarations']
-                       if ';native-declaration-attributes:v5;' in row.get('canonical_type_identity','')}
-    if not ('objc3.native-declaration-attributes.v5' in metadata['required_semantics']):
-        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.native-declaration-attributes.v5' in metadata['required_semantics']")
+                       if ';native-declaration-attributes:v6;' in row.get('canonical_type_identity','')}
+    if not ('objc3.native-declaration-attributes.v6' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.native-declaration-attributes.v6' in metadata['required_semantics']")
     if not ({'NativeDeclarationAttributes::Packet','NativeDeclarationAttributes::Aligned',
             'NativeDeclarationAttributes::Slot','NativeDeclarationAttributes::TypeAligned',
             'NativeDeclarationAttributes::Special','NativeDeclarationAttributes::partial',

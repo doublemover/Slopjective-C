@@ -382,7 +382,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
                               position + ".element", depth + 1);
   } else if (const auto *function = type->getAs<clang::FunctionType>()) {
     if (function->getCallConv()!=clang::CC_C) {
-      AppendNativeContractField(out,";native-declaration-attributes:v5;");
+      AppendNativeContractField(out,";native-declaration-attributes:v6;");
       AppendNativeContractField(out,position+":calling-convention:"+
           std::to_string(static_cast<unsigned>(function->getCallConv())));
     }
@@ -425,7 +425,7 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
                                   parameter, depth + 1);
         const auto abi=prototype->getExtParameterInfo(index).getABI();
         if (abi!=clang::ParameterABI::Ordinary) {
-          AppendNativeContractField(out,";native-declaration-attributes:v5;");
+          AppendNativeContractField(out,";native-declaration-attributes:v6;");
           AppendNativeContractField(out,parameter+":parameter-abi:"+
               std::to_string(static_cast<unsigned>(abi)));
         }
