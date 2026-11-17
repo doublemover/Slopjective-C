@@ -609,7 +609,8 @@ SourceModuleImportStatus InterfaceSourceImportBridge::ImportObjC3Module(
         native_header_prelude_=std::make_shared<const StandardLibraryHeaderManifest>(std::move(prelude));
     }
     auto imported = session->ImportInto(sema_->getASTContext(), *file_manager_,
-        /*source_scoped_visibility=*/true, importer_state_,native_header_prelude_.get());
+        /*source_scoped_visibility=*/true, importer_state_,native_header_prelude_.get(),
+        &sema_->getPreprocessor(),target_.native_asm_dialect);
     if (!imported.success) {
       // ASTImporter can already have inserted part of the module. Keep the
       // provider session alive and stop further AST mutations after failure.

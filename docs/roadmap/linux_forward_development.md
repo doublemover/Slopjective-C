@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.183 / System 2.109 assembly-profile span](linux_native_assembly_profiles.md)
+binds the effective native assembly dialect across publication, reparsing,
+direct/source-directed imports and opposite-ownership producer proofs.
+
 The [Source 2.182 / System 2.108 control-flow span](linux_native_control_flow_contracts.md)
 preserves statement annotations, typed policy dependencies, label targets and
 GNU inline assembly through source-free C17/C++ packages.

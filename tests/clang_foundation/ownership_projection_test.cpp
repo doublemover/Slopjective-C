@@ -42,13 +42,14 @@ std::string Read(const fs::path &path) {
   return {std::istreambuf_iterator<char>(stream), {}};
 }
 void TestProvenanceAndModeLocks(const fs::path &root, bool producer_arc,
-                                bool cpp, const std::string &standard) {
+                                bool cpp, const std::string &standard, bool intel = false) {
   auto source = std::string("#include \"native-runtime.h\"\n") +
                 (cpp ? std::string("extern \"C\" {\n") + api + "}\n" : api);
   auto emit = Request(root / (cpp ? "provider.mm" : "provider.m"), producer_arc,
                       cpp, standard, source);
   emit.emit_semantic_interface = true;
   emit.arguments.push_back("-I" + root.string());
+  if(intel)emit.arguments.push_back("-masm=intel");
   emit.projected_arc = !producer_arc;
   emit.module_name = "Projected";
   emit.package_identity = "projection-v1";
@@ -64,6 +65,8 @@ void TestProvenanceAndModeLocks(const fs::path &root, bool producer_arc,
       sidecar.ownership_projection, built.interface_artifact->source_bytes,
       semantics));
   assert(producer.ownership_projection.empty());
+  assert(sidecar.module.language_profile.find(intel?";native-inline-asm-dialect:v1;mode=1":";native-inline-asm-dialect:v1;mode=0")!=std::string::npos);
+  assert(producer.module.language_profile.find(intel?";native-inline-asm-dialect:v1;mode=1":";native-inline-asm-dialect:v1;mode=0")!=std::string::npos);
   assert(producer.module.canonical_name == "Projected.__ownership_producer");
   assert(producer.module.runtime_abi != sidecar.module.runtime_abi);
   auto client = Request(
@@ -73,6 +76,7 @@ void TestProvenanceAndModeLocks(const fs::path &root, bool producer_arc,
   input.source_path = path.string();
   input.locked_identity = sidecar.module;
   client.imported_interfaces = {input};
+  if(intel)client.arguments.push_back("-masm=intel");
   assert(Compile(client).success);
   client.arc = producer_arc;
   assert(!Compile(client).success);
@@ -189,6 +193,8 @@ int main() {
     for (bool producer_arc : {false, true}) {
       TestProvenanceAndModeLocks(root, producer_arc,
                                  std::string(standard) != "c17", standard);
+      TestProvenanceAndModeLocks(root, producer_arc,
+                                 std::string(standard) != "c17", standard, true);
       TestNativeRuntimeAliases(root, producer_arc,
                                std::string(standard) != "c17", standard);
     }

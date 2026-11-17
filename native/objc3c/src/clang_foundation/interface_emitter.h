@@ -39,9 +39,11 @@ namespace objc3::clang_foundation {
 // Exact parser dialect, standard and ownership mode used by providers and
 // importers.
 [[nodiscard]] std::string
-ReadInterfaceLanguageProfile(const clang::ASTContext &context);
+ReadInterfaceLanguageProfile(const clang::ASTContext &context,
+                             unsigned native_asm_dialect = 0);
 [[nodiscard]] std::string ReadInterfaceLanguageProfile(
-    const clang::LangOptions &language, const clang::TargetInfo &target);
+    const clang::LangOptions &language, const clang::TargetInfo &target,
+    unsigned native_asm_dialect = 0);
 
 // Native declaration owning the selected export policy of a row.
 [[nodiscard]] std::string
@@ -73,7 +75,8 @@ ReadInterfaceSPIGroup(const clang::NamedDecl *declaration);
     llvm::StringRef ownership_projection = {},
     const std::vector<std::string> &exports = {},
     const std::string &source_root = {},
-    const clang::Preprocessor *preprocessor = nullptr);
+    const clang::Preprocessor *preprocessor = nullptr,
+    unsigned native_asm_dialect = 0);
 
 // Emit a distinct consumer-mode interface, retaining the canonical producer
 // proof. The native object remains compiled under the producer's ownership.
@@ -83,6 +86,7 @@ ReadInterfaceSPIGroup(const clang::NamedDecl *declaration);
     const std::vector<InterfaceDependency> &dependencies = {},
     const std::vector<std::string> &exports = {},
     const std::string &source_root = {},
-    const clang::Preprocessor *preprocessor = nullptr);
+    const clang::Preprocessor *preprocessor = nullptr,
+    unsigned native_asm_dialect = 0);
 
 }  // namespace objc3::clang_foundation

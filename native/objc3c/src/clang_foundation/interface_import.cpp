@@ -25,6 +25,7 @@
 #include "clang/AST/DeclContextInternals.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/Diagnostic.h"
+#include "clang/Basic/CodeGenOptions.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
@@ -555,6 +556,8 @@ std::vector<std::string> BuildInterfaceASTArguments(
   }
   if (!target.target_triple.empty())
     args.push_back("--target=" + target.target_triple);
+  if(llvm::Triple(target.target_triple).isX86())
+    args.push_back(target.native_asm_dialect == 1 ? "-masm=intel" : "-masm=att");
   if (target.objc && !target.objc_runtime.empty())
     args.push_back("-fobjc-runtime=" + target.objc_runtime);
   if (target.objc && target.arc) args.push_back("-fobjc-arc");
@@ -776,7 +779,8 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     auto regenerated = EmitSemanticInterface(
         module.ast->getASTContext(), module.sidecar.module.canonical_name,
         module.sidecar.module.package_identity, module.sidecar.dependencies,
-        dependency_sources, module.sidecar.ownership_projection, {}, {}, &module.ast->getPreprocessor());
+        dependency_sources, module.sidecar.ownership_projection, {}, {}, &module.ast->getPreprocessor(),
+        module.ast->getCodeGenOpts().getInlineAsmDialect());
     if (!regenerated.success || regenerated.source_bytes != module.source_bytes) {
       Add(diagnostics, regenerated.diagnostics.empty()
               ? "O3IFC138" : regenerated.diagnostics.front().code,
@@ -868,7 +872,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     bool source_scoped_visibility,
     std::shared_ptr<clang::ASTImporterSharedState> shared_state,
     const StandardLibraryHeaderManifest *native_header_prelude,
-    const clang::Preprocessor *native_preprocessor) {
+    const clang::Preprocessor *native_preprocessor,
+    unsigned native_asm_dialect) {
   StandardLibraryHeaderCache standard_header_cache(&target_context,native_preprocessor);
   if(native_header_prelude)
     standard_header_cache.manifests.emplace(&target_context,*native_header_prelude);
@@ -884,7 +889,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       (language.ObjC ? language.ObjCRuntime.getAsString() : "no-objc-runtime") +
       std::string(language.ObjCAutoRefCount ? ";arc"
                                             : ";manual-reference-counting");
-  if (ReadInterfaceLanguageProfile(target_context) !=
+  if (ReadInterfaceLanguageProfile(target_context,native_asm_dialect) !=
           impl_->target.language_profile ||
       runtime != impl_->target.runtime_abi ||
       target_context.getTargetInfo().getTriple().str() !=

@@ -725,7 +725,8 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
 }
 
 std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
-                                             const clang::Preprocessor *preprocessor=nullptr) {
+                                             const clang::Preprocessor *preprocessor=nullptr,
+                                             unsigned native_asm_dialect=0) {
   const auto &lang = context.getLangOpts();
   const auto &standard = clang::LangStandard::getLangStandardForKind(lang.LangStd);
   std::vector<std::string> args = {
@@ -734,6 +735,8 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context,
       lang.ObjC ? (lang.CPlusPlus ? "objective-c++" : "objective-c")
                 : (lang.CPlusPlus ? "c++" : "c"),
       "-std=" + std::string(standard.getName())};
+  if(context.getTargetInfo().getTriple().isX86())
+    args.push_back(native_asm_dialect == 1 ? "-masm=intel" : "-masm=att");
   if (lang.ObjC) {
     args.push_back("-fobjc-runtime=" + lang.ObjCRuntime.getAsString());
     if (lang.ObjCAutoRefCount) args.push_back("-fobjc-arc");
@@ -906,7 +909,8 @@ namespace {
 bool ValidateOwnershipProjection(clang::ASTContext &context,
                                  llvm::StringRef producer_sidecar,
                                  InterfaceEmissionArtifact &result,
-                                 const clang::Preprocessor *preprocessor);
+                                 const clang::Preprocessor *preprocessor,
+                                 unsigned native_asm_dialect);
 }
 
 InterfaceEmissionArtifact EmitSemanticInterface(
@@ -916,9 +920,13 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     const std::vector<InterfaceSourceArtifact> &dependency_sources,
     llvm::StringRef ownership_projection,
     const std::vector<std::string> &exports, const std::string &source_root,
-    const clang::Preprocessor *preprocessor) {
+    const clang::Preprocessor *preprocessor,
+    unsigned native_asm_dialect) {
   StandardLibraryHeaderCache standard_header_cache(&context,preprocessor);
   InterfaceEmissionArtifact result;
+  if(native_asm_dialect > 1) {
+    AddDiagnostic(result,"O3IFC100","unknown native inline-assembly dialect");return result;
+  }
   if (canonical_module_name.empty() || package_identity.empty()) {
     AddDiagnostic(result, "O3IFC100",
                   "canonical module name and package identity are required");
@@ -968,7 +976,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   result.identity.language_revision = lang.ObjC3
       ? std::to_string(lang.ObjC3Revision)
       : "objc3-disabled";
-  result.identity.language_profile = ReadInterfaceLanguageProfile(context);
+  result.identity.language_profile = ReadInterfaceLanguageProfile(context,native_asm_dialect);
   result.identity.package_identity = package_identity.str();
 
   if (!ValidateExportNames(exports, result))
@@ -1022,7 +1030,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   if (!ownership_projection.empty() &&
       (!resolved_dependencies.empty() ||
-       !ValidateOwnershipProjection(context, ownership_projection, result, preprocessor))) {
+       !ValidateOwnershipProjection(context, ownership_projection, result, preprocessor, native_asm_dialect))) {
     if (result.diagnostics.empty())
       AddDiagnostic(result, "O3IFC150",
                     "ownership projections cannot have dependencies");
@@ -1368,7 +1376,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
             ? BuildInterfaceIncludePath(entry.first)
             : entry.second->virtual_include_path,
         entry.second->source_bytes);
-  auto roundtrip_arguments = RoundTripArguments(context, preprocessor);
+  auto roundtrip_arguments = RoundTripArguments(context, preprocessor, native_asm_dialect);
   bool complete_standard_headers=!standard_headers.empty();
   for(const auto &entry:sources_by_name)
     complete_standard_headers |= std::any_of(entry.second->declarations.begin(),entry.second->declarations.end(),HasCxxStandardLibraryIdentity);
@@ -1537,8 +1545,9 @@ bool ProjectionAPI(clang::ASTContext &context,
 
 std::vector<std::string> ProjectionArguments(const clang::ASTContext &context,
                                              bool arc,
-                                             const clang::Preprocessor *preprocessor) {
-  auto args = RoundTripArguments(context, preprocessor);
+                                             const clang::Preprocessor *preprocessor,
+                                             unsigned native_asm_dialect) {
+  auto args = RoundTripArguments(context, preprocessor, native_asm_dialect);
   args.erase(std::remove(args.begin(), args.end(), "-fobjc-arc"), args.end());
   args.push_back(arc ? "-fobjc-arc" : "-fno-objc-arc");
   return args;
@@ -1547,7 +1556,8 @@ std::vector<std::string> ProjectionArguments(const clang::ASTContext &context,
 bool ValidateOwnershipProjection(clang::ASTContext &context,
                                  llvm::StringRef producer_sidecar,
                                  InterfaceEmissionArtifact &result,
-                                 const clang::Preprocessor *preprocessor) {
+                                 const clang::Preprocessor *preprocessor,
+                                 unsigned native_asm_dialect) {
   if (!ProjectionAPI(context, result))
     return false;
   auto original = DecodeSemanticInterfaceSidecar(
@@ -1569,7 +1579,7 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
     return false;
   }
   auto arguments =
-      ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount, preprocessor);
+      ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount, preprocessor, native_asm_dialect);
   clang::tooling::FileContentMappings files;
   AddRuntimeInterfaceFiles(files, arguments, result.source_bytes.find(
       "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos,
@@ -1589,7 +1599,7 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
   }
   auto regenerated = EmitSemanticInterface(ast->getASTContext(),
                                            original->module.canonical_name,
-                                           original->module.package_identity, {}, {}, {}, {}, {}, &ast->getPreprocessor());
+                                           original->module.package_identity, {}, {}, {}, {}, {}, &ast->getPreprocessor(), native_asm_dialect);
   if (!regenerated.success || regenerated.source_bytes != result.source_bytes ||
       regenerated.sidecar_json != producer_sidecar) {
     AddDiagnostic(result, "O3IFC154",
@@ -1606,7 +1616,8 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
     llvm::StringRef package_identity, bool consumer_arc,
     const std::vector<InterfaceDependency> &dependencies,
     const std::vector<std::string> &exports, const std::string &source_root,
-    const clang::Preprocessor *preprocessor) {
+    const clang::Preprocessor *preprocessor,
+    unsigned native_asm_dialect) {
   InterfaceEmissionArtifact result;
   if (producer.getLangOpts().ObjCAutoRefCount == consumer_arc ||
       !dependencies.empty()) {
@@ -1619,10 +1630,10 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
     return result;
   auto original = EmitSemanticInterface(
       producer, canonical_module_name.str() + ".__ownership_producer",
-      package_identity, {}, {}, {}, exports, source_root, preprocessor);
+      package_identity, {}, {}, {}, exports, source_root, preprocessor, native_asm_dialect);
   if (!original.success)
     return original;
-  auto arguments = ProjectionArguments(producer, consumer_arc, preprocessor);
+  auto arguments = ProjectionArguments(producer, consumer_arc, preprocessor, native_asm_dialect);
   clang::tooling::FileContentMappings files;
   auto original_contract=DecodeSemanticInterfaceSidecar(original.sidecar_json,original.source_bytes,kProjectionSemantics);
   if(!original_contract) {
@@ -1644,7 +1655,7 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
   }
   result =
       EmitSemanticInterface(ast->getASTContext(), canonical_module_name,
-                            package_identity, {}, {}, original.sidecar_json, {}, {}, &ast->getPreprocessor());
+                            package_identity, {}, {}, original.sidecar_json, {}, {}, &ast->getPreprocessor(), native_asm_dialect);
   if (result.success && result.source_bytes != original.source_bytes) {
     result.success = false;
     result.source_bytes.clear();

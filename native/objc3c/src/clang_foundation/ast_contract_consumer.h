@@ -9,5 +9,5 @@ namespace clang {class Preprocessor;}
 namespace objc3::clang_foundation {
 std::unique_ptr<clang::ASTConsumer> MakeContractConsumer(
     const CompileRequest &request, CompileResult &result,
-    const clang::Preprocessor *preprocessor);
+    const clang::Preprocessor *preprocessor, unsigned native_asm_dialect);
 }

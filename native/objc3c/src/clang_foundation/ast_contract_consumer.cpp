@@ -21,8 +21,9 @@ class ContractConsumer final : public clang::ASTConsumer,
                                public clang::RecursiveASTVisitor<ContractConsumer> {
  public:
   ContractConsumer(const CompileRequest &request, CompileResult &result,
-                   const clang::Preprocessor *preprocessor)
-      : request_(request), result_(result), preprocessor_(preprocessor) {}
+                   const clang::Preprocessor *preprocessor, unsigned native_asm_dialect)
+      : request_(request), result_(result), preprocessor_(preprocessor),
+        native_asm_dialect_(native_asm_dialect) {}
 
   void Initialize(clang::ASTContext &context) override {
     context_ = &context;
@@ -145,13 +146,13 @@ class ContractConsumer final : public clang::ASTConsumer,
       result_.interface_artifact = EmitOwnershipProjection(
           context, request_.module_name, request_.package_identity,
           *request_.projected_arc, result_.resolved_interface_dependencies,
-          request_.interface_exports, source_root_, preprocessor_);
+          request_.interface_exports, source_root_, preprocessor_, native_asm_dialect_);
     else if (request_.emit_semantic_interface)
       result_.interface_artifact = EmitSemanticInterface(
           context, request_.module_name, request_.package_identity,
           result_.resolved_interface_dependencies,
           result_.resolved_interface_sources, {}, request_.interface_exports,
-          source_root_, preprocessor_);
+          source_root_, preprocessor_, native_asm_dialect_);
   }
 
  private:
@@ -159,13 +160,14 @@ class ContractConsumer final : public clang::ASTConsumer,
   CompileResult &result_;
   clang::ASTContext *context_ = nullptr;
   const clang::Preprocessor *preprocessor_;
+  unsigned native_asm_dialect_;
   std::string source_root_;
 };
 }  // namespace
 
 std::unique_ptr<clang::ASTConsumer> MakeContractConsumer(
     const CompileRequest &request, CompileResult &result,
-    const clang::Preprocessor *preprocessor) {
-  return std::make_unique<ContractConsumer>(request, result, preprocessor);
+    const clang::Preprocessor *preprocessor, unsigned native_asm_dialect) {
+  return std::make_unique<ContractConsumer>(request, result, preprocessor, native_asm_dialect);
 }
 }  // namespace objc3::clang_foundation

@@ -20,6 +20,7 @@
 #include "clang/CodeGen/CodeGenAction.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Basic/CodeGenOptions.h"
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Frontend/MultiplexConsumer.h"
@@ -174,7 +175,8 @@ public:
       return;
     }
     auto imported = session_->ImportInto(context, compiler_.getFileManager(),
-                                        request_.source_directed_imports,{},nullptr,&compiler_.getPreprocessor());
+                                        request_.source_directed_imports,{},nullptr,&compiler_.getPreprocessor(),
+                                        compiler_.getCodeGenOpts().getInlineAsmDialect());
     result_.interface_import_diagnostics = imported.diagnostics;
     if (!imported.success) {
       std::string message;
@@ -348,7 +350,8 @@ class ContractAction final : public NativeAction {
     if (imports_ || request_.source_directed_imports)
       consumers.push_back(std::make_unique<InterfaceImportConsumer>(
           imports_, compiler, lookup_source_, request_, result_));
-    consumers.push_back(MakeContractConsumer(request_, result_, &compiler.getPreprocessor()));
+    consumers.push_back(MakeContractConsumer(request_, result_, &compiler.getPreprocessor(),
+                                              compiler.getCodeGenOpts().getInlineAsmDialect()));
     std::shared_ptr<CInlineProviderState> c_inline;
     if(request_.module_owned_names && request_.emit!=EmitKind::Syntax &&
         (request_.language==BaseLanguage::C || request_.language==BaseLanguage::ObjectiveC)) {
@@ -432,7 +435,8 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
         result_.failure = "Cannot derive the consumer primitive/target ABI";
         return false;
       }
-      target.language_profile = ReadInterfaceLanguageProfile(language, target_instance.getTarget());
+      target.native_asm_dialect = invocation->getCodeGenOpts().getInlineAsmDialect();
+      target.language_profile = ReadInterfaceLanguageProfile(language, target_instance.getTarget(),target.native_asm_dialect);
       target.objc = language.ObjC;
       target.objc3 = language.ObjC3;
       target.arc = language.ObjCAutoRefCount;

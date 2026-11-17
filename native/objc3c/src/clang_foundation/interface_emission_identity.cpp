@@ -2412,7 +2412,8 @@ bool ValidateExportNames(const std::vector<std::string> &exports,
 using namespace emission_detail;
 
 std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang,
-                                         const clang::TargetInfo &target) {
+                                         const clang::TargetInfo &target,
+                                         unsigned native_asm_dialect) {
   static constexpr const char *profiles[] = {
       "compatibility", "strict", "strict-concurrency", "strict-system"};
   const auto index = static_cast<unsigned>(lang.ObjC3Profile);
@@ -2448,6 +2449,8 @@ std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang,
       ";long-double-format=" + std::to_string(static_cast<unsigned>(
           llvm::APFloat::SemanticsToEnum(target.getLongDoubleFormat()))) +
       ";clang-abi-compat=" + std::to_string(static_cast<unsigned>(lang.getClangABICompat()));
+  profile += ";native-inline-asm-dialect:v1;mode=" +
+      std::to_string(native_asm_dialect);
   profile += ";target-cpu=" + target.getTargetOpts().CPU;
   std::string features;
   for (const auto &feature : target.getTargetOpts().Features)
@@ -2469,8 +2472,9 @@ std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang,
 
 }
 
-std::string ReadInterfaceLanguageProfile(const clang::ASTContext &context) {
-  return ReadInterfaceLanguageProfile(context.getLangOpts(), context.getTargetInfo());
+std::string ReadInterfaceLanguageProfile(const clang::ASTContext &context,
+                                         unsigned native_asm_dialect) {
+  return ReadInterfaceLanguageProfile(context.getLangOpts(), context.getTargetInfo(), native_asm_dialect);
 }
 
 // An unnamed record's methods inherit its stable owner/path even when their

@@ -56,6 +56,7 @@ struct InterfaceImportTarget {
   bool strict_concurrency = false;
   std::vector<std::string> ast_arguments;
   bool allow_function_overloads = false;
+  unsigned native_asm_dialect = 0;
   InterfaceResourceLimits resource_limits;
 };
 
@@ -105,7 +106,8 @@ public:
       bool source_scoped_visibility = false,
       std::shared_ptr<clang::ASTImporterSharedState> shared_state = {},
       const StandardLibraryHeaderManifest *native_header_prelude = nullptr,
-      const clang::Preprocessor *native_preprocessor = nullptr);
+      const clang::Preprocessor *native_preprocessor = nullptr,
+      unsigned native_asm_dialect = 0);
 
   [[nodiscard]] std::vector<InterfaceSourceArtifact>
   GetSourceArtifacts() const;

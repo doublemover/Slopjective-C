@@ -434,8 +434,6 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
 
 clang::NamedDecl *Representative(clang::NamedDecl *declaration);
 
-std::vector<std::string> RoundTripArguments(const clang::ASTContext &context);
-
 bool SameDeclaration(const InterfaceDeclarationIdentity &a,
                      const InterfaceDeclarationIdentity &b);
 
