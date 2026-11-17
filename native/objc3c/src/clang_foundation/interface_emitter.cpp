@@ -386,7 +386,8 @@ class InterfaceCollector final
     // Emitting it again as a namespace root adds another forward declaration
     // on every canonical replay and can change namespace lookup prematurely.
     if (!class_template_friend &&
-        (IsTopLevel(declaration) || IsOutOfLineDefaultedDefinition(declaration)) &&
+        (IsTopLevel(declaration) || IsOutOfLineDefaultedDefinition(declaration) ||
+         IsPublishedOutOfLineMethodDefinition(declaration)) &&
         (!FriendOwner(declaration) ||
          (llvm::isa<clang::FunctionDecl,clang::FunctionTemplateDecl>(declaration) &&
           !declaration->getLexicalDeclContext()->isRecord())) &&
@@ -577,6 +578,7 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   // qualified function spelling would print invalid `Worker::get` inside it.
   if (llvm::isa<clang::CXXRecordDecl, clang::ClassTemplateDecl>(declaration) ||
       IsDetachedCallableTemplateRoot(declaration) || IsDetachedStaticDataTemplateRoot(declaration) ||
+      IsPublishedOutOfLineMethodDefinition(declaration) ||
       declaration->getDeclContext()->getRedeclContext()->isNamespace())
     policy.FullyQualifiedName = false;
 
@@ -714,6 +716,7 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
     // Out-of-line source definitions retain an explicit qualifier even with
     // FullyQualifiedName disabled. The enclosing wrappers already supply it.
     if (function && !scopes.empty() && !IsDetachedCallableTemplateDefinition(function) &&
+        !IsPublishedOutOfLineMethodDefinition(function) &&
         !IsConcreteMemberFunctionSpecialization(function) && !IsClosedParentMemberSpecialization(function))
       function->setQualifierInfo({});
     PrintUnscopedRootDeclaration(declaration, context, out, declaration_only);
@@ -1130,6 +1133,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeLifetimeAnnotationSemantic);
     if(HasNativeExternalBindingIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeExternalBindingSemantic);
+    if(HasCxxOutOfLineDefinitionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxOutOfLineDefinitionSemantic);
+    if(HasCxxExplicitSpecifierIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxExplicitSpecifierSemantic);
     if(HasNativeObjectPolicyIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeObjectPolicySemantic);
     if(HasNativeObjectExpressionIdentity(declaration))

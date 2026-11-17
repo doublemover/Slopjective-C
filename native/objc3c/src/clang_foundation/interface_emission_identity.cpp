@@ -488,8 +488,32 @@ bool GenericArgumentKey(const clang::TemplateArgument &argument,
   }
 }
 
+// Canonical partial identities bind parameter positions, not user spelling.
+// This temporary printing view never changes emitted source or name lookup.
+class CanonicalTemplateParameterNames {
+  std::vector<std::pair<clang::NamedDecl *,clang::DeclarationName>> saved_;
+public:
+  CanonicalTemplateParameterNames(const clang::TemplateParameterList *head,const clang::ASTContext &context) {
+    auto bind=[&](auto &&self,const clang::TemplateParameterList *list,unsigned depth)->void {
+      if(!list)return;
+      unsigned index=0;
+      for(auto *parameter:*list) {
+        saved_.emplace_back(parameter,parameter->getDeclName());
+        const auto name="__objc3_template_parameter_"+std::to_string(depth)+"_"+std::to_string(index++);
+        parameter->setDeclName(clang::DeclarationName(&context.Idents.get(name)));
+        if(const auto *nested=llvm::dyn_cast<clang::TemplateTemplateParmDecl>(parameter))self(self,nested->getTemplateParameters(),depth+1);
+      }
+    };
+    bind(bind,head,0);
+  }
+  ~CanonicalTemplateParameterNames(){for(auto entry=saved_.rbegin();entry!=saved_.rend();++entry)entry->first->setDeclName(entry->second);}
+  CanonicalTemplateParameterNames(const CanonicalTemplateParameterNames &)=delete;
+  CanonicalTemplateParameterNames &operator=(const CanonicalTemplateParameterNames &)=delete;
+};
+
 std::string VariablePartialArgumentKey(const clang::VarTemplatePartialSpecializationDecl *partial,
                                        const clang::ASTContext &context) {
+  CanonicalTemplateParameterNames normalized_parameters(partial->getTemplateParameters(),context);
   std::string head;llvm::raw_string_ostream stream(head);
   clang::PrintingPolicy policy(context.getLangOpts());policy.PrintAsCanonical=true;
   partial->getTemplateParameters()->print(stream,context,policy);
@@ -502,6 +526,7 @@ std::string VariablePartialArgumentKey(const clang::VarTemplatePartialSpecializa
 bool ClassSpecializationArgumentKey(const clang::ClassTemplateSpecializationDecl *specialization,
                                     const clang::ASTContext &context,std::string &key) {
   if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(specialization)) {
+    CanonicalTemplateParameterNames normalized_parameters(partial->getTemplateParameters(),context);
     std::string head;llvm::raw_string_ostream stream(head);
     clang::PrintingPolicy policy(context.getLangOpts());policy.PrintAsCanonical=true;
     partial->getTemplateParameters()->print(stream,context,policy);
@@ -2196,6 +2221,8 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
       printed->setQualifierInfo({});
       auto specialization_policy=policy;
       specialization_policy.IncludeTagDefinition=HasDeclarationUnnamedLocalType(specialization);
+      const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(specialization);
+      CanonicalTemplateParameterNames normalized_parameters(partial?partial->getTemplateParameters():nullptr,context);
       printed->print(specialization_stream,specialization_policy);
       const auto origins=FactoryDeclarationTypeKey(specialization);
       if(!origins.empty())text+=";factory-origins="+ComputeInterfaceSourceSha256(origins);
@@ -2205,7 +2232,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     for (const auto &[key,digest]:specializations)
       body+=";specialization="+std::to_string(key.size())+":"+key+":"+digest;
     return "class-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
-        ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v2;" +
+        ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v3;" +
         ";cxx-template-structure:v1;rtti=" + std::to_string(context.getLangOpts().RTTI) + ";" +
         (specializations.empty() || pattern->getDeclContext()->isRecord() ? "" : ";cxx-class-specializations:v1;") +
         (!pattern->getDeclContext()->isRecord() && std::any_of(published_specializations.begin(),published_specializations.end(),
@@ -2216,7 +2243,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         (members.friends ? ";cxx-friends:v3;" : "") +
         (members.functions ? ";cxx-member-templates:v1;" : "") +
         (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;" : "") +
-        (members.variables ? ";cxx-variable-templates:v1;" : "") +
+        (members.variables ? ";cxx-variable-templates:v2;" : "") +
         (members.nested ? ";cxx-nested-templates:v1;" : "") +
         (members.variadic ? ";cxx-variadic-templates:v1;" : "") +
         (members.thread_local_storage ? ";cxx-thread-local:v1;" : "");
@@ -2230,6 +2257,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     for (const auto *partial:PublishedVariablePartials(pattern)) {
       std::string text;llvm::raw_string_ostream stream(text);
       clang::PrintingPolicy policy(context.getLangOpts());policy.PrintAsCanonical=true;
+      CanonicalTemplateParameterNames normalized_parameters(partial->getTemplateParameters(),context);
       partial->print(stream,policy);
       partials.emplace(VariablePartialArgumentKey(partial,context),ComputeInterfaceSourceSha256(text));
       deduced |= partial->getType()->getContainedAutoType()!=nullptr;
@@ -2244,7 +2272,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         ";initializer=" + (variable->hasInit() ? identity.Get(const_cast<clang::Expr *>(variable->getInit())) :
             variable->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly ? "declaration" : "default") +
         (partials.empty()?"":";partials="+ComputeInterfaceSourceSha256(partial_contract)) +
-        "};cxx-variable-templates:v1;" +
+        "};cxx-variable-templates:v2;" +
         (partials.empty() || pattern->getDeclContext()->isRecord()?"":";cxx-variable-partial-specializations:v1;") +
         ";cxx-template-structure:v1;" +
         (deduced ? ";cxx-template-deduction:v1;" : "") +
@@ -2328,7 +2356,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         value+=";cxx-concrete-nested-templates:v1;;cxx-nested-templates:v1;";
       if (members.functions) value+=";cxx-member-templates:v1;";
       if (members.aliases) value+=";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;";
-      if (members.variables) value+=";cxx-variable-templates:v1;";
+      if (members.variables) value+=";cxx-variable-templates:v2;";
       if (members.deduced) value+=";cxx-template-deduction:v1;";
       if (members.variadic) value+=";cxx-variadic-templates:v1;";
       if (members.thread_local_storage) value+=";cxx-thread-local:v1;";
@@ -2954,7 +2982,7 @@ bool ReadInterfaceDeclarationIdentity(
     if (!specialization->isInline() || !specialization->hasInit())
       identity.canonical_type_identity+=";cxx-variable-specialization-storage:v1;delivery="+
           std::string(specialization->isInline()?"inline-zero":"external")+";";
-    identity.canonical_type_identity+=";cxx-variable-specializations:v1;;cxx-variable-templates:v1;primary="+
+    identity.canonical_type_identity+=";cxx-variable-specializations:v1;;cxx-variable-templates:v2;primary="+
         ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate())+";arguments="+
         ComputeInterfaceSourceSha256(key)+";";
   }
@@ -3011,6 +3039,11 @@ bool ReadInterfaceDeclarationIdentity(
       std::string text;llvm::raw_string_ostream stream(text);
       clang::PrintingPolicy policy(context.getLangOpts());
       policy.PrintAsCanonical=true;policy.PolishForDeclaration=true;
+      const auto *class_partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(partial);
+      const auto *variable_partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(partial);
+      CanonicalTemplateParameterNames normalized_parameters(
+          class_partial?class_partial->getTemplateParameters():
+          variable_partial?variable_partial->getTemplateParameters():nullptr,context);
       partial->print(stream,policy);
       definitions.insert(ReadInterfaceDeclarationStableId(partial)+":"+ComputeInterfaceSourceSha256(text));
     }
@@ -3225,6 +3258,38 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-function-effects:v1;";
   if (HasDeclarationNativeLifetime(representative))
     identity.canonical_type_identity+=";native-lifetime-annotations:v1;";
+  if(HasDeclarationOutOfLineMethodDefinitions(representative))
+    identity.canonical_type_identity+=";cxx-out-of-line-definitions:v1;";
+  if(auto functions=PublishedConditionalExplicitFunctions(representative);!functions.empty()) {
+    std::string predicates;
+    auto field=[&](const std::string &value){predicates+=std::to_string(value.size())+":"+value;};
+    for(const auto *function:functions) {
+      field(function->clang::Decl::getDeclKindName());
+      if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function)) {
+        const auto *owner=method->getParent();
+        // Injected class-name printing retains non-type parameter spellings.
+        // A primary/partial owner binds its nominal template identity instead.
+        if(const auto *pattern=owner->getDescribedClassTemplate())field(ReadInterfaceDeclarationStableId(pattern));
+        else if(const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(owner))field(ReadInterfaceDeclarationStableId(partial));
+        else field(CanonicalType(context.getCanonicalTagType(owner),context));
+      }
+      field(CanonicalType(function->getType(),context));
+      DeclarationExpressionIdentity predicate(context,function);
+      std::vector<const clang::DeclContext *> scopes;
+      for(const auto *scope=function->getDeclContext();scope;scope=scope->getParent())scopes.push_back(scope);
+      for(auto scope=scopes.rbegin();scope!=scopes.rend();++scope) {
+        if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(*scope))
+          if(const auto *pattern=record->getDescribedClassTemplate())predicate.TemplateParameters(pattern);
+        if(const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(*scope))
+          for(const auto *parameter:*partial->getTemplateParameters())predicate.Local(parameter);
+        if(const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(*scope))
+          if(const auto *pattern=owner->getDescribedFunctionTemplate())predicate.TemplateParameters(pattern);
+      }
+      field(predicate.Get(const_cast<clang::Expr *>(clang::ExplicitSpecifier::getFromDecl(function).getExpr()),true));
+    }
+    identity.canonical_type_identity+=";cxx-explicit-specifiers:v1;predicates="+
+        ComputeInterfaceSourceSha256(predicates)+";";
+  }
   if(HasDeclarationNativeObjectPolicy(representative))
     identity.canonical_type_identity+=";native-object-policies:v1;";
   if(HasDeclarationNativeObjectExpressions(representative))

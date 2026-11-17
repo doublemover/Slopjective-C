@@ -586,6 +586,18 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasNativeFunctionEffectIdentity(d) || IsNativeFunctionEffectOwner(d);});
   if(function_effects!=function_effect_capability || !function_effect_owners)
     Add(result,"O3IFC145","native function effect identity and required capability must agree",expected.canonical_name);
+  const bool out_of_line_definitions=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxOutOfLineDefinitionIdentity);
+  const bool out_of_line_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxOutOfLineDefinitionSemantic)!=sidecar.required_semantics.end();
+  const bool out_of_line_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxOutOfLineDefinitionIdentity(d) || IsCxxOutOfLineDefinitionOwner(d);});
+  if(out_of_line_definitions!=out_of_line_capability || !out_of_line_owners)
+    Add(result,"O3IFC145","out-of-line method definition identity and required capability must agree",expected.canonical_name);
+  const bool explicit_specifiers=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxExplicitSpecifierIdentity);
+  const bool explicit_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxExplicitSpecifierSemantic)!=sidecar.required_semantics.end();
+  const bool explicit_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxExplicitSpecifierIdentity(d) || IsCxxExplicitSpecifierOwner(d);});
+  if(explicit_specifiers!=explicit_capability || !explicit_owners)
+    Add(result,"O3IFC145","conditional explicit specifier identity and required capability must agree",expected.canonical_name);
   const bool object_policies=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeObjectPolicyIdentity);
   const bool object_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeObjectPolicySemantic)!=sidecar.required_semantics.end();
   const bool object_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

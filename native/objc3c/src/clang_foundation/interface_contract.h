@@ -168,6 +168,21 @@ inline bool HasNativeLifetimeAnnotationIdentity(const InterfaceDeclarationIdenti
 inline bool IsNativeLifetimeAnnotationOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d);
 }
+inline constexpr const char *kCxxOutOfLineDefinitionSemantic = "objc3.cxx-out-of-line-definitions.v1";
+inline bool HasCxxOutOfLineDefinitionIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-out-of-line-definitions:v1;")!=std::string::npos;
+}
+inline bool IsCxxOutOfLineDefinitionOwner(const InterfaceDeclarationIdentity &d) {
+  return d.kind=="CXXRecord" || d.kind=="ClassTemplate" || d.kind=="ClassTemplateSpecialization" ||
+      d.kind=="ClassTemplatePartialSpecialization" || IsCxxMemberDeclarationKind(d.kind);
+}
+inline constexpr const char *kCxxExplicitSpecifierSemantic = "objc3.cxx-explicit-specifiers.v1";
+inline bool HasCxxExplicitSpecifierIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-explicit-specifiers:v1;")!=std::string::npos;
+}
+inline bool IsCxxExplicitSpecifierOwner(const InterfaceDeclarationIdentity &d) {
+  return IsNativeFunctionEffectOwner(d);
+}
 inline constexpr const char *kNativeObjectPolicySemantic = "objc3.native-object-policies.v1";
 inline bool HasNativeObjectPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-object-policies:v1;")!=std::string::npos;
@@ -680,13 +695,13 @@ inline constexpr const char *kCxxTemplateStructureSemantic = "objc3.cxx-template
 inline bool HasCxxTemplateStructureIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-template-structure:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxClassTemplateSemantic = "objc3.cxx-class-templates.v2";
+inline constexpr const char *kCxxClassTemplateSemantic = "objc3.cxx-class-templates.v3";
 inline bool HasCxxClassTemplateIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-class-templates:v2;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-class-templates:v3;") != std::string::npos;
 }
-inline constexpr const char *kCxxVariableTemplateSemantic = "objc3.cxx-variable-templates.v1";
+inline constexpr const char *kCxxVariableTemplateSemantic = "objc3.cxx-variable-templates.v2";
 inline bool HasCxxVariableTemplateIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-variable-templates:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-variable-templates:v2;") != std::string::npos;
 }
 inline constexpr const char *kCxxAliasTemplateSemantic = "objc3.cxx-alias-templates.v1";
 inline bool HasCxxAliasTemplateIdentity(const InterfaceDeclarationIdentity &d) {

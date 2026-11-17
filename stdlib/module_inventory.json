@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 196,
+        "minor": 197,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native conditional explicit constructor/conversion predicates retain typed lexical template/parameter bindings, exact source-free reader admission and expression-aware import equivalence across ordinary/template/specialized/nested and local factory/closure declarations; ordinary inline out-of-line constructors, conversions, methods and virtual destructors publish complete bodies with separate reader admission; class-template v3 and variable-template v2 contracts normalize partial parameter names and non-type pattern dependencies; matching SDK acceptance pending",
         "Native Objective-C method-family, designated-initializer, super-call, subclassing, explicit property/protocol implementation, non-runtime protocol, boxing, precise lifetime and class runtime policies retain canonical source, typed contract identity, target-owned import and a native-object-policies v1 reader promise; method families include exact payloads and Objective-C++ new-keyword parsing; complete class/protocol merges retain member policies and designated state, matching SDK acceptance pending",
         "Bounded inline/internal scalar and reference argument projections preserve cleanup-managed provenance through nested native/template helpers, exact selected reference storage and caller read/write/escape roles; ordinary snapshots remain admitted while resource copies, projected writes and recursive/opaque/mutating helpers reject; source/PCH/native checks pass, matching SDK acceptance pending",
         "Native availability guards preserve selected version/type/range through target-owned AST import and target-bound canonical builtin grammar in C17/C++20/23 and Objective-C source-free templates/default arguments; native-object-expressions v2 replaces v1; standard move/forward/forward_like/as_const views preserve read/write/escape roles and local cells without erasing known cleanup provenance; matching SDK acceptance pending",
@@ -359,12 +360,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 122,
+        "minor": 123,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native conditional explicit constructor/conversion predicates retain typed lexical template/parameter bindings, exact source-free reader admission and expression-aware import equivalence across ordinary/template/specialized/nested and local factory/closure declarations; ordinary inline out-of-line constructors, conversions, methods and virtual destructors publish complete bodies with separate reader admission; class-template v3 and variable-template v2 contracts normalize partial parameter names and non-type pattern dependencies; matching SDK acceptance pending",
         "Native Objective-C method-family, designated-initializer, super-call, subclassing, explicit property/protocol implementation, non-runtime protocol, boxing, precise lifetime and class runtime policies retain canonical source, typed contract identity, target-owned import and a native-object-policies v1 reader promise; method families include exact payloads and Objective-C++ new-keyword parsing; complete class/protocol merges retain member policies and designated state, matching SDK acceptance pending",
         "Bounded inline/internal scalar and reference argument projections preserve cleanup-managed provenance through nested native/template helpers, exact selected reference storage and caller read/write/escape roles; ordinary snapshots remain admitted while resource copies, projected writes and recursive/opaque/mutating helpers reject; source/PCH/native checks pass, matching SDK acceptance pending",
         "Native availability guards preserve selected version/type/range through target-owned AST import and target-bound canonical builtin grammar in C17/C++20/23 and Objective-C source-free templates/default arguments; native-object-expressions v2 replaces v1; standard move/forward/forward_like/as_const views preserve read/write/escape roles and local cells without erasing known cleanup provenance; matching SDK acceptance pending",

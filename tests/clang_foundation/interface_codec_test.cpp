@@ -61,8 +61,13 @@ int main() {
   assert(capabilities.count(kNativeFunctionPolicySemantic));
   assert(!capabilities.count("objc3.cxx-friends.v1"));
   assert(!capabilities.count("objc3.cxx-friends.v2"));
-  assert(capabilities.count("objc3.cxx-class-templates.v2"));
+  assert(capabilities.count("objc3.cxx-class-templates.v3"));
   assert(!capabilities.count("objc3.cxx-class-templates.v1"));
+  assert(!capabilities.count("objc3.cxx-class-templates.v2"));
+  assert(capabilities.count("objc3.cxx-variable-templates.v2"));
+  assert(!capabilities.count("objc3.cxx-variable-templates.v1"));
+  assert(capabilities.count(kCxxExplicitSpecifierSemantic));
+  assert(capabilities.count(kCxxOutOfLineDefinitionSemantic));
   assert(!capabilities.count("objc3.native-declaration-attributes.v3"));
   assert(capabilities.count("objc3.native-declaration-attributes.v6"));
   assert(!capabilities.count("objc3.native-declaration-attributes.v4"));

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.197 / System 2.123 conditional-explicit span](linux_conditional_explicit_packages.md)
+binds native constructor/conversion predicates across source-free class and local
+factory graphs and delivers ordinary inline out-of-line member definitions.
+
 The [Source 2.196 / System 2.122 native object-policy span](linux_native_object_policies.md)
 publishes Objective-C initializer, method-family, superclass, property/protocol,
 boxing and lifetime contracts with native import and explicit reader admission.

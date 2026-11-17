@@ -74,6 +74,14 @@ class TypeDependencyVisitor final
    }
    void CheckDeclarationAttributes(const clang::NamedDecl *declaration) {
      if (!declaration) return;
+     if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+       if(const auto *predicate=clang::ExplicitSpecifier::getFromDecl(function).getExpr()) {
+         const auto locals=lambda_locals_;
+         auto restore=llvm::scope_exit([&]{lambda_locals_=locals;});
+         for(const auto *redecl:function->redecls())
+           for(const auto *parameter:redecl->parameters())lambda_locals_.insert(parameter->getCanonicalDecl());
+         TraverseStmt(const_cast<clang::Expr *>(predicate));
+       }
      for(const auto *capture:declaration->specific_attrs<clang::LifetimeCaptureByAttr>())
        if(std::find(capture->params_begin(),capture->params_end(),clang::LifetimeCaptureByAttr::Invalid)!=capture->params_end())
          AddDiagnostic(result_,"O3IFC112","lifetime capture target is not resolved in its callable parameter context",declaration->getNameAsString());
@@ -777,7 +785,8 @@ class TypeDependencyVisitor final
          owner=llvm::dyn_cast<clang::NamedDecl>(owner->getDeclContext()))
       if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(owner))
         for (const auto &argument : specialization->getTemplateArgs().asArray())
-          if (!CheckGenericArgument(argument)) UnsupportedExpression();
+          if (!(llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization)
+                    ? CheckPatternArgument(argument) : CheckGenericArgument(argument))) UnsupportedExpression();
   }
   bool CheckPatternArgument(const clang::TemplateArgument &argument) {
     if (argument.getKind()==clang::TemplateArgument::Expression) return TraverseStmt(argument.getAsExpr());
@@ -1745,12 +1754,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
           (!method->isDefaulted() || IsSupportedDefaultedSpecialMember(method) ||
            IsInClassDefaultedComparison(method)) &&
           !method->getTrailingRequiresClause();
-      if (const auto *ctor =
-              llvm::dyn_cast_or_null<clang::CXXConstructorDecl>(method))
-        supported &= ctor->getExplicitSpecifier().getExpr() == nullptr;
-      if (const auto *conversion =
-              llvm::dyn_cast_or_null<clang::CXXConversionDecl>(method))
-        supported &= conversion->getExplicitSpecifier().getExpr() == nullptr;
+
     }
   }
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))

@@ -64,7 +64,7 @@
 "objc3.cxx-inline-closure-objects.v3"
 ";cxx-inline-closure-objects:v3;"
 "@cpu-version@"
-"objc3.cxx-class-templates.v2"
+"objc3.cxx-class-templates.v3"
 "objc3.manual-family-call-proofs.v1"
 ";manual-family-call-proofs:v1;"
 
@@ -95,3 +95,7 @@
 ";native-object-expressions:v2;"
 "objc3.native-object-policies.v1"
 ";native-object-policies:v1;"
+"objc3.cxx-explicit-specifiers.v1"
+";cxx-explicit-specifiers:v1;"
+"objc3.cxx-out-of-line-definitions.v1"
+";cxx-out-of-line-definitions:v1;"

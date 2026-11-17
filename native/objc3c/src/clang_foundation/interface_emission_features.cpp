@@ -470,6 +470,49 @@ bool HasDeclarationNativeLifetime(const clang::NamedDecl *declaration) {
   return constraints.found || HasPublishedExpression(declaration,Scan);
 }
 
+bool IsPublishedOutOfLineMethodDefinition(const clang::NamedDecl *declaration) {
+  const auto *method=llvm::dyn_cast_or_null<clang::CXXMethodDecl>(declaration);
+  return method && method->isOutOfLine() && method->doesThisDeclarationHaveABody() &&
+      !method->isTemplated() && !method->getParent()->isDependentContext() &&
+      PublishesFunctionBody(method);
+}
+bool HasDeclarationOutOfLineMethodDefinitions(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  struct Methods:clang::DynamicRecursiveASTVisitor {
+    bool found=false;
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitCXXMethodDecl(clang::CXXMethodDecl *method) override {
+      found|=IsPublishedOutOfLineMethodDefinition(method->getDefinition());return true;
+    }
+  } methods;
+  methods.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return methods.found;
+}
+
+std::vector<const clang::FunctionDecl *> PublishedConditionalExplicitFunctions(const clang::NamedDecl *declaration) {
+  std::vector<const clang::FunctionDecl *> functions;
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return functions;
+  llvm::SmallPtrSet<const clang::FunctionDecl *,32> seen;
+  struct Predicates:clang::DynamicRecursiveASTVisitor {
+    std::vector<const clang::FunctionDecl *> &functions;
+    llvm::SmallPtrSetImpl<const clang::FunctionDecl *> &seen;
+    bool bodies;
+    Predicates(decltype(functions) f,decltype(seen) s,bool b):functions(f),seen(s),bodies(b){}
+    bool TraverseStmt(clang::Stmt *statement) override {
+      return !bodies || clang::DynamicRecursiveASTVisitor::TraverseStmt(statement);
+    }
+    bool VisitFunctionDecl(clang::FunctionDecl *function) override {
+      if(!function->isImplicit() && clang::ExplicitSpecifier::getFromDecl(function).getExpr() &&
+          seen.insert(function->getCanonicalDecl()).second)functions.push_back(function);
+      return true;
+    }
+  } declarations(functions,seen,false);
+  declarations.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  HasPublishedExpression(declaration,[&](const clang::Stmt *statement) {
+    Predicates values(functions,seen,true);values.TraverseStmt(const_cast<clang::Stmt *>(statement));return false;
+  });
+  return functions;
+}
+
 bool HasDeclarationNativeObjectPolicy(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Policy=[](const clang::NamedDecl *named) {

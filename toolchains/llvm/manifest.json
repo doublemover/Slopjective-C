@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "8ceccde0922c691e3a6308eb62fb8168a4a8f9147cb65531920c6b3d02d8b736"
+      "sha256": "43bde6fc0da92eb4632e39fff25646910cf849f0c873e4a2eba3233a7ddca9e5"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
