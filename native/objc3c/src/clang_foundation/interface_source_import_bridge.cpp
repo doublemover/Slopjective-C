@@ -14,10 +14,12 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclTemplate.h"
+#include "clang/AST/DeclObjC.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Sema/Sema.h"
+#include "clang/Sema/SemaObjC.h"
 #include "clang/Sema/Lookup.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -34,6 +36,19 @@ bool SameIdentity(const InterfaceModuleIdentity &left,
       left.language_revision == right.language_revision &&
       left.language_profile == right.language_profile &&
       left.package_identity == right.package_identity;
+}
+
+void RegisterObjCMethodDeclaration(clang::Sema *sema,clang::NamedDecl *declaration,
+    std::set<const clang::Decl *> &registered) {
+  if (!sema || !sema->getLangOpts().ObjC) return;
+  auto add = [&](clang::ObjCMethodDecl *method) {
+    if (method && registered.insert(method->getCanonicalDecl()).second)
+      sema->ObjC().AddAnyMethodToGlobalPool(method);
+  };
+  if (auto *property=llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration)) {
+    add(property->getGetterMethodDecl());
+    if (!property->isReadOnly()) add(property->getSetterMethodDecl());
+  } else add(llvm::dyn_cast<clang::ObjCMethodDecl>(declaration));
 }
 
 bool ComputeVisibleClosure(
@@ -119,6 +134,8 @@ void InterfaceSourceImportBridge::ConfigureSourceRegistry(
 }
 
 void InterfaceSourceImportBridge::Reset() {
+  registered_objc_methods_.clear();
+  initially_visible_objc_methods_.clear();
   pending_inline_definitions_.clear();
   registered_inline_definitions_.clear();
   registry_.clear();
@@ -176,10 +193,13 @@ void InterfaceSourceImportBridge::InitializeSema(clang::Sema &sema) {
     last_failure_ = "source-import bridge must be reconfigured for a different consumer ASTContext";
     visible_.clear();
     initially_visible_declarations_.clear();
+    initially_visible_objc_methods_.clear();
+    registered_objc_methods_.clear();
     importer_state_.reset();
     native_header_prelude_.reset();
   }
   sema_ = &sema;
+  RegisterVisibleObjCMethods();
 }
 
 void InterfaceSourceImportBridge::QueueInlineDefinitions(
@@ -292,6 +312,33 @@ void InterfaceSourceImportBridge::RestoreVisibleFriendLookup() {
   }
 }
 
+void InterfaceSourceImportBridge::RegisterVisibleObjCMethods() {
+  if (!sema_ || !sema_->getLangOpts().ObjC) return;
+  auto register_declaration = [&](clang::NamedDecl *declaration) {
+    RegisterObjCMethodDeclaration(sema_,declaration,registered_objc_methods_);
+  };
+  for (auto *method : initially_visible_objc_methods_) register_declaration(method);
+  // Only exact admitted method/property rows participate. Walking a container's entire
+  // imported graph could expose a private dependency or an ungranted SPI entry.
+  for (const auto &module : visible_) {
+    auto declarations = declarations_.find(module);
+    auto artifact = artifacts_.find(module);
+    if (declarations == declarations_.end() || artifact == artifacts_.end()) continue;
+    const auto request = requests_.find(module);
+    std::map<std::string,const InterfaceDeclarationIdentity *> identities;
+    for (const auto &identity:artifact->second.declarations) identities.emplace(identity.stable_id,&identity);
+    for (auto *declaration : declarations->second) {
+      if (!llvm::isa<clang::ObjCMethodDecl,clang::ObjCPropertyDecl>(declaration)) continue;
+      const auto identity=identities.find(ReadInterfaceDeclarationStableId(declaration));
+      if (identity==identities.end()) continue;
+      if (!identity->second->spi_group.empty() &&
+          (!directly_imported_.count(module) || request == requests_.end() ||
+           !IsGrantedSPI(*identity->second, request->second.spi_groups))) continue;
+      register_declaration(declaration);
+    }
+  }
+}
+
 void InterfaceSourceImportBridge::RecordDirectImport(
     llvm::StringRef canonical_name) {
   directly_imported_.insert(canonical_name.str());
@@ -311,6 +358,7 @@ void InterfaceSourceImportBridge::RecordDirectImport(
         return left.module.canonical_name < right.module.canonical_name;
       });
   RestoreVisibleFriendLookup();
+  RegisterVisibleObjCMethods();
 }
 
 SourceModuleImportStatus InterfaceSourceImportBridge::Activate(
@@ -387,6 +435,8 @@ void InterfaceSourceImportBridge::AppendModuleDeclarations(
     // A class specialization is selected through its primary template; it
     // does not introduce another ordinary or module-qualified lookup name.
     if (llvm::isa_and_nonnull<clang::ClassTemplateSpecializationDecl>(declaration)) return;
+    // These rows supply the selector pool, never free/module-qualified names.
+    if (llvm::isa_and_nonnull<clang::ObjCMethodDecl,clang::ObjCPropertyDecl>(declaration)) return;
     if (!declaration || !declaration->getIdentifier() ||
         declaration->getIdentifier()->getName()!=identifier) return;
     if(identifier_namespace && !(declaration->getIdentifierNamespace()&identifier_namespace)) return;
@@ -767,6 +817,11 @@ bool InterfaceSourceImportBridge::LookupUnqualified(
 
 void InterfaceSourceImportBridge::AddInitiallyVisible(
     clang::NamedDecl *declaration) {
+  if (llvm::isa_and_nonnull<clang::ObjCMethodDecl,clang::ObjCPropertyDecl>(declaration)) {
+    initially_visible_objc_methods_.push_back(declaration);
+    RegisterObjCMethodDeclaration(sema_,declaration,registered_objc_methods_);
+    return;
+  }
   if (!declaration || !declaration->getIdentifier()) return;
   auto &declarations =
       initially_visible_declarations_[declaration->getIdentifier()];

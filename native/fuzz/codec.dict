@@ -91,3 +91,5 @@
 ";native-lifetime-annotations:v1;"
 "objc3.native-external-bindings.v1"
 ";native-external-binding:v1;symbol="
+"objc3.native-object-expressions.v1"
+";native-object-expressions:v1;"

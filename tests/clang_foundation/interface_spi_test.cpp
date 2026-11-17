@@ -71,6 +71,7 @@ void Check(const fs::path &root, BaseLanguage language,
     SPI(Testing) __attribute__((objc_root_class)) @interface SecretRoot
     - (int)onlySecret;
     @property(readonly) int secretProperty;
+    @property(class,readonly) int secretClassProperty;
     @end
     SPI(Testing) @protocol SecretProtocol @end
   )";
@@ -128,8 +129,10 @@ void Check(const fs::path &root, BaseLanguage language,
     assert(!Compile(client).success);
   }
   if (objc) {
-    client.source_text = "int client(id v) { return [v onlySecret]; }";
-    assert(!Compile(client).success);
+    for(const auto &expression:{std::string("[v onlySecret]"),std::string("[v secretProperty]"),std::string("[c secretClassProperty]")}) {
+      client.source_text = "int client(id v,Class c) { return "+expression+"; }";
+      assert(!Compile(client).success);
+    }
   }
   client.imported_interfaces[0].spi_groups = {"Testing"};
   client.source_text =
@@ -143,6 +146,8 @@ void Check(const fs::path &root, BaseLanguage language,
   if (objc) {
     client.source_text = "int client(SecretRoot *v, id<SecretProtocol> p) { "
                          "return [v onlySecret] + v.secretProperty + !!p; }";
+    CheckResult(Compile(client));
+    client.source_text="int client(id v,Class c){return [v onlySecret]+[v secretProperty]+[c secretClassProperty];}";
     CheckResult(Compile(client));
   }
   client.source_text = "int client(void) { return other(); }";
@@ -198,6 +203,23 @@ void Check(const fs::path &root, BaseLanguage language,
     client.source_text =
         "@import SPI.Leaf;\nint client(void) { return @SPI.Leaf.secret(); }";
     assert(!Compile(client).success);
+  }
+  if(objc) {
+    auto selectors=Request(root/"selectors.m",language,standard,arc,"");
+    selectors.source_directed_imports=true;selectors.interface_search_paths={root.string()};
+    InterfaceModuleRequest leaf;leaf.canonical_name="SPI.Leaf";leaf.locked_identity=artifact.identity;leaf.spi_groups={"Testing"};leaf.initially_visible=false;
+    InterfaceModuleRequest parent;parent.canonical_name="SPI.Top";parent.locked_identity=top_artifact.identity;parent.initially_visible=false;
+    selectors.module_imports={leaf,parent};
+    const std::string use="int selectors(id v,Class c){return [v onlySecret]+[v secretProperty]+[c secretClassProperty];}";
+    selectors.source_text="@import SPI.Top;\n"+use;
+    assert(!Compile(selectors).success); // A re-export does not grant its dependency's SPI.
+    selectors.source_text=use+"\n@import SPI.Leaf;";
+    assert(!Compile(selectors).success); // Later imports cannot populate earlier selector lookups.
+    selectors.source_text="@import SPI.Top;\n@import SPI.Leaf;\n@import SPI.Leaf;\n"+use;
+    CheckResult(Compile(selectors)); // Activate a direct grant even if its module was already visible.
+    selectors.module_imports[0].spi_groups.clear();
+    selectors.source_text="@import SPI.Leaf;\n"+use;
+    assert(!Compile(selectors).success);
   }
   if (cpp) {
     auto scoped = Request(root / "scoped.m", language, standard, arc,

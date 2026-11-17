@@ -126,6 +126,7 @@ private:
   void Reset();
   void RecordDirectImport(llvm::StringRef canonical_name);
   void RestoreVisibleFriendLookup();
+  void RegisterVisibleObjCMethods();
   bool AddVisibleClosure(llvm::StringRef canonical_name);
   void AppendModuleDeclarations(llvm::StringRef canonical_name,
                                llvm::StringRef identifier,
@@ -139,6 +140,8 @@ private:
   clang::ASTConsumer *definition_consumer_ = nullptr;
   std::vector<clang::NamedDecl *> pending_inline_definitions_;
   std::set<const clang::Decl *> registered_inline_definitions_;
+  std::set<const clang::Decl *> registered_objc_methods_;
+  std::vector<clang::NamedDecl *> initially_visible_objc_methods_;
   std::set<std::string> registry_;
   std::map<std::string, InterfaceModuleRequest> requests_;
   std::map<std::string, std::vector<clang::NamedDecl *>> declarations_;

@@ -739,6 +739,21 @@ class TypeDependencyVisitor final
   bool VisitCXXDeleteExpr(clang::CXXDeleteExpr *expression) {
     CheckExpressionReference(expression->getOperatorDelete()); return true;
   }
+  bool VisitObjCPropertyRefExpr(clang::ObjCPropertyRefExpr *expression) {
+    if(expression->isExplicitProperty())CheckExpressionReference(expression->getExplicitProperty());
+    else {CheckExpressionReference(expression->getImplicitPropertyGetter());CheckExpressionReference(expression->getImplicitPropertySetter());}
+    if(expression->isClassReceiver())CheckExpressionReference(expression->getClassReceiver());
+    else if(expression->isSuperReceiver())TraverseType(expression->getSuperReceiverType());
+    return true;
+  }
+  bool VisitObjCSubscriptRefExpr(clang::ObjCSubscriptRefExpr *expression) {
+    CheckExpressionReference(expression->getAtIndexMethodDecl());CheckExpressionReference(expression->setAtIndexMethodDecl());return true;
+  }
+  bool VisitObjCProtocolExpr(clang::ObjCProtocolExpr *expression) {CheckExpressionReference(expression->getProtocol());return true;}
+  bool VisitObjCEncodeExpr(clang::ObjCEncodeExpr *expression) {return TraverseTypeLoc(expression->getEncodedTypeSourceInfo()->getTypeLoc());}
+  bool VisitObjCBoxedExpr(clang::ObjCBoxedExpr *expression) {CheckExpressionReference(expression->getBoxingMethod());return true;}
+  bool VisitObjCArrayLiteral(clang::ObjCArrayLiteral *expression) {CheckExpressionReference(expression->getArrayWithObjectsMethod());return true;}
+  bool VisitObjCDictionaryLiteral(clang::ObjCDictionaryLiteral *expression) {CheckExpressionReference(expression->getDictWithObjectsMethod());return true;}
   bool VisitObjCIvarRefExpr(clang::ObjCIvarRefExpr *expression) {
     CheckExpressionReference(expression->getDecl());return true;
   }
@@ -1115,6 +1130,7 @@ class TypeDependencyVisitor final
 
   bool VisitObjCInterfaceType(clang::ObjCInterfaceType *type) {
     const auto *declaration = type->getDecl();
+    if(declaration && declaration==context_.getObjCProtocolDecl())return true;
     CheckVisibility(declaration);
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))

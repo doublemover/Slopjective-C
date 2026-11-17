@@ -381,6 +381,48 @@ bool HasDeclarationNativeFunctionEffects(const clang::NamedDecl *declaration) {
   return constraints.found || HasPublishedExpression(declaration,Scan);
 }
 
+bool HasDeclarationNativeObjectExpressions(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  // Visit signature/type/constraint expressions as well as published bodies,
+  // defaults and initializers. Hidden implementation statements create no claim.
+  struct Implementations:clang::DynamicRecursiveASTVisitor {
+    llvm::SmallPtrSet<const clang::Stmt *,32> skipped;
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitFunctionDecl(clang::FunctionDecl *function) override {
+      if(!PublishesFunctionBody(function)) {
+        if(function->doesThisDeclarationHaveABody())skipped.insert(function->getBody());
+        if(const auto *constructor=llvm::dyn_cast<clang::CXXConstructorDecl>(function))
+          for(const auto *initializer:constructor->inits())skipped.insert(initializer->getInit());
+      }
+      return true;
+    }
+    bool VisitObjCMethodDecl(clang::ObjCMethodDecl *method) override {
+      if(method->hasBody())skipped.insert(method->getBody());return true;
+    }
+    bool VisitVarDecl(clang::VarDecl *variable) override {
+      if(!llvm::isa<clang::ParmVarDecl>(variable) && variable->hasInit() && !PublishesVariableInitializer(variable))skipped.insert(variable->getInit());return true;
+    }
+  } implementations;
+  implementations.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  struct Expressions:clang::DynamicRecursiveASTVisitor {
+    const decltype(implementations.skipped) &skipped;bool found=false;
+    explicit Expressions(const decltype(implementations.skipped) &skipped):skipped(skipped){}
+    bool TraverseStmt(clang::Stmt *statement) override {
+      if(statement && skipped.contains(statement))return true;
+      return clang::DynamicRecursiveASTVisitor::TraverseStmt(statement);
+    }
+    bool VisitExpr(clang::Expr *expression) override {
+      found|=llvm::isa<clang::ObjCPropertyRefExpr,clang::ObjCSubscriptRefExpr,clang::ObjCSelectorExpr,clang::ObjCProtocolExpr,
+          clang::ObjCEncodeExpr,clang::ObjCBoolLiteralExpr,clang::ObjCStringLiteral,clang::ObjCBoxedExpr,
+          clang::ObjCArrayLiteral,clang::ObjCDictionaryLiteral,clang::ObjCIsaExpr,
+          clang::ObjCIndirectCopyRestoreExpr,clang::ObjCBridgedCastExpr,clang::PseudoObjectExpr>(expression);
+      if(const auto *opaque=llvm::dyn_cast<clang::OpaqueValueExpr>(expression))found|=opaque->isUnique();
+      return true;
+    }
+  } expressions(implementations.skipped);
+  expressions.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return expressions.found;
+}
+
 bool HasDeclarationNativeLifetime(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Policy=[](const clang::NamedDecl *named) {

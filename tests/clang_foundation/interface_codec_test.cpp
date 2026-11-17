@@ -127,6 +127,7 @@ int main() {
       {";native-function-policies:v1;",kNativeFunctionPolicySemantic},
       {";native-function-effects:v1;",kNativeFunctionEffectSemantic},
       {";native-lifetime-annotations:v1;",kNativeLifetimeAnnotationSemantic},
+      {";native-object-expressions:v1;",kNativeObjectExpressionSemantic},
       {";native-external-binding:v1;symbol=3:ffi;",kNativeExternalBindingSemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},

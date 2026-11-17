@@ -168,6 +168,13 @@ inline bool HasNativeLifetimeAnnotationIdentity(const InterfaceDeclarationIdenti
 inline bool IsNativeLifetimeAnnotationOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d);
 }
+inline constexpr const char *kNativeObjectExpressionSemantic = "objc3.native-object-expressions.v1";
+inline bool HasNativeObjectExpressionIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-object-expressions:v1;")!=std::string::npos;
+}
+inline bool IsNativeObjectExpressionOwner(const InterfaceDeclarationIdentity &d) {
+  return IsNativeFunctionEffectOwner(d);
+}
 inline constexpr const char *kNativeExternalBindingSemantic = "objc3.native-external-bindings.v1";
 inline constexpr const char *kNativeExternalBindingMarker = ";native-external-binding:v1;symbol=";
 inline bool HasNativeExternalBindingIdentity(const InterfaceDeclarationIdentity &d) {

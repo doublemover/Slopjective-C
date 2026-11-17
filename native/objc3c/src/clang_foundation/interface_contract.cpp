@@ -586,6 +586,12 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasNativeFunctionEffectIdentity(d) || IsNativeFunctionEffectOwner(d);});
   if(function_effects!=function_effect_capability || !function_effect_owners)
     Add(result,"O3IFC145","native function effect identity and required capability must agree",expected.canonical_name);
+  const bool object_expressions=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeObjectExpressionIdentity);
+  const bool object_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeObjectExpressionSemantic)!=sidecar.required_semantics.end();
+  const bool object_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeObjectExpressionIdentity(d) || IsNativeObjectExpressionOwner(d);});
+  if(object_expressions!=object_capability || !object_owners)
+    Add(result,"O3IFC145","native object expression identity and required capability must agree",expected.canonical_name);
   const bool external_bindings=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeExternalBindingIdentity);
   const bool external_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeExternalBindingSemantic)!=sidecar.required_semantics.end();
   const bool external_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

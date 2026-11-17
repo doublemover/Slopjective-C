@@ -1212,7 +1212,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
           variable && variable->isInline())
         if (auto *definition = variable->getDefinition())
           report.inline_definitions.push_back(definition);
-      if (IsTranslationUnitLookupDeclaration(named)) {
+      if (IsTranslationUnitLookupDeclaration(named) || llvm::isa<clang::ObjCMethodDecl,clang::ObjCPropertyDecl>(named)) {
         report.declarations_by_module[module.sidecar.module.canonical_name]
             .push_back(named);
         if (!source_scoped_visibility &&

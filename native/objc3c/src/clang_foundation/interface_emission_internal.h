@@ -211,6 +211,7 @@ bool HasDeclarationConstantEvaluationControl(const clang::NamedDecl *declaration
 bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeFunctionEffects(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeLifetime(const clang::NamedDecl *declaration);
+bool HasDeclarationNativeObjectExpressions(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeFunctionPolicy(const clang::NamedDecl *declaration);
 bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeLambdaArgumentABI(const clang::NamedDecl *declaration);

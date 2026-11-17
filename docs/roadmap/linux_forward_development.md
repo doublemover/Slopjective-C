@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.192 / System 2.118 native object-expression span](linux_native_object_expressions.md)
+preserves property/subscript evaluation, reflection, literals and ARC writeback
+through source-free packages, target-owned AST graphs and canonical replay.
+
 The [Source 2.191 / System 2.117 external-binding span](linux_native_external_bindings.md)
 publishes explicit native function/data/member and Objective-C runtime names,
 including foreign ABI packages consumed through module-owned adapters.

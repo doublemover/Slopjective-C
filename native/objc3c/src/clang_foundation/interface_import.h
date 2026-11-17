@@ -74,7 +74,8 @@ struct InterfaceImportReport {
   // insertion. Provider-only code cannot supply consumer-only ODR uses.
   std::vector<clang::NamedDecl *> inline_definitions;
   std::vector<clang::NamedDecl *> visible_lookup_declarations;
-  // Imported TU lookup declarations (including unscoped enum constants)
+  // Imported TU lookup declarations (including unscoped enum constants) and
+  // verified Objective-C methods for the position-sensitive selector pool,
   // grouped by their originating module. Each vector
   // is filtered by that module's own sidecar declaration identities; types
   // re-emitted through a dependency include do not become exports of the

@@ -1175,6 +1175,35 @@ public:
   bool VisitCXXDeleteExpr(clang::CXXDeleteExpr *expression) {
     Reference(expression->getOperatorDelete()); return true;
   }
+  bool VisitObjCPropertyRefExpr(clang::ObjCPropertyRefExpr *expression) {
+    Add(expression->isExplicitProperty()?"explicit-property":"implicit-property");
+    if(expression->isExplicitProperty())Reference(expression->getExplicitProperty());
+    else {Reference(expression->getImplicitPropertyGetter());Reference(expression->getImplicitPropertySetter());}
+    Add(std::to_string(expression->isMessagingGetter()));Add(std::to_string(expression->isMessagingSetter()));
+    if(expression->isObjectReceiver())Add("object-receiver");
+    else if(expression->isSuperReceiver()){Add("super-receiver");Add(ExpressionType(expression->getSuperReceiverType()));}
+    else {Add("class-receiver");Reference(expression->getClassReceiver());}
+    return true;
+  }
+  bool VisitObjCSubscriptRefExpr(clang::ObjCSubscriptRefExpr *expression) {
+    Reference(expression->getAtIndexMethodDecl());Reference(expression->setAtIndexMethodDecl());return true;
+  }
+  bool VisitObjCSelectorExpr(clang::ObjCSelectorExpr *expression) {Add(expression->getSelector().getAsString());return true;}
+  bool VisitObjCProtocolExpr(clang::ObjCProtocolExpr *expression) {Reference(expression->getProtocol());return true;}
+  bool VisitObjCEncodeExpr(clang::ObjCEncodeExpr *expression) {Add(ExpressionType(expression->getEncodedType()));return true;}
+  bool VisitObjCBoolLiteralExpr(clang::ObjCBoolLiteralExpr *expression) {Add(std::to_string(expression->getValue()));return true;}
+  bool VisitObjCObjectLiteral(clang::ObjCObjectLiteral *expression) {Add(std::to_string(expression->isExpressibleAsConstantInitializer()));return true;}
+  bool VisitObjCBoxedExpr(clang::ObjCBoxedExpr *expression) {Reference(expression->getBoxingMethod());return true;}
+  bool VisitObjCArrayLiteral(clang::ObjCArrayLiteral *expression) {Reference(expression->getArrayWithObjectsMethod());return true;}
+  bool VisitObjCDictionaryLiteral(clang::ObjCDictionaryLiteral *expression) {
+    Reference(expression->getDictWithObjectsMethod());Add(std::to_string(expression->getNumElements()));
+    for(unsigned I=0;I!=expression->getNumElements();++I){const auto element=expression->getKeyValueElement(I);
+      Add(std::to_string(element.isPackExpansion()));Add(element.NumExpansions?std::to_string(*element.NumExpansions):"dependent-count");}
+    return true;
+  }
+  bool VisitObjCIsaExpr(clang::ObjCIsaExpr *expression) {Add(std::to_string(expression->isArrow()));return true;}
+  bool VisitObjCIndirectCopyRestoreExpr(clang::ObjCIndirectCopyRestoreExpr *expression) {Add(std::to_string(expression->shouldCopy()));return true;}
+  bool VisitObjCBridgedCastExpr(clang::ObjCBridgedCastExpr *expression) {Add(expression->getBridgeKindName());return true;}
   bool VisitObjCIvarRefExpr(clang::ObjCIvarRefExpr *expression) {
     Reference(expression->getDecl());
     Add(std::to_string(expression->isArrow()));
@@ -1424,6 +1453,7 @@ public:
   }
   bool TraverseOpaqueValueExpr(clang::OpaqueValueExpr *expression,
                                DataRecursionQueue * = nullptr) {
+    Add(expression->isUnique()?"unique-opaque":"shared-opaque");
     return TraverseStmt(expression->getSourceExpr());
   }
   bool TraverseCompoundLiteralExpr(clang::CompoundLiteralExpr *expression,
@@ -3189,6 +3219,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-function-effects:v1;";
   if (HasDeclarationNativeLifetime(representative))
     identity.canonical_type_identity+=";native-lifetime-annotations:v1;";
+  if(HasDeclarationNativeObjectExpressions(representative))
+    identity.canonical_type_identity+=";native-object-expressions:v1;";
   if (HasDeclarationNativeFunctionPolicy(representative))
     identity.canonical_type_identity+=";native-function-policies:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))
