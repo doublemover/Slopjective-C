@@ -846,6 +846,41 @@ void TestNativeStorageLifetimeReplay() {
  }
 }
 
+void TestNativeCControlFlow() {
+ const char *source=R"c(
+inline int native_c_control(int n){
+ __attribute__((assume(n>0)));
+ int sum=0;
+#pragma clang loop unroll_count(4) vectorize(disable)
+ for(int i=0;i<n;++i)sum+=i;
+ __asm__ volatile("" :);
+ __asm__ volatile("" : "+r"(sum) : : "memory");
+ if(n>1)goto positive;goto negative;
+positive:return sum;
+negative:return 0;
+}
+ )c";
+ for(const char *language:{"c","objective-c"})for(bool arc:{false,true}) {
+  if(arc && llvm::StringRef(language)=="c")continue;
+  std::vector<std::string> args={"-x",language,"-std=c17","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
+  if(llvm::StringRef(language)=="objective-c") {
+   args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"});
+   if(arc)args.push_back("-fobjc-arc");
+  }
+  auto emit=[&](const std::string &text) {
+   auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"control.c");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+   auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.c_control","test",{},{},{},{});
+   for(const auto &diagnostic:result.diagnostics)llvm::errs()<<diagnostic.code<<": "<<diagnostic.message<<"\n";
+   assert(result.success);return result;
+  };
+  auto original=emit(source);auto replay=emit(original.source_bytes);
+  assert(original.source_bytes==replay.source_bytes);
+  assert(original.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
+  assert(original.sidecar_json.find(kNativeControlFlowSemantic)!=std::string::npos);
+  assert(original.source_bytes.find("__asm__ volatile (\"\" : ")!=std::string::npos);
+ }
+}
+
 void TestNativeUnionKeyPathReplay() {
  for(const char *standard:{"c++20","c++23"}) {
   std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
@@ -12494,6 +12529,7 @@ int main(int argc,char **argv) {
   cases.Run("TestCxxNamespaceAttributes", TestCxxNamespaceAttributes);
   cases.Run("TestCxxLambdaExpressions", TestCxxLambdaExpressions);
   cases.Run("TestCxxThreadLocalData", TestCxxThreadLocalData);
+  cases.Run("TestNativeCControlFlow", TestNativeCControlFlow);
   cases.Run("TestCxxFriends", TestCxxFriends);
   cases.Run("TestNativeExportRoots", TestNativeExportRoots);
   cases.Run("TestCxxLocalExpressions", TestCxxLocalExpressions);

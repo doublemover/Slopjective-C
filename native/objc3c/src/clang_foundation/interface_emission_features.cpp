@@ -163,6 +163,21 @@ bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNativeControlFlow(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Control:clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitStmt(clang::Stmt *node) override {
+        found|=llvm::isa<clang::AttributedStmt,clang::GCCAsmStmt,
+            clang::LabelStmt,clang::GotoStmt,clang::IndirectGotoStmt,
+            clang::AddrLabelExpr>(node);return true;
+      }
+    } control;
+    control.TraverseStmt(const_cast<clang::Stmt *>(statement));return control.found;
+  });
+}
+
 bool HasDeclarationConstantEvaluationControl(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {

@@ -51,7 +51,8 @@
     "objc3_native_indirect_family_provider",
     "objc3_native_typestate_provider",
     "objc3_native_friend_template_provider",
-    "objc3_native_friend_class_provider"
+    "objc3_native_friend_class_provider",
+    "objc3_native_control_flow_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",

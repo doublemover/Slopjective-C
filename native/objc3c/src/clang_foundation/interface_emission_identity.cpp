@@ -977,6 +977,49 @@ public:
     for(const auto &state:states)Add("native-state-contract:"+state);
     return true;
   }
+  bool VisitAttributedStmt(clang::AttributedStmt *statement) {
+    // Attribute children are not traversed by RecursiveASTVisitor's default
+    // AttributedStmt walk. Bind policy fields and visit each typed argument.
+    for(const auto *attribute:statement->getAttrs()) {
+      Add("statement-attribute:"+std::to_string(attribute->getKind()));
+      if(const auto *loop=llvm::dyn_cast<clang::LoopHintAttr>(attribute)) {
+        Add(clang::LoopHintAttr::ConvertOptionTypeToStr(loop->getOption()));
+        Add(clang::LoopHintAttr::ConvertLoopHintStateToStr(loop->getState()));
+      } else if(const auto *unroll=llvm::dyn_cast<clang::OpenCLUnrollHintAttr>(attribute))
+        Add(std::to_string(unroll->getUnrollHint()));
+      else if(const auto *suppress=llvm::dyn_cast<clang::SuppressAttr>(attribute)) {
+        Add(suppress->isGSL()?"gsl":"clang");
+        std::set<std::string> codes;
+        for(auto code:suppress->diagnosticIdentifiers())codes.insert(code.str());
+        for(const auto &code:codes)Add(code);
+      }
+      if(!TraverseAttr(const_cast<clang::Attr *>(attribute)))return false;
+    }
+    return true;
+  }
+  bool VisitLabelStmt(clang::LabelStmt *statement) {
+    Local(statement->getDecl());Reference(statement->getDecl());return true;
+  }
+  bool VisitGotoStmt(clang::GotoStmt *statement) {
+    Local(statement->getLabel());Reference(statement->getLabel());return true;
+  }
+  bool VisitAddrLabelExpr(clang::AddrLabelExpr *expression) {
+    Local(expression->getLabel());Reference(expression->getLabel());return true;
+  }
+  bool VisitGCCAsmStmt(clang::GCCAsmStmt *statement) {
+    Add(statement->isSimple()?"basic-asm":"extended-asm");
+    Add(statement->isVolatile()?"volatile-asm":"movable-asm");
+    Add("outputs:"+std::to_string(statement->getNumOutputs()));
+    Add("inputs:"+std::to_string(statement->getNumInputs()));
+    Add("clobbers:"+std::to_string(statement->getNumClobbers()));
+    Add("labels:"+std::to_string(statement->getNumLabels()));
+    for(unsigned i=0;i<statement->getNumOutputs();++i)Add(statement->getOutputName(i).str());
+    for(unsigned i=0;i<statement->getNumInputs();++i)Add(statement->getInputName(i).str());
+    for(unsigned i=0;i<statement->getNumLabels();++i) {
+      auto *label=statement->getLabelExpr(i)->getLabel();Local(label);Reference(label);
+    }
+    return true;
+  }
   bool VisitIfStmt(clang::IfStmt *branch) {
     Add("if-kind:"+std::to_string(static_cast<unsigned>(branch->getStatementKind())));return true;
   }
@@ -3046,6 +3089,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-cpu-variant:v1;";
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
+  if (HasDeclarationNativeControlFlow(representative))
+    identity.canonical_type_identity+=";native-control-flow-contracts:v1;";
   if (HasDeclarationConstantEvaluationControl(representative))
     identity.canonical_type_identity+=";cxx-constant-evaluation-control:v1;";
   if (HasDeclarationManualFamilyCallProof(representative))

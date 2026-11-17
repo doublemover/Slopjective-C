@@ -147,6 +147,10 @@ inline constexpr const char *kCxxThreadLocalSemantic = "objc3.cxx-thread-local.v
 inline bool HasCxxThreadLocalIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-thread-local:v1;") != std::string::npos;
 }
+inline constexpr const char *kNativeControlFlowSemantic = "objc3.native-control-flow-contracts.v1";
+inline bool HasNativeControlFlowIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-control-flow-contracts:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxConstantEvaluationControlSemantic = "objc3.cxx-constant-evaluation-control.v1";
 inline bool HasCxxConstantEvaluationControlIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-constant-evaluation-control:v1;") != std::string::npos;

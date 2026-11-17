@@ -202,6 +202,8 @@ bool HasDeclarationNativeStorageLifetime(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedUnionStorage(const clang::NamedDecl *declaration);
 bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration);
 bool HasDeclarationManualFamilyCallProof(const clang::NamedDecl *declaration);
+bool IsPublishedStatementAttribute(const clang::Attr *);
+bool HasDeclarationNativeControlFlow(const clang::NamedDecl *);
 bool HasDeclarationConstantEvaluationControl(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration);
 bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration);

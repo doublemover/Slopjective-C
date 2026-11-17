@@ -73,3 +73,6 @@
 
 "objc3.cxx-constant-evaluation-control.v1"
 ";cxx-constant-evaluation-control:v1;"
+
+"objc3.native-control-flow-contracts.v1"
+";native-control-flow-contracts:v1;"

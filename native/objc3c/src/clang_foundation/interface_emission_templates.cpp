@@ -72,6 +72,14 @@ bool IsPublishedThreadSafetyAttribute(const clang::Attr *attribute) {
   return llvm::isa<clang::CapabilityAttr,clang::ReentrantCapabilityAttr,clang::ScopedLockableAttr,clang::GuardedVarAttr,clang::PtGuardedVarAttr,clang::GuardedByAttr,clang::PtGuardedByAttr,clang::AcquiredBeforeAttr,clang::AcquiredAfterAttr,clang::AssertCapabilityAttr,clang::TryAcquireCapabilityAttr,clang::AcquireCapabilityAttr,clang::ReleaseCapabilityAttr,clang::RequiresCapabilityAttr,clang::LocksExcludedAttr,clang::LockReturnedAttr,clang::NoThreadSafetyAnalysisAttr>(attribute);
 }
 
+bool IsPublishedStatementAttribute(const clang::Attr *attribute) {
+  return llvm::isa<clang::LikelyAttr,clang::UnlikelyAttr,clang::FallThroughAttr,
+      clang::MustTailAttr,clang::NoMergeAttr,clang::NoInlineAttr,
+      clang::AlwaysInlineAttr,clang::NoOutlineAttr,clang::CXXAssumeAttr,
+      clang::CodeAlignAttr,clang::LoopHintAttr,clang::OpenCLUnrollHintAttr,
+      clang::SuppressAttr>(attribute);
+}
+
 bool IsPublishedNativeStateAttribute(const clang::Attr *attribute) {
   return llvm::isa<clang::ConsumableAttr,clang::ConsumableAutoCastAttr,clang::ConsumableSetOnReadAttr,clang::CallableWhenAttr,clang::ParamTypestateAttr,clang::ReturnTypestateAttr,clang::SetTypestateAttr,clang::TestTypestateAttr,clang::EnumExtensibilityAttr,clang::FlagEnumAttr>(attribute);
 }

@@ -55,6 +55,7 @@ int main() {
   assert(capabilities.count(kManualFamilyCallProofSemantic));
   assert(capabilities.count(kCxxFriendSemantic));
   assert(capabilities.count(kCxxConstantEvaluationControlSemantic));
+  assert(capabilities.count(kNativeControlFlowSemantic));
   assert(!capabilities.count("objc3.cxx-friends.v1"));
   assert(!capabilities.count("objc3.cxx-friends.v2"));
   assert(capabilities.count("objc3.cxx-class-templates.v2"));
@@ -110,6 +111,7 @@ int main() {
       {";manual-family-call-proofs:v1;",kManualFamilyCallProofSemantic},
       {";cxx-friends:v3;",kCxxFriendSemantic},
       {";cxx-constant-evaluation-control:v1;",kCxxConstantEvaluationControlSemantic},
+      {";native-control-flow-contracts:v1;",kNativeControlFlowSemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},

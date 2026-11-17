@@ -36,6 +36,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kBorrowedResultProofSemantic,
     kManualFamilyCallProofSemantic,
     kCxxConstantEvaluationControlSemantic,
+    kNativeControlFlowSemantic,
     kNativeUnnamedEnumSemantic,
     kNativeStorageLifetimeSemantic,
     kAtomicManagedPropertySemantic,
@@ -761,6 +762,12 @@ llvm::Error ValidateForEncoding(
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
   if(borrowed_unions!=borrowed_union_capability)
     return Invalid("borrowed union byte storage identity and required capability must agree");
+  const bool control_flow=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeControlFlowIdentity);
+  const bool control_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeControlFlowSemantic)!=sidecar.required_semantics.end();
+  const bool control_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeControlFlowIdentity(d) || d.kind!="Namespace";});
+  if(control_flow!=control_capability || !control_owners)
+    return Invalid("native control-flow identity and required capability must agree");
   const bool constant_control=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxConstantEvaluationControlIdentity);
   const bool constant_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConstantEvaluationControlSemantic)!=sidecar.required_semantics.end();
   const bool constant_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.182 / System 2.108 control-flow span](linux_native_control_flow_contracts.md)
+preserves statement annotations, typed policy dependencies, label targets and
+GNU inline assembly through source-free C17/C++ packages.
+
 The [Source 2.181 / System 2.107 class-friend span](linux_native_class_template_friends.md)
 publishes class-template friendship, fixes cyclic nominal imports and preserves
 constexpr/consteval branch semantics through canonical source-free replay.

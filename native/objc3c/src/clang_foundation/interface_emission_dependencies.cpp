@@ -683,6 +683,14 @@ class TypeDependencyVisitor final
       TraverseType(declaration->getType());
     return true;
   }
+  bool VisitAttributedStmt(clang::AttributedStmt *statement) {
+    for(const auto *attribute:statement->getAttrs()) {
+      if(!IsPublishedStatementAttribute(attribute))
+        return UnsupportedExpression("statement attribute has no publication contract");
+      if(!TraverseAttr(const_cast<clang::Attr *>(attribute)))return false;
+    }
+    return true;
+  }
   bool VisitExpr(clang::Expr *expression) {
     TraverseType(expression->getType());
     return true;
