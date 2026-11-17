@@ -382,7 +382,7 @@ class InterfaceCollector final
     // The sidecar still records one semantic identity per USR below.
     if ((IsTopLevel(declaration) || IsOutOfLineDefaultedDefinition(declaration)) &&
         (!FriendOwner(declaration) ||
-         (llvm::isa<clang::FunctionDecl>(declaration) &&
+         (llvm::isa<clang::FunctionDecl,clang::FunctionTemplateDecl>(declaration) &&
           !declaration->getLexicalDeclContext()->isRecord())) &&
         !llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
                    clang::ObjCIvarDecl, clang::FieldDecl,

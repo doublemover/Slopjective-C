@@ -808,7 +808,10 @@ public:
       // Bind both forms to the same primary owner and converted arguments;
       // the canonical spelling below still preserves value qualifiers.
       TraverseType(context_.getCanonicalTagType(specialization));
-    else TraverseType(type);
+    // Function signatures can nest injected-class-name and spelled template
+    // sugar. Traverse their canonical graph at every depth; spelling is bound
+    // below and nominal class owners/converted arguments remain explicit.
+    else TraverseType(type.getCanonicalType());
     clang::PrintingPolicy policy(context_.getLangOpts());
     policy.PrintAsCanonical = true;
     policy.FullyQualifiedName = true;
@@ -1858,11 +1861,19 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
 }
 
 const clang::CXXRecordDecl *FriendOwner(const clang::NamedDecl *declaration) {
-  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
-    for (const auto *redecl : function->redecls())
-      if (redecl->getFriendObjectKind() != clang::Decl::FOK_None)
-        if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(redecl->getLexicalDeclContext()))
-          return record;
+  if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
+    declaration=pattern->getTemplatedDecl();
+  if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      function && !llvm::isa<clang::CXXMethodDecl>(function))
+    for(const auto *redecl:function->redecls()) {
+      // Friend templates can carry FOK only on their FunctionTemplateDecl,
+      // and an inline-definition callback precedes that flag's attachment.
+      // A namespace function lexically declared in a record is a friend.
+      const auto *lexical=redecl->getLexicalDeclContext();
+      if(const auto *pattern=redecl->getDescribedFunctionTemplate())
+        lexical=pattern->getLexicalDeclContext();
+      if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(lexical))return record;
+    }
   return nullptr;
 }
 
@@ -1882,13 +1893,22 @@ bool IsInClassDefaultedComparison(const clang::FunctionDecl *function) {
   }
 }
 
+const clang::FunctionDecl *PublishedFriendFunction(const clang::FriendDecl *declaration) {
+  if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(declaration->getFriendDecl()))
+    return pattern->getTemplatedDecl();
+  return llvm::dyn_cast_or_null<clang::FunctionDecl>(declaration->getFriendDecl());
+}
+
 bool IsConcreteFriend(const clang::FriendDecl *declaration) {
   if (declaration->isPackExpansion() || declaration->getFriendTypeNumTemplateParameterLists())
     return false;
-  if (const auto *type = declaration->getFriendType())
-    return !type->getType()->isDependentType();
-  const auto *function = llvm::dyn_cast_or_null<clang::FunctionDecl>(declaration->getFriendDecl());
-  return function && !function->isTemplated() && !function->getTrailingRequiresClause() &&
+  if (const auto *type = declaration->getFriendType()) return !type->getType().isNull();
+  const auto *function=PublishedFriendFunction(declaration);
+  if(!function || function->getPrimaryTemplate())return false;
+  if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(declaration->getFriendDecl()))
+    return IsBoundedNestedTemplateParameters(pattern->getTemplateParameters()) &&
+        !function->isDeleted() && !function->isDefaulted();
+  return !function->getDescribedFunctionTemplate() &&
       (!function->isDefaulted() || IsInClassDefaultedComparison(function));
 }
 
@@ -1906,11 +1926,12 @@ std::vector<std::string> NeededStandardLibraryHeaders(const clang::NamedDecl *de
 
 struct ClassTemplatePublication {
   bool deduced=false, functions=false, aliases=false, variables=false;
-  bool nested=false, thread_local_storage=false, variadic=false, nested_classes=false, effectful=false;
+  bool nested=false, thread_local_storage=false, variadic=false, nested_classes=false, effectful=false, friends=false;
   void Read(const clang::CXXRecordDecl *record) {
     if (!record || !record->isCompleteDefinition()) return;
     for (const auto *member : record->decls()) {
       if (member->isImplicit()) continue;
+      friends |= llvm::isa<clang::FriendDecl>(member);
       if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(member);
           specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation) continue;
       const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member);
@@ -2009,6 +2030,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
              ? ";cxx-class-partial-specializations:v1;" : "") +
         (members.deduced ? ";cxx-template-deduction:v1;" : "") +
         (members.effectful ? ";cxx-effectful-template-members:v1;" : "") +
+        (members.friends ? ";cxx-friends:v2;" : "") +
         (members.functions ? ";cxx-member-templates:v1;" : "") +
         (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;" : "") +
         (members.variables ? ";cxx-variable-templates:v1;" : "") +
@@ -3108,9 +3130,12 @@ bool ReadInterfaceDeclarationIdentity(
     if (const auto *owner = FriendOwner(function))
       identity.canonical_type_identity += "friend-owner=" + ReadInterfaceDeclarationStableId(owner) + ";";
   }
-  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(representative))
+  const auto *friend_function=llvm::dyn_cast<clang::FunctionDecl>(representative);
+  if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(representative))
+    friend_function=pattern->getTemplatedDecl();
+  if (const auto *function=friend_function)
     if (const auto *owner = FriendOwner(function); owner && !IsInClassDefaultedComparison(function))
-      identity.canonical_type_identity += ";cxx-friends:v1;owner=" +
+      identity.canonical_type_identity += ";cxx-friends:v2;owner=" +
           ReadInterfaceDeclarationStableId(owner) + ";deleted=" +
           std::to_string(function->isDeleted()) + ";lookup=" +
           std::to_string(function->getIdentifierNamespace()) + ";";

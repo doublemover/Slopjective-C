@@ -48,7 +48,7 @@ const std::vector<llvm::StringRef> semantics = {
     "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",           "objc3.api-partitions.v1",
     "objc3.cxx-namespaces.v1", "objc3.cxx-namespace-attributes.v1",
-    "objc3.cxx-definitions.v1", "objc3.cxx-friends.v1"};
+    "objc3.cxx-definitions.v1", "objc3.cxx-friends.v2"};
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
   const bool objc = language == BaseLanguage::ObjectiveC ||

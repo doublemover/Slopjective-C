@@ -407,7 +407,9 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool friend_capability = std::find(
       sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
       kCxxFriendSemantic) != sidecar.required_semantics.end();
-  if (has_friends != friend_capability)
+  const bool friend_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFriendIdentity(d) || d.kind!="Namespace";});
+  if (has_friends != friend_capability || !friend_owners)
     Add(result, "O3IFC040", "C++ friend identity and required capability must agree", expected.canonical_name);
   const bool has_blocks = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxBlockExpressionIdentity);

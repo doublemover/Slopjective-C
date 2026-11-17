@@ -11544,10 +11544,10 @@ void TestCxxFriends() {
     changed.replace(changed.find("return v.n;}"),std::string("return v.n;}").size(),"return v.n+1;}");
     auto different=emit(changed);
     assert(different.success && different.identity.semantic_fingerprint!=emitted.identity.semantic_fingerprint);
-    assert(!emit("struct V { template<class T> friend int generic(T); };").success);
+    assert(emit("struct V { template<class T> friend int generic(T); };").success);
     assert(!emit("struct __attribute__((annotate(\"objc3.spi:Testing\"))) A {friend int shared();}; "
                  "struct B {friend int shared();};").success);
-    std::erase(decoded->required_semantics,"objc3.cxx-friends.v1");
+    std::erase(decoded->required_semantics,"objc3.cxx-friends.v2");
     decoded->module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
     auto erased=EncodeSemanticInterfaceSidecar(*decoded,semantics);
     assert(!erased); llvm::consumeError(erased.takeError());
@@ -12362,6 +12362,9 @@ void TestBoundedCxxSemanticInterfaces() {
     if (llvm::StringRef(source).contains("struct Public {struct")) {
       assert(emitted.success);
       assert(emitted.sidecar_json.find(kCxxUnnamedTemplateProjectionSemantic)!=std::string::npos);
+    } else if (llvm::StringRef(source).contains("template<class T> friend bool")) {
+      assert(emitted.success);
+      assert(emitted.sidecar_json.find(kCxxFriendSemantic)!=std::string::npos);
     } else if (llvm::StringRef(source).contains("[](auto value)")) {
       assert(emitted.success);
       assert(emitted.sidecar_json.find("objc3.cxx-generic-local-lambdas.v2")!=std::string::npos);

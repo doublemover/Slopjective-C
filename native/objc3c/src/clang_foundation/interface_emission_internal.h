@@ -299,6 +299,7 @@ bool IsClosedParentMemberSpecialization(const clang::NamedDecl *declaration);
 
 bool IsClosedParentPattern(const clang::NamedDecl *declaration);
 
+const clang::FunctionDecl *PublishedFriendFunction(const clang::FriendDecl *declaration);
 bool IsConcreteFriend(const clang::FriendDecl *declaration);
 
 bool IsConcreteMemberClassSpecialization(const clang::ClassTemplateSpecializationDecl *record);

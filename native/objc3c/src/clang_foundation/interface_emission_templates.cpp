@@ -382,6 +382,12 @@ const clang::ClassTemplateDecl *ClassTemplateOwner(const clang::NamedDecl *decla
 // A concrete record retains its ordinary member rows. Only patterns and their
 // instantiated descendants are published as part of the nearest record owner.
 const clang::NamedDecl *TemplatePublicationOwner(const clang::NamedDecl *declaration) {
+  if(const auto *owner=FriendOwner(declaration)) {
+    if(const auto *pattern=owner->getDescribedClassTemplate())return pattern;
+    if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(owner))
+      return specialization->getSpecializedTemplate();
+    if(const auto *pattern=ClassTemplateOwner(owner))return pattern;
+  }
   bool pattern=false;
   for (const clang::NamedDecl *current=declaration; current;
        current=llvm::dyn_cast<clang::NamedDecl>(current->getDeclContext())) {

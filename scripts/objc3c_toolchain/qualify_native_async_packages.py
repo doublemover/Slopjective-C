@@ -685,10 +685,10 @@ def check_cpp_metadata(metadata):
             raise AssertionError('missing local expression capability: ' + semantic)
         if marker not in names.get(name, {}).get('canonical_type_identity', ''):
             raise AssertionError('missing local expression identity: ' + name)
-    if 'objc3.cxx-friends.v1' not in metadata.get('required_semantics', []):
+    if 'objc3.cxx-friends.v2' not in metadata.get('required_semantics', []):
         raise AssertionError('missing C++ friend capability')
     for name in ('NativeFriendValue', 'native_friend_reveal', 'native_friend_external', 'native_friend_delayed'):
-        if ';cxx-friends:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+        if ';cxx-friends:v2;' not in names.get(name, {}).get('canonical_type_identity', ''):
             raise AssertionError('missing C++ friend identity: ' + name)
     if 'objc3.cxx-thread-local.v1' not in metadata.get('required_semantics', []):
         raise AssertionError('missing C++ thread-local capability')

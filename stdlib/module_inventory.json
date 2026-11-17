@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 179,
+        "minor": 180,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Source-free constrained/variadic hidden friends, delayed definitions and dependent friend types preserve native ADL, private access and export/SPI policy across ordinary, primary/partial and nested class-template graphs; instantiated functions and their template primaries share one template ABI owner under cxx-friends v2; complete SDK acceptance pending",
         "Native typestate and open/closed/flag-enum contracts retain every state, transition, parameter/return obligation and published-local annotation across C++ templates and source-free imports; canonical state sets/spellings share identity under native-declaration-attributes v6; complete SDK acceptance pending",
         "Bounded indirect retainable-family calls preserve definite common holds, possible releases and deferred effects across aliases, immutable fields and callback factories; exceptional paths keep completed claims and possible consumption without acquiring a failed retain. Inline family-owned record buffers retain their exact root lifetime. Manual-family-call-proofs v1 and borrowed-result-proofs v13 require current readers; matching SDK pending",
         "Native vendor ABI tags coexist with a single reserved module owner across class/function/variable templates and specializations; complete canonical tags bind source-free declarations and physical native mangling under native-declaration-attributes v5; matched SDK pending",
@@ -342,7 +343,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 105,
+        "minor": 106,
         "patch": 0
       },
       "header": "include/objc3/system.h",

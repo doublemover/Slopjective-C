@@ -190,6 +190,8 @@ std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
         return owner;
   if (const auto *label = declaration->getAttr<clang::AsmLabelAttr>())
     return label->getLabel().str();
+  if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if(auto owner=ReadModuleOwnedAbiTag(function->getAttr<clang::AbiTagAttr>());!owner.empty())return owner;
   if (const auto *name = declaration->getAttr<clang::ObjCRuntimeNameAttr>())
     return name->getMetadataName().str();
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration))
@@ -365,6 +367,35 @@ public:
                        clang::TSK_Undeclared))
       return true;
     if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
+      // Class-template friends are reconstructed from their owning pattern.
+      // Use one template owner tag on both the pattern and every instantiated
+      // friend instead of inventing a concrete asm label during a call visit.
+      if(!llvm::isa<clang::CXXMethodDecl>(function))
+        if(const auto *lexical=llvm::dyn_cast<clang::CXXRecordDecl>(function->getLexicalDeclContext())) {
+          const clang::ClassTemplateDecl *pattern=nullptr;
+          for(const clang::DeclContext *scope=lexical;scope && !pattern;scope=scope->getParent())
+            if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope)) {
+              pattern=record->getDescribedClassTemplate();
+              if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record))
+                pattern=specialization->getSpecializedTemplate();
+            }
+          if(pattern) {
+            if(!VisitNamedDecl(const_cast<clang::CXXRecordDecl *>(pattern->getTemplatedDecl())))return false;
+            const auto expected=ReadNativeSymbolName(pattern);
+            llvm::SmallVector<clang::FunctionDecl *,2> targets{function};
+            if(auto *primary=function->getPrimaryTemplate())targets.push_back(primary->getTemplatedDecl());
+            // Sema can instantiate a friend template before the owning class
+            // reaches the top-level naming callback. Bind its instantiated
+            // primary too; callable identity and later clones read that owner.
+            for(auto *target:targets)for(auto *redecl:target->redecls()) {
+              if(!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+                return Error(decl,"class-template friend redeclares a foreign ABI");
+              if(redecl->hasAttr<clang::AsmLabelAttr>() || !setModuleOwnedAbiTag(context_,redecl,expected))
+                return Error(decl,"class-template friend conflicts with its template ABI owner");
+            }
+            return true;
+          }
+        }
       if (function->getPrimaryTemplate()) {
         const bool explicit_namespace=!llvm::isa<clang::CXXMethodDecl>(function) &&
             function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization;

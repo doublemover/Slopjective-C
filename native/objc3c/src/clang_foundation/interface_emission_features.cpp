@@ -1877,8 +1877,10 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
       if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member)) {
         if (const auto *type = friend_decl->getFriendType()) {
           friends.insert("type=" + CanonicalType(type->getType(), context));
-        } else if (const auto *function =
-                       llvm::dyn_cast_or_null<clang::FunctionDecl>(friend_decl->getFriendDecl());
+        } else if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(friend_decl->getFriendDecl())) {
+          friends.insert("function-template="+ReadInterfaceDeclarationStableId(pattern)+
+              ":contract="+DeclarationTypeIdentity(pattern,context));
+        } else if (const auto *function = PublishedFriendFunction(friend_decl);
                    function && !IsInClassDefaultedComparison(function)) {
           function = function->getMostRecentDecl();
           friends.insert("function=" + ReadInterfaceDeclarationStableId(function) +
@@ -1888,11 +1890,12 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
               ":consteval=" + std::to_string(function->isConsteval()) +
               ":deleted=" + std::to_string(function->isDeleted()) +
               ":lookup=" + std::to_string(function->getIdentifierNamespace()) +
+              ":constraints=" + (function->getTrailingRequiresClause()?DeclarationExpressionContract(function->getTrailingRequiresClause().ConstraintExpr,context):"none") +
               ":body=" + (PublishesFunctionBody(function)
                   ? FunctionDefinitionContract(function, context) : "declaration"));
         }
       }
-    if (!friends.empty()) out << ";cxx-friends:v1;";
+    if (!friends.empty()) out << ";cxx-friends:v2;";
     for (const auto &friend_identity : friends) out << "friend=" << friend_identity << ';';
   }
   if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);

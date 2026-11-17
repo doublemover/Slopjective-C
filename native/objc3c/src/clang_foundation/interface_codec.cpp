@@ -90,7 +90,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.cxx-namespace-attributes.v1",
     "objc3.cxx-lambda-expressions.v2",
     "objc3.cxx-thread-local.v1",
-    "objc3.cxx-friends.v1",
+    "objc3.cxx-friends.v2",
     kCxxBlockExpressionSemantic,
     "objc3.cxx-statement-expressions.v1",
     "objc3.cxx-local-types.v1",
@@ -587,7 +587,9 @@ llvm::Error ValidateForEncoding(
   const bool friend_capability = std::find(
       sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
       kCxxFriendSemantic) != sidecar.required_semantics.end();
-  if (has_friends != friend_capability)
+  const bool friend_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFriendIdentity(d) || d.kind!="Namespace";});
+  if (has_friends != friend_capability || !friend_owners)
     return Invalid("C++ friend identity and required capability must agree");
   const bool has_blocks = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxBlockExpressionIdentity);

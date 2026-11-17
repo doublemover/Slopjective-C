@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.180 / System 2.106 friend-template span](linux_native_friend_templates.md)
+publishes constrained/variadic and dependent friends through ordinary, partial
+and nested template graphs, preserving native ADL, private access and ABI owners.
+
 The [Source 2.179 / System 2.105 native state-contract span](linux_native_typestate_packages.md)
 preserves native typestate transitions, call/parameter/return requirements and
 enum extensibility/flag contracts through source-free C++ package delivery.

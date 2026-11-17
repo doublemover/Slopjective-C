@@ -498,7 +498,25 @@ class TypeDependencyVisitor final
       CheckDeclarationAttributes(llvm::dyn_cast<clang::NamedDecl>(member));
       if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(member);
           specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation) continue;
-      if (const auto *function=llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) CheckFunctionTemplate(function);
+      if(const auto *friend_decl=llvm::dyn_cast<clang::FriendDecl>(member)) {
+        if(const auto *function=PublishedFriendFunction(friend_decl))
+          for(const auto *redecl:function->redecls())
+            if(const auto *owner=llvm::dyn_cast<clang::CXXRecordDecl>(redecl->getLexicalDeclContext());
+                owner && !llvm::isa<clang::CXXMethodDecl>(redecl)) {
+              if(!SelectedExport(owner,exports_))
+                AddDiagnostic(result_,"O3IFC156","friend binding references an excluded owning record",owner->getQualifiedNameAsString());
+              if(ReadInterfaceSPIGroup(owner)!=ReadInterfaceSPIGroup(record))
+                AddDiagnostic(result_,"O3IFC157","shared friend owners require the same SPI policy",function->getQualifiedNameAsString());
+            }
+        if(const auto *type=friend_decl->getFriendType())TraverseTypeLoc(type->getTypeLoc());
+        else if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(friend_decl->getFriendDecl()))
+          CheckFunctionTemplate(pattern);
+        else if(const auto *function=PublishedFriendFunction(friend_decl)) {
+          TraverseType(function->getType());
+          TraverseStmt(const_cast<clang::Expr *>(function->getTrailingRequiresClause().ConstraintExpr));
+          CheckBody(function);
+        }
+      } else if (const auto *function=llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) CheckFunctionTemplate(function);
       else if (const auto *alias=llvm::dyn_cast<clang::TypeAliasTemplateDecl>(member)) CheckAliasTemplate(alias);
       else if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) CheckClassTemplate(pattern);
       else if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) CheckVariableTemplate(pattern);
@@ -1454,6 +1472,8 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       for (const auto *attribute : variable->attrs()) if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
       for (const auto *partial:PublishedVariablePartials(value))
         if (!IsBoundedVariablePartial(partial)) return false;
+    } else if(const auto *friend_decl=llvm::dyn_cast<clang::FriendDecl>(member)) {
+      if(!IsConcreteFriend(friend_decl))return false;
     } else if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
       if (IsClosedParentMemberSpecialization(method)) continue;
       if (method->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization) return false;
@@ -1563,6 +1583,19 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         (!partial || IsBoundedVariablePartial(partial)))return true;
     AddDiagnostic(result,"O3IFC101","native standard variable specialization requires an inline constexpr definition and named module owner",variable->getQualifiedNameAsString());return false;
   }
+  const auto *friend_function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+  if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
+    friend_function=pattern->getTemplatedDecl();
+  if(friend_function)
+    if(const auto *first_owner=FriendOwner(declaration))
+      for(const auto *redecl:friend_function->redecls())
+        if(const auto *owner=llvm::dyn_cast<clang::CXXRecordDecl>(redecl->getLexicalDeclContext());
+            owner && !llvm::isa<clang::CXXMethodDecl>(redecl)) {
+          if(!SelectedExport(owner,exports))
+            AddDiagnostic(result,"O3IFC156","friend binding references an excluded owning record",owner->getQualifiedNameAsString());
+          if(ReadInterfaceSPIGroup(owner)!=ReadInterfaceSPIGroup(first_owner))
+            AddDiagnostic(result,"O3IFC157","shared friend owners require the same SPI policy",friend_function->getQualifiedNameAsString());
+        }
   const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
   if (IsPublishedStandardSpecialization(record)) {
     const auto *published=llvm::cast<clang::ClassTemplateSpecializationDecl>(record);
@@ -1622,10 +1655,10 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       if (llvm::isa<clang::BaseUsingDecl>(member)) continue;
       if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member)) {
         supported &= IsConcreteFriend(friend_decl);
-        if (const auto *function = llvm::dyn_cast_or_null<clang::FunctionDecl>(friend_decl->getFriendDecl()))
+        if (const auto *function = PublishedFriendFunction(friend_decl))
           for (const auto *redecl : function->redecls())
             if (const auto *owner = llvm::dyn_cast<clang::CXXRecordDecl>(redecl->getLexicalDeclContext());
-                owner && redecl->getFriendObjectKind() != clang::Decl::FOK_None) {
+                owner && !llvm::isa<clang::CXXMethodDecl>(redecl)) {
               if (!SelectedExport(owner, exports))
                 AddDiagnostic(result, "O3IFC156", "friend binding references an excluded owning record",
                               owner->getQualifiedNameAsString());
@@ -1753,8 +1786,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
           for (const auto &argument:function->getTemplateSpecializationArgs()->asArray())
             specialization &= GenericArgumentKey(argument,function->getASTContext(),key);
       }
-      supported &= ((!function->getPrimaryTemplate() && !function->isTemplated()) || specialization) &&
-                   !function->getTrailingRequiresClause() &&
+      supported &= ((!function->getPrimaryTemplate() && (!function->isTemplated() || FriendOwner(function))) || specialization) &&
+                   (!function->getTrailingRequiresClause() || FriendOwner(function)) &&
                    (!function->isDefaulted() || IsInClassDefaultedComparison(function));
     }
   }

@@ -147,9 +147,9 @@ inline constexpr const char *kCxxThreadLocalSemantic = "objc3.cxx-thread-local.v
 inline bool HasCxxThreadLocalIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-thread-local:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxFriendSemantic = "objc3.cxx-friends.v1";
+inline constexpr const char *kCxxFriendSemantic = "objc3.cxx-friends.v2";
 inline bool HasCxxFriendIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-friends:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-friends:v2;") != std::string::npos;
 }
 inline constexpr const char *kCxxBlockExpressionSemantic = "objc3.cxx-block-expressions.v3";
 inline bool HasCxxBlockExpressionIdentity(const InterfaceDeclarationIdentity &d) {
