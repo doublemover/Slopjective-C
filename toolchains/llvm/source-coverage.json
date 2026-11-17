@@ -47,7 +47,8 @@
     "objc3_aarch64_native_abi",
     "objc3_native_diagnostic_contract_provider",
     "objc3_native_union_template_provider",
-    "objc3_native_abi_tag_provider"
+    "objc3_native_abi_tag_provider",
+    "objc3_native_indirect_family_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",

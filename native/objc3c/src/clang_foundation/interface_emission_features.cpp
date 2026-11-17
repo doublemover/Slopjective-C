@@ -23,11 +23,13 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/ExprObjC.h"
 #include "clang/AST/DeclFriend.h"
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ObjC3Async.h"
+#include "clang/AST/ObjC3ResourceTypes.h"
 #include "clang/AST/PrettyPrinter.h"
 #include "clang/AST/RecordLayout.h"
 #include "clang/AST/DynamicRecursiveASTVisitor.h"
@@ -154,6 +156,32 @@ bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   if (llvm::isa<clang::NamespaceDecl>(declaration)) return false;
   return HasPublishedExpression(declaration, [](const clang::Stmt *, const clang::NamedDecl *owner) {
     return owner->hasAttr<clang::ObjCReturnsBorrowedAttr>();
+  });
+}
+
+bool HasDeclarationManualFamilyCallProof(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  const bool mrc=!declaration->getASTContext().getLangOpts().ObjCAutoRefCount;
+  return HasPublishedExpression(declaration,[&](const clang::Stmt *statement) {
+    struct Calls:clang::DynamicRecursiveASTVisitor {
+      const clang::ASTContext &context;bool mrc,found=false;
+      Calls(const clang::ASTContext &context,bool mrc):context(context),mrc(mrc){}
+      bool VisitCallExpr(clang::CallExpr *call) override {
+        if(clang::getObjC3FamilyOperation(call->getDirectCallee()))found=true;
+        for(const auto *argument:call->arguments())
+          found|=clang::getObjC3RetainableFamily(context,argument->getType())!=nullptr ||
+              clang::getObjC3RetainableFamily(context,argument->IgnoreParenImpCasts()->getType())!=nullptr;
+        return true;
+      }
+      bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+        if(mrc && message->getReceiverKind()==clang::ObjCMessageExpr::Instance) {
+          const auto family=message->getMethodFamily();
+          found|=family==clang::OMF_retain || family==clang::OMF_release || family==clang::OMF_autorelease;
+        }
+        return true;
+      }
+    } calls(declaration->getASTContext(),mrc);
+    calls.TraverseStmt(const_cast<clang::Stmt *>(statement));return calls.found;
   });
 }
 

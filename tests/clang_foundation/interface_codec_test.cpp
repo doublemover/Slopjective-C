@@ -51,6 +51,8 @@ int main() {
   assert(!capabilities.count("objc3.borrowed-result-proofs.v9"));
   assert(!capabilities.count("objc3.borrowed-result-proofs.v10"));
   assert(!capabilities.count("objc3.borrowed-result-proofs.v11"));
+  assert(!capabilities.count("objc3.borrowed-result-proofs.v12"));
+  assert(capabilities.count(kManualFamilyCallProofSemantic));
   assert(capabilities.count("objc3.cxx-class-templates.v2"));
   assert(!capabilities.count("objc3.cxx-class-templates.v1"));
   assert(!capabilities.count("objc3.native-declaration-attributes.v3"));
@@ -99,7 +101,8 @@ int main() {
   // declarations, even when their marker and required-semantics list agree.
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
       {";native-storage-lifetime:v6;",kNativeStorageLifetimeSemantic},
-      {";borrowed-result-proofs:v12;",kBorrowedResultProofSemantic},
+      {";borrowed-result-proofs:v13;",kBorrowedResultProofSemantic},
+      {";manual-family-call-proofs:v1;",kManualFamilyCallProofSemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},

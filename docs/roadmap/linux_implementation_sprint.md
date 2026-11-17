@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.178 / System 2.104 family-claim span](linux_indirect_family_claims.md)
+tracks bounded indirect family operations and normal/exceptional retain counts.
+Inline native record storage inherits its retainable-family owner's lifetime.
+
 The [Source 2.174 / System 2.100 consumed reference span](linux_consumed_reference_results.md)
 extends bounded nested reference producers and active-caller mutable slots while
 preserving alias/address/capture escape checks.

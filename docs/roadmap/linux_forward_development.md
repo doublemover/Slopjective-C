@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.178 / System 2.104 family-claim span](linux_indirect_family_claims.md)
+tracks bounded indirect family operations and normal/exceptional retain counts.
+Inline native record storage inherits its retainable-family owner's lifetime.
+
 The [Source 2.177 / System 2.103 ABI-tag span](linux_native_abi_tag_packages.md)
 preserves native vendor ABI tags alongside the reserved module owner across
 complete template/specialization and native class graphs.

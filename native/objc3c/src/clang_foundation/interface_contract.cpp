@@ -578,6 +578,12 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
   if(borrowed_unions!=borrowed_union_capability)
     Add(result,"O3IFC147","borrowed union byte storage identity and required capability must agree",expected.canonical_name);
+  const bool manual_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasManualFamilyCallProofIdentity);
+  const bool manual_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kManualFamilyCallProofSemantic)!=sidecar.required_semantics.end();
+  const bool manual_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasManualFamilyCallProofIdentity(d) || d.kind!="Namespace";});
+  if(manual_proofs!=manual_capability || !manual_owners)
+    Add(result,"O3IFC145","manual family call proof identity and required capability must agree",expected.canonical_name);
   const bool borrowed_proofs=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasBorrowedResultProofIdentity);
   const bool borrowed_proof_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedResultProofSemantic)!=sidecar.required_semantics.end();
   const bool borrowed_proof_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

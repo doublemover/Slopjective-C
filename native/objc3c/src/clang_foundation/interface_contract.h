@@ -258,9 +258,13 @@ inline constexpr const char *kNativeEmissionPolicySemantic = "objc3.native-emiss
 inline bool HasNativeEmissionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-emission-policies:v3;") != std::string::npos;
 }
-inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v12";
+inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v13";
 inline bool HasBorrowedResultProofIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";borrowed-result-proofs:v12;") != std::string::npos;
+  return d.canonical_type_identity.find(";borrowed-result-proofs:v13;") != std::string::npos;
+}
+inline constexpr const char *kManualFamilyCallProofSemantic = "objc3.manual-family-call-proofs.v1";
+inline bool HasManualFamilyCallProofIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";manual-family-call-proofs:v1;") != std::string::npos;
 }
 inline constexpr const char *kBorrowedReceiverResultSemantic = "objc3.borrowed-receiver-results.v1";
 inline bool HasBorrowedReceiverResultIdentity(const InterfaceDeclarationIdentity &d) {

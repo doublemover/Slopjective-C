@@ -45080,7 +45080,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,7205 @@
+@@ -0,0 +1,7301 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -45408,6 +45408,12 @@ new file mode 100644
 +  llvm::DenseMap<unsigned, CallableCapturePath> SymbolicCallablePaths;
 +  mutable SmallVector<unsigned, 4> InvokedCallableTokens;
 +  mutable llvm::SmallPtrSet<const Expr *, 8> UnqualifiedCallablePaths;
++  struct FamilyCallInfo {
++    const Attr *Common = nullptr;
++    bool MayRetain = false, MayRelease = false, MayAutorelease = false;
++  };
++  mutable llvm::DenseMap<const CallExpr *, FamilyCallInfo> FamilyCalls;
++  const Expr *SuppressedRetainClaim = nullptr;
 +  using OwnerSummaryCache = llvm::DenseMap<const Expr *, OwnerSummary>;
 +  std::shared_ptr<OwnerSummaryCache> OwnerSummaries = std::make_shared<OwnerSummaryCache>();
 +  llvm::DenseMap<const Expr *, SmallVector<const VarDecl *, 4>> FutureBorrowCaptures;
@@ -45937,6 +45943,64 @@ new file mode 100644
 +      return Construction->getConstructor();
 +    return nullptr;
 +  }
++  FamilyCallInfo familyCall(const Expr *Invocation) const {
++    FamilyCallInfo Result;
++    const auto *Call = dyn_cast<CallExpr>(Invocation);
++    if (!Call) return Result;
++    auto Observe = [&](const Attr *Operation) {
++      Result.MayRetain |= isa_and_nonnull<ObjCFamilyRetainAttr>(Operation);
++      Result.MayRelease |= isa_and_nonnull<ObjCFamilyReleaseAttr>(Operation);
++      Result.MayAutorelease |= isa_and_nonnull<ObjCFamilyAutoreleaseAttr>(Operation);
++    };
++    if (const auto *Function = Call->getDirectCallee()) {
++      Result.Common = getObjC3FamilyOperation(Function);
++      Observe(Result.Common);
++      return Result;
++    }
++    if (auto Found = FamilyCalls.find(Call); Found != FamilyCalls.end())
++      return Found->second;
++    // Recursive factory/alias queries cannot acquire a provisional contract.
++    // Keep all work in a local result: recursive insertion may rehash the map.
++    FamilyCalls.try_emplace(Call);
++    SmallVector<const FunctionDecl *, 4> Targets;
++    unsigned Budget = 512;
++    bool Complete = staticCallTargets(Call, 0, Budget, {}, Targets) && !Targets.empty();
++    const auto *Pointer = Call->getCallee()->getType()->getAs<PointerType>();
++    QualType Actual = Pointer ? Pointer->getPointeeType() : QualType();
++    const auto *Prototype = Actual.isNull() ? nullptr : Actual->getAs<FunctionProtoType>();
++    bool Common = Complete;
++    for (const auto *Target : Targets) {
++      const Attr *Operation = getObjC3FamilyOperation(Target);
++      // A possible release is a may effect, even when another branch is open
++      // or carries no family contract. Only complete agreement grants a hold.
++      Observe(Operation);
++      const auto *Method = dyn_cast<CXXMethodDecl>(Target);
++      const bool Signature = Prototype && !Prototype->isVariadic() &&
++          (!Method || Method->isStatic() || Method->isExplicitObjectMemberFunction()) &&
++          Context.hasSameFunctionTypeIgnoringExceptionSpec(Actual, Target->getType()) &&
++          sameObjC3RetainableFamilyType(Context, Actual, Target->getType()) &&
++          sameObjC3BorrowedType(Context, Actual, Context, Target->getType());
++      Complete &= Signature;
++      if (!Operation || !Signature) { Common = false; continue; }
++      if (!Result.Common) Result.Common = Operation;
++      else if (Result.Common->getKind() != Operation->getKind() ||
++          getObjC3FamilyOperationName(Result.Common)->getName() !=
++              getObjC3FamilyOperationName(Operation)->getName()) Common = false;
++    }
++    // An unresolved family-shaped callback cannot attest its net owner count.
++    // Match the canonical retain/release shapes without interpreting generic
++    // opaque-pointer callbacks as family operations.
++    if (!Complete && Prototype && !Prototype->isVariadic() &&
++        Prototype->getNumParams() == 1 &&
++        getObjC3RetainableFamily(Context, Prototype->getParamType(0))) {
++      Result.MayRelease |= Prototype->getReturnType()->isVoidType();
++      if (getObjC3RetainableFamily(Context, Prototype->getReturnType()))
++        Result.MayRetain = Result.MayAutorelease = true;
++    }
++    if (!Complete || !Common) Result.Common = nullptr;
++    FamilyCalls[Call] = Result;
++    return Result;
++  }
 +  const Expr *argument(const Expr *E, unsigned Index) const {
 +    if (const auto *Call = dyn_cast<CallExpr>(E))
 +      return Index < Call->getNumArgs() ? Call->getArg(Index) : nullptr;
@@ -46240,7 +46304,7 @@ new file mode 100644
 +      if (statementMayBorrow(Child)) return true;
 +    return false;
 +  }
-+  // A pointer into inline ivar storage borrows the containing ObjC object.
++  // A pointer into inline ivar/family storage borrows the containing owner.
 +  // Pointer/reference indirection leaves that storage and needs a separate
 +  // declared owner contract. Native record/base/array paths stay inline.
 +  const Expr *embeddedIvarOwner(const Expr *Storage, bool *Exhausted = nullptr) const {
@@ -46255,7 +46319,10 @@ new file mode 100644
 +      if (const auto *Ivar = dyn_cast<ObjCIvarRefExpr>(Storage)) return Ivar->getBase();
 +      if (const auto *Member = dyn_cast<MemberExpr>(Storage)) {
 +        const auto *Field = dyn_cast<FieldDecl>(Member->getMemberDecl());
-+        if (Member->isArrow() || !Field || Field->getType()->isReferenceType()) return nullptr;
++        if (!Field || Field->getType()->isReferenceType()) return nullptr;
++        if (Member->isArrow())
++          return getObjC3RetainableFamily(Context, Member->getBase()->getType())
++              ? Member->getBase() : nullptr;
 +        Storage = Member->getBase();continue;
 +      }
 +      if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(Storage)) {
@@ -46263,6 +46330,10 @@ new file mode 100644
 +        if (!Base->getType()->isArrayType()) return nullptr;
 +        Storage = Base;continue;
 +      }
++      if (const auto *Dereference = dyn_cast<UnaryOperator>(Storage);
++          Dereference && Dereference->getOpcode() == UO_Deref)
++        return getObjC3RetainableFamily(Context, Dereference->getSubExpr()->getType())
++            ? Dereference->getSubExpr() : nullptr;
 +      if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Storage)) {
 +        Storage = Opaque->getSourceExpr();continue;
 +      }
@@ -47285,10 +47356,9 @@ new file mode 100644
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(E))
 +      if (Binary->getOpcode() == BO_Comma || Binary->isAssignmentOp())
 +        return ownerIdentity(Binary->getRHS(), State);
-+    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(E)))
-+      if (const auto *Operation = getObjC3FamilyOperation(Function);
-+          Operation && isa<ObjCFamilyRetainAttr>(Operation))
-+        return evaluatedOwnerIdentity(argument(E, 0), State);
++    if (const auto *Operation = familyCall(E).Common;
++        Operation && isa<ObjCFamilyRetainAttr>(Operation))
++      return evaluatedOwnerIdentity(argument(E, 0), State);
 +    if (const auto *Message = dyn_cast<ObjCMessageExpr>(E);
 +        Message && Message->getMethodFamily() == OMF_retain &&
 +        Message->getReceiverKind() == ObjCMessageExpr::Instance)
@@ -48435,13 +48505,11 @@ new file mode 100644
 +    };
 +    const Expr *RetainedOwner = nullptr;
 +    const Expr *DeferredOwner = nullptr;
-+    bool FamilyRelease = false;
-+    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(Invocation)))
-+      if (const auto *Operation = getObjC3FamilyOperation(Function)) {
-+        if (isa<ObjCFamilyRetainAttr>(Operation)) RetainedOwner = argument(Invocation, 0);
-+        else if (isa<ObjCFamilyAutoreleaseAttr>(Operation)) DeferredOwner = argument(Invocation, 0);
-+        else if (isa<ObjCFamilyReleaseAttr>(Operation)) FamilyRelease = true;
-+      }
++    const auto Family = familyCall(Invocation);
++    const bool FamilyRelease = Family.MayRelease;
++    if (Family.Common && isa<ObjCFamilyRetainAttr>(Family.Common))
++      RetainedOwner = argument(Invocation, 0);
++    if (Family.MayAutorelease) DeferredOwner = argument(Invocation, 0);
 +    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation); Message && !ARC) {
 +      if (Message->getReceiverKind() == ObjCMessageExpr::Instance) {
 +        if (Message->getMethodFamily() == OMF_retain) RetainedOwner = Message->getInstanceReceiver();
@@ -48463,7 +48531,8 @@ new file mode 100644
 +            }
 +      }
 +    }
-+    if (RetainedOwner && !ownerIsUnowned(RetainedOwner, State)) {
++    if (RetainedOwner && Invocation != SuppressedRetainClaim &&
++        !ownerIsUnowned(RetainedOwner, State)) {
 +      Value Owners = evaluatedOwnerIdentity(RetainedOwner, State);
 +      // A may set cannot establish a retain for every possible object. Only
 +      // one proven identity gains a definite additional lifetime claim.
@@ -51036,12 +51105,12 @@ new file mode 100644
 +                                 ? "an escaping block argument"
 +                                 : "an argument without a non-escaping lifetime contract");
 +      }
-+    if (Emit)
-+      if (const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(Invocation)))
-+        if (const auto *Operation = getObjC3FamilyOperation(Function);
-+            Operation && !isa<ObjCFamilyReleaseAttr>(Operation) &&
-+            ownerIsUnowned(argument(Invocation, 0), State))
-+          diagnose(Invocation, "a retainable family operation after owner release");
++    if (Emit) {
++      const auto Family = familyCall(Invocation);
++      if ((Family.MayRetain || Family.MayAutorelease) &&
++          ownerIsUnowned(argument(Invocation, 0), State))
++        diagnose(Invocation, "a retainable family operation after owner release");
++    }
 +    if (Emit) {
 +      auto Found = Acquisitions.find(Invocation);
 +      if (Found != Acquisitions.end() && !InferredOwnerAcquisitions.count(Invocation)) {
@@ -52142,11 +52211,38 @@ new file mode 100644
 +      const CFGBlock *Block = Work.pop_back_val();
 +      Facts Output = Inputs[Block->getBlockID()];
 +      transfer(*Block, Output, false);
++      const Expr *RetainingInvocation = nullptr;
++      // With AddEHEdges, a throwing call ends an unterminated CFG block:
++      // its normal continuation is first and its exceptional successor last.
++      // Branch/short-circuit/temporary-dtor terminators are not call EH edges.
++      if (Block->succ_size() > 1 && !Block->getTerminatorStmt() && !Block->empty())
++        if (auto Last = Block->back().getAs<CFGStmt>())
++          if (const auto *Invocation = dyn_cast<Expr>(Last->getStmt())) {
++            const auto Family = familyCall(Invocation);
++            bool Retaining = Family.Common && isa<ObjCFamilyRetainAttr>(Family.Common);
++            if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation))
++              Retaining |= !Actions.getLangOpts().ObjCAutoRefCount &&
++                  Message->getReceiverKind() == ObjCMessageExpr::Instance &&
++                  Message->getMethodFamily() == OMF_retain;
++            if (Retaining) RetainingInvocation = Invocation;
++          }
++      Facts Exceptional;
++      if (RetainingInvocation) {
++        Exceptional = Inputs[Block->getBlockID()];
++        const Expr *Previous = SuppressedRetainClaim;
++        SuppressedRetainClaim = RetainingInvocation;
++        // Keep prior completed holds and all possible consumption. Only this
++        // call's positive claim depends on returning normally. Replaying from
++        // its block input handles cf_consumed on that same owner correctly.
++        transfer(*Block, Exceptional, false);
++        SuppressedRetainClaim = Previous;
++      }
 +      unsigned EdgeIndex = 0;
 +      for (auto Successor : Block->succs()) {
 +        unsigned Index = EdgeIndex++;
 +        if (const CFGBlock *Next = Successor.getReachableBlock()) {
-+          Facts Edge = Output;
++          Facts Edge = RetainingInvocation && Index + 1 == Block->succ_size()
++              ? Exceptional : Output;
 +          if (Block->succ_size() == 2) {
 +            const Expr *Condition = Block->getLastCondition();
 +            if (!Condition)
@@ -73557,3 +73653,116 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
  
      // Print the trailing return type if it was specified in the source.
      if (Node->hasExplicitResultType()) {
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-indirect-family.h b/clang/test/ObjC3/Sema/Inputs/borrowed-indirect-family.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-indirect-family.h
+@@ -0,0 +1,37 @@
++#ifndef OBJC3_INDIRECT_FAMILY_H
++#define OBJC3_INDIRECT_FAMILY_H
++typedef struct IndirectObject *IndirectRef __attribute__((objc_retainable_family(Indirect)));
++IndirectRef indirect_hold(IndirectRef) __attribute__((objc_family_retain(Indirect)));
++IndirectRef indirect_hold_other(IndirectRef) __attribute__((objc_family_retain(Indirect)));
++void indirect_drop(IndirectRef) __attribute__((objc_family_release(Indirect)));
++void indirect_drop_other(IndirectRef) __attribute__((objc_family_release(Indirect)));
++void indirect_drop_consumed(IndirectRef __attribute__((cf_consumed))) __attribute__((objc_family_release(Indirect)));
++IndirectRef indirect_auto(IndirectRef) __attribute__((objc_family_autorelease(Indirect)));
++IndirectRef indirect_plain(IndirectRef);
++void indirect_noop(IndirectRef);
++IndirectRef indirect_hold_consumed(IndirectRef __attribute__((cf_consumed))) __attribute__((objc_family_retain(Indirect)));
++#ifdef __cplusplus
++IndirectRef indirect_hold_nothrow(IndirectRef) noexcept __attribute__((objc_family_retain(Indirect)));
++#endif
++typedef borrowed const char *IndirectLoan;
++IndirectLoan indirect_bytes(IndirectRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void indirect_use(const char *value __attribute__((noescape)));
++typedef IndirectRef (*IndirectHold)(IndirectRef);
++typedef void (*IndirectDrop)(IndirectRef);
++typedef void (*IndirectConsumed)(IndirectRef __attribute__((cf_consumed)));
++static IndirectHold const indirect_global_hold=indirect_hold;
++static IndirectDrop const indirect_global_drop=indirect_drop;
++static inline IndirectHold indirect_factory(int which){return which?indirect_hold:indirect_hold_other;}
++static inline IndirectHold indirect_nested_factory(int which){return indirect_factory(which);}
++#ifdef __cplusplus
++struct IndirectTable {IndirectHold hold;IndirectDrop drop;};
++static constexpr IndirectTable indirect_table{indirect_hold,indirect_drop};
++#endif
++#if !__has_feature(objc_arc)
++__attribute__((objc_root_class)) @interface IndirectOwner
++- (id)retain;
++- (oneway void)release;
++@end
++IndirectLoan indirect_object_bytes(IndirectOwner *_Nonnull owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/borrowed-indirect-family.m b/clang/test/ObjC3/Sema/borrowed-indirect-family.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-indirect-family.m
+@@ -0,0 +1,64 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-indirect-family.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-indirect-family.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-indirect-family.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-indirect-family.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-indirect-family.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-nullability-completeness -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -emit-pch %S/Inputs/borrowed-indirect-family.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -Wno-nullability-completeness -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-indirect-family.h"
++#endif
++void known_balanced(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);IndirectHold const hold=indirect_hold;IndirectDrop const drop=indirect_drop;hold(owner);drop(owner);indirect_use(value);drop(owner);}
++void global_balanced(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);indirect_global_hold(owner);indirect_global_drop(owner);indirect_use(value);indirect_global_drop(owner);}
++void alias_balanced(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);IndirectRef alias=indirect_global_hold(owner);indirect_drop(owner);indirect_use(value);indirect_drop(alias);}
++void conditional_balanced(IndirectRef owner,int which){IndirectLoan value=indirect_bytes(owner);IndirectHold const hold=which?indirect_hold:indirect_hold_other;IndirectDrop const drop=which?indirect_drop:indirect_drop_other;hold(owner);drop(owner);indirect_use(value);drop(owner);}
++void factory_balanced(IndirectRef owner,int which){IndirectLoan value=indirect_bytes(owner);indirect_nested_factory(which)(owner);indirect_drop(owner);indirect_use(value);indirect_drop(owner);}
++void consumed_once(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);IndirectConsumed const drop=indirect_drop_consumed;indirect_hold(owner);drop(owner);indirect_use(value);indirect_drop(owner);}
++void known_read_only(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);IndirectDrop const noop=indirect_noop;noop(owner);indirect_use(value);}
++void known_release(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);IndirectDrop const drop=indirect_drop;drop(owner);indirect_use(value);} // expected-error {{call using a value after its owner lifetime ended}}
++void conditional_release(IndirectRef owner,int which){IndirectLoan value=indirect_bytes(owner);IndirectDrop const drop=which?indirect_drop:indirect_noop;drop(owner);indirect_use(value);} // expected-error {{call using a value after its owner lifetime ended}}
++void partial_release(IndirectRef owner,int which,IndirectDrop opaque){IndirectLoan value=indirect_bytes(owner);IndirectDrop const drop=which?indirect_drop:opaque;drop(owner);indirect_use(value);} // expected-error {{call using a value after its owner lifetime ended}}
++void unknown_release(IndirectRef owner,IndirectDrop opaque){IndirectLoan value=indirect_bytes(owner);opaque(owner);indirect_use(value);} // expected-error {{call using a value after its owner lifetime ended}}
++void mixed_hold(IndirectRef owner,int which){IndirectLoan value=indirect_bytes(owner);IndirectHold const hold=which?indirect_hold:indirect_plain;hold(owner);indirect_drop(owner);indirect_use(value);} // expected-error {{call using a value after its owner lifetime ended}}
++void unknown_hold(IndirectRef owner,IndirectHold hold){IndirectLoan value=indirect_bytes(owner);hold(owner);indirect_drop(owner);indirect_use(value);} // expected-error {{call using a value after its owner lifetime ended}}
++void nullable_hold(IndirectRef owner,int which){IndirectLoan value=indirect_bytes(owner);IndirectHold const hold=which?indirect_hold:(IndirectHold)0;if(hold)hold(owner);indirect_drop(owner);indirect_use(value);} // expected-error {{call using a value after its owner lifetime ended}}
++void dead_retain(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);(void)value;indirect_drop(owner);indirect_global_hold(owner);} // expected-error {{retainable family operation after owner release}}
++void dead_unknown_retain(IndirectRef owner,IndirectHold hold){IndirectLoan value=indirect_bytes(owner);(void)value;indirect_drop(owner);hold(owner);} // expected-error {{retainable family operation after owner release}}
++void deferred_hold(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);IndirectHold const schedule=indirect_auto;indirect_hold(owner);schedule(owner);indirect_drop(owner);indirect_use(value);} // expected-error {{call using a value after its owner lifetime ended}}
++#ifdef __cplusplus
++void failed_conditional_hold(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);try{if(indirect_hold(owner)){} }catch(...){indirect_drop(owner);indirect_use(value);}} // expected-error {{call using a value after its owner lifetime ended}}
++void failed_direct_hold(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);try{indirect_hold(owner);}catch(...){indirect_drop(owner);indirect_use(value);}} // expected-error {{call using a value after its owner lifetime ended}}
++void failed_indirect_hold(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);try{indirect_global_hold(owner);}catch(...){indirect_drop(owner);indirect_use(value);}} // expected-error {{call using a value after its owner lifetime ended}}
++void failed_consumed_hold(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);try{indirect_hold_consumed(owner);}catch(...){indirect_use(value);}} // expected-error {{call using a value after its owner lifetime ended}}
++void failed_hold_preserves_input(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);try{indirect_hold(owner);}catch(...){indirect_use(value);return;}indirect_drop(owner);indirect_use(value);}
++void earlier_completed_hold(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);indirect_hold_nothrow(owner);try{indirect_hold(owner);}catch(...){indirect_drop(owner);indirect_use(value);return;}indirect_drop(owner);indirect_drop(owner);indirect_use(value);}
++void table_balanced(IndirectRef owner){IndirectLoan value=indirect_bytes(owner);indirect_table.hold(owner);indirect_table.drop(owner);indirect_use(value);indirect_table.drop(owner);}
++#endif
++
++#if !__has_feature(objc_arc)
++void failed_objc_hold(IndirectOwner *_Nonnull owner){IndirectLoan value=indirect_object_bytes(owner);@try{[owner retain];}@catch(id exception){[owner release];indirect_use(value);}} // expected-error {{call using a value after its owner lifetime ended}}
++void earlier_objc_hold(IndirectOwner *_Nonnull owner){IndirectLoan value=indirect_object_bytes(owner);[owner retain];@try{[owner retain];}@catch(id exception){[owner release];indirect_use(value);return;}[owner release];[owner release];indirect_use(value);}
++#endif
++
++struct IndirectEmbedded { struct { char bytes[8]; int marker; } nested; const char *external; };
++typedef struct IndirectEmbedded *IndirectEmbeddedRef __attribute__((objc_retainable_family(Embedded)));
++void indirect_embedded_drop(IndirectEmbeddedRef) __attribute__((objc_family_release(Embedded)));
++IndirectLoan embedded_bytes(IndirectEmbeddedRef owner) __attribute__((objc_returns_borrowed(owner_index=0))){return owner->nested.bytes;}
++IndirectLoan embedded_dereferenced_bytes(IndirectEmbeddedRef owner) __attribute__((objc_returns_borrowed(owner_index=0))){return (*owner).nested.bytes;}
++IndirectLoan embedded_element(IndirectEmbeddedRef owner) __attribute__((objc_returns_borrowed(owner_index=0))){return &owner->nested.bytes[2];}
++IndirectLoan embedded_wrong_owner(IndirectEmbeddedRef owner,IndirectEmbeddedRef other) __attribute__((objc_returns_borrowed(owner_index=0))){return other->nested.bytes;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++IndirectLoan embedded_pointer_field(IndirectEmbeddedRef owner) __attribute__((objc_returns_borrowed(owner_index=0))){return owner->external;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++void embedded_expired(IndirectEmbeddedRef owner){const char *bytes=owner->nested.bytes;indirect_embedded_drop(owner);indirect_use(bytes);} // expected-error {{call using a value after its owner lifetime ended}}
++void embedded_address_expired(IndirectEmbeddedRef owner){const char *bytes=&(*owner).nested.bytes[2];indirect_embedded_drop(owner);indirect_use(bytes);} // expected-error {{call using a value after its owner lifetime ended}}
++int embedded_scalar(IndirectEmbeddedRef owner){int value=owner->nested.marker;indirect_embedded_drop(owner);return value;}

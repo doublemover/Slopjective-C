@@ -2994,8 +2994,10 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-cpu-variant:v1;";
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
+  if (HasDeclarationManualFamilyCallProof(representative))
+    identity.canonical_type_identity+=";manual-family-call-proofs:v1;";
   if (HasDeclarationBorrowedResultProof(representative))
-    identity.canonical_type_identity+=";borrowed-result-proofs:v12;";
+    identity.canonical_type_identity+=";borrowed-result-proofs:v13;";
   if (HasDeclarationNativeStorageLifetime(representative))
     identity.canonical_type_identity += ";native-storage-lifetime:v6;";
   if (HasDeclarationAtomicManagedProperty(representative))

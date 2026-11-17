@@ -49,8 +49,8 @@
 "objc3.cxx-standard-library-headers.v2"
 ";cxx-standard-library-headers:v2;"
 
-"objc3.borrowed-result-proofs.v12"
-";borrowed-result-proofs:v12;"
+"objc3.borrowed-result-proofs.v13"
+";borrowed-result-proofs:v13;"
 
 "objc3.cxx-virtual-call-expressions.v1"
 ";cxx-virtual-call-expressions:v1;"
@@ -65,3 +65,5 @@
 ";cxx-inline-closure-objects:v3;"
 "@cpu-version@"
 "objc3.cxx-class-templates.v2"
+"objc3.manual-family-call-proofs.v1"
+";manual-family-call-proofs:v1;"

@@ -393,8 +393,10 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/native_union_template_provider_test.cpp)
   add_executable(objc3_native_abi_tag_provider_test
     ../../../../tests/clang_foundation/native_abi_tag_provider_test.cpp)
+  add_executable(objc3_native_indirect_family_provider_test
+    ../../../../tests/clang_foundation/native_indirect_family_provider_test.cpp)
   foreach(_standard_library_test IN ITEMS objc3_standard_library_provider_test
-      objc3_standard_library_customization_provider_test objc3_native_abi_tag_provider_test objc3_native_union_template_provider_test objc3_native_diagnostic_contract_provider_test objc3_native_storage_lifetime_provider_test objc3_native_emission_policy_provider_test objc3_native_deduced_group_provider_test objc3_native_mrc_record_payload_provider_test objc3_native_standard_owned_payload_provider_test)
+      objc3_standard_library_customization_provider_test objc3_native_indirect_family_provider_test objc3_native_abi_tag_provider_test objc3_native_union_template_provider_test objc3_native_diagnostic_contract_provider_test objc3_native_storage_lifetime_provider_test objc3_native_emission_policy_provider_test objc3_native_deduced_group_provider_test objc3_native_mrc_record_payload_provider_test objc3_native_standard_owned_payload_provider_test)
     target_include_directories(${_standard_library_test} SYSTEM PRIVATE
       ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
     target_link_libraries(${_standard_library_test} PRIVATE objc3c_clang_foundation)
@@ -460,6 +462,10 @@ if (BUILD_TESTING)
     COMMAND objc3_native_abi_tag_provider_test)
   set_tests_properties(objc3_native_abi_tag_provider PROPERTIES
     LABELS "native;publication;extended" TIMEOUT 300)
+  objc3c_add_frontend_test(NAME objc3_native_indirect_family_provider
+    COMMAND objc3_native_indirect_family_provider_test)
+  set_tests_properties(objc3_native_indirect_family_provider PROPERTIES
+    LABELS "native;ownership;extended" TIMEOUT 300)
   objc3c_add_frontend_test(NAME objc3_standard_library_customization_provider
     COMMAND objc3_standard_library_customization_provider_test)
   set_tests_properties(objc3_standard_library_customization_provider PROPERTIES
