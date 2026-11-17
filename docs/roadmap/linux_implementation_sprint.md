@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.195 / System 2.121 argument-projection span](linux_native_argument_projections.md)
+retains cleanup provenance through bounded native value/reference helper chains
+and preserves selected caller storage without spuriously escaping unused inputs.
+
 The [Source 2.194 / System 2.120 availability span](linux_native_availability_packages.md)
 publishes target-bound native availability guards with exact AST ownership,
 portable canonical grammar and the object-expression v2 reader cutover.

@@ -27,6 +27,14 @@ actor class BoundaryActor:BoundaryRoot
 - (int)stable __attribute__((objc_nonisolated));
 @end
 namespace BoundaryModule {
+inline int identity_value(int value) noexcept{return value;}
+inline int nested_value(int value) noexcept{return identity_value(value);}
+inline int &identity_reference(int &value) noexcept{return value;}
+template<class T>inline T &template_reference(T &value) noexcept{return value;}
+inline int ordinary_helpers(int value) __objc3_async_frame {
+ int &alias=identity_reference(value);int &view=template_reference(alias);
+ return __objc3_await boundary_number(nested_value(view));
+}
 inline int ordinary_move(int value) __objc3_async_frame {
  return __objc3_await boundary_number(std::move(value));
 }
@@ -63,8 +71,8 @@ static int execute(void){
  assert(complete && completion.kind==OBJC3_COMPLETION_SUCCESS && completion.has_payload && completion.payload);
  assert(*static_cast<const int *>(completion.payload)==42);boundary_completed();
  objc3_task_release(task);
- for(unsigned operation=0;operation!=2;++operation){
-  auto ordinary=operation?BoundaryModule::ordinary_views(41):BoundaryModule::ordinary_move(41);task=0;
+ for(unsigned operation=0;operation!=3;++operation){
+  auto ordinary=operation==2?BoundaryModule::ordinary_helpers(41):operation==1?BoundaryModule::ordinary_views(41):BoundaryModule::ordinary_move(41);task=0;
   assert(objc3_async_frame_start(&ordinary,caller,0,&task)==OBJC3_SERVICE_OK);complete=false;
   for(unsigned step=0;step!=128;++step){uint32_t count=0;
    assert(objc3_executor_pump(destination,32,&count)==OBJC3_SERVICE_OK && objc3_executor_pump(caller,32,&count)==OBJC3_SERVICE_OK);
@@ -146,6 +154,9 @@ void Run(const fs::path &root,const char *standard,int ownership){
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"#include <utility>\nint rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;return __objc3_await boundary_target(std::move(copy));}","cleanup-managed concurrent value"},
      {"#include <utility>\nint rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;int &alias=std::forward<int &>(copy);alias=h;return __objc3_await boundary_target(std::as_const(copy));}","cleanup-managed concurrent value"},
+     {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=BoundaryModule::identity_value(h);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=BoundaryModule::nested_value(h);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;int &alias=BoundaryModule::template_reference(copy);alias=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"int rejected(int copy) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();copy=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int first=0,second=first;first=second;second=choose?first:h;first=second;return __objc3_await boundary_target(first);}","cleanup-managed concurrent value"},
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;int &view=copy;return __objc3_await boundary_target(view);}","cleanup-managed concurrent value"},

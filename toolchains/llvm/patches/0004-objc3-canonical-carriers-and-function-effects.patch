@@ -53365,7 +53365,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,2281 @@
+@@ -0,0 +1,2390 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53392,6 +53392,7 @@ new file mode 100644
 +#include "clang/Sema/SemaObjC.h"
 +#include "llvm/ADT/STLExtras.h"
 +#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/ADT/ScopeExit.h"
 +#include "llvm/Support/SaveAndRestore.h"
 +
 +using namespace clang;
@@ -53648,6 +53649,107 @@ new file mode 100644
 +  const auto Name=Function->getIdentifier()->getName();
 +  return Name=="move" || Name=="forward" || Name=="forward_like" || Name=="as_const";
 +}
++struct ArgumentProjection { unsigned Index; bool Aliases; };
++// Infer only closed, non-owning, native argument views. An inline/internal
++// definition must contain one return and no runtime statements before it.
++// Nested projections share budgets and reject recursive definition graphs.
++std::optional<ArgumentProjection> argumentProjectionImpl(
++    const CallExpr *Call,ASTContext &Context,unsigned &Budget,unsigned Depth,
++    llvm::SmallPtrSetImpl<const FunctionDecl *> &Active) {
++  if(!Call || !Budget || Depth>16 || Call->getNumArgs()>32)return std::nullopt;
++  --Budget;
++  if(standardReferenceView(Call))return ArgumentProjection{0,true};
++  const auto *Function=Call->getDirectCallee();
++  if(!Function || isa<CXXMethodDecl>(Function) || Function->isVariadic() ||
++      Function->getNumParams()!=Call->getNumArgs() ||
++      getObjC3Executor(Function) || isObjC3ActorIsolated(Function) ||
++      Function->hasAttr<ReturnsTwiceAttr>() || Function->hasAttr<ObjCFamilyRetainAttr>() ||
++      Function->hasAttr<ObjCFamilyReleaseAttr>() || Function->hasAttr<ObjCFamilyAutoreleaseAttr>() ||
++      Function->hasAttr<CFReturnsRetainedAttr>() || Function->hasAttr<CFReturnsNotRetainedAttr>() ||
++      Function->hasAttr<OwnershipAttr>())return std::nullopt;
++  if(const auto *Type=getObjC3CallableFunctionType(Function);
++      Type && (Type->getObjC3FunctionEffects().Async ||
++               Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None))return std::nullopt;
++  QualType Result=Function->getReturnType();
++  // A dependent pattern can omit a selected user conversion/copy until its
++  // instantiation. Scalar/reference results cannot hide aggregate return work.
++  if(!Result->isReferenceType() &&
++      (!Result->isScalarType() || Result->isObjCRetainableType() ||
++       isObjC3NSObjectStorageType(Result)))return std::nullopt;
++  for(const auto *Parameter:Function->parameters()) {
++    QualType Type=Parameter->getType();
++    if(managedTransferStorage(Parameter) || Parameter->hasAttr<NSConsumedAttr>() ||
++        Parameter->hasAttr<CFConsumedAttr>() || getObjC3ResourceTypeContract(Context,Type).Cleanup)
++      return std::nullopt;
++    if(!Type->isReferenceType() &&
++        (!Type->isScalarType() || Type->isObjCRetainableType() ||
++         isObjC3NSObjectStorageType(Type)))return std::nullopt;
++  }
++  const FunctionDecl *Definition=Function->getDefinition();
++  bool Pattern=false;
++  if(!Definition)if(const auto *Template=Function->getTemplateInstantiationPattern()) {
++    Definition=Template->getDefinition();Pattern=true;
++  }
++  if(!Definition || (!Definition->isInlined() && Definition->isExternallyVisible()) ||
++      Definition->getNumParams()!=Call->getNumArgs() ||
++      !Active.insert(Definition->getCanonicalDecl()).second)return std::nullopt;
++  auto Leave=llvm::scope_exit([&]{Active.erase(Definition->getCanonicalDecl());});
++  const auto *Body=dyn_cast_or_null<CompoundStmt>(Definition->getBody());
++  if(!Body)return std::nullopt;
++  const ReturnStmt *Return=nullptr;
++  for(const auto *Statement:Body->body()) {
++    if(!Budget)return std::nullopt;
++    --Budget;
++    while(const auto *Attributed=dyn_cast<AttributedStmt>(Statement))Statement=Attributed->getSubStmt();
++    if(isa<NullStmt>(Statement))continue;
++    if(const auto *Declarations=dyn_cast<DeclStmt>(Statement)) {
++      for(const auto *D:Declarations->decls())
++        if(!isa<TypeDecl,StaticAssertDecl>(D))return std::nullopt;
++      continue;
++    }
++    const auto *Candidate=dyn_cast<ReturnStmt>(Statement);
++    if(!Candidate || Return)return std::nullopt;
++    Return=Candidate;
++  }
++  const Expr *Value=Return?Return->getRetValue():nullptr;
++  while(Value) {
++    if(!Budget)return std::nullopt;
++    --Budget;
++    Value=Value->IgnoreParens();
++    if(Call->isGLValue() && !Value->isGLValue())return std::nullopt;
++    if(const auto *Cast=dyn_cast<CastExpr>(Value)) {
++      if(Cast->getCastKind()==CK_IntegralToBoolean || Cast->getCastKind()==CK_PointerToBoolean ||
++          Cast->getCastKind()==CK_MemberPointerToBoolean || Cast->getCastKind()==CK_FloatingToBoolean)
++        return std::nullopt; // Computed telemetry has its ordinary value contract.
++      Value=Cast->getSubExpr();continue;
++    }
++    if(const auto *Nested=dyn_cast<CallExpr>(Value)) {
++      auto Projection=argumentProjectionImpl(Nested,Context,Budget,Depth+1,Active);
++      if(!Projection)return std::nullopt;
++      for(unsigned I=0;I!=Nested->getNumArgs();++I)
++        if(I!=Projection->Index && Nested->getArg(I)->HasSideEffects(Context))return std::nullopt;
++      Value=Nested->getArg(Projection->Index);continue;
++    }
++    const auto *Reference=dyn_cast<DeclRefExpr>(Value);
++    const auto *Parameter=Reference?dyn_cast<ParmVarDecl>(Reference->getDecl()):nullptr;
++    if(!Parameter)return std::nullopt;
++    for(unsigned I=0;I!=Definition->getNumParams();++I)if(Definition->getParamDecl(I)==Parameter) {
++      const bool Aliases=Call->isGLValue();
++      if(Aliases && !Function->getParamDecl(I)->getType()->isReferenceType())return std::nullopt;
++      if(Pattern && !Context.hasSameUnqualifiedType(
++          Function->getReturnType().getNonReferenceType(),
++          Function->getParamDecl(I)->getType().getNonReferenceType()))return std::nullopt;
++      return ArgumentProjection{I,Aliases};
++    }
++    return std::nullopt;
++  }
++  return std::nullopt;
++}
++std::optional<ArgumentProjection> argumentProjection(const CallExpr *Call,ASTContext &Context) {
++  unsigned Budget=256;
++  llvm::SmallPtrSet<const FunctionDecl *,16> Active;
++  return argumentProjectionImpl(Call,Context,Budget,0,Active);
++}
 +// Storage cleanup is a value contract even when its scalar type has no
 +// resource typedef sugar. Preserve it through bounded value-preserving views
 +// before building a task/isolation snapshot. Explicit wrappers still undergo
@@ -53669,9 +53771,10 @@ new file mode 100644
 +    auto Cell=[&](const Expr *Value)->const VarDecl * {
 +      for(unsigned Depth=0;Value && Depth!=64;++Depth) {
 +        Value=Value->IgnoreParenCasts();
-+        if(const auto *Call=dyn_cast<CallExpr>(Value);standardReferenceView(Call)) {
-+          Value=Call->getArg(0);continue;
-+        }
++        if(const auto *Call=dyn_cast<CallExpr>(Value))
++          if(auto Projection=argumentProjection(Call,Context);Projection && Projection->Aliases) {
++            Value=Call->getArg(Projection->Index);continue;
++          }
 +        const auto *Reference=dyn_cast<DeclRefExpr>(Value);
 +        const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +        if(!Variable || !Variable->hasLocalStorage())return nullptr;
@@ -53749,9 +53852,12 @@ new file mode 100644
 +      if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(Node)){Add(Opaque->getSourceExpr(),Use);continue;}
 +      if(const auto *Default=dyn_cast<CXXDefaultArgExpr>(Node)){Add(Default->getExpr());continue;}
 +      if(const auto *Default=dyn_cast<CXXDefaultInitExpr>(Node)){Add(Default->getExpr());continue;}
-+      if(const auto *Call=dyn_cast<CallExpr>(Node);standardReferenceView(Call)) {
-+        Add(Call->getArg(0),Use);continue;
-+      }
++      if(const auto *Call=dyn_cast<CallExpr>(Node))
++        if(auto Projection=argumentProjection(Call,Context)) {
++          for(unsigned I=0;I!=Call->getNumArgs();++I)
++            Add(Call->getArg(I),Projection->Aliases && I==Projection->Index?Use:Read);
++          continue;
++        }
 +      if(const auto *Cast=dyn_cast<CastExpr>(Node)) {
 +        Add(Cast->getSubExpr(),(Cast->getCastKind()==CK_LValueToRValue || Cast->getCastKind()==CK_ToVoid)?Read:Use);continue;
 +      }
@@ -53898,6 +54004,9 @@ new file mode 100644
 +      for(const auto *Value:List->getInitExprs())if(Value && Recurse(Recurse,Value,Depth+1))return true;
 +      return false;
 +    }
++    if(const auto *Call=dyn_cast<CallExpr>(E))
++      if(auto Projection=argumentProjection(Call,Context))
++        return Recurse(Recurse,Call->getArg(Projection->Index),Depth+1);
 +    if(const auto *Call=dyn_cast<CallExpr>(E);Call && Call->isGLValue()) {
 +      // Native reference forwarders (including move/forward) can preserve a
 +      // resource slot without preserving its variable attribute in the type.
@@ -76825,5 +76934,92 @@ new file mode 100644
 + auto [copied]=original;
 + auto work=[copied]() -> void __objc3_async_frame {(void)copied;};
 + (void)managed_lambda_launch(work); // expected-error {{cleanup-managed concurrent value}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-argument-projections.h b/clang/test/ObjC3/Sema/Inputs/native-argument-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-argument-projections.h
+@@ -0,0 +1,30 @@
++#ifndef OBJC3_NATIVE_ARGUMENT_PROJECTIONS_H
++#define OBJC3_NATIVE_ARGUMENT_PROJECTIONS_H
++#include "mutable-managed-values.h"
++static inline int managed_identity_value(int value){return value;}
++static inline int managed_nested_value(int value){return managed_identity_value(value);}
++static inline int managed_second_value(int ignored,int selected){return selected;}
++static inline int managed_projection_plain(int value) __objc3_async_frame {
++ return __objc3_await managed_remote(managed_nested_value(value));
++}
++static inline int managed_projection_ignores_resource(void) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ return __objc3_await managed_remote(managed_second_value(descriptor,42));
++}
++#ifdef __cplusplus
++static inline int &managed_identity_reference(int &value){return value;}
++static inline int &managed_second_reference(int &ignored,int &selected){return selected;}
++template<class T>static inline T &managed_template_reference(T &value){return value;}
++static inline int &managed_nested_reference(int &value){return managed_identity_reference(value);}
++static inline int managed_projection_reference(int value) __objc3_async_frame {
++ int &first=managed_nested_reference(value);
++ int &second=managed_template_reference(first);
++ return __objc3_await managed_remote(managed_identity_value(second));
++}
++static inline void managed_projection_unused_reference(void) {
++ int first=42,second=0;int &alias=managed_second_reference(first,second);alias=1;
++ ManagedWork work=^void(void) __objc3_async_frame {(void)first;};
++ (void)managed_detach(work);
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-argument-projections.m b/clang/test/ObjC3/Sema/native-argument-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-argument-projections.m
+@@ -0,0 +1,45 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-argument-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-argument-projections.h"
++int managed_projection_identity_copy(void) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_identity_value(descriptor);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int managed_projection_nested_copy(void) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_nested_value(descriptor);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++void managed_projection_capture(void) {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_identity_value(descriptor);
++ ManagedWork work=^void(void) __objc3_async_frame {(void)copied;};
++ (void)managed_detach(work); // expected-error {{cleanup-managed capture}}
++}
++#ifdef __cplusplus
++void managed_projection_reference_write(void) {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int first=42,second=0;int &alias=managed_second_reference(first,second);alias=descriptor;
++ ManagedWork work=^void(void) __objc3_async_frame {(void)second;};
++ (void)managed_detach(work); // expected-error {{cleanup-managed capture}}
++}
++static inline int &managed_mutating_reference(int &value){managed_modify(&value);return value;}
++int managed_projection_impure(int value) __objc3_async_frame {
++ return __objc3_await managed_remote(managed_mutating_reference(value)); // expected-error {{cleanup-managed concurrent value}}
++}
++int &managed_unknown_reference(int &);
++int managed_projection_unknown(int value) __objc3_async_frame {
++ return __objc3_await managed_remote(managed_unknown_reference(value)); // expected-error {{cleanup-managed concurrent value}}
++}
++static inline int &managed_recursive_reference(int &value){return managed_recursive_reference(value);}
++int managed_projection_recursive(int value) __objc3_async_frame {
++ return __objc3_await managed_remote(managed_recursive_reference(value)); // expected-error {{cleanup-managed concurrent value}}
 +}
 +#endif
