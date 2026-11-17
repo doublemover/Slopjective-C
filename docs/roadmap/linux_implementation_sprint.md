@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.186 / System 2.112 native function-policy span](linux_native_function_policies.md)
+preserves definition and optimizer policies through source-free C17/C++ packages,
+including exact builtin, entry-patching, register-clearing and trusted-call contracts.
+
 The [Source 2.185 / System 2.111 actor receiver span](linux_actor_receiver_bindings.md)
 keeps current-actor receiver identity immutable across MRC/ARC and native imports,
 and admits bounded immutable aliases without dropping executor isolation.

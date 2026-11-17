@@ -328,6 +328,38 @@ bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNativeFunctionPolicy(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  auto Policy=[](const clang::NamedDecl *named) {
+    if(!named)return false;
+    for(const auto *attribute:named->attrs())
+      if(!attribute->isImplicit() && IsPublishedNativeFunctionPolicy(attribute)) {
+        if(llvm::isa<clang::NoBuiltinAttr>(attribute))
+          if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(named);
+              function && !PublishesFunctionBody(function))continue;
+        return true;
+      }
+    return false;
+  };
+  struct Declarations : clang::DynamicRecursiveASTVisitor {
+    decltype(Policy) &policy;bool found=false;
+    explicit Declarations(decltype(Policy) &policy):policy(policy) {}
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitNamedDecl(clang::NamedDecl *named) override{found|=policy(named);return true;}
+  } declarations(Policy);
+  declarations.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  if(declarations.found)return true;
+  return HasPublishedExpression(declaration,[&](const clang::Stmt *statement) {
+    struct Locals : clang::DynamicRecursiveASTVisitor {
+      decltype(Policy) &policy;bool found=false;
+      explicit Locals(decltype(Policy) &policy):policy(policy) {}
+      bool VisitNamedDecl(clang::NamedDecl *named) override{found|=policy(named);return true;}
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) override{found|=policy(expression->getCallOperator());return true;}
+    } locals(Policy);
+    locals.TraverseStmt(const_cast<clang::Stmt *>(statement));return locals.found;
+  });
+}
+
 bool HasDeclarationNativeCleanup(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
     struct Cleanup : clang::DynamicRecursiveASTVisitor {

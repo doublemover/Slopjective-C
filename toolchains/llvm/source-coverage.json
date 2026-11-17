@@ -55,7 +55,8 @@
     "objc3_native_control_flow_provider",
     "objc3_native_assembly_profile_provider",
     "objc3_native_c_overload_provider",
-    "objc3_native_actor_receiver_provider"
+    "objc3_native_actor_receiver_provider",
+    "objc3_native_function_policy_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",

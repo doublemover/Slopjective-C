@@ -84,11 +84,20 @@ bool IsPublishedNativeStateAttribute(const clang::Attr *attribute) {
   return llvm::isa<clang::ConsumableAttr,clang::ConsumableAutoCastAttr,clang::ConsumableSetOnReadAttr,clang::CallableWhenAttr,clang::ParamTypestateAttr,clang::ReturnTypestateAttr,clang::SetTypestateAttr,clang::TestTypestateAttr,clang::EnumExtensibilityAttr,clang::FlagEnumAttr>(attribute);
 }
 
+bool IsPublishedNativeFunctionPolicy(const clang::Attr *attribute) {
+  return llvm::isa<clang::NoBuiltinAttr,clang::MinSizeAttr,
+      clang::ConvergentAttr,clang::NoConvergentAttr,
+      clang::EnforceTCBAttr,clang::EnforceTCBLeafAttr,
+      clang::NoSplitStackAttr,clang::SpeculativeLoadHardeningAttr,
+      clang::NoSpeculativeLoadHardeningAttr,clang::PatchableFunctionEntryAttr,
+      clang::ZeroCallUsedRegsAttr>(attribute);
+}
+
 bool IsPublishedNativeAttribute(const clang::Attr *attribute) {
   if(const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute))
     return std::any_of(tag->tags_begin(),tag->tags_end(),
         [](llvm::StringRef name){return !name.starts_with("__objc3_m_");});
-  return IsPublishedNativeStateAttribute(attribute) || IsPublishedThreadSafetyAttribute(attribute) || llvm::isa<clang::DeprecatedAttr,clang::UnavailableAttr,clang::AvailabilityAttr,clang::ErrorAttr,clang::AArch64VectorPcsAttr,clang::AArch64SVEPcsAttr,clang::TargetAttr,clang::TargetVersionAttr,clang::TargetClonesAttr,clang::MinVectorWidthAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr,clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr,clang::CFReturnsRetainedAttr,clang::CFReturnsNotRetainedAttr,clang::OwnershipAttr,clang::ArgumentWithTypeTagAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::DiagnoseAsBuiltinAttr,clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::EnableIfAttr,clang::OverloadableAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SwiftCallAttr,clang::SwiftAsyncCallAttr,clang::SwiftContextAttr,clang::SwiftAsyncContextAttr,clang::SwiftErrorResultAttr,clang::SwiftIndirectResultAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,clang::TrivialABIAttr,
+  return IsPublishedNativeFunctionPolicy(attribute) || IsPublishedNativeStateAttribute(attribute) || IsPublishedThreadSafetyAttribute(attribute) || llvm::isa<clang::DeprecatedAttr,clang::UnavailableAttr,clang::AvailabilityAttr,clang::ErrorAttr,clang::AArch64VectorPcsAttr,clang::AArch64SVEPcsAttr,clang::TargetAttr,clang::TargetVersionAttr,clang::TargetClonesAttr,clang::MinVectorWidthAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr,clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr,clang::CFReturnsRetainedAttr,clang::CFReturnsNotRetainedAttr,clang::OwnershipAttr,clang::ArgumentWithTypeTagAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::DiagnoseAsBuiltinAttr,clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::EnableIfAttr,clang::OverloadableAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SwiftCallAttr,clang::SwiftAsyncCallAttr,clang::SwiftContextAttr,clang::SwiftAsyncContextAttr,clang::SwiftErrorResultAttr,clang::SwiftIndirectResultAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,clang::TrivialABIAttr,
       clang::VisibilityAttr,clang::TypeVisibilityAttr,clang::NoInlineAttr,
       clang::AlwaysInlineAttr,clang::FlattenAttr,clang::ColdAttr,clang::HotAttr,
       clang::ConstAttr,clang::PureAttr,clang::WarnUnusedResultAttr,clang::UnusedAttr,
@@ -966,7 +975,8 @@ std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool nat
       if(!native || !statement)return true;
       if(const auto *function=llvm::dyn_cast_or_null<clang::FunctionDecl>(owner))
         if(statement==function->getBody() && !PublishesFunctionBody(function))return true;
-      if(const auto *variable=llvm::dyn_cast_or_null<clang::VarDecl>(owner))
+      if(const auto *variable=llvm::dyn_cast_or_null<clang::VarDecl>(owner);
+          variable && !llvm::isa<clang::ParmVarDecl>(variable))
         if(statement==variable->getInit() && !PublishesVariableInitializer(variable))return true;
       // Only new diagnostic contracts enter this body inventory. Generated
       // temporary declarations and implicit callable machinery do not create
@@ -976,7 +986,7 @@ std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool nat
         bool VisitNamedDecl(clang::NamedDecl *declaration) override {
           std::set<std::string> values;
           for(const auto *attribute:declaration->attrs())
-            if(!attribute->isImplicit() && (IsPublishedNativeStateAttribute(attribute) || llvm::isa<clang::DeprecatedAttr,clang::UnavailableAttr,
+            if(!attribute->isImplicit() && (IsPublishedNativeFunctionPolicy(attribute) || IsPublishedNativeStateAttribute(attribute) || llvm::isa<clang::DeprecatedAttr,clang::UnavailableAttr,
                 clang::AvailabilityAttr,clang::ErrorAttr,clang::UnusedAttr>(attribute) ||
                 (llvm::isa<clang::AbiTagAttr>(attribute) && IsPublishedNativeAttribute(attribute))))
               values.insert(NativeAttributeValue(attribute,declaration));
@@ -1036,6 +1046,9 @@ std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool nat
             values.insert("native-noreturn-function-type");
       for(const auto *attribute:declaration->attrs())
         if((native ? IsPublishedNativeAttribute(attribute) : IsForeignImportAttribute(attribute)) && !attribute->isImplicit()) {
+          if(llvm::isa<clang::NoBuiltinAttr>(attribute))
+            if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+                function && !PublishesFunctionBody(function))continue;
           if(native) {if(!llvm::isa<clang::EnableIfAttr>(attribute))values.insert(NativeAttributeValue(attribute,declaration));continue;}
           std::string value;llvm::raw_string_ostream out(value);
           clang::PrintingPolicy policy(declaration->getASTContext().getLangOpts());

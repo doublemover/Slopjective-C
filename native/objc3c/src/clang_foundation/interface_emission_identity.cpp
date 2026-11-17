@@ -1728,6 +1728,28 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     }
     if(llvm::isa<clang::NoThreadSafetyAnalysisAttr>(attribute))return key;
   }
+  if(const auto *builtins=llvm::dyn_cast<clang::NoBuiltinAttr>(attribute)) {
+    std::set<std::string> names;
+    for(auto name:builtins->builtinNames())names.insert(name.str());
+    const bool all=names.empty() || names.count("*");
+    add(all?"all-builtins":"selected-builtins");
+    if(!all)for(const auto &name:names)add(name);
+    return key;
+  }
+  if(const auto *tcb=llvm::dyn_cast<clang::EnforceTCBAttr>(attribute)) {
+    add(tcb->getTCBName());return key;
+  }
+  if(const auto *tcb=llvm::dyn_cast<clang::EnforceTCBLeafAttr>(attribute)) {
+    add(tcb->getTCBName());return key;
+  }
+  if(const auto *entry=llvm::dyn_cast<clang::PatchableFunctionEntryAttr>(attribute)) {
+    add(std::to_string(entry->getCount()));add(std::to_string(entry->getOffset()));
+    add(entry->getSection());return key;
+  }
+  if(const auto *registers=llvm::dyn_cast<clang::ZeroCallUsedRegsAttr>(attribute)) {
+    add(clang::ZeroCallUsedRegsAttr::ConvertZeroCallUsedRegsKindToStr(registers->getZeroCallUsedRegs()));
+    return key;
+  }
   if(const auto *target=llvm::dyn_cast<clang::TargetAttr>(attribute))
     add(target->getFeaturesStr());
   else if(const auto *version=llvm::dyn_cast<clang::TargetVersionAttr>(attribute))
@@ -3087,6 +3109,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-virtual-call-expressions:v1;";
   if (HasDeclarationThreadSafetyContract(representative))
     identity.canonical_type_identity+=";native-thread-safety:v1;";
+  if (HasDeclarationNativeFunctionPolicy(representative))
+    identity.canonical_type_identity+=";native-function-policies:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))
     identity.canonical_type_identity+=";native-emission-policies:v3;";
   if (NativeCPUVariant(representative))

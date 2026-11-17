@@ -206,6 +206,7 @@ bool IsPublishedStatementAttribute(const clang::Attr *);
 bool HasDeclarationNativeControlFlow(const clang::NamedDecl *);
 bool HasDeclarationConstantEvaluationControl(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration);
+bool HasDeclarationNativeFunctionPolicy(const clang::NamedDecl *declaration);
 bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeLambdaArgumentABI(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeMRCRecordPayload(const clang::NamedDecl *declaration);
@@ -366,6 +367,7 @@ bool HasDeclarationNativeCxxAsync(const clang::NamedDecl *declaration);
 bool HasDeclarationVirtualCall(const clang::NamedDecl *declaration);
 bool HasDeclarationThreadSafetyContract(const clang::NamedDecl *declaration);
 bool IsPublishedNativeStateAttribute(const clang::Attr *attribute);
+bool IsPublishedNativeFunctionPolicy(const clang::Attr *attribute);
 bool IsPublishedNativeAttribute(const clang::Attr *attribute);
 bool IsPublishedSemanticAttribute(const clang::Attr *attribute);
 

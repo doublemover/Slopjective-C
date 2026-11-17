@@ -580,6 +580,12 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
   if(borrowed_unions!=borrowed_union_capability)
     Add(result,"O3IFC147","borrowed union byte storage identity and required capability must agree",expected.canonical_name);
+  const bool function_policies=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeFunctionPolicyIdentity);
+  const bool function_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeFunctionPolicySemantic)!=sidecar.required_semantics.end();
+  const bool function_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeFunctionPolicyIdentity(d) || IsNativeFunctionPolicyOwner(d);});
+  if(function_policies!=function_policy_capability || !function_policy_owners)
+    Add(result,"O3IFC145","native function policy identity and required capability must agree",expected.canonical_name);
   const bool actor_receivers=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasActorReceiverBindingIdentity);
   const bool receiver_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kActorReceiverBindingSemantic)!=sidecar.required_semantics.end();
   const bool receiver_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

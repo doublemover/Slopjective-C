@@ -58,6 +58,7 @@ int main() {
   assert(capabilities.count(kNativeControlFlowSemantic));
   assert(capabilities.count(kCOverloadableSemantic));
   assert(capabilities.count(kActorReceiverBindingSemantic));
+  assert(capabilities.count(kNativeFunctionPolicySemantic));
   assert(!capabilities.count("objc3.cxx-friends.v1"));
   assert(!capabilities.count("objc3.cxx-friends.v2"));
   assert(capabilities.count("objc3.cxx-class-templates.v2"));
@@ -116,6 +117,7 @@ int main() {
       {";native-control-flow-contracts:v1;",kNativeControlFlowSemantic},
       {";c-overloadable-functions:v1;",kCOverloadableSemantic},
       {";actor-receiver-bindings:v1;",kActorReceiverBindingSemantic},
+      {";native-function-policies:v1;",kNativeFunctionPolicySemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
@@ -154,6 +156,20 @@ int main() {
       auto invalid=valid;auto owner=original.declarations.front();
       owner.stable_id="c:@bad-owner";owner.qualified_name=owner.export_root="A::bad_owner";owner.kind=kind;
       owner.canonical_type_identity+=";c-overloadable-functions:v1;";
+      invalid.declarations.push_back(owner);assert(Fails(EncodeSemanticInterfaceSidecar(invalid,reader)));
+    }
+  }
+  // Function policy markers remain scoped when a legitimate owner coexists.
+  {
+    auto valid=*decoded;valid.declarations.front().kind="Function";
+    valid.declarations.front().canonical_type_identity+=";native-function-policies:v1;";
+    valid.required_semantics.push_back(kNativeFunctionPolicySemantic);
+    std::vector<llvm::StringRef> reader(std::begin(supported),std::end(supported));reader.push_back(kNativeFunctionPolicySemantic);
+    assert(EncodeSemanticInterfaceSidecar(valid,reader));
+    for(const char *kind:{"Namespace","Typedef","Enum","EnumConstant","ObjCProperty","ObjCIvar"}) {
+      auto invalid=valid;auto owner=original.declarations.front();
+      owner.stable_id="c:@bad-policy-owner";owner.qualified_name=owner.export_root="A::bad_policy_owner";owner.kind=kind;
+      owner.canonical_type_identity+=";native-function-policies:v1;";
       invalid.declarations.push_back(owner);assert(Fails(EncodeSemanticInterfaceSidecar(invalid,reader)));
     }
   }
