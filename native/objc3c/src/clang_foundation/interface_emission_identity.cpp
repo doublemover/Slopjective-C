@@ -1175,6 +1175,12 @@ public:
   bool VisitCXXDeleteExpr(clang::CXXDeleteExpr *expression) {
     Reference(expression->getOperatorDelete()); return true;
   }
+  bool VisitObjCIvarRefExpr(clang::ObjCIvarRefExpr *expression) {
+    Reference(expression->getDecl());
+    Add(std::to_string(expression->isArrow()));
+    Add(std::to_string(expression->isFreeIvar()));
+    return true;
+  }
   bool VisitObjCMessageExpr(clang::ObjCMessageExpr *expression) {
     Reference(expression->getMethodDecl()); return true;
   }

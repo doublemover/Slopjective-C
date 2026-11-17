@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.190 / System 2.116 Block-binding span](linux_mutable_block_bindings.md)
+proves bounded local work-item assignments and nested capture environments, with
+source-free native object retirement and cancellation controls.
+
 The [Source 2.189 / System 2.115 native lifetime-annotation span](linux_native_lifetime_annotations.md)
 preserves typed owner/view annotations and exact capture targets through source-free
 packages, native AST import, renamed definitions and implicit receiver/lambda calls.

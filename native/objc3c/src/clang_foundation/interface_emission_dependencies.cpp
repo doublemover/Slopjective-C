@@ -739,6 +739,9 @@ class TypeDependencyVisitor final
   bool VisitCXXDeleteExpr(clang::CXXDeleteExpr *expression) {
     CheckExpressionReference(expression->getOperatorDelete()); return true;
   }
+  bool VisitObjCIvarRefExpr(clang::ObjCIvarRefExpr *expression) {
+    CheckExpressionReference(expression->getDecl());return true;
+  }
   bool VisitObjCMessageExpr(clang::ObjCMessageExpr *expression) {
     CheckExpressionReference(expression->getMethodDecl()); return true;
   }

@@ -415,9 +415,11 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/native_boundary_resource_provider_test.cpp)
   add_executable(objc3_native_function_effect_provider_test
     ../../../../tests/clang_foundation/native_function_effect_provider_test.cpp)
+  add_executable(objc3_native_block_binding_provider_test
+    ../../../../tests/clang_foundation/native_block_binding_provider_test.cpp)
   add_executable(objc3_native_lifetime_annotation_provider_test
     ../../../../tests/clang_foundation/native_lifetime_annotation_provider_test.cpp)
-  foreach(_standard_library_test IN ITEMS objc3_native_lifetime_annotation_provider_test objc3_native_function_effect_provider_test objc3_native_boundary_resource_provider_test objc3_native_function_policy_provider_test objc3_native_actor_receiver_provider_test objc3_native_c_overload_provider_test objc3_native_assembly_profile_provider_test objc3_native_control_flow_provider_test objc3_standard_library_provider_test objc3_native_typestate_provider_test objc3_native_friend_template_provider_test objc3_native_friend_class_provider_test
+  foreach(_standard_library_test IN ITEMS objc3_native_block_binding_provider_test objc3_native_lifetime_annotation_provider_test objc3_native_function_effect_provider_test objc3_native_boundary_resource_provider_test objc3_native_function_policy_provider_test objc3_native_actor_receiver_provider_test objc3_native_c_overload_provider_test objc3_native_assembly_profile_provider_test objc3_native_control_flow_provider_test objc3_standard_library_provider_test objc3_native_typestate_provider_test objc3_native_friend_template_provider_test objc3_native_friend_class_provider_test
       objc3_standard_library_customization_provider_test objc3_native_indirect_family_provider_test objc3_native_abi_tag_provider_test objc3_native_union_template_provider_test objc3_native_diagnostic_contract_provider_test objc3_native_storage_lifetime_provider_test objc3_native_emission_policy_provider_test objc3_native_deduced_group_provider_test objc3_native_mrc_record_payload_provider_test objc3_native_standard_owned_payload_provider_test)
     target_include_directories(${_standard_library_test} SYSTEM PRIVATE
       ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
@@ -428,6 +430,10 @@ if (BUILD_TESTING)
       OBJC3_STANDARD_LIBRARY_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}"
       OBJC3_STANDARD_LIBRARY_TEST_LINK_FLAGS="${_c_inline_link_flags}")
   endforeach()
+  target_compile_definitions(objc3_native_block_binding_provider_test PRIVATE
+    OBJC3_BLOCK_BINDING_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
+    OBJC3_BLOCK_BINDING_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>")
+  add_dependencies(objc3_native_block_binding_provider_test objc3_runtime_services)
   target_compile_definitions(objc3_native_boundary_resource_provider_test PRIVATE
     OBJC3_BOUNDARY_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
     OBJC3_BOUNDARY_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>")
@@ -504,6 +510,10 @@ if (BUILD_TESTING)
     COMMAND objc3_native_friend_template_provider_test)
   set_tests_properties(objc3_native_friend_template_provider PROPERTIES
     LABELS "native;publication;extended" TIMEOUT 300)
+  objc3c_add_frontend_test(NAME objc3_native_block_binding_provider
+    COMMAND objc3_native_block_binding_provider_test)
+  set_tests_properties(objc3_native_block_binding_provider PROPERTIES
+    LABELS "native;ownership;concurrency;extended" TIMEOUT 300)
   objc3c_add_frontend_test(NAME objc3_native_lifetime_annotation_provider
     COMMAND objc3_native_lifetime_annotation_provider_test)
   set_tests_properties(objc3_native_lifetime_annotation_provider PROPERTIES

@@ -1510,7 +1510,7 @@ index 2cb79b6ba..603ac6e0f 100644
 +  "child task handle is unused; await or join the task, or use the detached API explicitly">,
 +  InGroup<DiagGroup<"objc3-unused-task">>;
 +def err_objc3_task_unknown_capture : Error<
-+  "cannot prove Sendable captures of this concurrent block value; pass a block literal or an immutable local block initialized by a literal">;
++  "cannot prove Sendable captures of this concurrent block value; pass a literal or a bounded local block value with provable captures">;
 +
 +def err_objc3_type_identity_pointer : Error<
 +  "Objective-C 3 type identity requires a pointer to the result type">;
@@ -3066,15 +3066,16 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedStmt VisitAtomicExpr(AtomicExpr *E);
      ExpectedStmt VisitAddrLabelExpr(AddrLabelExpr *E);
      ExpectedStmt VisitConstantExpr(ConstantExpr *E);
-@@ -677,6 +751,7 @@
+@@ -677,6 +751,8 @@
      ExpectedStmt VisitCXXDeleteExpr(CXXDeleteExpr *E);
      ExpectedStmt VisitCXXConstructExpr(CXXConstructExpr *E);
      ExpectedStmt VisitCXXMemberCallExpr(CXXMemberCallExpr *E);
 +    ExpectedStmt VisitObjCMessageExpr(ObjCMessageExpr *E);
++    ExpectedStmt VisitObjCIvarRefExpr(ObjCIvarRefExpr *E);
      ExpectedStmt VisitCXXDependentScopeMemberExpr(CXXDependentScopeMemberExpr *E);
      ExpectedStmt VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr *E);
      ExpectedStmt VisitCXXUnresolvedConstructExpr(CXXUnresolvedConstructExpr *E);
-@@ -705,6 +780,7 @@
+@@ -705,6 +781,7 @@
      ExpectedStmt
      VisitSubstNonTypeTemplateParmPackExpr(SubstNonTypeTemplateParmPackExpr *E);
      ExpectedStmt VisitPseudoObjectExpr(PseudoObjectExpr *E);
@@ -3082,7 +3083,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      ExpectedStmt VisitCXXParenListInitExpr(CXXParenListInitExpr *E);
      ExpectedStmt VisitCXXExpansionSelectExpr(CXXExpansionSelectExpr *E);
  
-@@ -1426,6 +1502,39 @@
+@@ -1426,6 +1503,39 @@
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -3122,7 +3123,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1613,6 +1722,11 @@
+@@ -1613,6 +1723,11 @@
    Error Err = Error::success();
    FunctionProtoType::ExtProtoInfo ToEPI;
    ToEPI.ExtInfo = FromEPI.ExtInfo;
@@ -3134,7 +3135,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToEPI.Variadic = FromEPI.Variadic;
    ToEPI.HasTrailingReturn = FromEPI.HasTrailingReturn;
    ToEPI.TypeQuals = FromEPI.TypeQuals;
-@@ -1626,6 +1740,52 @@
+@@ -1626,6 +1741,52 @@
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -3187,7 +3188,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (Err)
      return std::move(Err);
  
-@@ -1821,6 +1981,13 @@
+@@ -1821,6 +1982,13 @@
    if (!ToEquivalentTypeOrErr)
      return ToEquivalentTypeOrErr.takeError();
  
@@ -3201,7 +3202,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return Importer.getToContext().getAttributedType(
        T->getAttrKind(), *ToModifiedTypeOrErr, *ToEquivalentTypeOrErr,
        T->getAttr());
-@@ -2434,6 +2601,26 @@
+@@ -2434,6 +2602,26 @@
                                                  ImportedOrErr.takeError());
    }
  
@@ -3228,7 +3229,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ChildErrors;
  }
  
-@@ -2472,6 +2659,7 @@
+@@ -2472,6 +2660,7 @@
  
  Error ASTNodeImporter::ImportDeclContext(
      Decl *FromD, DeclContext *&ToDC, DeclContext *&ToLexicalDC) {
@@ -3236,7 +3237,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToDCOrErr = Importer.ImportContext(FromD->getDeclContext());
    if (!ToDCOrErr)
      return ToDCOrErr.takeError();
-@@ -2517,7 +2705,7 @@
+@@ -2517,7 +2706,7 @@
  
  Error ASTNodeImporter::ImportDefinition(
      RecordDecl *From, RecordDecl *To, ImportDefinitionKind Kind) {
@@ -3245,7 +3246,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      // There are cases in LLDB when we first import a class without its
      // members. The class will have DefinitionData, but no members. Then,
      // importDefinition is called from LLDB, which tries to get the members, so
-@@ -2526,6 +2714,19 @@
+@@ -2526,6 +2715,19 @@
      // definition.
      To->setCompleteDefinition(false);
      To->completeDefinition();
@@ -3265,7 +3266,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    };
  
    if (To->getDefinition() || To->isBeingDefined()) {
-@@ -2537,6 +2738,12 @@
+@@ -2537,6 +2739,12 @@
          (To->isLambda() && shouldForceImportDeclContext(Kind))) {
        if (To->isLambda()) {
          auto *FromCXXRD = cast<CXXRecordDecl>(From);
@@ -3278,7 +3279,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          SmallVector<LambdaCapture, 8> ToCaptures;
          ToCaptures.reserve(FromCXXRD->capture_size());
          for (const auto &FromCapture : FromCXXRD->captures()) {
-@@ -2559,6 +2766,26 @@
+@@ -2559,6 +2767,26 @@
      return Error::success();
    }
  
@@ -3305,7 +3306,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -2734,8 +2961,30 @@
+@@ -2734,8 +2962,30 @@
                                      : StructuralEquivalenceKind::Default;
  }
  
@@ -3336,7 +3337,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Eliminate a potential failure point where we attempt to re-import
    // something we're trying to import while completing ToRecord.
    Decl *ToOrigin = Importer.GetOriginalDecl(To);
-@@ -2899,6 +3148,47 @@
+@@ -2899,6 +3149,47 @@
    return ToD;
  }
  
@@ -3384,7 +3385,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedDecl
  ASTNodeImporter::VisitCXXExpansionStmtDecl(CXXExpansionStmtDecl *D) {
    auto DCOrErr = Importer.ImportContext(D->getDeclContext());
-@@ -2938,6 +3228,13 @@
+@@ -2938,6 +3229,13 @@
    if (ToD)
      return ToD;
  
@@ -3398,7 +3399,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    NamespaceDecl *MergeWithNamespace = nullptr;
    if (!Name) {
      // This is an anonymous namespace. Adopt an existing anonymous
-@@ -2983,12 +3280,13 @@
+@@ -2983,12 +3281,13 @@
      return RBraceLocOrErr.takeError();
  
    // Create the "to" namespace, if needed.
@@ -3414,7 +3415,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        return ToNamespace;
      ToNamespace->setRBraceLoc(*RBraceLocOrErr);
      ToNamespace->setLexicalDeclContext(LexicalDC);
-@@ -2996,7 +3294,7 @@
+@@ -2996,7 +3295,7 @@
  
      // If this is an anonymous namespace, register it as the anonymous
      // namespace within its context.
@@ -3423,7 +3424,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        if (auto *TU = dyn_cast<TranslationUnitDecl>(DC))
          TU->setAnonymousNamespace(ToNamespace);
        else
-@@ -3004,6 +3302,13 @@
+@@ -3004,6 +3303,13 @@
      }
    }
    Importer.MapImported(D, ToNamespace);
@@ -3437,7 +3438,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (Error Err = ImportDeclContext(D))
      return std::move(Err);
-@@ -3085,7 +3390,18 @@
+@@ -3085,7 +3391,18 @@
  
          QualType FromUT = D->getUnderlyingType();
          QualType FoundUT = FoundTypedef->getUnderlyingType();
@@ -3457,7 +3458,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            // If the underlying declarations are unnamed records these can be
            // imported as different types. We should create a distinct typedef
            // node in this case.
-@@ -3222,6 +3538,8 @@
+@@ -3222,6 +3539,8 @@
      return ToAlias;
  
    ToTemplatedDecl->setDescribedAliasTemplate(ToAlias);
@@ -3466,7 +3467,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    ToAlias->setAccess(D->getAccess());
    ToAlias->setLexicalDeclContext(LexicalDC);
-@@ -3400,6 +3718,24 @@
+@@ -3400,6 +3719,24 @@
    if (ToD)
      return ToD;
  
@@ -3491,7 +3492,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Figure out what structure name we're looking for.
    unsigned IDNS = Decl::IDNS_Tag;
    DeclarationName SearchName = Name;
-@@ -3417,7 +3753,16 @@
+@@ -3417,7 +3754,16 @@
  
    // We may already have a record of the same name; try to find and match it.
    RecordDecl *PrevDecl = nullptr;
@@ -3509,7 +3510,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      auto FoundDecls =
          Importer.findDeclsInToCtx(DC, SearchName);
-@@ -3438,6 +3783,19 @@
+@@ -3438,6 +3784,19 @@
            Found = Tag->getDecl();
        }
  
@@ -3529,7 +3530,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        if (auto *FoundRecord = dyn_cast<RecordDecl>(Found)) {
          // Do not emit false positive diagnostic in case of unnamed
          // struct/union and in case of anonymous structs.  Would be false
-@@ -3456,6 +3814,14 @@
+@@ -3456,6 +3815,14 @@
            continue;
  
          if (IsStructuralMatch(D, FoundRecord)) {
@@ -3544,7 +3545,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            RecordDecl *FoundDef = FoundRecord->getDefinition();
            if (D->isThisDeclarationADefinition() && FoundDef) {
              // FIXME: Structural equivalence check should check for same
-@@ -3463,9 +3829,7 @@
+@@ -3463,9 +3830,7 @@
              Importer.MapImported(D, FoundDef);
              if (const auto *DCXX = dyn_cast<CXXRecordDecl>(D)) {
                auto *FoundCXX = dyn_cast<CXXRecordDecl>(FoundDef);
@@ -3555,7 +3556,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
                  // FoundDef may not have every implicit method that D has
                  // because implicit methods are created only if they are used.
                  if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
-@@ -3508,13 +3872,6 @@
+@@ -3508,13 +3873,6 @@
                DC, *TInfoOrErr, Loc, DCXX->getLambdaDependencyKind(),
                DCXX->isGenericLambda(), DCXX->getLambdaCaptureDefault()))
          return D2CXX;
@@ -3569,7 +3570,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        D2CXX->setLambdaNumbering(DCXX->getLambdaNumbering());
      } else {
        if (GetImportedOrCreateDecl(D2CXX, D, Importer.getToContext(),
-@@ -3525,6 +3882,13 @@
+@@ -3525,6 +3883,13 @@
      }
  
      D2 = D2CXX;
@@ -3583,7 +3584,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      D2->setAccess(D->getAccess());
      D2->setLexicalDeclContext(LexicalDC);
      addDeclToContexts(D, D2);
-@@ -3572,6 +3936,8 @@
+@@ -3572,6 +3937,8 @@
    else
      return QualifierLocOrErr.takeError();
  
@@ -3592,7 +3593,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isAnonymousStructOrUnion())
      D2->setAnonymousStructOrUnion(true);
  
-@@ -3579,6 +3945,18 @@
+@@ -3579,6 +3946,18 @@
      if (Error Err = ImportDefinition(D, D2, IDK_Default))
        return std::move(Err);
  
@@ -3611,7 +3612,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return D2;
  }
  
-@@ -3996,6 +4374,72 @@
+@@ -3996,6 +4375,72 @@
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -3684,7 +3685,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4020,6 +4464,14 @@
+@@ -4020,6 +4465,14 @@
      return ToD;
  
    FunctionDecl *FoundByLookup = nullptr;
@@ -3699,7 +3700,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    FunctionTemplateDecl *FromFT = D->getDescribedFunctionTemplate();
  
    // If this is a function template specialization, then try to find the same
-@@ -4040,7 +4492,7 @@
+@@ -4040,7 +4493,7 @@
    }
    // Try to find a function in our own ("to") context with the same name, same
    // type, and in the same context as the function we're importing.
@@ -3708,7 +3709,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary | Decl::IDNS_OrdinaryFriend;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4049,10 +4501,82 @@
+@@ -4049,10 +4502,82 @@
          continue;
  
        if (auto *FoundFunction = dyn_cast<FunctionDecl>(FoundDecl)) {
@@ -3792,7 +3793,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
            FoundByLookup = FoundFunction;
-@@ -4061,8 +4585,12 @@
+@@ -4061,8 +4586,12 @@
          // FIXME: Check for overloading more carefully, e.g., by boosting
          // Sema::IsOverload out to the AST library.
  
@@ -3807,7 +3808,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            continue;
  
          // Complain about inconsistent function types.
-@@ -4105,9 +4633,36 @@
+@@ -4105,9 +4634,36 @@
                                   FoundByLookup->getDescribedFunctionTemplate());
            }
            return Importer.MapImported(D, FoundByLookup);
@@ -3847,7 +3848,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          }
        }
      }
-@@ -4120,6 +4675,7 @@
+@@ -4120,6 +4676,7 @@
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -3855,7 +3856,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4154,8 +4710,12 @@
+@@ -4154,8 +4711,12 @@
        FromEPI = DefaultEPI;
        UsedDifferentProtoType = true;
      }
@@ -3869,7 +3870,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      FromTSI = Importer.getFromContext().getTrivialTypeSourceInfo(
          FromTy, D->getBeginLoc());
    }
-@@ -4169,12 +4729,64 @@
+@@ -4169,12 +4730,64 @@
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToDefaultLoc = importChecked(Err, D->getDefaultLoc());
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
@@ -3937,7 +3938,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -4284,12 +4896,25 @@
+@@ -4284,12 +4897,25 @@
    ToFunction->setQualifierInfo(ToQualifierLoc);
    ToFunction->setAccess(D->getAccess());
    ToFunction->setLexicalDeclContext(LexicalDC);
@@ -3964,7 +3965,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -4330,6 +4955,36 @@
+@@ -4330,6 +4956,36 @@
    }
    ToFunction->setParams(Parameters);
  
@@ -4001,7 +4002,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // We need to complete creation of FunctionProtoTypeLoc manually with setting
    // params it refers to.
    if (TInfo) {
-@@ -4386,9 +5041,16 @@
+@@ -4386,9 +5042,16 @@
        ToFunction->setType(*TyOrErr);
      else
        return TyOrErr.takeError();
@@ -4020,7 +4021,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        return TSIOrErr.takeError();
    }
  
-@@ -4440,6 +5102,17 @@
+@@ -4440,6 +5103,17 @@
  
    // Determine whether we've already imported this field.
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
@@ -4038,7 +4039,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    for (auto *FoundDecl : FoundDecls) {
      if (FieldDecl *FoundField = dyn_cast<FieldDecl>(FoundDecl)) {
        // For anonymous fields, match up by index.
-@@ -4505,6 +5178,14 @@
+@@ -4505,6 +5179,14 @@
    ToField->setAccess(D->getAccess());
    ToField->setLexicalDeclContext(LexicalDC);
    ToField->setImplicit(D->isImplicit());
@@ -4053,7 +4054,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (ToCapturedVLAType)
      ToField->setCapturedVLAType(cast<VariableArrayType>(ToCapturedVLAType));
    LexicalDC->addDeclInternal(ToField);
-@@ -4793,7 +5474,11 @@
+@@ -4793,7 +5475,11 @@
    // Try to find a variable in our own ("to") context with the same name and
    // in the same context as the variable we're importing.
    VarDecl *FoundByLookup = nullptr;
@@ -4066,7 +4067,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4802,6 +5487,10 @@
+@@ -4802,6 +5488,10 @@
          continue;
  
        if (auto *FoundVar = dyn_cast<VarDecl>(FoundDecl)) {
@@ -4077,7 +4078,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          if (!hasSameVisibilityContextAndLinkage(FoundVar, D))
            continue;
          if (Importer.IsStructurallyEquivalent(D->getType(),
-@@ -4897,9 +5586,15 @@
+@@ -4897,9 +5587,15 @@
    }
  
    ToVar->setTSCSpec(D->getTSCSpec());
@@ -4093,7 +4094,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isInlineSpecified())
      ToVar->setInlineSpecified();
    if (D->isInline())
-@@ -4910,6 +5605,15 @@
+@@ -4910,6 +5606,15 @@
      ToVar->setPreviousDecl(Recent);
    }
  
@@ -4109,7 +4110,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Import the described template, if any.
    if (D->getDescribedVarTemplate()) {
      auto ToVTOrErr = import(D->getDescribedVarTemplate());
-@@ -4931,6 +5635,23 @@
+@@ -4931,6 +5636,23 @@
    if (Error Err = ImportInitializer(D, ToVar))
      return std::move(Err);
  
@@ -4133,7 +4134,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isConstexpr())
      ToVar->setConstexpr(true);
  
-@@ -5062,6 +5783,19 @@
+@@ -5062,6 +5784,19 @@
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -4153,7 +4154,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5858,7 @@
+@@ -5124,6 +5859,7 @@
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -4161,7 +4162,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5873,8 @@
+@@ -5138,6 +5874,8 @@
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -4170,7 +4171,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5170,9 +5907,26 @@
+@@ -5170,9 +5908,26 @@
    // Implicit params are declared when Sema encounters the definition but this
    // never happens when the method is imported. Manually declare the implicit
    // params now that the MethodDecl knows its class interface.
@@ -4200,7 +4201,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    return ToMethod;
  }
-@@ -5461,6 +6215,7 @@
+@@ -5461,6 +6216,7 @@
      return std::move(Err);
    if (ToD)
      return ToD;
@@ -4208,7 +4209,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    Error Err = Error::success();
    auto ToLoc = importChecked(Err, D->getNameInfo().getLoc());
-@@ -5468,28 +6223,59 @@
+@@ -5468,28 +6224,59 @@
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
    if (Err)
      return std::move(Err);
@@ -4276,7 +4277,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    return ImportUsingShadowDecls(D, ToUsing);
  }
-@@ -5517,6 +6303,7 @@
+@@ -5517,6 +6304,7 @@
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -4284,7 +4285,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5685,6 +6472,21 @@
+@@ -5685,6 +6473,21 @@
    if (Error Err = ImportDeclarationNameLoc(D->getNameInfo(), NameInfo))
      return std::move(Err);
  
@@ -4306,7 +4307,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    UnresolvedUsingValueDecl *ToUsingValue;
    if (GetImportedOrCreateDecl(ToUsingValue, D, Importer.getToContext(), DC,
                                ToUsingLoc, ToQualifierLoc, NameInfo,
-@@ -5724,6 +6526,7 @@
+@@ -5724,6 +6527,7 @@
      return ToUsing;
  
    ToUsing->setAccess(D->getAccess());
@@ -4314,7 +4315,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
  
-@@ -5904,6 +6707,15 @@
+@@ -5904,6 +6708,15 @@
        break;
    }
  
@@ -4330,7 +4331,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6888,9 @@
+@@ -6076,6 +6889,9 @@
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -4340,7 +4341,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6397,8 +7212,27 @@
+@@ -6397,8 +7213,27 @@
          bool IgnoreTemplateParmDepth =
              (FoundTemplate->getFriendObjectKind() != Decl::FOK_None) !=
              (D->getFriendObjectKind() != Decl::FOK_None);
@@ -4370,7 +4371,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            if (DependentFriend || IsDependentFriend(FoundTemplate))
              continue;
  
-@@ -6458,11 +7292,12 @@
+@@ -6458,11 +7293,12 @@
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -4384,7 +4385,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
    if (FoundByLookup) {
-@@ -6489,6 +7324,8 @@
+@@ -6489,6 +7325,8 @@
      D2->setPreviousDecl(Recent);
    }
  
@@ -4393,7 +4394,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return D2;
  }
  
-@@ -6497,6 +7334,9 @@
+@@ -6497,6 +7335,9 @@
    ClassTemplateDecl *ClassTemplate;
    if (Error Err = importInto(ClassTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4403,7 +4404,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6508,6 +7348,7 @@
+@@ -6508,6 +7349,7 @@
    if (Error Err =
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
@@ -4411,7 +4412,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Try to find an existing specialization with these template arguments and
    // template parameter list.
    void *InsertPos = nullptr;
-@@ -6711,6 +7552,11 @@
+@@ -6711,6 +7553,11 @@
    SmallVector<NamedDecl *, 4> ConflictingDecls;
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
    VarTemplateDecl *FoundByLookup = nullptr;
@@ -4423,7 +4424,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    for (auto *FoundDecl : FoundDecls) {
      if (!FoundDecl->isInIdentifierNamespace(Decl::IDNS_Ordinary))
        continue;
-@@ -6740,6 +7586,15 @@
+@@ -6740,6 +7587,15 @@
          break;
        }
        ConflictingDecls.push_back(FoundDecl);
@@ -4439,7 +4440,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      }
    }
  
-@@ -6777,10 +7632,11 @@
+@@ -6777,10 +7633,11 @@
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -4452,7 +4453,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (DC != Importer.getToContext().getTranslationUnitDecl())
      updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
-@@ -6796,6 +7652,7 @@
+@@ -6796,6 +7653,7 @@
      ToVarTD->setPreviousDecl(Recent);
    }
  
@@ -4460,7 +4461,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ToVarTD;
  }
  
-@@ -6818,6 +7675,9 @@
+@@ -6818,6 +7676,9 @@
    VarTemplateDecl *VarTemplate = nullptr;
    if (Error Err = importInto(VarTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4470,7 +4471,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6839,10 +7699,21 @@
+@@ -6839,10 +7700,21 @@
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
  
@@ -4496,7 +4497,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (FoundSpecialization) {
      if (IsStructuralMatch(D, FoundSpecialization)) {
        VarDecl *FoundDef = FoundSpecialization->getDefinition();
-@@ -6879,13 +7750,9 @@
+@@ -6879,13 +7751,9 @@
    using PartVarSpecDecl = VarTemplatePartialSpecializationDecl;
    // Create a new specialization.
    if (auto *FromPartial = dyn_cast<PartVarSpecDecl>(D)) {
@@ -4511,7 +4512,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
                                  VarTemplate, QualType(), nullptr,
                                  D->getStorageClass(), TemplateArgs))
        return ToPartial;
-@@ -6914,8 +7781,11 @@
+@@ -6914,8 +7782,11 @@
  
    // Update InsertPos, because preceding import calls may have invalidated
    // it by adding new specializations.
@@ -4525,7 +4526,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    QualType T;
    if (Error Err = importInto(T, D->getType()))
-@@ -6935,6 +7805,10 @@
+@@ -6935,6 +7806,10 @@
    }
  
    D2->setSpecializationKind(D->getSpecializationKind());
@@ -4536,7 +4537,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (D->getTemplateArgsAsWritten())
      D2->setTemplateArgsAsWritten(ToTAInfo);
-@@ -6948,6 +7822,8 @@
+@@ -6948,6 +7823,8 @@
      D2->setConstexpr(true);
  
    D2->setAccess(D->getAccess());
@@ -4545,7 +4546,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (Error Err = ImportInitializer(D, D2))
      return std::move(Err);
-@@ -6995,7 +7871,10 @@
+@@ -6995,7 +7872,10 @@
        if (auto *FoundTemplate = dyn_cast<FunctionTemplateDecl>(FoundDecl)) {
          if (!hasSameVisibilityContextAndLinkage(FoundTemplate, D))
            continue;
@@ -4557,7 +4558,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            FunctionTemplateDecl *TemplateWithDef =
                getTemplateDefinition(FoundTemplate);
            if (D->isThisDeclarationADefinition() && TemplateWithDef)
-@@ -7051,17 +7930,13 @@
+@@ -7051,17 +7931,13 @@
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -4579,7 +4580,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7951,15 @@
+@@ -7076,6 +7952,15 @@
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -4595,7 +4596,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ToFunc;
  }
  
-@@ -7111,7 +7995,10 @@
+@@ -7111,7 +7996,10 @@
    if (GetImportedOrCreateDecl(To, D, Importer.getToContext(), DC, RequiresLoc))
      return To;
    To->setLexicalDeclContext(LexicalDC);
@@ -4607,7 +4608,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return To;
  }
  
-@@ -7328,6 +8215,97 @@
+@@ -7328,6 +8216,97 @@
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -4705,7 +4706,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +8463,93 @@
+@@ -7485,6 +8464,93 @@
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -4799,7 +4800,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8840,178 @@
+@@ -7775,6 +8841,178 @@
                  E->getVarargABI());
  }
  
@@ -4978,7 +4979,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +9321,16 @@
+@@ -8084,6 +9322,16 @@
                                 ToLocations);
  }
  
@@ -4995,7 +4996,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8132,13 +9379,22 @@
+@@ -8132,13 +9380,22 @@
        ToAmpAmpLoc, ToLabelLoc, ToLabel, ToType);
  }
  ExpectedStmt ASTNodeImporter::VisitConstantExpr(ConstantExpr *E) {
@@ -5025,10 +5026,22 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  ExpectedStmt ASTNodeImporter::VisitParenExpr(ParenExpr *E) {
    Error Err = Error::success();
-@@ -8835,6 +10091,53 @@
+@@ -8835,6 +10092,65 @@
                                     E->getFPFeatures());
  }
  
++ExpectedStmt ASTNodeImporter::VisitObjCIvarRefExpr(ObjCIvarRefExpr *E) {
++  Error Err = Error::success();
++  auto *Declaration = importChecked(Err, E->getDecl());
++  auto Type = importChecked(Err, E->getType());
++  auto Location = importChecked(Err, E->getLocation());
++  auto Operator = importChecked(Err, E->getOpLoc());
++  auto *Base = importChecked(Err, E->getBase());
++  if (Err) return std::move(Err);
++  return new (Importer.getToContext()) ObjCIvarRefExpr(
++      Declaration, Type, Location, Operator, Base, E->isArrow(), E->isFreeIvar());
++}
++
 +ExpectedStmt ASTNodeImporter::VisitObjCMessageExpr(ObjCMessageExpr *E) {
 +  Error Err = Error::success();
 +  auto Type = importChecked(Err, E->getType());
@@ -5079,7 +5092,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9082,7 +10385,9 @@
+@@ -9082,7 +10398,9 @@
  ExpectedStmt
  ASTNodeImporter::VisitUnresolvedMemberExpr(UnresolvedMemberExpr *E) {
    Error Err = Error::success();
@@ -5090,7 +5103,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToOperatorLoc = importChecked(Err, E->getOperatorLoc());
    auto ToQualifierLoc = importChecked(Err, E->getQualifierLoc());
    auto ToTemplateKeywordLoc = importChecked(Err, E->getTemplateKeywordLoc());
-@@ -9163,6 +10468,16 @@
+@@ -9163,6 +10481,16 @@
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -5107,7 +5120,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10767,14 @@
+@@ -9452,6 +10780,14 @@
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -5122,7 +5135,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10820,21 @@
+@@ -9497,6 +10833,21 @@
        E->getIndex(), E->getFinal());
  }
  
@@ -5144,7 +5157,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +11002,12 @@
+@@ -9664,8 +11015,12 @@
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -5159,7 +5172,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +11057,219 @@
+@@ -9715,7 +11070,219 @@
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -5380,7 +5393,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  
  namespace {
-@@ -9834,12 +11388,21 @@
+@@ -9834,12 +11401,21 @@
      assert(!ToAttr && "Use one AttrImporter to import one Attribute object.");
  
      SourceRange ToRange = NImporter.importChecked(Err, FromAttr->getRange());
@@ -5404,7 +5417,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    }
  
    // Get the result of the previous import attempt (can be used only once).
-@@ -9857,6 +11420,119 @@
+@@ -9857,6 +11433,119 @@
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -5524,7 +5537,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -9880,6 +11556,14 @@
+@@ -9880,6 +11569,14 @@
      break;
    }
  
@@ -5539,7 +5552,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    case attr::EnableIf: {
      const auto *From = cast<EnableIfAttr>(FromAttr);
      AI.importAttr(From, AI.importArg(From->getCond()).value(),
-@@ -10123,12 +11807,62 @@
+@@ -10123,12 +11820,62 @@
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -5606,7 +5619,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          return ToAttrOrErr.takeError();
      }
  
-@@ -10571,6 +12305,12 @@
+@@ -10571,6 +12318,12 @@
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -5619,7 +5632,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +12321,9 @@
+@@ -10581,9 +12334,9 @@
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -5631,7 +5644,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +12333,9 @@
+@@ -10593,9 +12346,9 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5643,7 +5656,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +12345,17 @@
+@@ -10605,17 +12358,17 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5665,7 +5678,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -10823,6 +12563,8 @@
+@@ -10823,6 +12576,8 @@
      ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
                 ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
                 FromValue.getArrayInitializedElts());
@@ -5674,7 +5687,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      break;
    case APValue::Struct:
      Result.MakeStruct(FromValue.getStructNumBases(),
-@@ -10838,7 +12580,7 @@
+@@ -10838,7 +12593,7 @@
      APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
      if (Err)
        return std::move(Err);
@@ -5683,7 +5696,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      break;
    }
    case APValue::AddrLabelDiff: {
-@@ -10858,10 +12600,10 @@
+@@ -10858,10 +12613,10 @@
        return std::move(Err);
      MutableArrayRef<const CXXRecordDecl *> ToPath =
          Result.setMemberPointerUninit(
@@ -5696,7 +5709,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
           Idx++) {
        const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
-@@ -10912,7 +12654,7 @@
+@@ -10912,7 +12667,7 @@
        }
      }
      CharUnits Offset = FromValue.getLValueOffset();
@@ -5705,7 +5718,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11006,6 +12748,11 @@
+@@ -11006,6 +12761,11 @@
    // This mapping should be maintained only in this function. Therefore do not
    // check for additional consistency.
    ImportedFromDecls[To] = From;
@@ -5717,7 +5730,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // In the case of TypedefNameDecl we create the Decl first and only then we
    // import and set its DeclContext. So, the DC is still not set when we reach
    // here from GetImportedOrCreateDecl.
-@@ -11049,3 +12796,16 @@
+@@ -11049,3 +12809,16 @@
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -21233,10 +21246,9 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..9f2464838 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,44 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,45 @@
    Support
    TargetParser
    )
@@ -21246,6 +21258,7 @@ index 81010e046..9f2464838 100644
 +  PARTIAL_SOURCES_INTENDED
 +  ObjC3TypeContractsTest.cpp
 +  ObjC3ASTInfrastructureTest.cpp
++  ObjC3NativeObjectImportTest.cpp
 +  EmbedTraversalTest.cpp
 +  ObjC3DiagnosticStorageTest.cpp
 +  ObjC3CarrierTypeTest.cpp
@@ -21281,6 +21294,7 @@ index 81010e046..9f2464838 100644
 +  Support
 +  TargetParser
 +  )
+
 diff --git a/clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp b/clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp
 new file mode 100644
 index 000000000..37f1e2094
@@ -53109,7 +53123,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1934 @@
+@@ -0,0 +1,2069 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53474,13 +53488,140 @@ new file mode 100644
 +  SmallVectorImpl<const BlockExpr *> &Blocks;
 +  llvm::SmallPtrSet<const Expr *, 32> Complete, Active;
 +  llvm::SmallPtrSet<const BlockDecl *, 16> Added;
-+  unsigned Budget = 256;
++  unsigned Budget = 256, ScanBudget = 4096;
++  const Stmt *ScopeBody;
++  llvm::SmallPtrSet<const VarDecl *,16> ActiveBindings, CompleteBindings;
++  llvm::DenseMap<const VarDecl *,SmallVector<const VarDecl *,4>> InitializerEdges;
++  const VarDecl *InitializerOwner=nullptr;
++
++  bool initializersAcyclic() const {
++    llvm::SmallPtrSet<const VarDecl *,16> Visiting,Complete;
++    unsigned Remaining=256;
++    auto Visit=[&](auto &&Self,const VarDecl *Variable,unsigned Depth)->bool {
++      if (Complete.contains(Variable))return true;
++      if (!Remaining || Depth>64 || !Visiting.insert(Variable).second)return false;
++      --Remaining;
++      auto Found=InitializerEdges.find(Variable);
++      if (Found!=InitializerEdges.end())
++        for (const auto *Target:Found->second)if (!Self(Self,Target,Depth+1))return false;
++      Visiting.erase(Variable);Complete.insert(Variable);return true;
++    };
++    for (const auto &Entry:InitializerEdges)if (!Visit(Visit,Entry.first,0))return false;
++    return true;
++  }
++  bool collectInitializer(const VarDecl *Variable,unsigned Depth) {
++    llvm::SaveAndRestore<const VarDecl *> Owner(InitializerOwner,Variable);
++    return collect(Variable->getInit(),Depth+1);
++  }
++
++  bool collectBinding(const VarDecl *Variable, unsigned Depth) {
++    if (!Variable || !Variable->isLocalVarDecl() || !Variable->hasInit() ||
++        Variable->getType().isVolatileQualified() || Depth>64)return false;
++    if (CompleteBindings.contains(Variable))return true;
++    if (!ActiveBindings.insert(Variable).second)return true;
++    llvm::SaveAndRestore<const VarDecl *> Owner(InitializerOwner,nullptr);
++    const bool Proven=[&]() {
++    if (Variable->getType().isConstQualified())
++      return collectInitializer(Variable,Depth);
++    if (!ScopeBody || Variable->hasGlobalStorage() ||
++        Variable->hasAttr<BlocksAttr>() || !Variable->getType()->isBlockPointerType())return false;
++    // All possible writes contribute environments. Addresses and reference
++    // bindings escape that closed set, so they cannot establish this proof.
++    enum Use { Unknown, Read, Write };
++    struct Entry {const Stmt *Node;Use Role;};
++    SmallVector<Entry,32> Pending{{ScopeBody,Unknown}};
++    SmallVector<const Expr *,8> Values;
++    bool FoundDefinition=false;
++    while (!Pending.empty()) {
++      const auto [Node,Role]=Pending.pop_back_val();
++      if (!Node)continue;
++      if (!ScanBudget)return false;
++      --ScanBudget;
++      if (isa<GotoStmt,IndirectGotoStmt,GCCAsmStmt>(Node))return false;
++      if (const auto *Declarations=dyn_cast<DeclStmt>(Node))
++        for (const auto *D:Declarations->decls())FoundDefinition|=D==Variable;
++      if (const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
++        if (Reference->getDecl()==Variable && Role==Unknown)return false;
++        continue;
++      }
++      if (const auto *Block=dyn_cast<BlockExpr>(Node)) {
++        for (const auto &Capture:Block->getBlockDecl()->captures()) {
++          if (Capture.getVariable()==Variable && Capture.isByRef())return false;
++          if (const auto *Init=Capture.getObjC3InitExpr())Pending.push_back({Init,Unknown});
++        }
++        continue; // Closure bodies mutate their own copied environments.
++      }
++      if (const auto *Lambda=dyn_cast<LambdaExpr>(Node)) {
++        for (const auto &Capture:Lambda->captures())
++          if (Capture.capturesVariable() && Capture.getCapturedVar()==Variable &&
++              Capture.getCaptureKind()==LCK_ByRef)return false;
++        for (const auto *Init:Lambda->capture_inits())Pending.push_back({Init,Unknown});
++        continue;
++      }
++      if (isa<UnaryExprOrTypeTraitExpr,CXXNoexceptExpr,RequiresExpr>(Node))continue;
++      if (const auto *Paren=dyn_cast<ParenExpr>(Node)) {Pending.push_back({Paren->getSubExpr(),Role});continue;}
++      if (const auto *Cleanup=dyn_cast<ExprWithCleanups>(Node)) {Pending.push_back({Cleanup->getSubExpr(),Role});continue;}
++      if (const auto *Opaque=dyn_cast<OpaqueValueExpr>(Node)) {Pending.push_back({Opaque->getSourceExpr(),Role});continue;}
++      if (const auto *Default=dyn_cast<CXXDefaultArgExpr>(Node)) {Pending.push_back({Default->getExpr(),Unknown});continue;}
++      if (const auto *Default=dyn_cast<CXXDefaultInitExpr>(Node)) {Pending.push_back({Default->getExpr(),Unknown});continue;}
++      if (const auto *Cast=dyn_cast<CastExpr>(Node)) {
++        const bool Reads=Cast->getCastKind()==CK_LValueToRValue ||
++                         (Role==Read && Cast->isGLValue() && Cast->getCastKind()==CK_NoOp);
++        Pending.push_back({Cast->getSubExpr(),Reads?Read:Unknown});continue;
++      }
++      if (const auto *Conditional=dyn_cast<AbstractConditionalOperator>(Node)) {
++        Pending.push_back({Conditional->getCond(),Unknown});
++        Pending.push_back({Conditional->getTrueExpr(),Role==Read?Read:Unknown});
++        Pending.push_back({Conditional->getFalseExpr(),Role==Read?Read:Unknown});continue;
++      }
++      if (const auto *Comma=dyn_cast<BinaryOperator>(Node);Comma && Comma->getOpcode()==BO_Comma) {
++        Pending.push_back({Comma->getLHS(),Unknown});Pending.push_back({Comma->getRHS(),Role});continue;
++      }
++      if (const auto *Unary=dyn_cast<UnaryOperator>(Node);Unary && Unary->getOpcode()==UO_Extension) {
++        Pending.push_back({Unary->getSubExpr(),Role});continue;
++      }
++      if (const auto *Assignment=dyn_cast<BinaryOperator>(Node);
++          Assignment && Assignment->getOpcode()==BO_Assign) {
++        const auto *Reference=dyn_cast<DeclRefExpr>(Assignment->getLHS()->IgnoreParenImpCasts());
++        const bool Writes=Reference && Reference->getDecl()==Variable;
++        if (Writes)Values.push_back(Assignment->getRHS());
++        Pending.push_back({Assignment->getLHS(),Writes?Write:Unknown});
++        Pending.push_back({Assignment->getRHS(),Unknown});continue;
++      }
++      for (const Stmt *Child:Node->children())Pending.push_back({Child,Unknown});
++    }
++    if (!FoundDefinition)return false;
++    if (!collectInitializer(Variable,Depth))return false;
++    // Assignment cycles close over the union of all admitted environments.
++    // The separate initializer DAG must establish each binding first.
++    for (const Expr *Value:Values)if (!collect(Value,Depth+1))return false;
++    return true;
++    }();
++    ActiveBindings.erase(Variable);
++    if (Proven)CompleteBindings.insert(Variable);
++    return Proven;
++  }
 +public:
-+  ConcurrentBlockValues(ASTContext &C, SmallVectorImpl<const BlockExpr *> &B)
-+      : Context(C), Blocks(B) {}
++  ConcurrentBlockValues(ASTContext &C, SmallVectorImpl<const BlockExpr *> &B,
++                        const Stmt *Body=nullptr)
++      : Context(C), Blocks(B), ScopeBody(Body) {}
++  bool collectVariable(const VarDecl *Variable) {
++    return collectBinding(Variable,0) && initializersAcyclic();
++  }
++  bool collectRoot(const Expr *Expression) {
++    return collect(Expression) && initializersAcyclic();
++  }
 +  bool collect(const Expr *E, unsigned Depth = 0) {
 +    if (!E || Depth > 64) return false;
 +    E = transferSource(E);
++    if (const auto *Reference=dyn_cast<DeclRefExpr>(E))
++      if (const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl())) {
++        if (InitializerOwner) {
++          auto &Edges=InitializerEdges[InitializerOwner];
++          if (!llvm::is_contained(Edges,Variable))Edges.push_back(Variable);
++        }
++        if (ActiveBindings.contains(Variable))return true;
++      }
 +    if (Complete.contains(E)) return true;
 +    if (!Budget || !Active.insert(E).second) return false;
 +    --Budget;
@@ -53511,9 +53652,7 @@ new file mode 100644
 +      }
 +      const auto *Reference = dyn_cast<DeclRefExpr>(E);
 +      const auto *Variable = Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
-+      return Variable && Variable->isLocalVarDecl() &&
-+             Variable->getType().isConstQualified() && Variable->hasInit() &&
-+             collect(Variable->getInit(), Depth + 1);
++      return collectBinding(Variable,Depth);
 +    }();
 +    Active.erase(E);
 +    if (Proven) Complete.insert(E);
@@ -53521,9 +53660,14 @@ new file mode 100644
 +  }
 +};
 +bool knownConcurrentBlocks(ASTContext &C, const Expr *E,
-+                            SmallVectorImpl<const BlockExpr *> &Blocks) {
-+  return ConcurrentBlockValues(C, Blocks).collect(E);
++                            SmallVectorImpl<const BlockExpr *> &Blocks,
++                            const Stmt *Body=nullptr) {
++  return ConcurrentBlockValues(C, Blocks, Body).collectRoot(E);
 +}
++struct ConcurrentCaptureProof {
++  llvm::SmallPtrSet<const BlockDecl *,16> Active, Complete;
++  unsigned Budget=256;
++};
 +
 +bool isAsyncBlockType(QualType T) {
 +  if (const auto *B = T->getAs<BlockPointerType>())
@@ -53608,8 +53752,8 @@ new file mode 100644
 +  return false;
 +}
 +bool checkKnownConcurrentBlock(Sema &, const BlockExpr *, SourceLocation,
-+                               bool RequireAsync,
-+                               llvm::SmallPtrSetImpl<const BlockDecl *> &);
++                               bool RequireAsync, ConcurrentCaptureProof &,
++                               const Stmt *ScopeBody);
 +
 +bool checkBoundarySignature(Sema &S, const ObjCMethodDecl *Method) {
 +  QualType Result = Method->getReturnType();
@@ -53746,6 +53890,7 @@ new file mode 100644
 +  Decl *Callable;
 +  unsigned AwaitDepth = 0;
 +  bool CheckTaskBoundaries = true;
++  const Stmt *ScopeBody;
 +  bool Invalid = false;
 +  llvm::SmallPtrSet<const Stmt *, 32> Checked;
 +
@@ -53827,11 +53972,11 @@ new file mode 100644
 +          Invalid |= checkTransferValue(S,Argument,TransferType,
 +                                        "concurrent block value",Target);
 +        SmallVector<const BlockExpr *, 8> Blocks;
-+        if (knownConcurrentBlocks(S.Context, Argument, Blocks)) {
-+          llvm::SmallPtrSet<const BlockDecl *, 8> Active;
++        if (knownConcurrentBlocks(S.Context, Argument, Blocks, ScopeBody)) {
++          ConcurrentCaptureProof Proof;
 +          for (const auto *Block : Blocks)
 +            Invalid |= checkKnownConcurrentBlock(
-+                S, Block, Site->getExprLoc(), isAsyncWorkParameter(Target, Index), Active);
++                S, Block, Site->getExprLoc(), isAsyncWorkParameter(Target, Index), Proof, ScopeBody);
 +        } else if (unsafeAdmission(S.Context, TransferType)) {
 +          Invalid |= checkTransfer(S, TransferType, Argument->getExprLoc(),
 +                                   "unchecked concurrent block value", Target);
@@ -53851,9 +53996,10 @@ new file mode 100644
 +  }
 +
 +public:
-+  IsolationBodyChecker(Sema &S, Decl *Callable, bool AwaitOperand = false)
++  IsolationBodyChecker(Sema &S, Decl *Callable, bool AwaitOperand = false,
++                       const Stmt *Body = nullptr)
 +      : Base(S.Context), S(S), Callable(Callable),
-+        AwaitDepth(AwaitOperand ? 1 : 0), CheckTaskBoundaries(!AwaitOperand) {}
++        AwaitDepth(AwaitOperand ? 1 : 0), CheckTaskBoundaries(!AwaitOperand), ScopeBody(Body) {}
 +  bool failed() const { return Invalid; }
 +  void VisitCompoundStmt(CompoundStmt *Body) {
 +    for (Stmt *Child : Body->body()) {
@@ -53943,18 +54089,20 @@ new file mode 100644
 +namespace {
 +bool checkKnownConcurrentBlock(
 +    Sema &S, const BlockExpr *B, SourceLocation Site, bool RequireAsync,
-+    llvm::SmallPtrSetImpl<const BlockDecl *> &Active) {
++    ConcurrentCaptureProof &Proof, const Stmt *ScopeBody) {
 +  bool Invalid = false;
 +  const BlockDecl *D = B->getBlockDecl();
-+  if (!Active.insert(D).second)
-+    return checkTransfer(S, B->getType(), Site, "recursive block capture proof",
-+                         nullptr);
++  if (!Proof.Budget || Proof.Active.size()>=64 || !Proof.Active.insert(D).second)
++    return checkTransfer(S, B->getType(), Site, "bounded block capture proof",
++                         nullptr, true);
++  --Proof.Budget;
 +  const auto *Signature = getObjC3CallableFunctionType(D);
 +  if (RequireAsync &&
 +      (!Signature || !Signature->getObjC3FunctionEffects().Async)) {
 +    S.Diag(Site, diag::err_objc3_task_async_work);
 +    Invalid = true;
 +  }
++  if (Proof.Complete.contains(D)) {Proof.Active.erase(D);return Invalid;}
 +  for (const auto &Capture : D->captures()) {
 +    const VarDecl *V = Capture.getVariable();
 +    SourceLocation Loc = Capture.getObjC3CaptureRange().isValid()
@@ -53983,12 +54131,12 @@ new file mode 100644
 +    } else {
 +      SmallVector<const BlockExpr *, 8> Blocks;
 +      const Expr *Initializer = Capture.getObjC3InitExpr();
-+      if (!Initializer && V->getType().isConstQualified() && V->hasInit())
-+        Initializer = V->getInit();
-+      if (!Unsafe && !Managed && V->getType()->isBlockPointerType() && Initializer &&
-+          knownConcurrentBlocks(S.Context, Initializer, Blocks)) {
++      const bool KnownBlocks = !Unsafe && !Managed && V->getType()->isBlockPointerType() &&
++          (Initializer ? knownConcurrentBlocks(S.Context, Initializer, Blocks, ScopeBody)
++                       : ConcurrentBlockValues(S.Context,Blocks,ScopeBody).collectVariable(V));
++      if (KnownBlocks) {
 +        for (const auto *Block : Blocks)
-+          Failed |= checkKnownConcurrentBlock(S, Block, Loc, false, Active);
++          Failed |= checkKnownConcurrentBlock(S, Block, Loc, false, Proof, ScopeBody);
 +      } else {
 +        Failed = checkTransfer(S, V->getType(), Loc, "concurrent capture",
 +                               nullptr, Unsafe || Managed);
@@ -54010,15 +54158,16 @@ new file mode 100644
 +    Invalid |= checkTransfer(S, Finder.Type.isNull() ? S.Context.VoidPtrTy : Finder.Type,
 +                             Site, "shared C++ this capture", nullptr, true);
 +  }
-+  Active.erase(D);
++  Proof.Active.erase(D);
++  if (!Invalid)Proof.Complete.insert(D);
 +  return Invalid;
 +}
 +} // namespace
 +
 +bool clang::checkObjC3ConcurrentBlockCaptures(Sema &S, const BlockExpr *B,
 +                                              SourceLocation Site) {
-+  llvm::SmallPtrSet<const BlockDecl *, 8> Active;
-+  return checkKnownConcurrentBlock(S, B, Site, true, Active);
++  ConcurrentCaptureProof Proof;
++  return checkKnownConcurrentBlock(S, B, Site, true, Proof, nullptr);
 +}
 +
 +void clang::handleObjC3IsolationAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
@@ -54179,7 +54328,7 @@ new file mode 100644
 +bool clang::checkObjC3IsolationBody(Sema &S, Decl *Callable, Stmt *Body) {
 +  if (!S.getLangOpts().ObjC3 || !Callable || !Body)
 +    return false;
-+  IsolationBodyChecker Checker(S, Callable);
++  IsolationBodyChecker Checker(S, Callable, false, Body);
 +  Checker.Visit(Body);
 +  return Checker.failed();
 +}
@@ -75451,6 +75600,7 @@ new file mode 100644
 +@interface DerivedView:ViewActor
 +- (const char *_Nonnull)derived __attribute__((objc_nonisolated,objc_returns_inner_pointer)); // expected-error {{nonisolated actor member cannot transfer a receiver-owned interior view}}
 +@end
+
 diff --git a/clang/lib/Sema/SemaLambda.cpp b/clang/lib/Sema/SemaLambda.cpp
 --- a/clang/lib/Sema/SemaLambda.cpp
 +++ b/clang/lib/Sema/SemaLambda.cpp
@@ -75522,4 +75672,308 @@ new file mode 100644
 +}
 +void conflict(const Owner &source [[clang::lifetime_capture_by(second)]],View &first,View &second){} // expected-error {{lifetime capture targets do not match a previous declaration}}
 +void ReceiverConflict::bind(View &first,View &second) [[clang::lifetime_capture_by(second)]] {} // expected-error {{lifetime capture targets do not match a previous declaration}}
++}
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/mutable-block-bindings.h b/clang/test/ObjC3/Sema/Inputs/mutable-block-bindings.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/mutable-block-bindings.h
+@@ -0,0 +1,78 @@
++#ifndef OBJC3_MUTABLE_BLOCK_BINDINGS_H
++#define OBJC3_MUTABLE_BLOCK_BINDINGS_H
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface SafeBlockObject<Sendable> @end
++__attribute__((objc_root_class)) @interface UnsafeBlockObject @end
++typedef void (^BindingWork)(void) __objc3_async_frame;
++void *binding_detached(BindingWork) __attribute__((objc_task_detached));
++void binding_escape(BindingWork *);
++static inline void block_bindings_valid(int choose,SafeBlockObject *safe) {
++ BindingWork first=^void(void) __objc3_async_frame {(void)safe;};
++ BindingWork second=^void(void) __objc3_async_frame {};
++ BindingWork selected=first;if(choose)selected=second;
++ BindingWork alias=selected;alias=choose?first:selected;
++ (void)binding_detached(alias);
++ for(int n=0;n!=2;++n)alias=choose?alias:selected;
++ selected=alias;
++ (void)binding_detached(selected);
++ void (^callback)(void)=^{(void)safe;};
++ if(choose)callback=^{(void)safe;};
++ BindingWork nested=^void(void) __objc3_async_frame {callback();};
++ (void)binding_detached(nested);
++}
++static inline void block_bindings_diamond(SafeBlockObject *safe) {
++ void (^const left0)(void)=^{(void)safe;};
++ void (^const right0)(void)=^{(void)safe;};
++ void (^const left1)(void)=^{left0();right0();};
++ void (^const right1)(void)=^{left0();right0();};
++ void (^const left2)(void)=^{left1();right1();};
++ void (^const right2)(void)=^{left1();right1();};
++ void (^const left3)(void)=^{left2();right2();};
++ void (^const right3)(void)=^{left2();right2();};
++ void (^const left4)(void)=^{left3();right3();};
++ void (^const right4)(void)=^{left3();right3();};
++ void (^const left5)(void)=^{left4();right4();};
++ void (^const right5)(void)=^{left4();right4();};
++ void (^const left6)(void)=^{left5();right5();};
++ void (^const right6)(void)=^{left5();right5();};
++ void (^const left7)(void)=^{left6();right6();};
++ void (^const right7)(void)=^{left6();right6();};
++ void (^const left8)(void)=^{left7();right7();};
++ void (^const right8)(void)=^{left7();right7();};
++ void (^const left9)(void)=^{left8();right8();};
++ void (^const right9)(void)=^{left8();right8();};
++ void (^const left10)(void)=^{left9();right9();};
++ void (^const right10)(void)=^{left9();right9();};
++ void (^const left11)(void)=^{left10();right10();};
++ void (^const right11)(void)=^{left10();right10();};
++ void (^const left12)(void)=^{left11();right11();};
++ void (^const right12)(void)=^{left11();right11();};
++ void (^const left13)(void)=^{left12();right12();};
++ void (^const right13)(void)=^{left12();right12();};
++ void (^const left14)(void)=^{left13();right13();};
++ void (^const right14)(void)=^{left13();right13();};
++ void (^const left15)(void)=^{left14();right14();};
++ void (^const right15)(void)=^{left14();right14();};
++ void (^const left16)(void)=^{left15();right15();};
++ void (^const right16)(void)=^{left15();right15();};
++ void (^const left17)(void)=^{left16();right16();};
++ void (^const right17)(void)=^{left16();right16();};
++ void (^const left18)(void)=^{left17();right17();};
++ void (^const right18)(void)=^{left17();right17();};
++ void (^const left19)(void)=^{left18();right18();};
++ void (^const right19)(void)=^{left18();right18();};
++ void (^const left20)(void)=^{left19();right19();};
++ void (^const right20)(void)=^{left19();right19();};
++ void (^const left21)(void)=^{left20();right20();};
++ void (^const right21)(void)=^{left20();right20();};
++ void (^const left22)(void)=^{left21();right21();};
++ void (^const right22)(void)=^{left21();right21();};
++ void (^const left23)(void)=^{left22();right22();};
++ void (^const right23)(void)=^{left22();right22();};
++ void (^const left24)(void)=^{left23();right23();};
++ void (^const right24)(void)=^{left23();right23();};
++ BindingWork const top=^void(void) __objc3_async_frame {left24();right24();};
++ (void)binding_detached(top);
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/mutable-block-bindings.m b/clang/test/ObjC3/Sema/mutable-block-bindings.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/mutable-block-bindings.m
+@@ -0,0 +1,133 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/mutable-block-bindings.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/mutable-block-bindings.h"
++void block_bindings_bad_capture(int choose,UnsafeBlockObject *unsafe) {
++ BindingWork work=^void(void) __objc3_async_frame {};
++ if(choose)work=^void(void) __objc3_async_frame {(void)unsafe;};
++ (void)binding_detached(work); // expected-error {{non-Sendable type}}
++}
++void block_bindings_unknown(int choose,BindingWork unknown) {
++ BindingWork work=^void(void) __objc3_async_frame {};
++ if(choose)work=unknown;
++ (void)binding_detached(work); // expected-error {{cannot prove Sendable captures}}
++}
++void block_bindings_address_escape(void) {
++ BindingWork work=^void(void) __objc3_async_frame {};
++ binding_escape(&work);
++ (void)binding_detached(work); // expected-error {{cannot prove Sendable captures}}
++}
++void block_bindings_shared(void) {
++ __block BindingWork work=^void(void) __objc3_async_frame {};
++ (void)binding_detached(work); // expected-error {{cannot prove Sendable captures}}
++}
++void block_bindings_volatile(void) {
++ BindingWork volatile work=^void(void) __objc3_async_frame {};
++ (void)binding_detached(work); // expected-error {{cannot prove Sendable captures}}
++}
++void block_bindings_cycle(BindingWork unknown) {
++ BindingWork first=^void(void) __objc3_async_frame {};
++ BindingWork second=first;first=second;second=unknown;
++ (void)binding_detached(first); // expected-error {{cannot prove Sendable captures}}
++}
++#ifdef __cplusplus
++void binding_ref_escape(BindingWork __strong &);
++void block_bindings_reference_escape(void) {
++ BindingWork work=^void(void) __objc3_async_frame {};
++ binding_ref_escape(work);
++ (void)binding_detached(work); // expected-error {{cannot prove Sendable captures}}
++}
++void block_bindings_lambda_reference_escape(void) {
++ BindingWork work=^void(void) __objc3_async_frame {};
++ auto change=[&work]{work=^void(void) __objc3_async_frame {};};change();
++ (void)binding_detached(work); // expected-error {{cannot prove Sendable captures}}
++}
++#endif
++
++void block_bindings_too_deep(void) {
++ void (^const step0)(void)=^{};
++ void (^const step1)(void)=^{step0();};
++ void (^const step2)(void)=^{step1();};
++ void (^const step3)(void)=^{step2();};
++ void (^const step4)(void)=^{step3();};
++ void (^const step5)(void)=^{step4();};
++ void (^const step6)(void)=^{step5();};
++ void (^const step7)(void)=^{step6();};
++ void (^const step8)(void)=^{step7();};
++ void (^const step9)(void)=^{step8();};
++ void (^const step10)(void)=^{step9();};
++ void (^const step11)(void)=^{step10();};
++ void (^const step12)(void)=^{step11();};
++ void (^const step13)(void)=^{step12();};
++ void (^const step14)(void)=^{step13();};
++ void (^const step15)(void)=^{step14();};
++ void (^const step16)(void)=^{step15();};
++ void (^const step17)(void)=^{step16();};
++ void (^const step18)(void)=^{step17();};
++ void (^const step19)(void)=^{step18();};
++ void (^const step20)(void)=^{step19();};
++ void (^const step21)(void)=^{step20();};
++ void (^const step22)(void)=^{step21();};
++ void (^const step23)(void)=^{step22();};
++ void (^const step24)(void)=^{step23();};
++ void (^const step25)(void)=^{step24();};
++ void (^const step26)(void)=^{step25();};
++ void (^const step27)(void)=^{step26();};
++ void (^const step28)(void)=^{step27();};
++ void (^const step29)(void)=^{step28();};
++ void (^const step30)(void)=^{step29();};
++ void (^const step31)(void)=^{step30();};
++ void (^const step32)(void)=^{step31();};
++ void (^const step33)(void)=^{step32();};
++ void (^const step34)(void)=^{step33();};
++ void (^const step35)(void)=^{step34();};
++ void (^const step36)(void)=^{step35();};
++ void (^const step37)(void)=^{step36();};
++ void (^const step38)(void)=^{step37();};
++ void (^const step39)(void)=^{step38();};
++ void (^const step40)(void)=^{step39();};
++ void (^const step41)(void)=^{step40();};
++ void (^const step42)(void)=^{step41();};
++ void (^const step43)(void)=^{step42();};
++ void (^const step44)(void)=^{step43();};
++ void (^const step45)(void)=^{step44();};
++ void (^const step46)(void)=^{step45();};
++ void (^const step47)(void)=^{step46();};
++ void (^const step48)(void)=^{step47();};
++ void (^const step49)(void)=^{step48();};
++ void (^const step50)(void)=^{step49();};
++ void (^const step51)(void)=^{step50();};
++ void (^const step52)(void)=^{step51();};
++ void (^const step53)(void)=^{step52();};
++ void (^const step54)(void)=^{step53();};
++ void (^const step55)(void)=^{step54();};
++ void (^const step56)(void)=^{step55();};
++ void (^const step57)(void)=^{step56();};
++ void (^const step58)(void)=^{step57();};
++ void (^const step59)(void)=^{step58();};
++ void (^const step60)(void)=^{step59();};
++ void (^const step61)(void)=^{step60();};
++ void (^const step62)(void)=^{step61();};
++ void (^const step63)(void)=^{step62();};
++ void (^const step64)(void)=^{step63();};
++ void (^const step65)(void)=^{step64();};
++ void (^const step66)(void)=^{step65();};
++ void (^const step67)(void)=^{step66();};
++ void (^const step68)(void)=^{step67();};
++ void (^const step69)(void)=^{step68();};
++ BindingWork const top=^void(void) __objc3_async_frame {step69();};
++ (void)binding_detached(top); // expected-error {{bounded block capture proof}}
++}
++#ifdef __cplusplus
++void block_bindings_conditional_reference(int choose) {
++ BindingWork first=^void(void) __objc3_async_frame {};
++ BindingWork second=^void(void) __objc3_async_frame {};
++ binding_ref_escape(choose?first:second);
++ (void)binding_detached(first); // expected-error {{cannot prove Sendable captures}}
++}
++#endif
+
+diff --git a/clang/unittests/AST/ObjC3NativeObjectImportTest.cpp b/clang/unittests/AST/ObjC3NativeObjectImportTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3NativeObjectImportTest.cpp
+@@ -0,0 +1,75 @@
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ExprObjC.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/Support/Error.h"
++#include "gtest/gtest.h"
++#include <string>
++#include <vector>
++using namespace clang;
++
++TEST(ObjC3ASTInfrastructure, NativeObjCIvarReferencesRetainOwnedDeclarationsAndAccessKinds) {
++ const char *Source=R"ivars(
++ __attribute__((objc_root_class)) @interface IvarRoot {
++ @public
++  int number;
++  unsigned flags:3;
++ @protected
++  int inherited;
++ }
++ @end
++ @interface IvarChild:IvarRoot
++ - (int)read;
++ @end
++ @implementation IvarChild
++ - (int)read {return number+flags+self->inherited;}
++ @end
++ inline int ivar_read(IvarChild *value){return ++value->number+value->flags;}
++ inline void ivar_write(IvarChild *value){value->flags=3;}
++ inline int ivar_callback(IvarChild *value){auto callback=^{return value->number;};return callback();}
++ )ivars";
++ for(const char *Standard:{"c++20","c++23"})for(bool Arc:{false,true}) {
++  std::vector<std::string> Args={"-x","objective-c++",std::string("-std=")+Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fblocks"};
++  if(Arc)Args.push_back("-fobjc-arc");
++  auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"ivars-source.mm");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"ivars-target.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  struct References:RecursiveASTVisitor<References> {
++   ASTContext &Context;unsigned All=0,Free=0,Arrow=0,BitFields=0;
++   llvm::SmallPtrSet<ObjCIvarRefExpr *,16> Seen;
++   std::vector<ObjCIvarRefExpr *> Nodes;
++   explicit References(ASTContext &C):Context(C){}
++   bool VisitObjCIvarRefExpr(ObjCIvarRefExpr *E) {
++    if(!Seen.insert(E).second)return true;
++    Nodes.push_back(E);++All;Free+=E->isFreeIvar();Arrow+=E->isArrow();BitFields+=E->getDecl()->isBitField();
++    EXPECT_EQ(&E->getDecl()->getASTContext(),&Context);
++    EXPECT_EQ(E->getObjectKind(),E->getDecl()->isBitField()?OK_BitField:OK_Ordinary);
++    EXPECT_EQ(E->getValueKind(),VK_LValue);EXPECT_TRUE(E->getBase());
++    if(E->getLocation().isValid())EXPECT_GT(Context.getSourceManager().getSpellingLineNumber(E->getLocation()),0u);
++    return true;
++   }
++  } Original(From->getASTContext());Original.TraverseDecl(From->getASTContext().getTranslationUnitDecl());
++  ASSERT_GE(Original.All,7u);ASSERT_GE(Original.Free,2u);ASSERT_GE(Original.BitFields,3u);
++  std::vector<Expr *> ImportedExpressions;
++  {
++   ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(!D->isImplicit()) {
++    auto Imported=Importer.Import(D);if(!Imported){auto Message=llvm::toString(Imported.takeError());FAIL()<<Message;}
++   }
++   // Implementation bodies are not published by interface import. Exercise
++   // their free-ivar nodes directly after their method/self bindings import.
++   for(auto *Expression:Original.Nodes) {
++    auto Imported=Importer.Import(Expression);
++    if(!Imported){auto Message=llvm::toString(Imported.takeError());FAIL()<<Message;}
++    ImportedExpressions.push_back(*Imported);
++   }
++  }
++  From.reset();References Retained(To->getASTContext());Retained.TraverseDecl(To->getASTContext().getTranslationUnitDecl());
++  for(auto *Expression:ImportedExpressions)Retained.TraverseStmt(Expression);
++  EXPECT_EQ(Retained.All,Original.All);EXPECT_EQ(Retained.Free,Original.Free);EXPECT_EQ(Retained.Arrow,Original.Arrow);EXPECT_EQ(Retained.BitFields,Original.BitFields);
++ }
 +}

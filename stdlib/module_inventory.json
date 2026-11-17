@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 189,
+        "minor": 190,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Bounded mutable local Block work-item graphs retain every initializer/write, joins, loop-carried/self/cyclic assignments and nested capture environment while rejecting unknown, escaped, shared-byref and volatile bindings; separate initializer DAGs and shared capture memo/budgets bound analysis; native Objective-C ivar references now deep-import declaration/base/type/location and typed dependency/identity contracts; matching SDK acceptance pending",
         "Native GSL owner/pointer pointee metadata and lifetime_capture_by target contracts survive source-free C++20/23 publication, deep native import, renamed/unnamed redeclarations and implicit receiver/lambda bindings under native-lifetime-annotations v1; exact callable targets and dependency admission retain native dangling-capture diagnostics; matching SDK acceptance pending",
         "Native nonblocking/nonallocating/blocking/allocating function-type effects, dependent predicates and callback contracts survive source-free signatures, templates, lambdas and Blocks; native import owns predicate graphs, structural equivalence preserves effect distinctions, canonical printing and typed dependencies bind publication under native-function-effects v1; matching SDK acceptance pending",
         "Receiver-owned interior views cannot escape through nonisolated actor methods or synthesized property getters; bounded managed-value transfer proofs retain storage cleanup/resource contracts through readonly aliases, selected values, aggregates, takes and concurrent captures, with explicit unsafe admission audited; broader mutable/interprocedural proofs and matching SDK acceptance pending",
@@ -352,12 +353,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 115,
+        "minor": 116,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Bounded mutable local Block work-item graphs retain every initializer/write, joins, loop-carried/self/cyclic assignments and nested capture environment while rejecting unknown, escaped, shared-byref and volatile bindings; separate initializer DAGs and shared capture memo/budgets bound analysis; native Objective-C ivar references now deep-import declaration/base/type/location and typed dependency/identity contracts; matching SDK acceptance pending",
         "Native GSL owner/pointer pointee metadata and lifetime_capture_by target contracts survive source-free C++20/23 publication, deep native import, renamed/unnamed redeclarations and implicit receiver/lambda bindings under native-lifetime-annotations v1; exact callable targets and dependency admission retain native dangling-capture diagnostics; matching SDK acceptance pending",
         "Native nonblocking/nonallocating/blocking/allocating function-type effects, dependent predicates and callback contracts survive source-free signatures, templates, lambdas and Blocks; native import owns predicate graphs, structural equivalence preserves effect distinctions, canonical printing and typed dependencies bind publication under native-function-effects v1; matching SDK acceptance pending",
         "Receiver-owned interior views cannot escape through nonisolated actor methods or synthesized property getters; bounded managed-value transfer proofs retain storage cleanup/resource contracts through readonly aliases, selected values, aggregates, takes and concurrent captures, with explicit unsafe admission audited; broader mutable/interprocedural proofs and matching SDK acceptance pending",
