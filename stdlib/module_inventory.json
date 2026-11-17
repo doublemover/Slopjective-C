@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 193,
+        "minor": 194,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native availability guards preserve selected version/type/range through target-owned AST import and target-bound canonical builtin grammar in C17/C++20/23 and Objective-C source-free templates/default arguments; native-object-expressions v2 replaces v1; standard move/forward/forward_like/as_const views preserve read/write/escape roles and local cells without erasing known cleanup provenance; matching SDK acceptance pending",
         "Cleanup-managed scalar/aggregate provenance follows bounded mutable local/parameter writes, assignment cycles, exact native C++ reference cells, record members, array elements, structured bindings and Block/lambda captures; completed native isolation snapshots recheck writes while native reference lifetime holds and type-level Sendable contracts remain intact; source-only unsafe wrappers grant explicit admission, matching SDK acceptance pending",
         "Native Objective-C property/indexed/keyed subscript, reflection, literal/factory and ARC copy/zero writeback graphs retain exact typed accessor/dependency identity, target-owned AST nodes and unique evaluation flags under native-object-expressions v1; canonical bridge/super/ownership-qualifier grammar replays exactly, unpublished implementation bodies create no claim; matching SDK acceptance pending",
         "Explicit external C function/data/callback labels, C++ static/instance entry names and Objective-C runtime class/protocol names now publish exact native ABI bindings under native-external-bindings v1; framed identities and one native-name validator reject missing/forged capabilities, malformed/control/reserved names and namespace owners while preserving module-owned name guards; source-free unowned ABI packages compose with owned adapters and two native consumers, matching SDK acceptance pending",
@@ -356,12 +357,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 119,
+        "minor": 120,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native availability guards preserve selected version/type/range through target-owned AST import and target-bound canonical builtin grammar in C17/C++20/23 and Objective-C source-free templates/default arguments; native-object-expressions v2 replaces v1; standard move/forward/forward_like/as_const views preserve read/write/escape roles and local cells without erasing known cleanup provenance; matching SDK acceptance pending",
         "Cleanup-managed scalar/aggregate provenance follows bounded mutable local/parameter writes, assignment cycles, exact native C++ reference cells, record members, array elements, structured bindings and Block/lambda captures; completed native isolation snapshots recheck writes while native reference lifetime holds and type-level Sendable contracts remain intact; source-only unsafe wrappers grant explicit admission, matching SDK acceptance pending",
         "Native Objective-C property/indexed/keyed subscript, reflection, literal/factory and ARC copy/zero writeback graphs retain exact typed accessor/dependency identity, target-owned AST nodes and unique evaluation flags under native-object-expressions v1; canonical bridge/super/ownership-qualifier grammar replays exactly, unpublished implementation bodies create no claim; matching SDK acceptance pending",
         "Explicit external C function/data/callback labels, C++ static/instance entry names and Objective-C runtime class/protocol names now publish exact native ABI bindings under native-external-bindings v1; framed identities and one native-name validator reject missing/forged capabilities, malformed/control/reserved names and namespace owners while preserving module-owned name guards; source-free unowned ABI packages compose with owned adapters and two native consumers, matching SDK acceptance pending",

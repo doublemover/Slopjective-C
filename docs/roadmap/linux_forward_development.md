@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.194 / System 2.120 availability span](linux_native_availability_packages.md)
+publishes target-bound native availability guards with exact AST ownership,
+portable canonical grammar and the object-expression v2 reader cutover.
+
 The [Source 2.193 / System 2.119 mutable managed-value span](linux_mutable_managed_values.md)
 tracks cleanup provenance through bounded local writes, reference aliases,
 captures and completed isolation snapshots while retaining native reference holds.

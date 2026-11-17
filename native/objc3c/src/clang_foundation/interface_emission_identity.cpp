@@ -1191,6 +1191,9 @@ public:
   bool VisitObjCSelectorExpr(clang::ObjCSelectorExpr *expression) {Add(expression->getSelector().getAsString());return true;}
   bool VisitObjCProtocolExpr(clang::ObjCProtocolExpr *expression) {Reference(expression->getProtocol());return true;}
   bool VisitObjCEncodeExpr(clang::ObjCEncodeExpr *expression) {Add(ExpressionType(expression->getEncodedType()));return true;}
+  bool VisitObjCAvailabilityCheckExpr(clang::ObjCAvailabilityCheckExpr *expression) {
+    Add(expression->hasVersion()?expression->getVersion().getAsString():"all-target-versions");return true;
+  }
   bool VisitObjCBoolLiteralExpr(clang::ObjCBoolLiteralExpr *expression) {Add(std::to_string(expression->getValue()));return true;}
   bool VisitObjCObjectLiteral(clang::ObjCObjectLiteral *expression) {Add(std::to_string(expression->isExpressibleAsConstantInitializer()));return true;}
   bool VisitObjCBoxedExpr(clang::ObjCBoxedExpr *expression) {Reference(expression->getBoxingMethod());return true;}
@@ -3220,7 +3223,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationNativeLifetime(representative))
     identity.canonical_type_identity+=";native-lifetime-annotations:v1;";
   if(HasDeclarationNativeObjectExpressions(representative))
-    identity.canonical_type_identity+=";native-object-expressions:v1;";
+    identity.canonical_type_identity+=";native-object-expressions:v2;";
   if (HasDeclarationNativeFunctionPolicy(representative))
     identity.canonical_type_identity+=";native-function-policies:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))

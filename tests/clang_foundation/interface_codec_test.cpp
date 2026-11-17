@@ -78,6 +78,8 @@ int main() {
   assert(!capabilities.count("objc3.cxx-unnamed-template-projections.v1"));
   assert(!capabilities.count("objc3.cxx-incomplete-template-declarations.v1"));
   assert(!capabilities.count("objc3.native-emission-policies.v2"));
+  assert(capabilities.count(kNativeObjectExpressionSemantic));
+  assert(!capabilities.count("objc3.native-object-expressions.v1"));
   const llvm::StringRef supported[] = {"effects.async.v1", "ownership.v1",
                                        "objc3.async-entry-abi.v5"};
   const llvm::StringRef source = "int answer(void);\n";
@@ -86,15 +88,17 @@ int main() {
   original.canonical_source_sha256 = ComputeInterfaceSourceSha256(source);
   original.required_semantics = {"ownership.v1", "effects.async.v1",
                                  "objc3.async-entry-abi.v5"};
-  InterfaceDeclarationIdentity function{
-      "c:@F@answer", "function", "A::answer", "int ()", {}};
+  InterfaceDeclarationIdentity function;
+  function.stable_id="c:@F@answer";function.kind="function";
+  function.qualified_name="A::answer";function.canonical_type_identity="int ()";
   function.export_root = "A::answer";
   function.effects.is_async = true;
   function.effects.async_abi_identity = "v1:4:type11:cxx-task-v1";
   function.effects.throws_kind = "none";
   function.effects.ownership_identity = "borrowed-param-0";
-  InterfaceDeclarationIdentity global{
-      "c:@answerCount", "global", "A::answerCount", "unsigned long", {}};
+  InterfaceDeclarationIdentity global;
+  global.stable_id="c:@answerCount";global.kind="global";
+  global.qualified_name="A::answerCount";global.canonical_type_identity="unsigned long";
   global.export_root = "A::answerCount";
   original.declarations = {global, function};
   original.dependencies = {{Module("Base", "sha256:base"), true, true}};
@@ -127,7 +131,7 @@ int main() {
       {";native-function-policies:v1;",kNativeFunctionPolicySemantic},
       {";native-function-effects:v1;",kNativeFunctionEffectSemantic},
       {";native-lifetime-annotations:v1;",kNativeLifetimeAnnotationSemantic},
-      {";native-object-expressions:v1;",kNativeObjectExpressionSemantic},
+      {";native-object-expressions:v2;",kNativeObjectExpressionSemantic},
       {";native-external-binding:v1;symbol=3:ffi;",kNativeExternalBindingSemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
@@ -138,7 +142,9 @@ int main() {
       {";cxx-base-adjustment-expressions:v1;",kCxxBaseAdjustmentSemantic},
       {";native-cpu-variant:v1;",kNativeEmissionPolicySemantic}}) {
     auto invalid=*decoded;
-    InterfaceDeclarationIdentity space{"c:@N@Bad","Namespace","A::Bad","namespace",{}};
+    InterfaceDeclarationIdentity space;
+    space.stable_id="c:@N@Bad";space.kind="Namespace";
+    space.qualified_name="A::Bad";space.canonical_type_identity="namespace";
     space.export_root="A::Bad";
     invalid.declarations.push_back(space);
     auto valid_namespace=EncodeSemanticInterfaceSidecar(invalid,supported);
@@ -210,7 +216,9 @@ int main() {
     legitimate.required_semantics.push_back(capability);
     std::vector<llvm::StringRef> reader(std::begin(supported),std::end(supported));reader.push_back(capability);
     auto encoded_legitimate=EncodeSemanticInterfaceSidecar(legitimate,reader);assert(encoded_legitimate);
-    InterfaceDeclarationIdentity space{"c:@N@Forged","Namespace","A::Forged","namespace"+marker,{}};
+    InterfaceDeclarationIdentity space;
+    space.stable_id="c:@N@Forged";space.kind="Namespace";
+    space.qualified_name="A::Forged";space.canonical_type_identity="namespace"+marker;
     space.export_root="A::Forged";
     legitimate.declarations.push_back(space);
     assert(Fails(EncodeSemanticInterfaceSidecar(legitimate,reader)));

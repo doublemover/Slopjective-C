@@ -14,17 +14,27 @@ extern "C" BoundaryHandle boundary_open(void) noexcept;
 extern "C" void boundary_close(BoundaryHandle) noexcept;
 extern "C" int boundary_target(BoundaryHandle) noexcept __attribute__((objc_executor(named("boundary.serial"))));
 extern "C" int boundary_finish(int) noexcept;
+extern "C" int boundary_number(int) noexcept __attribute__((objc_executor(named("boundary.serial"))));
 extern "C" void boundary_begin(objc3_executor_t *) noexcept;
 extern "C" void boundary_completed(void) noexcept;
 )boundary";
 constexpr const char *Source=R"boundary(
 #include <objc3c/runtime/objc3_runtime_services.h>
+#include <utility>
 __attribute__((objc_root_class)) @interface BoundaryRoot @end
 actor class BoundaryActor:BoundaryRoot
 - (const char *_Nonnull)view __attribute__((objc_returns_inner_pointer));
 - (int)stable __attribute__((objc_nonisolated));
 @end
 namespace BoundaryModule {
+inline int ordinary_move(int value) __objc3_async_frame {
+ return __objc3_await boundary_number(std::move(value));
+}
+inline int ordinary_views(int value) __objc3_async_frame {
+ int &alias=std::forward<int &>(value);
+ const int &view=std::as_const(alias);
+ return __objc3_await boundary_number(std::forward<const int &>(view));
+}
 inline int transfer(void) __objc3_async_frame {
  int descriptor __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();
  int copied=0;copied=descriptor;
@@ -52,7 +62,18 @@ static int execute(void){
  }
  assert(complete && completion.kind==OBJC3_COMPLETION_SUCCESS && completion.has_payload && completion.payload);
  assert(*static_cast<const int *>(completion.payload)==42);boundary_completed();
- objc3_task_release(task);objc3_executor_release(destination);objc3_executor_release(caller);return 0;
+ objc3_task_release(task);
+ for(unsigned operation=0;operation!=2;++operation){
+  auto ordinary=operation?BoundaryModule::ordinary_views(41):BoundaryModule::ordinary_move(41);task=0;
+  assert(objc3_async_frame_start(&ordinary,caller,0,&task)==OBJC3_SERVICE_OK);complete=false;
+  for(unsigned step=0;step!=128;++step){uint32_t count=0;
+   assert(objc3_executor_pump(destination,32,&count)==OBJC3_SERVICE_OK && objc3_executor_pump(caller,32,&count)==OBJC3_SERVICE_OK);
+   if(objc3_task_get_completion(task,&completion)==OBJC3_SERVICE_OK){complete=true;break;}
+  }
+  assert(complete && completion.kind==OBJC3_COMPLETION_SUCCESS && completion.has_payload && *static_cast<const int *>(completion.payload)==42);
+  objc3_task_release(task);
+ }
+ objc3_executor_release(destination);objc3_executor_release(caller);return 0;
 }
 )boundary";
 constexpr const char *Main=R"boundary(
@@ -73,6 +94,7 @@ extern "C" int boundary_target(int descriptor) noexcept {
  assert(objc3_executor_is_current(destination));assert(opened==1 && closed==0 && descriptor==last_descriptor);
  assert(fcntl(descriptor,F_GETFD)>=0);return 42;
 }
+extern "C" int boundary_number(int value) noexcept {assert(objc3_executor_is_current(destination) && value==41);return value+1;}
 extern "C" int boundary_finish(int value) noexcept {
  assert(objc3_executor_is_current(caller));assert(value==42 && opened==1 && closed==0);
  assert(fcntl(last_descriptor,F_GETFD)>=0);return value;
@@ -122,6 +144,8 @@ void Run(const fs::path &root,const char *standard,int ownership){
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();return __objc3_await boundary_target(h);}","cleanup-managed concurrent value"},
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"#include <utility>\nint rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;return __objc3_await boundary_target(std::move(copy));}","cleanup-managed concurrent value"},
+     {"#include <utility>\nint rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;int &alias=std::forward<int &>(copy);alias=h;return __objc3_await boundary_target(std::as_const(copy));}","cleanup-managed concurrent value"},
      {"int rejected(int copy) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();copy=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int first=0,second=first;first=second;second=choose?first:h;first=second;return __objc3_await boundary_target(first);}","cleanup-managed concurrent value"},
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;int &view=copy;return __objc3_await boundary_target(view);}","cleanup-managed concurrent value"},

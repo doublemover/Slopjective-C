@@ -413,7 +413,7 @@ bool HasDeclarationNativeObjectExpressions(const clang::NamedDecl *declaration) 
     }
     bool VisitExpr(clang::Expr *expression) override {
       found|=llvm::isa<clang::ObjCPropertyRefExpr,clang::ObjCSubscriptRefExpr,clang::ObjCSelectorExpr,clang::ObjCProtocolExpr,
-          clang::ObjCEncodeExpr,clang::ObjCBoolLiteralExpr,clang::ObjCStringLiteral,clang::ObjCBoxedExpr,
+          clang::ObjCEncodeExpr,clang::ObjCAvailabilityCheckExpr,clang::ObjCBoolLiteralExpr,clang::ObjCStringLiteral,clang::ObjCBoxedExpr,
           clang::ObjCArrayLiteral,clang::ObjCDictionaryLiteral,clang::ObjCIsaExpr,
           clang::ObjCIndirectCopyRestoreExpr,clang::ObjCBridgedCastExpr,clang::PseudoObjectExpr>(expression);
       if(const auto *opaque=llvm::dyn_cast<clang::OpaqueValueExpr>(expression))found|=opaque->isUnique();

@@ -168,9 +168,9 @@ inline bool HasNativeLifetimeAnnotationIdentity(const InterfaceDeclarationIdenti
 inline bool IsNativeLifetimeAnnotationOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d);
 }
-inline constexpr const char *kNativeObjectExpressionSemantic = "objc3.native-object-expressions.v1";
+inline constexpr const char *kNativeObjectExpressionSemantic = "objc3.native-object-expressions.v2";
 inline bool HasNativeObjectExpressionIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-object-expressions:v1;")!=std::string::npos;
+  return d.canonical_type_identity.find(";native-object-expressions:v2;")!=std::string::npos;
 }
 inline bool IsNativeObjectExpressionOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d);

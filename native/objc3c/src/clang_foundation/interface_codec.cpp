@@ -230,14 +230,6 @@ llvm::Expected<std::uint64_t> RequiredUnsigned(const Object &object,
   return static_cast<std::uint64_t>(*number);
 }
 
-llvm::Expected<const Object *> RequiredObject(const Object &object,
-                                              llvm::StringRef key,
-                                              llvm::StringRef path) {
-  auto *value = object.getObject(key);
-  if (!value) return Invalid(llvm::formatv("{0}/{1}: required object missing or has wrong type", path, key).str());
-  return value;
-}
-
 llvm::Expected<const Array *> RequiredArray(const Object &object,
                                             llvm::StringRef key,
                                             llvm::StringRef path,
