@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.173 / System 2.99 inline lambda-factory span](linux_inline_closure_factory_results.md)
+binds local record/enum and nested closure results to their named variable owners
+and preserves native overload identity during import.
+
+
 The [Source 2.172 / System 2.98 owning inline closure span](linux_owning_inline_closure_objects.md)
 adds native cleanup-wrapped capture initializers and concrete class-static closure
 owners, with the inline-closure-objects v2 reader cutover.

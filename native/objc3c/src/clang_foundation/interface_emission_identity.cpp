@@ -2341,6 +2341,54 @@ std::string ReadInterfaceLanguageProfile(const clang::ASTContext &context) {
 // An unnamed record's methods inherit its stable owner/path even when their
 // own signatures contain only scalar types. Native USRs for those methods
 // otherwise retain the anonymous parent's physical source coordinates.
+static bool HasInlineClosureObjectType(clang::QualType type) {
+  struct Origins:clang::DynamicRecursiveASTVisitor {
+    bool found=false;
+    bool TraverseDecl(clang::Decl *) override{return true;}
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool TraverseType(clang::QualType value,bool qualifier=true) override {
+      return value.isNull() || clang::DynamicRecursiveASTVisitor::TraverseType(value.getCanonicalType(),qualifier);
+    }
+    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) override {
+      if(argument.getKind()==clang::TemplateArgument::StructuralValue)
+        return TraverseType(argument.getStructuralValueType());
+      if(argument.getKind()==clang::TemplateArgument::Declaration) {
+        if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))
+          return TraverseType(object->getType());
+        return TraverseType(argument.getParamTypeForDecl());
+      }
+      return clang::DynamicRecursiveASTVisitor::TraverseTemplateArgument(argument);
+    }
+    bool VisitTagType(clang::TagType *type) override {
+      for(const auto *scope=static_cast<const clang::DeclContext *>(type->getDecl());scope;scope=scope->getParent())
+        if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+          if(InlineClosureObjectOrigin(record)){found=true;break;}
+      if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(type->getDecl()))
+        for(const auto &argument:specialization->getTemplateArgs().asArray())
+          if(!TraverseTemplateArgument(argument))return false;
+      return true;
+    }
+  } origins;
+  origins.TraverseType(type);return origins.found;
+}
+
+static clang::QualType UndeducedCallableResult(clang::QualType type,const clang::ASTContext &context) {
+  clang::QualType result;
+  if(const auto *automatic=llvm::dyn_cast<clang::AutoType>(type.getTypePtr()))
+    result=context.getAutoType(clang::DeducedKind::Undeduced,clang::QualType(),automatic->getKeyword(),
+        automatic->getTypeConstraintConcept(),automatic->getTypeConstraintArguments());
+  else if(const auto *pointer=llvm::dyn_cast<clang::PointerType>(type.getTypePtr()))
+    result=context.getPointerType(UndeducedCallableResult(pointer->getPointeeType(),context));
+  else if(const auto *reference=llvm::dyn_cast<clang::LValueReferenceType>(type.getTypePtr()))
+    result=context.getLValueReferenceType(UndeducedCallableResult(reference->getPointeeType(),context));
+  else if(const auto *reference=llvm::dyn_cast<clang::RValueReferenceType>(type.getTypePtr()))
+    result=context.getRValueReferenceType(UndeducedCallableResult(reference->getPointeeType(),context));
+  else if(const auto *parenthesis=llvm::dyn_cast<clang::ParenType>(type.getTypePtr()))
+    result=context.getParenType(UndeducedCallableResult(parenthesis->getInnerType(),context));
+  else return type;
+  return context.getQualifiedType(result,type.getLocalQualifiers());
+}
+
 static std::string ProjectedCallableKey(const clang::FunctionDecl *function) {
   const auto &context=function->getASTContext();
   const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);
@@ -2354,14 +2402,35 @@ static std::string ProjectedCallableKey(const clang::FunctionDecl *function) {
     if(!UnnamedTemplateTypeKey(type,context).empty())
       parent="named-record:"+CanonicalType(type,context);
   }
-  if (parent.empty() && UnnamedTemplateTypeKey(function->getType(),context).empty()) return {};
+  const bool inline_parent=method && HasInlineClosureObjectType(context.getCanonicalTagType(method->getParent()));
+  if(parent.empty() && inline_parent)
+    parent="inline-closure-record:"+CanonicalType(context.getCanonicalTagType(method->getParent()),context);
+  // A deduced factory's own local return type points back to the factory.
+  // Detect the inline-owner parameter signature without that self-owned result.
+  // Normalize both declarations and definitions, retaining auto/decltype(auto)
+  // as an explicit discriminator rather than colliding with typed void returns.
+  clang::QualType signature=function->getType(),deduced_signature=signature;
+  const auto *deduced=function->getDeclaredReturnType()->getContainedAutoType();
+  if(deduced)
+    if(const auto *prototype=signature->getAs<clang::FunctionProtoType>())
+      deduced_signature=const_cast<clang::ASTContext &>(context).getFunctionType(
+          context.VoidTy,prototype->getParamTypes(),prototype->getExtProtoInfo());
+  const bool inline_projection=inline_parent || HasInlineClosureObjectType(deduced_signature);
+  std::string deduction;
+  if(inline_projection && deduced) {
+    signature=deduced_signature;
+    deduction=";deduced-return="+std::to_string(static_cast<unsigned>(deduced->getKeyword()))+
+        ":shape="+CanonicalType(UndeducedCallableResult(function->getDeclaredReturnType(),context),context);
+  }
+  if (parent.empty() && UnnamedTemplateTypeKey(signature,context).empty() &&
+      !inline_projection) return {};
   std::string name=function->getQualifiedNameAsString();
   if (!parent.empty()) {
     name=parent+":"+function->clang::Decl::getDeclKindName();
     if (!llvm::isa<clang::CXXConstructorDecl,clang::CXXDestructorDecl,clang::CXXConversionDecl>(function))
       name+=":"+function->getNameAsString();
   }
-  return name+"@"+ComputeInterfaceSourceSha256(CanonicalType(function->getType(),context));
+  return name+"@"+ComputeInterfaceSourceSha256(CanonicalType(signature,context)+deduction);
 }
 
 static const clang::TargetAttr *NativeCPUVariant(const clang::NamedDecl *declaration) {
@@ -2861,7 +2930,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
   if (HasDeclarationInlineClosureObject(representative))
-    identity.canonical_type_identity+=";cxx-inline-closure-objects:v2;";
+    identity.canonical_type_identity+=";cxx-inline-closure-objects:v3;";
   if (HasDeclarationCxxBaseAdjustment(representative))
     identity.canonical_type_identity+=";cxx-base-adjustment-expressions:v1;";
   if (HasDeclarationCxxSpecialMemberSelection(representative))

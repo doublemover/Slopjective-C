@@ -521,7 +521,7 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool inline_closures=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxInlineClosureObjectIdentity);
   const bool closure_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxInlineClosureObjectSemantic)!=sidecar.required_semantics.end();
   const bool closure_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
-      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-inline-closure-objects:v2;")==std::string::npos;});
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-inline-closure-objects:v3;")==std::string::npos;});
   if(inline_closures!=closure_capability || !closure_owners)
     Add(result,"O3IFC193","C++ inline closure object identity and required capability must agree",expected.canonical_name);
   const bool base_adjustment=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxBaseAdjustmentIdentity);

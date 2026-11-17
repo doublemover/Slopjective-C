@@ -51,6 +51,7 @@ int main() {
   assert(!capabilities.count("objc3.borrowed-result-proofs.v9"));
   assert(!capabilities.count("objc3.borrowed-result-proofs.v10"));
   assert(!capabilities.count("objc3.cxx-inline-closure-objects.v1"));
+  assert(!capabilities.count("objc3.cxx-inline-closure-objects.v2"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v2"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v3"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v4"));
@@ -97,7 +98,7 @@ int main() {
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
       {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},
       {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic},
-      {";cxx-inline-closure-objects:v2;",kCxxInlineClosureObjectSemantic},
+      {";cxx-inline-closure-objects:v3;",kCxxInlineClosureObjectSemantic},
       {";cxx-base-adjustment-expressions:v1;",kCxxBaseAdjustmentSemantic},
       {";native-cpu-variant:v1;",kNativeEmissionPolicySemantic}}) {
     auto invalid=*decoded;
@@ -125,7 +126,7 @@ int main() {
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
       {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},
       {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic},
-      {";cxx-inline-closure-objects:v2;",kCxxInlineClosureObjectSemantic},
+      {";cxx-inline-closure-objects:v3;",kCxxInlineClosureObjectSemantic},
       {";cxx-base-adjustment-expressions:v1;",kCxxBaseAdjustmentSemantic}}) {
     auto legitimate=*decoded;legitimate.declarations.front().canonical_type_identity+=marker;
     legitimate.required_semantics.push_back(capability);

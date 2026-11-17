@@ -1644,14 +1644,77 @@ inline const OwnedType &reference(){return owned;}
 inline int generic_instantiations(){return generic(1)+generic(2L);}
 inline void failed_capture(){auto value=[first=Token(1),second=Token(-1)]{return first.value+second.value;};(void)value;}
 }
-)closures";
+)closures" R"factories(
+namespace InlineFactoryResults {
+inline constexpr auto first=[base=40](int n){struct Product {int value;};return Product{base+n};};
+inline constexpr auto second=[base=40](int n){struct Product {int value;};return Product{base+n};};
+inline constexpr auto alias=first;
+using First=decltype(first(1));using Second=decltype(second(1));using Selected=decltype(first(1));
+inline int classify(First){return 1;}inline int classify(Second){return 2;}
+inline int inspect(Selected value){return value.value;}
+inline auto mapped(First input);
+inline auto mapped(First input){struct Product {int value;};return Product{input.value};}
+using Mapped=decltype(mapped(first(1)));
+template<auto Value>struct Structural {};
+using FirstValue=Structural<first(1)>;using SecondValue=Structural<second(1)>;
+inline int structural(FirstValue){return 1;}inline int structural(SecondValue){return 2;}
+
+template<class T>inline auto metadata_only(First,T){return 42;}
+template<class T>inline auto *metadata_only(First,T){return static_cast<int *>(nullptr);}
+
+
+inline constexpr auto generic=[base=40]<class T>(T n){struct Product {T value;};return Product{T(base)+n};};
+using Signed=decltype(generic(1));using Unsigned=decltype(generic(1u));
+inline constexpr auto nested=[base=40](int n){return [value=base+n](int delta){struct Product {int value;};return Product{value+delta};};};
+using NestedClosure=decltype(nested(1));using NestedProduct=decltype(nested(1)(1));
+inline constexpr auto tree=[] {struct Outer {struct Inner {int value;};Inner nested;};return Outer{{42}};};
+using Tree=decltype(tree());using Inner=Tree::Inner;
+inline constexpr auto enumeration=[] {enum Value {Answer=42};return Answer;};
+using Enumeration=decltype(enumeration());
+struct Factories {inline static constexpr auto product=[base=40](int n){struct Product {int value;};return Product{base+n};};};
+using MemberProduct=decltype(Factories::product(2));
+inline int live=0,created=0,destroyed=0,copies=0,moves=0;
+struct Owner {
+ int value;
+ explicit Owner(int n):value(n){if(n<0)throw 83;++live;++created;}
+ Owner(const Owner &other):value(other.value){++live;++created;++copies;}
+ Owner(Owner &&other)noexcept:value(other.value){other.value=-1;++live;++created;++moves;}
+ ~Owner(){--live;++destroyed;}
+};
+inline auto owning=[base=40](int n){struct Product {Owner owner;int value()const{return owner.value;}};return Product{Owner(base+n)};};
+using Owned=decltype(owning(2));
+inline int consume(Owned value){return value.value();}
+}
+)factories";
   auto first=emit(source,"inline-closures.cpp");
   for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
   assert(first.success);
   const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
   auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
   assert(llvm::is_contained(decoded->required_semantics,std::string(kCxxInlineClosureObjectSemantic)));
-  auto old=supported;std::erase(old,llvm::StringRef(kCxxInlineClosureObjectSemantic));old.push_back("objc3.cxx-inline-closure-objects.v1");
+  std::set<std::string> overload_ids,overload_symbols;
+  unsigned overloads=0;
+  for(const auto &declaration:decoded->declarations)
+    if(declaration.qualified_name=="InlineFactoryResults::classify") {
+      ++overloads;overload_ids.insert(declaration.stable_id);overload_symbols.insert(declaration.native_symbol_name);
+    }
+  assert(overloads==2 && overload_ids.size()==2 && overload_symbols.size()==2);
+  std::set<std::string> deduced_ids,deduced_symbols;
+  for(const auto &declaration:decoded->declarations)
+    if(declaration.qualified_name=="InlineFactoryResults::metadata_only") {
+      deduced_ids.insert(declaration.stable_id);deduced_symbols.insert(declaration.native_symbol_name);
+    }
+  assert(deduced_ids.size()==2 && deduced_symbols.size()==2);
+  std::set<std::string> structural_ids,structural_symbols;
+  for(const auto &declaration:decoded->declarations)
+    if(declaration.qualified_name=="InlineFactoryResults::structural") {
+      structural_ids.insert(declaration.stable_id);structural_symbols.insert(declaration.native_symbol_name);
+    }
+  assert(structural_ids.size()==2 && structural_symbols.size()==2);
+
+
+
+  auto old=supported;std::erase(old,llvm::StringRef(kCxxInlineClosureObjectSemantic));old.push_back("objc3.cxx-inline-closure-objects.v2");
   auto unsupported=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!unsupported);llvm::consumeError(unsupported.takeError());
   std::erase(decoded->required_semantics,kCxxInlineClosureObjectSemantic);
   auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
@@ -1659,7 +1722,13 @@ inline void failed_capture(){auto value=[first=Token(1),second=Token(-1)]{return
   auto moved=emit("\n\n"+source,"relocated-inline-closures.cpp");assert(moved.success && moved.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
   auto changed=source;auto offset=changed.find("token=Token(40)");assert(offset!=std::string::npos);changed.replace(offset,std::string("token=Token(40)").size(),"token=Token(44)");
   auto other=emit(changed,"changed-inline-closures.cpp");assert(other.success && other.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
-  auto hidden=emit("namespace HiddenClosures {inline constexpr auto hidden=[] {return 42;};using Exposed=decltype(hidden);}","hidden-closure.cpp",{"HiddenClosures::Exposed"});assert(!hidden.success);
+  auto selected=source;auto projection=selected.find("Selected=decltype(first(1))");assert(projection!=std::string::npos);selected.replace(projection,std::string("Selected=decltype(first(1))").size(),"Selected=decltype(second(1))");
+  auto changed_owner=emit(selected,"changed-factory-owner.cpp");assert(changed_owner.success && changed_owner.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  auto private_factory=emit("namespace HiddenFactory {inline auto hidden=[](int n){struct Product{int value;};return Product{n};};using Exposed=decltype(hidden(1));}","excluded-inline-factory.cpp",{"HiddenFactory::Exposed"});
+  assert(!private_factory.success && std::any_of(private_factory.diagnostics.begin(),private_factory.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  auto private_member=emit("struct HiddenFactory{inline static auto hidden=[](int n){struct Product{int value;};return Product{n};};};using Exposed=decltype(HiddenFactory::hidden(1));","excluded-inline-member-factory.cpp",{"Exposed"});
+  assert(!private_member.success && std::any_of(private_member.diagnostics.begin(),private_member.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  auto hidden=emit("namespace HiddenClosures {inline constexpr auto hidden=[] {return 42;};using Exposed=decltype(hidden);}","hidden-closure.cpp",{"HiddenClosures::Exposed"});assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
   auto noninline=emit("namespace HiddenClosures {constexpr auto hidden=[] {return 42;};using Exposed=decltype(hidden);}","noninline-closure.cpp");assert(!noninline.success);
  }
 }

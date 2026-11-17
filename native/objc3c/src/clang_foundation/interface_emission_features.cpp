@@ -1121,16 +1121,18 @@ const clang::FunctionDecl *FactoryResultOrigin(const clang::TagDecl *tag) {
   for(const auto *scope=tag->getDeclContext();scope;scope=scope->getParent())
     if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
       const clang::FunctionDecl *closure_owner=nullptr;
+      const clang::VarDecl *closure_object=nullptr;
       if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function)) {
         if(method->getParent()->isLambda() || IsExpressionLocalTag(method->getParent())) {
           closure_owner=FactoryResultOrigin(method->getParent());
-          if(!closure_owner)return nullptr;
+          closure_object=InlineClosureObjectOrigin(method->getParent());
+          if(!closure_owner && !closure_object)return nullptr;
         }
       } else if(!IsTopLevel(function))return nullptr;
       const auto *result=FactoryResultTagRoot(function,tag);
       if(!result ||
-          function->getType()->isDependentType() || (!closure_owner && !function->isExternallyVisible()))return nullptr;
-      bool bound=closure_owner || !ReadNativeSymbolName(function).empty();
+          function->getType()->isDependentType() || (!closure_owner && !closure_object && !function->isExternallyVisible()))return nullptr;
+      bool bound=closure_owner || closure_object || !ReadNativeSymbolName(function).empty();
       if(const auto *primary=function->getPrimaryTemplate())
         bound |= !ReadNativeSymbolName(primary).empty() || !ReadNativeSymbolName(primary->getTemplatedDecl()).empty();
       if(const auto *owner=TemplatePublicationOwner(function))bound |= !ReadNativeSymbolName(owner).empty();
@@ -1144,9 +1146,12 @@ std::string FactoryOriginKey(const clang::FunctionDecl *function) {
   if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);
       method && (method->getParent()->isLambda() || IsExpressionLocalTag(method->getParent()))) {
     const auto *owner=FactoryResultOrigin(method->getParent());
-    if(!owner)return {};
-    std::string bindings;GenericFactoryBindings(owner,bindings);
-    const auto parent=FactoryOriginKey(owner);
+    const auto *object=InlineClosureObjectOrigin(method->getParent());
+    if(!owner && !object)return {};
+    std::string bindings;if(owner)GenericFactoryBindings(owner,bindings);
+    const auto variable=object?ReadInterfaceDeclarationStableId(object):std::string{};
+    const auto parent=owner?FactoryOriginKey(owner)
+        : ":inline-closure-object="+std::to_string(variable.size())+":"+variable;
     std::string key=std::to_string(parent.size())+":"+parent+":local-call:"+std::to_string(bindings.size())+":"+bindings;
     if(method->getParent()->isLambda())return key+":closure";
     const auto path=FactoryTagPath(method->getParent(),FactoryResultTagRoot(owner,method->getParent()),function->getASTContext());

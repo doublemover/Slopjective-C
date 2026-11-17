@@ -1,5 +1,10 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.173 / System 2.99 inline lambda-factory span](linux_inline_closure_factory_results.md)
+binds local record/enum and nested closure results to their named variable owners
+and preserves native overload identity during import.
+
+
 The [Source 2.172 / System 2.98 owning inline closure span](linux_owning_inline_closure_objects.md)
 adds native cleanup-wrapped capture initializers and concrete class-static closure
 owners, with the inline-closure-objects v2 reader cutover.
@@ -33,7 +38,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.172 / System 2.98 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.173 / System 2.99 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

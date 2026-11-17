@@ -145,6 +145,48 @@ inline int generic_instantiations(){return generic(1)+generic(2L);}
 inline void failed_capture(){auto value=[first=Token(1),second=Token(-1)]{return first.value+second.value;};(void)value;}
 }
 
+
+namespace InlineFactoryResults {
+inline constexpr auto first=[base=40](int n){struct Product {int value;};return Product{base+n};};
+inline constexpr auto second=[base=40](int n){struct Product {int value;};return Product{base+n};};
+inline constexpr auto alias=first;
+using First=decltype(first(1));using Second=decltype(second(1));using Selected=decltype(first(1));
+inline int classify(First){return 1;}inline int classify(Second){return 2;}
+inline int inspect(Selected value){return value.value;}
+inline auto mapped(First input);
+inline auto mapped(First input){struct Product {int value;};return Product{input.value};}
+using Mapped=decltype(mapped(first(1)));
+template<auto Value>struct Structural {};
+using FirstValue=Structural<first(1)>;using SecondValue=Structural<second(1)>;
+inline int structural(FirstValue){return 1;}inline int structural(SecondValue){return 2;}
+
+template<class T>inline auto metadata_only(First,T){return 42;}
+template<class T>inline auto *metadata_only(First,T){return static_cast<int *>(nullptr);}
+
+
+inline constexpr auto generic=[base=40]<class T>(T n){struct Product {T value;};return Product{T(base)+n};};
+using Signed=decltype(generic(1));using Unsigned=decltype(generic(1u));
+inline constexpr auto nested=[base=40](int n){return [value=base+n](int delta){struct Product {int value;};return Product{value+delta};};};
+using NestedClosure=decltype(nested(1));using NestedProduct=decltype(nested(1)(1));
+inline constexpr auto tree=[] {struct Outer {struct Inner {int value;};Inner nested;};return Outer{{42}};};
+using Tree=decltype(tree());using Inner=Tree::Inner;
+inline constexpr auto enumeration=[] {enum Value {Answer=42};return Answer;};
+using Enumeration=decltype(enumeration());
+struct Factories {inline static constexpr auto product=[base=40](int n){struct Product {int value;};return Product{base+n};};};
+using MemberProduct=decltype(Factories::product(2));
+inline int live=0,created=0,destroyed=0,copies=0,moves=0;
+struct Owner {
+ int value;
+ explicit Owner(int n):value(n){if(n<0)throw 83;++live;++created;}
+ Owner(const Owner &other):value(other.value){++live;++created;++copies;}
+ Owner(Owner &&other)noexcept:value(other.value){other.value=-1;++live;++created;++moves;}
+ ~Owner(){--live;++destroyed;}
+};
+inline auto owning=[base=40](int n){struct Product {Owner owner;int value()const{return owner.value;}};return Product{Owner(base+n)};};
+using Owned=decltype(owning(2));
+inline int consume(Owned value){return value.value();}
+}
+
 inline int cleanup_order=0;
 struct CleanupValue {
  int value;
@@ -450,6 +492,7 @@ void verify_exit(){
     const auto consumer_source=root/(std::string("consumer-")+name+".mm");
     Write(consumer_source,std::string(R"storage(
 #include <pthread.h>
+#include <cstdio>
 static void *worker(void *){return StorageLifetime::thread_finalized().value==8?nullptr:(void *)1;}
 )storage")+"extern \"C\" int check_"+name+R"storage(() {
   using namespace StorageLifetime;
@@ -522,6 +565,23 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   const int previous_state=Closures::mutable_state(0),previous_member_state=Closures::Owners::state(0);
   if(Closures::mutable_state(2)!=previous_state+2 || Closures::Owners::state(3)!=previous_member_state+3)return 82;
   static_assert(!__is_constructible(decltype(Closures::unique),const decltype(Closures::unique)&));
+  namespace FactoryResults=InlineFactoryResults;
+  static_assert(!__is_same(FactoryResults::First,FactoryResults::Second));
+  static_assert(!__is_same(FactoryResults::Signed,FactoryResults::Unsigned));
+  static_assert(__is_same(decltype(FactoryResults::alias(1)),FactoryResults::First));
+  if(FactoryResults::structural(FactoryResults::FirstValue{})!=1 || FactoryResults::structural(FactoryResults::SecondValue{})!=2 || FactoryResults::classify(FactoryResults::first(1))!=1 || FactoryResults::classify(FactoryResults::second(1))!=2 || FactoryResults::inspect(FactoryResults::first(2))!=42 || FactoryResults::mapped(FactoryResults::first(2)).value!=42)return 83;
+  if(FactoryResults::generic(2).value!=42 || FactoryResults::generic(2u).value!=42 || FactoryResults::nested(1)(1).value!=42 || FactoryResults::tree().nested.value!=42 || FactoryResults::enumeration()!=42 || FactoryResults::Factories::product(2).value!=42)return 84;
+  const int previous_created=FactoryResults::created,previous_destroyed=FactoryResults::destroyed,previous_copies=FactoryResults::copies,previous_moves=FactoryResults::moves;
+  {auto value=FactoryResults::owning(2);
+   if(value.value()!=42 || FactoryResults::live!=1){std::fprintf(stderr,"factory result: value=%d live=%d\n",value.value(),FactoryResults::live);return 85;}
+   // Parameter destruction may occur at the caller full-expression boundary.
+   const int copied_value=FactoryResults::consume(value);
+   if(copied_value!=42 || FactoryResults::live!=1){std::fprintf(stderr,"factory copy: value=%d live=%d copies=%d destroyed=%d\n",copied_value,FactoryResults::live,FactoryResults::copies,FactoryResults::destroyed);return 85;}
+   const int moved_value=FactoryResults::consume(static_cast<decltype(value)&&>(value));
+   if(moved_value!=42 || value.value()!=-1 || FactoryResults::live!=1){std::fprintf(stderr,"factory move: value=%d source=%d live=%d\n",moved_value,value.value(),FactoryResults::live);return 86;}}
+  if(FactoryResults::live || FactoryResults::created-previous_created!=3 || FactoryResults::destroyed-previous_destroyed!=3 || FactoryResults::copies-previous_copies!=1 || FactoryResults::moves-previous_moves!=1)return 87;
+  bool factory_failed=false;try{auto value=FactoryResults::owning(-50);(void)value;}catch(int value){factory_failed=value==83;}
+  if(!factory_failed || FactoryResults::live || FactoryResults::created-previous_created!=3)return 88;
   if(static_member_view(nullptr,0)[0]!='s' || static_member_view(nullptr,1)[0]!='t')return 61;
   if(static_member_factory_view(nullptr,0)[0]!='t' || static_member_factory_view(nullptr,1)[0]!='s')return 62;
   if(static_member_nothrow_view(nullptr)[0]!='s' || static_member_constant_field_view(nullptr)[0]!='s')return 64;
