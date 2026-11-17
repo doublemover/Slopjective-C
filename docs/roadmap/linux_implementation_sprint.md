@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.199 / System 2.125 native control-graph span](linux_native_control_argument_projections.md)
+retains selected caller provenance through bounded branches, switches and
+immutable aliases while preserving conservative unproved-reference diagnostics.
+
 The [Source 2.198 / System 2.124 native deduction-guide span](linux_native_deduction_guides.md)
 binds class-owned deduction policies, exports and native import without inventing
 runtime entry points for guide declarations.

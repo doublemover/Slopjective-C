@@ -40,5 +40,7 @@ isolation suite, all 108 AST controls, all 17 import groups, 18 publication grou
 production codec and 16 tooling checks pass. The changed LLVM translation unit
 compiles as C++17 with warnings treated as errors; fresh maintained patch replay
 reproduces every changed production/control file and all digests match. Runtime layouts, extension ABI 24 and interface schema 2.2 are
-unchanged. Conditional/multiple-return helpers, general interprocedural/global
-mutation and complete profile/SDK acceptance remain separate obligations.
+unchanged. [Source 2.199](linux_native_control_argument_projections.md) extends
+this proof to bounded conditional/multiple-return control graphs and immutable
+aliases. General interprocedural/global mutation and complete profile/SDK
+acceptance remain separate obligations.
