@@ -1987,12 +1987,42 @@ __attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan member(v
 __attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local_slot(void *owner){const char *const slot=text;return forward_slot(slot);}
 }
 )references";
+      if(cxx)source+=R"consumed(
+namespace ConsumedReferenceProofs {
+inline constexpr char first[]="first",second[]="second";
+inline int observations=0;inline void observe(){++observations;}
+inline const char *const &leaf(const char *const &value){observe();return value;}
+inline const char *const &chain(const char *const &value){observe();return leaf(value);}
+inline const char *as_value(const char *const &value){observe();return chain(value);}
+inline const char *const &select(int choose,const char *const &one,const char *const &two){observe();return choose?chain(one):leaf(two);}
+using Producer=const char *const &(*)(const char *const &);
+inline const char *identity(const char *value){return value;}
+inline const char *next(const char *value){return value+1;}
+using Callback=const char *(*)(const char *);
+inline Callback const &callback_leaf(Callback const &value){observe();return value;}
+inline Callback const &callback_chain(Callback const &value){observe();return callback_leaf(value);}
+struct Target {const char *read(const char *value)const{return value;}const char *next(const char *value)const{return value+1;}};
+using Method=const char *(Target::*)(const char *)const;
+inline Method const &member_leaf(Method const &value){observe();return value;}
+inline Method const &member_chain(Method const &value){observe();return member_leaf(value);}
+inline const char *(&function_leaf(const char *(&value)(const char *)))(const char *){observe();return value;}
+inline const char *(&function_chain(const char *(&value)(const char *)))(const char *){observe();return function_leaf(value);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan constant(void *owner){const char *const value=first;return chain(value);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan mutable_slot(void *owner,int choose){const char *value=first;if(choose)value=second;return chain(value);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan value_result(void *owner,int choose){const char *value=first;if(choose)value=second;return as_value(value);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan choice(void *owner,int choose){const char *one=first;const char *two=second;return select(choose,one,two);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan targets(void *owner,int choose){const char *value=first;Producer target=choose?leaf:chain;return target(value);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan callback(void *owner,int choose){Callback target=identity;if(choose)target=next;return callback_chain(target)(first);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan member(void *owner,int choose){Target object;Method target=&Target::read;if(choose)target=&Target::next;return (object.*member_chain(target))(first);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan function(void *owner){return function_chain(identity)(first);}
+}
+)consumed";
       auto first=emit(source,"static-borrowed-results.m");
       const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
       auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
       assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedResultProofSemantic)));
       auto older=supported;std::erase(older,llvm::StringRef(kBorrowedResultProofSemantic));
-      older.push_back("objc3.borrowed-result-proofs.v10");
+      older.push_back("objc3.borrowed-result-proofs.v11");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
       std::erase(decoded->required_semantics,kBorrowedResultProofSemantic);
       auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());

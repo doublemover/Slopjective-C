@@ -45061,7 +45061,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,7192 @@
+@@ -0,0 +1,7205 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49900,6 +49900,7 @@ new file mode 100644
 +      unsigned &Budget,unsigned Depth=0,bool ReadOnlyReferenceResult=false) const {
 +    if(Depth>32)return false;
 +    llvm::SmallPtrSet<const DeclRefExpr *,8> ReturnedReferences;
++    llvm::SmallPtrSet<const CallExpr *,8> ConsumedReferenceResults;
 +    // Discover the complete local read-only reference graph before scanning
 +    // uses: the bounded statement stack need not visit declarations before uses.
 +    llvm::DenseMap<const VarDecl *,SmallVector<const VarDecl *,2>> Aliases;
@@ -49909,6 +49910,10 @@ new file mode 100644
 +    while(!Discovery.empty()) {
 +      const Stmt *Node=Discovery.pop_back_val();if(!Node)continue;
 +      if(!Budget)return false;--Budget;
++      if(const auto *Load=dyn_cast<ImplicitCastExpr>(Node);
++          Load && (Load->getCastKind()==CK_LValueToRValue || Load->getCastKind()==CK_FunctionToPointerDecay))
++        if(const auto *Call=dyn_cast<CallExpr>(Load->getSubExpr()->IgnoreParenImpCasts());
++            Call && Call->isGLValue())ConsumedReferenceResults.insert(Call);
 +      if(ReadOnlyReferenceResult)
 +        if(const auto *Return=dyn_cast<ReturnStmt>(Node)) {
 +          SmallVector<const Expr *,4> Results{Return->getRetValue()};
@@ -49917,6 +49922,8 @@ new file mode 100644
 +            if(!Budget)return false;--Budget;
 +            Result=Result->IgnoreParenImpCasts();
 +            if(const auto *Reference=dyn_cast<DeclRefExpr>(Result))ReturnedReferences.insert(Reference);
++            else if(const auto *Call=dyn_cast<CallExpr>(Result);Call && Call->isGLValue())
++              ConsumedReferenceResults.insert(Call);
 +            else if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(Result)) {
 +              Results.push_back(Choice->getTrueExpr());Results.push_back(Choice->getFalseExpr());
 +            } else if(const auto *Comma=dyn_cast<BinaryOperator>(Result);Comma && Comma->getOpcode()==BO_Comma)
@@ -49999,7 +50006,11 @@ new file mode 100644
 +                  if(!Parameter->getType()->isReferenceType() || Type.isVolatileQualified() ||
 +                      !(Type->isFunctionType() || (staticProofPointerType(Type) && Type.isConstQualified())))break;
 +                  llvm::SmallPtrSet<const VarDecl *,1> Inputs{Parameter};StaticPointerWrites NestedWrites;
-+                  Matched=staticPointerSlotUses(Definition->getBody(),Inputs,NestedWrites,Budget,Depth+1) &&
++                  const QualType Result=Definition->getReturnType().getNonReferenceType();
++                  const bool ConsumedReference=ConsumedReferenceResults.contains(Call) &&
++                      Definition->getReturnType()->isReferenceType() && !Result.isVolatileQualified() &&
++                      (Result->isFunctionType() || (staticProofPointerType(Result) && Result.isConstQualified()));
++                  Matched=staticPointerSlotUses(Definition->getBody(),Inputs,NestedWrites,Budget,Depth+1,ConsumedReference) &&
 +                      Inputs.contains(Parameter);
 +                  break;
 +                }
@@ -50307,7 +50318,9 @@ new file mode 100644
 +    const bool KnownCapture=staticCapturedValues(Variable,Depth+1,Budget,Bindings,Captured,Captures,true);
 +    if(Captured)return KnownCapture && !Captures.empty();
 +    const QualType Type=Variable->getType().getNonReferenceType();
-+    if(!staticProofPointerType(Type) || !Type.isConstQualified() || Type.isVolatileQualified())return false;
++    if(!staticProofPointerType(Type) || Type.isVolatileQualified() ||
++        (!Type.isConstQualified() && (Variable->getType()->isReferenceType() ||
++          !Variable->hasLocalStorage() || !staticResultObjectOutlivesRead(Variable))))return false;
 +    if(Variable->getType()->isReferenceType()) {
 +      if(const auto *Parameter=dyn_cast<ParmVarDecl>(Variable)) {
 +        bool Found=false;
@@ -60551,7 +60564,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,3611 @@
+@@ -0,0 +1,3675 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -64163,6 +64176,70 @@ new file mode 100644
 +  EXPECT_GE(Visitor.Closures,9u);EXPECT_GE(Visitor.LocalRecords,7u);
 + }
 +}
++
++TEST(ObjC3ASTInfrastructure, ConsumedReferenceCallsKeepExactSlotAndCallableGraphs) {
++ const char *Source=R"cpp(
++namespace ConsumedStorage {typedef borrowed const char *StaticLoan;
++
++namespace ConsumedReferenceProofs {
++inline constexpr char first[]="first",second[]="second";
++inline int observations=0;inline void observe(){++observations;}
++inline const char *const &leaf(const char *const &value){observe();return value;}
++inline const char *const &chain(const char *const &value){observe();return leaf(value);}
++inline const char *as_value(const char *const &value){observe();return chain(value);}
++inline const char *const &select(int choose,const char *const &one,const char *const &two){observe();return choose?chain(one):leaf(two);}
++using Producer=const char *const &(*)(const char *const &);
++inline const char *identity(const char *value){return value;}
++inline const char *next(const char *value){return value+1;}
++using Callback=const char *(*)(const char *);
++inline Callback const &callback_leaf(Callback const &value){observe();return value;}
++inline Callback const &callback_chain(Callback const &value){observe();return callback_leaf(value);}
++struct Target {const char *read(const char *value)const{return value;}const char *next(const char *value)const{return value+1;}};
++using Method=const char *(Target::*)(const char *)const;
++inline Method const &member_leaf(Method const &value){observe();return value;}
++inline Method const &member_chain(Method const &value){observe();return member_leaf(value);}
++inline const char *(&function_leaf(const char *(&value)(const char *)))(const char *){observe();return value;}
++inline const char *(&function_chain(const char *(&value)(const char *)))(const char *){observe();return function_leaf(value);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan constant(void *owner){const char *const value=first;return chain(value);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan mutable_slot(void *owner,int choose){const char *value=first;if(choose)value=second;return chain(value);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan value_result(void *owner,int choose){const char *value=first;if(choose)value=second;return as_value(value);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan choice(void *owner,int choose){const char *one=first;const char *two=second;return select(choose,one,two);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan targets(void *owner,int choose){const char *value=first;Producer target=choose?leaf:chain;return target(value);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan callback(void *owner,int choose){Callback target=identity;if(choose)target=next;return callback_chain(target)(first);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan member(void *owner,int choose){Target object;Method target=&Target::read;if(choose)target=&Target::next;return (object.*member_chain(target))(first);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan function(void *owner){return function_chain(identity)(first);}
++}
++
++}
++ )cpp";
++ for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++  std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++      "--target=x86_64-unknown-linux-gnu","-fobjc3-profile=strict-system","-fexceptions","-fobjc-exceptions"};
++  if(ARC)Args.push_back("-fobjc-arc");
++  auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"member-source.mm");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"member-target.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  NamespaceDecl *Imported=nullptr;
++  {
++   ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *N=dyn_cast<NamespaceDecl>(D)) {
++    auto Result=Importer.Import(N);ASSERT_TRUE(static_cast<bool>(Result));Imported=dyn_cast<NamespaceDecl>(*Result);
++   }
++  }
++  ASSERT_TRUE(Imported);From.reset();
++  PrintingPolicy Policy(To->getASTContext().getLangOpts());Policy.PolishForDeclaration=true;
++  std::string Printed;llvm::raw_string_ostream Out(Printed);Imported->print(Out,Policy);Out.flush();
++  auto Replay=tooling::buildASTFromCodeWithArgs(Printed,Args,"member-replay.mm");
++  ASSERT_TRUE(Replay);EXPECT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++  struct Calls:RecursiveASTVisitor<Calls> {
++   unsigned References=0;
++   bool VisitCallExpr(CallExpr *Call){References+=Call->isGLValue();return true;}
++  } Visitor;
++  Visitor.TraverseDecl(Replay->getASTContext().getTranslationUnitDecl());
++  EXPECT_GE(Visitor.References,10u);
++ }
++}
++
 
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
@@ -71725,7 +71802,7 @@ diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
-@@ -0,0 +1,310 @@
+@@ -0,0 +1,330 @@
 +#ifndef OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +#define OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +typedef borrowed const char *StaticGraphLoan;
@@ -72035,13 +72112,33 @@ new file mode 100644
 +inline const char *graph_returned_alias_mutation(const char *value){const char *const &alias=graph_reference_result(value);const_cast<const char *&>(alias)=graph_unknown();return value;}
 +inline const char *const &graph_reference_result_choice(int choose,const char *const &first,const char *const &second){return choose?first:second;}
 +inline const char *const &graph_reference_result_branch(int choose,const char *const &first,const char *const &second){if(choose)return first;return second;}
++
++inline const char *const &graph_consumed_ref_leaf(const char *const &value){return value;}
++inline const char *const &graph_consumed_ref_chain(const char *const &value){return graph_consumed_ref_leaf(value);}
++inline const char *const &graph_consumed_ref_choice(int choose,const char *const &first,const char *const &second){return choose?graph_consumed_ref_chain(first):graph_consumed_ref_leaf(second);}
++inline const char *graph_consumed_ref_value(const char *const &value){return graph_consumed_ref_chain(value);}
++using GraphReferenceProducer=const char *const &(*)(const char *const &);
++inline GraphForwardCallback const &graph_consumed_callback_leaf(GraphForwardCallback const &value){return value;}
++inline GraphForwardCallback const &graph_consumed_callback_chain(GraphForwardCallback const &value){return graph_consumed_callback_leaf(value);}
++inline GraphMemberPointer const &graph_consumed_member_leaf(GraphMemberPointer const &value){return value;}
++inline GraphMemberPointer const &graph_consumed_member_chain(GraphMemberPointer const &value){return graph_consumed_member_leaf(value);}
++inline const char *(&graph_consumed_function_leaf(const char *(&value)(const char *)))(const char *){return value;}
++inline const char *(&graph_consumed_function_chain(const char *(&value)(const char *)))(const char *){return graph_consumed_function_leaf(value);}
++inline const char *const &graph_consumed_dangling_value(const char *const value){return value;}
++inline const char *const &graph_consumed_dangling_chain(const char *const &value){return graph_consumed_dangling_value(value);}
++void graph_consumed_address(const char *const *);
++inline const char *graph_consumed_escaped_alias(const char *value){const char *const &alias=graph_consumed_ref_chain(value);const_cast<const char *&>(alias)=graph_unknown();return value;}
++inline const char *graph_consumed_escaped_address(const char *value){graph_consumed_address(&graph_consumed_ref_chain(value));return value;}
++inline const char *graph_consumed_reference_capture(const char *value){auto capture=[&alias=graph_consumed_ref_chain(value)]{return alias;};(void)capture;return value;}
++struct GraphConstexprStoredView {const char *value;constexpr const char *read()const{return value;}};
++inline GraphConstexprStoredView graph_constexpr_mutable_view{graph_first};
 +#endif
 
 diff --git a/clang/test/ObjC3/Sema/borrowed-static-control-flow.m b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
-@@ -0,0 +1,323 @@
+@@ -0,0 +1,346 @@
 +// REQUIRES: x86-registered-target
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
@@ -72364,6 +72461,29 @@ new file mode 100644
 +STATIC_GRAPH StaticGraphLoan static_graph_reference_object_choice(void *owner,int choose){const char *const first=graph_first;const char *const second=graph_second;return graph_reference_result_choice(choose,first,second);}
 +STATIC_GRAPH StaticGraphLoan static_graph_reference_object_branch(void *owner,int choose){const char *const first=graph_first;const char *const second=graph_second;return graph_reference_result_branch(choose,first,second);}
 +STATIC_GRAPH StaticGraphLoan static_graph_reference_object_alias_mutation(void *owner){return graph_returned_alias_mutation(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_constant(void *owner,int choose){const char *const value=graph_first;return graph_consumed_ref_chain(value);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_constant_value(void *owner,int choose){const char *const value=graph_first;return graph_consumed_ref_value(value);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_mutable(void *owner,int choose){const char *value=graph_first;if(choose)value=graph_second;return graph_consumed_ref_chain(value);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_mutable_value(void *owner,int choose){const char *value=graph_first;if(choose)value=graph_second;return graph_consumed_ref_value(value);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_conditional(void *owner,int choose){const char *first=graph_first;const char *second=graph_second;return graph_consumed_ref_choice(choose,first,second);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_targets(void *owner,int choose){const char *value=graph_first;GraphReferenceProducer target=choose?graph_consumed_ref_leaf:graph_consumed_ref_chain;return target(value);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_callback(void *owner,int choose){GraphForwardCallback value=graph_forward;if(choose)value=graph_readonly_local;return graph_consumed_callback_chain(value)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_member(void *owner,int choose){GraphMemberTargets object;GraphMemberPointer value=&GraphMemberTargets::read;if(choose)value=&GraphMemberTargets::next;return (object.*graph_consumed_member_chain(value))(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_function(void *owner,int choose){return graph_consumed_function_chain(graph_forward)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_function_alias(void *owner,int choose){const char *(&value)(const char *)=graph_forward;return graph_consumed_function_chain(value)(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_unknown(void *owner,int choose,const char *unknown){const char *value=graph_first;if(choose)value=unknown;return graph_consumed_ref_chain(value);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_alias(void *owner,int choose,const char *unknown){return graph_consumed_escaped_alias(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_address(void *owner,int choose,const char *unknown){return graph_consumed_escaped_address(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_capture(void *owner,int choose,const char *unknown){return graph_consumed_reference_capture(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_dangling(void *owner,int choose,const char *unknown){const char *value=graph_first;return graph_consumed_dangling_chain(value);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_callback(void *owner,int choose,const char *unknown){GraphForwardCallback value=graph_forward;if(choose)value=graph_mutable_callback;return graph_consumed_callback_chain(value)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_unknown_callback(void *owner,int choose,const char *unknown){return graph_consumed_callback_chain(graph_mutable_callback)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_null_target(void *owner,int choose,const char *unknown){const char *value=graph_first;GraphReferenceProducer target=choose?graph_consumed_ref_leaf:nullptr;return target(value);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_global_field(void *owner){return graph_constexpr_mutable_view.value;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_global_method(void *owner){return graph_constexpr_mutable_view.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_local_field(void *owner,const char *unknown){GraphConstexprStoredView view{graph_first};view.value=unknown;return view.value;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_local_method(void *owner,const char *unknown){GraphConstexprStoredView view{graph_first};view.value=unknown;return view.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_consumed_reference_bad_mutable_capture(void *owner){auto call=[value=graph_first]()mutable{return value;};return call();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +#endif
 
 diff --git a/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm b/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm

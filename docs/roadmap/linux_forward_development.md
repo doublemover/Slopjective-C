@@ -1,5 +1,10 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.174 / System 2.100 consumed reference span](linux_consumed_reference_results.md)
+extends bounded nested reference producers and active-caller mutable slots while
+preserving alias/address/capture escape checks.
+
+
 The [Source 2.173 / System 2.99 inline lambda-factory span](linux_inline_closure_factory_results.md)
 binds local record/enum and nested closure results to their named variable owners
 and preserves native overload identity during import.
@@ -38,7 +43,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.173 / System 2.99 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.174 / System 2.100 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

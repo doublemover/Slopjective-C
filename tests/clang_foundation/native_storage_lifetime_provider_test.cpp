@@ -187,6 +187,36 @@ using Owned=decltype(owning(2));
 inline int consume(Owned value){return value.value();}
 }
 
+
+namespace ConsumedReferenceProofs {
+inline constexpr char first[]="first",second[]="second";
+inline int observations=0;inline void observe(){++observations;}
+inline const char *const &leaf(const char *const &value){observe();return value;}
+inline const char *const &chain(const char *const &value){observe();return leaf(value);}
+inline const char *as_value(const char *const &value){observe();return chain(value);}
+inline const char *const &select(int choose,const char *const &one,const char *const &two){observe();return choose?chain(one):leaf(two);}
+using Producer=const char *const &(*)(const char *const &);
+inline const char *identity(const char *value){return value;}
+inline const char *next(const char *value){return value+1;}
+using Callback=const char *(*)(const char *);
+inline Callback const &callback_leaf(Callback const &value){observe();return value;}
+inline Callback const &callback_chain(Callback const &value){observe();return callback_leaf(value);}
+struct Target {const char *read(const char *value)const{return value;}const char *next(const char *value)const{return value+1;}};
+using Method=const char *(Target::*)(const char *)const;
+inline Method const &member_leaf(Method const &value){observe();return value;}
+inline Method const &member_chain(Method const &value){observe();return member_leaf(value);}
+inline const char *(&function_leaf(const char *(&value)(const char *)))(const char *){observe();return value;}
+inline const char *(&function_chain(const char *(&value)(const char *)))(const char *){observe();return function_leaf(value);}
+STATIC_BORROWED inline StaticLoan constant(void *owner){const char *const value=first;return chain(value);}
+STATIC_BORROWED inline StaticLoan mutable_slot(void *owner,int choose){const char *value=first;if(choose)value=second;return chain(value);}
+STATIC_BORROWED inline StaticLoan value_result(void *owner,int choose){const char *value=first;if(choose)value=second;return as_value(value);}
+STATIC_BORROWED inline StaticLoan choice(void *owner,int choose){const char *one=first;const char *two=second;return select(choose,one,two);}
+STATIC_BORROWED inline StaticLoan targets(void *owner,int choose){const char *value=first;Producer target=choose?leaf:chain;return target(value);}
+STATIC_BORROWED inline StaticLoan callback(void *owner,int choose){Callback target=identity;if(choose)target=next;return callback_chain(target)(first);}
+STATIC_BORROWED inline StaticLoan member(void *owner,int choose){Target object;Method target=&Target::read;if(choose)target=&Target::next;return (object.*member_chain(target))(first);}
+STATIC_BORROWED inline StaticLoan function(void *owner){return function_chain(identity)(first);}
+}
+
 inline int cleanup_order=0;
 struct CleanupValue {
  int value;
@@ -582,6 +612,12 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(FactoryResults::live || FactoryResults::created-previous_created!=3 || FactoryResults::destroyed-previous_destroyed!=3 || FactoryResults::copies-previous_copies!=1 || FactoryResults::moves-previous_moves!=1)return 87;
   bool factory_failed=false;try{auto value=FactoryResults::owning(-50);(void)value;}catch(int value){factory_failed=value==83;}
   if(!factory_failed || FactoryResults::live || FactoryResults::created-previous_created!=3)return 88;
+  namespace Consumed=ConsumedReferenceProofs;
+  const int previous_consumed_observations=Consumed::observations;
+  if(Consumed::constant(nullptr)[0]!='f' || Consumed::mutable_slot(nullptr,0)[0]!='f' || Consumed::mutable_slot(nullptr,1)[0]!='s' || Consumed::value_result(nullptr,0)[0]!='f' || Consumed::value_result(nullptr,1)[0]!='s')return 90;
+  if(Consumed::choice(nullptr,0)[0]!='s' || Consumed::choice(nullptr,1)[0]!='f' || Consumed::targets(nullptr,0)[0]!='f' || Consumed::targets(nullptr,1)[0]!='f')return 91;
+  if(Consumed::callback(nullptr,0)[0]!='f' || Consumed::callback(nullptr,1)[0]!='i' || Consumed::member(nullptr,0)[0]!='f' || Consumed::member(nullptr,1)[0]!='i' || Consumed::function(nullptr)[0]!='f')return 92;
+  if(Consumed::observations-previous_consumed_observations!=30)return 93;
   if(static_member_view(nullptr,0)[0]!='s' || static_member_view(nullptr,1)[0]!='t')return 61;
   if(static_member_factory_view(nullptr,0)[0]!='t' || static_member_factory_view(nullptr,1)[0]!='s')return 62;
   if(static_member_nothrow_view(nullptr)[0]!='s' || static_member_constant_field_view(nullptr)[0]!='s')return 64;

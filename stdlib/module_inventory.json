@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 173,
+        "minor": 174,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -337,12 +337,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 99,
+        "minor": 100,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Bounded read-only pointer/function/member-pointer reference results forward through nested exact helpers when loaded immediately or returned to the result proof; active-caller mutable slots retain every write while escaped aliases/address/reference captures and dangling callee slots remain rejected; borrowed-result-proofs v12 cutover (source; matching SDK pending)",
         "Named inline namespace/class-static lambda factories bind local record/enum, nested closure and generic result owners to the exact variable plus concrete callable arguments; projected aliases, nominal import matching, distinct overloaded symbols and deduced-return placeholder shapes preserve identity and export-policy dependencies, with cxx-inline-closure-objects v3 hard cutover (source; matching SDK pending)",
         "Inline namespace and concrete class-static closure objects retain owning init-capture cleanup wrappers and stable type owners, including mutable/generic and TLS object forms, copies and native storage policies; cxx-inline-closure-objects v2 hard cutover (source; matching SDK pending)",
         "Bounded pointer/callback/member-pointer reference-result graphs retain immutable field/capture storage and active-caller const object/slot lifetimes through synchronous nested forwarding, while rejecting nested callee locals and unproved receiver storage; borrowed-result-proofs v11 cutover (source; matching SDK pending)",

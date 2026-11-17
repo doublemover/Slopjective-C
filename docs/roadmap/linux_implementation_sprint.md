@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.174 / System 2.100 consumed reference span](linux_consumed_reference_results.md)
+extends bounded nested reference producers and active-caller mutable slots while
+preserving alias/address/capture escape checks.
+
+
 The [Source 2.173 / System 2.99 inline lambda-factory span](linux_inline_closure_factory_results.md)
 binds local record/enum and nested closure results to their named variable owners
 and preserves native overload identity during import.
