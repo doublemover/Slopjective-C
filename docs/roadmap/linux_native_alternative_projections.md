@@ -27,4 +27,4 @@ write destinations, unknown-call/capture escape and argument bit 31. All four
 optimized source-free provider/two-consumer executor configurations pass,
 including 19 ordinary value/reference paths per consumer and exact descriptor
 closure. The maintained patch reproduces authored sources and 16 tooling checks
-pass. Full isolation regression and archive acceptance are tracked separately.
+pass. The full isolation regression, all 118 AST controls and production codec also pass. Archive acceptance remains separate.

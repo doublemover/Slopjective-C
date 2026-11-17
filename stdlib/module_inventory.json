@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 201,
+        "minor": 202,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native function-template structural equivalence compares complete callable declarations instead of only function types; complete authored records bind bare/conditional explicit policies, template heads and class/method final state, rejecting conflicting imports in both directions; matching SDK acceptance pending",
         "Bounded native helper argument unions preserve every possible scalar/reference source through branches, switches, conditional expressions, nested projections and immutable aliases; multi-cell reference writes and escapes update all possible caller bindings, including captures and high argument positions; unrelated condition/ignored arguments remain reads; matching SDK acceptance pending",
         "Native nested/member deduction guides publish separate class-owned identities through ordinary, dependent and pack-enclosing record graphs; guide v2 binds access, lexical template heads and associated requirements without creating runtime entries; complete-record import compares written guide sets and policies; matching SDK acceptance pending",
         "Bounded pure native argument control graphs preserve cleanup provenance and exact reference storage through if/conditional/switch paths, case fallthrough/break, immutable scalar/reference aliases, nested closed helpers and direct dependent returns; every live return must select one caller argument, unknown/ambiguous/mutating paths remain unproved; matching SDK acceptance pending",
@@ -364,12 +365,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 127,
+        "minor": 128,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native function-template structural equivalence compares complete callable declarations instead of only function types; complete authored records bind bare/conditional explicit policies, template heads and class/method final state, rejecting conflicting imports in both directions; matching SDK acceptance pending",
         "Bounded native helper argument unions preserve every possible scalar/reference source through branches, switches, conditional expressions, nested projections and immutable aliases; multi-cell reference writes and escapes update all possible caller bindings, including captures and high argument positions; unrelated condition/ignored arguments remain reads; matching SDK acceptance pending",
         "Native nested/member deduction guides publish separate class-owned identities through ordinary, dependent and pack-enclosing record graphs; guide v2 binds access, lexical template heads and associated requirements without creating runtime entries; complete-record import compares written guide sets and policies; matching SDK acceptance pending",
         "Bounded pure native argument control graphs preserve cleanup provenance and exact reference storage through if/conditional/switch paths, case fallthrough/break, immutable scalar/reference aliases, nested closed helpers and direct dependent returns; every live return must select one caller argument, unknown/ambiguous/mutating paths remain unproved; matching SDK acceptance pending",

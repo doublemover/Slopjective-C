@@ -6380,12 +6380,17 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
  /// Determine structural equivalence of two methods.
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       CXXMethodDecl *Method1,
-@@ -1717,18 +1943,19 @@
+@@ -1713,22 +1939,23 @@
+       Method1->isVolatile() == Method2->isVolatile() &&
+       Method1->isVirtual() == Method2->isVirtual() &&
+       Method1->isPureVirtual() == Method2->isPureVirtual() &&
++      Method1->hasAttr<FinalAttr>() == Method2->hasAttr<FinalAttr>() &&
+       Method1->isDefaulted() == Method2->isDefaulted() &&
        Method1->isDeleted() == Method2->isDeleted();
    if (!PropertiesEqual)
      return false;
+-  // FIXME: Check for 'final'.
 +  if(!sameEnableIfPredicates(Context,Method1,Method2))return false;
-   // FIXME: Check for 'final'.
  
    if (auto *Constructor1 = dyn_cast<CXXConstructorDecl>(Method1)) {
      auto *Constructor2 = cast<CXXConstructorDecl>(Method2);
@@ -6435,23 +6440,26 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    // C23 6.2.7p1:
    // ... Moreover, two complete structure, union, or enumerated types declared
    // with the same tag are compatible if members satisfy the following
-@@ -1934,6 +2178,45 @@
+@@ -1934,6 +2178,48 @@
  
    if (auto *D1CXX = dyn_cast<CXXRecordDecl>(D1)) {
      if (auto *D2CXX = dyn_cast<CXXRecordDecl>(D2)) {
++      if(D1CXX->hasAttr<FinalAttr>()!=D2CXX->hasAttr<FinalAttr>())return false;
 +      // Authored conditional conversion policies are part of the definition,
 +      // even when no corresponding callable has been imported individually.
 +      // Implicit specialization caches do not supply a written declaration.
 +      if(D1CXX->getTemplateSpecializationKind()!=TSK_ImplicitInstantiation &&
 +          D2CXX->getTemplateSpecializationKind()!=TSK_ImplicitInstantiation) {
 +        auto Policies=[](CXXRecordDecl *Record) {
-+          SmallVector<CXXMethodDecl *,8> Result;
++          SmallVector<NamedDecl *,8> Result;
 +          for(auto *Member:Record->decls()) {
 +            auto *Method=dyn_cast<CXXMethodDecl>(Member);
-+            if(auto *Template=dyn_cast<FunctionTemplateDecl>(Member))
-+              Method=dyn_cast<CXXMethodDecl>(Template->getTemplatedDecl());
-+            if(Method && !Method->isImplicit() &&
-+                ExplicitSpecifier::getFromDecl(Method).getExpr())Result.push_back(Method);
++            auto *Template=dyn_cast<FunctionTemplateDecl>(Member);
++            if(Template)Method=dyn_cast<CXXMethodDecl>(Template->getTemplatedDecl());
++            if(!Method || Method->isImplicit())continue;
++            const auto Explicit=ExplicitSpecifier::getFromDecl(Method);
++            if(Explicit.getExpr() || Explicit.isExplicit() || Method->hasAttr<FinalAttr>())
++              Result.push_back(Template?static_cast<NamedDecl *>(Template):Method);
 +          }
 +          return Result;
 +        };
@@ -6481,7 +6489,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
        if (D1CXX->hasExternalLexicalStorage() &&
            !D1CXX->isCompleteDefinition()) {
          D1CXX->getASTContext().getExternalSource()->CompleteType(D1CXX);
-@@ -2290,7 +2573,8 @@
+@@ -2290,7 +2576,8 @@
        return false;
    }
  
@@ -6491,7 +6499,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
  }
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
-@@ -2308,7 +2592,10 @@
+@@ -2308,7 +2595,10 @@
      return false;
    }
  
@@ -6503,7 +6511,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
  }
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
-@@ -2380,6 +2667,8 @@
+@@ -2380,6 +2670,8 @@
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ClassTemplateDecl *D1,
                                       ClassTemplateDecl *D2) {
@@ -6512,7 +6520,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2389,9 +2678,85 @@
+@@ -2389,21 +2681,117 @@
                                    D2->getTemplatedDecl());
  }
  
@@ -6598,10 +6606,17 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2402,8 +2767,27 @@
- }
  
- static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+-  // Check the templated declaration.
+-  return IsStructurallyEquivalent(Context, D1->getTemplatedDecl()->getType(),
+-                                  D2->getTemplatedDecl()->getType());
++  // Queue the actual declaration as well as its type. A type alone cannot
++  // bind explicit policies, method categories or borrowed/isolation contracts.
++  return IsStructurallyEquivalent(Context, static_cast<Decl *>(D1->getTemplatedDecl()),
++                                  static_cast<Decl *>(D2->getTemplatedDecl()));
++}
++
++static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
 +                                     VarTemplateDecl *D1,
 +                                     VarTemplateDecl *D2) {
 +  auto *First = D1->getTemplatedDecl();
@@ -6617,16 +6632,16 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
 +         First->isInline() == Second->isInline() &&
 +         First->isConstexpr() == Second->isConstexpr() &&
 +         IsStructurallyEquivalent(Context, First->getInit(), Second->getInit());
-+}
-+
-+static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+ }
+ 
+ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       TypeAliasTemplateDecl *D1,
                                       TypeAliasTemplateDecl *D2) {
 +  if (!haveSameAbiTags(D1->getTemplatedDecl(),D2->getTemplatedDecl())) return false;
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2416,6 +2800,14 @@
+@@ -2416,6 +2804,14 @@
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ConceptDecl *D1,
                                       ConceptDecl *D2) {
@@ -6641,7 +6656,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2443,15 +2835,70 @@
+@@ -2443,15 +2839,70 @@
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       TypedefNameDecl *D1, TypedefNameDecl *D2) {
@@ -6712,7 +6727,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
-@@ -2489,6 +2936,10 @@
+@@ -2489,6 +2940,10 @@
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ObjCMethodDecl *Method1,
                                       ObjCMethodDecl *Method2) {
@@ -6723,7 +6738,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    bool PropertiesEqual =
        Method1->isInstanceMethod() == Method2->isInstanceMethod() &&
        Method1->isVariadic() == Method2->isVariadic() &&
-@@ -2600,6 +3051,18 @@
+@@ -2600,6 +3055,18 @@
                                       Decl *D1, Decl *D2) {
    // FIXME: Check for known structural equivalences via a callback of some sort.
  
@@ -6742,7 +6757,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
-@@ -2784,8 +3247,24 @@
+@@ -2784,8 +3251,24 @@
      Decl *D1, Decl *D2) {
  
    // Kind mismatch.
@@ -77665,7 +77680,7 @@ diff --git a/clang/unittests/AST/ObjC3DeductionGuideImportTest.cpp b/clang/unitt
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3DeductionGuideImportTest.cpp
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,137 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
@@ -77758,6 +77773,49 @@ new file mode 100644
 +  auto From=tooling::buildASTFromCodeWithArgs(Reverse?Negative:Positive,{"-std=c++20"},"from.cpp");auto To=tooling::buildASTFromCodeWithArgs(Reverse?Positive:Negative,{"-std=c++20"},"to.cpp");ASSERT_TRUE(From);ASSERT_TRUE(To);
 +  CXXRecordDecl *Root=nullptr;for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner" && R->isCompleteDefinition())Root=R;ASSERT_TRUE(Root);
 +  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);auto Imported=Importer.Import(Root);EXPECT_FALSE(bool(Imported));if(!Imported)llvm::consumeError(Imported.takeError());
++ }
++}
++
++TEST(ObjC3ASTInfrastructure, FunctionTemplateEquivalenceChecksGuideDeclarationPolicy) {
++ for(bool Different:{false,true}) {
++  const std::string Prefix="template<class T>struct Box{template<class U>Box(U);};";
++  auto A=tooling::buildASTFromCodeWithArgs(Prefix+"template<class T>explicit(sizeof(T)>4)Box(T)->Box<T>;",{"-std=c++20"},"left.cpp");
++  auto B=tooling::buildASTFromCodeWithArgs(Prefix+(Different?"template<class U>explicit(sizeof(U)>8)Box(U)->Box<U>;":"template<class U>explicit(sizeof(U)>4)Box(U)->Box<U>;"),{"-std=c++20"},"right.cpp");
++  ASSERT_TRUE(A);ASSERT_TRUE(B);auto *L=OnlyGuide(*A),*R=OnlyGuide(*B);ASSERT_TRUE(L);ASSERT_TRUE(R);
++  llvm::DenseSet<std::tuple<Decl *,Decl *,int>> NonEquivalent;
++  StructuralEquivalenceContext Context(A->getASTContext().getLangOpts(),A->getASTContext(),B->getASTContext(),NonEquivalent,StructuralEquivalenceKind::Default,false,false);
++  EXPECT_EQ(Context.IsEquivalent(L->getDescribedFunctionTemplate(),R->getDescribedFunctionTemplate()),!Different);
++ }
++}
++TEST(ObjC3ASTInfrastructure, CompleteRecordsRejectTemplateAndBareExplicitPolicyChanges) {
++ for(const auto &Pair:std::vector<std::pair<std::string,std::string>>{
++  {"struct Owner{template<class T>struct Cell{template<class U>Cell(U);};template<class T>explicit(sizeof(T)>4)Cell(T)->Cell<T>;};", "struct Owner{template<class T>struct Cell{template<class U>Cell(U);};template<class T>explicit(sizeof(T)>8)Cell(T)->Cell<T>;};"},
++  {"struct Owner{explicit Owner(int);};","struct Owner{Owner(int);};"},
++  {"struct Owner{template<class T>explicit(sizeof(T)>4)Owner(T);};","struct Owner{template<class U>explicit(sizeof(U)>8)Owner(U);};"}})
++ for(bool Reverse:{false,true}) {
++  auto From=tooling::buildASTFromCodeWithArgs(Reverse?Pair.second:Pair.first,{"-std=c++20"},"from.cpp");auto To=tooling::buildASTFromCodeWithArgs(Reverse?Pair.first:Pair.second,{"-std=c++20"},"to.cpp");ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());ASSERT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  CXXRecordDecl *Root=nullptr;for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner" && R->isCompleteDefinition())Root=R;ASSERT_TRUE(Root);
++  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);auto Imported=Importer.Import(Root);EXPECT_FALSE(bool(Imported));if(!Imported)llvm::consumeError(Imported.takeError());
++ }
++}
++TEST(ObjC3ASTInfrastructure, CompleteRecordsRejectClassAndMethodFinalPolicyChanges) {
++ for(const auto &Pair:std::vector<std::pair<std::string,std::string>>{
++  {"struct Owner final{int value;};","struct Owner{int value;};"},
++  {"struct Owner{virtual int run() final;};","struct Owner{virtual int run();};"}})
++ for(bool Reverse:{false,true}) {
++  auto From=tooling::buildASTFromCodeWithArgs(Reverse?Pair.second:Pair.first,{"-std=c++20"},"from.cpp");auto To=tooling::buildASTFromCodeWithArgs(Reverse?Pair.first:Pair.second,{"-std=c++20"},"to.cpp");ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());ASSERT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  CXXRecordDecl *Root=nullptr;for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->getName()=="Owner" && R->isCompleteDefinition())Root=R;ASSERT_TRUE(Root);
++  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);auto Imported=Importer.Import(Root);EXPECT_FALSE(bool(Imported));if(!Imported)llvm::consumeError(Imported.takeError());
++ }
++}
++TEST(ObjC3ASTInfrastructure, FunctionTemplateEquivalenceRetainsNativeMethodCategory) {
++ for(bool Different:{false,true}) {
++  auto A=tooling::buildASTFromCodeWithArgs("struct Owner{template<class T>static int call(T);};",{"-std=c++20"},"left.cpp");
++  auto B=tooling::buildASTFromCodeWithArgs(Different?"struct Owner{template<class U>int call(U);};":"struct Owner{template<class U>static int call(U);};",{"-std=c++20"},"right.cpp");ASSERT_TRUE(A);ASSERT_TRUE(B);
++  auto Find=[](ASTUnit &Unit)->FunctionTemplateDecl *{for(auto *D:Unit.getASTContext().getTranslationUnitDecl()->decls())if(auto *R=dyn_cast<CXXRecordDecl>(D);R && R->isCompleteDefinition())for(auto *M:R->decls())if(auto *T=dyn_cast<FunctionTemplateDecl>(M))return T;return nullptr;};
++  auto *L=Find(*A),*R=Find(*B);ASSERT_TRUE(L);ASSERT_TRUE(R);
++  llvm::DenseSet<std::tuple<Decl *,Decl *,int>> NonEquivalent;StructuralEquivalenceContext Context(A->getASTContext().getLangOpts(),A->getASTContext(),B->getASTContext(),NonEquivalent,StructuralEquivalenceKind::Default,false,false);
++  EXPECT_EQ(Context.IsEquivalent(L,R),!Different);
 + }
 +}
 

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.202 / System 2.128 template-policy import span](linux_native_template_policy_imports.md)
+binds complete callable declarations and authored class/method policies during
+native equivalence and whole-record import.
+
 The [Source 2.201 / System 2.127 alternative-projection span](linux_native_alternative_projections.md)
 preserves all possible argument sources and reference cells through bounded
 native helper control graphs, including projected writes and escapes.
