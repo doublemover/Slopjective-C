@@ -26,8 +26,10 @@ actor class BoundaryActor:BoundaryRoot
 @end
 namespace BoundaryModule {
 inline int transfer(void) __objc3_async_frame {
- BoundaryHandle descriptor __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();
- int result=__objc3_await boundary_target(descriptor);
+ int descriptor __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();
+ int copied=0;copied=descriptor;
+ BoundaryHandle admitted=copied;
+ int result=__objc3_await boundary_target(admitted);
  return boundary_finish(result);
 }
 }
@@ -118,6 +120,14 @@ void Run(const fs::path &root,const char *standard,int ownership){
  }
  for(const auto &[text,message]:std::vector<std::pair<std::string,std::string>>{
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();return __objc3_await boundary_target(h);}","cleanup-managed concurrent value"},
+     {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(int copy) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();copy=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int first=0,second=first;first=second;second=choose?first:h;first=second;return __objc3_await boundary_target(first);}","cleanup-managed concurrent value"},
+     {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;int &view=copy;return __objc3_await boundary_target(view);}","cleanup-managed concurrent value"},
+     {"void may_modify(int *) noexcept;int rejected(void) __objc3_async_frame {int copy=0;may_modify(&copy);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"struct NativeManagedPair{int value;};void close_pair(NativeManagedPair *) noexcept;int rejected(void) __objc3_async_frame {NativeManagedPair owner __attribute__((cleanup(close_pair)))={42};auto [copy]=owner;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"template<class W>int bad_spawn(W) __attribute__((objc_task_spawn));int rejected(void){int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;copy=h;return bad_spawn([copy]()->int __objc3_async_frame {return copy;});}","cleanup-managed concurrent value"},
      {"@interface BoundaryActor (RejectedView) - (const char *_Nonnull)bad __attribute__((objc_nonisolated,objc_returns_inner_pointer));@end","nonisolated actor member cannot transfer a receiver-owned interior view"}}){
   const auto input=root/"bad.mm";Write(input,text);auto value=request(input,root/"bad.o");value.imported_interfaces={external,dependency};auto result=Compile(value);assert(!result.success);
   assert(std::any_of(result.diagnostics.begin(),result.diagnostics.end(),[&](const auto &d){return d.message.find(message)!=std::string::npos;}));

@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 192,
+        "minor": 193,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Cleanup-managed scalar/aggregate provenance follows bounded mutable local/parameter writes, assignment cycles, exact native C++ reference cells, record members, array elements, structured bindings and Block/lambda captures; completed native isolation snapshots recheck writes while native reference lifetime holds and type-level Sendable contracts remain intact; source-only unsafe wrappers grant explicit admission, matching SDK acceptance pending",
         "Native Objective-C property/indexed/keyed subscript, reflection, literal/factory and ARC copy/zero writeback graphs retain exact typed accessor/dependency identity, target-owned AST nodes and unique evaluation flags under native-object-expressions v1; canonical bridge/super/ownership-qualifier grammar replays exactly, unpublished implementation bodies create no claim; matching SDK acceptance pending",
         "Explicit external C function/data/callback labels, C++ static/instance entry names and Objective-C runtime class/protocol names now publish exact native ABI bindings under native-external-bindings v1; framed identities and one native-name validator reject missing/forged capabilities, malformed/control/reserved names and namespace owners while preserving module-owned name guards; source-free unowned ABI packages compose with owned adapters and two native consumers, matching SDK acceptance pending",
         "Bounded mutable local Block work-item graphs retain every initializer/write, joins, loop-carried/self/cyclic assignments and nested capture environment while rejecting unknown, escaped, shared-byref and volatile bindings; separate initializer DAGs and shared capture memo/budgets bound analysis; native Objective-C ivar references now deep-import declaration/base/type/location and typed dependency/identity contracts; matching SDK acceptance pending",
@@ -355,12 +356,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 118,
+        "minor": 119,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Cleanup-managed scalar/aggregate provenance follows bounded mutable local/parameter writes, assignment cycles, exact native C++ reference cells, record members, array elements, structured bindings and Block/lambda captures; completed native isolation snapshots recheck writes while native reference lifetime holds and type-level Sendable contracts remain intact; source-only unsafe wrappers grant explicit admission, matching SDK acceptance pending",
         "Native Objective-C property/indexed/keyed subscript, reflection, literal/factory and ARC copy/zero writeback graphs retain exact typed accessor/dependency identity, target-owned AST nodes and unique evaluation flags under native-object-expressions v1; canonical bridge/super/ownership-qualifier grammar replays exactly, unpublished implementation bodies create no claim; matching SDK acceptance pending",
         "Explicit external C function/data/callback labels, C++ static/instance entry names and Objective-C runtime class/protocol names now publish exact native ABI bindings under native-external-bindings v1; framed identities and one native-name validator reject missing/forged capabilities, malformed/control/reserved names and namespace owners while preserving module-owned name guards; source-free unowned ABI packages compose with owned adapters and two native consumers, matching SDK acceptance pending",
         "Bounded mutable local Block work-item graphs retain every initializer/write, joins, loop-carried/self/cyclic assignments and nested capture environment while rejecting unknown, escaped, shared-byref and volatile bindings; separate initializer DAGs and shared capture memo/budgets bound analysis; native Objective-C ivar references now deep-import declaration/base/type/location and typed dependency/identity contracts; matching SDK acceptance pending",

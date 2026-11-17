@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.193 / System 2.119 mutable managed-value span](linux_mutable_managed_values.md)
+tracks cleanup provenance through bounded local writes, reference aliases,
+captures and completed isolation snapshots while retaining native reference holds.
+
 The [Source 2.192 / System 2.118 native object-expression span](linux_native_object_expressions.md)
 preserves property/subscript evaluation, reflection, literals and ARC writeback
 through source-free packages, target-owned AST graphs and canonical replay.
