@@ -1788,6 +1788,16 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     }
     if(llvm::isa<clang::NoThreadSafetyAnalysisAttr>(attribute))return key;
   }
+  if(const auto *owner=llvm::dyn_cast<clang::OwnerAttr>(attribute)) {
+    add(owner->getDerefTypeLoc()?CanonicalType(owner->getDerefType(),declaration->getASTContext()):"unspecified-pointee");return key;
+  }
+  if(const auto *pointer=llvm::dyn_cast<clang::PointerAttr>(attribute)) {
+    add(pointer->getDerefTypeLoc()?CanonicalType(pointer->getDerefType(),declaration->getASTContext()):"unspecified-pointee");return key;
+  }
+  if(const auto *capture=llvm::dyn_cast<clang::LifetimeCaptureByAttr>(attribute)) {
+    std::set<int> targets(capture->params_begin(),capture->params_end());
+    for(int target:targets)add(std::to_string(target));return key;
+  }
   if(const auto *builtins=llvm::dyn_cast<clang::NoBuiltinAttr>(attribute)) {
     std::set<std::string> names;
     for(auto name:builtins->builtinNames())names.insert(name.str());
@@ -3171,6 +3181,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-thread-safety:v1;";
   if (HasDeclarationNativeFunctionEffects(representative))
     identity.canonical_type_identity+=";native-function-effects:v1;";
+  if (HasDeclarationNativeLifetime(representative))
+    identity.canonical_type_identity+=";native-lifetime-annotations:v1;";
   if (HasDeclarationNativeFunctionPolicy(representative))
     identity.canonical_type_identity+=";native-function-policies:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))

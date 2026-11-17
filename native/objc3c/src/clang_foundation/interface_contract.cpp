@@ -586,6 +586,12 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasNativeFunctionEffectIdentity(d) || IsNativeFunctionEffectOwner(d);});
   if(function_effects!=function_effect_capability || !function_effect_owners)
     Add(result,"O3IFC145","native function effect identity and required capability must agree",expected.canonical_name);
+  const bool lifetime_annotations=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeLifetimeAnnotationIdentity);
+  const bool lifetime_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeLifetimeAnnotationSemantic)!=sidecar.required_semantics.end();
+  const bool lifetime_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeLifetimeAnnotationIdentity(d) || IsNativeLifetimeAnnotationOwner(d);});
+  if(lifetime_annotations!=lifetime_capability || !lifetime_owners)
+    Add(result,"O3IFC145","native lifetime annotation identity and required capability must agree",expected.canonical_name);
   const bool function_policies=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeFunctionPolicyIdentity);
   const bool function_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeFunctionPolicySemantic)!=sidecar.required_semantics.end();
   const bool function_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

@@ -1126,6 +1126,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCOverloadableSemantic);
     if(HasNativeFunctionEffectIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeFunctionEffectSemantic);
+    if(HasNativeLifetimeAnnotationIdentity(declaration))
+      sidecar.required_semantics.push_back(kNativeLifetimeAnnotationSemantic);
     if(HasNativeFunctionPolicyIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeFunctionPolicySemantic);
     if(HasNativeControlFlowIdentity(declaration))

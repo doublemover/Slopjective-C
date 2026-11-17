@@ -160,6 +160,13 @@ inline bool IsNativeFunctionEffectOwner(const InterfaceDeclarationIdentity &d) {
       d.kind=="ObjCMethod" || d.kind=="ObjCInterface" || d.kind=="ObjCCategory" ||
       d.kind=="ObjCProtocol" || d.kind=="ObjCProperty" || d.kind=="ObjCIvar";
 }
+inline constexpr const char *kNativeLifetimeAnnotationSemantic = "objc3.native-lifetime-annotations.v1";
+inline bool HasNativeLifetimeAnnotationIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-lifetime-annotations:v1;") != std::string::npos;
+}
+inline bool IsNativeLifetimeAnnotationOwner(const InterfaceDeclarationIdentity &d) {
+  return IsNativeFunctionEffectOwner(d);
+}
 inline constexpr const char *kNativeFunctionPolicySemantic = "objc3.native-function-policies.v1";
 inline bool HasNativeFunctionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-function-policies:v1;") != std::string::npos;

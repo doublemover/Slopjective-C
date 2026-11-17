@@ -381,6 +381,53 @@ bool HasDeclarationNativeFunctionEffects(const clang::NamedDecl *declaration) {
   return constraints.found || HasPublishedExpression(declaration,Scan);
 }
 
+bool HasDeclarationNativeLifetime(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  auto Policy=[](const clang::NamedDecl *named) {
+    if(!named)return false;
+    if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(named))
+      if(!NativeReceiverLifetimeCaptures(function).empty())return true;
+    for(const auto *attribute:named->attrs())
+      if(!attribute->isImplicit() && IsPublishedNativeLifetimeAttribute(attribute)) {
+        return true;
+      }
+    return false;
+  };
+  struct Declarations : clang::DynamicRecursiveASTVisitor {
+    decltype(Policy) &policy;bool found=false;
+    explicit Declarations(decltype(Policy) &policy):policy(policy) {}
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitNamedDecl(clang::NamedDecl *named) override{found|=policy(named);return true;}
+  } declarations(Policy);
+  declarations.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  if(declarations.found)return true;
+  auto Scan=[&](const clang::Stmt *statement) {
+    struct Locals : clang::DynamicRecursiveASTVisitor {
+      decltype(Policy) &policy;bool found=false;
+      explicit Locals(decltype(Policy) &policy):policy(policy) {}
+      bool VisitNamedDecl(clang::NamedDecl *named) override{found|=policy(named);return true;}
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) override{found|=policy(expression->getCallOperator());return true;}
+    } locals(Policy);
+    locals.TraverseStmt(const_cast<clang::Stmt *>(statement));return locals.found;
+  };
+  struct Constraints:clang::DynamicRecursiveASTVisitor {
+    decltype(Scan) &scan;bool found=false;
+    explicit Constraints(decltype(Scan) &scan):scan(scan){}
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitFunctionDecl(clang::FunctionDecl *function) override {
+      found|=scan(function->getTrailingRequiresClause().ConstraintExpr);return true;
+    }
+    bool VisitTemplateDecl(clang::TemplateDecl *pattern) override {
+      found|=scan(pattern->getTemplateParameters()->getRequiresClause());return true;
+    }
+    bool VisitConceptDecl(clang::ConceptDecl *concept_decl) override {
+      found|=scan(concept_decl->getConstraintExpr());return true;
+    }
+  } constraints(Scan);
+  constraints.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  return constraints.found || HasPublishedExpression(declaration,Scan);
+}
+
 bool HasDeclarationNativeFunctionPolicy(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Policy=[](const clang::NamedDecl *named) {

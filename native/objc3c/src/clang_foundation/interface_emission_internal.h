@@ -28,6 +28,7 @@ class FriendDecl;
 class FunctionDecl;
 class FunctionTemplateDecl;
 class LambdaExpr;
+class LifetimeCaptureByAttr;
 class NamedDecl;
 class NamespaceDecl;
 class ObjCMethodDecl;
@@ -115,6 +116,8 @@ std::string CxxCoroutineContract(const clang::Decl *function,
                                   const clang::ASTContext &context);
 
 std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::Decl *function);
+
+std::vector<const clang::LifetimeCaptureByAttr *> NativeReceiverLifetimeCaptures(const clang::FunctionDecl *);
 
 std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool native=false);
 
@@ -207,6 +210,7 @@ bool HasDeclarationNativeControlFlow(const clang::NamedDecl *);
 bool HasDeclarationConstantEvaluationControl(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeFunctionEffects(const clang::NamedDecl *declaration);
+bool HasDeclarationNativeLifetime(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeFunctionPolicy(const clang::NamedDecl *declaration);
 bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeLambdaArgumentABI(const clang::NamedDecl *declaration);
@@ -368,6 +372,7 @@ bool HasDeclarationNativeCxxAsync(const clang::NamedDecl *declaration);
 bool HasDeclarationVirtualCall(const clang::NamedDecl *declaration);
 bool HasDeclarationThreadSafetyContract(const clang::NamedDecl *declaration);
 bool IsPublishedNativeStateAttribute(const clang::Attr *attribute);
+bool IsPublishedNativeLifetimeAttribute(const clang::Attr *attribute);
 bool IsPublishedNativeFunctionPolicy(const clang::Attr *attribute);
 bool IsPublishedNativeAttribute(const clang::Attr *attribute);
 bool IsPublishedSemanticAttribute(const clang::Attr *attribute);

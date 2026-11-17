@@ -66,10 +66,27 @@ class TypeDependencyVisitor final
          exports_(exports), spi_group_(std::move(spi_group)),
          source_root_(source_root) {}
 
+   bool VisitParmVarDecl(clang::ParmVarDecl *parameter) {
+     // Callback prototypes also own parameter declarations. Checking only named
+     // functions would let a callable-context contract disappear during printing.
+     CheckDeclarationAttributes(parameter);
+     return true;
+   }
    void CheckDeclarationAttributes(const clang::NamedDecl *declaration) {
      if (!declaration) return;
+     for(const auto *capture:declaration->specific_attrs<clang::LifetimeCaptureByAttr>())
+       if(std::find(capture->params_begin(),capture->params_end(),clang::LifetimeCaptureByAttr::Invalid)!=capture->params_end())
+         AddDiagnostic(result_,"O3IFC112","lifetime capture target is not resolved in its callable parameter context",declaration->getNameAsString());
+     if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+       for(const auto *capture:NativeReceiverLifetimeCaptures(function))
+         if(std::find(capture->params_begin(),capture->params_end(),clang::LifetimeCaptureByAttr::Invalid)!=capture->params_end())
+           AddDiagnostic(result_,"O3IFC112","implicit receiver lifetime capture target is not resolved",function->getNameAsString());
+     if(const auto *parameter=llvm::dyn_cast<clang::ParmVarDecl>(declaration);
+         parameter && parameter->hasAttr<clang::LifetimeCaptureByAttr>())
+       if(!llvm::isa<clang::FunctionDecl,clang::ObjCMethodDecl,clang::BlockDecl>(parameter->getDeclContext()))
+         AddDiagnostic(result_,"O3IFC112","lifetime capture contracts require a named callable parameter context",parameter->getNameAsString());
      for (const auto *attribute:declaration->attrs())
-       if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::ConstructorAttr,clang::DestructorAttr>(attribute))
+       if (llvm::isa<clang::OwnerAttr,clang::PointerAttr,clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::ConstructorAttr,clang::DestructorAttr>(attribute))
          TraverseAttr(const_cast<clang::Attr *>(attribute));
        else if(const auto *cleanup=llvm::dyn_cast<clang::CleanupAttr>(attribute)) {
          CheckExpressionReference(cleanup->getFunctionDecl());

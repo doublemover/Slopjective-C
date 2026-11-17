@@ -119,6 +119,7 @@ int main() {
       {";actor-receiver-bindings:v1;",kActorReceiverBindingSemantic},
       {";native-function-policies:v1;",kNativeFunctionPolicySemantic},
       {";native-function-effects:v1;",kNativeFunctionEffectSemantic},
+      {";native-lifetime-annotations:v1;",kNativeLifetimeAnnotationSemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},

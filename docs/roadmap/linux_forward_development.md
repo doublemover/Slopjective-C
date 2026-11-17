@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.189 / System 2.115 native lifetime-annotation span](linux_native_lifetime_annotations.md)
+preserves typed owner/view annotations and exact capture targets through source-free
+packages, native AST import, renamed definitions and implicit receiver/lambda calls.
+
 The [Source 2.188 / System 2.114 native function-effect span](linux_native_function_effects.md)
 retains conditional nonblocking/nonallocating type contracts through source-free
 printing, exact native import, callback conversion and dependency admission.
