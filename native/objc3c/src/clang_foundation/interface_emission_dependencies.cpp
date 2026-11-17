@@ -625,6 +625,7 @@ class TypeDependencyVisitor final
     if (body_function_)
       for (const auto *attribute : variable->attrs())
         if (!attribute->isImplicit() &&
+            !IsPublishedNativeAttribute(attribute) &&
             !(llvm::isa<clang::ParmVarDecl>(variable) &&
               (IsPublishedSemanticAttribute(attribute) || IsForeignImportAttribute(attribute))) &&
             !llvm::isa<clang::BlocksAttr,clang::AlignedAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::NoSanitizeAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr>(attribute))
@@ -1408,7 +1409,10 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
     return true;
   }
-  if (!body->isCompleteDefinition() || (body->isUnion() && !body->isAnonymousStructOrUnion()) ||
+  // Named union templates retain the same complete member and specialization
+  // contracts as class/struct templates. Native constructors/destructors own
+  // their active arm; publication never synthesizes an arm discriminator.
+  if (!body->isCompleteDefinition() ||
       (!body->getIdentifier() && UnnamedTemplateRecordKey(body,body->getASTContext()).empty())) return false;
   if (record->getDeclContext()->isRecord() && !body->getLexicalDeclContext()->isRecord() &&
       !IsDetachedNestedTemplateDefinition(body) &&

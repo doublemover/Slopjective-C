@@ -372,10 +372,10 @@ inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-null
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
 }
-inline constexpr const char *kNativeDeclarationAttributeSemantic = "objc3.native-declaration-attributes.v3";
+inline constexpr const char *kNativeDeclarationAttributeSemantic = "objc3.native-declaration-attributes.v4";
 inline bool HasNativeDeclarationAttributeIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-declaration-attributes:v3;") != std::string::npos ||
-         d.effects.ownership_identity.find(";native-declaration-attributes:v3;") != std::string::npos;
+  return d.canonical_type_identity.find(";native-declaration-attributes:v4;") != std::string::npos ||
+         d.effects.ownership_identity.find(";native-declaration-attributes:v4;") != std::string::npos;
 }
 inline bool HasCxxCoroutineTraitsSpecializationIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;") != std::string::npos;
@@ -596,9 +596,9 @@ inline constexpr const char *kCxxTemplateStructureSemantic = "objc3.cxx-template
 inline bool HasCxxTemplateStructureIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-template-structure:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxClassTemplateSemantic = "objc3.cxx-class-templates.v1";
+inline constexpr const char *kCxxClassTemplateSemantic = "objc3.cxx-class-templates.v2";
 inline bool HasCxxClassTemplateIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-class-templates:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-class-templates:v2;") != std::string::npos;
 }
 inline constexpr const char *kCxxVariableTemplateSemantic = "objc3.cxx-variable-templates.v1";
 inline bool HasCxxVariableTemplateIdentity(const InterfaceDeclarationIdentity &d) {

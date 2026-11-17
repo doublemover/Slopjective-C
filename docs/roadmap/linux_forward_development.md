@@ -1,5 +1,13 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.176 / System 2.102 union-template span](linux_native_union_template_packages.md)
+publishes native union templates, specialization graphs and explicit active-arm
+lifetimes with the cxx-class-templates v2 reader cutover.
+
+The [Source 2.176 / System 2.102 API diagnostic span](linux_native_api_diagnostics.md)
+extends nested and published-local availability, deprecation and native diagnostic
+contracts with the native-declaration-attributes v4 reader cutover.
+
 The [Source 2.175 / System 2.101 native AArch64 span](linux_aarch64_native_implementation.md)
 connects compiler ABI, runtime, architecture-pinned tools/caches, package delivery
 and native CI. ARM SDK qualification and fresh-host acceptance remain pending.
@@ -47,7 +55,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.175 / System 2.101 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.176 / System 2.102 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

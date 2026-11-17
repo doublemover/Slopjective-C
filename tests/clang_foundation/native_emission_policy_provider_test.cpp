@@ -136,7 +136,7 @@ inline int invoke(Callback *callback,int value,void *state){return callback(valu
   provider.interface_exports={"SwiftABI"};provider.emit_semantic_interface=true;
   auto built=Compile(provider);Success(built);assert(built.interface_artifact && built.interface_artifact->success);
   const auto artifact=*built.interface_artifact;
-  assert(artifact.sidecar_json.find("objc3.native-declaration-attributes.v3")!=std::string::npos);
+  assert(artifact.sidecar_json.find("objc3.native-declaration-attributes.v4")!=std::string::npos);
   const auto interface=root/"SwiftABI.objc3i";
   Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
   assert(fs::remove(source));

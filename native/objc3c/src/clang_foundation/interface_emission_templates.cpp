@@ -73,7 +73,7 @@ bool IsPublishedThreadSafetyAttribute(const clang::Attr *attribute) {
 }
 
 bool IsPublishedNativeAttribute(const clang::Attr *attribute) {
-  return IsPublishedThreadSafetyAttribute(attribute) || llvm::isa<clang::AArch64VectorPcsAttr,clang::AArch64SVEPcsAttr,clang::TargetAttr,clang::TargetVersionAttr,clang::TargetClonesAttr,clang::MinVectorWidthAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr,clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr,clang::CFReturnsRetainedAttr,clang::CFReturnsNotRetainedAttr,clang::OwnershipAttr,clang::ArgumentWithTypeTagAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::DiagnoseAsBuiltinAttr,clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::EnableIfAttr,clang::OverloadableAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SwiftCallAttr,clang::SwiftAsyncCallAttr,clang::SwiftContextAttr,clang::SwiftAsyncContextAttr,clang::SwiftErrorResultAttr,clang::SwiftIndirectResultAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,clang::TrivialABIAttr,
+  return IsPublishedThreadSafetyAttribute(attribute) || llvm::isa<clang::DeprecatedAttr,clang::UnavailableAttr,clang::AvailabilityAttr,clang::ErrorAttr,clang::AArch64VectorPcsAttr,clang::AArch64SVEPcsAttr,clang::TargetAttr,clang::TargetVersionAttr,clang::TargetClonesAttr,clang::MinVectorWidthAttr,clang::SectionAttr,clang::UsedAttr,clang::RetainAttr,clang::WeakAttr,clang::NoSanitizeAttr,clang::DisableSanitizerInstrumentationAttr,clang::NoProfileFunctionAttr,clang::NoInstrumentFunctionAttr,clang::NoStackProtectorAttr,clang::NoDebugAttr,clang::ConstructorAttr,clang::DestructorAttr,clang::InitPriorityAttr,clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr,clang::CFReturnsRetainedAttr,clang::CFReturnsNotRetainedAttr,clang::OwnershipAttr,clang::ArgumentWithTypeTagAttr,clang::TypeTagForDatatypeAttr,clang::FormatMatchesAttr,clang::DiagnoseAsBuiltinAttr,clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::EnableIfAttr,clang::OverloadableAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SwiftCallAttr,clang::SwiftAsyncCallAttr,clang::SwiftContextAttr,clang::SwiftAsyncContextAttr,clang::SwiftErrorResultAttr,clang::SwiftIndirectResultAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,clang::TrivialABIAttr,
       clang::VisibilityAttr,clang::TypeVisibilityAttr,clang::NoInlineAttr,
       clang::AlwaysInlineAttr,clang::FlattenAttr,clang::ColdAttr,clang::HotAttr,
       clang::ConstAttr,clang::PureAttr,clang::WarnUnusedResultAttr,clang::UnusedAttr,
@@ -940,9 +940,43 @@ std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool nat
     std::string key;
     unsigned ordinal=0;
     std::set<const clang::Decl *> visited;
-    bool TraverseStmt(clang::Stmt *) override {return true;}
+    const clang::NamedDecl *owner=nullptr;
+    bool TraverseStmt(clang::Stmt *statement) override {
+      if(!native || !statement)return true;
+      if(const auto *function=llvm::dyn_cast_or_null<clang::FunctionDecl>(owner))
+        if(statement==function->getBody() && !PublishesFunctionBody(function))return true;
+      if(const auto *variable=llvm::dyn_cast_or_null<clang::VarDecl>(owner))
+        if(statement==variable->getInit() && !PublishesVariableInitializer(variable))return true;
+      // Only new diagnostic contracts enter this body inventory. Generated
+      // temporary declarations and implicit callable machinery do not create
+      // ordinal differences between provider and canonical replay.
+      struct Diagnostics:clang::DynamicRecursiveASTVisitor {
+        std::string key;
+        bool VisitNamedDecl(clang::NamedDecl *declaration) override {
+          std::set<std::string> values;
+          for(const auto *attribute:declaration->attrs())
+            if(!attribute->isImplicit() && llvm::isa<clang::DeprecatedAttr,clang::UnavailableAttr,
+                clang::AvailabilityAttr,clang::ErrorAttr,clang::UnusedAttr>(attribute))
+              values.insert(NativeAttributeValue(attribute,declaration));
+          if(!values.empty()) {
+            key+="declaration:";
+            for(const auto &value:values)key+=std::to_string(value.size())+":"+value;
+          }
+          return true;
+        }
+        bool VisitLambdaExpr(clang::LambdaExpr *expression) override {
+          VisitNamedDecl(expression->getCallOperator());return true;
+        }
+      } diagnostics;
+      diagnostics.TraverseStmt(statement);
+      if(!diagnostics.key.empty())key+="published-diagnostics:"+
+          std::to_string(diagnostics.key.size())+":"+diagnostics.key;
+      return true;
+    }
     bool TraverseDecl(clang::Decl *declaration) override {
       if (!declaration || declaration->isImplicit() || !visited.insert(declaration).second) return true;
+      const auto *previous=owner;owner=llvm::dyn_cast<clang::NamedDecl>(declaration);
+      auto restore=llvm::scope_exit([&]{owner=previous;});
       if (!clang::DynamicRecursiveASTVisitor::TraverseDecl(declaration)) return false;
       const auto *named=llvm::dyn_cast<clang::NamedDecl>(declaration);
       if (!named) return true;

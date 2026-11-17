@@ -1131,9 +1131,12 @@ InterfaceContractValidation ValidateSemanticInterface(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxClassTemplateIdentity);
   const bool class_capability = std::find(sidecar.required_semantics.begin(),
       sidecar.required_semantics.end(), kCxxClassTemplateSemantic) != sidecar.required_semantics.end();
+  const bool class_template_owners = std::all_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+      [](const auto &d) {return !HasCxxClassTemplateIdentity(d) || d.kind=="ClassTemplate" ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
   const bool class_data_capability = std::find(sidecar.required_semantics.begin(),
       sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
-  if (has_class_templates != class_capability || (class_capability && !class_data_capability))
+  if (has_class_templates != class_capability || !class_template_owners || (class_capability && !class_data_capability))
     Add(result,"O3IFC054","class template identity and required class/data capabilities must agree",expected.canonical_name);
   const bool has_variable_templates = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxVariableTemplateIdentity);

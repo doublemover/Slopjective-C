@@ -1030,6 +1030,9 @@ public:
           local_contracts.insert("local-emission-policy:"+NativeAttributeValue(attribute,declaration));
         else if(!attribute->isImplicit() && llvm::isa<clang::ConstInitAttr,clang::NoDestroyAttr,clang::AlwaysDestroyAttr,clang::CleanupAttr,clang::ObjCCleanupAttr,clang::ObjCResourceAttr>(attribute))
           local_contracts.insert("local-storage-lifetime:"+NativeAttributeValue(attribute,declaration));
+        else if(!attribute->isImplicit() && llvm::isa<clang::DeprecatedAttr,clang::UnavailableAttr,
+            clang::AvailabilityAttr,clang::ErrorAttr,clang::UnusedAttr>(attribute))
+          local_contracts.insert("local-diagnostic-contract:"+NativeAttributeValue(attribute,declaration));
       }
       for(const auto &contract:local_contracts)Add(contract);
     }
@@ -1362,6 +1365,7 @@ public:
   }
   std::string Get(clang::Stmt *expression,bool parameter_bindings=false) {
     clang::PrintingPolicy policy(context_.getLangOpts());
+    policy.PolishForDeclaration = true;
     const bool unnamed=ContainsUnnamedLocalType(expression);
     // Canonical types erase owned-tag spelling. Keep complete unnamed local
     // definitions in the text binding; typed references use lexical slots.
@@ -1530,9 +1534,36 @@ std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
   return identity.Get(const_cast<clang::Stmt *>(PublishedFunctionBody(definition)));
 }
 
+// Diagnostic contracts are semantic data, independent of GNU/C++ spelling.
+// Keep messages length-delimited, including embedded quotes and separators.
+static std::string NativeDiagnosticAttributeValue(const clang::Attr *attribute) {
+  std::string value;
+  auto field=[&](llvm::StringRef text){value+=std::to_string(text.size())+":"+text.str();};
+  if(const auto *deprecated=llvm::dyn_cast<clang::DeprecatedAttr>(attribute)) {
+    field("deprecated");field(deprecated->getMessage());field(deprecated->getReplacement());
+  } else if(const auto *unavailable=llvm::dyn_cast<clang::UnavailableAttr>(attribute)) {
+    field("unavailable");field(unavailable->getMessage());
+  } else if(const auto *availability=llvm::dyn_cast<clang::AvailabilityAttr>(attribute)) {
+    field("availability");field(availability->getPlatform()->getName());
+    field(availability->getIntroduced().normalize().getAsString());
+    field(availability->getDeprecated().normalize().getAsString());
+    field(availability->getObsoleted().normalize().getAsString());
+    field(availability->getUnavailable()?"true":"false");field(availability->getMessage());
+    field(availability->getStrict()?"true":"false");field(availability->getReplacement());
+    field(std::to_string(availability->getPriority()));
+    field(availability->getEnvironment()?availability->getEnvironment()->getName():"");
+  } else if(const auto *diagnostic=llvm::dyn_cast<clang::ErrorAttr>(attribute)) {
+    field(diagnostic->isError()?"error":"warning");field(diagnostic->getUserDiagnostic());
+  }
+  return value;
+}
+
 std::string NativeAttributeValue(const clang::Attr *attribute,const clang::NamedDecl *declaration) {
   std::string key=std::to_string(attribute->getKind());
   auto add=[&](llvm::StringRef value){key+=";"+std::to_string(value.size())+":"+value.str();};
+  if(auto diagnostic=NativeDiagnosticAttributeValue(attribute);!diagnostic.empty()) {
+    add(diagnostic);return key;
+  }
   if(IsPublishedThreadSafetyAttribute(attribute)) {
     auto expression=[&](const clang::Expr *value) {
       if(!value){add("none");return;}
@@ -1910,6 +1941,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     llvm::raw_string_ostream stream(body);
     clang::PrintingPolicy policy(context.getLangOpts());
     policy.PrintAsCanonical = true;
+    policy.PolishForDeclaration = true;
     policy.SuppressScope = true;
     policy.AnonymousTagNameStyle=static_cast<unsigned>(clang::PrintingPolicy::AnonymousTagMode::Plain);
     policy.IncludeTagDefinition=HasDeclarationUnnamedLocalType(declaration);
@@ -1939,7 +1971,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     for (const auto &[key,digest]:specializations)
       body+=";specialization="+std::to_string(key.size())+":"+key+":"+digest;
     return "class-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
-        ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v1;" +
+        ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v2;" +
         ";cxx-template-structure:v1;rtti=" + std::to_string(context.getLangOpts().RTTI) + ";" +
         (specializations.empty() || pattern->getDeclContext()->isRecord() ? "" : ";cxx-class-specializations:v1;") +
         (!pattern->getDeclContext()->isRecord() && std::any_of(published_specializations.begin(),published_specializations.end(),
@@ -3170,7 +3202,7 @@ bool ReadInterfaceDeclarationIdentity(
   ReadNativeDeclarationContracts(representative, context, identity.effects);
   const auto native_attributes=DeclarationAttributeKey(representative,true);
   if(!native_attributes.empty())
-    identity.canonical_type_identity+=";native-declaration-attributes:v3;contracts="+
+    identity.canonical_type_identity+=";native-declaration-attributes:v4;contracts="+
         ComputeInterfaceSourceSha256(native_attributes)+";";
   const auto foreign_attributes=DeclarationAttributeKey(representative);
   if(!foreign_attributes.empty())

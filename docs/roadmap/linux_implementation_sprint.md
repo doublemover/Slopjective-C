@@ -702,3 +702,14 @@ Native Linux AArch64 now has compiler/owned-carrier ABI, runtime and header
 admission, pinned bootstrap assets, architecture-separated binary caches, SDK
 builtins/install admission, ARM CPU version/vector PCS publication and native
 CI/release selection. See [implementation and qualification boundary](linux_aarch64_native_implementation.md).
+
+## Source 2.176 / System 2.102: native API diagnostic contracts
+
+Nested C++ public records, member templates, aliases, enumerators and published
+locals retain native availability, deprecation, unavailable and error/warning
+contracts. Structural identity binds their full messages, severity, replacements
+and platform versions; canonical native diagnostic printing quotes arbitrary
+strings. The v4 declaration-attribute reader cutover and source-free native
+regression fixture cover metadata changes and consumer diagnostics. See
+[the implementation record](linux_native_api_diagnostics.md). Matched SDK
+consolidation and broader remaining implementation continue.

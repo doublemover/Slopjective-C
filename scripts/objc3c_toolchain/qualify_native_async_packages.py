@@ -174,7 +174,7 @@ def check_factory_metadata(metadata):
     if not ordinary <= projections:
         raise ValueError('qualify_native_async_packages: ordinary unnamed-record projection metadata is incomplete')
     native_contracts={row['qualified_name'] for row in metadata['declarations']
-                      if ';native-declaration-attributes:v3;' in row.get('canonical_type_identity','')}
+                      if ';native-declaration-attributes:v4;' in row.get('canonical_type_identity','')}
     if not ({'NativeDeclarationAttributes::provider_object_size','NativeDeclarationAttributes::provider_dynamic_size',
             'NativeDeclarationAttributes::lifetime','NativeDeclarationAttributes::noescape',
             'NativeDeclarationAttributes::provider_callback','NativeDeclarationAttributes::provider_sentinel',
@@ -199,9 +199,9 @@ def check_factory_metadata(metadata):
     if not (all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)):
         raise ValueError("qualify_native_async_packages: required semantic check failed: all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)")
     native_attributes={row['qualified_name'] for row in metadata['declarations']
-                       if ';native-declaration-attributes:v3;' in row.get('canonical_type_identity','')}
-    if not ('objc3.native-declaration-attributes.v3' in metadata['required_semantics']):
-        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.native-declaration-attributes.v3' in metadata['required_semantics']")
+                       if ';native-declaration-attributes:v4;' in row.get('canonical_type_identity','')}
+    if not ('objc3.native-declaration-attributes.v4' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.native-declaration-attributes.v4' in metadata['required_semantics']")
     if not ({'NativeDeclarationAttributes::Packet','NativeDeclarationAttributes::Aligned',
             'NativeDeclarationAttributes::Slot','NativeDeclarationAttributes::TypeAligned',
             'NativeDeclarationAttributes::Special','NativeDeclarationAttributes::partial',
@@ -677,7 +677,7 @@ def check_cpp_metadata(metadata):
         ('objc3.cxx-function-templates.v2', 'native_template_add', ';cxx-function-templates:v2;'),
         ('objc3.cxx-alias-templates.v1', 'NativeTemplatePointer', ';cxx-alias-templates:v1;'),
         ('objc3.cxx-variable-templates.v1', 'native_template_answer', ';cxx-variable-templates:v1;'),
-        ('objc3.cxx-class-templates.v1', 'NativeTemplateBox', ';cxx-class-templates:v1;'),
+        ('objc3.cxx-class-templates.v2', 'NativeTemplateBox', ';cxx-class-templates:v2;'),
         ('objc3.cxx-template-structure.v1', 'NativeTemplateRoot', ';cxx-template-structure:v1;'),
         ('objc3.cxx-template-deduction.v1', 'native_template_deduced_add', ';cxx-template-deduction:v1;'),
     ):

@@ -44,7 +44,9 @@
     "objc3_interface_import_api",
     "objc3_interface_module_resolution",
     "objc3_interface_artifact_io",
-    "objc3_aarch64_native_abi"
+    "objc3_aarch64_native_abi",
+    "objc3_native_diagnostic_contract_provider",
+    "objc3_native_union_template_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",

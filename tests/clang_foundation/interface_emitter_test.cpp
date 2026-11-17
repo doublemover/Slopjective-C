@@ -648,8 +648,14 @@ void TestNativeLambdaContractsReplay() {
   auto changed=source;auto at=changed.find("no_sanitize(\"address\")");assert(at!=std::string::npos);
   changed.replace(at,std::string("no_sanitize(\"address\")").size(),"no_sanitize(\"undefined\")");
   assert(emit(changed).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
-  auto convention=source;at=convention.find("vectorcall,noinline");assert(at!=std::string::npos);
-  convention.replace(at,std::string("vectorcall,noinline").size(),"preserve_most,noinline");
+  auto convention=source;
+#if defined(__aarch64__)
+  const std::string native_vector_convention="aarch64_vector_pcs";
+#else
+  const std::string native_vector_convention="vectorcall";
+#endif
+  at=convention.find(native_vector_convention);assert(at!=std::string::npos);
+  convention.replace(at,native_vector_convention.size(),"preserve_most");
   assert(emit(convention).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
   auto unsupported=clang::tooling::buildASTFromCodeWithArgs(source+R"(
     namespace LambdaContracts {inline int unmodeled(){auto call=[]() __attribute__((annotate("unmodeled"))){return 42;};return call();}}
@@ -4152,7 +4158,7 @@ void TestNativeAllocatorAndDiagnosticContracts() {
       auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
       std::vector<llvm::StringRef> supported;
       for(const auto&item:*metadata->getAsObject()->getArray("required_semantics"))supported.push_back(*item.getAsString());
-      assert(std::find(supported.begin(),supported.end(),llvm::StringRef("objc3.native-declaration-attributes.v3"))!=supported.end());
+      assert(std::find(supported.begin(),supported.end(),llvm::StringRef("objc3.native-declaration-attributes.v4"))!=supported.end());
       auto older=supported;std::erase(older,llvm::StringRef(kNativeDeclarationAttributeSemantic));
       older.push_back("objc3.native-declaration-attributes.v1");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);
@@ -10673,7 +10679,7 @@ void TestConcreteNestedTemplates() {
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
     ExpectCurrentPublication(emit,"struct Outer{template<class T>struct Box;};");
-    assert(!emit("struct Outer{template<class T>union Box{T value;};};").success);
+    ExpectCurrentPublication(emit,"struct Outer{template<class T>union Box{T value;};};");
   }
 }
 
@@ -10901,7 +10907,7 @@ void TestNestedTemplateTypes() {
     }
     assert(!emit("template<class T>struct Outer{struct Inner;};").success);
     ExpectCurrentPublication(emit,"template<class T>struct Outer{template<class U>static U value;};");
-    assert(!emit("template<class T>struct Outer{union Inner{T value;};};").success);
+    ExpectCurrentPublication(emit,"template<class T>struct Outer{union Inner{T value;};};");
     auto partial=emit("template<class T>struct Outer{template<class U>struct Inner{};template<class U>struct Inner<U*>{};};");
     assert(partial.success && partial.sidecar_json.find(kCxxDependentMemberPartialSemantic)!=std::string::npos);
   }

@@ -94,12 +94,14 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 175,
+        "minor": 176,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Public native union templates retain primary/partial/explicit/nested declarations, native union layout, active-arm user-provided special members and source-free ABI under cxx-class-templates v2; qualification is bound to the matching source SDK",
+        "Native C++ nested/template/member/alias/enumerator and published-local availability/deprecation/error/warning contracts retain canonical diagnostic payloads and source-free admission under native-declaration-attributes v4; qualified SDK consolidation pending",
         "Source-free native C++ async imports retain instantiated qualified SDK capture/value/private-result/foreign-promise/nil-conversion dependencies before backend delivery, including optional/variant/expected owning payloads; native-cxx-async-import v1 and special-member-selection v1 reader cutovers, matching SDK pending",
         "Owned task factories may return mutable task rvalue references, transferring their unique frame once across child, detached and explicit/inferred task groups; borrowed/const task and raw-frame references remain rejected. Compiler async-work admission and source-free native lifetime/cancellation controls cover the transfer; matched SDK pending",
         "Owned task/group factories support one-shot rvalue invocation when lvalue invocation is unavailable, preserving move-only storage through inner-frame destruction, pre-entry cancellation, original exceptions and lvalue-overload priority; direct/detached/group/raw-frame and source-free controls are maintained, matched SDK pending",
@@ -337,7 +339,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 101,
+        "minor": 102,
         "patch": 0
       },
       "header": "include/objc3/system.h",
