@@ -73,6 +73,44 @@ STATIC_BORROWED inline StaticLoan callback(void *owner){return callbacks.read(se
 STATIC_BORROWED inline StaticLoan base(void *owner){return select_branch(both);}
 }
 
+
+namespace ReferenceProofs {
+inline constexpr char text[]="reference";
+inline int observations=0;inline void observe(){++observations;}
+inline const char *identity(const char *value){return value;}
+struct Target {const char *read(const char *value)const{return value;}};
+using Callback=const char *(*)(const char *);
+using Method=const char *(Target::*)(const char *)const;
+struct Fields {
+ const char *value;
+ Callback callback;
+ Method method;
+ const char *const &reference()const{observe();return value;}
+ const char *const &nested()const{return reference();}
+ Callback const &callback_reference()const{observe();return callback;}
+ Method const &member_reference()const{observe();return method;}
+};
+inline constexpr Fields stored{text,identity,&Target::read};
+inline const char *const &forward(const Fields &object){return object.nested();}
+inline const char *const &forward_twice(const Fields &object){return forward(object);}
+inline const char *const &forward_slot(const char *const &slot){observe();return slot;}
+inline constexpr auto closure=[value=text]()->decltype(auto){observe();return (value);};
+inline constexpr auto nested_closure=[inner=closure]()->decltype(auto){observe();return inner();};
+STATIC_BORROWED inline StaticLoan global(void *owner){return stored.reference();}
+STATIC_BORROWED inline StaticLoan nested(void *owner){return stored.nested();}
+STATIC_BORROWED inline StaticLoan forwarded(void *owner){return forward_twice(stored);}
+STATIC_BORROWED inline StaticLoan local(void *owner){const Fields object{text,identity,&Target::read};return object.reference();}
+STATIC_BORROWED inline StaticLoan local_forwarded(void *owner){const Fields object{text,identity,&Target::read};return forward_twice(object);}
+STATIC_BORROWED inline StaticLoan local_alias(void *owner){const Fields object{text,identity,&Target::read};const auto &alias=object;return forward(alias);}
+STATIC_BORROWED inline StaticLoan captured(void *owner){return closure();}
+STATIC_BORROWED inline StaticLoan nested_captured(void *owner){return nested_closure();}
+STATIC_BORROWED inline StaticLoan local_captured(void *owner){const auto call=[value=text]()->decltype(auto){observe();return (value);};return call();}
+STATIC_BORROWED inline StaticLoan local_nested_captured(void *owner){const auto call=[inner=closure]()->decltype(auto){observe();return inner();};return call();}
+STATIC_BORROWED inline StaticLoan callback(void *owner){return stored.callback_reference()(text);}
+STATIC_BORROWED inline StaticLoan member(void *owner){Target object;return (object.*stored.member_reference())(text);}
+STATIC_BORROWED inline StaticLoan local_slot(void *owner){const char *const slot=text;return forward_slot(slot);}
+}
+
 inline int cleanup_order=0;
 struct CleanupValue {
  int value;
@@ -428,6 +466,12 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(captured(nullptr)[0]!='f' || nested_captured(nullptr)[0]!='f' || pointer_captured(nullptr)[0]!='f')return 66;
   if(record_captured(nullptr)[0]!='s' || local_captured(nullptr)[0]!='f' || callback(nullptr)[0]!='s' || base(nullptr)[0]!='f')return 67;
   if(observations-previous_observations!=14)return 68;
+  const int previous_reference_observations=ReferenceProofs::observations;
+  if(ReferenceProofs::global(nullptr)[0]!='r' || ReferenceProofs::nested(nullptr)[0]!='r' || ReferenceProofs::forwarded(nullptr)[0]!='r')return 69;
+  if(ReferenceProofs::local(nullptr)[0]!='r' || ReferenceProofs::local_forwarded(nullptr)[0]!='r' || ReferenceProofs::local_alias(nullptr)[0]!='r')return 70;
+  if(ReferenceProofs::captured(nullptr)[0]!='r' || ReferenceProofs::nested_captured(nullptr)[0]!='r' || ReferenceProofs::local_captured(nullptr)[0]!='r' || ReferenceProofs::local_nested_captured(nullptr)[0]!='r')return 71;
+  if(ReferenceProofs::callback(nullptr)[0]!='r' || ReferenceProofs::member(nullptr)[0]!='r' || ReferenceProofs::local_slot(nullptr)[0]!='r')return 72;
+  if(ReferenceProofs::observations-previous_reference_observations!=15 || &ReferenceProofs::stored.reference()!=&ReferenceProofs::stored.value)return 73;
   if(static_member_view(nullptr,0)[0]!='s' || static_member_view(nullptr,1)[0]!='t')return 61;
   if(static_member_factory_view(nullptr,0)[0]!='t' || static_member_factory_view(nullptr,1)[0]!='s')return 62;
   if(static_member_nothrow_view(nullptr)[0]!='s' || static_member_constant_field_view(nullptr)[0]!='s')return 64;

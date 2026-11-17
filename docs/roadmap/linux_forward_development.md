@@ -1,5 +1,10 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.171 / System 2.97 reference-result span](linux_reference_result_objects.md)
+retains field/capture storage and active-caller lifetimes through bounded native
+reference forwarding while rejecting nested callee locals and escaped aliases.
+
+
 The [paired compiler-source feedback driver](linux_semantic_source_feedback.md)
 implements the remaining #8288 generation experiment using the qualified coverage
 compiler, independent model controls, counterbalanced bounded windows and compact
@@ -23,7 +28,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.170 / System 2.96 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.171 / System 2.97 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

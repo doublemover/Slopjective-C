@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.171 / System 2.97 reference-result span](linux_reference_result_objects.md)
+adds immutable field/capture references and active-caller pointer-cell lifetimes
+under the borrowed-result-proofs v11 reader cutover.
+
+
 The [Source 2.170 / System 2.96 immutable receiver span](linux_immutable_receiver_proofs.md)
 extends permanent-result proofs through actual const objects and value captures,
 with a native base-adjustment identity cutover.

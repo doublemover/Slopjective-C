@@ -1816,12 +1816,50 @@ __attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan callback
 __attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan base(void *owner){return select_branch(both);}
 }
 )immutable";
+      if(cxx)source+=R"references(
+namespace ReferenceProofs {
+inline constexpr char text[]="reference";
+inline int observations=0;inline void observe(){++observations;}
+inline const char *identity(const char *value){return value;}
+struct Target {const char *read(const char *value)const{return value;}};
+using Callback=const char *(*)(const char *);
+using Method=const char *(Target::*)(const char *)const;
+struct Fields {
+ const char *value;
+ Callback callback;
+ Method method;
+ const char *const &reference()const{observe();return value;}
+ const char *const &nested()const{return reference();}
+ Callback const &callback_reference()const{observe();return callback;}
+ Method const &member_reference()const{observe();return method;}
+};
+inline constexpr Fields stored{text,identity,&Target::read};
+inline const char *const &forward(const Fields &object){return object.nested();}
+inline const char *const &forward_twice(const Fields &object){return forward(object);}
+inline const char *const &forward_slot(const char *const &slot){observe();return slot;}
+inline constexpr auto closure=[value=text]()->decltype(auto){observe();return (value);};
+inline constexpr auto nested_closure=[inner=closure]()->decltype(auto){observe();return inner();};
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan global(void *owner){return stored.reference();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan nested(void *owner){return stored.nested();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan forwarded(void *owner){return forward_twice(stored);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local(void *owner){const Fields object{text,identity,&Target::read};return object.reference();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local_forwarded(void *owner){const Fields object{text,identity,&Target::read};return forward_twice(object);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local_alias(void *owner){const Fields object{text,identity,&Target::read};const auto &alias=object;return forward(alias);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan captured(void *owner){return closure();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan nested_captured(void *owner){return nested_closure();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local_captured(void *owner){const auto call=[value=text]()->decltype(auto){observe();return (value);};return call();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local_nested_captured(void *owner){const auto call=[inner=closure]()->decltype(auto){observe();return inner();};return call();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan callback(void *owner){return stored.callback_reference()(text);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan member(void *owner){Target object;return (object.*stored.member_reference())(text);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local_slot(void *owner){const char *const slot=text;return forward_slot(slot);}
+}
+)references";
       auto first=emit(source,"static-borrowed-results.m");
       const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
       auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
       assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedResultProofSemantic)));
       auto older=supported;std::erase(older,llvm::StringRef(kBorrowedResultProofSemantic));
-      older.push_back("objc3.borrowed-result-proofs.v9");
+      older.push_back("objc3.borrowed-result-proofs.v10");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
       std::erase(decoded->required_semantics,kBorrowedResultProofSemantic);
       auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
