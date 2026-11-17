@@ -206,6 +206,7 @@ bool IsPublishedStatementAttribute(const clang::Attr *);
 bool HasDeclarationNativeControlFlow(const clang::NamedDecl *);
 bool HasDeclarationConstantEvaluationControl(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration);
+bool HasDeclarationNativeFunctionEffects(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeFunctionPolicy(const clang::NamedDecl *declaration);
 bool HasDeclarationAtomicManagedProperty(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeLambdaArgumentABI(const clang::NamedDecl *declaration);

@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.188 / System 2.114 native function-effect span](linux_native_function_effects.md)
+retains conditional nonblocking/nonallocating type contracts through source-free
+printing, exact native import, callback conversion and dependency admission.
+
 The [Source 2.187 / System 2.113 managed-boundary span](linux_managed_boundary_values.md)
 retains cleanup-managed value contracts across executor/task snapshots and prevents
 nonisolated actor APIs from exposing receiver-owned interior views.
@@ -60,21 +64,17 @@ The [Source 2.174 / System 2.100 consumed reference span](linux_consumed_referen
 extends bounded nested reference producers and active-caller mutable slots while
 preserving alias/address/capture escape checks.
 
-
 The [Source 2.173 / System 2.99 inline lambda-factory span](linux_inline_closure_factory_results.md)
 binds local record/enum and nested closure results to their named variable owners
 and preserves native overload identity during import.
-
 
 The [Source 2.172 / System 2.98 owning inline closure span](linux_owning_inline_closure_objects.md)
 adds native cleanup-wrapped capture initializers and concrete class-static closure
 owners, with the inline-closure-objects v2 reader cutover.
 
-
 The [Source 2.171 / System 2.97 reference-result span](linux_reference_result_objects.md)
 retains field/capture storage and active-caller lifetimes through bounded native
 reference forwarding while rejecting nested callee locals and escaped aliases.
-
 
 The [paired compiler-source feedback driver](linux_semantic_source_feedback.md)
 implements the remaining #8288 generation experiment using the qualified coverage

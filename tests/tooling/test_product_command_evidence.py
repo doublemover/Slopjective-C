@@ -10,20 +10,15 @@ import pytest
 
 from scripts.objc3c_toolchain.product_evidence import ProductCommands, blob_bytes, consolidate_campaign_blobs, phase_of, replay
 from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification
+from scripts.objc3c_toolchain.package import SOURCE_BUILD_HELPERS, install_source_build_helpers
 
 
-@pytest.mark.parametrize('entry', ['run_linux_feature_batch.py', 'qualify_async_c_abi.py',
-                                  'product_evidence.py'])
+@pytest.mark.parametrize('entry', [installed for _, installed in SOURCE_BUILD_HELPERS])
 @pytest.mark.parametrize('compression_available', [True, False])
 def test_installed_helpers_import_without_a_source_checkout(tmp_path, entry, compression_available):
-    sources = Path(__file__).resolve().parents[2] / 'scripts/objc3c_toolchain'
     installed = tmp_path / 'installed'
     installed.mkdir()
-    for original, name in [('source_graph.py', 'build.py'), *[(name, name) for name in (
-            'sdk_example.py', 'binary_packages.py', 'sanitizer_policy.py',
-            'llvm_ir_execution.py', 'product_evidence.py', 'run_linux_feature_batch.py',
-            'qualify_async_c_abi.py')]]:
-        shutil.copyfile(sources / original, installed / name)
+    install_source_build_helpers(installed)
     environment = dict(os.environ)
     environment.pop('PYTHONPATH', None)
     loader = '''

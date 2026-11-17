@@ -147,6 +147,19 @@ inline constexpr const char *kCxxThreadLocalSemantic = "objc3.cxx-thread-local.v
 inline bool HasCxxThreadLocalIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-thread-local:v1;") != std::string::npos;
 }
+inline constexpr const char *kNativeFunctionEffectSemantic = "objc3.native-function-effects.v1";
+inline bool HasNativeFunctionEffectIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";native-function-effects:v1;") != std::string::npos;
+}
+inline bool IsNativeFunctionEffectOwner(const InterfaceDeclarationIdentity &d) {
+  return d.kind=="Concept" || d.kind=="Function" || d.kind=="FunctionTemplate" || d.kind=="Field" || IsCxxMemberDeclarationKind(d.kind) ||
+      d.kind=="Record" || d.kind=="CXXRecord" || d.kind=="ClassTemplate" || d.kind=="ClassTemplateSpecialization" ||
+      d.kind=="ClassTemplatePartialSpecialization" || d.kind=="Var" || d.kind=="VarTemplate" ||
+      d.kind=="VarTemplateSpecialization" || d.kind=="VarTemplatePartialSpecialization" ||
+      d.kind=="Typedef" || d.kind=="TypeAlias" || d.kind=="TypeAliasTemplate" ||
+      d.kind=="ObjCMethod" || d.kind=="ObjCInterface" || d.kind=="ObjCCategory" ||
+      d.kind=="ObjCProtocol" || d.kind=="ObjCProperty" || d.kind=="ObjCIvar";
+}
 inline constexpr const char *kNativeFunctionPolicySemantic = "objc3.native-function-policies.v1";
 inline bool HasNativeFunctionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-function-policies:v1;") != std::string::npos;

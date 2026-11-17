@@ -57,7 +57,8 @@
     "objc3_native_c_overload_provider",
     "objc3_native_actor_receiver_provider",
     "objc3_native_function_policy_provider",
-    "objc3_native_boundary_resource_provider"
+    "objc3_native_boundary_resource_provider",
+    "objc3_native_function_effect_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",

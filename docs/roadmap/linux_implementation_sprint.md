@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.188 / System 2.114 native function-effect span](linux_native_function_effects.md)
+retains conditional nonblocking/nonallocating type contracts through source-free
+printing, exact native import, callback conversion and dependency admission.
+
 The [Source 2.187 / System 2.113 managed-boundary span](linux_managed_boundary_values.md)
 retains cleanup-managed value contracts across executor/task snapshots and prevents
 nonisolated actor APIs from exposing receiver-owned interior views.
@@ -44,26 +48,21 @@ The [Source 2.174 / System 2.100 consumed reference span](linux_consumed_referen
 extends bounded nested reference producers and active-caller mutable slots while
 preserving alias/address/capture escape checks.
 
-
 The [Source 2.173 / System 2.99 inline lambda-factory span](linux_inline_closure_factory_results.md)
 binds local record/enum and nested closure results to their named variable owners
 and preserves native overload identity during import.
-
 
 The [Source 2.172 / System 2.98 owning inline closure span](linux_owning_inline_closure_objects.md)
 adds native cleanup-wrapped capture initializers and concrete class-static closure
 owners, with the inline-closure-objects v2 reader cutover.
 
-
 The [Source 2.171 / System 2.97 reference-result span](linux_reference_result_objects.md)
 adds immutable field/capture references and active-caller pointer-cell lifetimes
 under the borrowed-result-proofs v11 reader cutover.
 
-
 The [Source 2.170 / System 2.96 immutable receiver span](linux_immutable_receiver_proofs.md)
 extends permanent-result proofs through actual const objects and value captures,
 with a native base-adjustment identity cutover.
-
 
 The [paired compiler-source feedback driver](linux_semantic_source_feedback.md)
 implements the remaining #8288 generation experiment using the qualified coverage
@@ -598,7 +597,6 @@ checks; complete native/archive acceptance remains separate.
   return proof. Source/PCH positives and conservative negative controls pass;
   borrowed-result-proofs v3 requires rebuilding published bodies.
 
-
 ## Source 2.155 / System 2.81 implementation
 
 - [Automatic cleanup publication](linux_automatic_cleanup_publication.md)
@@ -612,7 +610,6 @@ checks; complete native/archive acceptance remains separate.
   bounded return proof. Unknown/mutable/volatile/TLS and incompatible ABI casts
   retain diagnostics. Native-storage-lifetime v2 and borrowed-result-proofs v4
   are hard reader cutovers; broader dependent cleanup storage remains open.
-
 
 ## Source 2.156 / System 2.82 implementation
 
@@ -734,7 +731,6 @@ Read-only reference/alias graphs, exact C++ callable producers and permanent
 pointer-object reference results share the bounded result proof. Qualified
 versus virtual dispatch is bound separately in interface identity. See
 [contracts and controls](linux_permanent_reference_and_method_proofs.md).
-
 
 ## Source 2.175 / System 2.101 implementation
 

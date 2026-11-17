@@ -1036,6 +1036,20 @@ public:
     return WalkUpFromConstantArrayTypeLoc(location) &&
            TraverseTypeLoc(location.getElementLoc());
   }
+  bool BindNativeFunctionEffects(const clang::FunctionProtoType *type) {
+    if(type->getFunctionEffects().empty())return true;
+    Add("native-function-effects:v1");
+    for(const auto &effect:type->getFunctionEffects()) {
+      Add(effect.Effect.name());
+      if(auto *condition=effect.Cond.getCondition()) {
+        Add("conditional");if(!TraverseStmt(condition))return false;
+      } else Add("unconditional");
+    }
+    return true;
+  }
+  bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
+    return BindNativeFunctionEffects(type);
+  }
   bool TraverseFunctionProtoTypeLoc(clang::FunctionProtoTypeLoc location,
                                      bool = true) {
     // A function-pointer type can carry source-only parameter declarations.
@@ -1045,6 +1059,7 @@ public:
     if (!WalkUpFromFunctionProtoTypeLoc(location) ||
         !TraverseTypeLoc(location.getReturnLoc())) return false;
     const auto *type=location.getTypePtr();
+    if(!BindNativeFunctionEffects(type))return false;
     if (const auto *error=location.getObjC3ThrowsPayloadInfo())
       if (!TraverseTypeLoc(error->getTypeLoc())) return false;
     for (unsigned index=0;index<type->getNumParams();++index) {
@@ -1490,6 +1505,51 @@ private:
   std::map<const clang::Decl *, unsigned> locals_;
   unsigned next_local_slot_ = 0;
 };
+
+std::string NativeFunctionEffectKey(const clang::NamedDecl *declaration) {
+  if(const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))
+    declaration=pattern->getTemplatedDecl();
+  // Concepts, builtins and template-template parameters have no owned value
+  // declaration or callable signature. Their expression/head has its own key.
+  if(!declaration)return {};
+  clang::QualType type;
+  if(const auto *value=llvm::dyn_cast<clang::ValueDecl>(declaration))type=value->getType();
+  if(const auto *alias=llvm::dyn_cast<clang::TypedefNameDecl>(declaration))type=alias->getUnderlyingType();
+  if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))type=method->getObjC3FunctionType();
+  if(type.isNull())return {};
+  DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
+  auto bind=[&](auto &&self,const clang::DeclContext *scope)->void {
+    if(!scope)return;self(self,scope->getParent());
+    if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope)) {
+      if(const auto *pattern=record->getDescribedClassTemplate())identity.TemplateParameters(pattern);
+      if(const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(record))
+        for(const auto *parameter:*partial->getTemplateParameters())identity.Local(parameter);
+    }
+  };
+  bind(bind,declaration->getDeclContext());
+  if(const auto *alias=llvm::dyn_cast<clang::TypeAliasDecl>(declaration))
+    if(const auto *pattern=alias->getDescribedAliasTemplate())identity.TemplateParameters(pattern);
+  if(const auto *variable=llvm::dyn_cast<clang::VarDecl>(declaration))
+    if(const auto *pattern=variable->getDescribedVarTemplate())identity.TemplateParameters(pattern);
+  struct Effects:clang::RecursiveASTVisitor<Effects> {
+    DeclarationExpressionIdentity &identity;std::string key;unsigned ordinal=0;
+    explicit Effects(DeclarationExpressionIdentity &identity):identity(identity){}
+    bool TraverseDecl(clang::Decl *){return true;}
+    bool TraverseStmt(clang::Stmt *){return true;}
+    void Add(llvm::StringRef value){key+=std::to_string(value.size())+":"+value.str();}
+    bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
+      ++ordinal;if(type->getFunctionEffects().empty())return true;
+      Add(std::to_string(ordinal));
+      for(const auto &effect:type->getFunctionEffects()) {
+        Add(effect.Effect.name());
+        if(auto *condition=effect.Cond.getCondition())Add(identity.Get(condition,true));
+        else Add("unconditional");
+      }
+      return true;
+    }
+  } effects(identity);
+  effects.TraverseType(type.getCanonicalType());return effects.key;
+}
 
 std::string DeclarationExpressionContract(const clang::Expr *expression,
                                            const clang::ASTContext &context) {
@@ -3109,6 +3169,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-virtual-call-expressions:v1;";
   if (HasDeclarationThreadSafetyContract(representative))
     identity.canonical_type_identity+=";native-thread-safety:v1;";
+  if (HasDeclarationNativeFunctionEffects(representative))
+    identity.canonical_type_identity+=";native-function-effects:v1;";
   if (HasDeclarationNativeFunctionPolicy(representative))
     identity.canonical_type_identity+=";native-function-policies:v1;";
   if (HasDeclarationNativeEmissionPolicy(representative))
@@ -3346,6 +3408,9 @@ bool ReadInterfaceDeclarationIdentity(
   const auto return_ownership = ReadNativeReturnOwnership(representative);
   if (!return_ownership.empty()) identity.effects.ownership_identity = return_ownership;
   ReadNativeDeclarationContracts(representative, context, identity.effects);
+  const auto native_effects=NativeFunctionEffectKey(representative);
+  if(!native_effects.empty())identity.canonical_type_identity+=";native-function-effect-contracts="+
+      ComputeInterfaceSourceSha256(native_effects)+";";
   const auto native_attributes=DeclarationAttributeKey(representative,true);
   if(!native_attributes.empty())
     identity.canonical_type_identity+=";native-declaration-attributes:v6;contracts="+

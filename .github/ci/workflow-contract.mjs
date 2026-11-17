@@ -188,14 +188,15 @@ export function validateNativeGate(text) {
     foundationBundle?.if ||
     !foundationBundle?.with?.path?.includes("out/instrumented-foundation/profile.tar.zst") ||
     foundationBundle.with?.["if-no-files-found"] !== "error" ||
-    foundationDiagnostics?.if !==
-      "always() && steps.asan-foundation-run.outcome != 'skipped'" ||
+    foundationDiagnostics?.if !== "always() && steps.asan-foundation-run.outcome != 'skipped'" ||
     !foundationDiagnostics?.with?.name?.startsWith("asan-foundation-diagnostics-") ||
     !foundationDiagnostics?.with?.path?.includes("producer/producer.json") ||
     foundationDiagnostics.with.path.includes("profile.tar.zst") ||
     foundationDiagnostics.with?.["if-no-files-found"] !== "error"
   )
-    throw new Error("Sanitizer producer must publish success bytes and always retain failure evidence");
+    throw new Error(
+      "Sanitizer producer must publish success bytes and always retain failure evidence",
+    );
   const fullOwnerCondition =
     "needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''";
   if (
@@ -216,9 +217,7 @@ export function validateNativeGate(text) {
       "Artifact transport must be bounded, explicit and separate from compiler execution",
     );
 
-  const productGroups = (consumers?.strategy?.matrix?.include ?? []).map(
-    (entry) => entry.group,
-  );
+  const productGroups = (consumers?.strategy?.matrix?.include ?? []).map((entry) => entry.group);
   const instrumentedGroups = instrumentedConsumers?.strategy?.matrix?.group ?? [];
   const consumerRun = (consumers?.steps ?? []).find((step) =>
     step.run?.includes("scripts.objc3c_assurance.release_matrix run"),
@@ -246,8 +245,7 @@ export function validateNativeGate(text) {
         "swift",
         "semantic",
       ]) ||
-    JSON.stringify(consumers.needs?.toSorted()) !==
-      JSON.stringify(["plan", "product-producer"]) ||
+    JSON.stringify(consumers.needs?.toSorted()) !== JSON.stringify(["plan", "product-producer"]) ||
     !consumers.if?.includes("needs.product-producer.result == 'success'") ||
     consumers.env?.RELEASE_GROUP !== "${{ matrix.group }}" ||
     !consumerRun?.run.includes('--group "$RELEASE_GROUP"') ||
@@ -261,11 +259,11 @@ export function validateNativeGate(text) {
       JSON.stringify(["asan-foundation-producer", "plan", "product-producer"]) ||
     !instrumentedConsumers?.if?.includes("needs.asan-foundation-producer.result == 'success'") ||
     instrumentedConsumers?.env?.RELEASE_GROUP !== "${{ matrix.group }}" ||
-    !(instrumentedConsumers?.steps ?? []).some(
-      (step) => step.run?.includes("scripts.objc3c_assurance.instrumented_foundation restore"),
+    !(instrumentedConsumers?.steps ?? []).some((step) =>
+      step.run?.includes("scripts.objc3c_assurance.instrumented_foundation restore"),
     ) ||
-    !(instrumentedConsumers?.steps ?? []).some(
-      (step) => step.run?.includes('--group "$RELEASE_GROUP"'),
+    !(instrumentedConsumers?.steps ?? []).some((step) =>
+      step.run?.includes('--group "$RELEASE_GROUP"'),
     ) ||
     coveragePartitions?.strategy?.["fail-fast"] !== false ||
     JSON.stringify(coveragePartitions?.strategy?.matrix?.partition) !==
@@ -384,7 +382,9 @@ export function validateNativeGate(text) {
         ),
     )
   )
-    throw new Error("Activated container execution must trust only its exact checked-out workspace");
+    throw new Error(
+      "Activated container execution must trust only its exact checked-out workspace",
+    );
   for (const job of [diagnostic, producer, consumers, asanProducer, instrumentedConsumers])
     validateNativeContainer(job ?? {});
   for (const job of executionJobs) {
@@ -439,10 +439,12 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
   const release = yaml.load(releaseText);
   const call = release.jobs?.build;
   const install = release.jobs?.install;
+  const sdkArtifact = "objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}";
+  const hostInput = "${{ inputs.linux_host }}";
   const archive =
     native.jobs?.["product-producer"]?.steps?.filter(
       (step) =>
-        step.with?.name === "objc3c-linux-sdk" && step.uses?.startsWith("actions/upload-artifact@"),
+        step.with?.name === sdkArtifact && step.uses?.startsWith("actions/upload-artifact@"),
     ) ?? [];
   if (
     !Object.hasOwn(native.on, "workflow_call") ||
@@ -452,6 +454,8 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     release.permissions?.contents !== "read" ||
     call?.uses !== "./.github/workflows/native-assurance.yml" ||
     call.if ||
+    call.with?.linux_host !== hostInput ||
+    release.jobs?.["implementation-analysis"]?.with?.linux_host !== hostInput ||
     Object.hasOwn(call.with ?? {}, "diagnostic_core_only") ||
     call["continue-on-error"] ||
     JSON.stringify(install?.needs?.toSorted()) !==
@@ -460,8 +464,7 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     archive[0].if ||
     !(install.steps ?? []).some(
       (step) =>
-        step.uses?.startsWith("actions/download-artifact@") &&
-        step.with?.name === "objc3c-linux-sdk",
+        step.uses?.startsWith("actions/download-artifact@") && step.with?.name === sdkArtifact,
     )
   ) {
     throw new Error(

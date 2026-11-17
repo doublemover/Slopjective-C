@@ -15,6 +15,51 @@ MANIFEST = 'objc3-sdk.json'
 SCHEMA = 'objc3.sdk.v2'
 
 
+SOURCE_BUILD_HELPERS = (
+    ('source_graph.py', 'build.py'),
+    ('sdk_example.py', 'sdk_example.py'),
+    ('qualify_source_graph.py', 'qualify.py'),
+    ('binary_packages.py', 'binary_packages.py'),
+    ('sanitizer_policy.py', 'sanitizer_policy.py'),
+    ('linux_host.py', 'linux_host.py'),
+    ('llvm_ir_execution.py', 'llvm_ir_execution.py'),
+    ('product_evidence.py', 'product_evidence.py'),
+    ('qualify_binary_packages.py', 'qualify_binary_packages.py'),
+    ('qualify_ownership_projections.py', 'qualify_ownership_projections.py'),
+    ('qualify_public_surfaces.py', 'qualify_public_surfaces.py'),
+    ('qualify_api_availability.py', 'qualify_api_availability.py'),
+    ('qualify_module_spi.py', 'qualify_module_spi.py'),
+    ('qualify_module_names.py', 'qualify_module_names.py'),
+    ('qualify_module_names_debugger.py', 'qualify_module_names_debugger.py'),
+    ('qualify_module_names_collision_debugger.py', 'qualify_module_names_collision_debugger.py'),
+    ('qualify_structured_runtime.py', 'qualify_structured_runtime.py'),
+    ('qualify_task_coroutines.py', 'qualify_task_coroutines.py'),
+    ('qualify_async_c_abi.py', 'qualify_async_c_abi.py'),
+    ('qualify_stdlib.py', 'qualify_stdlib.py'),
+    ('run_linux_feature_batch.py', 'run_linux_feature_batch.py'),
+    ('run_linux_compiler_witnesses.py', 'run_linux_compiler_witnesses.py'),
+    ('qualify_match_results.py', 'qualify_match_results.py'),
+    ('qualify_defer_control_flow.py', 'qualify_defer_control_flow.py'),
+    ('qualify_guard_bindings.py', 'qualify_guard_bindings.py'),
+    ('qualify_optional_access.py', 'qualify_optional_access.py'),
+    ('qualify_carrier_debugger.py', 'qualify_carrier_debugger.py'),
+    ('qualify_recursive_carriers.py', 'qualify_recursive_carriers.py'),
+    ('qualify_native_async.py', 'qualify_native_async.py'),
+    ('qualify_native_async_packages.py', 'qualify_native_async_packages.py'),
+    ('qualify_typed_keypath_packages.py', 'qualify_typed_keypath_packages.py'),
+)
+
+
+def install_source_build_helpers(destination: Path, *, repo: Path | None = None) -> None:
+    """Install the same helper closure used by SDK assembly and relocation checks."""
+    for original, installed in SOURCE_BUILD_HELPERS:
+        shutil.copyfile(Path(__file__).with_name(original), destination / installed)
+    repo = repo or Path(__file__).resolve().parents[2]
+    for name in ('defer_source.py', 'guard_source.py', 'optional_access_source.py'):
+        shutil.copyfile(repo / 'scripts/objc3c_native_validation' / name, destination / name)
+
+
+
 def _digest(value) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
@@ -193,45 +238,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     shutil.copyfile(Path(__file__).with_name('qualify_source_modules.py'), example / 'qualify.py')
     builder = prefix / 'share/objc3c/source-build'
     builder.mkdir(parents=True, exist_ok=True)
-    for original, installed in (('source_graph.py', 'build.py'), ('sdk_example.py', 'sdk_example.py'),
-                                ('qualify_source_graph.py', 'qualify.py'),
-                                ('binary_packages.py', 'binary_packages.py'),
-                                ('sanitizer_policy.py', 'sanitizer_policy.py'),
-                                ('linux_host.py', 'linux_host.py'),
-                                ('llvm_ir_execution.py', 'llvm_ir_execution.py'),
-                                ('product_evidence.py', 'product_evidence.py'),
-                                ('qualify_binary_packages.py', 'qualify_binary_packages.py'),
-                                ('qualify_ownership_projections.py', 'qualify_ownership_projections.py'),
-                                ('qualify_public_surfaces.py', 'qualify_public_surfaces.py'),
-                                ('qualify_api_availability.py', 'qualify_api_availability.py'),
-                                ('qualify_module_spi.py', 'qualify_module_spi.py'),
-                                ('qualify_module_names.py', 'qualify_module_names.py'),
-                                ('qualify_module_names_debugger.py', 'qualify_module_names_debugger.py'),
-                                ('qualify_module_names_collision_debugger.py', 'qualify_module_names_collision_debugger.py'),
-                                ('qualify_structured_runtime.py', 'qualify_structured_runtime.py'),
-                                ('qualify_task_coroutines.py', 'qualify_task_coroutines.py'),
-                                ('qualify_async_c_abi.py', 'qualify_async_c_abi.py'),
-                                ('qualify_stdlib.py', 'qualify_stdlib.py'),
-                                ('run_linux_feature_batch.py', 'run_linux_feature_batch.py'),
-                                ('run_linux_compiler_witnesses.py', 'run_linux_compiler_witnesses.py'),
-                                ('qualify_match_results.py', 'qualify_match_results.py'),
-                                ('qualify_defer_control_flow.py', 'qualify_defer_control_flow.py'),
-                                ('qualify_guard_bindings.py', 'qualify_guard_bindings.py'),
-                                ('qualify_optional_access.py', 'qualify_optional_access.py'),
-                                ('qualify_carrier_debugger.py', 'qualify_carrier_debugger.py'),
-                                ('qualify_recursive_carriers.py', 'qualify_recursive_carriers.py'),
-                                ('qualify_native_async.py', 'qualify_native_async.py'),
-                                ('qualify_native_async_packages.py', 'qualify_native_async_packages.py'),
-                                ('qualify_typed_keypath_packages.py', 'qualify_typed_keypath_packages.py')):
-        shutil.copyfile(Path(__file__).with_name(original), builder / installed)
+    install_source_build_helpers(builder, repo=repo)
     shutil.copytree(repo / 'tests/tooling/fixtures/native_sanitizer_controls',
                     builder / 'native_sanitizer_controls')
-    shutil.copyfile(repo / 'scripts/objc3c_native_validation/defer_source.py',
-                    builder / 'defer_source.py')
-    shutil.copyfile(repo / 'scripts/objc3c_native_validation/guard_source.py',
-                    builder / 'guard_source.py')
-    shutil.copyfile(repo / 'scripts/objc3c_native_validation/optional_access_source.py',
-                    builder / 'optional_access_source.py')
     shutil.copytree(repo / 'tests/clang_foundation/optional_access',
                     prefix / 'share/objc3c/examples/optional-access')
     shutil.copytree(repo / 'tests/clang_foundation/guard_bindings',

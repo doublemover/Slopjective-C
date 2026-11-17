@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 187,
+        "minor": 188,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Native nonblocking/nonallocating/blocking/allocating function-type effects, dependent predicates and callback contracts survive source-free signatures, templates, lambdas and Blocks; native import owns predicate graphs, structural equivalence preserves effect distinctions, canonical printing and typed dependencies bind publication under native-function-effects v1; matching SDK acceptance pending",
         "Receiver-owned interior views cannot escape through nonisolated actor methods or synthesized property getters; bounded managed-value transfer proofs retain storage cleanup/resource contracts through readonly aliases, selected values, aggregates, takes and concurrent captures, with explicit unsafe admission audited; broader mutable/interprocedural proofs and matching SDK acceptance pending",
         "Native function policies preserve builtin suppression on published definitions, convergence, size optimization, split-stack suppression, speculative-load hardening/opt-out, patchable entry counts/offsets/section, register clearing and trusted-call domains across source-free C17/C++20/23 publication, local/template/lambda definitions, published field/parameter defaults and native import; imported C library declarations precede implicit builtins while private/pre-import names stay hidden, and core integer sugar prints target-correct declarations; native-function-policies v1 reader cutover, matching SDK acceptance pending",
         "Actor-isolated self bindings are immutable and nonnull in ARC/MRC, including consuming/initializing entries; exact bounded immutable automatic aliases and address/reference views preserve current-actor identity, nonisolated actor instancetype results retain logical Sendable type, and imported implicit receiver declarations retain exact type/ownership/body identity under actor-receiver-bindings v1; matched SDK acceptance pending",
@@ -350,12 +351,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 113,
+        "minor": 114,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Native nonblocking/nonallocating/blocking/allocating function-type effects, dependent predicates and callback contracts survive source-free signatures, templates, lambdas and Blocks; native import owns predicate graphs, structural equivalence preserves effect distinctions, canonical printing and typed dependencies bind publication under native-function-effects v1; matching SDK acceptance pending",
         "Receiver-owned interior views cannot escape through nonisolated actor methods or synthesized property getters; bounded managed-value transfer proofs retain storage cleanup/resource contracts through readonly aliases, selected values, aggregates, takes and concurrent captures, with explicit unsafe admission audited; broader mutable/interprocedural proofs and matching SDK acceptance pending",
         "Native function policies preserve builtin suppression on published definitions, convergence, size optimization, split-stack suppression, speculative-load hardening/opt-out, patchable entry counts/offsets/section, register clearing and trusted-call domains across source-free C17/C++20/23 publication, local/template/lambda definitions, published field/parameter defaults and native import; imported C library declarations precede implicit builtins while private/pre-import names stay hidden, and core integer sugar prints target-correct declarations; native-function-policies v1 reader cutover, matching SDK acceptance pending",
         "Actor-isolated self bindings are immutable and nonnull in ARC/MRC, including consuming/initializing entries; exact bounded immutable automatic aliases and address/reference views preserve current-actor identity, nonisolated actor instancetype results retain logical Sendable type, and imported implicit receiver declarations retain exact type/ownership/body identity under actor-receiver-bindings v1; matched SDK acceptance pending",

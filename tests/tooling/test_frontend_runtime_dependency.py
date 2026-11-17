@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from scripts.objc3c_toolchain import test_runtime as owner
+from scripts.objc3c_toolchain.linux_host import host_identity, native_linux_host
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -18,12 +19,15 @@ def dependency(tmp_path, monkeypatch):
     (bootstrap / 'bin/clang').write_bytes(b'pinned bootstrap')
     pin = repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json'
     pin.parent.mkdir(parents=True)
-    pin.write_text(json.dumps({'profiles': {'linux-x86_64': {
+    native = native_linux_host()
+    pin.write_text(json.dumps({'profiles': {native: {
         'runtime_commit': 'a'*40, 'robin_map_commit': 'b'*40}}}))
-    stage = repo / 'out/toolchains/libobjc2-v2.3/build-linux-x86_64/key/stage'
+    stage = repo / f'out/toolchains/libobjc2-v2.3/build-{native}/key/stage'
     (stage / 'lib').mkdir(parents=True)
-    (stage / 'lib/libobjc.so').write_bytes(b'pinned runtime')
-    value = {'status': 'passed', 'stage': str(stage), 'source_commit': 'a'*40,
+    elf = bytearray(64);elf[:6] = b'\x7fELF\x02\x01'
+    elf[18:20] = host_identity()['elf_machine'].to_bytes(2, 'little')
+    (stage / 'lib/libobjc.so').write_bytes(elf)
+    value = {'status': 'passed', 'profile': native, 'stage': str(stage), 'source_commit': 'a'*40,
              'robin_map_commit': 'b'*40,
              'configuration': {'compiler_sha256': owner.digest(bootstrap / 'bin/clang')}}
     def run(argv, **kwargs):
@@ -55,6 +59,23 @@ def test_profile_rejects_a_different_or_escaped_runtime(tmp_path, dependency, da
         outside = tmp_path / 'foreign.so';outside.write_bytes(b'foreign runtime')
         (stage / 'lib/libobjc.so').unlink();(stage / 'lib/libobjc.so').symlink_to(outside)
     with pytest.raises(ValueError, match='pinned compiler/source inputs'):
+        owner.prepare(repo, bootstrap, tmp_path / 'evidence', fetch=False, jobs=2)
+
+
+@pytest.mark.parametrize('damage', ['foreign-elf', 'missing-profile', 'foreign-profile'])
+def test_profile_rejects_foreign_runtime_architecture(tmp_path, dependency, damage):
+    repo, bootstrap, stage, value = dependency
+    if damage == 'foreign-elf':
+        library = stage / 'lib/libobjc.so'
+        header = bytearray(library.read_bytes())
+        foreign = 183 if host_identity()['elf_machine'] == 62 else 62
+        header[18:20] = foreign.to_bytes(2, 'little')
+        library.write_bytes(header)
+    elif damage == 'missing-profile':
+        value.pop('profile')
+    else:
+        value['profile'] = 'linux-aarch64' if native_linux_host() == 'linux-x86_64' else 'linux-x86_64'
+    with pytest.raises(ValueError, match='architecture|native ELF'):
         owner.prepare(repo, bootstrap, tmp_path / 'evidence', fetch=False, jobs=2)
 
 
@@ -90,9 +111,12 @@ file(WRITE "${{CMAKE_BINARY_DIR}}/chosen.txt" "${{_c_inline_objc_runtime}}")
 @pytest.mark.parametrize('mode',['foundation','explicit','wrong-version','profile-override','missing'])
 def test_frontend_generator_admission_executes_the_actual_cmake_guard(tmp_path,mode):
     text=(ROOT/'native/objc3c/src/clang_foundation/CMakeLists.txt').read_text()
-    start=text.index('set(_tablegen ')
+    start=text.index('include("${_objc3_repo}/native/objc3c/cmake/Objc3LinuxHost.cmake")')
     end=text.index('add_custom_command(OUTPUT',start)
-    repo=tmp_path/'repo';tool=repo/'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen'
+    repo=tmp_path/'repo'
+    host_module=repo/'native/objc3c/cmake/Objc3LinuxHost.cmake';host_module.parent.mkdir(parents=True)
+    host_module.write_bytes((ROOT/'native/objc3c/cmake/Objc3LinuxHost.cmake').read_bytes())
+    tool=repo/f'out/toolchains/objc3-development/build-{native_linux_host()}/bin/llvm-tblgen'
     tool.parent.mkdir(parents=True)
     version='23.1.4' if mode=='wrong-version' else '23.1.5'
     marker=tmp_path/'executed'

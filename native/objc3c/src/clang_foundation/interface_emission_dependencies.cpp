@@ -1116,6 +1116,9 @@ class TypeDependencyVisitor final
   }
 
   bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
+    for(const auto &effect:type->getFunctionEffects())
+      if(auto *condition=effect.Cond.getCondition())
+        if(!TraverseStmt(condition))return false;
     const auto effects = type->getObjC3FunctionEffects();
     // The canonical function type explicitly selects its physical ABI. Never
     // infer the return carrier from the importing translation unit's language.

@@ -104,7 +104,7 @@ class Campaign:
             *(installed_shared_library(stage / 'lib', name)
               for name in ('libLLVM.so', 'libclang-cpp.so'))]}
         for name in ('llvm_ir_execution.py', 'compiler_instrumentation.py', 'llvm_tools.py',
-                     'binary_packages.py', 'sanitizer_policy.py', 'sdk_example.py'):
+                     'binary_packages.py', 'sanitizer_policy.py', 'linux_host.py', 'sdk_example.py'):
             path = Path(__file__).with_name(name)
             self.inputs[str(path)] = digest(path)
         self.report['inputs'] = self.inputs

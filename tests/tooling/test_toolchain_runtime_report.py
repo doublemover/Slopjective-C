@@ -8,6 +8,7 @@ import sys
 import pytest
 
 from scripts.objc3c_toolchain_runtime import build_linux
+from scripts.objc3c_toolchain.linux_host import host_identity, native_linux_host
 
 
 @pytest.mark.skipif(sys.platform != 'linux', reason='native Linux runtime producer')
@@ -16,13 +17,16 @@ def test_cold_checkout_noise_cannot_contaminate_the_structured_report(tmp_path, 
     config = tmp_path / 'scripts/objc3c_toolchain_runtime/runtime-profile.json'
     config.parent.mkdir(parents=True)
     config.write_bytes(profile.read_bytes())
-    for row in json.loads(profile.read_text())['profiles']['linux-x86_64']['source_patches']:
+    for row in json.loads(profile.read_text())['profiles'][native_linux_host()]['source_patches']:
         patch = tmp_path / row['file']
         patch.parent.mkdir(parents=True, exist_ok=True)
         patch.write_bytes((profile.parents[2] / row['file']).read_bytes())
     compiler = tmp_path / 'compiler/bin/clang'
     compiler.parent.mkdir(parents=True)
-    compiler.write_bytes(b'compiler identity')
+    elf = bytearray(64);elf[:6] = b'\x7fELF\x02\x01'
+    elf[18:20] = host_identity()['elf_machine'].to_bytes(2, 'little')
+    for tool in ('clang', 'clang++', 'ld.lld'):
+        (compiler.parent / tool).write_bytes(elf)
 
     def cold_checkout(path, *args, **kwargs):
         if not path.exists():
@@ -33,7 +37,7 @@ def test_cold_checkout_noise_cannot_contaminate_the_structured_report(tmp_path, 
         if command[:2] == ['cmake', '--install']:
             stage = Path(command[command.index('--prefix') + 1])
             (stage / 'lib').mkdir(parents=True)
-            (stage / 'lib/libobjc.so').write_bytes(b'runtime')
+            (stage / 'lib/libobjc.so').write_bytes(elf)
         return SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(build_linux, 'checkout', cold_checkout)

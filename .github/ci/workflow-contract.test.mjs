@@ -190,20 +190,30 @@ test("extended native workflow retains its full receipt-verifying aggregate", ()
   validateNativeGate(native);
 });
 
-for (const fault of ["missing partition", "duplicate partition", "out-of-range partition",
-  "obsolete single consumer", "missing schedules", "extra consumer"]) {
+for (const fault of [
+  "missing partition",
+  "duplicate partition",
+  "out-of-range partition",
+  "obsolete single consumer",
+  "missing schedules",
+  "extra consumer",
+]) {
   test(`native and release gates reject sanitizer matrix ${fault}`, () => {
     const owner = yaml.load(native);
     const groups = owner.jobs["instrumented-product-consumers"].strategy.matrix.group;
     if (fault === "missing partition") groups.splice(3, 1);
     if (fault === "duplicate partition") groups[3] = groups[0];
     if (fault === "out-of-range partition") groups[3] = "asan-products-partition-8";
-    if (fault === "obsolete single consumer") groups.splice(0, groups.length, "asan-products", "runtime-schedules");
+    if (fault === "obsolete single consumer")
+      groups.splice(0, groups.length, "asan-products", "runtime-schedules");
     if (fault === "missing schedules") groups.pop();
     if (fault === "extra consumer") groups.push("unreviewed-consumer");
     const changed = yaml.dump(owner);
     assert.throws(() => validateNativeGate(changed), /complete independent execution matrices/);
-    assert.throws(() => validateNativeRelease(changed, release), /complete independent execution matrices/);
+    assert.throws(
+      () => validateNativeRelease(changed, release),
+      /complete independent execution matrices/,
+    );
   });
 }
 
@@ -214,9 +224,7 @@ for (const fault of ["missing diagnostics", "conditional diagnostics", "failure 
     const diagnostics = steps.find(
       (step) => step.name === "Preserve sanitizer compiler diagnostics",
     );
-    const bundle = steps.find(
-      (step) => step.name === "Preserve exact sanitizer compiler bundle",
-    );
+    const bundle = steps.find((step) => step.name === "Preserve exact sanitizer compiler bundle");
     if (fault === "missing diagnostics") steps.splice(steps.indexOf(diagnostics), 1);
     if (fault === "conditional diagnostics") diagnostics.if = "success()";
     if (fault === "failure bundle") bundle.if = "always()";
@@ -248,7 +256,7 @@ for (const fault of [
     if (fault === "partial release caller") caller.jobs.build.with = { diagnostic_core_only: true };
     if (fault === "partial SDK publication")
       owner.jobs["product-producer"].steps.find(
-        (step) => step.with?.name === "objc3c-linux-sdk",
+        (step) => step.name === "Preserve qualified SDK archive",
       ).if = "success()";
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
@@ -261,6 +269,10 @@ for (const fault of [
   "failed archive",
   "older source blocks repaired source",
   "discard active source",
+  "foreign build host",
+  "foreign analysis host",
+  "unbound producer archive",
+  "foreign installed archive",
 ]) {
   test(`SDK release rejects ${fault}`, () => {
     const owner = yaml.load(native),
@@ -271,11 +283,23 @@ for (const fault of [
     if (fault === "missing native gate") delete owner.on.workflow_call;
     if (fault === "failed archive")
       owner.jobs["product-producer"].steps.find(
-        (step) => step.with?.name === "objc3c-linux-sdk",
+        (step) => step.name === "Preserve qualified SDK archive",
       ).if = "always()";
     if (fault === "older source blocks repaired source")
       owner.concurrency.group = owner.concurrency.group.replace("-${{ github.sha }}", "");
     if (fault === "discard active source") owner.concurrency["cancel-in-progress"] = true;
+    if (fault === "foreign build host") caller.jobs.build.with.linux_host = "linux-aarch64";
+    if (fault === "foreign analysis host")
+      caller.jobs["implementation-analysis"].with.linux_host = "linux-aarch64";
+    if (fault === "unbound producer archive")
+      owner.jobs["product-producer"].steps.find(
+        (step) => step.name === "Preserve qualified SDK archive",
+      ).with.name = "objc3c-linux-sdk";
+    if (fault === "foreign installed archive")
+      caller.jobs.install.steps.find((step) =>
+        step.uses?.startsWith("actions/download-artifact@"),
+      ).with.name = "objc3c-linux-sdk-linux-aarch64";
+
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
 }

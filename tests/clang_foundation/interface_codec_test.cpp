@@ -118,6 +118,7 @@ int main() {
       {";c-overloadable-functions:v1;",kCOverloadableSemantic},
       {";actor-receiver-bindings:v1;",kActorReceiverBindingSemantic},
       {";native-function-policies:v1;",kNativeFunctionPolicySemantic},
+      {";native-function-effects:v1;",kNativeFunctionEffectSemantic},
       {";native-emission-policies:v3;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},

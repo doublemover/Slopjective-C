@@ -580,6 +580,12 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
   if(borrowed_unions!=borrowed_union_capability)
     Add(result,"O3IFC147","borrowed union byte storage identity and required capability must agree",expected.canonical_name);
+  const bool function_effects=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeFunctionEffectIdentity);
+  const bool function_effect_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeFunctionEffectSemantic)!=sidecar.required_semantics.end();
+  const bool function_effect_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasNativeFunctionEffectIdentity(d) || IsNativeFunctionEffectOwner(d);});
+  if(function_effects!=function_effect_capability || !function_effect_owners)
+    Add(result,"O3IFC145","native function effect identity and required capability must agree",expected.canonical_name);
   const bool function_policies=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeFunctionPolicyIdentity);
   const bool function_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeFunctionPolicySemantic)!=sidecar.required_semantics.end();
   const bool function_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

@@ -328,6 +328,59 @@ bool HasDeclarationNativeEmissionPolicy(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationNativeFunctionEffects(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  struct Effects:clang::DynamicRecursiveASTVisitor {
+    bool found=false;
+    bool VisitFunctionProtoType(clang::FunctionProtoType *type) override {
+      found|=!type->getFunctionEffects().empty();return true;
+    }
+  };
+  struct Declarations:clang::DynamicRecursiveASTVisitor {
+    Effects effects;
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitNamedDecl(clang::NamedDecl *named) override {
+      if(const auto *value=llvm::dyn_cast<clang::ValueDecl>(named))effects.TraverseType(value->getType());
+      if(const auto *alias=llvm::dyn_cast<clang::TypedefNameDecl>(named))effects.TraverseType(alias->getUnderlyingType());
+      if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(named))effects.TraverseType(method->getObjC3FunctionType());
+      return true;
+    }
+  } declarations;
+  declarations.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  if(declarations.effects.found)return true;
+  auto Scan=[](const clang::Stmt *statement) {
+    struct Values:clang::DynamicRecursiveASTVisitor {
+      Effects effects;
+      bool VisitExpr(clang::Expr *expression) override {
+        if(!expression->getType().isNull())effects.TraverseType(expression->getType());return true;
+      }
+      bool VisitNamedDecl(clang::NamedDecl *named) override {
+        if(const auto *value=llvm::dyn_cast<clang::ValueDecl>(named))effects.TraverseType(value->getType());return true;
+      }
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) override {
+        effects.TraverseType(expression->getCallOperator()->getType());return true;
+      }
+    } values;
+    values.TraverseStmt(const_cast<clang::Stmt *>(statement));return values.effects.found;
+  };
+  struct Constraints:clang::DynamicRecursiveASTVisitor {
+    decltype(Scan) &scan;bool found=false;
+    explicit Constraints(decltype(Scan) &scan):scan(scan){}
+    bool TraverseStmt(clang::Stmt *) override{return true;}
+    bool VisitFunctionDecl(clang::FunctionDecl *function) override {
+      found|=scan(function->getTrailingRequiresClause().ConstraintExpr);return true;
+    }
+    bool VisitTemplateDecl(clang::TemplateDecl *pattern) override {
+      found|=scan(pattern->getTemplateParameters()->getRequiresClause());return true;
+    }
+    bool VisitConceptDecl(clang::ConceptDecl *concept_decl) override {
+      found|=scan(concept_decl->getConstraintExpr());return true;
+    }
+  } constraints(Scan);
+  constraints.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  return constraints.found || HasPublishedExpression(declaration,Scan);
+}
+
 bool HasDeclarationNativeFunctionPolicy(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
   auto Policy=[](const clang::NamedDecl *named) {
