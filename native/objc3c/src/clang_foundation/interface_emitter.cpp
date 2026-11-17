@@ -1120,6 +1120,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeEmissionPolicySemantic);
     if (HasBorrowedUnionStorageIdentity(declaration))
       sidecar.required_semantics.push_back(kBorrowedUnionStorageSemantic);
+    if(HasActorReceiverBindingIdentity(declaration))
+      sidecar.required_semantics.push_back(kActorReceiverBindingSemantic);
     if(HasCOverloadableIdentity(declaration))
       sidecar.required_semantics.push_back(kCOverloadableSemantic);
     if(HasNativeControlFlowIdentity(declaration))

@@ -79,3 +79,6 @@
 
 "objc3.c-overloadable-functions.v1"
 ";c-overloadable-functions:v1;"
+
+"objc3.actor-receiver-bindings.v1"
+";actor-receiver-bindings:v1;"

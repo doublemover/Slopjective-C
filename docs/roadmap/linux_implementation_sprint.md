@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.185 / System 2.111 actor receiver span](linux_actor_receiver_bindings.md)
+keeps current-actor receiver identity immutable across MRC/ARC and native imports,
+and admits bounded immutable aliases without dropping executor isolation.
+
 The [Source 2.184 / System 2.110 C-overload span](linux_native_c_overload_packages.md)
 publishes marked C candidates, fallback and conditional/hidden-argument contracts
 through direct, on-demand and module-qualified source-free package lookup.

@@ -2712,10 +2712,7 @@ inline int published_entry(int value) __objc3_async_frame {
   assert(emitted.success);
   assert(emitted.source_bytes.find("__objc3_isolation_entry_")==std::string::npos);
   assert(emitted.source_bytes.find("__objc3_await isolated_entry")!=std::string::npos);
-  const std::vector<llvm::StringRef> supported={
-      "objc3.cxx-data-interfaces.v1", "objc3.canonical-function-effects.v1",
-      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v5",
-      kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,RuntimeInterfaceSemantic()};
+  const auto &supported=SupportedSemanticInterfaceCapabilities();
   auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
                                               emitted.source_bytes,supported);
   assert(decoded);

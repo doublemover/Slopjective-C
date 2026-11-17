@@ -38,6 +38,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kCxxConstantEvaluationControlSemantic,
     kNativeControlFlowSemantic,
     kCOverloadableSemantic,
+    kActorReceiverBindingSemantic,
     kNativeUnnamedEnumSemantic,
     kNativeStorageLifetimeSemantic,
     kAtomicManagedPropertySemantic,
@@ -763,6 +764,12 @@ llvm::Error ValidateForEncoding(
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
   if(borrowed_unions!=borrowed_union_capability)
     return Invalid("borrowed union byte storage identity and required capability must agree");
+  const bool actor_receivers=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasActorReceiverBindingIdentity);
+  const bool receiver_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kActorReceiverBindingSemantic)!=sidecar.required_semantics.end();
+  const bool receiver_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasActorReceiverBindingIdentity(d) || IsActorReceiverBindingOwner(d);});
+  if(actor_receivers!=receiver_capability || !receiver_owners)
+    return Invalid("actor receiver binding identity and required capability must agree");
   const bool c_overloads=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCOverloadableIdentity);
   const bool overload_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCOverloadableSemantic)!=sidecar.required_semantics.end();
   const bool overload_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

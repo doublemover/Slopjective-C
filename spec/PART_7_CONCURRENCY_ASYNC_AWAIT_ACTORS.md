@@ -491,6 +491,15 @@ async void f(Counter *c) {
 
 Within actor-isolated code already executing on the actor’s executor, `await` is not required for isolated member access unless the member is explicitly `async`.
 
+The `self` binding of an actor-isolated instance entry is immutable and nonnull
+in both ARC and MRC, including consuming and initializing entries. Reassigning
+that binding is ill-formed: the current actor executor belongs to the receiver
+that entered the method. An explicitly nonisolated initializer retains ordinary
+Objective-C receiver replacement. The compiler may prove same-instance access
+through immutable automatic aliases and exact address/reference views; mutable,
+weak, volatile, static or unknown storage does not establish that identity.
+This proof grants neither ownership nor a general Sendable promise to an alias.
+
 #### 7.7.2.2 Property expressions across isolation domains {#part-7-7-2-2}
 
 An awaited property expression with synchronous accessors evaluates its receiver

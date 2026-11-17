@@ -4147,7 +4147,37 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5461,6 +6185,7 @@
+@@ -5170,9 +5894,26 @@
+   // Implicit params are declared when Sema encounters the definition but this
+   // never happens when the method is imported. Manually declare the implicit
+   // params now that the MethodDecl knows its class interface.
+-  if (D->getSelfDecl())
+-    ToMethod->createImplicitParams(Importer.getToContext(),
+-                                   ToMethod->getClassInterface());
++  if (D->getSelfDecl()) {
++    if (Importer.getToContext().getLangOpts().ObjC3) {
++      // The enclosing actor and callable attributes may still be importing.
++      // Preserve the checked source binding instead of deriving a different
++      // type from that incomplete context. Register the parameters as well so
++      // body references share the method's exact self/_cmd declarations.
++      auto ToSelf = import(D->getSelfDecl());
++      if (!ToSelf) return ToSelf.takeError();
++      auto ToCmd = import(D->getCmdDecl());
++      if (!ToCmd) return ToCmd.takeError();
++      (*ToSelf)->setDeclContext(ToMethod);
++      (*ToSelf)->setARCPseudoStrong(D->getSelfDecl()->isARCPseudoStrong());
++      (*ToCmd)->setDeclContext(ToMethod);
++      ToMethod->setSelfDecl(*ToSelf);
++      ToMethod->setCmdDecl(*ToCmd);
++    } else {
++      ToMethod->createImplicitParams(Importer.getToContext(),
++                                     ToMethod->getClassInterface());
++    }
++  }
+ 
+   return ToMethod;
+ }
+@@ -5461,6 +6202,7 @@
      return std::move(Err);
    if (ToD)
      return ToD;
@@ -4155,7 +4185,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    Error Err = Error::success();
    auto ToLoc = importChecked(Err, D->getNameInfo().getLoc());
-@@ -5468,28 +6193,59 @@
+@@ -5468,28 +6210,59 @@
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
    if (Err)
      return std::move(Err);
@@ -4223,7 +4253,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    return ImportUsingShadowDecls(D, ToUsing);
  }
-@@ -5517,6 +6273,7 @@
+@@ -5517,6 +6290,7 @@
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -4231,7 +4261,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5685,6 +6442,21 @@
+@@ -5685,6 +6459,21 @@
    if (Error Err = ImportDeclarationNameLoc(D->getNameInfo(), NameInfo))
      return std::move(Err);
  
@@ -4253,7 +4283,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    UnresolvedUsingValueDecl *ToUsingValue;
    if (GetImportedOrCreateDecl(ToUsingValue, D, Importer.getToContext(), DC,
                                ToUsingLoc, ToQualifierLoc, NameInfo,
-@@ -5724,6 +6496,7 @@
+@@ -5724,6 +6513,7 @@
      return ToUsing;
  
    ToUsing->setAccess(D->getAccess());
@@ -4261,7 +4291,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
  
-@@ -5904,6 +6677,15 @@
+@@ -5904,6 +6694,15 @@
        break;
    }
  
@@ -4277,7 +4307,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6858,9 @@
+@@ -6076,6 +6875,9 @@
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -4287,7 +4317,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6397,8 +7182,27 @@
+@@ -6397,8 +7199,27 @@
          bool IgnoreTemplateParmDepth =
              (FoundTemplate->getFriendObjectKind() != Decl::FOK_None) !=
              (D->getFriendObjectKind() != Decl::FOK_None);
@@ -4317,7 +4347,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            if (DependentFriend || IsDependentFriend(FoundTemplate))
              continue;
  
-@@ -6458,11 +7262,12 @@
+@@ -6458,11 +7279,12 @@
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -4331,7 +4361,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
    if (FoundByLookup) {
-@@ -6489,6 +7294,8 @@
+@@ -6489,6 +7311,8 @@
      D2->setPreviousDecl(Recent);
    }
  
@@ -4340,7 +4370,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return D2;
  }
  
-@@ -6497,6 +7304,9 @@
+@@ -6497,6 +7321,9 @@
    ClassTemplateDecl *ClassTemplate;
    if (Error Err = importInto(ClassTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4350,7 +4380,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6508,6 +7318,7 @@
+@@ -6508,6 +7335,7 @@
    if (Error Err =
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
@@ -4358,7 +4388,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Try to find an existing specialization with these template arguments and
    // template parameter list.
    void *InsertPos = nullptr;
-@@ -6711,6 +7522,11 @@
+@@ -6711,6 +7539,11 @@
    SmallVector<NamedDecl *, 4> ConflictingDecls;
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
    VarTemplateDecl *FoundByLookup = nullptr;
@@ -4370,7 +4400,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    for (auto *FoundDecl : FoundDecls) {
      if (!FoundDecl->isInIdentifierNamespace(Decl::IDNS_Ordinary))
        continue;
-@@ -6740,6 +7556,15 @@
+@@ -6740,6 +7573,15 @@
          break;
        }
        ConflictingDecls.push_back(FoundDecl);
@@ -4386,7 +4416,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      }
    }
  
-@@ -6777,10 +7602,11 @@
+@@ -6777,10 +7619,11 @@
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -4399,7 +4429,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (DC != Importer.getToContext().getTranslationUnitDecl())
      updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
-@@ -6796,6 +7622,7 @@
+@@ -6796,6 +7639,7 @@
      ToVarTD->setPreviousDecl(Recent);
    }
  
@@ -4407,7 +4437,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ToVarTD;
  }
  
-@@ -6818,6 +7645,9 @@
+@@ -6818,6 +7662,9 @@
    VarTemplateDecl *VarTemplate = nullptr;
    if (Error Err = importInto(VarTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4417,7 +4447,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6839,10 +7669,21 @@
+@@ -6839,10 +7686,21 @@
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
  
@@ -4443,7 +4473,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (FoundSpecialization) {
      if (IsStructuralMatch(D, FoundSpecialization)) {
        VarDecl *FoundDef = FoundSpecialization->getDefinition();
-@@ -6879,13 +7720,9 @@
+@@ -6879,13 +7737,9 @@
    using PartVarSpecDecl = VarTemplatePartialSpecializationDecl;
    // Create a new specialization.
    if (auto *FromPartial = dyn_cast<PartVarSpecDecl>(D)) {
@@ -4458,7 +4488,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
                                  VarTemplate, QualType(), nullptr,
                                  D->getStorageClass(), TemplateArgs))
        return ToPartial;
-@@ -6914,8 +7751,11 @@
+@@ -6914,8 +7768,11 @@
  
    // Update InsertPos, because preceding import calls may have invalidated
    // it by adding new specializations.
@@ -4472,7 +4502,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    QualType T;
    if (Error Err = importInto(T, D->getType()))
-@@ -6935,6 +7775,10 @@
+@@ -6935,6 +7792,10 @@
    }
  
    D2->setSpecializationKind(D->getSpecializationKind());
@@ -4483,7 +4513,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (D->getTemplateArgsAsWritten())
      D2->setTemplateArgsAsWritten(ToTAInfo);
-@@ -6948,6 +7792,8 @@
+@@ -6948,6 +7809,8 @@
      D2->setConstexpr(true);
  
    D2->setAccess(D->getAccess());
@@ -4492,7 +4522,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (Error Err = ImportInitializer(D, D2))
      return std::move(Err);
-@@ -6995,7 +7841,10 @@
+@@ -6995,7 +7858,10 @@
        if (auto *FoundTemplate = dyn_cast<FunctionTemplateDecl>(FoundDecl)) {
          if (!hasSameVisibilityContextAndLinkage(FoundTemplate, D))
            continue;
@@ -4504,7 +4534,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            FunctionTemplateDecl *TemplateWithDef =
                getTemplateDefinition(FoundTemplate);
            if (D->isThisDeclarationADefinition() && TemplateWithDef)
-@@ -7051,17 +7900,13 @@
+@@ -7051,17 +7917,13 @@
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -4526,7 +4556,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7921,15 @@
+@@ -7076,6 +7938,15 @@
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -4542,7 +4572,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ToFunc;
  }
  
-@@ -7111,7 +7965,10 @@
+@@ -7111,7 +7982,10 @@
    if (GetImportedOrCreateDecl(To, D, Importer.getToContext(), DC, RequiresLoc))
      return To;
    To->setLexicalDeclContext(LexicalDC);
@@ -4554,7 +4584,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return To;
  }
  
-@@ -7328,6 +8185,97 @@
+@@ -7328,6 +8202,97 @@
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -4652,7 +4682,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +8433,93 @@
+@@ -7485,6 +8450,93 @@
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -4746,7 +4776,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8810,178 @@
+@@ -7775,6 +8827,178 @@
                  E->getVarargABI());
  }
  
@@ -4925,7 +4955,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +9291,16 @@
+@@ -8084,6 +9308,16 @@
                                 ToLocations);
  }
  
@@ -4942,7 +4972,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8132,13 +9349,22 @@
+@@ -8132,13 +9366,22 @@
        ToAmpAmpLoc, ToLabelLoc, ToLabel, ToType);
  }
  ExpectedStmt ASTNodeImporter::VisitConstantExpr(ConstantExpr *E) {
@@ -4972,7 +5002,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  ExpectedStmt ASTNodeImporter::VisitParenExpr(ParenExpr *E) {
    Error Err = Error::success();
-@@ -8835,6 +10061,53 @@
+@@ -8835,6 +10078,53 @@
                                     E->getFPFeatures());
  }
  
@@ -5026,7 +5056,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9082,7 +10355,9 @@
+@@ -9082,7 +10372,9 @@
  ExpectedStmt
  ASTNodeImporter::VisitUnresolvedMemberExpr(UnresolvedMemberExpr *E) {
    Error Err = Error::success();
@@ -5037,7 +5067,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToOperatorLoc = importChecked(Err, E->getOperatorLoc());
    auto ToQualifierLoc = importChecked(Err, E->getQualifierLoc());
    auto ToTemplateKeywordLoc = importChecked(Err, E->getTemplateKeywordLoc());
-@@ -9163,6 +10438,16 @@
+@@ -9163,6 +10455,16 @@
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -5054,7 +5084,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10737,14 @@
+@@ -9452,6 +10754,14 @@
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -5069,7 +5099,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10790,21 @@
+@@ -9497,6 +10807,21 @@
        E->getIndex(), E->getFinal());
  }
  
@@ -5091,7 +5121,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10972,12 @@
+@@ -9664,8 +10989,12 @@
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -5106,7 +5136,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +11027,211 @@
+@@ -9715,7 +11044,211 @@
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -5319,7 +5349,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  
  namespace {
-@@ -9834,12 +11350,21 @@
+@@ -9834,12 +11367,21 @@
      assert(!ToAttr && "Use one AttrImporter to import one Attribute object.");
  
      SourceRange ToRange = NImporter.importChecked(Err, FromAttr->getRange());
@@ -5343,7 +5373,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    }
  
    // Get the result of the previous import attempt (can be used only once).
-@@ -9857,6 +11382,85 @@
+@@ -9857,6 +11399,85 @@
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -5429,7 +5459,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -9880,6 +11484,14 @@
+@@ -9880,6 +11501,14 @@
      break;
    }
  
@@ -5444,7 +5474,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    case attr::EnableIf: {
      const auto *From = cast<EnableIfAttr>(FromAttr);
      AI.importAttr(From, AI.importArg(From->getCond()).value(),
-@@ -10123,12 +11735,62 @@
+@@ -10123,12 +11752,62 @@
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -5511,7 +5541,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          return ToAttrOrErr.takeError();
      }
  
-@@ -10571,6 +12233,12 @@
+@@ -10571,6 +12250,12 @@
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -5524,7 +5554,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +12249,9 @@
+@@ -10581,9 +12266,9 @@
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -5536,7 +5566,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +12261,9 @@
+@@ -10593,9 +12278,9 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5548,7 +5578,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +12273,17 @@
+@@ -10605,17 +12290,17 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5570,7 +5600,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -10823,6 +12491,8 @@
+@@ -10823,6 +12508,8 @@
      ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
                 ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
                 FromValue.getArrayInitializedElts());
@@ -5579,7 +5609,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      break;
    case APValue::Struct:
      Result.MakeStruct(FromValue.getStructNumBases(),
-@@ -10838,7 +12508,7 @@
+@@ -10838,7 +12525,7 @@
      APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
      if (Err)
        return std::move(Err);
@@ -5588,7 +5618,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      break;
    }
    case APValue::AddrLabelDiff: {
-@@ -10858,10 +12528,10 @@
+@@ -10858,10 +12545,10 @@
        return std::move(Err);
      MutableArrayRef<const CXXRecordDecl *> ToPath =
          Result.setMemberPointerUninit(
@@ -5601,7 +5631,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
           Idx++) {
        const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
-@@ -10912,7 +12582,7 @@
+@@ -10912,7 +12599,7 @@
        }
      }
      CharUnits Offset = FromValue.getLValueOffset();
@@ -5610,7 +5640,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11006,6 +12676,11 @@
+@@ -11006,6 +12693,11 @@
    // This mapping should be maintained only in this function. Therefore do not
    // check for additional consistency.
    ImportedFromDecls[To] = From;
@@ -5622,7 +5652,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // In the case of TypedefNameDecl we create the Decl first and only then we
    // import and set its DeclContext. So, the DC is still not set when we reach
    // here from GetImportedOrCreateDecl.
-@@ -11049,3 +12724,16 @@
+@@ -11049,3 +12741,16 @@
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -52566,7 +52596,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1771 @@
+@@ -0,0 +1,1818 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -52979,8 +53009,15 @@ new file mode 100644
 +                               llvm::SmallPtrSetImpl<const BlockDecl *> &);
 +
 +bool checkBoundarySignature(Sema &S, const ObjCMethodDecl *Method) {
++  QualType Result = Method->getReturnType();
++  if (Method->hasRelatedResultType())
++    if (const auto *Interface = Method->getClassInterface(); isObjC3Actor(Interface))
++      // instancetype is logically this actor's dynamic type, not an arbitrary
++      // id. Nonisolated construction/identity results transfer an actor ref.
++      Result = S.Context.getObjCObjectPointerType(
++          S.Context.getObjCInterfaceType(Interface));
 +  bool Invalid =
-+      checkTransfer(S, Method->getReturnType(), Method->getLocation(),
++      checkTransfer(S, Result, Method->getLocation(),
 +                    "nonisolated result", Method);
 +  for (const auto *P : Method->parameters())
 +    Invalid |= checkTransfer(S, P->getType(), P->getLocation(),
@@ -53036,6 +53073,70 @@ new file mode 100644
 +  }
 +};
 +
++// A same-actor proof is a value identity proof, not merely an actor type.
++// Only immutable automatic bindings and exact address/load pairs participate.
++// Static/TLS locals can retain a different invocation's receiver; weak/volatile
++// slots and mutable aliases cannot establish the current receiver identity.
++bool currentActorReceiver(const Decl *Callable, const Expr *Receiver,
++                          bool Super = false) {
++  const auto *Method = dyn_cast_or_null<ObjCMethodDecl>(Callable);
++  if (!Method || !isObjC3ActorIsolated(Method)) return false;
++  const auto *Self = Method->getSelfDecl();
++  if (!Self || !Self->getType().isConstQualified()) return false;
++  if (Super) return true;
++  unsigned Budget = 128;
++  llvm::SmallPtrSet<const VarDecl *, 16> Active;
++  auto Prove = [&](auto &&Recurse, const Expr *Value, unsigned Loads,
++                   unsigned Depth) -> bool {
++    if (!Value || !Budget || Depth > 32 || Loads > 8) return false;
++    --Budget;
++    if (const auto *Paren = dyn_cast<ParenExpr>(Value))
++      return Recurse(Recurse, Paren->getSubExpr(), Loads, Depth + 1);
++    if (const auto *Cast = dyn_cast<ImplicitCastExpr>(Value))
++      return Recurse(Recurse, Cast->getSubExpr(), Loads, Depth + 1);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Value))
++      return Recurse(Recurse, Opaque->getSourceExpr(), Loads, Depth + 1);
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Value))
++      return Recurse(Recurse, Cleanups->getSubExpr(), Loads, Depth + 1);
++    if (const auto *Temporary = dyn_cast<MaterializeTemporaryExpr>(Value))
++      return Recurse(Recurse, Temporary->getSubExpr(), Loads, Depth + 1);
++    if (const auto *Temporary = dyn_cast<CXXBindTemporaryExpr>(Value))
++      return Recurse(Recurse, Temporary->getSubExpr(), Loads, Depth + 1);
++    if (const auto *Reference = dyn_cast<DeclRefExpr>(Value)) {
++      if (Reference->getDecl() == Self) return Loads == 0;
++      const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl());
++      if (!Variable || !Variable->hasLocalStorage() || !Variable->hasInit())
++        return false;
++      QualType Type = Variable->getType().getNonReferenceType();
++      if (!Type.isConstQualified() || Type.isVolatileQualified() ||
++          Type->isAtomicType() || Type.getObjCLifetime() == Qualifiers::OCL_Weak ||
++          !Active.insert(Variable).second) return false;
++      const bool Proven = Recurse(Recurse, Variable->getInit(), Loads, Depth + 1);
++      Active.erase(Variable);return Proven;
++    }
++    if (const auto *Unary = dyn_cast<UnaryOperator>(Value)) {
++      if (Unary->getOpcode() == UO_Deref)
++        return Recurse(Recurse, Unary->getSubExpr(), Loads + 1, Depth + 1);
++      if (Unary->getOpcode() == UO_AddrOf && Loads)
++        return Recurse(Recurse, Unary->getSubExpr(), Loads - 1, Depth + 1);
++    }
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Value))
++      return Recurse(Recurse, Conditional->getTrueExpr(), Loads, Depth + 1) &&
++             Recurse(Recurse, Conditional->getFalseExpr(), Loads, Depth + 1);
++    if (const auto *Binary = dyn_cast<BinaryOperator>(Value);
++        Binary && Binary->getOpcode() == BO_Comma)
++      return Recurse(Recurse, Binary->getRHS(), Loads, Depth + 1);
++    if (const auto *Generic = dyn_cast<GenericSelectionExpr>(Value);
++        Generic && !Generic->isResultDependent())
++      return Recurse(Recurse, Generic->getResultExpr(), Loads, Depth + 1);
++    if (const auto *Choice = dyn_cast<ChooseExpr>(Value);
++        Choice && !Choice->isConditionDependent())
++      return Recurse(Recurse, Choice->getChosenSubExpr(), Loads, Depth + 1);
++    return false;
++  };
++  return Prove(Prove, Receiver, 0, 0);
++}
++
 +class IsolationBodyChecker : public EvaluatedExprVisitor<IsolationBodyChecker> {
 +  using Base = EvaluatedExprVisitor<IsolationBodyChecker>;
 +  Sema &S;
@@ -53046,18 +53147,7 @@ new file mode 100644
 +  llvm::SmallPtrSet<const Stmt *, 32> Checked;
 +
 +  bool sameActor(const Expr *Receiver, bool Super = false) const {
-+    const auto *M = dyn_cast<ObjCMethodDecl>(Callable);
-+    if (!M || !isObjC3ActorIsolated(M))
-+      return false;
-+    if (Super)
-+      return true;
-+    Receiver = Receiver ? Receiver->IgnoreParenImpCasts() : nullptr;
-+    if (const auto *Opaque = dyn_cast_or_null<OpaqueValueExpr>(Receiver))
-+      Receiver = Opaque->getSourceExpr()
-+                     ? Opaque->getSourceExpr()->IgnoreParenImpCasts()
-+                     : nullptr;
-+    const auto *Reference = dyn_cast_or_null<DeclRefExpr>(Receiver);
-+    return Reference && Reference->getDecl() == M->getSelfDecl();
++    return currentActorReceiver(Callable, Receiver, Super);
 +  }
 +  bool executorProven(const Decl *Callee) const {
 +    const auto *Target = getObjC3Executor(Callee);
@@ -53942,17 +54032,8 @@ new file mode 100644
 +}
 +
 +bool sameCurrentActor(const Decl *Callable, const ObjCMessageExpr *Message) {
-+  const auto *Method = dyn_cast<ObjCMethodDecl>(Callable);
-+  if (!Method || !isObjC3ActorIsolated(Method))
-+    return false;
-+  if (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance)
-+    return true;
-+  const auto *Receiver = Message->getInstanceReceiver();
-+  if (!Receiver)
-+    return false;
-+  const auto *Reference =
-+      dyn_cast<DeclRefExpr>(Receiver->IgnoreParenImpCasts());
-+  return Reference && Reference->getDecl() == Method->getSelfDecl();
++  return currentActorReceiver(Callable, Message->getInstanceReceiver(),
++      Message->getReceiverKind() == ObjCMessageExpr::SuperInstance);
 +}
 +
 +bool unsupportedIsolatedConsumption(const Sema &S, QualType Type,
@@ -54040,14 +54121,10 @@ new file mode 100644
 +  }
 +  bool SameActor = false;
 +  if (Property) {
-+    if (const auto *Method = dyn_cast<ObjCMethodDecl>(Callable);
-+        Method && isObjC3ActorIsolated(Method)) {
-+      SameActor = Property->Reference->isSuperReceiver();
-+      if (Property->Reference->isObjectReceiver())
-+        if (auto *Base = propertyInput(Property->Reference->getBase()))
-+          if (auto *Reference = dyn_cast<DeclRefExpr>(Base->IgnoreParenImpCasts()))
-+            SameActor = Reference->getDecl() == Method->getSelfDecl();
-+    }
++    SameActor = currentActorReceiver(Callable,
++        Property->Reference->isObjectReceiver()
++            ? propertyInput(Property->Reference->getBase()) : nullptr,
++        Property->Reference->isSuperReceiver());
 +  } else if (Message) SameActor = sameCurrentActor(Callable, Message);
 +  bool Crossing = (ActorEntry && !SameActor) ||
 +                  (Executor && (!Current || Current->getExecutor() !=
@@ -54338,6 +54415,7 @@ new file mode 100644
 +    Diag(Loc, diag::warn_objc3_unnecessary_c_await);
 +  return Operand;
 +}
+
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.h b/clang/lib/Sema/SemaObjC3Isolation.h
 new file mode 100644
 index 000000000..ac32b7dd5
@@ -60829,7 +60907,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,3929 @@
+@@ -0,0 +1,4003 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -64757,6 +64835,80 @@ new file mode 100644
 + for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(isa<FunctionDecl>(D)) {
 +  auto Result=Importer.Import(D);EXPECT_FALSE(static_cast<bool>(Result));
 +  if(!Result)llvm::consumeError(Result.takeError());
++ }
++}
++
++TEST(ObjC3ASTInfrastructure, ActorReceiverBindingTypesSurviveNativeImport) {
++ const char *Source=R"objc(
++__attribute__((objc_root_class)) @interface BindingRoot
++- (instancetype _Nullable)init;
++@end
++actor class BindingActor:BindingRoot
++- (instancetype _Nullable)initIsolated;
++- (instancetype _Nullable)initNonisolated __attribute__((objc_nonisolated));
++- (instancetype _Nonnull)identity __attribute__((objc_nonisolated));
++- (int)read;
++- (int)aliases;
++- (void)consume __attribute__((ns_consumes_self));
++@property(nonatomic,readonly) int token __attribute__((objc_nonisolated));
++@end
++@implementation BindingActor
++- (int)read{return 17;}
++- (int)token __attribute__((objc_nonisolated)){return 19;}
++- (void)consume{}
++- (int)aliases {
++ BindingActor *_Nonnull const first=self;
++ BindingActor *_Nonnull const *const cell=&first;
++ return [first read]+[*cell read]+[*(&self) read];
++}
++- (instancetype _Nullable)initIsolated{return self;}
++- (instancetype _Nullable)initNonisolated __attribute__((objc_nonisolated)){self=[super init];return self;}
++- (instancetype _Nonnull)identity __attribute__((objc_nonisolated)){return self;}
++@end
++)objc";
++ for(const char *Language:{"objective-c","objective-c++"})for(bool ARC:{false,true}) {
++  std::vector<std::string> Args={"-x",Language,Language==StringRef("objective-c")?"-std=c17":"-std=c++23",
++      "--target=x86_64-unknown-linux-gnu","-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-concurrency"};
++  if(ARC)Args.push_back("-fobjc-arc");
++  auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"actor-binding-source.m");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"actor-binding-target.m");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  auto Check=[&](ASTContext &Context){
++   unsigned Count=0;
++   for(auto *D:Context.getTranslationUnitDecl()->decls())if(auto *Actor=dyn_cast<ObjCInterfaceDecl>(D);Actor && Actor->getName()=="BindingActor")
++    for(auto *Method:Actor->instance_methods()) {
++     if(!Method->getSelfDecl())Method->createImplicitParams(Context,Actor);
++     const auto Type=Method->getSelfDecl()->getType();const auto Name=Method->getSelector().getAsString();
++     if(Name=="initNonisolated")EXPECT_FALSE(Type.isConstQualified());
++     else if(Name=="identity" || Name=="token")EXPECT_EQ(Type.isConstQualified(),ARC);
++     else {EXPECT_TRUE(Type.isConstQualified());EXPECT_EQ(Type->getNullability(),NullabilityKind::NonNull);}
++     if(Name=="consume" && ARC) {
++      EXPECT_TRUE(Method->getSelfDecl()->hasAttr<NSConsumedAttr>());
++      EXPECT_FALSE(Method->getSelfDecl()->isARCPseudoStrong());
++     }
++     ++Count;
++    }
++   EXPECT_GE(Count,7u);
++   for(auto *D:Context.getTranslationUnitDecl()->decls())if(auto *Impl=dyn_cast<ObjCImplementationDecl>(D))
++    for(auto *Method:Impl->instance_methods())if(Method->hasBody()) {
++     struct References:RecursiveASTVisitor<References> {
++      ImplicitParamDecl *Self;
++      bool VisitDeclRefExpr(DeclRefExpr *E) {
++       if(E->getDecl()->getName()=="self")EXPECT_EQ(E->getDecl(),Self);
++       return true;
++      }
++     } Uses;Uses.Self=Method->getSelfDecl();Uses.TraverseStmt(Method->getBody());
++    }
++  };
++  Check(From->getASTContext());
++  {
++   ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(!D->isImplicit() && isa<ObjCInterfaceDecl,ObjCImplementationDecl>(D)) {
++    auto Result=Importer.Import(D);
++    if(!Result){auto Message=llvm::toString(Result.takeError());FAIL()<<Message;}
++   }
++  }
++  From.reset();Check(To->getASTContext());EXPECT_FALSE(To->getDiagnostics().hasErrorOccurred());
 + }
 +}
 
@@ -74183,3 +74335,140 @@ diff --git a/clang/include/clang/Basic/AttributeCommonInfo.h b/clang/include/cla
  
    Kind getParsedKind() const { return Kind(AttrKind); }
    Syntax getSyntax() const { return Syntax(SyntaxUsed); }
+
+diff --git a/clang/lib/AST/DeclObjC.cpp b/clang/lib/AST/DeclObjC.cpp
+--- a/clang/lib/AST/DeclObjC.cpp
++++ b/clang/lib/AST/DeclObjC.cpp
+@@ -17,6 +17,7 @@
+ #include "clang/AST/Decl.h"
+ #include "clang/AST/DeclBase.h"
+ #include "clang/AST/ODRHash.h"
++#include "clang/AST/ObjC3Isolation.h"
+ #include "clang/AST/Stmt.h"
+ #include "clang/AST/Type.h"
+ #include "clang/AST/TypeLoc.h"
+@@ -1181,6 +1182,17 @@
+       selfIsPseudoStrong = true;
+     }
+   }
++  // The current actor executor is bound to the receiver that entered this
++  // method. Replacing its self slot cannot change that executor. Preserve the
++  // binding in MRC and consuming/init methods as well as ordinary ARC methods;
++  // explicitly nonisolated entries retain ordinary Objective-C self rules.
++  if (Context.getLangOpts().ObjC3 && isInstanceMethod() &&
++      isObjC3Actor(OID) && isObjC3ActorIsolated(this)) {
++    // A nil message never enters a method body, and this binding cannot later
++    // become nil. Preserve that fact through native address/reference views.
++    selfTy = Context.getAttributedType(attr::TypeNonNull, selfTy, selfTy);
++    selfTy = selfTy.withConst();
++  }
+   return selfTy;
+ }
+ 
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/actor-receiver-bindings.h b/clang/test/ObjC3/Sema/Inputs/actor-receiver-bindings.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/actor-receiver-bindings.h
+@@ -0,0 +1,25 @@
++#ifndef OBJC3_ACTOR_RECEIVER_BINDINGS_H
++#define OBJC3_ACTOR_RECEIVER_BINDINGS_H
++__attribute__((objc_root_class)) @interface ReceiverRoot
++- (instancetype _Nullable)init;
++@end
++actor class ReceiverActor : ReceiverRoot {
++ int _value;
++}
++@property(nonatomic) int value;
++- (int)read;
++- (int)aliases:(int)flag;
++- (int)pointerCells;
++- (int)references;
++- (int)replace:(ReceiverActor *_Nonnull)other;
++- (int)mutableAlias;
++- (int)unknownAlias:(ReceiverActor *_Nonnull)other;
++- (int)unsafeAlias;
++- (int)volatileAlias;
++- (int)mutableCell;
++- (int)conditionalAlias:(ReceiverActor *_Nonnull)other flag:(int)flag;
++- (int)staticAlias;
++- (instancetype _Nullable)init __attribute__((objc_nonisolated));
++- (instancetype _Nonnull)identity __attribute__((objc_nonisolated));
++@end
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/actor-receiver-bindings.m b/clang/test/ObjC3/Sema/actor-receiver-bindings.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/actor-receiver-bindings.m
+@@ -0,0 +1,70 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/actor-receiver-bindings.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/actor-receiver-bindings.h"
++@implementation ReceiverActor
++@synthesize value=_value;
++- (int)read {return _value;}
++- (int)aliases:(int)flag {
++ ReceiverActor *_Nonnull const first=self;
++ ReceiverActor *_Nonnull const second=first;
++ ReceiverActor *_Nonnull const choice=flag?second:self;
++ first.value=17;choice.value+=1;
++ return [first read]+[second read]+choice.value+[(flag?first:second) read]+[((void)flag,self) read];
++}
++- (int)pointerCells {
++ ReceiverActor *_Nonnull const first=self;
++ ReceiverActor *_Nonnull const *const cell=&first;
++ ReceiverActor *_Nonnull const *const *const nested=&cell;
++ return [*cell read]+[**nested read]+[*(&self) read];
++}
++- (int)references {
++#if __cplusplus
++ ReceiverActor *_Nonnull const &first=self;
++ ReceiverActor *_Nonnull const &second=first;
++ return [first read]+second.value;
++#else
++ ReceiverActor *_Nonnull const selected=_Generic(1,int:self,default:self);
++ return [selected read]+[__builtin_choose_expr(1,self,self) read];
++#endif
++}
++- (instancetype _Nullable)init __attribute__((objc_nonisolated)) {self=[super init];return self;}
++- (instancetype _Nonnull)identity __attribute__((objc_nonisolated)) {return self;}
++- (int)replace:(ReceiverActor *_Nonnull)other {
++ self=other; // expected-error {{cannot assign to}}
++ return 0;
++}
++- (int)mutableAlias {
++ ReceiverActor *_Nonnull alias=self;
++ return [alias read]; // expected-error {{cross-actor entry requires an explicit await}}
++}
++- (int)unknownAlias:(ReceiverActor *_Nonnull)other {
++ ReceiverActor *_Nonnull const alias=other;
++ return [alias read]; // expected-error {{cross-actor entry requires an explicit await}}
++}
++- (int)unsafeAlias {
++ ReceiverActor *_Nonnull __unsafe_unretained const alias=self;
++ return [alias read];
++}
++- (int)volatileAlias {
++ ReceiverActor *_Nonnull const volatile alias=self;
++ return [alias read]; // expected-error {{cross-actor entry requires an explicit await}}
++}
++- (int)mutableCell {
++ ReceiverActor *_Nonnull alias=self;
++ ReceiverActor *_Nonnull __strong *const cell=&alias;
++ return [*cell read]; // expected-error {{cross-actor entry requires an explicit await}}
++}
++- (int)conditionalAlias:(ReceiverActor *_Nonnull)other flag:(int)flag {
++ ReceiverActor *_Nonnull const alias=flag?self:other;
++ return [alias read]; // expected-error {{cross-actor entry requires an explicit await}}
++}
++- (int)staticAlias {
++ static ReceiverActor *_Nonnull alias;
++ alias=self;
++ return [alias read]; // expected-error {{cross-actor entry requires an explicit await}}
++}
++@end

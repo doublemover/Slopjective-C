@@ -3093,6 +3093,11 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-cpu-variant:v1;";
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
+  if(context.getLangOpts().ObjC3 &&
+      (clang::isObjC3ActorIsolated(representative) ||
+       (llvm::isa<clang::ObjCInterfaceDecl>(representative) &&
+        clang::isObjC3Actor(llvm::cast<clang::ObjCInterfaceDecl>(representative)))))
+    identity.canonical_type_identity+=";actor-receiver-bindings:v1;";
   if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(representative);
       function && !context.getLangOpts().CPlusPlus && function->hasAttr<clang::OverloadableAttr>())
     identity.canonical_type_identity+=";c-overloadable-functions:v1;";

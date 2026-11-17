@@ -147,6 +147,14 @@ inline constexpr const char *kCxxThreadLocalSemantic = "objc3.cxx-thread-local.v
 inline bool HasCxxThreadLocalIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-thread-local:v1;") != std::string::npos;
 }
+inline constexpr const char *kActorReceiverBindingSemantic = "objc3.actor-receiver-bindings.v1";
+inline bool HasActorReceiverBindingIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";actor-receiver-bindings:v1;") != std::string::npos;
+}
+inline bool IsActorReceiverBindingOwner(const InterfaceDeclarationIdentity &d) {
+  return d.kind=="ObjCInterface" || d.kind=="ObjCMethod" ||
+      d.kind=="ObjCProperty" || d.kind=="ObjCIvar";
+}
 inline constexpr const char *kCOverloadableSemantic = "objc3.c-overloadable-functions.v1";
 inline bool HasCOverloadableIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";c-overloadable-functions:v1;") != std::string::npos;

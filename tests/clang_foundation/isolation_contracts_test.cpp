@@ -203,6 +203,21 @@ __attribute__((objc_executor(named("two")))) int wrong_named(void) { return name
 - (SafeMessage *)safe:(Counter *)value __attribute__((objc_nonisolated));
 @end
 )")));
+  Success(Compile(Make(Root.str() + R"(
+@interface Counter (LogicalActorResults)
+- (instancetype _Nonnull)identity __attribute__((objc_nonisolated));
+- (instancetype _Nullable)initIndependent __attribute__((objc_nonisolated));
+@end
+@implementation Counter (LogicalActorResults)
+- (instancetype _Nonnull)identity __attribute__((objc_nonisolated)){return self;}
+- (instancetype _Nullable)initIndependent __attribute__((objc_nonisolated)){self=0;return self;}
+@end
+)")));
+  Reject(Make(Root.str() + R"(
+@interface Counter (ErasedActorResults)
+- (id _Nonnull)erased __attribute__((objc_nonisolated));
+@end
+)"),"non-Sendable type");
   Reject(Make(Root.str() + R"(
 @interface Counter (Future)
 - (void)future __attribute__((objc_actor_nonreentrant));
@@ -712,23 +727,7 @@ int module_consume(__attribute__((ns_consumed)) SafeMessage *)
   auto Emitted = EmitSemanticInterface(From->getASTContext(),
                                        "Isolation.Contracts", "isolation-v1");
   assert(Emitted.success);
-  const std::vector<llvm::StringRef> Semantics = {
-      "objc3.canonical-function-effects.v1",
-      "objc3.async-entry-abi.v5",
-      RuntimeInterfaceSemantic(),
-      "objc3.native-carrier-types.v1",
-      "objc3.native-return-ownership.v1",
-      "objc3.native-ownership-contracts.v1",
-      "objc3.native-declaration-attributes.v6",
-      "objc3.isolation-contracts.v1",
-      "objc3.typed-keypaths.v1",
-      "objc3.direct-dispatch.v1",
-      "objc3.cxx-data-interfaces.v1",
-      "objc3.cxx-member-interfaces.v1",
-      "objc3.ownership-projection.v1",
-      "objc3.api-availability.v1",
-      "objc3.api-partitions.v1",
-      "objc3.module-owned-names.v1"};
+  const auto &Semantics = SupportedSemanticInterfaceCapabilities();
   auto Decoded = DecodeSemanticInterfaceSidecar(
       Emitted.sidecar_json, Emitted.source_bytes, Semantics);
   if (!Decoded) {
