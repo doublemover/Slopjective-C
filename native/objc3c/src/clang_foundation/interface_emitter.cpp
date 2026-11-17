@@ -296,7 +296,7 @@ class InterfaceCollector final
         unsigned count = 0;
         for (const auto *a : declaration->specific_attrs<clang::AnnotateAttr>())
           count += a->getAnnotation().starts_with("objc3.spi:");
-        if (!IsTopLevel(declaration) ||
+        if (NativeDeductionGuide(declaration) || !IsTopLevel(declaration) ||
             llvm::isa<clang::ObjCCategoryDecl>(declaration) ||
             !IsValidSPIGroup(group) || count != 1 || annotation->args_size()) {
           AddDiagnostic(result_, "O3IFC157",
@@ -858,12 +858,16 @@ std::string ReadInterfaceExportRoot(const clang::NamedDecl *declaration) {
 }
 
 std::string ReadInterfaceSPIGroup(const clang::NamedDecl *declaration) {
+  if(const auto *guide=NativeDeductionGuide(declaration))declaration=guide->getDeducedTemplate();
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration && !IsTopLevel(declaration))
     declaration = llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext());
   for (const clang::DeclContext *scope = declaration ? declaration->getDeclContext() : nullptr;
        declaration;) {
     const auto *root = Representative(const_cast<clang::NamedDecl *>(declaration));
+    // Concepts and template-template parameters have no templated declaration.
+    if(const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(root))
+      if(const auto *templated=pattern->getTemplatedDecl())root=templated;
     for (const auto *attribute : root->specific_attrs<clang::AnnotateAttr>())
       if (attribute->getAnnotation().starts_with("objc3.spi:"))
         return attribute->getAnnotation().drop_front(10).str();
@@ -1135,6 +1139,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeExternalBindingSemantic);
     if(HasCxxOutOfLineDefinitionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxOutOfLineDefinitionSemantic);
+    if(HasCxxDeductionGuideIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxDeductionGuideSemantic);
     if(HasCxxExplicitSpecifierIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxExplicitSpecifierSemantic);
     if(HasNativeObjectPolicyIdentity(declaration))

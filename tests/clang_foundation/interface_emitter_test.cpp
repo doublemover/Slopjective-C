@@ -3716,7 +3716,7 @@ void TestPublicConcepts() {
     )";
     auto first=emit(source);
     for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
-    assert(first.success && first.sidecar_json.find("objc3.cxx-concepts.v1")!=std::string::npos);
+    assert(first.success && first.sidecar_json.find("objc3.cxx-concepts.v2")!=std::string::npos);
     auto repeated=emit(first.source_bytes,"reprinted.cpp");
     assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
     auto relocated=emit("\n\n"+source,"relocated.cpp");
@@ -3825,7 +3825,7 @@ void TestPublicAliasTemplates() {
     )";
     auto first=emit(source);
     for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
-    assert(first.success && first.sidecar_json.find("objc3.cxx-alias-templates.v1")!=std::string::npos);
+    assert(first.success && first.sidecar_json.find("objc3.cxx-alias-templates.v2")!=std::string::npos);
     auto repeated=emit(first.source_bytes,"reprinted-aliases.cpp");
     assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
     auto relocated=emit("\n\n"+source,"relocated-aliases.cpp");

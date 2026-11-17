@@ -1465,6 +1465,26 @@ bool IsBoundedClassMemberVariable(const clang::VarTemplateDecl *pattern) {
 }
 
 
+// A primary class template owns one root SPI policy. Its authored record
+// carries the annotation, while the interface row is the ClassTemplateDecl.
+static bool IsPublishedClassTemplateSPI(const clang::Attr *attribute,
+                                         const clang::CXXRecordDecl *record) {
+  const auto *annotation=llvm::dyn_cast<clang::AnnotateAttr>(attribute);
+  const auto *pattern=record->getDescribedClassTemplate();
+  if(!annotation || !annotation->getAnnotation().starts_with("objc3.spi:") ||
+      annotation->args_size() || !pattern || !IsTopLevel(pattern))return false;
+  const auto group=annotation->getAnnotation().drop_front(10).str();
+  if(!IsValidSPIGroup(group))return false;
+  unsigned count=0;
+  for(const auto *a:record->specific_attrs<clang::AnnotateAttr>())count+=a->getAnnotation().starts_with("objc3.spi:");
+  if(count!=1)return false;
+  for(const auto *scope=record->getDeclContext();scope;scope=scope->getParent())
+    if(const auto *space=llvm::dyn_cast<clang::NamespaceDecl>(scope)) {
+      const auto parent=ReadInterfaceSPIGroup(space);if(!parent.empty() && parent!=group)return false;
+    }
+  return true;
+}
+
 bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
                             const clang::ClassTemplateDecl *pattern) {
   if (pattern && !IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
@@ -1484,7 +1504,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
     for (const auto *attribute:record->attrs())
       if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
         if (!HasOnlyNativeAbiTags(tag) && !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(pattern))) return false;
-      } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute)) return false;
+      } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute) && !IsPublishedClassTemplateSPI(attribute,record)) return false;
     return true;
   }
   // Named union templates retain the same complete member and specialization
@@ -1500,7 +1520,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
   for (const auto *attribute : body->attrs()) {
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (!HasOnlyNativeAbiTags(tag) && (!pattern || !HasModuleOwnedAbiTag(tag,ReadNativeSymbolName(pattern)))) return false;
-    } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute) && !llvm::isa<clang::FinalAttr>(attribute)) return false;
+    } else if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute) && !llvm::isa<clang::FinalAttr>(attribute) && !IsPublishedClassTemplateSPI(attribute,body)) return false;
   }
   for (const auto *member : body->decls()) {
     if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member)) continue;
@@ -1645,6 +1665,17 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         variable->hasInit() && !variable->isStaticDataMember() &&
         (!partial || IsBoundedVariablePartial(partial)))return true;
     AddDiagnostic(result,"O3IFC101","native standard variable specialization requires an inline constexpr definition and named module owner",variable->getQualifiedNameAsString());return false;
+  }
+  if(const auto *guide=NativeDeductionGuide(declaration)) {
+    for(const auto *attribute:guide->attrs()) {
+      if(llvm::isa<clang::AsmLabelAttr,clang::AbiTagAttr>(attribute)) {
+        AddDiagnostic(result,"O3IFC101","deduction guides cannot define native symbol bindings",guide->getQualifiedNameAsString());return false;
+      }
+      if(const auto *annotation=llvm::dyn_cast<clang::AnnotateAttr>(attribute);
+          annotation && annotation->getAnnotation().starts_with("objc3.spi:")) {
+        AddDiagnostic(result,"O3IFC157","deduction guides inherit SPI from their class template",guide->getQualifiedNameAsString());return false;
+      }
+    }
   }
   const auto *friend_function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
   if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))

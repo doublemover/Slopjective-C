@@ -61,12 +61,18 @@ int main() {
   assert(capabilities.count(kNativeFunctionPolicySemantic));
   assert(!capabilities.count("objc3.cxx-friends.v1"));
   assert(!capabilities.count("objc3.cxx-friends.v2"));
-  assert(capabilities.count("objc3.cxx-class-templates.v3"));
+  assert(capabilities.count("objc3.cxx-class-templates.v4"));
   assert(!capabilities.count("objc3.cxx-class-templates.v1"));
   assert(!capabilities.count("objc3.cxx-class-templates.v2"));
+  assert(!capabilities.count("objc3.cxx-class-templates.v3"));
   assert(capabilities.count("objc3.cxx-variable-templates.v2"));
   assert(!capabilities.count("objc3.cxx-variable-templates.v1"));
   assert(capabilities.count(kCxxExplicitSpecifierSemantic));
+  assert(capabilities.count(kCxxDeductionGuideSemantic));
+  assert(capabilities.count(kCxxConceptSemantic));
+  assert(capabilities.count(kCxxAliasTemplateSemantic));
+  assert(!capabilities.count("objc3.cxx-concepts.v1"));
+  assert(!capabilities.count("objc3.cxx-alias-templates.v1"));
   assert(capabilities.count(kCxxOutOfLineDefinitionSemantic));
   assert(!capabilities.count("objc3.native-declaration-attributes.v3"));
   assert(capabilities.count("objc3.native-declaration-attributes.v6"));
@@ -85,6 +91,23 @@ int main() {
   assert(!capabilities.count("objc3.native-emission-policies.v2"));
   assert(capabilities.count(kNativeObjectExpressionSemantic));
   assert(!capabilities.count("objc3.native-object-expressions.v1"));
+  {
+    InterfaceDeclarationIdentity guide,pattern;
+    guide.stable_id="guide:int";guide.kind="CXXDeductionGuide";
+    guide.canonical_type_identity="auto (int) -> Box<long>;cxx-deduction-guides:v1;owner=Box;explicit=implicit;";
+    pattern.stable_id="guide:template";pattern.kind="FunctionTemplate";
+    pattern.canonical_type_identity="template Box<T>;cxx-deduction-guides:v1;owner=Box;explicit=conditional;";
+    assert(CanShareInterfaceFunctionLookup(guide,pattern,true));
+    assert(CanShareInterfaceFunctionLookup(pattern,guide,true));
+    assert(!CanShareInterfaceFunctionLookup(guide,pattern,false));
+    assert(!CanShareInterfaceFunctionLookup(guide,guide,true));
+    auto invalid=guide;invalid.canonical_type_identity="auto (int) -> Box<long>";
+    assert(!CanShareInterfaceFunctionLookup(invalid,pattern,true));
+    invalid=guide;invalid.native_symbol_name="invalid_guide_entry";
+    assert(!CanShareInterfaceFunctionLookup(invalid,pattern,true));
+    invalid=guide;invalid.kind="Namespace";
+    assert(!CanShareInterfaceFunctionLookup(invalid,pattern,true));
+  }
   const llvm::StringRef supported[] = {"effects.async.v1", "ownership.v1",
                                        "objc3.async-entry-abi.v5"};
   const llvm::StringRef source = "int answer(void);\n";

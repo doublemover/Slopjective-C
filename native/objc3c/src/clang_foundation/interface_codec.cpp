@@ -44,6 +44,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kNativeExternalBindingSemantic,
     kCxxOutOfLineDefinitionSemantic,
     kCxxExplicitSpecifierSemantic,
+    kCxxDeductionGuideSemantic,
     kNativeObjectPolicySemantic,
     kNativeObjectExpressionSemantic,
     kNativeFunctionEffectSemantic,
@@ -109,7 +110,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.cxx-unnamed-local-types.v1",
     "objc3.cxx-generic-local-lambdas.v2",
     "objc3.cxx-union-values.v1",
-    "objc3.cxx-concepts.v1",
+    "objc3.cxx-concepts.v2",
     kCxxFunctionTemplateSemantic,
     kCxxAliasTemplateSemantic,
     kCxxVariableTemplateSemantic,
@@ -776,6 +777,12 @@ llvm::Error ValidateForEncoding(
       [](const auto &d){return !HasCxxOutOfLineDefinitionIdentity(d) || IsCxxOutOfLineDefinitionOwner(d);});
   if(out_of_line_definitions!=out_of_line_capability || !out_of_line_owners)
     return Invalid("out-of-line method definition identity and required capability must agree");
+  const bool deduction_guides=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxDeductionGuideIdentity);
+  const bool deduction_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxDeductionGuideSemantic)!=sidecar.required_semantics.end();
+  const bool deduction_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDeductionGuideIdentity(d) || IsCxxDeductionGuideOwner(d);});
+  if(deduction_guides!=deduction_capability || !deduction_owners)
+    return Invalid("deduction guide identity and required capability must agree");
   const bool explicit_specifiers=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxExplicitSpecifierIdentity);
   const bool explicit_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxExplicitSpecifierSemantic)!=sidecar.required_semantics.end();
   const bool explicit_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

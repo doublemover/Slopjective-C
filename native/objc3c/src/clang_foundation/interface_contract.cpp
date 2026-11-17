@@ -592,6 +592,12 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasCxxOutOfLineDefinitionIdentity(d) || IsCxxOutOfLineDefinitionOwner(d);});
   if(out_of_line_definitions!=out_of_line_capability || !out_of_line_owners)
     Add(result,"O3IFC145","out-of-line method definition identity and required capability must agree",expected.canonical_name);
+  const bool deduction_guides=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxDeductionGuideIdentity);
+  const bool deduction_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxDeductionGuideSemantic)!=sidecar.required_semantics.end();
+  const bool deduction_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDeductionGuideIdentity(d) || IsCxxDeductionGuideOwner(d);});
+  if(deduction_guides!=deduction_capability || !deduction_owners)
+    Add(result,"O3IFC145","deduction guide identity and required capability must agree",expected.canonical_name);
   const bool explicit_specifiers=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxExplicitSpecifierIdentity);
   const bool explicit_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxExplicitSpecifierSemantic)!=sidecar.required_semantics.end();
   const bool explicit_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

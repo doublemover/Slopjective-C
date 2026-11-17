@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.198 / System 2.124 native deduction-guide span](linux_native_deduction_guides.md)
+binds class-owned deduction policies, exports and native import without inventing
+runtime entry points for guide declarations.
+
 The [Source 2.197 / System 2.123 conditional-explicit span](linux_conditional_explicit_packages.md)
 binds native constructor/conversion predicates across source-free class and local
 factory graphs and delivers ordinary inline out-of-line member definitions.

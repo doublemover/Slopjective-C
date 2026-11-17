@@ -168,6 +168,13 @@ inline bool HasNativeLifetimeAnnotationIdentity(const InterfaceDeclarationIdenti
 inline bool IsNativeLifetimeAnnotationOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d);
 }
+inline constexpr const char *kCxxDeductionGuideSemantic = "objc3.cxx-deduction-guides.v1";
+inline bool HasCxxDeductionGuideIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-deduction-guides:v1;")!=std::string::npos;
+}
+inline bool IsCxxDeductionGuideOwner(const InterfaceDeclarationIdentity &d) {
+  return (d.kind=="CXXDeductionGuide" || d.kind=="FunctionTemplate") && d.native_symbol_name.empty();
+}
 inline constexpr const char *kCxxOutOfLineDefinitionSemantic = "objc3.cxx-out-of-line-definitions.v1";
 inline bool HasCxxOutOfLineDefinitionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-out-of-line-definitions:v1;")!=std::string::npos;
@@ -181,7 +188,7 @@ inline bool HasCxxExplicitSpecifierIdentity(const InterfaceDeclarationIdentity &
   return d.canonical_type_identity.find(";cxx-explicit-specifiers:v1;")!=std::string::npos;
 }
 inline bool IsCxxExplicitSpecifierOwner(const InterfaceDeclarationIdentity &d) {
-  return IsNativeFunctionEffectOwner(d);
+  return IsNativeFunctionEffectOwner(d) || d.kind=="CXXDeductionGuide";
 }
 inline constexpr const char *kNativeObjectPolicySemantic = "objc3.native-object-policies.v1";
 inline bool HasNativeObjectPolicyIdentity(const InterfaceDeclarationIdentity &d) {
@@ -695,25 +702,25 @@ inline constexpr const char *kCxxTemplateStructureSemantic = "objc3.cxx-template
 inline bool HasCxxTemplateStructureIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-template-structure:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxClassTemplateSemantic = "objc3.cxx-class-templates.v3";
+inline constexpr const char *kCxxClassTemplateSemantic = "objc3.cxx-class-templates.v4";
 inline bool HasCxxClassTemplateIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-class-templates:v3;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-class-templates:v4;") != std::string::npos;
 }
 inline constexpr const char *kCxxVariableTemplateSemantic = "objc3.cxx-variable-templates.v2";
 inline bool HasCxxVariableTemplateIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-variable-templates:v2;") != std::string::npos;
 }
-inline constexpr const char *kCxxAliasTemplateSemantic = "objc3.cxx-alias-templates.v1";
+inline constexpr const char *kCxxAliasTemplateSemantic = "objc3.cxx-alias-templates.v2";
 inline bool HasCxxAliasTemplateIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-alias-templates:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-alias-templates:v2;") != std::string::npos;
 }
 inline constexpr const char *kCxxFunctionTemplateSemantic = "objc3.cxx-function-templates.v2";
 inline bool HasCxxFunctionTemplateIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-function-templates:v2;") != std::string::npos;
 }
-inline constexpr const char *kCxxConceptSemantic = "objc3.cxx-concepts.v1";
+inline constexpr const char *kCxxConceptSemantic = "objc3.cxx-concepts.v2";
 inline bool HasCxxConceptIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-concepts:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-concepts:v2;") != std::string::npos;
 }
 
 inline constexpr const char *kCxxLocalTypeSemantic = "objc3.cxx-local-types.v1";
@@ -721,7 +728,8 @@ inline bool HasCxxLocalTypeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-local-types:v1;") != std::string::npos;
 }
 inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
-  return d.kind=="Function" || d.kind=="FunctionTemplate" || IsCxxMemberDeclarationKind(d.kind) ||
+  return (d.kind=="CXXDeductionGuide" && HasCxxDeductionGuideIdentity(d) && IsCxxDeductionGuideOwner(d)) ||
+         d.kind=="Function" || d.kind=="FunctionTemplate" || IsCxxMemberDeclarationKind(d.kind) ||
          (d.kind=="Using" && d.canonical_type_identity.find(";functions=1;")!=std::string::npos);
 }
 

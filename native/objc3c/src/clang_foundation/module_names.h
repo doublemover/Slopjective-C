@@ -6,6 +6,7 @@ class ASTContext;
 class AbiTagAttr;
 class Decl;
 class NamedDecl;
+class CXXDeductionGuideDecl;
 class SourceLocation;
 } // namespace clang
 namespace objc3::clang_foundation {
@@ -23,6 +24,8 @@ bool IsModuleOwnedSource(const clang::ASTContext &context,
                          clang::SourceLocation location,
                          const std::string &root = {});
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration);
+// Guides have a nominal template owner and no independent native entry point.
+const clang::CXXDeductionGuideDecl *NativeDeductionGuide(const clang::NamedDecl *declaration);
 // Native vendor tags coexist with one distinct reserved module owner.
 std::string ReadModuleOwnedAbiTag(const clang::AbiTagAttr *attribute);
 bool HasModuleOwnedAbiTag(const clang::AbiTagAttr *attribute,

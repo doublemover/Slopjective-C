@@ -64,6 +64,7 @@ bool HasValidNativeSymbolName(const InterfaceModuleIdentity &module,
             "concept{owner=" + BuildModuleOwnedName(owner, module.package_identity,
                                                     declaration.stable_id) + ";");
   }
+  if(HasCxxDeductionGuideIdentity(declaration))return declaration.native_symbol_name.empty();
   if (declaration.native_symbol_name.empty())
     return true;
   if (declaration.kind != "Function" && declaration.kind != "FunctionTemplate" &&
@@ -153,7 +154,13 @@ bool HasOnlyNativeAbiTags(const clang::AbiTagAttr *attribute) {
       [](llvm::StringRef tag){return !tag.starts_with("__objc3_m_");});
 }
 
+const clang::CXXDeductionGuideDecl *NativeDeductionGuide(const clang::NamedDecl *declaration) {
+  if(const auto *pattern=llvm::dyn_cast_or_null<clang::FunctionTemplateDecl>(declaration))
+    declaration=pattern->getTemplatedDecl();
+  return llvm::dyn_cast_or_null<clang::CXXDeductionGuideDecl>(declaration);
+}
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
+  if(NativeDeductionGuide(declaration))return {};
   if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))
     return ReadNativeSymbolName(specialization->getSpecializedTemplate());
   if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
@@ -332,6 +339,8 @@ public:
       }
       return true;
     }
+    // A guide participates in class deduction, never native symbol emission.
+    if(NativeDeductionGuide(decl))return true;
     const bool value = llvm::isa<clang::FunctionDecl, clang::VarDecl>(decl);
     const bool runtime =
         llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl,

@@ -506,6 +506,24 @@ public:
     };
     bind(bind,head,0);
   }
+  CanonicalTemplateParameterNames(const clang::Decl *root,const clang::ASTContext &context) {
+    struct Parameters:clang::DynamicRecursiveASTVisitor {
+      decltype(saved_) &saved;
+      const clang::ASTContext &context;
+      llvm::SmallPtrSet<const clang::NamedDecl *,32> seen;
+      Parameters(decltype(saved_) &s,const clang::ASTContext &c):saved(s),context(c){}
+      void Bind(clang::NamedDecl *parameter,unsigned depth,unsigned index) {
+        if(!seen.insert(parameter).second)return;
+        saved.emplace_back(parameter,parameter->getDeclName());
+        const auto name="__objc3_template_parameter_"+std::to_string(depth)+"_"+std::to_string(index);
+        parameter->setDeclName(clang::DeclarationName(&context.Idents.get(name)));
+      }
+      bool VisitTemplateTypeParmDecl(clang::TemplateTypeParmDecl *parameter) {Bind(parameter,parameter->getDepth(),parameter->getIndex());return true;}
+      bool VisitNonTypeTemplateParmDecl(clang::NonTypeTemplateParmDecl *parameter) {Bind(parameter,parameter->getDepth(),parameter->getIndex());return true;}
+      bool VisitTemplateTemplateParmDecl(clang::TemplateTemplateParmDecl *parameter) {Bind(parameter,parameter->getDepth(),parameter->getIndex());return true;}
+    } parameters(saved_,context);
+    parameters.TraverseDecl(const_cast<clang::Decl *>(root));
+  }
   ~CanonicalTemplateParameterNames(){for(auto entry=saved_.rbegin();entry!=saved_.rend();++entry)entry->first->setDeclName(entry->second);}
   CanonicalTemplateParameterNames(const CanonicalTemplateParameterNames &)=delete;
   CanonicalTemplateParameterNames &operator=(const CanonicalTemplateParameterNames &)=delete;
@@ -1684,18 +1702,12 @@ std::string FunctionTemplateHeadContract(const clang::TemplateDecl *pattern,
 
 std::string ConceptIdentity(const clang::ConceptDecl *declaration,
                             const clang::ASTContext &context) {
-  clang::PrintingPolicy policy(context.getLangOpts());
-  policy.AnonymousTagNameStyle = static_cast<unsigned>(
-      clang::PrintingPolicy::AnonymousTagMode::Plain);
-  std::string head;
-  llvm::raw_string_ostream stream(head);
-  declaration->getTemplateParameters()->print(stream, context, policy);
   DeclarationExpressionIdentity identity(context);
-  for (const auto *parameter : *declaration->getTemplateParameters()) identity.Local(parameter);
+  identity.TemplateParameters(declaration);
   return "concept{owner=" + ReadCxxConceptOwner(declaration) +
-      ";parameters=" + ComputeInterfaceSourceSha256(head) + ";constraint=" +
+      ";parameters=" + FunctionTemplateHeadContract(declaration,context) + ";constraint=" +
       identity.Get(const_cast<clang::Expr *>(declaration->getConstraintExpr())) +
-      "};cxx-concepts:v1;";
+      "};cxx-concepts:v2;";
 }
 
 std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
@@ -2196,6 +2208,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
   if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
     return ConceptIdentity(concept_decl, context);
   if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) {
+    CanonicalTemplateParameterNames normalized_parameters(pattern,context);
     std::string body;
     llvm::raw_string_ostream stream(body);
     clang::PrintingPolicy policy(context.getLangOpts());
@@ -2232,7 +2245,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     for (const auto &[key,digest]:specializations)
       body+=";specialization="+std::to_string(key.size())+":"+key+":"+digest;
     return "class-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
-        ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v3;" +
+        ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v4;" +
         ";cxx-template-structure:v1;rtti=" + std::to_string(context.getLangOpts().RTTI) + ";" +
         (specializations.empty() || pattern->getDeclContext()->isRecord() ? "" : ";cxx-class-specializations:v1;") +
         (!pattern->getDeclContext()->isRecord() && std::any_of(published_specializations.begin(),published_specializations.end(),
@@ -2242,7 +2255,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         (members.effectful ? ";cxx-effectful-template-members:v1;" : "") +
         (members.friends ? ";cxx-friends:v3;" : "") +
         (members.functions ? ";cxx-member-templates:v1;" : "") +
-        (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;" : "") +
+        (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v2;" : "") +
         (members.variables ? ";cxx-variable-templates:v2;" : "") +
         (members.nested ? ";cxx-nested-templates:v1;" : "") +
         (members.variadic ? ";cxx-variadic-templates:v1;" : "") +
@@ -2279,17 +2292,13 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         (HasDeclarationThreadLocal(pattern) ? ";cxx-thread-local:v1;" : "");
   }
   if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
-    std::string head;
-    llvm::raw_string_ostream stream(head);
-    clang::PrintingPolicy policy(context.getLangOpts());
-    pattern->getTemplateParameters()->print(stream, context, policy);
     DeclarationExpressionIdentity identity(context);
     identity.TemplateParameters(pattern);
     const auto *constraint = pattern->getTemplateParameters()->getRequiresClause();
-    return "alias-template{parameters=" + ComputeInterfaceSourceSha256(head) +
+    return "alias-template{parameters=" + FunctionTemplateHeadContract(pattern,context) +
         ";constraint=" + (constraint ? identity.Get(const_cast<clang::Expr *>(constraint)) : "none") +
         ";type=" + CanonicalType(pattern->getTemplatedDecl()->getUnderlyingType(), context) +
-        "};cxx-alias-templates:v1;";
+        "};cxx-alias-templates:v2;";
   }
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
     const auto *function = pattern->getTemplatedDecl();
@@ -2355,7 +2364,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
       if (members.nested_classes)
         value+=";cxx-concrete-nested-templates:v1;;cxx-nested-templates:v1;";
       if (members.functions) value+=";cxx-member-templates:v1;";
-      if (members.aliases) value+=";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;";
+      if (members.aliases) value+=";cxx-member-alias-templates:v1;;cxx-alias-templates:v2;";
       if (members.variables) value+=";cxx-variable-templates:v2;";
       if (members.deduced) value+=";cxx-template-deduction:v1;";
       if (members.variadic) value+=";cxx-variadic-templates:v1;";
@@ -2403,6 +2412,13 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                 ? ";language-linkage=" + std::to_string(static_cast<unsigned>(
                                              function->getLanguageLinkage()))
                 : "");
+    if(const auto *guide=llvm::dyn_cast<clang::CXXDeductionGuideDecl>(function)) {
+      const auto explicit_specifier=guide->getExplicitSpecifier();
+      identity+=";cxx-deduction-guides:v1;owner="+
+          ReadInterfaceDeclarationStableId(guide->getDeducedTemplate())+
+          ";explicit="+std::string(explicit_specifier.getExpr()?"conditional":
+              explicit_specifier.isExplicit()?"explicit":"implicit")+";";
+    }
     unsigned index = 0;
     for (const auto *parameter : function->parameters()) {
       if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
@@ -2460,6 +2476,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
 }
 
 std::string ExportRootName(const clang::NamedDecl *declaration) {
+  if(const auto *guide=NativeDeductionGuide(declaration))return ExportRootName(guide->getDeducedTemplate());
   if (const auto *owner=PublishedStandardSpecializationOwner(declaration)) return ExportRootName(owner);
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration) {
@@ -2899,6 +2916,10 @@ bool ReadInterfaceDeclarationIdentity(
     InterfaceDeclarationIdentity &identity) {
   identity = {};
   if (!declaration) return false;
+  // Guide result types and sizeof... predicates print their pack declarations.
+  // Bind those spellings positionally for this guide-owned identity only.
+  std::optional<CanonicalTemplateParameterNames> normalized_guide_parameters;
+  if(NativeDeductionGuide(declaration))normalized_guide_parameters.emplace(declaration,context);
   const auto stable_id = ReadInterfaceDeclarationStableId(declaration);
   if (stable_id.empty()) return false;
   auto *representative = Representative(declaration);
@@ -3353,7 +3374,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationNullableKeyPathWrite(representative))
     identity.canonical_type_identity += ";keypath-nullable-writes:v1;";
   if (HasDeclarationConcept(representative) && !llvm::isa<clang::ConceptDecl>(representative))
-    identity.canonical_type_identity += ";cxx-concepts:v1;";
+    identity.canonical_type_identity += ";cxx-concepts:v2;";
   if (const auto *method =
           llvm::dyn_cast<clang::CXXMethodDecl>(representative)) {
     identity.canonical_type_identity += method->isStatic()

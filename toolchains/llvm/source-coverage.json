@@ -65,7 +65,8 @@
     "objc3_native_object_expression_provider",
     "objc3_native_availability_provider",
     "objc3_native_object_policy_provider",
-    "objc3_native_explicit_specifier_provider"
+    "objc3_native_explicit_specifier_provider",
+    "objc3_native_deduction_guide_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",
