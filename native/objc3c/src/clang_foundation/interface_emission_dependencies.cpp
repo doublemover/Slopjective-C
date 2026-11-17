@@ -974,6 +974,9 @@ class TypeDependencyVisitor final
       CheckEnclosingClassArguments(declaration);
       return true;
     }
+    if(const auto *object=InlineClosureObjectOrigin(declaration)) {
+      CheckExpressionReference(object);return true;
+    }
     if (const auto *factory=FactoryResultOrigin(declaration)) {
       CheckFactoryReference(factory);
       return true;

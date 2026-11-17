@@ -1049,6 +1049,10 @@ public:
   }
   bool VisitCastExpr(clang::CastExpr *expression) {
     Add(expression->getCastKindName());
+    for(const auto *base:expression->path()) {
+      Add("native-base-adjustment");Add(ExpressionType(base->getType()));
+      Add(std::to_string(base->isVirtual()));
+    }
     return true;
   }
   bool VisitDeclRefExpr(clang::DeclRefExpr *expression) {
@@ -2856,6 +2860,10 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";keypath-dependent-literals:v1;";
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
+  if (HasDeclarationInlineClosureObject(representative))
+    identity.canonical_type_identity+=";cxx-inline-closure-objects:v1;";
+  if (HasDeclarationCxxBaseAdjustment(representative))
+    identity.canonical_type_identity+=";cxx-base-adjustment-expressions:v1;";
   if (HasDeclarationCxxSpecialMemberSelection(representative))
     identity.canonical_type_identity+=";cxx-special-member-selection:v1;";
   if (HasDeclarationNativeCxxAsync(representative))
@@ -2871,7 +2879,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
   if (HasDeclarationBorrowedResultProof(representative))
-    identity.canonical_type_identity+=";borrowed-result-proofs:v9;";
+    identity.canonical_type_identity+=";borrowed-result-proofs:v10;";
   if (HasDeclarationNativeStorageLifetime(representative))
     identity.canonical_type_identity += ";native-storage-lifetime:v6;";
   if (HasDeclarationAtomicManagedProperty(representative))

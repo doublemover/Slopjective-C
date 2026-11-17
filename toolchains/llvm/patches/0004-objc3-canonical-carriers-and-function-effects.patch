@@ -3515,7 +3515,21 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
                  // FoundDef may not have every implicit method that D has
                  // because implicit methods are created only if they are used.
                  if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
-@@ -3525,6 +3858,13 @@
+@@ -3508,13 +3841,6 @@
+               DC, *TInfoOrErr, Loc, DCXX->getLambdaDependencyKind(),
+               DCXX->isGenericLambda(), DCXX->getLambdaCaptureDefault()))
+         return D2CXX;
+-      Decl *ContextDecl = DCXX->getLambdaContextDecl();
+-      ExpectedDecl CDeclOrErr = import(ContextDecl);
+-      if (!CDeclOrErr)
+-        return CDeclOrErr.takeError();
+-      if (ContextDecl != nullptr) {
+-        D2CXX->setLambdaContextDecl(*CDeclOrErr);
+-      }
+       D2CXX->setLambdaNumbering(DCXX->getLambdaNumbering());
+     } else {
+       if (GetImportedOrCreateDecl(D2CXX, D, Importer.getToContext(),
+@@ -3525,6 +3851,13 @@
      }
  
      D2 = D2CXX;
@@ -3529,7 +3543,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      D2->setAccess(D->getAccess());
      D2->setLexicalDeclContext(LexicalDC);
      addDeclToContexts(D, D2);
-@@ -3572,6 +3912,8 @@
+@@ -3572,6 +3905,8 @@
    else
      return QualifierLocOrErr.takeError();
  
@@ -3538,7 +3552,26 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isAnonymousStructOrUnion())
      D2->setAnonymousStructOrUnion(true);
  
-@@ -3996,6 +4338,72 @@
+@@ -3579,6 +3914,18 @@
+     if (Error Err = ImportDefinition(D, D2, IDK_Default))
+       return std::move(Err);
+ 
++  if(D2CXX && D2CXX->isLambda()) {
++    // An inline variable can be its closure's mangling context. Importing it
++    // before the closure definition re-enters the variable initializer with
++    // a mapped but capture-less class. Complete captures and fields first;
++    // the nested LambdaExpr must see the real native capture shape.
++    auto *FromLambda=cast<CXXRecordDecl>(D);
++    if(Decl *ContextDecl=FromLambda->getLambdaContextDecl()) {
++      auto ImportedContext=import(ContextDecl);
++      if(!ImportedContext)return ImportedContext.takeError();
++      D2CXX->setLambdaContextDecl(*ImportedContext);
++    }
++  }
+   return D2;
+ }
+ 
+@@ -3996,6 +4343,72 @@
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -3611,7 +3644,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4020,6 +4428,14 @@
+@@ -4020,6 +4433,14 @@
      return ToD;
  
    FunctionDecl *FoundByLookup = nullptr;
@@ -3626,7 +3659,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    FunctionTemplateDecl *FromFT = D->getDescribedFunctionTemplate();
  
    // If this is a function template specialization, then try to find the same
-@@ -4040,7 +4456,7 @@
+@@ -4040,7 +4461,7 @@
    }
    // Try to find a function in our own ("to") context with the same name, same
    // type, and in the same context as the function we're importing.
@@ -3635,7 +3668,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary | Decl::IDNS_OrdinaryFriend;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4051,8 +4467,75 @@
+@@ -4051,8 +4472,75 @@
        if (auto *FoundFunction = dyn_cast<FunctionDecl>(FoundDecl)) {
          if (!hasSameVisibilityContextAndLinkage(FoundFunction, D))
            continue;
@@ -3712,7 +3745,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
            FoundByLookup = FoundFunction;
-@@ -4105,9 +4588,36 @@
+@@ -4105,9 +4593,36 @@
                                   FoundByLookup->getDescribedFunctionTemplate());
            }
            return Importer.MapImported(D, FoundByLookup);
@@ -3752,7 +3785,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          }
        }
      }
-@@ -4120,6 +4630,7 @@
+@@ -4120,6 +4635,7 @@
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -3760,7 +3793,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4169,12 +4680,64 @@
+@@ -4169,12 +4685,64 @@
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToDefaultLoc = importChecked(Err, D->getDefaultLoc());
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
@@ -3828,7 +3861,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -4284,12 +4847,25 @@
+@@ -4284,12 +4852,25 @@
    ToFunction->setQualifierInfo(ToQualifierLoc);
    ToFunction->setAccess(D->getAccess());
    ToFunction->setLexicalDeclContext(LexicalDC);
@@ -3855,7 +3888,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -4330,6 +4906,36 @@
+@@ -4330,6 +4911,36 @@
    }
    ToFunction->setParams(Parameters);
  
@@ -3892,7 +3925,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // We need to complete creation of FunctionProtoTypeLoc manually with setting
    // params it refers to.
    if (TInfo) {
-@@ -4386,9 +4992,16 @@
+@@ -4386,9 +4997,16 @@
        ToFunction->setType(*TyOrErr);
      else
        return TyOrErr.takeError();
@@ -3911,7 +3944,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        return TSIOrErr.takeError();
    }
  
-@@ -4440,6 +5053,17 @@
+@@ -4440,6 +5058,17 @@
  
    // Determine whether we've already imported this field.
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
@@ -3929,7 +3962,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    for (auto *FoundDecl : FoundDecls) {
      if (FieldDecl *FoundField = dyn_cast<FieldDecl>(FoundDecl)) {
        // For anonymous fields, match up by index.
-@@ -4505,6 +5129,14 @@
+@@ -4505,6 +5134,14 @@
    ToField->setAccess(D->getAccess());
    ToField->setLexicalDeclContext(LexicalDC);
    ToField->setImplicit(D->isImplicit());
@@ -3944,7 +3977,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (ToCapturedVLAType)
      ToField->setCapturedVLAType(cast<VariableArrayType>(ToCapturedVLAType));
    LexicalDC->addDeclInternal(ToField);
-@@ -4793,7 +5425,11 @@
+@@ -4793,7 +5430,11 @@
    // Try to find a variable in our own ("to") context with the same name and
    // in the same context as the variable we're importing.
    VarDecl *FoundByLookup = nullptr;
@@ -3957,7 +3990,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4802,6 +5438,10 @@
+@@ -4802,6 +5443,10 @@
          continue;
  
        if (auto *FoundVar = dyn_cast<VarDecl>(FoundDecl)) {
@@ -3968,7 +4001,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          if (!hasSameVisibilityContextAndLinkage(FoundVar, D))
            continue;
          if (Importer.IsStructurallyEquivalent(D->getType(),
-@@ -4897,9 +5537,15 @@
+@@ -4897,9 +5542,15 @@
    }
  
    ToVar->setTSCSpec(D->getTSCSpec());
@@ -3984,7 +4017,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isInlineSpecified())
      ToVar->setInlineSpecified();
    if (D->isInline())
-@@ -4910,6 +5556,15 @@
+@@ -4910,6 +5561,15 @@
      ToVar->setPreviousDecl(Recent);
    }
  
@@ -4000,7 +4033,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Import the described template, if any.
    if (D->getDescribedVarTemplate()) {
      auto ToVTOrErr = import(D->getDescribedVarTemplate());
-@@ -4931,6 +5586,23 @@
+@@ -4931,6 +5591,23 @@
    if (Error Err = ImportInitializer(D, ToVar))
      return std::move(Err);
  
@@ -4024,7 +4057,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (D->isConstexpr())
      ToVar->setConstexpr(true);
  
-@@ -5062,6 +5734,19 @@
+@@ -5062,6 +5739,19 @@
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -4044,7 +4077,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5809,7 @@
+@@ -5124,6 +5814,7 @@
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -4052,7 +4085,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5824,8 @@
+@@ -5138,6 +5829,8 @@
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -4061,7 +4094,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5461,6 +6149,7 @@
+@@ -5461,6 +6154,7 @@
      return std::move(Err);
    if (ToD)
      return ToD;
@@ -4069,7 +4102,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    Error Err = Error::success();
    auto ToLoc = importChecked(Err, D->getNameInfo().getLoc());
-@@ -5468,28 +6157,59 @@
+@@ -5468,28 +6162,59 @@
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
    if (Err)
      return std::move(Err);
@@ -4137,7 +4170,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    return ImportUsingShadowDecls(D, ToUsing);
  }
-@@ -5517,6 +6237,7 @@
+@@ -5517,6 +6242,7 @@
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -4145,7 +4178,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5685,6 +6406,21 @@
+@@ -5685,6 +6411,21 @@
    if (Error Err = ImportDeclarationNameLoc(D->getNameInfo(), NameInfo))
      return std::move(Err);
  
@@ -4167,7 +4200,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    UnresolvedUsingValueDecl *ToUsingValue;
    if (GetImportedOrCreateDecl(ToUsingValue, D, Importer.getToContext(), DC,
                                ToUsingLoc, ToQualifierLoc, NameInfo,
-@@ -5724,6 +6460,7 @@
+@@ -5724,6 +6465,7 @@
      return ToUsing;
  
    ToUsing->setAccess(D->getAccess());
@@ -4175,7 +4208,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
  
-@@ -5904,6 +6641,15 @@
+@@ -5904,6 +6646,15 @@
        break;
    }
  
@@ -4191,7 +4224,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6822,9 @@
+@@ -6076,6 +6827,9 @@
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -4201,7 +4234,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6458,11 +7207,12 @@
+@@ -6458,11 +7212,12 @@
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -4215,7 +4248,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
    if (FoundByLookup) {
-@@ -6489,6 +7239,8 @@
+@@ -6489,6 +7244,8 @@
      D2->setPreviousDecl(Recent);
    }
  
@@ -4224,7 +4257,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return D2;
  }
  
-@@ -6497,6 +7249,9 @@
+@@ -6497,6 +7254,9 @@
    ClassTemplateDecl *ClassTemplate;
    if (Error Err = importInto(ClassTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4234,7 +4267,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6508,6 +7263,7 @@
+@@ -6508,6 +7268,7 @@
    if (Error Err =
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
@@ -4242,7 +4275,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // Try to find an existing specialization with these template arguments and
    // template parameter list.
    void *InsertPos = nullptr;
-@@ -6711,6 +7467,11 @@
+@@ -6711,6 +7472,11 @@
    SmallVector<NamedDecl *, 4> ConflictingDecls;
    auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
    VarTemplateDecl *FoundByLookup = nullptr;
@@ -4254,7 +4287,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    for (auto *FoundDecl : FoundDecls) {
      if (!FoundDecl->isInIdentifierNamespace(Decl::IDNS_Ordinary))
        continue;
-@@ -6740,6 +7501,15 @@
+@@ -6740,6 +7506,15 @@
          break;
        }
        ConflictingDecls.push_back(FoundDecl);
@@ -4270,7 +4303,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      }
    }
  
-@@ -6777,10 +7547,11 @@
+@@ -6777,10 +7552,11 @@
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -4283,7 +4316,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (DC != Importer.getToContext().getTranslationUnitDecl())
      updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
  
-@@ -6796,6 +7567,7 @@
+@@ -6796,6 +7572,7 @@
      ToVarTD->setPreviousDecl(Recent);
    }
  
@@ -4291,7 +4324,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ToVarTD;
  }
  
-@@ -6818,6 +7590,9 @@
+@@ -6818,6 +7595,9 @@
    VarTemplateDecl *VarTemplate = nullptr;
    if (Error Err = importInto(VarTemplate, D->getSpecializedTemplate()))
      return std::move(Err);
@@ -4301,7 +4334,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    // Import the context of this declaration.
    DeclContext *DC, *LexicalDC;
-@@ -6839,10 +7614,21 @@
+@@ -6839,10 +7619,21 @@
            ImportTemplateArguments(D->getTemplateArgs().asArray(), TemplateArgs))
      return std::move(Err);
  
@@ -4327,7 +4360,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (FoundSpecialization) {
      if (IsStructuralMatch(D, FoundSpecialization)) {
        VarDecl *FoundDef = FoundSpecialization->getDefinition();
-@@ -6879,13 +7665,9 @@
+@@ -6879,13 +7670,9 @@
    using PartVarSpecDecl = VarTemplatePartialSpecializationDecl;
    // Create a new specialization.
    if (auto *FromPartial = dyn_cast<PartVarSpecDecl>(D)) {
@@ -4342,7 +4375,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
                                  VarTemplate, QualType(), nullptr,
                                  D->getStorageClass(), TemplateArgs))
        return ToPartial;
-@@ -6914,8 +7696,11 @@
+@@ -6914,8 +7701,11 @@
  
    // Update InsertPos, because preceding import calls may have invalidated
    // it by adding new specializations.
@@ -4356,7 +4389,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    QualType T;
    if (Error Err = importInto(T, D->getType()))
-@@ -6935,6 +7720,10 @@
+@@ -6935,6 +7725,10 @@
    }
  
    D2->setSpecializationKind(D->getSpecializationKind());
@@ -4367,7 +4400,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (D->getTemplateArgsAsWritten())
      D2->setTemplateArgsAsWritten(ToTAInfo);
-@@ -6948,6 +7737,8 @@
+@@ -6948,6 +7742,8 @@
      D2->setConstexpr(true);
  
    D2->setAccess(D->getAccess());
@@ -4376,7 +4409,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  
    if (Error Err = ImportInitializer(D, D2))
      return std::move(Err);
-@@ -6995,7 +7786,10 @@
+@@ -6995,7 +7791,10 @@
        if (auto *FoundTemplate = dyn_cast<FunctionTemplateDecl>(FoundDecl)) {
          if (!hasSameVisibilityContextAndLinkage(FoundTemplate, D))
            continue;
@@ -4388,7 +4421,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
            FunctionTemplateDecl *TemplateWithDef =
                getTemplateDefinition(FoundTemplate);
            if (D->isThisDeclarationADefinition() && TemplateWithDef)
-@@ -7051,17 +7845,13 @@
+@@ -7051,17 +7850,13 @@
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -4410,7 +4443,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7866,15 @@
+@@ -7076,6 +7871,15 @@
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -4426,7 +4459,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return ToFunc;
  }
  
-@@ -7111,7 +7910,10 @@
+@@ -7111,7 +7915,10 @@
    if (GetImportedOrCreateDecl(To, D, Importer.getToContext(), DC, RequiresLoc))
      return To;
    To->setLexicalDeclContext(LexicalDC);
@@ -4438,7 +4471,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return To;
  }
  
-@@ -7328,6 +8130,97 @@
+@@ -7328,6 +8135,97 @@
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -4536,7 +4569,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +8378,93 @@
+@@ -7485,6 +8383,93 @@
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -4630,7 +4663,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8755,178 @@
+@@ -7775,6 +8760,178 @@
                  E->getVarargABI());
  }
  
@@ -4809,7 +4842,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +9236,16 @@
+@@ -8084,6 +9241,16 @@
                                 ToLocations);
  }
  
@@ -4826,7 +4859,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8132,13 +9294,22 @@
+@@ -8132,13 +9299,22 @@
        ToAmpAmpLoc, ToLabelLoc, ToLabel, ToType);
  }
  ExpectedStmt ASTNodeImporter::VisitConstantExpr(ConstantExpr *E) {
@@ -4856,7 +4889,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  ExpectedStmt ASTNodeImporter::VisitParenExpr(ParenExpr *E) {
    Error Err = Error::success();
-@@ -8835,6 +10006,53 @@
+@@ -8835,6 +10011,53 @@
                                     E->getFPFeatures());
  }
  
@@ -4910,7 +4943,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9082,7 +10300,9 @@
+@@ -9082,7 +10305,9 @@
  ExpectedStmt
  ASTNodeImporter::VisitUnresolvedMemberExpr(UnresolvedMemberExpr *E) {
    Error Err = Error::success();
@@ -4921,7 +4954,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    auto ToOperatorLoc = importChecked(Err, E->getOperatorLoc());
    auto ToQualifierLoc = importChecked(Err, E->getQualifierLoc());
    auto ToTemplateKeywordLoc = importChecked(Err, E->getTemplateKeywordLoc());
-@@ -9163,6 +10383,16 @@
+@@ -9163,6 +10388,16 @@
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -4938,7 +4971,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10682,14 @@
+@@ -9452,6 +10687,14 @@
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -4953,7 +4986,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10735,21 @@
+@@ -9497,6 +10740,21 @@
        E->getIndex(), E->getFinal());
  }
  
@@ -4975,7 +5008,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10917,12 @@
+@@ -9664,8 +10922,12 @@
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -4990,7 +5023,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10972,211 @@
+@@ -9715,7 +10977,211 @@
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -5203,7 +5236,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
  }
  
  namespace {
-@@ -9857,6 +11318,69 @@
+@@ -9857,6 +11323,69 @@
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -5273,7 +5306,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -9880,6 +11404,14 @@
+@@ -9880,6 +11409,14 @@
      break;
    }
  
@@ -5288,7 +5321,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    case attr::EnableIf: {
      const auto *From = cast<EnableIfAttr>(FromAttr);
      AI.importAttr(From, AI.importArg(From->getCond()).value(),
-@@ -10123,12 +11655,62 @@
+@@ -10123,12 +11660,62 @@
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -5355,7 +5388,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
          return ToAttrOrErr.takeError();
      }
  
-@@ -10571,6 +12153,12 @@
+@@ -10571,6 +12158,12 @@
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -5368,7 +5401,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +12169,9 @@
+@@ -10581,9 +12174,9 @@
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -5380,7 +5413,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +12181,9 @@
+@@ -10593,9 +12186,9 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5392,7 +5425,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +12193,17 @@
+@@ -10605,17 +12198,17 @@
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -5414,7 +5447,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -10823,6 +12411,8 @@
+@@ -10823,6 +12416,8 @@
      ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
                 ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
                 FromValue.getArrayInitializedElts());
@@ -5423,7 +5456,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      break;
    case APValue::Struct:
      Result.MakeStruct(FromValue.getStructNumBases(),
-@@ -10838,7 +12428,7 @@
+@@ -10838,7 +12433,7 @@
      APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
      if (Err)
        return std::move(Err);
@@ -5432,7 +5465,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      break;
    }
    case APValue::AddrLabelDiff: {
-@@ -10858,10 +12448,10 @@
+@@ -10858,10 +12453,10 @@
        return std::move(Err);
      MutableArrayRef<const CXXRecordDecl *> ToPath =
          Result.setMemberPointerUninit(
@@ -5445,7 +5478,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
           Idx++) {
        const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
-@@ -10912,7 +12502,7 @@
+@@ -10912,7 +12507,7 @@
        }
      }
      CharUnits Offset = FromValue.getLValueOffset();
@@ -5454,7 +5487,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11006,6 +12596,11 @@
+@@ -11006,6 +12601,11 @@
    // This mapping should be maintained only in this function. Therefore do not
    // check for additional consistency.
    ImportedFromDecls[To] = From;
@@ -5466,7 +5499,7 @@ diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
    // In the case of TypedefNameDecl we create the Decl first and only then we
    // import and set its DeclContext. So, the DC is still not set when we reach
    // here from GetImportedOrCreateDecl.
-@@ -11049,3 +12644,16 @@
+@@ -11049,3 +12649,16 @@
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -45001,7 +45034,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,6849 @@
+@@ -0,0 +1,7105 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -49464,7 +49497,7 @@ new file mode 100644
 +    }
 +    return Type->isScalarType() || Type->isVectorType();
 +  }
-+  using StaticReturnBinding = std::pair<const ParmVarDecl *, const Expr *>;
++  using StaticReturnBinding = std::pair<const Decl *, const Expr *>;
 +  bool staticProofPointerType(QualType Type) const {
 +    return !Type.isNull() && (Type->isPointerType() || Type->isMemberFunctionPointerType());
 +  }
@@ -49513,6 +49546,207 @@ new file mode 100644
 +    return Expression->EvaluateAsLValue(Result,Context) && !Result.HasSideEffects &&
 +        !Result.HasUndefinedBehavior && Result.Val.isLValue() &&
 +        stableStaticLValueBase(Result.Val,Budget);
++  }
++  enum class StaticFieldMatch {Missing,Proved,Unknown};
++  StaticFieldMatch staticStoredFieldValues(const APValue &Value,QualType Type,
++      const FieldDecl *Field,unsigned Depth,unsigned &Budget,SmallVectorImpl<APValue> &Values) const {
++    if(Depth>32 || !Budget)return StaticFieldMatch::Unknown;
++    --Budget;
++    const auto *Record=Type->getAsCXXRecordDecl();
++    if(!Record || !(Record=Record->getDefinition()))return StaticFieldMatch::Unknown;
++    if(Record->getCanonicalDecl()==Field->getParent()->getCanonicalDecl()) {
++      const APValue *Stored=nullptr;
++      if(Value.isStruct() && Field->getFieldIndex()<Value.getStructNumFields())Stored=&Value.getStructField(Field->getFieldIndex());
++      else if(Value.isUnion() && Value.getUnionField()==Field)Stored=&Value.getUnionValue();
++      if(!Stored || Values.size()>=64)return StaticFieldMatch::Unknown;
++      Values.push_back(*Stored);return StaticFieldMatch::Proved;
++    }
++    if(!Value.isStruct())return StaticFieldMatch::Missing;
++    bool Found=false;unsigned Index=0;
++    for(const auto &Base:Record->bases()) {
++      if(Base.isVirtual() || Index>=Value.getStructNumBases())return StaticFieldMatch::Unknown;
++      const auto Result=staticStoredFieldValues(Value.getStructBase(Index++),Base.getType(),Field,Depth+1,Budget,Values);
++      if(Result==StaticFieldMatch::Unknown)return Result;
++      Found|=Result==StaticFieldMatch::Proved;
++    }
++    return Found?StaticFieldMatch::Proved:StaticFieldMatch::Missing;
++  }
++  const VarDecl *staticImmutableReceiverDefinition(const VarDecl *Root) const {
++    if(!Root || !(Root=Root->getDefinition()) ||
++        Root->getTLSKind()!=VarDecl::TLS_None || Root->getType()->isReferenceType() ||
++        !Root->getType().isConstQualified() || Root->getType().isVolatileQualified() ||
++        !Root->hasInit() || (!Root->hasLocalStorage() && !Root->hasConstantInitialization()))return nullptr;
++    for(const auto *Redeclaration:Root->redecls())
++      if(Redeclaration->hasAttr<WeakAttr>() || Redeclaration->hasAttr<WeakRefAttr>() ||
++          Redeclaration->hasAttr<AliasAttr>())return nullptr;
++    return Root;
++  }
++  bool staticImmutableReceiverValue(const VarDecl *Root,APValue &Value) const {
++    if(Root->hasConstantInitialization()) {
++      const APValue *Constant=Root->evaluateValue();if(!Constant)return false;
++      Value=*Constant;return true;
++    }
++    // Sema does not mark ordinary const record locals as constant-initialized.
++    // Demand an actual C++ constant initializer, including an empty diagnostic
++    // trail; a merely foldable initializer is not an immutable value proof.
++    if(!Root->hasLocalStorage())return false;
++    SmallVector<PartialDiagnosticAt,4> Notes;Expr::EvalResult Result;Result.Diag=&Notes;
++    if(!Root->getInit()->EvaluateAsInitializer(Context,Root,Result,true) ||
++        !Notes.empty() || Result.HasSideEffects || Result.HasUndefinedBehavior)return false;
++    Value=std::move(Result.Val);return true;
++  }
++  bool staticReceiverFieldValue(const APValue &Address,const FieldDecl *Field,
++      unsigned &Budget,SmallVectorImpl<APValue> &Values) const {
++    if(!Address.isLValue() || !Address.hasLValuePath() || Address.isLValueOnePastTheEnd())return false;
++    const auto *Root=staticImmutableReceiverDefinition(
++        dyn_cast_or_null<VarDecl>(Address.getLValueBase().dyn_cast<const ValueDecl *>()));
++    if(!Root)return false;
++    QualType Type=Root->getType();
++    APValue CompleteValue;if(!staticImmutableReceiverValue(Root,CompleteValue))return false;
++    const APValue *Value=&CompleteValue;
++    for(const auto &Entry:Address.getLValuePath()) {
++      if(!Budget)return false;--Budget;
++      if(const auto *Array=Context.getAsConstantArrayType(Type)) {
++        const uint64_t Index=Entry.getAsArrayIndex();
++        if(!Value->isArray() || Index>=Value->getArraySize())return false;
++        if(Index<Value->getArrayInitializedElts())Value=&Value->getArrayInitializedElt(Index);
++        else if(Value->hasArrayFiller())Value=&Value->getArrayFiller();else return false;
++        Type=Array->getElementType();continue;
++      }
++      const auto *Record=Type->getAsCXXRecordDecl();
++      if(!Record || !(Record=Record->getDefinition()))return false;
++      const auto Member=Entry.getAsBaseOrMember();
++      if(const auto *Subobject=dyn_cast<FieldDecl>(Member.getPointer())) {
++        if(Subobject->isMutable() || Subobject->getType()->isReferenceType() ||
++            Subobject->getParent()->getCanonicalDecl()!=Record->getCanonicalDecl())return false;
++        if(Value->isStruct()) {
++          if(Subobject->getFieldIndex()>=Value->getStructNumFields())return false;
++          Value=&Value->getStructField(Subobject->getFieldIndex());
++        } else if(Value->isUnion() && Value->getUnionField()==Subobject)Value=&Value->getUnionValue();
++        else return false;
++        Type=Subobject->getType();continue;
++      }
++      const auto *Base=dyn_cast<CXXRecordDecl>(Member.getPointer());
++      if(!Base || Member.getInt() || !Value->isStruct())return false;
++      unsigned Index=0;bool Found=false;
++      for(const auto &Specifier:Record->bases()) {
++        const auto *Candidate=Specifier.getType()->getAsCXXRecordDecl();
++        if(Candidate && Candidate->getCanonicalDecl()==Base->getCanonicalDecl()) {
++          if(Specifier.isVirtual() || Index>=Value->getStructNumBases())return false;
++          Value=&Value->getStructBase(Index);Type=Specifier.getType();Found=true;break;
++        }
++        ++Index;
++      }
++      if(!Found)return false;
++    }
++    return staticStoredFieldValues(*Value,Type,Field,0,Budget,Values)==StaticFieldMatch::Proved;
++  }
++  bool staticReceiverFieldValues(const Expr *Expression,const FieldDecl *Field,
++      unsigned Depth,unsigned &Budget,ArrayRef<StaticReturnBinding> Bindings,
++      SmallVectorImpl<APValue> &Values) const {
++    if(!Expression || !Actions.getLangOpts().CPlusPlus || Depth>32 || !Budget ||
++        Field->isMutable() || Field->getType()->isReferenceType() ||
++        Field->getType().isVolatileQualified())return false;
++    --Budget;
++    const Expr *Native=Expression;
++    Expression=Expression->IgnoreParenImpCasts();
++    if(const auto *This=dyn_cast<CXXThisExpr>(Expression)) {
++      const auto *Record=This->getType()->getPointeeType()->getAsCXXRecordDecl();if(!Record)return false;
++      // The receiver belongs to the caller's environment. Exclude its own
++      // binding before following nested this calls, including conditional ones.
++      for(size_t I=Bindings.size();I;--I)
++        if(Bindings[I-1].first==Record->getCanonicalDecl())
++          return staticReceiverFieldValues(Bindings[I-1].second,Field,Depth+1,Budget,
++              Bindings.take_front(I-1),Values);
++      return false;
++    }
++    if(const auto *Reference=dyn_cast<DeclRefExpr>(Expression)) {
++      const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
++      if(Variable) {
++        bool Captured=false;SmallVector<APValue,4> Captures;
++        const bool Known=staticCapturedValues(Variable,Depth+1,Budget,Bindings,Captured,Captures);
++        if(Captured) {
++          if(!Known || Captures.empty())return false;
++          for(const auto &Value:Captures) {
++            if(Value.isLValue()) {
++              if(!staticReceiverFieldValue(Value,Field,Budget,Values))return false;
++            } else if(staticStoredFieldValues(Value,Variable->getType().getNonReferenceType(),Field,
++                         Depth+1,Budget,Values)!=StaticFieldMatch::Proved)return false;
++          }
++          return true;
++        }
++      }
++      if(const auto *Parameter=dyn_cast_or_null<ParmVarDecl>(Variable)) {
++        bool Found=false;
++        for(size_t I=0;I<Bindings.size();++I)if(Bindings[I].first==Parameter) {
++          Found=true;
++          if(!staticReceiverFieldValues(Bindings[I].second,Field,Depth+1,Budget,
++              Bindings.take_front(I),Values))return false;
++        }
++        return Found;
++      }
++    }
++    if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(Expression)) {
++      bool Truth;
++      if(!Choice->getCond()->HasSideEffects(Context) &&
++          Choice->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++        return staticReceiverFieldValues(Truth?Choice->getTrueExpr():Choice->getFalseExpr(),Field,Depth+1,Budget,Bindings,Values);
++      return staticReceiverFieldValues(Choice->getTrueExpr(),Field,Depth+1,Budget,Bindings,Values) &&
++          staticReceiverFieldValues(Choice->getFalseExpr(),Field,Depth+1,Budget,Bindings,Values);
++    }
++    if(const auto *Reference=dyn_cast<DeclRefExpr>(Expression))
++      if(const auto *Root=staticImmutableReceiverDefinition(dyn_cast<VarDecl>(Reference->getDecl()));
++          Root && Root->getType()->isRecordType()) {
++        // A local const object's address is not a C++ constant expression.
++        // Its constant initializer still proves copied scalar values. Never
++        // grant permanent storage to the local object or its captured fields.
++        APValue Value;
++        return staticImmutableReceiverValue(Root,Value) && staticStoredFieldValues(Value,Root->getType(),Field,
++            Depth+1,Budget,Values)==StaticFieldMatch::Proved;
++      }
++    APValue Constant;
++    const bool ConstantExpression=Native->isCXX11ConstantExpr(Context,&Constant);
++    if(Native->isGLValue() && Native->getType()->isRecordType()) {
++      // A direct object may have a constant initializer without being declared
++      // constexpr. Its address and actual const complete object are separate
++      // proofs; a const view of mutable storage cannot freeze its fields.
++      if(!ConstantExpression && !isa<DeclRefExpr>(Expression))return false;
++      Expr::EvalResult Address;
++      return Native->EvaluateAsLValue(Address,Context) && !Address.HasSideEffects &&
++          !Address.HasUndefinedBehavior && staticReceiverFieldValue(Address.Val,Field,Budget,Values);
++    }
++    return ConstantExpression && staticReceiverFieldValue(Constant,Field,Budget,Values);
++  }
++  bool staticCapturedValues(const VarDecl *Variable,unsigned Depth,unsigned &Budget,
++      ArrayRef<StaticReturnBinding> Bindings,bool &Captured,SmallVectorImpl<APValue> &Values) const {
++    Captured=false;
++    if(Depth>32 || !Budget){Captured=true;return false;}
++    for(size_t I=Bindings.size();I;--I) {
++      if(!Budget){Captured=true;return false;}--Budget;
++      const auto *Record=dyn_cast<CXXRecordDecl>(Bindings[I-1].first);
++      if(!Record || !Record->isLambda())continue;
++      if(Record->capture_size()>Budget){Captured=true;return false;}
++      Budget-=Record->capture_size();
++      llvm::DenseMap<const ValueDecl *,FieldDecl *> Fields;FieldDecl *This=nullptr;
++      Record->getCaptureFields(Fields,This);
++      auto Found=Fields.find(Variable);
++      if(Found==Fields.end())continue;
++      Captured=true;
++      return staticReceiverFieldValues(Bindings[I-1].second,Found->second,Depth+1,Budget,
++          Bindings.take_front(I-1),Values);
++    }
++    return false;
++  }
++  bool staticPermanentPointerValues(ArrayRef<APValue> Values,unsigned &Budget) const {
++    if(Values.empty())return false;
++    for(const auto &Value:Values)
++      if(!Value.isLValue() || (!Value.isNullPointer() && !stableStaticLValueBase(Value,Budget)))return false;
++    return true;
++  }
++  bool staticMemberValues(const MemberExpr *Member,unsigned Depth,unsigned &Budget,
++      ArrayRef<StaticReturnBinding> Bindings,SmallVectorImpl<APValue> &Values) const {
++    const auto *Field=dyn_cast<FieldDecl>(Member->getMemberDecl());
++    return Field && staticReceiverFieldValues(Member->getBase(),Field,Depth,Budget,Bindings,Values);
 +  }
 +  const FunctionDecl *staticCallableDefinition(const FunctionDecl *Function,
 +                                               const CallExpr *Call,unsigned &Budget) const {
@@ -49563,7 +49797,9 @@ new file mode 100644
 +    if(!Definition && Budget && Function->instantiationIsPending() &&
 +        Function->getTemplateSpecializationKind()==TSK_ImplicitInstantiation &&
 +        !Function->isDependentContext() && !Function->isInvalidDecl() &&
-+        Function!=Callable && !Function->getType()->isDependentType()) {
++        (!isa<FunctionDecl>(Callable) ||
++         Function->getCanonicalDecl()!=cast<FunctionDecl>(Callable)->getCanonicalDecl()) &&
++        !Function->getType()->isDependentType()) {
 +      const auto *Pattern=Function->getTemplateInstantiationPattern();
 +      if(Pattern && Pattern->hasBody() && !Pattern->isLateTemplateParsed()) {
 +        --Budget;
@@ -49800,6 +50036,10 @@ new file mode 100644
 +    for(unsigned I=0;I<Definition->getNumParams();++I) {
 +      const auto *Parameter=Definition->getParamDecl(I);QualType Type=Parameter->getType();
 +      const QualType Referent=Type.getNonReferenceType();
++      if(Type->isReferenceType() && Referent.isConstQualified() &&
++          !Referent.isVolatileQualified() && Referent->isRecordType()) {
++        Arguments.emplace_back(Parameter,Call->getArg(I+Offset));continue;
++      }
 +      if(Type->isReferenceType()) {
 +        if(Referent.isVolatileQualified() || !Slots.contains(Parameter) ||
 +            !(Referent->isFunctionType() ||
@@ -49808,6 +50048,13 @@ new file mode 100644
 +          (!Type.isConstQualified() && !Slots.contains(Parameter)))continue;
 +      Arguments.emplace_back(Parameter,Call->getArg(I+Offset));
 +      for(const auto *Value:Writes[Parameter])Arguments.emplace_back(Parameter,Value);
++    }
++    if(const auto *Method=dyn_cast<CXXMethodDecl>(Definition);
++        Method && Method->isImplicitObjectMemberFunction()) {
++      const Expr *Receiver=nullptr;
++      if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call))Receiver=Member->getImplicitObjectArgument();
++      else if(isa<CXXOperatorCallExpr>(Call) && Call->getNumArgs())Receiver=Call->getArg(0);
++      if(Receiver)Arguments.emplace_back(Method->getParent()->getCanonicalDecl(),Receiver);
 +    }
 +    return true;
 +  }
@@ -49863,6 +50110,32 @@ new file mode 100644
 +    if (const auto *Comma = dyn_cast<BinaryOperator>(Expression);
 +        Comma && (Comma->getOpcode() == BO_Comma || Comma->getOpcode() == BO_Assign))
 +      return staticFunctionTargets(Comma->getRHS(), Depth+1, Budget, Bindings, Targets);
++    auto AddConstantTargets=[&](ArrayRef<APValue> Values) {
++      if(Values.empty())return false;
++      for(const auto &Value:Values) {
++        const auto *Function=Value.isMemberPointer()
++            ? dyn_cast_or_null<FunctionDecl>(Value.getMemberPointerDecl())
++            : Value.isLValue()?dyn_cast_or_null<FunctionDecl>(Value.getLValueBase().dyn_cast<const ValueDecl *>()):nullptr;
++        if(!Function || (Value.isLValue() &&
++            (!Value.getLValueOffset().isZero() || Value.isLValueOnePastTheEnd())))return false;
++        Function=Function->getCanonicalDecl();
++        if(!llvm::is_contained(Targets,Function)) {
++          if(Targets.size()>=64)return false;
++          Targets.push_back(Function);
++        }
++      }
++      return true;
++    };
++    if(const auto *Member=dyn_cast<MemberExpr>(Expression)) {
++      SmallVector<APValue,4> Values;
++      if(staticMemberValues(Member,Depth+1,Budget,Bindings,Values))return AddConstantTargets(Values);
++    }
++    if(const auto *Reference=dyn_cast<DeclRefExpr>(Expression))
++      if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl())) {
++        bool Captured=false;SmallVector<APValue,4> Values;
++        const bool Known=staticCapturedValues(Variable,Depth+1,Budget,Bindings,Captured,Values);
++        if(Captured)return Known && AddConstantTargets(Values);
++      }
 +    if (const auto *Reference = dyn_cast<DeclRefExpr>(Expression)) {
 +      if (const auto *Function = dyn_cast<FunctionDecl>(Reference->getDecl())) {
 +        Function = Function->getCanonicalDecl();
@@ -50127,6 +50400,14 @@ new file mode 100644
 +    if (!Expression->isPRValue()) return false;
 +    if(const auto *Load=dyn_cast<ImplicitCastExpr>(Expression);
 +        Load && Load->getCastKind()==CK_LValueToRValue && Load->getType()->isPointerType())
++      if(const auto *Reference=dyn_cast<DeclRefExpr>(Load->getSubExpr()->IgnoreParenImpCasts()))
++        if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl())) {
++          bool Captured=false;SmallVector<APValue,4> Values;
++          const bool Known=staticCapturedValues(Variable,Depth+1,Budget,Bindings,Captured,Values);
++          if(Captured)return Known && staticPermanentPointerValues(Values,Budget);
++        }
++    if(const auto *Load=dyn_cast<ImplicitCastExpr>(Expression);
++        Load && Load->getCastKind()==CK_LValueToRValue && Load->getType()->isPointerType())
 +      if(const auto *Reference=dyn_cast<DeclRefExpr>(Load->getSubExpr()->IgnoreParenImpCasts());
 +          Reference && isa<VarDecl>(Reference->getDecl()) &&
 +          cast<VarDecl>(Reference->getDecl())->hasLocalStorage())
@@ -50146,6 +50427,14 @@ new file mode 100644
 +      return staticStorageSlotResult(Update->getSubExpr(),Depth+1,Budget,Bindings);
 +    if(const auto *Default=dyn_cast<CXXDefaultArgExpr>(Expression))
 +      return staticStorageResultImpl(Default->getExpr(),Depth+1,Budget,Bindings);
++    if(const auto *Load=dyn_cast<ImplicitCastExpr>(Expression);
++        Load && Load->getCastKind()==CK_LValueToRValue && Load->getType()->isPointerType())
++      if(const auto *Member=dyn_cast<MemberExpr>(Load->getSubExpr()->IgnoreParenImpCasts())) {
++        SmallVector<APValue,4> Values;
++        if(staticMemberValues(Member,Depth+1,Budget,Bindings,Values) && !Values.empty()) {
++          return staticPermanentPointerValues(Values,Budget);
++        }
++      }
 +    Expr::EvalResult Result;
 +    if (!Expression->EvaluateAsRValue(Result, Context) ||
 +        Result.HasSideEffects || Result.HasUndefinedBehavior || !Result.Val.isLValue()) {
@@ -60148,7 +60437,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,3318 @@
+@@ -0,0 +1,3388 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -63465,6 +63754,76 @@ new file mode 100644
 +   }
 +  } Visitor;
 +  Visitor.TraverseDecl(Replay->getASTContext().getTranslationUnitDecl());EXPECT_GE(Visitor.Members,6u);
++ }
++}
++
++TEST(ObjC3ASTInfrastructure, ImmutableReceiverAndCaptureGraphsSurviveImport) {
++ const char *Source=R"cpp(
++ namespace ImmutableStorage {typedef borrowed const char *StaticLoan;
++
++namespace ImmutableProofs {
++inline constexpr char first[]="first",second[]="second";
++inline int observations=0;
++inline void observe(){++observations;}
++struct View {
++ const char *value;
++ const char *read()const{observe();return value;}
++ const char *nested()const{return read();}
++};
++inline constexpr View one{first},two{second};
++inline const char *apply(const View &view){return view.nested();}
++inline constexpr auto capture=[value=first]{observe();return value;};
++inline constexpr auto nested_capture=[inner=capture]{observe();return inner();};
++inline constexpr auto pointer_capture=[value=&one]{observe();return value->read();};
++struct Functor {const char *value;const char *operator()()const{observe();return value;}};
++inline constexpr auto record_capture=[value=Functor{second}]{observe();return value();};
++inline const char *forward(const char *value){return value;}
++using Callback=const char *(*)(const char *);
++struct Callbacks {Callback target;const char *read(const char *value)const{observe();return target(value);}};
++inline constexpr Callbacks callbacks{forward};
++struct Branch {const char *value;};struct Left:Branch {};struct Right:Branch {};struct Both:Left,Right {};
++inline constexpr Both both{{{first}},{{second}}};
++inline const char *select_branch(const Both &value){observe();return value.Left::value;}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan field(void *owner,int choose){return (choose?one:two).nested();}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan through_reference(void *owner){return apply(one);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local(void *owner){const View view{second};return view.read();}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan captured(void *owner){return capture();}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan nested_captured(void *owner){return nested_capture();}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan pointer_captured(void *owner){return pointer_capture();}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan record_captured(void *owner){return record_capture();}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local_captured(void *owner){const auto closure=[value=first]{observe();return value;};return closure();}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan callback(void *owner){return callbacks.read(second);}
++__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan base(void *owner){return select_branch(both);}
++}
++
++}
++ )cpp";
++ for(const char *Standard:{"-std=c++20","-std=c++23"})for(bool ARC:{false,true}) {
++  std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
++      "--target=x86_64-unknown-linux-gnu","-fobjc3-profile=strict-system","-fexceptions","-fobjc-exceptions"};
++  if(ARC)Args.push_back("-fobjc-arc");
++  auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"member-source.mm");
++  auto To=tooling::buildASTFromCodeWithArgs("",Args,"member-target.mm");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  NamespaceDecl *Imported=nullptr;
++  {
++   ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())if(auto *N=dyn_cast<NamespaceDecl>(D)) {
++    auto Result=Importer.Import(N);ASSERT_TRUE(static_cast<bool>(Result));Imported=dyn_cast<NamespaceDecl>(*Result);
++   }
++  }
++  ASSERT_TRUE(Imported);From.reset();
++  PrintingPolicy Policy(To->getASTContext().getLangOpts());Policy.PolishForDeclaration=true;
++  std::string Printed;llvm::raw_string_ostream Out(Printed);Imported->print(Out,Policy);Out.flush();
++  auto Replay=tooling::buildASTFromCodeWithArgs(Printed,Args,"member-replay.mm");
++  ASSERT_TRUE(Replay);EXPECT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++  struct Calls:RecursiveASTVisitor<Calls> {
++   unsigned Members=0,Closures=0;
++   bool VisitCXXMemberCallExpr(CXXMemberCallExpr *){++Members;return true;}
++   bool VisitLambdaExpr(LambdaExpr *){++Closures;return true;}
++  } Visitor;
++  Visitor.TraverseDecl(Replay->getASTContext().getTranslationUnitDecl());
++  EXPECT_GE(Visitor.Members,5u);EXPECT_GE(Visitor.Closures,5u);
 + }
 +}
 
@@ -71029,7 +71388,7 @@ diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,287 @@
 +#ifndef OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +#define OBJC3_BORROWED_STATIC_CONTROL_FLOW_H
 +typedef borrowed const char *StaticGraphLoan;
@@ -71266,12 +71625,63 @@ new file mode 100644
 +#endif
 +
 +#endif
++
++#ifdef __cplusplus
++// Immutable receivers contribute stored values, never their own lifetime.
++inline void graph_observe_receiver() {}
++struct GraphStoredView {
++ const char *value;
++ const char *read()const {graph_observe_receiver();return value;}
++ const char *nested()const {return read();}
++};
++inline constexpr GraphStoredView graph_stored_first{graph_first};
++inline constexpr GraphStoredView graph_stored_second{graph_second};
++inline GraphStoredView graph_stored_mutable{graph_first};
++inline const GraphStoredView &graph_stored_mutable_view=graph_stored_mutable;
++inline thread_local const GraphStoredView graph_stored_tls{graph_first};
++extern const GraphStoredView graph_stored_weak __attribute__((weak));
++inline const GraphStoredView graph_stored_weak{graph_first};
++inline const char *graph_stored_apply(const GraphStoredView &value){return value.nested();}
++inline const char *graph_stored_pointer(const GraphStoredView *value){return value->nested();}
++struct GraphStoredPrefix {long words[4];};
++struct GraphStoredDerived:GraphStoredPrefix,GraphStoredView {};
++inline constexpr GraphStoredDerived graph_stored_derived{{{0}}, {graph_second}};
++struct GraphStoredNested {GraphStoredView nested;};
++inline constexpr GraphStoredNested graph_stored_nested{{graph_first}};
++inline constexpr GraphStoredView graph_stored_array[]={{graph_first},{graph_second}};
++union GraphStoredUnion {GraphStoredView view;long inactive;};
++inline constexpr GraphStoredUnion graph_stored_union{{graph_second}};
++struct GraphStoredMutable {mutable const char *value;const char *read()const{return value;}};
++inline constexpr GraphStoredMutable graph_stored_mutable_field{graph_first};
++struct GraphStoredReference {const char *const &value;const char *read()const{return value;}};
++inline const char *graph_stored_slot=graph_first;
++inline const GraphStoredReference graph_stored_reference_field{graph_stored_slot};
++struct GraphStoredVolatile {const char *volatile value;const char *read()const{return value;}};
++inline const GraphStoredVolatile graph_stored_volatile_field{graph_first};
++inline constexpr auto graph_stored_capture=[value=graph_first]{graph_observe_receiver();return value;};
++inline constexpr auto graph_stored_nested_capture=[inner=graph_stored_capture]{graph_observe_receiver();return inner();};
++inline constexpr auto graph_stored_pointer_capture=[value=&graph_stored_first]{graph_observe_receiver();return value->read();};
++struct GraphStoredFunctor {const char *value;const char *operator()()const{graph_observe_receiver();return value;}};
++inline constexpr auto graph_stored_record_capture=[value=GraphStoredFunctor{graph_second}]{graph_observe_receiver();return value();};
++struct GraphStoredCallback {
++ GraphForwardCallback callback;
++ const char *read(const char *value)const {graph_observe_receiver();return callback(value);}
++};
++inline constexpr GraphStoredCallback graph_stored_callback{graph_forward};
++struct GraphStoredMemberCallback {
++ GraphMemberPointer callback;
++ const char *read(GraphMemberTargets &object,const char *value)const {graph_observe_receiver();return (object.*callback)(value);}
++};
++inline constexpr GraphStoredMemberCallback graph_stored_member_callback{&GraphMemberTargets::read};
++inline const GraphStoredView graph_stored_mutable_bytes{graph_mutable};
++inline const char *graph_stored_runtime_source(){graph_observe_receiver();return graph_first;}
++#endif
 
 diff --git a/clang/test/ObjC3/Sema/borrowed-static-control-flow.m b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-static-control-flow.m
-@@ -0,0 +1,257 @@
+@@ -0,0 +1,295 @@
 +// REQUIRES: x86-registered-target
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fexceptions -fcxx-exceptions -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -ferror-limit 0 -Wno-deprecated-volatile -Wno-return-type -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-control-flow.h -o %t-c17-False.pch
@@ -71528,6 +71938,44 @@ new file mode 100644
 +STATIC_GRAPH StaticGraphLoan static_graph_member_constant_field(void *owner,GraphMemberTargets &object){return (object.*graph_fixed_member_cell.callback)(graph_first);}
 +STATIC_GRAPH StaticGraphLoan static_graph_member_mutable_field(void *owner,GraphMemberTargets &object){return (object.*graph_mutable_member_cell.callback)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_GRAPH StaticGraphLoan static_graph_member_local_field(void *owner,GraphMemberTargets &object){GraphMemberCell cell{&GraphMemberTargets::read};return (object.*cell.callback)(graph_first);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++#endif
++
++#ifdef __cplusplus
++STATIC_GRAPH StaticGraphLoan static_graph_stored_field(void *owner,int choose){return graph_stored_first.read();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_nested(void *owner,int choose){return graph_stored_first.nested();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_forward(void *owner,int choose){return graph_stored_apply(graph_stored_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_pointer(void *owner,int choose){return graph_stored_pointer(&graph_stored_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_choice(void *owner,int choose){return (choose?graph_stored_first:graph_stored_second).read();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_base(void *owner,int choose){return graph_stored_derived.read();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_nested_field(void *owner,int choose){return graph_stored_nested.nested.read();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_array(void *owner,int choose){return graph_stored_array[1].read();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_union(void *owner,int choose){return graph_stored_union.view.read();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_capture(void *owner,int choose){return graph_stored_capture();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_nested_capture(void *owner,int choose){return graph_stored_nested_capture();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_pointer_capture(void *owner,int choose){return graph_stored_pointer_capture();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_record_capture(void *owner,int choose){return graph_stored_record_capture();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_callback(void *owner,int choose){return graph_stored_callback.read(graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_member_callback(void *owner,int choose){GraphMemberTargets object;return graph_stored_member_callback.read(object,graph_first);}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_local(void *owner,int choose){const GraphStoredView view{graph_first};return view.read();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_local_capture(void *owner,int choose){const auto closure=[value=graph_first]{graph_observe_receiver();return value;};return closure();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_local_record_capture(void *owner,int choose){const auto closure=[value=GraphStoredFunctor{graph_first}]{return value();};return closure();}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_mutable(void *owner,int choose,const char *unknown,const GraphStoredView &object){return graph_stored_mutable.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_mutable_view(void *owner,int choose,const char *unknown,const GraphStoredView &object){return graph_stored_mutable_view.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_tls(void *owner,int choose,const char *unknown,const GraphStoredView &object){return graph_stored_tls.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_weak(void *owner,int choose,const char *unknown,const GraphStoredView &object){return graph_stored_weak.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_mutable_field(void *owner,int choose,const char *unknown,const GraphStoredView &object){return graph_stored_mutable_field.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_reference_field(void *owner,int choose,const char *unknown,const GraphStoredView &object){return graph_stored_reference_field.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_volatile_field(void *owner,int choose,const char *unknown,const GraphStoredView &object){return graph_stored_volatile_field.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_local_mutable(void *owner,int choose,const char *unknown,const GraphStoredView &object){GraphStoredView view{graph_first};return view.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_local_view(void *owner,int choose,const char *unknown,const GraphStoredView &object){GraphStoredView view{graph_first};const GraphStoredView &alias=view;return graph_stored_apply(alias);} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_local_reference_capture(void *owner,int choose,const char *unknown,const GraphStoredView &object){const char *value=graph_first;const auto closure=[&value]{return value;};return closure();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_mutable_capture(void *owner,int choose,const char *unknown,const GraphStoredView &object){auto closure=[value=graph_first]()mutable{value=graph_second;return value;};return closure();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_unknown_capture(void *owner,int choose,const char *unknown,const GraphStoredView &object){const auto closure=[value=unknown]{return value;};return closure();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_unknown_receiver(void *owner,int choose,const char *unknown,const GraphStoredView &object){return object.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_mixed_receiver(void *owner,int choose,const char *unknown,const GraphStoredView &object){return (choose?graph_stored_first:graph_stored_mutable).read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_pointee(void *owner){return graph_stored_mutable_bytes.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_runtime_initializer(void *owner){const GraphStoredView view{graph_stored_runtime_source()};return view.read();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_GRAPH StaticGraphLoan static_graph_stored_bad_runtime_capture(void *owner){const auto closure=[value=graph_stored_runtime_source()]{return value;};return closure();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +#endif
 
 diff --git a/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm b/clang/test/ObjC3/Sema/mrc-record-payload-boundaries.mm

@@ -1776,12 +1776,52 @@ void TestBorrowedStaticStorageReplay() {
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline StaticLoan static_inline_select(void *owner,int choose){return static_inline_choice(choose);}
       )";
+      if(cxx)source+=R"immutable(
+namespace ImmutableProofs {
+inline constexpr char first[]="first",second[]="second";
+inline int observations=0;
+inline void observe(){++observations;}
+struct View {
+ const char *value;
+ const char *read()const{observe();return value;}
+ const char *nested()const{return read();}
+};
+inline constexpr View one{first},two{second};
+inline const char *apply(const View &view){return view.nested();}
+inline constexpr auto capture=[value=first]{observe();return value;};
+inline constexpr auto other_capture=[value=first]{observe();return value;};
+using ExportedClosure=decltype(capture);
+inline const ExportedClosure &closure_reference(){return capture;}
+inline constexpr auto nested_capture=[inner=capture]{observe();return inner();};
+inline constexpr auto pointer_capture=[value=&one]{observe();return value->read();};
+struct Functor {const char *value;const char *operator()()const{observe();return value;}};
+inline constexpr auto record_capture=[value=Functor{second}]{observe();return value();};
+inline const char *forward(const char *value){return value;}
+using Callback=const char *(*)(const char *);
+struct Callbacks {Callback target;const char *read(const char *value)const{observe();return target(value);}};
+inline constexpr Callbacks callbacks{forward};
+struct Branch {const char *value;};struct Left:Branch {};struct Right:Branch {};struct Both:Left,Right {};
+using AliasLeft=Left;
+inline constexpr Both both{{{first}},{{second}}};
+inline const char *select_branch(const Both &value){observe();return value.Left::value;}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan field(void *owner,int choose){return (choose?one:two).nested();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan through_reference(void *owner){return apply(one);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local(void *owner){const View view{second};return view.read();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan captured(void *owner){return capture();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan nested_captured(void *owner){return nested_capture();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan pointer_captured(void *owner){return pointer_capture();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan record_captured(void *owner){return record_capture();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan local_captured(void *owner){const auto closure=[value=first]{observe();return value;};return closure();}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan callback(void *owner){return callbacks.read(second);}
+__attribute__((objc_returns_borrowed(owner_index=0))) inline StaticLoan base(void *owner){return select_branch(both);}
+}
+)immutable";
       auto first=emit(source,"static-borrowed-results.m");
       const auto &catalog=SupportedSemanticInterfaceCapabilities();std::vector<llvm::StringRef> supported(catalog.begin(),catalog.end());
       auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(decoded);
       assert(llvm::is_contained(decoded->required_semantics,std::string(kBorrowedResultProofSemantic)));
       auto older=supported;std::erase(older,llvm::StringRef(kBorrowedResultProofSemantic));
-      older.push_back("objc3.borrowed-result-proofs.v7");
+      older.push_back("objc3.borrowed-result-proofs.v9");
       auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
       std::erase(decoded->required_semantics,kBorrowedResultProofSemantic);
       auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
@@ -1800,6 +1840,30 @@ void TestBorrowedStaticStorageReplay() {
         auto unsupported=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,virtual_older);assert(!unsupported);llvm::consumeError(unsupported.takeError());
         std::erase(virtual_contract->required_semantics,kCxxVirtualCallSemantic);
         auto virtual_missing=EncodeSemanticInterfaceSidecar(*virtual_contract,supported);assert(!virtual_missing);llvm::consumeError(virtual_missing.takeError());
+        assert(llvm::is_contained(virtual_contract->required_semantics,std::string(kCxxBaseAdjustmentSemantic)));
+        auto base_contract=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(base_contract);
+        auto base_older=supported;std::erase(base_older,llvm::StringRef(kCxxBaseAdjustmentSemantic));
+        auto base_unsupported=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,base_older);assert(!base_unsupported);llvm::consumeError(base_unsupported.takeError());
+        std::erase(base_contract->required_semantics,kCxxBaseAdjustmentSemantic);
+        auto base_missing=EncodeSemanticInterfaceSidecar(*base_contract,supported);assert(!base_missing);llvm::consumeError(base_missing.takeError());
+        auto closure_contract=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,supported);assert(closure_contract);
+        assert(llvm::is_contained(closure_contract->required_semantics,std::string(kCxxInlineClosureObjectSemantic)));
+        auto closure_older=supported;std::erase(closure_older,llvm::StringRef(kCxxInlineClosureObjectSemantic));
+        auto closure_rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,closure_older);assert(!closure_rejected);llvm::consumeError(closure_rejected.takeError());
+        std::erase(closure_contract->required_semantics,kCxxInlineClosureObjectSemantic);
+        auto closure_missing=EncodeSemanticInterfaceSidecar(*closure_contract,supported);assert(!closure_missing);llvm::consumeError(closure_missing.takeError());
+        auto other_closure=source;auto projected=other_closure.find("ExportedClosure=decltype(capture)");assert(projected!=std::string::npos);
+        other_closure.replace(projected,std::string("ExportedClosure=decltype(capture)").size(),"ExportedClosure=decltype(other_capture)");
+        // This changes the alias's native type owner, while preserving all
+        // lambda bodies and capture values in the published module.
+        other_closure.replace(other_closure.find("return capture;}"),std::string("return capture;}").size(),"return other_capture;}");
+        assert(emit(other_closure,"other-inline-closure.mm").identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+        auto aliased_base=source;auto original_base=aliased_base.find("value.Left::value");assert(original_base!=std::string::npos);
+        aliased_base.replace(original_base,std::string("value.Left::value").size(),"value.AliasLeft::value");
+        assert(emit(aliased_base,"aliased-native-base.mm").identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+        auto other_base=source;auto branch=other_base.find("value.Left::value");assert(branch!=std::string::npos);
+        other_base.replace(branch,std::string("value.Left::value").size(),"value.Right::value");
+        assert(emit(other_base,"other-native-base.mm").identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
         auto dynamic=source;auto at=dynamic.find("value.StaticVirtualMethodProducer::read()");assert(at!=std::string::npos);
         dynamic.replace(at,std::string("value.StaticVirtualMethodProducer::read()").size(),"value.read()");
         assert(emit(dynamic,"dynamic-member-dispatch.m").identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
@@ -11811,7 +11875,7 @@ void TestCxxClassDispatch() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
       "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-class-dispatch.v1", kCxxVirtualCallSemantic};
+      "objc3.cxx-class-dispatch.v1", kCxxVirtualCallSemantic, kCxxBaseAdjustmentSemantic};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {
         "-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};

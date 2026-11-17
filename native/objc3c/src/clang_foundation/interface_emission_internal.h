@@ -144,6 +144,8 @@ std::string FactoryDeclarationTypeKey(const clang::NamedDecl *declaration);
 std::string FactoryOriginKey(const clang::FunctionDecl *function);
 
 const clang::FunctionDecl *FactoryResultOrigin(const clang::TagDecl *tag);
+const clang::VarDecl *InlineClosureObjectOrigin(const clang::TagDecl *tag);
+bool HasDeclarationInlineClosureObject(const clang::NamedDecl *declaration);
 
 const clang::TagDecl *FactoryResultTagRoot(const clang::FunctionDecl *function,const clang::TagDecl *tag);
 
@@ -353,6 +355,7 @@ bool IsPublicContainer(const clang::DeclContext *context,
 bool IsPublishedDeducedFactory(const clang::FunctionDecl *function);
 
 bool IsPublishedThreadSafetyAttribute(const clang::Attr *attribute);
+bool HasDeclarationCxxBaseAdjustment(const clang::NamedDecl *declaration);
 bool HasDeclarationCxxSpecialMemberSelection(const clang::NamedDecl *declaration);
 bool HasDeclarationNativeCxxAsync(const clang::NamedDecl *declaration);
 bool HasDeclarationVirtualCall(const clang::NamedDecl *declaration);

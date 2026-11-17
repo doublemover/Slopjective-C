@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.170 / System 2.96 immutable receiver span](linux_immutable_receiver_proofs.md)
+extends permanent-result proofs through actual const objects and value captures,
+with a native base-adjustment identity cutover.
+
+
 The [paired compiler-source feedback driver](linux_semantic_source_feedback.md)
 implements the remaining #8288 generation experiment using the qualified coverage
 compiler, independent model controls, counterbalanced bounded windows and compact

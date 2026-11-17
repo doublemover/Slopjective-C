@@ -230,6 +230,14 @@ inline constexpr const char *kBorrowedUnionStorageSemantic = "objc3.borrowed-uni
 inline bool HasBorrowedUnionStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";borrowed-union-byte-storage:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxInlineClosureObjectSemantic = "objc3.cxx-inline-closure-objects.v1";
+inline bool HasCxxInlineClosureObjectIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-inline-closure-objects:v1;")!=std::string::npos;
+}
+inline constexpr const char *kCxxBaseAdjustmentSemantic = "objc3.cxx-base-adjustment-expressions.v1";
+inline bool HasCxxBaseAdjustmentIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-base-adjustment-expressions:v1;")!=std::string::npos;
+}
 inline constexpr const char *kCxxSpecialMemberSelectionSemantic = "objc3.cxx-special-member-selection.v1";
 inline bool HasCxxSpecialMemberSelectionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.kind!="Namespace" && d.canonical_type_identity.find(";cxx-special-member-selection:v1;")!=std::string::npos;
@@ -250,9 +258,9 @@ inline constexpr const char *kNativeEmissionPolicySemantic = "objc3.native-emiss
 inline bool HasNativeEmissionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-emission-policies:v2;") != std::string::npos;
 }
-inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v9";
+inline constexpr const char *kBorrowedResultProofSemantic = "objc3.borrowed-result-proofs.v10";
 inline bool HasBorrowedResultProofIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";borrowed-result-proofs:v9;") != std::string::npos;
+  return d.canonical_type_identity.find(";borrowed-result-proofs:v10;") != std::string::npos;
 }
 inline constexpr const char *kBorrowedReceiverResultSemantic = "objc3.borrowed-receiver-results.v1";
 inline bool HasBorrowedReceiverResultIdentity(const InterfaceDeclarationIdentity &d) {

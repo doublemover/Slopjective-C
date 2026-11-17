@@ -36,6 +36,43 @@ typedef const char *StaticLoan;
 union StaticUnion {char bytes[8];long other;};
 extern const StaticUnion static_union;
 const StaticUnion static_union={{'s','t','a','t','i','c',0}};
+
+namespace ImmutableProofs {
+inline constexpr char first[]="first",second[]="second";
+inline int observations=0;
+inline void observe(){++observations;}
+struct View {
+ const char *value;
+ const char *read()const{observe();return value;}
+ const char *nested()const{return read();}
+};
+inline constexpr View one{first},two{second};
+inline const char *apply(const View &view){return view.nested();}
+inline constexpr auto capture=[value=first]{observe();return value;};
+inline constexpr auto nested_capture=[inner=capture]{observe();return inner();};
+inline constexpr auto pointer_capture=[value=&one]{observe();return value->read();};
+struct Functor {const char *value;const char *operator()()const{observe();return value;}};
+inline constexpr auto record_capture=[value=Functor{second}]{observe();return value();};
+inline const char *forward(const char *value){return value;}
+using Callback=const char *(*)(const char *);
+struct Callbacks {Callback target;const char *read(const char *value)const{observe();return target(value);}};
+inline constexpr Callbacks callbacks{forward};
+struct Branch {const char *value;};struct Left:Branch {};struct Right:Branch {};struct Both:Left,Right {};
+using AliasLeft=Left;
+inline constexpr Both both{{{first}},{{second}}};
+inline const char *select_branch(const Both &value){observe();return value.Left::value;}
+STATIC_BORROWED inline StaticLoan field(void *owner,int choose){return (choose?one:two).nested();}
+STATIC_BORROWED inline StaticLoan through_reference(void *owner){return apply(one);}
+STATIC_BORROWED inline StaticLoan local(void *owner){const View view{second};return view.read();}
+STATIC_BORROWED inline StaticLoan captured(void *owner){return capture();}
+STATIC_BORROWED inline StaticLoan nested_captured(void *owner){return nested_capture();}
+STATIC_BORROWED inline StaticLoan pointer_captured(void *owner){return pointer_capture();}
+STATIC_BORROWED inline StaticLoan record_captured(void *owner){return record_capture();}
+STATIC_BORROWED inline StaticLoan local_captured(void *owner){const auto closure=[value=first]{observe();return value;};return closure();}
+STATIC_BORROWED inline StaticLoan callback(void *owner){return callbacks.read(second);}
+STATIC_BORROWED inline StaticLoan base(void *owner){return select_branch(both);}
+}
+
 inline int cleanup_order=0;
 struct CleanupValue {
  int value;
@@ -385,6 +422,12 @@ static void *worker(void *){return StorageLifetime::thread_finalized().value==8?
   if(static_final_method_view(nullptr,final_method)[0]!='s' || static_lambda_view(nullptr)[0]!='l')return 58;
   StaticDispatchDerived derived;
   if(static_dynamic_dispatch(derived)[0]!='d' || static_qualified_dispatch(derived)[0]!='b' || static_qualified_method_view(nullptr,derived)[0]!='b')return 59;
+  using namespace ImmutableProofs;
+  const int previous_observations=observations;
+  if(field(nullptr,0)[0]!='s' || field(nullptr,1)[0]!='f' || through_reference(nullptr)[0]!='f' || local(nullptr)[0]!='s')return 65;
+  if(captured(nullptr)[0]!='f' || nested_captured(nullptr)[0]!='f' || pointer_captured(nullptr)[0]!='f')return 66;
+  if(record_captured(nullptr)[0]!='s' || local_captured(nullptr)[0]!='f' || callback(nullptr)[0]!='s' || base(nullptr)[0]!='f')return 67;
+  if(observations-previous_observations!=14)return 68;
   if(static_member_view(nullptr,0)[0]!='s' || static_member_view(nullptr,1)[0]!='t')return 61;
   if(static_member_factory_view(nullptr,0)[0]!='t' || static_member_factory_view(nullptr,1)[0]!='s')return 62;
   if(static_member_nothrow_view(nullptr)[0]!='s' || static_member_constant_field_view(nullptr)[0]!='s')return 64;

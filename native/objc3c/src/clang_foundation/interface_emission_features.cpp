@@ -157,6 +157,17 @@ bool HasDeclarationBorrowedResultProof(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationCxxBaseAdjustment(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return false;
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Adjustments:clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitCastExpr(clang::CastExpr *expression) override {found|=expression->path_size()!=0;return true;}
+    } adjustments;
+    adjustments.TraverseStmt(const_cast<clang::Stmt *>(statement));return adjustments.found;
+  });
+}
+
 bool HasDeclarationCxxSpecialMemberSelection(const clang::NamedDecl *declaration) {
   if(!declaration->getASTContext().getLangOpts().CPlusPlus ||
       llvm::isa<clang::NamespaceDecl>(declaration))return false;
@@ -1086,6 +1097,20 @@ std::string FactoryTagPath(const clang::TagDecl *tag,const clang::TagDecl *root,
   return path;
 }
 
+const clang::VarDecl *InlineClosureObjectOrigin(const clang::TagDecl *tag) {
+  const auto *closure=llvm::dyn_cast_or_null<clang::CXXRecordDecl>(tag);
+  if(!closure || !closure->isLambda())return nullptr;
+  const auto *object=llvm::dyn_cast_or_null<clang::VarDecl>(closure->getLambdaContextDecl());
+  if(!object || !(object=object->getDefinition()) || !object->isInline() ||
+      !object->isExternallyVisible() || !object->hasInit() || !IsTopLevel(object) ||
+      object->getType()->isDependentType() || object->getDescribedVarTemplate() ||
+      llvm::isa<clang::VarTemplateSpecializationDecl>(object) ||
+      !PublishesVariableInitializer(object))return nullptr;
+  const auto *initializer=llvm::dyn_cast<clang::LambdaExpr>(object->getInit()->IgnoreParenImpCasts());
+  return initializer && initializer->getLambdaClass()->getCanonicalDecl()==closure->getCanonicalDecl()
+      ? object : nullptr;
+}
+
 const clang::FunctionDecl *FactoryResultOrigin(const clang::TagDecl *tag) {
   for(const auto *scope=tag->getDeclContext();scope;scope=scope->getParent())
     if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
@@ -1151,6 +1176,11 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
     }
     bool VisitTagType(clang::TagType *type) override {
       const auto *tag=type->getDecl();
+      if(const auto *object=InlineClosureObjectOrigin(tag)) {
+        const auto owner=ReadInterfaceDeclarationStableId(object);
+        const auto identity=":inline-closure-object="+std::to_string(owner.size())+":"+owner;
+        key+=std::to_string(identity.size())+":"+identity;
+      }
       if(const auto *factory=FactoryResultOrigin(tag)) {
         if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(tag))closure |= record->isLambda();
         if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(factory))lambda_result |= method->getParent()->isLambda();
@@ -1205,7 +1235,7 @@ bool HasOnlyPublishedUnnamedTypes(clang::QualType type) {
       const auto *tag=type->getDecl();
       if(IsExpressionLocalTag(tag) || (!tag->getIdentifier() && !tag->getTypedefNameForAnonDecl()))
         valid &= (NativeUnnamedEnumeration(tag) && IsPublishedType(tag) && !IsExpressionLocalTag(tag)) ||
-            FactoryResultOrigin(tag)!=nullptr || !UnnamedTemplateTagKey(tag,tag->getASTContext()).empty();
+            FactoryResultOrigin(tag)!=nullptr || InlineClosureObjectOrigin(tag)!=nullptr || !UnnamedTemplateTagKey(tag,tag->getASTContext()).empty();
       if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(tag))
         for(const auto &argument:specialization->getTemplateArgs().asArray())TraverseTemplateArgument(argument);
       return true;
@@ -1349,6 +1379,10 @@ std::string UnnamedTemplateDeclarationTypeKey(const clang::NamedDecl *declaratio
     }
   } visitor;
   visitor.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return visitor.key;
+}
+
+bool HasDeclarationInlineClosureObject(const clang::NamedDecl *declaration) {
+  return FactoryDeclarationTypeKey(declaration).find(":inline-closure-object=")!=std::string::npos;
 }
 
 bool HasDeclarationFactoryTypeProjection(const clang::NamedDecl *declaration) {

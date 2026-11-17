@@ -48,6 +48,7 @@ int main() {
   assert(capabilities.count(kCxxUnnamedTemplateProjectionSemantic));
   assert(capabilities.count("objc3.c-inline-definitions.v1"));
   assert(!capabilities.count("objc3.borrowed-result-proofs.v8"));
+  assert(!capabilities.count("objc3.borrowed-result-proofs.v9"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v2"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v3"));
   assert(!capabilities.count("objc3.native-subobject-cleanup.v4"));
@@ -88,12 +89,14 @@ int main() {
   // declarations, even when their marker and required-semantics list agree.
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
       {";native-storage-lifetime:v6;",kNativeStorageLifetimeSemantic},
-      {";borrowed-result-proofs:v9;",kBorrowedResultProofSemantic},
+      {";borrowed-result-proofs:v10;",kBorrowedResultProofSemantic},
       {";native-emission-policies:v2;",kNativeEmissionPolicySemantic},
       {";native-thread-safety:v1;",kNativeThreadSafetySemantic},
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
       {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},
       {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic},
+      {";cxx-inline-closure-objects:v1;",kCxxInlineClosureObjectSemantic},
+      {";cxx-base-adjustment-expressions:v1;",kCxxBaseAdjustmentSemantic},
       {";native-cpu-variant:v1;",kNativeEmissionPolicySemantic}}) {
     auto invalid=*decoded;
     InterfaceDeclarationIdentity space{"c:@N@Bad","Namespace","A::Bad","namespace",{}};
@@ -119,7 +122,9 @@ int main() {
   for(const auto &[marker,capability]:std::vector<std::pair<std::string,std::string>>{
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
       {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},
-      {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic}}) {
+      {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic},
+      {";cxx-inline-closure-objects:v1;",kCxxInlineClosureObjectSemantic},
+      {";cxx-base-adjustment-expressions:v1;",kCxxBaseAdjustmentSemantic}}) {
     auto legitimate=*decoded;legitimate.declarations.front().canonical_type_identity+=marker;
     legitimate.required_semantics.push_back(capability);
     std::vector<llvm::StringRef> reader(std::begin(supported),std::end(supported));reader.push_back(capability);

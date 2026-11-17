@@ -6,6 +6,9 @@ compiler, independent model controls, counterbalanced bounded windows and compac
 source-point evidence. Current-source execution remains in SDK/CI consolidation;
 uniform generation remains the default.
 
+The [Source 2.170 / System 2.96 immutable receiver and capture span](linux_immutable_receiver_proofs.md)
+adds native constant field facts and base-adjustment body identity.
+
 The [Source 2.169 / System 2.95 native member-pointer span](linux_native_member_pointer_proofs.md)
 extends bounded permanent-result proofs to known member targets, factories,
 reference aliases, concrete method templates and native receiver adjustments,
@@ -20,7 +23,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.167 / System 2.93 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.170 / System 2.96 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

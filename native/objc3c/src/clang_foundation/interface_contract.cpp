@@ -518,6 +518,18 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
+  const bool inline_closures=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxInlineClosureObjectIdentity);
+  const bool closure_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxInlineClosureObjectSemantic)!=sidecar.required_semantics.end();
+  const bool closure_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-inline-closure-objects:v1;")==std::string::npos;});
+  if(inline_closures!=closure_capability || !closure_owners)
+    Add(result,"O3IFC193","C++ inline closure object identity and required capability must agree",expected.canonical_name);
+  const bool base_adjustment=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxBaseAdjustmentIdentity);
+  const bool base_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxBaseAdjustmentSemantic)!=sidecar.required_semantics.end();
+  const bool base_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-base-adjustment-expressions:v1;")==std::string::npos;});
+  if(base_adjustment!=base_capability || !base_owners)
+    Add(result,"O3IFC192","C++ base-adjustment expression identity and required capability must agree",expected.canonical_name);
   const bool special_member_selection=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxSpecialMemberSelectionIdentity);
   const bool selection_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxSpecialMemberSelectionSemantic)!=sidecar.required_semantics.end();
   const bool selection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

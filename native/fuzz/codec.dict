@@ -49,8 +49,8 @@
 "objc3.cxx-standard-library-headers.v2"
 ";cxx-standard-library-headers:v2;"
 
-"objc3.borrowed-result-proofs.v9"
-";borrowed-result-proofs:v9;"
+"objc3.borrowed-result-proofs.v10"
+";borrowed-result-proofs:v10;"
 
 "objc3.cxx-virtual-call-expressions.v1"
 ";cxx-virtual-call-expressions:v1;"
@@ -59,3 +59,7 @@
 ";native-cxx-async-import:v1;"
 "objc3.cxx-special-member-selection.v1"
 ";cxx-special-member-selection:v1;"
+"objc3.cxx-base-adjustment-expressions.v1"
+";cxx-base-adjustment-expressions:v1;"
+"objc3.cxx-inline-closure-objects.v1"
+";cxx-inline-closure-objects:v1;"
