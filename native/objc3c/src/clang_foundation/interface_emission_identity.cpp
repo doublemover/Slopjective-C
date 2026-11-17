@@ -3093,6 +3093,9 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";native-cpu-variant:v1;";
   if (HasDeclarationBorrowedUnionStorage(representative))
     identity.canonical_type_identity+=";borrowed-union-byte-storage:v1;";
+  if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(representative);
+      function && !context.getLangOpts().CPlusPlus && function->hasAttr<clang::OverloadableAttr>())
+    identity.canonical_type_identity+=";c-overloadable-functions:v1;";
   if (HasDeclarationNativeControlFlow(representative))
     identity.canonical_type_identity+=";native-control-flow-contracts:v1;";
   if (HasDeclarationConstantEvaluationControl(representative))

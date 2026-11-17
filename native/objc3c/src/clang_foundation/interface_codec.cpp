@@ -37,6 +37,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kManualFamilyCallProofSemantic,
     kCxxConstantEvaluationControlSemantic,
     kNativeControlFlowSemantic,
+    kCOverloadableSemantic,
     kNativeUnnamedEnumSemantic,
     kNativeStorageLifetimeSemantic,
     kAtomicManagedPropertySemantic,
@@ -762,6 +763,12 @@ llvm::Error ValidateForEncoding(
   const bool borrowed_union_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kBorrowedUnionStorageSemantic)!=sidecar.required_semantics.end();
   if(borrowed_unions!=borrowed_union_capability)
     return Invalid("borrowed union byte storage identity and required capability must agree");
+  const bool c_overloads=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCOverloadableIdentity);
+  const bool overload_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCOverloadableSemantic)!=sidecar.required_semantics.end();
+  const bool overload_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCOverloadableIdentity(d) || d.kind=="Function";});
+  if(c_overloads!=overload_capability || !overload_owners)
+    return Invalid("C overloadable identity and required capability must agree");
   const bool control_flow=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeControlFlowIdentity);
   const bool control_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeControlFlowSemantic)!=sidecar.required_semantics.end();
   const bool control_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

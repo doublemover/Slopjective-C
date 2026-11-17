@@ -11,6 +11,7 @@
 #include "clang/AST/ASTImporterSharedState.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/Decl.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/Basic/IdentifierTable.h"
@@ -253,9 +254,7 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
         const auto &old = *prior.identity;
         if (SameInterfaceDeclarationIdentity(old, decl))
           continue;
-        if (target_.allow_function_overloads &&
-            old.stable_id != decl.stable_id &&
-            (IsCxxOverloadDeclaration(old) && IsCxxOverloadDeclaration(decl)))
+        if (CanShareInterfaceFunctionLookup(old,decl,target_.allow_function_overloads))
           continue;
         reason = "source import '" + importing_module.str() +
             "' conflicts with visible declaration '" + decl.qualified_name +
@@ -453,15 +452,21 @@ QualifiedModuleLookup InterfaceSourceImportBridge::LookupQualified(
     result.declarations.clear();
     return result;
   }
+  auto overload_set=[&] {
+    unsigned unmarked=0;
+    for(const auto *declaration:result.declarations) {
+      if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+        unmarked+=!function->hasAttr<clang::OverloadableAttr>();
+      else if(!target_.allow_function_overloads ||
+              !llvm::isa<clang::FunctionTemplateDecl>(declaration))return false;
+    }
+    // This is evaluated only for multiple candidates: at most one unmarked
+    // C fallback means every other candidate carries native overloadability.
+    return target_.allow_function_overloads || unmarked<=1;
+  };
   if (result.declarations.empty())
     result.status = QualifiedModuleLookupStatus::NotFound;
-  else if (result.declarations.size() == 1)
-    result.status = QualifiedModuleLookupStatus::Found;
-  else if (target_.allow_function_overloads &&
-           std::all_of(result.declarations.begin(), result.declarations.end(),
-               [](clang::NamedDecl *declaration) {
-                 return llvm::isa<clang::FunctionDecl, clang::FunctionTemplateDecl>(declaration);
-               }))
+  else if (result.declarations.size() == 1 || overload_set())
     result.status = QualifiedModuleLookupStatus::Found;
   else
     result.status = QualifiedModuleLookupStatus::Ambiguous;

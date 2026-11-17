@@ -53,7 +53,8 @@
     "objc3_native_friend_template_provider",
     "objc3_native_friend_class_provider",
     "objc3_native_control_flow_provider",
-    "objc3_native_assembly_profile_provider"
+    "objc3_native_assembly_profile_provider",
+    "objc3_native_c_overload_provider"
   ],
   "runtime_tests": [
     "objc3_task_services",

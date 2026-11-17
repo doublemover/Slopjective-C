@@ -475,8 +475,7 @@ bool CheckExportCollisions(
         repeated = true;
         continue; // The same canonical declaration can be re-exported.
       }
-      if (allow_function_overloads && prior.stable_id != decl.stable_id &&
-          (IsCxxOverloadDeclaration(prior) && IsCxxOverloadDeclaration(decl)))
+      if (CanShareInterfaceFunctionLookup(prior,decl,allow_function_overloads))
         continue;
       Add(diagnostics, "O3IFC132",
           "multiple imported modules provide incompatible declarations with "

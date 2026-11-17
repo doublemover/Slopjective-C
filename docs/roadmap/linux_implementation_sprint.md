@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.184 / System 2.110 C-overload span](linux_native_c_overload_packages.md)
+publishes marked C candidates, fallback and conditional/hidden-argument contracts
+through direct, on-demand and module-qualified source-free package lookup.
+
 The [Source 2.183 / System 2.109 assembly-profile span](linux_native_assembly_profiles.md)
 binds the effective native assembly dialect across publication, reparsing,
 direct/source-directed imports and opposite-ownership producer proofs.

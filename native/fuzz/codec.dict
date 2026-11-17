@@ -76,3 +76,6 @@
 
 "objc3.native-control-flow-contracts.v1"
 ";native-control-flow-contracts:v1;"
+
+"objc3.c-overloadable-functions.v1"
+";c-overloadable-functions:v1;"

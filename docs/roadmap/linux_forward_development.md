@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.184 / System 2.110 C-overload span](linux_native_c_overload_packages.md)
+publishes marked C candidates, fallback and conditional/hidden-argument contracts
+through direct, on-demand and module-qualified source-free package lookup.
+
 The [Source 2.183 / System 2.109 assembly-profile span](linux_native_assembly_profiles.md)
 binds the effective native assembly dialect across publication, reparsing,
 direct/source-directed imports and opposite-ownership producer proofs.
@@ -2275,8 +2279,9 @@ The [receipt](../support/linux_cxx_conditional_overloads_progress.json) records
 33 frontend suites, 239 native unit tests, 412 compiler regressions and 27 focused
 tooling tests passing, plus 32 source-free configurations / 224 commands and three
 full-fixture smoke configurations / 21 commands. SDK 2.62 and runtime binaries are
-unchanged. C overloadable package publication, further predicate/declaration
-forms and the broader implementation categories above remain open.
+unchanged at that checkpoint. [Source 2.184](linux_native_c_overload_packages.md)
+now implements source-free C overloadable package publication. Further
+predicate/declaration forms and the broader implementation categories remain open.
 
 ## Source 2.154 implementation span
 

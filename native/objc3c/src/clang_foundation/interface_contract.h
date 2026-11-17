@@ -147,6 +147,10 @@ inline constexpr const char *kCxxThreadLocalSemantic = "objc3.cxx-thread-local.v
 inline bool HasCxxThreadLocalIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-thread-local:v1;") != std::string::npos;
 }
+inline constexpr const char *kCOverloadableSemantic = "objc3.c-overloadable-functions.v1";
+inline bool HasCOverloadableIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";c-overloadable-functions:v1;") != std::string::npos;
+}
 inline constexpr const char *kNativeControlFlowSemantic = "objc3.native-control-flow-contracts.v1";
 inline bool HasNativeControlFlowIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-control-flow-contracts:v1;") != std::string::npos;
@@ -636,6 +640,16 @@ inline bool HasCxxLocalTypeIdentity(const InterfaceDeclarationIdentity &d) {
 inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
   return d.kind=="Function" || d.kind=="FunctionTemplate" || IsCxxMemberDeclarationKind(d.kind) ||
          (d.kind=="Using" && d.canonical_type_identity.find(";functions=1;")!=std::string::npos);
+}
+
+// C overload sets must contain a native marked function. Clang also admits one
+// unmarked fallback; a pair of incompatible ordinary C entries still conflicts.
+inline bool CanShareInterfaceFunctionLookup(const InterfaceDeclarationIdentity &a,
+    const InterfaceDeclarationIdentity &b,bool allow_cxx) {
+  if(a.stable_id==b.stable_id)return false;
+  if(allow_cxx && IsCxxOverloadDeclaration(a) && IsCxxOverloadDeclaration(b))return true;
+  return a.kind=="Function" && b.kind=="Function" &&
+      (HasCOverloadableIdentity(a) || HasCOverloadableIdentity(b));
 }
 
 // Compare the complete declaration contract, including every modeled effect.

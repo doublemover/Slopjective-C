@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 183,
+        "minor": 184,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Source-free C17/Objective-C overloadable functions preserve separate provider candidates, one unmarked fallback, conditional priority and hidden object-size arguments through direct/on-demand/module-qualified lookup and native C inline delivery; ordinary C declaration conflicts remain rejected; c-overloadable-functions v1 hard reader cutover, matching SDK pending",
         "Native package profiles bind the effective inline-assembly dialect from completed compiler invocations; AT&T/Intel publication, exact reparsing, direct/on-demand import and opposite-ownership producer proofs retain the same setting, and mismatched consumers reject before lowering; current-source SDK acceptance pending",
         "Native published-body control contracts preserve branch likelihood, fallthrough, musttail/inlining/merge policies, assumptions, loop states/counts and suppression payloads; typed attribute dependencies and exact goto/asm target/operand roles bind identity; strict C17 reserved assembly spelling and empty extended-asm separators survive replay under native-control-flow-contracts v1; matching SDK acceptance pending",
         "Source-free class-template friendship preserves ordinary/constrained/variadic/template-template and non-type heads, exact specialization access and cyclic nominal identity across ordinary/primary/partial/nested classes; constexpr/consteval branches retain native printing and typed identity under cxx-friends v3 and cxx-constant-evaluation-control v1; matching SDK acceptance pending",
@@ -346,12 +347,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 109,
+        "minor": 110,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Source-free C17/Objective-C overloadable functions preserve separate provider candidates, one unmarked fallback, conditional priority and hidden object-size arguments through direct/on-demand/module-qualified lookup and native C inline delivery; ordinary C declaration conflicts remain rejected; c-overloadable-functions v1 hard reader cutover, matching SDK pending",
         "Native package profiles bind the effective inline-assembly dialect from completed compiler invocations; AT&T/Intel publication, exact reparsing, direct/on-demand import and opposite-ownership producer proofs retain the same setting, and mismatched consumers reject before lowering; current-source SDK acceptance pending",
         "Native published-body control contracts preserve branch likelihood, fallthrough, musttail/inlining/merge policies, assumptions, loop states/counts and suppression payloads; typed attribute dependencies and exact goto/asm target/operand roles bind identity; strict C17 reserved assembly spelling and empty extended-asm separators survive replay under native-control-flow-contracts v1; matching SDK acceptance pending",
         "Source-free class-template friendship preserves ordinary/constrained/variadic/template-template and non-type heads, exact specialization access and cyclic nominal identity across ordinary/primary/partial/nested classes; constexpr/consteval branches retain native printing and typed identity under cxx-friends v3 and cxx-constant-evaluation-control v1; matching SDK acceptance pending",
