@@ -37,6 +37,18 @@ inline int control_switch(int choose,int value) noexcept{switch(choose){case 0:r
 inline int control_value(int choose,int value) noexcept{const int first=control_switch(choose,value);const int second=control_if(choose,first);return control_conditional(choose,second);}
 inline int &control_reference(int choose,int &value) noexcept{int &first=identity_reference(value);int &second=first;if(choose)return second;switch(choose){case 0:return first;default:break;}return second;}
 template<class T>inline T &control_template(T &value) noexcept{if constexpr(__is_same(T,int))return value;else return value;}
+inline int select_value(int choose,int left,int right) noexcept{if(choose)return left;return right;}
+inline int select_nested(int choose,int left,int right) noexcept{const int selected=select_value(choose,left,right);return choose?selected:left;}
+inline int &select_reference(int choose,int &left,int &right) noexcept{if(choose)return left;return right;}
+inline int &select_nested_reference(int choose,int &left,int &right) noexcept{int &view=select_reference(choose,left,right);return choose?view:right;}
+inline int ordinary_alternative_values(int choose,int value) __objc3_async_frame{
+ int left=choose?value:value-1,right=choose?value-1:value;
+ return __objc3_await boundary_number(select_value(choose,left,right));
+}
+inline int ordinary_alternative_writes(int choose,int value) __objc3_async_frame{
+ int left=0,right=0;int &view=select_nested_reference(choose,left,right);view=value;
+ return __objc3_await boundary_number(select_reference(choose,left,right));
+}
 inline int ordinary_control_helpers(int choose,int value) __objc3_async_frame{return __objc3_await boundary_number(control_value(choose,value));}
 inline int ordinary_control_references(int choose,int value) __objc3_async_frame{int &view=control_reference(choose,value);return __objc3_await boundary_number(control_template(view));}
 inline int ordinary_helpers(int value) __objc3_async_frame {
@@ -79,8 +91,8 @@ static int execute(void){
  assert(complete && completion.kind==OBJC3_COMPLETION_SUCCESS && completion.has_payload && completion.payload);
  assert(*static_cast<const int *>(completion.payload)==42);boundary_completed();
  objc3_task_release(task);
- for(unsigned operation=0;operation!=11;++operation){
-  auto ordinary=operation>=7?BoundaryModule::ordinary_control_references(operation-7,41):operation>=3?BoundaryModule::ordinary_control_helpers(operation-3,41):operation==2?BoundaryModule::ordinary_helpers(41):operation==1?BoundaryModule::ordinary_views(41):BoundaryModule::ordinary_move(41);task=0;
+ for(unsigned operation=0;operation!=19;++operation){
+  auto ordinary=operation>=15?BoundaryModule::ordinary_alternative_writes(operation-15,41):operation>=11?BoundaryModule::ordinary_alternative_values(operation-11,41):operation>=7?BoundaryModule::ordinary_control_references(operation-7,41):operation>=3?BoundaryModule::ordinary_control_helpers(operation-3,41):operation==2?BoundaryModule::ordinary_helpers(41):operation==1?BoundaryModule::ordinary_views(41):BoundaryModule::ordinary_move(41);task=0;
   assert(objc3_async_frame_start(&ordinary,caller,0,&task)==OBJC3_SERVICE_OK);complete=false;
   for(unsigned step=0;step!=128;++step){uint32_t count=0;
    assert(objc3_executor_pump(destination,32,&count)==OBJC3_SERVICE_OK && objc3_executor_pump(caller,32,&count)==OBJC3_SERVICE_OK);
@@ -168,6 +180,12 @@ void Run(const fs::path &root,const char *standard,int ownership){
      {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();const int copy=BoundaryModule::control_value(choose,h);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;BoundaryModule::control_reference(choose,copy)=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;BoundaryModule::control_template(copy)=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=BoundaryModule::select_value(choose,h,0);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=BoundaryModule::select_value(choose,0,h);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=BoundaryModule::select_nested(choose,h,0);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=BoundaryModule::select_nested(choose,0,h);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
+     {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int left=0,right=0;int &view=BoundaryModule::select_nested_reference(choose,left,right);view=h;return __objc3_await boundary_target(left);}","cleanup-managed concurrent value"},
+     {"int rejected(int choose) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int left=0,right=0;int &view=BoundaryModule::select_nested_reference(choose,left,right);view=h;return __objc3_await boundary_target(right);}","cleanup-managed concurrent value"},
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=BoundaryModule::identity_value(h);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=BoundaryModule::nested_value(h);return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},
      {"int rejected(void) __objc3_async_frame {int h __attribute__((objc_resource(close=boundary_close,invalid=-1)))=boundary_open();int copy=0;int &alias=BoundaryModule::template_reference(copy);alias=h;return __objc3_await boundary_target(copy);}","cleanup-managed concurrent value"},

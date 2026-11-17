@@ -53627,11 +53627,12 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,2503 @@
+@@ -0,0 +1,2548 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include <optional>
++#include <cstdint>
 +#include "SemaObjC3Isolation.h"
 +#include "SemaObjC3Effects.h"
 +#include "clang/AST/ASTConsumer.h"
@@ -53911,16 +53912,20 @@ new file mode 100644
 +  const auto Name=Function->getIdentifier()->getName();
 +  return Name=="move" || Name=="forward" || Name=="forward_like" || Name=="as_const";
 +}
-+struct ArgumentProjection { unsigned Index; bool Aliases; };
++struct ArgumentProjection {
++  uint32_t Arguments;
++  bool Aliases;
++  bool selects(unsigned Index) const { return Arguments & (uint32_t(1) << Index); }
++};
 +// Infer only closed, non-owning, native argument views. An inline/internal
-+// definition must contain a bounded pure control graph with one selected argument.
++// definition must contain a bounded pure control graph with a bounded set of selected arguments.
 +// Nested projections share budgets and reject recursive definition graphs.
 +std::optional<ArgumentProjection> argumentProjectionImpl(
 +    const CallExpr *Call,ASTContext &Context,unsigned &Budget,unsigned Depth,
 +    llvm::SmallPtrSetImpl<const FunctionDecl *> &Active) {
 +  if(!Call || !Budget || Depth>16 || Call->getNumArgs()>32)return std::nullopt;
 +  --Budget;
-+  if(standardReferenceView(Call))return ArgumentProjection{0,true};
++  if(standardReferenceView(Call))return ArgumentProjection{1,true};
 +  const auto *Function=Call->getDirectCallee();
 +  if(!Function || isa<CXXMethodDecl>(Function) || Function->isVariadic() ||
 +      Function->isMultiVersion() || Function->isNoReturn() ||
@@ -53962,9 +53967,9 @@ new file mode 100644
 +  auto Leave=llvm::scope_exit([&]{Active.erase(Definition->getCanonicalDecl());});
 +  const auto *Body=dyn_cast_or_null<CompoundStmt>(Definition->getBody());
 +  if(!Body)return std::nullopt;
-+  // Immutable local views and every live return must identify the same caller
-+  // argument. Pure branching changes control, never ownership or storage.
-+  struct LocalProjection {unsigned Index;bool Aliases;};
++  // Immutable views retain the union of all caller arguments on live returns.
++  // Pure branching changes selection, never ownership or storage.
++  struct LocalProjection {uint32_t Arguments;bool Aliases;};
 +  llvm::DenseMap<const VarDecl *,LocalProjection> Locals;
 +  auto Resolve=[&](auto &&Self,const Expr *Value,unsigned Level,bool RequireAlias)->std::optional<unsigned> {
 +    if(!Value || !Budget || Level>64)return std::nullopt;
@@ -53984,7 +53989,7 @@ new file mode 100644
 +        return Self(Self,Truth?Conditional->getTrueExpr():Conditional->getFalseExpr(),Level+1,RequireAlias);
 +      auto Left=Self(Self,Conditional->getTrueExpr(),Level+1,RequireAlias);
 +      auto Right=Self(Self,Conditional->getFalseExpr(),Level+1,RequireAlias);
-+      return Left && Right && *Left==*Right?Left:std::nullopt;
++      return Left && Right?std::optional<unsigned>(*Left|*Right):std::nullopt;
 +    }
 +    if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(Value))
 +      return Self(Self,Opaque->getSourceExpr(),Level+1,RequireAlias);
@@ -53995,15 +54000,21 @@ new file mode 100644
 +    if(const auto *Nested=dyn_cast<CallExpr>(Value)) {
 +      auto Projection=argumentProjectionImpl(Nested,Context,Budget,Depth+1,Active);
 +      if(!Projection || (RequireAlias && !Projection->Aliases))return std::nullopt;
-+      for(unsigned I=0;I!=Nested->getNumArgs();++I)
-+        if(I!=Projection->Index && Nested->getArg(I)->HasSideEffects(Context))return std::nullopt;
-+      return Self(Self,Nested->getArg(Projection->Index),Level+1,RequireAlias);
++      unsigned Sources=0;
++      for(unsigned I=0;I!=Nested->getNumArgs();++I) {
++        if(Projection->selects(I)) {
++          auto Source=Self(Self,Nested->getArg(I),Level+1,RequireAlias);
++          if(!Source)return std::nullopt;
++          Sources|=*Source;
++        } else if(Nested->getArg(I)->HasSideEffects(Context))return std::nullopt;
++      }
++      return Sources?std::optional<unsigned>(Sources):std::nullopt;
 +    }
 +    const auto *Reference=dyn_cast<DeclRefExpr>(Value);
 +    const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +    if(!Variable)return std::nullopt;
 +    if(auto Found=Locals.find(Variable->getCanonicalDecl());Found!=Locals.end())
-+      return !RequireAlias || Found->second.Aliases?std::optional<unsigned>(Found->second.Index):std::nullopt;
++      return !RequireAlias || Found->second.Aliases?std::optional<unsigned>(Found->second.Arguments):std::nullopt;
 +    const auto *Parameter=dyn_cast<ParmVarDecl>(Variable);
 +    if(!Parameter)return std::nullopt;
 +    for(unsigned I=0;I!=Definition->getNumParams();++I)if(Definition->getParamDecl(I)==Parameter) {
@@ -54011,12 +54022,12 @@ new file mode 100644
 +      if(Pattern && !Context.hasSameUnqualifiedType(
 +          Function->getReturnType().getNonReferenceType(),
 +          Function->getParamDecl(I)->getType().getNonReferenceType()))return std::nullopt;
-+      return I;
++      return uint32_t(1)<<I;
 +    }
 +    return std::nullopt;
 +  };
 +  enum :unsigned {Fall=1,Returned=2,Broken=4};
-+  std::optional<unsigned> Selected;
++  unsigned Selected=0;
 +  auto Sequence=[&](auto &&Visit,llvm::ArrayRef<const Stmt *> Statements,unsigned Level,bool InSwitch)->std::optional<unsigned> {
 +    unsigned Flow=Fall;
 +    for(const auto *Statement:Statements) {
@@ -54063,8 +54074,8 @@ new file mode 100644
 +    }
 +    if(const auto *Return=dyn_cast<ReturnStmt>(Statement)) {
 +      auto Source=Resolve(Resolve,Return->getRetValue(),0,Call->isGLValue());
-+      if(!Source || (Selected && *Selected!=*Source))return std::nullopt;
-+      Selected=Source;return Returned;
++      if(!Source)return std::nullopt;
++      Selected|=*Source;return Returned;
 +    }
 +    if(const auto *If=dyn_cast<IfStmt>(Statement)) {
 +      if(If->getInit() || If->getConditionVariable())return std::nullopt;
@@ -54118,7 +54129,7 @@ new file mode 100644
 +  };
 +  auto Flow=Visit(Visit,Body,0,false);
 +  if(!Flow || *Flow!=Returned || !Selected)return std::nullopt;
-+  return ArgumentProjection{*Selected,Call->isGLValue()};
++  return ArgumentProjection{Selected,Call->isGLValue()};
 +}
 +std::optional<ArgumentProjection> argumentProjection(const CallExpr *Call,ASTContext &Context) {
 +  unsigned Budget=256;
@@ -54143,25 +54154,55 @@ new file mode 100644
 +    struct Entry {const Stmt *Node;Role Use;unsigned Depth;};
 +    SmallVector<Entry,32> Pending{{ScopeBody,Unknown,0}};
 +    unsigned Remaining=4096;
-+    auto Cell=[&](const Expr *Value)->const VarDecl * {
-+      for(unsigned Depth=0;Value && Depth!=64;++Depth) {
-+        Value=Value->IgnoreParenCasts();
-+        if(const auto *Call=dyn_cast<CallExpr>(Value))
-+          if(auto Projection=argumentProjection(Call,Context);Projection && Projection->Aliases) {
-+            Value=Call->getArg(Projection->Index);continue;
-+          }
-+        const auto *Reference=dyn_cast<DeclRefExpr>(Value);
++    using CellSet=SmallVector<const VarDecl *,4>;
++    auto Cells=[&](const Expr *Value)->std::optional<CellSet> {
++      CellSet Result;
++      llvm::SmallPtrSet<const VarDecl *,16> References;
++      unsigned CellBudget=256;
++      auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->bool {
++        if(!E || !CellBudget || Depth>64)return false;
++        --CellBudget;E=E->IgnoreParenCasts();
++        if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(E))
++          return Self(Self,Opaque->getSourceExpr(),Depth+1);
++        if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E)) {
++          bool Truth;
++          if(!Conditional->getCond()->HasSideEffects(Context) &&
++              Conditional->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++            return Self(Self,Truth?Conditional->getTrueExpr():Conditional->getFalseExpr(),Depth+1);
++          return Self(Self,Conditional->getTrueExpr(),Depth+1) &&
++              Self(Self,Conditional->getFalseExpr(),Depth+1);
++        }
++        if(const auto *Call=dyn_cast<CallExpr>(E)) {
++          auto Projection=argumentProjection(Call,Context);
++          if(!Projection || !Projection->Aliases)return false;
++          for(unsigned I=0;I!=Call->getNumArgs();++I)
++            if(Projection->selects(I) && !Self(Self,Call->getArg(I),Depth+1))return false;
++          return true;
++        }
++        const auto *Reference=dyn_cast<DeclRefExpr>(E);
 +        const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
-+        if(!Variable || !Variable->hasLocalStorage())return nullptr;
-+        if(!Variable->getType()->isReferenceType() || !Variable->hasInit())return Variable;
-+        Value=Variable->getInit();
-+      }
-+      return nullptr;
++        if(!Variable || !Variable->hasLocalStorage())return false;
++        if(Variable->getType()->isReferenceType()) {
++          if(!Variable->hasInit() || !References.insert(Variable->getCanonicalDecl()).second)return false;
++          auto Leave=llvm::scope_exit([&]{References.erase(Variable->getCanonicalDecl());});
++          return Self(Self,Variable->getInit(),Depth+1);
++        }
++        Variable=Variable->getCanonicalDecl();
++        if(!llvm::is_contained(Result,Variable)) {
++          if(Result.size()==32)return false;
++          Result.push_back(Variable);
++        }
++        return true;
++      };
++      return Resolve(Resolve,Value,0) && !Result.empty()?std::optional<CellSet>(std::move(Result)):std::nullopt;
 +    };
-+    auto CapturedCell=[&](const VarDecl *Variable) {
++    auto Escape=[&](const VarDecl *Variable) {
 +      if(Variable->getType()->isReferenceType() && Variable->hasInit())
-+        if(const auto *Target=Cell(Variable->getInit()))return Target;
-+      return Variable;
++        if(auto Targets=Cells(Variable->getInit())) {
++          for(const auto *Target:*Targets)Escaped.insert(Target);
++          return;
++        }
++      Escaped.insert(Variable->getCanonicalDecl());
 +    };
 +    while(!Pending.empty()) {
 +      const Entry Current=Pending.pop_back_val();
@@ -54175,12 +54216,12 @@ new file mode 100644
 +      if(isa<GotoStmt,IndirectGotoStmt,GCCAsmStmt>(Node)){Incomplete=true;return;}
 +      if(const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
 +        if(const auto *V=dyn_cast<VarDecl>(Reference->getDecl());V && V->hasLocalStorage() && Use==Unknown)
-+          Escaped.insert(CapturedCell(V));
++          Escape(V);
 +        continue;
 +      }
 +      if(const auto *Block=dyn_cast<BlockExpr>(Node)) {
 +        for(const auto &Capture:Block->getBlockDecl()->captures()) {
-+          if(Capture.isByRef())Escaped.insert(CapturedCell(Capture.getVariable()));
++          if(Capture.isByRef())Escape(Capture.getVariable());
 +          Add(Capture.getObjC3InitExpr());
 +        }
 +        continue;
@@ -54188,13 +54229,13 @@ new file mode 100644
 +      if(const auto *Lambda=dyn_cast<LambdaExpr>(Node)) {
 +        for(const auto &Capture:Lambda->captures())
 +          if(Capture.capturesVariable() && Capture.getCaptureKind()==LCK_ByRef)
-+            if(const auto *Variable=dyn_cast<VarDecl>(Capture.getCapturedVar()))Escaped.insert(CapturedCell(Variable));
++            if(const auto *Variable=dyn_cast<VarDecl>(Capture.getCapturedVar()))Escape(Variable);
 +        for(const auto *Init:Lambda->capture_inits())Add(Init);
 +        continue; // A value capture writes its own environment, not this binding.
 +      }
 +      if(const auto *Declarations=dyn_cast<DeclStmt>(Node)) {
 +        for(const auto *D:Declarations->decls())if(const auto *V=dyn_cast<VarDecl>(D))
-+          if(V->hasInit())Add(V->getInit(),V->getType()->isReferenceType() && Cell(V->getInit())?Read:Unknown);
++          if(V->hasInit())Add(V->getInit(),V->getType()->isReferenceType() && Cells(V->getInit())?Read:Unknown);
 +        continue;
 +      }
 +      if(const auto *Branch=dyn_cast<IfStmt>(Node)) {
@@ -54230,7 +54271,7 @@ new file mode 100644
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
 +        if(auto Projection=argumentProjection(Call,Context)) {
 +          for(unsigned I=0;I!=Call->getNumArgs();++I)
-+            Add(Call->getArg(I),Projection->Aliases && I==Projection->Index?Use:Read);
++            Add(Call->getArg(I),Projection->Aliases && Projection->selects(I)?Use:Read);
 +          continue;
 +        }
 +      if(const auto *Cast=dyn_cast<CastExpr>(Node)) {
@@ -54254,17 +54295,18 @@ new file mode 100644
 +          continue;
 +        }
 +        if(Binary->isAssignmentOp()) {
-+          const auto *V=Cell(Binary->getLHS());
-+          if(V && V->hasLocalStorage())Writes[V].push_back(Binary->getOpcode()==BO_Assign?Binary->getRHS():Binary);
-+          Add(Binary->getLHS(),V?Write:Unknown);Add(Binary->getRHS());continue;
++          auto Targets=Cells(Binary->getLHS());
++          if(Targets)for(const auto *V:*Targets)
++            Writes[V].push_back(Binary->getOpcode()==BO_Assign?Binary->getRHS():Binary);
++          Add(Binary->getLHS(),Targets?Write:Unknown);Add(Binary->getRHS());continue;
 +        }
 +      }
 +      if(const auto *Unary=dyn_cast<UnaryOperator>(Node)) {
 +        if(Unary->getOpcode()==UO_Extension){Add(Unary->getSubExpr(),Use);continue;}
 +        if(Unary->isIncrementDecrementOp()) {
-+          const auto *V=Cell(Unary->getSubExpr());
-+          if(V && V->hasLocalStorage())Writes[V].push_back(Unary);
-+          Add(Unary->getSubExpr(),V?Write:Unknown);continue;
++          auto Targets=Cells(Unary->getSubExpr());
++          if(Targets)for(const auto *V:*Targets)Writes[V].push_back(Unary);
++          Add(Unary->getSubExpr(),Targets?Write:Unknown);continue;
 +        }
 +      }
 +      if(const auto *Construction=dyn_cast<CXXConstructExpr>(Node);
@@ -54380,8 +54422,11 @@ new file mode 100644
 +      return false;
 +    }
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
-+      if(auto Projection=argumentProjection(Call,Context))
-+        return Recurse(Recurse,Call->getArg(Projection->Index),Depth+1);
++      if(auto Projection=argumentProjection(Call,Context)) {
++        for(unsigned I=0;I!=Call->getNumArgs();++I)
++          if(Projection->selects(I) && Recurse(Recurse,Call->getArg(I),Depth+1))return true;
++        return false;
++      }
 +    if(const auto *Call=dyn_cast<CallExpr>(E);Call && Call->isGLValue()) {
 +      // Native reference forwarders (including move/forward) can preserve a
 +      // resource slot without preserving its variable attribute in the type.
@@ -77859,7 +77904,7 @@ new file mode 100644
 +}
 +static inline int &managed_ambiguous_control(int choose,int &left,int &right){if(choose)return left;return right;}
 +int managed_control_ambiguous_result(int choose,int left,int right) __objc3_async_frame {
-+ return __objc3_await managed_remote(managed_ambiguous_control(choose,left,right)); // expected-error {{cleanup-managed concurrent value}}
++ return __objc3_await managed_remote(managed_ambiguous_control(choose,left,right));
 +}
 +#pragma clang diagnostic push
 +#pragma clang diagnostic ignored "-Wvla-cxx-extension"
@@ -77913,5 +77958,132 @@ new file mode 100644
 +static inline int &managed_mutable_local(int &value){int local=value;return value;}
 +int managed_control_mutable_result(int value) __objc3_async_frame {
 + return __objc3_await managed_remote(managed_mutable_local(value)); // expected-error {{cleanup-managed concurrent value}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-alternative-argument-projections.h b/clang/test/ObjC3/Sema/Inputs/native-alternative-argument-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-alternative-argument-projections.h
+@@ -0,0 +1,22 @@
++#ifndef OBJC3_NATIVE_ALTERNATIVE_ARGUMENT_PROJECTIONS_H
++#define OBJC3_NATIVE_ALTERNATIVE_ARGUMENT_PROJECTIONS_H
++#include "native-control-argument-projections.h"
++static inline int managed_select_value(int choose,int left,int right){if(choose)return left;return right;}
++static inline int managed_select_conditional(int choose,int left,int right){return choose?left:right;}
++static inline int managed_select_switch(int choose,int left,int right){switch(choose){case 0:return left;case 1:case 2:return right;default:return left;}}
++static inline int managed_select_nested(int choose,int left,int right){const int selected=managed_select_value(choose,left,right);return choose?managed_select_conditional(choose,selected,right):left;}
++static inline int managed_alternatives_ordinary(int choose,int left,int right) __objc3_async_frame {return __objc3_await managed_remote(managed_select_nested(choose,left,right));}
++static inline int managed_alternatives_unused_resource(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ return __objc3_await managed_remote(managed_select_value(descriptor,42,43)+choose);
++}
++#ifdef __cplusplus
++static inline int &managed_select_reference(int choose,int &left,int &right){if(choose)return left;return right;}
++static inline int &managed_select_ref_conditional(int choose,int &left,int &right){return choose?left:right;}
++static inline int &managed_select_ref_nested(int choose,int &left,int &right){int &view=managed_select_reference(choose,left,right);return managed_select_ref_conditional(choose,view,right);}
++template<class T>static inline T &managed_select_template(int choose,T &left,T &right){if(choose)return left;return right;}
++static inline void managed_alternatives_ordinary_write(int choose){int left=0,right=0;managed_select_ref_nested(choose,left,right)=42;ManagedWork work=^void(void) __objc3_async_frame {(void)left;(void)right;};(void)managed_detach(work);}
++static inline void managed_alternatives_condition_ignored(void){int condition=0,left=0,right=0;managed_select_reference(condition,left,right)=1;ManagedWork work=^void(void) __objc3_async_frame {(void)condition;};(void)managed_detach(work);}
++static inline int &managed_select_high(int choose,int &p1,int &p2,int &p3,int &p4,int &p5,int &p6,int &p7,int &p8,int &p9,int &p10,int &p11,int &p12,int &p13,int &p14,int &p15,int &p16,int &p17,int &p18,int &p19,int &p20,int &p21,int &p22,int &p23,int &p24,int &p25,int &p26,int &p27,int &p28,int &p29,int &p30,int &p31){if(choose)return p1;return p31;}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-alternative-argument-projections.m b/clang/test/ObjC3/Sema/native-alternative-argument-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-alternative-argument-projections.m
+@@ -0,0 +1,93 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-alternative-argument-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-alternative-argument-projections.h"
++int managed_select_value_left_copy(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_select_value(choose,descriptor,42);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int managed_select_value_right_copy(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_select_value(choose,42,descriptor);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int managed_select_conditional_left_copy(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_select_conditional(choose,descriptor,42);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int managed_select_conditional_right_copy(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_select_conditional(choose,42,descriptor);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int managed_select_switch_left_copy(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_select_switch(choose,descriptor,42);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int managed_select_switch_right_copy(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_select_switch(choose,42,descriptor);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int managed_select_nested_left_copy(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_select_nested(choose,descriptor,42);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int managed_select_nested_right_copy(int choose) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int copied=managed_select_nested(choose,42,descriptor);
++ return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++#ifdef __cplusplus
++void managed_alternatives_write_both(int choose){
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int left=0,right=0;int &first=managed_select_ref_nested(choose,left,right);int &second=first;second=descriptor;
++ ManagedWork a=^void(void) __objc3_async_frame {(void)left;};
++ (void)managed_detach(a); // expected-error {{cleanup-managed capture}}
++ ManagedWork b=^void(void) __objc3_async_frame {(void)right;};
++ (void)managed_detach(b); // expected-error {{cleanup-managed capture}}
++}
++void managed_alternatives_conditional_write(int choose){
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int left=0,right=0;(choose?left:right)=descriptor;
++ ManagedWork a=^void(void) __objc3_async_frame {(void)left;};
++ (void)managed_detach(a); // expected-error {{cleanup-managed capture}}
++ ManagedWork b=^void(void) __objc3_async_frame {(void)right;};
++ (void)managed_detach(b); // expected-error {{cleanup-managed capture}}
++}
++void managed_alternatives_template_write(int choose){
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ int left=0,right=0;managed_select_template(choose,left,right)=descriptor;
++ ManagedWork work=^void(void) __objc3_async_frame {(void)right;};
++ (void)managed_detach(work); // expected-error {{cleanup-managed capture}}
++}
++void managed_alternatives_escape(int choose){
++ int left=0,right=0;int &alias=managed_select_reference(choose,left,right);managed_modify(&alias);
++ ManagedWork a=^void(void) __objc3_async_frame {(void)left;};
++ (void)managed_detach(a); // expected-error {{cleanup-managed capture}}
++ ManagedWork b=^void(void) __objc3_async_frame {(void)right;};
++ (void)managed_detach(b); // expected-error {{cleanup-managed capture}}
++}
++void managed_alternatives_capture_escape(int choose){
++ int left=0,right=0;int &alias=managed_select_reference(choose,left,right);
++ auto mutation=[&alias](){alias=42;};(void)mutation;
++ ManagedWork a=^void(void) __objc3_async_frame {(void)left;};
++ (void)managed_detach(a); // expected-error {{cleanup-managed capture}}
++ ManagedWork b=^void(void) __objc3_async_frame {(void)right;};
++ (void)managed_detach(b); // expected-error {{cleanup-managed capture}}
++}
++int managed_alternatives_high_bit(int choose) __objc3_async_frame {
++ int first=1,middle=2;
++ int last __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ return __objc3_await managed_remote(managed_select_high(choose,first,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,middle,last)); // expected-error {{cleanup-managed concurrent value}}
 +}
 +#endif

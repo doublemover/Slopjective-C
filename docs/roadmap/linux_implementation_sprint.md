@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.201 / System 2.127 alternative-projection span](linux_native_alternative_projections.md)
+preserves all possible argument sources and reference cells through bounded
+native helper control graphs, including projected writes and escapes.
+
 The [Source 2.200 / System 2.126 member deduction-guide span](linux_native_member_deduction_guides.md)
 publishes nested/dependent guide identities, enclosing template bindings and
 complete-record import policy checks through the guide-v2 reader cutover.
