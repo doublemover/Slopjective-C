@@ -53652,7 +53652,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,2574 @@
+@@ -0,0 +1,2640 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53674,6 +53674,7 @@ new file mode 100644
 +#include "clang/AST/ObjC3Isolation.h"
 +#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/Basic/DiagnosticSema.h"
++#include "clang/Basic/SourceManager.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/ParsedAttr.h"
 +#include "clang/Sema/Sema.h"
@@ -54534,6 +54535,16 @@ new file mode 100644
 +    SmallVector<Entry,32> Pending{{ScopeBody,Unknown}};
 +    SmallVector<const Expr *,8> Values;
 +    bool FoundDefinition=false;
++    auto ContainsBinding=[&](const Stmt *Node) {
++      if(!Node)return false;
++      const auto &SM=Context.getSourceManager();
++      const auto Location=SM.getExpansionLoc(Variable->getLocation());
++      const auto Begin=SM.getExpansionLoc(Node->getBeginLoc());
++      const auto End=SM.getExpansionLoc(Node->getEndLoc());
++      if(Location.isInvalid() || Begin.isInvalid() || End.isInvalid() ||
++          SM.getFileID(Begin)!=SM.getFileID(End))return true;
++      return SM.getFileID(Location)==SM.getFileID(Begin) && SM.isPointWithin(Location,Begin,End);
++    };
 +    while (!Pending.empty()) {
 +      const auto [Node,Role]=Pending.pop_back_val();
 +      if (!Node)continue;
@@ -54561,13 +54572,57 @@ new file mode 100644
 +        continue;
 +      }
 +      if (isa<UnaryExprOrTypeTraitExpr,CXXNoexceptExpr,RequiresExpr>(Node))continue;
++      if(const auto *Branch=dyn_cast<IfStmt>(Node)) {
++        Pending.push_back({Branch->getInit(),Unknown});
++        Pending.push_back({Branch->getConditionVariableDeclStmt(),Unknown});
++        const auto *Condition=Branch->getCond();Pending.push_back({Condition,Unknown});bool Truth;
++        if(Condition && !Condition->HasSideEffects(Context) &&
++            Condition->EvaluateAsBooleanCondition(Truth,Context)) {
++          Pending.push_back({Truth?Branch->getThen():Branch->getElse(),Unknown});
++          const auto *Discarded=Truth?Branch->getElse():Branch->getThen();
++          if(ContainsBinding(Discarded))Pending.push_back({Discarded,Unknown});
++        }
++        else {Pending.push_back({Branch->getThen(),Unknown});Pending.push_back({Branch->getElse(),Unknown});}
++        continue;
++      }
++      if(const auto *Loop=dyn_cast<WhileStmt>(Node)) {
++        Pending.push_back({Loop->getConditionVariableDeclStmt(),Unknown});
++        Pending.push_back({Loop->getCond(),Unknown});bool Truth;
++        if(Loop->getCond()->HasSideEffects(Context) ||
++            !Loop->getCond()->EvaluateAsBooleanCondition(Truth,Context) || Truth || ContainsBinding(Loop->getBody()))
++          Pending.push_back({Loop->getBody(),Unknown});
++        continue;
++      }
++      if(const auto *Loop=dyn_cast<ForStmt>(Node)) {
++        Pending.push_back({Loop->getInit(),Unknown});
++        Pending.push_back({Loop->getConditionVariableDeclStmt(),Unknown});
++        Pending.push_back({Loop->getCond(),Unknown});bool Truth;
++        if(!Loop->getCond() || Loop->getCond()->HasSideEffects(Context) ||
++            !Loop->getCond()->EvaluateAsBooleanCondition(Truth,Context) || Truth || ContainsBinding(Loop->getBody())) {
++          Pending.push_back({Loop->getInc(),Unknown});Pending.push_back({Loop->getBody(),Unknown});
++        }
++        continue;
++      }
++      if(const auto *Choice=dyn_cast<ChooseExpr>(Node);Choice && !Choice->isConditionDependent() && !ContainsBinding(Node)) {
++        Pending.push_back({Choice->getChosenSubExpr(),Role});continue;
++      }
++      if(const auto *Generic=dyn_cast<GenericSelectionExpr>(Node);Generic && !Generic->isResultDependent() && !ContainsBinding(Node)) {
++        Pending.push_back({Generic->getResultExpr(),Role});continue;
++      }
++      if(const auto *Binary=dyn_cast<BinaryOperator>(Node);Binary && Binary->isLogicalOp()) {
++        Pending.push_back({Binary->getLHS(),Unknown});bool Truth;
++        if(Binary->getLHS()->HasSideEffects(Context) ||
++            !Binary->getLHS()->EvaluateAsBooleanCondition(Truth,Context) ||
++            (Binary->getOpcode()==BO_LAnd?Truth:!Truth) || ContainsBinding(Binary->getRHS()))Pending.push_back({Binary->getRHS(),Unknown});
++        continue;
++      }
 +      if (const auto *Paren=dyn_cast<ParenExpr>(Node)) {Pending.push_back({Paren->getSubExpr(),Role});continue;}
 +      if (const auto *Cleanup=dyn_cast<ExprWithCleanups>(Node)) {Pending.push_back({Cleanup->getSubExpr(),Role});continue;}
 +      if (const auto *Opaque=dyn_cast<OpaqueValueExpr>(Node)) {Pending.push_back({Opaque->getSourceExpr(),Role});continue;}
 +      if (const auto *Default=dyn_cast<CXXDefaultArgExpr>(Node)) {Pending.push_back({Default->getExpr(),Unknown});continue;}
 +      if (const auto *Default=dyn_cast<CXXDefaultInitExpr>(Node)) {Pending.push_back({Default->getExpr(),Unknown});continue;}
 +      if (const auto *Cast=dyn_cast<CastExpr>(Node)) {
-+        const bool Reads=Cast->getCastKind()==CK_LValueToRValue ||
++        const bool Reads=Cast->getCastKind()==CK_LValueToRValue || Cast->getCastKind()==CK_ToVoid ||
 +                         (Role==Read && Cast->isGLValue() && Cast->getCastKind()==CK_NoOp);
 +        Pending.push_back({Cast->getSubExpr(),Reads?Read:Unknown});continue;
 +      }
@@ -54579,9 +54634,16 @@ new file mode 100644
 +          continue;
 +        }
 +      if (const auto *Conditional=dyn_cast<AbstractConditionalOperator>(Node)) {
-+        Pending.push_back({Conditional->getCond(),Unknown});
-+        Pending.push_back({Conditional->getTrueExpr(),Role==Read?Read:Unknown});
-+        Pending.push_back({Conditional->getFalseExpr(),Role==Read?Read:Unknown});continue;
++        Pending.push_back({Conditional->getCond(),Unknown});bool Truth;
++        if(!Conditional->getCond()->HasSideEffects(Context) &&
++            Conditional->getCond()->EvaluateAsBooleanCondition(Truth,Context)) {
++          Pending.push_back({Truth?Conditional->getTrueExpr():Conditional->getFalseExpr(),Role==Read?Read:Unknown});
++          const auto *Discarded=Truth?Conditional->getFalseExpr():Conditional->getTrueExpr();
++          if(ContainsBinding(Discarded))Pending.push_back({Discarded,Role==Read?Read:Unknown});
++        }
++        else {Pending.push_back({Conditional->getTrueExpr(),Role==Read?Read:Unknown});
++          Pending.push_back({Conditional->getFalseExpr(),Role==Read?Read:Unknown});}
++        continue;
 +      }
 +      if (const auto *Comma=dyn_cast<BinaryOperator>(Node);Comma && Comma->getOpcode()==BO_Comma) {
 +        Pending.push_back({Comma->getLHS(),Unknown});Pending.push_back({Comma->getRHS(),Role});continue;
@@ -54654,6 +54716,10 @@ new file mode 100644
 +      if (const auto *Binary = dyn_cast<BinaryOperator>(E))
 +        if (Binary->getOpcode() == BO_Comma || Binary->getOpcode() == BO_Assign)
 +          return collect(Binary->getRHS(), Depth + 1);
++      if(const auto *Choice=dyn_cast<ChooseExpr>(E);Choice && !Choice->isConditionDependent())
++        return collect(Choice->getChosenSubExpr(),Depth+1);
++      if(const auto *Generic=dyn_cast<GenericSelectionExpr>(E);Generic && !Generic->isResultDependent())
++        return collect(Generic->getResultExpr(),Depth+1);
 +      if (const auto *Statement = dyn_cast<StmtExpr>(E)) {
 +        const auto *Body = Statement->getSubStmt();
 +        return !Body->body_empty() &&
@@ -78261,3 +78327,51 @@ new file mode 100644
 + (void)binding_detached(binding_select(choose,owned,empty)); // expected-error {{cleanup-managed capture}}
 + (void)binding_detached(binding_select(choose,empty,owned)); // expected-error {{cleanup-managed capture}}
 +}
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-block-control-proofs.h b/clang/test/ObjC3/Sema/Inputs/native-block-control-proofs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-block-control-proofs.h
+@@ -0,0 +1,17 @@
++#ifndef OBJC3_NATIVE_BLOCK_CONTROL_PROOFS_H
++#define OBJC3_NATIVE_BLOCK_CONTROL_PROOFS_H
++#include "native-block-helper-projections.h"
++static inline void binding_discarded_if(BindingWork unknown,SafeBlockObject *safe){BindingWork work=^void(void) __objc3_async_frame {(void)safe;};if(0)work=unknown;else work=work;(void)binding_detached(work);}
++static inline void binding_discarded_while(BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};while(0)work=unknown;(void)binding_detached(work);}
++static inline void binding_discarded_for(BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};for(;0;work=unknown)work=unknown;(void)binding_detached(work);}
++static inline void binding_discarded_logic(BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};(void)(0 && (work=unknown));(void)(1 || (work=unknown));(void)binding_detached(work);}
++static inline void binding_discarded_conditional(BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};(void)(1?work:(work=unknown));(void)(0?(work=unknown):work);(void)binding_detached(work);}
++static inline void binding_nested_dead_definition(void){if(0){BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(work);}}
++#ifndef __cplusplus
++static inline void binding_selected_generic(void){BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(_Generic(0,int:work,default:(BindingWork)0));(void)binding_detached(__builtin_choose_expr(1,work,(BindingWork)0));}
++static inline void binding_discarded_generic(BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};(void)_Generic(0,int:work,default:(work=unknown));(void)__builtin_choose_expr(1,work,(work=unknown));(void)binding_detached(work);}
++#endif
++#ifdef __cplusplus
++static inline void binding_discarded_constexpr(BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};if constexpr(false)work=unknown;(void)binding_detached(work);}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-block-control-proofs.m b/clang/test/ObjC3/Sema/native-block-control-proofs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-block-control-proofs.m
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-block-control-proofs.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-block-control-proofs.h"
++void binding_live_unknown_if(int choose,BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};if(choose)work=unknown;(void)binding_detached(work);} // expected-error {{cannot prove Sendable captures}}
++void binding_live_unknown_while(int choose,BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};while(choose)work=unknown;(void)binding_detached(work);} // expected-error {{cannot prove Sendable captures}}
++void binding_live_unknown_for(int choose,BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};for(;choose;work=unknown){}(void)binding_detached(work);} // expected-error {{cannot prove Sendable captures}}
++void binding_live_unknown_logic(int choose,BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};(void)(choose && (work=unknown));(void)binding_detached(work);} // expected-error {{cannot prove Sendable captures}}
++void binding_live_unknown_conditional(int choose,BindingWork unknown){BindingWork work=^void(void) __objc3_async_frame {};(void)(choose?work:(work=unknown));(void)binding_detached(work);} // expected-error {{cannot prove Sendable captures}}
++void binding_dead_unknown_definition(BindingWork unknown){if(0){BindingWork work=unknown;(void)binding_detached(work);}} // expected-error {{cannot prove Sendable captures}}
++void binding_dead_unknown_write(BindingWork unknown){if(0){BindingWork work=^void(void) __objc3_async_frame {};work=unknown;(void)binding_detached(work);}} // expected-error {{cannot prove Sendable captures}}
++void binding_dead_unsafe_definition(UnsafeBlockObject *object){if(0){BindingWork work=^void(void) __objc3_async_frame {(void)object;};(void)binding_detached(work);}} // expected-error {{non-Sendable type}}
++int binding_mutate_condition(BindingWork *);
++void binding_effectful_condition(void){BindingWork work=^void(void) __objc3_async_frame {};if((binding_mutate_condition(&work),0)){}(void)binding_detached(work);} // expected-error {{cannot prove Sendable captures}}

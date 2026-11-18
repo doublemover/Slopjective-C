@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.204 / System 2.130 work-item control span](linux_native_block_control_proofs.md)
+prunes provably unexecuted environments while preserving full checks for
+bindings declared inside discarded regions and all live/unknown routes.
+
 The [Source 2.203 / System 2.129 Block-helper span](linux_native_block_helper_projections.md)
 preserves actual work-item capture environments through closed native helper
 chains and immutable internal/inline global bindings.

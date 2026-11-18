@@ -14,6 +14,7 @@ typedef void (^BindingWork)(void) __objc3_async_frame;
 extern "C" objc3_task_t *binding_start(BindingWork,objc3_executor_t *) __attribute__((objc_task_detached));
 extern "C" void binding_pause(void) __objc3_async_frame;
 extern "C" void binding_release(void *);
+extern "C" BindingWork binding_unresolved_work(void);
 )blocks";
 constexpr const char *Source=R"blocks(
 __attribute__((objc_root_class)) @interface BindingOwner<Sendable> {
@@ -59,6 +60,11 @@ inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned s
  if(shape==6){const BindingWork immutable=project(work);work=project(immutable);}
  if(shape==7)work=project_reference(selected);
  if(shape==8)work=global_work;
+ if(shape==9){if(0)work=binding_unresolved_work();}
+ if(shape==10){while(0)work=binding_unresolved_work();for(;0;work=binding_unresolved_work())work=binding_unresolved_work();}
+ if(shape==11){(void)(0 && (work=binding_unresolved_work()));(void)(1 || (work=binding_unresolved_work()));}
+ if(shape==12){(void)(1?work:(work=binding_unresolved_work()));}
+ if(shape==13){if constexpr(false)work=binding_unresolved_work();}
  objc3_task_t *task=binding_start(work,executor);
 #if !__has_feature(objc_arc)
  binding_release((__bridge void *)one);binding_release((__bridge void *)two);
@@ -72,7 +78,7 @@ constexpr const char *Consumer=R"blocks(
 #include <assert.h>
 static int execute(void) {
  objc3_executor_t *executor=nullptr;assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);
- for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=9;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
+ for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=14;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
   unsigned destroyed=0,ran=0,deferred=0;
   objc3_task_t *task=BindingModule::start(executor,choose,shape,&destroyed,&ran,&deferred);
   assert(task && destroyed==(shape==8?2u:1u) && ran==0 && deferred==0);
