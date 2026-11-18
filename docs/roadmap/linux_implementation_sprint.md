@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.221 / System 2.147 borrowed-projection span](linux_native_borrowed_transfer_projections.md)
+retains known borrowed identities through native getters and aliases at task and
+executor boundaries, independently of resource unsafe admission.
+
 The [Source 2.220 / System 2.146 pointer-view and weak-policy span](linux_native_pointer_resource_views.md)
 retains resource storage behind immutable native pointer views and unknown
 managed receivers, and preserves weak-reference restrictions in class imports.

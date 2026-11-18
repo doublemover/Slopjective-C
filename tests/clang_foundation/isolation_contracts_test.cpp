@@ -927,6 +927,43 @@ void CheckManagedBoundaryValues(bool Cxx,bool Arc,const std::string &Standard) {
   assert(Has(Warning,"nonisolated actor member cannot transfer a receiver-owned interior view"));
 }
 
+void CheckBorrowedGetterBoundaries(bool Arc,const std::string &Standard) {
+  namespace fs=std::filesystem;
+  auto directory=fs::temp_directory_path()/("objc3-loan-getter-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+  fs::create_directory(directory);struct Cleanup{fs::path path;~Cleanup(){fs::remove_all(path);}}cleanup{directory};
+  auto provider=Request(R"source(
+struct BorrowedBoundaryView {
+ borrowed const char *loan;
+ const char *independent;
+ int value;
+ const char *get()const{return loan;}
+ const char *ordinary()const{return independent;}
+ int scalar()const{return value;}
+};
+)source",true,Arc,Standard);
+  provider.input_path=(directory/"provider.mm").string();provider.emit_semantic_interface=true;
+  provider.module_name="test.BorrowedGetter";provider.package_identity="borrowed-getter-v1";
+  provider.interface_exports={"BorrowedBoundaryView"};auto published=Compile(provider);Success(published);
+  assert(published.interface_artifact && published.interface_artifact->success);
+  const auto &artifact=*published.interface_artifact;
+  auto interface=directory/"BorrowedGetter.objc3i";
+  {std::ofstream file(interface);file<<artifact.source_bytes;assert(file.good());}
+  {std::ofstream file(interface.string()+".json");file<<artifact.sidecar_json;assert(file.good());}
+  const std::string preamble="#include \"objc3_task.hpp\"\n typedef void (^BorrowedBoundaryWork)(void) __objc3_async_frame;void *borrowed_boundary_spawn(BorrowedBoundaryWork) __attribute__((objc_task_detached));";
+  auto consumer=Request("",true,Arc,Standard);consumer.input_path=(directory/"consumer.mm").string();
+  InterfaceImportInput input;input.source_path=interface.string();input.sidecar_path=interface.string()+".json";input.locked_identity=artifact.identity;
+  consumer.imported_interfaces={input};
+  consumer.source_text=preamble+"void rejected(BorrowedBoundaryView &source){const char *copied=source.get();borrowed_boundary_spawn(^void(void) __objc3_async_frame {(void)copied;});}";
+  Reject(consumer,"borrowed capture");
+  consumer.source_text=preamble+"typedef const char *UncheckedLoan __attribute__((objc_unsafe_sendable));void rejected(BorrowedBoundaryView &source){UncheckedLoan copied=source.get();borrowed_boundary_spawn(^void(void) __objc3_async_frame {(void)copied;});}";
+  Reject(consumer,"borrowed capture");
+  consumer.source_text=preamble+"void ordinary(BorrowedBoundaryView &source){const char *copied=source.ordinary();int value=source.scalar();borrowed_boundary_spawn(^void(void) __objc3_async_frame {(void)copied;(void)value;});}";
+  Success(Compile(consumer));
+  auto crossing=consumer;crossing.source_text="#include \"objc3_runtime_services.h\"\ntypedef const char *UncheckedLoan __attribute__((objc_unsafe_sendable));int borrowed_remote(UncheckedLoan) __attribute__((nothrow,objc_executor(main)));int rejected(BorrowedBoundaryView &source) __objc3_async_frame {return __objc3_await borrowed_remote(source.get());}";
+  if(Standard!="c17")crossing.source_text->replace(0,std::string("#include \"objc3_runtime_services.h\"").size(),"#include \"objc3_task.hpp\"");
+  Reject(crossing,"borrowed concurrent value");
+}
+
 void CheckImportConflicts() {
   for (auto Other : {"global", "named(\"background\")"}) {
     auto From = Parse("__attribute__((objc_executor(main))) int entry(void);");
@@ -960,7 +997,12 @@ void CheckImportConflicts() {
 }
 } // namespace
 
-int main() {
+int main(int argc,char **argv) {
+  if(argc!=1) {
+    if(argc!=2 || std::string(argv[1])!="--borrowed-getters")return 2;
+    for(bool Arc:{false,true})for(const std::string Standard:{"c++20","c++23"})CheckBorrowedGetterBoundaries(Arc,Standard);
+    return 0;
+  }
   for (bool Arc : {false, true}) {
     CheckSource(false, Arc, "c17");
     CheckManagedBoundaryValues(false,Arc,"c17");
@@ -970,6 +1012,7 @@ int main() {
     for (const std::string Standard : {"c++20", "c++23"}) {
       CheckSource(true, Arc, Standard);
       CheckManagedBoundaryValues(true,Arc,Standard);
+      CheckBorrowedGetterBoundaries(Arc,Standard);
       CheckConcurrentCaptures(Arc, Standard);
       CheckAwaitBoundaries(true, Arc, Standard);
       CheckExecutorEntryIR(true, Arc, Standard);

@@ -53722,7 +53722,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3480 @@
+@@ -0,0 +1,3523 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53803,17 +53803,19 @@ new file mode 100644
 +  bool Borrowed = false;
 +};
 +bool carriesManagedResourceValue(ASTContext &, const Expr *, const Stmt * = nullptr,
-+                                  const VarDecl * = nullptr,Sema * = nullptr);
++                                  const VarDecl * = nullptr,Sema * = nullptr,bool = false);
 +bool managedTransferStorage(const ValueDecl *Value) {
 +  return Value && (Value->hasAttr<CleanupAttr>() ||
 +      Value->hasAttr<ObjCCleanupAttr>() || Value->hasAttr<ObjCResourceAttr>());
 +}
 +class SendableClassifier {
 +  ASTContext &C;
++  Sema *Actions;
++  const Stmt *ScopeBody;
 +  llvm::SmallPtrSet<const Type *, 16> Active;
 +
 +public:
-+  explicit SendableClassifier(ASTContext &C) : C(C) {}
++  explicit SendableClassifier(ASTContext &C,Sema *Actions=nullptr,const Stmt *ScopeBody=nullptr) : C(C),Actions(Actions),ScopeBody(ScopeBody) {}
 +  SendableResult classify(QualType T) {
 +    if (T.isNull())
 +      return {};
@@ -53911,6 +53913,9 @@ new file mode 100644
 +                InitCapture && InitCapture->hasInit() &&
 +                !InitCapture->getType().isNull()) {
 +              const Expr *Init = InitCapture->getInit()->IgnoreParenImpCasts();
++              if(carriesManagedResourceValue(C,Init,ScopeBody,nullptr,Actions,true)) {
++                Active.erase(Record);return {false,false,true};
++              }
 +              Managed |= carriesManagedResourceValue(C,Init);
 +            }
 +            if (Unowned || Managed) {
@@ -53955,8 +53960,10 @@ new file mode 100644
 +};
 +
 +bool checkTransfer(Sema &S, QualType T, SourceLocation Loc, StringRef Reason,
-+                   const Decl *Boundary, bool ForceUnsafe = false) {
-+  auto Classification = SendableClassifier(S.Context).classify(T);
++                   const Decl *Boundary, bool ForceUnsafe = false,bool ForceBorrowed=false,
++                   const Stmt *ScopeBody=nullptr) {
++  auto Classification = SendableClassifier(S.Context,&S,ScopeBody).classify(T);
++  if(ForceBorrowed){Classification.Safe=false;Classification.Borrowed=true;}
 +  if (ForceUnsafe && !unsafeAdmission(S.Context, T))
 +    Classification.Safe = false;
 +  if (!Classification.Safe) {
@@ -54082,6 +54089,8 @@ new file mode 100644
 +  bool Managed;
 +  bool Arrow;
 +  bool Identity;
++  bool Borrowed;
++  bool Pointer;
 +};
 +std::optional<FieldProjection> fieldProjectionImpl(const CallExpr *Call,ASTContext &Context,
 +    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active,Sema *Actions) {
@@ -54173,14 +54182,15 @@ new file mode 100644
 +    return isa<IntegerLiteral,FloatingLiteral,CharacterLiteral,CXXBoolLiteralExpr,
 +        CXXNullPtrLiteralExpr,GNUNullExpr,UnaryExprOrTypeTraitExpr,CXXNoexceptExpr,TypeTraitExpr>(E);
 +  };
-+  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Level)->std::optional<bool> {
-+    if(!E || !Work || Level>32)return std::nullopt;--Work;
-+    E=E->IgnoreParens();
++  struct FieldReturn {bool Identity,Borrowed,Pointer;};
++  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Level)->std::optional<FieldReturn> {
++    if(!E || !Work || Level>32)return std::nullopt;--Work;E=E->IgnoreParens();
 +    if(const auto *Cast=dyn_cast<CastExpr>(E)) {
 +      auto Source=Self(Self,Cast->getSubExpr(),Level+1);if(!Source)return std::nullopt;
 +      const auto Kind=Cast->getCastKind();
-+      return *Source && Kind!=CK_IntegralToBoolean && Kind!=CK_PointerToBoolean &&
-+          Kind!=CK_MemberPointerToBoolean && Kind!=CK_FloatingToBoolean;
++      if(Kind==CK_IntegralToBoolean || Kind==CK_PointerToBoolean ||
++          Kind==CK_MemberPointerToBoolean || Kind==CK_FloatingToBoolean)return FieldReturn{false,false,false};
++      return Source;
 +    }
 +    if(const auto *Unary=dyn_cast<UnaryOperator>(E);Unary && Unary->getOpcode()==UO_Plus)
 +      return Self(Self,Unary->getSubExpr(),Level+1);
@@ -54189,16 +54199,28 @@ new file mode 100644
 +    if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E)) {
 +      if(!Observe(Observe,Conditional->getCond(),Level+1))return std::nullopt;
 +      auto Left=Self(Self,Conditional->getTrueExpr(),Level+1),Right=Self(Self,Conditional->getFalseExpr(),Level+1);
-+      return Left && Right?std::optional<bool>(*Left || *Right):std::nullopt;
++      if(!Left || !Right)return std::nullopt;
++      return FieldReturn{Left->Identity || Right->Identity,Left->Borrowed || Right->Borrowed,Left->Pointer || Right->Pointer};
++    }
++    if(const auto *Binary=dyn_cast<BinaryOperator>(E);Binary && Binary->isAdditiveOp() && E->getType()->isPointerType()) {
++      auto Left=Self(Self,Binary->getLHS(),Level+1),Right=Self(Self,Binary->getRHS(),Level+1);
++      if(!Left || !Right)return std::nullopt;
++      return FieldReturn{true,Left->Borrowed || Right->Borrowed,true};
 +    }
 +    if(const auto *Inner=dyn_cast<CallExpr>(E)) {
-+      auto Projection=Nested(Inner);return Projection?std::optional<bool>(Projection->Identity):std::nullopt;
++      auto Projection=Nested(Inner);
++      return Projection?std::optional<FieldReturn>({Projection->Identity,Projection->Borrowed,Projection->Pointer}):std::nullopt;
 +    }
-+    if(isa<MemberExpr>(E))return Path(E)?std::optional<bool>(true):std::nullopt;
-+    return Observe(Observe,E,Level+1)?std::optional<bool>(false):std::nullopt;
++    if(const auto *Field=dyn_cast<MemberExpr>(E)) {
++      if(!Path(E))return std::nullopt;
++      auto Type=Field->getMemberDecl()->getType().getNonReferenceType();
++      return FieldReturn{true,containsObjC3BorrowedType(Context,Type),
++          Type->isPointerType() || Type->isObjCObjectPointerType() || Type->isBlockPointerType() || Type->isRecordType() || Type->isArrayType()};
++    }
++    return Observe(Observe,E,Level+1)?std::optional<FieldReturn>({false,false,false}):std::nullopt;
 +  };
-+  auto Identity=Resolve(Resolve,Value,0);if(!Identity)return std::nullopt;
-+  return FieldProjection{Member->getBase(),Managed,Member->isArrow(),*Identity};
++  auto Result=Resolve(Resolve,Value,0);if(!Result)return std::nullopt;
++  return FieldProjection{Member->getBase(),Managed,Member->isArrow(),Result->Identity,Result->Borrowed,Result->Pointer};
 +}
 +std::optional<FieldProjection> fieldProjection(const CallExpr *Call,ASTContext &Context,Sema *Actions=nullptr) {
 +  unsigned Work=256;llvm::SmallPtrSet<const FunctionDecl *,16> Active;
@@ -54504,7 +54526,7 @@ new file mode 100644
 +// before building a task/isolation snapshot. Explicit wrappers still undergo
 +// their ordinary structural/unsafe-Sendable type admission.
 +bool carriesManagedResourceValue(ASTContext &Context,const Expr *Expression,
-+                                  const Stmt *ScopeBody,const VarDecl *RootBinding,Sema *Actions) {
++                                  const Stmt *ScopeBody,const VarDecl *RootBinding,Sema *Actions,bool BorrowedOnly) {
 +  unsigned Budget=256;
 +  llvm::SmallPtrSet<const VarDecl *,32> Active,Complete;
 +  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> Writes;
@@ -54728,7 +54750,7 @@ new file mode 100644
 +  };
 +  auto VariableValue=[&](auto &&Recurse,const VarDecl *Variable,unsigned Depth)->bool {
 +    if(!Variable)return false;
-+    if(managedTransferStorage(Variable))return true;
++    if(!BorrowedOnly && managedTransferStorage(Variable))return true;
 +    if(Complete.contains(Variable))return false;
 +    // This is a monotone may-source union. Closing an active assignment cycle
 +    // adds no source; another reachable initializer/write still supplies taint.
@@ -54743,7 +54765,9 @@ new file mode 100644
 +      // Block environments have their separate complete target/capture proof.
 +      const bool NativeReference=Variable->getType()->isObjCRetainableType() ||
 +          isObjC3NSObjectStorageType(Variable->getType());
-+      Managed=(Incomplete || Escaped.contains(Variable)) && !NativeReference;
++      auto Type=Variable->getType().getNonReferenceType();
++      const bool PointerShape=Type->isPointerType() || Type->isBlockPointerType() || Type->isRecordType() || Type->isArrayType();
++      Managed=(Incomplete || Escaped.contains(Variable)) && !NativeReference && (!BorrowedOnly || PointerShape);
 +      if(!Managed) {
 +        auto Found=Writes.find(Variable);
 +        if(Found!=Writes.end())for(const auto *Value:Found->second)
@@ -54757,7 +54781,8 @@ new file mode 100644
 +  auto Visit=[&](auto &&Recurse,const Expr *E,unsigned Depth)->bool {
 +    if(!E || !Budget || Depth>32)return true;
 +    --Budget;
-+    if(getObjC3ResourceTypeContract(Context,E->getType()).Cleanup)return true;
++    if(BorrowedOnly?isObjC3BorrowedType(Context,E->getType()):
++        bool(getObjC3ResourceTypeContract(Context,E->getType()).Cleanup))return true;
 +    if(const auto *Cast=dyn_cast<CastExpr>(E)) {
 +      if(Cast->getCastKind()==CK_IntegralToBoolean ||
 +         Cast->getCastKind()==CK_PointerToBoolean ||
@@ -54774,9 +54799,9 @@ new file mode 100644
 +    if(const auto *Default=dyn_cast<CXXDefaultArgExpr>(E))return Recurse(Recurse,Default->getExpr(),Depth+1);
 +    if(const auto *Default=dyn_cast<CXXDefaultInitExpr>(E))return Recurse(Recurse,Default->getExpr(),Depth+1);
 +    if(const auto *Operation=dyn_cast<ObjC3ResourceExpr>(E))
-+      return Operation->getKind()==ObjC3ResourceExpr::Kind::Take;
++      return !BorrowedOnly && Operation->getKind()==ObjC3ResourceExpr::Kind::Take;
 +    if(const auto *Reference=dyn_cast<DeclRefExpr>(E)) {
-+      if(managedTransferStorage(Reference->getDecl()))return true;
++      if(!BorrowedOnly && managedTransferStorage(Reference->getDecl()))return true;
 +      if(const auto *Binding=dyn_cast<BindingDecl>(Reference->getDecl()))
 +        return Binding->getBinding() && Recurse(Recurse,Binding->getBinding(),Depth+1);
 +      const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
@@ -54789,8 +54814,14 @@ new file mode 100644
 +        if(Initializer && Recurse(Recurse,Initializer,Depth+1))return true;
 +      return false;
 +    }
-+    if(const auto *Member=dyn_cast<MemberExpr>(E))return managedTransferStorage(Member->getMemberDecl()) ||
-+        (!Member->isArrow() && Recurse(Recurse,Member->getBase(),Depth+1));
++    if(const auto *Member=dyn_cast<MemberExpr>(E)) {
++      auto Type=Member->getMemberDecl()->getType().getNonReferenceType();
++      if(BorrowedOnly) {
++        if(containsObjC3BorrowedType(Context,Type))return true;
++        if(!(Type->isPointerType() || Type->isBlockPointerType() || Type->isRecordType() || Type->isArrayType()))return false;
++      } else if(managedTransferStorage(Member->getMemberDecl()))return true;
++      return !Member->isArrow() && Recurse(Recurse,Member->getBase(),Depth+1);
++    }
 +    if(const auto *Subscript=dyn_cast<ArraySubscriptExpr>(E)) {
 +      const auto *Base=Subscript->getBase()->IgnoreParenImpCasts();
 +      return Base->getType()->isArrayType() && Recurse(Recurse,Base,Depth+1);
@@ -54810,6 +54841,7 @@ new file mode 100644
 +    if(const auto *Unary=dyn_cast<UnaryOperator>(E)) {
 +      if(Unary->getOpcode()==UO_Plus)return Recurse(Recurse,Unary->getSubExpr(),Depth+1);
 +      if(Unary->getOpcode()==UO_Deref) {
++        if(BorrowedOnly && !E->getType()->isPointerType() && !E->getType()->isBlockPointerType() && !E->getType()->isRecordType())return false;
 +        auto Pointees=receiverPointees(Context,Unary->getSubExpr());if(Pointees.Truncated)return true;
 +        for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
 +      }
@@ -54835,7 +54867,10 @@ new file mode 100644
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
 +      if(auto Field=fieldProjection(Call,Context,Actions)) {
 +        if(!Field->Identity)return false;
-+        if(Field->Managed || declaredManagedReceiver(Context,Field->Receiver))return true;
++        if(BorrowedOnly) {
++          if(Field->Borrowed)return true;
++          if(!Field->Pointer)return false;
++        } else if(Field->Managed || declaredManagedReceiver(Context,Field->Receiver))return true;
 +        if(!Field->Arrow)return Recurse(Recurse,Field->Receiver,Depth+1);
 +        auto Pointees=receiverPointees(Context,Field->Receiver);
 +        if(Pointees.Truncated)return true;
@@ -54848,7 +54883,7 @@ new file mode 100644
 +          if(Projection->selects(I) && Recurse(Recurse,Call->getArg(I),Depth+1))return true;
 +        return false;
 +      }
-+    if(const auto *Call=dyn_cast<CallExpr>(E)) {
++    if(const auto *Call=dyn_cast<CallExpr>(E);Call && !BorrowedOnly) {
 +      const Expr *Receiver=nullptr;
 +      if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call))Receiver=Member->getImplicitObjectArgument();
 +      else if(const auto *Operator=dyn_cast<CXXOperatorCallExpr>(Call))
@@ -54860,7 +54895,8 @@ new file mode 100644
 +          if(declaredManagedReceiver(Context,Target))return true;
 +      }
 +    }
-+    if(const auto *Call=dyn_cast<CallExpr>(E);Call && Call->isGLValue()) {
++    if(const auto *Call=dyn_cast<CallExpr>(E);Call && Call->isGLValue() &&
++        (!BorrowedOnly || E->getType()->isPointerType() || E->getType()->isBlockPointerType() || E->getType()->isRecordType())) {
 +      // Native reference forwarders (including move/forward) can preserve a
 +      // resource slot without preserving its variable attribute in the type.
 +      for(const auto *Value:Call->arguments())if(Recurse(Recurse,Value,Depth+1))return true;
@@ -54873,8 +54909,9 @@ new file mode 100644
 +bool checkTransferValue(Sema &S,const Expr *Value,QualType Type,
 +                        StringRef Reason,const Decl *Boundary,const Stmt *ScopeBody=nullptr) {
 +  const bool Managed=carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S);
-+  return checkTransfer(S,Type,Value->getExprLoc(),
-+      Managed?StringRef("cleanup-managed concurrent value"):Reason,Boundary,Managed);
++  const bool Borrowed=carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S,true);
++  return checkTransfer(S,Type,Value->getExprLoc(),Borrowed?StringRef("borrowed concurrent value"):
++      Managed?StringRef("cleanup-managed concurrent value"):Reason,Boundary,Managed,Borrowed,ScopeBody);
 +}
 +// Prove every possible capture environment before diagnosing its transfers.
 +// Completed expression nodes are shared across diamonds; active nodes reject
@@ -55638,8 +55675,9 @@ new file mode 100644
 +    --Proof.Budget;
 +    auto Leave=llvm::scope_exit([&]{Proof.ActiveFactoryValues.erase(Value);});
 +    const bool Managed=carriesManagedResourceValue(S.Context,Value,Body,nullptr,&S);
++    const bool Borrowed=carriesManagedResourceValue(S.Context,Value,Body,nullptr,&S,true);
 +    if(Capture.TransportType->isBlockPointerType()) {
-+      if(Managed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),"cleanup-managed capture",Capture.Parameter,true);
++      if(Managed || Borrowed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),Borrowed?"borrowed capture":"cleanup-managed capture",Capture.Parameter,Managed,Borrowed,Body);
 +      SmallVector<const BlockExpr *,8> Blocks;SmallVector<FactoryCapture,8> Nested;
 +      if(knownConcurrentBlocks(S,Value,Blocks,Body,&Nested)) {
 +        Invalid|=checkFactoryCaptures(S,Nested,Body,Proof,Depth+1);
@@ -55651,7 +55689,7 @@ new file mode 100644
 +        S.Diag(Value->getExprLoc(),diag::err_objc3_task_unknown_capture);Invalid=true;
 +      } else checkTransfer(S,Type,Value->getExprLoc(),"unverified concurrent block capture",Capture.Parameter);
 +    } else Invalid|=checkTransfer(S,Type,Value->getExprLoc(),
-+        Managed?"cleanup-managed capture":"concurrent capture",Capture.Parameter,Managed);
++        Borrowed?"borrowed capture":Managed?"cleanup-managed capture":"concurrent capture",Capture.Parameter,Managed,Borrowed,Body);
 +  }
 +  for(const auto &Capture:Captures)if(Capture.Environment)
 +    Invalid|=checkKnownConcurrentBlock(S,Capture.Environment,Capture.Environment->getExprLoc(),false,Proof,Body);
@@ -55957,7 +55995,8 @@ new file mode 100644
 +          ++Index;
 +          continue;
 +        }
-+        if(carriesManagedResourceValue(S.Context,Argument,ScopeBody,nullptr,&S))
++        if(carriesManagedResourceValue(S.Context,Argument,ScopeBody,nullptr,&S) ||
++            carriesManagedResourceValue(S.Context,Argument,ScopeBody,nullptr,&S,true))
 +          Invalid |= checkTransferValue(S,Argument,TransferType,
 +                                        "concurrent block value",Target,ScopeBody);
 +        SmallVector<const BlockExpr *, 8> Blocks;
@@ -56048,8 +56087,10 @@ new file mode 100644
 +        const auto *Value=transferSource(Argument);
 +        // Initializer-only provenance was checked while constructing the frame.
 +        // This pass contributes later writes and closed binding/escape facts.
-+        if(!carriesManagedResourceValue(S.Context,Value,nullptr,nullptr,&S) &&
-+            carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S))
++        if((!carriesManagedResourceValue(S.Context,Value,nullptr,nullptr,&S) &&
++            carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S)) ||
++           (!carriesManagedResourceValue(S.Context,Value,nullptr,nullptr,&S,true) &&
++            carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S,true)))
 +          Invalid|=checkTransferValue(S,Value,Value->getType(),
 +              "isolated snapshot",nullptr,ScopeBody);
 +      }
@@ -56124,17 +56165,19 @@ new file mode 100644
 +    // Plain formal parameter types cannot stand in for those source values.
 +    if(Proof.FactoryBindings.contains(V))continue;
 +    bool Managed = managedTransferStorage(V);
++    bool Borrowed=carriesManagedResourceValue(S.Context,nullptr,ScopeBody,V,&S,true);
++    if(const auto *Initializer=Capture.getObjC3InitExpr())
++      Borrowed|=carriesManagedResourceValue(S.Context,Initializer,ScopeBody,nullptr,&S,true);
 +    Managed |= carriesManagedResourceValue(S.Context,nullptr,ScopeBody,V,&S);
 +    if(const auto *Initializer=Capture.getObjC3InitExpr())
 +      Managed |= carriesManagedResourceValue(S.Context,Initializer,ScopeBody,nullptr,&S);
 +    bool Failed = false;
-+    if (Capture.isByRef() ||
++    if (Capture.isByRef() || Borrowed ||
 +        (Managed && !unsafeAdmission(S.Context, V->getType()))) {
 +      S.Diag(Loc, strictConcurrency(S) ? diag::err_objc3_sendable_transfer
 +                                       : diag::warn_objc3_sendable_transfer)
 +          << V->getType()
-+          << (Capture.isByRef() ? "shared __block capture"
-+                                : "cleanup-managed capture");
++          << (Capture.isByRef() ? "shared __block capture":Borrowed?"borrowed capture":"cleanup-managed capture");
 +      Failed = strictConcurrency(S);
 +    } else {
 +      SmallVector<const BlockExpr *, 8> Blocks;
@@ -56149,7 +56192,7 @@ new file mode 100644
 +          Failed |= checkKnownConcurrentBlock(S, Block, Loc, false, Proof, ScopeBody);
 +      } else {
 +        Failed = checkTransfer(S, V->getType(), Loc, "concurrent capture",
-+                               nullptr, Unsafe || Managed);
++                               nullptr, Unsafe || Managed,Borrowed,ScopeBody);
 +      }
 +    }
 +    if (Failed)
@@ -80536,6 +80579,99 @@ new file mode 100644
 + (void)binding_detached(binding_make_scalar(pointer->get<int>()));
 + int scalar=41;int *const cell=&scalar;*cell=42;int plain=*cell;
 + (void)binding_detached(binding_make_scalar(plain));
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-borrowed-field-projections.m b/clang/test/ObjC3/Sema/native-borrowed-field-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-borrowed-field-projections.m
+@@ -0,0 +1,57 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-borrowed-field-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-borrowed-field-projections.h"
++#if __OBJC3_PROFILE__ == 3
++const char *binding_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#else
++typedef const char *BindingUncheckedLoan __attribute__((objc_unsafe_sendable));
++void binding_loan_copy(borrowed const char *source) {
++ const char *copied=source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)copied;}); // expected-error {{borrowed capture}}
++}
++void binding_loan_write(borrowed const char *source) {
++ const char *copied=0;copied=source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)copied;}); // expected-error {{borrowed capture}}
++}
++void binding_loan_pointer_write(borrowed const char *source) {
++ const char *copied=0;const char **const slot=&copied;*slot=source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)copied;}); // expected-error {{borrowed capture}}
++}
++void binding_loan_unchecked(borrowed const char *source) {
++ BindingUncheckedLoan copied=(BindingUncheckedLoan)source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)copied;}); // expected-error {{borrowed capture}}
++}
++void binding_loan_plain_observations(borrowed const char *source) {
++ int present=source!=0;char character=*source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)present;(void)character;});
++}
++#ifdef __cplusplus
++void binding_loan_getters(BindingLoanFields &source) {
++ const char *copied=source.get();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)copied;}); // expected-error {{borrowed capture}}
++ const char *forwarded=source.forwarded();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)forwarded;}); // expected-error {{borrowed capture}}
++ const char *generic=source.generic<>();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)generic;}); // expected-error {{borrowed capture}}
++ const char *choice=source.choice();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)choice;}); // expected-error {{borrowed capture}}
++ const char *advanced=source.advanced();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)advanced;}); // expected-error {{borrowed capture}}
++ __INTPTR_TYPE__ bits=source.bits();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)bits;}); // expected-error {{borrowed capture}}
++ BindingUncheckedLoan unchecked=source.get();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)unchecked;}); // expected-error {{borrowed capture}}
++}
++template<class Work>void *binding_loan_lambda(Work) __attribute__((objc_task_detached));
++void binding_loan_cpp_lambda(BindingLoanFields &source) {
++ auto work=[value=source.get()]() -> void __objc3_async_frame {(void)value;};
++ (void)binding_loan_lambda(work); // expected-error {{non-Sendable type}}
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-borrowed-field-projections.h b/clang/test/ObjC3/Sema/Inputs/native-borrowed-field-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-borrowed-field-projections.h
+@@ -0,0 +1,24 @@
++#ifndef OBJC3_BORROWED_FIELD_PROJECTIONS_H
++#define OBJC3_BORROWED_FIELD_PROJECTIONS_H
++#include "native-pointer-field-projections.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++struct BindingLoanFields {
++ borrowed const char *loan;
++ const char *independent;
++ int scalar;
++ const char *get()const{return loan;}
++ const char *forwarded()const{return get();}
++ template<class=void>const char *generic()const{return loan;}
++ const char *choice()const{return scalar?loan:(const char *)0;}
++ const char *advanced()const{return loan+1;}
++ __INTPTR_TYPE__ bits()const{return reinterpret_cast<__INTPTR_TYPE__>(loan);}
++ bool valid()const{return loan!=0;}
++ int number()const{return scalar;}
++ const char *ordinary()const{return independent;}
++};
++static inline void binding_loan_observations(BindingLoanFields &source) {
++ bool valid=source.valid();int scalar=source.number();const char *ordinary=source.ordinary();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)valid;(void)scalar;(void)ordinary;});
 +}
 +#endif
 +#endif
