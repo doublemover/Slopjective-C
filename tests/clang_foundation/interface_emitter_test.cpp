@@ -329,9 +329,7 @@ void TestNativeOwnershipContractsRoundTrip() {
     auto emitted =
         EmitSemanticInterface(ast->getASTContext(), "fixture.owners", "test");
     assert(emitted.success && emitted.diagnostics.empty());
-    const std::vector<llvm::StringRef> semantics = {
-        "objc3.canonical-function-effects.v1", kNativeDeclarationAttributeSemantic,
-        "objc3.native-ownership-contracts.v1", "objc3.cxx-data-interfaces.v1"};
+    const auto semantics = CurrentReaderSemantics();
     auto decoded = DecodeSemanticInterfaceSidecar(
         emitted.sidecar_json, emitted.source_bytes, semantics);
     assert(static_cast<bool>(decoded));
@@ -393,9 +391,7 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
         EmitSemanticInterface(ast->getASTContext(), "fixture.paths", "test");
     assert(emitted.success);
     assert(emitted.source_bytes.find("__objc3_keypath_") == std::string::npos);
-    const std::vector<llvm::StringRef> supported = {
-        "objc3.typed-keypaths.v1", "objc3.canonical-function-effects.v1",
-        "objc3.native-ownership-contracts.v1", "objc3.cxx-data-interfaces.v1"};
+    const auto supported = CurrentReaderSemantics();
     auto decoded = DecodeSemanticInterfaceSidecar(
         emitted.sidecar_json, emitted.source_bytes, supported);
     assert(decoded);
@@ -468,7 +464,7 @@ void TestDeducedTaskGroupReplay() {
 void TestNativeEmissionPolicyReplay() {
  for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
   const bool cpp=std::string(standard)!="c17";
-  std::vector<std::string> args={"-x",cpp?"objective-c++":"objective-c",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu"};
+  std::vector<std::string> args={"-x",cpp?"objective-c++":"objective-c",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   if(arc)args.push_back("-fobjc-arc");
   const std::string source=R"(
    extern int policy_data __attribute__((section(".data.objc3.policy"),weak));
@@ -2437,7 +2433,7 @@ void TestKeyPathSubscriptBodies() {
       CompileRequest request;request.input_path=(root/"consumer.mm").string();
       request.source_text="int imported_paths(IndexedRoot *root) {return explicit_literal(root)+checked_literal(root);}\n";
       request.language=BaseLanguage::ObjectiveCxx;request.objc3=true;request.arc=arc;
-      request.objc_runtime="gnustep-2.2";request.target_triple="x86_64-unknown-linux-gnu";
+      request.objc_runtime="gnustep-2.2";request.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
       request.arguments={std::string("-std=")+standard,"-O0","-I"+root.string(),
           "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
       request.imported_interfaces={input};request.emit=EmitKind::LLVM;
@@ -2453,9 +2449,7 @@ void TestKeyPathSubscriptBodies() {
       while(std::getline(lines,line))
         if(line.find("__objc3_keypath_")!=std::string::npos)
           assert(!line.starts_with("declare ") && line.find(" = external ")==std::string::npos);
-      const std::vector<llvm::StringRef> supported={"objc3.typed-keypaths.v1","objc3.keypath-checked-reads.v1",
-          "objc3.keypath-subscripts.v1","objc3.keypath-nullable-writes.v1","objc3.canonical-function-effects.v1","objc3.cxx-data-interfaces.v1",
-          "objc3.cxx-definitions.v1","objc3.native-ownership-contracts.v1"};
+      const auto supported = CurrentReaderSemantics();
       auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,supported);
       if (!decoded) { llvm::errs()<<llvm::toString(decoded.takeError())<<"\n"; assert(false); }
       auto relocated=parse(emitted.source_bytes,"indexed-consumer.mm");
@@ -2534,11 +2528,7 @@ void TestConsumedAndMethodOwnershipRoundTrips() {
            {"ns_consumed", "noescape", "ns_consumes_self",
             "ns_returns_retained", "ns_returns_not_retained"})
         assert(emitted.source_bytes.find(attribute) != std::string::npos);
-      const std::vector<llvm::StringRef> supported = {
-          "objc3.canonical-function-effects.v1",
-          "objc3.native-return-ownership.v1",
-          "objc3.native-ownership-contracts.v1", kNativeDeclarationAttributeSemantic,
-          "objc3.cxx-data-interfaces.v1"};
+      const auto supported = CurrentReaderSemantics();
       auto decoded = DecodeSemanticInterfaceSidecar(
           emitted.sidecar_json, emitted.source_bytes, supported);
       assert(decoded);
@@ -2685,9 +2675,7 @@ void TestCAsyncPhysicalABIRoundTrips() {
     assert(emitted.success && !emitted.source_bytes.empty());
     assert(emitted.source_bytes.find("__objc3_async_frame") !=
            std::string::npos);
-    const std::vector<llvm::StringRef> supported = {
-        "objc3.canonical-function-effects.v1", kAsyncEntryABISemantic,
-        RuntimeInterfaceSemantic()};
+    const auto supported = CurrentReaderSemantics();
     auto decoded = DecodeSemanticInterfaceSidecar(
         emitted.sidecar_json, emitted.source_bytes, supported);
     assert(decoded);
@@ -3037,8 +3025,7 @@ void TestTypedEffectSemanticInterfacesRoundTrip() {
                      diagnostic.message.c_str());
     assert(emitted.success && !emitted.source_bytes.empty() &&
            !emitted.sidecar_json.empty());
-    const std::vector<llvm::StringRef> semantics = {
-        "objc3.canonical-function-effects.v1"};
+    const auto semantics = CurrentReaderSemantics();
     auto decoded = DecodeSemanticInterfaceSidecar(
         emitted.sidecar_json, emitted.source_bytes, semantics);
     assert(decoded);
@@ -3122,9 +3109,7 @@ void TestManagedReturnOwnershipRoundTrips() {
              regenerated.source_bytes == emitted.source_bytes);
       assert(regenerated.identity.semantic_fingerprint ==
              emitted.identity.semantic_fingerprint);
-      const std::vector<llvm::StringRef> supported = {
-          "objc3.canonical-function-effects.v1",
-          "objc3.native-return-ownership.v1"};
+      const auto supported = CurrentReaderSemantics();
       auto decoded = DecodeSemanticInterfaceSidecar(
           emitted.sidecar_json, emitted.source_bytes, supported);
       assert(decoded);
@@ -3283,9 +3268,7 @@ void TestDeletedAggregateMemberIdentity() {
   auto deleted = emit("struct Plain { int value; int get() const = delete; };");
   assert(ordinary.identity.semantic_fingerprint !=
          deleted.identity.semantic_fingerprint);
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1"};
+  const auto semantics = CurrentReaderSemantics();
   auto decoded = DecodeSemanticInterfaceSidecar(
       deleted.sidecar_json, deleted.source_bytes, semantics);
   assert(decoded);
@@ -3303,9 +3286,7 @@ void TestDeletedAggregateMemberIdentity() {
 }
 
 void TestCxxClassStructure() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {"-x", "c++", standard,
                                            "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
@@ -3404,11 +3385,7 @@ void TestCxxClassStructure() {
 }
 
 void TestCxxLocalExpressions() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-declaration-expressions.v1", "objc3.cxx-definitions.v1",
-      "objc3.cxx-block-expressions.v3", "objc3.cxx-statement-expressions.v1",
-      "objc3.module-owned-names.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
@@ -3708,7 +3685,7 @@ void TestCxxUnionValues() {
     assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
     auto changed=source;changed.replace(changed.find("double floating"),15,"long double floating");
     auto layout=emit(changed);assert(layout.success && layout.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
-    std::vector<llvm::StringRef> semantics={"objc3.cxx-data-interfaces.v1","objc3.cxx-union-values.v1"};
+    const auto semantics = CurrentReaderSemantics();
     auto simple=emit("union Value{int n;double d;};");
     assert(simple.success);
     auto decoded=DecodeSemanticInterfaceSidecar(simple.sidecar_json,simple.source_bytes,semantics);
@@ -3755,8 +3732,7 @@ void TestPublicConcepts() {
     auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     auto simple=emit("template<class T> concept Sized=sizeof(T)>0;");
     assert(simple.success);
-    const std::vector<llvm::StringRef> semantics={
-        "objc3.cxx-data-interfaces.v1",kCxxConceptSemantic};
+    const auto semantics = CurrentReaderSemantics();
     auto decoded=DecodeSemanticInterfaceSidecar(simple.sidecar_json,simple.source_bytes,semantics);
     assert(decoded);
     for (const auto *capability:{kCxxConceptSemantic,"objc3.cxx-data-interfaces.v1"}) {
@@ -4517,7 +4493,7 @@ void TestOpaqueStandardLibrarySpecializations() {
     request.source_text="#include <coroutine>\n@import fixture.opaque_standard;\n"
         "NativeOpaqueStandard::BoxHash *consume_box_hash(NativeOpaqueStandard::BoxHash *value){return value;}\n";
     request.language=BaseLanguage::ObjectiveCxx;request.objc3=true;request.arc=true;
-    request.objc_runtime="gnustep-2.2";request.target_triple="x86_64-unknown-linux-gnu";
+    request.objc_runtime="gnustep-2.2";request.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
     request.arguments={std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     request.source_directed_imports=true;request.interface_search_paths={module_root.string()};
     InterfaceModuleRequest module;module.canonical_name=first.identity.canonical_name;
@@ -4660,7 +4636,7 @@ unsigned long standard_specialization_client() {
 )";
     request.language=objc?BaseLanguage::ObjectiveCxx:BaseLanguage::Cxx;request.objc3=objc;request.arc=arc;
     if(objc)request.objc_runtime="gnustep-2.2";
-    request.target_triple="x86_64-unknown-linux-gnu";
+    request.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
     request.arguments={std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     request.imported_interfaces={input};request.emit=EmitKind::Object;request.output_path=(root/(name+".o")).string();
     auto consumer=Compile(request);
@@ -4836,7 +4812,7 @@ namespace NativeStandard {
     CompileRequest request;request.input_path=(root/(suffix+(objc?".mm":".cpp"))).string();
     request.source_text="static_assert(NativeStandard::bump(41)==42);int standard_client(){return NativeStandard::sum()+static_cast<int>(NativeStandard::message().size());}";
     request.language=objc?BaseLanguage::ObjectiveCxx:BaseLanguage::Cxx;request.objc3=objc;request.arc=arc;
-    request.target_triple="x86_64-unknown-linux-gnu";if(objc)request.objc_runtime="gnustep-2.2";
+    request.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;if(objc)request.objc_runtime="gnustep-2.2";
     request.arguments={std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
     request.imported_interfaces={imported};request.emit=EmitKind::Object;request.output_path=(root/(suffix+".o")).string();
     auto consumer=Compile(request);
@@ -11615,10 +11591,7 @@ void TestCxxFriends() {
 }
 
 void TestCxxThreadLocalData() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-definitions.v1", "objc3.cxx-thread-local.v1", "objc3.module-owned-names.v1",
-      "objc3.native-ownership-contracts.v1", "objc3.canonical-function-effects.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -11663,10 +11636,7 @@ void TestCxxThreadLocalData() {
 }
 
 void TestCxxLambdaExpressions() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-declaration-expressions.v1", "objc3.cxx-definitions.v1",
-      "objc3.cxx-lambda-expressions.v2", "objc3.module-owned-names.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -11714,10 +11684,7 @@ void TestCxxLambdaExpressions() {
 }
 
 void TestCxxNamespaceAttributes() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-namespaces.v1",
-      "objc3.cxx-namespace-attributes.v1", "objc3.module-owned-names.v1",
-      "objc3.api-availability.v1", "objc3.api-partitions.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -11809,12 +11776,7 @@ void TestCxxImmediateDefaulting() {
 }
 
 void TestCxxOutOfLineDefaulting() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-class-dispatch.v1", kCxxVirtualCallSemantic, "objc3.cxx-namespaces.v1",
-      "objc3.cxx-declaration-expressions.v1", "objc3.cxx-out-of-line-defaulting.v1",
-      "objc3.module-owned-names.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -11848,10 +11810,7 @@ void TestCxxOutOfLineDefaulting() {
 }
 
 void TestCxxDefaultedComparisons() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-defaulted-comparisons.v1", "objc3.module-owned-names.v1", "objc3.api-partitions.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -11939,11 +11898,7 @@ void TestCxxDefinitions() {
 }
 
 void TestCxxDeclarationExpressions() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-nested-types.v1", "objc3.cxx-namespaces.v1",
-      "objc3.cxx-declaration-expressions.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {
         "-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
@@ -11992,10 +11947,7 @@ void TestCxxDeclarationExpressions() {
 }
 
 void TestCxxUsingDeclarations() {
-  const std::vector<llvm::StringRef> semantics={
-      "objc3.cxx-data-interfaces.v1","objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1","objc3.cxx-class-structure.v1",
-      "objc3.cxx-namespaces.v1","objc3.cxx-using.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for(const char *standard:{"-std=c++20","-std=c++23"}) {
     const std::vector<std::string> args={"-x","c++",standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit=[&](const std::string &source) {
@@ -12028,9 +11980,7 @@ void TestCxxUsingDeclarations() {
 }
 
 void TestCxxNestedTypes() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-nested-types.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args={"-x","c++",standard,"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
     auto emit=[&](const std::string &source) {
@@ -12070,9 +12020,7 @@ void TestCxxNestedTypes() {
 }
 
 void TestCxxNamedNamespaces() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-namespaces.v1"};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {
         "-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
@@ -12140,10 +12088,7 @@ void TestCxxNamedNamespaces() {
 }
 
 void TestCxxClassDispatch() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
-      "objc3.cxx-class-dispatch.v1", kCxxVirtualCallSemantic, kCxxBaseAdjustmentSemantic};
+  const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     const std::vector<std::string> args = {
         "-x", "c++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
@@ -12213,9 +12158,7 @@ void TestCxxClassDispatch() {
 }
 
 void TestCxxClassLifecycles() {
-  const std::vector<llvm::StringRef> semantics = {
-      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-class-lifecycles.v1"};
+  const auto semantics = CurrentReaderSemantics();
   const std::vector<std::string> args = {"-x", "c++", "-std=c++20",
                                          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   const char *source =

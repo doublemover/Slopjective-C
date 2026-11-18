@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 
 #include <cassert>
@@ -28,7 +29,7 @@ CompileRequest Request(const fs::path &path, BaseLanguage language,
   r.arc = arc;
   if (r.objc3)
     r.objc_runtime = "gnustep-2.2";
-  r.target_triple = "x86_64-unknown-linux-gnu";
+  r.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   r.arguments = {"-std=" + standard, "-fblocks"};
   return r;
 }

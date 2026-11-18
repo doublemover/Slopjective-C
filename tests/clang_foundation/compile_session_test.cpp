@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/frontend_api.h"
 
@@ -22,18 +23,18 @@ int main() {
   target_request.language = BaseLanguage::ObjectiveC;
   target_request.input_path = "objc3c-session-target.m";
   target_request.source_text = "@interface NativeTarget @end";
-  target_request.arguments = {"--target=x86_64-unknown-linux-gnu"};
+  target_request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   auto linux_target = Compile(target_request);
   assert(linux_target.success && linux_target.runtime_abi == "gnustep-2.2");
   target_request.objc3 = true;
-  target_request.arguments = {"--target=x86_64-unknown-linux-gnu", "-fobjc-runtime=gnustep-2.0"};
+  target_request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET, "-fobjc-runtime=gnustep-2.0"};
   auto obsolete_runtime = Compile(target_request);
   assert(!obsolete_runtime.success && obsolete_runtime.failure.find("requires GNUstep 2.2") != std::string::npos);
   target_request.objc3 = false;
   target_request.arguments = {"--target=x86_64-apple-macosx14.0"};
   auto apple_target = Compile(target_request);
   assert(apple_target.success && apple_target.runtime_abi.starts_with("macosx"));
-  target_request.arguments = {"--target=x86_64-unknown-linux-gnu", "-fobjc-runtime=gcc"};
+  target_request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET, "-fobjc-runtime=gcc"};
   auto explicit_runtime = Compile(target_request);
   assert(explicit_runtime.success && explicit_runtime.runtime_abi == "gcc");
   auto explicit_standard = request;
@@ -258,7 +259,7 @@ int main() {
     header << "#define HEADER_VALUE 4\n";
     std::ofstream response(directory / "flags with spaces.rsp");
     response << "-DRESPONSE_VALUE=9 -I\"include path\" -std=c23 "
-                "--target=x86_64-unknown-linux-gnu\n";
+                "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET "\n";
   }
   auto response_request = request;
   response_request.emit = EmitKind::Syntax;

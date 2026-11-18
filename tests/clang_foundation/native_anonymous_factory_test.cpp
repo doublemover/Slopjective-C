@@ -24,7 +24,7 @@ int main(){
   CompileRequest provider;provider.input_path=(root/"provider.cpp").string();provider.language=BaseLanguage::Cxx;
   provider.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;provider.arguments={std::string("-std=")+standard};
   provider.emit_semantic_interface=true;provider.module_name="test.AnonymousFactories";provider.package_identity="anonymous-factories-v1";
-  provider.interface_exports={"make_record","make_nested","make_generic","global_record","other_record","nested_record","read_global","primary","secondary","Primary","third","record_value","NamedObjects"};
+  provider.interface_exports={"make_record","make_nested","make_generic","global_record","other_record","nested_record","read_global","primary","secondary","Primary","third","record_value","NamedObjects","NamedRecord","declared_record","NamedUnion","declared_union"};
   provider.source_text=R"source(
 constexpr auto make_record(){struct {int value;constexpr int read()const{return value;}} result{42};return result;}
 constexpr auto make_nested(){struct {struct {int value;} nested;} result{{42}};return result;}
@@ -37,6 +37,8 @@ inline constexpr struct {int value;constexpr int read()const{return value;}const
 using Primary=decltype(primary);
 inline constexpr Primary third{9};
 template<decltype(primary) Value>inline constexpr int record_value=Value.value;
+struct NamedRecord{int value;};extern const NamedRecord declared_record;
+union NamedUnion{int value;long other;};extern const NamedUnion declared_union;
 namespace NamedObjects{inline constexpr struct{int value;constexpr int read()const{return value;}} first{12},second{30};}
 
 )source";
@@ -46,6 +48,9 @@ namespace NamedObjects{inline constexpr struct{int value;constexpr int read()con
   std::set<std::string> ids;bool first=false,second=false;
   for(const auto &D:decoded->declarations){assert(ids.insert(D.stable_id).second);first|=D.export_root=="global_record";second|=D.export_root=="other_record";}
   assert(first && second);
+  for(const auto &D:decoded->declarations)
+    if(D.qualified_name=="declared_record" || D.qualified_name=="declared_union")
+      assert(D.stable_id=="c:@"+D.qualified_name);
   auto relocated=provider;relocated.input_path=(root/"relocated/provider.cpp").string();
   auto moved=Compile(relocated);Success(moved);assert(moved.interface_artifact->identity.semantic_fingerprint==artifact.identity.semantic_fingerprint);
   auto supported=SupportedSemanticInterfaceCapabilities();

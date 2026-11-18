@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/frontend_api.h"
 #include "clang_foundation/interface_codec.h"
@@ -25,7 +26,7 @@ CompileRequest Request(const fs::path &path, BaseLanguage language,
   r.arc = arc;
   if (r.objc3)
     r.objc_runtime = "gnustep-2.2";
-  r.target_triple = "x86_64-unknown-linux-gnu";
+  r.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   r.arguments = {"-std=" + standard, "-fblocks", "-Werror=objc-method-access"};
   return r;
 }
@@ -272,7 +273,7 @@ void Check(const fs::path &root, BaseLanguage language,
     options.base.input_path = "spi-api.m";
     options.base.source = source.c_str();
     options.base.source_size = source.size();
-    options.base.target_triple = "x86_64-unknown-linux-gnu";
+    options.base.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
     options.base.objc_runtime = "gnustep-2.2";
     options.base.language = 2;
     options.base.objc3 = 1;

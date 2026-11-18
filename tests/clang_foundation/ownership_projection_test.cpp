@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_codec.h"
 
@@ -29,7 +30,7 @@ CompileRequest Request(const fs::path &path, bool arc, bool cpp,
   r.objc3 = true;
   r.arc = arc;
   r.objc_runtime = "gnustep-2.2";
-  r.target_triple = "x86_64-unknown-linux-gnu";
+  r.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   r.arguments = {"-std=" + standard, "-fblocks"};
   return r;
 }

@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/runtime_interface_types.h"
@@ -23,7 +24,7 @@ CompileRequest Module(std::string input, std::string name, std::string package,
   request.source_text = std::move(source);
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
-  request.arguments = {"--target=x86_64-unknown-linux-gnu"};
+  request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   request.emit_semantic_interface = true;
   request.module_name = std::move(name);
   request.package_identity = std::move(package);
@@ -184,7 +185,7 @@ CompileResult SourceConsumer(const std::filesystem::path &root,
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
   request.source_directed_imports = true;
-  request.arguments = {"--target=x86_64-unknown-linux-gnu"};
+  request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   request.interface_search_paths = {root.string()};
   request.module_imports = {Locked(direct_module)};
   return Compile(request);

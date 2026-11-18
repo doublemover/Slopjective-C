@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "CodecTarget.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
@@ -17,7 +18,7 @@ using namespace objc3::clang_foundation;
 
 int main(int argc,char **argv) {
   assert(argc==1 || argc==2);
-  unsigned first=0,last=38;
+  unsigned first=0,last=39;
   if(argc==2) {
     const char *end=argv[1]+std::char_traits<char>::length(argv[1]);
     const auto parsed=std::from_chars(argv[1],end,first);
@@ -25,11 +26,18 @@ int main(int argc,char **argv) {
     last=first+1;
   }
   for (unsigned family=first;family!=last;++family) {
-    const bool owning_closures=family==37,mrc_records=family==36,union_bytes=family==35,deduced_groups=family==34,emission_policies=family==33,static_proofs=family==32,union_carriers=family==31,unnamed_enums=family==30,storage_lifetime=family==29,managed_union_paths=family==28,atomic_managed=family==27,implicit_checked=family==26,arc_records=family==25,carrier_lambdas=family==24,mixed_storage=family==23,byref_cpp=family==21,byref_c=family==22,aligned_c=family==20,aligned_blocks=family==19,cpp_values=family==18,mixed_calls=family==17,cpp_runtime=family==16,registers=family==15,storage=family==14,messages=family==13,composition=family==12,carrier_calls=family==11;
+    const bool inline_objects=family==38,owning_closures=family==37,mrc_records=family==36,union_bytes=family==35,deduced_groups=family==34,emission_policies=family==33,static_proofs=family==32,union_carriers=family==31,unnamed_enums=family==30,storage_lifetime=family==29,managed_union_paths=family==28,atomic_managed=family==27,implicit_checked=family==26,arc_records=family==25,carrier_lambdas=family==24,mixed_storage=family==23,byref_cpp=family==21,byref_c=family==22,aligned_c=family==20,aligned_blocks=family==19,cpp_values=family==18,mixed_calls=family==17,cpp_runtime=family==16,registers=family==15,storage=family==14,messages=family==13,composition=family==12,carrier_calls=family==11;
     const bool resource_paths=family==9,union_paths=family==10;
-    const bool results=family==8,properties=family>=6 && family<8,cxx=(family&1) || results || union_paths || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || byref_cpp || mixed_storage || carrier_lambdas || arc_records || implicit_checked || atomic_managed || managed_union_paths || storage_lifetime || unnamed_enums || union_carriers || static_proofs || emission_policies || deduced_groups || union_bytes || mrc_records || owning_closures;
+    const bool results=family==8,properties=family>=6 && family<8,cxx=inline_objects || (family&1) || results || union_paths || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || byref_cpp || mixed_storage || carrier_lambdas || arc_records || implicit_checked || atomic_managed || managed_union_paths || storage_lifetime || unnamed_enums || union_carriers || static_proofs || emission_policies || deduced_groups || union_bytes || mrc_records || owning_closures;
     const bool blocks=family>=2 && family<6,producers=family>=4 && family<6;
-    std::string source = owning_closures ? R"(
+    std::string source = inline_objects ? R"(
+      namespace CodecInlineObjects {
+        inline constexpr struct {int value;constexpr int read()const{return value;}} first{11},second{31};
+        template<decltype(first) Value>constexpr int read(){return Value.value;}
+        inline constexpr struct {struct Nested{int value;} nested;} holder{{42}};
+        inline constexpr int result=read<second>();
+      }
+    )" : owning_closures ? R"(
       namespace CodecClosure {
         void *acquire(void *);void release(void *);
         struct Pin {void *value;explicit Pin(void *value):value(acquire(value)){}Pin(const Pin &other):value(acquire(other.value)){}Pin(Pin &&other)noexcept:value(other.value){other.value=nullptr;}~Pin()noexcept{release(value);}};
@@ -366,7 +374,7 @@ int main(int argc,char **argv) {
       }
     )";
     std::vector<std::string> args={cxx?(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || byref_cpp || mixed_storage || carrier_lambdas || arc_records || implicit_checked || atomic_managed || managed_union_paths || storage_lifetime || unnamed_enums || union_carriers || static_proofs || emission_policies || deduced_groups || union_bytes || mrc_records || owning_closures?"-xobjective-c++":"-xc++"):(blocks || properties || aligned_c || byref_c?"-xobjective-c":"-xc"),cxx?"-std=c++23":"-std=c17"};
-    if(blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || aligned_c || byref_cpp || byref_c || mixed_storage || carrier_lambdas || arc_records || implicit_checked || atomic_managed || managed_union_paths || storage_lifetime || unnamed_enums || union_carriers || static_proofs || emission_policies || deduced_groups || union_bytes || mrc_records || owning_closures)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=x86_64-unknown-linux-gnu"});
+    if(inline_objects || blocks || properties || results || resource_paths || union_paths || carrier_calls || composition || messages || storage || registers || cpp_runtime || mixed_calls || cpp_values || aligned_blocks || aligned_c || byref_cpp || byref_c || mixed_storage || carrier_lambdas || arc_records || implicit_checked || atomic_managed || managed_union_paths || storage_lifetime || unnamed_enums || union_carriers || static_proofs || emission_policies || deduced_groups || union_bytes || mrc_records || owning_closures)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc3-profile=strict-system","-fobjc-arc","-fblocks","-fexceptions","-fobjc-exceptions","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET});
     if(mrc_records)std::erase(args,std::string("-fobjc-arc"));
     clang::tooling::FileContentMappings files;
     if(deduced_groups){args.push_back("-resource-dir=" OBJC3_CODEC_TEST_RESOURCE_DIR);AddRuntimeInterfaceFiles(files,args,true);}
@@ -384,7 +392,7 @@ int main(int argc,char **argv) {
     const auto capabilities=SupportedSemanticInterfaceCapabilities();
     auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,capabilities);
     assert(decoded);
-    const std::string expected=owning_closures?kNativeLambdaArgumentABISemantic:mrc_records?kNativeMRCRecordPayloadSemantic:union_bytes?kBorrowedUnionStorageSemantic:deduced_groups?kSdkRuntimeDeclarationSemantic:emission_policies?kNativeEmissionPolicySemantic:static_proofs?kBorrowedResultProofSemantic:union_carriers?kNativeARCRecordPayloadSemantic:unnamed_enums?kNativeUnnamedEnumSemantic:storage_lifetime?kNativeStorageLifetimeSemantic:managed_union_paths?kResourceKeyPathValueSemantic:atomic_managed?kAtomicManagedPropertySemantic:implicit_checked?kCheckedCppRecordResultSemantic:arc_records?kNativeARCRecordPayloadSemantic:carrier_lambdas?kNativeCarrierLambdaSemantic:mixed_storage?kCppCarrierCompositionSemantic:byref_cpp || byref_c?kNativeByrefStorageSemantic:aligned_c || aligned_blocks?kNativeBlockAlignmentSemantic:cpp_values?kCppCarrierCallSemantic:mixed_calls?kMixedCarrierCallSemantic:cpp_runtime?kCppCarrierRuntimeSemantic:registers?kCheckedCppRecordResultSemantic:storage?kCppCarrierStorageSemantic:messages?kCheckedCppMessageSemantic:composition?kCppCarrierCompositionSemantic:carrier_calls?kCppCarrierCallSemantic:resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
+    const std::string expected=inline_objects?kCxxInlineClosureObjectSemantic:owning_closures?kNativeLambdaArgumentABISemantic:mrc_records?kNativeMRCRecordPayloadSemantic:union_bytes?kBorrowedUnionStorageSemantic:deduced_groups?kSdkRuntimeDeclarationSemantic:emission_policies?kNativeEmissionPolicySemantic:static_proofs?kBorrowedResultProofSemantic:union_carriers?kNativeARCRecordPayloadSemantic:unnamed_enums?kNativeUnnamedEnumSemantic:storage_lifetime?kNativeStorageLifetimeSemantic:managed_union_paths?kResourceKeyPathValueSemantic:atomic_managed?kAtomicManagedPropertySemantic:implicit_checked?kCheckedCppRecordResultSemantic:arc_records?kNativeARCRecordPayloadSemantic:carrier_lambdas?kNativeCarrierLambdaSemantic:mixed_storage?kCppCarrierCompositionSemantic:byref_cpp || byref_c?kNativeByrefStorageSemantic:aligned_c || aligned_blocks?kNativeBlockAlignmentSemantic:cpp_values?kCppCarrierCallSemantic:mixed_calls?kMixedCarrierCallSemantic:cpp_runtime?kCppCarrierRuntimeSemantic:registers?kCheckedCppRecordResultSemantic:storage?kCppCarrierStorageSemantic:messages?kCheckedCppMessageSemantic:composition?kCppCarrierCompositionSemantic:carrier_calls?kCppCarrierCallSemantic:resource_paths || union_paths?kResourceKeyPathValueSemantic:properties?kAsyncEntryABISemantic:producers || results?kCxxBlockExpressionSemantic:blocks?kAutomaticOwnerUnwindSemantic:cxx?kCxxIncompleteTemplateSemantic:"objc3.c-inline-definitions.v1";
     assert(std::find(decoded->required_semantics.begin(),decoded->required_semantics.end(),expected)!=decoded->required_semantics.end());
     auto bytes=objc3::fuzz::Pack(artifact.source_bytes,artifact.sidecar_json);assert(!bytes.empty());
     std::string first;

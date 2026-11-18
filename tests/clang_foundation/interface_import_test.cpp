@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "compile_test_diagnostics.h"
 #include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
@@ -25,7 +26,7 @@ CompileRequest ModuleRequest(const fs::path &input, const std::string &name,
   request.source_text = source;
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
-  request.target_triple = "x86_64-unknown-linux-gnu";
+  request.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   request.objc_runtime = "gnustep-2.2";
   request.arguments = {"-std=c17"};
   request.emit_semantic_interface = true;

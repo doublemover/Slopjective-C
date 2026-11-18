@@ -2792,8 +2792,8 @@ std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration) {
   if (!declaration) return {};
   if(const auto *variable=llvm::dyn_cast<clang::VarDecl>(declaration))
-    if(const auto *record=variable->getType()->getAsCXXRecordDecl();record && !record->isLambda() &&
-        InlineClosureObjectOrigin(record)==variable->getDefinition())
+    if(const auto *record=variable->getType()->getAsCXXRecordDecl();record && !record->isLambda())
+      if(const auto *owner=InlineClosureObjectOrigin(record);owner && owner==variable->getDefinition())
       return "c:@InlineAnonymousObject@"+variable->getQualifiedNameAsString();
   if(const auto *tag=llvm::dyn_cast<clang::TagDecl>(declaration))
     if(const auto *object=InlineClosureObjectOrigin(tag);object && !llvm::cast<clang::CXXRecordDecl>(tag)->isLambda())

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.226 / System 2.152 backend and reader span](linux_native_backend_and_reader_consistency.md)
+registers the SDK's configured generators, routes native integration to its host,
+repairs named record publication and keeps positive reader tests current.
+
 The [Source 2.225 / System 2.151 native diagnostic span](linux_native_diagnostic_edits.md)
 delivers source-bound native edit sets through the C API and JSON frontend mode,
 including exact byte replay, virtual-input locations and structured module errors.

@@ -1,3 +1,4 @@
+#include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/frontend_api.h"
 #include "clang_foundation/interface_artifact_io.h"
@@ -37,7 +38,7 @@ CompileRequest Producer(std::string input, std::string module,
   request.source_text = std::move(source);
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
-  request.arguments = {"--target=x86_64-unknown-linux-gnu"};
+  request.arguments = {"--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
   request.emit_semantic_interface = true;
   request.module_name = std::move(module);
   request.package_identity = std::move(package);
@@ -80,7 +81,7 @@ bool CompileV3Consumer(const std::filesystem::path &root,
   options.base.input_path = objective_cxx ? "consumer.mm" : "consumer.m";
   options.base.source = source.data();
   options.base.source_size = source.size();
-  options.base.target_triple = "x86_64-unknown-linux-gnu";
+  options.base.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   options.base.language = objective_cxx ? 3 : 2;
   options.base.emit = 0;
   options.base.profile = 0;
@@ -106,7 +107,7 @@ bool CompileV3Consumer(const std::filesystem::path &root,
       assert(HasSha256Field(json, "resource_sha256"));
       assert(json.find("\"patch_digest\":") != std::string::npos);
       assert(json.find("ObjC3-patches=") != std::string::npos);
-      assert(json.find("\"target\":\"x86_64-unknown-linux-gnu\"") != std::string::npos);
+      assert(json.find("\"target\":\"" OBJC3_TEST_NATIVE_LINUX_TARGET "\"") != std::string::npos);
       assert(json.find("\"runtime\":\"gnustep-2.2\"") != std::string::npos);
       assert(json.find("\"name\":\"" + identity.canonical_name +
           "\",\"fingerprint\":\"" + identity.semantic_fingerprint + "\"") !=

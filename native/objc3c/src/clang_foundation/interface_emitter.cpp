@@ -590,8 +590,8 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   policy.PolishForDeclaration = true;
   policy.IncludeTagDefinition = HasDeclarationUnnamedLocalType(declaration);
   if(const auto *variable=llvm::dyn_cast<clang::VarDecl>(declaration))
-    if(const auto *record=variable->getType()->getAsCXXRecordDecl();record && !record->isLambda() &&
-        InlineClosureObjectOrigin(record)==variable->getDefinition()) {
+    if(const auto *record=variable->getType()->getAsCXXRecordDecl();record && !record->isLambda())
+      if(const auto *owner=InlineClosureObjectOrigin(record);owner && owner==variable->getDefinition()) {
       policy.IncludeTagDefinition=true;policy.FullyQualifiedName=false;
     }
   LocalDefinitionPrintingCallbacks local_scopes(declaration);

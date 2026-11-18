@@ -979,9 +979,13 @@ CompileResult Compile(const CompileRequest &request) {
   }
   static std::once_flag targets;
   std::call_once(targets, [] {
-    llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmPrinter();
-    llvm::InitializeNativeTargetAsmParser();
+    // The SDK can supply more than its host backend. Register the same target
+    // set that its generated LLVM headers describe, so embedded compilation
+    // and the ordinary Clang driver have identical code-generation reach.
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmPrinters();
+    llvm::InitializeAllAsmParsers();
   });
   auto physical = llvm::vfs::createPhysicalFileSystem();
   if (!request.working_directory.empty()) {
