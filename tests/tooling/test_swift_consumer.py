@@ -109,8 +109,17 @@ def test_release_admission_requires_archive_signature_and_exact_signing_fingerpr
     elif mutation == 'archive-bytes': archive.write_bytes(b'changed')
     elif mutation == 'signature': signature.write_bytes(b'changed')
     monkeypatch.setattr(tools.shutil, 'which', lambda *args, **kwargs: '/bin/true')
-    monkeypatch.setattr(tools.subprocess, 'run', lambda *args, **kwargs: SimpleNamespace(
-        returncode=int(mutation == 'gpg-error'), stdout='[GNUPG:] VALIDSIG '+'b'*40+' ', stderr=''))
+    def run(argv, **kwargs):
+        assert {'--no-options', '--no-autostart'} <= set(argv)
+        assert '--import' not in argv
+        if '--verify' in argv:
+            assert '--no-default-keyring' in argv
+            assert argv[argv.index('--keyring')+1] == str(work / 'gnupg/signing-key.gpg')
+        else:
+            assert '--dearmor' in argv
+        return SimpleNamespace(returncode=int(mutation == 'gpg-error' and '--verify' in argv),
+                               stdout='[GNUPG:] VALIDSIG '+'b'*40+' ', stderr='')
+    monkeypatch.setattr(tools.subprocess, 'run', run)
     work = tmp_path / 'work';work.mkdir()
     with pytest.raises(ValueError, match='version pin|verification failed|fingerprint'):
         tools.verify_archive(tmp_path, archive, signature, work, pin)

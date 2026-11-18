@@ -88,8 +88,14 @@ def verify_archive(repo, archive, signature, work, pin):
     gpg = shutil.which('gpg', path=os.defpath)
     if not gpg:
         raise ValueError('GnuPG is required to verify the pinned Swift release')
-    commands = [[gpg, '--batch', '--homedir', keyring, '--import', repo / pin['public_key']],
-                [gpg, '--batch', '--homedir', keyring, '--status-fd', '1', '--verify', signature, archive]]
+    # Loading an armored public key via --import starts gpg-agent even though
+    # no signing key is needed. An agent socket may exceed the Unix path limit
+    # when CI places its temporary directory under a deep checkout.
+    public_keyring = keyring / 'signing-key.gpg'
+    isolated = [gpg, '--no-options', '--batch', '--no-autostart', '--homedir', keyring]
+    commands = [[*isolated, '--output', public_keyring, '--dearmor', repo / pin['public_key']],
+                [*isolated, '--no-default-keyring', '--keyring', public_keyring,
+                 '--status-fd', '1', '--verify', signature, archive]]
     records = []
     for index, argv in enumerate(commands):
         result = subprocess.run(list(map(str, argv)), capture_output=True, text=True, timeout=120,
@@ -98,7 +104,8 @@ def verify_archive(repo, archive, signature, work, pin):
         records.append({'argv': list(map(str, argv)), 'exit_code': result.returncode,
                         'log': log.name, 'log_sha256': digest(log)})
         if result.returncode:
-            raise ValueError('Swift release signature verification failed')
+            operation = 'public key conversion' if index == 0 else 'signature verification'
+            raise ValueError(f'Swift release {operation} failed: {result.stderr.strip()}')
     if '[GNUPG:] VALIDSIG '+pin['signing_fingerprint']+' ' not in (work / 'signature-1.log').read_text():
         raise ValueError('Swift release used a different signing fingerprint')
     return {'verifier': str(gpg), 'sha256': digest(Path(gpg)), 'commands': records}
