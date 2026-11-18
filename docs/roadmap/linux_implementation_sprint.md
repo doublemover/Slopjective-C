@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.239 / System 2.165 public async syntax span](linux_public_async_syntax.md)
+accepts contextual async/await across native callable forms while retaining
+explicit frame/task ABI identity and reserved full-feature predicates.
+
 The [Source 2.238 / System 2.164 fixed member-pointer span](linux_native_member_pointer_graphs.md)
 retains exact immutable native method targets through scalar/reference/global
 graphs and conservative receiver-state fallback, with explicit dispatch bounds.

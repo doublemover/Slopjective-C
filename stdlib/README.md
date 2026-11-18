@@ -65,8 +65,9 @@ checking. Consult the inventory and matching SDK receipt for delivery status.
 
 The concurrency module exposes the shared task/frame, group, cancellation,
 executor and serial actor ABI. Include `<objc3c/runtime/objc3_task.hpp>` explicitly
-for the C++ coroutine adapter. Public async/await and actor language capabilities
-remain reserved until compiler lowering and isolation are complete.
+for the C++ coroutine adapter. The development compiler accepts contextual public `async`/`await` spellings,
+backed by the shared frame ABI. Public async/actor feature predicates remain
+reserved until the complete language, interop and delivery contracts pass.
 
 The development `objc3.system` header exposes `objc3_file_descriptor` and
 `objc3_heap_buffer` with native cleanup, family and sentinel contracts. Descriptor
@@ -95,7 +96,7 @@ and ownership diagnostics. The compiler source now also implements native
 under ARC and MRC. These statements need no library import; `objc3.system`
 imports retain their Strict System gate. Borrowed-pointer contracts and escape
 checking are authored in the native compiler; remaining alias/diagnostic boundaries
-and complete Strict System conformance remain outstanding. Source 2.238 / System 2.164 is the current development checkpoint. SDK 2.62 /
+and complete Strict System conformance remain outstanding. Source 2.239 / System 2.165 is the current development checkpoint. SDK 2.62 /
 extension ABI 21 remains the last accepted archive; extension ABI 24 source
 changes still require one fresh matching SDK campaign.
 

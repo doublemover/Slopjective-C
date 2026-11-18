@@ -872,6 +872,18 @@ if(BUILD_TESTING)
   target_compile_definitions(objc3_linux_codegen_targets_test PRIVATE OBJC3_TEST_CODEGEN_BACKENDS="${_objc3_test_codegen_backends}")
   objc3c_add_frontend_test(NAME objc3_linux_codegen_targets COMMAND objc3_linux_codegen_targets_test)
   set_tests_properties(objc3_linux_codegen_targets PROPERTIES TIMEOUT 90)
+  add_executable(objc3_native_public_async_syntax_test "${_objc3_repo}/tests/clang_foundation/native_public_async_syntax_test.cpp")
+  target_include_directories(objc3_native_public_async_syntax_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_native_public_async_syntax_test PRIVATE objc3c_clang_foundation)
+  target_compile_definitions(objc3_native_public_async_syntax_test PRIVATE
+    OBJC3_PUBLIC_ASYNC_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
+    OBJC3_PUBLIC_ASYNC_LINKER="${CMAKE_CXX_COMPILER}"
+    OBJC3_PUBLIC_ASYNC_RUNTIME="$<TARGET_FILE:objc3_runtime_services>"
+    OBJC3_PUBLIC_ASYNC_OBJC="${_c_inline_objc_runtime}"
+    OBJC3_PUBLIC_ASYNC_LINK_FLAGS="${_c_inline_link_flags}")
+  add_dependencies(objc3_native_public_async_syntax_test objc3_runtime_services)
+  objc3c_add_frontend_test(NAME objc3_native_public_async_syntax COMMAND objc3_native_public_async_syntax_test)
+  set_tests_properties(objc3_native_public_async_syntax PROPERTIES TIMEOUT 180)
   add_executable(objc3_native_aliasing_policy_test "${_objc3_repo}/tests/clang_foundation/native_aliasing_policy_test.cpp")
   target_include_directories(objc3_native_aliasing_policy_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_native_aliasing_policy_test PRIVATE objc3c_clang_foundation)

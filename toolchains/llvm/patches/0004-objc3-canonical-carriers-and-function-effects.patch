@@ -6440,7 +6440,39 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    // C23 6.2.7p1:
    // ... Moreover, two complete structure, union, or enumerated types declared
    // with the same tag are compatible if members satisfy the following
-@@ -1934,6 +2178,48 @@
+@@ -1904,13 +2148,24 @@
+   else if (Spec1 || Spec2)
+     return false;
+ 
+-  // Compare the definitions of these two records. If either or both are
+-  // incomplete (i.e. it is a forward decl), we assume that they are
+-  // equivalent. except in C23 mode.
+-  D1 = D1->getDefinition();
+-  D2 = D2->getDefinition();
+-  if (!D1 || !D2)
+-    return !Context.LangOpts.C23;
++  // C23's structural compatibility of distinct scopes within one AST needs
++  // complete definitions. Corresponding named tags in separate translation
++  // units can still denote an opaque C API, including recursive runtime
++  // carriers. Keep the context/name/attribute proof; never use this exception
++  // to equate separate incomplete scopes in one translation unit.
++  auto *Definition1 = D1->getDefinition();
++  auto *Definition2 = D2->getDefinition();
++  if (!Definition1 || !Definition2) {
++    if (!Context.LangOpts.C23)
++      return true;
++    return &Context.FromCtx != &Context.ToCtx &&
++           Context.FromCtx.getLangOpts().C23 && Context.ToCtx.getLangOpts().C23 &&
++           D1->getIdentifier() && D2->getIdentifier() &&
++           IsRecordContextStructurallyEquivalent(Context, D1, D2) &&
++           areDeclAttrsEquivalent(D1, D2, Context).Kind;
++  }
++  D1 = Definition1;
++  D2 = Definition2;
+ 
+   // In C23 mode, check for structural equivalence of attributes on the record
+   // itself. FIXME: Should this happen in C++ as well?
+@@ -1934,6 +2189,48 @@
  
    if (auto *D1CXX = dyn_cast<CXXRecordDecl>(D1)) {
      if (auto *D2CXX = dyn_cast<CXXRecordDecl>(D2)) {
@@ -6489,7 +6521,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
        if (D1CXX->hasExternalLexicalStorage() &&
            !D1CXX->isCompleteDefinition()) {
          D1CXX->getASTContext().getExternalSource()->CompleteType(D1CXX);
-@@ -2290,7 +2576,8 @@
+@@ -2290,7 +2587,8 @@
        return false;
    }
  
@@ -6499,7 +6531,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
  }
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
-@@ -2308,7 +2595,10 @@
+@@ -2308,7 +2606,10 @@
      return false;
    }
  
@@ -6511,7 +6543,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
  }
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
-@@ -2380,6 +2670,8 @@
+@@ -2380,6 +2681,8 @@
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ClassTemplateDecl *D1,
                                       ClassTemplateDecl *D2) {
@@ -6520,7 +6552,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2389,21 +2681,117 @@
+@@ -2389,21 +2692,117 @@
                                    D2->getTemplatedDecl());
  }
  
@@ -6641,7 +6673,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2416,6 +2804,14 @@
+@@ -2416,6 +2815,14 @@
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ConceptDecl *D1,
                                       ConceptDecl *D2) {
@@ -6656,7 +6688,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2443,15 +2839,70 @@
+@@ -2443,15 +2850,70 @@
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       TypedefNameDecl *D1, TypedefNameDecl *D2) {
@@ -6727,7 +6759,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
-@@ -2489,6 +2940,10 @@
+@@ -2489,6 +2951,10 @@
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ObjCMethodDecl *Method1,
                                       ObjCMethodDecl *Method2) {
@@ -6738,7 +6770,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    bool PropertiesEqual =
        Method1->isInstanceMethod() == Method2->isInstanceMethod() &&
        Method1->isVariadic() == Method2->isVariadic() &&
-@@ -2600,6 +3055,18 @@
+@@ -2600,6 +3066,18 @@
                                       Decl *D1, Decl *D2) {
    // FIXME: Check for known structural equivalences via a callback of some sort.
  
@@ -6757,7 +6789,7 @@ diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStruc
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
-@@ -2784,8 +3251,24 @@
+@@ -2784,8 +3262,24 @@
      Decl *D1, Decl *D2) {
  
    // Kind mismatch.
@@ -10229,7 +10261,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
        if (EPI.isNoEscape())
          OS << "__attribute__((noescape)) ";
        auto ABI = EPI.getABI();
-@@ -1104,15 +1169,27 @@
+@@ -1104,15 +1169,28 @@
    }
    T->printExceptionSpecification(OS, Policy);
  
@@ -10247,11 +10279,12 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
 +  // Print ObjC3 source effects in one stable order, independent of the source
 +  // ordering accepted by Sema. Declaration output must use reparsable keyword
 +  // spellings, including effects nested inside typedefs and callback types.
-+  // Diagnostic/canonical type strings retain their concise spelling.
++  // Keep both physical ABIs explicit in type strings too: public async now
++  // denotes the shared frame ABI, so printing a C++ task entry as async would
++  // silently change its entry representation when the type is reparsed.
 +  ObjC3FunctionEffectInfo ObjC3 = T->getObjC3FunctionEffects();
 +  if (ObjC3.Async)
-+    OS << (ObjC3.AsyncFrame ? " __objc3_async_frame"
-+             : Policy.PolishForDeclaration ? " __objc3_async" : " async");
++    OS << (ObjC3.AsyncFrame ? " __objc3_async_frame" : " __objc3_async");
 +  switch (ObjC3.Throws) {
 +  case ObjC3ThrowsKind::None:
 +    break;
@@ -10266,7 +10299,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    }
  
    if (T->hasCFIUncheckedCallee())
-@@ -1120,6 +1197,7 @@
+@@ -1120,6 +1198,7 @@
  
    if (T->hasTrailingReturn()) {
      OS << " -> ";
@@ -10274,7 +10307,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      print(T->getReturnType(), OS, StringRef());
    } else
      printAfter(T->getReturnType(), OS);
-@@ -1228,8 +1306,6 @@
+@@ -1228,8 +1307,6 @@
      OS << " __attribute__((noreturn))";
    if (Info.getCmseNSCall())
      OS << " __attribute__((cmse_nonsecure_call))";
@@ -10283,7 +10316,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (Info.getRegParm())
      OS << " __attribute__((regparm ("
         << Info.getRegParm() << ")))";
-@@ -1243,9 +1319,12 @@
+@@ -1243,9 +1320,12 @@
                                               raw_ostream &OS) {
    // If needed for precedence reasons, wrap the inner part in grouping parens.
    SaveAndRestore PrevPHIsEmpty(HasEmptyPlaceHolder, false);
@@ -10296,7 +10329,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  }
  
  void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
-@@ -1544,6 +1623,14 @@
+@@ -1544,6 +1624,14 @@
  
  void TypePrinter::printPredefinedSugarBefore(const PredefinedSugarType *T,
                                               raw_ostream &OS) {
@@ -10311,7 +10344,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    OS << T->getIdentifier()->getName();
    spaceBeforePlaceHolder(OS);
  }
-@@ -1618,6 +1705,16 @@
+@@ -1618,6 +1706,16 @@
  }
  
  void TypePrinter::printRecordBefore(const RecordType *T, raw_ostream &OS) {
@@ -10328,7 +10361,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    // Print the preferred name if we have one for this type.
    if (Policy.UsePreferredNames) {
      for (const auto *PNA : T->getDecl()
-@@ -1787,7 +1884,7 @@
+@@ -1787,7 +1885,7 @@
                                              raw_ostream &OS) {}
  
  void TypePrinter::printParenBefore(const ParenType *T, raw_ostream &OS) {
@@ -10337,7 +10370,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      printBefore(T->getInnerType(), OS);
      OS << '(';
    } else
-@@ -1795,7 +1892,7 @@
+@@ -1795,7 +1893,7 @@
  }
  
  void TypePrinter::printParenAfter(const ParenType *T, raw_ostream &OS) {
@@ -10346,7 +10379,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      OS << ')';
      printAfter(T->getInnerType(), OS);
    } else
-@@ -1866,6 +1963,8 @@
+@@ -1866,6 +1964,8 @@
        T->getAttrKind() == attr::ObjCOwnership)
      return printBefore(T->getEquivalentType(), OS);
  
@@ -10355,7 +10388,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (T->getAttrKind() == attr::ObjCKindOf)
      OS << "__kindof ";
  
-@@ -1885,6 +1984,10 @@
+@@ -1885,6 +1985,10 @@
    else
      printBefore(T->getModifiedType(), OS);
  
@@ -10366,7 +10399,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (T->isMSTypeSpec()) {
      switch (T->getAttrKind()) {
      default: return;
-@@ -1932,7 +2035,8 @@
+@@ -1932,7 +2036,8 @@
  
    // Some attributes are printed as qualifiers before the type, so we have
    // nothing left to do.
@@ -10376,7 +10409,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
        T->getImmediateNullability() || T->isWebAssemblyFuncrefSpec())
      return;
  
-@@ -1940,10 +2044,8 @@
+@@ -1940,10 +2045,8 @@
    if (T->getAttrKind() == attr::ObjCInertUnsafeUnretained)
      return;
  
@@ -10389,7 +10422,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      return;
  
    if (T->getAttrKind() == attr::LifetimeBound) {
-@@ -2030,6 +2132,9 @@
+@@ -2030,6 +2133,9 @@
      // AttributedType nodes for them.
      break;
  
@@ -10751,7 +10784,7 @@ diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
    switch (Tok.getKind()) {
    default: return false;
  
-@@ -6827,7 +7087,12 @@
+@@ -6827,7 +7087,13 @@
        DiagnoseIdentifier = NextToken().isOneOf(tok::comma, tok::semi);
      else if ((D.getContext() == DeclaratorContext::TrailingReturn ||
                D.getContext() == DeclaratorContext::TrailingReturnVar) &&
@@ -10760,12 +10793,13 @@ diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
 +             !(getLangOpts().ObjC3 &&
 +               (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
 +                Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++                Tok.getIdentifierInfo()->isStr("async") ||
 +                Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
 +                Tok.getIdentifierInfo()->isStr("throws"))))
        DiagnoseIdentifier = NextToken().isOneOf(
            tok::comma, tok::semi, tok::equal, tok::l_brace, tok::kw_try);
      if (DiagnoseIdentifier) {
-@@ -7305,6 +7570,15 @@
+@@ -7305,6 +7571,15 @@
    SmallVector<SourceRange, 2> DynamicExceptionRanges;
    ExprResult NoexceptExpr;
    CachedTokens *ExceptionSpecTokens = nullptr;
@@ -10781,7 +10815,7 @@ diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
    ParsedAttributes FnAttrs(AttrFactory);
    TypeResult TrailingReturnType;
    SourceLocation TrailingReturnTypeLoc;
-@@ -7431,11 +7705,29 @@
+@@ -7431,11 +7706,29 @@
          TrailingReturnTypeLoc = Range.getBegin();
          EndLoc = Range.getEnd();
        }
@@ -10791,7 +10825,7 @@ diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
      }
    }
  
-+  // Parse the reserved internal ObjC3 suffix spellings after the ordinary
++  // Parse ObjC3 effect suffixes after the ordinary
 +  // function declarator suffix. They remain identifiers in all other
 +  // contexts, preserving existing async/throws names and macros.
 +  ParseObjC3FunctionEffects(ObjC3Async, ObjC3AsyncFrame,
@@ -10811,7 +10845,7 @@ diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
    // Collect non-parameter declarations from the prototype if this is a function
    // declaration. They will be moved into the scope of the function. Only do
    // this in C and not C++, where the decls will continue to live in the
-@@ -7470,10 +7762,99 @@
+@@ -7470,10 +7763,101 @@
                      NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
                      ExceptionSpecTokens, DeclsInPrototype, StartLoc,
                      LocalEndLoc, D, TrailingReturnType, TrailingReturnTypeLoc,
@@ -10835,9 +10869,11 @@ diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
 +  while (Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&
 +         (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
 +          Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++          Tok.getIdentifierInfo()->isStr("async") ||
 +          (Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
 +           Tok.getIdentifierInfo()->isStr("throws")))) {
-+    const bool IsFrame = Tok.getIdentifierInfo()->isStr("__objc3_async_frame");
++    const bool IsFrame = Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++                         Tok.getIdentifierInfo()->isStr("async");
 +    const bool IsAsync = IsFrame || Tok.getIdentifierInfo()->isStr("__objc3_async");
 +    SourceLocation EffectLoc = Tok.getLocation();
 +    ConsumeToken();
@@ -11664,7 +11700,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      PD.complete(Result);
      return Result;
    }
-@@ -1280,6 +1339,18 @@
+@@ -1280,6 +1339,19 @@
        return nullptr;
      }
  
@@ -11673,6 +11709,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++         Tok.getIdentifierInfo()->isStr("async") ||
 +         (Tok.getIdentifierInfo()->isStr("nonreentrant") &&
 +          isObjC3Actor(getObjC3ContainingInterface(Actions.ObjC().getObjCDeclContext()))) ||
 +         (Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
@@ -11683,7 +11720,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      // Check for another keyword selector.
      SelIdent = ParseObjCSelectorPiece(selLoc);
      if (!SelIdent && Tok.isNot(tok::colon))
-@@ -1335,6 +1406,8 @@
+@@ -1335,6 +1407,8 @@
      ObjCParamInfo.push_back(Param);
    }
  
@@ -11692,7 +11729,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
    // FIXME: Add support for optional parameter list...
    // If attributes exist after the method, parse them.
    MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
-@@ -1348,7 +1421,7 @@
+@@ -1348,7 +1422,7 @@
    Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
        getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType, KeyLocs,
        Sel, ObjCParamInfo.data(), CParamInfo.data(), CParamInfo.size(),
@@ -11701,7 +11738,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
  
    PD.complete(Result);
    return Result;
-@@ -1705,8 +1778,16 @@
+@@ -1705,8 +1779,16 @@
  
    BalancedDelimiterTracker T(*this, tok::l_brace);
    T.consumeOpen();
@@ -11719,7 +11756,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      // Each iteration of this loop reads one objc-instance-variable-decl.
  
      // Check for extraneous top-level semicolon.
-@@ -1996,6 +2077,7 @@
+@@ -1996,6 +2078,7 @@
  
    {
      ObjCImplParsingDataRAII ObjCImplParsing(*this, ObjCImpDecl);
@@ -11727,7 +11764,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      while (!ObjCImplParsing.isFinished() && !isEofOrEom()) {
        ParsedAttributes DeclAttrs(AttrFactory);
        MaybeParseCXX11Attributes(DeclAttrs);
-@@ -2515,6 +2597,11 @@
+@@ -2515,6 +2598,11 @@
  }
  
  ExprResult Parser::ParseObjCAtExpression(SourceLocation AtLoc) {
@@ -11739,7 +11776,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
    switch (Tok.getKind()) {
    case tok::code_completion:
      cutOffParsing();
-@@ -2732,6 +2819,13 @@
+@@ -2732,6 +2820,13 @@
    }
  
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -11753,7 +11790,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
  
    if (getLangOpts().CPlusPlus) {
      // We completely separate the C and C++ cases because C++ requires
-@@ -2822,6 +2916,16 @@
+@@ -2822,6 +2917,16 @@
                                         ParsedType ReceiverType,
                                         Expr *ReceiverExpr) {
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -11770,7 +11807,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
  
    if (Tok.is(tok::code_completion)) {
      cutOffParsing();
-@@ -2978,10 +3082,74 @@
+@@ -2978,10 +3083,74 @@
      return Actions.ObjC().ActOnClassMessage(getCurScope(), ReceiverType, Sel,
                                              LBracLoc, KeyLocs, RBracLoc,
                                              KeyExprs);
@@ -11847,27 +11884,32 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
    if (Res.isInvalid()) return Res;
 
 diff --git a/clang/lib/Parse/ParseTentative.cpp b/clang/lib/Parse/ParseTentative.cpp
-index 1477fc38b..42e2dd14e 100644
 --- a/clang/lib/Parse/ParseTentative.cpp
 +++ b/clang/lib/Parse/ParseTentative.cpp
-@@ -11,6 +11,7 @@
+@@ -11,6 +11,8 @@
  //
  //===----------------------------------------------------------------------===//
  
++#include "clang/AST/ObjC3Async.h"
 +#include "clang/Basic/ObjC3Syntax.h"
  #include "clang/Parse/Parser.h"
  #include "clang/Parse/RAIIObjectsForParser.h"
  #include "clang/Sema/ParsedTemplate.h"
-@@ -1022,6 +1023,19 @@ Parser::TPResult
+@@ -1022,6 +1024,24 @@
  Parser::isCXXDeclarationSpecifier(ImplicitTypenameContext AllowImplicitTypename,
                                    Parser::TPResult BracedCastResult,
                                    bool *InvalidAsDeclSpec) {
 +  if (getLangOpts().ObjC3 && Tok.is(tok::at))
 +    return isObjC3QualifiedTypeNameAhead() ? TPResult::True : TPResult::False;
++  const auto *AwaitSignature = getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      Tok.getIdentifierInfo()->isStr("await")
++      ? getObjC3CallableFunctionType(Decl::castFromDeclContext(Actions.CurContext))
++      : nullptr;
 +  // Preserve contextual expressions during C++ condition/type-id speculation.
 +  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +      Tok.getIdentifierInfo() &&
 +      (Tok.getIdentifierInfo()->isStr("__objc3_await") ||
++       (AwaitSignature && AwaitSignature->getObjC3FunctionEffects().Async) ||
 +       (NextToken().is(tok::l_paren) &&
 +        isObjC3ExpressionSyntax(Tok.getIdentifierInfo()->getName()))))
 +    return TPResult::False;
@@ -11878,16 +11920,20 @@ index 1477fc38b..42e2dd14e 100644
    auto IsPlaceholderSpecifier = [&](TemplateIdAnnotation *TemplateId,
                                      int Lookahead) {
      // We have a placeholder-constraint (we check for 'auto' or 'decltype' to
-@@ -1892,6 +1906,24 @@ Parser::TryParseFunctionDeclarator(bool MayHaveTrailingReturnType) {
-     }
-   }
- 
+@@ -1889,6 +1909,25 @@
+       ConsumeParen();
+       if (!SkipUntil(tok::r_paren, StopAtSemi))
+         return TPResult::Error;
++    }
++  }
++
 +  // Match the reserved effects consumed by the real function declarator.
 +  // Tentative parsing must also recognize them in nested function-pointer
 +  // parameters, without changing ordinary async/throws name classification.
 +  while (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +         (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
 +          Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++         Tok.getIdentifierInfo()->isStr("async") ||
 +          (Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
 +           Tok.getIdentifierInfo()->isStr("throws")))) {
 +    bool IsThrows = (Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
@@ -11897,12 +11943,10 @@ index 1477fc38b..42e2dd14e 100644
 +      ConsumeParen();
 +      if (!SkipUntil(tok::r_paren, StopAtSemi))
 +        return TPResult::Error;
-+    }
-+  }
-+
-   // attribute-specifier-seq
-   if (!TrySkipAttributes())
-     return TPResult::Ambiguous;
+     }
+   }
+ 
+
 diff --git a/clang/lib/Parse/Parser.cpp b/clang/lib/Parse/Parser.cpp
 --- a/clang/lib/Parse/Parser.cpp
 +++ b/clang/lib/Parse/Parser.cpp
@@ -19284,7 +19328,6 @@ index 000000000..e802b3367
 +}
 diff --git a/clang/test/ObjC3/AST/function-effect-template-pch.mm b/clang/test/ObjC3/AST/function-effect-template-pch.mm
 new file mode 100644
-index 000000000..e852af96e
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/function-effect-template-pch.mm
 @@ -0,0 +1,10 @@
@@ -19296,8 +19339,9 @@ index 000000000..e852af96e
 +  pch_substituted_effect<OtherError>();
 +}
 +
-+// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () async throws(const Error *)' explicit_instantiation_definition
-+// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () async throws(const OtherError *)'
++// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () __objc3_async throws(const Error *)' explicit_instantiation_definition
++// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () __objc3_async throws(const OtherError *)'
+
 diff --git a/clang/test/ObjC3/AST/function-effect-type-adjustment.c b/clang/test/ObjC3/AST/function-effect-type-adjustment.c
 new file mode 100644
 index 000000000..affa17a3c
@@ -19353,7 +19397,6 @@ index 000000000..ddb8fd233
 +void multiple_throws() __objc3_throws(Error, Other); // invalid-error {{'throws' payload must be exactly one type}}
 diff --git a/clang/test/ObjC3/AST/function-effects-pch.m b/clang/test/ObjC3/AST/function-effects-pch.m
 new file mode 100644
-index 000000000..c8f060e1a
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/function-effects-pch.m
 @@ -0,0 +1,6 @@
@@ -19362,10 +19405,10 @@ index 000000000..c8f060e1a
 +
 +void use_pch_effect();
 +
-+// CHECK: pch_async_typed_effect 'void () async throws(const E *)'
++// CHECK: pch_async_typed_effect 'void () __objc3_async throws(const E *)'
+
 diff --git a/clang/test/ObjC3/AST/function-effects.m b/clang/test/ObjC3/AST/function-effects.m
 new file mode 100644
-index 000000000..d4c763d6b
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/function-effects.m
 @@ -0,0 +1,28 @@
@@ -19390,13 +19433,14 @@ index 000000000..d4c763d6b
 +#define throws_macro(x) (x)
 +int preserved_macro = throws_macro(0);
 +
-+// CHECK: internal_async 'void () async'
++// CHECK: internal_async 'void () __objc3_async'
 +// CHECK: internal_typed_throw 'void () throws(Error)'
 +// CHECK: internal_qualified_pointer_throw 'void () throws(const Error *)'
-+// CHECK: internal_async_typed 'void () async throws(Error)'
-+// CHECK: internal_reordered_typed 'void () async throws(Error)'
++// CHECK: internal_async_typed 'void () __objc3_async throws(Error)'
++// CHECK: internal_reordered_typed 'void () __objc3_async throws(Error)'
 +// CHECK: substituted_throw 'void () throws(Error)'
 +// CHECK: substituted_throw 'void () throws(Other)'
+
 diff --git a/clang/test/ObjC3/AST/match-dependent-transform.mm b/clang/test/ObjC3/AST/match-dependent-transform.mm
 new file mode 100644
 index 000000000..05bc9c365
@@ -21875,7 +21919,7 @@ index 000000000..ed9ca35e6
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,47 @@
+@@ -55,3 +55,49 @@
    Support
    TargetParser
    )
@@ -21886,6 +21930,8 @@ diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists
 +  ObjC3TypeContractsTest.cpp
 +  ObjC3ASTInfrastructureTest.cpp
 +  ObjC3NativeObjectImportTest.cpp
++  ObjC3C23OpaqueImportTest.cpp
++  ObjC3PublicAsyncSyntaxTest.cpp
 +  ObjC3ExplicitSpecifierImportTest.cpp
 +  ObjC3DeductionGuideImportTest.cpp
 +  EmbedTraversalTest.cpp
@@ -63909,10 +63955,9 @@ index 000000000..d96c20185
 +// CHECK: template <int N> __attribute__((abi_tag("owner"))) int count()
 +// CHECK: template <class ...T> __attribute__((abi_tag("owner"))) constexpr int sum(T ...n)
 diff --git a/clang/lib/Parse/ParseExprCXX.cpp b/clang/lib/Parse/ParseExprCXX.cpp
-index 6b8ab6ce8..9bb8965bf 100644
 --- a/clang/lib/Parse/ParseExprCXX.cpp
 +++ b/clang/lib/Parse/ParseExprCXX.cpp
-@@ -482,6 +482,15 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
+@@ -482,6 +482,15 @@
        continue;
      }
  
@@ -63928,7 +63973,7 @@ index 6b8ab6ce8..9bb8965bf 100644
      CheckForTemplateAndDigraph(Next, ObjectType, EnteringContext, II, SS);
  
      // nested-name-specifier:
-@@ -1345,7 +1354,12 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+@@ -1345,7 +1354,13 @@
                    tok::kw___constant, tok::kw___generic, tok::kw_groupshared,
                    tok::kw_requires, tok::kw_noexcept) ||
        Tok.isRegularKeywordAttribute() ||
@@ -63937,12 +63982,13 @@ index 6b8ab6ce8..9bb8965bf 100644
 +      (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +       (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
 +        Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++         Tok.getIdentifierInfo()->isStr("async") ||
 +        Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
 +        Tok.getIdentifierInfo()->isStr("throws")));
  
    if (HasSpecifiers && !HasParentheses && !getLangOpts().CPlusPlus23) {
      // It's common to forget that one needs '()' before 'mutable', an
-@@ -1426,6 +1440,17 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+@@ -1426,6 +1441,17 @@
          DeclEndLoc = Range.getEnd();
      }
  
@@ -63960,7 +64006,7 @@ index 6b8ab6ce8..9bb8965bf 100644
      SourceLocation NoLoc;
      D.AddTypeInfo(DeclaratorChunk::getFunction(
                        /*HasProto=*/true,
-@@ -1438,7 +1463,10 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+@@ -1438,7 +1464,10 @@
                        NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
                        /*ExceptionSpecTokens*/ nullptr,
                        /*DeclsInPrototype=*/{}, LParenLoc, FunLocalRangeEnd, D,
@@ -63972,7 +64018,7 @@ index 6b8ab6ce8..9bb8965bf 100644
                    std::move(Attributes), DeclEndLoc);
  
      if (HasParentheses && Tok.is(tok::kw_requires))
-@@ -1447,8 +1475,10 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+@@ -1447,8 +1476,10 @@
  
    // Emit a warning if we see a CUDA host/device/global attribute
    // after '(...)'. nvcc doesn't accept this.
@@ -63985,7 +64031,7 @@ index 6b8ab6ce8..9bb8965bf 100644
        if (A.getKind() == ParsedAttr::AT_CUDADevice ||
            A.getKind() == ParsedAttr::AT_CUDAHost ||
            A.getKind() == ParsedAttr::AT_CUDAGlobal)
-@@ -1933,6 +1963,7 @@ Sema::ConditionResult Parser::ParseCXXCondition(StmtResult *InitStmt,
+@@ -1933,6 +1964,7 @@
    }
  
    case ConditionOrInitStatement::InitStmtDecl: {
@@ -63993,6 +64039,7 @@ index 6b8ab6ce8..9bb8965bf 100644
      WarnOnInit();
      DeclGroupPtrTy DG;
      SourceLocation DeclStart = Tok.getLocation(), DeclEnd;
+
 diff --git a/clang/test/ObjC3/Parser/native-lambda-effects.mm b/clang/test/ObjC3/Parser/native-lambda-effects.mm
 new file mode 100644
 index 000000000..040059ae3
@@ -82930,3 +82977,204 @@ new file mode 100644
 +}
 +#endif
 +#endif
+
+diff --git a/clang/test/ObjC3/Sema/public-async-syntax.m b/clang/test/ObjC3/Sema/public-async-syntax.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/public-async-syntax.m
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/public-async-syntax.h"
++int public_async_control(int value) async {
++ if(await public_async_leaf(value))return await public_async_parent(value);
++ return await public_async_indirect(public_async_leaf,value);
++}
++int public_async_duplicate(void) async async; // expected-error {{duplicate}}
++int public_async_outside(void){return await 42;} // expected-error {{native await requires an async}}
++@implementation PublicAsyncWorker
++-(int)step:(int)value async {return await public_async_leaf(value);}
++-(int)async:(int)value {return value;}
++@end
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/public-async-syntax.h b/clang/test/ObjC3/Sema/Inputs/public-async-syntax.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/public-async-syntax.h
+@@ -0,0 +1,44 @@
++#ifndef OBJC3_PUBLIC_ASYNC_SYNTAX_H
++#define OBJC3_PUBLIC_ASYNC_SYNTAX_H
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++static inline int public_async_leaf(int value) async {return value+1;}
++static inline int public_async_parent(int value) async {return await public_async_leaf(value);}
++typedef int (*PublicAsyncFunction)(int) async;
++typedef int (^PublicAsyncBlock)(int) async;
++static inline int public_async_indirect(PublicAsyncFunction call,int value) async {return await call(value);}
++static inline objc3_async_frame public_async_block(int value){
++ PublicAsyncBlock work=^int(int input) async {return await public_async_leaf(input);};
++ return work(value);
++}
++static inline int async(int value){return value;}
++static inline int await(int value){return value;}
++static inline int public_async_identifiers(void){return async(20)+await(22);}
++static inline int public_async_parenthesized_name(int value) async {
++ int observed=(await)(value);
++ return await public_async_leaf(observed);
++}
++static inline int public_async_local_name(int value) async {
++ int await=value;int observed=await;
++ return await public_async_leaf(observed);
++}
++__attribute__((objc_root_class)) @interface PublicAsyncWorker
++-(int)step:(int)value async;
++-(int)async:(int)value;
++@end
++#if defined(__cplusplus)
++namespace objc3 {template<class Value>struct task {};}
++template<class Value>using __objc3_async_task=objc3::task<Value>;
++using PrivateTaskAlias=int(*)(int) __objc3_async;
++using IntrinsicFrameAlias=int(*)(int) __objc3_async_frame;
++using PublicAsyncAlias=int(*)(int) async;
++static_assert(__is_same(PublicAsyncAlias,IntrinsicFrameAlias));
++static_assert(!__is_same(PublicAsyncAlias,PrivateTaskAlias));
++struct PublicAsyncMethods {
++ int step(int value) async {return await public_async_leaf(value);}
++};
++static inline int public_async_lambda(int value) async {
++ auto work=[](int input)->int async {return await public_async_leaf(input);};
++ return await work(value);
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/public-async-type-identity.mm b/clang/test/ObjC3/Sema/public-async-type-identity.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/public-async-type-identity.mm
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-dump %s | FileCheck %s --check-prefix=TYPE
++// expected-no-diagnostics
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++namespace objc3 {template<class Value>struct task {};}
++template<class Value>using __objc3_async_task=objc3::task<Value>;
++using PublicFrame=int(*)(int) async;
++using IntrinsicFrame=int(*)(int) __objc3_async_frame;
++using PrivateTask=int(*)(int) __objc3_async;
++static_assert(__is_same(PublicFrame,IntrinsicFrame));
++static_assert(!__is_same(PublicFrame,PrivateTask));
++// TYPE: TypeAliasDecl {{.*}} PublicFrame 'int (*)(int) __objc3_async_frame'
++// TYPE: TypeAliasDecl {{.*}} PrivateTask 'int (*)(int) __objc3_async'
+
+diff --git a/clang/unittests/AST/ObjC3C23OpaqueImportTest.cpp b/clang/unittests/AST/ObjC3C23OpaqueImportTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3C23OpaqueImportTest.cpp
+@@ -0,0 +1,62 @@
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ASTStructuralEquivalence.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/Support/Error.h"
++#include "gtest/gtest.h"
++using namespace clang;
++namespace {
++std::unique_ptr<ASTUnit> opaqueAST(const std::string &Code,const char *Standard,const char *File="opaque-source.c") {
++ auto AST=tooling::buildASTFromCodeWithArgs(Code,{"-xc",std::string("-std=")+Standard},File);
++ if(AST)AST->getDiagnostics().setSuppressAllDiagnostics(true);
++ return AST;
++}
++FunctionDecl *opaqueFunction(ASTUnit &AST) {
++ for(auto *D:AST.getASTContext().getTranslationUnitDecl()->decls())
++  if(auto *F=dyn_cast<FunctionDecl>(D);F && F->getName()=="consume")return F;
++ return nullptr;
++}
++}
++TEST(ObjC3ASTInfrastructure,C23CorrespondingOpaqueTagsImportThroughRecursiveCarriers) {
++ for(const char *Standard:{"c17","c23"}) {
++  const std::string Code="struct Shared;struct Holder {struct Shared *value;void(*resume)(struct Shared *);};void consume(struct Holder *);";
++  auto From=opaqueAST(Code,Standard),To=opaqueAST(Code,Standard,"opaque-target.c");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());ASSERT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  auto *Expected=opaqueFunction(*To);ASSERT_TRUE(Expected);
++  {
++   ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++   auto Imported=Importer.Import(opaqueFunction(*From));
++   if(!Imported){auto Message=llvm::toString(Imported.takeError());FAIL()<<Standard<<": "<<Message;}
++   EXPECT_EQ(cast<FunctionDecl>(*Imported)->getCanonicalDecl(),Expected->getCanonicalDecl());
++  }
++  From.reset();EXPECT_EQ(Expected->getNumParams(),1u);
++ }
++}
++TEST(ObjC3ASTInfrastructure,C23OpaqueTagsRetainKindAttributeAndDefinitionConflicts) {
++ for(const auto &Pair:{
++      std::pair{"union Shared;","struct Shared;"},
++      std::pair{"struct __attribute__((aligned(16))) Shared;","struct Shared;"},
++      std::pair{"struct Shared {int value;};","struct Shared {double value;};"}}) {
++  const char *Kind=std::string(Pair.first).find("union")==0?"union":"struct";
++  auto From=opaqueAST(std::string(Pair.first)+"void consume("+Kind+" Shared *);","c23");
++  auto To=opaqueAST(std::string(Pair.second)+"void consume(struct Shared *);","c23","opaque-target.c");
++  ASSERT_TRUE(From);ASSERT_TRUE(To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());ASSERT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++  auto Imported=Importer.Import(opaqueFunction(*From));EXPECT_FALSE(bool(Imported));
++  if(!Imported)llvm::consumeError(Imported.takeError());
++ }
++}
++TEST(ObjC3ASTInfrastructure,C23SameASTDistinctIncompleteScopesRemainUnproved) {
++ auto AST=opaqueAST("struct Shared;void scopes(void){struct Shared;}","c23");ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++ struct Records:RecursiveASTVisitor<Records> {
++  SmallVector<RecordDecl *,2> Values;
++  bool VisitRecordDecl(RecordDecl *D){if(D->getName()=="Shared")Values.push_back(D);return true;}
++ } Found;Found.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());ASSERT_EQ(Found.Values.size(),2u);
++ ASTImporter::NonEquivalentDeclSet NonEquivalent;
++ StructuralEquivalenceContext Context(AST->getLangOpts(),AST->getASTContext(),AST->getASTContext(),NonEquivalent,StructuralEquivalenceKind::Default,false,false);
++ EXPECT_FALSE(Context.IsEquivalent(Found.Values[0],Found.Values[1]));
++}
+
+diff --git a/clang/unittests/AST/ObjC3PublicAsyncSyntaxTest.cpp b/clang/unittests/AST/ObjC3PublicAsyncSyntaxTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3PublicAsyncSyntaxTest.cpp
+@@ -0,0 +1,40 @@
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/AST/ASTContext.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++using namespace clang;
++TEST(ObjC3ASTInfrastructure,PublicAsyncPrintedTypesKeepPhysicalEntries) {
++ const std::string Prelude=R"(
++ struct objc3_task;struct objc3_async_result_type;
++ typedef struct objc3_async_frame {
++  unsigned struct_size,version;void *context;
++  void(*resume)(struct objc3_task *,void *);void(*destroy)(void *);
++  const struct objc3_async_result_type *result_type;
++ }objc3_async_frame;
++ namespace objc3 {template<class Value>struct task {};}
++ template<class Value>using __objc3_async_task=objc3::task<Value>;
++ )";
++ for(const char *Standard:{"c++20","c++23"}) {
++  const std::vector<std::string> Args={"-xobjective-c++",std::string("-std=")+Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++  auto AST=tooling::buildASTFromCodeWithArgs(Prelude+"using PublicFrame=int(*)(int) async;using PrivateTask=int(*)(int)__objc3_async;",Args,"public-types.mm");
++  ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto Type=[&](ASTUnit &Unit,const char *Name) {
++   auto &Context=Unit.getASTContext();
++   auto Found=Context.getTranslationUnitDecl()->lookup(&Context.Idents.get(Name));
++   return Found.empty()?QualType():cast<TypedefNameDecl>(*Found.begin())->getUnderlyingType();
++  };
++  auto Frame=Type(*AST,"PublicFrame"),Task=Type(*AST,"PrivateTask");
++  ASSERT_FALSE(Frame.isNull());ASSERT_FALSE(Task.isNull());EXPECT_FALSE(AST->getASTContext().hasSameType(Frame,Task));
++  const auto FrameText=Frame.getAsString(),TaskText=Task.getAsString();
++  EXPECT_NE(FrameText.find("__objc3_async_frame"),std::string::npos);
++  EXPECT_NE(TaskText.find("__objc3_async"),std::string::npos);
++  EXPECT_EQ(TaskText.find("__objc3_async_frame"),std::string::npos);
++  auto Replay=tooling::buildASTFromCodeWithArgs(Prelude+"using ReplayedFrame="+FrameText+";using ReplayedTask="+TaskText+";",Args,"replayed-types.mm");
++  ASSERT_TRUE(Replay);ASSERT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
++  auto ReplayedFrame=Type(*Replay,"ReplayedFrame"),ReplayedTask=Type(*Replay,"ReplayedTask");
++  ASSERT_FALSE(ReplayedFrame.isNull());ASSERT_FALSE(ReplayedTask.isNull());
++  EXPECT_TRUE(ReplayedFrame->getPointeeType()->castAs<FunctionProtoType>()->getObjC3FunctionEffects().AsyncFrame);
++  EXPECT_FALSE(ReplayedTask->getPointeeType()->castAs<FunctionProtoType>()->getObjC3FunctionEffects().AsyncFrame);
++ }
++}

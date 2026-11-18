@@ -1043,7 +1043,6 @@ index fdefb6d6b..20e2109c1 100644
 +  Profiler.Visit(Expression);
 +}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..fc6f591aa 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -24,6 +24,8 @@
@@ -1055,7 +1054,7 @@ index 74209f579..fc6f591aa 100644
  #include "clang/Basic/PrettyStackTrace.h"
  #include "clang/Lex/LiteralSupport.h"
  #include "clang/Parse/Parser.h"
-@@ -305,6 +307,7 @@ bool Parser::isNotExpressionStart() {
+@@ -305,6 +307,7 @@
  
  bool Parser::isFoldOperator(prec::Level Level) const {
    return Level > prec::Unknown && Level != prec::Conditional &&
@@ -1063,7 +1062,7 @@ index 74209f579..fc6f591aa 100644
           Level != prec::Spaceship;
  }
  
-@@ -328,6 +331,9 @@ Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec) {
+@@ -328,6 +331,9 @@
      // then we are done!
      if (NextTokPrec < MinPrec)
        return LHS;
@@ -1073,7 +1072,7 @@ index 74209f579..fc6f591aa 100644
  
      // Consume the operator, saving the operator token for error reporting.
      Token OpToken = Tok;
-@@ -495,6 +501,7 @@ Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec) {
+@@ -495,6 +501,7 @@
  
      // Assignment and conditional expressions are right-associative.
      bool isRightAssoc = ThisPrec == prec::Conditional ||
@@ -1081,7 +1080,7 @@ index 74209f579..fc6f591aa 100644
                          ThisPrec == prec::Assignment;
  
      // Get the precedence of the operator to the right of the RHS.  If it binds
-@@ -546,6 +553,9 @@ Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec) {
+@@ -546,6 +553,9 @@
          LHS = Actions.CreateRecoveryExpr(LHS.get()->getBeginLoc(),
                                           PrevTokLocation,
                                           {LHS.get()});
@@ -1091,7 +1090,7 @@ index 74209f579..fc6f591aa 100644
        } else if (TernaryMiddle.isInvalid()) {
          // If we're using '>>' as an operator within a template
          // argument list (in C++98), suggest the addition of
-@@ -890,6 +900,98 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +900,114 @@
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -1105,11 +1104,27 @@ index 74209f579..fc6f591aa 100644
 +      Res = ParseObjC3KeyPathApplication();
 +      break;
 +    }
-+    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
-+        Tok.getIdentifierInfo()->isStr("__objc3_await")) {
++    const bool InternalAwait = Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("__objc3_await");
++    const bool PublicAwait = Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("await");
++    const auto *AwaitSignature = getLangOpts().ObjC3 && (InternalAwait || PublicAwait)
++        ? getObjC3CallableFunctionType(Decl::castFromDeclContext(Actions.CurContext))
++        : nullptr;
++    // Await is contextual in an async body. Outside one, preserve ordinary
++    // await(...) calls and identifiers, but diagnose an unambiguous prefix.
++    const bool AwaitOperandFollows = getLangOpts().ObjC3 && PublicAwait && !NextToken().isOneOf(
++        tok::semi, tok::comma, tok::r_paren, tok::r_square, tok::r_brace,
++        tok::period, tok::arrow, tok::question, tok::colon, tok::equal);
++    const bool PublicAwaitPrefix = getLangOpts().ObjC3 && PublicAwait &&
++        ((AwaitSignature && AwaitSignature->getObjC3FunctionEffects().Async &&
++          AwaitOperandFollows) ||
++         NextToken().isOneOf(tok::identifier, tok::numeric_constant,
++                            tok::char_constant, tok::string_literal,
++                            tok::kw_this, tok::kw_nullptr, tok::at));
++    if (getLangOpts().ObjC3 && (InternalAwait || PublicAwaitPrefix)) {
 +      SourceLocation AwaitLoc = ConsumeToken();
-+      const auto *FT = getObjC3CallableFunctionType(
-+          Decl::castFromDeclContext(Actions.CurContext));
++      const auto *FT = AwaitSignature;
 +      if ((getLangOpts().CPlusPlus && !getLangOpts().CPlusPlus20) || !FT ||
 +          !FT->getObjC3FunctionEffects().Async) {
 +        Diag(AwaitLoc, diag::err_objc3_await_context);
@@ -1190,7 +1205,7 @@ index 74209f579..fc6f591aa 100644
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
-@@ -1632,6 +1734,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -1632,6 +1750,7 @@
  
        [[fallthrough]];
      case tok::period:
@@ -1198,7 +1213,7 @@ index 74209f579..fc6f591aa 100644
      case tok::arrow:
        break;
  
-@@ -1934,6 +2037,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+@@ -1934,6 +2053,21 @@
  
        break;
      }
@@ -1220,7 +1235,7 @@ index 74209f579..fc6f591aa 100644
      case tok::arrow:
      case tok::period: {
        // postfix-expression: p-e '->' template[opt] id-expression
-@@ -3330,6 +3448,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
+@@ -3330,6 +3464,66 @@
    // Inform sema that we are starting a block.
    Actions.ActOnBlockStart(CaretLoc, getCurScope());
  
@@ -1287,6 +1302,7 @@ index 74209f579..fc6f591aa 100644
    // Parse the return type if present.
    DeclSpec DS(AttrFactory);
    Declarator ParamInfo(DS, ParsedAttributesView::none(),
+
 diff --git a/clang/lib/Sema/SemaExceptionSpec.cpp b/clang/lib/Sema/SemaExceptionSpec.cpp
 index 0ed5c35c4..3f71c52c7 100644
 --- a/clang/lib/Sema/SemaExceptionSpec.cpp

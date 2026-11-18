@@ -27,5 +27,5 @@ retain member-pointer calls in C++20/23 ARC/MRC consumers. Focused verification
 results: all 504 new/selected adjacent source/PCH commands, six expanded
 source-free ARC/MRC configurations and 100 focused tooling checks pass. The
 preceding compiler misses seven new transfer diagnostics and rejects two ordinary
-fixed-target uses. A full isolation regression is running; matching SDK, complete
-profiles and native ARM qualification remain pending.
+fixed-target uses. The full isolation regression also passes. Matching SDK, complete profiles and
+native ARM qualification remain pending.
