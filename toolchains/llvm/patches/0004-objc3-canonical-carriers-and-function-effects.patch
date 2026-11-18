@@ -78514,7 +78514,7 @@ new file mode 100644
 +void binding_helper_impure(void){(void)binding_detached(binding_impure(binding_global));} // expected-error {{cannot prove Sendable captures}}
 +#if __has_feature(objc_arc)
 +static inline BindingWork binding_captured_parameter(UnsafeBlockObject *object){return ^void(void) __objc3_async_frame {(void)object;};}
-+void binding_helper_open_factory(UnsafeBlockObject *object){(void)binding_detached(binding_captured_parameter(object));} // expected-error {{cannot prove Sendable captures}}
++void binding_helper_open_factory(UnsafeBlockObject *object){(void)binding_detached(binding_captured_parameter(object));} // expected-error {{non-Sendable type}}
 +#endif
 +BindingWork binding_open_factory(void);
 +void binding_helper_unresolved_factory(void){(void)binding_detached(binding_open_factory());} // expected-error {{cannot prove Sendable captures}}
