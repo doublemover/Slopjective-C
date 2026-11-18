@@ -235,6 +235,10 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
     return std::nullopt;
   }
 
+  // Ownership belongs to the bridge. Its aliases must also parse in C
+  // consumers using Blocks, where ARC qualifiers are unavailable.
+  type = context.getQualifiedType(type.getLocalUnqualifiedType(),
+                                  type.getLocalQualifiers().withoutObjCLifetime());
   declarations << "typedef ";
   type.print(declarations, policy, alias);
   declarations << ";\n#else\ntypedef void *" << alias << ";\n#endif\n";
@@ -332,6 +336,7 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
     if (!result)
       return reject("the result has no self-contained C value declaration");
     std::string parameters, inputs;
+    bool owning_bridge = actor_method.has_value();
     constexpr llvm::StringLiteral receiver = "__objc3_c_receiver";
     constexpr llvm::StringLiteral opaque_receiver_type = "void *";
     if (actor_method) {
@@ -343,13 +348,16 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
     std::string message = "[" + receiver.str();
     for (unsigned index = 0; index < source_parameters.size(); ++index) {
       const auto *parameter = source_parameters[index];
-      auto type = export_type(prototype ? prototype->getParamType(index) : parameter->getType(),
+      const auto parameter_type =
+          prototype ? prototype->getParamType(index) : parameter->getType();
+      auto type = export_type(parameter_type,
                               type_prefix + "arg" + std::to_string(index) + "_t");
       if (!type || (prototype && prototype->getExtParameterInfo(index).getOpaqueValue()) ||
           parameter->hasAttr<clang::NSConsumedAttr>() || parameter->hasAttr<clang::CFConsumedAttr>())
         return reject("parameter " + std::to_string(index + 1) +
                       " has no self-contained C value declaration");
       const auto argument = "__objc3_c_argument_" + std::to_string(index);
+      owning_bridge |= parameter_type->isObjCRetainableType();
       parameters += ", " + type->spelling + " " + argument;
       if (!inputs.empty()) inputs += ", ";
       inputs += argument;
@@ -379,7 +387,7 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
     }
     definitions << "#undef " << name << "\n#undef " << thunk << "\n#undef "
                 << callback << "\n" << types << declaration;
-    if (actor_method || clang::getObjC3Executor(source)) {
+    if (owning_bridge || clang::getObjC3Executor(source)) {
       const auto bridge = "__objc3_c_executor_bridge_" + name;
       if (!tu->lookup(&context.Idents.get(bridge)).empty())
         return reject("the generated executor bridge name is already declared");
@@ -394,9 +402,9 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
       }
       // A native await supplies the same executor admission, startup errors,
       // and cancellation propagation as an ordinary Objective-C caller.
-      if (actor_method) {
+      if (owning_bridge) {
         // The native async Block ramp copies its captures before suspending,
-        // including the typed receiver, with the same cleanup in ARC and MRC.
+        // retaining objects and copying Blocks in both ARC and MRC.
         definitions << "static objc3_async_frame " << bridge << '('
                     << bridge_parameters << ") { return (^" << result->spelling
                     << "(void) __objc3_async_frame";
@@ -414,7 +422,7 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
       if (checked) definitions << "__objc3_try(";
       definitions << "__objc3_await " << call;
       if (checked) definitions << ')';
-      definitions << (actor_method ? "; })(); }\n" : "; }\n");
+      definitions << (owning_bridge ? "; })(); }\n" : "; }\n");
       frame = bridge + '(' + bridge_inputs + ')';
     }
     definitions << "OBJC3_ASYNC_C_DEFINE_" << (returns_void ? "VOID" : result->kind)

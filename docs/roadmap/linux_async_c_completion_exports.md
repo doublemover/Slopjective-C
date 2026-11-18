@@ -159,3 +159,22 @@ the caller's receiver, and then let the frames enter. The preceding MRC
 bridge destroys the receiver immediately. The owning bridge delivers each
 callback once and destroys all three actor objects after completion and
 explicit mailbox unbind.
+
+Source 2.265 / System 2.191 retains object arguments and copies Block
+arguments in generated C exports before submission returns. The owning
+native bridge keeps both inputs alive through the source call and releases
+them after completion or cancellation. The caller keeps raw C pointer
+storage valid through completion. The manual export macros retain their
+existing ownership contract.
+
+Generated Block aliases with typed parameters also compile in C with Blocks
+enabled. Interface emission places Objective-C root and runtime-name
+attributes on the class definition so repeated forward declarations from
+generated signatures remain valid.
+
+Eight C17/C23 and C++20/C++23 provider configurations in ARC and MRC
+execute the generated calls with a separate C consumer. The consumer blocks
+worker entry, submits, and releases its object and heap Block handles.
+The tests observe the expected value, cancellation at an unavailable
+executor, and destruction of both arguments on each path. Source-free
+callers also compile against the generated interface.

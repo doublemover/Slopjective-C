@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.265 / System 2.191 C argument bridge](linux_async_c_completion_exports.md)
+retains object inputs and copies Blocks before returning to the C caller.
+Completion and cancellation both release the captured arguments.
+
 The [Source 2.264 / System 2.190 local type contracts](linux_cxx_local_types.md)
 retain dependent local records inside published template bodies, including
 local aliases and member definitions through source-free instantiation.

@@ -231,6 +231,7 @@ extern "C" {
 #endif
 extern id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
 extern id object_dispose(id);
+extern void *_Block_copy(const void *);
 #if !__has_feature(objc_arc)
 extern void objc_release(id);
 #endif
@@ -238,11 +239,14 @@ extern void objc_release(id);
 }
 #endif
 static _Atomic(unsigned) generated_actor_destructions;
-__attribute__((objc_root_class)) @interface GeneratedActorRoot { Class isa; }
+__attribute__((objc_root_class, objc_runtime_name("GeneratedCArgumentRoot")))
+@interface GeneratedActorRoot { Class isa; }
 + (instancetype)new;
+- (int)contribution;
 @end
 @implementation GeneratedActorRoot
 + (instancetype)new { return class_createInstance(self, 0); }
+- (int)contribution { return 11; }
 - (void)dealloc {
   __c11_atomic_fetch_add(&generated_actor_destructions, 1, __ATOMIC_RELAXED);
   object_dispose(self);
@@ -251,6 +255,15 @@ __attribute__((objc_root_class)) @interface GeneratedActorRoot { Class isa; }
 - (void)_ARCCompliantRetainRelease {}
 #endif
 @end
+static int generated_arguments(GeneratedActorRoot *input, GeneratedBlock apply) async {
+  return [input contribution] + apply(20);
+}
+static int generated_abandoned_arguments(GeneratedActorRoot *input, GeneratedBlock apply) async
+    __attribute__((nothrow, objc_executor(named("generated.missing")))) {
+  (void)input;
+  (void)apply;
+  __builtin_trap();
+}
 actor class GeneratedActor : GeneratedActorRoot { int value; }
 - (int)add:(int)left by:(int)right __attribute__((nothrow));
 - (int)current __attribute__((nothrow));
@@ -295,6 +308,24 @@ void *generated_actor_create(void) {
   return (void *)[GeneratedActor new];
 #endif
 }
+void *generated_argument_create(void) {
+#if __has_feature(objc_arc)
+  return (__bridge_retained void *)[GeneratedActorRoot new];
+#else
+  return (void *)[GeneratedActorRoot new];
+#endif
+}
+void *generated_argument_block_create(void) {
+  GeneratedActorRoot *captured = [GeneratedActorRoot new];
+  GeneratedBlock action = ^(int value) { return [captured contribution] + value; };
+#if __has_feature(objc_arc)
+  return _Block_copy((__bridge const void *)action);
+#else
+  void *copy = _Block_copy((const void *)action);
+  objc_release(captured);
+  return copy;
+#endif
+}
 void generated_actor_release(void *actor) {
 #if __has_feature(objc_arc)
   id owner = (__bridge_transfer id)actor;
@@ -326,7 +357,8 @@ unsigned generated_actors_destroyed(void) {
   provider.output_path = (root / "provider.o").string();
   provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
       "generated_object", "generated_block", "generated_aggregate", "generated_main",
-      "generated_named", "generated_missing", "GeneratedActor::add:by:",
+      "generated_named", "generated_missing", "generated_arguments",
+      "generated_abandoned_arguments", "GeneratedActor::add:by:",
       "GeneratedActor::current", "GeneratedActor::checked:"};
   provider.async_c_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
@@ -335,7 +367,7 @@ unsigned generated_actors_destroyed(void) {
   provider.interface_exports = {"generated_value_async_c", "generated_void_async_c",
       "generated_checked_async_c", "generated_value_completion_t",
       "generated_void_completion_t", "generated_checked_completion_t",
-      "generated_object_async_c", "generated_block_async_c", "Error"};
+      "generated_object_async_c", "generated_block_async_c", "Error", "GeneratedActorRoot"};
   auto generated = Compile(provider);
   Compiled(generated);
   Require(generated.interface_artifact.has_value(), "generated C interface missing");
@@ -415,6 +447,10 @@ static void observe(void *context, objc_async_completion_status_t status,
 void call_imported_actor(void *receiver) {
   GeneratedActor_add_by_async_c(receiver, 40, 2, 0, observe);
 }
+void call_imported_arguments(generated_arguments_async_c_arg0_t value,
+                             generated_arguments_async_c_arg1_t action) {
+  generated_arguments_async_c(value, action, 0, observe);
+}
 )";
   Compiled(Compile(imported));
   const auto client = root / "client.c";
@@ -427,6 +463,8 @@ void call_imported_actor(void *receiver) {
 #include "generated.h"
 extern objc3_async_c_error generated_failure(void);
 extern void *generated_actor_create(void);
+extern void *generated_argument_create(void);
+extern void *generated_argument_block_create(void);
 extern void generated_actor_release(void *);
 extern unsigned generated_actors_destroyed(void);
 extern void *_Block_copy(const void *);
@@ -437,7 +475,7 @@ static ClientBlock retained_block;
 #else
 typedef void *ClientBlock;
 #endif
-static atomic_int complete[16];
+static atomic_int complete[18];
 static atomic_uint paused_workers;
 static atomic_bool resume_workers;
 static void hold_worker(void *unused) {
@@ -518,6 +556,16 @@ static void actor_done(void *context, objc_async_completion_status_t status,
   }
   assert(atomic_fetch_add((atomic_int *)context, 1) == 0);
 }
+static void arguments_done(void *context, objc_async_completion_status_t status,
+                           int value, objc3_async_c_error error) {
+  if (context == &complete[16]) {
+    assert(status == OBJC_ASYNC_COMPLETION_SUCCESS && value == 42 && !error);
+  } else {
+    assert(context == &complete[17] && status == OBJC_ASYNC_COMPLETION_CANCELLED);
+    assert(objc3_async_c_error_is_cancellation(error));
+  }
+  assert(atomic_fetch_add((atomic_int *)context, 1) == 0);
+}
 int main(void) {
   generated_named_async_c(41, &complete[9], executor_done);
   for (int elapsed = 0; elapsed < 2000 && !atomic_load(&complete[9]); ++elapsed)
@@ -547,8 +595,8 @@ int main(void) {
   generated_main_async_c(41, &complete[7], executor_done);
   generated_named_async_c(41, &complete[8], executor_done);
   generated_missing_async_c(&complete[10], missing_done);
-  // No bridge body may acquire a receiver until after the C caller releases
-  // its reference. The canonical executor has four shared workers.
+  // Workers cannot enter a bridge until after the caller releases its
+  // references. The canonical executor has four shared workers.
   objc3_executor_t *global = 0;
   assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
   for (unsigned worker = 0; worker != 4; ++worker)
@@ -563,14 +611,26 @@ int main(void) {
   GeneratedActor_checked_async_c(actor, true, &complete[14], actor_done);
   GeneratedActor_current_async_c(closed, &complete[15], actor_done);
   generated_actor_release(actor);
+  void *object = generated_argument_create();
+  void *action = generated_argument_block_create();
+  void *abandoned_object = generated_argument_create();
+  void *abandoned_action = generated_argument_block_create();
+  assert(object && action && abandoned_object && abandoned_action);
+  generated_arguments_async_c(object, (ClientBlock)action, &complete[16], arguments_done);
+  generated_abandoned_arguments_async_c(abandoned_object, (ClientBlock)abandoned_action,
+                                       &complete[17], arguments_done);
+  generated_actor_release(object);
+  generated_actor_release(abandoned_object);
+  _Block_release(action);
+  _Block_release(abandoned_action);
   assert(generated_actors_destroyed() == 0);
   atomic_store(&resume_workers, true);
   for (int elapsed = 0; elapsed < 2000; ++elapsed) {
     unsigned executed = 0;
     assert(objc3_executor_pump(main_executor, 8, &executed) == OBJC3_SERVICE_OK);
     int count = 0;
-    for (unsigned index = 0; index < 16; ++index) count += atomic_load(&complete[index]);
-    if (count == 16) {
+    for (unsigned index = 0; index < 18; ++index) count += atomic_load(&complete[index]);
+    if (count == 18) {
 #ifdef __BLOCKS__
       assert(retained_block(2) == 42);
       _Block_release((const void *)retained_block);
@@ -581,9 +641,9 @@ int main(void) {
       objc3_actor_release(closed_mailbox);
       generated_actor_release(closed);
       generated_actor_release(other);
-      for (unsigned wait = 0; wait < 2000 && generated_actors_destroyed() != 3; ++wait)
+      for (unsigned wait = 0; wait < 2000 && generated_actors_destroyed() != 7; ++wait)
         nanosleep(&(struct timespec){0, 1000000}, 0);
-      assert(generated_actors_destroyed() == 3);
+      assert(generated_actors_destroyed() == 7);
       objc3_executor_release(named_executor);
       objc3_executor_release(main_executor);
       return 0;

@@ -648,14 +648,16 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
     }
   }
   // Clang's declaration-polishing policy omits non-keyword attributes.
-  // Emit this modeled class contract through its native attribute printer.
-  if (const auto *interface =
-          llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
-    if (const auto *root = interface->getAttr<clang::ObjCRootClassAttr>()) {
+  // Class attributes can be inherited by `@class` nodes, where their
+  // prefix syntax is invalid. Emit them on the interface definition.
+  const auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration);
+  const bool interface_definition = interface && interface->isThisDeclarationADefinition();
+  if (interface_definition)
+    if (const auto *root = declaration->getAttr<clang::ObjCRootClassAttr>()) {
       root->printPretty(out, policy);
       out << '\n';
     }
-  if (llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl>(declaration))
+  if (interface_definition || llvm::isa<clang::ObjCProtocolDecl>(declaration))
     if (const auto *runtime =
             declaration->getAttr<clang::ObjCRuntimeNameAttr>()) {
       runtime->printPretty(out, policy);
