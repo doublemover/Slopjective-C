@@ -53738,7 +53738,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3780 @@
+@@ -0,0 +1,3872 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54523,10 +54523,13 @@ new file mode 100644
 +    if(!RequireAlias && !BlockValues) {
 +      if(const auto *Binary=dyn_cast<BinaryOperator>(Value);
 +          Binary && !Binary->isAssignmentOp() && !Binary->isPtrMemOp() && !Binary->HasSideEffects(Context)) {
++        // Pure observations do not carry storage identity, even when their
++        // input is a global or another source outside this parameter proof.
++        if(Binary->isComparisonOp() || Binary->isLogicalOp())return 0;
++        if(Binary->getOpcode()!=BO_Comma && !BorrowedSources && !Value->getType()->isPointerType())return 0;
 +        auto Left=Self(Self,Binary->getLHS(),Level+1,false),Right=Self(Self,Binary->getRHS(),Level+1,false);
 +        if(!Left || !Right)return std::nullopt;
 +        if(Binary->getOpcode()==BO_Comma)return Right;
-+        if(Binary->isComparisonOp() || Binary->isLogicalOp())return 0;
 +        return BorrowedSources || Value->getType()->isPointerType()?*Left|*Right:0;
 +      }
 +      if(const auto *Unary=dyn_cast<UnaryOperator>(Value)) {
@@ -54537,6 +54540,9 @@ new file mode 100644
 +              Parameter->getType().isVolatileQualified() || Parameter->getType()->isAtomicType())return std::nullopt;
 +        }else if(Unary->getOpcode()!=UO_Plus && Unary->getOpcode()!=UO_Minus &&
 +            Unary->getOpcode()!=UO_Not && Unary->getOpcode()!=UO_LNot)return std::nullopt;
++        if(!Unary->HasSideEffects(Context) &&
++            (Unary->getOpcode()==UO_LNot || (!BorrowedSources && !Value->getType()->isPointerType() &&
++             (Unary->getOpcode()==UO_Minus || Unary->getOpcode()==UO_Not))))return 0;
 +        auto Source=Self(Self,Unary->getSubExpr(),Level+1,false);if(!Source)return std::nullopt;
 +        if(Unary->getOpcode()==UO_LNot)return 0;
 +        return BorrowedSources || Value->getType()->isPointerType() || Unary->getOpcode()==UO_Plus ||
@@ -54759,13 +54765,66 @@ new file mode 100644
 +  llvm::SmallPtrSet<const VarDecl *,32> Active,Complete;
 +  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> Writes;
 +  llvm::SmallPtrSet<const VarDecl *,32> Escaped;
-+  bool Indexed=false,Incomplete=false;
++  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> ActualSources;
++  llvm::DenseMap<const CallExpr *,const FunctionDecl *> CallDefinitions;
++  llvm::DenseMap<const FunctionDecl *,SmallVector<const Expr *,4>> ReturnSources;
++  llvm::SmallPtrSet<const FunctionDecl *,32> IndexedFunctions;
++  bool Indexed=false,Incomplete=false,CallGraphIncomplete=false;
++  llvm::DenseMap<const FunctionDecl *,const FunctionDecl *> DefinitionCache;
++  auto ExcludedPolicy=[](const FunctionDecl *Function) {
++    return Function->hasAttr<WeakAttr>() || Function->hasAttr<WeakRefAttr>() ||
++        Function->hasAttr<WeakImportAttr>() || Function->hasAttr<AliasAttr>() ||
++        Function->hasAttr<IFuncAttr>() || Function->hasAttr<ReturnsTwiceAttr>() ||
++        Function->hasAttr<ObjCTaskSpawnAttr>() || Function->hasAttr<ObjCTaskDetachedAttr>() ||
++        Function->hasAttr<ObjCTaskGroupAttr>() || Function->hasAttr<ObjCFamilyRetainAttr>() ||
++        Function->hasAttr<ObjCFamilyReleaseAttr>() || Function->hasAttr<ObjCFamilyAutoreleaseAttr>() ||
++        Function->hasAttr<CFReturnsRetainedAttr>() || Function->hasAttr<CFReturnsNotRetainedAttr>() ||
++        Function->hasAttr<OwnershipAttr>();
++  };
++  auto ClosedDefinition=[&](const CallExpr *Call)->const FunctionDecl * {
++    const auto *Function=Call->getDirectCallee();
++    if(!Function || Function->isVariadic() || Function->isMultiVersion() ||
++        Function->isNoReturn() || Function->isInStdNamespace() ||
++        Function->getNumParams()!=Call->getNumArgs() || Call->getNumArgs()>16 ||
++        (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) ||
++        getObjC3Executor(Function) || isObjC3ActorIsolated(Function))return nullptr;
++    auto Cached=DefinitionCache.try_emplace(Function,nullptr);
++    if(!Cached.second)return Cached.first->second;
++    const auto *Definition=Function->getDefinition();
++    if(!Definition || (!Definition->isInlined() && Definition->isExternallyVisible()) ||
++        Definition->getNumParams()!=Call->getNumArgs() ||
++        ExcludedPolicy(Function) || ExcludedPolicy(Definition) ||
++        getObjC3Executor(Definition) || isObjC3ActorIsolated(Definition))return nullptr;
++    const auto *Type=getObjC3CallableFunctionType(Definition);
++    if(!Type || Type->getObjC3FunctionEffects().Async ||
++        Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None)return nullptr;
++    const auto Result=Definition->getReturnType();
++    if((!Result->isVoidType() && !Result->isScalarType()) ||
++        Result->isObjCRetainableType() || isObjC3NSObjectStorageType(Result))return nullptr;
++    for(const auto *Parameter:Definition->parameters()) {
++      const auto Value=Parameter->getType();
++      if(!Value->isScalarType() || Value->isObjCRetainableType() ||
++          isObjC3NSObjectStorageType(Value) || Parameter->hasAttr<NSConsumedAttr>() ||
++          Parameter->hasAttr<CFConsumedAttr>())return nullptr;
++    }
++    const auto *Body=dyn_cast_or_null<CompoundStmt>(Definition->getBody());
++    if(!Body || Body->size()>32)return nullptr;
++    SmallVector<const Stmt *,16> Pending{Body};unsigned Work=128;
++    while(!Pending.empty()) {
++      if(!Work)return nullptr;--Work;const auto *Node=Pending.pop_back_val();
++      if(isa<GotoStmt,IndirectGotoStmt,GCCAsmStmt,CoroutineBodyStmt>(Node))return nullptr;
++      if(isa<LambdaExpr,BlockExpr>(Node))continue;
++      for(const auto *Child:Node->children())if(Child)Pending.push_back(Child);
++    }
++    Cached.first->second=Definition;
++    return Definition;
++  };
 +  auto Index=[&]() {
 +    if(Indexed || !ScopeBody)return;
 +    Indexed=true;
 +    enum Role {Unknown,Read,Write};
-+    struct Entry {const Stmt *Node;Role Use;unsigned Depth;};
-+    SmallVector<Entry,32> Pending{{ScopeBody,Unknown,0}};
++    struct Entry {const Stmt *Node;Role Use;unsigned Depth;const FunctionDecl *Function;};
++    SmallVector<Entry,32> Pending{{ScopeBody,Unknown,0,nullptr}};
 +    unsigned Remaining=4096;
 +    using CellSet=SmallVector<const VarDecl *,4>;
 +    auto Cells=[&](const Expr *Value)->std::optional<CellSet> {
@@ -54848,8 +54907,32 @@ new file mode 100644
 +      if(!Node)continue;
 +      if(!Remaining || Depth>128){Incomplete=true;return;}
 +      --Remaining;
-+      auto Add=[&](const Stmt *Child,Role R=Unknown){Pending.push_back({Child,R,Depth+1});};
++      auto Add=[&](const Stmt *Child,Role R=Unknown){Pending.push_back({Child,R,Depth+1,Current.Function});};
 +      if(isa<GotoStmt,IndirectGotoStmt,GCCAsmStmt>(Node)){Incomplete=true;return;}
++      if(const auto *Return=dyn_cast<ReturnStmt>(Node);Return && Current.Function) {
++        if(const auto *Value=Return->getRetValue()) {
++          auto &Sources=ReturnSources[Current.Function];
++          if(Sources.size()==32)CallGraphIncomplete=true;
++          else Sources.push_back(Value);
++          Add(Value,Read);
++        }
++        continue;
++      }
++      if(const auto *Call=dyn_cast<CallExpr>(Node))
++        if(const auto *Definition=ClosedDefinition(Call)) {
++          CallDefinitions[Call]=Definition;
++          for(unsigned I=0;I!=Call->getNumArgs();++I) {
++            auto &Sources=ActualSources[Definition->getParamDecl(I)->getCanonicalDecl()];
++            if(!llvm::is_contained(Sources,Call->getArg(I)))Sources.push_back(Call->getArg(I));
++          }
++          if(!IndexedFunctions.contains(Definition)) {
++            if(IndexedFunctions.size()==32)CallGraphIncomplete=true;
++            else {
++              IndexedFunctions.insert(Definition);
++              Pending.push_back({Definition->getBody(),Unknown,Depth+1,Definition});
++            }
++          }
++        }
 +      if(const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
 +        if(const auto *V=dyn_cast<VarDecl>(Reference->getDecl());V && (V->hasLocalStorage() || V->hasGlobalStorage()) && Use==Unknown)
 +          Escape(V);
@@ -54998,6 +55081,8 @@ new file mode 100644
 +    if(!Active.insert(Variable).second)return false;
 +    bool Managed=false;
 +    if(const auto *Initializer=Variable->getAnyInitializer())Managed=Recurse(Recurse,Initializer,Depth+1);
++    if(!Managed)if(auto Found=ActualSources.find(Variable);Found!=ActualSources.end())
++      for(const auto *Source:Found->second)if(Recurse(Recurse,Source,Depth+1)){Managed=true;break;}
 +    if(!Managed && !Variable->getType().isConstQualified()) {
 +      Index();
 +      // Native reference snapshots acquire their own lifetime hold, and their
@@ -55008,7 +55093,7 @@ new file mode 100644
 +          isObjC3NSObjectStorageType(Variable->getType());
 +      auto Type=Variable->getType().getNonReferenceType();
 +      const bool PointerShape=Type->isPointerType() || Type->isBlockPointerType() || Type->isRecordType() || Type->isArrayType();
-+      Managed=(Incomplete || Escaped.contains(Variable)) && !NativeReference && (!BorrowedOnly || PointerShape);
++      Managed=(Incomplete || (CallGraphIncomplete && Variable->hasGlobalStorage()) || Escaped.contains(Variable)) && !NativeReference && (!BorrowedOnly || PointerShape);
 +      if(!Managed) {
 +        auto Found=Writes.find(Variable);
 +        if(Found!=Writes.end())for(const auto *Value:Found->second)
@@ -55166,6 +55251,13 @@ new file mode 100644
 +        if(declaredManagedReceiver(Context,Receiver))return true;
 +        for(const auto *Target:receiverPointees(Context,Receiver).Targets)
 +          if(declaredManagedReceiver(Context,Target))return true;
++      }
++    }
++    if(const auto *Call=dyn_cast<CallExpr>(E);Call && ClosedDefinition(Call)) {
++      Index();if(Incomplete || CallGraphIncomplete)return true;
++      if(auto Found=CallDefinitions.find(Call);Found!=CallDefinitions.end()) {
++        for(const auto *Source:ReturnSources[Found->second])
++          if(Recurse(Recurse,Source,Depth+1))return true;
 +      }
 +    }
 +    if(const auto *Call=dyn_cast<CallExpr>(E);Call && Call->isGLValue() &&
@@ -81324,5 +81416,108 @@ new file mode 100644
 + global_projection_number=42;int number=global_projection_number;
 + (void)binding_detached(binding_make_scalar(number));
 +}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-global-call-graphs.m b/clang/test/ObjC3/Sema/native-global-call-graphs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-global-call-graphs.m
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-global-call-graphs.h"
++#if __OBJC3_PROFILE__ == 3
++const char *global_graph_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#else
++void global_graph_values(borrowed const char *loan){
++ global_graph_store(loan);const char *stored=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)stored;}); // expected-error {{borrowed capture}}
++ const char *loaded=global_graph_load();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)loaded;}); // expected-error {{borrowed capture}}
++ global_graph_chain(loan);const char *chained=global_graph_load();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)chained;}); // expected-error {{borrowed capture}}
++ const char *roundtrip=global_graph_roundtrip(loan);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)roundtrip;}); // expected-error {{borrowed capture}}
++ global_graph_recursive(loan,2);const char *recursive=global_graph_load();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)recursive;}); // expected-error {{borrowed capture}}
++ const char *bounded=global_graph_bound_0(loan);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)bounded;}); // expected-error {{borrowed capture}}
++ int observed=global_graph_observe();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)observed;});
++}
++void global_graph_resources(void){
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ global_graph_store_number(descriptor);int value=global_graph_load_number();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++ int telemetry=global_graph_telemetry();
++ (void)binding_detached(binding_make_scalar(telemetry));
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-global-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-global-call-graphs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-global-call-graphs.h
+@@ -0,0 +1,61 @@
++#ifndef OBJC3_GLOBAL_CALL_GRAPHS_H
++#define OBJC3_GLOBAL_CALL_GRAPHS_H
++#include "native-global-value-projections.h"
++#if __OBJC3_PROFILE__ != 3
++static inline void global_graph_store(const char *value){global_projection_pointer=value;}
++static inline const char *global_graph_load(void){return global_projection_pointer;}
++static inline void global_graph_chain(const char *value){global_graph_store(value);}
++static inline const char *global_graph_roundtrip(const char *value){global_graph_chain(value);return global_graph_load();}
++static inline void global_graph_store_number(int value){global_projection_number=value;}
++static inline int global_graph_load_number(void){return global_projection_number;}
++static inline int global_graph_telemetry(void){return global_projection_number+1;}
++static inline int global_graph_observe(void){return global_projection_pointer!=0;}
++static inline void global_graph_recursive(const char *value,int depth){if(depth)global_graph_recursive(value,depth-1);else global_projection_pointer=value;}
++static inline void global_graph_ignore(const char *value){if(0)global_projection_pointer=value;global_projection_pointer="static";}
++static inline void global_graph_ignored_input(borrowed const char *loan){
++ global_graph_ignore(loan);const char *value=global_graph_load();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++}
++static inline void global_graph_ordinary(void){
++ global_graph_chain("static");const char *value=global_graph_load();
++ int observed=global_graph_observe();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;(void)observed;});
++ global_graph_store_number(42);int number=global_graph_load_number();
++ (void)binding_detached(binding_make_scalar(number));
++}
++static inline const char *global_graph_bound_33(const char *value){return value;}
++static inline const char *global_graph_bound_32(const char *value){return global_graph_bound_33(value);}
++static inline const char *global_graph_bound_31(const char *value){return global_graph_bound_32(value);}
++static inline const char *global_graph_bound_30(const char *value){return global_graph_bound_31(value);}
++static inline const char *global_graph_bound_29(const char *value){return global_graph_bound_30(value);}
++static inline const char *global_graph_bound_28(const char *value){return global_graph_bound_29(value);}
++static inline const char *global_graph_bound_27(const char *value){return global_graph_bound_28(value);}
++static inline const char *global_graph_bound_26(const char *value){return global_graph_bound_27(value);}
++static inline const char *global_graph_bound_25(const char *value){return global_graph_bound_26(value);}
++static inline const char *global_graph_bound_24(const char *value){return global_graph_bound_25(value);}
++static inline const char *global_graph_bound_23(const char *value){return global_graph_bound_24(value);}
++static inline const char *global_graph_bound_22(const char *value){return global_graph_bound_23(value);}
++static inline const char *global_graph_bound_21(const char *value){return global_graph_bound_22(value);}
++static inline const char *global_graph_bound_20(const char *value){return global_graph_bound_21(value);}
++static inline const char *global_graph_bound_19(const char *value){return global_graph_bound_20(value);}
++static inline const char *global_graph_bound_18(const char *value){return global_graph_bound_19(value);}
++static inline const char *global_graph_bound_17(const char *value){return global_graph_bound_18(value);}
++static inline const char *global_graph_bound_16(const char *value){return global_graph_bound_17(value);}
++static inline const char *global_graph_bound_15(const char *value){return global_graph_bound_16(value);}
++static inline const char *global_graph_bound_14(const char *value){return global_graph_bound_15(value);}
++static inline const char *global_graph_bound_13(const char *value){return global_graph_bound_14(value);}
++static inline const char *global_graph_bound_12(const char *value){return global_graph_bound_13(value);}
++static inline const char *global_graph_bound_11(const char *value){return global_graph_bound_12(value);}
++static inline const char *global_graph_bound_10(const char *value){return global_graph_bound_11(value);}
++static inline const char *global_graph_bound_9(const char *value){return global_graph_bound_10(value);}
++static inline const char *global_graph_bound_8(const char *value){return global_graph_bound_9(value);}
++static inline const char *global_graph_bound_7(const char *value){return global_graph_bound_8(value);}
++static inline const char *global_graph_bound_6(const char *value){return global_graph_bound_7(value);}
++static inline const char *global_graph_bound_5(const char *value){return global_graph_bound_6(value);}
++static inline const char *global_graph_bound_4(const char *value){return global_graph_bound_5(value);}
++static inline const char *global_graph_bound_3(const char *value){return global_graph_bound_4(value);}
++static inline const char *global_graph_bound_2(const char *value){return global_graph_bound_3(value);}
++static inline const char *global_graph_bound_1(const char *value){return global_graph_bound_2(value);}
++static inline const char *global_graph_bound_0(const char *value){return global_graph_bound_1(value);}
 +#endif
 +#endif

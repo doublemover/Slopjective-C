@@ -32,7 +32,13 @@ void Check(bool arc, const std::string &standard) {
   provider.input_path = (root / (cxx ? "provider.mm" : "provider.m")).string();
   provider.source_text = "extern const char *published_pointer;extern int published_number;extern const char *published_array[2];"
       "struct PublishedSlots {const char *pointer;int number;};"
-      "extern struct PublishedSlots published_slots;";
+      "extern struct PublishedSlots published_slots;"
+      "inline void published_store(const char *value){published_pointer=value;}"
+      "inline const char *published_load(void){return published_pointer;}"
+      "inline void published_chain(const char *value){published_store(value);}"
+      "inline const char *published_roundtrip(const char *value){published_chain(value);return published_load();}"
+      "inline void published_store_number(int value){published_number=value;}"
+      "inline int published_load_number(void){return published_number;}";
   provider.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
   provider.objc3 = true; provider.arc = arc; provider.strict_concurrency = true;
   provider.objc_runtime = "gnustep-2.2";
@@ -41,7 +47,8 @@ void Check(bool arc, const std::string &standard) {
       std::string("-I") + OBJC3_GLOBAL_RUNTIME_HEADERS};
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GlobalSlots"; provider.package_identity = "global-slots-v1";
-  provider.interface_exports = {"published_pointer", "published_number", "PublishedSlots", "published_slots", "published_array"};
+  provider.interface_exports = {"published_pointer", "published_number", "PublishedSlots", "published_slots", "published_array",
+      "published_store", "published_load", "published_chain", "published_roundtrip", "published_store_number", "published_load_number"};
   auto published = Compile(provider); Require(published);
   assert(published.interface_artifact && published.interface_artifact->success);
   const auto &artifact = *published.interface_artifact;
@@ -89,6 +96,17 @@ void Check(bool arc, const std::string &standard) {
         ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
   run("void observed(borrowed const char *loan){published_pointer=loan;int value=published_pointer!=0;"
       "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+  run("void rejected(borrowed const char *loan){published_store(loan);const char *value=published_pointer;"
+      "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+  run("void rejected(borrowed const char *loan){published_chain(loan);const char *value=published_load();"
+      "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+  run("void rejected(borrowed const char *loan){const char *value=published_roundtrip(loan);"
+      "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+  run("void ordinary(void){const char *value=published_roundtrip(\"static\");"
+      "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+  run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
+      "published_store_number(descriptor);int value=published_load_number();"
+      "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
   const std::string crossing = preamble +
       (cxx ? "\n#include \"objc3_task.hpp\"\n" : "") +
       "typedef const char *GlobalUnchecked __attribute__((objc_unsafe_sendable));"
