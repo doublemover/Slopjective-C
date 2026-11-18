@@ -53798,7 +53798,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4284 @@
+@@ -0,0 +1,4320 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54091,66 +54091,83 @@ new file mode 100644
 +  const auto Name=Function->getIdentifier()->getName();
 +  return Name=="move" || Name=="forward" || Name=="forward_like" || Name=="as_const";
 +}
-+// Resolve a single immutable native function-pointer target. The function
-+// prototype, including calling convention and effects, must match exactly.
-+const FunctionDecl *projectionCallee(const CallExpr *Call,ASTContext &Context) {
++using ProjectionCallees = SmallVector<const FunctionDecl *, 4>;
++
++// Resolve every target of an immutable native callable choice. The prototype,
++// including calling convention and effects, must match every target exactly.
++ProjectionCallees projectionCallees(const CallExpr *Call, ASTContext &Context) {
 +  const auto *MemberCall=dyn_cast<BinaryOperator>(Call->getCallee()->IgnoreParenImpCasts());
 +  const bool MemberTarget=MemberCall && MemberCall->isPtrMemOp();
-+  if(!MemberTarget)if(const auto *Direct=Call->getDirectCallee())return Direct;
++  if (!MemberTarget)
++    if (const auto *Direct = Call->getDirectCallee()) return {Direct};
 +  const Expr *Target=MemberTarget?MemberCall->getRHS():Call->getCallee();
 +  const auto CalleeType=Target->getType();
 +  const auto *MemberType=CalleeType->getAs<MemberPointerType>();
-+  if(MemberTarget?!MemberType:(!CalleeType->isPointerType() || !CalleeType->getPointeeType()->isFunctionType()))return nullptr;
++  if(MemberTarget?!MemberType:(!CalleeType->isPointerType() || !CalleeType->getPointeeType()->isFunctionType()))return {};
 +  const auto Prototype=MemberType?MemberType->getPointeeType():CalleeType->getPointeeType();
-+  if(!Prototype->isFunctionType())return nullptr;
++  if(!Prototype->isFunctionType())return {};
 +  unsigned Work=64;
 +  llvm::SmallPtrSet<const VarDecl *,16> Active;
-+  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->const FunctionDecl * {
-+    if(!E || !Work || Depth>16)return nullptr;--Work;E=E->IgnoreParenImpCasts();
++  llvm::SmallPtrSet<const FunctionDecl *,8> Seen;
++  ProjectionCallees Targets;
++  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->bool {
++    if(!E || !Work || Depth>16)return false;--Work;E=E->IgnoreParenImpCasts();
 +    if(const auto *Cast=dyn_cast<CastExpr>(E))
-+      return Cast->getCastKind()==CK_NoOp?Self(Self,Cast->getSubExpr(),Depth+1):nullptr;
++      return Cast->getCastKind()==CK_NoOp && Self(Self,Cast->getSubExpr(),Depth+1);
 +    if(const auto *Unary=dyn_cast<UnaryOperator>(E);Unary && Unary->getOpcode()==UO_AddrOf)
 +      return Self(Self,Unary->getSubExpr(),Depth+1);
 +    if(const auto *View=dyn_cast<CallExpr>(E);View && standardReferenceView(View))
 +      return Self(Self,View->getArg(0),Depth+1);
 +    if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(E)) {
-+      if(Choice->getCond()->HasSideEffects(Context))return nullptr;
++      if(Choice->getCond()->HasSideEffects(Context))return false;
 +      bool Truth;
 +      if(!Choice->getCond()->isValueDependent() && Choice->getCond()->EvaluateAsBooleanCondition(Truth,Context))
 +        return Self(Self,Truth?Choice->getTrueExpr():Choice->getFalseExpr(),Depth+1);
-+      const auto *Left=Self(Self,Choice->getTrueExpr(),Depth+1);
-+      const auto *Right=Self(Self,Choice->getFalseExpr(),Depth+1);
-+      return Left && Right && Left->getCanonicalDecl()==Right->getCanonicalDecl()?Left:nullptr;
++      return Self(Self,Choice->getTrueExpr(),Depth+1) &&
++             Self(Self,Choice->getFalseExpr(),Depth+1);
 +    }
 +    const auto *Reference=dyn_cast<DeclRefExpr>(E);
-+    if(!Reference)return nullptr;
-+    if(const auto *Function=dyn_cast<FunctionDecl>(Reference->getDecl()))return Function;
++    if(!Reference)return false;
++    if(const auto *Function=dyn_cast<FunctionDecl>(Reference->getDecl())) {
++      if(!Context.hasSameType(Function->getType(),Prototype))return false;
++      if(MemberTarget) {
++        const auto *Method=dyn_cast<CXXMethodDecl>(Function);
++        const auto *Owner=MemberType->getMostRecentCXXRecordDecl();
++        if(!Method || Method->isStatic() || !Owner ||
++            Owner->getCanonicalDecl()!=Method->getParent()->getCanonicalDecl())return false;
++      }
++      if(Seen.insert(Function->getCanonicalDecl()).second) {
++        if(Targets.size()==8)return false;
++        Targets.push_back(Function);
++      }
++      return true;
++    }
 +    const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
-+    if(!Variable)return nullptr;
++    if(!Variable)return false;
 +    const auto Value=Variable->getType().getNonReferenceType();
 +    const auto *Member=Value->getAs<MemberPointerType>();
 +    if((MemberTarget?(!Member || !Member->getPointeeType()->isFunctionType()):
 +        (!Value->isPointerType() || !Value->getPointeeType()->isFunctionType())) ||
-+        !Value.isConstQualified() || Value.isVolatileQualified() || Variable->hasAttr<BlocksAttr>())return nullptr;
++        !Value.isConstQualified() || Value.isVolatileQualified() || Variable->hasAttr<BlocksAttr>())return false;
 +    Variable=Variable->getCanonicalDecl();
-+    if(!Active.insert(Variable).second)return nullptr;
++    if(!Active.insert(Variable).second)return false;
 +    auto Leave=llvm::scope_exit([&]{Active.erase(Variable);});
 +    return Self(Self,Variable->getAnyInitializer(),Depth+1);
 +  };
-+  const auto *Function=Resolve(Resolve,Target,0);
-+  if(MemberTarget) {
-+    const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Function);
-+    const auto *Owner=MemberType->getMostRecentCXXRecordDecl();
-+    if(!Method || Method->isStatic() || !Owner ||
-+        Owner->getCanonicalDecl()!=Method->getParent()->getCanonicalDecl())return nullptr;
-+  }
-+  return Function && Context.hasSameType(Function->getType(),Prototype)?Function:nullptr;
++  if (!Resolve(Resolve, Target, 0)) return {};
++  return Targets;
++}
++
++const FunctionDecl *projectionCallee(const CallExpr *Call, ASTContext &Context) {
++  auto Targets = projectionCallees(Call, Context);
++  return Targets.size() == 1 ? Targets.front() : nullptr;
 +}
 +
 +bool closedProjectionReceiverImpl(const CallExpr *Call,ASTContext &Context,
-+    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active) {
++    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active,
++    const FunctionDecl *Selected = nullptr) {
 +  if(!Work || Depth>16)return false;--Work;
-+  const auto *Function=Call?projectionCallee(Call,Context):nullptr;
++  const auto *Function=Selected?Selected:(Call?projectionCallee(Call,Context):nullptr);
 +  if(!Function)return false;
 +  const auto *Method=dyn_cast<CXXMethodDecl>(Function);
 +  if(!Method)return true;
@@ -54214,9 +54231,10 @@ new file mode 100644
 +  }
 +  return true;
 +}
-+bool closedProjectionReceiver(const CallExpr *Call,ASTContext &Context) {
++bool closedProjectionReceiver(const CallExpr *Call,ASTContext &Context,
++                              const FunctionDecl *Selected = nullptr) {
 +  unsigned Work=1024;llvm::SmallPtrSet<const FunctionDecl *,16> Active;
-+  return closedProjectionReceiverImpl(Call,Context,Work,0,Active);
++  return closedProjectionReceiverImpl(Call,Context,Work,0,Active,Selected);
 +}
 +// A closed accessor exposes exactly one native field, rather than attesting
 +// an arbitrary method result. Keep its receiver storage contract when the
@@ -54891,7 +54909,7 @@ new file mode 100644
 +  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> Writes;
 +  llvm::SmallPtrSet<const VarDecl *,32> Escaped;
 +  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> ActualSources;
-+  llvm::DenseMap<const CallExpr *,const FunctionDecl *> CallDefinitions;
++  llvm::DenseMap<const CallExpr *,ProjectionCallees> CallDefinitions;
 +  llvm::DenseMap<const FunctionDecl *,SmallVector<const Expr *,4>> ReturnSources;
 +  llvm::SmallPtrSet<const FunctionDecl *,32> IndexedFunctions;
 +  llvm::DenseMap<const ValueDecl *,SmallVector<const VarDecl *,4>> CaptureBindings;
@@ -55050,14 +55068,13 @@ new file mode 100644
 +    if(!Resolve(Resolve,Receiver,0,{}))return std::nullopt;
 +    return Bindings;
 +  };
-+  auto ClosedDefinition=[&](const CallExpr *Call)->const FunctionDecl * {
-+    const auto *Function=projectionCallee(Call,Context);
++  auto ClosedDefinition=[&](const CallExpr *Call,const FunctionDecl *Function)->const FunctionDecl * {
 +    const unsigned Offset=ArgumentOffset(Call);
 +    if(!Function || Function->isVariadic() || Function->isMultiVersion() ||
 +        Function->isNoReturn() || Function->isInStdNamespace() ||
 +        Function->getNumParams()+Offset!=Call->getNumArgs() || Function->getNumParams()>16 ||
 +        (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic() &&
-+         !closedProjectionReceiver(Call,Context)) ||
++         !closedProjectionReceiver(Call,Context,Function)) ||
 +        getObjC3Executor(Function) || isObjC3ActorIsolated(Function))return nullptr;
 +    const auto *Method=dyn_cast<CXXMethodDecl>(Function);
 +    const bool Captured=Method && Method->getParent()->isLambda() && Method->getParent()->capture_size()!=0;
@@ -55116,6 +55133,14 @@ new file mode 100644
 +    RegisterCaptures();
 +    return Definition;
 +  };
++  auto ClosedDefinitions=[&](const CallExpr *Call) {
++    auto Targets=projectionCallees(Call,Context);
++    for(auto *&Target:Targets) {
++      Target=ClosedDefinition(Call,Target);
++      if(!Target)return ProjectionCallees{};
++    }
++    return Targets;
++  };
 +  auto Index=[&]() {
 +    if(Indexed || !ScopeBody)return;
 +    Indexed=true;
@@ -55168,39 +55193,43 @@ new file mode 100644
 +          // arguments and not a temporary value of the result's scalar type.
 +          // Resolve it with this call's formal bindings before the scope index
 +          // visits helper bodies; discovery order cannot change the cell set.
-+          const auto *Definition=ClosedDefinition(Call);
-+          if(!Call->isGLValue() || !Definition ||
-+              !Definition->getReturnType()->isReferenceType() ||
-+              !Returning.insert(Definition).second)return false;
++          if(!Call->isGLValue())return false;
++          const auto Definitions=ClosedDefinitions(Call);
++          if(Definitions.empty())return false;
 +          const unsigned Offset=ArgumentOffset(Call);
-+          for(unsigned I=0;I!=Definition->getNumParams();++I)
-+            ReferenceActuals[Definition->getParamDecl(I)->getCanonicalDecl()]=Call->getArg(I+Offset);
-+          auto Leave=llvm::scope_exit([&] {
-+            for(const auto *Parameter:Definition->parameters())
-+              ReferenceActuals.erase(Parameter->getCanonicalDecl());
-+            Returning.erase(Definition);
-+          });
-+          SmallVector<const Stmt *,16> Statements{Definition->getBody()};
-+          bool Found=false;
-+          while(!Statements.empty()) {
-+            if(!CellBudget)return false;--CellBudget;
-+            const auto *Statement=Statements.pop_back_val();
-+            if(isa<LambdaExpr,BlockExpr>(Statement))continue;
-+            if(const auto *Return=dyn_cast<ReturnStmt>(Statement)) {
-+              if(!Self(Self,Return->getRetValue(),Depth+1))return false;
-+              Found=true;continue;
-+            }
-+            if(const auto *Branch=dyn_cast<IfStmt>(Statement)) {
-+              bool Truth;
-+              if(!Branch->getCond()->isValueDependent() && !Branch->getCond()->HasSideEffects(Context) &&
-+                  Branch->getCond()->EvaluateAsBooleanCondition(Truth,Context)) {
-+                if(const auto *Chosen=Truth?Branch->getThen():Branch->getElse())Statements.push_back(Chosen);
-+                continue;
++          for(const auto *Definition:Definitions) {
++            if(!Definition->getReturnType()->isReferenceType() ||
++                !Returning.insert(Definition).second)return false;
++            for(unsigned I=0;I!=Definition->getNumParams();++I)
++              ReferenceActuals[Definition->getParamDecl(I)->getCanonicalDecl()]=Call->getArg(I+Offset);
++            auto Leave=llvm::scope_exit([&] {
++              for(const auto *Parameter:Definition->parameters())
++                ReferenceActuals.erase(Parameter->getCanonicalDecl());
++              Returning.erase(Definition);
++            });
++            SmallVector<const Stmt *,16> Statements{Definition->getBody()};
++            bool Found=false;
++            while(!Statements.empty()) {
++              if(!CellBudget)return false;--CellBudget;
++              const auto *Statement=Statements.pop_back_val();
++              if(isa<LambdaExpr,BlockExpr>(Statement))continue;
++              if(const auto *Return=dyn_cast<ReturnStmt>(Statement)) {
++                if(!Self(Self,Return->getRetValue(),Depth+1))return false;
++                Found=true;continue;
 +              }
++              if(const auto *Branch=dyn_cast<IfStmt>(Statement)) {
++                bool Truth;
++                if(!Branch->getCond()->isValueDependent() && !Branch->getCond()->HasSideEffects(Context) &&
++                    Branch->getCond()->EvaluateAsBooleanCondition(Truth,Context)) {
++                  if(const auto *Chosen=Truth?Branch->getThen():Branch->getElse())Statements.push_back(Chosen);
++                  continue;
++                }
++              }
++              for(const auto *Child:Statement->children())if(Child)Statements.push_back(Child);
 +            }
-+            for(const auto *Child:Statement->children())if(Child)Statements.push_back(Child);
++            if(!Found)return false;
 +          }
-+          return Found;
++          return true;
 +        }
 +        if(const auto *Subscript=dyn_cast<ArraySubscriptExpr>(E)) {
 +          const auto *Base=Subscript->getBase()->IgnoreParenImpCasts();
@@ -55308,26 +55337,31 @@ new file mode 100644
 +        continue;
 +      }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
-+        if(const auto *Definition=ClosedDefinition(Call)) {
++        if(auto Definitions=ClosedDefinitions(Call);!Definitions.empty()) {
 +          const unsigned Offset=ArgumentOffset(Call);
 +          bool ClosedReferences=true;
-+          for(unsigned I=0;I!=Definition->getNumParams();++I)
-+            if(Definition->getParamDecl(I)->getType()->isReferenceType() && !Cells(Call->getArg(I+Offset)))ClosedReferences=false;
++          const auto *Signature=Definitions.front();
++          for(unsigned I=0;I!=Signature->getNumParams();++I)
++            if(Signature->getParamDecl(I)->getType()->isReferenceType() &&
++                !Cells(Call->getArg(I+Offset)))ClosedReferences=false;
 +          if(!ClosedReferences) {
 +            if(!argumentProjection(Call,Context))CallGraphIncomplete=true;
 +          } else {
-+          CallDefinitions[Call]=Definition;
-+          for(unsigned I=0;I!=Definition->getNumParams();++I) {
-+            auto &Sources=ActualSources[Definition->getParamDecl(I)->getCanonicalDecl()];
-+            if(!llvm::is_contained(Sources,Call->getArg(I+Offset)))Sources.push_back(Call->getArg(I+Offset));
-+          }
-+          if(!IndexedFunctions.contains(Definition)) {
-+            if(IndexedFunctions.size()==32)CallGraphIncomplete=true;
-+            else {
-+              IndexedFunctions.insert(Definition);
-+              Pending.push_back({Definition->getBody(),Unknown,Depth+1,Definition});
++            for(const auto *Definition:Definitions) {
++              for(unsigned I=0;I!=Definition->getNumParams();++I) {
++                auto &Sources=ActualSources[Definition->getParamDecl(I)->getCanonicalDecl()];
++                if(!llvm::is_contained(Sources,Call->getArg(I+Offset)))
++                  Sources.push_back(Call->getArg(I+Offset));
++              }
++              if(!IndexedFunctions.contains(Definition)) {
++                if(IndexedFunctions.size()==32)CallGraphIncomplete=true;
++                else {
++                  IndexedFunctions.insert(Definition);
++                  Pending.push_back({Definition->getBody(),Unknown,Depth+1,Definition});
++                }
++              }
 +            }
-+          }
++            CallDefinitions[Call]=std::move(Definitions);
 +          }
 +        }
 +      if(const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
@@ -55421,7 +55455,8 @@ new file mode 100644
 +          continue;
 +        }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node);Call && CallDefinitions.contains(Call)) {
-+        const auto *Definition=CallDefinitions.find(Call)->second;
++        // Every target has the same physical prototype and argument offset.
++        const auto *Definition=CallDefinitions.find(Call)->second.front();
 +        const unsigned Offset=ArgumentOffset(Call);
 +        bool UnknownReference=false;
 +        if(Call->isGLValue() && Use!=Read) {
@@ -55715,11 +55750,12 @@ new file mode 100644
 +          if(declaredManagedReceiver(Context,Target))return true;
 +      }
 +    }
-+    if(const auto *Call=dyn_cast<CallExpr>(E);Call && ClosedDefinition(Call)) {
++    if(const auto *Call=dyn_cast<CallExpr>(E);Call && !ClosedDefinitions(Call).empty()) {
 +      Index();if(Incomplete || CallGraphIncomplete)return true;
 +      if(auto Found=CallDefinitions.find(Call);Found!=CallDefinitions.end()) {
-+        for(const auto *Source:ReturnSources[Found->second])
-+          if(Recurse(Recurse,Source,Depth+1))return true;
++        for(const auto *Definition:Found->second)
++          for(const auto *Source:ReturnSources[Definition])
++            if(Recurse(Recurse,Source,Depth+1))return true;
 +      }
 +    }
 +    if(const auto *Call=dyn_cast<CallExpr>(E);Call && E->getType()->isRecordType() &&
@@ -82226,7 +82262,7 @@ new file mode 100644
 +void indirect_graph_different(int choose){
 + auto const work=choose?&indirect_reference_store:&indirect_reference_other;const char *slot="static";
 + work(slot,"other");const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
 +}
 +void indirect_graph_volatile(void){
 + auto const volatile work=&indirect_reference_store;const char *slot="static";work(slot,"other");const char *value=slot;
@@ -82906,7 +82942,7 @@ new file mode 100644
 + FixedMemberReceiver source;const char *slot="static";
 + auto const method=choose?&FixedMemberReceiver::ordinary:&FixedMemberReceiver::alternate;
 + (source.*method)(slot);const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
 +}
 +void member_pointer_alias_bound(){
 + FixedMemberReceiver source;const char *slot="static";
@@ -83178,3 +83214,107 @@ new file mode 100644
 +  EXPECT_FALSE(ReplayedTask->getPointeeType()->castAs<FunctionProtoType>()->getObjC3FunctionEffects().AsyncFrame);
 + }
 +}
+
+diff --git a/clang/test/ObjC3/Sema/native-callable-target-sets.m b/clang/test/ObjC3/Sema/native-callable-target-sets.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-callable-target-sets.m
+@@ -0,0 +1,54 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-callable-target-sets.h"
++#if __OBJC3_PROFILE__ == 3
++const char *target_set_system_reject(borrowed const char *value) { return value; } // expected-error {{borrowed pointer escapes through return}}
++#else
++void target_set_store(borrowed const char *loan, int choose) {
++  void (*const target)(const char *) = choose ? target_store_first : target_store_other;
++  target(loan);
++  const char *value = global_projection_pointer;
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; }); // expected-error {{borrowed capture}}
++}
++void target_set_read(borrowed const char *loan, int choose) {
++  global_projection_pointer = loan;
++  const char *(*const target)(void) = choose ? target_get_literal : target_get_global;
++  const char *value = target();
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; }); // expected-error {{borrowed capture}}
++}
++#ifdef __cplusplus
++void target_set_cells(borrowed const char *loan, int choose) {
++  auto const target = choose ? &target_get_global_cell : &target_get_other_cell;
++  target() = loan;
++  const char *first = global_projection_pointer;
++  const char *other = target_other_cell;
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)first; }); // expected-error {{borrowed capture}}
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)other; }); // expected-error {{borrowed capture}}
++}
++void member_target_set_reference(borrowed const char *loan, int choose) {
++  CallableTargetSet receiver;
++  auto const target = choose ? &CallableTargetSet::store_first : &CallableTargetSet::store_other;
++  const char *slot = "static";
++  (receiver.*target)(slot, loan);
++  const char *value = slot;
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; }); // expected-error {{borrowed capture}}
++}
++void member_target_set_cells(borrowed const char *loan, int choose) {
++  CallableTargetSet receiver;
++  auto *const address = &receiver;
++  auto const target = choose ? &CallableTargetSet::first_cell : &CallableTargetSet::other_cell;
++  (address->*target)() = loan;
++  const char *first = global_projection_pointer;
++  const char *other = target_other_cell;
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)first; }); // expected-error {{borrowed capture}}
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)other; }); // expected-error {{borrowed capture}}
++}
++void member_target_set_resource(int choose) {
++  CallableTargetSet receiver;
++  auto const target = choose ? &CallableTargetSet::value : &CallableTargetSet::observation;
++  int descriptor __attribute__((objc_resource(close=global_projection_close, invalid=-1))) = global_projection_open();
++  int value = (receiver.*target)(descriptor);
++  (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-callable-target-sets.h b/clang/test/ObjC3/Sema/Inputs/native-callable-target-sets.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-callable-target-sets.h
+@@ -0,0 +1,38 @@
++#ifndef OBJC3_NATIVE_CALLABLE_TARGET_SETS_H
++#define OBJC3_NATIVE_CALLABLE_TARGET_SETS_H
++#include "native-member-pointer-graphs.h"
++#if __OBJC3_PROFILE__ != 3
++static inline void target_store_first(const char *value) { global_projection_pointer = value; }
++static inline void target_store_other(const char *value) { (void)value; global_projection_pointer = "static"; }
++static inline const char *target_get_global(void) { return global_projection_pointer; }
++static inline const char *target_get_literal(void) { return "static"; }
++static inline void target_set_safe(int choose) {
++  void (*const target)(const char *) = choose ? target_store_first : target_store_other;
++  target("value");
++  const char *(*const read)(void) = choose ? target_get_global : target_get_literal;
++  const char *value = read();
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; });
++}
++#ifdef __cplusplus
++static const char *target_other_cell = "static";
++static inline const char *&target_get_global_cell(void) { return global_projection_pointer; }
++static inline const char *&target_get_other_cell(void) { return target_other_cell; }
++struct CallableTargetSet {
++  void store_first(const char *&slot, const char *value) const { slot = value; }
++  void store_other(const char *&slot, const char *value) const { (void)value; slot = "static"; }
++  const char *&first_cell() const { return global_projection_pointer; }
++  const char *&other_cell() const { return target_other_cell; }
++  int value(const int &value) const { return value; }
++  int observation(const int &value) const { return value != 0; }
++};
++static inline void member_target_set_safe(int choose) {
++  CallableTargetSet receiver;
++  auto const target = choose ? &CallableTargetSet::store_first : &CallableTargetSet::store_other;
++  const char *slot = "static";
++  (receiver.*target)(slot, "safe");
++  const char *value = slot;
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; });
++}
++#endif
++#endif
++#endif

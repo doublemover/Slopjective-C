@@ -29,3 +29,6 @@ source-free ARC/MRC configurations and 100 focused tooling checks pass. The
 preceding compiler misses seven new transfer diagnostics and rejects two ordinary
 fixed-target uses. The full isolation regression also passes. Matching SDK, complete profiles and
 native ARM qualification remain pending.
+
+Source 2.242 extends immutable target discovery to
+[bounded sets of distinct targets](linux_native_callable_target_sets.md).

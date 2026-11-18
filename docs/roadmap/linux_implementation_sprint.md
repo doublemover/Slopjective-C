@@ -1,5 +1,8 @@
 # Linux implementation sprint
 
+The [Source 2.242 / System 2.168 callable target sets](linux_native_callable_target_sets.md)
+combine writes and returned storage for immutable runtime-selected native callables.
+
 The [Source 2.241 / System 2.167 C completion interfaces](linux_async_c_completion_exports.md)
 retain typed callback signatures and physical symbols in source-free packages.
 

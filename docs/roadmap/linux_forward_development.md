@@ -1,5 +1,8 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.242 / System 2.168 callable target sets](linux_native_callable_target_sets.md)
+combine writes and returned storage for immutable runtime-selected native callables.
+
 The [Source 2.241 / System 2.167 C completion interfaces](linux_async_c_completion_exports.md)
 retain typed callback signatures and physical symbols in source-free packages.
 
@@ -2263,7 +2266,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    System capabilities.
 5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
    next implementation span is coherent, then perform one coordinated SDK
-   cutover. Source 2.154–2.241 still requires its fresh matching campaign; focused
+   cutover. Source 2.154–2.242 still requires its fresh matching campaign; focused
    local receipts do not promote a replacement archive. Avoid repeated archive
    rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native
