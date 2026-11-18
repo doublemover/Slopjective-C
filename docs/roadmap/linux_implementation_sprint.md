@@ -1,5 +1,12 @@
 # Linux implementation sprint
 
+Source 2.254 / System 2.180 indexes the enclosing concurrency scope before
+expanding closed helper bodies. Deep helper chains share a bounded index
+without consuming the slots needed by independent short calls. Storage
+write replay deduplicates sources, and raw pointer capture diagnostics
+distinguish a traced loan from an unverified lifetime after opaque mutation
+or proof exhaustion. Both still require their existing transfer admission.
+
 The [Source 2.253 / System 2.179 C completion executor changes](linux_async_c_completion_exports.md)
 generate native executor hops and preserve checked failure and cancellation
 at the C callback boundary.

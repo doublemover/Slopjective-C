@@ -53858,7 +53858,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4571 @@
+@@ -0,0 +1,4604 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53939,7 +53939,8 @@ new file mode 100644
 +  bool Borrowed = false;
 +};
 +bool carriesManagedResourceValue(ASTContext &, const Expr *, const Stmt * = nullptr,
-+                                  const VarDecl * = nullptr,Sema * = nullptr,bool = false);
++                                  const VarDecl * = nullptr, Sema * = nullptr, bool = false,
++                                  bool *UnprovenLifetime = nullptr);
 +bool managedTransferStorage(const ValueDecl *Value) {
 +  return Value && (Value->hasAttr<CleanupAttr>() ||
 +      Value->hasAttr<ObjCCleanupAttr>() || Value->hasAttr<ObjCResourceAttr>());
@@ -55070,14 +55071,26 @@ new file mode 100644
 +// before building a task/isolation snapshot. Explicit wrappers still undergo
 +// their ordinary structural/unsafe-Sendable type admission.
 +bool carriesManagedResourceValue(ASTContext &Context,const Expr *Expression,
-+                                  const Stmt *ScopeBody,const VarDecl *RootBinding,Sema *Actions,bool BorrowedOnly) {
++                                  const Stmt *ScopeBody, const VarDecl *RootBinding,
++                                  Sema *Actions, bool BorrowedOnly,
++                                  bool *UnprovenLifetime) {
++  auto Unproven = [&] {
++    if (UnprovenLifetime)
++      *UnprovenLifetime = true;
++    return true;
++  };
 +  // Block values have a dedicated closure graph, which can establish aliases
 +  // through longer chains than scalar storage projections.
 +  const bool BlockValue = Expression && Expression->getType()->isBlockPointerType();
 +  unsigned Budget = BlockValue ? 1024 : 256;
 +  const unsigned DepthLimit = BlockValue ? 128 : 32;
 +  llvm::SmallPtrSet<const VarDecl *,32> Active,Complete;
-+  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> Writes;
++  llvm::DenseMap<const VarDecl *, SmallVector<const Expr *, 4>> Writes;
++  auto RecordWrite = [&](const VarDecl *Variable, const Expr *Source) {
++    auto &Sources = Writes[Variable];
++    if (!llvm::is_contained(Sources, Source))
++      Sources.push_back(Source);
++  };
 +  llvm::SmallPtrSet<const VarDecl *,32> Escaped;
 +  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> ActualSources;
 +  llvm::DenseMap<const CallExpr *,ProjectionCallees> CallDefinitions;
@@ -55341,6 +55354,8 @@ new file mode 100644
 +    enum Role {Unknown,Read,Write};
 +    struct Entry {const Stmt *Node;Role Use;unsigned Depth;const FunctionDecl *Function;};
 +    SmallVector<Entry,32> Pending{{ScopeBody,Unknown,0,nullptr}};
++    SmallVector<Entry, 32> PendingFunctions;
++    unsigned NextFunction = 0;
 +    // A direct lambda value snapshots its by-copy captures when evaluated.
 +    // Later top-level statements cannot change those snapshots in structured
 +    // control flow. Keep the whole enclosing statement, since it can loop or
@@ -55576,7 +55591,12 @@ new file mode 100644
 +      }
 +      Escaped.insert(Variable);
 +    };
-+    while(!Pending.empty()) {
++    while (!Pending.empty() || NextFunction < PendingFunctions.size()) {
++      // Process the enclosing scope first, then expand helper bodies in order
++      // of discovery. A deep helper chain cannot spend the whole function
++      // budget before independent calls in the enclosing scope are indexed.
++      if (Pending.empty())
++        Pending.push_back(PendingFunctions[NextFunction++]);
 +      const Entry Current=Pending.pop_back_val();
 +      const Stmt *Node=Current.Node;
 +      const Role Use=Current.Use;
@@ -55616,7 +55636,7 @@ new file mode 100644
 +                if(IndexedFunctions.size()==32)CallGraphIncomplete=true;
 +                else {
 +                  IndexedFunctions.insert(Definition);
-+                  Pending.push_back({Definition->getBody(),Unknown,Depth+1,Definition});
++                  PendingFunctions.push_back({Definition->getBody(),Unknown,Depth+1,Definition});
 +                }
 +              }
 +            }
@@ -55790,7 +55810,7 @@ new file mode 100644
 +          DeferredWrites.push_back({Binary->getLHS(),Binary->getOpcode()==BO_Assign?Binary->getRHS():Binary});
 +          auto Targets=Cells(Binary->getLHS());
 +          if(Targets)for(const auto *V:*Targets)
-+            Writes[V].push_back(Binary->getOpcode()==BO_Assign?Binary->getRHS():Binary);
++            RecordWrite(V, Binary->getOpcode() == BO_Assign ? Binary->getRHS() : Binary);
 +          Add(Binary->getLHS(),Targets?Write:Unknown);Add(Binary->getRHS());continue;
 +        }
 +      }
@@ -55807,7 +55827,7 @@ new file mode 100644
 +        if(Unary->isIncrementDecrementOp()) {
 +          DeferredWrites.push_back({Unary->getSubExpr(),Unary});
 +          auto Targets=Cells(Unary->getSubExpr());
-+          if(Targets)for(const auto *V:*Targets)Writes[V].push_back(Unary);
++          if(Targets)for(const auto *V:*Targets)RecordWrite(V, Unary);
 +          Add(Unary->getSubExpr(),Targets?Write:Unknown);continue;
 +        }
 +      }
@@ -55825,7 +55845,7 @@ new file mode 100644
 +    // was indexed. Resolve every write/escape again against the final argument
 +    // graph, so caller order cannot drop a later cell from the may-source union.
 +    for(const auto &[Target,Source]:DeferredWrites)
-+      if(auto Targets=Cells(Target))for(const auto *Variable:*Targets)Writes[Variable].push_back(Source);
++      if(auto Targets=Cells(Target))for(const auto *Variable:*Targets)RecordWrite(Variable, Source);
 +    SmallVector<const VarDecl *,16> Escapes(DeferredEscapes.begin(),DeferredEscapes.end());
 +    for(const auto *Variable:Escapes)Escape(Variable);
 +    for(const auto &[Variable,Class]:ReferenceCaptures) {
@@ -55851,21 +55871,22 @@ new file mode 100644
 +    // This is a monotone may-source union. Closing an active assignment cycle
 +    // adds no source; another reachable initializer/write still supplies taint.
 +    if(!Active.insert(Variable).second)return false;
++    Index();
 +    bool Managed=false;
 +    if(const auto *Initializer=Variable->getAnyInitializer())Managed=Recurse(Recurse,Initializer,Depth+1);
 +    if(!Managed)if(auto Found=ActualSources.find(Variable);Found!=ActualSources.end())
 +      for(const auto *Source:Found->second)if(Recurse(Recurse,Source,Depth+1)){Managed=true;break;}
 +    if(!Managed && !Variable->getType().isConstQualified()) {
-+      Index();
 +      // Native reference snapshots acquire their own lifetime hold, and their
 +      // Sendable type constrains every retargeted value. Unknown slot writes
 +      // cannot erase scalar resource ownership from that reference transport.
 +      // Block environments have their separate complete target/capture proof.
 +      const bool NativeReference=Variable->getType()->isObjCRetainableType() ||
 +          isObjC3NSObjectStorageType(Variable->getType());
-+      Managed = !BorrowedOnly && !NativeReference &&
++      if (!BorrowedOnly && !NativeReference &&
 +          (Incomplete || (CallGraphIncomplete && Variable->hasGlobalStorage()) ||
-+           Escaped.contains(Variable));
++           Escaped.contains(Variable)))
++        Managed = Unproven();
 +      if(!Managed) {
 +        auto Found=Writes.find(Variable);
 +        if(Found!=Writes.end())for(const auto *Value:Found->second)
@@ -55880,7 +55901,7 @@ new file mode 100644
 +    if (!E)
 +      return false;
 +    if (!Budget || Depth > DepthLimit)
-+      return !BorrowedOnly;
++      return !BorrowedOnly && Unproven();
 +    --Budget;
 +    if(BorrowedOnly?isObjC3BorrowedType(Context,E->getType()):
 +        bool(getObjC3ResourceTypeContract(Context,E->getType()).Cleanup))return true;
@@ -55904,7 +55925,7 @@ new file mode 100644
 +    if(const auto *Reference=dyn_cast<DeclRefExpr>(E)) {
 +      if (!BorrowedOnly && Reference->refersToEnclosingVariableOrCapture() &&
 +          UnknownCaptures.contains(CaptureIdentity(Reference->getDecl())))
-+        return true;
++        return Unproven();
 +      if(!BorrowedOnly && managedTransferStorage(Reference->getDecl()))return true;
 +      if(const auto *Binding=dyn_cast<BindingDecl>(Reference->getDecl()))
 +        return Binding->getBinding() && Recurse(Recurse,Binding->getBinding(),Depth+1);
@@ -55958,7 +55979,7 @@ new file mode 100644
 +      if(Unary->getOpcode()==UO_Deref) {
 +        if(BorrowedOnly && !E->getType()->isPointerType() && !E->getType()->isBlockPointerType() && !E->getType()->isRecordType())return false;
 +        auto Pointees=receiverPointees(Context,Unary->getSubExpr());
-+        if (Pointees.Truncated && !BorrowedOnly) return true;
++        if (Pointees.Truncated && !BorrowedOnly) return Unproven();
 +        for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
 +      }
 +    }
@@ -55994,9 +56015,9 @@ new file mode 100644
 +          // invalidated the closure's captured storage since construction.
 +          if(Call->getType()->isBooleanType())return false;
 +          Index();
-+          if (Incomplete && !BorrowedOnly) return true;
++          if (Incomplete && !BorrowedOnly) return Unproven();
 +          for(const auto *Binding:Field->ReceiverBindings) {
-+            if (Escaped.contains(Binding) && !BorrowedOnly) return true;
++            if (Escaped.contains(Binding) && !BorrowedOnly) return Unproven();
 +            if(auto Found=Writes.find(Binding);Found!=Writes.end())
 +              for(const auto *Value:Found->second)if(Recurse(Recurse,Value,Depth+1))return true;
 +          }
@@ -56009,7 +56030,7 @@ new file mode 100644
 +        } else if(Field->Managed || declaredManagedReceiver(Context,Field->Receiver))return true;
 +        if(!Field->Arrow)return Recurse(Recurse,Field->Receiver,Depth+1);
 +        auto Pointees=receiverPointees(Context,Field->Receiver);
-+        if (Pointees.Truncated && !BorrowedOnly) return true;
++        if (Pointees.Truncated && !BorrowedOnly) return Unproven();
 +        for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
 +        return false;
 +      }
@@ -56032,7 +56053,7 @@ new file mode 100644
 +          if(const auto *Receiver=Member->getImplicitObjectArgument()) {
 +            if(Recurse(Recurse,Receiver,Depth+1))return true;
 +            auto Pointees=receiverPointees(Context,Receiver);
-+            if (Pointees.Truncated && !BorrowedOnly) return true;
++            if (Pointees.Truncated && !BorrowedOnly) return Unproven();
 +            for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
 +          }
 +        for(const auto *Argument:Call->arguments())if(Recurse(Recurse,Argument,Depth+1))return true;
@@ -56054,7 +56075,7 @@ new file mode 100644
 +      // Unknown writes require unchecked lifetime admission. A loan must
 +      // come from a source or a type contract, and blocks even that admission.
 +      if ((Incomplete || CallGraphIncomplete) && !BorrowedOnly)
-+        return true;
++        return Unproven();
 +      if(auto Found=CallDefinitions.find(Call);Found!=CallDefinitions.end()) {
 +        for(const auto *Definition:Found->second)
 +          for(const auto *Source:ReturnSources[Definition])
@@ -56850,10 +56871,16 @@ new file mode 100644
 +    }
 +    --Proof.Budget;
 +    auto Leave=llvm::scope_exit([&]{Proof.ActiveFactoryValues.erase(Value);});
-+    const bool Managed=carriesManagedResourceValue(S.Context,Value,Body,nullptr,&S);
-+    const bool Borrowed=carriesManagedResourceValue(S.Context,Value,Body,nullptr,&S,true);
++    bool UnprovenLifetime = false;
++    const bool Managed = carriesManagedResourceValue(
++        S.Context, Value, Body, nullptr, &S, false, &UnprovenLifetime);
++    const bool Borrowed = carriesManagedResourceValue(
++        S.Context, Value, Body, nullptr, &S, true);
++    const char *CaptureReason = Borrowed ? "borrowed capture" :
++        UnprovenLifetime && Type->isPointerType() ? "unverified capture lifetime" :
++        Managed ? "cleanup-managed capture" : "concurrent capture";
 +    if(Capture.TransportType->isBlockPointerType()) {
-+      if(Managed || Borrowed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),Borrowed?"borrowed capture":"cleanup-managed capture",Capture.Parameter,Managed,Borrowed,Body);
++      if(Managed || Borrowed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),CaptureReason,Capture.Parameter,Managed,Borrowed,Body);
 +      SmallVector<const BlockExpr *,8> Blocks;SmallVector<FactoryCapture,8> Nested;
 +      if(knownConcurrentBlocks(S,Value,Blocks,Body,&Nested)) {
 +        Invalid|=checkFactoryCaptures(S,Nested,Body,Proof,Depth+1);
@@ -56865,7 +56892,7 @@ new file mode 100644
 +        S.Diag(Value->getExprLoc(),diag::err_objc3_task_unknown_capture);Invalid=true;
 +      } else checkTransfer(S,Type,Value->getExprLoc(),"unverified concurrent block capture",Capture.Parameter);
 +    } else Invalid|=checkTransfer(S,Type,Value->getExprLoc(),
-+        Borrowed?"borrowed capture":Managed?"cleanup-managed capture":"concurrent capture",Capture.Parameter,Managed,Borrowed,Body);
++        CaptureReason,Capture.Parameter,Managed,Borrowed,Body);
 +  }
 +  for(const auto &Capture:Captures)if(Capture.Environment)
 +    Invalid|=checkKnownConcurrentBlock(S,Capture.Environment,Capture.Environment->getExprLoc(),false,Proof,Body);
@@ -57352,16 +57379,22 @@ new file mode 100644
 +    bool Borrowed=carriesManagedResourceValue(S.Context,nullptr,ScopeBody,V,&S,true);
 +    if(const auto *Initializer=Capture.getObjC3InitExpr())
 +      Borrowed|=carriesManagedResourceValue(S.Context,Initializer,ScopeBody,nullptr,&S,true);
-+    Managed |= carriesManagedResourceValue(S.Context,nullptr,ScopeBody,V,&S);
-+    if(const auto *Initializer=Capture.getObjC3InitExpr())
-+      Managed |= carriesManagedResourceValue(S.Context,Initializer,ScopeBody,nullptr,&S);
++    bool UnprovenLifetime = false;
++    Managed |= carriesManagedResourceValue(S.Context, nullptr, ScopeBody, V,
++                                            &S, false, &UnprovenLifetime);
++    if (const auto *Initializer = Capture.getObjC3InitExpr())
++      Managed |= carriesManagedResourceValue(S.Context, Initializer, ScopeBody,
++                                              nullptr, &S, false, &UnprovenLifetime);
 +    bool Failed = false;
 +    if (Capture.isByRef() || Borrowed ||
 +        (Managed && !unsafeAdmission(S.Context, V->getType()))) {
 +      S.Diag(Loc, strictConcurrency(S) ? diag::err_objc3_sendable_transfer
 +                                       : diag::warn_objc3_sendable_transfer)
 +          << V->getType()
-+          << (Capture.isByRef() ? "shared __block capture":Borrowed?"borrowed capture":"cleanup-managed capture");
++          << (Capture.isByRef() ? "shared __block capture" :
++              Borrowed ? "borrowed capture" :
++              UnprovenLifetime && V->getType()->isPointerType()
++                  ? "unverified capture lifetime" : "cleanup-managed capture");
 +      Failed = strictConcurrency(S);
 +    } else {
 +      SmallVector<const BlockExpr *, 8> Blocks;
@@ -82088,7 +82121,7 @@ new file mode 100644
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)generic_branch;}); // expected-error {{borrowed capture}}
 + auto escaped=[copied=(const char *)"static"](){return copied;};capture_unknown_write(escaped);
 + const char *changed=escaped();
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)changed;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)changed;}); // expected-error {{unverified capture lifetime}}
 + auto identity=[](const char *value){return value;};
 + const char *parameter=identity(source.get());
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)parameter;}); // expected-error {{borrowed capture}}
@@ -82144,7 +82177,6 @@ new file mode 100644
 + (void)binding_detached(binding_make_scalar(number));
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-captured-value-projections.h b/clang/test/ObjC3/Sema/Inputs/native-captured-value-projections.h
 new file mode 100644
 --- /dev/null
@@ -82294,7 +82326,7 @@ new file mode 100644
 + global_graph_recursive(loan,2);const char *recursive=global_graph_load();
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)recursive;}); // expected-error {{borrowed capture}}
 + const char *bounded=global_graph_bound_0(loan);
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)bounded;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)bounded;}); // expected-error {{unverified capture lifetime}}
 + int observed=global_graph_observe();
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)observed;});
 +}
@@ -82306,7 +82338,6 @@ new file mode 100644
 + (void)binding_detached(binding_make_scalar(telemetry));
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-global-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-global-call-graphs.h
 new file mode 100644
 --- /dev/null
@@ -82405,8 +82436,8 @@ new file mode 100644
 + const char *first="static",*second="static";
 + reference_graph_escape(first);reference_graph_escape(second);
 + const char *first_value=first,*second_value=second;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)first_value;}); // expected-error {{borrowed capture}}
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)second_value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)first_value;}); // expected-error {{unverified capture lifetime}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)second_value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void reference_graph_receiver_values(borrowed const char *loan){
 + ReferenceGraphReceiver source;ReferenceGraphFinal final_source;
@@ -82419,7 +82450,7 @@ new file mode 100644
 +}
 +void reference_graph_open_dispatch(ReferenceGraphReceiver &source){
 + const char *slot="static";source.virtual_store(slot,"other");const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void reference_graph_resources(void){
 + int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
@@ -82427,7 +82458,6 @@ new file mode 100644
 + (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-reference-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-reference-call-graphs.h
 new file mode 100644
 --- /dev/null
@@ -82599,7 +82629,7 @@ new file mode 100644
 +void indirect_graph_unproved(void){
 + void (*mutable_store)(const char **,const char *)=indirect_pointer_store;
 + const char *slot="static";mutable_store(&slot,"other");const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +#ifdef __cplusplus
 +void indirect_graph_different(int choose){
@@ -82609,12 +82639,12 @@ new file mode 100644
 +}
 +void indirect_graph_volatile(void){
 + auto const volatile work=&indirect_reference_store;const char *slot="static";work(slot,"other");const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void indirect_graph_signature(void){
 + void (*const work)(const char *&,const char *)=&indirect_reference_nothrow;
 + const char *slot="static";work(slot,"other");const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void indirect_graph_bound(void){
 + auto const value0=&indirect_reference_store;
@@ -82638,11 +82668,10 @@ new file mode 100644
 + auto const value18=value17;
 + auto const value19=value18;
 + const char *slot="static";value19(slot,"other");const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +#endif
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-indirect-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-indirect-call-graphs.h
 new file mode 100644
 --- /dev/null
@@ -82721,7 +82750,7 @@ new file mode 100644
 +void captured_graph_bound(borrowed const char *loan){
 + auto work=[saved=loan,value0=0,value1=1,value2=2,value3=3,value4=4,value5=5,value6=6,value7=7,value8=8,value9=9,value10=10,value11=11,value12=12,value13=13,value14=14,value15=15,value16=16,value17=17,value18=18,value19=19,value20=20,value21=21,value22=22,value23=23,value24=24,value25=25,value26=26,value27=27,value28=28,value29=29,value30=30,value31=31,value32=32](){global_projection_pointer=saved;};work();
 + const char *value=global_projection_pointer;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void captured_graph_alias_bound(borrowed const char *loan){
 + auto value0=[saved=loan](){global_projection_pointer=saved;};
@@ -82747,7 +82776,7 @@ new file mode 100644
 + auto value20=value19;
 + auto value21=value20;
 + value21();const char *value=global_projection_pointer;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void captured_graph_resources(void){
 + int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
@@ -82757,15 +82786,14 @@ new file mode 100644
 +void captured_graph_escaped_reference(void){
 + auto work=[saved=(const char *)"static"](const char *&target){target=saved;};captured_graph_unknown(work);
 + const char *slot="static";work(slot);const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void captured_graph_escaped(void){
 + auto work=[saved=(const char *)"static"](){global_projection_external=saved;};captured_graph_unknown(work);work();
 + const char *value=global_projection_external;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-captured-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-captured-call-graphs.h
 new file mode 100644
 --- /dev/null
@@ -82885,18 +82913,17 @@ new file mode 100644
 +}
 +void reference_result_escape(){
 + reference_graph_unknown(result_global_slot());const char *value=global_projection_pointer;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void reference_result_cycle(bool choose){
 + const char *slot="static";result_cycle(choose,slot)="other";const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void reference_result_bounds(borrowed const char *loan){
 + result_bound_39()=loan;const char *value=global_projection_pointer;
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-reference-result-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-reference-result-graphs.h
 new file mode 100644
 --- /dev/null
@@ -83037,17 +83064,17 @@ new file mode 100644
 +void capture_reference_escaped_copy(){
 + const char *slot="static";auto work=[&slot](){slot="other";};auto copy=work;capture_storage_unknown(copy);work();
 + const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void capture_reference_escaped_container(){
 + const char *slot="static";auto work=[&slot](){slot="other";};CaptureEnvelope<decltype(work)> box{work};auto copy=box;
 + capture_storage_unknown(copy);work();const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void capture_reference_escaped_outer(){
 + const char *slot="static";auto work=[&slot](){slot="other";};auto outer=[work](){};
 + capture_storage_unknown(outer);work();const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void capture_reference_binding(borrowed const char *loan){
 + const char *values[1]={"static"};auto &[slot]=values;auto work=[&slot,saved=loan](){slot=saved;};work();
@@ -83073,10 +83100,9 @@ new file mode 100644
 +void capture_record_shape_bound(borrowed const char *loan){
 + CaptureWideRecord record={loan};auto work=[record](){global_projection_pointer=record.pointer;};work();
 + const char *value=global_projection_pointer;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-reference-record-captures.h b/clang/test/ObjC3/Sema/Inputs/native-reference-record-captures.h
 new file mode 100644
 --- /dev/null
@@ -83166,7 +83192,7 @@ new file mode 100644
 +void stored_escaped(){
 + const char *slot="static";auto work=[&slot](){slot="other";};StoredWork<decltype(work)> box{42,work};capture_storage_unknown(box);
 + box.value();const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void stored_dynamic_array(borrowed const char *loan,unsigned index){
 + auto work=[saved=loan](){global_projection_pointer=saved;};decltype(work) values[2]={work,work};values[index]();
@@ -83184,7 +83210,6 @@ new file mode 100644
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-stored-callables.h b/clang/test/ObjC3/Sema/Inputs/native-stored-callables.h
 new file mode 100644
 --- /dev/null
@@ -83258,24 +83283,24 @@ new file mode 100644
 + extern void replace_member_target(decltype(method) &);
 + replace_member_target(method);
 + (source.*method)(slot);const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void member_pointer_assignment_escape(){
 + FixedMemberReceiver source;const char *slot="static";auto method=&FixedMemberReceiver::ordinary;
 + extern void replace_member_target(decltype(method) &);
 + replace_member_target((method=&FixedMemberReceiver::ordinary));
 + (source.*method)(slot);const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void member_pointer_virtual(){
 + FixedMemberReceiver source;const char *slot="static";auto const method=&FixedMemberReceiver::dynamic;(source.*method)(slot);
 + const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void member_pointer_weakened(){
 + FixedMemberReceiver source;const char *slot="static";void(FixedMemberReceiver::*const method)(const char *&)const=&FixedMemberReceiver::ordinary;
 + (source.*method)(slot);const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +void member_pointer_resource(){
 + FixedMemberReceiver source;int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
@@ -83326,7 +83351,7 @@ new file mode 100644
 + auto const &value20=value19;
 + auto const &value21=value20;
 + (source.*value21)(slot);const char *value=slot;
-+ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{unverified capture lifetime}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-member-pointer-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-member-pointer-graphs.h
