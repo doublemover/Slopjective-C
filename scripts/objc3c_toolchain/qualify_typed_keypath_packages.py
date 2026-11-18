@@ -23,7 +23,7 @@ else:
     from qualify_public_surfaces import prepare, case_workspace
 
 MODULE = 'fixture.TypedKeyPaths'
-SEMANTIC = 'objc3.typed-keypaths.v1'
+SEMANTIC = 'objc3.typed-keypaths.v2'
 CXX_OPERATIONS = ('read', 'write', 'readonly', 'metadata', 'packed_read', 'all_read', 'all_write',
     'braced_write', 'literal_count_path', 'literal_read_count', 'literal_checked_path',
     'typed_read', 'typed_write', 'typed_narrow', 'typed_make')

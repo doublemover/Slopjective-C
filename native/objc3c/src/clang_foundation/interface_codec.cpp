@@ -26,7 +26,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.native-return-ownership.v1",
     "objc3.native-ownership-contracts.v1",
     "objc3.isolation-contracts.v1",
-    "objc3.typed-keypaths.v1",
+    "objc3.typed-keypaths.v2",
     "objc3.keypath-subscripts.v1",
     kNativeEmissionPolicySemantic,
     kNativeThreadSafetySemantic,
@@ -694,17 +694,17 @@ llvm::Error ValidateForEncoding(
     return Invalid("async consuming ownership identity and required capability must agree");
   const bool dependent_types = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathTypeIdentity);
   const bool dependent_type_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathTypeSemantic) != sidecar.required_semantics.end();
-  const bool dependent_type_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
+  const bool dependent_type_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
   if (dependent_types != dependent_type_capability || (dependent_type_capability && !dependent_type_paths))
     return Invalid("dependent key-path type identity and required type/key-path capabilities must agree");
   const bool dependent_literals = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathLiteralIdentity);
   const bool dependent_literal_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathLiteralSemantic) != sidecar.required_semantics.end();
-  const bool dependent_literal_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
+  const bool dependent_literal_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
   if (dependent_literals != dependent_literal_capability || (dependent_literal_capability && !dependent_literal_paths))
     return Invalid("dependent key-path literal identity and required literal/key-path capabilities must agree");
   const bool checked_reads = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasCheckedKeyPathReadIdentity);
   const bool checked_read_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kCheckedKeyPathReadSemantic) != sidecar.required_semantics.end();
-  const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
+  const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     return Invalid("checked key-path read identity and required read/key-path capabilities must agree");
   const bool inline_closures=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxInlineClosureObjectIdentity);
@@ -925,12 +925,12 @@ llvm::Error ValidateForEncoding(
     return Invalid("C++ carrier call identity and required capability must agree");
   const bool resource_paths = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasResourceKeyPathValueIdentity);
   const bool resource_path_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kResourceKeyPathValueSemantic)!=sidecar.required_semantics.end();
-  const bool resource_typed_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
+  const bool resource_typed_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v2")!=sidecar.required_semantics.end();
   if (resource_paths!=resource_path_capability || (resource_path_capability && !resource_typed_paths))
     return Invalid("resource key-path identity and required resource/key-path capabilities must agree");
   const bool nullable_writes = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNullableKeyPathWriteIdentity);
   const bool nullable_write_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNullableKeyPathWriteSemantic)!=sidecar.required_semantics.end();
-  const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
+  const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v2")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
   const bool has_native_attributes=std::any_of(sidecar.declarations.begin(),
@@ -1545,7 +1545,7 @@ llvm::Error ValidateForEncoding(
       return Invalid(llvm::formatv("unknown required semantic '{0}'", semantic).str());
   }
   if (required.count("objc3.keypath-subscripts.v1") &&
-      !required.count("objc3.typed-keypaths.v1"))
+      !required.count("objc3.typed-keypaths.v2"))
     return Invalid("key-path subscripts are missing their typed key-path capability");
   if (required.count(RuntimeCompletionSemantic().str()) &&
       !required.count(RuntimeInterfaceSemantic().str()))
@@ -1564,7 +1564,7 @@ llvm::Error ValidateForEncoding(
         !required.count("objc3.native-ownership-contracts.v1"))
       return Invalid("native ownership contract is missing its semantic capability");
     if (declaration.canonical_type_identity.find("KeyPath<") != std::string::npos &&
-        !required.count("objc3.typed-keypaths.v1"))
+        !required.count("objc3.typed-keypaths.v2"))
       return Invalid("typed key path is missing its semantic capability");
     if ((!effects.actor_isolation_identity.empty() ||
          !effects.executor_affinity_identity.empty()) &&

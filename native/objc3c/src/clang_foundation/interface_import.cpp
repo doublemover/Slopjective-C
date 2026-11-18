@@ -1392,7 +1392,7 @@ bool InterfaceImportSession::RequiresKeyPathHeader() const {
   if (!impl_) return false;
   return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
     return std::find(module.sidecar.required_semantics.begin(),
-        module.sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") !=
+        module.sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") !=
         module.sidecar.required_semantics.end();
   });
 }

@@ -58497,7 +58497,7 @@ diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPa
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1648 @@
+@@ -0,0 +1,1654 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -59110,12 +59110,11 @@ new file mode 100644
 +  FieldDecl *Field = nullptr;
 +  QualType Owner, Value;
 +  SourceLocation Loc;
++  bool CanSet = false;
 +};
 +
 +bool readonly(const Component &Part) {
-+  return Part.Property ? Part.Property->isReadOnly() ||
-+                             !Part.Property->getSetterMethodDecl()
-+                       : Part.Field->getType().isConstQualified();
++  return Part.Property ? !Part.CanSet : Part.Field->getType().isConstQualified();
 +}
 +
 +ExprResult readComponent(Sema &S, Expr *Receiver, const Component &Part) {
@@ -59697,7 +59696,7 @@ new file mode 100644
 +  SmallVector<Component, 4> Components;
 +  QualType Current = Root;
 +  bool Writable = true;
-+  bool HasFields = false;
++  bool KVCCompatible = true;
 +  bool NullableTraversal = false;
 +  auto NoteNullable = [&](QualType Value, unsigned Index) {
 +    if (Index + 1 < Members.size() && nullable(Value)) {
@@ -59764,7 +59763,7 @@ new file mode 100644
 +      Component Part{nullptr, Field, Current, Value, MemberLocs[I]};
 +      Components.push_back(Part);
 +      Writable &= !readonly(Part);
-+      HasFields = true;
++      KVCCompatible = false;
 +      Path += "." + Members[I]->getName().str();
 +      NoteNullable(Value, I);
 +      Current = Value;
@@ -59789,21 +59788,20 @@ new file mode 100644
 +                                    "declared instance property");
 +      return ExprError();
 +    }
-+    if (!Property->getGetterMethodDecl()) {
++    ObjCMethodDecl *Getter = Property->getGetterMethodDecl();
++    ObjCMethodDecl *Setter = Property->getSetterMethodDecl();
++    if (!Getter) {
 +      reject(*this, MemberLocs[I],
 +             "key-path property requires a declared getter");
 +      return ExprError();
 +    }
-+    if (DiagnoseUseOfDecl(Property->getGetterMethodDecl(), MemberLocs[I]) ||
-+        (!Property->isReadOnly() && Property->getSetterMethodDecl() &&
-+         DiagnoseUseOfDecl(Property->getSetterMethodDecl(), MemberLocs[I])))
++    if (DiagnoseUseOfDecl(Getter, MemberLocs[I]))
 +      return ExprError();
 +    auto Isolated = [](const Decl *Declaration) {
 +      return isObjC3ActorIsolated(Declaration) ||
 +             getObjC3Executor(Declaration) != nullptr;
 +    };
-+    if (Isolated(Property) || Isolated(Property->getGetterMethodDecl()) ||
-+        Isolated(Property->getSetterMethodDecl())) {
++    if (Isolated(Property) || Isolated(Getter)) {
 +      reject(*this, MemberLocs[I],
 +             "synchronous key paths cannot access actor-isolated or "
 +             "executor-affine properties");
@@ -59820,8 +59818,7 @@ new file mode 100644
 +          return true;
 +      return false;
 +    };
-+    if (ConsumesCaller(Property->getGetterMethodDecl()) ||
-+        ConsumesCaller(Property->getSetterMethodDecl())) {
++    if (ConsumesCaller(Getter)) {
 +      reject(*this, MemberLocs[I],
 +             "key paths cannot erase consuming accessor ownership");
 +      return ExprError();
@@ -59832,8 +59829,7 @@ new file mode 100644
 +      auto Effects = Accessor->getObjC3FunctionEffects();
 +      return Effects.Async || Effects.Throws != ObjC3ThrowsKind::None;
 +    };
-+    if (UnsupportedEffect(Property->getGetterMethodDecl()) ||
-+        UnsupportedEffect(Property->getSetterMethodDecl())) {
++    if (UnsupportedEffect(Getter)) {
 +      reject(*this, MemberLocs[I],
 +             "key-path accessors must be synchronous and nonthrowing");
 +      return ExprError();
@@ -59849,8 +59845,18 @@ new file mode 100644
 +      return ExprError();
 +    }
 +    Value = normalizeValue(*this, Value);
-+    Components.push_back({Property, nullptr, Current, Value, MemberLocs[I]});
-+    Writable &= !Property->isReadOnly() && Property->getSetterMethodDecl();
++    // A path can expose its getter independently. A setter that adds an
++    // effect, isolation or ownership contract cannot be used for writeback
++    // through WritableKeyPath's ordinary synchronous ABI.
++    const bool CanSet = !Property->isReadOnly() && Setter &&
++        !Isolated(Setter) && !ConsumesCaller(Setter) && !UnsupportedEffect(Setter);
++    if (CanSet && DiagnoseUseOfDecl(Setter, MemberLocs[I]))
++      return ExprError();
++    // A KVC string can name a setter outside the typed read contract.
++    if (!Property->isReadOnly() && Setter && !CanSet)
++      KVCCompatible = false;
++    Components.push_back({Property, nullptr, Current, Value, MemberLocs[I], CanSet});
++    Writable &= CanSet;
 +    if (!Path.empty())
 +      Path += ".";
 +    Path += Members[I]->getName().str();
@@ -59920,7 +59926,7 @@ new file mode 100644
 +      aggregate(*this, Array, ComponentValues, Loc), Loc);
 +  Expr *DescriptorFields[] = {
 +      integer(*this, 32, 2, Loc),
-+      integer(*this, 32, (Writable ? 1u : 0u) | (HasFields ? 0u : 2u) |
++      integer(*this, 32, (Writable ? 1u : 0u) | (KVCCompatible ? 2u : 0u) |
 +                            (NullableTraversal ? 4u : 0u) |
 +                            (NullableTraversal && Writable ? 8u : 0u) |
 +                            (NullableTraversal && !nullable(Current) ? 16u : 0u), Loc),
@@ -61036,10 +61042,9 @@ index 000000000..61c933281
 +@end
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-native-ownership.m b/clang/test/ObjC3/Sema/typed-keypath-native-ownership.m
 new file mode 100644
-index 000000000..0bba2f948
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-native-ownership.m
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,23 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
@@ -61056,9 +61061,12 @@ index 000000000..0bba2f948
 +KeyPath<NativeOwnershipPathRoot *, NativeOwnershipPathRoot * _Nullable> native_owned_path(void) {
 +  return @keypath(NativeOwnershipPathRoot, produced);
 +}
-+void invalid_native_ownership(void) {
++KeyPath<NativeOwnershipPathRoot *, NativeOwnershipPathRoot * _Nullable> native_consuming_setter_read(void) {
++  return @keypath(NativeOwnershipPathRoot, consuming);
++}
++void invalid_native_ownership(NativeOwnershipPathRoot *_Nonnull root) {
 +  (void)@keypath(NativeOwnershipPathRoot, bytes); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
-+  (void)@keypath(NativeOwnershipPathRoot, consuming); // expected-error {{key paths cannot erase consuming accessor ownership}}
++  KeyPathSet(@keypath(NativeOwnershipPathRoot, consuming), root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m b/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m
 new file mode 100644
@@ -83816,3 +83824,48 @@ new file mode 100644
 +#endif
 +
 +#endif
+diff --git a/clang/test/ObjC3/Sema/typed-keypath-accessor-projections.m b/clang/test/ObjC3/Sema/typed-keypath-accessor-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-keypath-accessor-projections.m
+@@ -0,0 +1,40 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++
++#include "../Inputs/keypath-abi.h"
++@protocol Error @end
++__attribute__((objc_root_class))
++@interface SplitAccessors
++@property(nonatomic) int ordinary;
++@property(nonatomic) int checked;
++- (void)setChecked:(int)value __objc3_throws(id<Error>);
++@property(nonatomic) int affine;
++- (void)setAffine:(int)value __attribute__((objc_executor(main)));
++@property(nonatomic, strong) SplitAccessors * _Nullable consuming;
++- (void)setConsuming:(SplitAccessors * _Nullable __attribute__((ns_consumed)))value;
++@property(nonatomic, readonly) int affineRead;
++- (int)affineRead __attribute__((objc_executor(main)));
++@property(nonatomic, readonly) int consumingRead;
++- (int)consumingRead __attribute__((ns_consumes_self));
++@property(nonatomic, readonly) int effectfulRead;
++- (int)effectfulRead __objc3_throws(id<Error>);
++@end
++int read_safe(SplitAccessors * _Nonnull object) {
++  KeyPath<SplitAccessors *, int> checked = @keypath(SplitAccessors, checked);
++  KeyPath<SplitAccessors *, int> affine = @keypath(SplitAccessors, affine);
++  KeyPath<SplitAccessors *, SplitAccessors * _Nullable> consuming = @keypath(SplitAccessors, consuming);
++  WritableKeyPath<SplitAccessors *, int> ordinary = @keypath(SplitAccessors, ordinary);
++  KeyPathSet(ordinary, object, 17);
++  return KeyPathGet(checked, object) + KeyPathGet(affine, object) +
++         (KeyPathGet(consuming, object) != 0);
++}
++void reject_effects(SplitAccessors * _Nonnull object) {
++  KeyPathSet(@keypath(SplitAccessors, checked), object, 1); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
++  KeyPathSet(@keypath(SplitAccessors, affine), object, 1); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
++  KeyPathSet(@keypath(SplitAccessors, consuming.ordinary), object, 1); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
++  (void)@keypath(SplitAccessors, affineRead); // expected-error {{synchronous key paths cannot access actor-isolated or executor-affine properties}}
++  (void)@keypath(SplitAccessors, consumingRead); // expected-error {{key paths cannot erase consuming accessor ownership}}
++  (void)@keypath(SplitAccessors, effectfulRead); // expected-error {{key-path accessors must be synchronous and nonthrowing}}
++}

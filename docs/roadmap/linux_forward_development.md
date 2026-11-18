@@ -7,6 +7,11 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.266 / System 2.192 / keypath 2.14 accessor change](linux_typed_keypaths.md)
+keeps synchronous getters available through typed read-only paths when a
+setter introduces throwing, isolation or consuming ownership. Projected
+paths carry no setter on that component and cannot convert to KVC.
+
 The [Source 2.265 / System 2.191 C argument bridge](linux_async_c_completion_exports.md)
 retains object inputs and copies Blocks before returning to the C caller.
 Completion and cancellation both release the captured arguments.

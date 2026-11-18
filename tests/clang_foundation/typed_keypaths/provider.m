@@ -44,6 +44,16 @@ __unsafe_unretained RuntimePathNode *path_clear_optional_parent;
 - (void)setInherited:(PathInherited)value { ++path_inherited_sets; _inherited=value; }
 #endif
 - (int)identity { return _count + 100; }
+- (int)checkedProjection { return _count + 200; }
+- (void)setCheckedProjection:(int)value __objc3_throws(id<Error>) {
+  (void)value;
+  __builtin_trap();
+}
+- (int)affineProjection { return _count + 300; }
+- (void)setAffineProjection:(int)value __attribute__((objc_executor(main))) {
+  (void)value;
+  __builtin_trap();
+}
 - (RuntimePathNode *)readChild { ++path_child_reads; return _child; }
 - (void)writeChild:(RuntimePathNode *)child {
 #if __has_feature(objc_arc)
@@ -128,6 +138,9 @@ WritableKeyPath<RuntimePathNode *, int> runtime_nested_path(void) {
 }
 KeyPath<RuntimePathNode *, int> runtime_identity_path(void) {
   return @keypath(RuntimePathNode, identity);
+}
+KeyPath<RuntimePathNode *, int> runtime_checked_projection(void) {
+  return @keypath(RuntimePathNode, checkedProjection);
 }
 WritableKeyPath<RuntimePathNode *, PathPair> runtime_pair_path(void) {
   return @keypath(RuntimePathNode, pair);

@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 265,
+        "minor": 266,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -379,7 +379,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 13,
+        "minor": 14,
         "patch": 0
       },
       "header": "include/objc3/keypath.h",
@@ -389,6 +389,7 @@
         "Native by-value explicit C++ resource owners, composed records and whole active scalar/resource unions through keypath get/set and nested writeback preserve native copy/move/destruction; exact copy/setter faults and nullable-write cleanup pass eight ASan/UBSan configurations / 60 commands, all 29 compiler cases (52 new commands), 48 AST controls, four source-free profiles, nine adjacent frontend groups, codec/isolation and 220 exact production decoder replays; required resource-values v1 capability, matched SDK pending",
         "Native C++ nontrivial record values and record-field writeback with checked copying and exception cleanup (source)",
         "native typed property key-path literals",
+        "Synchronous getters with checked, executor-affine or consuming setters form typed read-only projections without writable accessors or KVC conversion; source-free typed-keypaths v2 admission",
         "typed read/write and readonly conversion",
         "immutable component metadata and native accessor dispatch",
         "cross-translation-unit type and descriptor identity",
@@ -416,7 +417,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 191,
+        "minor": 192,
         "patch": 0
       },
       "header": "include/objc3/system.h",

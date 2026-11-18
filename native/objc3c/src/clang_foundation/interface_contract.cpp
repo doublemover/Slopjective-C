@@ -507,17 +507,17 @@ InterfaceContractValidation ValidateSemanticInterface(
     Add(result,"O3IFC105","async consuming ownership identity and required capability must agree",expected.canonical_name);
   const bool dependent_types = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathTypeIdentity);
   const bool dependent_type_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathTypeSemantic) != sidecar.required_semantics.end();
-  const bool dependent_type_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
+  const bool dependent_type_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
   if (dependent_types != dependent_type_capability || (dependent_type_capability && !dependent_type_paths))
     Add(result,"O3IFC104","dependent key-path type identity and required type/key-path capabilities must agree",expected.canonical_name);
   const bool dependent_literals = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathLiteralIdentity);
   const bool dependent_literal_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathLiteralSemantic) != sidecar.required_semantics.end();
-  const bool dependent_literal_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
+  const bool dependent_literal_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
   if (dependent_literals != dependent_literal_capability || (dependent_literal_capability && !dependent_literal_paths))
     Add(result,"O3IFC103","dependent key-path literal identity and required literal/key-path capabilities must agree",expected.canonical_name);
   const bool checked_reads = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasCheckedKeyPathReadIdentity);
   const bool checked_read_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kCheckedKeyPathReadSemantic) != sidecar.required_semantics.end();
-  const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();
+  const bool checked_read_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v2") != sidecar.required_semantics.end();
   if (checked_reads != checked_read_capability || (checked_read_capability && !checked_read_paths))
     Add(result,"O3IFC102","checked key-path read identity and required read/key-path capabilities must agree",expected.canonical_name);
   const bool inline_closures=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxInlineClosureObjectIdentity);
@@ -748,12 +748,12 @@ InterfaceContractValidation ValidateSemanticInterface(
     Add(result,"O3IFC130","C++ carrier call identity and required capability must agree",expected.canonical_name);
   const bool resource_paths = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasResourceKeyPathValueIdentity);
   const bool resource_path_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kResourceKeyPathValueSemantic)!=sidecar.required_semantics.end();
-  const bool resource_typed_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
+  const bool resource_typed_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v2")!=sidecar.required_semantics.end();
   if (resource_paths!=resource_path_capability || (resource_path_capability && !resource_typed_paths))
     Add(result,"O3IFC106","resource key-path identity and required resource/key-path capabilities must agree",expected.canonical_name);
   const bool nullable_writes = std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNullableKeyPathWriteIdentity);
   const bool nullable_write_capability = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNullableKeyPathWriteSemantic)!=sidecar.required_semantics.end();
-  const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
+  const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v2")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
   const bool has_native_attributes=std::any_of(sidecar.declarations.begin(),
@@ -1336,7 +1336,7 @@ InterfaceContractValidation ValidateSemanticInterface(
           "native symbol name violates its ownership or explicit external binding contract",
           d.stable_id);
   if (std::binary_search(required.begin(), required.end(), "objc3.keypath-subscripts.v1") &&
-      !std::binary_search(required.begin(), required.end(), "objc3.typed-keypaths.v1"))
+      !std::binary_search(required.begin(), required.end(), "objc3.typed-keypaths.v2"))
     Add(result, "O3IFC046", "key-path subscripts are missing their typed key-path capability");
   const bool effect_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.canonical-function-effects.v1");
@@ -1394,7 +1394,7 @@ InterfaceContractValidation ValidateSemanticInterface(
     if (declaration.canonical_type_identity.find("KeyPath<") !=
             std::string::npos &&
         !std::binary_search(required.begin(), required.end(),
-                            "objc3.typed-keypaths.v1"))
+                            "objc3.typed-keypaths.v2"))
       Add(result, "O3IFC024",
           "typed key path is missing its semantic capability",
           declaration.stable_id);

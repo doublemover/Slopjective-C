@@ -28,7 +28,7 @@ fake integer helpers and package metadata are no longer library inputs.
 `objc3.concurrency` are native imports. The development `objc3.system` module is
 available under `-fobjc3-profile=strict-system` and supplies Linux resource
 helpers. The partial native `objc3.keypath` module supplies typed paths and
-immutable metadata; its development version is 2.12.0. Module presence does not claim a
+immutable metadata; its development version is 2.14.0. Module presence does not claim a
 complete Core or Strict profile.
 
 Text uses validated UTF-8 and explicit byte/scalar lengths; embedded NUL is data.

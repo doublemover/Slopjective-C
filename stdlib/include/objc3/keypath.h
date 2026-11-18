@@ -5,7 +5,7 @@
 #include <objc3c/runtime/objc3_keypath.h>
 
 #define OBJC3_KEYPATH_MODULE_SEMVER_MAJOR 2u
-#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 13u
+#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 14u
 #define OBJC3_KEYPATH_MODULE_SEMVER_PATCH 0u
 
 /* KeyPath<Root, Value> and WritableKeyPath<Root, Value> are compiler-owned
@@ -39,6 +39,8 @@
  * captured in written root, key, value order. Assignment returns the converted
  * setter input; compound updates perform one get and one set. These updates
  * provide ordinary property semantics, without atomic read/modify/write.
+ * A synchronous getter with a checked, isolated, or consuming setter can
+ * form a read-only path. This path cannot write through KVC either.
  * KeyPathToKVCString(kp) explicitly boxes property-only metadata as an
  * autoreleased NSString when Foundation is present. Incompatible paths return
  * nil; strict profiles diagnose the loss of typed root/value checking.

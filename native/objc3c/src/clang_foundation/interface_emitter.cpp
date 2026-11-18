@@ -1122,7 +1122,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (collector.UsesCanonicalFunctionEffects())
     sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
   if (collector.UsesTypedKeyPaths())
-    sidecar.required_semantics.push_back("objc3.typed-keypaths.v1");
+    sidecar.required_semantics.push_back("objc3.typed-keypaths.v2");
   if (collector.UsesKeyPathSubscripts())
     sidecar.required_semantics.push_back("objc3.keypath-subscripts.v1");
   for (const auto &declaration : sidecar.declarations) {
@@ -1422,7 +1422,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (HasNativeIsolationContracts(effects))
       sidecar.required_semantics.push_back(kNativeIsolationContractSemantic);
     if (declaration.canonical_type_identity.find("KeyPath<") != std::string::npos)
-      sidecar.required_semantics.push_back("objc3.typed-keypaths.v1");
+      sidecar.required_semantics.push_back("objc3.typed-keypaths.v2");
     if (declaration.canonical_type_identity.find("Optional(") !=
             std::string::npos ||
         declaration.canonical_type_identity.find("Result(") !=

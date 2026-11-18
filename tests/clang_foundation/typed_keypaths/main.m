@@ -287,6 +287,27 @@ int main(void) {
     assert(KeyPathGet(path, root) == 42);
     assert(KeyPathGet(runtime_identity_path(), child) == 142);
 
+    KeyPath<RuntimePathNode *, int> checked = runtime_checked_projection();
+    KeyPath<RuntimePathNode *, int> affine = @keypath(RuntimePathNode, child.affineProjection);
+    assert(KeyPathGet(checked, child) == 242);
+    assert(KeyPathGet(affine, root) == 342);
+    const objc3_keypath_descriptor_v2 *checkedMetadata = KeyPathMetadata(checked);
+    const objc3_keypath_descriptor_v2 *affineMetadata = KeyPathMetadata(affine);
+    assert(objc3_keypath_validate_v2(checkedMetadata) == OBJC3_KEYPATH_OK);
+    assert(objc3_keypath_validate_v2(affineMetadata) == OBJC3_KEYPATH_OK);
+    const unsigned write_or_kvc = OBJC3_KEYPATH_WRITABLE | OBJC3_KEYPATH_KVC_COMPATIBLE;
+    assert(!(checkedMetadata->flags & write_or_kvc));
+    assert(!(affineMetadata->flags & write_or_kvc));
+    assert(!KeyPathToKVCString(checked) && !KeyPathToKVCString(affine));
+    assert(objc3_keypath_component_v2_at(checkedMetadata, 0, &part) == 0);
+    assert(!strcmp(part->getter_selector, "checkedProjection"));
+    assert(part->flags & OBJC3_KEYPATH_COMPONENT_READONLY);
+    assert(!*part->setter_selector);
+    assert(objc3_keypath_component_v2_at(affineMetadata, 1, &part) == 0);
+    assert(!strcmp(part->getter_selector, "affineProjection"));
+    assert(part->flags & OBJC3_KEYPATH_COMPONENT_READONLY);
+    assert(!*part->setter_selector);
+
     // A provider-owned record and a consumer literal share structural metadata
     // identity while their descriptor/global helper addresses may differ.
     int equal = 0;

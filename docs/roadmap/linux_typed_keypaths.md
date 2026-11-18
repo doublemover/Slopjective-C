@@ -45,6 +45,15 @@ Sema resolves every declared instance property, checks availability, verifies
 object intermediate types, and retains the final property's nullability.
 Missing, inaccessible, or incompatible components fail before lowering.
 
+Source 2.266 and keypath 2.14 preserve a synchronous, nonconsuming getter when
+its setter is async, throwing, executor-affine, actor-isolated or consuming. A
+route through that property has read-only type. Its component metadata carries
+the getter selector and read-only flag, with an empty setter selector. The
+route cannot box as a KVC string because the string could expose the setter
+without those contracts. The `objc3.typed-keypaths.v2` reader capability covers
+source-free replay of these projections. Getters with unsupported effects,
+isolation or ownership still fail admission.
+
 `KeyPathGet`, `KeyPathSet`, and `KeyPathMetadata` are compiler-owned applications.
 Each written operand is evaluated once, in source order, and the selected
 keypath record is copied before later operands can mutate its source.

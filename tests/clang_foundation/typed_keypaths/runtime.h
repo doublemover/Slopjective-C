@@ -1,6 +1,7 @@
 #ifndef OBJC3_TYPED_KEYPATH_RUNTIME_FIXTURE_H
 #define OBJC3_TYPED_KEYPATH_RUNTIME_FIXTURE_H
 @import objc3.keypath;
+@import objc3.errors;
 #include <objc/runtime.h>
 #include <objc/objc-arc.h>
 #include <objc/blocks_runtime.h>
@@ -49,6 +50,10 @@ __attribute__((objc_root_class))
 + (instancetype)newWithCount:(int)count;
 @property(nonatomic, getter=readCount, setter=writeCount:) int count;
 @property(nonatomic, readonly) int identity;
+@property(nonatomic) int checkedProjection;
+- (void)setCheckedProjection:(int)value __objc3_throws(id<Error>);
+@property(nonatomic) int affineProjection;
+- (void)setAffineProjection:(int)value __attribute__((objc_executor(main)));
 @property(nonatomic, strong, getter=readChild, setter=writeChild:)
     RuntimePathNode * _Nonnull child;
 @property(nonatomic, copy) RuntimePathNode * _Nullable copied;
@@ -79,6 +84,7 @@ __attribute__((objc_root_class))
 
 WritableKeyPath<RuntimePathNode *, int> runtime_nested_path(void);
 KeyPath<RuntimePathNode *, int> runtime_identity_path(void);
+KeyPath<RuntimePathNode *, int> runtime_checked_projection(void);
 WritableKeyPath<RuntimePathNode *, PathPair> runtime_pair_path(void);
 WritableKeyPath<RuntimePathNode *, unsigned> runtime_bits_path(void);
 #ifdef __cplusplus
