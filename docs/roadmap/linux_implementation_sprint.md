@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.247 / System 2.173 native checked C++ result changes](linux_checked_cpp_regions.md)
+support unwinding destructors on synchronous indirect results and preserve
+callee result ownership through exceptional return-expression cleanup.
+
 The [Source 2.246 / System 2.172 mutable callable analysis](linux_native_callable_target_sets.md)
 combines exact initializers and assignments in closed automatic storage while
 preserving conservative analysis for escaped and opaque callable bindings.

@@ -276,6 +276,157 @@ void interface_checkpoint(void) {
   LinkAndRun(root, provider.output_path, client.output_path, imported.output_path);
   std::cout << "C completion source-free execution " << standard << (arc ? " ARC\n" : " MRC\n");
 }
+
+void CheckThrowingDestructor(const std::string &standard, bool arc) {
+  llvm::SmallString<128> temporary;
+  Require(!llvm::sys::fs::createUniqueDirectory("objc3-checked-sret", temporary),
+          "temporary directory failed");
+  const fs::path root(temporary.c_str());
+  struct Cleanup { fs::path path; ~Cleanup() { fs::remove_all(path); } } cleanup{root};
+  const auto provider_path = root / "checked-provider.mm";
+  Write(provider_path, R"(
+@protocol Error
+@end
+__attribute__((objc_root_class))
+@interface CheckedOwnerError <Error>
++ (id)self;
++ (id)retain;
++ (oneway void)release;
++ (id)autorelease;
+@end
+@implementation CheckedOwnerError
++ (id)self { return self; }
++ (id)retain { return self; }
++ (oneway void)release {}
++ (id)autorelease { return self; }
+@end
+
+struct DestructorException { int code; };
+struct CheckedOwner {
+  int value;
+  bool explode;
+  CheckedOwner(int value, bool explode);
+  CheckedOwner(const CheckedOwner &) = delete;
+  ~CheckedOwner() noexcept(false);
+};
+struct CheckedArgument {
+  bool explode;
+  ~CheckedArgument() noexcept(false);
+};
+static int alive;
+static int destroyed;
+CheckedOwner::CheckedOwner(int value, bool explode) : value(value), explode(explode) {
+  ++alive;
+}
+CheckedOwner::~CheckedOwner() noexcept(false) {
+  --alive;
+  ++destroyed;
+  if (explode) throw DestructorException{value};
+}
+CheckedArgument::~CheckedArgument() noexcept(false) {
+  if (explode) throw DestructorException{99};
+}
+int checked_alive() { return alive; }
+int checked_destroyed() { return destroyed; }
+id<Error> checked_owner_error() { return (id<Error>)[CheckedOwnerError self]; }
+CheckedOwner make_checked_owner(bool fail, bool explode, const CheckedArgument &)
+    __objc3_throws(id<Error>) {
+  if (fail) __objc3_throw(checked_owner_error());
+  return CheckedOwner(42, explode);
+}
+CheckedOwner relay_checked_owner(bool fail, bool explode, bool argument_throws)
+    __objc3_throws(id<Error>) {
+  return try make_checked_owner(fail, explode, CheckedArgument{argument_throws});
+}
+)");
+  CompileRequest provider;
+  provider.input_path = provider_path.string();
+  provider.language = BaseLanguage::ObjectiveCxx;
+  provider.objc3 = true;
+  provider.arc = arc;
+  provider.objc_runtime = "gnustep-2.2";
+  provider.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
+  provider.arguments = {"-std=" + standard, "-O2", "-fblocks", "-fexceptions",
+                        "-fobjc-exceptions", "-UNDEBUG"};
+  provider.emit = EmitKind::Object;
+  provider.output_path = (root / "checked-provider.o").string();
+  provider.emit_semantic_interface = true;
+  provider.module_name = "test.CheckedSRet";
+  provider.package_identity = "checked-sret-v1";
+  provider.interface_exports = {"Error", "DestructorException", "CheckedOwner",
+      "CheckedArgument", "checked_alive", "checked_destroyed", "checked_owner_error",
+      "make_checked_owner", "relay_checked_owner"};
+  const auto published = Compile(provider);
+  Compiled(published);
+  Require(published.interface_artifact && published.interface_artifact->success,
+          "checked result interface missing");
+  const auto &artifact = *published.interface_artifact;
+  const auto interface = root / "checked.objc3i";
+  Write(interface, artifact.source_bytes);
+  Write(interface.string() + ".json", artifact.sidecar_json);
+  Require(fs::remove(provider_path), "checked result provider source removal failed");
+
+  CompileRequest consumer = provider;
+  consumer.input_path = (root / "checked-client.mm").string();
+  consumer.output_path = (root / "checked-client.o").string();
+  consumer.emit_semantic_interface = false;
+  consumer.module_name.clear();
+  consumer.package_identity.clear();
+  consumer.interface_exports.clear();
+  InterfaceImportInput input;
+  input.source_path = interface.string();
+  input.sidecar_path = interface.string() + ".json";
+  input.locked_identity = artifact.identity;
+  consumer.imported_interfaces = {input};
+  consumer.source_text = R"(
+#include <assert.h>
+int main() {
+  __objc3_do {
+    CheckedOwner value = try relay_checked_owner(true, true, false);
+    (void)value;
+    __builtin_trap();
+  } __objc3_catch(id<Error> error) {
+    assert(error == checked_owner_error());
+    assert(!checked_alive() && !checked_destroyed());
+  }
+  try {
+    CheckedOwner value = try! relay_checked_owner(false, true, false);
+    assert(value.value == 42 && checked_alive() == 1 && !checked_destroyed());
+  } catch (const DestructorException &error) {
+    assert(error.code == 42);
+  }
+  assert(!checked_alive() && checked_destroyed() == 1);
+  try {
+    try! make_checked_owner(false, true, CheckedArgument{false});
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 42);
+  }
+  assert(!checked_alive() && checked_destroyed() == 2);
+  try {
+    CheckedOwner value = try! make_checked_owner(false, false, CheckedArgument{true});
+    (void)value;
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 99);
+  }
+  assert(!checked_alive() && checked_destroyed() == 3);
+  try {
+    CheckedOwner value = try! relay_checked_owner(false, false, true);
+    (void)value;
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 99);
+  }
+  assert(!checked_alive() && checked_destroyed() == 4);
+}
+)";
+  Compiled(Compile(consumer));
+  LinkAndRun(root, provider.output_path, consumer.output_path);
+  std::cout << "Checked throwing destructor source-free execution "
+            << standard << (arc ? " ARC\n" : " MRC\n");
+}
+
 }
 int main() {
   try {
@@ -283,6 +434,8 @@ int main() {
       for (const bool arc : {false, true}) {
         Check(standard, arc);
         CheckCCompletion(standard, arc);
+        if (standard.starts_with("c++"))
+          CheckThrowingDestructor(standard, arc);
       }
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n';

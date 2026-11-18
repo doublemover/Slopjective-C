@@ -8628,10 +8628,9 @@ index 000000000..0b4e60866
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..7ae940df0
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,927 @@
+@@ -0,0 +1,925 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -9195,6 +9194,9 @@ index 000000000..7ae940df0
 +      CGF.Builder.CreateLoad(CGF.ObjC3CarrierReturnInitialized), Destroy,
 +      Empty);
 +  CGF.EmitBlock(Destroy);
++  // Destruction may unwind into the function's EH cleanup. Ownership ends
++  // before invoking the destructor so that cleanup cannot destroy it again.
++  CGF.Builder.CreateStore(CGF.Builder.getFalse(), CGF.ObjC3CarrierReturnInitialized);
 +  const bool Cpp = supportsObjC3CheckedCppResult(CGF.CGM, CGF.FnRetTy);
 +  if (Cpp)
 +    CGF.emitDestroy(CGF.ReturnValue, CGF.FnRetTy, CGF.getDestroyer(CGF.FnRetTy.isDestructedType()), false);
@@ -9554,11 +9556,6 @@ index 000000000..7ae940df0
 +  }
 +  CGF.EmitBlock(Done);
 +}
-+
-+
-+
-+
-+
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.h b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
 new file mode 100644
 index 000000000..fc638aef7
@@ -12503,7 +12500,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,992 @@
+@@ -0,0 +1,1024 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12650,6 +12647,31 @@ new file mode 100644
 +         isa<CoawaitExpr>(E->IgnoreParenImpCasts());
 +}
 +
++bool supportsCheckedResult(CodeGenModule &CGM, QualType Type,
++                           bool AllowThrowingDestructor) {
++  if (supportsObjC3CarrierCppCallABI(CGM, Type) ||
++      supportsObjC3MixedCarrierCallABI(CGM, Type))
++    return true;
++  if (!CGM.getLangOpts().CPlusPlus || Type.isNull() ||
++      !Type->isRecordType() || Type.isVolatileQualified())
++    return false;
++  const auto *Record = Type->getAsCXXRecordDecl();
++  if (!Record || !(Record = Record->getDefinition()))
++    return false;
++  const auto *Destructor = Record->getDestructor();
++  if (Destructor && Destructor->isDeleted())
++    return false;
++  if (Destructor &&
++      !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow()) {
++    // The checked synchronous sret edge owns a native destination and can
++    // run a throwing destructor under ordinary C++ EH. Return-in-register
++    // ownership and async value-operation callbacks need a separate contract.
++    return AllowThrowingDestructor && CGM.getLangOpts().CXXExceptions &&
++           !Record->canPassInRegisters();
++  }
++  return Record->hasTrivialDestructor() || Destructor;
++}
++
 +bool isSupportedTryCall(CodeGenFunction &CGF, const ObjC3TryExpr &E,
 +                         const Expr *&Call) {
 +  Call = E.getOperand()->IgnoreParenImpCasts();
@@ -12657,7 +12679,7 @@ new file mode 100644
 +  if (Signature && !Signature->getObjC3FunctionEffects().Async &&
 +      supportsObjC3CheckedCppResult(CGF.CGM, Signature->getReturnType()))
 +    Call = getObjC3AsyncSourceCall(E.getOperand());
-+  else if (Signature && supportsObjC3CheckedCppResult(CGF.CGM, E.getOperand()->getType())) {
++  else if (Signature && supportsObjC3NothrowCheckedCppResult(CGF.CGM, E.getOperand()->getType())) {
 +    const Expr *Unbound = unboundCppCheckedResult(E.getOperand());
 +    if (isNativeCAwait(CGF, Unbound)) Call = Unbound;
 +  }
@@ -12829,16 +12851,11 @@ new file mode 100644
 +}
 +
 +bool CodeGen::supportsObjC3CheckedCppResult(CodeGenModule &CGM, QualType Type) {
-+  if(supportsObjC3CarrierCppCallABI(CGM,Type) || supportsObjC3MixedCarrierCallABI(CGM,Type))return true;
-+  if (!CGM.getLangOpts().CPlusPlus || Type.isNull() ||
-+      !Type->isRecordType() || Type.isVolatileQualified()) return false;
-+  const auto *Record = Type->getAsCXXRecordDecl();
-+  if (!Record || !(Record=Record->getDefinition())) return false;
-+  const auto *Destructor = Record->getDestructor();
-+  if(Destructor && (Destructor->isDeleted() ||
-+      !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow()))return false;
-+  return Record->hasTrivialDestructor() || Destructor;
++  return supportsCheckedResult(CGM, Type, /*AllowThrowingDestructor=*/true);
++}
 +
++bool CodeGen::supportsObjC3NothrowCheckedCppResult(CodeGenModule &CGM, QualType Type) {
++  return supportsCheckedResult(CGM, Type, /*AllowThrowingDestructor=*/false);
 +}
 +
 +bool CodeGen::isObjC3ConstructedCppResultInitializer(CodeGenModule &CGM, const Expr *Root) {
@@ -12906,15 +12923,18 @@ new file mode 100644
 +  // An outer conditional, aggregate or constructor can finish construction
 +  // before its checked-call argument temporaries are destroyed. Track the
 +  // destination's completion, not just the immediate leaf expression shape.
-+  auto Contains = [&](auto &&Self, const Stmt *Node) -> bool {
++  auto Contains = [&](auto &&Self, const Stmt *Node, bool SyncOnly) -> bool {
 +    if (!Node || isa<LambdaExpr, BlockExpr>(Node)) return false;
 +    if (const auto *Try = dyn_cast<ObjC3TryExpr>(Node))
-+      if (getObjC3AsyncCalleeFunctionType(Try->getOperand())) return true;
-+    if (const auto *Await = dyn_cast<CoawaitExpr>(Node))
-+      if (const auto *Signature = getObjC3AsyncCalleeFunctionType(Await))
-+        if (Signature->getObjC3FunctionEffects().Async) return true;
++      if (const auto *Signature = getObjC3AsyncCalleeFunctionType(Try->getOperand()))
++        if (!SyncOnly || !Signature->getObjC3FunctionEffects().Async)
++          return true;
++    if (!SyncOnly)
++      if (const auto *Await = dyn_cast<CoawaitExpr>(Node))
++        if (const auto *Signature = getObjC3AsyncCalleeFunctionType(Await))
++          if (Signature->getObjC3FunctionEffects().Async) return true;
 +    for (const Stmt *Child : Node->children())
-+      if (Self(Self, Child)) return true;
++      if (Self(Self, Child, SyncOnly)) return true;
 +    return false;
 +  };
 +  // Ordinary initializers can name a template whose destructor exception
@@ -12922,8 +12942,10 @@ new file mode 100644
 +  // first; a general local-lifetime probe must not force that lazy semantic
 +  // query from CodeGen. Actual checked result signatures prepare their native
 +  // destructor contracts during Sema admission.
-+  return Contains(Contains, Root) && supportsObjC3CheckedCppResult(CGM, Base) &&
-+      Base.isDestructedType()!=QualType::DK_none;
++  if (!Contains(Contains, Root, false) || Base.isDestructedType() == QualType::DK_none)
++    return false;
++  return supportsObjC3NothrowCheckedCppResult(CGM, Base) ||
++         (Contains(Contains, Root, true) && supportsObjC3CheckedCppResult(CGM, Base));
 +}
 +
 +bool CodeGen::supportsObjC3ErrorOutMethod(CodeGenModule &CGM,
@@ -13291,7 +13313,7 @@ new file mode 100644
 +    auto *Failure = CGF.createBasicBlock("objc3.try.failure");
 +    const auto *Signature=getObjC3AsyncCalleeFunctionType(E.getOperand());
 +    const bool Cpp=Signature && !Signature->getObjC3FunctionEffects().Async &&
-+        supportsObjC3CheckedCppResult(CGF.CGM,E.getType());
++        supportsObjC3CheckedCppResult(CGF.CGM, E.getType());
 +    Address Discarded=Address::invalid(),DiscardedInitialized=Address::invalid();
 +    if(Cpp && Dest.isIgnored() && E.getType().isDestructedType()!=QualType::DK_none) {
 +      Discarded=CGF.CreateMemTemp(E.getType(),"objc3.checked.discard.value");
@@ -13344,8 +13366,15 @@ new file mode 100644
 +  const bool ARCLocal =
 +      supportsObjC3CarrierARCLocalLifetime(CGF.CGM, E.getType());
 +  const auto *Signature = getObjC3AsyncCalleeFunctionType(E.getOperand());
++  QualType Payload = E.getOperand()->getType();
++  if (Signature && !Signature->getObjC3FunctionEffects().Async &&
++      !supportsObjC3NothrowCheckedCppResult(CGF.CGM, Payload) &&
++      supportsObjC3CheckedCppResult(CGF.CGM, Payload)) {
++    CGF.CGM.ErrorUnsupported(&E, "throwing destructor in a try? Optional payload");
++    return false;
++  }
 +  const bool NativeCpp = Signature &&
-+      supportsObjC3CheckedCppResult(CGF.CGM, E.getOperand()->getType()) &&
++      supportsObjC3NothrowCheckedCppResult(CGF.CGM, Payload) &&
 +      (!Signature->getObjC3FunctionEffects().Async ||
 +       isNativeCAwait(CGF, unboundCppCheckedResult(E.getOperand())));
 +  const bool CppLocal = (NativeCpp || getObjC3CheckedAsyncAdapter(E.getOperand())) &&
@@ -13498,10 +13527,9 @@ new file mode 100644
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.h b/clang/lib/CodeGen/CGObjC3TypedErrors.h
 new file mode 100644
-index 000000000..c5aeb1a11
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.h
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,71 @@
 +//===--- CGObjC3TypedErrors.h - ObjC3 error-output CodeGen -------*- C++
 +//-*-===//
 +//
@@ -13547,6 +13575,7 @@ index 000000000..c5aeb1a11
 +                                QualType ErrorType);
 +// Native indirect C++ results have no object on a checked failure edge.
 +bool supportsObjC3CheckedCppResult(CodeGenModule &CGM, QualType Type);
++bool supportsObjC3NothrowCheckedCppResult(CodeGenModule &CGM, QualType Type);
 +bool isObjC3ConstructedCppResultInitializer(CodeGenModule &CGM, const Expr *Value);
 +bool supportsObjC3ErrorOutCall(CodeGenFunction &CGF, const Expr *Call);
 +bool supportsObjC3ErrorOutMethod(CodeGenModule &CGM, const ObjCMethodDecl *Method);
@@ -30322,7 +30351,7 @@ new file mode 100644
 +  RunCleanupsScope ResultScope(*this);
 +  CleanupDeactivationScope ResultDeactivation(*this);
 +  const auto SavedInit = getObjC3CarrierLocalInitState();
-+  if (Result.isValid() && supportsObjC3CheckedCppResult(CGM, T) &&
++  if (Result.isValid() && supportsObjC3NothrowCheckedCppResult(CGM, T) &&
 +      !(SavedInit.Initialized.isValid() && isObjC3CarrierLocalInitialization(Result, T))) {
 +    // Array elements and discarded copies need their own owner until the
 +    // awaiting expression finishes cleaning its source arguments and child.
@@ -35820,29 +35849,29 @@ index 000000000..bf69205ff
 +// CHECK: @_ZN21ResourceCompilerValueD1Ev
 diff --git a/clang/test/ObjC3/CodeGen/native-checked-cxx-optional-gates.mm b/clang/test/ObjC3/CodeGen/native-checked-cxx-optional-gates.mm
 new file mode 100644
-index 000000000..727132b7b
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-checked-cxx-optional-gates.mm
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,23 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fblocks -emit-llvm-only -verify -DREGION=1 %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fblocks -emit-llvm-only -verify -DREGION=2 %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fblocks -fobjc-arc -emit-llvm-only -verify -DREGION=1 %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fblocks -fobjc-arc -emit-llvm-only -verify -DREGION=2 %s
-+#include "Inputs/native-checked-cxx-results.h"
++@protocol Error
++@end
 +struct ThrowingOptionalOwner {
 +  int value;ThrowingOptionalOwner(const ThrowingOptionalOwner &);
 +  ~ThrowingOptionalOwner() noexcept(false);
 +};
-+ThrowingOptionalOwner throwing_optional_source() __objc3_throws(id<Error>); // expected-error {{cannot compile this ObjC3 async/throws callable ABI lowering yet}}
++ThrowingOptionalOwner throwing_optional_source() __objc3_throws(id<Error>);
 +typedef __objc3_optional(ThrowingOptionalOwner) UnsupportedOptionalOwner;
 +#if REGION == 1
 +const UnsupportedOptionalOwner &unsupported_static_reference() {
-+  static const UnsupportedOptionalOwner &value=__objc3_try_optional(throwing_optional_source());
++  static const UnsupportedOptionalOwner &value=__objc3_try_optional(throwing_optional_source()); // expected-error {{throwing destructor in a try? Optional payload}}
 +  return value;
 +}
 +#else
 +const UnsupportedOptionalOwner &unsupported_thread_reference() {
-+  static thread_local const UnsupportedOptionalOwner &value=__objc3_try_optional(throwing_optional_source());
++  static thread_local const UnsupportedOptionalOwner &value=__objc3_try_optional(throwing_optional_source()); // expected-error {{throwing destructor in a try? Optional payload}}
 +  return value;
 +}
 +#endif

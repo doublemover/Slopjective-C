@@ -39,3 +39,20 @@ consolidation. Public extension ABI 24, native frame 1,
 runtime services 4 and semantic schema 2.2 remain unchanged. General nullable
 synchronous Objective-C record sends, throwing-destructor/register-ABI results,
 other construction/lifetime regions and final SDK consolidation remain separate.
+
+Source 2.247 / System 2.173 admits synchronous checked indirect C++ results
+whose native destructors can unwind. The callee owns the result until its
+return-expression and lexical cleanups finish. An exception from an argument
+destructor destroys that result before the native exception reaches the caller.
+Result destruction clears its ownership flag before invoking the destructor.
+Checked failure before construction transfers the error with no result object.
+
+Four independently linked source-free C++20/23 ARC and MRC consumers verify
+the checked error identity, local and discarded result destruction, and
+argument-destructor exceptions in both caller and callee. The callee case
+caught a leaked constructed result before the return cleanup guard was enabled.
+Four compiler controls preserve rejection of throwing-destructor `try?` Optional
+payloads in static and thread-local regions. Throwing-destructor register ABI,
+Optional payloads and async value-operation transport still require their own
+lifetime coverage. The maintained AArch64 patch applies after this change;
+native archive qualification remains separate.
