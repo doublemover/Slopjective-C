@@ -8635,7 +8635,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,948 @@
+@@ -0,0 +1,947 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -9087,8 +9087,7 @@ new file mode 100644
 +      const auto *Dtor=RD->getDestructor();
 +      const auto *Prototype = Dtor ? Dtor->getType()->getAs<FunctionProtoType>() : nullptr;
 +      return Prototype && !isUnresolvedExceptionSpec(Prototype->getExceptionSpecType()) &&
-+             (Prototype->isNothrow() ||
-+              (AllowThrowing && !RD->canPassInRegisters()));
++             (Prototype->isNothrow() || AllowThrowing);
 +    }
 +    return true;
 +  };
@@ -38114,7 +38113,7 @@ new file mode 100644
 @@ -0,0 +1,43 @@
 +// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=1 -emit-llvm-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=2 -emit-llvm-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=3 -emit-llvm-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -DCASE=3 -emit-llvm-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=4 -emit-llvm-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=5 -emit-llvm-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=6 -emit-llvm-only -verify %s
@@ -38159,7 +38158,7 @@ diff --git a/clang/test/ObjC3/CodeGen/native-checked-register-results.mm b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-checked-register-results.mm
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,42 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,X64
 +// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARM
 +
@@ -38191,4 +38190,14 @@ new file mode 100644
 +RegisterPair make_register_pair(bool fail) __objc3_throws(id<Error>) {
 +  if (fail) __objc3_throw(get_error());
 +  return RegisterPair(17.0, 25.0);
++}
++
++using MaybeRegister = __objc3_optional(RegisterOwner);
++// CHECK-LABEL: define dso_local void @_Z13wrap_registerb(
++// CHECK-SAME: sret(
++// CHECK: {{call|invoke}} i32 @_Z13make_registerb(
++MaybeRegister wrap_register(bool fail) {
++  if (fail)
++    return __objc3_none(RegisterOwner);
++  return __objc3_some(RegisterOwner, try! make_register(false));
 +}

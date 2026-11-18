@@ -1068,6 +1068,7 @@ struct [[clang::trivial_abi]] RegisterPair {
   RegisterPair(const RegisterPair &other);
   ~RegisterPair() noexcept(false);
 };
+using MaybeRegister = __objc3_optional(RegisterOwner);
 
 int transport_live();
 int transport_destroyed();
@@ -1084,6 +1085,8 @@ void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second);
 RegisterOwner make_register(int mode) __objc3_throws(id<Error>);
 RegisterOwner relay_register(int mode) __objc3_throws(id<Error>);
 RegisterPair make_register_pair(bool fail) __objc3_throws(id<Error>);
+MaybeRegister wrap_register(int mode);
+bool consume_register(MaybeRegister value);
 __attribute__((objc_root_class))
 @interface RegisterFactory
 + (RegisterOwner)value:(int)mode __objc3_throws(id<Error>);
@@ -1186,6 +1189,13 @@ RegisterPair make_register_pair(bool fail) __objc3_throws(id<Error>) {
   if (fail) __objc3_throw(transport_checked_error());
   return RegisterPair(17.0, 25.0);
 }
+MaybeRegister wrap_register(int mode) {
+  if (mode < 0) return __objc3_none(RegisterOwner);
+  return __objc3_some(RegisterOwner, try! make_register(mode));
+}
+bool consume_register(MaybeRegister value) {
+  return __objc3_has_value(value);
+}
 @implementation RegisterFactory
 + (RegisterOwner)value:(int)mode __objc3_throws(id<Error>) {
   return try relay_register(mode);
@@ -1212,7 +1222,8 @@ RegisterPair make_register_pair(bool fail) __objc3_throws(id<Error>) {
       "transport_make", "transport_relay", "transport_consume", "transport_pair",
       "transport_checked_error", "transport_checked", "transport_checked_relay",
       "RegisterOwner", "RegisterPair", "RegisterFactory", "make_register",
-      "relay_register", "make_register_pair"};
+      "relay_register", "make_register_pair", "MaybeRegister", "wrap_register",
+      "consume_register"};
   const auto published = Compile(provider);
   Compiled(published);
   Require(published.interface_artifact && published.interface_artifact->success,
@@ -1388,6 +1399,26 @@ int main() {
     count(2, 18, 1, 1, 5);
   }
   count(0, 20, 1, 1, 5);
+  {
+    auto missing = wrap_register(-1);
+    require(!consume_register(missing));
+    count(0, 20, 1, 1, 5);
+    auto present = wrap_register(0);
+    count(1, 20, 1, 1, 5);
+    require(consume_register(present));
+    count(1, 21, 2, 1, 5);
+  }
+  count(0, 22, 2, 1, 5);
+  try {
+    consume_register(wrap_register(1));
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 31); }
+  count(0, 23, 2, 1, 5);
+  try {
+    (void)wrap_register(2);
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 32); }
+  count(0, 24, 2, 1, 5);
 }
 )";
   Compiled(Compile(consumer));

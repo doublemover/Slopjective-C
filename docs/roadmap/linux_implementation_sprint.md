@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.260 / System 2.186 register payload change](linux_checked_cpp_optionals.md)
+composes checked native register results with synchronous indirect Optional
+transport and caller-owned by-value snapshots.
+
 The [Source 2.259 / System 2.185 checked register results](linux_checked_cpp_regions.md)
 extend native C++ unwinding ownership to eligible register-returned records.
 Direct and indirect calls, native Blocks and checked messages retain their ABI.

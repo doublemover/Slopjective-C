@@ -90,3 +90,15 @@ Some(None), nested ownership, discarded results and a return-expression
 destructor throwing after the result has been constructed. AArch64 IR confirms
 the native result and error-out slots. Carrier parameters on checked entries,
 runtime-callable encoding and async value operations keep their existing gates.
+
+Source 2.260 / System 2.186 composes native register payloads with the
+synchronous Optional carrier transport. A checked C++ call can produce a
+`trivial_abi` owner in registers and construct Some from that result. The
+carrier itself still uses an indirect return and caller-owned argument
+storage.
+
+The linked clients check None, copied Some arguments, throwing full-expression
+destruction and partial construction when the payload call unwinds. Both
+Linux targets have IR controls for the direct payload and indirect carrier
+edges. A compiler configuration without C++ exception handling still rejects
+this throwing-destructor transport.

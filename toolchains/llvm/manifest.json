@@ -27,7 +27,7 @@
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "255828aa0ad5574279345d5c831c0922ccb3c2ce2b53c80a186f14f2b686ef8d"
+      "sha256": "cf1ed07b6c24c81a2ad01f7139bcf18cedfb40c68689af0d3dfc7ef1705f8fee"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
