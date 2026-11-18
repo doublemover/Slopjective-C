@@ -994,7 +994,7 @@ void TestResourceKeyPathReplay() {
         explicit PublishedPathOwner(int);
         PublishedPathOwner(const PublishedPathOwner &);
         PublishedPathOwner(PublishedPathOwner &&) noexcept;
-        ~PublishedPathOwner() noexcept;
+        ~PublishedPathOwner() noexcept(false);
       };
       struct PublishedPathPair {PublishedPathOwner first,second;};
       union PublishedPathUnion {

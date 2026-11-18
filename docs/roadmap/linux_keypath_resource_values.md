@@ -42,3 +42,21 @@ open issue bodies/timestamps remain unchanged.
 Native metadata remains descriptor ABI v2; extension ABI 24, native frame 1,
 runtime services 4 and schema 2.2 are unchanged. These are development-source
 receipts. Final package/profile consolidation and the replacement SDK remain open.
+
+Source 2.261 / keypath 2.13 admits explicit by-value C++ resource owners
+whose destructors may throw on native Linux with C++ exceptions enabled.
+Typed accessor functions use ordinary C++ exception unwinding. The tested
+inherited resource owner keeps its base cleanup even when the derived
+destructor throws.
+
+Whole-value reads, intermediate field reads and writeback, and skipped
+nullable writes exercise exact resource counts and catch identity. A late
+destructor after a successful setter preserves the completed update. A
+skipped write evaluates and destroys its value without dispatching the
+setter. Raw resource fields, erased borrowed ownership and compilation
+without C++ exceptions still fail admission.
+
+All 24 source/PCH native key-path configurations pass in 156 commands.
+Eight smaller x86-64 executions and AArch64 IR cover the new destructor
+path. Four interface replays retain the resource capability, and five
+compiler controls cover positive and rejected cases.

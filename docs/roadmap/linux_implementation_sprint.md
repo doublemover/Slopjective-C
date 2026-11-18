@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.261 / System 2.187 resource key-path change](linux_keypath_resource_values.md)
+admits explicit owners whose destructors may throw. Native tests check unwinding
+after field reads, completed writeback and skipped nullable writes.
+
 The [Source 2.260 / System 2.186 register payload change](linux_checked_cpp_optionals.md)
 composes checked native register results with synchronous indirect Optional
 transport and caller-owned by-value snapshots.

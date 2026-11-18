@@ -6,6 +6,7 @@ static int path_resource_stored=31;
 static bool path_resource_active[4096],path_resource_set_fault;
 static bool path_resource_union_owned;
 static int path_resource_union_stored;
+static int path_resource_throw_handle;
 static void path_resource_close(int handle) noexcept {
   if(handle==-1)return;
   assert(handle>0 && handle<4096 && path_resource_active[handle]);
@@ -25,6 +26,14 @@ struct PathResourceValue {
   }
   PathResourceValue(PathResourceValue &&other) noexcept:handle(other.handle),value(other.value) {other.handle=-1;}
   ~PathResourceValue() noexcept {path_resource_close(handle);}
+};
+struct PathThrowingResource : PathResourceValue {
+  using PathResourceValue::PathResourceValue;
+  PathThrowingResource(const PathThrowingResource &) = default;
+  PathThrowingResource(PathThrowingResource &&) noexcept = default;
+  ~PathThrowingResource() noexcept(false) {
+    if (handle == path_resource_throw_handle) throw 713;
+  }
 };
 struct PathResourcePair {PathResourceValue first,second;};
 union PathResourceUnion {
@@ -48,6 +57,7 @@ union PathResourceUnion {
   __unsafe_unretained RuntimeResourcePathNode *_resourceNext;
 }
 @property(nonatomic) PathResourceValue resource;
+@property(nonatomic) PathThrowingResource throwingResource;
 @property(nonatomic) PathResourcePair resources;
 @property(nonatomic) PathResourceUnion activeResource;
 @property(nonatomic,assign) RuntimeResourcePathNode * _Nullable resourceNext;
@@ -59,6 +69,14 @@ union PathResourceUnion {
   ++path_resource_sets;if(path_resource_set_fault)throw 712;path_resource_union_owned=value.owns_resource();path_resource_union_stored=value.value();
 }
 - (PathResourceValue)resource {++path_resource_gets;return PathResourceValue(path_resource_stored);}
+- (PathThrowingResource)throwingResource {
+  ++path_resource_gets;
+  return PathThrowingResource(path_resource_stored);
+}
+- (void)setThrowingResource:(PathThrowingResource)value {
+  ++path_resource_sets;
+  path_resource_stored = value.value;
+}
 - (void)setResource:(PathResourceValue)value {
   ++path_resource_sets;if(path_resource_set_fault)throw 712;path_resource_stored=value.value;
 }
@@ -144,6 +162,33 @@ static void keypath_cxx_resource_contract() {
       assert(failed && path_resource_stored==before && !path_resource_live && path_resource_opened==path_resource_closed);
     }
     path_resource_set_fault=false;
+    {
+      auto owner = @keypath(RuntimeResourcePathNode, throwingResource);
+      auto field = @keypath(RuntimeResourcePathNode, throwingResource.value);
+      auto skipped = @keypath(RuntimeResourcePathNode, resourceNext.throwingResource);
+      int gets = path_resource_gets, sets = path_resource_sets;
+      {
+        auto value = KeyPathGet(owner, node);
+        assert(value.value == path_resource_stored && path_resource_live == 1);
+      }
+      assert(!path_resource_live && path_resource_opened == path_resource_closed);
+      for (unsigned route = 0; route != 3; ++route) {
+        path_resource_throw_handle = path_resource_next + 1;
+        bool caught = false;
+        try {
+          if (route == 0) (void)KeyPathGet(field, node);
+          if (route == 1) KeyPathSet(field, node, 59);
+          if (route == 2) KeyPathSet(skipped, node, PathThrowingResource(60));
+        } catch (int error) {
+          assert(error == 713);
+          caught = true;
+        }
+        assert(caught && !path_resource_live && path_resource_opened == path_resource_closed);
+      }
+      path_resource_throw_handle = 0;
+      assert(path_resource_stored == 59 && path_resource_gets == gets + 3 &&
+             path_resource_sets == sets + 1);
+    }
     {
       auto missing=@keypath(RuntimeResourcePathNode,resourceNext.resource);
       PathResourceValue value(71);int gets=path_resource_gets,sets=path_resource_sets;
