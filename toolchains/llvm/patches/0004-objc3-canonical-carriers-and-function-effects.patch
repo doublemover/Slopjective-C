@@ -53738,7 +53738,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3523 @@
+@@ -0,0 +1,3592 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54107,16 +54107,25 @@ new file mode 100644
 +  bool Identity;
 +  bool Borrowed;
 +  bool Pointer;
++  bool StorageAddress;
 +};
 +std::optional<FieldProjection> fieldProjectionImpl(const CallExpr *Call,ASTContext &Context,
 +    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active,Sema *Actions) {
 +  if(!Work || Depth>16)return std::nullopt;--Work;
 +  const auto *Method=Call?dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee()):nullptr;
 +  const auto *Member=Call?dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts()):nullptr;
-+  if(!Method || !Member || Method->isStatic() || Method->isOverloadedOperator() ||
-+      Method->isExplicitObjectMemberFunction() || Call->getNumArgs() ||
-+      Method->getNumParams() || Member->getBase()->HasSideEffects(Context) ||
-+      (Method->isVirtual() && !Member->hasQualifier() &&
++  const Expr *Receiver=Member?Member->getBase():nullptr;
++  bool Arrow=Member && Member->isArrow();
++  unsigned Arguments=Call?Call->getNumArgs():0;
++  if(const auto *Operator=dyn_cast_or_null<CXXOperatorCallExpr>(Call);
++      Operator && Method && Method->isOverloadedOperator() && Arguments==1) {
++    Receiver=Operator->getArg(0);Arguments=0;Arrow=false;
++  }
++  if(!Method || !Receiver || Method->isStatic() || Method->isVolatile() ||
++      Method->isExplicitObjectMemberFunction() || Arguments ||
++      Method->getNumParams() || Receiver->HasSideEffects(Context) ||
++      Receiver->getType().getNonReferenceType().isVolatileQualified() ||
++      (Method->isVirtual() && (!Member || !Member->hasQualifier()) &&
 +       !Method->hasAttr<FinalAttr>() && !Method->getParent()->hasAttr<FinalAttr>()))return std::nullopt;
 +  if(!Active.insert(Method->getCanonicalDecl()).second)return std::nullopt;
 +  auto Leave=llvm::scope_exit([&]{Active.erase(Method->getCanonicalDecl());});
@@ -54133,7 +54142,7 @@ new file mode 100644
 +    const auto *Body=Pattern && !Pattern->isLateTemplateParsed()?dyn_cast_or_null<CompoundStmt>(Pattern->getBody()):nullptr;
 +    const auto *Return=Body && Body->size()==1?dyn_cast<ReturnStmt>(*Body->body_begin()):nullptr;
 +    const auto *Value=Return && Return->getRetValue()?Return->getRetValue()->IgnoreParenImpCasts():nullptr;
-+    if(Value && isa<MemberExpr,CXXDependentScopeMemberExpr,CallExpr,BinaryOperator,UnaryOperator,AbstractConditionalOperator>(Value) &&
++    if(Value && isa<MemberExpr,ArraySubscriptExpr,CXXDependentScopeMemberExpr,CallExpr,BinaryOperator,UnaryOperator,AbstractConditionalOperator>(Value) &&
 +        Pattern->isInlined() && !Pattern->isInvalidDecl()) {
 +      Work-=16;
 +      Actions->InstantiateFunctionDefinition(Call->getExprLoc(),const_cast<CXXMethodDecl *>(Method),false,false);
@@ -54157,16 +54166,36 @@ new file mode 100644
 +  bool Managed=false;
 +  auto Path=[&](const Expr *E) {
 +    E=E->IgnoreParenImpCasts();
-+    while(const auto *Field=dyn_cast<MemberExpr>(E)) {
++    for(;;) {
 +      if(!Work)return false;--Work;
-+      const auto *Declaration=dyn_cast<FieldDecl>(Field->getMemberDecl());
-+      if(!Declaration || Declaration->getType().isVolatileQualified() ||
-+          Declaration->getType()->isAtomicType())return false;
-+      Managed|=managedTransferStorage(Declaration) ||
-+          getObjC3ResourceTypeContract(Context,Declaration->getType()).Cleanup;
-+      E=Field->getBase()->IgnoreParenImpCasts();
-+      if(Field->isArrow() && !isa<CXXThisExpr>(E))return false;
++      if(const auto *Field=dyn_cast<MemberExpr>(E)) {
++        const auto *Declaration=dyn_cast<FieldDecl>(Field->getMemberDecl());
++        if(!Declaration || Declaration->getType().isVolatileQualified() ||
++            Declaration->getType()->isAtomicType())return false;
++        Managed|=managedTransferStorage(Declaration) ||
++            getObjC3ResourceTypeContract(Context,Declaration->getType()).Cleanup;
++        E=Field->getBase()->IgnoreParenImpCasts();
++        if(Field->isArrow() && !isa<CXXThisExpr>(E))return false;
++        continue;
++      }
++      if(const auto *Subscript=dyn_cast<ArraySubscriptExpr>(E)) {
++        const auto *Base=Subscript->getBase()->IgnoreParenImpCasts();
++        const auto *Array=Context.getAsConstantArrayType(Base->getType());
++        const auto Index=Subscript->getIdx()->getIntegerConstantExpr(Context);
++        if(!Array || !Index || Index->isNegative() || Index->getActiveBits()>64 ||
++            Index->getZExtValue()>=Array->getSize().getLimitedValue())return false;
++        E=Base;continue;
++      }
++      if(const auto *Deref=dyn_cast<UnaryOperator>(E);Deref && Deref->getOpcode()==UO_Deref) {
++        const auto *Base=Deref->getSubExpr()->IgnoreParenImpCasts();
++        if(const auto *Array=Context.getAsConstantArrayType(Base->getType());Array && !Array->getSize().isZero()) {
++          E=Base;continue;
++        }
++      }
++      break;
 +    }
++    if(const auto *Deref=dyn_cast<UnaryOperator>(E);Deref && Deref->getOpcode()==UO_Deref)
++      E=Deref->getSubExpr()->IgnoreParenImpCasts();
 +    return isa<CXXThisExpr>(E);
 +  };
 +  auto Nested=[&](const CallExpr *Inner) -> std::optional<FieldProjection> {
@@ -54182,7 +54211,7 @@ new file mode 100644
 +    if(!E || !Work || Level>32)return false;--Work;
 +    E=E->IgnoreParens();
 +    if(const auto *Cast=dyn_cast<CastExpr>(E))return Self(Self,Cast->getSubExpr(),Level+1);
-+    if(isa<MemberExpr>(E))return Path(E);
++    if(isa<MemberExpr,ArraySubscriptExpr>(E))return Path(E);
 +    if(const auto *Inner=dyn_cast<CallExpr>(E))return bool(Nested(Inner));
 +    if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E))
 +      return Self(Self,Conditional->getCond(),Level+1) &&
@@ -54198,7 +54227,7 @@ new file mode 100644
 +    return isa<IntegerLiteral,FloatingLiteral,CharacterLiteral,CXXBoolLiteralExpr,
 +        CXXNullPtrLiteralExpr,GNUNullExpr,UnaryExprOrTypeTraitExpr,CXXNoexceptExpr,TypeTraitExpr>(E);
 +  };
-+  struct FieldReturn {bool Identity,Borrowed,Pointer;};
++  struct FieldReturn {bool Identity,Borrowed,Pointer;bool StorageAddress=false;};
 +  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Level)->std::optional<FieldReturn> {
 +    if(!E || !Work || Level>32)return std::nullopt;--Work;E=E->IgnoreParens();
 +    if(const auto *Cast=dyn_cast<CastExpr>(E)) {
@@ -54208,35 +54237,60 @@ new file mode 100644
 +          Kind==CK_MemberPointerToBoolean || Kind==CK_FloatingToBoolean)return FieldReturn{false,false,false};
 +      return Source;
 +    }
-+    if(const auto *Unary=dyn_cast<UnaryOperator>(E);Unary && Unary->getOpcode()==UO_Plus)
-+      return Self(Self,Unary->getSubExpr(),Level+1);
++    if(const auto *Unary=dyn_cast<UnaryOperator>(E)) {
++      if(Unary->getOpcode()==UO_Plus)return Self(Self,Unary->getSubExpr(),Level+1);
++      if(Unary->getOpcode()==UO_AddrOf) {
++        auto Source=Self(Self,Unary->getSubExpr(),Level+1);
++        if(Source){Source->StorageAddress=true;Source->Pointer=true;}
++        return Source;
++      }
++      if(Unary->getOpcode()==UO_Minus || Unary->getOpcode()==UO_Not) {
++        auto Source=Self(Self,Unary->getSubExpr(),Level+1);
++        if(!Source)return std::nullopt;
++        return Source->Borrowed?Source:std::optional<FieldReturn>({false,false,false});
++      }
++    }
 +    if(const auto *Binary=dyn_cast<BinaryOperator>(E);Binary && Binary->getOpcode()==BO_Comma)
 +      return Observe(Observe,Binary->getLHS(),Level+1)?Self(Self,Binary->getRHS(),Level+1):std::nullopt;
 +    if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E)) {
 +      if(!Observe(Observe,Conditional->getCond(),Level+1))return std::nullopt;
 +      auto Left=Self(Self,Conditional->getTrueExpr(),Level+1),Right=Self(Self,Conditional->getFalseExpr(),Level+1);
 +      if(!Left || !Right)return std::nullopt;
-+      return FieldReturn{Left->Identity || Right->Identity,Left->Borrowed || Right->Borrowed,Left->Pointer || Right->Pointer};
++      return FieldReturn{Left->Identity || Right->Identity,Left->Borrowed || Right->Borrowed,Left->Pointer || Right->Pointer,Left->StorageAddress || Right->StorageAddress};
 +    }
 +    if(const auto *Binary=dyn_cast<BinaryOperator>(E);Binary && Binary->isAdditiveOp() && E->getType()->isPointerType()) {
 +      auto Left=Self(Self,Binary->getLHS(),Level+1),Right=Self(Self,Binary->getRHS(),Level+1);
 +      if(!Left || !Right)return std::nullopt;
-+      return FieldReturn{true,Left->Borrowed || Right->Borrowed,true};
++      return FieldReturn{true,Left->Borrowed || Right->Borrowed,true,Left->StorageAddress || Right->StorageAddress};
++    }
++    // Integer operations on pointer bits retain the known loan. Comparisons,
++    // logical operations and bool conversions remain independent observations.
++    if(const auto *Binary=dyn_cast<BinaryOperator>(E);
++        Binary && !Binary->isAssignmentOp() && !Binary->isPtrMemOp()) {
++      auto Left=Self(Self,Binary->getLHS(),Level+1),Right=Self(Self,Binary->getRHS(),Level+1);
++      if(!Left || !Right)return std::nullopt;
++      if(Binary->isComparisonOp() || Binary->isLogicalOp())return FieldReturn{false,false,false};
++      const bool Borrowed=Left->Borrowed || Right->Borrowed;
++      const bool Pointer=Left->Pointer || Right->Pointer;
++      return FieldReturn{Borrowed || Pointer,Borrowed,Pointer,Left->StorageAddress || Right->StorageAddress};
 +    }
 +    if(const auto *Inner=dyn_cast<CallExpr>(E)) {
 +      auto Projection=Nested(Inner);
-+      return Projection?std::optional<FieldReturn>({Projection->Identity,Projection->Borrowed,Projection->Pointer}):std::nullopt;
++      return Projection?std::optional<FieldReturn>({Projection->Identity,Projection->Borrowed,Projection->Pointer,Projection->StorageAddress}):std::nullopt;
 +    }
-+    if(const auto *Field=dyn_cast<MemberExpr>(E)) {
++    const auto *ArrayDeref=dyn_cast<UnaryOperator>(E);
++    if(isa<MemberExpr,ArraySubscriptExpr>(E) ||
++        (ArrayDeref && ArrayDeref->getOpcode()==UO_Deref &&
++         Context.getAsConstantArrayType(ArrayDeref->getSubExpr()->IgnoreParenImpCasts()->getType()))) {
 +      if(!Path(E))return std::nullopt;
-+      auto Type=Field->getMemberDecl()->getType().getNonReferenceType();
++      auto Type=E->getType().getNonReferenceType();
 +      return FieldReturn{true,containsObjC3BorrowedType(Context,Type),
 +          Type->isPointerType() || Type->isObjCObjectPointerType() || Type->isBlockPointerType() || Type->isRecordType() || Type->isArrayType()};
 +    }
 +    return Observe(Observe,E,Level+1)?std::optional<FieldReturn>({false,false,false}):std::nullopt;
 +  };
 +  auto Result=Resolve(Resolve,Value,0);if(!Result)return std::nullopt;
-+  return FieldProjection{Member->getBase(),Managed,Member->isArrow(),Result->Identity,Result->Borrowed,Result->Pointer};
++  return FieldProjection{Receiver,Managed,Arrow,Result->Identity,Result->Borrowed,Result->Pointer,Result->StorageAddress};
 +}
 +std::optional<FieldProjection> fieldProjection(const CallExpr *Call,ASTContext &Context,Sema *Actions=nullptr) {
 +  unsigned Work=256;llvm::SmallPtrSet<const FunctionDecl *,16> Active;
@@ -54505,6 +54559,17 @@ new file mode 100644
 +      }
 +      return true;
 +    }
++    if(const auto *Call=dyn_cast<CallExpr>(E))
++      if(auto Field=fieldProjection(Call,Context);Field && Field->StorageAddress) {
++        if(Field->Arrow)return Self(Self,Field->Receiver,Depth+1);
++        const auto *Target=Field->Receiver->IgnoreParenImpCasts();
++        if(Target->HasSideEffects(Context) || !isa<DeclRefExpr,MemberExpr,ArraySubscriptExpr>(Target))return false;
++        if(!llvm::is_contained(Result.Targets,Target)) {
++          if(Result.Targets.size()==16){Result.Truncated=true;return false;}
++          Result.Targets.push_back(Target);
++        }
++        return true;
++      }
 +    const auto *Reference=dyn_cast<DeclRefExpr>(E);
 +    const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +    if(!Variable || !Variable->hasLocalStorage() || !Variable->hasInit())return false;
@@ -54693,8 +54758,9 @@ new file mode 100644
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
 +        if(auto Field=fieldProjection(Call,Context,Actions)) {
 +          auto Pointees=Field->Arrow?receiverPointees(Context,Field->Receiver):ReceiverPointees{};
-+          if(Pointees.Closed)for(const auto *Target:Pointees.Targets)Add(Target,Call->isGLValue()?Use:Read);
-+          else Add(Field->Receiver,Call->isGLValue()?Use:Read);
++          const auto ReceiverUse=Field->StorageAddress && Use!=Read?Unknown:(Call->isGLValue()?Use:Read);
++          if(Pointees.Closed)for(const auto *Target:Pointees.Targets)Add(Target,ReceiverUse);
++          else Add(Field->Receiver,ReceiverUse);
 +          continue;
 +        }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
@@ -54853,9 +54919,12 @@ new file mode 100644
 +    if(const auto *Binary=dyn_cast<BinaryOperator>(E)) {
 +      if(Binary->getOpcode()==BO_Comma)return Recurse(Recurse,Binary->getRHS(),Depth+1);
 +      if(Binary->getOpcode()==BO_Assign)return Recurse(Recurse,Binary->getLHS(),Depth+1) || Recurse(Recurse,Binary->getRHS(),Depth+1);
++      if((BorrowedOnly || E->getType()->isPointerType()) && !Binary->isComparisonOp() && !Binary->isLogicalOp() && !Binary->isPtrMemOp() && !Binary->isAssignmentOp())
++        return Recurse(Recurse,Binary->getLHS(),Depth+1) || Recurse(Recurse,Binary->getRHS(),Depth+1);
 +    }
 +    if(const auto *Unary=dyn_cast<UnaryOperator>(E)) {
-+      if(Unary->getOpcode()==UO_Plus)return Recurse(Recurse,Unary->getSubExpr(),Depth+1);
++      if(Unary->getOpcode()==UO_Plus || Unary->getOpcode()==UO_AddrOf || (BorrowedOnly && (Unary->getOpcode()==UO_Minus || Unary->getOpcode()==UO_Not)))
++        return Recurse(Recurse,Unary->getSubExpr(),Depth+1);
 +      if(Unary->getOpcode()==UO_Deref) {
 +        if(BorrowedOnly && !E->getType()->isPointerType() && !E->getType()->isBlockPointerType() && !E->getType()->isRecordType())return false;
 +        auto Pointees=receiverPointees(Context,Unary->getSubExpr());if(Pointees.Truncated)return true;
@@ -80688,6 +80757,156 @@ new file mode 100644
 +static inline void binding_loan_observations(BindingLoanFields &source) {
 + bool valid=source.valid();int scalar=source.number();const char *ordinary=source.ordinary();
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)valid;(void)scalar;(void)ordinary;});
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-operator-field-projections.m b/clang/test/ObjC3/Sema/native-operator-field-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-operator-field-projections.m
+@@ -0,0 +1,72 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-operator-field-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-operator-field-projections.h"
++#if __OBJC3_PROFILE__ == 3
++const char *operator_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#else
++void operator_direct_bits(borrowed const char *source) {
++ __INTPTR_TYPE__ masked=((__INTPTR_TYPE__)source)^1;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)masked;}); // expected-error {{borrowed capture}}
++ __INTPTR_TYPE__ inverted=~(__INTPTR_TYPE__)source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)inverted;}); // expected-error {{borrowed capture}}
++ __INTPTR_TYPE__ shifted=((__INTPTR_TYPE__)source)>>1;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)shifted;}); // expected-error {{borrowed capture}}
++ int compared=((__INTPTR_TYPE__)source)>0;int present=source!=0;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)compared;(void)present;});
++}
++#ifdef __cplusplus
++int operator_resource_open(void);
++void operator_resource_close(int) __attribute__((nothrow));
++void operator_resource_writes() {
++ int descriptor __attribute__((objc_resource(close=operator_resource_close,invalid=-1)))=operator_resource_open();
++ OperatorField source{42};*source=descriptor;int value=source();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void operator_resource_address_escape() {
++ int descriptor __attribute__((objc_resource(close=operator_resource_close,invalid=-1)))=operator_resource_open();
++ OperatorField source{42};int *address=&source;*address=descriptor;int value=source();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void operator_resource_const_address() {
++ int descriptor __attribute__((objc_resource(close=operator_resource_close,invalid=-1)))=operator_resource_open();
++ OperatorField source{42};int *const address=&source;*address=descriptor;int value=source();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void array_loan_getters(ArrayLoanFields &source,NestedArrayLoanFields &nested) {
++ const char *element=source.get();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)element;}); // expected-error {{borrowed capture}}
++ const char *first=source.first();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)first;}); // expected-error {{borrowed capture}}
++ const char *generic=source.generic<>();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)generic;}); // expected-error {{borrowed capture}}
++ const char *called=source();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)called;}); // expected-error {{borrowed capture}}
++ const char *projected=nested.get();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)projected;}); // expected-error {{borrowed capture}}
++}
++void operator_getters(OperatorLoanFields &source,GenericOperatorLoan &generic) {
++ const char *called=source();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)called;}); // expected-error {{borrowed capture}}
++ const char *dereferenced=*source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)dereferenced;}); // expected-error {{borrowed capture}}
++ const char *plus=+source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)plus;}); // expected-error {{borrowed capture}}
++ const char **address=&source;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)address;}); // expected-error {{borrowed capture}}
++ const char *chained=source.chained();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)chained;}); // expected-error {{borrowed capture}}
++ const char *templated=generic();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)templated;}); // expected-error {{borrowed capture}}
++ __INTPTR_TYPE__ masked=source.masked();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)masked;}); // expected-error {{borrowed capture}}
++ __INTPTR_TYPE__ inverted=source.inverted();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)inverted;}); // expected-error {{borrowed capture}}
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-operator-field-projections.h b/clang/test/ObjC3/Sema/Inputs/native-operator-field-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-operator-field-projections.h
+@@ -0,0 +1,66 @@
++#ifndef OBJC3_OPERATOR_FIELD_PROJECTIONS_H
++#define OBJC3_OPERATOR_FIELD_PROJECTIONS_H
++#include "native-borrowed-field-projections.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++struct OperatorLoanFields {
++ borrowed const char *loan;
++ int scalar;
++ const char *operator()()const{return loan;}
++ const char *operator*()const{return loan;}
++ const char *operator+()const{return loan;}
++ const char **operator&(){return &loan;}
++ bool operator!()const{return loan==0;}
++ const char *chained()const{return (*this)();}
++ __INTPTR_TYPE__ masked()const{return reinterpret_cast<__INTPTR_TYPE__>(loan)^1;}
++ __INTPTR_TYPE__ inverted()const{return ~reinterpret_cast<__INTPTR_TYPE__>(loan);}
++ int number()const{return scalar+1;}
++ bool compared()const{return reinterpret_cast<__INTPTR_TYPE__>(loan)>0;}
++};
++struct ArrayLoanFields {
++ borrowed const char *values[2];
++ int numbers[2];
++ const char *get()const{return values[1];}
++ const char *first()const{return *values;}
++ template<unsigned Index=1>const char *generic()const{return values[Index];}
++ const char *operator()()const{return values[0];}
++ bool present()const{return values[0]!=0;}
++ int number()const{return numbers[0];}
++};
++struct NestedArrayLoanFields {
++ ArrayLoanFields rows[2];
++ const char *get()const{return rows[1].values[0];}
++ int number()const{return rows[0].numbers[1];}
++};
++static inline void array_loan_observations(ArrayLoanFields &source,NestedArrayLoanFields &nested) {
++ bool present=source.present();int number=source.number();int other=nested.number();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)present;(void)number;(void)other;});
++}
++struct GenericOperatorLoan {
++ borrowed const char *loan;
++ template<class=void>const char *operator()()const{return loan;}
++};
++struct OperatorField {
++ int value;
++ int &operator*(){return value;}
++ int *operator&(){return &value;}
++ int operator()()const{return value;}
++ bool operator!()const{return value==0;}
++};
++void operator_field_cleanup(OperatorField *);
++static inline void operator_field_observations() {
++ OperatorField local{42};*local=43;int *const address=&local;*address=44;
++ (void)binding_detached(binding_make_scalar(local()));
++ OperatorField cleaned __attribute__((cleanup(operator_field_cleanup)))={42};
++ bool empty=!cleaned;(void)binding_detached(binding_make_scalar(empty));
++}
++struct OperatorResourceView {
++ const char *value;
++ const char *operator()()const{return value;}
++ bool operator!()const{return value==0;}
++};
++static inline void operator_observations(OperatorLoanFields &source) {
++ bool empty=!source;int number=source.number();bool compared=source.compared();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)empty;(void)number;(void)compared;});
 +}
 +#endif
 +#endif

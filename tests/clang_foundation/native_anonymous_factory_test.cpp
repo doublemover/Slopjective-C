@@ -24,7 +24,7 @@ int main(){
   CompileRequest provider;provider.input_path=(root/"provider.cpp").string();provider.language=BaseLanguage::Cxx;
   provider.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;provider.arguments={std::string("-std=")+standard};
   provider.emit_semantic_interface=true;provider.module_name="test.AnonymousFactories";provider.package_identity="anonymous-factories-v1";
-  provider.interface_exports={"make_record","make_nested","make_generic","global_record","other_record","nested_record","read_global"};
+  provider.interface_exports={"make_record","make_nested","make_generic","global_record","other_record","nested_record","read_global","primary","secondary","Primary","third","record_value","NamedObjects"};
   provider.source_text=R"source(
 constexpr auto make_record(){struct {int value;constexpr int read()const{return value;}} result{42};return result;}
 constexpr auto make_nested(){struct {struct {int value;} nested;} result{{42}};return result;}
@@ -33,6 +33,12 @@ inline constexpr struct {int value;constexpr int read()const{return value;}} glo
 inline constexpr struct {int value;constexpr int read()const{return value;}} other_record{7};
 inline constexpr struct {struct Left{int value;constexpr int read()const{return value;}} left;struct Right{int value;constexpr int read()const{return value;}} right;template<class T>constexpr T sum(T n)const{return left.value+right.value+n;}} nested_record{{20},{22}};
 template<decltype(global_record) Value>constexpr int read_global(){return Value.value;}
+inline constexpr struct {int value;constexpr int read()const{return value;}constexpr auto make()const{struct Local{int value;constexpr int read()const{return value;}};return Local{value};}} primary{11},secondary{31};
+using Primary=decltype(primary);
+inline constexpr Primary third{9};
+template<decltype(primary) Value>inline constexpr int record_value=Value.value;
+namespace NamedObjects{inline constexpr struct{int value;constexpr int read()const{return value;}} first{12},second{30};}
+
 )source";
   auto produced=Compile(provider);Success(produced);assert(produced.interface_artifact && produced.interface_artifact->success);
   const auto &artifact=*produced.interface_artifact;
@@ -47,6 +53,7 @@ template<decltype(global_record) Value>constexpr int read_global(){return Value.
   old_reader.erase(std::remove(old_reader.begin(),old_reader.end(),llvm::StringRef(kCxxInlineClosureObjectSemantic)),old_reader.end());
   auto rejected=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,old_reader);assert(!rejected);llvm::consumeError(rejected.takeError());
   auto missing=provider;missing.interface_exports={"read_global"};assert(!Compile(missing).success);
+  missing.interface_exports={"secondary"};assert(!Compile(missing).success);
   for(const char *private_member:{"static constexpr int secret(){return 42;}\ninline constexpr struct{int value;constexpr int read()const{return secret();}} global_record{42};",
       "static constexpr int secret=42;\ninline constexpr struct{int value;constexpr int read()const{return secret;}} global_record{42};"}){
     auto hidden=provider;hidden.interface_exports={"global_record"};hidden.source_text=private_member;assert(!Compile(hidden).success);
@@ -73,7 +80,7 @@ template<decltype(global_record) Value>constexpr int read_global(){return Value.
   CompileRequest consumer;consumer.input_path=(root/"consumer.cpp").string();consumer.language=BaseLanguage::Cxx;
   consumer.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;consumer.arguments={std::string("-std=")+standard};
   InterfaceImportInput imported;imported.source_path=interface.string();imported.sidecar_path=interface.string()+".json";imported.locked_identity=artifact.identity;consumer.imported_interfaces={imported};
-  consumer.source_text="static_assert(make_record().read()==42);static_assert(make_nested().nested.value==42);static_assert(make_generic(42).read()==42);static_assert(global_record.read()==42);static_assert(other_record.read()==7);static_assert(nested_record.left.read()==20);static_assert(nested_record.right.read()==22);static_assert(nested_record.sum(0)==42);static_assert(read_global<global_record>()==42);extern \"C\" int anonymous_result(){return make_record().read()+make_nested().nested.value+make_generic(42).read();}";
+  consumer.source_text="static_assert(make_record().read()==42);static_assert(make_nested().nested.value==42);static_assert(make_generic(42).read()==42);static_assert(global_record.read()==42);static_assert(other_record.read()==7);static_assert(nested_record.left.read()==20);static_assert(nested_record.right.read()==22);static_assert(nested_record.sum(0)==42);static_assert(read_global<global_record>()==42);static_assert(primary.read()+secondary.read()==42);static_assert(primary.make().read()==11);static_assert(third.read()==9);static_assert(record_value<secondary> ==31);static_assert(NamedObjects::first.read()+NamedObjects::second.read()==42);extern \"C\" int anonymous_result(){return make_record().read()+make_nested().nested.value+make_generic(42).read();}";
   consumer.emit=EmitKind::Object;consumer.output_path=(root/"consumer.o").string();auto consumed=Compile(consumer);Success(consumed);
   Write(root/"main.c","int anonymous_result(void);int main(void){return anonymous_result()==126?0:1;}");
   Execute({consumed.compiler_driver_path,"--no-default-config","-fuse-ld=lld",consumer.output_path,(root/"main.c").string(),"-o",(root/"witness").string()});Execute({(root/"witness").string()});

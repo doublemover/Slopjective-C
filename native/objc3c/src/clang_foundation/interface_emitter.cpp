@@ -560,6 +560,28 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
       c_inline->setImplicitlyInline(c_inline_inherited);
     }
   });
+  // A second variable in an anonymous-record declaration shares the first
+  // variable's record. Publish a reference to that exact type, never a second
+  // anonymous definition (which would create a different C++ type).
+  const auto original_type=variable?variable->getType():clang::QualType();
+  const auto *original_type_info=variable?variable->getTypeSourceInfo():nullptr;
+  bool projected_object_type=false;
+  auto restore_object_type=llvm::scope_exit([&] {
+    if(projected_object_type) {
+      const_cast<clang::VarDecl *>(variable)->setType(original_type);
+      const_cast<clang::VarDecl *>(variable)->setTypeSourceInfo(const_cast<clang::TypeSourceInfo *>(original_type_info));
+    }
+  });
+  if(variable && llvm::isa<clang::TagType>(original_type.getTypePtr()))
+    if(const auto *record=original_type->getAsCXXRecordDecl();record && !record->isLambda())
+      if(const auto *owner=InlineClosureObjectOrigin(record);owner && owner!=variable->getDefinition()) {
+        auto *reference=new (context) clang::DeclRefExpr(context,const_cast<clang::VarDecl *>(owner),
+            false,owner->getType(),clang::VK_LValue,clang::SourceLocation());
+        auto projected=context.getDecltypeType(reference,original_type);
+        const_cast<clang::VarDecl *>(variable)->setType(projected);
+        const_cast<clang::VarDecl *>(variable)->setTypeSourceInfo(context.getTrivialTypeSourceInfo(projected));
+        projected_object_type=true;
+      }
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.PrintAsCanonical = false;
   policy.FullyQualifiedName = true;

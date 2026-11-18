@@ -934,9 +934,18 @@ void CheckBorrowedGetterBoundaries(bool Arc,const std::string &Standard) {
   auto provider=Request(R"source(
 struct BorrowedBoundaryView {
  borrowed const char *loan;
+ borrowed const char *values[2];
  const char *independent;
  int value;
  const char *get()const{return loan;}
+ const char *array_value()const{return values[1];}
+ template<unsigned Index=0>const char *array_generic()const{return values[Index];}
+ const char *operator()()const{return loan;}
+ const char *operator*()const{return loan;}
+ bool operator!()const{return loan==0;}
+ __INTPTR_TYPE__ masked()const{return reinterpret_cast<__INTPTR_TYPE__>(loan)^1;}
+ __INTPTR_TYPE__ inverted()const{return ~reinterpret_cast<__INTPTR_TYPE__>(loan);}
+ bool compared()const{return reinterpret_cast<__INTPTR_TYPE__>(loan)>0;}
  const char *ordinary()const{return independent;}
  int scalar()const{return value;}
 };
@@ -955,12 +964,18 @@ struct BorrowedBoundaryView {
   consumer.imported_interfaces={input};
   consumer.source_text=preamble+"void rejected(BorrowedBoundaryView &source){const char *copied=source.get();borrowed_boundary_spawn(^void(void) __objc3_async_frame {(void)copied;});}";
   Reject(consumer,"borrowed capture");
+  for(const char *expression:{"source()","*source","source.masked()","source.inverted()","source.array_value()","source.array_generic<>()","reinterpret_cast<__INTPTR_TYPE__>(source.get())^1"}) {
+    consumer.source_text=preamble+"void rejected(BorrowedBoundaryView &source){auto copied="+expression+";borrowed_boundary_spawn(^void(void) __objc3_async_frame {(void)copied;});}";
+    Reject(consumer,"borrowed capture");
+  }
   consumer.source_text=preamble+"typedef const char *UncheckedLoan __attribute__((objc_unsafe_sendable));void rejected(BorrowedBoundaryView &source){UncheckedLoan copied=source.get();borrowed_boundary_spawn(^void(void) __objc3_async_frame {(void)copied;});}";
   Reject(consumer,"borrowed capture");
-  consumer.source_text=preamble+"void ordinary(BorrowedBoundaryView &source){const char *copied=source.ordinary();int value=source.scalar();borrowed_boundary_spawn(^void(void) __objc3_async_frame {(void)copied;(void)value;});}";
+  consumer.source_text=preamble+"void ordinary(BorrowedBoundaryView &source){const char *copied=source.ordinary();int value=source.scalar();bool empty=!source;bool compared=source.compared();borrowed_boundary_spawn(^void(void) __objc3_async_frame {(void)copied;(void)value;(void)empty;(void)compared;});}";
   Success(Compile(consumer));
   auto crossing=consumer;crossing.source_text="#include \"objc3_runtime_services.h\"\ntypedef const char *UncheckedLoan __attribute__((objc_unsafe_sendable));int borrowed_remote(UncheckedLoan) __attribute__((nothrow,objc_executor(main)));int rejected(BorrowedBoundaryView &source) __objc3_async_frame {return __objc3_await borrowed_remote(source.get());}";
   if(Standard!="c17")crossing.source_text->replace(0,std::string("#include \"objc3_runtime_services.h\"").size(),"#include \"objc3_task.hpp\"");
+  Reject(crossing,"borrowed concurrent value");
+  crossing.source_text->replace(crossing.source_text->find("source.get()"),std::string("source.get()").size(),"source()");
   Reject(crossing,"borrowed concurrent value");
 }
 

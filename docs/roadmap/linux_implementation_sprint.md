@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.224 / System 2.150 native view span](linux_native_operator_and_array_views.md)
+retains borrowed identities through closed operators, fixed-array getters and
+pointer-bit expressions, tracks returned storage addresses, and preserves shared
+anonymous record types during publication.
+
 The [Source 2.223 / System 2.149 inline anonymous-object span](linux_native_inline_anonymous_objects.md)
 publishes owned unnamed record constants, nested/generic members and structural
 arguments with source-independent identity, exact SPI admission and v4 readers.
