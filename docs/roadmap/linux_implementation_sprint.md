@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.253 / System 2.179 C completion executor changes](linux_async_c_completion_exports.md)
+generate native executor hops and preserve checked failure and cancellation
+at the C callback boundary.
+
 The [Source 2.252 / System 2.178 C completion signature changes](linux_async_c_completion_exports.md)
 generate object, Block, and C-layout aggregate bridges, including exact client
 layout checks and source-free C callback execution.

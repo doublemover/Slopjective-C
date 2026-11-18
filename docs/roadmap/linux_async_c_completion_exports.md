@@ -113,5 +113,17 @@ interface export set as their thunks and callbacks.
 
 The eight separate C executables check object identity, copied Block lifetime,
 and aggregate input and result fields in addition to the scalar, void, and
-checked forms. Destination-specific synthesis, wider foreign types and
-adapters, and matching SDK acceptance remain open.
+checked forms.
+
+Source 2.253 / System 2.179 generates bridges for free async declarations with
+executor affinity. A private native await enters the source function on its
+declared executor. C callers use the same completion types and can invoke the
+bridge from any executor. The compiler retains the native typed error channel
+and applies ordinary isolation admission to the generated await.
+
+All eight C clients verify actual execution on the main and registered named
+executors. A missing named executor produces checked failure for a throwing
+entry and distinguished cancellation for a nonthrowing entry. Both controls
+deliver one completion without entering the unavailable destination.
+Actor-instance synthesis, wider foreign types and adapters, and matching SDK
+acceptance remain open.

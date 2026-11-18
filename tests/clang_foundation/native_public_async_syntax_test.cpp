@@ -202,6 +202,26 @@ static struct GeneratedAggregate generated_aggregate(struct GeneratedAggregate v
   ++value.values[1];
   return value;
 }
+static int generated_main(int value) async __attribute__((nothrow, objc_executor(main))) {
+  objc3_executor_t *executor = 0;
+  if (objc3_executor_get_main(&executor) != OBJC3_SERVICE_OK) __builtin_trap();
+  int current = objc3_executor_is_current(executor);
+  objc3_executor_release(executor);
+  return current ? value + 1 : -1;
+}
+static int generated_named(int value) async throws(id<Error>)
+    __attribute__((nothrow, objc_executor(named("generated.completion")))) {
+  objc3_executor_t *executor = 0;
+  if (objc3_executor_get_named("generated.completion", &executor) != OBJC3_SERVICE_OK)
+    __builtin_trap();
+  int current = objc3_executor_is_current(executor);
+  objc3_executor_release(executor);
+  return current ? value + 1 : -1;
+}
+static void generated_missing(void) async
+    __attribute__((nothrow, objc_executor(named("generated.missing")))) {
+  __builtin_trap();
+}
 #define generated_value(...) invalid_if_reexpanded
 )");
   CompileRequest provider;
@@ -216,7 +236,8 @@ static struct GeneratedAggregate generated_aggregate(struct GeneratedAggregate v
   provider.emit = EmitKind::Object;
   provider.output_path = (root / "provider.o").string();
   provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
-      "generated_object", "generated_block", "generated_aggregate"};
+      "generated_object", "generated_block", "generated_aggregate", "generated_main",
+      "generated_named", "generated_missing"};
   provider.async_c_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GeneratedCompletion";
@@ -286,7 +307,7 @@ static ClientBlock retained_block;
 #else
 typedef void *ClientBlock;
 #endif
-static atomic_int complete[7];
+static atomic_int complete[11];
 static void value_done(void *context, objc_async_completion_status_t status,
                        int value, objc3_async_c_error error) {
   assert(context == &complete[0] && status == OBJC_ASYNC_COMPLETION_SUCCESS);
@@ -332,7 +353,32 @@ static void aggregate_done(void *context, objc_async_completion_status_t status,
   assert(value.values[0] == 73 && value.values[1] == 91);
   assert(atomic_fetch_add(&complete[6], 1) == 0);
 }
+static void executor_done(void *context, objc_async_completion_status_t status,
+                          int value, objc3_async_c_error error) {
+  if (context == &complete[9]) {
+    assert(status == OBJC_ASYNC_COMPLETION_ERROR && error);
+  } else {
+    assert(context == &complete[7] || context == &complete[8]);
+    assert(status == OBJC_ASYNC_COMPLETION_SUCCESS && value == 42 && !error);
+  }
+  assert(atomic_fetch_add((atomic_int *)context, 1) == 0);
+}
+static void missing_done(void *context, objc_async_completion_status_t status,
+                         objc3_async_c_error error) {
+  assert(context == &complete[10] && status == OBJC_ASYNC_COMPLETION_CANCELLED);
+  assert(objc3_async_c_error_is_cancellation(error));
+  assert(atomic_fetch_add(&complete[10], 1) == 0);
+}
 int main(void) {
+  generated_named_async_c(41, &complete[9], executor_done);
+  for (int elapsed = 0; elapsed < 2000 && !atomic_load(&complete[9]); ++elapsed)
+    nanosleep(&(struct timespec){0, 1000000}, 0);
+  assert(atomic_load(&complete[9]) == 1);
+  objc3_executor_t *main_executor = 0, *named_executor = 0;
+  assert(objc3_executor_get_main(&main_executor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(0, &named_executor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_register_named("generated.completion", named_executor) == OBJC3_SERVICE_OK);
+
   const int input = 41;
   generated_value_async_c(true, &input, &complete[0], value_done);
   generated_void_async_c(0, void_done);
@@ -342,14 +388,22 @@ int main(void) {
   generated_block_async_c(40, &complete[5], block_done);
   struct GeneratedAggregate initial = {{'C', 41}, {73, 90}};
   generated_aggregate_async_c(initial, &complete[6], aggregate_done);
+  generated_main_async_c(41, &complete[7], executor_done);
+  generated_named_async_c(41, &complete[8], executor_done);
+  generated_missing_async_c(&complete[10], missing_done);
   for (int elapsed = 0; elapsed < 2000; ++elapsed) {
+    unsigned executed = 0;
+    assert(objc3_executor_pump(main_executor, 8, &executed) == OBJC3_SERVICE_OK);
     int count = 0;
-    for (unsigned index = 0; index < 7; ++index) count += atomic_load(&complete[index]);
-    if (count == 7) {
+    for (unsigned index = 0; index < 11; ++index) count += atomic_load(&complete[index]);
+    if (count == 11) {
 #ifdef __BLOCKS__
       assert(retained_block(2) == 42);
       _Block_release((const void *)retained_block);
 #endif
+      assert(objc3_executor_unregister_named("generated.completion") == OBJC3_SERVICE_OK);
+      objc3_executor_release(named_executor);
+      objc3_executor_release(main_executor);
       return 0;
     }
     nanosleep(&(struct timespec){0, 1000000}, 0);

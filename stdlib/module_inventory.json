@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 252,
+        "minor": 253,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Generated C completion bridges route executor-qualified free entries through native awaits, with verified main and named execution and checked failure or cancellation for unavailable destinations; actor-instance exports and matching SDK acceptance remain open",
         "Generated C completion signatures support Objective-C references, typed or opaque Blocks, and C-layout aggregates with verified size, alignment and field offsets; destination-specific synthesis and matching SDK acceptance remain open",
         "Typed C completion thunks and headers are generated for global native free async entries with builtin and pointer signatures, including separately linked definitions, void and checked callbacks and canonical interface metadata; wider signature, destination and SDK acceptance remain open",
         "Lowered isolation properties and native C++ frame inputs preserve by-value reads and explicit receiver contracts, with known loans checked independently of unknown storage and direct by-value captures checked at construction; full release and SDK acceptance remain pending",
@@ -414,12 +415,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 178,
+        "minor": 179,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Generated C completion bridges route executor-qualified free entries through native awaits, with verified main and named execution and checked failure or cancellation for unavailable destinations; actor-instance exports and matching SDK acceptance remain open",
         "Generated C completion signatures support Objective-C references, typed or opaque Blocks, and C-layout aggregates with verified size, alignment and field offsets; destination-specific synthesis and matching SDK acceptance remain open",
         "Typed C completion thunks and headers are generated for global native free async entries with builtin and pointer signatures, including separately linked definitions, void and checked callbacks and canonical interface metadata; wider signature, destination and SDK acceptance remain open",
         "Lowered isolation properties and native C++ frame inputs preserve by-value reads and explicit receiver contracts, with known loans checked independently of unknown storage and direct by-value captures checked at construction; full release and SDK acceptance remain pending",

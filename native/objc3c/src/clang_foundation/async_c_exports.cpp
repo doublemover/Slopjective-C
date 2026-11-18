@@ -238,9 +238,9 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
         prototype->getCallConv() != clang::CC_C)
       return reject("expected one nonvariadic free function with a native prototype");
     const auto effects = prototype->getObjC3FunctionEffects();
-    if (!effects.AsyncFrame || clang::getObjC3Executor(source) ||
-        clang::isObjC3ActorIsolated(source) || prototype->hasObjC3BorrowedResult())
-      return reject("expected a global native async frame entry with independent result lifetime");
+    if (!effects.AsyncFrame || clang::isObjC3ActorIsolated(source) ||
+        prototype->hasObjC3BorrowedResult())
+      return reject("expected a native async frame entry with independent result lifetime");
     if (!source->isExternallyVisible() && !source->getDefinition())
       return reject("the internal async declaration needs a definition in this translation unit");
 
@@ -285,14 +285,39 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
     header << types << declaration;
     output.interface_exports.push_back(thunk);
     output.interface_exports.push_back(callback);
+    const auto call = (language.CPlusPlus ? "::" : "") + name + '(' + inputs + ')';
+    auto frame = call;
     // The unqualified C preprocessing spelling must select the original
     // declaration even when the provider reuses a name as a macro later.
     definitions << "#undef " << name << "\n#undef " << thunk << "\n#undef "
-                << callback << "\n" << types << declaration
-                << "OBJC3_ASYNC_C_DEFINE_" << (returns_void ? "VOID" : result->kind)
+                << callback << "\n" << types << declaration;
+    if (clang::getObjC3Executor(source)) {
+      const auto bridge = "__objc3_c_executor_bridge_" + name;
+      if (!tu->lookup(&context.Idents.get(bridge)).empty())
+        return reject("the generated executor bridge name is already declared");
+      const bool checked = effects.Throws != clang::ObjC3ThrowsKind::None;
+      // A native await supplies the same executor admission, startup errors,
+      // and cancellation propagation as an ordinary Objective-C caller.
+      definitions << "static " << result->spelling << ' ' << bridge << '('
+                  << (parameters.empty() ? "void" : parameters.substr(2))
+                  << ") __objc3_async_frame";
+      if (checked) {
+        definitions << " __objc3_throws";
+        if (effects.Throws == clang::ObjC3ThrowsKind::Typed)
+          definitions << '(' << effects.ErrorType.getAsString(context.getPrintingPolicy()) << ')';
+      }
+      definitions << " { ";
+      if (!returns_void) definitions << "return ";
+      if (checked) definitions << "__objc3_try(";
+      definitions << "__objc3_await " << call;
+      if (checked) definitions << ')';
+      definitions << "; }\n";
+      frame = bridge + '(' + inputs + ')';
+    }
+    definitions << "OBJC3_ASYNC_C_DEFINE_" << (returns_void ? "VOID" : result->kind)
                 << '(' << name;
     if (!returns_void) definitions << ", " << result->spelling;
-    definitions << ", " << (language.CPlusPlus ? "::" : "") << name << '(' << inputs << "), "
+    definitions << ", " << frame << ", "
                 << (effects.Throws == clang::ObjC3ThrowsKind::None ? 0 : 1)
                 << ", 0, 0" << parameters << ")\n";
   }
