@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import posixpath
 import shutil
@@ -16,9 +17,18 @@ from scripts.objc3c_toolchain.binary_packages import digest, write_json
 from scripts.objc3c_toolchain.build import _build_foundation, foundation_lock
 from scripts.objc3c_toolchain.core import build_plans, prepare, seal_development
 from scripts.objc3c_toolchain.implementation_analysis import dependencies, inventory, patch_units
-from scripts.objc3c_toolchain.linux_host import native_linux_host
+from scripts.objc3c_toolchain.linux_host import native_linux_host, require_elf
 
-SCHEMA = 'objc3c.implementation-analysis-foundation.v1'
+SCHEMA = 'objc3c.implementation-analysis-foundation.v2'
+TABLEGEN = Path('bin/llvm-tblgen')
+
+
+def _tablegen(build: Path) -> Path:
+    path = build / TABLEGEN
+    if not path.is_file() or path.is_symlink() or not os.access(path, os.X_OK):
+        raise ValueError('shared analysis foundation requires its own executable llvm-tblgen')
+    require_elf(path)
+    return path
 
 
 def _build_files(repo: Path, configuration: dict) -> set[Path]:
@@ -36,6 +46,7 @@ def _build_files(repo: Path, configuration: dict) -> set[Path]:
     paths = {
         database, build / 'CMakeCache.txt', build / 'build.ninja', build / '.ninja_deps',
         build / 'foundation-build-report.json', Path(configuration['configuration_trace']),
+        _tablegen(build),
     }
     # Ninja checks the recorded object's nanosecond mtime to authenticate its
     # dependency closure. Retain only the compiled objects that own those rows.
@@ -162,6 +173,8 @@ def restore(repo: Path, plan: dict, bundle: Path, evidence: Path) -> tuple[dict,
     files = _archive_members(archive, locations)
     if not files or files != report['archive']['members'] or len(files) != len(set(files)):
         raise ValueError('analysis foundation archive has escaped or incomplete members')
+    if (build / TABLEGEN).relative_to(repo).as_posix() not in files:
+        raise ValueError('analysis foundation archive omitted llvm-tblgen')
     original = bundle / 'foundation'
     reports = native_files(original)
     if not reports or [artifact(original, path) for path in reports] != report['foundation_artifacts']:
@@ -170,6 +183,7 @@ def restore(repo: Path, plan: dict, bundle: Path, evidence: Path) -> tuple[dict,
     prepare(repo, source_dir=source, fetch=True)
     seal_development(repo, source_dir=source)
     subprocess.run(['tar', '-I', 'zstd', '-xf', archive, '-C', repo], check=True)
+    _tablegen(build)
     if _identity(portable, stage) != report['identity']:
         raise ValueError('restored analysis compiler differs from the producer')
     evidence.mkdir(parents=True, exist_ok=False)

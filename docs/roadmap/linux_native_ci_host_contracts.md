@@ -48,3 +48,10 @@ status after printing its annotation. Previously its final `echo` made a failed
 aggregate appear successful. Four executable shell controls preserve success,
 ordinary failures and timeout exit codes; workflow-policy mutations reject a
 missing or overwritten exit status. No archive is promoted by a diagnostic run.
+
+The shared analysis foundation now transports its configured
+`bin/llvm-tblgen` with the staged compiler and Ninja dependency inputs. The
+fork-matched frontend invokes that executable to generate the scanner's option
+table. The producer rejects a missing, non-executable or wrong-architecture
+tool, and the consumer validates the restored member before frontend
+configuration. The earlier AArch64 partitions all stopped at this boundary.

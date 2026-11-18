@@ -208,7 +208,9 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
 
 
 def test_shared_foundation_preserves_actual_ninja_dependencies(tmp_path):
-    from scripts.objc3c_implementation_assurance.shared_foundation import _archive, _archive_members
+    from scripts.objc3c_implementation_assurance.shared_foundation import (
+        _archive, _archive_members, _tablegen,
+    )
 
     ninja, compiler = shutil.which('ninja'), shutil.which('cc')
     if not all((ninja, compiler, shutil.which('zstd'))):
@@ -224,11 +226,16 @@ def test_shared_foundation_preserves_actual_ninja_dependencies(tmp_path):
         f'build identity.o: cc {source}\n')
     subprocess.run([ninja, '-C', build], check=True, capture_output=True)
     original = (build / 'identity.o').stat().st_mtime_ns
+    tool_source = tmp_path / 'generator.c'
+    tool_source.write_text('#include <stdio.h>\nint main(void) { puts("restored generator"); }\n')
+    tool = build / 'bin/llvm-tblgen'
+    tool.parent.mkdir()
+    subprocess.run([compiler, tool_source, '-o', tool], check=True, capture_output=True)
     (stage / 'target').write_text('real retained payload')
     (stage / 'alias').symlink_to('target')
     bundle = tmp_path / 'foundation.tar.zst'
     receipt = _archive(tmp_path, bundle, (stage, build), {
-        build / 'build.ninja', build / '.ninja_deps', build / 'identity.o',
+        build / 'build.ninja', build / '.ninja_deps', build / 'identity.o', tool,
         stage / 'target', stage / 'alias',
     })
     assert _archive_members(bundle, ('out/build/', 'out/stage/')) == receipt['members']
@@ -237,6 +244,7 @@ def test_shared_foundation_preserves_actual_ninja_dependencies(tmp_path):
     subprocess.run(['tar', '-I', 'zstd', '-xf', bundle, '-C', tmp_path], check=True)
     assert (build / 'identity.o').stat().st_mtime_ns == original
     assert (stage / 'alias').read_text() == 'real retained payload'
+    assert subprocess.check_output([_tablegen(build)], text=True) == 'restored generator\n'
     dependencies = subprocess.check_output([ninja, '-C', build, '-t', 'deps', 'identity.o'], text=True)
     assert '(VALID)' in dependencies and str(source) in dependencies
 
@@ -265,12 +273,15 @@ def test_shared_foundation_selects_real_configured_compiler_inputs(tmp_path):
     (source / 'clang/lib').mkdir(parents=True)
     (source / 'clang/lib/owned.cpp').write_text('#include "table.inc"\nint selected() { return value; }\n')
     (source / 'ordinary.cpp').write_text('int unselected() { return 0; }\n')
+    (source / 'tablegen.cpp').write_text('int main() { return 0; }\n')
     (source / 'table.in').write_text('constexpr int value = 42;\n')
     (source / 'CMakeLists.txt').write_text('''
 cmake_minimum_required(VERSION 3.20)
 project(shared-foundation-control LANGUAGES CXX)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 configure_file(table.in "${CMAKE_BINARY_DIR}/include/llvm/table.inc" COPYONLY)
+add_executable(llvm-tblgen tablegen.cpp)
 add_library(LLVM SHARED clang/lib/owned.cpp ordinary.cpp)
 target_include_directories(LLVM PRIVATE "${CMAKE_BINARY_DIR}/include/llvm")
 set_target_properties(LLVM PROPERTIES VERSION 23.1 SOVERSION 23)
@@ -287,8 +298,11 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
     trace = build / 'foundation-configuration-trace.jsonl'
     trace.write_text('{}\n')
     (build / 'foundation-build-report.json').write_text('{}\n')
-    selected = _build_files(tmp_path, {'paths': {'build': str(build), 'source': str(source)},
-        'host_environment': {'ninja_path': ninja}, 'configuration_trace': str(trace)})
+    configuration = {'paths': {'build': str(build), 'source': str(source)},
+        'host_environment': {'ninja_path': ninja}, 'configuration_trace': str(trace)}
+    selected = _build_files(tmp_path, configuration)
+    tablegen = build / 'bin/llvm-tblgen'
+    assert tablegen in selected
     assert build / 'include/llvm/table.inc' in selected
     assert build / 'CMakeFiles/rules.ninja' in selected
     assert any(path.name == 'owned.cpp.o' for path in selected)
@@ -297,6 +311,9 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
         'libLLVM.so', 'libLLVM.so.23', 'libLLVM.so.23.1',
         'libclang-cpp.so', 'libclang-cpp.so.23', 'libclang-cpp.so.23.1',
     }
+    tablegen.unlink()
+    with pytest.raises(ValueError, match='executable llvm-tblgen'):
+        _build_files(tmp_path, configuration)
 
 
 def test_failed_shared_foundation_blocks_terminal_analysis(tmp_path):
