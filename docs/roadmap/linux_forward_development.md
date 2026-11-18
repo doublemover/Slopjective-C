@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.208 / System 2.134 factory-chain span](linux_native_block_factory_chains.md)
+composes closed native factory return graphs while mapping inner captures to
+actual outer caller contracts under shared work, depth and cycle limits.
+
 The [Source 2.207 / System 2.133 factory-calculation span](linux_native_block_factory_calculations.md)
 retains caller cleanup/ownership contracts through pure scalar calculations and
 concrete template locals, with separate controls for unevaluated operands.
@@ -175,7 +179,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.207 / System 2.133 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.208 / System 2.134 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 

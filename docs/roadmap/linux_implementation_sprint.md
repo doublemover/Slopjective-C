@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.208 / System 2.134 factory-chain span](linux_native_block_factory_chains.md)
+composes closed native factory return graphs while mapping inner captures to
+actual outer caller contracts under shared work, depth and cycle limits.
+
 The [Source 2.207 / System 2.133 factory-calculation span](linux_native_block_factory_calculations.md)
 retains caller cleanup/ownership contracts through pure scalar calculations and
 concrete template locals, with separate controls for unevaluated operands.

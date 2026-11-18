@@ -53652,7 +53652,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,2977 @@
+@@ -0,0 +1,2999 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54484,6 +54484,7 @@ new file mode 100644
 +  SmallVectorImpl<FactoryCapture> *FactoryCaptures;
 +  llvm::SmallPtrSet<const Expr *, 32> Complete, Active;
 +  llvm::SmallPtrSet<const BlockDecl *, 16> Added;
++  llvm::SmallPtrSet<const FunctionDecl *,16> ActiveFactories;
 +  // Shared recipe work remains bounded independently of scope scanning and
 +  // recursion. MRC copy wrappers and dependent capture discovery consume work.
 +  unsigned Budget = 1024, ScanBudget = 4096;
@@ -54542,6 +54543,8 @@ new file mode 100644
 +    };
 +    for(unsigned I=0;I!=Function->getNumParams();++I)
 +      if(!ParameterAllowed(Function->getParamDecl(I)) || !ParameterAllowed(Definition->getParamDecl(I),Pattern))return false;
++    if(!ActiveFactories.insert(Definition->getCanonicalDecl()).second)return false;
++    auto LeaveFactory=llvm::scope_exit([&]{ActiveFactories.erase(Definition->getCanonicalDecl());});
 +    const auto *Body=dyn_cast_or_null<CompoundStmt>(Definition->getBody());
 +    if(!Body)return false;
 +    llvm::DenseMap<const VarDecl *,uint32_t> Locals;
@@ -54635,6 +54638,25 @@ new file mode 100644
 +        return Self(Self,Generic->getResultExpr(),Level+1,Copied);
 +      if(const auto *Copy=dyn_cast<CallExpr>(E);Copy && !Copied && RuntimeCopy(Copy))
 +        return Self(Self,Copy->getArg(0),Level+1,true);
++      if(const auto *Nested=dyn_cast<CallExpr>(E)) {
++        if(!Context.hasSameUnqualifiedType(Nested->getType(),Function->getReturnType()))return false;
++        // Construction arguments must themselves belong to this closed recipe,
++        // including ignored arguments: an opaque call cannot hide state work.
++        for(const auto *Argument:Nested->arguments())if(!Origin(Origin,Argument,Level+1))return false;
++        const auto First=FactoryCaptures->size();
++        // Recompute a nested symbolic recipe under the shared work/cycle bounds.
++        // Expression memoization cannot substitute a previous outer caller's
++        // arguments for the same inner factory definition.
++        if(!collectFactory(Nested,Level+1))return false;
++        SmallVector<FactoryCapture,8> NestedCaptures(FactoryCaptures->begin()+First,FactoryCaptures->end());
++        FactoryCaptures->resize(First);
++        for(const auto &Capture:NestedCaptures) {
++          auto Sources=Origin(Origin,Capture.Value,Level+1);if(!Sources)return false;
++          auto Found=llvm::find_if(Bindings,[&](const auto &Binding){return Binding.first==Capture.Binding;});
++          if(Found==Bindings.end())Bindings.push_back({Capture.Binding,*Sources});else Found->second|=*Sources;
++        }
++        return true;
++      }
 +      if(E->isNullPointerConstant(Context,Expr::NPC_ValueDependentIsNotNull))return true;
 +      const auto *Block=dyn_cast<BlockExpr>(E);
 +      if(!Block || !Context.hasSameUnqualifiedType(Block->getType(),Function->getReturnType()) ||
@@ -78998,3 +79020,59 @@ new file mode 100644
 +void binding_opaque_calculation_reject(void){(void)binding_detached(binding_opaque_calculation_factory(42));} // expected-error {{cannot prove Sendable captures}}
 +static inline BindingWork binding_dereference_factory(int *value){const int result=*value;return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)result;});}
 +void binding_dereference_reject(int *value){(void)binding_detached(binding_dereference_factory(value));} // expected-error {{cannot prove Sendable captures}}
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-block-factory-chains.h b/clang/test/ObjC3/Sema/Inputs/native-block-factory-chains.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-block-factory-chains.h
+@@ -0,0 +1,15 @@
++#ifndef OBJC3_FACTORY_CHAINS_H
++#define OBJC3_FACTORY_CHAINS_H
++#include "native-block-factory-calculations.h"
++static inline BindingWork binding_chain_scalar(int value){const int snapshot=value+1;return binding_scalar_alias(snapshot);}
++static inline BindingWork binding_chain_pair(int choose,int left,int right){if(choose)return binding_calculated_factory(left,right);return binding_calculated_factory(right,left);}
++static inline BindingWork binding_chain_object(SafeBlockObject *object){SafeBlockObject *const snapshot=object;return binding_object_alias(snapshot);}
++static inline BindingWork binding_chain_unsafe(UnsafeBlockObject *object){return binding_make_unsafe(object);}
++static inline BindingWork binding_chain_callback(BindingWork callback){return binding_callback_alias(callback);}
++static inline BindingWork binding_chain_outer(int value){return binding_chain_scalar(value);}
++static inline void binding_chains_ordinary(int choose,SafeBlockObject *safe){(void)binding_detached(binding_chain_outer(42));(void)binding_detached(binding_chain_pair(choose,41,42));(void)binding_detached(binding_chain_object(safe));const BindingWork base=^void(void) __objc3_async_frame {};(void)binding_detached(binding_chain_callback(base));}
++#ifdef __cplusplus
++struct BindingChainFactory{static BindingWork make(int value){return BindingFactory::make(value);}};
++static inline void binding_chain_static_ordinary(void){(void)binding_detached(BindingChainFactory::make(42));}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-block-factory-chains.m b/clang/test/ObjC3/Sema/native-block-factory-chains.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-block-factory-chains.m
+@@ -0,0 +1,29 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-block-factory-chains.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-block-factory-chains.h"
++void chain_close(int);int chain_open(void);
++void binding_chain_resource(int choose){int descriptor __attribute__((objc_resource(close=chain_close,invalid=-1)))=chain_open();
++ (void)binding_detached(binding_chain_scalar(descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_chain_outer(descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_chain_pair(choose,descriptor,42)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_chain_pair(choose,41,descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_chain_pair(descriptor,41,42));
++}
++void binding_chain_callback_unknown(BindingWork unknown){(void)binding_detached(binding_chain_callback(unknown));} // expected-error {{cannot prove Sendable captures}}
++void binding_chain_unsafe_object(UnsafeBlockObject *unsafe){(void)binding_detached(binding_chain_unsafe(unsafe));} // expected-error {{non-Sendable type}}
++static inline BindingWork binding_chain_cycle_a(int);
++static inline BindingWork binding_chain_cycle_b(int value){return binding_chain_cycle_a(value);}
++static inline BindingWork binding_chain_cycle_a(int value){return binding_chain_cycle_b(value);}
++void binding_chain_cycle_reject(void){(void)binding_detached(binding_chain_cycle_a(42));} // expected-error {{cannot prove Sendable captures}}
++BindingWork binding_chain_opaque(int);
++static inline BindingWork binding_chain_open(int value){return binding_chain_opaque(value);}
++void binding_chain_opaque_reject(void){(void)binding_detached(binding_chain_open(42));} // expected-error {{cannot prove Sendable captures}}
++int binding_chain_state(void);
++static inline BindingWork binding_chain_stateful(int value){return binding_make_unused(binding_chain_state());}
++void binding_chain_stateful_reject(void){(void)binding_detached(binding_chain_stateful(42));} // expected-error {{cannot prove Sendable captures}}

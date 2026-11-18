@@ -69,6 +69,32 @@ inline BindingWork calculated_factory(BindingOwner *owner,unsigned value,unsigne
 }
 inline BindingWork calculated_scalar_factory(int left,int right){const long wide=(long)left;const int result=(int)(wide*3+right);return FACTORY_RESULT(^void(void) __objc3_async_frame {(void)result;});}
 inline BindingWork unsafe_factory(BindingUnsafe *owner){return FACTORY_RESULT(^void(void) __objc3_async_frame {(void)owner;});}
+inline BindingWork factory_chain(BindingOwner *owner,unsigned value,unsigned *ran,unsigned *deferred){const unsigned expected=value+0;return calculated_factory(owner,expected,ran,deferred);}
+inline BindingWork callback_chain(BindingWork callback){return callback_alias_factory(callback);}
+inline BindingWork scalar_chain(int left,int right){return calculated_scalar_factory(left+1,right*2);}
+inline BindingWork unsafe_chain(BindingUnsafe *owner){return unsafe_factory(owner);}
+inline objc3_task_t *chain_start(objc3_executor_t *executor,unsigned choose,bool callback,unsigned *destroyed,unsigned *ran,unsigned *deferred){
+ BindingOwner *one=[BindingOwner new],*two=[BindingOwner new];
+ one->destroyed=destroyed;one->value=1;two->destroyed=destroyed;two->value=2;
+ const BindingWork base=factory_chain(choose?one:two,choose?1u:2u,ran,deferred);
+ const BindingWork produced=callback?callback_chain(base):base;
+ objc3_task_t *task=binding_start(produced,executor);
+#if !__has_feature(objc_arc)
+ if(callback)_Block_release((const void *)produced);_Block_release((const void *)base);
+ binding_release((__bridge void *)one);binding_release((__bridge void *)two);
+#endif
+ return task;
+}
+inline objc3_task_t *calculated_start(objc3_executor_t *executor,unsigned choose,unsigned *destroyed,unsigned *ran,unsigned *deferred){
+ BindingOwner *one=[BindingOwner new],*two=[BindingOwner new];
+ one->destroyed=destroyed;one->value=1;two->destroyed=destroyed;two->value=2;
+ BindingWork produced=calculated_factory(choose?one:two,choose?1u:2u,ran,deferred);
+ objc3_task_t *task=binding_start(produced,executor);
+#if !__has_feature(objc_arc)
+ _Block_release((const void *)produced);binding_release((__bridge void *)one);binding_release((__bridge void *)two);
+#endif
+ return task;
+}
 inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned shape,
                            unsigned *destroyed,unsigned *ran,unsigned *deferred) {
  BindingOwner *one=[BindingOwner new],*two=[BindingOwner new];
@@ -123,7 +149,6 @@ inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned s
 #endif
  work=produced;
  }
- if(shape==23){produced=calculated_factory(choose?one:two,choose?1u:2u,ran,deferred);work=produced;}
  objc3_task_t *task=binding_start(work,executor);
 #if !__has_feature(objc_arc)
  if(produced)_Block_release((const void *)produced);
@@ -138,9 +163,9 @@ constexpr const char *Consumer=R"blocks(
 #include <assert.h>
 static int execute(void) {
  objc3_executor_t *executor=nullptr;assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);
- for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=24;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
+ for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=26;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
   unsigned destroyed=0,ran=0,deferred=0;
-  objc3_task_t *task=BindingModule::start(executor,choose,shape,&destroyed,&ran,&deferred);
+  objc3_task_t *task=shape>=24?BindingModule::chain_start(executor,choose,shape==25,&destroyed,&ran,&deferred):shape==23?BindingModule::calculated_start(executor,choose,&destroyed,&ran,&deferred):BindingModule::start(executor,choose,shape,&destroyed,&ran,&deferred);
   assert(task && destroyed==(shape==8?2u:1u) && ran==0 && deferred==0);
   if(cancel)objc3_task_request_cancel(task);
   uint32_t executed=0;assert(objc3_executor_pump(executor,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);
@@ -223,6 +248,10 @@ void Run(const fs::path &root,const char *standard,int ownership) {
   "void rejected(unsigned choose,BindingUnsafe *object){BindingWork bad=^void(void) __objc3_async_frame {(void)object;};BindingWork safe=^void(void) __objc3_async_frame {};binding_start(BindingModule::nested_work(choose,safe,bad),nullptr);}",
   "void rejected(BindingWork unknown){binding_start(BindingModule::project(unknown),nullptr);}",
   "void rejected(BindingWork unknown){binding_start(BindingModule::callback_factory(unknown),nullptr);}",
+  "void rejected(BindingWork unknown){binding_start(BindingModule::callback_chain(unknown),nullptr);}",
+  "void rejected(BindingUnsafe *owner){binding_start(BindingModule::unsafe_chain(owner),nullptr);}",
+  "void chain_close(int);int chain_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=chain_close,invalid=-1)))=chain_open();binding_start(BindingModule::scalar_chain(descriptor,42),nullptr);}",
+  "void chain_close(int);int chain_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=chain_close,invalid=-1)))=chain_open();binding_start(BindingModule::scalar_chain(41,descriptor),nullptr);}",
   "void calculation_close(int);int calculation_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=calculation_close,invalid=-1)))=calculation_open();binding_start(BindingModule::calculated_scalar_factory(descriptor,42),nullptr);}",
   "void calculation_close(int);int calculation_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=calculation_close,invalid=-1)))=calculation_open();binding_start(BindingModule::calculated_scalar_factory(41,descriptor),nullptr);}",
   "void rejected(BindingWork unknown){binding_start(BindingModule::callback_alias_factory(unknown),nullptr);}",

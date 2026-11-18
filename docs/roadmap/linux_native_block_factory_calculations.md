@@ -31,5 +31,10 @@ package witness adds a calculated value alongside its owner and checks exact
 retirement, work/defer counts and cancellation in direct and directed consumers.
 Both input positions have imported resource-erasure negative controls.
 
-Focused verification and matching SDK delivery are tracked separately; no full
-profile or replacement-archive acceptance is claimed here.
+The new 72-command source/PCH matrix and five adjacent 72-command suites
+pass across C17/C++20/C++23, ARC/MRC and all four profiles (432 commands).
+Four optimized native configurations pass 1,536 task scenarios; the calculated
+task uses an independent helper so the preceding 23-shape mutable graph stays
+within the existing shared scope-scan limit. Fresh patch application and 16
+tooling checks pass. The preceding span's full isolation/codec/122-AST receipt
+remains distinct; matching SDK and full-profile acceptance are still pending.
