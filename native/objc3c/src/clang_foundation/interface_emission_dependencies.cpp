@@ -1008,7 +1008,7 @@ class TypeDependencyVisitor final
   }
 
   void CheckFactoryReference(const clang::FunctionDecl *function) {
-    if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);method && (method->getParent()->isLambda() || IsExpressionLocalTag(method->getParent()))) {
+    if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);method && (method->getParent()->isLambda() || IsExpressionLocalTag(method->getParent()) || InlineClosureObjectOrigin(method->getParent()))) {
       if(const auto *owner=FactoryResultOrigin(method->getParent()))CheckFactoryReference(owner);
       if(const auto *object=InlineClosureObjectOrigin(method->getParent()))CheckExpressionReference(object);
       if(const auto *arguments=function->getTemplateSpecializationArgs())

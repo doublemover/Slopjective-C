@@ -1409,23 +1409,61 @@ std::string FactoryTagPath(const clang::TagDecl *tag,const clang::TagDecl *root,
 }
 
 const clang::VarDecl *InlineClosureObjectOrigin(const clang::TagDecl *tag) {
-  const auto *closure=llvm::dyn_cast_or_null<clang::CXXRecordDecl>(tag);
-  if(!closure || !closure->isLambda())return nullptr;
-  const auto *object=llvm::dyn_cast_or_null<clang::VarDecl>(closure->getLambdaContextDecl());
+  const auto *record=llvm::dyn_cast_or_null<clang::CXXRecordDecl>(tag);
+  if(!record)return nullptr;
+  // Nested record types belong to the same emitted object definition. Keep
+  // their lexical paths distinct in identity instead of treating them as
+  // independent top-level declarations.
+  if(!record->isLambda() && !IsTopLevel(record)) {
+    const auto *outer=record;
+    unsigned depth=32;
+    while(depth--)
+      if(const auto *parent=llvm::dyn_cast<clang::CXXRecordDecl>(outer->getDeclContext()))outer=parent;
+      else return outer==record ? nullptr : InlineClosureObjectOrigin(outer);
+    return nullptr;
+  }
+  const clang::VarDecl *object=nullptr;
+  if(record->isLambda())object=llvm::dyn_cast_or_null<clang::VarDecl>(record->getLambdaContextDecl());
+  else {
+    if(record->getIdentifier() || record->getTypedefNameForAnonDecl() || !IsTopLevel(record) ||
+        !record->isCompleteDefinition() || !record->isTriviallyCopyable() || !record->hasTrivialDestructor())return nullptr;
+    unsigned work=1024;
+    auto immutable=[&](auto &&self,const clang::CXXRecordDecl *current,unsigned depth)->bool {
+      if(!current || depth==32 || !work-- || !current->isCompleteDefinition() ||
+          !current->isTriviallyCopyable() || !current->hasTrivialDestructor())return false;
+      for(const auto &base:current->bases())
+        if(!self(self,base.getType()->getAsCXXRecordDecl(),depth+1))return false;
+      for(const auto *field:current->fields()) {
+        if(!work-- || field->isMutable())return false;
+        auto type=field->getType();
+        while(const auto *array=current->getASTContext().getAsArrayType(type)) {
+          if(!work--)return false;
+          type=array->getElementType();
+        }
+        if(const auto *nested=type->getAsCXXRecordDecl())
+          if(!self(self,nested,depth+1))return false;
+      }
+      return true;
+    };
+    if(!immutable(immutable,record,0))return nullptr;
+    unsigned remaining=32;
+    for(const clang::Decl *next=record->getNextDeclInContext();next && remaining--;next=next->getNextDeclInContext()) {
+      const auto *candidate=llvm::dyn_cast<clang::VarDecl>(next);
+      if(candidate && candidate->getType()->getAsCXXRecordDecl() &&
+          candidate->getType()->getAsCXXRecordDecl()->getCanonicalDecl()==record->getCanonicalDecl() &&
+          candidate->isInline() && candidate->isConstexpr()) {object=candidate;break;}
+    }
+  }
   if(!object || !(object=object->getDefinition()) || !object->isInline() ||
-      !object->isExternallyVisible() || !object->hasInit() ||
+      (record->isLambda() && !object->isExternallyVisible()) || !object->hasInit() ||
       (!IsTopLevel(object) && (!object->isStaticDataMember() ||
        !IsPublishedType(llvm::cast<clang::CXXRecordDecl>(object->getDeclContext())) ||
        object->getDeclContext()->isDependentContext())) ||
       object->getType()->isDependentType() || object->getDescribedVarTemplate() ||
-      llvm::isa<clang::VarTemplateSpecializationDecl>(object) ||
-      !PublishesVariableInitializer(object))return nullptr;
-  // Owning init-captures wrap the same direct lambda in temporary cleanup
-  // nodes. Preserve that lambda's stable variable owner without admitting a
-  // different constructor/call expression as the closure definition.
+      llvm::isa<clang::VarTemplateSpecializationDecl>(object) || !PublishesVariableInitializer(object))return nullptr;
+  if(!record->isLambda())return object;
   const auto *initializer=llvm::dyn_cast<clang::LambdaExpr>(object->getInit()->IgnoreImplicit());
-  return initializer && initializer->getLambdaClass()->getCanonicalDecl()==closure->getCanonicalDecl()
-      ? object : nullptr;
+  return initializer && initializer->getLambdaClass()->getCanonicalDecl()==record->getCanonicalDecl()?object:nullptr;
 }
 
 const clang::FunctionDecl *FactoryResultOrigin(const clang::TagDecl *tag) {
@@ -1434,7 +1472,7 @@ const clang::FunctionDecl *FactoryResultOrigin(const clang::TagDecl *tag) {
       const clang::FunctionDecl *closure_owner=nullptr;
       const clang::VarDecl *closure_object=nullptr;
       if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function)) {
-        if(method->getParent()->isLambda() || IsExpressionLocalTag(method->getParent())) {
+        if(method->getParent()->isLambda() || IsExpressionLocalTag(method->getParent()) || InlineClosureObjectOrigin(method->getParent())) {
           closure_owner=FactoryResultOrigin(method->getParent());
           closure_object=InlineClosureObjectOrigin(method->getParent());
           if(!closure_owner && !closure_object)return nullptr;
@@ -1500,7 +1538,11 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
       const auto *tag=type->getDecl();
       if(const auto *object=InlineClosureObjectOrigin(tag)) {
         const auto owner=ReadInterfaceDeclarationStableId(object);
-        const auto identity=":inline-closure-object="+std::to_string(owner.size())+":"+owner;
+        auto identity=":inline-closure-object="+std::to_string(owner.size())+":"+owner;
+        const auto *root=object->getType()->getAsCXXRecordDecl();
+        if(!root->isLambda() && tag->getCanonicalDecl()!=root->getCanonicalDecl()) {
+          nested=true;identity+=":lexical="+FactoryTagPath(tag,root,context);
+        }
         key+=std::to_string(identity.size())+":"+identity;
       }
       if(const auto *factory=FactoryResultOrigin(tag)) {

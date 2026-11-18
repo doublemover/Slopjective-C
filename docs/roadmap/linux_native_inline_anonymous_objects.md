@@ -1,0 +1,35 @@
+# Native inline anonymous objects
+
+Source 2.223 / System 2.149 publishes immutable, trivially copyable inline
+`constexpr` objects whose record types have no authored name. Their complete
+record definitions, initializers, methods, generic members and nested record
+members travel with the owning variable. Native internal linkage is preserved;
+this does not invent an externally linked object symbol for an unnamed type.
+
+Stable identities bind the variable's qualified name and each nested lexical
+record/field path. Identical member names on distinct objects cannot merge.
+Relocating provider inputs leaves the interface fingerprint unchanged. Structural
+non-type template parameters preserve their authored `decltype(object)` spelling
+instead of emitting Clang's unparseable diagnostic name for an anonymous record.
+Published dependencies and SPI groups follow the owning object; missing exports
+and private method dependencies cannot be hidden by printing a complete record.
+
+The `objc3.cxx-inline-closure-objects.v4` reader contract is a hard cutover. Older
+capabilities are not advertised. Production sidecar controls reject missing
+capabilities and forged declaration owners. Existing closure objects and local,
+nested and dependent factory result projections retain their contracts.
+
+Admission bounds record ancestry to 32 contexts, owner discovery to 32 following
+declarations, and immutable subobject inspection to 1,024 steps / 32 levels.
+Mutable subobjects and nontrivial copy/destruction remain outside this lane.
+Pointer members retain their normal native pointer semantics; this mechanism does
+not prove external pointee lifetime or transitive immutability.
+
+C++20/23 source-free consumers compile, link and execute; controls cover distinct
+owners, nested/generic member access, structural arguments, relocation, export
+closure, private dependencies, mutable/nontrivial exclusions and SPI import
+admission. Matching archive, full profiles and native ARM acceptance remain
+separate work. Production codec controls, twelve selected existing closure/factory
+regression groups, 90 tooling checks (four archive-dependent skips) and fresh
+maintained-patch reconstruction pass. Selected groups do not qualify the full
+frontend catalogue.

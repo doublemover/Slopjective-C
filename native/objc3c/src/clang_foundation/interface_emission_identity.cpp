@@ -2484,6 +2484,14 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
 }
 
 std::string ExportRootName(const clang::NamedDecl *declaration) {
+  for(const clang::DeclContext *scope=llvm::dyn_cast<clang::DeclContext>(declaration);scope;scope=scope->getParent())
+    if(const auto *tag=llvm::dyn_cast<clang::TagDecl>(scope))
+      if(const auto *object=InlineClosureObjectOrigin(tag))return ExportRootName(object);
+  if(!llvm::isa<clang::DeclContext>(declaration))
+    for(const auto *scope=declaration->getDeclContext();scope;scope=scope->getParent())
+      if(const auto *tag=llvm::dyn_cast<clang::TagDecl>(scope))
+        if(const auto *object=InlineClosureObjectOrigin(tag))return ExportRootName(object);
+
   if(const auto *guide=NativeDeductionGuide(declaration))return ExportRootName(guide->getDeducedTemplate());
   if (const auto *owner=PublishedStandardSpecializationOwner(declaration)) return ExportRootName(owner);
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
@@ -2783,6 +2791,24 @@ static const clang::Attr *NativeCPUVariant(const clang::NamedDecl *declaration) 
 std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration) {
   if (!declaration) return {};
+  if(const auto *variable=llvm::dyn_cast<clang::VarDecl>(declaration))
+    if(const auto *record=variable->getType()->getAsCXXRecordDecl();record && !record->isLambda() &&
+        InlineClosureObjectOrigin(record)==variable->getDefinition())
+      return "c:@InlineAnonymousObject@"+variable->getQualifiedNameAsString();
+  if(const auto *tag=llvm::dyn_cast<clang::TagDecl>(declaration))
+    if(const auto *object=InlineClosureObjectOrigin(tag);object && !llvm::cast<clang::CXXRecordDecl>(tag)->isLambda())
+      return ReadInterfaceDeclarationStableId(object)+"@record@"+FactoryTagPath(tag,object->getType()->getAsCXXRecordDecl(),tag->getASTContext());
+  if(const auto *field=llvm::dyn_cast<clang::FieldDecl>(declaration))
+    if(const auto *object=InlineClosureObjectOrigin(field->getParent());object && !llvm::cast<clang::CXXRecordDecl>(field->getParent())->isLambda())
+      return ReadInterfaceDeclarationStableId(field->getParent())+"@field@"+std::to_string(field->getFieldIndex())+"@"+field->getNameAsString();
+  if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
+    bool owned=false;
+    for(const auto *parameter:*pattern->getTemplateParameters())
+      if(const auto *value=llvm::dyn_cast<clang::NonTypeTemplateParmDecl>(parameter))
+        owned|=FactoryTypeKey(value->getType(),pattern->getASTContext()).find(":inline-closure-object=")!=std::string::npos;
+    if(owned)return "c:@InlineObjectTemplate@"+pattern->getQualifiedNameAsString()+"@"+
+        ComputeInterfaceSourceSha256(FunctionTemplateHeadContract(pattern,pattern->getASTContext())+CanonicalType(pattern->getTemplatedDecl()->getType(),pattern->getASTContext()));
+  }
   if(const auto *guide=NativeDeductionGuide(declaration)) {
     const auto *pattern=guide->getDescribedFunctionTemplate();
     const clang::NamedDecl *identity=pattern?static_cast<const clang::NamedDecl *>(pattern):guide;
@@ -3343,7 +3369,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
   if (HasDeclarationInlineClosureObject(representative))
-    identity.canonical_type_identity+=";cxx-inline-closure-objects:v3;";
+    identity.canonical_type_identity+=";cxx-inline-closure-objects:v4;";
   if (HasDeclarationCxxBaseAdjustment(representative))
     identity.canonical_type_identity+=";cxx-base-adjustment-expressions:v1;";
   if (HasDeclarationCxxSpecialMemberSelection(representative))

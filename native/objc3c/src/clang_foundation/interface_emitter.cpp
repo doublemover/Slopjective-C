@@ -567,6 +567,11 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   policy.SuppressUnwrittenScope = false;
   policy.PolishForDeclaration = true;
   policy.IncludeTagDefinition = HasDeclarationUnnamedLocalType(declaration);
+  if(const auto *variable=llvm::dyn_cast<clang::VarDecl>(declaration))
+    if(const auto *record=variable->getType()->getAsCXXRecordDecl();record && !record->isLambda() &&
+        InlineClosureObjectOrigin(record)==variable->getDefinition()) {
+      policy.IncludeTagDefinition=true;policy.FullyQualifiedName=false;
+    }
   LocalDefinitionPrintingCallbacks local_scopes(declaration);
   if (HasDeclarationLocalType(declaration)) {
     // A local type can be qualified by its local record or enum, but never
@@ -864,6 +869,12 @@ std::string ReadInterfaceExportRoot(const clang::NamedDecl *declaration) {
 }
 
 std::string ReadInterfaceSPIGroup(const clang::NamedDecl *declaration) {
+  for(const auto *scope=llvm::dyn_cast<clang::DeclContext>(declaration)
+          ? llvm::cast<clang::DeclContext>(declaration) : declaration->getDeclContext();
+      scope;scope=scope->getParent())
+    if(const auto *tag=llvm::dyn_cast<clang::TagDecl>(scope))
+      if(const auto *object=InlineClosureObjectOrigin(tag))
+        return ReadInterfaceSPIGroup(object);
   if(const auto *guide=NativeDeductionGuide(declaration))declaration=guide->getDeducedTemplate();
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration && !IsTopLevel(declaration))

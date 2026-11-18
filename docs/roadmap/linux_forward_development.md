@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.223 / System 2.149 inline anonymous-object span](linux_native_inline_anonymous_objects.md)
+publishes owned unnamed record constants, nested/generic members and structural
+arguments with source-independent identity, exact SPI admission and v4 readers.
+
 The [Source 2.222 / System 2.148 transparent-union span](linux_native_transparent_union_arguments.md)
 preserves native C argument conversion/ABI contracts and their exact source-free
 identity through matching C17/C23 provider and consumer compilation.
@@ -236,7 +240,7 @@ matching SDK consolidation follows the implementation batch.
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
 campaign as historical evidence. Its terminal upstream receipt-state bug is
 fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
-Source 2.222 / System 2.148 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.223 / System 2.149 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2099,7 +2103,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.222 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.223 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 

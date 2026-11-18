@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.223 / System 2.149 inline anonymous-object span](linux_native_inline_anonymous_objects.md)
+publishes owned unnamed record constants, nested/generic members and structural
+arguments with source-independent identity, exact SPI admission and v4 readers.
+
 The [Source 2.222 / System 2.148 transparent-union span](linux_native_transparent_union_arguments.md)
 preserves native C argument conversion/ABI contracts and their exact source-free
 identity through matching C17/C23 provider and consumer compilation.

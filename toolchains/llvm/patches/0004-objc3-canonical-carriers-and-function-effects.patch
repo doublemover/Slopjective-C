@@ -8784,7 +8784,23 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
-@@ -2023,3 +3046,18 @@
+@@ -1971,7 +2994,14 @@
+   if (IdentifierInfo *II = NTTP->getIdentifier())
+     Name =
+         Policy.CleanUglifiedParameters ? II->deuglifiedName() : II->getName();
+-  printDeclType(NTTP->getType(), Name, NTTP->isParameterPack());
++  // Parameter adjustment drops decltype sugar (and top-level const). Preserve
++  // the authored spelling for published anonymous record parameters: a
++  // diagnostic `(unnamed at ...)` type name is not a declaration.
++  QualType ParameterType = NTTP->getType();
++  if (Policy.PolishForDeclaration && ParameterType->hasUnnamedOrLocalType())
++    if (const auto *Written = NTTP->getTypeSourceInfo())
++      ParameterType = Written->getType();
++  printDeclType(ParameterType, Name, NTTP->isParameterPack());
+ 
+   if (NTTP->hasDefaultArgument() && !NTTP->defaultArgumentWasInherited()) {
+     Out << " = ";
+@@ -2023,3 +3053,18 @@
      }
    }
  }

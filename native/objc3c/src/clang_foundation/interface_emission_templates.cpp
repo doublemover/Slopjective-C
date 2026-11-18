@@ -191,8 +191,14 @@ bool IsPublishedUnnamedEnumEntity(const clang::NamedDecl *declaration) {
     if(variable->getStorageClass()==clang::SC_Static || (!variable->isInline() && !variable->isConstexpr()) || !variable->hasInit())return false;
     type=variable->getType();
   }else return false;
-  return CanonicalType(type,declaration->getASTContext()).find(";native-unnamed-enums:v1;")!=std::string::npos &&
-      HasOnlyPublishedUnnamedTypes(type);
+  bool owned=CanonicalType(type,declaration->getASTContext()).find(";native-unnamed-enums:v1;")!=std::string::npos ||
+      FactoryTypeKey(type,declaration->getASTContext()).find(":inline-closure-object=")!=std::string::npos;
+  if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if(const auto *pattern=function->getDescribedFunctionTemplate())
+      for(const auto *parameter:*pattern->getTemplateParameters())
+        if(const auto *value=llvm::dyn_cast<clang::NonTypeTemplateParmDecl>(parameter))
+          owned|=FactoryTypeKey(value->getType(),declaration->getASTContext()).find(":inline-closure-object=")!=std::string::npos;
+  return owned && HasOnlyPublishedUnnamedTypes(type);
 }
 
 const clang::EnumDecl *NativeUnnamedEnumeration(const clang::NamedDecl *declaration) {
