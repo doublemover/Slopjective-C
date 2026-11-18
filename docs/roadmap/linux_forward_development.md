@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.272 / System 2.198 wider C error-out bridge](linux_async_c_completion_exports.md#synchronous-c-error-out-exports)
+adds checked C records, Objective-C object and Block values and verified layout
+contracts. Register and indirect aggregates use the target's ordinary return ABI.
+
 The [Source 2.271 / System 2.197 match diagnostics](linux_public_carriers.md)
 apply profile-aware exhaustiveness, provide an editable default fallback, and
 enforce the expression-guard and nonempty-body rules of Part 5.

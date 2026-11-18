@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 271,
+        "minor": 272,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Synchronous checked C exports cover plain C-layout aggregate, Objective-C object and Block values. Register and indirect C records preserve the target return ABI and can be optionalized. Linked C and source-free clients verify layout, error identity and borrowed reference lifetime. Matching SDK acceptance pending",
         "Closed statement matches warn in compatibility and fail in strict profiles, with a trapping default fix-it at writable braces. Native parsing rejects empty match bodies and expression guards containing calls, checked expressions or nested matches. Matching SDK acceptance pending",
         "Generated synchronous C throwing entries publish scalar, pointer and void signatures through the native trailing error-out ABI. Linked C and source-free clients verify success clearing, exact +0 error identity, null slots and retention across autorelease pool drainage. Matching SDK acceptance pending",
         "Published function templates and members of class templates retain dependent local records, local aliases and explicit local union arms in source-free bodies; C++20 and C++23 instantiation pass under cxx-local-types v2 admission; matching SDK acceptance pending",
@@ -419,12 +420,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 197,
+        "minor": 198,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Synchronous checked C exports cover plain C-layout aggregate, Objective-C object and Block values. Register and indirect C records preserve the target return ABI and can be optionalized. Linked C and source-free clients verify layout, error identity and borrowed reference lifetime. Matching SDK acceptance pending",
         "Closed statement matches warn in compatibility and fail in strict profiles, with a trapping default fix-it at writable braces. Native parsing rejects empty match bodies and expression guards containing calls, checked expressions or nested matches. Matching SDK acceptance pending",
         "Generated synchronous C throwing entries publish scalar, pointer and void signatures through the native trailing error-out ABI. Linked C and source-free clients verify success clearing, exact +0 error identity, null slots and retention across autorelease pool drainage. Matching SDK acceptance pending",
         "Published function templates and members of class templates retain dependent local records, local aliases and explicit local union arms in source-free bodies; C++20 and C++23 instantiation pass under cxx-local-types v2 admission; matching SDK acceptance pending",

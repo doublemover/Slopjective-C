@@ -222,3 +222,17 @@ Eight native C17/C23 and C++20/C++23 ARC/MRC provider configurations link an
 ordinary C caller. They exercise value, pointer and void signatures, error-out
 clearing, exact error identity, discarded errors, and retaining an error across
 autorelease pool drainage. Source-free import checks the generated declaration.
+
+Source 2.272 / System 2.198 extends synchronous C exports to admitted object
+and Block references and plain C-layout aggregates. Reference results use the
+source's +0 lifetime. Retain an object or copy a Block to keep it through the
+surrounding pool's drainage. The C header uses opaque references where the
+client language lacks the corresponding native reference type. By-value records
+carry static size, alignment and offset checks.
+
+Checked C record calls use the platform's ordinary register or indirect result
+convention with the same trailing error slot. They also support optionalizing
+calls with plain record payloads. Records with managed, borrowed or resource
+storage require their own contracts. Eight linked C clients verify small and
+large aggregate returns and exact error identity, object and Block values and
+source-free replay. LLVM IR tests bind the x86-64 and AArch64 result conventions.

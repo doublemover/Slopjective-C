@@ -189,12 +189,12 @@ private:
     const auto alignment = std::to_string(layout.getAlignment().getQuantity());
     declarations_ += tag + " {\n" + fields + "};\n";
     declarations_ += "static_assert(sizeof(" + tag + ") == " + size +
-        " && __alignof__(" + tag + ") == " + alignment + ", \"C async aggregate layout\");\n";
+        " && __alignof__(" + tag + ") == " + alignment + ", \"C export aggregate layout\");\n";
     unsigned index = 0;
     for (const auto *field : definition->fields()) {
       const auto offset = layout.getFieldOffset(index++) / context_.getCharWidth();
       declarations_ += "static_assert(offsetof(" + tag + ", " + field->getName().str() +
-          ") == " + std::to_string(offset) + ", \"C async aggregate field offset\");\n";
+          ") == " + std::to_string(offset) + ", \"C export aggregate field offset\");\n";
     }
     complete_.insert(record);
     active_.erase(record);
@@ -283,6 +283,16 @@ CExportSource GenerateCExports(clang::ASTContext &context,
   llvm::StringSet<> selected;
   auto *tu = context.getTranslationUnitDecl();
   CExportRecords records(context, output.interface_exports);
+  auto export_type = [&](clang::QualType type, const std::string &alias,
+                         llvm::raw_ostream &declarations) {
+    auto emitted = ExportType(context, type, alias, declarations, records);
+    if (emitted && emitted->spelling == alias) {
+      if (!tu->lookup(&context.Idents.get(alias)).empty())
+        return std::optional<CExportType>{};
+      output.interface_exports.push_back(alias);
+    }
+    return emitted;
+  };
   for (const auto &name : throws_symbols) {
     auto reject = [&](llvm::StringRef reason) {
       failure = "Cannot export C throwing entry " + name + ": " + reason.str();
@@ -295,7 +305,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     const auto effects = prototype->getObjC3FunctionEffects();
     if (effects.Async || effects.Throws == clang::ObjC3ThrowsKind::None ||
         clang::getObjC3Executor(function) || prototype->hasObjC3BorrowedResult() ||
-        prototype->getCallConv() != clang::CC_C ||
+        prototype->getCallConv() != clang::CC_C || prototype->getExtInfo().getProducesResult() ||
         function->hasAttr<clang::CFReturnsRetainedAttr>() ||
         function->hasAttr<clang::CFReturnsNotRetainedAttr>())
       return reject("expected a synchronous throwing entry with a portable result lifetime and C calling convention");
@@ -309,29 +319,33 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     if (!selected.insert(thunk).second || !tu->lookup(&context.Idents.get(thunk)).empty() ||
         !tu->lookup(&context.Idents.get(bridge)).empty())
       return reject("the generated C symbol or native bridge is already declared or selected");
-    const auto result = PortableValueType(context, prototype->getReturnType());
-    if (!result) return reject("the result has no self-contained scalar or pointer C declaration");
+    std::string types;
+    llvm::raw_string_ostream declarations(types);
+    const auto prefix = thunk + '_';
+    const auto result = export_type(prototype->getReturnType(), prefix + "result_t", declarations);
+    if (!result) return reject("the result has no self-contained C value declaration");
     std::string parameters, inputs;
     for (unsigned index = 0; index < prototype->getNumParams(); ++index) {
-      const auto type = PortableValueType(context, prototype->getParamType(index));
+      const auto type = export_type(prototype->getParamType(index),
+                                    prefix + "arg" + std::to_string(index) + "_t", declarations);
       const auto *parameter = function->getParamDecl(index);
       if (!type || prototype->getExtParameterInfo(index).getOpaqueValue() ||
           parameter->hasAttr<clang::NSConsumedAttr>() || parameter->hasAttr<clang::CFConsumedAttr>())
         return reject("parameter " + std::to_string(index + 1) +
-                      " has no self-contained scalar or pointer C declaration");
+                      " has no self-contained C value declaration");
       const auto argument = "__objc3_c_argument_" + std::to_string(index);
       if (index) { parameters += ", "; inputs += ", "; }
-      parameters += *type + ' ' + argument;
+      parameters += type->spelling + ' ' + argument;
       inputs += argument;
     }
     constexpr llvm::StringLiteral linkage = "__OBJC3_ASYNC_C_LINKAGE ";
-    const auto declaration = linkage.str() + *result + ' ' + thunk + '(' +
+    const auto declaration = linkage.str() + result->spelling + ' ' + thunk + '(' +
         (parameters.empty() ? "" : parameters + ", ") + "objc3_async_c_error _Nullable * _Nullable);\n";
-    header << declaration;
+    header << types << declaration;
     output.interface_exports.push_back(thunk);
     definitions << "#undef " << name << "\n#undef " << thunk << "\n#undef " << bridge << '\n'
-                << declaration;
-    const auto native = linkage.str() + *result + ' ' + bridge + '(' +
+                << types << declaration;
+    const auto native = linkage.str() + result->spelling + ' ' + bridge + '(' +
         (parameters.empty() ? "void" : parameters) + ')';
     // The native checked entry implements exactly the trailing error-out
     // parameter in the public C declaration, including null and +0 ownership.
@@ -398,16 +412,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     std::string types;
     llvm::raw_string_ostream declarations_text(types);
     const auto type_prefix = name + "_async_c_";
-    auto export_type = [&](clang::QualType type, const std::string &alias) {
-      auto emitted = ExportType(context, type, alias, declarations_text, records);
-      if (emitted && emitted->spelling == alias) {
-        if (!tu->lookup(&context.Idents.get(alias)).empty())
-          return std::optional<CExportType>{};
-        output.interface_exports.push_back(alias);
-      }
-      return emitted;
-    };
-    auto result = export_type(result_type, type_prefix + "result_t");
+    auto result = export_type(result_type, type_prefix + "result_t", declarations_text);
     if (!result)
       return reject("the result has no self-contained C value declaration");
     std::string parameters, inputs;
@@ -426,7 +431,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       const auto parameter_type =
           prototype ? prototype->getParamType(index) : parameter->getType();
       auto type = export_type(parameter_type,
-                              type_prefix + "arg" + std::to_string(index) + "_t");
+                              type_prefix + "arg" + std::to_string(index) + "_t", declarations_text);
       if (!type || (prototype && prototype->getExtParameterInfo(index).getOpaqueValue()) ||
           parameter->hasAttr<clang::NSConsumedAttr>() || parameter->hasAttr<clang::CFConsumedAttr>())
         return reject("parameter " + std::to_string(index + 1) +

@@ -12527,7 +12527,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,1045 @@
+@@ -0,0 +1,1089 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12552,8 +12552,10 @@ new file mode 100644
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/Expr.h"
-+#include "clang/AST/ObjC3Async.h"
 +#include "clang/AST/ExprObjC.h"
++#include "clang/AST/ObjC3Async.h"
++#include "clang/AST/ObjC3Borrowed.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/Stmt.h"
 +#include "clang/AST/Type.h"
 +#include "clang/CodeGen/CGFunctionInfo.h"
@@ -12674,6 +12676,37 @@ new file mode 100644
 +         isa<CoawaitExpr>(E->IgnoreParenImpCasts());
 +}
 +
++bool containsCheckedCResource(ASTContext &Context, QualType Type) {
++  Type = Context.getBaseElementType(Type);
++  if (getObjC3ResourceTypeContract(Context, Type).Cleanup)
++    return true;
++  if (const auto *Record = Type->getAsRecordDecl())
++    if (const auto *Definition = Record->getDefinition())
++      return llvm::any_of(Definition->fields(), [&](const FieldDecl *Field) {
++        return containsCheckedCResource(Context, Field->getType());
++      });
++  return false;
++}
++
++bool supportsPlainCheckedCRecord(CodeGenModule &CGM, QualType Type) {
++  if (CGM.getLangOpts().CPlusPlus || Type.isNull() || Type.isVolatileQualified())
++    return false;
++  const auto &Triple = CGM.getTarget().getTriple();
++  if (!Triple.isOSLinux() ||
++      (Triple.getArch() != llvm::Triple::x86_64 &&
++       Triple.getArch() != llvm::Triple::aarch64))
++    return false;
++  const auto *Record = Type->getAsRecordDecl();
++  const auto *Definition = Record ? Record->getDefinition() : nullptr;
++  ASTContext &Context = CGM.getContext();
++  return Definition && !Definition->hasFlexibleArrayMember() &&
++         supportsObjC3CarrierCopyPayload(CGM, Type) &&
++         !Type.isNonTrivialToPrimitiveCopy() &&
++         Type.isDestructedType() == QualType::DK_none &&
++         !containsObjC3BorrowedType(Context, Type) &&
++         !containsCheckedCResource(Context, Type);
++}
++
 +bool supportsCheckedResult(CodeGenModule &CGM, QualType Type,
 +                           bool AllowThrowingDestructor) {
 +  if ((AllowThrowingDestructor ? supportsObjC3CarrierCppCallABI(CGM, Type)
@@ -12689,8 +12722,16 @@ new file mode 100644
 +  const auto *Destructor = Record->getDestructor();
 +  if (Destructor && Destructor->isDeleted())
 +    return false;
-+  if (Destructor &&
-+      !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow()) {
++  // A trivial implicit destructor can keep an unresolved exception
++  // specification through CodeGen. It requires no result cleanup.
++  if (Record->hasTrivialDestructor())
++    return true;
++  const auto *DestructorType =
++      Destructor ? Destructor->getType()->castAs<FunctionProtoType>() : nullptr;
++  if (!DestructorType ||
++      isUnresolvedExceptionSpec(DestructorType->getExceptionSpecType()))
++    return false;
++  if (!DestructorType->isNothrow()) {
 +    // Only synchronous checked calls can use the provisional return owner.
 +    // Direct results are admitted on the native Linux ABIs whose normal
 +    // result-slot initialization runs before the hidden error check.
@@ -12703,7 +12744,7 @@ new file mode 100644
 +        CGM.getTarget().getCXXABI().isItaniumFamily();
 +    return !Record->canPassInRegisters() || NativeLinux;
 +  }
-+  return Record->hasTrivialDestructor() || Destructor;
++  return true;
 +}
 +
 +bool isSupportedTryCall(CodeGenFunction &CGF, const ObjC3TryExpr &E,
@@ -13094,6 +13135,7 @@ new file mode 100644
 +  if (!FPT->getReturnType()->isVoidType() &&
 +      !CodeGenFunction::hasScalarEvaluationKind(FPT->getReturnType()) &&
 +      !supportsObjC3CarrierARCCallABI(CGM, FPT->getReturnType()) &&
++      !supportsPlainCheckedCRecord(CGM, FPT->getReturnType()) &&
 +      !supportsObjC3CheckedCppResult(CGM, FPT->getReturnType()))
 +    return false;
 +
@@ -13350,6 +13392,7 @@ new file mode 100644
 +    if ((!getObjC3CheckedAsyncAdapter(E.getOperand()) &&
 +         !isNativeCAwait(CGF, E.getOperand()) &&
 +         !supportsObjC3CarrierARCCallABI(CGF.CGM, E.getType()) &&
++         !supportsPlainCheckedCRecord(CGF.CGM, E.getType()) &&
 +         !supportsObjC3CheckedCppResult(CGF.CGM, E.getType())) ||
 +        !isSupportedTryCall(CGF, E, Call)) {
 +      CGF.CGM.ErrorUnsupported(&E, "unsupported aggregate typed throws result");
@@ -13443,6 +13486,7 @@ new file mode 100644
 +       CodeGenFunction::getEvaluationKind(E.getOperand()->getType()) != TEK_Complex &&
 +       !CodeGenFunction::hasScalarEvaluationKind(E.getOperand()->getType()) &&
 +       !(AggregateOperand && (isNativeCAwait(CGF, E.getOperand()) || CppLocal ||
++                              supportsPlainCheckedCRecord(CGF.CGM, E.getOperand()->getType()) ||
 +                              supportsObjC3CarrierARCCallABI(CGF.CGM, E.getOperand()->getType()))))) {
 +    CGF.CGM.ErrorUnsupported(&E, "unsupported typed throws optional result");
 +    return false;
@@ -21710,20 +21754,66 @@ index 000000000..7b466d150
 +// CHECK-NOT: call ptr @llvm.objc.retain(
 +// CHECK: call void @llvm.objc.storeStrong(ptr %objc3.catch.error, ptr null)
 +// CHECK: ret void
-diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m b/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-c-record-unsupported.m b/clang/test/ObjC3/CodeGen/typed-error-c-record-unsupported.m
 new file mode 100644
-index 000000000..cc98b0da2
 --- /dev/null
-+++ b/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m
-@@ -0,0 +1,8 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
++++ b/clang/test/ObjC3/CodeGen/typed-error-c-record-unsupported.m
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c23 -triple aarch64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o /dev/null -verify %s
 +
 +@protocol Error @end
 +typedef id<Error> E;
-+struct Value { int x; };
++struct Value { id reference; };
 +struct Value aggregate_success(void) __objc3_throws(E) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
 +  return (struct Value){0};
 +}
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-c-record.m b/clang/test/ObjC3/CodeGen/typed-error-c-record.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-c-record.m
+@@ -0,0 +1,41 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c23 -triple aarch64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++
++@protocol Error @end
++struct Direct { int x, y; };
++struct Indirect { long data[4]; };
++
++struct Direct checked_register(struct Direct value, id<Error> failure)
++    __objc3_throws(id<Error>) {
++  if (failure) __objc3_throw(failure);
++  ++value.x;
++  return value;
++}
++
++struct Indirect checked_indirect(struct Indirect value, id<Error> failure)
++    __objc3_throws(id<Error>) {
++  if (failure) __objc3_throw(failure);
++  ++value.data[2];
++  return value;
++}
++
++int optional_register(int input, id<Error> failure) {
++  __objc3_optional(struct Direct) value =
++      __objc3_try_optional(checked_register((struct Direct){input, 2}, failure));
++  return __objc3_has_value(value);
++}
++
++int optional_indirect(long input, id<Error> failure) {
++  __objc3_optional(struct Indirect) value =
++      __objc3_try_optional(checked_indirect((struct Indirect){{1, input, 3, 4}}, failure));
++  return __objc3_has_value(value);
++}
++
++// CHECK-LABEL: define {{.*}}i64 @checked_register(i64 {{[^,]+}}, ptr {{[^,]+}}, ptr
++// CHECK-LABEL: define {{.*}}void @checked_indirect(ptr {{[^,]*}}sret(%struct.Indirect)
++// CHECK-LABEL: define {{.*}}i32 @optional_register(
++// CHECK: call i64 @checked_register({{.*}}, ptr {{.*}}%objc3.error.out)
++// CHECK: br i1 {{.*}}, label %objc3.try.failure, label %objc3.try.success
++// CHECK-LABEL: define {{.*}}i32 @optional_indirect(
++// CHECK: call void @checked_indirect(ptr {{[^,]*}}sret(%struct.Indirect){{.*}}, ptr {{.*}}%objc3.error.out)
++// CHECK: br i1 {{.*}}, label %objc3.try.failure, label %objc3.try.success
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-unwind.mm b/clang/test/ObjC3/CodeGen/typed-error-mrc-unwind.mm
 new file mode 100644
 index 000000000..06537d73a

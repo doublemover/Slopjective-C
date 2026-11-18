@@ -24,7 +24,9 @@ void Require(bool condition, const std::string &message) {
 void Compiled(const CompileResult &result) {
   if (result.success) return;
   std::cerr << result.failure << '\n';
-  for (const auto &item : result.diagnostics) std::cerr << item.message << '\n';
+  for (const auto &item : result.diagnostics)
+    std::cerr << item.spelling.file << ':' << item.spelling.line << ':'
+              << item.spelling.column << ": " << item.message << '\n';
   for (const auto &item : result.interface_import_diagnostics) std::cerr << item.message << '\n';
   if (result.interface_artifact)
     for (const auto &item : result.interface_artifact->diagnostics)
@@ -292,6 +294,27 @@ static const int *generated_sync_pointer(const int *value) __objc3_throws(id<Err
   if (!value) __objc3_throw(generated_failure());
   return value;
 }
+static id<Error> generated_sync_object(id<Error> value) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!value) __objc3_throw(generated_failure());
+  return value;
+}
+static GeneratedBlock generated_sync_block(GeneratedBlock value) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!value) __objc3_throw(generated_failure());
+  return value;
+}
+static struct GeneratedPort generated_sync_port(struct GeneratedPort value)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!value.flag) __objc3_throw(generated_failure());
+  ++value.lane;
+  return value;
+}
+static struct GeneratedAggregate generated_sync_aggregate(struct GeneratedAggregate value)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!value.port.flag) __objc3_throw(generated_failure());
+  ++value.port.lane;
+  ++value.values[1];
+  return value;
+}
 static int generated_abandoned_arguments(GeneratedActorRoot *input, GeneratedBlock apply) async
     __attribute__((nothrow, objc_executor(named("generated.missing")))) {
   (void)input;
@@ -408,7 +431,8 @@ unsigned generated_checked_errors_destroyed(void) {
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
       "GeneratedActor::current", "GeneratedDerivedActor::current", "GeneratedDerivedActor::checked:"};
-  provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer"};
+  provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer",
+      "generated_sync_object", "generated_sync_block", "generated_sync_port", "generated_sync_aggregate"};
   provider.c_export_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GeneratedCompletion";
@@ -524,6 +548,14 @@ void call_imported_arguments(generated_arguments_async_c_arg0_t value,
 }
 int call_imported_checked(objc3_async_c_error *failure) {
   return generated_sync_checked_throws_c(41, failure);
+}
+struct GeneratedAggregate call_imported_aggregate(struct GeneratedAggregate value,
+                                                    objc3_async_c_error *failure) {
+  return generated_sync_aggregate_throws_c(value, failure);
+}
+generated_sync_block_throws_c_result_t call_imported_block(generated_sync_block_throws_c_arg0_t block,
+                                                           objc3_async_c_error *failure) {
+  return generated_sync_block_throws_c(block, failure);
 }
 )";
   Compiled(Compile(imported));
@@ -674,6 +706,20 @@ int main(void) {
   assert(synchronous_failure == generated_failure());
   assert(generated_sync_pointer_throws_c(&input, &synchronous_failure) == &input && !synchronous_failure);
   assert(!generated_sync_pointer_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());
+  assert(generated_sync_object_throws_c(generated_failure(), &synchronous_failure) == generated_failure());
+  assert(!synchronous_failure);
+  assert(!generated_sync_object_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());
+  assert(!generated_sync_block_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());
+  struct GeneratedPort port = generated_sync_port_throws_c((struct GeneratedPort){'C', 41}, &synchronous_failure);
+  assert(!synchronous_failure && port.flag == 'C' && port.lane == 42);
+  (void)generated_sync_port_throws_c((struct GeneratedPort){0, 41}, &synchronous_failure);
+  assert(synchronous_failure == generated_failure());
+  struct GeneratedAggregate initial = {{'C', 41}, {73, 90}};
+  struct GeneratedAggregate aggregate = generated_sync_aggregate_throws_c(initial, &synchronous_failure);
+  assert(!synchronous_failure && aggregate.port.flag == 'C' && aggregate.port.lane == 42);
+  assert(aggregate.values[0] == 73 && aggregate.values[1] == 91);
+  (void)generated_sync_aggregate_throws_c((struct GeneratedAggregate){0}, &synchronous_failure);
+  assert(synchronous_failure == generated_failure());
   void *pool = objc_autoreleasePoolPush();
   assert(generated_sync_checked_throws_c(-2, &synchronous_failure) == 0);
   assert(synchronous_failure && synchronous_failure != generated_failure());
@@ -689,7 +735,6 @@ int main(void) {
   generated_checked_async_c(1, &complete[3], checked_done);
   generated_object_async_c(generated_failure(), &complete[4], object_done);
   generated_block_async_c(40, &complete[5], block_done);
-  struct GeneratedAggregate initial = {{'C', 41}, {73, 90}};
   generated_aggregate_async_c(initial, &complete[6], aggregate_done);
   generated_main_async_c(41, &complete[7], executor_done);
   generated_named_async_c(41, &complete[8], executor_done);
@@ -715,6 +760,13 @@ int main(void) {
   void *abandoned_object = generated_argument_create();
   void *abandoned_action = generated_argument_block_create();
   assert(object && action && abandoned_object && abandoned_action);
+  pool = objc_autoreleasePoolPush();
+  ClientBlock synchronous_block = generated_sync_block_throws_c((ClientBlock)action, &synchronous_failure);
+  assert(!synchronous_failure && (const void *)synchronous_block == action);
+#ifdef __BLOCKS__
+  assert(synchronous_block(31) == 42);
+#endif
+  objc_autoreleasePoolPop(pool);
   generated_arguments_async_c(object, (ClientBlock)action, &complete[16], arguments_done);
   generated_abandoned_arguments_async_c(abandoned_object, (ClientBlock)abandoned_action,
                                        &complete[17], arguments_done);
@@ -771,7 +823,7 @@ int main(void) {
     const auto mismatch = Compile(packed);
     Require(!mismatch.success && std::any_of(mismatch.diagnostics.begin(), mismatch.diagnostics.end(),
                 [](const auto &diagnostic) {
-                  return diagnostic.message.find("C async aggregate layout") != std::string::npos;
+                  return diagnostic.message.find("C export aggregate layout") != std::string::npos;
                 }), "a C consumer with an incompatible aggregate layout was admitted");
   }
   LinkAndRun(root, provider.output_path, consumer.output_path, separate_body);
