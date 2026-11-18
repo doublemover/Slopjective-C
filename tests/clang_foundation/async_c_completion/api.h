@@ -44,8 +44,12 @@ int completion_cancel_entries(void);
 int completion_error_conforms(CompletionObject _Nonnull error);
 int completion_checked_cancellation(const objc3_completion * _Nonnull result,
                                     objc3_async_c_error _Nonnull expected);
+int completion_checked_error(const objc3_completion * _Nonnull result,
+                             objc3_async_c_error _Nonnull expected);
 objc3_async_frame completion_cancel_child(CompletionCancellation * _Nonnull state);
+objc3_async_frame completion_member_failure(CompletionObject _Nonnull error);
 objc3_async_frame completion_join_frame(objc3_task_t * _Nonnull child);
+objc3_async_frame completion_group_join_frame(objc3_task_group_t * _Nonnull group);
 objc3_async_frame completion_checkpoint_frame(CompletionCancellation * _Nonnull state);
 objc3_async_frame completion_narrow_frame(CompletionCancellation * _Nonnull state);
 objc3_async_frame completion_optional_frame(CompletionCancellation * _Nonnull state);

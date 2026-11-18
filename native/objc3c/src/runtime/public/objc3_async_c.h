@@ -63,6 +63,13 @@ static inline void objc3_task_check_cancellation(void)
   id<Error> error = objc3_task_current_cancellation_error();
   if (error) __objc3_throw(error);
 }
+
+/* Retain, close and await group quiescence, then propagate the first checked
+ * failure or explicit group cancellation. An interrupted wait throws
+ * cancellation without cancelling independently owned member tasks. */
+__OBJC3_ASYNC_C_LINKAGE void objc3_task_group_join_checked(objc3_task_group_t *)
+    __objc3_async_frame __objc3_throws(id<Error>)
+    __asm__("__objc3_task_group_join_checked_frame");
 #endif
 
 /* Declare the same typed native entry in both provider and C client headers.

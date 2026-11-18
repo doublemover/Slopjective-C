@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.245 / System 2.171 checked group join](linux_async_handle_joins.md)
+waits for native member quiescence and propagates the exact first error across
+nested groups. A cancelled waiter leaves independently owned group members running.
+
 The [Source 2.244 / System 2.170 throwing cancellation changes](linux_checked_await_cancellation.md)
 deliver a distinguished checked error from task joins and generic throwing
 awaits, and add public cooperative cancellation query and checkpoint APIs.

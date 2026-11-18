@@ -151,6 +151,86 @@ static void check_cancelled_join(objc3_executor_t *executor) {
   assert(state.child_destroyed == 1);
 }
 
+static void parked_member_resume(objc3_task_t *task, void *context) {
+  unsigned *resumes = context;
+  if (++*resumes == 1) return;
+  objc3_completion result = {sizeof(result), OBJC3_SERVICE_ABI_VERSION,
+                             OBJC3_COMPLETION_SUCCESS, 0, NULL, NULL, NULL, NULL};
+  assert(objc3_task_complete(task, &result) == OBJC3_SERVICE_OK);
+}
+
+static void parked_member_destroy(void *context) {
+  unsigned *resumes = context;
+  assert(*resumes == 2);
+  ++*resumes;
+}
+
+enum GroupJoinOutcome { GroupSuccess, InterruptedJoin, CancelledGroup, NestedFailure };
+
+static void check_group_join(objc3_executor_t *executor, enum GroupJoinOutcome outcome) {
+  objc3_task_group_t *group = NULL;
+  assert(objc3_task_group_create(NULL, &group) == OBJC3_SERVICE_OK);
+  unsigned member_resumes = 0;
+  objc3_task_start_options options = {
+      .struct_size = sizeof(options), .version = OBJC3_SERVICE_ABI_VERSION,
+      .executor = executor, .frame = &member_resumes,
+      .resume = parked_member_resume, .destroy = parked_member_destroy};
+  objc3_task_t *member = NULL;
+  assert(objc3_task_start(&options, &member) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add(group, member) == OBJC3_SERVICE_OK);
+
+  void *error = NULL;
+  if (outcome == NestedFailure) {
+    // Keep the original MRC argument through completion of the throwing task.
+    error = completion_make_object();
+    objc3_task_group_t *nested = NULL;
+    assert(objc3_task_group_create(group, &nested) == OBJC3_SERVICE_OK);
+    objc3_async_frame failure = completion_member_failure(error);
+    objc3_task_t *failed_member = NULL;
+    assert(objc3_async_frame_start(&failure, executor, NULL, &failed_member) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_add(nested, failed_member) == OBJC3_SERVICE_OK);
+    objc3_task_release(failed_member);
+    objc3_task_group_release(nested);
+  }
+
+  objc3_async_frame frame = completion_group_join_frame(group);
+  objc3_task_t *join = NULL;
+  assert(objc3_async_frame_start(&frame, executor, NULL, &join) == OBJC3_SERVICE_OK);
+  unsigned executed = 0;
+  assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+  objc3_completion result = {0};
+  assert(member_resumes == 1);
+  assert(objc3_task_get_completion(join, &result) == OBJC3_SERVICE_NOT_READY);
+  if (outcome == InterruptedJoin) {
+    objc3_task_request_cancel(join);
+    assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+    assert(objc3_task_get_completion(join, &result) == OBJC3_SERVICE_OK);
+    assert(completion_checked_cancellation(&result, retained_cancellation));
+    assert(member_resumes == 1 && !objc3_task_is_cancel_requested(member));
+  } else if (outcome == CancelledGroup) {
+    assert(objc3_task_group_cancel(group) == OBJC3_SERVICE_OK);
+    assert(objc3_task_is_cancel_requested(member));
+  } else if (outcome == NestedFailure) {
+    assert(objc3_task_is_cancel_requested(member));
+  }
+  assert(objc3_task_schedule_resume(member) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+  assert(member_resumes == 3);
+  assert(objc3_task_get_completion(join, &result) == OBJC3_SERVICE_OK);
+  if (outcome == GroupSuccess) {
+    assert(result.kind == OBJC3_COMPLETION_SUCCESS && !result.has_payload);
+  } else if (outcome == NestedFailure) {
+    assert(completion_checked_error(&result, error));
+  } else {
+    assert(completion_checked_cancellation(&result, retained_cancellation));
+  }
+  assert(objc3_task_group_join(group) == OBJC3_SERVICE_OK);
+  objc3_task_release(join);
+  objc3_task_release(member);
+  objc3_task_group_release(group);
+  objc_release(error);
+}
+
 static void check_cancellation_checkpoint(objc3_executor_t *executor, int cancel) {
   CompletionCancellation state = {0};
   objc3_async_frame frame = completion_checkpoint_frame(&state);
@@ -219,6 +299,10 @@ int main(void) {
 #endif
   }
   check_cancelled_join(manual);
+  check_group_join(manual, GroupSuccess);
+  check_group_join(manual, InterruptedJoin);
+  check_group_join(manual, CancelledGroup);
+  check_group_join(manual, NestedFailure);
   check_cancellation_checkpoint(manual, 0);
   check_cancellation_checkpoint(manual, 1);
   CompletionCancellation checked_state = {0};

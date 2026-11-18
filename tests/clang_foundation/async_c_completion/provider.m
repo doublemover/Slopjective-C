@@ -71,11 +71,18 @@ static int error_result(id<Error> error) async throws(id<Error>) {
 }
 static int cancel_result(objc3_actor_t *actor) async { ++cancel_entries; return actor != 0; }
 
+int completion_checked_error(const objc3_completion *result,
+                             objc3_async_c_error expected) {
+  return result->kind == OBJC3_COMPLETION_ERROR && !result->has_payload &&
+         __objc3_async_c_completion_error(result) == expected;
+}
 int completion_checked_cancellation(const objc3_completion *result,
                                     objc3_async_c_error expected) {
-  if (result->kind != OBJC3_COMPLETION_ERROR || result->has_payload) return 0;
-  objc3_async_c_error error = __objc3_async_c_completion_error(result);
-  return error == expected && objc3_async_c_error_is_cancellation(error);
+  return objc3_async_c_error_is_cancellation(expected) &&
+         completion_checked_error(result, expected);
+}
+objc3_async_frame completion_member_failure(CompletionObject error) {
+  return error_result((id<Error>)error);
 }
 
 @protocol NarrowCompletionError <Error>
@@ -144,6 +151,12 @@ static int join_parent(objc3_task_t *child) async throws(id<Error>) {
 }
 objc3_async_frame completion_join_frame(objc3_task_t *child) {
   return join_parent(child);
+}
+static void group_join_parent(objc3_task_group_t *group) async throws(id<Error>) {
+  try await objc3_task_group_join_checked(group);
+}
+objc3_async_frame completion_group_join_frame(objc3_task_group_t *group) {
+  return group_join_parent(group);
 }
 static int checkpoint_parent(CompletionCancellation *state) async {
   ++state->entered;

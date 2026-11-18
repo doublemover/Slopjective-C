@@ -80,6 +80,7 @@ void resume_task_join(objc3_task_t *owner, void *context) noexcept {
 
 struct GroupJoin {
   objc3_task_group_t *group;
+  bool checked;
   bool waiting = false;
   objc3_service_status status = OBJC3_SERVICE_NOT_READY;
   ~GroupJoin() { objc3_task_group_release(group); }
@@ -119,6 +120,19 @@ void resume_group_join(objc3_task_t *owner, void *context) noexcept {
   completion.version = OBJC3_SERVICE_ABI_VERSION;
   completion.kind = OBJC3_COMPLETION_SUCCESS;
   completion.result_type = &void_type;
+  if (frame.checked) {
+    const auto status = objc3::services::task_group_checked_join_result(
+        reinterpret_cast<objc3::services::TaskGroup *>(frame.group),
+        &completion.error);
+    if (status != OBJC3_SERVICE_OK) {
+      fail(owner, status);
+      return;
+    }
+    if (completion.error) {
+      completion.kind = OBJC3_COMPLETION_ERROR;
+      completion.result_type = nullptr;
+    }
+  }
   publish(owner, completion);
 }
 
@@ -289,13 +303,13 @@ objc3_async_frame_from_task(objc3_task_t *dependency,
   return OBJC3_SERVICE_OK;
 }
 
-extern "C" objc3_service_status
-objc3_async_frame_from_group(objc3_task_group_t *group,
-                             objc3_async_frame *out_frame) {
+static objc3_service_status frame_from_group(objc3_task_group_t *group,
+                                            objc3_async_frame *out_frame,
+                                            bool checked) {
   if (!group || !out_frame) return OBJC3_SERVICE_INVALID_ARGUMENT;
   auto *owned = objc3_task_group_retain(group);
   if (!owned) return OBJC3_SERVICE_NOT_READY;
-  auto *frame = new (std::nothrow) GroupJoin{owned};
+  auto *frame = new (std::nothrow) GroupJoin{owned, checked};
   if (!frame) {
     objc3_task_group_release(owned);
     return OBJC3_SERVICE_OUT_OF_MEMORY;
@@ -303,6 +317,12 @@ objc3_async_frame_from_group(objc3_task_group_t *group,
   *out_frame = {sizeof(objc3_async_frame), OBJC3_ASYNC_ABI_VERSION, frame,
                 resume_group_join, destroy_group_join, &void_type};
   return OBJC3_SERVICE_OK;
+}
+
+extern "C" objc3_service_status
+objc3_async_frame_from_group(objc3_task_group_t *group,
+                             objc3_async_frame *out_frame) {
+  return frame_from_group(group, out_frame, false);
 }
 
 extern "C" objc3_service_status
@@ -355,5 +375,12 @@ extern "C" objc3_async_frame
 __objc3_task_group_join_frame(objc3_task_group_t *group) {
   objc3_async_frame frame{};
   const auto status = objc3_async_frame_from_group(group, &frame);
+  return status == OBJC3_SERVICE_OK ? frame : failure_frame(status);
+}
+
+extern "C" objc3_async_frame
+__objc3_task_group_join_checked_frame(objc3_task_group_t *group) {
+  objc3_async_frame frame{};
+  const auto status = frame_from_group(group, &frame, true);
   return status == OBJC3_SERVICE_OK ? frame : failure_frame(status);
 }

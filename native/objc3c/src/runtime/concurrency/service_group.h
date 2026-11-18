@@ -26,6 +26,10 @@ objc3_service_status task_group_try_next_completed(TaskGroup *group,
 objc3_service_status task_group_join(TaskGroup *group);
 objc3_service_status task_group_await(TaskGroup *group, objc3_task_t *parent,
                                       objc3_service_status *out_status);
+// Inspect the outcome after the group quiescence wait succeeds. The error
+// remains borrowed for the lifetime of the retained group.
+objc3_service_status task_group_checked_join_result(TaskGroup *group,
+                                                    objc3_error_t **out_error);
 objc3_service_status task_group_await_cleanup(TaskGroup *group,
                                               objc3_task_t *parent,
                                               objc3_service_status *out_status);

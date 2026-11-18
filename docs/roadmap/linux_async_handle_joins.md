@@ -32,6 +32,22 @@ or group membership, including nested membership, so the additional frame cannot
 hide those self-dependency cycles. Identity tokens avoid retaining an ancestor or
 comparing a recycled task address.
 
+Source 2.245 / System 2.171 adds `objc3_task_group_join_checked` to
+`objc3.concurrency` for Objective-C and Objective-C++. The group retains the
+first published member error during failure ordering, including propagation from
+nested groups, and requests cancellation of unfinished siblings before exposing
+the failure. The checked join waits for quiescence and propagates that exact
+error. An explicitly cancelled group also waits for quiescence and throws the
+distinguished cancellation value when it has no member error. Cancelling only
+the waiter releases its dependent join promptly and leaves independent members
+running. The lower-level waits continue to serve completion callbacks and
+shielded cleanup that need to confirm quiescence.
+
+Eight native source-free clients exercise ordinary, interrupted, explicitly
+cancelled and nested-failure group joins. They check error identity, sibling
+cancellation, isolated waiter cancellation and cleanup before completion. The
+task-service and structured-runtime suites also pass.
+
 Objective-C C17 uses a typed declaration, followed by an ordinary native await:
 
 ```objective-c

@@ -77,6 +77,7 @@ struct TaskGroup final {
   bool cancelled{false};
   bool explicitly_cancelled{false};
   bool first_failure_seen{false};
+  objc3_error_t *first_failure{nullptr};
   bool failure_propagation_failed{false};
 
   TaskGroup()
@@ -92,6 +93,7 @@ struct TaskGroup final {
     }
     for (const auto &entry : tasks) objc3_task_release(entry.task);
     for (auto *child : children) task_group_release(child);
+    objc3_error_release(first_failure);
   }
 };
 
@@ -512,6 +514,7 @@ void task_completed(void *opaque, const objc3_completion *completion) {
       if (found->failed && publish_completion) {
         if (!group->first_failure_seen) {
           group->first_failure_seen = true;
+          group->first_failure = objc3_error_retain(completion->error);
           propagation_status = cancel_group_siblings_locked(
               group, cancellations, nullptr, task, true);
         }
@@ -537,6 +540,7 @@ void task_completed(void *opaque, const objc3_completion *completion) {
           propagation_status = OBJC3_SERVICE_NOT_READY;
         } else if (!parent->first_failure_seen) {
           parent->first_failure_seen = true;
+          parent->first_failure = objc3_error_retain(completion->error);
           propagation_status = cancel_group_siblings_locked(
               parent, cancellations, failed_child, nullptr, true);
         }
@@ -999,6 +1003,17 @@ bool task_group_contains_target(
 objc3_service_status task_group_await(TaskGroup *group, objc3_task_t *parent,
                                       objc3_service_status *out_status) {
   return await_group(group, parent, out_status, false);
+}
+
+objc3_service_status task_group_checked_join_result(TaskGroup *group,
+                                                    objc3_error_t **out_error) {
+  std::lock_guard<std::mutex> lock(group->mutex);
+  *out_error = group->first_failure;
+  if (group->first_failure_seen && !*out_error)
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  if (!*out_error && group->explicitly_cancelled)
+    return OBJC3_SERVICE_CANCELLED;
+  return OBJC3_SERVICE_OK;
 }
 
 objc3_service_status task_group_await_cleanup(TaskGroup *group,
