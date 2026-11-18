@@ -23,7 +23,7 @@ bool UsesInterfaceCompiler(int argc, char **argv) {
   for (int i = 1; i < argc; ++i) {
     std::string_view arg(argv[i]);
     if (arg == "--") break;
-    if (arg == "--emit-object" || arg == "--emit-llvm" ||
+    if (arg == "--diagnostics-json" || arg == "--emit-object" || arg == "--emit-llvm" ||
         arg == "--emit-interface" || arg == "--project-ownership" ||
         arg == "--export-declaration" || arg == "--module-source-root" ||
         arg == "--module-owned-names" || arg == "--import-spi" ||

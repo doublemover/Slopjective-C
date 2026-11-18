@@ -28,6 +28,11 @@
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Frontend/MultiplexConsumer.h"
 #include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/Lexer.h"
+#include "llvm/Support/JSON.h"
+#include "llvm/ADT/StringExtras.h"
+#include "llvm/Support/FormatVariadic.h"
+#include <map>
 #include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Options/Options.h"
 #include "clang/Sema/ExternalSemaSource.h"
@@ -73,6 +78,14 @@ constexpr const char *Profiles[] = {
 class Diagnostics final : public clang::DiagnosticConsumer {
  public:
   explicit Diagnostics(CompileResult &result) : result_(result) {}
+  void BeginSourceFile(const clang::LangOptions &options,const clang::Preprocessor *preprocessor) override {
+    clang::DiagnosticConsumer::BeginSourceFile(options,preprocessor);
+    language_=options;buffer_hashes_.clear();
+  }
+  void EndSourceFile() override {
+    language_.reset();buffer_hashes_.clear();
+    clang::DiagnosticConsumer::EndSourceFile();
+  }
   void HandleDiagnostic(clang::DiagnosticsEngine::Level level,
                         const clang::Diagnostic &info) override {
     clang::DiagnosticConsumer::HandleDiagnostic(level, info);
@@ -96,11 +109,55 @@ class Diagnostics final : public clang::DiagnosticConsumer {
       };
       diagnostic.spelling = locate(manager.getSpellingLoc(info.getLocation()));
       diagnostic.expansion = locate(manager.getExpansionLoc(info.getLocation()));
-    }
+      if(info.getNumFixItHints()) {
+        auto unavailable=[&](const char *reason) {
+          diagnostic.edits.clear();diagnostic.edits_unavailable_reason=reason;
+        };
+        if(!language_)unavailable("missing_language_context");
+        else for(const auto &hint:info.getFixItHints()) {
+          const auto range=clang::Lexer::makeFileCharRange(hint.RemoveRange,manager,*language_);
+          if(range.isInvalid()){unavailable("non_rewritable_range");break;}
+          auto begin=manager.getDecomposedLoc(range.getBegin());
+          auto end=manager.getDecomposedLoc(range.getEnd());
+          if(begin.first!=end.first){unavailable("cross_buffer_range");break;}
+          bool invalid=false;auto buffer=manager.getBufferData(begin.first,&invalid);
+          if(invalid || begin.second>end.second || end.second>buffer.size()) {
+            unavailable("invalid_buffer_range");break;
+          }
+          DiagnosticEdit edit;
+          const auto entry=manager.getFileEntryRefForID(begin.first);
+          if(!entry){unavailable("non_file_buffer");break;}
+          llvm::SmallString<256> filename(entry->getName());
+          if(manager.getFileManager().getVirtualFileSystem().makeAbsolute(filename)) {
+            unavailable("unresolvable_file_path");break;
+          }
+          llvm::sys::path::remove_dots(filename,true);edit.file=filename.str().str();
+          edit.begin={edit.file,manager.getSpellingLineNumber(range.getBegin()),manager.getSpellingColumnNumber(range.getBegin())};
+          edit.end={edit.file,manager.getSpellingLineNumber(range.getEnd()),manager.getSpellingColumnNumber(range.getEnd())};
+          edit.begin_offset=begin.second;edit.end_offset=end.second;
+          auto hash=buffer_hashes_.find(begin.first.getHashValue());
+          if(hash==buffer_hashes_.end())
+            hash=buffer_hashes_.emplace(begin.first.getHashValue(),ComputeInterfaceSourceSha256(buffer)).first;
+          edit.source_sha256=hash->second;
+          edit.replacement=hint.CodeToInsert;
+          if(hint.InsertFromRange.isValid()) {
+            const auto insertion=clang::Lexer::makeFileCharRange(hint.InsertFromRange,manager,*language_);
+            if(insertion.isInvalid()){unavailable("non_rewritable_insertion");break;}
+            const auto bytes=clang::Lexer::getSourceText(insertion,manager,*language_,&invalid);
+            if(invalid){unavailable("invalid_insertion_range");break;}
+            edit.replacement=bytes.str();
+          }
+          edit.before_previous_insertions=hint.BeforePreviousInsertions;
+          diagnostic.edits.push_back(std::move(edit));
+        }
+      }
+    }else if(info.getNumFixItHints())diagnostic.edits_unavailable_reason="missing_source_buffer";
     result_.diagnostics.push_back(std::move(diagnostic));
   }
  private:
   CompileResult &result_;
+  std::optional<clang::LangOptions> language_;
+  std::map<unsigned,std::string> buffer_hashes_;
 };
 
 
@@ -789,6 +846,40 @@ struct TemporaryOutput {
   ~TemporaryOutput() { if (!path.empty()) llvm::sys::fs::remove(path); }
 };
 }  // namespace
+
+std::string EncodeCompileDiagnostics(const CompileResult &result) {
+  auto text=[](llvm::StringRef value) {
+    return llvm::json::isUTF8(value)?value.str():llvm::json::fixUTF8(value);
+  };
+  auto location=[&](const DiagnosticLocation &value) {
+    return llvm::json::Object{{"file",text(value.file)},{"line",value.line},{"column",value.column}};
+  };
+  llvm::json::Array diagnostics;
+  for(const auto &diagnostic:result.diagnostics) {
+    llvm::json::Array edits;
+    for(const auto &edit:diagnostic.edits)
+      edits.push_back(llvm::json::Object{{"file",text(edit.file)},{"file_bytes_hex",llvm::toHex(edit.file,true)},{"source_sha256",edit.source_sha256},
+          {"begin",location(edit.begin)},{"end",location(edit.end)},
+          {"begin_offset",edit.begin_offset},{"end_offset",edit.end_offset},
+          {"replacement",text(edit.replacement)},{"replacement_bytes_hex",llvm::toHex(edit.replacement,true)},{"before_previous_insertions",edit.before_previous_insertions}});
+    diagnostics.push_back(llvm::json::Object{{"id",diagnostic.id},{"severity",diagnostic.severity},
+        {"message",text(diagnostic.message)},{"spelling",location(diagnostic.spelling)},
+        {"expansion",location(diagnostic.expansion)},{"edits",std::move(edits)},
+        {"edits_unavailable_reason",diagnostic.edits_unavailable_reason}});
+  }
+  llvm::json::Array interface_diagnostics;
+  auto add_contract=[&](const auto &rows,llvm::StringRef stage) {
+    for(const auto &diagnostic:rows)
+      interface_diagnostics.push_back(llvm::json::Object{{"stage",stage},{"code",diagnostic.code},
+          {"message",text(diagnostic.message)},{"subject",text(diagnostic.subject)}});
+  };
+  add_contract(result.interface_import_diagnostics,"import");
+  if(result.interface_artifact)add_contract(result.interface_artifact->diagnostics,"publication");
+  return llvm::formatv("{0}",llvm::json::Value(llvm::json::Object{
+      {"contract_id","objc3c.native-diagnostics.v1"},{"success",result.success},
+      {"failure",text(result.failure)},{"compiler_identity",text(result.compiler_identity)},
+      {"diagnostics",std::move(diagnostics)},{"interface_diagnostics",std::move(interface_diagnostics)}})).str();
+}
 
 CompileResult Compile(const CompileRequest &request) {
   if(!request.meta_compilation && (!request.meta_packages.empty() || !request.meta_lock.empty())) {

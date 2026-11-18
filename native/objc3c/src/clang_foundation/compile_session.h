@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -65,12 +66,29 @@ struct DiagnosticLocation {
   unsigned column = 0;
 };
 
+// Offsets and physical locations address the exact UTF-8 source buffer named
+// by file. Consumers must match source_sha256 before applying the complete
+// diagnostic's edit set; end_offset is exclusive, including token-range hints.
+struct DiagnosticEdit {
+  std::string file;
+  std::string source_sha256;
+  DiagnosticLocation begin;
+  DiagnosticLocation end;
+  std::uint64_t begin_offset=0;
+  std::uint64_t end_offset=0;
+  std::string replacement;
+  bool before_previous_insertions=false;
+};
+
 struct CompileDiagnostic {
   unsigned id = 0;
   unsigned severity = 0;
   std::string message;
   DiagnosticLocation spelling;
   DiagnosticLocation expansion;
+  std::vector<DiagnosticEdit> edits;
+  // If any hint is not representable as a file edit, suppress the entire set.
+  std::string edits_unavailable_reason;
 };
 
 struct CompileResult {
@@ -104,5 +122,6 @@ struct CompileResult {
 // Both product entry points own one request and use this in-process frontend.
 // Clang/LLVM private types never cross the embedding ABI.
 CompileResult Compile(const CompileRequest &request);
+std::string EncodeCompileDiagnostics(const CompileResult &result);
 
 }  // namespace objc3::clang_foundation

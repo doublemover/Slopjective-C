@@ -6,6 +6,7 @@
 
 struct objc3c_frontend_v2_result {
   objc3::clang_foundation::CompileResult value;
+  std::string diagnostics_json;
 };
 
 namespace {
@@ -123,6 +124,7 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
     }
     auto result = std::make_unique<objc3c_frontend_v2_result>();
     result->value = Compile(request);
+    result->diagnostics_json=EncodeCompileDiagnostics(result->value);
     int status = result->value.success ? 0 : 1;
     *out_result = result.release();
     return status;
@@ -259,4 +261,9 @@ extern "C" const char *objc3c_frontend_v3_result_dependency_record(
   return result && result->value.success &&
       !result->value.semantic_dependency_record.empty()
       ? result->value.semantic_dependency_record.c_str() : nullptr;
+}
+
+extern "C" const char *objc3c_frontend_v3_result_diagnostics_json(
+    const objc3c_frontend_v2_result *result) {
+  return result?result->diagnostics_json.c_str():nullptr;
 }

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.225 / System 2.151 native diagnostic span](linux_native_diagnostic_edits.md)
+delivers source-bound native edit sets through the C API and JSON frontend mode,
+including exact byte replay, virtual-input locations and structured module errors.
+
 The [Source 2.224 / System 2.150 native view span](linux_native_operator_and_array_views.md)
 retains borrowed identities through closed operators, fixed-array getters and
 pointer-bit expressions, tracks returned storage addresses, and preserves shared

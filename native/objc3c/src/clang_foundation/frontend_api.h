@@ -112,6 +112,13 @@ int objc3c_frontend_v3_compile(const objc3c_frontend_v3_options *options,
  * from the result handle after a successful imported or metaprogramming compile. */
 const char *objc3c_frontend_v3_result_dependency_record(
     const objc3c_frontend_v2_result *result);
+/* UTF-8 objc3c.native-diagnostics.v1 JSON, including source-bound fix-it sets.
+ * Borrowed until result destruction; NULL for a NULL result. Edits use exclusive
+ * byte offsets into their named physical source buffer, with a SHA-256 guard.
+ * Hex filename/replacement fields preserve arbitrary bytes; text fields are
+ * display strings. Apply a full diagnostic edit set only to matching source. */
+const char *objc3c_frontend_v3_result_diagnostics_json(
+    const objc3c_frontend_v2_result *result);
 void objc3c_frontend_v2_result_destroy(objc3c_frontend_v2_result *result);
 int objc3c_frontend_v2_result_success(const objc3c_frontend_v2_result *result);
 const char *objc3c_frontend_v2_result_failure(const objc3c_frontend_v2_result *result);

@@ -28,7 +28,7 @@ int RunCompiler(int argc, char **argv) {
            "[--import-module name fingerprint package "
            "[--private-import] [--reexport-import] [--import-spi group]] "
            "[--source-imports] "
-           "[--emit-dependency-record path] "
+           "[--emit-dependency-record path] [--diagnostics-json] "
            "[-- <clang arguments>]\n";
     return 2;
   }
@@ -40,6 +40,7 @@ int RunCompiler(int argc, char **argv) {
       std::filesystem::is_directory(installed_root / "bin"))
     request.compiler_sdk_root = installed_root.string();
   std::string dependency_record_path;
+  bool diagnostics_json=false;
   request.input_path = argv[1];
   if (request.input_path.empty() || request.input_path.starts_with("--")) {
     std::cerr << "a source path must precede compiler options\n";
@@ -71,7 +72,8 @@ int RunCompiler(int argc, char **argv) {
         request.arguments.emplace_back(argv[i]);
       break;
     }
-    if(argument=="--meta-package" && has_values(1))
+    if(argument=="--diagnostics-json" && !diagnostics_json)diagnostics_json=true;
+    else if(argument=="--meta-package" && has_values(1))
       request.meta_packages.emplace_back(argv[++i]);
     else if(argument=="--meta-lock" && has_values(1) && request.meta_lock.empty())
       request.meta_lock=argv[++i];
@@ -211,8 +213,12 @@ int RunCompiler(int argc, char **argv) {
       return 2;
     }
   }
+  if(diagnostics_json && (request.output_path=="-" || request.interface_output_path=="-")) {
+    std::cerr<<"diagnostic JSON requires compiler artifacts to use named output files\n";return 2;
+  }
   request.dependency_record_output_path = dependency_record_path;
   auto result = Compile(request);
+  if(diagnostics_json)std::cout<<EncodeCompileDiagnostics(result)<<'\n';
   for (const auto &diagnostic : result.diagnostics) {
     const char *kind = diagnostic.severity == 5   ? "fatal error"
                        : diagnostic.severity == 4 ? "error"

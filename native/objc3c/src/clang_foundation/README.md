@@ -51,6 +51,20 @@ C API's `compiler_sdk_root` selects the same verified relocation. Installed
 embedding and independent native service libraries. Clang C++ implementation
 types do not cross the C embedding API.
 
+Native diagnostics, including source-bound fix-it sets, are available as
+`objc3c.native-diagnostics.v1` JSON:
+
+```sh
+objc3c source.m --objc3 --diagnostics-json --emit-object source.o \
+  -- -std=c17 > diagnostics.json
+```
+
+JSON goes to stdout and human diagnostics to stderr; use named artifact outputs.
+C embedders obtain the same result-owned record with
+`objc3c_frontend_v3_result_diagnostics_json`. Match each edit's source hash and
+apply its complete diagnostic set using exclusive byte offsets and exact hex
+replacement bytes. See [edit delivery and limits](../../../../docs/roadmap/linux_native_diagnostic_edits.md).
+
 Public capability claims follow
 [`schemas/objc3-language-capabilities.json`](../../../../schemas/objc3-language-capabilities.json).
 `defer` is qualified for Linux x86-64/GNUstep 2.0/compatibility under ARC and
