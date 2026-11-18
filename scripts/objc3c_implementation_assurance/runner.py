@@ -36,7 +36,8 @@ def owned_path(repo: Path, path: Path) -> Path:
     return path
 
 
-def run(repo: Path, plan: dict, output: Path, *, partition_index=0) -> dict:
+def run(repo: Path, plan: dict, output: Path, *, partition_index=0,
+        foundation_bundle: Path | None = None) -> dict:
     repo = repo.resolve(strict=True)
     output = owned_path(repo, output)
     try:
@@ -49,7 +50,7 @@ def run(repo: Path, plan: dict, output: Path, *, partition_index=0) -> dict:
         # The locked builder is used below so it does not reacquire this same lock.
         owned_path(repo, repo / 'out/toolchains/objc3-development/.foundation-build.lock')
         with foundation_lock(repo):
-            return _run_locked(repo, plan, output, partition)
+            return _run_locked(repo, plan, output, partition, foundation_bundle)
     except BaseException as error:
         if not output.exists():
             output.mkdir(parents=True)
@@ -65,7 +66,8 @@ def run(repo: Path, plan: dict, output: Path, *, partition_index=0) -> dict:
         raise
 
 
-def _run_locked(repo: Path, plan: dict, output: Path, partition: dict) -> dict:
+def _run_locked(repo: Path, plan: dict, output: Path, partition: dict,
+                foundation_bundle: Path | None) -> dict:
     if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
         raise ValueError('implementation assurance source changed before execution')
     if output.exists():
@@ -111,6 +113,8 @@ def _run_locked(repo: Path, plan: dict, output: Path, partition: dict) -> dict:
             save()
 
     def preserve_foundation():
+        if foundation_bundle is not None:
+            return  # The imported producer receipts are already preserved verbatim.
         receipt = foundation_build / 'foundation-build-report.json'
         if not receipt.is_file():
             return
@@ -127,14 +131,22 @@ def _run_locked(repo: Path, plan: dict, output: Path, partition: dict) -> dict:
 
     try:
         save()
-        foundation = _build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
-                                      instrumentation_profile=PROFILE,
-                                      test_results=output / 'foundation')
-        configuration = build_plans(repo, host=native_linux_host(),
-                                    instrumentation_profile=PROFILE)['configure']
-        preserve_foundation()
-        if foundation.get('status') != 'passed':
-            raise ValueError('instrumented foundation did not pass')
+        if foundation_bundle is None:
+            foundation = _build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
+                                          instrumentation_profile=PROFILE,
+                                          test_results=output / 'foundation')
+            configuration = build_plans(repo, host=native_linux_host(),
+                                        instrumentation_profile=PROFILE)['configure']
+            preserve_foundation()
+            if foundation.get('status') != 'passed':
+                raise ValueError('instrumented foundation did not pass')
+        else:
+            from .shared_foundation import restore
+            bundle = owned_path(repo, foundation_bundle)
+            if output.is_relative_to(bundle) or bundle.is_relative_to(output):
+                raise ValueError('shared foundation input overlaps analysis evidence')
+            configuration, producer = restore(repo, plan, bundle, output / 'foundation')
+            report['shared_foundation_sha256'] = producer['archive']['sha256']
         stage = Path(configuration['paths']['stage']).resolve(strict=True)
         bootstrap = Path(configuration['host_environment']['bootstrap_root']).resolve(strict=True)
         cmake = configuration['host_environment']['cmake_path']

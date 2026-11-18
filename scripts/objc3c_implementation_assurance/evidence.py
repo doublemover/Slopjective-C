@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
 
 from scripts.objc3c_toolchain.analysis_checkpoint import analysis_argv, tidy_diagnostics
 from scripts.objc3c_toolchain.implementation_analysis import (
@@ -203,6 +204,21 @@ def verify_build_proof(root: Path, receipt: dict) -> None:
             tests.extend(lit(path) if path.suffix == '.json' else junit(path))
     if not tests:
         raise ValueError('implementation foundation omitted actual native test results')
+    if 'shared_foundation_sha256' in receipt:
+        from .shared_foundation import SCHEMA as FOUNDATION_SCHEMA
+        producer_path = root / 'foundation/shared-producer.json'
+        producer = json.loads(producer_path.read_text())
+        evidence_root = producer_path.parent
+        actual = [artifact(evidence_root, path) for path in evidence_files(evidence_root)
+                  if path != producer_path]
+        if (producer.get('schema') != FOUNDATION_SCHEMA or producer.get('status') != 'PASS' or
+                producer.get('revision') != receipt['revision'] or
+                producer.get('plan_sha256') != receipt['plan_sha256'] or
+                producer.get('identity', {}).get('source_build_id') != receipt['source_build_id'] or
+                producer.get('identity', {}).get('build_config_digest') != receipt['build_config_digest'] or
+                producer.get('archive', {}).get('sha256') != receipt['shared_foundation_sha256'] or
+                producer.get('foundation_artifacts') != actual):
+            raise ValueError('implementation analysis foundation differs from its shared producer')
 
 
 def _aggregate_partition(plan: dict, root: Path, *, outcomes: dict, tested: str,
@@ -224,6 +240,8 @@ def _aggregate_partition(plan: dict, root: Path, *, outcomes: dict, tested: str,
             receipt.get('analysis_paths') != plan['analysis_paths'] or
             receipt.get('temporary_builds_reclaimed') is not True):
         raise ValueError('implementation assurance result is stale, failed or belongs to another revision')
+    if 'foundation' in outcomes and receipt.get('shared_foundation_sha256') != outcomes['foundation_archive']:
+        raise ValueError('implementation partition did not use the selected foundation archive')
     expected = [artifact(root, path) for path in evidence_files(root)]
     if receipt.get('artifacts') != expected:
         raise ValueError('implementation assurance artifact inventory is missing, substituted or changed')
@@ -249,6 +267,9 @@ def _aggregate_partition(plan: dict, root: Path, *, outcomes: dict, tested: str,
 
 def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     validate(plan)
+    if 'foundation' in outcomes and (outcomes['foundation'] != ('success' if plan['required'] else 'skipped') or
+            plan['required'] and not re.fullmatch('[0-9a-f]{64}', outcomes.get('foundation_archive', ''))):
+        raise ValueError('implementation analysis foundation producer failed, was skipped or omitted its archive')
     count = plan['analysis_partitions']
     if count == 1 or not plan['required']:
         return _aggregate_partition(plan, root, outcomes=outcomes, tested=tested)

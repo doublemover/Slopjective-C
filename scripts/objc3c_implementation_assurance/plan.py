@@ -24,6 +24,8 @@ OWNERS = (
     'toolchains/llvm/',
 )
 TOOLCHAIN_OWNERS = {
+    'scripts/objc3c_assurance/evidence.py',
+    'scripts/objc3c_assurance/instrumented_foundation.py',
     'scripts/objc3c_toolchain/analysis_checkpoint.py',
     'scripts/objc3c_toolchain/analysis_scheduling.py',
     'scripts/objc3c_toolchain/analysis_partition.py',

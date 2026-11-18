@@ -14,7 +14,7 @@ SHA = 'a' * 40
 CALLED_SHA = 'b' * 40
 
 
-def blocks(path, module, operations=('plan', 'run', 'publish', 'verify')):
+def blocks(path, module, operations=('plan', 'foundation', 'run', 'publish', 'verify')):
     source = path.read_text()
     commands = {}
     lines = source.splitlines()
@@ -64,7 +64,7 @@ def test_retained_coverage_diagnosis_preserves_the_aggregate_exit_status(tmp_pat
 
 @pytest.mark.parametrize('module,workflow,operations', [
     ('scripts.objc3c_assurance', 'native-assurance.yml', {'plan', 'run', 'publish', 'verify'}),
-    ('scripts.objc3c_implementation_assurance', 'implementation-analysis.yml', {'plan', 'run', 'verify'}),
+    ('scripts.objc3c_implementation_assurance', 'implementation-analysis.yml', {'plan', 'foundation', 'run', 'verify'}),
 ])
 @pytest.mark.parametrize('event,called_sha', [
     ('pull_request', ''), ('workflow_dispatch', ''), ('schedule', ''),

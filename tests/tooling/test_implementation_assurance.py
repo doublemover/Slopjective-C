@@ -1,6 +1,7 @@
 """Exact selection, retained evidence and cleanup controls for implementation analysis."""
 import json
 from pathlib import Path
+import shutil
 import subprocess
 
 import pytest
@@ -186,6 +187,9 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     assert 'schedule:' in workflow and 'workflow_dispatch:' in workflow
     assert 'workflow_call:' in workflow
     assert 'Linux implementation analysis gate' in workflow
+    assert 'needs: [plan, foundation]' in workflow
+    assert 'needs: [plan, foundation, analysis]' in workflow
+    assert '--foundation-bundle out/implementation-assurance/foundation-input' in workflow
     assert '--retain-builds' not in workflow
     release = (root / '.github/workflows/platform-host-evidence.yml').read_text()
     assert 'uses: ./.github/workflows/implementation-analysis.yml' in release
@@ -201,6 +205,106 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     runner = (root / 'scripts/objc3c_implementation_assurance/runner.py').read_text()
     assert "PROFILE = 'compiler-asan-ubsan'" in runner
     assert 'with foundation_lock(repo)' in runner
+
+
+def test_shared_foundation_preserves_actual_ninja_dependencies(tmp_path):
+    from scripts.objc3c_implementation_assurance.shared_foundation import _archive, _archive_members
+
+    ninja, compiler = shutil.which('ninja'), shutil.which('cc')
+    if not all((ninja, compiler, shutil.which('zstd'))):
+        pytest.skip('Ninja, a host C compiler and zstd are required for archive transport')
+    build, stage = tmp_path / 'out/build', tmp_path / 'out/stage'
+    build.mkdir(parents=True)
+    stage.mkdir()
+    source = tmp_path / 'identity.c'
+    source.write_text('int identity(int value) { return value; }\n')
+    (build / 'build.ninja').write_text(
+        f'rule cc\n  command = {compiler} -MMD -MF $out.d -c $in -o $out\n'
+        '  deps = gcc\n  depfile = $out.d\n'
+        f'build identity.o: cc {source}\n')
+    subprocess.run([ninja, '-C', build], check=True, capture_output=True)
+    original = (build / 'identity.o').stat().st_mtime_ns
+    (stage / 'target').write_text('real retained payload')
+    (stage / 'alias').symlink_to('target')
+    bundle = tmp_path / 'foundation.tar.zst'
+    receipt = _archive(tmp_path, bundle, (stage, build), {
+        build / 'build.ninja', build / '.ninja_deps', build / 'identity.o',
+        stage / 'target', stage / 'alias',
+    })
+    assert _archive_members(bundle, ('out/build/', 'out/stage/')) == receipt['members']
+    shutil.rmtree(build)
+    shutil.rmtree(stage)
+    subprocess.run(['tar', '-I', 'zstd', '-xf', bundle, '-C', tmp_path], check=True)
+    assert (build / 'identity.o').stat().st_mtime_ns == original
+    assert (stage / 'alias').read_text() == 'real retained payload'
+    dependencies = subprocess.check_output([ninja, '-C', build, '-t', 'deps', 'identity.o'], text=True)
+    assert '(VALID)' in dependencies and str(source) in dependencies
+
+
+def test_shared_foundation_rejects_an_archive_link_outside_the_owned_roots(tmp_path):
+    from scripts.objc3c_implementation_assurance.shared_foundation import _archive_members
+
+    if not shutil.which('zstd'):
+        pytest.skip('zstd is required for archive transport')
+    stage = tmp_path / 'out/stage'
+    stage.mkdir(parents=True)
+    (stage / 'alias').symlink_to('../../unowned')
+    archive = tmp_path / 'foundation.tar.zst'
+    subprocess.run(['tar', '-I', 'zstd', '-cf', archive, '-C', tmp_path, 'out/stage/alias'], check=True)
+    with pytest.raises(ValueError, match='unowned link'):
+        _archive_members(archive, ('out/stage/',))
+
+
+def test_shared_foundation_selects_real_configured_compiler_inputs(tmp_path):
+    from scripts.objc3c_implementation_assurance.shared_foundation import _build_files
+
+    cmake, ninja = shutil.which('cmake'), shutil.which('ninja')
+    if not all((cmake, ninja, shutil.which('c++'))):
+        pytest.skip('CMake, Ninja and a C++ compiler are required for graph capture')
+    source, build = tmp_path / 'source', tmp_path / 'out/build'
+    (source / 'clang/lib').mkdir(parents=True)
+    (source / 'clang/lib/owned.cpp').write_text('#include "table.inc"\nint selected() { return value; }\n')
+    (source / 'ordinary.cpp').write_text('int unselected() { return 0; }\n')
+    (source / 'table.in').write_text('constexpr int value = 42;\n')
+    (source / 'CMakeLists.txt').write_text('''
+cmake_minimum_required(VERSION 3.20)
+project(shared-foundation-control LANGUAGES CXX)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+configure_file(table.in "${CMAKE_BINARY_DIR}/include/llvm/table.inc" COPYONLY)
+add_library(LLVM SHARED clang/lib/owned.cpp ordinary.cpp)
+target_include_directories(LLVM PRIVATE "${CMAKE_BINARY_DIR}/include/llvm")
+set_target_properties(LLVM PROPERTIES VERSION 23.1 SOVERSION 23)
+add_library(clang-cpp SHARED ordinary.cpp)
+set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
+''')
+    subprocess.run([cmake, '-S', source, '-B', build, '-G', 'Ninja',
+                    f'-DCMAKE_MAKE_PROGRAM={ninja}', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'],
+                   check=True, capture_output=True)
+    subprocess.run([cmake, '--build', build], check=True, capture_output=True)
+    patches = tmp_path / 'toolchains/llvm/patches'
+    patches.mkdir(parents=True)
+    (patches / 'owned.patch').write_text('+++ b/clang/lib/owned.cpp\n')
+    trace = build / 'foundation-configuration-trace.jsonl'
+    trace.write_text('{}\n')
+    (build / 'foundation-build-report.json').write_text('{}\n')
+    selected = _build_files(tmp_path, {'paths': {'build': str(build), 'source': str(source)},
+        'host_environment': {'ninja_path': ninja}, 'configuration_trace': str(trace)})
+    assert build / 'include/llvm/table.inc' in selected
+    assert build / 'CMakeFiles/rules.ninja' in selected
+    assert any(path.name == 'owned.cpp.o' for path in selected)
+    assert not any(path.name == 'ordinary.cpp.o' for path in selected)
+    assert {path.name for path in selected if path.parent == build / 'lib'} == {
+        'libLLVM.so', 'libLLVM.so.23', 'libLLVM.so.23.1',
+        'libclang-cpp.so', 'libclang-cpp.so.23', 'libclang-cpp.so.23.1',
+    }
+
+
+def test_failed_shared_foundation_blocks_terminal_analysis(tmp_path):
+    plan = select([], **REV, periodic=True)
+    with pytest.raises(ValueError, match='foundation producer'):
+        evidence.aggregate(plan, tmp_path, outcomes={
+            'plan': 'success', 'foundation': 'failure', 'analysis': 'skipped',
+        }, tested=REV['tested'])
 
 
 @pytest.mark.parametrize('fault', ['missing-action', 'extra-action', 'wrong-selection', 'wrong-argv',

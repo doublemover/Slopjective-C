@@ -1,5 +1,12 @@
 # Objective-C 3.0 on Linux
 
+The implementation-analysis matrix uses a single same-run sanitizer compiler
+producer per host. Each partition restores its staged compiler, matching
+configured build inputs and recorded Ninja dependency owners. The terminal
+job binds all partitions to the producer's archive SHA-256 and still verifies
+the complete disjoint variant inventory. The shared archive expires after
+one day.
+
 The [Source 2.253 / System 2.179 C completion executor changes](linux_async_c_completion_exports.md)
 generate native executor hops and preserve checked failure and cancellation
 at the C callback boundary.

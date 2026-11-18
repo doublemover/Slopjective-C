@@ -16,12 +16,13 @@ from .plan import from_checkout
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=('plan', 'run', 'verify'))
+    parser.add_argument('command', choices=('plan', 'foundation', 'run', 'verify'))
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--periodic-sha')
     parser.add_argument('--partition-index', type=int, default=0)
+    parser.add_argument('--foundation-bundle', type=Path)
     args = parser.parse_args(argv)
     repo = args.repo.resolve()
     revisions = (dict.fromkeys(('head', 'base', 'tested'), sha(args.periodic_sha))
@@ -34,16 +35,27 @@ def main(argv=None):
             if os.environ.get('GITHUB_OUTPUT'):
                 with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
                     stream.write('analysis='+str(expected['required']).lower()+'\n')
+                    stream.write('partitions='+json.dumps(list(range(expected['analysis_partitions'])))+'\n')
             print(json.dumps(expected))
             return 0
         plan = json.loads(args.plan.read_text())
         if plan != expected:
             raise ValueError('downloaded plan differs from the exact source revision')
         if not args.output:
-            parser.error('--output is required for run and verify')
-        if args.command == 'run':
+            parser.error('--output is required for foundation, run and verify')
+        if args.command == 'foundation':
+            from .shared_foundation import produce
+            produced = produce(repo, plan, args.output)
+            report = {'status': produced['status'], 'identity': produced['identity'],
+                      'archive_sha256': produced['archive']['sha256'],
+                      'archive_bytes': produced['archive']['bytes']}
+            if os.environ.get('GITHUB_OUTPUT'):
+                with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+                    stream.write('archive_sha256='+report['archive_sha256']+'\n')
+        elif args.command == 'run':
             from .runner import run
-            report = run(repo, plan, args.output, partition_index=args.partition_index)
+            report = run(repo, plan, args.output, partition_index=args.partition_index,
+                         foundation_bundle=args.foundation_bundle)
         else:
             from .evidence import aggregate
             report = aggregate(plan, args.output,
