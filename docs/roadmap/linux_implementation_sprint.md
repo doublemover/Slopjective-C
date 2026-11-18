@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.219 / System 2.145 dependent-getter span](linux_native_dependent_field_projections.md)
+retains resource contracts through selected pending generic getter bodies and
+identity-preserving expressions without treating pure observations as escapes.
+
 The [Source 2.218 / System 2.144 generated-storage span](linux_native_meta_storage.md)
 materializes explicit native ivars before layout and delivers checked stored
 property behaviors through ordinary source-free class interfaces.

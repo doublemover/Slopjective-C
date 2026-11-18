@@ -53721,7 +53721,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3294 @@
+@@ -0,0 +1,3357 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53802,7 +53802,7 @@ new file mode 100644
 +  bool Borrowed = false;
 +};
 +bool carriesManagedResourceValue(ASTContext &, const Expr *, const Stmt * = nullptr,
-+                                  const VarDecl * = nullptr);
++                                  const VarDecl * = nullptr,Sema * = nullptr);
 +bool managedTransferStorage(const ValueDecl *Value) {
 +  return Value && (Value->hasAttr<CleanupAttr>() ||
 +      Value->hasAttr<ObjCCleanupAttr>() || Value->hasAttr<ObjCResourceAttr>());
@@ -54080,9 +54080,10 @@ new file mode 100644
 +  const Expr *Receiver;
 +  bool Managed;
 +  bool Arrow;
++  bool Identity;
 +};
 +std::optional<FieldProjection> fieldProjectionImpl(const CallExpr *Call,ASTContext &Context,
-+    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active) {
++    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active,Sema *Actions) {
 +  if(!Work || Depth>16)return std::nullopt;--Work;
 +  const auto *Method=Call?dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee()):nullptr;
 +  const auto *Member=Call?dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts()):nullptr;
@@ -54091,7 +54092,28 @@ new file mode 100644
 +      Method->getNumParams() || Member->getBase()->HasSideEffects(Context) ||
 +      (Method->isVirtual() && !Member->hasQualifier() &&
 +       !Method->hasAttr<FinalAttr>() && !Method->getParent()->hasAttr<FinalAttr>()))return std::nullopt;
++  if(!Active.insert(Method->getCanonicalDecl()).second)return std::nullopt;
++  auto Leave=llvm::scope_exit([&]{Active.erase(Method->getCanonicalDecl());});
 +  const auto *Definition=Method->getDefinition();
++  // Used implicit getter bodies can still be in Clang's pending queue when a
++  // task/executor boundary is checked. Materialize only the selected concrete
++  // single-return field/member view, never unrelated pending work or patterns.
++  if(!Definition && Actions && &Actions->Context==&Context && Work>=16 &&
++      Method->instantiationIsPending() && !Method->isDependentContext() &&
++      !Method->isInvalidDecl() && !Method->getType()->isDependentType() &&
++      Method->getTemplateSpecializationKind()==TSK_ImplicitInstantiation &&
++      (!Actions->getCurFunctionDecl(true) || Actions->getCurFunctionDecl(true)->getCanonicalDecl()!=Method->getCanonicalDecl())) {
++    const auto *Pattern=Method->getTemplateInstantiationPattern();
++    const auto *Body=Pattern && !Pattern->isLateTemplateParsed()?dyn_cast_or_null<CompoundStmt>(Pattern->getBody()):nullptr;
++    const auto *Return=Body && Body->size()==1?dyn_cast<ReturnStmt>(*Body->body_begin()):nullptr;
++    const auto *Value=Return && Return->getRetValue()?Return->getRetValue()->IgnoreParenImpCasts():nullptr;
++    if(Value && isa<MemberExpr,CXXDependentScopeMemberExpr,CallExpr,BinaryOperator,UnaryOperator,AbstractConditionalOperator>(Value) &&
++        Pattern->isInlined() && !Pattern->isInvalidDecl()) {
++      Work-=16;
++      Actions->InstantiateFunctionDefinition(Call->getExprLoc(),const_cast<CXXMethodDecl *>(Method),false,false);
++      Definition=Method->getDefinition();
++    }
++  }
 +  if(!Definition || !Definition->getBody() || Definition->isVariadic() ||
 +      Definition->isMultiVersion() || Definition->isNoReturn() ||
 +      getObjC3Executor(Definition) || isObjC3ActorIsolated(Definition) ||
@@ -54102,43 +54124,84 @@ new file mode 100644
 +  if(const auto *Type=getObjC3CallableFunctionType(Definition);
 +      !Type || Type->getObjC3FunctionEffects().Async ||
 +      Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None)return std::nullopt;
-+  if(!Active.insert(Definition->getCanonicalDecl()).second)return std::nullopt;
-+  auto Leave=llvm::scope_exit([&]{Active.erase(Definition->getCanonicalDecl());});
 +  const auto *Body=dyn_cast<CompoundStmt>(Definition->getBody());
 +  if(!Body || Body->size()!=1)return std::nullopt;
 +  const auto *Return=dyn_cast<ReturnStmt>(*Body->body_begin());
 +  const auto *Value=Return?Return->getRetValue():nullptr;
-+  // Boolean predicates are observations, not copies of resource identity.
-+  while(const auto *Cast=dyn_cast_or_null<ImplicitCastExpr>(Value)) {
-+    if(Cast->getCastKind()!=CK_LValueToRValue && Cast->getCastKind()!=CK_NoOp)
-+      return std::nullopt;
-+    Value=Cast->getSubExpr();
-+  }
-+  Value=Value?Value->IgnoreParens():nullptr;
-+  bool Managed=false,HasField=false;
-+  if(const auto *Nested=dyn_cast_or_null<CallExpr>(Value)) {
-+    auto Projection=fieldProjectionImpl(Nested,Context,Work,Depth+1,Active);
-+    if(!Projection)return std::nullopt;
-+    Managed=Projection->Managed;HasField=true;Value=Projection->Receiver->IgnoreParenImpCasts();
-+    // A nested pointer receiver would expose a separate pointee lifetime.
-+    if(Projection->Arrow && !isa<CXXThisExpr>(Value))return std::nullopt;
-+  }
-+  while(const auto *Field=dyn_cast_or_null<MemberExpr>(Value)) {
-+    if(!Work)return std::nullopt;--Work;
-+    const auto *Declaration=dyn_cast<FieldDecl>(Field->getMemberDecl());
-+    if(!Declaration || Declaration->getType().isVolatileQualified() ||
-+        Declaration->getType()->isAtomicType())return std::nullopt;
-+    Managed|=managedTransferStorage(Declaration) ||
-+        getObjC3ResourceTypeContract(Context,Declaration->getType()).Cleanup;
-+    HasField=true;Value=Field->getBase()->IgnoreParenImpCasts();
-+    if(Field->isArrow() && !isa<CXXThisExpr>(Value))return std::nullopt;
-+  }
-+  if(!HasField || !isa_and_nonnull<CXXThisExpr>(Value))return std::nullopt;
-+  return FieldProjection{Member->getBase(),Managed,Member->isArrow()};
++  bool Managed=false;
++  auto Path=[&](const Expr *E) {
++    E=E->IgnoreParenImpCasts();
++    while(const auto *Field=dyn_cast<MemberExpr>(E)) {
++      if(!Work)return false;--Work;
++      const auto *Declaration=dyn_cast<FieldDecl>(Field->getMemberDecl());
++      if(!Declaration || Declaration->getType().isVolatileQualified() ||
++          Declaration->getType()->isAtomicType())return false;
++      Managed|=managedTransferStorage(Declaration) ||
++          getObjC3ResourceTypeContract(Context,Declaration->getType()).Cleanup;
++      E=Field->getBase()->IgnoreParenImpCasts();
++      if(Field->isArrow() && !isa<CXXThisExpr>(E))return false;
++    }
++    return isa<CXXThisExpr>(E);
++  };
++  auto Nested=[&](const CallExpr *Inner) -> std::optional<FieldProjection> {
++    auto Projection=fieldProjectionImpl(Inner,Context,Work,Depth+1,Active,Actions);
++    if(!Projection || (Projection->Arrow &&
++        !isa<CXXThisExpr>(Projection->Receiver->IgnoreParenImpCasts())) ||
++        !Path(Projection->Receiver))return std::nullopt;
++    Managed|=Projection->Managed;
++    return Projection;
++  };
++  // A pure status read does not copy resource identity or escape the object.
++  auto Observe=[&](auto &&Self,const Expr *E,unsigned Level)->bool {
++    if(!E || !Work || Level>32)return false;--Work;
++    E=E->IgnoreParens();
++    if(const auto *Cast=dyn_cast<CastExpr>(E))return Self(Self,Cast->getSubExpr(),Level+1);
++    if(isa<MemberExpr>(E))return Path(E);
++    if(const auto *Inner=dyn_cast<CallExpr>(E))return bool(Nested(Inner));
++    if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E))
++      return Self(Self,Conditional->getCond(),Level+1) &&
++          Self(Self,Conditional->getTrueExpr(),Level+1) && Self(Self,Conditional->getFalseExpr(),Level+1);
++    if(const auto *Binary=dyn_cast<BinaryOperator>(E))
++      return !Binary->isAssignmentOp() && !Binary->isPtrMemOp() &&
++          Self(Self,Binary->getLHS(),Level+1) && Self(Self,Binary->getRHS(),Level+1);
++    if(const auto *Unary=dyn_cast<UnaryOperator>(E))
++      return (Unary->getOpcode()==UO_Plus || Unary->getOpcode()==UO_Minus ||
++          Unary->getOpcode()==UO_Not || Unary->getOpcode()==UO_LNot) &&
++          Self(Self,Unary->getSubExpr(),Level+1);
++    if(const auto *Reference=dyn_cast<DeclRefExpr>(E))return isa<EnumConstantDecl>(Reference->getDecl());
++    return isa<IntegerLiteral,FloatingLiteral,CharacterLiteral,CXXBoolLiteralExpr,
++        CXXNullPtrLiteralExpr,GNUNullExpr,UnaryExprOrTypeTraitExpr,CXXNoexceptExpr,TypeTraitExpr>(E);
++  };
++  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Level)->std::optional<bool> {
++    if(!E || !Work || Level>32)return std::nullopt;--Work;
++    E=E->IgnoreParens();
++    if(const auto *Cast=dyn_cast<CastExpr>(E)) {
++      auto Source=Self(Self,Cast->getSubExpr(),Level+1);if(!Source)return std::nullopt;
++      const auto Kind=Cast->getCastKind();
++      return *Source && Kind!=CK_IntegralToBoolean && Kind!=CK_PointerToBoolean &&
++          Kind!=CK_MemberPointerToBoolean && Kind!=CK_FloatingToBoolean;
++    }
++    if(const auto *Unary=dyn_cast<UnaryOperator>(E);Unary && Unary->getOpcode()==UO_Plus)
++      return Self(Self,Unary->getSubExpr(),Level+1);
++    if(const auto *Binary=dyn_cast<BinaryOperator>(E);Binary && Binary->getOpcode()==BO_Comma)
++      return Observe(Observe,Binary->getLHS(),Level+1)?Self(Self,Binary->getRHS(),Level+1):std::nullopt;
++    if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E)) {
++      if(!Observe(Observe,Conditional->getCond(),Level+1))return std::nullopt;
++      auto Left=Self(Self,Conditional->getTrueExpr(),Level+1),Right=Self(Self,Conditional->getFalseExpr(),Level+1);
++      return Left && Right?std::optional<bool>(*Left || *Right):std::nullopt;
++    }
++    if(const auto *Inner=dyn_cast<CallExpr>(E)) {
++      auto Projection=Nested(Inner);return Projection?std::optional<bool>(Projection->Identity):std::nullopt;
++    }
++    if(isa<MemberExpr>(E))return Path(E)?std::optional<bool>(true):std::nullopt;
++    return Observe(Observe,E,Level+1)?std::optional<bool>(false):std::nullopt;
++  };
++  auto Identity=Resolve(Resolve,Value,0);if(!Identity)return std::nullopt;
++  return FieldProjection{Member->getBase(),Managed,Member->isArrow(),*Identity};
 +}
-+std::optional<FieldProjection> fieldProjection(const CallExpr *Call,ASTContext &Context) {
++std::optional<FieldProjection> fieldProjection(const CallExpr *Call,ASTContext &Context,Sema *Actions=nullptr) {
 +  unsigned Work=256;llvm::SmallPtrSet<const FunctionDecl *,16> Active;
-+  return fieldProjectionImpl(Call,Context,Work,0,Active);
++  return fieldProjectionImpl(Call,Context,Work,0,Active,Actions);
 +}
 +
 +struct ArgumentProjection {
@@ -54374,7 +54437,7 @@ new file mode 100644
 +// before building a task/isolation snapshot. Explicit wrappers still undergo
 +// their ordinary structural/unsafe-Sendable type admission.
 +bool carriesManagedResourceValue(ASTContext &Context,const Expr *Expression,
-+                                  const Stmt *ScopeBody,const VarDecl *RootBinding) {
++                                  const Stmt *ScopeBody,const VarDecl *RootBinding,Sema *Actions) {
 +  unsigned Budget=256;
 +  llvm::SmallPtrSet<const VarDecl *,32> Active,Complete;
 +  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> Writes;
@@ -54409,7 +54472,7 @@ new file mode 100644
 +            isa<FieldDecl>(Member->getMemberDecl()))
 +          return Self(Self,Member->getBase(),Depth+1);
 +        if(const auto *Call=dyn_cast<CallExpr>(E)) {
-+          if(Call->isGLValue())if(auto Field=fieldProjection(Call,Context);Field && !Field->Arrow)
++          if(Call->isGLValue())if(auto Field=fieldProjection(Call,Context,Actions);Field && !Field->Arrow)
 +            return Self(Self,Field->Receiver,Depth+1);
 +          auto Projection=argumentProjection(Call,Context);
 +          if(!Projection || !Projection->Aliases)return false;
@@ -54507,7 +54570,7 @@ new file mode 100644
 +      if(const auto *Default=dyn_cast<CXXDefaultArgExpr>(Node)){Add(Default->getExpr());continue;}
 +      if(const auto *Default=dyn_cast<CXXDefaultInitExpr>(Node)){Add(Default->getExpr());continue;}
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
-+        if(auto Field=fieldProjection(Call,Context)) {
++        if(auto Field=fieldProjection(Call,Context,Actions)) {
 +          Add(Field->Receiver,Call->isGLValue()?Use:Read);continue;
 +        }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
@@ -54664,9 +54727,9 @@ new file mode 100644
 +      return false;
 +    }
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
-+      if(auto Field=fieldProjection(Call,Context))
-+        return Field->Managed ||
-+            (!Field->Arrow && Recurse(Recurse,Field->Receiver,Depth+1));
++      if(auto Field=fieldProjection(Call,Context,Actions))
++        return Field->Identity && (Field->Managed ||
++            (!Field->Arrow && Recurse(Recurse,Field->Receiver,Depth+1)));
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
 +      if(auto Projection=argumentProjection(Call,Context)) {
 +        for(unsigned I=0;I!=Call->getNumArgs();++I)
@@ -54685,7 +54748,7 @@ new file mode 100644
 +}
 +bool checkTransferValue(Sema &S,const Expr *Value,QualType Type,
 +                        StringRef Reason,const Decl *Boundary,const Stmt *ScopeBody=nullptr) {
-+  const bool Managed=carriesManagedResourceValue(S.Context,Value,ScopeBody);
++  const bool Managed=carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S);
 +  return checkTransfer(S,Type,Value->getExprLoc(),
 +      Managed?StringRef("cleanup-managed concurrent value"):Reason,Boundary,Managed);
 +}
@@ -55450,7 +55513,7 @@ new file mode 100644
 +    }
 +    --Proof.Budget;
 +    auto Leave=llvm::scope_exit([&]{Proof.ActiveFactoryValues.erase(Value);});
-+    const bool Managed=carriesManagedResourceValue(S.Context,Value,Body);
++    const bool Managed=carriesManagedResourceValue(S.Context,Value,Body,nullptr,&S);
 +    if(Capture.TransportType->isBlockPointerType()) {
 +      if(Managed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),"cleanup-managed capture",Capture.Parameter,true);
 +      SmallVector<const BlockExpr *,8> Blocks;SmallVector<FactoryCapture,8> Nested;
@@ -55770,7 +55833,7 @@ new file mode 100644
 +          ++Index;
 +          continue;
 +        }
-+        if(carriesManagedResourceValue(S.Context,Argument,ScopeBody))
++        if(carriesManagedResourceValue(S.Context,Argument,ScopeBody,nullptr,&S))
 +          Invalid |= checkTransferValue(S,Argument,TransferType,
 +                                        "concurrent block value",Target,ScopeBody);
 +        SmallVector<const BlockExpr *, 8> Blocks;
@@ -55861,8 +55924,8 @@ new file mode 100644
 +        const auto *Value=transferSource(Argument);
 +        // Initializer-only provenance was checked while constructing the frame.
 +        // This pass contributes later writes and closed binding/escape facts.
-+        if(!carriesManagedResourceValue(S.Context,Value) &&
-+            carriesManagedResourceValue(S.Context,Value,ScopeBody))
++        if(!carriesManagedResourceValue(S.Context,Value,nullptr,nullptr,&S) &&
++            carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S))
 +          Invalid|=checkTransferValue(S,Value,Value->getType(),
 +              "isolated snapshot",nullptr,ScopeBody);
 +      }
@@ -55937,9 +56000,9 @@ new file mode 100644
 +    // Plain formal parameter types cannot stand in for those source values.
 +    if(Proof.FactoryBindings.contains(V))continue;
 +    bool Managed = managedTransferStorage(V);
-+    Managed |= carriesManagedResourceValue(S.Context,nullptr,ScopeBody,V);
++    Managed |= carriesManagedResourceValue(S.Context,nullptr,ScopeBody,V,&S);
 +    if(const auto *Initializer=Capture.getObjC3InitExpr())
-+      Managed |= carriesManagedResourceValue(S.Context,Initializer,ScopeBody);
++      Managed |= carriesManagedResourceValue(S.Context,Initializer,ScopeBody,nullptr,&S);
 +    bool Failed = false;
 +    if (Capture.isByRef() ||
 +        (Managed && !unsafeAdmission(S.Context, V->getType()))) {
@@ -80090,6 +80153,99 @@ new file mode 100644
 + (void)binding_detached(binding_make_scalar(valid));
 + (void)binding_detached(binding_make_scalar(boolean));
 + (void)binding_detached(binding_make_scalar(status));
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-dependent-field-projections.m b/clang/test/ObjC3/Sema/native-dependent-field-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-dependent-field-projections.m
+@@ -0,0 +1,42 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-dependent-field-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-dependent-field-projections.h"
++#ifndef __cplusplus
++// expected-no-diagnostics
++#else
++void dependent_field_close(int);int dependent_field_open(void);
++void binding_dependent_cleanup(void) {
++ BindingGenericField source __attribute__((cleanup(binding_generic_cleanup)))={42,0};
++ int copied=source.get<int>();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++ int forwarded=source.forwarded<int>();(void)binding_detached(binding_make_scalar(forwarded)); // expected-error {{cleanup-managed capture}}
++ long widened=source.widened();(void)binding_detached(binding_make_scalar((int)widened)); // expected-error {{cleanup-managed capture}}
++ int positive=source.positive();(void)binding_detached(binding_make_scalar(positive)); // expected-error {{cleanup-managed capture}}
++ int comma=source.comma();(void)binding_detached(binding_make_scalar(comma)); // expected-error {{cleanup-managed capture}}
++ int choice=source.choice();(void)binding_detached(binding_make_scalar(choice)); // expected-error {{cleanup-managed capture}}
++}
++void binding_dependent_class(void) {
++ BindingTemplateField<int> source __attribute__((cleanup(binding_template_cleanup)))={42};
++ int copied=source.get();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_dependent_write(void) {
++ int descriptor __attribute__((objc_resource(close=dependent_field_close,invalid=-1)))=dependent_field_open();
++ BindingGenericField source={42,0};source.reference<int>()=descriptor;
++ int copied=source.get<int>();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_dependent_reference_choice(void) {
++ int descriptor __attribute__((objc_resource(close=dependent_field_close,invalid=-1)))=dependent_field_open();
++ BindingGenericField source={42,0};source.choice_reference()=descriptor;
++ int copied=source.get<int>();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_dependent_template_write(void) {
++ int descriptor __attribute__((objc_resource(close=dependent_field_close,invalid=-1)))=dependent_field_open();
++ BindingTemplateField<int> source={42};source.reference()=descriptor;
++ int copied=source.get();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-dependent-field-projections.h b/clang/test/ObjC3/Sema/Inputs/native-dependent-field-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-dependent-field-projections.h
+@@ -0,0 +1,39 @@
++#ifndef OBJC3_DEPENDENT_FIELD_PROJECTIONS_H
++#define OBJC3_DEPENDENT_FIELD_PROJECTIONS_H
++#include "native-field-projections.h"
++#ifdef __cplusplus
++struct BindingGenericField {
++ int value,other;
++ template<class T>T get()const{return value;}
++ template<class T>T forwarded()const{return get<T>();}
++ template<class T>T &reference()&{return value;}
++ long widened()const{return static_cast<long>(value);}
++ int positive()const{return +value;}
++ int comma()const{return ((void)0,value);}
++ int choice()const{return other?value:other;}
++ int &choice_reference()&{return other?value:other;}
++ bool valid()const{return value>=0;}
++ int status()const{return value+1;}
++ int literal()const{return 42;}
++};
++void binding_generic_cleanup(BindingGenericField *);
++template<class T>struct BindingTemplateField {
++ T value;T get()const{return value;}
++ T &reference()&{return value;}
++};
++void binding_template_cleanup(BindingTemplateField<int> *);
++static inline void binding_dependent_fields_ordinary(void) {
++ BindingGenericField source={42,0};source.reference<int>()=41;
++ int copied=source.get<int>(),forwarded=source.forwarded<int>();
++ bool converted=source.get<bool>(),valid=source.valid();int status=source.status(),literal=source.literal();
++ (void)binding_detached(binding_make_scalar(copied+forwarded+converted+valid+status+literal));
++ (void)binding_detached(binding_make_scalar(source.get<int>()));
++ BindingTemplateField<int> concrete={42};concrete.reference()=41;
++ (void)binding_detached(binding_make_scalar(concrete.get()));
++ BindingGenericField cleaned __attribute__((cleanup(binding_generic_cleanup)))={42,0};
++ bool observation=cleaned.get<bool>();int telemetry=cleaned.status();
++ (void)binding_detached(binding_make_scalar(observation));
++ (void)binding_detached(binding_make_scalar(telemetry));
 +}
 +#endif
 +#endif
