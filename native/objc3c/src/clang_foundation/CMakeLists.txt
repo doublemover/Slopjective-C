@@ -713,6 +713,15 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_isolation_contracts_test PRIVATE objc3c_clang_foundation)
   objc3c_link_clang_components(objc3_isolation_contracts_test clangTooling)
   objc3c_add_frontend_test(NAME objc3_isolation_contracts COMMAND objc3_isolation_contracts_test)
+  add_executable(objc3_native_global_provenance_test
+    ../../../../tests/clang_foundation/native_global_provenance_test.cpp)
+  target_include_directories(objc3_native_global_provenance_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_compile_definitions(objc3_native_global_provenance_test PRIVATE
+    OBJC3_GLOBAL_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
+  target_link_libraries(objc3_native_global_provenance_test PRIVATE objc3c_clang_foundation)
+  objc3c_add_frontend_test(NAME objc3_native_global_provenance COMMAND objc3_native_global_provenance_test)
+  set_tests_properties(objc3_native_global_provenance PROPERTIES TIMEOUT 180)
   add_executable(objc3_explicit_capture_lists_test
     ../../../../tests/clang_foundation/explicit_capture_lists_test.cpp)
   target_include_directories(objc3_explicit_capture_lists_test SYSTEM PRIVATE

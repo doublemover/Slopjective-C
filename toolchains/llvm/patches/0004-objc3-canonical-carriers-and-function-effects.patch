@@ -53738,7 +53738,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3769 @@
+@@ -0,0 +1,3780 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54807,9 +54807,17 @@ new file mode 100644
 +            if(Projection->selects(I) && !Self(Self,Call->getArg(I),Depth+1))return false;
 +          return true;
 +        }
++        if(const auto *Subscript=dyn_cast<ArraySubscriptExpr>(E)) {
++          const auto *Base=Subscript->getBase()->IgnoreParenImpCasts();
++          const auto *Array=Context.getAsConstantArrayType(Base->getType());
++          const auto Index=Subscript->getIdx()->getIntegerConstantExpr(Context);
++          if(!Array || !Index || Index->isNegative() || Index->getActiveBits()>64 ||
++              Index->getZExtValue()>=Array->getSize().getLimitedValue())return false;
++          return Self(Self,Base,Depth+1);
++        }
 +        const auto *Reference=dyn_cast<DeclRefExpr>(E);
 +        const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
-+        if(!Variable || !Variable->hasLocalStorage())return false;
++        if(!Variable || (!Variable->hasLocalStorage() && !Variable->hasGlobalStorage()))return false;
 +        if(Variable->getType()->isReferenceType()) {
 +          if(!Variable->hasInit() || !References.insert(Variable->getCanonicalDecl()).second)return false;
 +          auto Leave=llvm::scope_exit([&]{References.erase(Variable->getCanonicalDecl());});
@@ -54843,7 +54851,7 @@ new file mode 100644
 +      auto Add=[&](const Stmt *Child,Role R=Unknown){Pending.push_back({Child,R,Depth+1});};
 +      if(isa<GotoStmt,IndirectGotoStmt,GCCAsmStmt>(Node)){Incomplete=true;return;}
 +      if(const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
-+        if(const auto *V=dyn_cast<VarDecl>(Reference->getDecl());V && V->hasLocalStorage() && Use==Unknown)
++        if(const auto *V=dyn_cast<VarDecl>(Reference->getDecl());V && (V->hasLocalStorage() || V->hasGlobalStorage()) && Use==Unknown)
 +          Escape(V);
 +        continue;
 +      }
@@ -54977,16 +54985,20 @@ new file mode 100644
 +      for(const auto *Child:Node->children())Add(Child);
 +    }
 +  };
++  // Global/static/TLS values retain initializers and writes visible in this
++  // native scope. This is a may-source union, not a whole-program proof that
++  // other functions or threads cannot modify an unqualified global.
 +  auto VariableValue=[&](auto &&Recurse,const VarDecl *Variable,unsigned Depth)->bool {
 +    if(!Variable)return false;
++    Variable=Variable->getCanonicalDecl();
 +    if(!BorrowedOnly && managedTransferStorage(Variable))return true;
 +    if(Complete.contains(Variable))return false;
 +    // This is a monotone may-source union. Closing an active assignment cycle
 +    // adds no source; another reachable initializer/write still supplies taint.
 +    if(!Active.insert(Variable).second)return false;
 +    bool Managed=false;
-+    if(Variable->hasInit())Managed=Recurse(Recurse,Variable->getInit(),Depth+1);
-+    if(!Managed && Variable->hasLocalStorage() && !Variable->getType().isConstQualified()) {
++    if(const auto *Initializer=Variable->getAnyInitializer())Managed=Recurse(Recurse,Initializer,Depth+1);
++    if(!Managed && !Variable->getType().isConstQualified()) {
 +      Index();
 +      // Native reference snapshots acquire their own lifetime hold, and their
 +      // Sendable type constrains every retargeted value. Unknown slot writes
@@ -55035,7 +55047,6 @@ new file mode 100644
 +        return Binding->getBinding() && Recurse(Recurse,Binding->getBinding(),Depth+1);
 +      const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
 +      if(!Variable)return false;
-+      if(!Variable->hasLocalStorage() && !Variable->getType().isConstQualified())return false;
 +      return VariableValue(Recurse,Variable,Depth);
 +    }
 +    if(const auto *Lambda=dyn_cast<LambdaExpr>(E)) {
@@ -81223,6 +81234,95 @@ new file mode 100644
 + auto escaped_status=[loan=source.get()](){return loan!=0;};capture_unknown_write(escaped_status);
 + bool observed=escaped_status();
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)observed;});
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-global-value-projections.m b/clang/test/ObjC3/Sema/native-global-value-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-global-value-projections.m
+@@ -0,0 +1,49 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-global-value-projections.h"
++#if __OBJC3_PROFILE__ == 3
++const char *global_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#else
++void global_projection_values(borrowed const char *loan) {
++ global_projection_pointer=loan;const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ global_projection_array[1]=loan;const char *element=global_projection_array[1];
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)element;}); // expected-error {{borrowed capture}}
++ global_projection_external=loan;const char *external=global_projection_external;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)external;}); // expected-error {{borrowed capture}}
++ global_projection_thread=loan;const char *threaded=global_projection_thread;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)threaded;}); // expected-error {{borrowed capture}}
++ global_projection_record.value=loan;const char *member=global_projection_record.value;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)member;}); // expected-error {{borrowed capture}}
++ static const char *local_static;local_static=loan;const char *stored=local_static;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)stored;}); // expected-error {{borrowed capture}}
++ const char **const slot=&global_projection_pointer;*slot=loan;const char *aliased=*slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)aliased;}); // expected-error {{borrowed capture}}
++#ifdef __cplusplus
++ auto &reference=global_projection_external;reference=loan;const char *referred=reference;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)referred;}); // expected-error {{borrowed capture}}
++#endif
++ int present=global_projection_pointer!=0;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)present;});
++}
++void global_projection_redeclared(borrowed const char *loan) {
++ extern const char *global_projection_external;
++ global_projection_external=loan;const char *value=global_projection_external;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#ifdef __cplusplus
++extern borrowed const char *global_projection_initial_loan;
++extern const char *global_projection_initial;
++const char *global_projection_initial=global_projection_initial_loan;
++void global_projection_initializer(void) {
++ extern const char *global_projection_initial;
++ const char *value=global_projection_initial;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#endif
++void global_projection_resources(void) {
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ global_projection_number=descriptor;int value=global_projection_number;
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-global-value-projections.h b/clang/test/ObjC3/Sema/Inputs/native-global-value-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-global-value-projections.h
+@@ -0,0 +1,28 @@
++#ifndef OBJC3_GLOBAL_VALUE_PROJECTIONS_H
++#define OBJC3_GLOBAL_VALUE_PROJECTIONS_H
++#include "native-captured-value-projections.h"
++#if __OBJC3_PROFILE__ != 3
++static const char *global_projection_pointer;
++extern const char *global_projection_external;
++#ifdef __cplusplus
++static thread_local const char *global_projection_thread;
++#else
++static _Thread_local const char *global_projection_thread;
++#endif
++struct GlobalProjectionRecord {const char *value;};
++static struct GlobalProjectionRecord global_projection_record;
++static int global_projection_number;
++static const char *global_projection_array[2];
++void global_projection_close(int) __attribute__((nothrow));
++int global_projection_open(void);
++static inline void global_projection_observations(void) {
++ global_projection_pointer="static";
++ const char *value=global_projection_pointer;int present=global_projection_pointer!=0;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;(void)present;});
++ global_projection_array[1]="static";const char *element=global_projection_array[1];
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)element;});
++ global_projection_number=42;int number=global_projection_number;
++ (void)binding_detached(binding_make_scalar(number));
 +}
 +#endif
 +#endif

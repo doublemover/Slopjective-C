@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.228 / System 2.154 global-value span](linux_native_global_value_projections.md)
+retains native-scope borrowed/resource writes through global, static and TLS
+slots, canonical redeclarations, fixed arrays and source-free imported storage.
+
 The [Source 2.227 / System 2.153 callable-value span](linux_native_callable_value_projections.md)
 preserves captured and parameter-derived loans through pure native lambda graphs,
 tracks receiver writes/escapes and keeps independent observations usable.
