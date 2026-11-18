@@ -5096,7 +5096,7 @@ index 0683a4937..969684f81 100644
  
 +  if(CGM.getLangOpts().ObjC3 && hasObjC3CarrierCppPayload(type)) {
 +    const Expr *Recipe=getContext().getBlockVarCopyInit(&var).getCopyExpr();
-+    if(!Recipe || !(supportsObjC3CarrierCppCallABI(CGM,type) || supportsObjC3MixedCarrierCallABI(CGM,type))) {
++    if(!Recipe || !(supportsObjC3CarrierCppNothrowCallABI(CGM,type) || supportsObjC3MixedCarrierCallABI(CGM,type))) {
 +      diagnoseUnsupportedObjC3CarrierOperation(CGM,var.getLocation(),type,"native C++ carrier byref relocation");
 +      return nullptr;
 +    }
@@ -8635,7 +8635,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,925 @@
+@@ -0,0 +1,948 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -9060,8 +9060,8 @@ new file mode 100644
 +         supportsObjC3CarrierARCLocalLifetime(CGM, CarrierType);
 +}
 +
-+bool CodeGen::supportsObjC3CarrierCppCallABI(CodeGenModule &CGM,
-+                                            QualType Type) {
++static bool supportsCppCarrierCallABI(CodeGenModule &CGM, QualType Type,
++                                      bool AllowThrowingDestructor) {
 +  const auto &Triple=CGM.getTarget().getTriple();
 +  if (!CGM.getLangOpts().CPlusPlus || Type.isNull() ||
 +      Triple.getArch()!=llvm::Triple::x86_64 || !Triple.isOSLinux() ||
@@ -9069,22 +9069,42 @@ new file mode 100644
 +      Type.isVolatileQualified() || hasObjC3CarrierManagedPayload(Type) ||
 +      !supportsObjC3CarrierCppLocalLifetime(CGM,Type) ||
 +      !hasObjC3CarrierCppPayload(Type)) return false;
-+  auto NoThrow=[&](auto &&Self,QualType T,unsigned Depth)->bool {
-+    if(Depth>64) return false;
-+    if(isa<ObjC3OptionalType,ObjC3ResultType>(T.getCanonicalType().getTypePtr())) {
++  auto Qualify = [&](auto &&Self, QualType T, unsigned Depth,
++                     bool AllowThrowing) -> bool {
++    if (Depth > 64)
++      return false;
++    const auto *Canonical = T.getCanonicalType().getTypePtr();
++    if (isa<ObjC3OptionalType, ObjC3ResultType>(Canonical)) {
++      // Only nested Optional ownership shares the synchronous sret and
++      // caller-owned argument contract. Result arms keep their prior policy.
++      AllowThrowing &= isa<ObjC3OptionalType>(Canonical);
 +      auto Info=CGM.getContext().getObjC3CarrierRepresentationType(T);
 +      if(Info.State!=ObjC3CarrierRepresentationInfo::Status::Materialized)return false;
 +      for(const auto *Field:{Info.ValueField,Info.SuccessField,Info.ErrorField})
-+        if(Field && !Self(Self,Field->getType(),Depth+1))return false;
++        if (Field && !Self(Self, Field->getType(), Depth + 1, AllowThrowing))
++          return false;
 +    } else if(const auto *RD=T->getAsCXXRecordDecl();RD && RD->hasNonTrivialDestructor()) {
 +      const auto *Dtor=RD->getDestructor();
 +      const auto *Prototype = Dtor ? Dtor->getType()->getAs<FunctionProtoType>() : nullptr;
 +      return Prototype && !isUnresolvedExceptionSpec(Prototype->getExceptionSpecType()) &&
-+             Prototype->isNothrow();
++             (Prototype->isNothrow() ||
++              (AllowThrowing && !RD->canPassInRegisters()));
 +    }
 +    return true;
 +  };
-+  return NoThrow(NoThrow,Type,0);
++  return Qualify(Qualify, Type, 0, AllowThrowingDestructor);
++}
++
++bool CodeGen::supportsObjC3CarrierCppNothrowCallABI(CodeGenModule &CGM,
++                                                   QualType Type) {
++  return supportsCppCarrierCallABI(CGM, Type, false);
++}
++
++bool CodeGen::supportsObjC3CarrierCppCallABI(CodeGenModule &CGM, QualType Type) {
++  const bool NativeOptional = !Type.isNull() &&
++      isa<ObjC3OptionalType>(Type.getCanonicalType().getTypePtr()) &&
++      CGM.getLangOpts().CXXExceptions;
++  return supportsCppCarrierCallABI(CGM, Type, NativeOptional);
 +}
 +
 +bool CodeGen::supportsObjC3OwnedCarrierCallABI(CodeGenModule &CGM,QualType Type) {
@@ -9094,6 +9114,9 @@ new file mode 100644
 +
 +bool CodeGen::supportsObjC3CarrierRuntimeCallABI(CodeGenModule &CGM,
 +                                               QualType CarrierType) {
++  if (supportsObjC3CarrierCppCallABI(CGM, CarrierType) &&
++      !supportsObjC3CarrierCppNothrowCallABI(CGM, CarrierType))
++    return false;
 +  std::string Encoding;
 +  return supportsObjC3OwnedCarrierCallABI(CGM, CarrierType) &&
 +         getObjC3CarrierRuntimeEncoding(CGM.getContext(), CarrierType, Encoding);
@@ -9563,10 +9586,9 @@ new file mode 100644
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.h b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
 new file mode 100644
-index 000000000..fc638aef7
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,94 @@
 +//===--- CGObjC3ArcCarriers.h - ARC local carrier adapter ------*- C++ -*-===//
 +// Staged private adapter; no source ABI or capability promotion.
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ARCCARRIERS_H
@@ -9597,6 +9619,7 @@ index 000000000..fc638aef7
 +                                   Address Storage, bool IsARC);
 +bool supportsObjC3CarrierARCCallABI(CodeGenModule &CGM, QualType CarrierType);
 +bool supportsObjC3CarrierCppCallABI(CodeGenModule &CGM, QualType CarrierType);
++bool supportsObjC3CarrierCppNothrowCallABI(CodeGenModule &CGM, QualType CarrierType);
 +bool supportsObjC3OwnedCarrierCallABI(CodeGenModule &CGM, QualType CarrierType);
 +bool supportsObjC3CarrierRuntimeCallABI(CodeGenModule &CGM, QualType CarrierType);
 +/// Construct fresh, owned value storage for a local, argument or return slot.
@@ -9662,10 +9685,9 @@ index 000000000..fc638aef7
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..e5a023bb7
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1448 @@
+@@ -0,0 +1,1453 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -10864,6 +10886,11 @@ index 000000000..e5a023bb7
 +    if (Found.isNull())
 +      return false;
 +
++    if ((FPT->getObjC3FunctionEffects().Async ||
++         FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None) &&
++        supportsObjC3CarrierCppCallABI(CGM, T) &&
++        !supportsObjC3CarrierCppNothrowCallABI(CGM, T))
++      return Diagnose(T);
 +    QualType Projection;
 +    if (getObjC3CarrierABIProjectionType(CGM, T, Projection))
 +      return false;
@@ -12505,7 +12532,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,1030 @@
+@@ -0,0 +1,1034 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12654,7 +12681,7 @@ new file mode 100644
 +
 +bool supportsCheckedResult(CodeGenModule &CGM, QualType Type,
 +                           bool AllowThrowingDestructor) {
-+  if (supportsObjC3CarrierCppCallABI(CGM, Type) ||
++  if (supportsObjC3CarrierCppNothrowCallABI(CGM, Type) ||
 +      supportsObjC3MixedCarrierCallABI(CGM, Type))
 +    return true;
 +  if (!CGM.getLangOpts().CPlusPlus || Type.isNull() ||
@@ -12896,7 +12923,7 @@ new file mode 100644
 +          Context.hasSameUnqualifiedType(Cast->getType(),Cast->getSubExpr()->getType()))
 +        return Self(Self,Cast->getSubExpr());
 +      const bool EmptyOptional=isa<ObjC3OptionalType>(Base.getTypePtr()) &&
-+          supportsObjC3CarrierCppCallABI(CGM,Base);
++          supportsObjC3CarrierCppNothrowCallABI(CGM,Base);
 +      if(isa<ImplicitValueInitExpr,CXXScalarValueInitExpr>(Value))return EmptyOptional;
 +      if (const auto *List = dyn_cast<InitListExpr>(Value)) {
 +        for (const auto *Element : List->inits()) if (!Self(Self, Element)) return false;
@@ -12917,8 +12944,12 @@ new file mode 100644
 +        // Reference-valued suspension results remain aliases and cannot acquire
 +        // this provisional temporary owner.
 +        return true;
-+      if (isa<CallExpr,ObjCMessageExpr>(Value) &&
-+          (supportsObjC3CarrierCppCallABI(CGM,Base) || supportsObjC3MixedCarrierCallABI(CGM,Base)))return true;
++      if (isa<CallExpr, ObjCMessageExpr>(Value) &&
++          ((isa<ObjCMessageExpr>(Value)
++                ? supportsObjC3CarrierCppNothrowCallABI(CGM, Base)
++                : supportsObjC3CarrierCppCallABI(CGM, Base)) ||
++           supportsObjC3MixedCarrierCallABI(CGM, Base)))
++        return true;
 +      if (const auto *Try = dyn_cast<ObjC3TryExpr>(Value)) {
 +        if (Try->getKind() == ObjC3TryExpr::Kind::Optionalize) {
 +          if (NothrowPayload)
@@ -12927,7 +12958,7 @@ new file mode 100644
 +          return Signature && !Signature->getObjC3FunctionEffects().Async &&
 +                 supportsObjC3CheckedCppResult(CGM, Try->getOperand()->getType());
 +        }
-+        return (supportsObjC3CarrierCppCallABI(CGM, Base) ||
++        return (supportsObjC3CarrierCppNothrowCallABI(CGM, Base) ||
 +                supportsObjC3MixedCarrierCallABI(CGM, Base)) &&
 +               Context.hasSameUnqualifiedType(Try->getOperand()->getType(), Base);
 +      }
@@ -13440,7 +13471,7 @@ new file mode 100644
 +    // these casts would leak +1 results or miss return-value ownership.
 +    if (AggregateOperand) {
 +      const auto SavedInit=CGF.getObjC3CarrierLocalInitState();
-+      const bool CppCarrier=NativeCpp && (supportsObjC3CarrierCppCallABI(CGF.CGM,E.getOperand()->getType()) ||
++      const bool CppCarrier=NativeCpp && (supportsObjC3CarrierCppNothrowCallABI(CGF.CGM,E.getOperand()->getType()) ||
 +          supportsObjC3MixedCarrierCallABI(CGF.CGM,E.getOperand()->getType()));
 +      auto SetPayload=[&](Address Storage) {
 +        if(CppCarrier)CGF.setObjC3CarrierLocalInitState({Storage,E.getOperand()->getType().getCanonicalType().getUnqualifiedType(),Address::invalid()});
@@ -26864,13 +26895,14 @@ diff --git a/clang/lib/CodeGen/CGExprCXX.cpp b/clang/lib/CodeGen/CGExprCXX.cpp
 index 1769ab00e..7e388914c 100644
 --- a/clang/lib/CodeGen/CGExprCXX.cpp
 +++ b/clang/lib/CodeGen/CGExprCXX.cpp
-@@ -13,18 +13,71 @@
+@@ -13,18 +13,72 @@
  #include "CGCUDARuntime.h"
  #include "CGCXXABI.h"
  #include "CGDebugInfo.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3TypedErrors.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3MixedCarriers.h"
  #include "CGObjCRuntime.h"
  #include "CodeGenFunction.h"
  #include "ConstantEmitter.h"
@@ -26936,13 +26968,15 @@ index 1769ab00e..7e388914c 100644
  struct MemberCallInfo {
    RequiredArgs ReqArgs;
    // Number of prefix arguments for the call. Ignores the `this` pointer.
-@@ -128,6 +181,18 @@ RValue CodeGenFunction::EmitCXXDestructorCall(
+@@ -128,6 +182,20 @@ RValue CodeGenFunction::EmitCXXDestructorCall(
  RValue
  CodeGenFunction::EmitCXXPseudoDestructorExpr(const CXXPseudoDestructorExpr *E) {
    QualType DestroyedType = E->getDestroyedType();
 +  if(DestroyedType.isDestructedType()==QualType::DK_objc3_carrier) {
 +    QualType ObjectType=E->isArrow() ? E->getBase()->getType()->getPointeeType() : E->getBase()->getType();
-+    if(!supportsObjC3OwnedCarrierCallABI(CGM,ObjectType)) {
++    if(!supportsObjC3CarrierARCCallABI(CGM,ObjectType) &&
++       !supportsObjC3CarrierCppNothrowCallABI(CGM,ObjectType) &&
++       !supportsObjC3MixedCarrierCallABI(CGM,ObjectType)) {
 +      diagnoseUnsupportedObjC3CarrierOperation(CGM,E->getExprLoc(),DestroyedType,
 +          "nontrivial carrier explicit destruction");
 +      return RValue::get(nullptr);
@@ -26955,20 +26989,20 @@ index 1769ab00e..7e388914c 100644
    if (DestroyedType.hasStrongOrWeakObjCLifetime()) {
      // Automatic Reference Counting:
      //   If the pseudo-expression names a retainable object with weak or
-@@ -981,6 +1046,12 @@ static llvm::Value *EmitCXXNewAllocSize(CodeGenFunction &CGF,
+@@ -981,6 +1049,12 @@ static llvm::Value *EmitCXXNewAllocSize(CodeGenFunction &CGF,
  static void StoreAnyExprIntoOneUnit(CodeGenFunction &CGF, const Expr *Init,
                                      QualType AllocType, Address NewPtr,
                                      AggValueSlot::Overlap_t MayOverlap) {
 +  // Establish selected-payload initialization before the generic aggregate
 +  // emitter can treat a nontrivial carrier as an unqualified destination.
-+  if(supportsObjC3CarrierCppCallABI(CGF.CGM,AllocType)) {
++  if(supportsObjC3CarrierCppNothrowCallABI(CGF.CGM,AllocType)) {
 +    emitObjC3CarrierCppValueInit(CGF,Init,NewPtr);
 +    return;
 +  }
    // FIXME: Refactor with EmitExprAsInit.
    switch (CGF.getEvaluationKind(AllocType)) {
    case TEK_Scalar:
-@@ -1511,6 +1582,10 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+@@ -1511,6 +1585,10 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
                                    llvm::Value *AllocSize, CharUnits AllocAlign,
                                    const CallArgList &NewArgs) {
    unsigned NumNonPlacementArgs = E->getNumImplicitArgs();
@@ -26979,7 +27013,7 @@ index 1769ab00e..7e388914c 100644
  
    // If we're not inside a conditional branch, then the cleanup will
    // dominate and we can do the easier (and more efficient) thing.
-@@ -1525,7 +1600,7 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+@@ -1525,7 +1603,7 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
      typedef CallDeleteDuringNew<DirectCleanupTraits> DirectCleanup;
  
      DirectCleanup *Cleanup = CGF.EHStack.pushCleanupWithExtra<DirectCleanup>(
@@ -26988,7 +27022,7 @@ index 1769ab00e..7e388914c 100644
          TypeIdentity, NewPtr.emitRawPointer(CGF), AllocSize,
          E->implicitAllocationParameters(), AllocAlign);
      for (unsigned I = 0, N = E->getNumPlacementArgs(); I != N; ++I) {
-@@ -1554,7 +1629,7 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+@@ -1554,7 +1632,7 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
  
    ConditionalCleanup *Cleanup =
        CGF.EHStack.pushCleanupWithExtra<ConditionalCleanup>(
@@ -26997,14 +27031,14 @@ index 1769ab00e..7e388914c 100644
            SavedTypeIdentity, SavedNewPtr, SavedAllocSize,
            E->implicitAllocationParameters(), AllocAlign);
    for (unsigned I = 0, N = E->getNumPlacementArgs(); I != N; ++I) {
-@@ -1569,6 +1644,20 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+@@ -1569,6 +1647,20 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
  llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
    // The element type being allocated.
    QualType allocType = getContext().getBaseElementType(E->getAllocatedType());
 +  // Reject before evaluating allocation, placement arguments or initializer.
 +  // In particular, value/default initialization must not overwrite a live
 +  // nontrivial carrier through the generic zero-initialization fast path.
-+  bool QualifiedCppCarrier=supportsObjC3CarrierCppCallABI(CGM,allocType) &&
++  bool QualifiedCppCarrier=supportsObjC3CarrierCppNothrowCallABI(CGM,allocType) &&
 +      E->hasInitializer() && isObjC3ConstructedCppResultInitializer(CGM,E->getInitializer());
 +  // Value-initialized Optional storage has an explicit empty state. The
 +  // source initializer classifier checks every selected arm and array filler;
@@ -27018,7 +27052,7 @@ index 1769ab00e..7e388914c 100644
  
    // 1. Build a call to the allocation function.
    FunctionDecl *allocator = E->getOperatorNew();
-@@ -1598,6 +1687,31 @@ llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
+@@ -1598,6 +1690,31 @@ llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
        *this, E, minElements, numElements, allocSizeWithoutCookie);
    CharUnits allocAlign = getContext().getTypeAlignInChars(allocType);
  
@@ -27050,7 +27084,7 @@ index 1769ab00e..7e388914c 100644
    // Emit the allocation call.  If the allocator is a global placement
    // operator, just "inline" it directly.
    Address allocation = Address::invalid();
-@@ -1807,6 +1921,15 @@ llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
+@@ -1807,6 +1924,15 @@ llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
      resultPtr = PHI;
    }
  
@@ -27066,7 +27100,7 @@ index 1769ab00e..7e388914c 100644
    return resultPtr;
  }
  
-@@ -1999,6 +2122,12 @@ static bool EmitObjectDelete(CodeGenFunction &CGF, const CXXDeleteExpr *DE,
+@@ -1999,6 +2125,12 @@ static bool EmitObjectDelete(CodeGenFunction &CGF, const CXXDeleteExpr *DE,
      CGF.EmitCXXDestructorCall(Dtor, Dtor_Complete,
                                /*ForVirtualBase=*/false,
                                /*Delegating=*/false, Ptr, ElementType);
@@ -27079,11 +27113,11 @@ index 1769ab00e..7e388914c 100644
    else if (auto Lifetime = ElementType.getObjCLifetime()) {
      switch (Lifetime) {
      case Qualifiers::OCL_None:
-@@ -2092,6 +2221,11 @@ static void EmitArrayDelete(CodeGenFunction &CGF, const CXXDeleteExpr *E,
+@@ -2092,6 +2224,11 @@ static void EmitArrayDelete(CodeGenFunction &CGF, const CXXDeleteExpr *E,
  }
  
  void CodeGenFunction::EmitCXXDeleteExpr(const CXXDeleteExpr *E) {
-+  if (!supportsObjC3CarrierCppCallABI(CGM,getContext().getBaseElementType(E->getDestroyedType())) &&
++  if (!supportsObjC3CarrierCppNothrowCallABI(CGM,getContext().getBaseElementType(E->getDestroyedType())) &&
 +      diagnoseUnqualifiedCarrierDynamicStorage(
 +          CGM, E->getDestroyedType(), E->getExprLoc(),
 +          "nontrivial carrier dynamic destruction"))
@@ -38062,3 +38096,51 @@ new file mode 100644
 +// CHECK-LABEL: define{{.*}} void @_Z6caller
 +// CHECK: call swiftcc void @_Z10incomplete{{.*}}sret([0 x i8])
 +void caller(Opaque *out){incomplete(out);}
+diff --git a/clang/test/ObjC3/CodeGen/native-cpp-optional-transport-boundaries.mm b/clang/test/ObjC3/CodeGen/native-cpp-optional-transport-boundaries.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-cpp-optional-transport-boundaries.mm
+@@ -0,0 +1,43 @@
++// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=1 -emit-llvm-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=2 -emit-llvm-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=3 -emit-llvm-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=4 -emit-llvm-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=5 -emit-llvm-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=6 -emit-llvm-only -verify %s
++
++#include "Inputs/native-c-async-frame.h"
++@protocol Error @end
++
++struct Owner {
++  int value;
++  Owner(int);
++  Owner(const Owner &);
++  ~Owner() noexcept(false);
++};
++using Maybe = __objc3_optional(Owner);
++Maybe make();
++
++#if CASE == 1
++Maybe asynchronous() __objc3_async_frame { return make(); } // expected-error {{by-value call ABI}}
++#elif CASE == 2
++Maybe checked() __objc3_throws(id<Error>) { return make(); } // expected-error {{ObjC3 async/throws callable ABI lowering}}
++#elif CASE == 3
++struct [[clang::trivial_abi]] RegisterOwner {
++  int value;
++  RegisterOwner(int);
++  ~RegisterOwner() noexcept(false);
++};
++using RegisterOptional = __objc3_optional(RegisterOwner);
++RegisterOptional register_owner() { return __objc3_none(RegisterOwner); } // expected-error {{by-value call ABI}}
++#elif CASE == 4
++typedef Maybe (^BlockEntry)(void);
++Maybe invoke(BlockEntry entry) { return entry(); } // expected-error {{runtime callable type encoding}}
++#elif CASE == 5
++@protocol OwnerTrait
++- (Maybe)owner; // expected-error {{by-value call ABI}}
++@end
++Maybe message_call(id<OwnerTrait> source) { return [source owner]; }
++#elif CASE == 6
++using ResultOwner = __objc3_result(Owner, int);
++ResultOwner result_owner() { return __objc3_ok(Owner, int, Owner(1)); } // expected-error {{by-value call ABI}}
++#endif

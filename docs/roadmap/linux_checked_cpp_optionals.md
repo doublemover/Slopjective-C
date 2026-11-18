@@ -61,3 +61,18 @@ They check discard timing, comma evaluation, conditional selection, array
 rollback, catch identity and static/thread-local retry and teardown. Four IR
 controls cover static and thread-local compilation. Nonlocal Optional
 call transport and async value operations retain their existing ABI limits.
+
+Source 2.255 / System 2.181 adds synchronous native Linux by-value arguments
+and indirect returns for C++ Optional payloads with potentially throwing
+destructors. The caller owns each argument snapshot. The callee holds a
+provisional result until its full-expression cleanup succeeds, including
+when a temporary destructor throws after constructing the result. Some
+destroys its active payload once. None does not start a payload lifetime.
+
+Four source-free C++20/C++23 and ARC/MRC clients exercise returned Some
+and None, by-value copies and moves, throwing copy construction, late
+return failure, argument-list rollback, and both normal and exceptional
+caller cleanup. Eight separate-TU x86-64 runs cover these paths at O0 and
+O2. AArch64 IR checks confirm indirect result and argument projection.
+Compiler controls keep checked, async, Objective-C message, Block,
+register-payload, Result, and unqualified dynamic edges gated.

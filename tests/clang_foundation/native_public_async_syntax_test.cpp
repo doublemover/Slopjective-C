@@ -845,6 +845,186 @@ int main() {
             << standard << (arc ? " ARC\n" : " MRC\n");
 }
 
+void CheckOptionalTransport(const std::string &standard, bool arc) {
+  llvm::SmallString<128> temporary;
+  Require(!llvm::sys::fs::createUniqueDirectory("objc3-optional-transport", temporary),
+          "temporary directory failed");
+  const fs::path root(temporary.c_str());
+  struct Cleanup { fs::path path; ~Cleanup() { fs::remove_all(path); } } cleanup{root};
+  const auto provider_path = root / "transport-provider.mm";
+  Write(provider_path, R"(
+struct TransportError { int code; };
+struct TransportOwner {
+  int value;
+  int role;
+  TransportOwner(int value, int role = 0);
+  TransportOwner(const TransportOwner &);
+  TransportOwner(TransportOwner &&);
+  ~TransportOwner() noexcept(false);
+};
+using MaybeTransportOwner = __objc3_optional(TransportOwner);
+int transport_live();
+int transport_destroyed();
+int transport_copied();
+int transport_moved();
+int transport_consumed();
+MaybeTransportOwner transport_make(int mode);
+MaybeTransportOwner transport_relay(int mode);
+void transport_consume(MaybeTransportOwner value, int value_mode);
+void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second);
+static int live, destroyed, copied, moved, consumed;
+TransportOwner::TransportOwner(int value, int role) : value(value), role(role) {
+  if (role == 4 || (role == 5 && live)) throw TransportError{34};
+  ++live;
+}
+TransportOwner::TransportOwner(const TransportOwner &other)
+    : value(other.value), role(other.role) {
+  if (role == 3) throw TransportError{33};
+  ++live;
+  ++copied;
+}
+TransportOwner::TransportOwner(TransportOwner &&other)
+    : value(other.value), role(other.role) {
+  other.role = 0;
+  ++live;
+  ++moved;
+}
+TransportOwner::~TransportOwner() noexcept(false) {
+  --live;
+  ++destroyed;
+  if (role == 1) throw TransportError{31};
+}
+struct ReturnCleanup {
+  int mode;
+  int owner_value(int value) const { return value; }
+  ~ReturnCleanup() noexcept(false) {
+    if (mode == 2) throw TransportError{32};
+  }
+};
+int transport_live() { return live; }
+int transport_destroyed() { return destroyed; }
+int transport_copied() { return copied; }
+int transport_moved() { return moved; }
+int transport_consumed() { return consumed; }
+
+MaybeTransportOwner transport_make(int mode) {
+  if (mode < 0) return __objc3_none(TransportOwner);
+  return __objc3_some(TransportOwner,
+      TransportOwner(ReturnCleanup{mode}.owner_value(42), mode));
+}
+MaybeTransportOwner transport_relay(int mode) {
+  return transport_make(mode);
+}
+void transport_consume(MaybeTransportOwner value, int mode) {
+  ++consumed;
+  if (__objc3_has_value(value) != (mode >= 0)) __builtin_trap();
+  if (mode == 2) throw TransportError{38};
+}
+void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second) {
+  if (__objc3_has_value(first) || __objc3_has_value(second)) __builtin_trap();
+}
+)");
+  CompileRequest provider;
+  provider.input_path = provider_path.string();
+  provider.language = BaseLanguage::ObjectiveCxx;
+  provider.objc3 = true;
+  provider.arc = arc;
+  provider.objc_runtime = "gnustep-2.2";
+  provider.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
+  provider.arguments = {"-std=" + standard, "-O2", "-fblocks", "-fexceptions",
+                        "-fobjc-exceptions", "-UNDEBUG"};
+  provider.emit = EmitKind::Object;
+  provider.output_path = (root / "transport-provider.o").string();
+  provider.emit_semantic_interface = true;
+  provider.module_name = "test.OptionalTransport";
+  provider.package_identity = "optional-transport-v1";
+  provider.interface_exports = {"TransportError", "TransportOwner",
+      "MaybeTransportOwner", "transport_live", "transport_destroyed",
+      "transport_copied", "transport_moved", "transport_consumed",
+      "transport_make", "transport_relay", "transport_consume", "transport_pair"};
+  const auto published = Compile(provider);
+  Compiled(published);
+  Require(published.interface_artifact && published.interface_artifact->success,
+          "Optional transport interface missing");
+  const auto &artifact = *published.interface_artifact;
+  const auto interface = root / "transport.objc3i";
+  Write(interface, artifact.source_bytes);
+  Write(interface.string() + ".json", artifact.sidecar_json);
+  Require(fs::remove(provider_path), "Optional transport provider source removal failed");
+
+  CompileRequest consumer = provider;
+  consumer.input_path = (root / "transport-client.mm").string();
+  consumer.output_path = (root / "transport-client.o").string();
+  consumer.emit_semantic_interface = false;
+  consumer.module_name.clear();
+  consumer.package_identity.clear();
+  consumer.interface_exports.clear();
+  InterfaceImportInput input;
+  input.source_path = interface.string();
+  input.sidecar_path = interface.string() + ".json";
+  input.locked_identity = artifact.identity;
+  consumer.imported_interfaces = {input};
+  consumer.source_text = R"(
+static void require(bool condition) { if (!condition) __builtin_trap(); }
+static void count(int live, int destroyed, int copied, int moved, int consumed) {
+  require(transport_live() == live && transport_destroyed() == destroyed &&
+          transport_copied() == copied && transport_moved() == moved &&
+          transport_consumed() == consumed);
+}
+int main() {
+  {
+    auto none = transport_relay(-1);
+    transport_consume(none, -1);
+    count(0, 0, 0, 0, 1);
+  }
+  {
+    auto value = transport_relay(0);
+    count(1, 0, 0, 0, 1);
+    transport_consume(value, 0);
+    count(1, 1, 1, 0, 2);
+    transport_consume(static_cast<MaybeTransportOwner &&>(value), 0);
+    count(1, 2, 1, 1, 3);
+  }
+  count(0, 3, 1, 1, 3);
+  try {
+    (void)transport_relay(2);
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 32); }
+  count(0, 4, 1, 1, 3);
+  try {
+    transport_consume(transport_relay(1), 0);
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 31); }
+  count(0, 5, 1, 1, 4);
+  try {
+    transport_consume(transport_relay(0), 2);
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 38); }
+  count(0, 6, 1, 1, 5);
+  try {
+    // Whichever argument is evaluated first acquires the pending owner.
+    transport_pair(transport_relay(5), transport_relay(5));
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 34); }
+  count(0, 7, 1, 1, 5);
+  {
+    auto source = transport_make(3);
+    try {
+      transport_consume(source, 0);
+      __builtin_trap();
+    } catch (const TransportError &error) { require(error.code == 33); }
+    count(1, 7, 1, 1, 5);
+  }
+  count(0, 8, 1, 1, 5);
+}
+)";
+  Compiled(Compile(consumer));
+  LinkAndRun(root, provider.output_path, consumer.output_path);
+  std::cout << "Synchronous Optional transport source-free execution "
+            << standard << (arc ? " ARC\n" : " MRC\n");
+}
+
+
 }
 int main() {
   try {
@@ -853,8 +1033,10 @@ int main() {
         Check(standard, arc);
         CheckCCompletion(standard, arc);
         CheckGeneratedCCompletion(standard, arc);
-        if (standard.starts_with("c++"))
+        if (standard.starts_with("c++")) {
           CheckThrowingDestructor(standard, arc);
+          CheckOptionalTransport(standard, arc);
+        }
       }
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n';

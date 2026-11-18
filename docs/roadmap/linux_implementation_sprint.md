@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.255 / System 2.181 Optional call transport](linux_checked_cpp_optionals.md)
+supports throwing-destructor C++ payloads in synchronous native Linux arguments
+and indirect returns. Source-free consumers verify the caller snapshot and
+provisional result lifetimes through native exception unwinding.
+
 Source 2.254 / System 2.180 indexes the enclosing concurrency scope before
 expanding closed helper bodies. Deep helper chains share a bounded index
 without consuming the slots needed by independent short calls. Storage

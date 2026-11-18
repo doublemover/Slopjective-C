@@ -44,7 +44,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC
           CGM.getTarget().getCXXABI().isItaniumFamily() &&
           !CarrierType.isVolatileQualified() &&
 @@ -426,7 +426,7 @@
-                                             QualType Type) {
+                                       bool AllowThrowingDestructor) {
    const auto &Triple=CGM.getTarget().getTriple();
    if (!CGM.getLangOpts().CPlusPlus || Type.isNull() ||
 -      Triple.getArch()!=llvm::Triple::x86_64 || !Triple.isOSLinux() ||
