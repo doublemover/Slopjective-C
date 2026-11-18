@@ -8,7 +8,7 @@ namespace objc3::clang_foundation {
 struct CompileRequest;
 struct MetaClassExpansion {
   std::vector<MetaExpansion> entries;
-  std::string declarations,implementations,input_model;
+  std::string ivars,declarations,implementations,input_model;
   std::vector<std::string> protocols,request_keys;
 };
 struct MetaCompilation {

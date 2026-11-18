@@ -133,6 +133,12 @@ class MetaConsumer final : public clang::SemaConsumer {
     }
     D->setProtocolList(protocols.data(),protocols.size(),locations.data(),sema_->Context);
   }
+  std::string ivars(clang::ObjCInterfaceDecl *D) {
+    if(state_.collecting || !D)return {};
+    const auto K=key(D);auto found=state_.classes.find(K);
+    if(found==state_.classes.end() || !injected_.insert(K+":ivars").second)return {};
+    return found->second.ivars;
+  }
   std::string members(clang::ObjCContainerDecl *container) {
     if(state_.collecting)return {};
     bool implementation=llvm::isa<clang::ObjCImplementationDecl>(container);
@@ -151,6 +157,7 @@ public:
     sema_=&S;clang::ObjC3MetaCallbacks callbacks;callbacks.Context=this;
     callbacks.Attribute=[](void *p,clang::Sema &,clang::Decl *D,clang::ObjC3MetaAttribute kind,
         llvm::StringRef name,clang::SourceRange range){return static_cast<MetaConsumer *>(p)->attribute(D,kind,name,range);};
+    callbacks.Ivars=[](void *p,clang::Sema &,clang::ObjCInterfaceDecl *D){return static_cast<MetaConsumer *>(p)->ivars(D);};
     callbacks.Interface=[](void *p,clang::Sema &,clang::ObjCInterfaceDecl *D){static_cast<MetaConsumer *>(p)->protocols(D);};
     callbacks.Members=[](void *p,clang::Sema &,clang::ObjCContainerDecl *D){return static_cast<MetaConsumer *>(p)->members(D);};
     clang::setObjC3MetaCallbacks(S,callbacks);
@@ -234,12 +241,17 @@ public:
       auto expansion=ExpandMetaProgram(*package,*entry,target,options,error);
       if(!expansion){fail(R.range.getBegin(),error);continue;}
       auto &out=state_.classes[K];out.input_model=input_model;out.request_keys.push_back(requestIdentity(R));
-      if(out.declarations.size()+out.implementations.size()+expansion->declarations.size()+
-          expansion->implementations.size()>1024*1024) {
+      const auto additional=expansion->ivars.size()+expansion->declarations.size()+
+          expansion->implementations.size()+!expansion->ivars.empty()+
+          !expansion->declarations.empty()+!expansion->implementations.empty();
+      constexpr size_t maxOutput=1024*1024;
+      if(additional>maxOutput || out.ivars.size()+out.declarations.size()+
+          out.implementations.size()>maxOutput-additional) {
         fail(R.range.getBegin(),"combined class expansion exceeds one MiB");continue;
       }
-      out.declarations+=expansion->declarations+"\n";
-      out.implementations+=expansion->implementations+"\n";
+      if(!expansion->ivars.empty())out.ivars+=expansion->ivars+"\n";
+      if(!expansion->declarations.empty())out.declarations+=expansion->declarations+"\n";
+      if(!expansion->implementations.empty())out.implementations+=expansion->implementations+"\n";
       for(auto &P:expansion->protocols)
         if(std::find(out.protocols.begin(),out.protocols.end(),P)==out.protocols.end())out.protocols.push_back(P);
       out.entries.push_back(std::move(*expansion));

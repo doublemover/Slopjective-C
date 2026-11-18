@@ -101,6 +101,9 @@ Property behaviors support concrete class properties with explicit direct/dynami
 accessor contracts and checked actor/executor requirements. Source 2.217 extends
 the original `executor: "none"` subset; see
 [behavior affinity and typed queries](linux_native_meta_behavior_affinity.md).
+Source 2.218 adds optional `ivars` programs and the `objc3.meta.storage.v1` host
+capability for explicit generated instance storage; see
+[generated storage](linux_native_meta_storage.md).
 
 ## Bounds, publication and separate compilation
 

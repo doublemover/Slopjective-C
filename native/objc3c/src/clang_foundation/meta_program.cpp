@@ -133,10 +133,21 @@ class Interpreter {
     clang::LangOptions language; language.CPlusPlus = true; language.CPlusPlus11 = true; language.ObjC = true; language.Digraphs = true; language.Trigraphs = true;
     clang::Lexer lexer(clang::SourceLocation(),language,text.data(),text.data(),text.data()+text.size());
     clang::Token token; bool at = false;
+    std::vector<clang::tok::TokenKind> delimiters;
     for (;;) {
       lexer.LexFromRawLexer(token);
       if (token.is(clang::tok::eof)) break;
       if (!Charge()) return false;
+      const auto kind=token.getKind();
+      if(token.isOneOf(clang::tok::l_paren,clang::tok::l_square,clang::tok::l_brace)) {
+        if(delimiters.size()==128)return Fail("generated delimiter nesting exceeds 128 levels");
+        delimiters.push_back(kind);
+      } else if(token.isOneOf(clang::tok::r_paren,clang::tok::r_square,clang::tok::r_brace)) {
+        const auto expected=kind==clang::tok::r_paren?clang::tok::l_paren:
+            kind==clang::tok::r_square?clang::tok::l_square:clang::tok::l_brace;
+        if(delimiters.empty() || delimiters.back()!=expected)return Fail("generated source has an unmatched delimiter");
+        delimiters.pop_back();
+      }
       if (!token.is(clang::tok::comment)) ++tokens_;
       if (token.is(clang::tok::hash) || token.is(clang::tok::hashhash)) return Fail("generated preprocessing directives are not permitted");
       if (token.is(clang::tok::raw_identifier)) {
@@ -150,7 +161,7 @@ class Interpreter {
       }
       at = token.is(clang::tok::at);
     }
-    return true;
+    return delimiters.empty() || Fail("generated source has an unmatched delimiter");
   }
 public:
   Interpreter(const MetaPackage &package,const MetaEntrypoint &entry,const MetaClass &target,
@@ -159,8 +170,8 @@ public:
   std::optional<MetaExpansion> Execute() {
     MetaExpansion result; result.package_id=package_.id; result.package_version=package_.version;
     result.package_fingerprint=package_.fingerprint; result.entrypoint=entry_.name; result.kind=entry_.kind; result.protocols=entry_.protocols;
-    if (!Run(entry_.declarations,nullptr,result.declarations,0) || !Run(entry_.implementations,nullptr,result.implementations,0) ||
-        !Tokens(result.declarations) || !Tokens(result.implementations)) return std::nullopt;
+    if (!Run(entry_.ivars,nullptr,result.ivars,0) || !Run(entry_.declarations,nullptr,result.declarations,0) || !Run(entry_.implementations,nullptr,result.implementations,0) ||
+        !Tokens(result.ivars) || !Tokens(result.declarations) || !Tokens(result.implementations)) return std::nullopt;
     if (!tokens_ && result.protocols.empty() && entry_.kind != MetaEntryKind::Macro) {
       Fail("program produced no declarations or protocol conformances"); return std::nullopt;
     }

@@ -99,7 +99,7 @@ bool IsPublishedNativeFunctionPolicy(const clang::Attr *attribute) {
 }
 
 bool IsPublishedNativeObjectPolicy(const clang::Attr *attribute) {
-  return llvm::isa<clang::ObjCMethodFamilyAttr,clang::ObjCDesignatedInitializerAttr,clang::ObjCRequiresSuperAttr,
+  return llvm::isa<clang::ObjCDirectMembersAttr,clang::ObjCMethodFamilyAttr,clang::ObjCDesignatedInitializerAttr,clang::ObjCRequiresSuperAttr,
       clang::ObjCSubclassingRestrictedAttr,clang::ObjCRequiresPropertyDefsAttr,
       clang::ObjCExplicitProtocolImplAttr,clang::ObjCNonRuntimeProtocolAttr,
       clang::ObjCBoxableAttr,clang::ObjCPreciseLifetimeAttr,

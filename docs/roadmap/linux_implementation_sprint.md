@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.218 / System 2.144 generated-storage span](linux_native_meta_storage.md)
+materializes explicit native ivars before layout and delivers checked stored
+property behaviors through ordinary source-free class interfaces.
+
 The [Source 2.217 / System 2.143 behavior-affinity span](linux_native_meta_behavior_affinity.md)
 checks generated accessors against native actor/executor contracts and preserves
 typed borrowed/resource query inputs through source-free delivery.

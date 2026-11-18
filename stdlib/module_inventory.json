@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 217,
+        "minor": 218,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Locked native metaprogramming programs synthesize explicit private ivars before layout, append after authored storage, and publish exact expanded layout through source-free interfaces; generated accessors use native direct/dynamic/actor contracts, class-wide direct-member policy is retained, and storage shares bounded work/output/delimiter validation; matching SDK acceptance pending",
         "Native property behaviors validate effective direct/dynamic dispatch and actor/main/global/named executor affinity on declarations and implementations, including inherited contracts; source-free awaited consumers retain native hop lowering and reject unawaited crossings; metaprogramming borrowed/resource predicates preserve typedef type contracts, matching SDK acceptance pending",
         "Closed native C++ field accessors, nested field/getter graphs and qualified/final targets preserve receiver cleanup/resource provenance through scalar copies and reference views; direct field and projected reference writes update bounded aggregate cell sets, with ordinary getters and boolean/status observations retained; matching SDK acceptance pending",
         "Closed member-helper graphs, qualified/final virtual targets and selected pending concrete method-template bodies retain caller scalar/reference/Block/factory origins under shared receiver work/depth/cycle and bounded targeted-instantiation checks; open dispatch, field state, opaque/cyclic bodies and escaping this remain unproved; matching SDK acceptance pending",
@@ -380,12 +381,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 143,
+        "minor": 144,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Locked native metaprogramming programs synthesize explicit private ivars before layout, append after authored storage, and publish exact expanded layout through source-free interfaces; generated accessors use native direct/dynamic/actor contracts, class-wide direct-member policy is retained, and storage shares bounded work/output/delimiter validation; matching SDK acceptance pending",
         "Native property behaviors validate effective direct/dynamic dispatch and actor/main/global/named executor affinity on declarations and implementations, including inherited contracts; source-free awaited consumers retain native hop lowering and reject unawaited crossings; metaprogramming borrowed/resource predicates preserve typedef type contracts, matching SDK acceptance pending",
         "Closed native C++ field accessors, nested field/getter graphs and qualified/final targets preserve receiver cleanup/resource provenance through scalar copies and reference views; direct field and projected reference writes update bounded aggregate cell sets, with ordinary getters and boolean/status observations retained; matching SDK acceptance pending",
         "Closed member-helper graphs, qualified/final virtual targets and selected pending concrete method-template bodies retain caller scalar/reference/Block/factory origins under shared receiver work/depth/cycle and bounded targeted-instantiation checks; open dispatch, field state, opaque/cyclic bodies and escaping this remain unproved; matching SDK acceptance pending",

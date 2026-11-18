@@ -27,6 +27,12 @@ int main(){
  target.name="Odd\"\\\nName";
  auto escaped=ExpandMetaProgram(package,entry,target,{},error);assert(escaped && escaped->implementations.find("Odd\\\"\\\\\\012Name")!=std::string::npos);
  target.name="Counter";
+ entry.ivars={Text("int stored;")};
+ auto storage=ExpandMetaProgram(package,entry,target,{},error);assert(storage && storage->ivars=="int stored;");
+ for(const char *source:{"}","int a[2);","int f; } @public int escaped; {","int a[1;"}) {
+  entry.ivars={Text(source)};assert(!ExpandMetaProgram(package,entry,target,{},error) && error.find("delimiter")!=std::string::npos);
+ }
+ entry.ivars.clear();
  entry.implementations={Text("- (const char *)literal {return \"#include <x> __DATE__ asm\";}")};
  assert(ExpandMetaProgram(package,entry,target,{},error));
  for(const char *source:{"__DATE__","__TIME__ ","__TIMESTAMP__","#include <x>","%:include <x>","asm(\"x\");","_Pragma(\"x\")","@end","@import Bad;","objc_derive(\"Hash\")"}){

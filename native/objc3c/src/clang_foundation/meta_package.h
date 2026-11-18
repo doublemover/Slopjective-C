@@ -28,6 +28,7 @@ struct MetaEntrypoint {
   MetaEntryKind kind = MetaEntryKind::Derive;
   std::vector<std::string> required_capabilities;
   std::vector<std::string> protocols;
+  std::vector<MetaInstruction> ivars;
   std::vector<MetaInstruction> declarations;
   std::vector<MetaInstruction> implementations;
   // Property behaviors must state their dispatch and executor requirements.

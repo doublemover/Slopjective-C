@@ -274,7 +274,7 @@ std::optional<MetaPackage> Package(llvm::json::Object object, std::string &error
   unsigned budget = MaxProgramNodes;
   for (const auto &value : *entries) {
     const auto *entry = value.getAsObject();
-    if (!entry || !Keys(*entry, {"name", "kind", "requires", "protocols", "declarations", "implementations", "dispatch", "executor"}, error)) return std::nullopt;
+    if (!entry || !Keys(*entry, {"name", "kind", "requires", "protocols", "ivars", "declarations", "implementations", "dispatch", "executor"}, error)) return std::nullopt;
     auto name = entry->getString("name"), kind = entry->getString("kind");
     if (!name || !Name(*name) || !kind) { Fail(error, "invalid metaprogramming entrypoint identity"); return std::nullopt; }
     MetaEntrypoint item; item.name = name->str();
@@ -286,7 +286,10 @@ std::optional<MetaPackage> Package(llvm::json::Object object, std::string &error
     if (!Strings(*entry, "requires", item.required_capabilities, error) ||
         !Strings(*entry, "protocols", item.protocols, error, false)) return std::nullopt;
     auto *declarations = entry->getArray("declarations"), *implementations = entry->getArray("implementations");
-    if (!declarations || !implementations || (declarations->empty() && implementations->empty()) ||
+    const auto *ivars=entry->getArray("ivars");
+    if ((entry->get("ivars") && !ivars) || !declarations || !implementations ||
+        (declarations->empty() && implementations->empty() && (!ivars || ivars->empty())) ||
+        (ivars && !Program(*ivars,item.ivars,budget,0,error)) ||
         !Program(*declarations, item.declarations, budget, 0, error) || !Program(*implementations, item.implementations, budget, 0, error)) {
       if (error.empty()) Fail(error, "entrypoint requires a nonempty expansion program"); return std::nullopt;
     }
@@ -383,7 +386,7 @@ std::optional<MetaPackageSet> MetaPackageSet::Load(const std::vector<std::string
     if (!id || !version || !fingerprint || !locked.emplace(id->str(), std::make_pair(version->str(), fingerprint->str())).second) { Fail(error, "invalid/duplicate metaprogramming lock entry"); return std::nullopt; }
   }
   std::sort(result.packages.begin(), result.packages.end(), [](const auto &a, const auto &b){return a.id < b.id;});
-  std::set<std::string> capabilities{"objc3.meta.templates.v1", "objc3.meta.ast-query.v1"};
+  std::set<std::string> capabilities{"objc3.meta.templates.v1", "objc3.meta.ast-query.v1", "objc3.meta.storage.v1"};
   std::string identity = "objc3c.meta.package-set.v1\n";
   for (const auto &package : result.packages) {
     auto found = locked.find(package.id);

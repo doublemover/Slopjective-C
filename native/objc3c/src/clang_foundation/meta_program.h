@@ -24,7 +24,7 @@ struct MetaExpansionContext {
   bool strict = false;
 };
 struct MetaExpansion {
-  std::string declarations, implementations;
+  std::string ivars, declarations, implementations;
   std::vector<std::string> protocols;
   std::string package_id, package_version, package_fingerprint, entrypoint;
   MetaEntryKind kind = MetaEntryKind::Derive;
