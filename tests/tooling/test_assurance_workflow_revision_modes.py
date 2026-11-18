@@ -14,7 +14,7 @@ SHA = 'a' * 40
 CALLED_SHA = 'b' * 40
 
 
-def blocks(path, module):
+def blocks(path, module, operations=('plan', 'run', 'publish', 'verify')):
     source = path.read_text()
     commands = {}
     lines = source.splitlines()
@@ -28,11 +28,38 @@ def blocks(path, module):
                 len(lines[end]) - len(lines[end].lstrip()) > indentation):
             end += 1
         block = textwrap.dedent('\n'.join(lines[index + 1:end]))
-        operations = set(re.findall(
-            r'-m ' + re.escape(module) + r' (plan|run|publish|verify)\b', block))
-        for operation in operations:
+        selected = set(re.findall(
+            r'-m ' + re.escape(module) + r' (' + '|'.join(map(re.escape, operations)) + r')\b', block))
+        for operation in selected:
             commands.setdefault(operation, []).append(block)
     return commands
+
+
+@pytest.mark.parametrize('status', [0, 1, 7, 124])
+def test_retained_coverage_diagnosis_preserves_the_aggregate_exit_status(tmp_path, status):
+    commands = blocks(ROOT / '.github/workflows/native-assurance.yml',
+                      'scripts.objc3c_assurance.coverage_matrix', ('aggregate',))['aggregate']
+    diagnostic = [command for command in commands if 'Retained coverage aggregate' in command]
+    assert len(diagnostic) == 1
+    recorder = tmp_path / 'record.py'
+    recorder.write_text('import json,os,sys\n'
+                        'from pathlib import Path\n'
+                        'Path(os.environ["ARGV_FILE"]).write_text(json.dumps(sys.argv[1:]))\n'
+                        'raise SystemExit(int(os.environ["AGGREGATE_STATUS"]))\n')
+    output = tmp_path / 'argv.json'
+    result = subprocess.run(['bash', '-e', '-o', 'pipefail', '-c',
+        'python3() { "$TEST_PYTHON" "$ARGV_RECORDER" "$@"; }\n' + diagnostic[0]],
+        env={**os.environ, 'TEST_PYTHON': sys.executable, 'ARGV_RECORDER': str(recorder),
+             'ARGV_FILE': str(output), 'AGGREGATE_STATUS': str(status)},
+        capture_output=True, text=True, timeout=15)
+    assert result.returncode == status, result.stdout + result.stderr
+    assert json.loads(output.read_text()) == [
+        '-B', '-m', 'scripts.objc3c_assurance.coverage_matrix', 'aggregate',
+        '--plan', 'out/native-assurance/selection/plan.json',
+        '--producer-root', 'out/coverage-matrix/producer-result',
+        '--partitions-root', 'out/coverage-matrix/partitions',
+        '--output', 'out/native-assurance/results']
+    assert ('::error' if status else '::notice') in result.stdout
 
 
 @pytest.mark.parametrize('module,workflow,operations', [

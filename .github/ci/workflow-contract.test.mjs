@@ -235,6 +235,18 @@ for (const fault of ["missing diagnostics", "conditional diagnostics", "failure 
 test("manual SDK release reuses a passing native archive", () => {
   validateNativeRelease(native, release);
 });
+for (const fault of ["missing exit", "success exit", "status overwritten"]) {
+  test(`retained coverage diagnosis rejects ${fault}`, () => {
+    const owner = yaml.load(native);
+    const step = owner.jobs["diagnostic-coverage-aggregate"].steps.find((step) =>
+      step.run?.includes("scripts.objc3c_assurance.coverage_matrix aggregate"),
+    );
+    const replacement =
+      fault === "missing exit" ? "" : fault === "success exit" ? "exit 0" : "true";
+    step.run = step.run.replace('exit "$status"', replacement);
+    assert.throws(() => validateNativeGate(yaml.dump(owner)), /aggregate exit status/);
+  });
+}
 for (const fault of [
   "diagnosis by default",
   "hidden partial scope",

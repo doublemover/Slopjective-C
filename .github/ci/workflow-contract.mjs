@@ -177,6 +177,11 @@ export function validateNativeGate(text) {
   const coveragePartitions = jobs["coverage-partitions"];
   const coreAggregate = jobs["core-aggregate"];
   const coverageAggregate = jobs["coverage-aggregate"];
+  const retainedAggregate = (jobs["diagnostic-coverage-aggregate"]?.steps ?? []).find((step) =>
+    step.run?.includes("scripts.objc3c_assurance.coverage_matrix aggregate"),
+  );
+  if (!retainedAggregate?.run.trimEnd().endsWith('exit "$status"'))
+    throw new Error("Retained coverage diagnosis must preserve the aggregate exit status");
   const transport = jobs["diagnostic-transport"];
   const foundationBundle = (asanProducer?.steps ?? []).find(
     (step) => step.name === "Preserve exact sanitizer compiler bundle",

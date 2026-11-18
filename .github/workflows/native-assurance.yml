@@ -96,6 +96,7 @@ jobs:
           else
             echo "::error title=Retained coverage aggregate::Exact retained aggregate exited $status"
           fi
+          exit "$status"
 
   diagnostic-transport:
     name: Split existing artifact for bounded download (no compiler execution)

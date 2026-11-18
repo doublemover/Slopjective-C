@@ -28,3 +28,23 @@ current-source SDK/native-host acceptance gates.
 The complete local native-tooling CI command also passes: 1,689 tests,
 155 optional skips and 33 subtests. Remote CI must run again on the committed
 repair; local unit/configuration checks are not an SDK acceptance receipt.
+
+## Subsequent CI audit
+
+The Source 2.238 automatic documentation, native-tooling and workflow-policy jobs
+all pass. The earlier three failing jobs at `d51e62900349` predate the repairs
+above; their missing-helper, native loader fixture, generator, release-policy
+and formatting failures are covered by the maintained controls. A renewed local
+check of the affected helpers, loader/runtime fixtures and native producer/reader
+boundary passes 208 tests, with nine optional native-product skips.
+
+The separate Source 2.153 extended campaign failed in its terminal upstream
+receipt merge after its producers and consumers passed. The
+[terminal-state repair](linux_upstream_evidence_terminal_state.md) is committed;
+that historical run does not qualify the current compiler.
+
+The retained coverage diagnostic now returns the aggregate command's actual exit
+status after printing its annotation. Previously its final `echo` made a failed
+aggregate appear successful. Four executable shell controls preserve success,
+ordinary failures and timeout exit codes; workflow-policy mutations reject a
+missing or overwritten exit status. No archive is promoted by a diagnostic run.
