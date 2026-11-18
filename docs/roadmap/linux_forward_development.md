@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.227 / System 2.153 callable-value span](linux_native_callable_value_projections.md)
+preserves captured and parameter-derived loans through pure native lambda graphs,
+tracks receiver writes/escapes and keeps independent observations usable.
+
 The [Source 2.226 / System 2.152 backend and reader span](linux_native_backend_and_reader_consistency.md)
 registers the SDK's configured generators, routes native integration to its host,
 repairs named record publication and keeps positive reader tests current.
@@ -253,7 +257,7 @@ matching SDK consolidation follows the implementation batch.
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
 campaign as historical evidence. Its terminal upstream receipt-state bug is
 fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
-Source 2.226 / System 2.152 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.227 / System 2.153 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2116,7 +2120,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.226 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.227 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 

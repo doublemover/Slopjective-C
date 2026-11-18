@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.227 / System 2.153 callable-value span](linux_native_callable_value_projections.md)
+preserves captured and parameter-derived loans through pure native lambda graphs,
+tracks receiver writes/escapes and keeps independent observations usable.
+
 The [Source 2.226 / System 2.152 backend and reader span](linux_native_backend_and_reader_consistency.md)
 registers the SDK's configured generators, routes native integration to its host,
 repairs named record publication and keeps positive reader tests current.

@@ -53738,7 +53738,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3592 @@
+@@ -0,0 +1,3769 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54038,13 +54038,15 @@ new file mode 100644
 +  if(!Function)return false;
 +  const auto *Method=dyn_cast<CXXMethodDecl>(Function);
 +  if(!Method)return true;
-+  if(Method->isOverloadedOperator() || Method->isExplicitObjectMemberFunction())return false;
 +  const auto *Member=dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts());
++  const bool LambdaOperator=Method->isOverloadedOperator() && Method->getParent()->isLambda();
++  if((Method->isOverloadedOperator() && !LambdaOperator) || Method->isExplicitObjectMemberFunction())return false;
 +  if(Member && Member->getBase()->HasSideEffects(Context))return false;
++  if(LambdaOperator && !Method->isStatic() && isa<CXXOperatorCallExpr>(Call) && (!Call->getNumArgs() || Call->getArg(0)->HasSideEffects(Context)))return false;
 +  if(Method->isStatic())return true;
 +  // A qualified call suppresses virtual dispatch. Otherwise the selected
 +  // method or its declaring class must be final before its body is a proof.
-+  if(!Member || (Method->isVirtual() && !Member->hasQualifier() &&
++  if((!Member && !LambdaOperator) || (Method->isVirtual() && (!Member || !Member->hasQualifier()) &&
 +      !Method->hasAttr<FinalAttr>() && !Method->getParent()->hasAttr<FinalAttr>()))return false;
 +  const auto *Definition=Method->getDefinition();
 +  if(!Definition)if(const auto *Pattern=Method->getTemplateInstantiationPattern())
@@ -54108,6 +54110,8 @@ new file mode 100644
 +  bool Borrowed;
 +  bool Pointer;
 +  bool StorageAddress;
++  SmallVector<const Expr *,4> ValueSources={};
++  SmallVector<const VarDecl *,4> ReceiverBindings={};
 +};
 +std::optional<FieldProjection> fieldProjectionImpl(const CallExpr *Call,ASTContext &Context,
 +    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active,Sema *Actions) {
@@ -54142,7 +54146,10 @@ new file mode 100644
 +    const auto *Body=Pattern && !Pattern->isLateTemplateParsed()?dyn_cast_or_null<CompoundStmt>(Pattern->getBody()):nullptr;
 +    const auto *Return=Body && Body->size()==1?dyn_cast<ReturnStmt>(*Body->body_begin()):nullptr;
 +    const auto *Value=Return && Return->getRetValue()?Return->getRetValue()->IgnoreParenImpCasts():nullptr;
-+    if(Value && isa<MemberExpr,ArraySubscriptExpr,CXXDependentScopeMemberExpr,CallExpr,BinaryOperator,UnaryOperator,AbstractConditionalOperator>(Value) &&
++    bool ScalarGraph=Method->getParent()->isLambda() && Body && Body->size()<=16;
++    if(ScalarGraph)for(const auto *Statement:Body->body())
++      ScalarGraph &= isa<ReturnStmt,IfStmt,DeclStmt,CompoundStmt>(Statement);
++    if((ScalarGraph || (Value && isa<DeclRefExpr,MemberExpr,ArraySubscriptExpr,CXXDependentScopeMemberExpr,CallExpr,BinaryOperator,UnaryOperator,AbstractConditionalOperator>(Value))) &&
 +        Pattern->isInlined() && !Pattern->isInvalidDecl()) {
 +      Work-=16;
 +      Actions->InstantiateFunctionDefinition(Call->getExprLoc(),const_cast<CXXMethodDecl *>(Method),false,false);
@@ -54160,8 +54167,8 @@ new file mode 100644
 +      !Type || Type->getObjC3FunctionEffects().Async ||
 +      Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None)return std::nullopt;
 +  const auto *Body=dyn_cast<CompoundStmt>(Definition->getBody());
-+  if(!Body || Body->size()!=1)return std::nullopt;
-+  const auto *Return=dyn_cast<ReturnStmt>(*Body->body_begin());
++  if(!Body)return std::nullopt;
++  const auto *Return=Body->size()==1?dyn_cast<ReturnStmt>(*Body->body_begin()):nullptr;
 +  const auto *Value=Return?Return->getRetValue():nullptr;
 +  bool Managed=false;
 +  auto Path=[&](const Expr *E) {
@@ -54289,7 +54296,117 @@ new file mode 100644
 +    }
 +    return Observe(Observe,E,Level+1)?std::optional<FieldReturn>({false,false,false}):std::nullopt;
 +  };
-+  auto Result=Resolve(Resolve,Value,0);if(!Result)return std::nullopt;
++  auto Result=Value?Resolve(Resolve,Value,0):std::nullopt;
++  if(!Result) {
++    const auto *Closure=Method->getParent();
++    const auto ResultType=Call->getType();
++    if(!Closure->isLambda() || Call->isGLValue() ||
++        !ResultType->isScalarType() || ResultType->isObjCRetainableType() ||
++        isObjC3NSObjectStorageType(ResultType) || Closure->capture_size()>32)return std::nullopt;
++    SmallVector<const VarDecl *,4> Bindings;
++    llvm::SmallPtrSet<const VarDecl *,16> BindingActive;
++    auto KnownReceiver=[&](auto &&Self,const Expr *E,unsigned Level)->bool {
++      if(!E || !Work || Level>32)return false;--Work;E=E->IgnoreParenImpCasts();
++      if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(E))return Self(Self,Cleanup->getSubExpr(),Level+1);
++      if(const auto *Temporary=dyn_cast<MaterializeTemporaryExpr>(E))return Self(Self,Temporary->getSubExpr(),Level+1);
++      if(const auto *Lambda=dyn_cast<LambdaExpr>(E))return Lambda->getLambdaClass()->getCanonicalDecl()==Closure->getCanonicalDecl();
++      if(const auto *Construct=dyn_cast<CXXConstructExpr>(E))
++        return Construct->getConstructor()->isCopyOrMoveConstructor() &&
++            !Construct->getConstructor()->isUserProvided() && Construct->getNumArgs()==1 &&
++            Self(Self,Construct->getArg(0),Level+1);
++      if(const auto *Call=dyn_cast<CallExpr>(E);Call && standardReferenceView(Call))
++        return Self(Self,Call->getArg(0),Level+1);
++      const auto *Reference=dyn_cast<DeclRefExpr>(E);
++      const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
++      if(!Variable || !Variable->hasInit() || Variable->getType().isVolatileQualified() ||
++          (!Variable->hasLocalStorage() && !Variable->getType().isConstQualified()) ||
++          !BindingActive.insert(Variable->getCanonicalDecl()).second)return false;
++      auto Leave=llvm::scope_exit([&]{BindingActive.erase(Variable->getCanonicalDecl());});
++      if(!llvm::is_contained(Bindings,Variable->getCanonicalDecl()))Bindings.push_back(Variable->getCanonicalDecl());
++      return Self(Self,Variable->getInit(),Level+1);
++    };
++    if(Arrow || !KnownReceiver(KnownReceiver,Receiver,0))return std::nullopt;
++    llvm::SmallPtrSet<const VarDecl *,16> LocalAliases;
++    auto ScalarSource=[&](const ValueDecl *Declaration)->bool {
++      const auto *Variable=dyn_cast_or_null<VarDecl>(Declaration);
++      if(!Variable)return isa_and_nonnull<EnumConstantDecl,FunctionDecl>(Declaration);
++      auto Type=Variable->getType();
++      if(!Type->isScalarType() || Type->isObjCRetainableType() ||
++          isObjC3NSObjectStorageType(Type) || Type.isVolatileQualified() ||
++          Type->isAtomicType() || Variable->hasAttr<BlocksAttr>())return false;
++      if(LocalAliases.contains(Variable->getCanonicalDecl()))return true;
++      if(Variable->hasGlobalStorage())return Type.isConstQualified();
++      for(const auto &Capture:Closure->captures()) {
++        if(!Work)return false;--Work;
++        if(Capture.capturesVariable() && Capture.getCapturedVar()->getCanonicalDecl()==Variable->getCanonicalDecl())
++          return Capture.getCaptureKind()==LCK_ByCopy;
++      }
++      return false;
++    };
++    auto Pure=[&](const Expr *Value)->bool {
++      if(!Value || Value->HasSideEffects(Context))return false;
++      SmallVector<const Expr *,16> Pending{Value};
++    while(!Pending.empty()) {
++      if(!Work)return false;--Work;
++      const auto *E=Pending.pop_back_val()->IgnoreParens();
++      if(const auto *Reference=dyn_cast<DeclRefExpr>(E)) {
++        if(!ScalarSource(Reference->getDecl()))return false;
++      }else if(isa<UnaryExprOrTypeTraitExpr,CXXNoexceptExpr,TypeTraitExpr>(E))continue;
++      else if(const auto *Binary=dyn_cast<BinaryOperator>(E)) {
++        if(Binary->isAssignmentOp() || Binary->isPtrMemOp())return false;
++      }else if(const auto *Unary=dyn_cast<UnaryOperator>(E)) {
++        if(Unary->getOpcode()!=UO_Plus && Unary->getOpcode()!=UO_Minus &&
++            Unary->getOpcode()!=UO_Not && Unary->getOpcode()!=UO_LNot)return false;
++      }else if(!isa<CastExpr,AbstractConditionalOperator,IntegerLiteral,FloatingLiteral,
++          CharacterLiteral,StringLiteral,CXXBoolLiteralExpr,CXXNullPtrLiteralExpr,GNUNullExpr>(E))return false;
++      for(const auto *Child:E->children())if(const auto *Expression=dyn_cast_or_null<Expr>(Child))Pending.push_back(Expression);
++    }
++      return true;
++    };
++    SmallVector<const Expr *,4> Sources;
++    auto Control=[&](auto &&Self,const Stmt *Statement,unsigned Level)->std::optional<bool> {
++      if(!Statement)return false;
++      if(!Work || Level>16)return std::nullopt;--Work;
++      if(const auto *Compound=dyn_cast<CompoundStmt>(Statement)) {
++        for(const auto *Child:Compound->body()) {
++          auto Flow=Self(Self,Child,Level+1);if(!Flow || *Flow)return Flow;
++        }
++        return false;
++      }
++      if(const auto *Return=dyn_cast<ReturnStmt>(Statement)) {
++        if(!Pure(Return->getRetValue()) || Sources.size()==32)return std::nullopt;
++        Sources.push_back(Return->getRetValue());return true;
++      }
++      if(const auto *Branch=dyn_cast<IfStmt>(Statement)) {
++        if(Branch->getInit() || Branch->getConditionVariable() || Branch->isConsteval() ||
++            !Pure(Branch->getCond()))return std::nullopt;
++        bool Truth;
++        if(Branch->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++          return Self(Self,Truth?Branch->getThen():Branch->getElse(),Level+1);
++        auto Left=Self(Self,Branch->getThen(),Level+1),Right=Self(Self,Branch->getElse(),Level+1);
++        if(!Left || !Right)return std::nullopt;return *Left && *Right;
++      }
++      if(const auto *Declarations=dyn_cast<DeclStmt>(Statement)) {
++        for(const auto *D:Declarations->decls()) {
++          const auto *Variable=dyn_cast<VarDecl>(D);
++          if(!Variable || !Variable->hasLocalStorage() || Variable->getType()->isReferenceType() ||
++              managedTransferStorage(Variable) || Variable->hasAttr<BlocksAttr>() ||
++              !Variable->getType()->isScalarType() || Variable->getType()->isObjCRetainableType() ||
++              isObjC3NSObjectStorageType(Variable->getType()) || Variable->getType().isVolatileQualified() ||
++              Variable->getType()->isAtomicType() || !Pure(Variable->getInit()))return std::nullopt;
++          LocalAliases.insert(Variable->getCanonicalDecl());
++        }
++        return false;
++      }
++      if(isa<NullStmt>(Statement))return false;
++      if(const auto *Expression=dyn_cast<Expr>(Statement);Expression && Pure(Expression))return false;
++      return std::nullopt;
++    };
++    auto Flow=Control(Control,Body,0);
++    if(!Flow || !*Flow || Sources.empty())return std::nullopt;
++    FieldProjection Projection{Receiver,false,false,true,false,true,false};
++    Projection.ValueSources=std::move(Sources);Projection.ReceiverBindings=std::move(Bindings);return Projection;
++  }
 +  return FieldProjection{Receiver,Managed,Arrow,Result->Identity,Result->Borrowed,Result->Pointer,Result->StorageAddress};
 +}
 +std::optional<FieldProjection> fieldProjection(const CallExpr *Call,ASTContext &Context,Sema *Actions=nullptr) {
@@ -54307,17 +54424,21 @@ new file mode 100644
 +// Nested projections share budgets and reject recursive definition graphs.
 +std::optional<ArgumentProjection> argumentProjectionImpl(
 +    const CallExpr *Call,ASTContext &Context,unsigned &Budget,unsigned Depth,
-+    llvm::SmallPtrSetImpl<const FunctionDecl *> &Active,bool BlockValues) {
++    llvm::SmallPtrSetImpl<const FunctionDecl *> &Active,bool BlockValues,bool BorrowedSources) {
 +  if(!Call || !Budget || Depth>16 || Call->getNumArgs()>32)return std::nullopt;
 +  --Budget;
 +  if(!BlockValues && standardReferenceView(Call))return ArgumentProjection{1,true};
 +  const auto *Function=Call->getDirectCallee();
++  const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Function);
++  // Operator syntax retains its syntactic object argument even for a
++  // C++23 static call operator; an explicit member spelling does not.
++  const unsigned ArgumentOffset=Method && isa<CXXOperatorCallExpr>(Call)?1:0;
 +  if(!Function || !closedProjectionReceiver(Call,Context) || Function->isVariadic() ||
 +      Function->isMultiVersion() || Function->isNoReturn() ||
 +      Function->hasAttr<WeakAttr>() || Function->hasAttr<WeakRefAttr>() || Function->hasAttr<WeakImportAttr>() ||
 +      Function->hasAttr<ObjCTaskSpawnAttr>() || Function->hasAttr<ObjCTaskDetachedAttr>() ||
 +      Function->hasAttr<ObjCTaskGroupAttr>() ||
-+      Function->getNumParams()!=Call->getNumArgs() ||
++      Function->getNumParams()+ArgumentOffset!=Call->getNumArgs() ||
 +      getObjC3Executor(Function) || isObjC3ActorIsolated(Function) ||
 +      Function->hasAttr<ReturnsTwiceAttr>() || Function->hasAttr<ObjCFamilyRetainAttr>() ||
 +      Function->hasAttr<ObjCFamilyReleaseAttr>() || Function->hasAttr<ObjCFamilyAutoreleaseAttr>() ||
@@ -54348,7 +54469,7 @@ new file mode 100644
 +    Definition=Template->getDefinition();Pattern=true;
 +  }
 +  if(!Definition || (!Definition->isInlined() && Definition->isExternallyVisible()) ||
-+      Definition->getNumParams()!=Call->getNumArgs() ||
++      Definition->getNumParams()+ArgumentOffset!=Call->getNumArgs() ||
 +      !Active.insert(Definition->getCanonicalDecl()).second)return std::nullopt;
 +  auto Leave=llvm::scope_exit([&]{Active.erase(Definition->getCanonicalDecl());});
 +  const auto *Body=dyn_cast_or_null<CompoundStmt>(Definition->getBody());
@@ -54366,7 +54487,8 @@ new file mode 100644
 +    if(const auto *Cast=dyn_cast<CastExpr>(Value)) {
 +      if(Cast->getCastKind()==CK_IntegralToBoolean || Cast->getCastKind()==CK_PointerToBoolean ||
 +          Cast->getCastKind()==CK_MemberPointerToBoolean || Cast->getCastKind()==CK_FloatingToBoolean)
-+        return std::nullopt; // Computed telemetry retains its ordinary contract.
++        return !RequireAlias && !BlockValues && !Cast->getSubExpr()->HasSideEffects(Context)
++            ?std::optional<unsigned>(0):std::nullopt;
 +      return Self(Self,Cast->getSubExpr(),Level+1,RequireAlias);
 +    }
 +    if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(Value)) {
@@ -54386,7 +54508,7 @@ new file mode 100644
 +    if(const auto *Generic=dyn_cast<GenericSelectionExpr>(Value);Generic && !Generic->isResultDependent())
 +      return Self(Self,Generic->getResultExpr(),Level+1,RequireAlias);
 +    if(const auto *Nested=dyn_cast<CallExpr>(Value)) {
-+      auto Projection=argumentProjectionImpl(Nested,Context,Budget,Depth+1,Active,BlockValues);
++      auto Projection=argumentProjectionImpl(Nested,Context,Budget,Depth+1,Active,BlockValues,BorrowedSources);
 +      if(!Projection || (RequireAlias && !Projection->Aliases))return std::nullopt;
 +      unsigned Sources=0;
 +      for(unsigned I=0;I!=Nested->getNumArgs();++I) {
@@ -54398,6 +54520,31 @@ new file mode 100644
 +      }
 +      return Sources?std::optional<unsigned>(Sources):std::nullopt;
 +    }
++    if(!RequireAlias && !BlockValues) {
++      if(const auto *Binary=dyn_cast<BinaryOperator>(Value);
++          Binary && !Binary->isAssignmentOp() && !Binary->isPtrMemOp() && !Binary->HasSideEffects(Context)) {
++        auto Left=Self(Self,Binary->getLHS(),Level+1,false),Right=Self(Self,Binary->getRHS(),Level+1,false);
++        if(!Left || !Right)return std::nullopt;
++        if(Binary->getOpcode()==BO_Comma)return Right;
++        if(Binary->isComparisonOp() || Binary->isLogicalOp())return 0;
++        return BorrowedSources || Value->getType()->isPointerType()?*Left|*Right:0;
++      }
++      if(const auto *Unary=dyn_cast<UnaryOperator>(Value)) {
++        if(Unary->isIncrementDecrementOp()) {
++          const auto *Reference=dyn_cast<DeclRefExpr>(Unary->getSubExpr()->IgnoreParenImpCasts());
++          const auto *Parameter=Reference?dyn_cast<ParmVarDecl>(Reference->getDecl()):nullptr;
++          if(!Parameter || Parameter->getType()->isReferenceType() ||
++              Parameter->getType().isVolatileQualified() || Parameter->getType()->isAtomicType())return std::nullopt;
++        }else if(Unary->getOpcode()!=UO_Plus && Unary->getOpcode()!=UO_Minus &&
++            Unary->getOpcode()!=UO_Not && Unary->getOpcode()!=UO_LNot)return std::nullopt;
++        auto Source=Self(Self,Unary->getSubExpr(),Level+1,false);if(!Source)return std::nullopt;
++        if(Unary->getOpcode()==UO_LNot)return 0;
++        return BorrowedSources || Value->getType()->isPointerType() || Unary->getOpcode()==UO_Plus ||
++            (Unary->isIncrementDecrementOp() && Unary->isPostfix())?*Source:0;
++      }
++    }
++    if(!RequireAlias && !BlockValues && isa<IntegerLiteral,FloatingLiteral,CharacterLiteral,
++        StringLiteral,CXXBoolLiteralExpr,CXXNullPtrLiteralExpr,GNUNullExpr>(Value))return 0;
 +    const auto *Reference=dyn_cast<DeclRefExpr>(Value);
 +    const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +    if(!Variable)return std::nullopt;
@@ -54517,13 +54664,13 @@ new file mode 100644
 +    return std::nullopt;
 +  };
 +  auto Flow=Visit(Visit,Body,0,false);
-+  if(!Flow || *Flow!=Returned || !Selected)return std::nullopt;
-+  return ArgumentProjection{Selected,Call->isGLValue()};
++  if(!Flow || *Flow!=Returned || (!Selected && (BlockValues || Call->isGLValue())))return std::nullopt;
++  return ArgumentProjection{Selected<<ArgumentOffset,Call->isGLValue()};
 +}
-+std::optional<ArgumentProjection> argumentProjection(const CallExpr *Call,ASTContext &Context,bool BlockValues=false) {
++std::optional<ArgumentProjection> argumentProjection(const CallExpr *Call,ASTContext &Context,bool BlockValues=false,bool BorrowedSources=false) {
 +  unsigned Budget=256;
 +  llvm::SmallPtrSet<const FunctionDecl *,16> Active;
-+  return argumentProjectionImpl(Call,Context,Budget,0,Active,BlockValues);
++  return argumentProjectionImpl(Call,Context,Budget,0,Active,BlockValues,BorrowedSources);
 +}
 +struct ReceiverPointees {
 +  SmallVector<const Expr *,4> Targets;
@@ -54923,7 +55070,7 @@ new file mode 100644
 +        return Recurse(Recurse,Binary->getLHS(),Depth+1) || Recurse(Recurse,Binary->getRHS(),Depth+1);
 +    }
 +    if(const auto *Unary=dyn_cast<UnaryOperator>(E)) {
-+      if(Unary->getOpcode()==UO_Plus || Unary->getOpcode()==UO_AddrOf || (BorrowedOnly && (Unary->getOpcode()==UO_Minus || Unary->getOpcode()==UO_Not)))
++      if(Unary->getOpcode()==UO_Plus || Unary->getOpcode()==UO_AddrOf || (BorrowedOnly && (Unary->getOpcode()==UO_Minus || Unary->getOpcode()==UO_Not)) || (Unary->isIncrementDecrementOp() && (BorrowedOnly || E->getType()->isPointerType())))
 +        return Recurse(Recurse,Unary->getSubExpr(),Depth+1);
 +      if(Unary->getOpcode()==UO_Deref) {
 +        if(BorrowedOnly && !E->getType()->isPointerType() && !E->getType()->isBlockPointerType() && !E->getType()->isRecordType())return false;
@@ -54952,6 +55099,19 @@ new file mode 100644
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
 +      if(auto Field=fieldProjection(Call,Context,Actions)) {
 +        if(!Field->Identity)return false;
++        if(!Field->ValueSources.empty()) {
++          // A native bool result is an observation even if an opaque call has
++          // invalidated the closure's captured storage since construction.
++          if(Call->getType()->isBooleanType())return false;
++          Index();if(Incomplete)return true;
++          for(const auto *Binding:Field->ReceiverBindings) {
++            if(Escaped.contains(Binding))return true;
++            if(auto Found=Writes.find(Binding);Found!=Writes.end())
++              for(const auto *Value:Found->second)if(Recurse(Recurse,Value,Depth+1))return true;
++          }
++          for(const auto *Source:Field->ValueSources)if(Recurse(Recurse,Source,Depth+1))return true;
++          return false;
++        }
 +        if(BorrowedOnly) {
 +          if(Field->Borrowed)return true;
 +          if(!Field->Pointer)return false;
@@ -54963,10 +55123,27 @@ new file mode 100644
 +        return false;
 +      }
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
-+      if(auto Projection=argumentProjection(Call,Context)) {
++      if(auto Projection=argumentProjection(Call,Context,false,BorrowedOnly)) {
 +        for(unsigned I=0;I!=Call->getNumArgs();++I)
 +          if(Projection->selects(I) && Recurse(Recurse,Call->getArg(I),Depth+1))return true;
 +        return false;
++      }
++    // Every lambda invocation spelling has the same conservative fallback.
++    // Explicit member calls store the receiver outside the argument list;
++    // C++23 static operators have no receiver at all.
++    if(const auto *Call=dyn_cast<CallExpr>(E))
++      if(const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee());
++          Method && Method->getParent()->isLambda() &&
++          !E->getType()->isBooleanType() && E->getType()->isScalarType() &&
++          (BorrowedOnly || (!E->getType()->isObjCRetainableType() && !isObjC3NSObjectStorageType(E->getType())))) {
++        if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call);Member && !Method->isStatic())
++          if(const auto *Receiver=Member->getImplicitObjectArgument()) {
++            if(Recurse(Recurse,Receiver,Depth+1))return true;
++            auto Pointees=receiverPointees(Context,Receiver);
++            if(Pointees.Truncated)return true;
++            for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
++          }
++        for(const auto *Argument:Call->arguments())if(Recurse(Recurse,Argument,Depth+1))return true;
 +      }
 +    if(const auto *Call=dyn_cast<CallExpr>(E);Call && !BorrowedOnly) {
 +      const Expr *Receiver=nullptr;
@@ -80907,6 +81084,145 @@ new file mode 100644
 +static inline void operator_observations(OperatorLoanFields &source) {
 + bool empty=!source;int number=source.number();bool compared=source.compared();
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)empty;(void)number;(void)compared;});
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-captured-value-projections.m b/clang/test/ObjC3/Sema/native-captured-value-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-captured-value-projections.m
+@@ -0,0 +1,96 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -ferror-limit 0 -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -ferror-limit 0 -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -ferror-limit 0 -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -ferror-limit 0 -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -ferror-limit 0 -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -ferror-limit 0 -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-captured-value-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -ferror-limit 0 -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-captured-value-projections.h"
++#if __OBJC3_PROFILE__ == 3
++const char *captured_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#elif !defined(__cplusplus)
++// expected-no-diagnostics
++#else
++void captured_value_sources(BindingLoanFields &source,int choose) {
++ auto producer=[copied=source.get()](){return copied;};
++ const char *value=producer();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ auto copied=producer;const auto &alias=copied;const char *aliased=alias();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)aliased;}); // expected-error {{borrowed capture}}
++ auto generic=[copied=source.get()]<class=void>() -> const char *{return copied;};
++ const char *templated=generic();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)templated;}); // expected-error {{borrowed capture}}
++ auto mutable_view=[copied=source.get()]() mutable {return copied;};
++ const char *mutable_value=mutable_view();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)mutable_value;}); // expected-error {{borrowed capture}}
++ auto alternatives=[first=source.get(),second=(const char *)"static",choose](){return choose?first:second;};
++ const char *alternative=alternatives();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)alternative;}); // expected-error {{borrowed capture}}
++ auto local_alias=[copied=source.get()](){const char *local=copied;return local;};
++ const char *local_value=local_alias();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)local_value;}); // expected-error {{borrowed capture}}
++ auto branches=[copied=source.get(),choose](){if(choose)return copied;return (const char *)0;};
++ const char *branch_value=branches();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)branch_value;}); // expected-error {{borrowed capture}}
++ auto generic_graph=[copied=source.get(),choose]<class=void>() -> const char *{const char *local=copied;if(choose)return local;return (const char *)0;};
++ const char *generic_branch=generic_graph();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)generic_branch;}); // expected-error {{borrowed capture}}
++ auto escaped=[copied=(const char *)"static"](){return copied;};capture_unknown_write(escaped);
++ const char *changed=escaped();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)changed;}); // expected-error {{borrowed capture}}
++ auto identity=[](const char *value){return value;};
++ const char *parameter=identity(source.get());
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)parameter;}); // expected-error {{borrowed capture}}
++ const char *explicit_call=identity.operator()(source.get());
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)explicit_call;}); // expected-error {{borrowed capture}}
++ auto generic_argument=[]<class Value>(Value value) -> const char *{return value;};
++ const char *generic_parameter=generic_argument(source.get());
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)generic_parameter;}); // expected-error {{borrowed capture}}
++ const char *cursor=source.get();const char *incremented=identity(cursor++);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)incremented;}); // expected-error {{borrowed capture}}
++ auto bit_argument=[](__INTPTR_TYPE__ value){return value^1;};
++ __INTPTR_TYPE__ argument_bits=bit_argument((__INTPTR_TYPE__)source.get());
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)argument_bits;}); // expected-error {{borrowed capture}}
++ auto state=[copied=source.get()]() mutable {const char *old=copied;copied=0;return old;};
++ const char *stateful=state();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)stateful;}); // expected-error {{borrowed capture}}
++ auto explicit_state=[copied=source.get()]() mutable {const char *old=copied;copied=0;return old;};
++ const char *state_member=explicit_state.operator()();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)state_member;}); // expected-error {{borrowed capture}}
++ const char *reference_value=source.get();auto reference=[&reference_value](){return reference_value;};
++ const char *referenced=reference();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)referenced;}); // expected-error {{borrowed capture}}
++ const char *explicit_reference=reference.operator()();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)explicit_reference;}); // expected-error {{borrowed capture}}
++#if __cplusplus > 202002L
++ auto static_argument=[](const char *value) static {return value;};
++ const char *static_value=static_argument(source.get());
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)static_value;}); // expected-error {{borrowed capture}}
++ const char *static_member=static_argument.operator()(source.get());
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)static_member;}); // expected-error {{borrowed capture}}
++#endif
++ auto bits=[copied=(__INTPTR_TYPE__)source.get()](){return copied^1;};
++ __INTPTR_TYPE__ transformed=bits();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)transformed;}); // expected-error {{borrowed capture}}
++ auto oversized=[loan=source.get(),value0=0,value1=1,value2=2,value3=3,value4=4,value5=5,value6=6,value7=7,value8=8,value9=9,value10=10,value11=11,value12=12,value13=13,value14=14,value15=15,value16=16,value17=17,value18=18,value19=19,value20=20,value21=21,value22=22,value23=23,value24=24,value25=25,value26=26,value27=27,value28=28,value29=29,value30=30,value31=31,value32=32](){return loan;};const char *bounded=oversized();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)bounded;}); // expected-error {{borrowed capture}}
++ const char *local=source.get();auto named=[local](){return local;};const char *normal=named();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)normal;}); // expected-error {{borrowed capture}}
++}
++int captured_resource_open(void);
++void captured_resource_close(int) __attribute__((nothrow));
++void captured_resource_values(void) {
++ auto identity=[](int value){return value;};
++ auto arithmetic=[](int value){return value+1;};
++ int descriptor __attribute__((objc_resource(close=captured_resource_close,invalid=-1)))=captured_resource_open();
++ auto captured=[descriptor](){return descriptor;};int value=captured();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++ int forwarded=identity(descriptor);
++ (void)binding_detached(binding_make_scalar(forwarded)); // expected-error {{cleanup-managed capture}}
++ int computed=arithmetic(descriptor);
++ (void)binding_detached(binding_make_scalar(computed));
++ auto telemetry=[descriptor](){return descriptor+1;};int number=telemetry();
++ (void)binding_detached(binding_make_scalar(number));
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-captured-value-projections.h b/clang/test/ObjC3/Sema/Inputs/native-captured-value-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-captured-value-projections.h
+@@ -0,0 +1,31 @@
++#ifndef OBJC3_CAPTURED_VALUE_PROJECTIONS_H
++#define OBJC3_CAPTURED_VALUE_PROJECTIONS_H
++#include "native-operator-field-projections.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++template<class Work>void capture_unknown_write(Work &);
++static inline void capture_value_observations(BindingLoanFields &source) {
++ auto selected=[loan=source.get(),value=(const char *)"static"](){const char *snapshot=value;return snapshot;};
++ auto status=[loan=source.get()](){if(loan)return true;return false;};
++ auto calculation=[loan=source.get(),count=42](){return count+1;};
++ const char *value=selected();bool valid=status();int number=calculation();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;(void)valid;(void)number;});
++ auto argument=[loan=source.get()](const char *value){return value;};
++ const char *argument_value=argument("static");
++ auto constant=[](const char *){return "static";};const char *constant_value=constant(source.get());
++ auto boolean=[](const char *value){return value!=0;};int parameter_status=boolean(source.get());
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)argument_value;(void)constant_value;(void)parameter_status;});
++#if __cplusplus > 202002L
++ auto static_constant=[](const char *) static {return "static";};
++ auto static_observation=[](const char *value) static {return value!=0;};
++ const char *static_value=static_constant(source.get());bool static_status=static_observation(source.get());
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)static_value;(void)static_status;});
++#endif
++ auto ordinary=[value=(const char *)"static"]() mutable {return value;};
++ auto copied=ordinary;auto &alias=copied;const char *other=alias.operator()();
++ (void)other;
++ auto escaped_status=[loan=source.get()](){return loan!=0;};capture_unknown_write(escaped_status);
++ bool observed=escaped_status();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)observed;});
 +}
 +#endif
 +#endif
