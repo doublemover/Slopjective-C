@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.232 / System 2.158 indirect-call span](linux_native_indirect_call_graphs.md)
+retains scalar value/storage sources through one immutable native function-pointer
+target, with exact prototype and conservative target-discovery admission.
+
 The [Source 2.231 / System 2.157 stateless-callable span](linux_native_stateless_call_graphs.md)
 binds native operator argument offsets consistently across closed global and
 reference-write summaries, including explicit calls and C++23 static operators.
@@ -273,7 +277,7 @@ matching SDK consolidation follows the implementation batch.
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
 campaign as historical evidence. Its terminal upstream receipt-state bug is
 fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
-Source 2.231 / System 2.157 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.232 / System 2.158 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2136,7 +2140,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.231 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.232 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 

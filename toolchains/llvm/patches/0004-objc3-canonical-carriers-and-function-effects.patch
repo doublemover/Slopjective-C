@@ -53738,7 +53738,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3930 @@
+@@ -0,0 +1,3972 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54031,10 +54031,52 @@ new file mode 100644
 +  const auto Name=Function->getIdentifier()->getName();
 +  return Name=="move" || Name=="forward" || Name=="forward_like" || Name=="as_const";
 +}
++// Resolve a single immutable native function-pointer target. The function
++// prototype, including calling convention and effects, must match exactly.
++const FunctionDecl *projectionCallee(const CallExpr *Call,ASTContext &Context) {
++  if(const auto *Direct=Call->getDirectCallee())return Direct;
++  const auto CalleeType=Call->getCallee()->getType();
++  if(!CalleeType->isPointerType() || !CalleeType->getPointeeType()->isFunctionType())return nullptr;
++  unsigned Work=64;
++  llvm::SmallPtrSet<const VarDecl *,16> Active;
++  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->const FunctionDecl * {
++    if(!E || !Work || Depth>16)return nullptr;--Work;E=E->IgnoreParenImpCasts();
++    if(const auto *Cast=dyn_cast<CastExpr>(E))
++      return Cast->getCastKind()==CK_NoOp?Self(Self,Cast->getSubExpr(),Depth+1):nullptr;
++    if(const auto *Unary=dyn_cast<UnaryOperator>(E);Unary && Unary->getOpcode()==UO_AddrOf)
++      return Self(Self,Unary->getSubExpr(),Depth+1);
++    if(const auto *View=dyn_cast<CallExpr>(E);View && standardReferenceView(View))
++      return Self(Self,View->getArg(0),Depth+1);
++    if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(E)) {
++      if(Choice->getCond()->HasSideEffects(Context))return nullptr;
++      bool Truth;
++      if(!Choice->getCond()->isValueDependent() && Choice->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++        return Self(Self,Truth?Choice->getTrueExpr():Choice->getFalseExpr(),Depth+1);
++      const auto *Left=Self(Self,Choice->getTrueExpr(),Depth+1);
++      const auto *Right=Self(Self,Choice->getFalseExpr(),Depth+1);
++      return Left && Right && Left->getCanonicalDecl()==Right->getCanonicalDecl()?Left:nullptr;
++    }
++    const auto *Reference=dyn_cast<DeclRefExpr>(E);
++    if(!Reference)return nullptr;
++    if(const auto *Function=dyn_cast<FunctionDecl>(Reference->getDecl()))return Function;
++    const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
++    if(!Variable)return nullptr;
++    const auto Value=Variable->getType().getNonReferenceType();
++    if(!Value->isPointerType() || !Value->getPointeeType()->isFunctionType() ||
++        !Value.isConstQualified() || Value.isVolatileQualified() || Variable->hasAttr<BlocksAttr>())return nullptr;
++    Variable=Variable->getCanonicalDecl();
++    if(!Active.insert(Variable).second)return nullptr;
++    auto Leave=llvm::scope_exit([&]{Active.erase(Variable);});
++    return Self(Self,Variable->getAnyInitializer(),Depth+1);
++  };
++  const auto *Function=Resolve(Resolve,Call->getCallee(),0);
++  return Function && Context.hasSameType(Function->getType(),CalleeType->getPointeeType())?Function:nullptr;
++}
++
 +bool closedProjectionReceiverImpl(const CallExpr *Call,ASTContext &Context,
 +    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active) {
 +  if(!Work || Depth>16)return false;--Work;
-+  const auto *Function=Call?Call->getDirectCallee():nullptr;
++  const auto *Function=Call?projectionCallee(Call,Context):nullptr;
 +  if(!Function)return false;
 +  const auto *Method=dyn_cast<CXXMethodDecl>(Function);
 +  if(!Method)return true;
@@ -54428,7 +54470,7 @@ new file mode 100644
 +  if(!Call || !Budget || Depth>16 || Call->getNumArgs()>32)return std::nullopt;
 +  --Budget;
 +  if(!BlockValues && standardReferenceView(Call))return ArgumentProjection{1,true};
-+  const auto *Function=Call->getDirectCallee();
++  const auto *Function=projectionCallee(Call,Context);
 +  const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Function);
 +  // Operator syntax retains its syntactic object argument even for a
 +  // C++23 static call operator; an explicit member spelling does not.
@@ -54791,7 +54833,7 @@ new file mode 100644
 +    return isa<CXXOperatorCallExpr>(Call) && isa_and_nonnull<CXXMethodDecl>(Call->getDirectCallee())?1u:0u;
 +  };
 +  auto ClosedDefinition=[&](const CallExpr *Call)->const FunctionDecl * {
-+    const auto *Function=Call->getDirectCallee();
++    const auto *Function=projectionCallee(Call,Context);
 +    const unsigned Offset=ArgumentOffset(Call);
 +    if(!Function || Function->isVariadic() || Function->isMultiVersion() ||
 +        Function->isNoReturn() || Function->isInStdNamespace() ||
@@ -81773,5 +81815,117 @@ new file mode 100644
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)other;});
 +#endif
 +}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-indirect-call-graphs.m b/clang/test/ObjC3/Sema/native-indirect-call-graphs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-indirect-call-graphs.m
+@@ -0,0 +1,67 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-indirect-call-graphs.h"
++#if __OBJC3_PROFILE__ == 3
++const char *indirect_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#else
++void indirect_graph_values(borrowed const char *loan){
++ void (*const store)(const char *)=global_graph_store;store(loan);
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ const char *(*const load)(void)=global_graph_load;const char *loaded=load();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)loaded;}); // expected-error {{borrowed capture}}
++ const char *slot=loan;const char *(*const read)(const char *const *)=pointer_graph_pointer;
++ const char *pointed=read(&slot);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)pointed;}); // expected-error {{borrowed capture}}
++}
++void indirect_graph_resources(void){
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ int (*const read)(const int *)=pointer_graph_number;int value=read(&descriptor);
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void indirect_graph_unproved(void){
++ void (*mutable_store)(const char **,const char *)=indirect_pointer_store;
++ const char *slot="static";mutable_store(&slot,"other");const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#ifdef __cplusplus
++void indirect_graph_different(int choose){
++ auto const work=choose?&indirect_reference_store:&indirect_reference_other;const char *slot="static";
++ work(slot,"other");const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void indirect_graph_volatile(void){
++ auto const volatile work=&indirect_reference_store;const char *slot="static";work(slot,"other");const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void indirect_graph_signature(void){
++ void (*const work)(const char *&,const char *)=&indirect_reference_nothrow;
++ const char *slot="static";work(slot,"other");const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void indirect_graph_bound(void){
++ auto const value0=&indirect_reference_store;
++ auto const value1=value0;
++ auto const value2=value1;
++ auto const value3=value2;
++ auto const value4=value3;
++ auto const value5=value4;
++ auto const value6=value5;
++ auto const value7=value6;
++ auto const value8=value7;
++ auto const value9=value8;
++ auto const value10=value9;
++ auto const value11=value10;
++ auto const value12=value11;
++ auto const value13=value12;
++ auto const value14=value13;
++ auto const value15=value14;
++ auto const value16=value15;
++ auto const value17=value16;
++ auto const value18=value17;
++ auto const value19=value18;
++ const char *slot="static";value19(slot,"other");const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-indirect-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-indirect-call-graphs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-indirect-call-graphs.h
+@@ -0,0 +1,33 @@
++#ifndef OBJC3_INDIRECT_CALL_GRAPHS_H
++#define OBJC3_INDIRECT_CALL_GRAPHS_H
++#include "native-pointer-call-graphs.h"
++#if __OBJC3_PROFILE__ != 3
++static void (*const indirect_global_store)(const char *)=global_graph_store;
++static inline void indirect_pointer_store(const char **slot,const char *value){*slot=value;}
++static inline void indirect_graph_ordinary(int choose){
++ void (*const store)(const char *)=indirect_global_store;
++ const char *(*const load)(void)=global_graph_load;
++ void (*const alias)(const char *)=choose?store:store;
++ alias("static");const char *value=load();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++ int number=42;int (*const read)(const int *)=pointer_graph_number;int scalar=read(&number);
++ (void)binding_detached(binding_make_scalar(scalar));
++}
++#ifdef __cplusplus
++static inline void indirect_reference_store(const char *&slot,const char *value){slot=value;}
++static inline void indirect_reference_other(const char *&slot,const char *value){slot=value;}
++static inline void indirect_reference_nothrow(const char *&slot,const char *value)noexcept{slot=value;}
++template<int Choose>static inline void indirect_dependent_choice(void){
++ auto const work=Choose?&global_graph_store:&global_graph_store;work("static");
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++}
++static inline void indirect_reference_ordinary(void){
++ indirect_dependent_choice<0>();
++ auto const work=&indirect_reference_store;auto const &alias=work;const char *slot="static";
++ alias(slot,"other");auto const safe=&indirect_reference_nothrow;safe(slot,"static");const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++}
++#endif
 +#endif
 +#endif
