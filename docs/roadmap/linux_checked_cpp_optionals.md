@@ -102,3 +102,16 @@ destruction and partial construction when the payload call unwinds. Both
 Linux targets have IR controls for the direct payload and indirect carrier
 edges. A compiler configuration without C++ exception handling still rejects
 this throwing-destructor transport.
+
+Source 2.262 / System 2.188 admits by-value Optional snapshots in synchronous
+checked native C++ calls. Argument copy or move precedes entry. The caller
+destroys the snapshot at full-expression cleanup on successful and typed-failed
+returns. If that cleanup throws, native unwinding destroys a constructed
+result, and any pending typed propagation unwinds through its own cleanup.
+
+Four source-free C++20/C++23 ARC/MRC configurations and eight separate-TU
+x86-64 executions exercise direct and indirect calls, empty and engaged
+snapshots, throwing copies, exact error identity, and destructor faults after
+successful or typed-failed calls. x86-64 and AArch64 IR controls verify the
+indirect argument, result and checked error slots. Async, runtime-callable
+and no-C++-exceptions admission controls still apply.

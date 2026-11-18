@@ -9686,7 +9686,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Ca
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1453 @@
+@@ -0,0 +1,1452 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -10875,7 +10875,7 @@ new file mode 100644
 +    return !Carrier.isNull() && Diagnose(Carrier);
 +  }
 +
-+  auto CheckType = [&](QualType T, bool IsReturn) {
++  auto CheckType = [&](QualType T) {
 +    if (FPT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
 +        !FPT->getObjC3FunctionEffects().Async &&
 +        (supportsObjC3ManagedRecordCallABI(CGM, T) ||
@@ -10885,8 +10885,7 @@ new file mode 100644
 +    if (Found.isNull())
 +      return false;
 +
-+    if ((FPT->getObjC3FunctionEffects().Async ||
-+         (!IsReturn && FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None)) &&
++    if (FPT->getObjC3FunctionEffects().Async &&
 +        supportsObjC3CarrierCppCallABI(CGM, T) &&
 +        !supportsObjC3CarrierCppNothrowCallABI(CGM, T))
 +      return Diagnose(T);
@@ -10907,10 +10906,10 @@ new file mode 100644
 +  // Parameter admission below still requires its source-to-physical mapping.
 +  const bool ManagedFrameResult = FPT->getObjC3FunctionEffects().AsyncFrame &&
 +      supportsObjC3ManagedRecordRuntimeABI(CGM, FPT->getReturnType());
-+  if (!ManagedFrameResult && CheckType(FPT->getReturnType(), /*IsReturn=*/true))
++  if (!ManagedFrameResult && CheckType(FPT->getReturnType()))
 +    return true;
 +  for (QualType Param : FPT->param_types())
-+    if (CheckType(Param, /*IsReturn=*/false))
++    if (CheckType(Param))
 +      return true;
 +  return false;
 +}
@@ -38110,7 +38109,7 @@ diff --git a/clang/test/ObjC3/CodeGen/native-cpp-optional-transport-boundaries.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-cpp-optional-transport-boundaries.mm
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,45 @@
 +// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=1 -emit-llvm-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -DCASE=2 -emit-llvm-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -fblocks -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -DCASE=3 -emit-llvm-only -verify %s
@@ -38133,7 +38132,9 @@ new file mode 100644
 +#if CASE == 1
 +Maybe asynchronous() __objc3_async_frame { return make(); } // expected-error {{by-value call ABI}}
 +#elif CASE == 2
-+Maybe checked(Maybe value) __objc3_throws(id<Error>) { return make(); } // expected-error {{by-value call ABI}}
++int checked_async(Maybe value) __objc3_async_frame __objc3_throws(id<Error>) { // expected-error {{by-value call ABI}}
++  return __objc3_has_value(value);
++}
 +#elif CASE == 3
 +struct [[clang::trivial_abi]] RegisterOwner {
 +  int value;
@@ -38200,4 +38201,39 @@ new file mode 100644
 +  if (fail)
 +    return __objc3_none(RegisterOwner);
 +  return __objc3_some(RegisterOwner, try! make_register(false));
++}
+diff --git a/clang/test/ObjC3/CodeGen/native-checked-optional-arguments.mm b/clang/test/ObjC3/CodeGen/native-checked-optional-arguments.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-checked-optional-arguments.mm
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++
++@protocol Error @end
++id<Error> get_error();
++struct Owner {
++  int value;
++  Owner(int);
++  Owner(const Owner &);
++  ~Owner() noexcept(false);
++};
++using Maybe = __objc3_optional(Owner);
++// CHECK-LABEL: define dso_local void @_Z13checked_inout
++// CHECK-SAME: sret({{[^)]*}}) align 4 %agg.result, ptr noundef align 4 %value,
++// CHECK-SAME: i1 noundef{{( zeroext)?}} %fail, ptr noundef
++Maybe checked_inout(Maybe value, bool fail) __objc3_throws(id<Error>) {
++  if (fail) __objc3_throw(get_error());
++  return static_cast<Maybe &&>(value);
++}
++// CHECK-LABEL: define dso_local noundef i32 @_Z4call
++// CHECK: invoke void @_ZN5OwnerC1ERKS_
++// CHECK: invoke void @_Z13checked_inout{{.*}}sret({{[^)]*}}) align 4 {{.*}}, ptr noundef align 4 %objc3.arc.argument,
++// CHECK-SAME: ptr noundef %objc3.error.out
++// CHECK: br i1 %objc3.try.failed, label %objc3.try.failure, label %objc3.try.success
++// CHECK: objc3.try.continue:
++// CHECK: invoke void @_ZN5OwnerD1Ev
++int call(Maybe &source, bool fail) {
++  auto optional = try? checked_inout(source, fail);
++  return __objc3_has_value(optional);
 +}

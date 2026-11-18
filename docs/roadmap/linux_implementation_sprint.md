@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.262 / System 2.188 checked Optional argument change](linux_checked_cpp_optionals.md)
+preserves caller-owned snapshots and provisional result cleanup when a native
+destructor throws after a checked call.
+
 The [Source 2.261 / System 2.187 resource key-path change](linux_keypath_resource_values.md)
 admits explicit owners whose destructors may throw. Native tests check unwinding
 after field reads, completed writeback and skipped nullable writes.

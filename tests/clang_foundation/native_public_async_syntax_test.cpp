@@ -1080,6 +1080,8 @@ MaybeTransportOwner transport_relay(int mode);
 id<Error> transport_checked_error();
 MaybeTransportOwner transport_checked(int mode) __objc3_throws(id<Error>);
 MaybeTransportOwner transport_checked_relay(int mode) __objc3_throws(id<Error>);
+MaybeTransportOwner transport_checked_argument(MaybeTransportOwner value, int mode)
+    __objc3_throws(id<Error>);
 void transport_consume(MaybeTransportOwner value, int value_mode);
 void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second);
 RegisterOwner make_register(int mode) __objc3_throws(id<Error>);
@@ -1142,6 +1144,13 @@ MaybeTransportOwner transport_checked(int mode) __objc3_throws(id<Error>) {
 }
 MaybeTransportOwner transport_checked_relay(int mode) __objc3_throws(id<Error>) {
   return try transport_checked(mode);
+}
+MaybeTransportOwner transport_checked_argument(MaybeTransportOwner value, int mode)
+    __objc3_throws(id<Error>) {
+  ++consumed;
+  if (mode == -2) __objc3_throw(transport_checked_error());
+  if (mode == 1) return transport_make(0);
+  return static_cast<MaybeTransportOwner &&>(value);
 }
 void transport_consume(MaybeTransportOwner value, int mode) {
   ++consumed;
@@ -1221,6 +1230,7 @@ bool consume_register(MaybeRegister value) {
       "transport_copied", "transport_moved", "transport_consumed",
       "transport_make", "transport_relay", "transport_consume", "transport_pair",
       "transport_checked_error", "transport_checked", "transport_checked_relay",
+      "transport_checked_argument",
       "RegisterOwner", "RegisterPair", "RegisterFactory", "make_register",
       "relay_register", "make_register_pair", "MaybeRegister", "wrap_register",
       "consume_register"};
@@ -1419,6 +1429,62 @@ int main() {
     __builtin_trap();
   } catch (const TransportError &error) { require(error.code == 32); }
   count(0, 24, 2, 1, 5);
+  {
+    auto none = transport_make(-1);
+    auto returned = try! transport_checked_argument(none, 0);
+    require(!__objc3_has_value(returned));
+    count(0, 24, 2, 1, 6);
+  }
+  {
+    auto source = transport_make(0);
+    auto *call = &transport_checked_argument;
+    auto returned = try? call(source, 0);
+    require(__objc3_has_value(returned));
+    count(2, 25, 3, 2, 7);
+  }
+  count(0, 27, 3, 2, 7);
+  {
+    auto source = transport_make(0);
+    __objc3_do {
+      try transport_checked_argument(static_cast<MaybeTransportOwner &&>(source), -2);
+      __builtin_trap();
+    } __objc3_catch(id<Error> error) {
+      require(error == transport_checked_error());
+      count(1, 28, 3, 3, 8);
+    }
+  }
+  count(0, 29, 3, 3, 8);
+  {
+    auto source = transport_make(3);
+    try {
+      try? transport_checked_argument(source, 0);
+      __builtin_trap();
+    } catch (const TransportError &error) { require(error.code == 33); }
+    count(1, 29, 3, 3, 8);
+  }
+  count(0, 30, 3, 3, 8);
+  try {
+    auto result = try? transport_checked_argument(transport_make(1), 1);
+    (void)result;
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 31); }
+  count(0, 32, 3, 3, 9);
+  try {
+    auto result = try! transport_checked_argument(transport_make(1), 1);
+    (void)result;
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 31); }
+  count(0, 34, 3, 3, 10);
+  try {
+    __objc3_do {
+      try transport_checked_argument(transport_make(1), -2);
+      __builtin_trap();
+    } __objc3_catch(id<Error> error) {
+      (void)error;
+      __builtin_trap();
+    }
+  } catch (const TransportError &error) { require(error.code == 31); }
+  count(0, 35, 3, 3, 11);
 }
 )";
   Compiled(Compile(consumer));
