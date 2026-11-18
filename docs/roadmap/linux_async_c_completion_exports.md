@@ -125,5 +125,25 @@ All eight C clients verify actual execution on the main and registered named
 executors. A missing named executor produces checked failure for a throwing
 entry and distinguished cancellation for a nonthrowing entry. Both controls
 deliver one completion without entering the unavailable destination.
-Actor-instance synthesis, wider foreign types and adapters, and matching SDK
-acceptance remain open.
+Wider foreign types and adapters and matching SDK acceptance remain open.
+
+Source 2.256 / System 2.182 exports an isolated instance method selected
+with `--export-c-async 'Counter::add:by:'`. The C declaration is
+`Counter_add_by_async_c`. It takes the opaque receiver first, the method
+arguments in selector order, and then the context and completion. A private
+typed Objective-C frame performs the native await on the selected receiver.
+Only the thunk and its C signature enter the exported interface, so clients
+can import it independently of the actor class definition.
+
+The receiver must be a live instance of the named actor class or its subclass.
+C callers keep the receiver alive through completion. Ordinary method
+ownership, isolation and checked error admission apply. The generator admits
+directly declared isolated synchronous methods and native async frame methods,
+including nullary and multi-argument selectors. C++ crossings require the
+native nonthrowing exception contract. Nonisolated, missing and malformed
+selectors and duplicate C symbols fail before product publication.
+
+Eight separate C clients invoke two live actor instances and a closed mailbox
+through their generated headers. Each body checks its actor identity.
+Callbacks cover isolated state, checked success, the original typed error
+object and distinguished cancellation at the closed destination.

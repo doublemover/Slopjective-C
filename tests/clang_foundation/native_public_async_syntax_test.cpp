@@ -164,10 +164,13 @@ void CheckGeneratedCCompletion(const std::string &standard, bool arc) {
   fs::create_directories(includes / "objc3c");
   fs::create_directory_symlink(OBJC3_PUBLIC_ASYNC_HEADERS, includes / "objc3c/runtime");
   Write(source, R"(
+#include <assert.h>
 #include <stdbool.h>
 typedef int Integer;
 typedef const Integer *Input;
 @protocol Error @end
+@protocol Sendable @end
+@protocol GeneratedActorError <Error, Sendable> @end
 __attribute__((objc_root_class)) @interface GeneratedError <Error>
 + (Class)class;
 @end
@@ -222,7 +225,86 @@ static void generated_missing(void) async
     __attribute__((nothrow, objc_executor(named("generated.missing")))) {
   __builtin_trap();
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
+extern id object_dispose(id);
+#if !__has_feature(objc_arc)
+extern void objc_release(id);
+#endif
+#ifdef __cplusplus
+}
+#endif
+__attribute__((objc_root_class)) @interface GeneratedActorRoot { Class isa; }
++ (instancetype)new;
+@end
+@implementation GeneratedActorRoot
++ (instancetype)new { return class_createInstance(self, 0); }
+- (void)dealloc { object_dispose(self); }
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
+@end
+actor class GeneratedActor : GeneratedActorRoot { int value; }
+- (int)add:(int)left by:(int)right __attribute__((nothrow));
+- (int)current __attribute__((nothrow));
+- (int)checked:(bool)fail async throws(id<GeneratedActorError>) __attribute__((nothrow));
+- (void)ordinary __attribute__((objc_nonisolated));
+@end
+static void *generated_actor_pointer(GeneratedActor *object) {
+#if __has_feature(objc_arc)
+  return (__bridge void *)object;
+#else
+  return (void *)object;
+#endif
+}
+static void generated_actor_check(GeneratedActor *object) {
+  objc3_current_actor_facts facts = {sizeof(facts), OBJC3_ACTOR_SERVICE_VERSION};
+  objc3_actor_t *bound = 0;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_get_or_create_for_object(generated_actor_pointer(object), 0, &bound) == OBJC3_SERVICE_OK);
+  assert(facts.actor_identity == objc3_actor_identity(bound));
+  objc3_actor_release(bound);
+}
+@implementation GeneratedActor
+- (int)add:(int)left by:(int)right {
+  generated_actor_check(self);
+  return value += left + right;
+}
+- (int)current { generated_actor_check(self); return value; }
+- (int)checked:(bool)fail async throws(id<GeneratedActorError>) {
+  generated_actor_check(self);
+  if (fail) __objc3_throw((id<GeneratedActorError>)generated_failure());
+  return 42;
+}
+- (void)ordinary {}
+@end
+#ifdef __cplusplus
+extern "C" {
+#endif
+void *generated_actor_create(void) {
+#if __has_feature(objc_arc)
+  return (__bridge_retained void *)[GeneratedActor new];
+#else
+  return (void *)[GeneratedActor new];
+#endif
+}
+void generated_actor_release(void *actor) {
+#if __has_feature(objc_arc)
+  id owner = (__bridge_transfer id)actor;
+  (void)owner;
+#else
+  objc_release((id)actor);
+#endif
+}
+#ifdef __cplusplus
+}
+#endif
 #define generated_value(...) invalid_if_reexpanded
+#define add invalid_if_reexpanded
+#define GeneratedActor InvalidActor
 )");
   CompileRequest provider;
   provider.input_path = source.string();
@@ -237,7 +319,8 @@ static void generated_missing(void) async
   provider.output_path = (root / "provider.o").string();
   provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
       "generated_object", "generated_block", "generated_aggregate", "generated_main",
-      "generated_named", "generated_missing"};
+      "generated_named", "generated_missing", "GeneratedActor::add:by:",
+      "GeneratedActor::current", "GeneratedActor::checked:"};
   provider.async_c_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GeneratedCompletion";
@@ -251,6 +334,7 @@ static void generated_missing(void) async
   Require(generated.interface_artifact.has_value(), "generated C interface missing");
   const auto &interface = *generated.interface_artifact;
   Require(interface.source_bytes.find("generated_checked_async_c") != std::string::npos &&
+          interface.source_bytes.find("GeneratedActor_add_by_async_c") != std::string::npos &&
           interface.sidecar_json.find(RuntimeCompletionSemantic()) != std::string::npos,
           "generated C callable ABI was omitted from semantic metadata");
 
@@ -261,6 +345,15 @@ static void generated_missing(void) async
     auto result = Compile(rejected);
     Require(!result.success && result.failure.find("native async frame") != std::string::npos,
             "an ordinary declaration was admitted as an async export");
+    for (const std::string selection : {"GeneratedActor::ordinary", "GeneratedActor::add:",
+                                       "GeneratedActor::add::", "GeneratedError::class"}) {
+      rejected.async_c_exports = {selection};
+      const auto invalid_actor = Compile(rejected);
+      Require(!invalid_actor.success && invalid_actor.failure.find("isolated instance selector") != std::string::npos,
+              "an invalid actor selector was admitted as a C completion export");
+    }
+    rejected.async_c_exports = {"GeneratedActor::current", "GeneratedActor::current"};
+    Require(!Compile(rejected).success, "duplicate actor export was admitted");
     const auto header_before = llvm::MemoryBuffer::getFile(provider.async_c_header_output_path);
     Require(static_cast<bool>(header_before), "generated header missing");
     const std::string generated_header = (*header_before)->getBuffer().str();
@@ -291,14 +384,43 @@ int generated_value(bool enabled, const int *value) async {
   }
 
   Require(fs::remove(source), "generated provider source removal failed");
+  const auto interface_path = root / "GeneratedCompletion.objc3i";
+  Write(interface_path, interface.source_bytes);
+  Write(interface_path.string() + ".json", interface.sidecar_json);
+  CompileRequest imported;
+  imported.input_path = (root / (cxx ? "imported.mm" : "imported.m")).string();
+  imported.language = provider.language;
+  imported.target_triple = provider.target_triple;
+  imported.objc3 = true;
+  imported.arc = arc;
+  imported.emit = EmitKind::Syntax;
+  imported.arguments = provider.arguments;
+  InterfaceImportInput imported_api;
+  imported_api.source_path = interface_path.string();
+  imported_api.sidecar_path = interface_path.string() + ".json";
+  imported_api.locked_identity = interface.identity;
+  imported.imported_interfaces = {imported_api};
+  imported.source_text = R"(
+static void observe(void *context, objc_async_completion_status_t status,
+                    int value, objc3_async_c_error error) {
+  (void)context; (void)status; (void)value; (void)error;
+}
+void call_imported_actor(void *receiver) {
+  GeneratedActor_add_by_async_c(receiver, 40, 2, 0, observe);
+}
+)";
+  Compiled(Compile(imported));
   const auto client = root / "client.c";
   Write(client, R"(
 #define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <stdatomic.h>
+#include <stdio.h>
 #include <time.h>
 #include "generated.h"
 extern objc3_async_c_error generated_failure(void);
+extern void *generated_actor_create(void);
+extern void generated_actor_release(void *);
 extern void *_Block_copy(const void *);
 extern void _Block_release(const void *);
 #ifdef __BLOCKS__
@@ -307,7 +429,7 @@ static ClientBlock retained_block;
 #else
 typedef void *ClientBlock;
 #endif
-static atomic_int complete[11];
+static atomic_int complete[16];
 static void value_done(void *context, objc_async_completion_status_t status,
                        int value, objc3_async_c_error error) {
   assert(context == &complete[0] && status == OBJC_ASYNC_COMPLETION_SUCCESS);
@@ -369,6 +491,18 @@ static void missing_done(void *context, objc_async_completion_status_t status,
   assert(objc3_async_c_error_is_cancellation(error));
   assert(atomic_fetch_add(&complete[10], 1) == 0);
 }
+static void actor_done(void *context, objc_async_completion_status_t status,
+                       int value, objc3_async_c_error error) {
+  if (context == &complete[14]) {
+    assert(status == OBJC_ASYNC_COMPLETION_ERROR && error == generated_failure());
+  } else if (context == &complete[15]) {
+    assert(status == OBJC_ASYNC_COMPLETION_CANCELLED && objc3_async_c_error_is_cancellation(error));
+  } else {
+    assert(status == OBJC_ASYNC_COMPLETION_SUCCESS && !error);
+    assert(value == (context == &complete[12] ? 0 : 42));
+  }
+  assert(atomic_fetch_add((atomic_int *)context, 1) == 0);
+}
 int main(void) {
   generated_named_async_c(41, &complete[9], executor_done);
   for (int elapsed = 0; elapsed < 2000 && !atomic_load(&complete[9]); ++elapsed)
@@ -378,6 +512,13 @@ int main(void) {
   assert(objc3_executor_get_main(&main_executor) == OBJC3_SERVICE_OK);
   assert(objc3_executor_create(0, &named_executor) == OBJC3_SERVICE_OK);
   assert(objc3_executor_register_named("generated.completion", named_executor) == OBJC3_SERVICE_OK);
+  void *actor = generated_actor_create(), *other = generated_actor_create();
+  void *closed = generated_actor_create();
+  assert(actor && other && closed && actor != other);
+  objc3_actor_t *closed_mailbox = 0;
+  assert(objc3_actor_create(named_executor, &closed_mailbox) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_bind_object(closed, closed_mailbox) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(closed_mailbox) == OBJC3_SERVICE_OK);
 
   const int input = 41;
   generated_value_async_c(true, &input, &complete[0], value_done);
@@ -391,23 +532,35 @@ int main(void) {
   generated_main_async_c(41, &complete[7], executor_done);
   generated_named_async_c(41, &complete[8], executor_done);
   generated_missing_async_c(&complete[10], missing_done);
+  GeneratedActor_add_by_async_c(actor, 40, 2, &complete[11], actor_done);
+  GeneratedActor_current_async_c(other, &complete[12], actor_done);
+  GeneratedActor_checked_async_c(actor, false, &complete[13], actor_done);
+  GeneratedActor_checked_async_c(actor, true, &complete[14], actor_done);
+  GeneratedActor_current_async_c(closed, &complete[15], actor_done);
   for (int elapsed = 0; elapsed < 2000; ++elapsed) {
     unsigned executed = 0;
     assert(objc3_executor_pump(main_executor, 8, &executed) == OBJC3_SERVICE_OK);
     int count = 0;
-    for (unsigned index = 0; index < 11; ++index) count += atomic_load(&complete[index]);
-    if (count == 11) {
+    for (unsigned index = 0; index < 16; ++index) count += atomic_load(&complete[index]);
+    if (count == 16) {
 #ifdef __BLOCKS__
       assert(retained_block(2) == 42);
       _Block_release((const void *)retained_block);
 #endif
       assert(objc3_executor_unregister_named("generated.completion") == OBJC3_SERVICE_OK);
+      assert(objc3_actor_join(closed_mailbox) == OBJC3_SERVICE_OK);
+      objc3_actor_release(closed_mailbox);
+      generated_actor_release(closed);
+      generated_actor_release(other);
+      generated_actor_release(actor);
       objc3_executor_release(named_executor);
       objc3_executor_release(main_executor);
       return 0;
     }
     nanosleep(&(struct timespec){0, 1000000}, 0);
   }
+  for (unsigned index = 0; index < sizeof(complete) / sizeof(complete[0]); ++index)
+    if (!atomic_load(&complete[index])) fprintf(stderr, "Missing generated completion %u\n", index);
   return 1;
 }
 )");

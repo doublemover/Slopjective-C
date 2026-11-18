@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.256 / System 2.182 actor C completions](linux_async_c_completion_exports.md)
+generate a typed native await for a selected instance method and publish an
+opaque C receiver parameter with its callback. Source-free C clients verify
+instance identity, isolated state, checked errors and closed-mailbox cancellation.
+
 The [Source 2.255 / System 2.181 Optional call transport](linux_checked_cpp_optionals.md)
 supports throwing-destructor C++ payloads in synchronous native Linux arguments
 and indirect returns. Source-free consumers verify the caller snapshot and

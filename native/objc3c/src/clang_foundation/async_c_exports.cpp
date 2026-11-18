@@ -1,5 +1,6 @@
 #include "clang_foundation/async_c_exports.h"
 
+#include <algorithm>
 #include <iterator>
 #include <optional>
 
@@ -13,6 +14,7 @@
 #include "clang/AST/RecordLayout.h"
 #include "clang/Basic/TargetInfo.h"
 #include "llvm/ADT/SmallPtrSet.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Support/raw_ostream.h"
@@ -58,6 +60,44 @@ struct CExportType {
   std::string spelling;
   const char *kind = "VALUE";
 };
+
+struct CExportActorMethod {
+  const clang::ObjCInterfaceDecl *actor;
+  const clang::ObjCMethodDecl *method;
+  std::string symbol;
+};
+
+std::optional<CExportActorMethod> SelectActorMethod(clang::ASTContext &context,
+                                                    llvm::StringRef selection) {
+  const auto [owner, spelling] = selection.split("::");
+  if (!IsSourceIdentifier(owner) || spelling.empty()) return std::nullopt;
+  const auto matches = context.getTranslationUnitDecl()->lookup(&context.Idents.get(owner));
+  const auto *decl = matches.empty() || std::next(matches.begin()) != matches.end()
+      ? nullptr : llvm::dyn_cast<clang::ObjCInterfaceDecl>(matches.front());
+  const auto *actor = decl ? decl->getDefinition() : nullptr;
+  if (!actor || !clang::isObjC3Actor(actor)) return std::nullopt;
+
+  const bool has_parameters = spelling.ends_with(":");
+  llvm::SmallVector<llvm::StringRef, 4> pieces;
+  (has_parameters ? spelling.drop_back() : spelling).split(pieces, ':');
+  if ((!has_parameters && pieces.size() != 1) ||
+      !llvm::all_of(pieces, IsSourceIdentifier))
+    return std::nullopt;
+  llvm::SmallVector<const clang::IdentifierInfo *, 4> identifiers;
+  std::string symbol = owner.str();
+  for (auto piece : pieces) {
+    identifiers.push_back(&context.Idents.get(piece));
+    symbol += '_' + piece.str();
+  }
+  const auto selector = context.Selectors.getSelector(
+      has_parameters ? identifiers.size() : 0, identifiers.data());
+  const auto *method = actor->getInstanceMethod(selector);
+  if (!method || method->isVariadic() || !clang::isObjC3ActorIsolated(method) ||
+      method->hasAttr<clang::NSConsumesSelfAttr>() ||
+      method->hasAttr<clang::ObjCReturnsInnerPointerAttr>())
+    return std::nullopt;
+  return CExportActorMethod{actor, method, std::move(symbol)};
+}
 
 // Serialize a C spelling of each reachable storage type and verify the
 // provider's size, alignment and field offsets when the client compiles it.
@@ -220,29 +260,55 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
   llvm::StringSet<> selected;
   auto *tu = context.getTranslationUnitDecl();
   CExportRecords records(context, output.interface_exports);
-  for (const auto &name : symbols) {
+  for (const auto &selection : symbols) {
     auto reject = [&](llvm::StringRef reason) {
-      failure = "Cannot export C async entry " + name + ": " + reason.str();
+      failure = "Cannot export C async entry " + selection + ": " + reason.str();
       return AsyncCExportSource{};
     };
-    if (!IsSourceIdentifier(name) || !selected.insert(name).second)
-      return reject("expected a distinct source identifier");
-
-    const auto declarations = tu->lookup(&context.Idents.get(name));
-    const auto *source = !declarations.empty() &&
-        std::next(declarations.begin()) == declarations.end()
-        ? llvm::dyn_cast<clang::FunctionDecl>(declarations.front()) : nullptr;
-    const auto *prototype = source ? source->getType()->getAs<clang::FunctionProtoType>() : nullptr;
-    if (!prototype || prototype->isVariadic() ||
-        source->getTemplatedKind() != clang::FunctionDecl::TK_NonTemplate ||
-        prototype->getCallConv() != clang::CC_C)
-      return reject("expected one nonvariadic free function with a native prototype");
-    const auto effects = prototype->getObjC3FunctionEffects();
-    if (!effects.AsyncFrame || clang::isObjC3ActorIsolated(source) ||
-        prototype->hasObjC3BorrowedResult())
-      return reject("expected a native async frame entry with independent result lifetime");
-    if (!source->isExternallyVisible() && !source->getDefinition())
-      return reject("the internal async declaration needs a definition in this translation unit");
+    std::optional<CExportActorMethod> actor_method;
+    const clang::Decl *source = nullptr;
+    const clang::FunctionProtoType *prototype = nullptr;
+    clang::QualType result_type;
+    llvm::ArrayRef<clang::ParmVarDecl *> source_parameters;
+    clang::ObjC3FunctionEffectInfo effects;
+    std::string name = selection;
+    if (llvm::StringRef(selection).contains("::")) {
+      actor_method = SelectActorMethod(context, selection);
+      if (!actor_method)
+        return reject("expected an isolated instance selector declared on the named actor class");
+      const auto *method = actor_method->method;
+      name = actor_method->symbol;
+      source = method;
+      if (!method->getObjC3FunctionType().isNull())
+        prototype = method->getObjC3FunctionType()->getAs<clang::FunctionProtoType>();
+      effects = method->getObjC3FunctionEffects();
+      if (effects.Async && !effects.AsyncFrame)
+        return reject("the actor method requires a native async frame");
+      result_type = method->getReturnType();
+      source_parameters = method->parameters();
+    } else {
+      if (!IsSourceIdentifier(name)) return reject("expected a source identifier");
+      const auto declarations = tu->lookup(&context.Idents.get(name));
+      const auto *function = !declarations.empty() &&
+          std::next(declarations.begin()) == declarations.end()
+          ? llvm::dyn_cast<clang::FunctionDecl>(declarations.front()) : nullptr;
+      prototype = function ? function->getType()->getAs<clang::FunctionProtoType>() : nullptr;
+      if (!prototype || prototype->isVariadic() ||
+          function->getTemplatedKind() != clang::FunctionDecl::TK_NonTemplate)
+        return reject("expected one nonvariadic free function with a native prototype");
+      effects = prototype->getObjC3FunctionEffects();
+      if (!effects.AsyncFrame || clang::isObjC3ActorIsolated(function))
+        return reject("expected a native async frame entry with independent result lifetime");
+      if (!function->isExternallyVisible() && !function->getDefinition())
+        return reject("the internal async declaration needs a definition in this translation unit");
+      source = function;
+      result_type = prototype->getReturnType();
+      source_parameters = function->parameters();
+    }
+    if (prototype && (prototype->hasObjC3BorrowedResult() ||
+                      prototype->getCallConv() != clang::CC_C))
+      return reject("the source result lifetime or calling convention cannot cross the C ABI");
+    if (!selected.insert(name).second) return reject("the generated C symbol is already selected");
 
     const auto thunk = name + "_async_c";
     const auto callback = name + "_completion_t";
@@ -262,44 +328,74 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
       }
       return emitted;
     };
-    auto result = export_type(prototype->getReturnType(), type_prefix + "result_t");
+    auto result = export_type(result_type, type_prefix + "result_t");
     if (!result)
       return reject("the result has no self-contained C value declaration");
     std::string parameters, inputs;
-    for (unsigned index = 0; index < prototype->getNumParams(); ++index) {
-      auto type = export_type(prototype->getParamType(index),
+    constexpr llvm::StringLiteral receiver = "__objc3_c_receiver";
+    constexpr llvm::StringLiteral opaque_receiver_type = "void *";
+    if (actor_method) {
+      // The C signature can be imported without exporting the actor's class
+      // API. The private frame alone needs its typed receiver.
+      parameters = ", " + opaque_receiver_type.str() + receiver.str();
+      inputs = receiver.str();
+    }
+    std::string message = "[" + receiver.str();
+    for (unsigned index = 0; index < source_parameters.size(); ++index) {
+      const auto *parameter = source_parameters[index];
+      auto type = export_type(prototype ? prototype->getParamType(index) : parameter->getType(),
                               type_prefix + "arg" + std::to_string(index) + "_t");
-      if (!type || prototype->getExtParameterInfo(index).getOpaqueValue())
+      if (!type || (prototype && prototype->getExtParameterInfo(index).getOpaqueValue()) ||
+          parameter->hasAttr<clang::NSConsumedAttr>() || parameter->hasAttr<clang::CFConsumedAttr>())
         return reject("parameter " + std::to_string(index + 1) +
                       " has no self-contained C value declaration");
       const auto argument = "__objc3_c_argument_" + std::to_string(index);
       parameters += ", " + type->spelling + " " + argument;
       if (!inputs.empty()) inputs += ", ";
       inputs += argument;
+      if (actor_method)
+        message += " " + actor_method->method->getSelector().getNameForSlot(index).str() + ':' + argument;
     }
 
-    const bool returns_void = prototype->getReturnType()->isVoidType();
+    const bool returns_void = result_type->isVoidType();
     const auto declaration = (returns_void
         ? "OBJC3_ASYNC_C_DECLARE_VOID(" + name
         : "OBJC3_ASYNC_C_DECLARE(" + name + ", " + result->spelling) + parameters + ");\n";
     header << types << declaration;
     output.interface_exports.push_back(thunk);
     output.interface_exports.push_back(callback);
-    const auto call = (language.CPlusPlus ? "::" : "") + name + '(' + inputs + ')';
+    if (actor_method && source_parameters.empty())
+      message += " " + actor_method->method->getSelector().getAsString();
+    const auto call = actor_method ? message + ']' :
+        (language.CPlusPlus ? "::" : "") + name + '(' + inputs + ')';
     auto frame = call;
     // The unqualified C preprocessing spelling must select the original
     // declaration even when the provider reuses a name as a macro later.
+    if (actor_method) {
+      definitions << "#undef " << actor_method->actor->getName() << '\n';
+      const auto selector = actor_method->method->getSelector();
+      for (unsigned slot = 0; slot < std::max(1u, selector.getNumArgs()); ++slot)
+        definitions << "#undef " << selector.getNameForSlot(slot) << '\n';
+    }
     definitions << "#undef " << name << "\n#undef " << thunk << "\n#undef "
                 << callback << "\n" << types << declaration;
-    if (clang::getObjC3Executor(source)) {
+    if (actor_method || clang::getObjC3Executor(source)) {
       const auto bridge = "__objc3_c_executor_bridge_" + name;
       if (!tu->lookup(&context.Idents.get(bridge)).empty())
         return reject("the generated executor bridge name is already declared");
       const bool checked = effects.Throws != clang::ObjC3ThrowsKind::None;
+      auto bridge_parameters = parameters.empty() ? "void" : parameters.substr(2);
+      auto bridge_inputs = inputs;
+      if (actor_method) {
+        const auto actor_pointer = actor_method->actor->getName().str() + " *";
+        bridge_parameters.replace(0, opaque_receiver_type.size(), actor_pointer);
+        bridge_inputs = (language.ObjCAutoRefCount ? "(__bridge " : "(") +
+            actor_pointer + ")" + bridge_inputs;
+      }
       // A native await supplies the same executor admission, startup errors,
       // and cancellation propagation as an ordinary Objective-C caller.
       definitions << "static " << result->spelling << ' ' << bridge << '('
-                  << (parameters.empty() ? "void" : parameters.substr(2))
+                  << bridge_parameters
                   << ") __objc3_async_frame";
       if (checked) {
         definitions << " __objc3_throws";
@@ -312,7 +408,7 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
       definitions << "__objc3_await " << call;
       if (checked) definitions << ')';
       definitions << "; }\n";
-      frame = bridge + '(' + inputs + ')';
+      frame = bridge + '(' + bridge_inputs + ')';
     }
     definitions << "OBJC3_ASYNC_C_DEFINE_" << (returns_void ? "VOID" : result->kind)
                 << '(' << name;

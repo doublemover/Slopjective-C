@@ -22,7 +22,7 @@ int RunCompiler(int argc, char **argv) {
            "[--emit-interface path.objc3i --module name --package identity] "
            "[--project-ownership arc|mrc] "
            "[--export-declaration name] [--module-owned-names] "
-           "[--export-c-async name --emit-c-async-header file.h] "
+           "[--export-c-async name|Actor::selector --emit-c-async-header file.h] "
            "[--module-source-root dir] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
            "[--sdk-root dir] [--meta-package dir-or-manifest] [--meta-lock file] "
