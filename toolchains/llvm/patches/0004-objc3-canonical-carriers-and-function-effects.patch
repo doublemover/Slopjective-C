@@ -53738,7 +53738,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3872 @@
+@@ -0,0 +1,3923 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54533,6 +54533,12 @@ new file mode 100644
 +        return BorrowedSources || Value->getType()->isPointerType()?*Left|*Right:0;
 +      }
 +      if(const auto *Unary=dyn_cast<UnaryOperator>(Value)) {
++        if(Unary->getOpcode()==UO_Deref && !Unary->HasSideEffects(Context)) {
++          // A scalar load reads the selected pointee; it does not return an
++          // alias to the pointer variable. Copied bytes do not carry a loan.
++          if(BorrowedSources && !Value->getType()->isPointerType() && !Value->getType()->isBlockPointerType())return 0;
++          return Self(Self,Unary->getSubExpr(),Level+1,false);
++        }
 +        if(Unary->isIncrementDecrementOp()) {
 +          const auto *Reference=dyn_cast<DeclRefExpr>(Unary->getSubExpr()->IgnoreParenImpCasts());
 +          const auto *Parameter=Reference?dyn_cast<ParmVarDecl>(Reference->getDecl()):nullptr;
@@ -54786,7 +54792,8 @@ new file mode 100644
 +    if(!Function || Function->isVariadic() || Function->isMultiVersion() ||
 +        Function->isNoReturn() || Function->isInStdNamespace() ||
 +        Function->getNumParams()!=Call->getNumArgs() || Call->getNumArgs()>16 ||
-+        (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) ||
++        (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic() &&
++         (cast<CXXMethodDecl>(Function)->getParent()->isLambda() || !closedProjectionReceiver(Call,Context))) ||
 +        getObjC3Executor(Function) || isObjC3ActorIsolated(Function))return nullptr;
 +    auto Cached=DefinitionCache.try_emplace(Function,nullptr);
 +    if(!Cached.second)return Cached.first->second;
@@ -54802,7 +54809,8 @@ new file mode 100644
 +    if((!Result->isVoidType() && !Result->isScalarType()) ||
 +        Result->isObjCRetainableType() || isObjC3NSObjectStorageType(Result))return nullptr;
 +    for(const auto *Parameter:Definition->parameters()) {
-+      const auto Value=Parameter->getType();
++      const auto Value=Parameter->getType().getNonReferenceType();
++      if(Parameter->getType()->isReferenceType() && (Value.isVolatileQualified() || Value->isAtomicType()))return nullptr;
 +      if(!Value->isScalarType() || Value->isObjCRetainableType() ||
 +          isObjC3NSObjectStorageType(Value) || Parameter->hasAttr<NSConsumedAttr>() ||
 +          Parameter->hasAttr<CFConsumedAttr>())return nullptr;
@@ -54878,9 +54886,14 @@ new file mode 100644
 +        const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +        if(!Variable || (!Variable->hasLocalStorage() && !Variable->hasGlobalStorage()))return false;
 +        if(Variable->getType()->isReferenceType()) {
-+          if(!Variable->hasInit() || !References.insert(Variable->getCanonicalDecl()).second)return false;
-+          auto Leave=llvm::scope_exit([&]{References.erase(Variable->getCanonicalDecl());});
-+          return Self(Self,Variable->getInit(),Depth+1);
++          Variable=Variable->getCanonicalDecl();
++          if(!References.insert(Variable).second)return true;
++          auto Leave=llvm::scope_exit([&]{References.erase(Variable);});
++          if(Variable->hasInit())return Self(Self,Variable->getInit(),Depth+1);
++          auto Found=ActualSources.find(Variable);
++          if(Found==ActualSources.end() || Found->second.empty())return false;
++          for(const auto *Source:Found->second)if(!Self(Self,Source,Depth+1))return false;
++          return true;
 +        }
 +        Variable=Variable->getCanonicalDecl();
 +        if(!llvm::is_contained(Result,Variable)) {
@@ -54891,13 +54904,26 @@ new file mode 100644
 +      };
 +      return Resolve(Resolve,Value,0) && !Result.empty()?std::optional<CellSet>(std::move(Result)):std::nullopt;
 +    };
++    SmallVector<std::pair<const Expr *,const Expr *>,16> DeferredWrites;
++    llvm::SmallPtrSet<const VarDecl *,16> DeferredEscapes;
 +    auto Escape=[&](const VarDecl *Variable) {
-+      if(Variable->getType()->isReferenceType() && Variable->hasInit())
-+        if(auto Targets=Cells(Variable->getInit())) {
-+          for(const auto *Target:*Targets)Escaped.insert(Target);
-+          return;
++      Variable=Variable->getCanonicalDecl();
++      if(Variable->getType()->isReferenceType()) {
++        DeferredEscapes.insert(Variable);
++        if(Variable->hasInit())if(auto Targets=Cells(Variable->getInit())) {
++          for(const auto *Target:*Targets)Escaped.insert(Target);return;
 +        }
-+      Escaped.insert(Variable->getCanonicalDecl());
++        if(auto Found=ActualSources.find(Variable);Found!=ActualSources.end()) {
++          bool Closed=true;
++          for(const auto *Source:Found->second) {
++            auto Targets=Cells(Source);if(!Targets){Closed=false;continue;}
++            for(const auto *Target:*Targets)Escaped.insert(Target);
++          }
++          if(Closed)return;
++          CallGraphIncomplete=true;
++        }
++      }
++      Escaped.insert(Variable);
 +    };
 +    while(!Pending.empty()) {
 +      const Entry Current=Pending.pop_back_val();
@@ -54920,6 +54946,12 @@ new file mode 100644
 +      }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
 +        if(const auto *Definition=ClosedDefinition(Call)) {
++          bool ClosedReferences=true;
++          for(unsigned I=0;I!=Call->getNumArgs();++I)
++            if(Definition->getParamDecl(I)->getType()->isReferenceType() && !Cells(Call->getArg(I)))ClosedReferences=false;
++          if(!ClosedReferences) {
++            if(!argumentProjection(Call,Context))CallGraphIncomplete=true;
++          } else {
 +          CallDefinitions[Call]=Definition;
 +          for(unsigned I=0;I!=Call->getNumArgs();++I) {
 +            auto &Sources=ActualSources[Definition->getParamDecl(I)->getCanonicalDecl()];
@@ -54931,6 +54963,7 @@ new file mode 100644
 +              IndexedFunctions.insert(Definition);
 +              Pending.push_back({Definition->getBody(),Unknown,Depth+1,Definition});
 +            }
++          }
 +          }
 +        }
 +      if(const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
@@ -55007,6 +55040,15 @@ new file mode 100644
 +            Add(Call->getArg(I),Projection->Aliases && Projection->selects(I)?Use:Read);
 +          continue;
 +        }
++      if(const auto *Call=dyn_cast<CallExpr>(Node);Call && CallDefinitions.contains(Call)) {
++        const auto *Definition=CallDefinitions.find(Call)->second;
++        for(unsigned I=0;I!=Call->getNumArgs();++I) {
++          Add(Call->getArg(I),Read);
++          if(!Definition->getParamDecl(I)->getType()->isReferenceType())
++            for(const auto *Target:receiverPointees(Context,Call->getArg(I)).Targets)Add(Target,Unknown);
++        }
++        Add(Call->getCallee(),Read);continue;
++      }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node)) {
 +        for(const auto *Argument:Call->arguments())
 +          for(const auto *Target:receiverPointees(Context,Argument).Targets)Add(Target,Unknown);
@@ -55035,6 +55077,7 @@ new file mode 100644
 +          continue;
 +        }
 +        if(Binary->isAssignmentOp()) {
++          DeferredWrites.push_back({Binary->getLHS(),Binary->getOpcode()==BO_Assign?Binary->getRHS():Binary});
 +          auto Targets=Cells(Binary->getLHS());
 +          if(Targets)for(const auto *V:*Targets)
 +            Writes[V].push_back(Binary->getOpcode()==BO_Assign?Binary->getRHS():Binary);
@@ -55052,6 +55095,7 @@ new file mode 100644
 +        }
 +        if(Unary->getOpcode()==UO_Extension){Add(Unary->getSubExpr(),Use);continue;}
 +        if(Unary->isIncrementDecrementOp()) {
++          DeferredWrites.push_back({Unary->getSubExpr(),Unary});
 +          auto Targets=Cells(Unary->getSubExpr());
 +          if(Targets)for(const auto *V:*Targets)Writes[V].push_back(Unary);
 +          Add(Unary->getSubExpr(),Targets?Write:Unknown);continue;
@@ -55067,6 +55111,13 @@ new file mode 100644
 +      }
 +      for(const auto *Child:Node->children())Add(Child);
 +    }
++    // A shared callee may acquire more actual reference targets after its body
++    // was indexed. Resolve every write/escape again against the final argument
++    // graph, so caller order cannot drop a later cell from the may-source union.
++    for(const auto &[Target,Source]:DeferredWrites)
++      if(auto Targets=Cells(Target))for(const auto *Variable:*Targets)Writes[Variable].push_back(Source);
++    SmallVector<const VarDecl *,16> Escapes(DeferredEscapes.begin(),DeferredEscapes.end());
++    for(const auto *Variable:Escapes)Escape(Variable);
 +  };
 +  // Global/static/TLS values retain initializers and writes visible in this
 +  // native scope. This is a may-source union, not a whole-program proof that
@@ -81519,5 +81570,140 @@ new file mode 100644
 +static inline const char *global_graph_bound_2(const char *value){return global_graph_bound_3(value);}
 +static inline const char *global_graph_bound_1(const char *value){return global_graph_bound_2(value);}
 +static inline const char *global_graph_bound_0(const char *value){return global_graph_bound_1(value);}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-reference-call-graphs.m b/clang/test/ObjC3/Sema/native-reference-call-graphs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-reference-call-graphs.m
+@@ -0,0 +1,48 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-reference-call-graphs.h"
++#if __OBJC3_PROFILE__ == 3
++const char *reference_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#elif !defined(__cplusplus)
++// expected-no-diagnostics
++#else
++void reference_graph_values(borrowed const char *loan){
++ const char *slot="static";reference_graph_store(slot,loan);const char *direct=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)direct;}); // expected-error {{borrowed capture}}
++ const char *loaded=reference_graph_load(slot);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)loaded;}); // expected-error {{borrowed capture}}
++ reference_graph_chain(global_projection_pointer,loan);const char *global=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)global;}); // expected-error {{borrowed capture}}
++}
++void reference_graph_shared(borrowed const char *loan){
++ const char *first="static",*second="static";
++ reference_graph_store(first,loan);reference_graph_store(second,loan);
++ const char *first_value=first,*second_value=second;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)first_value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)second_value;}); // expected-error {{borrowed capture}}
++}
++void reference_graph_escaped(void){
++ const char *first="static",*second="static";
++ reference_graph_escape(first);reference_graph_escape(second);
++ const char *first_value=first,*second_value=second;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)first_value;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)second_value;}); // expected-error {{borrowed capture}}
++}
++void reference_graph_receiver_values(borrowed const char *loan){
++ ReferenceGraphReceiver source;ReferenceGraphFinal final_source;
++ const char *slot="static";source.chain(slot,loan);const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ const char *qualified="static";source.ReferenceGraphReceiver::virtual_store(qualified,loan);const char *qualified_value=qualified;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)qualified_value;}); // expected-error {{borrowed capture}}
++ const char *final_slot="static";final_source.virtual_store(final_slot,loan);const char *final_value=final_slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)final_value;}); // expected-error {{borrowed capture}}
++}
++void reference_graph_open_dispatch(ReferenceGraphReceiver &source){
++ const char *slot="static";source.virtual_store(slot,"other");const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_graph_resources(void){
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ int slot=0;reference_graph_number(slot,descriptor);int value=reference_graph_number_load(slot);
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-reference-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-reference-call-graphs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-reference-call-graphs.h
+@@ -0,0 +1,33 @@
++#ifndef OBJC3_REFERENCE_CALL_GRAPHS_H
++#define OBJC3_REFERENCE_CALL_GRAPHS_H
++#include "native-global-call-graphs.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++static inline void reference_graph_store(const char *&slot,const char *value){slot=value;}
++static inline const char *reference_graph_load(const char *const &slot){return slot;}
++static inline void reference_graph_chain(const char *&slot,const char *value){reference_graph_store(slot,value);}
++static inline void reference_graph_number(int &slot,int value){slot=value;}
++static inline int reference_graph_number_load(const int &slot){return slot;}
++template<class Value>void reference_graph_unknown(Value &);
++static inline void reference_graph_escape(const char *&slot){reference_graph_unknown(slot);}
++struct ReferenceGraphReceiver {
++ void store(const char *&slot,const char *value){slot=value;}
++ void chain(const char *&slot,const char *value){store(slot,value);}
++ virtual void virtual_store(const char *&slot,const char *value){slot=value;}
++};
++struct ReferenceGraphFinal final:ReferenceGraphReceiver {
++ void virtual_store(const char *&slot,const char *value)override{slot=value;}
++};
++static inline void reference_graph_methods(void){
++ ReferenceGraphReceiver source;ReferenceGraphFinal final_source;const char *slot="static";
++ source.chain(slot,"other");source.ReferenceGraphReceiver::virtual_store(slot,"static");
++ final_source.virtual_store(slot,"other");const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++}
++static inline void reference_graph_ordinary(void){
++ const char *slot="static";reference_graph_chain(slot,"other");const char *value=reference_graph_load(slot);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++ int number=0;reference_graph_number(number,42);int observed=reference_graph_number_load(number);
++ (void)binding_detached(binding_make_scalar(observed));
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-pointer-call-graphs.m b/clang/test/ObjC3/Sema/native-pointer-call-graphs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-pointer-call-graphs.m
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-pointer-call-graphs.h"
++#if __OBJC3_PROFILE__ == 3
++const char *pointer_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#else
++void pointer_graph_values(borrowed const char *loan){
++ const char *slot=loan;const char *value=pointer_graph_pointer(&slot);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void pointer_graph_resources(void){
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ int value=pointer_graph_number(&descriptor);
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-pointer-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-pointer-call-graphs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-pointer-call-graphs.h
+@@ -0,0 +1,14 @@
++#ifndef OBJC3_POINTER_CALL_GRAPHS_H
++#define OBJC3_POINTER_CALL_GRAPHS_H
++#include "native-global-call-graphs.h"
++#if __OBJC3_PROFILE__ != 3
++static inline int pointer_graph_number(const int *value){return *value;}
++static inline const char *pointer_graph_pointer(const char *const *value){return *value;}
++static inline char pointer_graph_byte(const char *value){return *value;}
++static inline void pointer_graph_observations(borrowed const char *loan){
++ int number=42;int scalar=pointer_graph_number(&number);const char *slot="static";const char *value=pointer_graph_pointer(&slot);
++ char byte=pointer_graph_byte(loan);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)scalar;(void)value;(void)byte;});
++}
 +#endif
 +#endif

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.230 / System 2.156 reference-helper span](linux_native_reference_call_graphs.md)
+resolves scalar reference writes and escapes against caller storage, including
+shared callees whose actual cell sets grow through later calls.
+
 The [Source 2.229 / System 2.155 closed-helper span](linux_native_global_call_graphs.md)
 connects scalar arguments, global writes and returned values through bounded
 native helper chains, recursion and source-free imported bodies.

@@ -38,7 +38,10 @@ void Check(bool arc, const std::string &standard) {
       "inline void published_chain(const char *value){published_store(value);}"
       "inline const char *published_roundtrip(const char *value){published_chain(value);return published_load();}"
       "inline void published_store_number(int value){published_number=value;}"
-      "inline int published_load_number(void){return published_number;}";
+      "inline int published_load_number(void){return published_number;}"
+      "inline int published_pointer_number(const int *value){return *value;}"
+      "inline const char *published_pointer_load(const char *const *value){return *value;}"
+      "inline char published_pointer_byte(const char *value){return *value;}";
   provider.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
   provider.objc3 = true; provider.arc = arc; provider.strict_concurrency = true;
   provider.objc_runtime = "gnustep-2.2";
@@ -48,7 +51,25 @@ void Check(bool arc, const std::string &standard) {
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GlobalSlots"; provider.package_identity = "global-slots-v1";
   provider.interface_exports = {"published_pointer", "published_number", "PublishedSlots", "published_slots", "published_array",
-      "published_store", "published_load", "published_chain", "published_roundtrip", "published_store_number", "published_load_number"};
+      "published_store", "published_load", "published_chain", "published_roundtrip", "published_store_number", "published_load_number",
+      "published_pointer_number", "published_pointer_load", "published_pointer_byte"};
+  if (cxx) {
+    *provider.source_text +=
+        "inline void published_reference_store(const char *&slot,const char *value){slot=value;}"
+        "inline const char *published_reference_load(const char *const &slot){return slot;}"
+        "inline void published_reference_chain(const char *&slot,const char *value){published_reference_store(slot,value);}"
+        "inline void published_reference_number(int &slot,int value){slot=value;}"
+        "struct PublishedReferenceReceiver {"
+        "void store(const char *&slot,const char *value){slot=value;}"
+        "void chain(const char *&slot,const char *value){store(slot,value);}"
+        "virtual void virtual_store(const char *&slot,const char *value){slot=value;}"
+        "};struct PublishedReferenceFinal final:PublishedReferenceReceiver {"
+        "void virtual_store(const char *&slot,const char *value)override{slot=value;}};";
+    for (const char *name : {"published_reference_store", "published_reference_load", "published_reference_chain", "published_reference_number"})
+      provider.interface_exports.push_back(name);
+    provider.interface_exports.push_back("PublishedReferenceReceiver");
+    provider.interface_exports.push_back("PublishedReferenceFinal");
+  }
   auto published = Compile(provider); Require(published);
   assert(published.interface_artifact && published.interface_artifact->success);
   const auto &artifact = *published.interface_artifact;
@@ -107,6 +128,38 @@ void Check(bool arc, const std::string &standard) {
   run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
       "published_store_number(descriptor);int value=published_load_number();"
       "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
+  run("void rejected(borrowed const char *loan){const char *slot=loan;const char *value=published_pointer_load(&slot);"
+      "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+  run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
+      "int value=published_pointer_number(&descriptor);"
+      "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
+  run("void ordinary(borrowed const char *loan){const char *slot=\"static\";const char *value=published_pointer_load(&slot);"
+      "char byte=published_pointer_byte(loan);int number=42;int scalar=published_pointer_number(&number);"
+      "global_detached(^void(void) __objc3_async_frame {(void)value;(void)byte;(void)scalar;});}");
+  if (cxx) {
+    for (const char *slot : {"local", "published_pointer", "published_slots.pointer", "published_array[1]"})
+      run("void rejected(borrowed const char *loan){const char *local=\"static\";published_reference_chain(" +
+          std::string(slot) + ",loan);const char *value=published_reference_load(" + slot +
+          ");global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void ordinary(void){const char *slot=\"static\";published_reference_chain(slot,\"other\");"
+        "const char *value=published_reference_load(slot);global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
+        "int slot=0;published_reference_number(slot,descriptor);int value=slot;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
+    run("void ordinary(void){int slot=0;published_reference_number(slot,42);int value=slot;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    for (const char *selected : {"first", "second"})
+      run("void rejected(borrowed const char *loan){const char *first=\"static\",*second=\"static\";"
+          "published_reference_store(first,loan);published_reference_store(second,loan);const char *value=" +
+          std::string(selected) + ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    for (const char *call : {"source.chain", "source.PublishedReferenceReceiver::virtual_store", "final_source.virtual_store"}) {
+      const std::string locals = "PublishedReferenceReceiver source;PublishedReferenceFinal final_source;const char *slot=\"static\";";
+      run("void rejected(borrowed const char *loan){" + locals + call + "(slot,loan);const char *value=slot;"
+          "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+      run("void ordinary(void){" + locals + call + "(slot,\"other\");const char *value=slot;"
+          "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    }
+  }
   const std::string crossing = preamble +
       (cxx ? "\n#include \"objc3_task.hpp\"\n" : "") +
       "typedef const char *GlobalUnchecked __attribute__((objc_unsafe_sendable));"

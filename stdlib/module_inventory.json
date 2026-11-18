@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 229,
+        "minor": 230,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed native scalar reference helpers resolve assignments, observations and escapes to complete caller cell sets across local/global/field/fixed-array storage; final binding replay preserves later actual targets of shared callees, receiver-independent/qualified/final member helpers and pure pointer loads retain their value roles, ordinary stores avoid false escapes, and known loan/resource transfers remain rejected; unresolved/open/stateful lifetime precision and matching SDK acceptance pending",
         "Closed native scalar-by-value helper graphs bind actual arguments, canonical parameters, global writes and return expressions through bounded chains and recursion; constant dead writes and pure observations remain independent, admitted discovery exhaustion stays conservative, and source-free imported bodies retain the same rules; open/reference/stateful/interprocedural precision and matching SDK acceptance pending",
         "Known borrowed/resource values retain native-scope provenance through global/external/static/TLS slots, canonical redeclarations and initializers, immutable address/reference aliases, record fields and bounded fixed-array cells; independent observations and ordinary writes remain admitted; whole-program mutable/global precision and matching SDK acceptance pending",
         "Local C++ lambda capture and parameter results retain borrowed/resource identities through copies, aliases, pure mutable/generic scalar graphs, conditional returns, pointer cursors and bit transformations; independent observations stay usable and unknown state/escaping receivers conservatively retain known sources; matching SDK acceptance pending",
@@ -392,12 +393,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 155,
+        "minor": 156,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed native scalar reference helpers resolve assignments, observations and escapes to complete caller cell sets across local/global/field/fixed-array storage; final binding replay preserves later actual targets of shared callees, receiver-independent/qualified/final member helpers and pure pointer loads retain their value roles, ordinary stores avoid false escapes, and known loan/resource transfers remain rejected; unresolved/open/stateful lifetime precision and matching SDK acceptance pending",
         "Closed native scalar-by-value helper graphs bind actual arguments, canonical parameters, global writes and return expressions through bounded chains and recursion; constant dead writes and pure observations remain independent, admitted discovery exhaustion stays conservative, and source-free imported bodies retain the same rules; open/reference/stateful/interprocedural precision and matching SDK acceptance pending",
         "Known borrowed/resource values retain native-scope provenance through global/external/static/TLS slots, canonical redeclarations and initializers, immutable address/reference aliases, record fields and bounded fixed-array cells; independent observations and ordinary writes remain admitted; whole-program mutable/global precision and matching SDK acceptance pending",
         "Local C++ lambda capture and parameter results retain borrowed/resource identities through copies, aliases, pure mutable/generic scalar graphs, conditional returns, pointer cursors and bit transformations; independent observations stay usable and unknown state/escaping receivers conservatively retain known sources; matching SDK acceptance pending",

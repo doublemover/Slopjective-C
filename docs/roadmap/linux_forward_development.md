@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.230 / System 2.156 reference-helper span](linux_native_reference_call_graphs.md)
+resolves scalar reference writes and escapes against caller storage, including
+shared callees whose actual cell sets grow through later calls.
+
 The [Source 2.229 / System 2.155 closed-helper span](linux_native_global_call_graphs.md)
 connects scalar arguments, global writes and returned values through bounded
 native helper chains, recursion and source-free imported bodies.
@@ -265,7 +269,7 @@ matching SDK consolidation follows the implementation batch.
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
 campaign as historical evidence. Its terminal upstream receipt-state bug is
 fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
-Source 2.229 / System 2.155 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.230 / System 2.156 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2128,7 +2132,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.229 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.230 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 
