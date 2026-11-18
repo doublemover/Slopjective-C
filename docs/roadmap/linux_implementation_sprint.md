@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.259 / System 2.185 checked register results](linux_checked_cpp_regions.md)
+extend native C++ unwinding ownership to eligible register-returned records.
+Direct and indirect calls, native Blocks and checked messages retain their ABI.
+
 The [Source 2.258 / System 2.184 checked Optional return change](linux_checked_cpp_optionals.md)
 holds provisional indirect results through typed failure and native unwinding.
 Source-free clients cover direct propagation, force and nested optionalization.

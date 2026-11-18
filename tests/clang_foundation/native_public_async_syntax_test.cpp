@@ -1056,6 +1056,19 @@ struct TransportOwner {
   ~TransportOwner() noexcept(false);
 };
 using MaybeTransportOwner = __objc3_optional(TransportOwner);
+struct [[clang::trivial_abi]] RegisterOwner {
+  int value;
+  explicit RegisterOwner(int value);
+  RegisterOwner(const RegisterOwner &other);
+  ~RegisterOwner() noexcept(false);
+};
+struct [[clang::trivial_abi]] RegisterPair {
+  double first, second;
+  RegisterPair(double first, double second);
+  RegisterPair(const RegisterPair &other);
+  ~RegisterPair() noexcept(false);
+};
+
 int transport_live();
 int transport_destroyed();
 int transport_copied();
@@ -1068,6 +1081,14 @@ MaybeTransportOwner transport_checked(int mode) __objc3_throws(id<Error>);
 MaybeTransportOwner transport_checked_relay(int mode) __objc3_throws(id<Error>);
 void transport_consume(MaybeTransportOwner value, int value_mode);
 void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second);
+RegisterOwner make_register(int mode) __objc3_throws(id<Error>);
+RegisterOwner relay_register(int mode) __objc3_throws(id<Error>);
+RegisterPair make_register_pair(bool fail) __objc3_throws(id<Error>);
+__attribute__((objc_root_class))
+@interface RegisterFactory
++ (RegisterOwner)value:(int)mode __objc3_throws(id<Error>);
+@end
+
 static int live, destroyed, copied, moved, consumed;
 TransportOwner::TransportOwner(int value, int role) : value(value), role(role) {
   if (role == 4 || (role == 5 && live)) throw TransportError{34};
@@ -1127,6 +1148,49 @@ void transport_consume(MaybeTransportOwner value, int mode) {
 void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second) {
   if (__objc3_has_value(first) || __objc3_has_value(second)) __builtin_trap();
 }
+
+RegisterOwner::RegisterOwner(int value) : value(value) { ++live; }
+RegisterOwner::RegisterOwner(const RegisterOwner &other) : value(other.value) {
+  ++live;
+  ++copied;
+}
+RegisterOwner::~RegisterOwner() noexcept(false) {
+  --live;
+  ++destroyed;
+  if (value == 31) throw TransportError{31};
+}
+RegisterPair::RegisterPair(double first, double second) : first(first), second(second) { ++live; }
+RegisterPair::RegisterPair(const RegisterPair &other) : first(other.first), second(other.second) {
+  ++live;
+  ++copied;
+}
+RegisterPair::~RegisterPair() noexcept(false) {
+  --live;
+  ++destroyed;
+}
+struct LateReturn {
+  int mode;
+  int value() const { return mode == 1 ? 31 : 42; }
+  ~LateReturn() noexcept(false) {
+    if (mode == 2) throw TransportError{32};
+  }
+};
+RegisterOwner make_register(int mode) __objc3_throws(id<Error>) {
+  if (mode < 0) __objc3_throw(transport_checked_error());
+  return RegisterOwner(LateReturn{mode}.value());
+}
+RegisterOwner relay_register(int mode) __objc3_throws(id<Error>) {
+  return try make_register(mode);
+}
+RegisterPair make_register_pair(bool fail) __objc3_throws(id<Error>) {
+  if (fail) __objc3_throw(transport_checked_error());
+  return RegisterPair(17.0, 25.0);
+}
+@implementation RegisterFactory
++ (RegisterOwner)value:(int)mode __objc3_throws(id<Error>) {
+  return try relay_register(mode);
+}
+@end
 )");
   CompileRequest provider;
   provider.input_path = provider_path.string();
@@ -1146,7 +1210,9 @@ void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second) {
       "MaybeTransportOwner", "transport_live", "transport_destroyed",
       "transport_copied", "transport_moved", "transport_consumed",
       "transport_make", "transport_relay", "transport_consume", "transport_pair",
-      "transport_checked_error", "transport_checked", "transport_checked_relay"};
+      "transport_checked_error", "transport_checked", "transport_checked_relay",
+      "RegisterOwner", "RegisterPair", "RegisterFactory", "make_register",
+      "relay_register", "make_register_pair"};
   const auto published = Compile(provider);
   Compiled(published);
   Require(published.interface_artifact && published.interface_artifact->success,
@@ -1259,6 +1325,69 @@ int main() {
     __builtin_trap();
   } catch (const TransportError &error) { require(error.code == 32); }
   count(0, 12, 1, 1, 5);
+
+  __objc3_do {
+    auto missing = try relay_register(-1);
+    (void)missing;
+    __builtin_trap();
+  } __objc3_catch(id<Error> error) {
+    require(error == transport_checked_error());
+    count(0, 12, 1, 1, 5);
+  }
+  {
+    auto missing = try? relay_register(-1);
+    auto absent_pair = try? make_register_pair(true);
+    require(!__objc3_has_value(missing) && !__objc3_has_value(absent_pair));
+    count(0, 12, 1, 1, 5);
+  }
+  {
+    auto ready = try! relay_register(0);
+    auto pair = try! make_register_pair(false);
+    require(ready.value == 42 && pair.first == 17.0 && pair.second == 25.0);
+    count(2, 12, 1, 1, 5);
+  }
+  count(0, 14, 1, 1, 5);
+  {
+    auto ready = try? relay_register(0);
+    require(__objc3_has_value(ready));
+    count(1, 14, 1, 1, 5);
+  }
+  count(0, 15, 1, 1, 5);
+  try {
+    try? relay_register(1);
+    __builtin_trap();
+  } catch (const TransportError &error) {
+    require(error.code == 31);
+  }
+  count(0, 16, 1, 1, 5);
+  try {
+    auto value = try! relay_register(2);
+    (void)value;
+    __builtin_trap();
+  } catch (const TransportError &error) {
+    require(error.code == 32);
+  }
+  count(0, 17, 1, 1, 5);
+  {
+    auto via_message = try! [RegisterFactory value:0];
+    auto message_failure = try? [RegisterFactory value:-1];
+    require(via_message.value == 42 && !__objc3_has_value(message_failure));
+    count(1, 17, 1, 1, 5);
+  }
+  count(0, 18, 1, 1, 5);
+  {
+    using CheckedRegister = RegisterOwner (^)(int) __objc3_throws(id<Error>);
+    CheckedRegister block = ^RegisterOwner(int mode) __objc3_throws(id<Error>) {
+      return try relay_register(mode);
+    };
+    auto via_block = try! block(0);
+    auto block_failure = try? block(-1);
+    auto *function = &relay_register;
+    auto indirect = try! function(0);
+    require(via_block.value == 42 && indirect.value == 42 && !__objc3_has_value(block_failure));
+    count(2, 18, 1, 1, 5);
+  }
+  count(0, 20, 1, 1, 5);
 }
 )";
   Compiled(Compile(consumer));

@@ -56,3 +56,17 @@ payloads in static and thread-local regions. Throwing-destructor register ABI,
 Optional payloads and async value-operation transport still require their own
 lifetime coverage. The maintained AArch64 patch applies after this change;
 native archive qualification remains separate.
+
+Source 2.259 / System 2.185 also qualifies synchronous C++ records passed
+back in registers on native Linux when their destructors may throw. The
+caller checks the hidden error slot before it owns the returned object.
+The callee's provisional object unwinds if return-expression cleanup
+throws before register transfer.
+
+The source-free controls preserve `trivial_abi` and execute integer and
+paired-floating result types with exact copy and destructor counts. Direct
+and indirect calls, Blocks and Objective-C messages pass with typed
+success and failure. Eight separate-TU x86-64 executions cover C++20/C++23,
+ARC/MRC and O0/O2. Target IR tests bind the x86-64 and AArch64 register
+representations and hidden error slot. Async value callbacks continue to
+require a nonthrowing destruction contract.

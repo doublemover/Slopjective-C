@@ -12532,7 +12532,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,1039 @@
+@@ -0,0 +1,1045 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12696,11 +12696,17 @@ new file mode 100644
 +    return false;
 +  if (Destructor &&
 +      !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow()) {
-+    // The checked synchronous sret edge owns a native destination and can
-+    // run a throwing destructor under ordinary C++ EH. Return-in-register
-+    // ownership and async value-operation callbacks need a separate contract.
-+    return AllowThrowingDestructor && CGM.getLangOpts().CXXExceptions &&
-+           !Record->canPassInRegisters();
++    // The synchronous checked caller may spill native register bits into its
++    // provisional result slot. Only success admits an active object there.
++    if (!AllowThrowingDestructor || !CGM.getLangOpts().CXXExceptions)
++      return false;
++    const auto &Triple = CGM.getTarget().getTriple();
++    const bool NativeLinux =
++        (Triple.getArch() == llvm::Triple::x86_64 ||
++         Triple.getArch() == llvm::Triple::aarch64) &&
++        Triple.isOSLinux() && Triple.isGNUEnvironment() &&
++        CGM.getTarget().getCXXABI().isItaniumFamily();
++    return !Record->canPassInRegisters() || NativeLinux;
 +  }
 +  return Record->hasTrivialDestructor() || Destructor;
 +}
@@ -38149,3 +38155,40 @@ new file mode 100644
 +using ResultOwner = __objc3_result(Owner, int);
 +ResultOwner result_owner() { return __objc3_ok(Owner, int, Owner(1)); } // expected-error {{by-value call ABI}}
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-checked-register-results.mm b/clang/test/ObjC3/CodeGen/native-checked-register-results.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-checked-register-results.mm
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,X64
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARM
++
++@protocol Error @end
++id<Error> get_error();
++struct [[clang::trivial_abi]] RegisterOwner {
++  int value;
++  explicit RegisterOwner(int value) : value(value) {}
++  RegisterOwner(const RegisterOwner &other) : value(other.value) {}
++  ~RegisterOwner() noexcept(false);
++};
++struct [[clang::trivial_abi]] RegisterPair {
++  double first, second;
++  RegisterPair(double first, double second) : first(first), second(second) {}
++  RegisterPair(const RegisterPair &other) : first(other.first), second(other.second) {}
++  ~RegisterPair() noexcept(false);
++};
++
++// CHECK-LABEL: define dso_local i32 @_Z13make_registerb(
++// CHECK-SAME: ptr noundef
++RegisterOwner make_register(bool fail) __objc3_throws(id<Error>) {
++  if (fail) __objc3_throw(get_error());
++  return RegisterOwner(42);
++}
++
++// X64-LABEL: define dso_local { double, double } @_Z18make_register_pairb(
++// ARM-LABEL: define dso_local %struct.RegisterPair @_Z18make_register_pairb(
++// CHECK-SAME: ptr noundef
++RegisterPair make_register_pair(bool fail) __objc3_throws(id<Error>) {
++  if (fail) __objc3_throw(get_error());
++  return RegisterPair(17.0, 25.0);
++}
