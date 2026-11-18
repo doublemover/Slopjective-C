@@ -56,6 +56,20 @@ table. The producer rejects a missing, non-executable or wrong-architecture
 tool, and the consumer validates the restored member before frontend
 configuration. The earlier AArch64 partitions all stopped at this boundary.
 
+The configured compilation database can name working directories containing
+only unselected objects. The shared analysis archive now includes those
+directory entries without recursing into their object files and checks their
+restoration before running analysis. This preserves relative source-path
+resolution and the exact dependency inventory on both Linux architectures.
+
+Interface admission reparses providers using the consumer's effective target
+CPU, ABI and feature options. The AArch64 SDK driver config enables FMV via
+compiler-rt. Clang Tooling reparses now preserve that setting through the same
+projection used for interface emission. The regression reproduces the profile
+mismatch with libgcc and verifies admission with the projected target. Test
+providers that construct their own Tooling ASTs use the SDK's native target
+settings, and target-attribute controls use architecture-specific spellings.
+
 The SDK frontend CTest plan records the executable's command argument index
 from each CMake registration. Direct tests start with their executable. The
 meta, diagnostic and text-file CLI wrappers pass it as an argument. Serial

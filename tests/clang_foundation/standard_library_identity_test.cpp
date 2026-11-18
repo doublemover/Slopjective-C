@@ -67,7 +67,7 @@ template<class T,unsigned long N=0>class span {
       "inline int read(int value){return value;}"
       "inline std::native_storage<int> storage(){return {{42}};}"
       "inline int deduced(){return std::existing_deduced.read().value;}}",
-      {"-xc++","-std=c++23","-isystem",root.string()},"native-template-identity.cpp");
+      test::NativeToolArguments({"-xc++","-std=c++23","-isystem",root.string()}),"native-template-identity.cpp");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
   std::vector<clang::TemplateDecl *> native;
   clang::ClassTemplateDecl *user=nullptr;
@@ -118,7 +118,7 @@ template<class T,unsigned long N=0>class span {
   consumer.imported_interfaces={imported};
   auto target_ast=clang::tooling::buildASTFromCodeWithArgs(
       "#include <functional>\n",
-      {"-xc++","-std=c++23","-isystem",root.string()},"native-target.cpp");
+      test::NativeToolArguments({"-xc++","-std=c++23","-isystem",root.string()}),"native-target.cpp");
   assert(target_ast && !target_ast->getDiagnostics().hasErrorOccurred());
   auto span_redeclarations=[&] {
     unsigned count=0;
@@ -154,7 +154,7 @@ template<class T,unsigned long N=0>class span {
   target.language_revision=artifact.identity.language_revision;
   target.language_profile=artifact.identity.language_profile;
   target.allow_function_overloads=true;
-  target.ast_arguments={"-xc++","-std=c++23","-isystem",root.string()};
+  target.ast_arguments=test::NativeToolArguments({"-xc++","-std=c++23","-isystem",root.string()});
   std::vector<InterfaceContractDiagnostic> diagnostics;
   auto session=InterfaceImportSession::Prepare({imported},target,diagnostics);
   if(!session)for(const auto &diagnostic:diagnostics)

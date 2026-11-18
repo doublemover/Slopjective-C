@@ -561,6 +561,7 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           : (language.CPlusPlus ? "c++" : "c");
       target.ast_arguments = BuildInterfaceASTArguments(
           result_.driver_arguments, import_language, standard.getName(), target);
+      AppendInterfaceTargetArguments(target_instance.getTarget(), target.ast_arguments);
       // Driver configuration files can supply SDK header roots without those
       // flags appearing in the caller's argv. Reparse against the completed
       // invocation's effective lookup configuration, including its macros.

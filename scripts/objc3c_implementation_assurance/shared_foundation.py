@@ -19,7 +19,7 @@ from scripts.objc3c_toolchain.core import build_plans, prepare, seal_development
 from scripts.objc3c_toolchain.implementation_analysis import dependencies, inventory, patch_units
 from scripts.objc3c_toolchain.linux_host import native_linux_host, require_elf
 
-SCHEMA = 'objc3c.implementation-analysis-foundation.v2'
+SCHEMA = 'objc3c.implementation-analysis-foundation.v3'
 TABLEGEN = Path('bin/llvm-tblgen')
 
 
@@ -29,6 +29,13 @@ def _tablegen(build: Path) -> Path:
         raise ValueError('shared analysis foundation requires its own executable llvm-tblgen')
     require_elf(path)
     return path
+
+
+def _build_directories(build: Path, database: Path) -> set[Path]:
+    # Resolving a relative source path requires its working directory even
+    # when the database row belongs to an unselected, unarchived object.
+    return {directory for row in json.loads(database.read_text())
+            if (directory := Path(row['directory'])) != build and directory.is_relative_to(build)}
 
 
 def _build_files(repo: Path, configuration: dict) -> set[Path]:
@@ -51,6 +58,7 @@ def _build_files(repo: Path, configuration: dict) -> set[Path]:
     # Ninja checks the recorded object's nanosecond mtime to authenticate its
     # dependency closure. Retain only the compiled objects that own those rows.
     paths.update(map(Path, recorded))
+    paths.update(_build_directories(build, database))
     paths.update(path for path in build.rglob('*')
                  if path.is_file() and path.suffix in ('.ninja', '.modmap', '.dd'))
     paths.update(path for row in rows for name in row['response_files']
@@ -73,7 +81,7 @@ def _build_files(repo: Path, configuration: dict) -> set[Path]:
 def _archive(repo: Path, archive: Path, allowed: tuple[Path, ...], files: set[Path]) -> dict:
     members = []
     for path in sorted(files):
-        if (not (path.is_file() or path.is_symlink()) or not any(path.is_relative_to(root) and
+        if (not (path.is_file() or path.is_dir() or path.is_symlink()) or not any(path.is_relative_to(root) and
                 path.resolve(strict=True).is_relative_to(root) for root in allowed)):
             raise ValueError('analysis foundation contains an unowned file: '+str(path))
         members.append(path.relative_to(repo).as_posix())
@@ -93,7 +101,7 @@ def _archive_members(archive: Path, prefixes: tuple[str, ...]) -> list[str]:
             for member in members:
                 name = member.name
                 if (not name.startswith(prefixes) or '..' in Path(name).parts or
-                        not (member.isfile() or member.issym() or member.islnk())):
+                        not (member.isfile() or member.isdir() or member.issym() or member.islnk())):
                     raise ValueError('analysis foundation archive contains an unowned member')
                 if member.issym() or member.islnk():
                     target = (posixpath.join(posixpath.dirname(name), member.linkname)
@@ -184,6 +192,10 @@ def restore(repo: Path, plan: dict, bundle: Path, evidence: Path) -> tuple[dict,
     seal_development(repo, source_dir=source)
     subprocess.run(['tar', '-I', 'zstd', '-xf', archive, '-C', repo], check=True)
     _tablegen(build)
+    directories = _build_directories(build, build / 'compile_commands.json')
+    if any(not path.is_dir() or path.is_symlink() or not path.resolve().is_relative_to(build)
+           for path in directories):
+        raise ValueError('analysis foundation archive omitted a configured compiler working directory')
     if _identity(portable, stage) != report['identity']:
         raise ValueError('restored analysis compiler differs from the producer')
     evidence.mkdir(parents=True, exist_ok=False)

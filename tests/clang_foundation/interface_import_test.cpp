@@ -4,7 +4,11 @@
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/interface_codec.h"
+#include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/interface_reparse_options.h"
 #include "clang_foundation/runtime_interface_types.h"
+#include "clang/Frontend/ASTUnit.h"
+#include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/ArrayRef.h"
 
@@ -61,6 +65,41 @@ bool HasImported(const CompileResult &result, const std::string &name) {
   return false;
 }
 
+void TestAArch64ReplayUsesEffectiveDriverTarget() {
+  const auto root = fs::temp_directory_path() / "objc3-aarch64-interface-target";
+  fs::create_directories(root);
+  const auto path = root / "provider.objc3i";
+  InterfaceImportTarget target;
+  target.target_triple = "aarch64-unknown-linux-gnu";
+  target.objc = target.objc3 = true;
+  target.objc_runtime = "gnustep-2.2";
+  target.ast_arguments = BuildInterfaceASTArguments({"--no-default-config", "--rtlib=libgcc"},
+                                                   "objective-c", "c17", target);
+  auto configured = target.ast_arguments;
+  configured.push_back("--rtlib=compiler-rt");
+  auto producer = clang::tooling::buildASTFromCodeWithArgs(
+      "int versioned_api(int value);", configured, "provider.m");
+  assert(producer && !producer->getDiagnostics().hasErrorOccurred());
+  const auto &context = producer->getASTContext();
+  assert(context.getTargetInfo().hasFeature("fmv"));
+  auto artifact = EmitSemanticInterface(producer->getASTContext(), "test.EffectiveArm", "arm-target");
+  assert(artifact.success);
+  { std::ofstream source(path); source << artifact.source_bytes; assert(source.good()); }
+  { std::ofstream sidecar(path.string() + ".json"); sidecar << artifact.sidecar_json; assert(sidecar.good()); }
+  target.runtime_abi = artifact.identity.runtime_abi;
+  target.extension_abi = artifact.identity.extension_abi;
+  target.language_revision = artifact.identity.language_revision;
+  target.language_profile = artifact.identity.language_profile;
+  auto input = ImportOf(path, artifact.identity);
+  std::vector<InterfaceContractDiagnostic> diagnostics;
+  assert(!InterfaceImportSession::Prepare({input}, target, diagnostics));
+  assert(diagnostics.size() == 1 && diagnostics.front().code == "O3IFC139");
+  diagnostics.clear();
+  AppendInterfaceTargetArguments(context.getTargetInfo(), target.ast_arguments);
+  assert(InterfaceImportSession::Prepare({input}, target, diagnostics) && diagnostics.empty());
+  fs::remove_all(root);
+}
+
 void TestAdmissionDiagnosticsUseInvocationFileSystem() {
   const auto root = fs::temp_directory_path() / "objc3-admission-diagnostic-vfs";
   fs::remove_all(root);
@@ -112,7 +151,7 @@ void TestPreparedImportBudgets() {
   target.language_profile = id.language_profile;
   target.objc = target.objc3 = true;
   target.objc_runtime = "gnustep-2.2";
-  target.ast_arguments = BuildInterfaceASTArguments({}, "objective-c", "c17", target);
+  target.ast_arguments = BuildInterfaceASTArguments(test::NativeToolArguments({}), "objective-c", "c17", target);
   std::vector<InterfaceContractDiagnostic> diagnostics;
   auto prepared = InterfaceImportSession::Prepare(inputs, target, diagnostics);
   for (const auto &d : diagnostics) std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
@@ -820,6 +859,7 @@ void TestCompilerVarargsMembersAreReused() {
 int main() {
   test::IsolatedCases cases;
   cases.Run("TestAdmissionDiagnosticsUseInvocationFileSystem", TestAdmissionDiagnosticsUseInvocationFileSystem);
+  cases.Run("TestAArch64ReplayUsesEffectiveDriverTarget", TestAArch64ReplayUsesEffectiveDriverTarget);
   cases.Run("TestPreparedImportBudgets", TestPreparedImportBudgets);
   cases.Run("TestPrimitiveABIProfilesRejectMismatchedConsumers", TestPrimitiveABIProfilesRejectMismatchedConsumers);
   cases.Run("TestThreeModuleSemanticLookupAndIdentity", TestThreeModuleSemanticLookupAndIdentity);

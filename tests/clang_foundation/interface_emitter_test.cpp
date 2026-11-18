@@ -464,16 +464,22 @@ void TestDeducedTaskGroupReplay() {
 void TestNativeEmissionPolicyReplay() {
  for(const char *standard:{"c17","c++20","c++23"})for(bool arc:{false,true}) {
   const bool cpp=std::string(standard)!="c17";
-  std::vector<std::string> args={"-x",cpp?"objective-c++":"objective-c",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2","--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
+  auto args=test::NativeToolArguments({"-x",cpp?"objective-c++":"objective-c",std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"});
   if(arc)args.push_back("-fobjc-arc");
+#if defined(__aarch64__)
+  const std::string target="neon", changed_target="sve", clone="sve", changed_clone="sve2";
+#else
+  const std::string target="sse2", changed_target="sse4.2", clone="sse4.2", changed_clone="popcnt";
+#endif
   const std::string source=R"(
    extern int policy_data __attribute__((section(".data.objc3.policy"),weak));
    int policy_data=17;
    int policy_read(const int *) __attribute__((section(".text.objc3.policy"),used,retain,noinline,no_sanitize("address","undefined"),disable_sanitizer_instrumentation,no_profile_instrument_function,no_instrument_function,no_stack_protector,nodebug));
    inline int policy_read(const int *value){return *value+policy_data;}
-   __attribute__((target("sse2"),min_vector_width(128),noinline)) inline int policy_target(int value){return value+1;}
-   __attribute__((target_clones("default","sse4.2"))) inline int policy_cloned(int value){return value+2;}
-  )";
+  )" + std::string("__attribute__((target(\"") + target +
+      "\"),min_vector_width(128),noinline)) inline int policy_target(int value){return value+1;}\n" +
+      "__attribute__((target_clones(\"default\",\"" + clone +
+      "\"))) inline int policy_cloned(int value){return value+2;}\n";
   auto emit=[&](const std::string &text) {
    auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,"native-emission-policy.m");assert(ast && !ast->getDiagnostics().hasErrorOccurred());
    assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.emission_policy","test",{}));
@@ -492,7 +498,7 @@ void TestNativeEmissionPolicyReplay() {
   auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,older);assert(!rejected);llvm::consumeError(rejected.takeError());
   std::erase(decoded->required_semantics,kNativeEmissionPolicySemantic);
   auto missing=EncodeSemanticInterfaceSidecar(*decoded,supported);assert(!missing);llvm::consumeError(missing.takeError());
-  for(const auto &[before,after]:std::vector<std::pair<std::string,std::string>>{{".text.objc3.policy",".text.objc3.other"},{".data.objc3.policy",".data.objc3.other"},{"\"address\",\"undefined\"","\"address\""},{"disable_sanitizer_instrumentation,",""},{"no_profile_instrument_function,",""},{"no_instrument_function,",""},{"no_stack_protector,",""},{",nodebug",""},{",weak",""},{"used,",""},{"retain,",""},{"target(\"sse2\")","target(\"sse4.2\")"},{"min_vector_width(128)","min_vector_width(64)"},{"\"default\",\"sse4.2\"","\"default\",\"popcnt\""}}) {
+  for(const auto &[before,after]:std::vector<std::pair<std::string,std::string>>{{".text.objc3.policy",".text.objc3.other"},{".data.objc3.policy",".data.objc3.other"},{"\"address\",\"undefined\"","\"address\""},{"disable_sanitizer_instrumentation,",""},{"no_profile_instrument_function,",""},{"no_instrument_function,",""},{"no_stack_protector,",""},{",nodebug",""},{",weak",""},{"used,",""},{"retain,",""},{"target(\""+target+"\")","target(\""+changed_target+"\")"},{"min_vector_width(128)","min_vector_width(64)"},{"\"default\",\""+clone+"\"","\"default\",\""+changed_clone+"\""}}) {
    auto changed=source;auto at=changed.find(before);assert(at!=std::string::npos);changed.replace(at,before.size(),after);
    assert(emit(changed).identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
   }
@@ -4530,9 +4536,9 @@ void TestOpaqueStandardLibrarySpecializations() {
   const auto root=std::filesystem::path(temporary.c_str());
   auto cleanup=llvm::scope_exit([&]{std::filesystem::remove_all(root);});
   for(const char *standard:{"c++20","c++23"}) {
-    std::vector<std::string> args={"-xobjective-c++",std::string("-std=")+standard,
+    auto args=test::NativeToolArguments({"-xobjective-c++",std::string("-std=")+standard,
         "-fobjc-version=3","-fobjc-runtime=gnustep-2.2","-fobjc-arc",
-        "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+        "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR});
     auto emit=[&](const std::string &source,const char *file="opaque-standard.cpp") {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       ast->getDiagnostics().getClient()->BeginSourceFile(ast->getLangOpts(),&ast->getPreprocessor());
@@ -4671,8 +4677,8 @@ inline constexpr int total(Key value) {
   for(const char *standard:{"c++20","c++23"})for(int mode=0;mode!=3;++mode) {
     const bool objc=mode!=0,arc=mode==2;
     std::fprintf(stderr,"STANDARD SPECIALIZATIONS %s %d\n",standard,mode);
-    std::vector<std::string> flags={"-x",objc?"objective-c++":"c++",std::string("-std=")+standard,
-        "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    auto flags=test::NativeToolArguments({"-x",objc?"objective-c++":"c++",std::string("-std=")+standard,
+        "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR});
     if(objc)flags.insert(flags.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",arc?"-fobjc-arc":"-fno-objc-arc"});
     auto emit=[&](const std::string &text,const char *file="standard-specializations.mm") {
       auto ast=clang::tooling::buildASTFromCodeWithArgs(text,flags,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -4813,8 +4819,8 @@ namespace NativeStandard {
     std::filesystem::create_directory(root);
     std::fprintf(stderr,"STDLIB MODE %s %d\n",standard,mode);
     const bool objc=mode!=0,arc=mode==2;
-    std::vector<std::string> args={"-x",objc?"objective-c++":"c++",std::string("-std=")+standard,
-        "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    auto args=test::NativeToolArguments({"-x",objc?"objective-c++":"c++",std::string("-std=")+standard,
+        "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR});
     if(objc){args.push_back("-fobjc-version=3");args.push_back("-fobjc-runtime=gnustep-2.2");}
     if(arc)args.push_back("-fobjc-arc");
     std::string traits_bytes;

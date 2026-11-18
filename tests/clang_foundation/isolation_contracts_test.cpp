@@ -91,12 +91,11 @@ std::vector<std::string> ASTArgs(bool Cxx, bool Arc) {
           "-fobjc-runtime=gnustep-2.2",
           "-fblocks",
           "-fobjc3-strict-concurrency",
-          Arc ? "-fobjc-arc" : "-fno-objc-arc",
-          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
+          Arc ? "-fobjc-arc" : "-fno-objc-arc"};
 }
 std::unique_ptr<clang::ASTUnit> Parse(llvm::StringRef Source, bool Cxx = false,
                                       bool Arc = true) {
-  auto Arguments = ASTArgs(Cxx, Arc);
+  auto Arguments = test::NativeToolArguments(ASTArgs(Cxx, Arc));
   clang::tooling::FileContentMappings Files;
   AddRuntimeInterfaceFiles(Files, Arguments);
   auto Unit = clang::tooling::buildASTFromCodeWithArgs(

@@ -2,6 +2,7 @@
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/Sanitizers.h"
+#include "clang/Basic/TargetInfo.h"
 #include "clang/Lex/DirectoryLookup.h"
 #include "clang/Lex/HeaderSearch.h"
 #include "clang/Lex/HeaderSearchOptions.h"
@@ -12,6 +13,21 @@
 #include <vector>
 
 namespace objc3::clang_foundation {
+inline void AppendInterfaceTargetArguments(const clang::TargetInfo &target,
+                                           std::vector<std::string> &arguments) {
+  const auto &options = target.getTargetOpts();
+  if (!options.CPU.empty())
+    arguments.insert(arguments.end(), {"-Xclang", "-target-cpu", "-Xclang", options.CPU});
+  if (!options.ABI.empty())
+    arguments.insert(arguments.end(), {"-Xclang", "-target-abi", "-Xclang", options.ABI});
+  // The AArch64 driver disables FMV with libgcc. The installed SDK enables
+  // it in its driver config, which the independent reparse driver may lack.
+  if (target.getTriple().getArch() == llvm::Triple::aarch64 && target.hasFeature("fmv"))
+    arguments.push_back("--rtlib=compiler-rt");
+  for (const auto &feature : options.FeaturesAsWritten)
+    arguments.insert(arguments.end(), {"-Xclang", "-target-feature", "-Xclang", feature});
+}
+
 // Physical lookup inputs are local to a reparse. Interface identities bind
 // their contents and native definitions, rather than installation paths.
 inline void AppendInterfaceHeaderSearchArguments(const clang::Preprocessor &preprocessor,

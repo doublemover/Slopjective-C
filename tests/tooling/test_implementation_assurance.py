@@ -1,5 +1,6 @@
 """Exact selection, retained evidence and cleanup controls for implementation analysis."""
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -233,16 +234,20 @@ def test_shared_foundation_preserves_actual_ninja_dependencies(tmp_path):
     subprocess.run([compiler, tool_source, '-o', tool], check=True, capture_output=True)
     (stage / 'target').write_text('real retained payload')
     (stage / 'alias').symlink_to('target')
+    working_directory = build / 'lib/IR'
+    working_directory.mkdir(parents=True)
+    (working_directory / 'unselected.o').write_text('excluded object')
     bundle = tmp_path / 'foundation.tar.zst'
     receipt = _archive(tmp_path, bundle, (stage, build), {
         build / 'build.ninja', build / '.ninja_deps', build / 'identity.o', tool,
-        stage / 'target', stage / 'alias',
+        stage / 'target', stage / 'alias', working_directory,
     })
     assert _archive_members(bundle, ('out/build/', 'out/stage/')) == receipt['members']
     shutil.rmtree(build)
     shutil.rmtree(stage)
     subprocess.run(['tar', '-I', 'zstd', '-xf', bundle, '-C', tmp_path], check=True)
     assert (build / 'identity.o').stat().st_mtime_ns == original
+    assert working_directory.is_dir() and not list(working_directory.iterdir())
     assert (stage / 'alias').read_text() == 'real retained payload'
     assert subprocess.check_output([_tablegen(build)], text=True) == 'restored generator\n'
     dependencies = subprocess.check_output([ninja, '-C', build, '-t', 'deps', 'identity.o'], text=True)
@@ -292,6 +297,15 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
                     f'-DCMAKE_MAKE_PROGRAM={ninja}', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'],
                    check=True, capture_output=True)
     subprocess.run([cmake, '--build', build], check=True, capture_output=True)
+    working_directory = build / 'lib/IR'
+    working_directory.mkdir()
+    database = build / 'compile_commands.json'
+    commands = json.loads(database.read_text())
+    for row in commands:
+        if Path(row['file']).name == 'ordinary.cpp':
+            row['directory'] = str(working_directory)
+            row['file'] = os.path.relpath(source / 'ordinary.cpp', working_directory)
+    database.write_text(json.dumps(commands))
     patches = tmp_path / 'toolchains/llvm/patches'
     patches.mkdir(parents=True)
     (patches / 'owned.patch').write_text('+++ b/clang/lib/owned.cpp\n')
@@ -305,9 +319,10 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
     assert tablegen in selected
     assert build / 'include/llvm/table.inc' in selected
     assert build / 'CMakeFiles/rules.ninja' in selected
+    assert working_directory in selected
     assert any(path.name == 'owned.cpp.o' for path in selected)
     assert not any(path.name == 'ordinary.cpp.o' for path in selected)
-    assert {path.name for path in selected if path.parent == build / 'lib'} == {
+    assert {path.name for path in selected if path.parent == build / 'lib' and not path.is_dir()} == {
         'libLLVM.so', 'libLLVM.so.23', 'libLLVM.so.23.1',
         'libclang-cpp.so', 'libclang-cpp.so.23', 'libclang-cpp.so.23.1',
     }
