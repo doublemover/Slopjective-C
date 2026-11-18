@@ -1,5 +1,6 @@
 #include "standard_library_test_support.h"
 #include "llvm/ADT/ScopeExit.h"
+#include <algorithm>
 
 using namespace objc3::clang_foundation;
 using namespace objc3::clang_foundation::standard_library_test;
@@ -184,6 +185,29 @@ inline constexpr T twice(T value) {return std::move(value)*2;}
   const auto interface=root/"StandardLibrary.objc3i";
   Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
   assert(fs::remove(provider_path));
+  InterfaceImportInput imported;
+  imported.source_path=interface.string();imported.locked_identity=artifact.identity;
+  if (std::find(library_arguments.begin(), library_arguments.end(), "-D_GLIBCXX_DEBUG=1") !=
+      library_arguments.end()) {
+    auto incompatible = request(root/"incompatible.mm", root/"incompatible.o");
+    incompatible.emit = EmitKind::Syntax;
+    incompatible.output_path.clear();
+    incompatible.source_text = "int mismatched_library_profile;";
+    incompatible.arguments.push_back("-U_GLIBCXX_DEBUG");
+    incompatible.imported_interfaces = {imported};
+    const auto rejected = Compile(incompatible);
+    const bool rejected_interface = !rejected.success && std::any_of(
+        rejected.interface_import_diagnostics.begin(), rejected.interface_import_diagnostics.end(),
+        [](const auto &diagnostic) {
+          // Changing the vector type can fail canonical reparse or native
+          // symbol identity before the final checked header comparison.
+          return diagnostic.code == "O3IFC137" || diagnostic.code == "O3IFC138" ||
+              diagnostic.code == "O3IFC139" || diagnostic.code == "O3IFC160" ||
+              diagnostic.code == "O3IFC183";
+        });
+    if (!rejected_interface) test::ReportFailure(rejected);
+    assert(rejected_interface && "a release-mode consumer imported debug-mode declarations");
+  }
   for(const char *name:{"a","b"}) {
     const auto path=root/(std::string("consumer-")+name+".mm");
     Write(path,"static_assert(NativeStandard::twice(21)==42);\nextern \"C\" int check_"+std::string(name)+R"(() {
@@ -205,7 +229,6 @@ inline constexpr T twice(T value) {return std::move(value)*2;}
 }
 )"+"extern \"C\" void *address_"+name+"(){return reinterpret_cast<void *>(&NativeStandard::words);}\n");
     auto consumer=request(path,root/(std::string(name)+".o"));
-    InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;
     consumer.imported_interfaces={imported};Success(Compile(consumer));
   }
   const auto main=root/"main.cpp";

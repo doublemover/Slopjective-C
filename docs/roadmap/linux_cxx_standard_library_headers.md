@@ -96,3 +96,10 @@ execution entries use the `extended` label.
 
 Other permitted standard-library customization forms, broader dependent lookup contracts,
 consolidated package/runtime verification and the replacement SDK remain tracked.
+
+The extended `objc3_standard_library_libstdcxx_debug` test exercises libstdc++
+with `_GLIBCXX_DEBUG=1`. The C++20 O0 and Objective-C++23 ARC O2 configurations
+publish the provider, remove its source, and link two independent consumers.
+They check debug containers and iterators alongside the existing customization
+and native-ownership cases. Clearing the debug-mode macro rejects the same
+provider before native declarations merge. Both development configurations pass.

@@ -615,6 +615,10 @@ if (BUILD_TESTING)
     COMMAND objc3_standard_library_provider_test -D_GLIBCXX_ASSERTIONS=1)
   set_tests_properties(objc3_standard_library_assertions PROPERTIES
     LABELS "native;standard-library;extended" TIMEOUT 600)
+  objc3c_add_frontend_test(NAME objc3_standard_library_libstdcxx_debug
+    COMMAND objc3_standard_library_provider_test -stdlib=libstdc++ -D_GLIBCXX_DEBUG=1)
+  set_tests_properties(objc3_standard_library_libstdcxx_debug PROPERTIES
+    LABELS "native;standard-library;extended" TIMEOUT 600)
   # Keep synchronization independently scheduled; combining both package
   # inventories approaches the baseline timeout before compiler instrumentation.
   objc3c_add_frontend_test(NAME objc3_standard_library_synchronization
