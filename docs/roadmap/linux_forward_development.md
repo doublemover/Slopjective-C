@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.238 / System 2.164 fixed member-pointer span](linux_native_member_pointer_graphs.md)
+retains exact immutable native method targets through scalar/reference/global
+graphs and conservative receiver-state fallback, with explicit dispatch bounds.
+
 The [Source 2.237 / System 2.163 stored-callable span](linux_native_stored_callables.md)
 resolves closure receivers through aggregate fields, fixed arrays and copied
 storage, retaining complete bounded runtime-index and enclosing-owner checks.

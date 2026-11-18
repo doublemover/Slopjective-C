@@ -53752,7 +53752,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4266 @@
+@@ -0,0 +1,4284 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54048,9 +54048,15 @@ new file mode 100644
 +// Resolve a single immutable native function-pointer target. The function
 +// prototype, including calling convention and effects, must match exactly.
 +const FunctionDecl *projectionCallee(const CallExpr *Call,ASTContext &Context) {
-+  if(const auto *Direct=Call->getDirectCallee())return Direct;
-+  const auto CalleeType=Call->getCallee()->getType();
-+  if(!CalleeType->isPointerType() || !CalleeType->getPointeeType()->isFunctionType())return nullptr;
++  const auto *MemberCall=dyn_cast<BinaryOperator>(Call->getCallee()->IgnoreParenImpCasts());
++  const bool MemberTarget=MemberCall && MemberCall->isPtrMemOp();
++  if(!MemberTarget)if(const auto *Direct=Call->getDirectCallee())return Direct;
++  const Expr *Target=MemberTarget?MemberCall->getRHS():Call->getCallee();
++  const auto CalleeType=Target->getType();
++  const auto *MemberType=CalleeType->getAs<MemberPointerType>();
++  if(MemberTarget?!MemberType:(!CalleeType->isPointerType() || !CalleeType->getPointeeType()->isFunctionType()))return nullptr;
++  const auto Prototype=MemberType?MemberType->getPointeeType():CalleeType->getPointeeType();
++  if(!Prototype->isFunctionType())return nullptr;
 +  unsigned Work=64;
 +  llvm::SmallPtrSet<const VarDecl *,16> Active;
 +  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->const FunctionDecl * {
@@ -54076,15 +54082,23 @@ new file mode 100644
 +    const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
 +    if(!Variable)return nullptr;
 +    const auto Value=Variable->getType().getNonReferenceType();
-+    if(!Value->isPointerType() || !Value->getPointeeType()->isFunctionType() ||
++    const auto *Member=Value->getAs<MemberPointerType>();
++    if((MemberTarget?(!Member || !Member->getPointeeType()->isFunctionType()):
++        (!Value->isPointerType() || !Value->getPointeeType()->isFunctionType())) ||
 +        !Value.isConstQualified() || Value.isVolatileQualified() || Variable->hasAttr<BlocksAttr>())return nullptr;
 +    Variable=Variable->getCanonicalDecl();
 +    if(!Active.insert(Variable).second)return nullptr;
 +    auto Leave=llvm::scope_exit([&]{Active.erase(Variable);});
 +    return Self(Self,Variable->getAnyInitializer(),Depth+1);
 +  };
-+  const auto *Function=Resolve(Resolve,Call->getCallee(),0);
-+  return Function && Context.hasSameType(Function->getType(),CalleeType->getPointeeType())?Function:nullptr;
++  const auto *Function=Resolve(Resolve,Target,0);
++  if(MemberTarget) {
++    const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Function);
++    const auto *Owner=MemberType->getMostRecentCXXRecordDecl();
++    if(!Method || Method->isStatic() || !Owner ||
++        Owner->getCanonicalDecl()!=Method->getParent()->getCanonicalDecl())return nullptr;
++  }
++  return Function && Context.hasSameType(Function->getType(),Prototype)?Function:nullptr;
 +}
 +
 +bool closedProjectionReceiverImpl(const CallExpr *Call,ASTContext &Context,
@@ -54096,13 +54110,16 @@ new file mode 100644
 +  if(!Method)return true;
 +  const auto *Member=dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts());
 +  const bool LambdaOperator=Method->isOverloadedOperator() && Method->getParent()->isLambda();
++  const auto *Indirect=dyn_cast<BinaryOperator>(Call->getCallee()->IgnoreParenImpCasts());
++  const bool IndirectMember=isa<CXXMemberCallExpr>(Call) && Indirect && Indirect->isPtrMemOp();
 +  if((Method->isOverloadedOperator() && !LambdaOperator) || Method->isExplicitObjectMemberFunction())return false;
 +  if(Member && Member->getBase()->HasSideEffects(Context))return false;
++  if(IndirectMember && Indirect->getLHS()->HasSideEffects(Context))return false;
 +  if(LambdaOperator && !Method->isStatic() && isa<CXXOperatorCallExpr>(Call) && (!Call->getNumArgs() || Call->getArg(0)->HasSideEffects(Context)))return false;
 +  if(Method->isStatic())return true;
 +  // A qualified call suppresses virtual dispatch. Otherwise the selected
 +  // method or its declaring class must be final before its body is a proof.
-+  if((!Member && !LambdaOperator) || (Method->isVirtual() && (!Member || !Member->hasQualifier()) &&
++  if((!Member && !LambdaOperator && !IndirectMember) || (Method->isVirtual() && (!Member || !Member->hasQualifier()) &&
 +      !Method->hasAttr<FinalAttr>() && !Method->getParent()->hasAttr<FinalAttr>()))return false;
 +  const auto *Definition=Method->getDefinition();
 +  if(!Definition)if(const auto *Pattern=Method->getTemplateInstantiationPattern())
@@ -55626,8 +55643,9 @@ new file mode 100644
 +    // Explicit member calls store the receiver outside the argument list;
 +    // C++23 static operators have no receiver at all.
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
-+      if(const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee());
-+          Method && Method->getParent()->isLambda() &&
++      if(const auto *Method=dyn_cast_or_null<CXXMethodDecl>(projectionCallee(Call,Context));
++          Method && (Method->getParent()->isLambda() ||
++              (isa<CXXMemberCallExpr>(Call) && isa<BinaryOperator>(Call->getCallee()->IgnoreParenImpCasts()))) &&
 +          !E->getType()->isBooleanType() && E->getType()->isScalarType() &&
 +          (BorrowedOnly || (!E->getType()->isObjCRetainableType() && !isObjC3NSObjectStorageType(E->getType())))) {
 +        if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call);Member && !Method->isStatic())
@@ -82763,6 +82781,152 @@ new file mode 100644
 + const char *global=global_projection_pointer;
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)global;});
 + decltype(write) array[2]={write,write};array[1]();
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-member-pointer-graphs.m b/clang/test/ObjC3/Sema/native-member-pointer-graphs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-member-pointer-graphs.m
+@@ -0,0 +1,99 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-member-pointer-graphs.h"
++#if __OBJC3_PROFILE__ == 3
++const char *member_pointer_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#elif !defined(__cplusplus)
++// expected-no-diagnostics
++#else
++void member_pointer_reference(borrowed const char *loan){
++ FixedMemberReceiver source;const char *slot="static";auto const method=&FixedMemberReceiver::store;
++ (source.*method)(slot,loan);const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_global(borrowed const char *loan){
++ FixedMemberReceiver source;auto const method=&FixedMemberReceiver::global;(source.*method)(loan);
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_pointer(borrowed const char *loan){
++ FixedMemberReceiver source;auto *const receiver=&source;auto const method=&FixedMemberReceiver::global;
++ (receiver->*method)(loan);const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_return(borrowed const char *loan){
++ FixedMemberReceiver source;auto const method=&FixedMemberReceiver::slot;(source.*method)()=loan;
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_selected(borrowed const char *loan,bool choose){
++ FixedMemberReceiver source;auto const first=&FixedMemberReceiver::global;auto const second=&FixedMemberReceiver::global;
++ auto const method=choose?first:second;(source.*method)(loan);const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_mutable(){
++ FixedMemberReceiver source;const char *slot="static";auto method=&FixedMemberReceiver::ordinary;(source.*method)(slot);
++ const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_virtual(){
++ FixedMemberReceiver source;const char *slot="static";auto const method=&FixedMemberReceiver::dynamic;(source.*method)(slot);
++ const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_weakened(){
++ FixedMemberReceiver source;const char *slot="static";void(FixedMemberReceiver::*const method)(const char *&)const=&FixedMemberReceiver::ordinary;
++ (source.*method)(slot);const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_resource(){
++ FixedMemberReceiver source;int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ auto const method=&FixedMemberReceiver::number;int value=(source.*method)(descriptor);
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++ auto const observation=&FixedMemberReceiver::observation;int observed=(source.*observation)(descriptor);
++ (void)binding_detached(binding_make_scalar(observed));
++}
++void member_pointer_capture(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};using Work=decltype(work);auto const method=&Work::operator();
++ (work.*method)();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_field(borrowed const char *loan){
++ FixedMemberField source{loan};auto const method=&FixedMemberField::get;const char *value=(source.*method)();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ auto const observation=&FixedMemberField::observed;bool observed=(source.*observation)();
++ (void)binding_detached(binding_make_scalar(observed));
++}
++void member_pointer_different(bool choose){
++ FixedMemberReceiver source;const char *slot="static";
++ auto const method=choose?&FixedMemberReceiver::ordinary:&FixedMemberReceiver::alternate;
++ (source.*method)(slot);const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_alias_bound(){
++ FixedMemberReceiver source;const char *slot="static";
++ auto const value0=&FixedMemberReceiver::ordinary;
++ auto const &value1=value0;
++ auto const &value2=value1;
++ auto const &value3=value2;
++ auto const &value4=value3;
++ auto const &value5=value4;
++ auto const &value6=value5;
++ auto const &value7=value6;
++ auto const &value8=value7;
++ auto const &value9=value8;
++ auto const &value10=value9;
++ auto const &value11=value10;
++ auto const &value12=value11;
++ auto const &value13=value12;
++ auto const &value14=value13;
++ auto const &value15=value14;
++ auto const &value16=value15;
++ auto const &value17=value16;
++ auto const &value18=value17;
++ auto const &value19=value18;
++ auto const &value20=value19;
++ auto const &value21=value20;
++ (source.*value21)(slot);const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-member-pointer-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-member-pointer-graphs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-member-pointer-graphs.h
+@@ -0,0 +1,35 @@
++#ifndef OBJC3_MEMBER_POINTER_GRAPHS_H
++#define OBJC3_MEMBER_POINTER_GRAPHS_H
++#include "native-stored-callables.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++struct FixedMemberReceiver {
++ void store(const char *&slot,const char *value)const{slot=value;}
++ void global(const char *value)const{global_projection_pointer=value;}
++ const char *load(const char *const &slot)const{return slot;}
++ const char *&slot()const{return global_projection_pointer;}
++ int number(const int &value)const{return value;}
++ int observation(const int &value)const{return value>=0;}
++ void ordinary(const char *&slot)const noexcept{slot="static";}
++ void alternate(const char *&slot)const noexcept{slot="other";}
++ virtual void dynamic(const char *&slot)const{slot="static";}
++};
++struct FixedMemberFinal final:FixedMemberReceiver {
++ void dynamic(const char *&slot)const override{slot="static";}
++};
++struct FixedMemberField {
++ const char *pointer;
++ const char *get()const{return pointer;}
++ bool observed()const{return pointer!=nullptr;}
++};
++static inline void member_pointer_ordinary(){
++ FixedMemberReceiver source;const char *slot="static";
++ auto const method=&FixedMemberReceiver::store;auto const &alias=method;(source.*alias)(slot,"other");
++ const char *value=slot;(void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++ auto const load=&FixedMemberReceiver::load;const char *read=(source.*load)(slot);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)read;});
++ auto const literal=&FixedMemberReceiver::ordinary;(source.*literal)(slot);
++ FixedMemberFinal final_source;auto const final_call=&FixedMemberFinal::dynamic;(final_source.*final_call)(slot);
++ const char *after=slot;(void)binding_detached(^void(void) __objc3_async_frame {(void)after;});
 +}
 +#endif
 +#endif

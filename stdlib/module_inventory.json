@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 237,
+        "minor": 238,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Immutable native member-function pointers retain exact canonical method/class/prototype identity through const bindings, aliases and same-target alternatives; receiver-independent/final targets share scalar/reference/global/returned-cell graphs, while open dispatch, mutable/mismatched targets and known receiver/capture state retain conservative fallback; source-free member-pointer helper publication is implemented, matching SDK and native ARM acceptance pending",
         "Captured native callable receivers resolve direct/nested aggregate fields, fixed arrays, explicit union initializers, copies, aliases and closed pointers under shared storage-path budgets; pure runtime indices prove every in-bounds fixed-array element, enclosing owner escapes retain conservative provenance, and source-free generic storage retains native bodies; opaque/custom/reference-subobject/inherited storage and matching SDK acceptance remain open",
         "Closed native callables retain reference-captured writes and trivial record/fixed-array value sources through mutable operators, constructor/factory inputs and structured bindings; closure copies, nested closures and aggregate storage owners share final escape checks, with separate bounded shape/cell/receiver graphs; native retained/reference-subobject/nontrivial ownership and matching SDK acceptance remain open",
         "Closed scalar reference-result helpers bind per-call returned storage through globals, static/TLS cells, fields, fixed arrays, reference parameters and aliases; chained/alternative returns preserve writes and unknown escapes under shared bounds, while callee automatic values, captured/open targets and unresolved state retain conservative admission; source-free detached/awaited ARC/MRC controls are implemented, matching SDK and native ARM acceptance pending",
@@ -400,12 +401,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 163,
+        "minor": 164,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Immutable native member-function pointers retain exact canonical method/class/prototype identity through const bindings, aliases and same-target alternatives; receiver-independent/final targets share scalar/reference/global/returned-cell graphs, while open dispatch, mutable/mismatched targets and known receiver/capture state retain conservative fallback; source-free member-pointer helper publication is implemented, matching SDK and native ARM acceptance pending",
         "Captured native callable receivers resolve direct/nested aggregate fields, fixed arrays, explicit union initializers, copies, aliases and closed pointers under shared storage-path budgets; pure runtime indices prove every in-bounds fixed-array element, enclosing owner escapes retain conservative provenance, and source-free generic storage retains native bodies; opaque/custom/reference-subobject/inherited storage and matching SDK acceptance remain open",
         "Closed native callables retain reference-captured writes and trivial record/fixed-array value sources through mutable operators, constructor/factory inputs and structured bindings; closure copies, nested closures and aggregate storage owners share final escape checks, with separate bounded shape/cell/receiver graphs; native retained/reference-subobject/nontrivial ownership and matching SDK acceptance remain open",
         "Closed scalar reference-result helpers bind per-call returned storage through globals, static/TLS cells, fields, fixed arrays, reference parameters and aliases; chained/alternative returns preserve writes and unknown escapes under shared bounds, while callee automatic values, captured/open targets and unresolved state retain conservative admission; source-free detached/awaited ARC/MRC controls are implemented, matching SDK and native ARM acceptance pending",

@@ -97,7 +97,16 @@ void Check(bool arc, const std::string &standard) {
         "inline void published_stored_capture(const char *value){auto work=[value](){published_pointer=value;};PublishedWorkStorage<decltype(work)> box{42,work};auto copy=box;const auto &alias=copy;alias.value();}"
         "inline void published_stored_reference(const char *&slot,const char *value){auto work=[&slot,&value](){slot=value;};PublishedWorkStorage<decltype(work)> box{42,work};box.value();}"
         "inline void published_stored_array(const char *value,unsigned index){auto work=[value](){published_pointer=value;};decltype(work) values[2]={work,work};values[index]();}"
-        "inline void published_stored_number(int value){auto work=[value](){published_number=value;};PublishedWorkStorage<decltype(work)> box{42,work};box.value();}";
+        "inline void published_stored_number(int value){auto work=[value](){published_number=value;};PublishedWorkStorage<decltype(work)> box{42,work};box.value();}"
+        "struct PublishedMemberReceiver {"
+        "void store(const char *&slot,const char *value)const{slot=value;}"
+        "void global(const char *value)const{published_pointer=value;}"
+        "const char *&slot()const{return published_pointer;}"
+        "int number(const int &value)const{return value;}"
+        "};"
+        "inline void published_member_store(const char *&slot,const char *value){PublishedMemberReceiver receiver;auto const call=&PublishedMemberReceiver::store;(receiver.*call)(slot,value);}"
+        "inline void published_member_global(const char *value){PublishedMemberReceiver receiver;auto const call=&PublishedMemberReceiver::global;(receiver.*call)(value);}"
+        "inline int published_member_number(const int &value){PublishedMemberReceiver receiver;auto const call=&PublishedMemberReceiver::number;return (receiver.*call)(value);}";
     for (const char *name : {"published_reference_store", "published_reference_load", "published_reference_chain", "published_reference_number"})
       provider.interface_exports.push_back(name);
     provider.interface_exports.push_back("PublishedReferenceReceiver");
@@ -120,6 +129,8 @@ void Check(bool arc, const std::string &standard) {
       provider.interface_exports.push_back(name);
     for (const char *name : {"PublishedWorkStorage", "published_stored_capture", "published_stored_reference",
          "published_stored_array", "published_stored_number"})
+      provider.interface_exports.push_back(name);
+    for (const char *name : {"PublishedMemberReceiver", "published_member_store", "published_member_global", "published_member_number"})
       provider.interface_exports.push_back(name);
     if (standard == "c++23") {
       *provider.source_text += "inline void published_static_store(const char *value){auto work=[](const char *input) static {published_pointer=input;};work.operator()(value);work(value);}";
@@ -266,7 +277,7 @@ void Check(bool arc, const std::string &standard) {
           "published_result_written(first,loan);published_result_written(second,loan);const char *value=" + std::string(slot) +
           ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
     }
-    for (const char *name : {"published_record_capture", "published_record_mutation", "published_array_capture", "published_stored_capture"}) {
+    for (const char *name : {"published_record_capture", "published_record_mutation", "published_array_capture", "published_stored_capture", "published_member_global"}) {
       run("void rejected(borrowed const char *loan){" + std::string(name) + "(loan);const char *value=published_pointer;"
           "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
       run("void ordinary(void){" + std::string(name) + "(\"static\");const char *value=published_pointer;"
@@ -276,6 +287,19 @@ void Check(bool arc, const std::string &standard) {
         "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
     run("void ordinary(void){const char *slot=\"static\";published_reference_capture(slot,\"other\");"
         "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    for (const char *name : {"published_member_store"}) {
+      run("void rejected(borrowed const char *loan){const char *slot=\"static\";" + std::string(name) + "(slot,loan);"
+          "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+      run("void ordinary(void){const char *slot=\"static\";" + std::string(name) + "(slot,\"other\");"
+          "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    }
+    run("void rejected(borrowed const char *loan){PublishedMemberReceiver receiver;auto const call=&PublishedMemberReceiver::slot;"
+        "(receiver.*call)()=loan;const char *value=published_pointer;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
+        "int value=published_member_number(descriptor);global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
+    run("void ordinary(void){int number=42;int value=published_member_number(number);"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
     run("void rejected(borrowed const char *loan){const char *slot=\"static\";published_stored_reference(slot,loan);"
         "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
     run("void ordinary(void){const char *slot=\"static\";published_stored_reference(slot,\"other\");"
