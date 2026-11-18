@@ -1,5 +1,13 @@
 # Objective-C 3.0 on Linux
 
+Source 2.250 / System 2.176 repairs the native release foundation. It
+preserves ordinary Clang diagnostics and retains the source-printing
+contracts used for published declarations. Isolation checking reads lowered
+property and C++ frame inputs as snapshots, keeps known loan provenance
+distinct from unknown storage, and checks direct C++ by-value captures at
+construction in bounded structured scopes. The release producer retains the
+exact foundation logs even when the SDK candidate could not be assembled.
+
 The [Source 2.249 / System 2.175 checked C++ Optional changes](linux_checked_cpp_optionals.md)
 extend throwing-destructor payloads to local and lifetime-extended storage,
 with native full-expression and rollback cleanup.
@@ -2294,7 +2302,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    System capabilities.
 5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
    next implementation span is coherent, then perform one coordinated SDK
-   cutover. Source 2.154–2.249 still requires its fresh matching campaign; focused
+   cutover. Source 2.154–2.250 still requires its fresh matching campaign; focused
    local receipts do not promote a replacement archive. Avoid repeated archive
    rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native

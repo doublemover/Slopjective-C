@@ -25473,10 +25473,9 @@ index 000000000..089b184bf
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
-index 000000000..6b3cc6b29
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
-@@ -0,0 +1,363 @@
+@@ -0,0 +1,372 @@
 +//===--- ObjC3FunctionEffectTest.cpp - function type effects --------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// See https://llvm.org/LICENSE.txt for license information.
@@ -25645,14 +25644,21 @@ index 000000000..6b3cc6b29
 +  QualType Error = recordType(Context, "Error");
 +  QualType AsyncTyped =
 +      functionType(Context, {true, ObjC3ThrowsKind::Typed, Error});
++  QualType FrameTyped =
++      functionType(Context, {true, ObjC3ThrowsKind::Typed, Error, true});
++  EXPECT_NE(AsyncTyped, FrameTyped);
 +  EXPECT_EQ(AsyncTyped.getAsString(Context.getPrintingPolicy()),
-+            "void () async throws(Error)");
++            "void () __objc3_async throws(Error)");
++  EXPECT_EQ(FrameTyped.getAsString(Context.getPrintingPolicy()),
++            "void () __objc3_async_frame throws(Error)");
 +  PrintingPolicy DeclarationPolicy(Context.getPrintingPolicy());
 +  DeclarationPolicy.PolishForDeclaration = true;
 +  EXPECT_EQ(AsyncTyped.getAsString(DeclarationPolicy),
 +            "void () __objc3_async throws(Error)");
 +  EXPECT_EQ(Context.getPointerType(AsyncTyped).getAsString(DeclarationPolicy),
 +            "void (*)() __objc3_async throws(Error)");
++  EXPECT_EQ(Context.getPointerType(FrameTyped).getAsString(DeclarationPolicy),
++            "void (*)() __objc3_async_frame throws(Error)");
 +  EXPECT_EQ(functionType(Context, {false, ObjC3ThrowsKind::Untyped, {}})
 +                .getAsString(DeclarationPolicy),
 +            "void () throws");
@@ -25795,7 +25801,9 @@ index 000000000..6b3cc6b29
 +    EXPECT_NE(Printed.find("__asm__(\"owned_value\")"), std::string::npos);
 +    const auto Global = Printed.find("__asm__(\"owned_global\")");
 +    ASSERT_NE(Global, std::string::npos);
-+    EXPECT_LT(Global, Printed.find("deprecated(\"old global\")"));
++    const auto Deprecated = Printed.find("deprecated(\"old global\")");
++    ASSERT_NE(Deprecated, std::string::npos);
++    EXPECT_LT(Deprecated, Global);
 +    EXPECT_NE(Printed.find("objc3.module-name:__objc3_m_category"),
 +              std::string::npos);
 +    auto Reparsed = tooling::buildASTFromCodeWithArgs(Printed, Args, Filename);
@@ -44595,86 +44603,96 @@ index 000000000..4c5f0dba4
 +}
 diff --git a/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m b/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m
 new file mode 100644
-index 000000000..654755f39
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m
-@@ -0,0 +1,106 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -verify=compat %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc3-profile=strict-concurrency -fsyntax-only -verify=strict %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fno-builtin -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
+@@ -0,0 +1,117 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -verify=compat %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc3-profile=strict-concurrency -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fno-builtin -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -DTEST_LIBC_JUMPS -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -verify=compat %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -DTEST_LIBC_JUMPS -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
 +// compat-no-diagnostics
 +void close_value(int) __attribute__((nothrow));
 +void escape_buffer(void **);
 +#ifdef __cplusplus
 +extern "C" {
 +#endif
++int sigsetjmp(void **, int) __attribute__((returns_twice));
 +void siglongjmp(void **, int) __attribute__((noreturn));
 +#ifdef __cplusplus
 +}
 +#endif
++// Use actual SJLJ builtins where supported and libc entry points on AArch64.
++#ifdef TEST_LIBC_JUMPS
++#define TEST_SETJMP(target) sigsetjmp(target, 0)
++#define TEST_LONGJMP siglongjmp
++#else
++#define TEST_SETJMP __builtin_setjmp
++#define TEST_LONGJMP __builtin_longjmp
++#endif
 +void skips_defer(void **target) {
 +  defer { close_value(1); } // strict-note {{scope-exit action registered here}}
-+  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +}
 +void skips_cleanup(void **target) {
 +  @cleanup(close_value) int value = 1; // strict-note {{scope-exit action registered here}}
-+  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +}
 +void skips_resource(void **target) {
 +  @resource(close_value, invalid: 0) int value = 1; // strict-note {{scope-exit action registered here}}
-+  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +}
 +void signal_jump(void **target) {
 +  @cleanup(close_value) int value = 1; // strict-note {{scope-exit action registered here}}
 +  siglongjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +}
 +void before_registration(void **target) {
-+  __builtin_longjmp(target, 1);
++  TEST_LONGJMP(target, 1);
 +  @cleanup(close_value) int value = 1;
 +}
 +void initializer_not_yet_registered(void **target) {
-+  int value __attribute__((cleanup(close_value))) = (__builtin_longjmp(target, 1), 1);
++  int value __attribute__((cleanup(close_value))) = (TEST_LONGJMP(target, 1), 1);
 +}
 +void after_inner_scope(void **target) {
 +  { @cleanup(close_value) int value = 1; }
-+  __builtin_longjmp(target, 1);
++  TEST_LONGJMP(target, 1);
 +}
 +void local_preserves_actions(void) {
 +  void *target[5];
 +  @cleanup(close_value) int value = 1;
 +  defer { close_value(2); }
-+  if(__builtin_setjmp(target) == 0) __builtin_longjmp(target, 1);
++  if(TEST_SETJMP(target) == 0) TEST_LONGJMP(target, 1);
 +}
 +void local_skips_new_action(void) {
 +  void *target[5];
-+  (void)__builtin_setjmp(target);
++  (void)TEST_SETJMP(target);
 +  @cleanup(close_value) int value = 1; // strict-note {{scope-exit action registered here}}
-+  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +}
 +void escaped_target(void) {
 +  void *target[5];
 +  @cleanup(close_value) int value = 1; // strict-note {{scope-exit action registered here}}
-+  (void)__builtin_setjmp(target);
++  (void)TEST_SETJMP(target);
 +  escape_buffer(target);
-+  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +}
 +void loop_initializer(void **target) {
 +  for(int value __attribute__((cleanup(close_value))) = 1;;) { // strict-note {{scope-exit action registered here}}
-+    __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++    TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +  }
 +}
 +void before_nested_callable_runs(void **target) {
 +  void (^body)(void) = ^{ @cleanup(close_value) int nested = 1; };
 +  (void)body;
-+  __builtin_longjmp(target, 1);
++  TEST_LONGJMP(target, 1);
 +}
 +#ifdef __cplusplus
 +void condition_initializer(void **target) {
 +  if(int value __attribute__((cleanup(close_value))) = 1) { // strict-note {{scope-exit action registered here}}
-+    __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++    TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +  }
 +}
 +namespace user {
@@ -44688,22 +44706,22 @@ index 000000000..654755f39
 +
 +void skips_precise_owner(id owner, void **target) {
 +  keepAlive(owner); // strict-note {{scope-exit action registered here}}
-+  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +}
 +void skips_bounded_owner(id owner, void **target) {
 +  withLifetime(owner) { // strict-note {{scope-exit action registered here}}
-+    __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++    TEST_LONGJMP(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
 +  }
 +}
 +void completed_precise_owner(id owner, void **target) {
 +  { keepAlive(owner); }
 +  withLifetime(owner) {}
-+  __builtin_longjmp(target, 1);
++  TEST_LONGJMP(target, 1);
 +}
 +void local_preserves_precise_owner(id owner) {
 +  void *target[5];
 +  keepAlive(owner);
-+  if (__builtin_setjmp(target) == 0) __builtin_longjmp(target, 1);
++  if (TEST_SETJMP(target) == 0) TEST_LONGJMP(target, 1);
 +}
 diff --git a/clang/include/clang/AST/ObjC3ResourceTypes.h b/clang/include/clang/AST/ObjC3ResourceTypes.h
 new file mode 100644
@@ -53840,7 +53858,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4441 @@
+@@ -0,0 +1,4571 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -55053,7 +55071,11 @@ new file mode 100644
 +// their ordinary structural/unsafe-Sendable type admission.
 +bool carriesManagedResourceValue(ASTContext &Context,const Expr *Expression,
 +                                  const Stmt *ScopeBody,const VarDecl *RootBinding,Sema *Actions,bool BorrowedOnly) {
-+  unsigned Budget=256;
++  // Block values have a dedicated closure graph, which can establish aliases
++  // through longer chains than scalar storage projections.
++  const bool BlockValue = Expression && Expression->getType()->isBlockPointerType();
++  unsigned Budget = BlockValue ? 1024 : 256;
++  const unsigned DepthLimit = BlockValue ? 128 : 32;
 +  llvm::SmallPtrSet<const VarDecl *,32> Active,Complete;
 +  llvm::DenseMap<const VarDecl *,SmallVector<const Expr *,4>> Writes;
 +  llvm::SmallPtrSet<const VarDecl *,32> Escaped;
@@ -55276,6 +55298,15 @@ new file mode 100644
 +      if(!Work)return nullptr;--Work;const auto *Node=Pending.pop_back_val();
 +      if(isa<GotoStmt,IndirectGotoStmt,GCCAsmStmt,CoroutineBodyStmt>(Node))return nullptr;
 +      if(isa<LambdaExpr,BlockExpr>(Node))continue;
++      if (const auto *Declarations = dyn_cast<DeclStmt>(Node))
++        for (const auto *D : Declarations->decls()) {
++          const auto *Alias = dyn_cast<TypedefNameDecl>(D);
++          const auto *Variable = dyn_cast<VarDecl>(D);
++          // VLA bounds can evaluate calls hidden in a type declaration.
++          if ((Alias && Alias->getUnderlyingType()->isVariablyModifiedType()) ||
++              (Variable && Variable->getType()->isVariablyModifiedType()))
++            return nullptr;
++        }
 +      for(const auto *Child:Node->children())if(Child)Pending.push_back(Child);
 +    }
 +    Cached.first->second=Definition;
@@ -55310,6 +55341,71 @@ new file mode 100644
 +    enum Role {Unknown,Read,Write};
 +    struct Entry {const Stmt *Node;Role Use;unsigned Depth;const FunctionDecl *Function;};
 +    SmallVector<Entry,32> Pending{{ScopeBody,Unknown,0,nullptr}};
++    // A direct lambda value snapshots its by-copy captures when evaluated.
++    // Later top-level statements cannot change those snapshots in structured
++    // control flow. Keep the whole enclosing statement, since it can loop or
++    // evaluate other operands with unspecified order.
++    if (const auto *Body = dyn_cast<CompoundStmt>(ScopeBody);
++        Body && Expression && isa<LambdaExpr>(transferSource(Expression))) {
++      const auto *Snapshot = transferSource(Expression);
++      const Stmt *CaptureStatement = nullptr;
++      unsigned Work = 4096;
++      bool Structured = true;
++      for (const auto *Child : Body->body()) {
++        SmallVector<const Stmt *, 32> Control{Child};
++        while (Structured && !Control.empty()) {
++          if (!Work--) { Structured = false; break; }
++          const auto *Node = Control.pop_back_val();
++          if (Node == Snapshot)
++            CaptureStatement = Child;
++          if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++            for (const auto *Init : Lambda->capture_inits())
++              if (Init)
++                Control.push_back(Init);
++            continue;
++          }
++          if (const auto *Block = dyn_cast<BlockExpr>(Node)) {
++            for (const auto &Capture : Block->getBlockDecl()->captures())
++              if (const auto *Init = Capture.getObjC3InitExpr())
++                Control.push_back(Init);
++            continue;
++          }
++          if (isa<LabelStmt, GotoStmt, IndirectGotoStmt, GCCAsmStmt>(Node)) {
++            Structured = false;
++            break;
++          }
++          if (const auto *Call = dyn_cast<CallExpr>(Node)) {
++            const auto *Callee = Call->getDirectCallee();
++            if (!Callee || Callee->hasAttr<ReturnsTwiceAttr>() ||
++                (Callee->getIdentifier() &&
++                 Callee->getIdentifier()->getName().ends_with("setjmp"))) {
++              Structured = false;
++              break;
++            }
++          }
++          if (const auto *Declarations = dyn_cast<DeclStmt>(Node))
++            for (const auto *Decl : Declarations->decls()) {
++              if (const auto *Alias = dyn_cast<TypedefNameDecl>(Decl))
++                Structured &= !Alias->getUnderlyingType()->isVariablyModifiedType();
++              if (const auto *Variable = dyn_cast<VarDecl>(Decl))
++                Structured &= !Variable->getType()->isVariablyModifiedType();
++            }
++          for (const auto *Part : Node->children())
++            if (Part)
++              Control.push_back(Part);
++        }
++        if (!Structured)
++          break;
++      }
++      if (Structured && CaptureStatement) {
++        Pending.clear();
++        for (const auto *Child : Body->body()) {
++          Pending.push_back({Child, Unknown, 1, nullptr});
++          if (Child == CaptureStatement)
++            break;
++        }
++      }
++    }
 +    unsigned Remaining=4096;
 +    using CellSet=SmallVector<const VarDecl *,4>;
 +    auto Cells=[&](const Expr *Value)->std::optional<CellSet> {
@@ -55596,8 +55692,36 @@ new file mode 100644
 +      if(const auto *Member=dyn_cast<MemberExpr>(Node)){Add(Member->getBase(),Use);continue;}
 +      if(const auto *Subscript=dyn_cast<ArraySubscriptExpr>(Node)){Add(Subscript->getBase(),Use);Add(Subscript->getIdx());continue;}
 +      if(isa<UnaryExprOrTypeTraitExpr,CXXNoexceptExpr,RequiresExpr>(Node))continue;
-+      if(const auto *Pseudo=dyn_cast<PseudoObjectExpr>(Node))
-+        if(const auto *Source=getObjC3IsolationSourceSyntax(Pseudo)){Add(Source,Use);continue;}
++      if (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(Node))
++        if (const auto *Source = getObjC3IsolationSourceSyntax(Pseudo)) {
++          Source = Source->IgnoreImplicit()->IgnoreParenImpCasts();
++          if (const auto *Property = dyn_cast<PseudoObjectExpr>(Source))
++            Source = Property->getSyntacticForm()->IgnoreParenImpCasts();
++          const auto *Assignment = dyn_cast<BinaryOperator>(Source);
++          if (Assignment && Assignment->isAssignmentOp() &&
++              isa<ObjCPropertyRefExpr>(Assignment->getLHS()->IgnoreParenImpCasts())) {
++            // Written property assignments retain lvalues for printing.
++            // Frame construction reads these inputs by value.
++            Add(Assignment->getLHS(), Read);
++            Add(Assignment->getRHS(), Read);
++          } else if (const auto *Call = dyn_cast<CallExpr>(Source)) {
++            // The synthetic source call describes a frame snapshot. Reading
++            // its copied/moved input and the receiver is not an independent
++            // reference escape from the same snapshot.
++            Add(Call->getCallee(), Read);
++            for (const auto *Argument : Call->arguments()) {
++              const Expr *Value = Argument->IgnoreImplicit();
++              if (const auto *Copy = dyn_cast<CXXConstructExpr>(Value);
++                  Copy && Copy->getNumArgs() == 1 &&
++                  Copy->getConstructor()->isCopyOrMoveConstructor())
++                Value = Copy->getArg(0);
++              Add(Value, Read);
++            }
++          } else {
++            Add(Source, Use);
++          }
++          continue;
++        }
 +      if(const auto *Paren=dyn_cast<ParenExpr>(Node)){Add(Paren->getSubExpr(),Use);continue;}
 +      if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(Node)){Add(Cleanup->getSubExpr(),Use);continue;}
 +      if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(Node)){Add(Opaque->getSourceExpr(),Use);continue;}
@@ -55739,9 +55863,9 @@ new file mode 100644
 +      // Block environments have their separate complete target/capture proof.
 +      const bool NativeReference=Variable->getType()->isObjCRetainableType() ||
 +          isObjC3NSObjectStorageType(Variable->getType());
-+      auto Type=Variable->getType().getNonReferenceType();
-+      const bool PointerShape=Type->isPointerType() || Type->isBlockPointerType() || Type->isRecordType() || Type->isArrayType();
-+      Managed=(Incomplete || (CallGraphIncomplete && Variable->hasGlobalStorage()) || Escaped.contains(Variable)) && !NativeReference && (!BorrowedOnly || PointerShape);
++      Managed = !BorrowedOnly && !NativeReference &&
++          (Incomplete || (CallGraphIncomplete && Variable->hasGlobalStorage()) ||
++           Escaped.contains(Variable));
 +      if(!Managed) {
 +        auto Found=Writes.find(Variable);
 +        if(Found!=Writes.end())for(const auto *Value:Found->second)
@@ -55753,7 +55877,10 @@ new file mode 100644
 +    return Managed;
 +  };
 +  auto Visit=[&](auto &&Recurse,const Expr *E,unsigned Depth)->bool {
-+    if(!E || !Budget || Depth>32)return true;
++    if (!E)
++      return false;
++    if (!Budget || Depth > DepthLimit)
++      return !BorrowedOnly;
 +    --Budget;
 +    if(BorrowedOnly?isObjC3BorrowedType(Context,E->getType()):
 +        bool(getObjC3ResourceTypeContract(Context,E->getType()).Cleanup))return true;
@@ -55775,11 +55902,9 @@ new file mode 100644
 +    if(const auto *Operation=dyn_cast<ObjC3ResourceExpr>(E))
 +      return !BorrowedOnly && Operation->getKind()==ObjC3ResourceExpr::Kind::Take;
 +    if(const auto *Reference=dyn_cast<DeclRefExpr>(E)) {
-+      if(Reference->refersToEnclosingVariableOrCapture() &&
-+          UnknownCaptures.contains(CaptureIdentity(Reference->getDecl()))) {
-+        const auto Value=Reference->getDecl()->getType().getNonReferenceType();
-+        if(!BorrowedOnly || Value->isPointerType() || Value->isBlockPointerType())return true;
-+      }
++      if (!BorrowedOnly && Reference->refersToEnclosingVariableOrCapture() &&
++          UnknownCaptures.contains(CaptureIdentity(Reference->getDecl())))
++        return true;
 +      if(!BorrowedOnly && managedTransferStorage(Reference->getDecl()))return true;
 +      if(const auto *Binding=dyn_cast<BindingDecl>(Reference->getDecl()))
 +        return Binding->getBinding() && Recurse(Recurse,Binding->getBinding(),Depth+1);
@@ -55787,9 +55912,18 @@ new file mode 100644
 +      if(!Variable)return false;
 +      return VariableValue(Recurse,Variable,Depth);
 +    }
-+    if(const auto *Lambda=dyn_cast<LambdaExpr>(E)) {
-+      for(const auto *Initializer:Lambda->capture_inits())
-+        if(Initializer && Recurse(Recurse,Initializer,Depth+1))return true;
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(E)) {
++      auto Initializer = Lambda->capture_init_begin();
++      for (const auto &Capture : Lambda->captures()) {
++        const auto *Init = *Initializer++;
++        if (!Init || !Recurse(Recurse, Init, Depth + 1))
++          continue;
++        if (BorrowedOnly || !Capture.capturesVariable() ||
++            !unsafeAdmission(Context, Capture.getCapturedVar()->getType()))
++          return true;
++        // A managed capture with explicit admission is checked by the
++        // closure classifier, which also emits its unchecked-transfer note.
++      }
 +      return false;
 +    }
 +    if(const auto *Member=dyn_cast<MemberExpr>(E)) {
@@ -55823,7 +55957,8 @@ new file mode 100644
 +        return Recurse(Recurse,Unary->getSubExpr(),Depth+1);
 +      if(Unary->getOpcode()==UO_Deref) {
 +        if(BorrowedOnly && !E->getType()->isPointerType() && !E->getType()->isBlockPointerType() && !E->getType()->isRecordType())return false;
-+        auto Pointees=receiverPointees(Context,Unary->getSubExpr());if(Pointees.Truncated)return true;
++        auto Pointees=receiverPointees(Context,Unary->getSubExpr());
++        if (Pointees.Truncated && !BorrowedOnly) return true;
 +        for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
 +      }
 +    }
@@ -55858,9 +55993,10 @@ new file mode 100644
 +          // A native bool result is an observation even if an opaque call has
 +          // invalidated the closure's captured storage since construction.
 +          if(Call->getType()->isBooleanType())return false;
-+          Index();if(Incomplete)return true;
++          Index();
++          if (Incomplete && !BorrowedOnly) return true;
 +          for(const auto *Binding:Field->ReceiverBindings) {
-+            if(Escaped.contains(Binding))return true;
++            if (Escaped.contains(Binding) && !BorrowedOnly) return true;
 +            if(auto Found=Writes.find(Binding);Found!=Writes.end())
 +              for(const auto *Value:Found->second)if(Recurse(Recurse,Value,Depth+1))return true;
 +          }
@@ -55873,7 +56009,7 @@ new file mode 100644
 +        } else if(Field->Managed || declaredManagedReceiver(Context,Field->Receiver))return true;
 +        if(!Field->Arrow)return Recurse(Recurse,Field->Receiver,Depth+1);
 +        auto Pointees=receiverPointees(Context,Field->Receiver);
-+        if(Pointees.Truncated)return true;
++        if (Pointees.Truncated && !BorrowedOnly) return true;
 +        for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
 +        return false;
 +      }
@@ -55896,7 +56032,7 @@ new file mode 100644
 +          if(const auto *Receiver=Member->getImplicitObjectArgument()) {
 +            if(Recurse(Recurse,Receiver,Depth+1))return true;
 +            auto Pointees=receiverPointees(Context,Receiver);
-+            if(Pointees.Truncated)return true;
++            if (Pointees.Truncated && !BorrowedOnly) return true;
 +            for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
 +          }
 +        for(const auto *Argument:Call->arguments())if(Recurse(Recurse,Argument,Depth+1))return true;
@@ -55914,7 +56050,11 @@ new file mode 100644
 +      }
 +    }
 +    if(const auto *Call=dyn_cast<CallExpr>(E);Call && !ClosedDefinitions(Call).empty()) {
-+      Index();if(Incomplete || CallGraphIncomplete)return true;
++      Index();
++      // Unknown writes require unchecked lifetime admission. A loan must
++      // come from a source or a type contract, and blocks even that admission.
++      if ((Incomplete || CallGraphIncomplete) && !BorrowedOnly)
++        return true;
 +      if(auto Found=CallDefinitions.find(Call);Found!=CallDefinitions.end()) {
 +        for(const auto *Definition:Found->second)
 +          for(const auto *Source:ReturnSources[Definition])
@@ -57031,19 +57171,22 @@ new file mode 100644
 +          ++Index;
 +          continue;
 +        }
-+        if(carriesManagedResourceValue(S.Context,Argument,ScopeBody,nullptr,&S) ||
-+            carriesManagedResourceValue(S.Context,Argument,ScopeBody,nullptr,&S,true))
-+          Invalid |= checkTransferValue(S,Argument,TransferType,
-+                                        "concurrent block value",Target,ScopeBody);
 +        SmallVector<const BlockExpr *, 8> Blocks;
 +        SmallVector<FactoryCapture,8> Captures;
-+        if (knownConcurrentBlocks(S, Argument, Blocks, ScopeBody,&Captures)) {
++        const bool Known = knownConcurrentBlocks(S, Argument, Blocks, ScopeBody, &Captures);
++        const bool Unchecked = unsafeAdmission(S.Context, TransferType);
++        if ((Known || Unchecked) &&
++            (carriesManagedResourceValue(S.Context,Argument,ScopeBody,nullptr,&S) ||
++             carriesManagedResourceValue(S.Context,Argument,ScopeBody,nullptr,&S,true)))
++          Invalid |= checkTransferValue(S,Argument,TransferType,
++                                        "concurrent block value",Target,ScopeBody);
++        if (Known) {
 +          ConcurrentCaptureProof Proof;
 +          Invalid|=checkFactoryCaptures(S,Captures,ScopeBody,Proof);
 +          for (const auto *Block : Blocks)
 +            Invalid |= checkKnownConcurrentBlock(
 +                S, Block, Site->getExprLoc(), isAsyncWorkParameter(Target, Index), Proof, ScopeBody);
-+        } else if (unsafeAdmission(S.Context, TransferType)) {
++        } else if (Unchecked) {
 +          Invalid |= checkTransfer(S, TransferType, Argument->getExprLoc(),
 +                                   "unchecked concurrent block value", Target);
 +        } else if (strictConcurrency(S)) {
@@ -57119,16 +57262,21 @@ new file mode 100644
 +        // the same source value already used by native current-actor checking.
 +        Crossing|=Frame->getNumArgs()==0 || !sameActor(Frame->getArg(0));
 +      }
-+      if(Crossing)for(const auto *Argument:Frame->arguments()) {
-+        const auto *Value=transferSource(Argument);
++      const Expr *Syntax = getObjC3IsolationSourceSyntax(E)->IgnoreImplicit()->IgnoreParenImpCasts();
++      const bool CxxReceiver = isa<CXXMemberCallExpr>(Syntax);
++      if (Crossing) for (auto [Index, Argument] : llvm::enumerate(Frame->arguments())) {
++        const auto *Value = transferSource(Argument);
++        QualType Type = Value->getType();
++        if (CxxReceiver && Index == 0 && Type->isPointerType())
++          Type = Type->getPointeeType();
 +        // Initializer-only provenance was checked while constructing the frame.
 +        // This pass contributes later writes and closed binding/escape facts.
 +        if((!carriesManagedResourceValue(S.Context,Value,nullptr,nullptr,&S) &&
 +            carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S)) ||
 +           (!carriesManagedResourceValue(S.Context,Value,nullptr,nullptr,&S,true) &&
 +            carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S,true)))
-+          Invalid|=checkTransferValue(S,Value,Value->getType(),
-+              "isolated snapshot",nullptr,ScopeBody);
++          Invalid |= checkTransferValue(S, Value, Type,
++              "isolated snapshot", nullptr, ScopeBody);
 +      }
 +    }
 +    const auto *Function = dyn_cast<FunctionDecl>(Callable);
@@ -64776,7 +64924,7 @@ diff --git a/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp b/clang/unittest
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ASTInfrastructureTest.cpp
-@@ -0,0 +1,4278 @@
+@@ -0,0 +1,4286 @@
 +//===- ObjC3ASTInfrastructureTest.cpp - AST ownership and traversal tests ---===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -67867,7 +68015,12 @@ new file mode 100644
 +  return call(nullptr,42);
 +}
 +inline int vector_contract(){
-+  auto call=[](int value) __attribute__((vectorcall,noinline)){return value;};return call(42);
++#if defined(__aarch64__)
++  auto call=[](int value) __attribute__((aarch64_vector_pcs,noinline)){return value;};
++#else
++  auto call=[](int value) __attribute__((vectorcall,noinline)){return value;};
++#endif
++  return call(42);
 +}
 +inline int diagnosed(){
 +  auto call=[](int value) __attribute__((diagnose_if(value<0,"negative","error"))){return value;};return call(42);
@@ -67876,8 +68029,11 @@ new file mode 100644
 +static_assert(defaults()==42 && immediate()==42);
 +}
 +)lambda";
++ for(const char *Target:{"x86_64-unknown-linux-gnu","aarch64-unknown-linux-gnu"})
 + for(const char *Standard:{"-std=c++20","-std=c++23"}) {
-+  std::vector<std::string> Args={Standard,"-Wthread-safety","-Werror=thread-safety"};
++  SCOPED_TRACE(Target);
++  const char *VectorConvention=StringRef(Target).starts_with("aarch64") ? "aarch64_vector_pcs" : "vectorcall";
++  std::vector<std::string> Args={Standard,"-target",Target,"-Wthread-safety","-Werror=thread-safety","-Werror=ignored-attributes"};
 +  std::string Text=Source;
 +  if(StringRef(Standard)=="-std=c++23")Text+=R"(namespace LambdaContracts {
 +    inline int static_callable(){auto call=[] [[nodiscard]] () static {return 42;};return call();}
@@ -67895,7 +68051,7 @@ new file mode 100644
 +  ASSERT_TRUE(Imported);From.reset();
 +  PrintingPolicy Policy(To->getASTContext().getLangOpts());Policy.PolishForDeclaration=true;
 +  std::string Printed;llvm::raw_string_ostream Out(Printed);Imported->print(Out,Policy);Out.flush();
-+  for(const char *Contract:{"requires_capability","noinline","no_sanitize","unused","consteval","requires","= 40","swiftcall","swift_context","vectorcall","diagnose_if"})
++  for(const char *Contract:{"requires_capability","noinline","no_sanitize","unused","consteval","requires","= 40","swiftcall","swift_context",VectorConvention,"diagnose_if"})
 +   EXPECT_NE(Printed.find(Contract),std::string::npos)<<Contract;
 +  auto Replay=tooling::buildASTFromCodeWithArgs(Printed,Args,"lambda-replay.cpp");ASSERT_TRUE(Replay);EXPECT_FALSE(Replay->getDiagnostics().hasErrorOccurred());
 +  if(StringRef(Standard)=="-std=c++23") {
@@ -69055,7 +69211,6 @@ new file mode 100644
 +  EXPECT_EQ(Reparsed.Captures,Retained.Captures);EXPECT_EQ(Reparsed.ReceiverCaptures,Retained.ReceiverCaptures);
 + }
 +}
-
 diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
 index b0a99cf27..ce6cc5587 100644
 --- a/clang/test/AST/ast-dump-template-name.cpp
@@ -70344,10 +70499,9 @@ index 000000000..15da1eacc
 +#endif
 diff --git a/clang/test/ObjC3/Sema/native-concurrent-block-aliases.m b/clang/test/ObjC3/Sema/native-concurrent-block-aliases.m
 new file mode 100644
-index 000000000..eb1ecd6bf
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-concurrent-block-aliases.m
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,58 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-concurrent-block-aliases.h -o %t-c17-False.pch
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
@@ -70399,7 +70553,12 @@ index 000000000..eb1ecd6bf
 +  (void)alias_spawn(first); // expected-error {{cannot prove Sendable captures}}
 +  AliasAsyncWork mutable_work=^void(void) __objc3_async_frame {};
 +  AliasAsyncWork const second=mutable_work;
-+  (void)alias_spawn(second); // expected-error {{cannot prove Sendable captures}}
++  (void)alias_spawn(second);
++}
++void alias_reassigned(AliasAsyncWork work) {
++  AliasAsyncWork mutable_work=^void(void) __objc3_async_frame {};
++  mutable_work=work;
++  (void)alias_spawn(mutable_work); // expected-error {{cannot prove Sendable captures}}
 +}
 diff --git a/clang/test/ObjC3/Sema/native-frame-hook-recovery.mm b/clang/test/ObjC3/Sema/native-frame-hook-recovery.mm
 new file mode 100644
@@ -70526,7 +70685,6 @@ index 000000000..335ca32cb
 +#endif
 diff --git a/clang/test/ObjC3/Sema/borrowed-static-results.m b/clang/test/ObjC3/Sema/borrowed-static-results.m
 new file mode 100644
-index 000000000..69b328daf
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-static-results.m
 @@ -0,0 +1,69 @@
@@ -70579,7 +70737,7 @@ index 000000000..69b328daf
 +STATIC_RESULT StaticBytes plain_tls(id owner){return static_plain_tls();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_RESULT StaticBytes plain_mutable(id owner){return static_plain_mutable();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_RESULT StaticBytes plain_recursive(id owner){return static_plain_recursive();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
-+STATIC_RESULT StaticBytes plain_statements(id owner){return static_plain_statements();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes plain_statements(id owner){return static_plain_statements();}
 +STATIC_RESULT StaticBytes external_body(id owner){return static_external_body();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +STATIC_RESULT StaticBytes weak_body(id owner){return static_weak_source();} // expected-error {{return without a matching borrowed return and owner parameter contract}}
 +#ifdef __cplusplus
@@ -70871,10 +71029,9 @@ index 000000000..481f62a45
 +#endif
 diff --git a/clang/test/ObjC3/Sema/native-concurrent-block-values.m b/clang/test/ObjC3/Sema/native-concurrent-block-values.m
 new file mode 100644
-index 000000000..d40947da4
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-concurrent-block-values.m
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,196 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-concurrent-block-values.h -o %t-c17-0.pch
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c17-0.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
@@ -70930,7 +71087,10 @@ index 000000000..d40947da4
 +  AliasAsyncWork const safe = ^void(void) __objc3_async_frame {};
 +  (void)alias_spawn(choose ? safe : unknown); // expected-error {{cannot prove Sendable captures}}
 +  AliasAsyncWork mutable_work = safe;
-+  (void)alias_detach(choose ? safe : mutable_work); // expected-error {{cannot prove Sendable captures}}
++  (void)alias_detach(choose ? safe : mutable_work);
++  AliasAsyncWork unproved = safe;
++  unproved = unknown;
++  (void)alias_detach(choose ? safe : unproved); // expected-error {{cannot prove Sendable captures}}
 +  AliasAsyncWork const choice = choose ? safe : unknown;
 +  (void)alias_spawn(choice); // expected-error {{cannot prove Sendable captures}}
 +}
@@ -79983,7 +80143,7 @@ diff --git a/clang/test/ObjC3/Sema/native-control-argument-projections.m b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-control-argument-projections.m
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,147 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
@@ -80101,15 +80261,36 @@ new file mode 100644
 +static inline int &managed_depth_15(int &value){return managed_depth_14(value);}
 +static inline int &managed_depth_16(int &value){return managed_depth_15(value);}
 +static inline int &managed_depth_17(int &value){return managed_depth_16(value);}
++int managed_control_extended_depth(int value) __objc3_async_frame {
++ return __objc3_await managed_remote(managed_depth_17(value));
++}
++#define FORWARD_DEPTH(N, PREVIOUS) \
++ static inline int &managed_depth_##N(int &value){return managed_depth_##PREVIOUS(value);}
++FORWARD_DEPTH(18, 17)
++FORWARD_DEPTH(19, 18)
++FORWARD_DEPTH(20, 19)
++FORWARD_DEPTH(21, 20)
++FORWARD_DEPTH(22, 21)
++FORWARD_DEPTH(23, 22)
++FORWARD_DEPTH(24, 23)
++FORWARD_DEPTH(25, 24)
++FORWARD_DEPTH(26, 25)
++FORWARD_DEPTH(27, 26)
++FORWARD_DEPTH(28, 27)
++FORWARD_DEPTH(29, 28)
++FORWARD_DEPTH(30, 29)
++FORWARD_DEPTH(31, 30)
++FORWARD_DEPTH(32, 31)
++FORWARD_DEPTH(33, 32)
++#undef FORWARD_DEPTH
 +int managed_control_depth_limit(int value) __objc3_async_frame {
-+ return __objc3_await managed_remote(managed_depth_17(value)); // expected-error {{cleanup-managed concurrent value}}
++ return __objc3_await managed_remote(managed_depth_33(value)); // expected-error {{cleanup-managed concurrent value}}
 +}
 +static inline int &managed_mutable_local(int &value){int local=value;return value;}
 +int managed_control_mutable_result(int value) __objc3_async_frame {
-+ return __objc3_await managed_remote(managed_mutable_local(value)); // expected-error {{cleanup-managed concurrent value}}
++ return __objc3_await managed_remote(managed_mutable_local(value));
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-alternative-argument-projections.h b/clang/test/ObjC3/Sema/Inputs/native-alternative-argument-projections.h
 new file mode 100644
 --- /dev/null
