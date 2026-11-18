@@ -12,9 +12,9 @@ def fixture(tmp_path, monkeypatch):
     build = tmp_path / "build with ' spaces"
     build.mkdir()
     rows = [{'name': 'objc3_first', 'target': 'objc3_first_test',
-             'executable': str(build / 'objc3_first_test')},
+             'executable': str(build / 'objc3_first_test'), 'command_index': 0},
             {'name': 'objc3_second', 'target': 'objc3_second_test',
-             'executable': str(build / 'objc3_second_test')}]
+             'executable': str(build / 'objc3_second_test'), 'command_index': 0}]
     (build / 'frontend-test-targets.json').write_text(json.dumps({'tests': rows}))
     monkeypatch.setattr('scripts.objc3c_toolchain.frontend_tests.subprocess.check_output',
                         lambda *a, **kw: json.dumps({'tests': [
@@ -126,8 +126,11 @@ def test_failed_variant_preserves_the_shared_executable(tmp_path, monkeypatch):
     assert not receipt['reclaimed'] and Path(rows[0]['executable']).is_file()
 
 
-def test_rebound_ctest_command_is_rejected_before_execution(tmp_path, monkeypatch):
+@pytest.mark.parametrize('position', [0, 3])
+def test_rebound_ctest_command_is_rejected_before_execution(tmp_path, monkeypatch, position):
     build, rows = fixture(tmp_path, monkeypatch)
+    rows[0]['command_index'] = position
+    (build / 'frontend-test-targets.json').write_text(json.dumps({'tests': rows}))
     monkeypatch.setattr('scripts.objc3c_toolchain.frontend_tests.subprocess.check_output',
         lambda *a, **kw: json.dumps({'tests': [
             {'name': row['name'], 'command': ['/foreign/program']} for row in rows]}))
@@ -159,6 +162,11 @@ objc3c_add_frontend_test(NAME objc3_shared_no_rtti COMMAND objc3_shared_test -fn
 add_executable(objc3_text_file_cli main.cpp)
 objc3c_add_frontend_test(NAME objc3_text_file_cli TARGET objc3_text_file_cli
   COMMAND "{sys.executable}" "{source}/wrapper.py" "$<TARGET_FILE:objc3_text_file_cli>")
+add_executable(objc3c main.cpp)
+objc3c_add_frontend_test(NAME objc3_meta_cli TARGET objc3c
+  COMMAND "{sys.executable}" "{source}/wrapper.py" "$<TARGET_FILE:objc3c>" --extra-option)
+objc3c_add_frontend_test(NAME objc3_diagnostic_cli TARGET objc3c
+  COMMAND "{sys.executable}" -B "{source}/wrapper.py" "$<TARGET_FILE:objc3c>")
 objc3c_write_frontend_test_inventory()
 ''')
     build = tmp_path / "build with ' spaces"
@@ -171,16 +179,20 @@ def test_real_cmake_records_shared_profile_commands_before_binaries_exist(tmp_pa
     build, configured = configure_real_project(tmp_path)
     assert configured.returncode == 0, configured.stdout + configured.stderr
     plan = json.loads((build / 'frontend-test-targets.json').read_text())['tests']
-    assert len(plan) == 4 and {row['target'] for row in plan} == {'objc3_shared_test', 'objc3_text_file_cli'}
+    assert {row['name']: row['command_index'] for row in plan} == {
+        'objc3_shared': 0, 'objc3_shared_assertions': 0, 'objc3_shared_no_rtti': 0,
+        'objc3_text_file_cli': 2, 'objc3_meta_cli': 2, 'objc3_diagnostic_cli': 3,
+    }
     calls = []
     def run(label, args):
         calls.append(args)
         subprocess.run(list(map(str, args)), check=True, capture_output=True, timeout=60)
     result = qualify(build, tmp_path / 'proof', run, jobs=2)
-    assert result['frontend_ctests'] == 4 and result['test_executables'] == 1
-    assert sum(call[0] == 'cmake' for call in calls) == 2
-    assert sum(call[0] == 'ctest' for call in calls) == 4
+    assert result['frontend_ctests'] == 6 and result['test_executables'] == 1
+    assert sum(call[0] == 'cmake' for call in calls) == 3
+    assert sum(call[0] == 'ctest' for call in calls) == 6
     assert (build / 'objc3_text_file_cli').is_file()
+    assert (build / 'objc3c').is_file()
 
 
 def test_real_cmake_refuses_unregistered_target_ownership(tmp_path):

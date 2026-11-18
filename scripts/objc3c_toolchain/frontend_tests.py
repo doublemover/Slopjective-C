@@ -13,7 +13,7 @@ from .sdk_example import write_json
 def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
     """Build, execute and reclaim each owned test; retain failed outputs."""
     build = build.resolve(strict=True)
-    report = {'status': 'running', 'schema': 'objc3c.frontend-serial-ctest.v1',
+    report = {'status': 'running', 'schema': 'objc3c.frontend-serial-ctest.v2',
               'tests': [], 'reclaimed': [], 'ctest_test_names': [], 'failures': []}
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / 'qualification.json'
@@ -30,12 +30,14 @@ def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
         groups = {}
         for row in rows:
             name, target, executable = row['name'], row['target'], Path(row['executable'])
+            position = row.get('command_index')
             if (not re.fullmatch(r'objc3_[a-z0-9_]+', name) or
                     not (re.fullmatch(r'objc3_[a-z0-9_]+_test', target) or
-                         target == name == 'objc3_text_file_cli') or
+                         target in ('objc3c', 'objc3_text_file_cli')) or
+                    type(position) is not int or position < 0 or
                     executable.name != target or not executable.is_absolute() or
                     not executable.resolve().is_relative_to(build) or executable.is_symlink()):
-                raise ValueError('frontend test target is not an owned build output')
+                raise ValueError(f'frontend test target is not an owned build output: {name} -> {target}')
             group = groups.setdefault(target, [])
             if group and group[0]['executable'] != row['executable']:
                 raise ValueError('frontend target aliases disagree on their executable')
@@ -62,9 +64,9 @@ def qualify(build: Path, output: Path, run, *, jobs: int) -> dict:
                                          '--show-only=json-v1'], text=True))['tests']}
             for row in variants:
                 command = commands.get(row['name'], [])
-                position = -1 if row['name'] == 'objc3_text_file_cli' else 0
-                if not command or command[position] != str(executable):
-                    raise ValueError('frontend CTest command differs from its executable owner')
+                position = row['command_index']
+                if position >= len(command) or command[position] != str(executable):
+                    raise ValueError(f'frontend CTest command differs from its executable owner: {row["name"]}')
             with executable.open('rb') as stream:
                 signature = hashlib.file_digest(stream, 'sha256').hexdigest()
             size = executable.stat().st_size

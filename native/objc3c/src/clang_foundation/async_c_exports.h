@@ -1,9 +1,8 @@
 #pragma once
 
+#include <span>
 #include <string>
 #include <vector>
-
-#include "llvm/ADT/ArrayRef.h"
 
 namespace clang {
 class ASTContext;
@@ -20,7 +19,7 @@ struct AsyncCExportSource {
 // Derive both halves of the C ABI from the same checked source declarations.
 // Each name identifies one non-overloaded function in the translation unit.
 [[nodiscard]] AsyncCExportSource GenerateAsyncCExports(
-    clang::ASTContext &context, llvm::ArrayRef<std::string> symbols,
+    clang::ASTContext &context, std::span<const std::string> symbols,
     std::string &failure);
 
 }  // namespace objc3::clang_foundation

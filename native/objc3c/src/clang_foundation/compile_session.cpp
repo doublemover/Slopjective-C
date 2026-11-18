@@ -178,7 +178,7 @@ constexpr const char *kEagerRuntimeReady = "__objc3_import_runtime_ready";
 
 class AsyncCExportConsumer final : public clang::ASTConsumer {
 public:
-  AsyncCExportConsumer(llvm::ArrayRef<std::string> names, CompileResult &result)
+  AsyncCExportConsumer(std::span<const std::string> names, CompileResult &result)
       : names_(names), result_(result) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
@@ -192,7 +192,7 @@ public:
   }
 
 private:
-  llvm::ArrayRef<std::string> names_;
+  std::span<const std::string> names_;
   CompileResult &result_;
 };
 

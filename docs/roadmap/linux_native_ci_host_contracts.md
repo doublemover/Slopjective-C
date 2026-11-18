@@ -55,3 +55,14 @@ fork-matched frontend invokes that executable to generate the scanner's option
 table. The producer rejects a missing, non-executable or wrong-architecture
 tool, and the consumer validates the restored member before frontend
 configuration. The earlier AArch64 partitions all stopped at this boundary.
+
+The SDK frontend CTest plan records the executable's command argument index
+from each CMake registration. Direct tests start with their executable. The
+meta, diagnostic and text-file CLI wrappers pass it as an argument. Serial
+qualification checks the actual CTest command, executes all aliases of the
+same owner and retains the product tools for installation.
+
+The public C embedding implementation compiles with the native source include
+root and the standard C++ library. Its internal async export state uses
+`std::span` for entry selections, so dependency scanning requires no LLVM
+headers through the embedding API.

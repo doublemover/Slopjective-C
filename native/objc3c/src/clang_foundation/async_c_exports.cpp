@@ -244,7 +244,7 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
 }  // namespace
 
 AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
-                                        llvm::ArrayRef<std::string> symbols,
+                                        std::span<const std::string> symbols,
                                         std::string &failure) {
   failure.clear();
   AsyncCExportSource output;
