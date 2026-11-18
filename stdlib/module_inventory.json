@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 205,
+        "minor": 206,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed work-item factories retain actual caller contracts through immutable scalar/object/Block local aliases and fixed-arity concrete free/static template patterns; deferred dependent Block captures are discovered under bounded evaluated-reference work, nested callbacks prove actual environments, and MRC capture copies remain mandatory; matching SDK acceptance pending",
         "Closed native Block factories construct scalar/Objective-C parameter environments through pure branches, switches and conditional returns; actual caller contracts and cleanup provenance replace plain formal capture types, including nested produced work; ARC literal returns and ABI-checked MRC Block copies retain native lifetime lowering; static C++ factories and ignored/control-only arguments preserve bounded admission; matching SDK acceptance pending",
         "Mutable Block environment proofs prune side-effect-free constant branches, zero-entry loops, short-circuit and conditional arms, selected C17 generic/choose expressions and discarded C++ constexpr branches; bindings declared inside a discarded region retain their own full semantic capture checks; void-discarded C++ lvalues preserve read roles; matching SDK acceptance pending",
         "Closed native Block-returning helper chains preserve the union of actual caller environments through bounded pure branches, immutable local aliases and nested selections; immutable internal/inline global Block definitions retain capture proofs, while mutable/external/weak/open factories remain unproved; content-bound canonical guards, pre-token admitted guard preludes and pre-semicolon source import admission prevent duplicate native/textual dependency definitions; matching SDK acceptance pending",
@@ -368,12 +369,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 131,
+        "minor": 132,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed work-item factories retain actual caller contracts through immutable scalar/object/Block local aliases and fixed-arity concrete free/static template patterns; deferred dependent Block captures are discovered under bounded evaluated-reference work, nested callbacks prove actual environments, and MRC capture copies remain mandatory; matching SDK acceptance pending",
         "Closed native Block factories construct scalar/Objective-C parameter environments through pure branches, switches and conditional returns; actual caller contracts and cleanup provenance replace plain formal capture types, including nested produced work; ARC literal returns and ABI-checked MRC Block copies retain native lifetime lowering; static C++ factories and ignored/control-only arguments preserve bounded admission; matching SDK acceptance pending",
         "Mutable Block environment proofs prune side-effect-free constant branches, zero-entry loops, short-circuit and conditional arms, selected C17 generic/choose expressions and discarded C++ constexpr branches; bindings declared inside a discarded region retain their own full semantic capture checks; void-discarded C++ lvalues preserve read roles; matching SDK acceptance pending",
         "Closed native Block-returning helper chains preserve the union of actual caller environments through bounded pure branches, immutable local aliases and nested selections; immutable internal/inline global Block definitions retain capture proofs, while mutable/external/weak/open factories remain unproved; content-bound canonical guards, pre-token admitted guard preludes and pre-semicolon source import admission prevent duplicate native/textual dependency definitions; matching SDK acceptance pending",

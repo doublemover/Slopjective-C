@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.206 / System 2.132 factory-alias span](linux_native_block_factory_aliases.md)
+retains caller value contracts through immutable factory-local aliases and
+concrete template patterns, including Clang's deferred dependent captures.
+
 The [Source 2.205 / System 2.131 factory-capture span](linux_native_block_factory_captures.md)
 maps newly constructed native work-item environments to their actual caller
 values, preserving resource checks and ARC/MRC lifetime behavior.
