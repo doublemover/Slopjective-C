@@ -952,7 +952,11 @@ def test_debugger_parser_header_matches_the_locked_production_patch_without_chec
     from scripts.objc3c_toolchain.debugger_test_header import HEADER, materialize
     repo = Path(__file__).resolve().parents[2]
     generated = materialize(repo, tmp_path / 'headers')
-    applied = tmp_path / 'upstream';applied.mkdir()
+    applied = tmp_path / 'upstream'
+    applied.mkdir()
+    # A test temporary directory may live under the checkout. Give git apply
+    # its own root so repository discovery cannot make it skip the patch.
+    subprocess.run(['git', 'init', '--quiet'], cwd=applied, check=True)
     subprocess.run(['git', 'apply', '--include=' + HEADER,
                     str(repo / 'toolchains/llvm/patches/0007-objc3-linux-debugger-runtime-contracts.patch')],
                    cwd=applied, check=True)
