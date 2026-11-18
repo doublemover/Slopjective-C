@@ -53652,7 +53652,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3091 @@
+@@ -0,0 +1,3106 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53938,6 +53938,16 @@ new file mode 100644
 +  const auto Name=Function->getIdentifier()->getName();
 +  return Name=="move" || Name=="forward" || Name=="forward_like" || Name=="as_const";
 +}
++bool closedProjectionReceiver(const CallExpr *Call,ASTContext &Context) {
++  const auto *Function=Call?Call->getDirectCallee():nullptr;
++  if(!Function)return false;
++  const auto *Method=dyn_cast<CXXMethodDecl>(Function);
++  if(!Method)return true;
++  if(!Method->isStatic() || Method->isOverloadedOperator())return false;
++  if(const auto *Member=dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts()))
++    if(Member->getBase()->HasSideEffects(Context))return false;
++  return true;
++}
 +struct ArgumentProjection {
 +  uint32_t Arguments;
 +  bool Aliases;
@@ -53953,7 +53963,7 @@ new file mode 100644
 +  --Budget;
 +  if(!BlockValues && standardReferenceView(Call))return ArgumentProjection{1,true};
 +  const auto *Function=Call->getDirectCallee();
-+  if(!Function || isa<CXXMethodDecl>(Function) || Function->isVariadic() ||
++  if(!Function || !closedProjectionReceiver(Call,Context) || Function->isVariadic() ||
 +      Function->isMultiVersion() || Function->isNoReturn() ||
 +      Function->hasAttr<WeakAttr>() || Function->hasAttr<WeakRefAttr>() || Function->hasAttr<WeakImportAttr>() ||
 +      Function->hasAttr<ObjCTaskSpawnAttr>() || Function->hasAttr<ObjCTaskDetachedAttr>() ||
@@ -54539,7 +54549,7 @@ new file mode 100644
 +  bool collectFactory(const CallExpr *Call,unsigned Depth) {
 +    if(!FactoryCaptures || !Call || Depth>64 || Call->getNumArgs()>32)return false;
 +    const auto *Function=Call->getDirectCallee();
-+    if(!Function || (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) || Function->isVariadic() ||
++    if(!Function || !closedProjectionReceiver(Call,Context) || Function->isVariadic() ||
 +        Function->isMultiVersion() || Function->isNoReturn() ||
 +        Function->hasAttr<WeakAttr>() || Function->hasAttr<WeakRefAttr>() || Function->hasAttr<WeakImportAttr>() ||
 +        Function->hasAttr<ObjCTaskSpawnAttr>() || Function->hasAttr<ObjCTaskDetachedAttr>() || Function->hasAttr<ObjCTaskGroupAttr>() ||
@@ -54715,6 +54725,11 @@ new file mode 100644
 +        // including ignored arguments: an opaque call cannot hide state work.
 +        for(const auto *Argument:Nested->arguments())
 +          if(!Origin(Origin,Argument,Level+1) && !(Argument->getType()->isBlockPointerType() && LiteralInitializer(LiteralInitializer,Argument,Level+1)))return false;
++        if(auto Projection=argumentProjection(Nested,Context,true)) {
++          for(unsigned I=0;I!=Nested->getNumArgs();++I)
++            if(Projection->selects(I) && !Self(Self,Nested->getArg(I),Level+1,Copied,Result))return false;
++          return true;
++        }
 +        const auto First=FactoryCaptures->size(),FirstBlock=Blocks.size();
 +        // Recompute a nested symbolic recipe under the shared work/cycle bounds.
 +        // Expression memoization cannot substitute a previous outer caller's
@@ -79296,4 +79311,57 @@ new file mode 100644
 +template<class T>static inline BindingWork binding_template_unused_unowned(T object){return BINDING_FACTORY_RESULT(^[unowned object] void(void) __objc3_async_frame {});}
 +void binding_template_unowned_boundary(SafeBlockObject *safe){(void)binding_detached(binding_template_unowned_factory(safe));} // expected-error {{cannot prove Sendable captures}}
 +void binding_template_unused_unowned_boundary(SafeBlockObject *safe){(void)binding_detached(binding_template_unused_unowned(safe));} // expected-error {{cannot prove Sendable captures}}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-static-argument-projections.h b/clang/test/ObjC3/Sema/Inputs/native-static-argument-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-static-argument-projections.h
+@@ -0,0 +1,16 @@
++#ifndef OBJC3_STATIC_ARGUMENT_PROJECTIONS_H
++#define OBJC3_STATIC_ARGUMENT_PROJECTIONS_H
++#include "native-block-factory-local-environments.h"
++#ifdef __cplusplus
++struct BindingStaticSources {
++ static int scalar(int value){return value;}
++ static int choice(int choose,int left,int right){if(choose)return left;return right;}
++ static int &reference(int &value){return value;}
++ template<class T>static T project(T value){return value;}
++ static BindingWork work(BindingWork value){return value;}
++ static BindingWork constructed(int value){return work(binding_local_literal_factory(value));}
++};
++BindingStaticSources binding_opaque_static_receiver(void);
++static inline void binding_static_ordinary(int choose){int value=42;BindingStaticSources::reference(value)=41;const BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(BindingStaticSources::work(work));BindingStaticSources source;(void)binding_detached(source.work(work));(void)binding_detached(BindingStaticSources::constructed(42));(void)binding_detached(binding_make_scalar(BindingStaticSources::scalar(value)));(void)binding_detached(binding_make_scalar(BindingStaticSources::choice(choose,41,42)));(void)binding_detached(binding_make_scalar(BindingStaticSources::project(42)));}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-static-argument-projections.m b/clang/test/ObjC3/Sema/native-static-argument-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-static-argument-projections.m
+@@ -0,0 +1,25 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-static-argument-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-static-argument-projections.h"
++#ifndef __cplusplus
++// expected-no-diagnostics
++#else
++void static_source_close(int);int static_source_open(void);
++void binding_static_resources(int choose){int descriptor __attribute__((objc_resource(close=static_source_close,invalid=-1)))=static_source_open();
++ int scalar=BindingStaticSources::scalar(descriptor);(void)binding_detached(binding_make_scalar(scalar)); // expected-error {{cleanup-managed capture}}
++ int left=BindingStaticSources::choice(choose,descriptor,42);(void)binding_detached(binding_make_scalar(left)); // expected-error {{cleanup-managed capture}}
++ int right=BindingStaticSources::choice(choose,41,descriptor);(void)binding_detached(binding_make_scalar(right)); // expected-error {{cleanup-managed capture}}
++ int projected=BindingStaticSources::project(descriptor);(void)binding_detached(binding_make_scalar(projected)); // expected-error {{cleanup-managed capture}}
++ int changed=42;BindingStaticSources::reference(changed)=descriptor;(void)binding_detached(binding_make_scalar(changed)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(BindingStaticSources::constructed(descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_make_scalar(BindingStaticSources::choice(descriptor,41,42)));
++}
++void binding_static_unknown(BindingWork unknown){(void)binding_detached(BindingStaticSources::work(unknown));} // expected-error {{cannot prove Sendable captures}}
++void binding_static_opaque_receiver(void){const BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(binding_opaque_static_receiver().work(work));} // expected-error {{cannot prove Sendable captures}}
 +#endif

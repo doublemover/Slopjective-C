@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.211 / System 2.137 static-projection span](linux_native_static_argument_projections.md)
+extends native scalar/reference/Block views to closed static C++ helpers and
+factory composition without admitting hidden object-qualifier side effects.
+
 The [Source 2.210 / System 2.136 local environment span](linux_native_block_factory_local_environments.md)
 composes local producer results and nested literal/produced environments while
 preserving caller transfer contracts and ordinary callback effects.
