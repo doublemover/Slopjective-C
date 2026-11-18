@@ -1597,7 +1597,9 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       if (method->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization) return false;
     } else if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(member)) {
       if (!variable->isStaticDataMember()) return false;
-    } else if (!llvm::isa<clang::FieldDecl,clang::TypedefNameDecl,clang::EnumDecl,clang::BaseUsingDecl>(member)) return false;
+    } else if (!llvm::isa<clang::FieldDecl, clang::TypedefNameDecl, clang::EnumDecl,
+                         clang::BaseUsingDecl, clang::UnresolvedUsingValueDecl,
+                         clang::UnresolvedUsingTypenameDecl>(member)) return false;
     for (const auto *attribute : member->attrs())
       if (!attribute->isImplicit() && !IsPublishedSemanticAttribute(attribute) && !IsForeignImportAttribute(attribute) && !llvm::isa<clang::OverrideAttr,clang::FinalAttr>(attribute)) return false;
   }

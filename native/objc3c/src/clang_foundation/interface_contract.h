@@ -102,9 +102,9 @@ inline bool HasCxxNestedTypeIdentity(const InterfaceDeclarationIdentity &d) {
          std::string::npos;
 }
 
-inline constexpr const char *kCxxUsingSemantic="objc3.cxx-using.v1";
+inline constexpr const char *kCxxUsingSemantic="objc3.cxx-using.v2";
 inline bool HasCxxUsingIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-using:v1;")!=std::string::npos;
+  return d.canonical_type_identity.find(";cxx-using:v2;")!=std::string::npos;
 }
 inline constexpr const char *kCxxDeclarationExpressionSemantic =
     "objc3.cxx-declaration-expressions.v1";

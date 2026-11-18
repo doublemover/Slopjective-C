@@ -94,7 +94,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.cxx-class-dispatch.v1",
     "objc3.cxx-namespaces.v1",
     "objc3.cxx-nested-types.v1",
-    "objc3.cxx-using.v1",
+    "objc3.cxx-using.v2",
     "objc3.cxx-declaration-expressions.v1",
     "objc3.c-inline-definitions.v1",
     "objc3.cxx-definitions.v1",

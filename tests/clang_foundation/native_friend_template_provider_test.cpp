@@ -50,6 +50,33 @@ template<class T> class Secret {
 public: explicit Secret(int n):value(n){}
 };
 struct Reader {static int read(const Secret<Reader> &v){return v.value;}};
+template<class T> struct Base {
+ explicit Base(T n):value(n){}
+protected:
+ using Value=T;
+ T value;
+ T add() const {return value;}
+ T add(T delta) const {return value+delta;}
+};
+template<class T> class Adaptor: public Base<T> {
+public:
+ using Base<T>::Base;
+ using typename Base<T>::Value;
+ using Base<T>::add;
+ Value read() const {return value;}
+private:
+ using Base<T>::value;
+};
+struct IntOverload {int call(int n) const {return n+1;}};
+struct LongOverload {long call(long n) const {return n+2;}};
+template<class... Bases> struct Combined: Bases... {using Bases::call...;};
+template<class T> using BaseLink=Base<T>;
+template<class T> struct AliasAdaptor: BaseLink<T> {
+ using BaseLink<T>::BaseLink;
+ using BaseLink<T>::add;
+};
+template<class Parent> struct GenericAdaptor: Parent {using Parent::Parent;};
+template<class... Bases> struct TypeProjection: Bases... {using typename Bases::Value...;};
 int provider(Value);
 inline int exercise(){
  Value v(17);Box<int> i(19);Box<long> l(23);Secret<Reader> s(29);
@@ -77,11 +104,13 @@ void Run(const fs::path &root,const char *standard,int ownership){
  const auto artifact=publish(Source);const auto repeated=publish(Source);
  assert(artifact.source_bytes==repeated.source_bytes && artifact.sidecar_json==repeated.sidecar_json);
  assert(artifact.sidecar_json.find(kCxxFriendSemantic)!=std::string::npos);
+ assert(artifact.sidecar_json.find(kCxxUsingSemantic)!=std::string::npos);
  for(const auto &[from,to]:std::vector<std::pair<std::string,std::string>>{
      {"return v.value+int(add);","return v.value+int(add)+2;"},
      {"requires Number<T>","requires (Number<T> && sizeof(T)<8)"},
      {"template<Number U>","template<class U>"},
-     {"friend T;","friend Reader;"}}){
+     {"friend T;","friend Reader;"},
+     {"private:\n using Base<T>::value;","public:\n using Base<T>::value;"}}){
   std::string changed=Source;const auto at=changed.find(from);assert(at!=std::string::npos);
   changed.replace(at,from.size(),to);assert(publish(changed).identity.semantic_fingerprint!=artifact.identity.semantic_fingerprint);
  }
@@ -99,6 +128,12 @@ void Run(const fs::path &root,const char *standard,int ownership){
      {"NativeFriends::A"},"O3IFC156");
  reject_owners("namespace NativeFriends{struct __attribute__((annotate(\"objc3.spi:Testing\"))) A{template<class T> friend int shared(T);};struct B{template<class T> friend int shared(T);};}",
      {"NativeFriends"},"O3IFC157");
+ reject_owners(R"(
+  namespace NativeFriends {
+  template<class T> struct Base {static constexpr int value=42;};
+  template<class T> using Hidden=Base<T>;
+  template<class T> struct Public: Base<T> {using Hidden<T>::value;};
+  })", {"NativeFriends::Base", "NativeFriends::Public"}, "O3IFC156");
  publish(Source);assert(fs::remove(source));
  const auto interface=root/"NativeFriends.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
  auto imported=[&](const fs::path &input,const fs::path &output){
@@ -106,7 +141,18 @@ void Run(const fs::path &root,const char *standard,int ownership){
   value.imported_interfaces={dependency};return value;
  };
  for(const char *name:{"a","b"}){
-  const auto input=root/(std::string(name)+".mm");Write(input,"extern \"C\" int check_"+std::string(name)+"(){return NativeFriends::exercise();}");
+  const auto input=root/(std::string(name)+".mm");
+  Write(input,"extern \"C\" int check_"+std::string(name)+R"(() {
+    NativeFriends::Adaptor<int> adapted(40);
+    NativeFriends::Adaptor<int>::Value value=2;
+    NativeFriends::Combined<NativeFriends::IntOverload,NativeFriends::LongOverload> calls;
+    NativeFriends::AliasAdaptor<int> alias(41);
+    NativeFriends::GenericAdaptor<NativeFriends::Adaptor<int>> generic(42);
+    NativeFriends::TypeProjection<NativeFriends::Adaptor<int>>::Value projected=42;
+    return NativeFriends::exercise() || adapted.read()!=40 || adapted.add()!=40 ||
+        adapted.add(value)!=42 || calls.call(41)!=42 || calls.call(40L)!=42 ||
+        alias.add(1)!=42 || generic.read()!=42 || projected!=42;
+  })");
   Success(Compile(imported(input,root/(std::string(name)+".o"))));
  }
  unsigned ordinal=0;
@@ -114,7 +160,8 @@ void Run(const fs::path &root,const char *standard,int ownership){
      {"int bad(){NativeFriends::Value v(1);return reveal(v,\"bad\");}","no matching function"},
      {"int bad(){NativeFriends::Value v(1);return v.value;}","private member"},
      {"int bad(){NativeFriends::Box<void*> v(nullptr);return read(v);}","no matching function"},
-     {"int bad(){NativeFriends::Value v(1);return NativeFriends::reveal(v,1);}","no member named"}}){
+     {"int bad(){NativeFriends::Value v(1);return NativeFriends::reveal(v,1);}","no member named"},
+     {"int bad(){return NativeFriends::Adaptor<int>(0).value;}","private member"}}){
   const auto input=root/("bad-"+std::to_string(ordinal++)+".mm");Write(input,text);const auto result=Compile(imported(input,root/"bad.o"));
   const bool rejected=!result.success && std::any_of(result.diagnostics.begin(),result.diagnostics.end(),[&](const auto &d){return d.message.find(message)!=std::string::npos;});
   if(!rejected)test::ReportFailure(result);assert(rejected);
@@ -124,6 +171,10 @@ void Run(const fs::path &root,const char *standard,int ownership){
  reader.push_back("objc3.cxx-friends.v1");auto old=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,reader);
  assert(!old);llvm::consumeError(old.takeError());reader.push_back(kCxxFriendSemantic);
  auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,reader);assert(decoded);
+ auto old_using=reader;
+ std::erase(old_using,llvm::StringRef(kCxxUsingSemantic));old_using.push_back("objc3.cxx-using.v1");
+ auto rejected_using=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,old_using);
+ assert(!rejected_using);llvm::consumeError(rejected_using.takeError());
  auto missing=*decoded;std::erase(missing.required_semantics,kCxxFriendSemantic);
  auto invalid=EncodeSemanticInterfaceSidecar(missing,reader);assert(!invalid);llvm::consumeError(invalid.takeError());
  const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a() || check_b();}");

@@ -2148,7 +2148,7 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
       if(const auto *using_decl=llvm::dyn_cast<clang::BaseUsingDecl>(member))
         using_members.insert(ReadInterfaceDeclarationStableId(using_decl)+
                              ":access="+CxxAccessName(using_decl->getAccess()));
-    if(!using_members.empty()) out << ";cxx-using:v1;";
+    if(!using_members.empty()) out << ";cxx-using:v2;";
     for(const auto &member:using_members) out << "using=" << member << ';';
   }
   if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);

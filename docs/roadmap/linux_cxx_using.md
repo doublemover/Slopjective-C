@@ -11,6 +11,19 @@ same spelling. Containing records also bind member using declarations. Directive
 bind the namespace as written and its resolved target; their stable identities
 include scope and nominated namespace, without source locations.
 
+Source 2.267 adds dependent base using declarations in published class
+templates. Canonical interfaces retain inherited constructor names, typename
+introductions, value and overload introductions, access, and pack expansions.
+The class template's identity binds the declaration and its qualifying types.
+Publication checks the qualifier's dependencies even when its targets are
+resolved only during client instantiation. These interfaces require
+`objc3.cxx-using.v2`.
+
+Linked C++20 and C++23 consumers exercise the overload sets, access checks,
+constructor inheritance through direct, aliased and parameterized bases, and
+dependent typename packs after the provider source is removed. An excluded
+alias and an older reader are rejected.
+
 Namespace exports include their using declarations/directives normally. A global
 directive can be selected explicitly as `@using:QualifiedNamespace`; it still
 A global enum introduction can be selected as

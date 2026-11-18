@@ -8824,7 +8824,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2845,14 @@
+@@ -1797,21 +2845,50 @@
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -8842,7 +8842,44 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2874,7 @@
++  if (D->isPackExpansion())
++    Out << "...";
+ }
+ 
+ void DeclPrinter::VisitUnresolvedUsingValueDecl(UnresolvedUsingValueDecl *D) {
+   if (!D->isAccessDeclaration())
+     Out << "using ";
+   D->getQualifier().print(Out, Policy);
+-  Out << D->getDeclName();
++  const IdentifierInfo *Constructor = nullptr;
++  if (D->getDeclName().getNameKind() == DeclarationName::CXXConstructorName &&
++      D->getQualifier().getKind() == NestedNameSpecifier::Kind::Type) {
++    // A dependent inherited constructor repeats the qualifier's terminal
++    // identifier, without its template arguments: using Base<T>::Base.
++    const Type *Qualifier = D->getQualifier().getAsType();
++    if (const auto *Spec = Qualifier->getAs<TemplateSpecializationType>()) {
++      TemplateName Template = Spec->getTemplateName();
++      if (const auto *Pattern = Template.getAsTemplateDecl())
++        Constructor = Pattern->getIdentifier();
++      else if (const auto *Dependent = Template.getAsDependentTemplateName())
++        Constructor = Dependent->getName().getIdentifier();
++    } else if (const auto *Parameter = Qualifier->getAs<TemplateTypeParmType>())
++      Constructor = Parameter->getIdentifier();
++    else if (const auto *Dependent = Qualifier->getAs<DependentNameType>())
++      Constructor = Dependent->getIdentifier();
++    else if (const auto *Alias = Qualifier->getAs<TypedefType>())
++      Constructor = Alias->getDecl()->getIdentifier();
++  }
++  if (Constructor)
++    Out << Constructor->getName();
++  else
++    D->getDeclName().print(Out, Policy);
++  if (D->isPackExpansion())
++    Out << "...";
+ }
+ 
+ void DeclPrinter::VisitUsingShadowDecl(UsingShadowDecl *D) {
+@@ -1823,7 +2900,7 @@
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -8851,7 +8888,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
-@@ -1971,7 +3022,14 @@
+@@ -1971,7 +3048,14 @@
    if (IdentifierInfo *II = NTTP->getIdentifier())
      Name =
          Policy.CleanUglifiedParameters ? II->deuglifiedName() : II->getName();
@@ -8867,7 +8904,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (NTTP->hasDefaultArgument() && !NTTP->defaultArgumentWasInherited()) {
      Out << " = ";
-@@ -2023,3 +3081,23 @@
+@@ -2023,3 +3107,23 @@
      }
    }
  }

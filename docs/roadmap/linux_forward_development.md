@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.267 / System 2.193 dependent using contracts](linux_cxx_using.md)
+preserve inherited constructors, typename and value introductions, and pack
+expansions inside source-free C++ class templates.
+
 The [Source 2.266 / System 2.192 / keypath 2.14 accessor change](linux_typed_keypaths.md)
 keeps synchronous getters available through typed read-only paths when a
 setter introduces throwing, isolation or consuming ownership. Projected

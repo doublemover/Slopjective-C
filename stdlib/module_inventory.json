@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 266,
+        "minor": 267,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -417,7 +417,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 192,
+        "minor": 193,
         "patch": 0
       },
       "header": "include/objc3/system.h",

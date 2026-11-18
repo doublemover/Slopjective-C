@@ -12064,7 +12064,7 @@ void TestCxxUsingDeclarations() {
     auto a=emit("namespace A { int f(); } namespace B { int f(); } using A::f;");
     auto b=emit("namespace A { int f(); } namespace B { int f(); } using B::f;");
     assert(a.success && b.success && a.identity.semantic_fingerprint!=b.identity.semantic_fingerprint);
-    std::erase(decoded->required_semantics,"objc3.cxx-using.v1");
+    std::erase(decoded->required_semantics,"objc3.cxx-using.v2");
     decoded->module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
     auto erased=EncodeSemanticInterfaceSidecar(*decoded,semantics);
     assert(!erased);llvm::consumeError(erased.takeError());

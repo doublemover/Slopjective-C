@@ -2179,11 +2179,14 @@ std::vector<std::string> NeededStandardLibraryHeaders(const clang::NamedDecl *de
 struct ClassTemplatePublication {
   bool deduced=false, functions=false, aliases=false, variables=false;
   bool nested=false, thread_local_storage=false, variadic=false, nested_classes=false, effectful=false, friends=false;
+  bool using_declarations = false;
   void Read(const clang::CXXRecordDecl *record) {
     if (!record || !record->isCompleteDefinition()) return;
     for (const auto *member : record->decls()) {
       if (member->isImplicit()) continue;
       friends |= llvm::isa<clang::FriendDecl>(member);
+      using_declarations |= llvm::isa<clang::BaseUsingDecl, clang::UnresolvedUsingValueDecl,
+                                     clang::UnresolvedUsingTypenameDecl>(member);
       if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(member);
           specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation) continue;
       const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member);
@@ -2286,6 +2289,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         (members.deduced ? ";cxx-template-deduction:v1;" : "") +
         (members.effectful ? ";cxx-effectful-template-members:v1;" : "") +
         (members.friends ? ";cxx-friends:v3;" : "") +
+        (members.using_declarations ? ";cxx-using:v2;" : "") +
         (members.functions ? ";cxx-member-templates:v1;" : "") +
         (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v2;" : "") +
         (members.variables ? ";cxx-variable-templates:v2;" : "") +
@@ -2358,7 +2362,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
            ";implementation=" + std::to_string(static_cast<unsigned>(property->getPropertyImplementation()));
   if (const auto *using_enum=llvm::dyn_cast<clang::UsingEnumDecl>(declaration))
     return "using-enum{target="+ReadInterfaceDeclarationStableId(using_enum->getEnumDecl())+
-           ";access="+CxxAccessName(using_enum->getAccess())+"};cxx-using:v1;";
+           ";access="+CxxAccessName(using_enum->getAccess())+"};cxx-using:v2;";
   if (const auto *using_decl=llvm::dyn_cast<clang::UsingDecl>(declaration)) {
     std::set<std::string> targets;
     bool functions=true;
@@ -2368,7 +2372,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
       targets.insert(ReadInterfaceDeclarationStableId(target));
     }
     std::string value="using{typename="+std::to_string(using_decl->hasTypename())+
-        ";access="+CxxAccessName(using_decl->getAccess())+"};cxx-using:v1;functions="+
+        ";access="+CxxAccessName(using_decl->getAccess())+"};cxx-using:v2;functions="+
         std::to_string(functions)+";";
     for(const auto &target:targets) value+="target="+target+";";
     return value;
@@ -2377,7 +2381,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     return "using-namespace{target="+
         ReadInterfaceDeclarationStableId(directive->getNominatedNamespaceAsWritten())+
         ";namespace="+ReadInterfaceDeclarationStableId(directive->getNominatedNamespace())+
-        "};cxx-using:v1;";
+        "};cxx-using:v2;";
   if (const auto *alias = llvm::dyn_cast<clang::NamespaceAliasDecl>(declaration))
     return "namespace-alias{target=" +
            ReadInterfaceDeclarationStableId(alias->getAliasedNamespace()) +
@@ -2401,6 +2405,8 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
       if (members.deduced) value+=";cxx-template-deduction:v1;";
       if (members.variadic) value+=";cxx-variadic-templates:v1;";
       if (members.thread_local_storage) value+=";cxx-thread-local:v1;";
+      if (members.using_declarations && value.find(";cxx-using:v2;") == std::string::npos)
+        value += ";cxx-using:v2;";
       std::set<std::string> patterns;
       for (const auto *member:cxx->decls())
         if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(member);
