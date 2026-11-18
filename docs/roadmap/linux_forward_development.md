@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.220 / System 2.146 pointer-view and weak-policy span](linux_native_pointer_resource_views.md)
+retains resource storage behind immutable native pointer views and unknown
+managed receivers, and preserves weak-reference restrictions in class imports.
+
 The [Source 2.219 / System 2.145 dependent-getter span](linux_native_dependent_field_projections.md)
 retains resource contracts through selected pending generic getter bodies and
 identity-preserving expressions without treating pure observations as escapes.
@@ -224,7 +228,7 @@ matching SDK consolidation follows the implementation batch.
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
 campaign as historical evidence. Its terminal upstream receipt-state bug is
 fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
-Source 2.219 / System 2.145 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.220 / System 2.146 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2087,7 +2091,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.219 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.220 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 

@@ -889,6 +889,9 @@ void CheckManagedBoundaryValues(bool Cxx,bool Arc,const std::string &Standard) {
   Reject(Make("int rejected(void) __objc3_async_frame {int h __attribute__((cleanup(boundary_cleanup)))=3;return __objc3_await boundary_scalar(h);}"),"cleanup-managed concurrent value");
   Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_packet("+(Cxx?std::string("BoundaryPacket{h}"):std::string("(struct BoundaryPacket){h}"))+ ");}"),"cleanup-managed concurrent value");
   Reject(Make("void rejected(void){"+Open+"boundary_spawn("+(Cxx?std::string("^void() __objc3_async {}"):std::string("boundary_work"))+",h);}"),"cleanup-managed concurrent value");
+  Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"int *const view=&h;return __objc3_await boundary_scalar(*view);}"),"cleanup-managed concurrent value");
+  Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"int scalar=42;int *const view=&scalar;*view=h;return __objc3_await boundary_scalar(scalar);}"),"cleanup-managed concurrent value");
+  Success(Compile(Make("int ordinary(void) __objc3_async_frame {int scalar=42;int *const view=&scalar;*view=41;return __objc3_await boundary_scalar(*view);}")));
   if(Cxx) {
     const std::string GenericField="struct BoundaryGenericField {int value;template<class T>T get()const{return value;}template<class T>T &reference()&{return value;}};void boundary_generic_cleanup(BoundaryGenericField *) noexcept;";
     Reject(Make(GenericField+"int rejected(void) __objc3_async_frame {BoundaryGenericField source __attribute__((cleanup(boundary_generic_cleanup)))={42};return __objc3_await boundary_scalar(source.get<int>());}"),"cleanup-managed concurrent value");
@@ -896,6 +899,9 @@ void CheckManagedBoundaryValues(bool Cxx,bool Arc,const std::string &Standard) {
     Success(Compile(Make(GenericField+"int ordinary(void) __objc3_async_frame {BoundaryGenericField source={42};bool observed=source.get<bool>();return __objc3_await boundary_scalar(source.get<int>())+observed;}")));
     Success(Compile(Make(GenericField+"int observation(void) __objc3_async_frame {BoundaryGenericField source __attribute__((cleanup(boundary_generic_cleanup)))={42};return __objc3_await boundary_scalar(source.get<bool>());}")));
     const std::string FieldPreamble="struct BoundaryField {int value;int get()const{return value;}int forwarded()const{return get();}int &reference()&{return value;}bool valid()const{return value!=0;}};void boundary_field_cleanup(BoundaryField *) noexcept;";
+    Reject(Make(FieldPreamble+"int rejected(void) __objc3_async_frame {BoundaryField source __attribute__((cleanup(boundary_field_cleanup)))={42};BoundaryField *const view=&source;return __objc3_await boundary_scalar(view->forwarded());}"),"cleanup-managed concurrent value");
+    Reject(Make(FieldPreamble+"int rejected(void) __objc3_async_frame {"+Open+"BoundaryField source={42};BoundaryField *const view=&source;view->reference()=h;return __objc3_await boundary_scalar(view->get());}"),"cleanup-managed concurrent value");
+    Success(Compile(Make(FieldPreamble+"int ordinary(void) __objc3_async_frame {BoundaryField source={42};BoundaryField *const view=&source;view->reference()=41;return __objc3_await boundary_scalar(view->get());}")));
     Reject(Make(FieldPreamble+"int rejected(void) __objc3_async_frame {BoundaryField source __attribute__((cleanup(boundary_field_cleanup)))={42};return __objc3_await boundary_scalar(source.forwarded());}"),"cleanup-managed concurrent value");
     Reject(Make(FieldPreamble+"int rejected(void) __objc3_async_frame {"+Open+"BoundaryField source={h};return __objc3_await boundary_scalar(source.get());}"),"cleanup-managed concurrent value");
     Reject(Make(FieldPreamble+"int rejected(void) __objc3_async_frame {"+Open+"BoundaryField source={42};source.reference()=h;return __objc3_await boundary_scalar(source.get());}"),"cleanup-managed concurrent value");

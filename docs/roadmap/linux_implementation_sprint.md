@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.220 / System 2.146 pointer-view and weak-policy span](linux_native_pointer_resource_views.md)
+retains resource storage behind immutable native pointer views and unknown
+managed receivers, and preserves weak-reference restrictions in class imports.
+
 The [Source 2.219 / System 2.145 dependent-getter span](linux_native_dependent_field_projections.md)
 retains resource contracts through selected pending generic getter bodies and
 identity-preserving expressions without treating pure observations as escapes.

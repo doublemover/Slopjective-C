@@ -7276,7 +7276,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -250,27 +438,348 @@
+@@ -250,27 +438,349 @@
    if (ALoc.isInvalid() || DLoc.isInvalid())
      return DeclPrinter::AttrPosAsWritten::Left;
  
@@ -7419,6 +7419,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +namespace {
 +const char *nativeObjectPolicySpelling(const Attr *Attribute) {
 +  switch(Attribute->getKind()) {
++  case attr::ArcWeakrefUnavailable:return "objc_arc_weak_reference_unavailable";
 +  case attr::ObjCDirectMembers:return "objc_direct_members";
 +  case attr::ObjCMethodFamily:return "objc_method_family";
 +  case attr::ObjCDesignatedInitializer:return "objc_designated_initializer";
@@ -7630,7 +7631,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      switch (A->getKind()) {
  #define ATTR(X)
  #define PRAGMA_SPELLING_ATTR(X) case attr::X:
-@@ -278,11 +787,226 @@
+@@ -278,11 +788,226 @@
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -7858,7 +7859,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        }
        break;
      }
-@@ -348,12 +1072,11 @@
+@@ -348,12 +1073,11 @@
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -7872,7 +7873,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -390,16 +1113,17 @@
+@@ -390,16 +1114,17 @@
      }
  
      if (Expr *Init = BMInitializer->getInit()) {
@@ -7895,7 +7896,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Expr *SimpleInit = nullptr;
        Expr **Args = nullptr;
        unsigned NumArgs = 0;
-@@ -451,7 +1175,7 @@
+@@ -451,7 +1176,7 @@
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -7904,7 +7905,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +1195,15 @@
+@@ -471,6 +1196,15 @@
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -7920,7 +7921,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +1287,12 @@
+@@ -554,9 +1288,12 @@
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -7935,7 +7936,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +1405,106 @@
+@@ -669,45 +1406,106 @@
    Out << Proto;
  }
  
@@ -8057,7 +8058,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +1518,24 @@
+@@ -721,12 +1519,24 @@
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -8084,7 +8085,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +1562,14 @@
+@@ -753,12 +1563,14 @@
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -8101,7 +8102,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1618,10 @@
+@@ -807,7 +1619,10 @@
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -8113,7 +8114,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1632,53 @@
+@@ -818,17 +1633,53 @@
        }
      }
  
@@ -8172,7 +8173,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1700,15 @@
+@@ -850,7 +1701,15 @@
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -8189,7 +8190,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -877,9 +1735,17 @@
+@@ -877,9 +1736,17 @@
          Indentation -= Policy.Indentation;
        }
  
@@ -8210,7 +8211,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,21 +1760,29 @@
+@@ -894,21 +1761,29 @@
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -8252,7 +8253,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    }
  
    if (D->isPackExpansion())
-@@ -917,14 +1791,22 @@
+@@ -917,14 +1792,22 @@
  
  void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    prettyPrintPragmas(D);
@@ -8277,7 +8278,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -932,6 +1814,9 @@
+@@ -932,6 +1815,9 @@
                                    &Context);
    }
  
@@ -8287,7 +8288,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Expr *Init = D->getInClassInitializer();
    if (!Policy.SuppressInitializers && Init) {
      if (D->getInClassInitStyle() == ICIS_ListInit)
-@@ -940,16 +1825,57 @@
+@@ -940,16 +1826,57 @@
        Out << " = ";
      Init->printPretty(Out, nullptr, Policy, Indentation, "\n", &Context);
    }
@@ -8350,7 +8351,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1885,10 @@
+@@ -959,9 +1886,10 @@
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -8364,7 +8365,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1912,46 @@
+@@ -985,22 +1913,46 @@
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -8415,7 +8416,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1973,8 @@
+@@ -1022,6 +1974,8 @@
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -8424,7 +8425,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1982,7 @@
+@@ -1029,9 +1983,7 @@
    }
  }
  
@@ -8435,7 +8436,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1997,7 @@
+@@ -1046,8 +1998,7 @@
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -8445,7 +8446,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +2019,8 @@
+@@ -1069,6 +2020,8 @@
      Out << "inline ";
  
    Out << "namespace ";
@@ -8454,7 +8455,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +2047,9 @@
+@@ -1095,6 +2048,9 @@
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -8464,7 +8465,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +2086,8 @@
+@@ -1131,7 +2087,8 @@
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -8474,7 +8475,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +2218,7 @@
+@@ -1262,7 +2219,7 @@
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -8483,7 +8484,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +2238,21 @@
+@@ -1282,12 +2239,21 @@
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -8506,7 +8507,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +2267,11 @@
+@@ -1302,7 +2268,11 @@
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -8519,7 +8520,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +2289,14 @@
+@@ -1320,6 +2290,14 @@
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -8534,7 +8535,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +2354,17 @@
+@@ -1377,13 +2355,17 @@
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -8555,7 +8556,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +2379,18 @@
+@@ -1398,9 +2380,18 @@
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -8576,7 +8577,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +2462,8 @@
+@@ -1472,9 +2463,8 @@
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -8588,7 +8589,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +2472,22 @@
+@@ -1483,8 +2473,22 @@
      Out << name;
  
    if (OMD->isVariadic())
@@ -8612,7 +8613,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +2495,7 @@
+@@ -1492,8 +2496,7 @@
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -8622,7 +8623,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << ';';
  }
  
-@@ -1512,8 +2514,8 @@
+@@ -1512,8 +2515,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8633,7 +8634,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2547,7 @@
+@@ -1545,7 +2548,7 @@
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -8642,7 +8643,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2560,8 @@
+@@ -1558,7 +2561,8 @@
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8652,7 +8653,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2571,8 @@
+@@ -1568,9 +2572,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8664,7 +8665,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2589,8 @@
+@@ -1587,6 +2590,8 @@
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -8673,7 +8674,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2600,8 @@
+@@ -1596,7 +2601,8 @@
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8683,7 +8684,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2624,8 @@
+@@ -1619,6 +2625,8 @@
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -8692,7 +8693,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2634,26 @@
+@@ -1627,13 +2635,26 @@
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -8723,7 +8724,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2665,8 @@
+@@ -1645,8 +2666,8 @@
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -8734,7 +8735,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2773,14 @@
+@@ -1753,15 +2774,14 @@
        }
      }
  
@@ -8756,7 +8757,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2816,14 @@
+@@ -1797,11 +2817,14 @@
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -8774,7 +8775,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2845,7 @@
+@@ -1823,7 +2846,7 @@
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -8783,7 +8784,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
-@@ -2023,3 +3045,18 @@
+@@ -2023,3 +3046,18 @@
      }
    }
  }
@@ -53721,7 +53722,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3357 @@
+@@ -0,0 +1,3480 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54432,6 +54433,72 @@ new file mode 100644
 +  llvm::SmallPtrSet<const FunctionDecl *,16> Active;
 +  return argumentProjectionImpl(Call,Context,Budget,0,Active,BlockValues);
 +}
++struct ReceiverPointees {
++  SmallVector<const Expr *,4> Targets;
++  bool Closed=false;
++  bool Truncated=false;
++};
++// Follow immutable native pointer bindings without guessing through retargeted
++// slots. Keep known alternatives even when another conditional arm is opaque;
++// only a complete target set may establish write cells or a read-only alias.
++ReceiverPointees receiverPointees(ASTContext &Context,const Expr *Expression) {
++  ReceiverPointees Result;unsigned Work=128;
++  llvm::SmallPtrSet<const VarDecl *,16> Active;
++  auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->bool {
++    if(!E)return false;
++    if(!Work || Depth>32){Result.Truncated=true;return false;}
++    --Work;E=E->IgnoreParenImpCasts();
++    if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(E))return Self(Self,Opaque->getSourceExpr(),Depth+1);
++    if(const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E)) {
++      bool Truth;
++      if(!Conditional->getCond()->HasSideEffects(Context) &&
++          Conditional->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++        return Self(Self,Truth?Conditional->getTrueExpr():Conditional->getFalseExpr(),Depth+1);
++      const bool Left=Self(Self,Conditional->getTrueExpr(),Depth+1);
++      const bool Right=Self(Self,Conditional->getFalseExpr(),Depth+1);return Left && Right;
++    }
++    if(const auto *Address=dyn_cast<UnaryOperator>(E);Address && Address->getOpcode()==UO_AddrOf) {
++      const auto *Target=Address->getSubExpr()->IgnoreParenImpCasts();
++      if(Target->HasSideEffects(Context) ||
++          !isa<DeclRefExpr,MemberExpr,ArraySubscriptExpr>(Target))return false;
++      if(!llvm::is_contained(Result.Targets,Target)) {
++        if(Result.Targets.size()==16){Result.Truncated=true;return false;}
++        Result.Targets.push_back(Target);
++      }
++      return true;
++    }
++    const auto *Reference=dyn_cast<DeclRefExpr>(E);
++    const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
++    if(!Variable || !Variable->hasLocalStorage() || !Variable->hasInit())return false;
++    auto Type=Variable->getType().getNonReferenceType();
++    if(!Type->isPointerType() || !Type.isConstQualified() || Type.isVolatileQualified() ||
++        !Active.insert(Variable->getCanonicalDecl()).second)return false;
++    auto Leave=llvm::scope_exit([&]{Active.erase(Variable->getCanonicalDecl());});
++    return Self(Self,Variable->getInit(),Depth+1);
++  };
++  Result.Closed=Resolve(Resolve,Expression,0) && !Result.Targets.empty();return Result;
++}
++bool declaredManagedReceiver(ASTContext &Context,const Expr *Expression) {
++  unsigned Work=64;llvm::SmallPtrSet<const VarDecl *,16> Active;
++  auto Visit=[&](auto &&Self,const Expr *E)->bool {
++    if(!E || !Work)return false;--Work;E=E->IgnoreParenImpCasts();
++    if(getObjC3ResourceTypeContract(Context,E->getType()).Cleanup)return true;
++    if(const auto *Deref=dyn_cast<UnaryOperator>(E);Deref && Deref->getOpcode()==UO_Deref) {
++      for(const auto *Target:receiverPointees(Context,Deref->getSubExpr()).Targets)if(Self(Self,Target))return true;
++      return false;
++    }
++    if(const auto *Member=dyn_cast<MemberExpr>(E))
++      return managedTransferStorage(Member->getMemberDecl()) || (!Member->isArrow() && Self(Self,Member->getBase()));
++    const auto *Reference=dyn_cast<DeclRefExpr>(E);
++    const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
++    if(!Variable)return false;
++    if(managedTransferStorage(Variable))return true;
++    if(Variable->getType()->isReferenceType() && Variable->hasInit() &&
++        Active.insert(Variable->getCanonicalDecl()).second)return Self(Self,Variable->getInit());
++    return false;
++  };
++  return Visit(Visit,Expression);
++}
 +// Storage cleanup is a value contract even when its scalar type has no
 +// resource typedef sugar. Preserve it through bounded value-preserving views
 +// before building a task/isolation snapshot. Explicit wrappers still undergo
@@ -54468,12 +54535,22 @@ new file mode 100644
 +          return Self(Self,Conditional->getTrueExpr(),Depth+1) &&
 +              Self(Self,Conditional->getFalseExpr(),Depth+1);
 +        }
++        if(const auto *Deref=dyn_cast<UnaryOperator>(E);Deref && Deref->getOpcode()==UO_Deref) {
++          auto Pointees=receiverPointees(Context,Deref->getSubExpr());if(!Pointees.Closed)return false;
++          for(const auto *Target:Pointees.Targets)if(!Self(Self,Target,Depth+1))return false;
++          return true;
++        }
 +        if(const auto *Member=dyn_cast<MemberExpr>(E);Member && !Member->isArrow() &&
 +            isa<FieldDecl>(Member->getMemberDecl()))
 +          return Self(Self,Member->getBase(),Depth+1);
 +        if(const auto *Call=dyn_cast<CallExpr>(E)) {
-+          if(Call->isGLValue())if(auto Field=fieldProjection(Call,Context,Actions);Field && !Field->Arrow)
-+            return Self(Self,Field->Receiver,Depth+1);
++          if(Call->isGLValue())if(auto Field=fieldProjection(Call,Context,Actions)) {
++            if(!Field->Arrow)return Self(Self,Field->Receiver,Depth+1);
++            auto Pointees=receiverPointees(Context,Field->Receiver);
++            if(!Pointees.Closed)return false;
++            for(const auto *Target:Pointees.Targets)if(!Self(Self,Target,Depth+1))return false;
++            return true;
++          }
 +          auto Projection=argumentProjection(Call,Context);
 +          if(!Projection || !Projection->Aliases)return false;
 +          for(unsigned I=0;I!=Call->getNumArgs();++I)
@@ -54536,7 +54613,13 @@ new file mode 100644
 +      }
 +      if(const auto *Declarations=dyn_cast<DeclStmt>(Node)) {
 +        for(const auto *D:Declarations->decls())if(const auto *V=dyn_cast<VarDecl>(D))
-+          if(V->hasInit())Add(V->getInit(),V->getType()->isReferenceType() && Cells(V->getInit())?Read:Unknown);
++          if(V->hasInit()) {
++            auto Type=V->getType().getNonReferenceType();
++            auto Pointees=Type->isPointerType() && Type.isConstQualified() && !Type.isVolatileQualified()
++                ?receiverPointees(Context,V->getInit()):ReceiverPointees{};
++            if(Pointees.Closed)Add(V->getInit(),Read);
++            else Add(V->getInit(),V->getType()->isReferenceType() && Cells(V->getInit())?Read:Unknown);
++          }
 +        continue;
 +      }
 +      if(const auto *Branch=dyn_cast<IfStmt>(Node)) {
@@ -54571,7 +54654,10 @@ new file mode 100644
 +      if(const auto *Default=dyn_cast<CXXDefaultInitExpr>(Node)){Add(Default->getExpr());continue;}
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
 +        if(auto Field=fieldProjection(Call,Context,Actions)) {
-+          Add(Field->Receiver,Call->isGLValue()?Use:Read);continue;
++          auto Pointees=Field->Arrow?receiverPointees(Context,Field->Receiver):ReceiverPointees{};
++          if(Pointees.Closed)for(const auto *Target:Pointees.Targets)Add(Target,Call->isGLValue()?Use:Read);
++          else Add(Field->Receiver,Call->isGLValue()?Use:Read);
++          continue;
 +        }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
 +        if(auto Projection=argumentProjection(Call,Context)) {
@@ -54579,6 +54665,13 @@ new file mode 100644
 +            Add(Call->getArg(I),Projection->Aliases && Projection->selects(I)?Use:Read);
 +          continue;
 +        }
++      if(const auto *Call=dyn_cast<CallExpr>(Node)) {
++        for(const auto *Argument:Call->arguments())
++          for(const auto *Target:receiverPointees(Context,Argument).Targets)Add(Target,Unknown);
++        if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call))
++          if(const auto *Receiver=Member->getImplicitObjectArgument())
++            for(const auto *Target:receiverPointees(Context,Receiver).Targets)Add(Target,Unknown);
++      }
 +      if(const auto *Cast=dyn_cast<CastExpr>(Node)) {
 +        Add(Cast->getSubExpr(),(Cast->getCastKind()==CK_LValueToRValue || Cast->getCastKind()==CK_ToVoid)?Read:Use);continue;
 +      }
@@ -54607,6 +54700,14 @@ new file mode 100644
 +        }
 +      }
 +      if(const auto *Unary=dyn_cast<UnaryOperator>(Node)) {
++        if(Unary->getOpcode()==UO_AddrOf && Use==Read){Add(Unary->getSubExpr(),Read);continue;}
++        if(Unary->getOpcode()==UO_Deref) {
++          auto Pointees=receiverPointees(Context,Unary->getSubExpr());
++          if(Pointees.Closed) {
++            for(const auto *Target:Pointees.Targets)Add(Target,Use);
++            Add(Unary->getSubExpr(),Read);continue;
++          }
++        }
 +        if(Unary->getOpcode()==UO_Extension){Add(Unary->getSubExpr(),Use);continue;}
 +        if(Unary->isIncrementDecrementOp()) {
 +          auto Targets=Cells(Unary->getSubExpr());
@@ -54706,8 +54807,13 @@ new file mode 100644
 +      if(Binary->getOpcode()==BO_Comma)return Recurse(Recurse,Binary->getRHS(),Depth+1);
 +      if(Binary->getOpcode()==BO_Assign)return Recurse(Recurse,Binary->getLHS(),Depth+1) || Recurse(Recurse,Binary->getRHS(),Depth+1);
 +    }
-+    if(const auto *Unary=dyn_cast<UnaryOperator>(E);Unary && Unary->getOpcode()==UO_Plus)
-+      return Recurse(Recurse,Unary->getSubExpr(),Depth+1);
++    if(const auto *Unary=dyn_cast<UnaryOperator>(E)) {
++      if(Unary->getOpcode()==UO_Plus)return Recurse(Recurse,Unary->getSubExpr(),Depth+1);
++      if(Unary->getOpcode()==UO_Deref) {
++        auto Pointees=receiverPointees(Context,Unary->getSubExpr());if(Pointees.Truncated)return true;
++        for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
++      }
++    }
 +    if(const auto *Generic=dyn_cast<GenericSelectionExpr>(E);Generic && !Generic->isResultDependent())
 +      return Recurse(Recurse,Generic->getResultExpr(),Depth+1);
 +    if(const auto *Choice=dyn_cast<ChooseExpr>(E);Choice && !Choice->isConditionDependent())
@@ -54727,15 +54833,33 @@ new file mode 100644
 +      return false;
 +    }
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
-+      if(auto Field=fieldProjection(Call,Context,Actions))
-+        return Field->Identity && (Field->Managed ||
-+            (!Field->Arrow && Recurse(Recurse,Field->Receiver,Depth+1)));
++      if(auto Field=fieldProjection(Call,Context,Actions)) {
++        if(!Field->Identity)return false;
++        if(Field->Managed || declaredManagedReceiver(Context,Field->Receiver))return true;
++        if(!Field->Arrow)return Recurse(Recurse,Field->Receiver,Depth+1);
++        auto Pointees=receiverPointees(Context,Field->Receiver);
++        if(Pointees.Truncated)return true;
++        for(const auto *Target:Pointees.Targets)if(Recurse(Recurse,Target,Depth+1))return true;
++        return false;
++      }
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
 +      if(auto Projection=argumentProjection(Call,Context)) {
 +        for(unsigned I=0;I!=Call->getNumArgs();++I)
 +          if(Projection->selects(I) && Recurse(Recurse,Call->getArg(I),Depth+1))return true;
 +        return false;
 +      }
++    if(const auto *Call=dyn_cast<CallExpr>(E)) {
++      const Expr *Receiver=nullptr;
++      if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call))Receiver=Member->getImplicitObjectArgument();
++      else if(const auto *Operator=dyn_cast<CXXOperatorCallExpr>(Call))
++        if(const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee());Method && !Method->isStatic() && Operator->getNumArgs())
++          Receiver=Operator->getArg(0);
++      if(Receiver) {
++        if(declaredManagedReceiver(Context,Receiver))return true;
++        for(const auto *Target:receiverPointees(Context,Receiver).Targets)
++          if(declaredManagedReceiver(Context,Target))return true;
++      }
++    }
 +    if(const auto *Call=dyn_cast<CallExpr>(E);Call && Call->isGLValue()) {
 +      // Native reference forwarders (including move/forward) can preserve a
 +      // resource slot without preserving its variable attribute in the type.
@@ -80246,6 +80370,172 @@ new file mode 100644
 + bool observation=cleaned.get<bool>();int telemetry=cleaned.status();
 + (void)binding_detached(binding_make_scalar(observation));
 + (void)binding_detached(binding_make_scalar(telemetry));
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-pointer-field-projections.m b/clang/test/ObjC3/Sema/native-pointer-field-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-pointer-field-projections.m
+@@ -0,0 +1,112 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-pointer-field-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-pointer-field-projections.h"
++void pointer_field_close(int);int pointer_field_open(void);
++void pointer_field_scalar_mutate(int *);
++void binding_common_pointer_slot(void) {
++ int descriptor __attribute__((objc_resource(close=pointer_field_close,invalid=-1)))=pointer_field_open();
++ int scalar=42;int *const view=&scalar;*view=descriptor;
++ int copied=*view;(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_common_pointer_source(int choose) {
++ int descriptor __attribute__((objc_resource(close=pointer_field_close,invalid=-1)))=pointer_field_open();
++ int ordinary=42;int *const view=choose?&ordinary:&descriptor;
++ int copied=*view;(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_common_pointer_escape(void) {
++ int scalar=42;int *const view=&scalar;pointer_field_scalar_mutate(view);
++ int copied=*view;(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++#ifdef __cplusplus
++void binding_pointer_cleanup(int choose) {
++ BindingField source __attribute__((cleanup(binding_field_cleanup)))={42},ordinary={41};
++ BindingField *const view=&source;BindingField *const alias=view;
++ int copied=alias->get();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++ int dereferenced=(*alias).get();(void)binding_detached(binding_make_scalar(dereferenced)); // expected-error {{cleanup-managed capture}}
++ BindingField *const alternatives=choose?&ordinary:&source;
++ int selected=alternatives->get();(void)binding_detached(binding_make_scalar(selected)); // expected-error {{cleanup-managed capture}}
++}
++void binding_pointer_partial(int choose,BindingField *unknown) {
++ BindingField source __attribute__((cleanup(binding_field_cleanup)))={42};
++ BindingField *const view=choose?&source:unknown;
++ int copied=view->get();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_pointer_writes(int choose) {
++ int descriptor __attribute__((objc_resource(close=pointer_field_close,invalid=-1)))=pointer_field_open();
++ BindingField left={41},right={42};BindingField *const view=choose?&left:&right;view->reference()=descriptor;
++ int first=left.get();(void)binding_detached(binding_make_scalar(first)); // expected-error {{cleanup-managed capture}}
++ int second=right.get();(void)binding_detached(binding_make_scalar(second)); // expected-error {{cleanup-managed capture}}
++}
++void binding_pointer_escapes(void) {
++ BindingField source={42};BindingField *const view=&source;binding_pointer_mutate(view);
++ int copied=view->get();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_pointer_indirect_escape(void) {
++ BindingPointerUnknown source={42};BindingPointerUnknown *const view=&source;
++ void (BindingPointerUnknown::*modify)()=&BindingPointerUnknown::modify;(view->*modify)();
++ int copied=view->get();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_pointer_condition_effects(void) {
++ BindingField source={42},other={41};BindingField *const view=binding_pointer_condition(&source)?&source:&other;
++ int copied=view->get();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_pointer_slot(void) {
++ int descriptor __attribute__((objc_resource(close=pointer_field_close,invalid=-1)))=pointer_field_open();
++ int scalar=42;int *const view=&scalar;*view=descriptor;
++ int copied=*view;(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++void binding_known_managed_unknown(void) {
++ BindingOpaqueField source __attribute__((cleanup(binding_opaque_cleanup)))={};source.value=42;
++ int opaque=source.opaque();(void)binding_detached(binding_make_scalar(opaque)); // expected-error {{cleanup-managed capture}}
++ int open=source.open();(void)binding_detached(binding_make_scalar(open)); // expected-error {{cleanup-managed capture}}
++ int changed=source.stateful();(void)binding_detached(binding_make_scalar(changed)); // expected-error {{cleanup-managed capture}}
++ int invoked=source();(void)binding_detached(binding_make_scalar(invoked)); // expected-error {{cleanup-managed capture}}
++ int (BindingOpaqueField::*member)()const=&BindingOpaqueField::opaque;
++ int indirect=(source.*member)();(void)binding_detached(binding_make_scalar(indirect)); // expected-error {{cleanup-managed capture}}
++}
++void binding_pointer_bound(void) {
++ BindingField source __attribute__((cleanup(binding_field_cleanup)))={42};
++ BindingField *const p0=&source;
++ BindingField *const p1=p0;
++ BindingField *const p2=p1;
++ BindingField *const p3=p2;
++ BindingField *const p4=p3;
++ BindingField *const p5=p4;
++ BindingField *const p6=p5;
++ BindingField *const p7=p6;
++ BindingField *const p8=p7;
++ BindingField *const p9=p8;
++ BindingField *const p10=p9;
++ BindingField *const p11=p10;
++ BindingField *const p12=p11;
++ BindingField *const p13=p12;
++ BindingField *const p14=p13;
++ BindingField *const p15=p14;
++ BindingField *const p16=p15;
++ BindingField *const p17=p16;
++ BindingField *const p18=p17;
++ BindingField *const p19=p18;
++ BindingField *const p20=p19;
++ BindingField *const p21=p20;
++ BindingField *const p22=p21;
++ BindingField *const p23=p22;
++ BindingField *const p24=p23;
++ BindingField *const p25=p24;
++ BindingField *const p26=p25;
++ BindingField *const p27=p26;
++ BindingField *const p28=p27;
++ BindingField *const p29=p28;
++ BindingField *const p30=p29;
++ BindingField *const p31=p30;
++ BindingField *const p32=p31;
++ BindingField *const p33=p32;
++ BindingField *const p34=p33;
++ int copied=p34->get();(void)binding_detached(binding_make_scalar(copied)); // expected-error {{cleanup-managed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-pointer-field-projections.h b/clang/test/ObjC3/Sema/Inputs/native-pointer-field-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-pointer-field-projections.h
+@@ -0,0 +1,42 @@
++#ifndef OBJC3_POINTER_FIELD_PROJECTIONS_H
++#define OBJC3_POINTER_FIELD_PROJECTIONS_H
++#include "native-dependent-field-projections.h"
++#ifdef __cplusplus
++struct BindingOpaqueField {
++ int value;
++ int opaque()const;
++ virtual int open()const{return value;}
++ int stateful(){++value;return value;}
++ int operator()()const{return value;}
++};
++void binding_opaque_cleanup(BindingOpaqueField *);
++struct BindingPointerUnknown {
++ int value;int get()const{return value;}
++ void modify();
++ static int literal(){return 42;}
++};
++void binding_pointer_mutate(BindingField *);
++int binding_pointer_condition(BindingField *);
++#endif
++static inline void binding_pointer_scalar_ordinary(void) {
++ int scalar=41;int *const view=&scalar;*view=42;int copied=*view;
++ (void)binding_detached(binding_make_scalar(copied));
++}
++#ifdef __cplusplus
++static inline void binding_pointer_fields_ordinary(int choose) {
++ BindingField left={41},right={42};BindingField *const view=choose?&left:&right;
++ BindingField *const alias=view;alias->reference()=42;
++ int copied=alias->get();(void)binding_detached(binding_make_scalar(copied));
++ int observed=alias->valid(),status=alias->status();
++ (void)binding_detached(binding_make_scalar(observed+status));
++ int dereferenced=(*alias).get();(void)binding_detached(binding_make_scalar(dereferenced));
++ BindingPointerUnknown static_source={42};BindingPointerUnknown *const static_view=&static_source;
++ int static_value=static_view->literal();(void)static_value;
++ (void)binding_detached(binding_make_scalar(static_view->get()));
++ BindingGenericField generic={42,0};BindingGenericField *const pointer=&generic;
++ (void)binding_detached(binding_make_scalar(pointer->get<int>()));
++ int scalar=41;int *const cell=&scalar;*cell=42;int plain=*cell;
++ (void)binding_detached(binding_make_scalar(plain));
 +}
 +#endif
 +#endif
