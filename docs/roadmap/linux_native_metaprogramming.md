@@ -97,13 +97,10 @@ Normal Clang checking still governs generated declarations, access, types,
 ownership, bodies and conflicting signatures. A generated method that collides
 with another explicit class declaration is rejected.
 
-Property behaviors currently support properties on concrete class interfaces with explicit
-`dispatch: "direct" | "dynamic"` and `executor: "none"`. The actual accessor
-methods must match that dispatch contract and have implementations when the
-class implementation is present. Executor-dependent/actor behavior lowering,
-protocol/category applications and more general storage transformations remain
-outside this contract; they diagnose rather than silently weakening their
-requirements. Normal declared properties can use ordinary autosynthesis.
+Property behaviors support concrete class properties with explicit direct/dynamic
+accessor contracts and checked actor/executor requirements. Source 2.217 extends
+the original `executor: "none"` subset; see
+[behavior affinity and typed queries](linux_native_meta_behavior_affinity.md).
 
 ## Bounds, publication and separate compilation
 

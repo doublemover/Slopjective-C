@@ -810,7 +810,8 @@ if(BUILD_TESTING)
   target_include_directories(objc3_meta_compilation_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_meta_compilation_test PRIVATE objc3c_frontend_v2)
   target_compile_definitions(objc3_meta_compilation_test PRIVATE
-    OBJC3_META_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}")
+    OBJC3_META_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}"
+    OBJC3_META_TEST_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
   objc3c_add_frontend_test(NAME objc3_meta_compilation COMMAND objc3_meta_compilation_test)
   set_tests_properties(objc3_meta_compilation PROPERTIES TIMEOUT 180)
   objc3c_add_frontend_test(NAME objc3_meta_cli TARGET objc3c

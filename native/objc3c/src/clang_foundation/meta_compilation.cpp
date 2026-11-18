@@ -3,6 +3,9 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/ObjC3Borrowed.h"
+#include "clang/AST/ObjC3Isolation.h"
+#include "clang/AST/ObjC3ResourceTypes.h"
 #include "clang/AST/PrettyPrinter.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Sema/ObjC3Metaprogramming.h"
@@ -12,6 +15,16 @@
 #include <algorithm>
 namespace objc3::clang_foundation {
 namespace {
+bool MatchesExecutor(const clang::Decl *D,std::string_view contract) {
+  const bool actor=clang::isObjC3ActorIsolated(D);
+  const auto *executor=clang::getObjC3Executor(D);
+  if(contract=="none")return !actor && !executor;
+  if(contract=="actor")return actor && !executor;
+  const bool requires_actor=contract.starts_with("actor@");
+  if(requires_actor)contract.remove_prefix(6);
+  if(actor!=requires_actor || !executor)return false;
+  return executor->getExecutor()==llvm::StringRef(contract.data(),contract.size());
+}
 class MetaConsumer final : public clang::SemaConsumer {
   const CompileRequest &request_;
   MetaCompilation &state_;
@@ -71,8 +84,10 @@ class MetaConsumer final : public clang::SemaConsumer {
         type->isObjCObjectPointerType()?MetaMemberKind::Object:
         type->isBlockPointerType()?MetaMemberKind::Block:
         type->isPointerType()?MetaMemberKind::Pointer:MetaMemberKind::Record;
-    M.borrowed=D->hasAttr<clang::ObjCReturnsBorrowedAttr>();
-    M.resource=D->hasAttr<clang::ObjCResourceAttr>();
+    M.borrowed=D->hasAttr<clang::ObjCReturnsBorrowedAttr>() ||
+        clang::containsObjC3BorrowedType(context,type);
+    M.resource=D->hasAttr<clang::ObjCResourceAttr>() ||
+        bool(clang::getObjC3ResourceTypeContract(context,type).Cleanup);
     M.weak=type.getObjCLifetime()==clang::Qualifiers::OCL_Weak;
     return M;
   }
@@ -177,14 +192,16 @@ public:
         auto *entry=state_.packages.Resolve(R.name,R.kind,&package,error);
         if(!entry){fail(R.range.getBegin(),error);continue;}
         auto check=[&](clang::ObjCMethodDecl *method) {
-          if(method && method->hasAttr<clang::ObjCExecutorAttr>())
-            return fail(R.range.getBegin(),"property behavior accessor requires an undeclared executor");
+          if(method && !MatchesExecutor(method,entry->executor))
+            return fail(R.range.getBegin(),"property behavior accessor executor differs from its declared contract: "+entry->executor);
           if(!method || method->isDirectMethod()!=(entry->dispatch=="direct"))
             return fail(R.range.getBegin(),"property behavior dispatch differs from its declared contract");
           if(auto *implementation=R.owner->getImplementation()) {
             auto *body=method->isInstanceMethod()?implementation->getInstanceMethod(method->getSelector()):
                 implementation->getClassMethod(method->getSelector());
             if(!body || !body->hasBody())return fail(R.range.getBegin(),"property behavior did not implement its accessor");
+            if(body->isDirectMethod()!=(entry->dispatch=="direct") || !MatchesExecutor(body,entry->executor))
+              return fail(R.range.getBegin(),"property behavior implementation differs from its declared dispatch/executor contract");
           }
           return true;
         };
@@ -211,14 +228,9 @@ public:
       std::string error;const MetaPackage *package=nullptr;
       auto *entry=state_.packages.Resolve(R.name,R.kind,&package,error);
       if(!entry){fail(R.range.getBegin(),error);continue;}
-      // Executor hopping requires a distinct lowering contract; this subset
-      // verifies the actual direct/dynamic accessor declarations below.
-      bool isolated=false;
-      for(auto *owner=D;owner;owner=owner->getSuperClass())
-        isolated|=owner->hasAttr<clang::ObjC3ActorAttr>() || owner->hasAttr<clang::ObjCExecutorAttr>();
-      if(R.kind==MetaEntryKind::PropertyBehavior && (entry->executor!="none" || isolated)) {
-        fail(R.range.getBegin(),"property behavior requires unsupported dispatch or executor semantics");continue;
-      }
+      // Generated accessors use ordinary native actor/executor lowering. The
+      // final pass validates their effective affinity, including inherited
+      // class contracts and explicit nonisolated declarations, on both owners.
       auto expansion=ExpandMetaProgram(*package,*entry,target,options,error);
       if(!expansion){fail(R.range.getBegin(),error);continue;}
       auto &out=state_.classes[K];out.input_model=input_model;out.request_keys.push_back(requestIdentity(R));

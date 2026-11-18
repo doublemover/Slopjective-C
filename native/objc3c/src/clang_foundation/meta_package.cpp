@@ -292,7 +292,7 @@ std::optional<MetaPackage> Package(llvm::json::Object object, std::string &error
     }
     if (item.kind == MetaEntryKind::PropertyBehavior) {
       auto dispatch = entry->getString("dispatch"), executor = entry->getString("executor");
-      if (!dispatch || (*dispatch != "direct" && *dispatch != "dynamic") || !executor || executor->empty() || executor->size() > 192) {
+      if (!dispatch || (*dispatch != "direct" && *dispatch != "dynamic") || !executor || !IsMetaExecutorContract(executor->str())) {
         Fail(error, "property behavior requires explicit dispatch and executor contracts"); return std::nullopt;
       }
       item.dispatch = dispatch->str(); item.executor = executor->str();
@@ -326,6 +326,18 @@ std::optional<std::string> Read(const std::string &path, std::string &error) {
   }
 }
 }  // namespace
+
+bool IsMetaExecutorContract(std::string_view value) {
+  if(value=="none" || value=="actor")return true;
+  if(value.starts_with("actor@"))value.remove_prefix(6);
+  if(value=="main" || value=="global")return true;
+  if(!value.starts_with("named:"))return false;
+  value.remove_prefix(6);
+  if(value.empty() || value.size()>192)return false;
+  // Executor names are literal identities, never source fragments. Match the
+  // compiler's supported printable UTF-8 spelling without permitting controls.
+  return std::all_of(value.begin(),value.end(),[](unsigned char c){return c>=0x20 && c!=0x7f;});
+}
 
 std::optional<std::string> ComputeMetaPackageFingerprintFromFile(const std::string &path,std::string &error) {
   auto document=Read(path,error);if(!document)return std::nullopt;

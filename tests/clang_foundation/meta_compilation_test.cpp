@@ -61,6 +61,26 @@ int main() {
         {"dispatch","dynamic"},{"executor","none"},{"declarations",llvm::json::Array{}},
         {"implementations",llvm::json::Array{Text("- (int)unrelated { return 1; }")}}}
     }}});
+  for(const char *affinity:{"none","main","global","named:meta.worker","actor","actor@named:meta.worker"}) {
+    document.getAsObject()->getArray("entrypoints")->push_back(llvm::json::Object{
+      {"name",std::string("Affinity_")+std::to_string(document.getAsObject()->getArray("entrypoints")->size())},
+      {"kind","property-behavior"},{"requires",llvm::json::Array{}},
+      {"dispatch","dynamic"},{"executor",affinity},{"declarations",llvm::json::Array{}},
+      {"implementations",llvm::json::Array{Text("- (int)answer { return 42; }")}}});
+  }
+  document.getAsObject()->getArray("entrypoints")->push_back(llvm::json::Object{
+    {"name","TypedContracts"},{"kind","derive"},{"requires",llvm::json::Array{}},
+    {"declarations",llvm::json::Array{Text("- (int)contracts;"),
+      llvm::json::Object{{"for_each","properties"},{"body",llvm::json::Array{
+        llvm::json::Object{{"if","member.resource"},{"then",llvm::json::Array{Text("- (int)meta_${member.name}_resource;")}}},
+        llvm::json::Object{{"if","member.borrowed"},{"then",llvm::json::Array{Text("- (int)meta_${member.name}_borrowed;")}}}}}},
+      llvm::json::Object{{"for_each","ivars"},{"body",llvm::json::Array{
+        llvm::json::Object{{"if","member.resource"},{"then",llvm::json::Array{Text("- (int)meta_${member.name}_resource;")}}},
+        llvm::json::Object{{"if","member.borrowed"},{"then",llvm::json::Array{Text("- (int)meta_${member.name}_borrowed;")}}}}}}}},
+    {"implementations",llvm::json::Array{Text("- (int)contracts { return 0"),
+      llvm::json::Object{{"for_each","properties"},{"body",llvm::json::Array{
+        llvm::json::Object{{"if","member.resource"},{"then",llvm::json::Array{Text(" + 1")}}},
+        llvm::json::Object{{"if","member.borrowed"},{"then",llvm::json::Array{Text(" + 2")}}}}}},Text("; }")}}});
   std::string error;auto fingerprint=ComputeMetaPackageFingerprint(JSON(document),error);assert(fingerprint);
   (*document.getAsObject())["fingerprint"]=*fingerprint;
   const auto manifest=root/"objc3-meta.json",lock=root/"lock.json";
@@ -262,6 +282,73 @@ __attribute__((objc_root_class,objc_direct_members)) @interface DirectBehavior
 @implementation DirectBehavior @end
 )source";
   Success(Compile(directBehavior));
+  // Explicit behavior contracts must match effective native affinity on
+  // declarations and implementations, including inherited and actor binding.
+  for(bool arc:{false,true})for(const char *standard:{"c17","c++20","c++23"}) {
+    auto affinity=request;affinity.arc=arc;
+    affinity.language=std::string(standard)=="c17"?BaseLanguage::ObjectiveC:BaseLanguage::ObjectiveCxx;
+    affinity.arguments={std::string("-std=")+standard,"-fblocks",std::string("-I")+OBJC3_META_TEST_RUNTIME_HEADERS};
+    affinity.strict_concurrency=true;
+    auto typed=affinity;typed.emit_semantic_interface=true;typed.module_name="test.TypedQueries";
+    typed.package_identity="meta-typed-queries-v1";typed.interface_exports={"meta_close","MetaHandle","MetaAlias","MetaLoan","MetaTyped"};
+    typed.source_text=R"typed(
+void meta_close(int) __attribute__((nothrow));
+typedef int MetaHandle __attribute__((objc_requires_cleanup(meta_close),objc_resource_family(MetaHandles),objc_invalid(-1)));
+typedef MetaHandle MetaAlias;
+typedef borrowed const char *MetaLoan;
+__attribute__((objc_root_class,objc_derive("TypedContracts"))) @interface MetaTyped {
+ MetaAlias stored_handle;
+ MetaLoan stored_loan;
+}
+@property(nonatomic,readonly) MetaAlias handle;
+@property(nonatomic,readonly) MetaLoan loan;
+@end
+)typed";
+    auto typed_result=Compile(typed);Success(typed_result);assert(typed_result.interface_artifact);
+    for(const char *name:{"meta_handle_resource","meta_loan_borrowed","meta_stored_handle_resource","meta_stored_loan_borrowed"})
+      assert(typed_result.interface_artifact->source_bytes.find(name)!=std::string::npos);
+    for(unsigned mode=0;mode!=6;++mode) {
+      const std::string rootClass="@protocol Sendable @end\n__attribute__((objc_root_class)) @interface MetaRoot <Sendable> { Class isa; } @end\n";
+      const std::string binding=mode==1?"__attribute__((objc_executor(main))) ":
+          mode==2?"__attribute__((objc_executor(global))) ":
+          mode==3 || mode==5?"__attribute__((objc_executor(named(\"meta.worker\")))) ":"";
+      const std::string declaration=mode>=4?"actor class":"@interface";
+      affinity.source_text=rootClass+binding+declaration+" MetaAffinity : MetaRoot\n"+
+          "@property(nonatomic,readonly) int answer __attribute__((objc_property_behavior(\"Affinity_"+
+          std::to_string(5+mode)+"\")));\n@end\n@implementation MetaAffinity @end\n";
+      auto result=Compile(affinity);Success(result);
+      auto exported=affinity;exported.emit_semantic_interface=true;
+      exported.module_name="test.MetaAffinity";exported.package_identity="meta-affinity-v1";
+      exported.interface_exports={"Sendable","MetaRoot","MetaAffinity"};auto provider=Compile(exported);Success(provider);
+      assert(provider.interface_artifact && provider.interface_artifact->success);
+      auto interface=root/"Affinity.objc3i";Write(interface,provider.interface_artifact->source_bytes);
+      Write(interface.string()+".json",provider.interface_artifact->sidecar_json);
+      InterfaceImportInput imported;imported.source_path=interface.string();imported.sidecar_path=interface.string()+".json";
+      imported.locked_identity=provider.interface_artifact->identity;
+      auto consumer=affinity;consumer.meta_packages.clear();consumer.meta_lock.clear();consumer.imported_interfaces={imported};
+      consumer.source_text=std::string(affinity.language==BaseLanguage::ObjectiveC?"#include \"objc3_runtime_services.h\"\n":"#include \"objc3_task.hpp\"\n")+(mode==0?"int read(MetaAffinity *value){return [value answer];}":
+          "int read(MetaAffinity *value) __objc3_async_frame {return __objc3_await [value answer];}");
+      fs::rename(manifest,root/"hidden-manifest.json");auto consumed=Compile(consumer);
+      fs::rename(root/"hidden-manifest.json",manifest);Success(consumed);
+      if(mode!=0) {
+        auto native=consumer;native.emit=EmitKind::LLVM;native.output_path=(root/"affinity-consumer.ll").string();
+        Success(Compile(native));std::ifstream input(native.output_path);
+        std::string ir((std::istreambuf_iterator<char>(input)),{});
+        assert(ir.find("objc3_task_hop")!=std::string::npos);
+        if(mode>=4)assert(ir.find("objc3_actor_get_or_create_for_object")!=std::string::npos);
+        if(mode!=4)assert(ir.find(mode==1?"objc3_executor_get_main":mode==2?"objc3_executor_get_global":"objc3_executor_get_named")!=std::string::npos);
+      }
+      if(mode!=0) {
+        consumer.source_text="int read(MetaAffinity *value){return [value answer];}";
+        auto rejected=Compile(consumer);assert(!rejected.success);
+      }
+      auto mismatch=affinity;
+      const auto name=mismatch.source_text->find("Affinity_"+std::to_string(5+mode));assert(name!=std::string::npos);
+      mismatch.source_text->replace(name,("Affinity_"+std::to_string(5+mode)).size(),"Affinity_"+std::to_string(5+(mode+1)%6));
+      auto rejected=Compile(mismatch);assert(!rejected.success);
+      assert(std::any_of(rejected.diagnostics.begin(),rejected.diagnostics.end(),[](const auto &D){return D.message.find("executor differs")!=std::string::npos;}));
+    }
+  }
   auto badBehavior=behavior;badBehavior.source_text=R"source(
 __attribute__((objc_root_class)) @interface Broken
 @property(nonatomic,readonly) int broken __attribute__((objc_property_behavior("WrongDispatch")));

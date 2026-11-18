@@ -40,6 +40,9 @@ void Lock(const fs::path &path, const std::vector<Fixture> &packages) {
 }
 }
 int main() {
+  for(const char *value:{"none","actor","main","global","named:worker","named:main","named:global","actor@main","actor@global","actor@named:worker"})assert(IsMetaExecutorContract(value));
+  for(const char *value:{"","worker","named:","actor@none","actor@actor","actor@named:","named:bad\nname"})assert(!IsMetaExecutorContract(value));
+
   llvm::SmallString<128> temporary; assert(!llvm::sys::fs::createUniqueDirectory("objc3-meta-packages", temporary));
   const fs::path root(temporary.c_str()); struct Cleanup { fs::path path; ~Cleanup(){fs::remove_all(path);} } cleanup{root};
   auto a = Package(root/"a/objc3-meta.json", "vendor.a", "1.2.3-rc.1+native.007", true);

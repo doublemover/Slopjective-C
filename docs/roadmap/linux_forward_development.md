@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.217 / System 2.143 behavior-affinity span](linux_native_meta_behavior_affinity.md)
+checks generated accessors against native actor/executor contracts and preserves
+typed borrowed/resource query inputs through source-free delivery.
+
 The [Source 2.216 / System 2.142 field-projection span](linux_native_field_projections.md)
 preserves cleanup/resource provenance through closed field accessors and nested
 getter graphs, and tracks writes through native field/reference cells.
@@ -212,7 +216,7 @@ matching SDK consolidation follows the implementation batch.
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
 campaign as historical evidence. Its terminal upstream receipt-state bug is
 fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
-Source 2.216 / System 2.142 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.217 / System 2.143 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2075,7 +2079,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.216 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.217 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 

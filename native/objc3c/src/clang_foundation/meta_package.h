@@ -35,6 +35,8 @@ struct MetaEntrypoint {
   std::string executor;
 };
 
+bool IsMetaExecutorContract(std::string_view value);
+
 struct MetaPackage {
   std::string id;
   std::string version;

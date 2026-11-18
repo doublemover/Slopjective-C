@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.217 / System 2.143 behavior-affinity span](linux_native_meta_behavior_affinity.md)
+checks generated accessors against native actor/executor contracts and preserves
+typed borrowed/resource query inputs through source-free delivery.
+
 The [Source 2.216 / System 2.142 field-projection span](linux_native_field_projections.md)
 preserves cleanup/resource provenance through closed field accessors and nested
 getter graphs, and tracks writes through native field/reference cells.
