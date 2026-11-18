@@ -202,6 +202,20 @@ bool IsQualifiedRuntimeCompletionDeclaration(const clang::NamedDecl *declaration
   if (llvm::isa<clang::TypedefNameDecl>(declaration))
     return (name == "objc_async_completion_status_t" || name == "objc3_async_c_error") &&
            from_header(declaration);
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
+    static constexpr llvm::StringLiteral public_functions[] = {
+        "objc3_async_c_error_is_cancellation", "objc3_async_frame_submit",
+        "objc3_task_current_cancellation_error", "objc3_task_check_cancellation",
+        "objc3_task_group_join_checked"};
+    return llvm::is_contained(public_functions, name) &&
+           llvm::all_of(function->redecls(), from_header) &&
+           ServiceContractMatches(context);
+  }
+  if (const auto *constant = llvm::dyn_cast<clang::EnumConstantDecl>(declaration)) {
+    const auto *owner = llvm::dyn_cast<clang::EnumDecl>(constant->getDeclContext());
+    return owner && IsQualifiedRuntimeCompletionDeclaration(owner, context) &&
+           from_header(constant);
+  }
   if (const auto *tag = llvm::dyn_cast<clang::EnumDecl>(declaration))
     return name == "objc_async_completion_status" && from_header(tag) && tag->getDefinition() &&
            from_header(tag->getDefinition());

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.248 / System 2.174 checked runtime interface changes](linux_async_c_completion_exports.md)
+bind public cancellation checkpoints, checked group joins and completion
+status references to the exact SDK header in published bodies.
+
 The [Source 2.247 / System 2.173 native checked C++ result changes](linux_checked_cpp_regions.md)
 support unwinding destructors on synchronous indirect results and preserve
 callee result ownership through exceptional return-expression cleanup.

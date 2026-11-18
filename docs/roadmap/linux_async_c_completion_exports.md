@@ -58,3 +58,17 @@ sidecar that removes the completion header capability.
 
 Automatic synthesis from a bare async declaration, other async representations
 and full SDK and native ARM acceptance remain open.
+
+Source 2.248 / System 2.174 admits public SDK cancellation and completion
+functions and status constants in published inline bodies. The v2 reader
+capability pins their exact header. Body identity uses the bound SDK declaration
+and contract, so the provider and consumer can install the static inline
+checkpoint at different paths. A source redeclaration or changed header bytes
+cannot supply the pinned identity.
+
+Eight source-free C/Objective-C and C++/Objective-C++ configurations compile and
+link the published checkpoint and checked group join without the provider
+source. The C clients execute the existing success, waiter cancellation, group
+cancellation and nested-failure cases through the imported body. An altered
+header is rejected before publication. The rehashed missing-capability control
+continues to fail in the production decoder.

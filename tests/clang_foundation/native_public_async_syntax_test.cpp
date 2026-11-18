@@ -185,6 +185,7 @@ void CheckCCompletion(const std::string &standard, bool arc) {
   provider.interface_exports = {"completion_value_async_c", "completion_void_async_c",
       "completion_object_async_c", "completion_block_async_c", "completion_error_async_c",
       "completion_cancel_async_c", "completion_worker_async_c", "CompletionRecord",
+      "completion_published_checkpoint", "completion_published_group_join", "Error",
       "CompletionObject", "CompletionBlock", "completion_value_completion_t",
       "completion_void_completion_t", "completion_object_completion_t",
       "completion_block_completion_t", "completion_error_completion_t",
@@ -222,6 +223,35 @@ void CheckCCompletion(const std::string &standard, bool arc) {
     Require(!rejected, "a C completion interface lost its required header capability");
     Require(llvm::toString(rejected.takeError()).find("pinned header capability") != std::string::npos,
             "header capability rejection did not identify the missing contract");
+    const auto altered_headers = root / "altered-runtime";
+    fs::create_directory(altered_headers);
+    const auto altered_header = altered_headers / "objc3_async_c.h";
+    fs::copy_file(fs::path(OBJC3_PUBLIC_ASYNC_HEADERS) / "objc3_async_c.h", altered_header);
+    {
+      std::ofstream changed(altered_header, std::ios::app);
+      changed << "\n/* Different SDK header bytes. */\n";
+      Require(changed.good(), "completion header mutation failed");
+    }
+    CompileRequest altered = provider;
+    altered.arguments.insert(altered.arguments.begin(), "-I" + altered_headers.string());
+    altered.input_path = (root / "altered-provider.m").string();
+    altered.output_path = (root / "altered-provider.o").string();
+    altered.interface_exports = {"published_altered_checkpoint"};
+    altered.source_text = R"(
+#include "objc3_async_c.h"
+inline void published_altered_checkpoint(void) {
+  try! objc3_task_check_cancellation();
+}
+)";
+    const auto incompatible = Compile(altered);
+    Require(!incompatible.success && incompatible.interface_artifact &&
+                std::any_of(incompatible.interface_artifact->diagnostics.begin(),
+                            incompatible.interface_artifact->diagnostics.end(),
+                            [](const auto &diagnostic) {
+                              return diagnostic.code == "O3IFC112" &&
+                                     diagnostic.subject == "objc3_task_check_cancellation";
+                            }),
+            "published checkpoint did not reject the altered completion header");
   }
   Require(fs::remove(provider_source), "provider source removal failed");
   // Check physical callable declarations directly from the paired interface.
@@ -253,7 +283,13 @@ void interface_client(void) {
 extern "C"
 #endif
 void interface_checkpoint(void) {
-  try! objc3_task_check_cancellation();
+  if (completion_published_checkpoint(1)) __builtin_trap();
+}
+#ifdef __cplusplus
+extern "C"
+#endif
+objc3_async_frame completion_group_join_frame(objc3_task_group_t *group) {
+  return completion_published_group_join(group);
 }
 )";
   InterfaceImportInput input;

@@ -217,6 +217,13 @@ class TypeDependencyVisitor final
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();
+    // The SDK prelude reconstructs these inline bodies in every consumer.
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target);
+        function && function->getStorageClass() == clang::SC_Static &&
+        IsQualifiedRuntimeCompletionDeclaration(function, context_)) {
+      UsesRuntimeFrame = UsesCCompletion = true;
+      return;
+    }
     if (IsStandardCoroutineDeclaration(target,context_)) return;
     if (IsStandardLibraryDeclaration(target,context_)) {
       CheckEnclosingClassArguments(target);

@@ -152,11 +152,15 @@ static int join_parent(objc3_task_t *child) async throws(id<Error>) {
 objc3_async_frame completion_join_frame(objc3_task_t *child) {
   return join_parent(child);
 }
-static void group_join_parent(objc3_task_group_t *group) async throws(id<Error>) {
+inline void completion_published_group_join(objc3_task_group_t *group)
+    async throws(id<Error>) {
   try await objc3_task_group_join_checked(group);
 }
-objc3_async_frame completion_group_join_frame(objc3_task_group_t *group) {
-  return group_join_parent(group);
+inline int completion_published_checkpoint(int check) {
+  if (check) try! objc3_task_check_cancellation();
+  return objc3_task_current_cancel_requested() ||
+         objc3_async_c_error_is_cancellation(objc3_task_current_cancellation_error()) ||
+         OBJC_ASYNC_COMPLETION_CANCELLED != 2;
 }
 static int checkpoint_parent(CompletionCancellation *state) async {
   ++state->entered;

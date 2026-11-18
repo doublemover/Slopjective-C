@@ -141,6 +141,7 @@ public:
     if(const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration))
       InspectArguments(variable->getTemplateArgs().asArray());
     Found |= IsQualifiedRuntimeServiceDeclaration(declaration,context_) ||
+             IsQualifiedRuntimeCompletionDeclaration(declaration,context_) ||
              IsQualifiedRuntimeTaskDeclaration(declaration,context_);
   }
   bool VisitTagType(clang::TagType *type) { Reference(type->getDecl()); return true; }
@@ -1288,6 +1289,15 @@ public:
   }
   void Reference(const clang::NamedDecl *declaration) {
     if (!declaration) { Add("<none>"); return; }
+    if (llvm::isa<clang::FunctionDecl, clang::EnumConstantDecl>(declaration) &&
+        IsQualifiedRuntimeCompletionDeclaration(declaration, context_)) {
+      // The installation and canonical replay paths differ for static inline
+      // SDK functions. Bind the exact header contract instead of a file USR.
+      Add(RuntimeCompletionSemantic());
+      Add(declaration->getDeclKindName());
+      Add(declaration->getQualifiedNameAsString());
+      return;
+    }
     if (llvm::isa<clang::ConceptDecl>(declaration)) {
       Add("concept-reference");
       Add(ReadInterfaceDeclarationStableId(declaration));
