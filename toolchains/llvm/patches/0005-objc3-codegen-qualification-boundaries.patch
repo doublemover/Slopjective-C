@@ -10876,7 +10876,7 @@ new file mode 100644
 +    return !Carrier.isNull() && Diagnose(Carrier);
 +  }
 +
-+  auto CheckType = [&](QualType T) {
++  auto CheckType = [&](QualType T, bool IsReturn) {
 +    if (FPT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
 +        !FPT->getObjC3FunctionEffects().Async &&
 +        (supportsObjC3ManagedRecordCallABI(CGM, T) ||
@@ -10887,7 +10887,7 @@ new file mode 100644
 +      return false;
 +
 +    if ((FPT->getObjC3FunctionEffects().Async ||
-+         FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None) &&
++         (!IsReturn && FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None)) &&
 +        supportsObjC3CarrierCppCallABI(CGM, T) &&
 +        !supportsObjC3CarrierCppNothrowCallABI(CGM, T))
 +      return Diagnose(T);
@@ -10908,10 +10908,10 @@ new file mode 100644
 +  // Parameter admission below still requires its source-to-physical mapping.
 +  const bool ManagedFrameResult = FPT->getObjC3FunctionEffects().AsyncFrame &&
 +      supportsObjC3ManagedRecordRuntimeABI(CGM, FPT->getReturnType());
-+  if (!ManagedFrameResult && CheckType(FPT->getReturnType()))
++  if (!ManagedFrameResult && CheckType(FPT->getReturnType(), /*IsReturn=*/true))
 +    return true;
 +  for (QualType Param : FPT->param_types())
-+    if (CheckType(Param))
++    if (CheckType(Param, /*IsReturn=*/false))
 +      return true;
 +  return false;
 +}
@@ -12532,7 +12532,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,1034 @@
+@@ -0,0 +1,1039 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12681,7 +12681,8 @@ new file mode 100644
 +
 +bool supportsCheckedResult(CodeGenModule &CGM, QualType Type,
 +                           bool AllowThrowingDestructor) {
-+  if (supportsObjC3CarrierCppNothrowCallABI(CGM, Type) ||
++  if ((AllowThrowingDestructor ? supportsObjC3CarrierCppCallABI(CGM, Type)
++                              : supportsObjC3CarrierCppNothrowCallABI(CGM, Type)) ||
 +      supportsObjC3MixedCarrierCallABI(CGM, Type))
 +    return true;
 +  if (!CGM.getLangOpts().CPlusPlus || Type.isNull() ||
@@ -12999,6 +13000,10 @@ new file mode 100644
 +                                         const ObjCMethodDecl *Method) {
 +  if (!Method || Method->getObjC3FunctionType().isNull() ||
 +      Method->getMethodFamily() != OMF_None)
++    return false;
++  QualType Result = Method->getReturnType();
++  if (supportsObjC3CarrierCppCallABI(CGM, Result) &&
++      !supportsObjC3CarrierCppNothrowCallABI(CGM, Result))
 +    return false;
 +  return supportsObjC3ErrorOutFunction(
 +      CGM, Method->getObjC3FunctionType()->castAs<FunctionProtoType>(),
@@ -13471,7 +13476,7 @@ new file mode 100644
 +    // these casts would leak +1 results or miss return-value ownership.
 +    if (AggregateOperand) {
 +      const auto SavedInit=CGF.getObjC3CarrierLocalInitState();
-+      const bool CppCarrier=NativeCpp && (supportsObjC3CarrierCppNothrowCallABI(CGF.CGM,E.getOperand()->getType()) ||
++      const bool CppCarrier=NativeCpp && (supportsObjC3CarrierCppCallABI(CGF.CGM,E.getOperand()->getType()) ||
 +          supportsObjC3MixedCarrierCallABI(CGF.CGM,E.getOperand()->getType()));
 +      auto SetPayload=[&](Address Storage) {
 +        if(CppCarrier)CGF.setObjC3CarrierLocalInitState({Storage,E.getOperand()->getType().getCanonicalType().getUnqualifiedType(),Address::invalid()});
@@ -38123,7 +38128,7 @@ new file mode 100644
 +#if CASE == 1
 +Maybe asynchronous() __objc3_async_frame { return make(); } // expected-error {{by-value call ABI}}
 +#elif CASE == 2
-+Maybe checked() __objc3_throws(id<Error>) { return make(); } // expected-error {{ObjC3 async/throws callable ABI lowering}}
++Maybe checked(Maybe value) __objc3_throws(id<Error>) { return make(); } // expected-error {{by-value call ABI}}
 +#elif CASE == 3
 +struct [[clang::trivial_abi]] RegisterOwner {
 +  int value;

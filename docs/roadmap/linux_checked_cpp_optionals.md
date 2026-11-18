@@ -76,3 +76,17 @@ caller cleanup. Eight separate-TU x86-64 runs cover these paths at O0 and
 O2. AArch64 IR checks confirm indirect result and argument projection.
 Compiler controls keep checked, async, Objective-C message, Block,
 register-payload, Result, and unqualified dynamic edges gated.
+
+Source 2.258 / System 2.184 admits the same indirect Optional result from
+synchronous free functions with typed throws. The hidden error slot commits
+separately from the result storage. A typed failure leaves the caller's
+result uninitialized. `try` propagates that error, `try!` observes the original
+Optional and `try?` distinguishes failed evaluation from a successful None
+using the outer tag. Native exceptions still unwind through the returned
+payload's ordinary cleanup.
+
+Four linked source-free clients check success, exact typed error identity,
+Some(None), nested ownership, discarded results and a return-expression
+destructor throwing after the result has been constructed. AArch64 IR confirms
+the native result and error-out slots. Carrier parameters on checked entries,
+runtime-callable encoding and async value operations keep their existing gates.

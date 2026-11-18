@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.258 / System 2.184 checked Optional return change](linux_checked_cpp_optionals.md)
+holds provisional indirect results through typed failure and native unwinding.
+Source-free clients cover direct propagation, force and nested optionalization.
+
 The [Source 2.257 / System 2.183 receiver ownership change](linux_async_c_completion_exports.md)
 roots generated actor receivers in native Block frames before submission
 returns in ARC and MRC. The C caller can release its reference before entry.

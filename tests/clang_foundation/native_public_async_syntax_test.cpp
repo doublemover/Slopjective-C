@@ -1037,6 +1037,15 @@ void CheckOptionalTransport(const std::string &standard, bool arc) {
   struct Cleanup { fs::path path; ~Cleanup() { fs::remove_all(path); } } cleanup{root};
   const auto provider_path = root / "transport-provider.mm";
   Write(provider_path, R"(
+@protocol Error @end
+__attribute__((objc_root_class))
+@interface TransportCheckedError <Error>
++ (Class)class;
+@end
+@implementation TransportCheckedError
++ (Class)class { return self; }
+@end
+
 struct TransportError { int code; };
 struct TransportOwner {
   int value;
@@ -1054,6 +1063,9 @@ int transport_moved();
 int transport_consumed();
 MaybeTransportOwner transport_make(int mode);
 MaybeTransportOwner transport_relay(int mode);
+id<Error> transport_checked_error();
+MaybeTransportOwner transport_checked(int mode) __objc3_throws(id<Error>);
+MaybeTransportOwner transport_checked_relay(int mode) __objc3_throws(id<Error>);
 void transport_consume(MaybeTransportOwner value, int value_mode);
 void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second);
 static int live, destroyed, copied, moved, consumed;
@@ -1099,6 +1111,14 @@ MaybeTransportOwner transport_make(int mode) {
 MaybeTransportOwner transport_relay(int mode) {
   return transport_make(mode);
 }
+id<Error> transport_checked_error() { return (id<Error>)[TransportCheckedError class]; }
+MaybeTransportOwner transport_checked(int mode) __objc3_throws(id<Error>) {
+  if (mode == -2) __objc3_throw(transport_checked_error());
+  return transport_make(ReturnCleanup{mode}.owner_value(mode == 2 ? 0 : mode));
+}
+MaybeTransportOwner transport_checked_relay(int mode) __objc3_throws(id<Error>) {
+  return try transport_checked(mode);
+}
 void transport_consume(MaybeTransportOwner value, int mode) {
   ++consumed;
   if (__objc3_has_value(value) != (mode >= 0)) __builtin_trap();
@@ -1122,10 +1142,11 @@ void transport_pair(MaybeTransportOwner first, MaybeTransportOwner second) {
   provider.emit_semantic_interface = true;
   provider.module_name = "test.OptionalTransport";
   provider.package_identity = "optional-transport-v1";
-  provider.interface_exports = {"TransportError", "TransportOwner",
+  provider.interface_exports = {"Error", "TransportError", "TransportOwner",
       "MaybeTransportOwner", "transport_live", "transport_destroyed",
       "transport_copied", "transport_moved", "transport_consumed",
-      "transport_make", "transport_relay", "transport_consume", "transport_pair"};
+      "transport_make", "transport_relay", "transport_consume", "transport_pair",
+      "transport_checked_error", "transport_checked", "transport_checked_relay"};
   const auto published = Compile(provider);
   Compiled(published);
   Require(published.interface_artifact && published.interface_artifact->success,
@@ -1200,6 +1221,44 @@ int main() {
     count(1, 7, 1, 1, 5);
   }
   count(0, 8, 1, 1, 5);
+
+  __objc3_do {
+    auto ignored = try transport_checked_relay(-2);
+    (void)ignored;
+    __builtin_trap();
+  } __objc3_catch(id<Error> error) {
+    require(error == transport_checked_error());
+    count(0, 8, 1, 1, 5);
+  }
+  {
+    auto missing = try? transport_checked_relay(-2);
+    auto present_none = try? transport_checked_relay(-1);
+    require(!__objc3_has_value(missing) && __objc3_has_value(present_none));
+    count(0, 8, 1, 1, 5);
+  }
+  {
+    auto nested = try? transport_checked_relay(0);
+    require(__objc3_has_value(nested));
+    count(1, 8, 1, 1, 5);
+  }
+  count(0, 9, 1, 1, 5);
+  {
+    auto present = try! transport_checked_relay(0);
+    require(__objc3_has_value(present));
+    count(1, 9, 1, 1, 5);
+  }
+  count(0, 10, 1, 1, 5);
+  try {
+    try? transport_checked_relay(1);
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 31); }
+  count(0, 11, 1, 1, 5);
+  try {
+    auto nested = try? transport_checked_relay(2);
+    (void)nested;
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 32); }
+  count(0, 12, 1, 1, 5);
 }
 )";
   Compiled(Compile(consumer));
