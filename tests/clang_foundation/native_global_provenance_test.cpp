@@ -64,11 +64,19 @@ void Check(bool arc, const std::string &standard) {
         "void chain(const char *&slot,const char *value){store(slot,value);}"
         "virtual void virtual_store(const char *&slot,const char *value){slot=value;}"
         "};struct PublishedReferenceFinal final:PublishedReferenceReceiver {"
-        "void virtual_store(const char *&slot,const char *value)override{slot=value;}};";
+        "void virtual_store(const char *&slot,const char *value)override{slot=value;}};"
+        "inline void published_stateless_store(const char *value){auto work=[](const char *input){published_pointer=input;};work(value);}"
+        "inline void published_stateless_reference(const char *&slot,const char *value){auto work=[](const char *&target,const char *input){target=input;};work(slot,value);}";
     for (const char *name : {"published_reference_store", "published_reference_load", "published_reference_chain", "published_reference_number"})
       provider.interface_exports.push_back(name);
     provider.interface_exports.push_back("PublishedReferenceReceiver");
     provider.interface_exports.push_back("PublishedReferenceFinal");
+    provider.interface_exports.push_back("published_stateless_store");
+    provider.interface_exports.push_back("published_stateless_reference");
+    if (standard == "c++23") {
+      *provider.source_text += "inline void published_static_store(const char *value){auto work=[](const char *input) static {published_pointer=input;};work.operator()(value);work(value);}";
+      provider.interface_exports.push_back("published_static_store");
+    }
   }
   auto published = Compile(provider); Require(published);
   assert(published.interface_artifact && published.interface_artifact->success);
@@ -159,6 +167,15 @@ void Check(bool arc, const std::string &standard) {
       run("void ordinary(void){" + locals + call + "(slot,\"other\");const char *value=slot;"
           "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
     }
+    run("void rejected(borrowed const char *loan){published_stateless_store(loan);const char *value=published_pointer;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void rejected(borrowed const char *loan){const char *slot=\"static\";published_stateless_reference(slot,loan);const char *value=slot;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void ordinary(void){const char *slot=\"static\";published_stateless_reference(slot,\"other\");const char *value=slot;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    if (standard == "c++23")
+      run("void rejected(borrowed const char *loan){published_static_store(loan);const char *value=published_pointer;"
+          "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
   }
   const std::string crossing = preamble +
       (cxx ? "\n#include \"objc3_task.hpp\"\n" : "") +

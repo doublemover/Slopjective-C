@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.231 / System 2.157 stateless-callable span](linux_native_stateless_call_graphs.md)
+binds native operator argument offsets consistently across closed global and
+reference-write summaries, including explicit calls and C++23 static operators.
+
 The [Source 2.230 / System 2.156 reference-helper span](linux_native_reference_call_graphs.md)
 resolves scalar reference writes and escapes against caller storage, including
 shared callees whose actual cell sets grow through later calls.
