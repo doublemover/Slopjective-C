@@ -3,6 +3,7 @@
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/runtime_interface_types.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Program.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/StringSaver.h"
@@ -37,7 +38,7 @@ void Execute(const std::vector<std::string> &command) {
   Require(llvm::sys::ExecuteAndWait(command.front(), arguments) == 0, "command failed: " + command.front());
 }
 void LinkAndRun(const fs::path &root, const std::string &provider,
-                const std::string &consumer, const std::string &interface_client = {}) {
+                const std::string &consumer, const std::string &extra_object = {}) {
   const auto program = (root / "program").string();
   std::vector<std::string> link{OBJC3_PUBLIC_ASYNC_LINKER, "--no-default-config",
                                 "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
@@ -47,7 +48,7 @@ void LinkAndRun(const fs::path &root, const std::string &provider,
   llvm::cl::TokenizeGNUCommandLine(OBJC3_PUBLIC_ASYNC_LINK_FLAGS, saver, flags);
   link.insert(link.end(), flags.begin(), flags.end());
   link.insert(link.end(), {"-fuse-ld=lld", provider, consumer});
-  if (!interface_client.empty()) link.push_back(interface_client);
+  if (!extra_object.empty()) link.push_back(extra_object);
   for (const auto &argument : {
        std::string(OBJC3_PUBLIC_ASYNC_RUNTIME), std::string(OBJC3_PUBLIC_ASYNC_OBJC),
        "-Wl,-rpath," + fs::path(OBJC3_PUBLIC_ASYNC_OBJC).parent_path().string(),
@@ -148,6 +149,167 @@ int main(void){
   Compiled(Compile(consumer));
   LinkAndRun(root, provider.output_path, consumer.output_path);
   std::cout << "Public async source-free execution " << standard << (arc ? " ARC\n" : " MRC\n");
+}
+
+void CheckGeneratedCCompletion(const std::string &standard, bool arc) {
+  llvm::SmallString<128> temporary;
+  Require(!llvm::sys::fs::createUniqueDirectory("objc3-generated-c-completion", temporary),
+          "temporary directory failed");
+  const fs::path root(temporary.c_str());
+  struct Cleanup { fs::path path; ~Cleanup() { fs::remove_all(path); } } cleanup{root};
+  const bool cxx = standard.starts_with("c++");
+  const bool declaration_only = standard == "c17" && !arc;
+  const auto source = root / (cxx ? "provider.mm" : "provider.m");
+  const auto includes = root / "include";
+  fs::create_directories(includes / "objc3c");
+  fs::create_directory_symlink(OBJC3_PUBLIC_ASYNC_HEADERS, includes / "objc3c/runtime");
+  Write(source, R"(
+#include <stdbool.h>
+typedef int Integer;
+typedef const Integer *Input;
+@protocol Error @end
+__attribute__((objc_root_class)) @interface GeneratedError <Error>
++ (Class)class;
+@end
+@implementation GeneratedError
++ (Class)class { return self; }
+@end
+#ifdef __cplusplus
+extern "C"
+#endif
+id<Error> generated_failure(void) { return (id<Error>)[GeneratedError class]; }
+#ifdef DECLARATION_ONLY
+Integer generated_value(bool enabled, Input value) async;
+#else
+static Integer generated_value(bool enabled, Input value) async {
+  return enabled ? *value + 1 : 0;
+}
+#endif
+static void generated_void(void) async {}
+static int generated_checked(int mode) async throws(id<Error>) {
+  if (mode) __objc3_throw(generated_failure());
+  return 42;
+}
+#define generated_value(...) invalid_if_reexpanded
+)");
+  CompileRequest provider;
+  provider.input_path = source.string();
+  provider.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
+  provider.objc3 = true;
+  provider.arc = arc;
+  provider.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
+  provider.arguments = {"-std=" + standard, "-fblocks", "-fobjc-exceptions",
+                        "-I" + includes.string()};
+  if (declaration_only) provider.arguments.push_back("-DDECLARATION_ONLY");
+  provider.emit = EmitKind::Object;
+  provider.output_path = (root / "provider.o").string();
+  provider.async_c_exports = {"generated_value", "generated_void", "generated_checked"};
+  provider.async_c_header_output_path = (root / "generated.h").string();
+  provider.emit_semantic_interface = true;
+  provider.module_name = "test.GeneratedCompletion";
+  provider.package_identity = "generated-completion-v1";
+  provider.interface_exports = {"generated_value_async_c", "generated_void_async_c",
+      "generated_checked_async_c", "generated_value_completion_t",
+      "generated_void_completion_t", "generated_checked_completion_t", "Error"};
+  auto generated = Compile(provider);
+  Compiled(generated);
+  Require(generated.interface_artifact.has_value(), "generated C interface missing");
+  const auto &interface = *generated.interface_artifact;
+  Require(interface.source_bytes.find("generated_checked_async_c") != std::string::npos &&
+          interface.sidecar_json.find(RuntimeCompletionSemantic()) != std::string::npos,
+          "generated C callable ABI was omitted from semantic metadata");
+
+  std::string separate_body;
+  if (declaration_only) {
+    auto rejected = provider;
+    rejected.async_c_exports = {"generated_failure"};
+    auto result = Compile(rejected);
+    Require(!result.success && result.failure.find("native async frame") != std::string::npos,
+            "an ordinary declaration was admitted as an async export");
+    const auto header_before = llvm::MemoryBuffer::getFile(provider.async_c_header_output_path);
+    Require(static_cast<bool>(header_before), "generated header missing");
+    const std::string generated_header = (*header_before)->getBuffer().str();
+    Write(provider.async_c_header_output_path, "previous header\n");
+    auto failed = provider;
+    failed.output_path = includes.string();
+    Require(!Compile(failed).success, "invalid object destination was accepted");
+    const auto header_after = llvm::MemoryBuffer::getFile(provider.async_c_header_output_path);
+    Require(header_after && (*header_after)->getBuffer() == "previous header\n",
+            "failed object publication changed the generated header");
+    Write(provider.async_c_header_output_path, generated_header);
+    CompileRequest body;
+    body.input_path = (root / "body.m").string();
+    body.source_text = R"(
+#include <stdbool.h>
+#include <objc3c/runtime/objc3_runtime_services.h>
+int generated_value(bool enabled, const int *value) async {
+  return enabled ? *value + 1 : 0;
+}
+)";
+    body.objc3 = true;
+    body.emit = EmitKind::Object;
+    body.output_path = (root / "body.o").string();
+    body.target_triple = provider.target_triple;
+    body.arguments = provider.arguments;
+    Compiled(Compile(body));
+    separate_body = body.output_path;
+  }
+
+  Require(fs::remove(source), "generated provider source removal failed");
+  const auto client = root / "client.c";
+  Write(client, R"(
+#define _POSIX_C_SOURCE 200809L
+#include <assert.h>
+#include <stdatomic.h>
+#include <time.h>
+#include "generated.h"
+extern objc3_async_c_error generated_failure(void);
+static atomic_int complete[4];
+static void value_done(void *context, objc_async_completion_status_t status,
+                       int value, objc3_async_c_error error) {
+  assert(context == &complete[0] && status == OBJC_ASYNC_COMPLETION_SUCCESS);
+  assert(value == 42 && !error);
+  assert(atomic_fetch_add(&complete[0], 1) == 0);
+}
+static void void_done(void *context, objc_async_completion_status_t status,
+                      objc3_async_c_error error) {
+  assert(!context && status == OBJC_ASYNC_COMPLETION_SUCCESS && !error);
+  assert(atomic_fetch_add(&complete[1], 1) == 0);
+}
+static void checked_done(void *context, objc_async_completion_status_t status,
+                          int value, objc3_async_c_error error) {
+  if (context == &complete[2]) {
+    assert(status == OBJC_ASYNC_COMPLETION_SUCCESS && value == 42 && !error);
+  } else {
+    assert(context == &complete[3] && status == OBJC_ASYNC_COMPLETION_ERROR);
+    assert(error && error == generated_failure());
+  }
+  assert(atomic_fetch_add((atomic_int *)context, 1) == 0);
+}
+int main(void) {
+  const int input = 41;
+  generated_value_async_c(true, &input, &complete[0], value_done);
+  generated_void_async_c(0, void_done);
+  generated_checked_async_c(0, &complete[2], checked_done);
+  generated_checked_async_c(1, &complete[3], checked_done);
+  for (int elapsed = 0; elapsed < 2000; ++elapsed) {
+    if (atomic_load(&complete[0]) + atomic_load(&complete[1]) +
+        atomic_load(&complete[2]) + atomic_load(&complete[3]) == 4) return 0;
+    nanosleep(&(struct timespec){0, 1000000}, 0);
+  }
+  return 1;
+}
+)");
+  CompileRequest consumer;
+  consumer.input_path = client.string();
+  consumer.output_path = (root / "client.o").string();
+  consumer.language = BaseLanguage::C;
+  consumer.emit = EmitKind::Object;
+  consumer.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
+  consumer.arguments = {"-std=c17", "-I" + includes.string()};
+  Compiled(Compile(consumer));
+  LinkAndRun(root, provider.output_path, consumer.output_path, separate_body);
+  std::cout << "generated C completion " << standard << (arc ? " ARC\n" : " MRC\n");
 }
 
 void CheckCCompletion(const std::string &standard, bool arc) {
@@ -567,6 +729,7 @@ int main() {
       for (const bool arc : {false, true}) {
         Check(standard, arc);
         CheckCCompletion(standard, arc);
+        CheckGeneratedCCompletion(standard, arc);
         if (standard.starts_with("c++"))
           CheckThrowingDestructor(standard, arc);
       }

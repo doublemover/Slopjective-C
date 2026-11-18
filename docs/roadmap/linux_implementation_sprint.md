@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.251 / System 2.177 generated C completion exports](linux_async_c_completion_exports.md)
+compile the canonical typed bridge and C client header from a native async
+declaration. Separate translation units share the exact frame and callback ABI.
+
 Source 2.250 / System 2.176 repairs the native release foundation. It
 preserves ordinary Clang diagnostics and retains the source-printing
 contracts used for published declarations. Isolation checking reads lowered

@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 250,
+        "minor": 251,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Typed C completion thunks and headers are generated for global native free async entries with builtin and pointer signatures, including separately linked definitions, void and checked callbacks and canonical interface metadata; wider signature, destination and SDK acceptance remain open",
         "Lowered isolation properties and native C++ frame inputs preserve by-value reads and explicit receiver contracts, with known loans checked independently of unknown storage and direct by-value captures checked at construction; full release and SDK acceptance remain pending",
         "Optionalized synchronous checked C++ results with throwing destructors have full-expression cleanup and guarded local, conditional, array, static and thread-local initialization; wider call/async transport and matching SDK acceptance remain open",
         "Published inline calls to checked group joins and cancellation checkpoints bind the exact SDK completion header and stable callable identities. Source-free native execution and mutated-header admission controls cover the v2 reader capability, with matching SDK acceptance pending",
@@ -109,7 +110,7 @@
         "Generic throwing await and task joins propagate the distinguished cancellation Error through the typed channel. The active-task query and throwing checkpoint share that value with C completion callbacks. Narrow effect domains retain cooperative cancellation status and optionalizing awaits produce None; full profile and matching SDK acceptance remain pending",
         "Public try, try? and try! normalize to checked propagation with native C and C++ ambiguity preserved; optionalizing native frame and C++ task awaits produce None after child or parent cancellation and ordinary cleanup, with complete joins, profile and matching SDK acceptance pending",
         "Immutable conditional function and member-function pointer target sets retain every exact native callable, combine its writes and returned storage, and preserve prototype and receiver proofs across source-free packages; arbitrary mutable targets, open dispatch and matching SDK acceptance remain open",
-        "Explicit C completion exports deliver canonical typed native callbacks for value, void, Objective-C object and Block frame results, preserve checked error objects and supply a distinguished retainable cancellation value; exact signed callback/header identities replay through semantic interfaces for unowned C ABI packages, with automatic thunk synthesis, wider ownership adapters and matching SDK acceptance remain open",
+        "Explicit C completion exports deliver canonical typed native callbacks for value, void, Objective-C object and Block frame results, preserve checked error objects and supply a distinguished retainable cancellation value; exact signed callback/header identities replay through semantic interfaces for unowned C ABI packages, with wider generated signatures, ownership adapters and matching SDK acceptance remain open",
         "Contextual public async/await source spellings share native free/function-pointer/Block/method/lambda effect parsing and persistent frame lowering; ordinary identifier contexts, PCH replay, explicit frame/task type printing and intrinsic interface identity remain preserved; full profile predicates and matching SDK/native ARM acceptance remain open",
         "Immutable native member-function pointers retain exact canonical method/class/prototype identity through const bindings, aliases and same-target alternatives; receiver-independent/final targets share scalar/reference/global/returned-cell graphs, while open dispatch, mutable/mismatched targets and known receiver/capture state retain conservative fallback; source-free member-pointer helper publication is implemented, matching SDK and native ARM acceptance pending",
         "Captured native callable receivers resolve direct/nested aggregate fields, fixed arrays, explicit union initializers, copies, aliases and closed pointers under shared storage-path budgets; pure runtime indices prove every in-bounds fixed-array element, enclosing owner escapes retain conservative provenance, and source-free generic storage retains native bodies; opaque/custom/reference-subobject/inherited storage and matching SDK acceptance remain open",
@@ -412,12 +413,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 176,
+        "minor": 177,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Typed C completion thunks and headers are generated for global native free async entries with builtin and pointer signatures, including separately linked definitions, void and checked callbacks and canonical interface metadata; wider signature, destination and SDK acceptance remain open",
         "Lowered isolation properties and native C++ frame inputs preserve by-value reads and explicit receiver contracts, with known loans checked independently of unknown storage and direct by-value captures checked at construction; full release and SDK acceptance remain pending",
         "Optionalized synchronous checked C++ results with throwing destructors have full-expression cleanup and guarded local, conditional, array, static and thread-local initialization; wider call/async transport and matching SDK acceptance remain open",
         "Published inline calls to checked group joins and cancellation checkpoints bind the exact SDK completion header and stable callable identities. Source-free native execution and mutated-header admission controls cover the v2 reader capability, with matching SDK acceptance pending",
@@ -427,7 +429,7 @@
         "Generic throwing await and task joins propagate the distinguished cancellation Error through the typed channel. The active-task query and throwing checkpoint share that value with C completion callbacks. Narrow effect domains retain cooperative cancellation status and optionalizing awaits produce None; full profile and matching SDK acceptance remain pending",
         "Public try, try? and try! normalize to checked propagation with native C and C++ ambiguity preserved; optionalizing native frame and C++ task awaits produce None after child or parent cancellation and ordinary cleanup, with complete joins, profile and matching SDK acceptance pending",
         "Immutable conditional function and member-function pointer target sets retain every exact native callable, combine its writes and returned storage, and preserve prototype and receiver proofs across source-free packages; arbitrary mutable targets, open dispatch and matching SDK acceptance remain open",
-        "Explicit C completion exports deliver canonical typed native callbacks for value, void, Objective-C object and Block frame results, preserve checked error objects and supply a distinguished retainable cancellation value; exact signed callback/header identities replay through semantic interfaces for unowned C ABI packages, with automatic thunk synthesis, wider ownership adapters and matching SDK acceptance remain open",
+        "Explicit C completion exports deliver canonical typed native callbacks for value, void, Objective-C object and Block frame results, preserve checked error objects and supply a distinguished retainable cancellation value; exact signed callback/header identities replay through semantic interfaces for unowned C ABI packages, with wider generated signatures, ownership adapters and matching SDK acceptance remain open",
         "Contextual public async/await source spellings share native free/function-pointer/Block/method/lambda effect parsing and persistent frame lowering; ordinary identifier contexts, PCH replay, explicit frame/task type printing and intrinsic interface identity remain preserved; full profile predicates and matching SDK/native ARM acceptance remain open",
         "Immutable native member-function pointers retain exact canonical method/class/prototype identity through const bindings, aliases and same-target alternatives; receiver-independent/final targets share scalar/reference/global/returned-cell graphs, while open dispatch, mutable/mismatched targets and known receiver/capture state retain conservative fallback; source-free member-pointer helper publication is implemented, matching SDK and native ARM acceptance pending",
         "Captured native callable receivers resolve direct/nested aggregate fields, fixed arrays, explicit union initializers, copies, aliases and closed pointers under shared storage-path budgets; pure runtime indices prove every in-bounds fixed-array element, enclosing owner escapes retain conservative provenance, and source-free generic storage retains native bodies; opaque/custom/reference-subobject/inherited storage and matching SDK acceptance remain open",

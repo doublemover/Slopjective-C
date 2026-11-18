@@ -679,30 +679,31 @@ WriteSemanticInterfaceArtifactWithObjectImpl(
   return result;
 }
 
-bool PublishCompilationProductsWithDependencyRecord(
-    const std::string &record_path, const std::string &record_bytes,
-    const std::function<bool()> &publish_products, std::string &failure) {
+bool PublishCompilationProductsWithTextArtifact(
+    const std::string &path, const std::string &bytes,
+    const std::function<bool()> &publish_products, std::string &failure,
+    const std::string &description) {
   failure.clear();
   std::error_code error;
-  const auto requested = fs::absolute(fs::path(record_path), error).lexically_normal();
+  const auto requested = fs::absolute(fs::path(path), error).lexically_normal();
   if (error || HasReparseAncestor(requested.parent_path())) {
-    failure = "dependency record directory is inaccessible or contains a reparse point";
+    failure = description + " directory is inaccessible or contains a reparse point";
     return false;
   }
   const auto parent = fs::canonical(requested.parent_path(), error);
   if (error || !fs::is_directory(parent, error) || error) {
-    failure = "dependency record directory must already exist";
+    failure = description + " directory must already exist";
     return false;
   }
   const auto destination = parent / requested.filename();
   bool existed = false;
   if (!InspectDestination(destination, existed, error)) {
-    failure = "dependency record destination must be a regular non-symlink file";
+    failure = description + " destination must be a regular non-symlink file";
     return false;
   }
   const auto transaction = MakeTransactionDirectory(parent, error);
   if (error || transaction.empty()) {
-    failure = "cannot create dependency record staging directory: " + error.message();
+    failure = "cannot create " + description + " staging directory: " + error.message();
     return false;
   }
   const auto stage = transaction / "record.stage";
@@ -743,19 +744,19 @@ bool PublishCompilationProductsWithDependencyRecord(
     rollback.release();
     failure = std::move(message);
     if (!restored)
-      failure += "; dependency record rollback incomplete; recovery files retained at " +
+      failure += "; " + description + " rollback incomplete; recovery files retained at " +
                  transaction.string();
     return false;
   };
-  if (!WriteFile(stage, record_bytes + "\n", error))
-    return fail("cannot stage dependency record: " + error.message());
+  if (!WriteFile(stage, bytes + "\n", error))
+    return fail("cannot stage " + description + ": " + error.message());
   if (existed) {
     fs::rename(destination, backup, error);
-    if (error) return fail("cannot preserve previous dependency record: " + error.message());
+    if (error) return fail("cannot preserve previous " + description + ": " + error.message());
     backed_up = true;
   }
   fs::rename(stage, destination, error);
-  if (error) return fail("cannot publish dependency record: " + error.message());
+  if (error) return fail("cannot publish " + description + ": " + error.message());
   published = true;
   if (!publish_products())
     return fail("compilation product publication failed");

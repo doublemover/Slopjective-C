@@ -26,6 +26,7 @@ bool UsesInterfaceCompiler(int argc, char **argv) {
     if (arg == "--diagnostics-json" || arg == "--emit-object" || arg == "--emit-llvm" ||
         arg == "--emit-interface" || arg == "--project-ownership" ||
         arg == "--export-declaration" || arg == "--module-source-root" ||
+        arg == "--export-c-async" || arg == "--emit-c-async-header" ||
         arg == "--module-owned-names" || arg == "--import-spi" ||
         arg == "--import-module" || arg == "--emit-dependency-record" ||
         arg == "--source-imports" || arg == "--meta-package" || arg == "--meta-lock")

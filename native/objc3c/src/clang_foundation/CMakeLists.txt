@@ -6,6 +6,7 @@ if (MSVC)
 endif()
 
 add_library(objc3c_clang_foundation STATIC
+  async_c_exports.cpp
   compile_session.cpp
   meta_package.cpp
   meta_program.cpp

@@ -22,6 +22,7 @@ int RunCompiler(int argc, char **argv) {
            "[--emit-interface path.objc3i --module name --package identity] "
            "[--project-ownership arc|mrc] "
            "[--export-declaration name] [--module-owned-names] "
+           "[--export-c-async name --emit-c-async-header file.h] "
            "[--module-source-root dir] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
            "[--sdk-root dir] [--meta-package dir-or-manifest] [--meta-lock file] "
@@ -77,6 +78,11 @@ int RunCompiler(int argc, char **argv) {
       request.meta_packages.emplace_back(argv[++i]);
     else if(argument=="--meta-lock" && has_values(1) && request.meta_lock.empty())
       request.meta_lock=argv[++i];
+    else if (argument == "--export-c-async" && has_values(1))
+      request.async_c_exports.emplace_back(argv[++i]);
+    else if (argument == "--emit-c-async-header" && has_values(1) &&
+             request.async_c_header_output_path.empty())
+      request.async_c_header_output_path = argv[++i];
     else if (argument == "--module-source-root" && has_values(1))
       request.module_source_root = argv[++i];
     else if (argument == "--module-owned-names")
@@ -176,6 +182,10 @@ int RunCompiler(int argc, char **argv) {
       (request.emit_semantic_interface &&
        (request.module_name.empty() || request.package_identity.empty()))) {
     std::cerr << "language mode or semantic interface options are inconsistent\n";
+    return 2;
+  }
+  if (request.async_c_exports.empty() != request.async_c_header_output_path.empty()) {
+    std::cerr << "C async exports require --export-c-async and --emit-c-async-header together\n";
     return 2;
   }
   if ((!request.module_imports.empty() &&
