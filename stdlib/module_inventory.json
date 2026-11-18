@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 212,
+        "minor": 213,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed direct nonvirtual C++ instance helpers which never inspect or capture this preserve actual caller scalar/reference/Block sources and constructed work environments; bounded receiver/definition checks reject field state, mutation, nested this captures, effectful receivers and virtual/operator/member-pointer targets; matching SDK acceptance pending",
         "Explicit content-locked native metaprogramming packages expand concrete class derives/macros and safe property behaviors into checked declarations and method bodies; bounded pure AST-query programs, canonical macro entrypoints, protocol attachment, dispatch/accessor checks, input/dependency/cache integrity and source-free expanded-metaprogramming v1 transport are implemented; default portable derives, broader executor/storage behavior contracts and matching SDK acceptance remain open",
         "Closed static C++ helper projections preserve original caller scalar/resource sources, exact reference cells and Block environments through pure branches and concrete templates; forwarding views compose constructed factory returns, while side-effectful object qualifiers and static operators cannot establish a closed receiver; matching SDK acceptance pending",
         "Closed local Block producer calls and nested literal/produced environments preserve actual caller transfer contracts through factory composition; construction-only validation rolls back unused capture facts, ordinary nested callbacks do not inherit the outer async requirement, and all symbolic bindings are checked before nested environments; Sendable actual values cannot erase explicit unowned capture policies; four cancellation routes retain exact owner/work/defer accounting; MRC copy lowering and bounded proof limits remain native, matching SDK acceptance pending",
@@ -375,12 +376,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 138,
+        "minor": 139,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed direct nonvirtual C++ instance helpers which never inspect or capture this preserve actual caller scalar/reference/Block sources and constructed work environments; bounded receiver/definition checks reject field state, mutation, nested this captures, effectful receivers and virtual/operator/member-pointer targets; matching SDK acceptance pending",
         "Explicit content-locked native metaprogramming packages expand concrete class derives/macros and safe property behaviors into checked declarations and method bodies; bounded pure AST-query programs, canonical macro entrypoints, protocol attachment, dispatch/accessor checks, input/dependency/cache integrity and source-free expanded-metaprogramming v1 transport are implemented; default portable derives, broader executor/storage behavior contracts and matching SDK acceptance remain open",
         "Closed static C++ helper projections preserve original caller scalar/resource sources, exact reference cells and Block environments through pure branches and concrete templates; forwarding views compose constructed factory returns, while side-effectful object qualifiers and static operators cannot establish a closed receiver; matching SDK acceptance pending",
         "Closed local Block producer calls and nested literal/produced environments preserve actual caller transfer contracts through factory composition; construction-only validation rolls back unused capture facts, ordinary nested callbacks do not inherit the outer async requirement, and all symbolic bindings are checked before nested environments; Sendable actual values cannot erase explicit unowned capture policies; four cancellation routes retain exact owner/work/defer accounting; MRC copy lowering and bounded proof limits remain native, matching SDK acceptance pending",

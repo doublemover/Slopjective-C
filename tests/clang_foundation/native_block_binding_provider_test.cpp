@@ -86,6 +86,22 @@ inline objc3_task_t *static_start(objc3_executor_t *executor,unsigned choose,uns
 #endif
  return task;
 }
+struct InstanceWorkView {
+ BindingWork forward(BindingWork work){return work;}
+ BindingWork construct(BindingOwner *owner,unsigned *ran,unsigned *deferred){return alias_factory(owner,ran,deferred);}
+ int scalar(int value){return value;}
+ int &reference(int &value){return value;}
+};
+inline objc3_task_t *instance_start(objc3_executor_t *executor,unsigned choose,unsigned *destroyed,unsigned *ran,unsigned *deferred){
+ BindingOwner *one=[BindingOwner new],*two=[BindingOwner new];
+ one->destroyed=destroyed;one->value=1;two->destroyed=destroyed;two->value=2;
+ InstanceWorkView source;const BindingWork work=source.forward(source.construct(choose?one:two,ran,deferred));
+ objc3_task_t *task=binding_start(work,executor);
+#if !__has_feature(objc_arc)
+ _Block_release((const void *)work);binding_release((__bridge void *)one);binding_release((__bridge void *)two);
+#endif
+ return task;
+}
 inline BindingWork nested_local_factory(BindingOwner *owner,unsigned *ran,unsigned *deferred){
  void (^const callback)(void)=^{*ran+=owner->value;};
  const BindingWork work=^void(void) __objc3_async_frame {defer {++*deferred;}__objc3_await binding_pause();callback();};
@@ -245,10 +261,10 @@ constexpr const char *Consumer=R"blocks(
 #include <stdio.h>
 static int execute(void) {
  objc3_executor_t *executor=nullptr;assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);
- for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=32;++shape)for(unsigned cancel=0;cancel!=4;++cancel){
+ for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=33;++shape)for(unsigned cancel=0;cancel!=4;++cancel){
   unsigned destroyed=0,ran=0,deferred=0;const unsigned before=binding_pause_count();
   auto require=[&](bool ok){if(!ok){fprintf(stderr,"block matrix shape=%u route=%u choose=%u destroyed=%u ran=%u deferred=%u pauses=%u\n",shape,cancel,choose,destroyed,ran,deferred,binding_pause_count()-before);__builtin_abort();}};
-  objc3_task_t *task=shape==31?BindingModule::static_start(executor,choose,&destroyed,&ran,&deferred):shape==30?BindingModule::wrapped_start(executor,choose,&destroyed,&ran,&deferred):shape==29?BindingModule::producer_start(executor,choose,&destroyed,&ran,&deferred):shape==28?BindingModule::nested_start(executor,choose,&destroyed,&ran,&deferred):shape>=26?BindingModule::local_start(executor,choose,shape==27,&destroyed,&ran,&deferred):shape>=24?BindingModule::chain_start(executor,choose,shape==25,&destroyed,&ran,&deferred):shape==23?BindingModule::calculated_start(executor,choose,&destroyed,&ran,&deferred):BindingModule::start(executor,choose,shape,&destroyed,&ran,&deferred);
+  objc3_task_t *task=shape==32?BindingModule::instance_start(executor,choose,&destroyed,&ran,&deferred):shape==31?BindingModule::static_start(executor,choose,&destroyed,&ran,&deferred):shape==30?BindingModule::wrapped_start(executor,choose,&destroyed,&ran,&deferred):shape==29?BindingModule::producer_start(executor,choose,&destroyed,&ran,&deferred):shape==28?BindingModule::nested_start(executor,choose,&destroyed,&ran,&deferred):shape>=26?BindingModule::local_start(executor,choose,shape==27,&destroyed,&ran,&deferred):shape>=24?BindingModule::chain_start(executor,choose,shape==25,&destroyed,&ran,&deferred):shape==23?BindingModule::calculated_start(executor,choose,&destroyed,&ran,&deferred):BindingModule::start(executor,choose,shape,&destroyed,&ran,&deferred);
   require(task && destroyed==(shape==8?2u:1u) && ran==0 && deferred==0);
   uint32_t executed=0;
   if(cancel>=2){

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.213 / System 2.139 instance-projection span](linux_native_instance_argument_projections.md)
+preserves caller scalar/reference/Block and factory sources through closed direct
+nonvirtual methods which never inspect or capture their receiver.
+
 The [Source 2.212 / System 2.138 metaprogramming span](linux_native_metaprogramming.md)
 adds explicit locked package programs, real class/member expansion, checked
 property-behavior dispatch and source-free expanded declaration transport.
