@@ -14,3 +14,43 @@ MeterAPI::Reading MeterAPI::adjustedReading(Reading value, int increment) noexce
   value.total += increment;
   return value;
 }
+
+namespace MeterAPI {
+namespace {
+int allocations;
+int destructions;
+int copies;
+}
+
+ReadingOwner::ReadingOwner(int amount) noexcept : storage(new int(amount)) {
+  ++allocations;
+}
+
+ReadingOwner::ReadingOwner(const ReadingOwner &other) noexcept
+    : ReadingOwner(other.amount()) {
+  ++copies;
+}
+
+ReadingOwner::ReadingOwner(ReadingOwner &&other) noexcept : storage(other.storage) {
+  other.storage = nullptr;
+}
+
+ReadingOwner::~ReadingOwner() noexcept {
+  if (storage) {
+    delete storage;
+    ++destructions;
+  }
+}
+
+int ReadingOwner::amount() const noexcept { return storage ? *storage : 0; }
+
+ReadingOwner initialOwner(int amount) noexcept { return ReadingOwner(amount); }
+
+ReadingOwner adjustedOwner(ReadingOwner value, int increment) noexcept {
+  return ReadingOwner(value.amount() + increment);
+}
+
+int ownerAllocations() noexcept { return allocations; }
+int ownerDestructions() noexcept { return destructions; }
+int ownerCopies() noexcept { return copies; }
+}

@@ -197,7 +197,7 @@ def suite_results(root: Path, name: str) -> list[dict]:
             raise ValueError('upstream test tool inventory is incomplete')
         return lit(directory / 'lit.json')
     if name == 'swift-consumer':
-        from scripts.objc3c_toolchain.swift_consumer import REQUIRED_ROWS, execution_result
+        from scripts.objc3c_toolchain.swift_consumer import QUALIFICATION_SCHEMA, REQUIRED_ROWS, execution_result
         result = read('consumer/qualification.json')
         cases, controls, rows = (result.get(key, []) for key in ('cases', 'controls', 'rows'))
         expected = {(language, transport, native, swift) for language in ('c', 'cxx')
@@ -206,17 +206,20 @@ def suite_results(root: Path, name: str) -> list[dict]:
             'old-spelling', 'wrong-type', 'nullability', 'availability',
             'public-name-identity-and-consumer', 'missing-provider-symbol',
             'cxx-original-header-independent-import', 'cxx-unmodified-emitted-header-import',
-            'cxx-field-type-identity-and-consumer', 'cxx-missing-provider-symbol'}
+            'cxx-field-type-identity-and-consumer', 'cxx-destructor-identity-and-consumer',
+            'cxx-missing-provider-symbol'}
         relocation = {'original_header_hidden': True, 'provider_source_hidden': True, 'replayed_header_unchanged': True}
         interfaces = result.get('interfaces', {})
-        if (result.get('schema') != 'objc3c.swift-consumer-qualification.v2' or
+        if (result.get('schema') != QUALIFICATION_SCHEMA or
                 len(cases) != len(expected) or {(row['language'], row['transport'], row['native_optimization'],
                                                row['swift_optimization'])
                               for row in cases if row.get('status') == 'PASS'} != expected or
                 len(controls) != len(control_names) or
                 {row['name'] for row in controls if row.get('status') == 'PASS'} != control_names or
-                len(rows) != len(REQUIRED_ROWS) or {row['id'] for row in rows} != set(REQUIRED_ROWS) or
-                any(row.get('status') != ('swift-import-qualified' if row['id'] == 'availability'
+                len(rows) != len(REQUIRED_ROWS) or
+                {row.get('id'): row.get('declaration') for row in rows} != REQUIRED_ROWS or
+                any(row.get('required') is not True or
+                    row.get('status') != ('swift-import-qualified' if row['id'] == 'availability'
                                          else 'swift-call-qualified') for row in rows) or
                 not result.get('commands') or result.get('relocation') != {'c': relocation, 'cxx': relocation} or
                 set(interfaces) != {'c', 'cxx'}):

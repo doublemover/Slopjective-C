@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.273 / System 2.199 Swift ownership gate](linux_swift_consumer.md)
+qualifies copyable, heap-owning C++ values through the independent Swift
+importer. The terminal checks all allocations retire and binds the deleted
+destructor control to changed native interface identity.
+
 The [Source 2.272 / System 2.198 wider C error-out bridge](linux_async_c_completion_exports.md#synchronous-c-error-out-exports)
 adds checked C records, Objective-C object and Block values and verified layout
 contracts. Register and indirect aggregates use the target's ordinary return ABI.

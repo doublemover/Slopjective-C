@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.swift-consumer-rows.v3",
+  "schema": "objc3c.swift-consumer-rows.v4",
   "module": "ForeignAPI",
   "cxx_module": "ForeignCxx",
   "rows": [
@@ -32,6 +32,11 @@
       "id": "cxx-trivial-value",
       "declaration": "MeterAPI::adjustedReading",
       "required": true
+    },
+    {
+      "id": "cxx-owning-value",
+      "declaration": "MeterAPI::adjustedOwner",
+      "required": true
     }
   ],
   "unqualified": [
@@ -51,9 +56,9 @@
       "reason": "Swift owns an independent Clang importer; product serialized AST/PCH inputs are not interchangeable."
     },
     {
-      "id": "cxx-owning-or-template-abi",
+      "id": "cxx-wider-ownership-and-template-abi",
       "status": "metadata-preserved",
-      "reason": "Only a fixed, self-contained, trivially copyable C++ record and nonthrowing functions cross this boundary."
+      "reason": "C++ crossing is qualified for the admitted trivial record and copyable owning value with nonthrowing lifetimes. Move-only, throwing and template ABI boundaries remain open."
     }
   ],
   "targets": [

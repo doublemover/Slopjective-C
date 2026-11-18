@@ -20,12 +20,16 @@ from .sdk_example import dependencies
 from .swift_toolchain import environment as swift_environment, verify as verify_swift, require_host
 
 EXPECTED = {'value': 42, 'amount': 42, 'read': 42, 'live': 0}
-CXX_EXPECTED = {'before': 40, 'count': 42, 'total': 2147483690}
+CXX_EXPECTED = {'before': 40, 'count': 42, 'total': 2147483690,
+                'owner_before': 40, 'owner_after': 42}
+CXX_LIFETIME = ('owner_allocations', 'owner_destructions', 'owner_copies')
+QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v3'
 CXX_IMPORT = ('-cxx-interoperability-mode=default', '-Xcc', '-std=c++20')
 REQUIRED_ROWS = {'renamed-primitive': 'objc3_swift_value',
     'nonnull-pointer': 'objc3_swift_read', 'newtype': 'ObjC3SwiftAmount',
     'opaque-c-lifetime': 'ObjC3SwiftToken', 'availability': 'objc3_swift_unavailable',
-    'cxx-trivial-value': 'MeterAPI::adjustedReading'}
+    'cxx-trivial-value': 'MeterAPI::adjustedReading',
+    'cxx-owning-value': 'MeterAPI::adjustedOwner'}
 NEGATIVES = {
     'old-spelling': ('import ForeignAPI\nlet value = objc3_swift_value(41)\n', "'objc3_swift_value' has been renamed to 'projectedValue(_:)'"),
     'wrong-type': ('import ForeignAPI\nlet value: String = projectedValue(41)\n', 'cannot convert value of type'),
@@ -78,7 +82,7 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
 
 def row_manifest(path):
     value = json.loads(path.read_text())
-    if (value.get('schema') != 'objc3c.swift-consumer-rows.v3' or
+    if (value.get('schema') != 'objc3c.swift-consumer-rows.v4' or
             value.get('targets') != [entry[1] for entry in HOSTS.values()] or value.get('module') != 'ForeignAPI' or
             value.get('cxx_module') != 'ForeignCxx' or
             not value.get('rows') or len(value['rows']) != len(REQUIRED_ROWS) or
@@ -103,7 +107,15 @@ def execution_result(text, language='c'):
         value = json.loads(text)
     except ValueError as error:
         raise ValueError('Swift consumer omitted its mixed-language result oracle') from error
-    if value != {'c': EXPECTED, 'cxx': CXX_EXPECTED}[language] or any(type(item) is not int for item in value.values()):
+    if not isinstance(value, dict) or any(type(item) is not int for item in value.values()):
+        raise ValueError('Swift mixed-language value or opaque lifetime contract failed')
+    if language == 'cxx':
+        counts = [value.get(key, -1) for key in CXX_LIFETIME]
+        allocations, destructions, copies = counts
+        fixed = {key: item for key, item in value.items() if key not in CXX_LIFETIME}
+        if fixed != CXX_EXPECTED or allocations != destructions or not 1 <= copies <= allocations - 2:
+            raise ValueError('Swift mixed-language C++ owning value or destructor contract failed')
+    elif value != EXPECTED:
         raise ValueError('Swift mixed-language value or opaque lifetime contract failed')
     return value
 
@@ -121,14 +133,14 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
     # No product compiler resources, loader variables, SDKROOT or Swift override
     # variables enter the independent consumer process.
     foreign_env = swift_environment(swift_root)
-    report = {'schema': 'objc3c.swift-consumer-qualification.v2', 'status': 'running',
+    report = {'schema': QUALIFICATION_SCHEMA, 'status': 'running',
         'host': require_host(),
         'sdk_seal': installed['seal_sha256'], 'source_build_id': installed['source_build_id'],
         'swift_seal_sha256': digest(swift_root / 'objc3-swift-consumer.json'),
         'swift_archive_sha256': foreign['archive_sha256'], 'rows': rows['rows'],
         'unqualified': rows['unqualified'], 'commands': [], 'cases': [], 'controls': [],
         'relocation': {}, 'interfaces': {},
-        'boundaries': 'Textual C declarations, opaque C resources and trivial C++ values with nonthrowing calls.',
+        'boundaries': 'Textual C declarations, opaque C resources and trivial or owning C++ values with nonthrowing calls.',
         'inputs': {str(path): digest(path) for path in [Path(__file__), *sorted(fixture.iterdir()),
             symbolizer, Path(__file__).with_name('swift_toolchain.py'), Path(__file__).with_name('sdk_example.py')] if path.is_file()}}
     frozen = report['inputs']
@@ -271,19 +283,26 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
                 mismatch_diagnostic = "cannot find 'projectedValue'"
                 control = 'public-name-identity-and-consumer'
                 symbol = 'objc3_swift_value'
-            if original_bytes.count(before) != 1:
-                raise ValueError('Swift consumer mutation must target one declaration')
-            changed = emitted / header_name
-            changed.write_bytes(original_bytes.replace(before, after))
-            changed_interface = emitted / 'Changed.objc3i'
-            altered = emit('changed-public-contract', changed, changed_interface)
-            if altered['module']['semantic_fingerprint'] == sidecar['module']['semantic_fingerprint']:
-                raise ValueError('native fingerprint ignored the changed Swift contract')
-            changed_root = output / (prefix + 'changed-module')
-            module(changed_root, changed_interface.read_bytes())
-            typecheck(prefix + 'changed-contract-control', changed_root, mismatch_source,
-                      expected=1, contains=(mismatch_diagnostic,))
-            report['controls'].append({'name': prefix + control, 'status': 'PASS'})
+            def check_changed_contract(label, before, after, source, diagnostic, control):
+                if original_bytes.count(before) != 1:
+                    raise ValueError('Swift consumer mutation must target one declaration')
+                changed = emitted / (label + '-' + header_name)
+                changed.write_bytes(original_bytes.replace(before, after))
+                changed_interface = emitted / (label + '.objc3i')
+                altered = emit(label + '-public-contract', changed, changed_interface)
+                if altered['module']['semantic_fingerprint'] == sidecar['module']['semantic_fingerprint']:
+                    raise ValueError('native fingerprint ignored the changed Swift contract')
+                changed_root = output / (prefix + label + '-module')
+                module(changed_root, changed_interface.read_bytes())
+                typecheck(prefix + label + '-contract-control', changed_root, source,
+                          expected=1, contains=(diagnostic,))
+                report['controls'].append({'name': prefix + control, 'status': 'PASS'})
+
+            check_changed_contract('changed', before, after, mismatch_source, mismatch_diagnostic, control)
+            if cxx:
+                check_changed_contract('deleted-destructor', b'~ReadingOwner() noexcept;',
+                    b'~ReadingOwner() = delete;', consumer,
+                    "'ReadingOwner' is not a member type", 'destructor-identity-and-consumer')
 
             driver = [swiftc, '-swift-version', '6', '-use-ld=lld', '-target', rows['target'], *import_args]
             for transport, content in (('original', original_bytes), ('emitted', emitted_bytes)):
