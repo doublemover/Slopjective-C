@@ -91,8 +91,9 @@ std::optional<CExportActorMethod> SelectActorMethod(clang::ASTContext &context,
   }
   const auto selector = context.Selectors.getSelector(
       has_parameters ? identifiers.size() : 0, identifiers.data());
-  const auto *method = actor->getInstanceMethod(selector);
-  if (!method || method->isVariadic() || !clang::isObjC3ActorIsolated(method) ||
+  const auto *method = actor->lookupInstanceMethod(selector);
+  if (!method || !llvm::isa<clang::ObjCInterfaceDecl>(method->getDeclContext()) ||
+      method->isVariadic() || !clang::isObjC3ActorIsolated(method) ||
       method->hasAttr<clang::NSConsumesSelfAttr>() ||
       method->hasAttr<clang::ObjCReturnsInnerPointerAttr>())
     return std::nullopt;
@@ -279,7 +280,7 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
     if (llvm::StringRef(selection).contains("::")) {
       actor_method = SelectActorMethod(context, selection);
       if (!actor_method)
-        return reject("expected an isolated instance selector declared on the named actor class");
+        return reject("expected an isolated instance selector in the named actor class hierarchy");
       const auto *method = actor_method->method;
       name = actor_method->symbol;
       source = method;

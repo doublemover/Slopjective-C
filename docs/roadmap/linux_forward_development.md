@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.269 / System 2.195 C actor bridge](linux_async_c_completion_exports.md)
+exports inherited isolated methods through subclass receivers and retains
+the superclass signature and checked error contract.
+
 The [Source 2.268 / System 2.194 native calling convention change](linux_swift_physical_abi.md)
 preserves Swift, x86 and AArch64 conventions on canonical C++ callable
 aliases and alias templates through source-free native execution.

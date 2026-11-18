@@ -298,6 +298,10 @@ static void generated_actor_check(GeneratedActor *object) {
 }
 - (void)ordinary {}
 @end
+@interface GeneratedDerivedActor : GeneratedActor
+@end
+@implementation GeneratedDerivedActor
+@end
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -306,6 +310,13 @@ void *generated_actor_create(void) {
   return (__bridge_retained void *)[GeneratedActor new];
 #else
   return (void *)[GeneratedActor new];
+#endif
+}
+void *generated_derived_actor_create(void) {
+#if __has_feature(objc_arc)
+  return (__bridge_retained void *)[GeneratedDerivedActor new];
+#else
+  return (void *)[GeneratedDerivedActor new];
 #endif
 }
 void *generated_argument_create(void) {
@@ -359,7 +370,7 @@ unsigned generated_actors_destroyed(void) {
       "generated_object", "generated_block", "generated_aggregate", "generated_main",
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
-      "GeneratedActor::current", "GeneratedActor::checked:"};
+      "GeneratedActor::current", "GeneratedDerivedActor::current", "GeneratedDerivedActor::checked:"};
   provider.async_c_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GeneratedCompletion";
@@ -374,6 +385,7 @@ unsigned generated_actors_destroyed(void) {
   const auto &interface = *generated.interface_artifact;
   Require(interface.source_bytes.find("generated_checked_async_c") != std::string::npos &&
           interface.source_bytes.find("GeneratedActor_add_by_async_c") != std::string::npos &&
+          interface.source_bytes.find("GeneratedDerivedActor_checked_async_c") != std::string::npos &&
           interface.sidecar_json.find(RuntimeCompletionSemantic()) != std::string::npos,
           "generated C callable ABI was omitted from semantic metadata");
 
@@ -384,8 +396,8 @@ unsigned generated_actors_destroyed(void) {
     auto result = Compile(rejected);
     Require(!result.success && result.failure.find("native async frame") != std::string::npos,
             "an ordinary declaration was admitted as an async export");
-    for (const std::string selection : {"GeneratedActor::ordinary", "GeneratedActor::add:",
-                                       "GeneratedActor::add::", "GeneratedError::class"}) {
+    for (const std::string selection : {"GeneratedActor::ordinary", "GeneratedDerivedActor::ordinary",
+                                       "GeneratedActor::add:", "GeneratedActor::add::", "GeneratedError::class"}) {
       rejected.async_c_exports = {selection};
       const auto invalid_actor = Compile(rejected);
       Require(!invalid_actor.success && invalid_actor.failure.find("isolated instance selector") != std::string::npos,
@@ -446,6 +458,7 @@ static void observe(void *context, objc_async_completion_status_t status,
 }
 void call_imported_actor(void *receiver) {
   GeneratedActor_add_by_async_c(receiver, 40, 2, 0, observe);
+  GeneratedDerivedActor_checked_async_c(receiver, 0, 0, observe);
 }
 void call_imported_arguments(generated_arguments_async_c_arg0_t value,
                              generated_arguments_async_c_arg1_t action) {
@@ -463,6 +476,7 @@ void call_imported_arguments(generated_arguments_async_c_arg0_t value,
 #include "generated.h"
 extern objc3_async_c_error generated_failure(void);
 extern void *generated_actor_create(void);
+extern void *generated_derived_actor_create(void);
 extern void *generated_argument_create(void);
 extern void *generated_argument_block_create(void);
 extern void generated_actor_release(void *);
@@ -575,7 +589,7 @@ int main(void) {
   assert(objc3_executor_get_main(&main_executor) == OBJC3_SERVICE_OK);
   assert(objc3_executor_create(0, &named_executor) == OBJC3_SERVICE_OK);
   assert(objc3_executor_register_named("generated.completion", named_executor) == OBJC3_SERVICE_OK);
-  void *actor = generated_actor_create(), *other = generated_actor_create();
+  void *actor = generated_derived_actor_create(), *other = generated_derived_actor_create();
   void *closed = generated_actor_create();
   assert(actor && other && closed && actor != other);
   objc3_actor_t *closed_mailbox = 0;
@@ -606,9 +620,9 @@ int main(void) {
   assert(atomic_load(&paused_workers) == 4);
   objc3_executor_release(global);
   GeneratedActor_add_by_async_c(actor, 40, 2, &complete[11], actor_done);
-  GeneratedActor_current_async_c(other, &complete[12], actor_done);
-  GeneratedActor_checked_async_c(actor, false, &complete[13], actor_done);
-  GeneratedActor_checked_async_c(actor, true, &complete[14], actor_done);
+  GeneratedDerivedActor_current_async_c(other, &complete[12], actor_done);
+  GeneratedDerivedActor_checked_async_c(actor, false, &complete[13], actor_done);
+  GeneratedDerivedActor_checked_async_c(actor, true, &complete[14], actor_done);
   GeneratedActor_current_async_c(closed, &complete[15], actor_done);
   generated_actor_release(actor);
   void *object = generated_argument_create();

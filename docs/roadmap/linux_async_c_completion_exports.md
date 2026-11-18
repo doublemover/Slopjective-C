@@ -127,6 +127,18 @@ entry and distinguished cancellation for a nonthrowing entry. Both controls
 deliver one completion without entering the unavailable destination.
 Wider foreign types and adapters and matching SDK acceptance remain open.
 
+Source 2.269 / System 2.195 resolves an actor export through ordinary instance
+method lookup on the named class. Methods declared on a superclass can use the
+subclass receiver in the emitted bridge. The inherited method supplies the
+signature, checked error contract and isolation. The typed await binds the
+actual receiver's mailbox. Nonisolated inherited methods retain the same
+rejection as directly declared ones.
+
+All eight C17/C23 and C++20/C++23 ARC/MRC configurations call synchronous and
+checked async inherited methods on subclass receivers after provider source
+removal. The C callers check independent receiver state, exact error identity,
+and receiver cleanup after release before worker entry.
+
 Source 2.256 / System 2.182 exports an isolated instance method selected
 with `--export-c-async 'Counter::add:by:'`. The C declaration is
 `Counter_add_by_async_c`. It takes the opaque receiver first, the method
