@@ -43,20 +43,29 @@ void complete(const objc3_completion *completion, bool checked,
               __objc3_async_c_delivery delivery) noexcept {
   objc3::services::CallbackAutoreleasePool pool;
   try {
-    if (!checked && completion->kind == OBJC3_COMPLETION_ERROR) {
+    if (completion->kind != OBJC3_COMPLETION_ERROR) {
+      delivery(completion);
+      return;
+    }
+    if (checked && __objc3_task_error_object(completion->error) !=
+                       (void *)cancellation_error()) {
+      delivery(completion);
+      return;
+    }
+    if (!checked) {
       // Infrastructure failure ends nonthrowing work without a language error.
       // A native checked error here would mean the export has a false effect.
       objc3_service_status service_status;
       if (objc3_async_error_get_service(completion->error, &service_status) !=
           OBJC3_SERVICE_OK)
         std::abort();
-      const objc3_completion cancelled{sizeof(objc3_completion),
-          OBJC3_SERVICE_ABI_VERSION, OBJC3_COMPLETION_CANCELLED, 0,
-          nullptr, nullptr, nullptr, nullptr};
-      delivery(&cancelled);
-    } else {
-      delivery(completion);
     }
+    // A checked propagation of the cancellation object is still cancellation
+    // at the C boundary, including when the child used an ordinary error slot.
+    const objc3_completion cancelled{sizeof(objc3_completion),
+        OBJC3_SERVICE_ABI_VERSION, OBJC3_COMPLETION_CANCELLED, 0,
+        nullptr, nullptr, nullptr, nullptr};
+    delivery(&cancelled);
   } catch (...) {
     // Native completion callbacks must not unwind across the C ABI.
   }
@@ -71,6 +80,10 @@ void deliver(void *context, const objc3_completion *completion) noexcept {
 
 extern "C" int objc3_async_c_error_is_cancellation(objc3_async_c_error error) {
   return error == cancellation_error();
+}
+
+extern "C" objc3_async_c_error objc3_task_current_cancellation_error(void) {
+  return objc3_task_current_cancel_requested() ? cancellation_error() : nullptr;
 }
 
 extern "C" void *__objc3_task_cancellation_error_object() noexcept {

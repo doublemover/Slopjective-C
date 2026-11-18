@@ -12503,7 +12503,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,974 @@
+@@ -0,0 +1,992 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12547,6 +12547,7 @@ new file mode 100644
 +  QualType Type;
 +  CodeGenFunction::JumpDest Failure;
 +  bool Optionalizes;
++  bool HandlesCancellation;
 +};
 +} // namespace clang::CodeGen
 +
@@ -12686,25 +12687,33 @@ new file mode 100644
 +public:
 +  ScopedObjC3ErrorOutCall(CodeGenFunction &CGF, Address Storage,
 +                          QualType ValueType, const Expr *Call,
-+                          llvm::BasicBlock *Failure, bool Optionalizes = false)
++                          llvm::BasicBlock *Failure, ObjC3TryExpr::Kind Operation)
 +      : CGF(CGF), PreviousStorage(CGF.ObjC3CallErrorOutStorage),
 +        PreviousType(CGF.ObjC3CallErrorOutValueType),
 +        PreviousCall(CGF.ObjC3CallErrorOutExpr),
 +        PreviousAsync(CGF.ObjC3AsyncError) {
++    const bool Optionalizes = Operation == ObjC3TryExpr::Kind::Optionalize;
 +    if (const auto *Adapter = getObjC3CheckedAsyncAdapter(Call)) {
 +      auto *Slot = cast<OpaqueValueExpr>(Adapter->getArg(1)->IgnoreImpCasts());
 +      AsyncSlot = std::make_unique<CodeGenFunction::OpaqueValueMapping>(
 +          CGF, Slot, RValue::get(Storage.emitRawPointer(CGF)));
 +      Async = std::make_unique<ObjC3AsyncErrorHandler>(ObjC3AsyncErrorHandler{
-+          Adapter, Storage, ValueType, CGF.getJumpDestInCurrentScope(Failure), Optionalizes});
++          Adapter, Storage, ValueType, CGF.getJumpDestInCurrentScope(Failure),
++          Optionalizes, false});
 +      CGF.ObjC3AsyncError = Async.get();
 +      // Result temporaries only become live on the successful resume edge.
 +      Conditional = std::make_unique<CodeGenFunction::ConditionalEvaluation>(CGF);
 +      Conditional->begin(CGF);
 +    }
 +    if (isNativeCAwait(CGF, Call)) {
++      const auto *Signature = getObjC3AsyncCalleeFunctionType(Call);
++      const bool HandlesCancellation =
++          Operation != ObjC3TryExpr::Kind::Propagate ||
++          (Signature && admitsObjC3CancellationError(
++                            Signature->getObjC3FunctionEffects()));
 +      Async = std::make_unique<ObjC3AsyncErrorHandler>(ObjC3AsyncErrorHandler{
-+          Call, Storage, ValueType, CGF.getJumpDestInCurrentScope(Failure), Optionalizes});
++          Call, Storage, ValueType, CGF.getJumpDestInCurrentScope(Failure),
++          Optionalizes, HandlesCancellation});
 +      CGF.ObjC3AsyncError = Async.get();
 +      Conditional = std::make_unique<CodeGenFunction::ConditionalEvaluation>(CGF);
 +      Conditional->begin(CGF);
@@ -12753,12 +12762,21 @@ new file mode 100644
 +  return Resume->getRHS();
 +}
 +
-+bool CodeGen::emitObjC3CAsyncOptionalCancellation(CodeGenFunction &CGF,
++bool CodeGen::emitObjC3CAsyncCheckedCancellation(CodeGenFunction &CGF,
 +                                                  const CoawaitExpr &E) {
 +  const auto *Handler = CGF.ObjC3AsyncError;
-+  if (!Handler || Handler->Call != &E || !Handler->Optionalizes) return false;
-+  // This arm has no result object and its Optional failure never reads the
-+  // error slot. Run the native child/argument cleanups before materializing None.
++  if (!Handler || Handler->Call != &E || !Handler->HandlesCancellation)
++    return false;
++  if (!Handler->Optionalizes) {
++    auto *Type = llvm::FunctionType::get(CGF.Int8PtrTy, {}, false);
++    auto *Object = CGF.EmitNounwindRuntimeCall(
++        CGF.CGM.CreateRuntimeFunction(Type,
++                                      "__objc3_task_cancellation_error_object"));
++    CGF.EmitStoreOfScalar(Object,
++        CGF.MakeAddrLValue(Handler->Storage, Handler->Type));
++  }
++  // There is no result object on this edge. Release the native child and
++  // its arguments before entering the checked expression's failure arm.
 +  CGF.EmitBranchThroughCleanup(Handler->Failure);
 +  return true;
 +}
@@ -12770,13 +12788,13 @@ new file mode 100644
 +  auto *Handler = CGF.ObjC3AsyncError;
 +  if (!Handler || Handler->Call != &E)
 +    return false;
-+  if (Handler->Optionalizes) {
-+    auto *Cancelled = CGF.createBasicBlock("objc3.await.optional.cancelled");
++  if (Handler->HandlesCancellation) {
++    auto *Cancelled = CGF.createBasicBlock("objc3.await.checked.cancelled");
 +    auto *NonCancelled = CGF.createBasicBlock("objc3.await.non_cancelled");
 +    CGF.Builder.CreateCondBr(CGF.Builder.CreateICmpEQ(Kind, CGF.Builder.getInt32(2)),
 +                             Cancelled, NonCancelled);
 +    CGF.EmitBlock(Cancelled);
-+    CGF.EmitBranchThroughCleanup(Handler->Failure);
++    emitObjC3CAsyncCheckedCancellation(CGF, E);
 +    CGF.EmitBlock(NonCancelled);
 +  }
 +  auto *Type = llvm::FunctionType::get(CGF.Int8PtrTy, {CGF.Int8PtrTy}, false);
@@ -13203,7 +13221,7 @@ new file mode 100644
 +  llvm::BasicBlock *Failure = CGF.createBasicBlock("objc3.try.failure");
 +  RValue CallValue;
 +  {
-+    ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorValueType, Call, Failure);
++    ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorValueType, Call, Failure, E.getKind());
 +    // Keep ARC's consume/reclaim casts around managed call results. The raw
 +    // call is still the exact key for the hidden error output, but stripping
 +    // these casts would leak +1 results or miss return-value ownership.
@@ -13283,7 +13301,7 @@ new file mode 100644
 +          NormalAndEHCleanup,Discarded,DiscardedInitialized,E.getType());
 +    }
 +    {
-+      ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorType, Call, Failure);
++      ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorType, Call, Failure, E.getKind());
 +      // Native records and C++ carrier results have no object on failure.
 +      // Bind cleanup only after the hidden error output confirms success.
 +      const auto SavedInit = CGF.getObjC3CarrierLocalInitState();
@@ -13376,7 +13394,7 @@ new file mode 100644
 +  }
 +  RValue CallValue;
 +  {
-+    ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorValueType, Call, Failure, /*Optionalizes=*/true);
++    ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorValueType, Call, Failure, E.getKind());
 +    // Keep ARC's consume/reclaim casts around managed call results. The raw
 +    // call is still the exact key for the hidden error output, but stripping
 +    // these casts would leak +1 results or miss return-value ownership.
@@ -29175,7 +29193,7 @@ new file mode 100644
 +  auto *Continue = CGF.createBasicBlock("objc3.await.continue");
 +  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Requested), Cancelled, Continue);
 +  CGF.EmitBlock(Cancelled);
-+  if (!Await || !emitObjC3CAsyncOptionalCancellation(CGF, *Await))
++  if (!Await || !emitObjC3CAsyncCheckedCancellation(CGF, *Await))
 +    cancel(CGF, Data);
 +  CGF.EmitBlock(Continue);
 +}
@@ -29228,7 +29246,7 @@ new file mode 100644
 +  Switch->addCase(CGF.Builder.getInt32(0), Continue);
 +  Switch->addCase(CGF.Builder.getInt32(7), Cancelled);
 +  CGF.EmitBlock(Cancelled);
-+  if (!Await || !emitObjC3CAsyncOptionalCancellation(CGF, *Await))
++  if (!Await || !emitObjC3CAsyncCheckedCancellation(CGF, *Await))
 +    cancel(CGF, Data);
 +  CGF.EmitBlock(Failed);
 +  replaceError(CGF, Data, serviceError(CGF, Status));
@@ -30476,7 +30494,7 @@ new file mode 100644
 +void pushObjC3AsyncPoolReopenCleanup(CodeGenFunction &, llvm::ArrayRef<Address>);
 +
 +/// Transfer a cancellation observed by an optionalizing native await.
-+bool emitObjC3CAsyncOptionalCancellation(CodeGenFunction &, const CoawaitExpr &);
++bool emitObjC3CAsyncCheckedCancellation(CodeGenFunction &, const CoawaitExpr &);
 +
 +/// Transfer an admitted checked error or optionalized cancellation to the
 +/// enclosing try failure edge. Foreign failures keep their native transport.

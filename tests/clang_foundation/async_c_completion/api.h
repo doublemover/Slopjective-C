@@ -27,6 +27,8 @@ OBJC3_ASYNC_C_DECLARE(completion_object, CompletionObject _Nullable,
 OBJC3_ASYNC_C_DECLARE(completion_block, CompletionBlock _Nullable, int value);
 OBJC3_ASYNC_C_DECLARE(completion_error, int, CompletionObject _Nonnull error);
 OBJC3_ASYNC_C_DECLARE(completion_cancel, int, objc3_actor_t * _Nonnull actor);
+OBJC3_ASYNC_C_DECLARE(completion_checked_cancel, int,
+                      CompletionCancellation * _Nonnull state);
 OBJC3_ASYNC_C_DECLARE(completion_worker, int, int value);
 
 #ifdef __cplusplus
@@ -40,11 +42,18 @@ CompletionObject _Nonnull completion_make_object(void)
 int completion_object_count(void);
 int completion_cancel_entries(void);
 int completion_error_conforms(CompletionObject _Nonnull error);
+int completion_checked_cancellation(const objc3_completion * _Nonnull result,
+                                    objc3_async_c_error _Nonnull expected);
+objc3_async_frame completion_cancel_child(CompletionCancellation * _Nonnull state);
+objc3_async_frame completion_join_frame(objc3_task_t * _Nonnull child);
+objc3_async_frame completion_checkpoint_frame(CompletionCancellation * _Nonnull state);
+objc3_async_frame completion_narrow_frame(CompletionCancellation * _Nonnull state);
 objc3_async_frame completion_optional_frame(CompletionCancellation * _Nonnull state);
 objc3_async_frame completion_await_frame(CompletionCancellation * _Nonnull state);
 #ifdef OBJC3_COMPLETION_PRIVATE_TASK
 objc3_async_frame completion_optional_task(CompletionCancellation * _Nonnull state);
 objc3_async_frame completion_await_task(CompletionCancellation * _Nonnull state);
+objc3_async_frame completion_narrow_task(CompletionCancellation * _Nonnull state);
 #endif
 #ifdef __cplusplus
 }

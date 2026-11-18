@@ -71,6 +71,17 @@ static int error_result(id<Error> error) async throws(id<Error>) {
 }
 static int cancel_result(objc3_actor_t *actor) async { ++cancel_entries; return actor != 0; }
 
+int completion_checked_cancellation(const objc3_completion *result,
+                                    objc3_async_c_error expected) {
+  if (result->kind != OBJC3_COMPLETION_ERROR || result->has_payload) return 0;
+  objc3_async_c_error error = __objc3_async_c_completion_error(result);
+  return error == expected && objc3_async_c_error_is_cancellation(error);
+}
+
+@protocol NarrowCompletionError <Error>
+- (int)completionErrorCode;
+@end
+
 static void cancel_child_resume(objc3_task_t *task, void *context) {
   (void)context;
   objc3_completion result = {0};
@@ -87,6 +98,10 @@ extern "C" {
 #endif
 int cancel_child(CompletionCancellation *state) async throws(id<Error>)
     __asm__("completion_cancel_child");
+int cancel_narrow_child(CompletionCancellation *state)
+    async throws(id<NarrowCompletionError>) __asm__("completion_cancel_child");
+int join_cancelled_child(objc3_task_t *child) async throws(id<Error>)
+    __asm__("__objc3_task_join_frame");
 objc3_async_frame completion_cancel_child(CompletionCancellation *state) {
   static const char identity[] = __builtin_objc3_type_identity((int *)0);
   static const objc3_async_result_type type = {sizeof(type), OBJC3_ASYNC_ABI_VERSION,
@@ -115,6 +130,42 @@ static int await_parent(CompletionCancellation *state) async throws(id<Error>) {
   ++state->resumed;
   return result;
 }
+static int narrow_parent(CompletionCancellation *state)
+    async throws(id<NarrowCompletionError>) {
+  ++state->entered;
+  __objc3_defer { ++state->finished; }
+  if (state->cancel_before_await) objc3_task_request_cancel(state->cancel_before_await);
+  int result = try await cancel_narrow_child(state);
+  ++state->resumed;
+  return result;
+}
+static int join_parent(objc3_task_t *child) async throws(id<Error>) {
+  return try await join_cancelled_child(child);
+}
+objc3_async_frame completion_join_frame(objc3_task_t *child) {
+  return join_parent(child);
+}
+static int checkpoint_parent(CompletionCancellation *state) async {
+  ++state->entered;
+  __objc3_defer { ++state->finished; }
+  if (objc3_task_current_cancel_requested() ||
+      objc3_task_current_cancellation_error()) return -1;
+  if (state->cancel_before_await) objc3_task_request_cancel(state->cancel_before_await);
+  __objc3_do {
+    try objc3_task_check_cancellation();
+    return state->cancel_before_await ? -2 : 42;
+  } __objc3_catch(id<Error> error) {
+    if (!state->cancel_before_await || !objc3_task_current_cancel_requested() ||
+        !objc3_async_c_error_is_cancellation(error)) return -3;
+    return 42;
+  }
+}
+objc3_async_frame completion_checkpoint_frame(CompletionCancellation *state) {
+  return checkpoint_parent(state);
+}
+objc3_async_frame completion_narrow_frame(CompletionCancellation *state) {
+  return narrow_parent(state);
+}
 objc3_async_frame completion_optional_frame(CompletionCancellation *state) {
   return optional_parent(state);
 }
@@ -137,6 +188,18 @@ static int await_task(CompletionCancellation *state) __objc3_async throws(id<Err
   int result = try await cancel_child(state);
   ++state->resumed;
   return result;
+}
+static int narrow_task(CompletionCancellation *state)
+    __objc3_async throws(id<NarrowCompletionError>) {
+  ++state->entered;
+  __objc3_defer { ++state->finished; }
+  if (state->cancel_before_await) objc3_task_request_cancel(state->cancel_before_await);
+  int result = try await cancel_narrow_child(state);
+  ++state->resumed;
+  return result;
+}
+objc3_async_frame completion_narrow_task(CompletionCancellation *state) {
+  return __objc3_async_to_frame<int>(narrow_task(state));
 }
 objc3_async_frame completion_optional_task(CompletionCancellation *state) {
   return __objc3_async_to_frame<int>(optional_task(state));
@@ -163,6 +226,8 @@ OBJC3_ASYNC_C_DEFINE_BLOCK(completion_block, CompletionBlock,
     block_result(value), 0, main_executor(), 0, int value)
 OBJC3_ASYNC_C_DEFINE_VALUE(completion_error, int,
     error_result((id<Error>)error), 1, main_executor(), 0, CompletionObject _Nonnull error)
+OBJC3_ASYNC_C_DEFINE_VALUE(completion_checked_cancel, int,
+    await_parent(state), 1, main_executor(), 0, CompletionCancellation * _Nonnull state)
 OBJC3_ASYNC_C_DEFINE_VALUE(completion_cancel, int,
     cancel_result(actor), 0, 0, actor, objc3_actor_t * _Nonnull actor)
 OBJC3_ASYNC_C_DEFINE_VALUE(completion_worker, int, next(value), 0, 0, 0, int value)

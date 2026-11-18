@@ -25,6 +25,9 @@ typedef enum objc_async_completion_status {
  * until callback return. Retain or copy them to keep them past that point. */
 int objc3_async_c_error_is_cancellation(objc3_async_c_error error);
 
+/* Return the borrowed cancellation error for the active task, or null. */
+objc3_async_c_error objc3_task_current_cancellation_error(void);
+
 /* Start a frame without exporting a task handle. Two null destinations select
  * the global executor. Success clears the carrier before queuing work and the
  * task remains owned until its one completion callback returns. The callback
@@ -51,6 +54,15 @@ void __objc3_async_c_check_result(const objc3_async_frame *,
 #define __OBJC3_ASYNC_C_LINKAGE extern "C"
 #else
 #define __OBJC3_ASYNC_C_LINKAGE extern
+#endif
+
+#if defined(__OBJC__) && defined(__OBJC3_LANGUAGE_REVISION__)
+/* Throw at this explicit cooperative checkpoint if cancellation is requested. */
+static inline void objc3_task_check_cancellation(void)
+    __objc3_throws(id<Error>) {
+  id<Error> error = objc3_task_current_cancellation_error();
+  if (error) __objc3_throw(error);
+}
 #endif
 
 /* Declare the same typed native entry in both provider and C client headers.

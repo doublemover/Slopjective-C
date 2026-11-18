@@ -835,6 +835,10 @@ extern "C" int objc3_task_is_cancel_requested(const objc3_task_t *task) {
   return task && task->cancel_requested.load(std::memory_order_acquire) ? 1 : 0;
 }
 
+extern "C" int objc3_task_current_cancel_requested(void) {
+  return objc3_task_is_cancel_requested(objc3_task_current_callback());
+}
+
 extern "C" objc3_service_status objc3_task_schedule_resume(objc3_task_t *task) {
   if (!task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   ResumeDispatch *rejected = nullptr;

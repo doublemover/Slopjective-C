@@ -1885,7 +1885,7 @@ diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,291 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -2110,6 +2110,20 @@ new file mode 100644
 +  else if (const auto *Block = Type->getAs<BlockPointerType>())
 +    Type = Block->getPointeeType();
 +  return Type->getAs<FunctionProtoType>();
++}
++
++/// The runtime cancellation object conforms to Error. A more specific
++/// error interface or protocol may impose requirements it cannot satisfy.
++inline bool admitsObjC3CancellationError(ObjC3FunctionEffectInfo Effects) {
++  if (Effects.Throws == ObjC3ThrowsKind::Untyped)
++    return true;
++  if (Effects.ErrorType.isNull())
++    return false;
++  const auto *Pointer =
++      Effects.ErrorType.getCanonicalType()->getAs<ObjCObjectPointerType>();
++  return Pointer && Pointer->isObjCQualifiedIdType() &&
++         Pointer->getNumProtocols() == 1 &&
++         Pointer->getProtocol(0)->getName() == "Error";
 +}
 +
 +inline const Decl *getObjC3AsyncResultOwner(const Expr *E) {

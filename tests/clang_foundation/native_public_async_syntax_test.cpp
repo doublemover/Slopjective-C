@@ -249,6 +249,12 @@ void interface_client(void) {
   completion_value_async_c(32, 41, 0, check_value);
   completion_void_async_c(0, check_void);
 }
+#ifdef __cplusplus
+extern "C"
+#endif
+void interface_checkpoint(void) {
+  try! objc3_task_check_cancellation();
+}
 )";
   InterfaceImportInput input;
   input.source_path = interface_path.string();

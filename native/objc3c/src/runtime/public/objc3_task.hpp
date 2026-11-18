@@ -344,7 +344,7 @@ namespace task_detail {
 template <class T> struct checked_dependency {
   basic_task<T> dependency;
   void **error;
-  bool optionalizes;
+  bool handles_cancellation;
 };
 } // namespace task_detail
 
@@ -743,17 +743,17 @@ public:
     template <class U>
     struct checked_dependency_awaiter : dependency_awaiter<U> {
       void **error;
-      bool optionalizes;
+      bool handles_cancellation;
       checked_dependency_awaiter(dependency_awaiter<U> dependency, void **error,
-                                 bool optionalizes)
+                                 bool handles_cancellation)
           : dependency_awaiter<U>(std::move(dependency)), error(error),
-            optionalizes(optionalizes) {}
+            handles_cancellation(handles_cancellation) {}
       bool await_ready() const noexcept {
         return !this->dependency.native_handle();
       }
       void __objc3_check_error() {
         if (objc3_task_is_cancel_requested(this->parent)) {
-          if (optionalizes) {
+          if (handles_cancellation) {
             *error = task_detail::__objc3_task_cancellation_error_object();
             return;
           }
@@ -762,7 +762,7 @@ public:
         objc3_completion completion{};
         task_detail::check(objc3_task_get_completion(
             this->dependency.native_handle(), &completion));
-        if (optionalizes && completion.kind == OBJC3_COMPLETION_CANCELLED) {
+        if (handles_cancellation && completion.kind == OBJC3_COMPLETION_CANCELLED) {
           *error = task_detail::__objc3_task_cancellation_error_object();
           return;
         }
@@ -781,7 +781,7 @@ public:
     };
     template <class U>
     auto await_transform(task_detail::checked_dependency<U> checked) {
-      if (checked.optionalizes) {
+      if (checked.handles_cancellation) {
         if (objc3_task_is_cancel_requested(owner)) {
           // The unstarted dependency remains owned by checked and is
           // reclaimed when the ready cancellation path returns.
@@ -795,7 +795,7 @@ public:
       }
       auto dependency = await_transform(std::move(checked.dependency));
       return checked_dependency_awaiter<U>{std::move(dependency), checked.error,
-                                          checked.optionalizes};
+                                          checked.handles_cancellation};
     }
 #endif
 
@@ -1304,9 +1304,9 @@ __objc3_async_task<To> __objc3_async_related_task(__objc3_async_task<From> sourc
 #ifdef __OBJC__
 template <class T>
 auto __objc3_async_checked(objc3::basic_task<T> dependency, void **error,
-                          bool optionalizes) {
+                          bool handles_cancellation) {
   return objc3::task_detail::checked_dependency<T>{std::move(dependency), error,
-                                                   optionalizes};
+                                                   handles_cancellation};
 }
 #endif
 

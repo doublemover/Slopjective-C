@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.244 / System 2.170 throwing cancellation changes](linux_checked_await_cancellation.md)
+deliver a distinguished checked error from task joins and generic throwing
+awaits, and add public cooperative cancellation query and checkpoint APIs.
+
 The [Source 2.243 / System 2.169 checked await changes](linux_checked_await_cancellation.md)
 admit public try prefixes and preserve empty Optional results and cleanup when
 native frames or C++ tasks observe cancellation.
@@ -2270,7 +2274,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    System capabilities.
 5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
    next implementation span is coherent, then perform one coordinated SDK
-   cutover. Source 2.154–2.243 still requires its fresh matching campaign; focused
+   cutover. Source 2.154–2.244 still requires its fresh matching campaign; focused
    local receipts do not promote a replacement archive. Avoid repeated archive
    rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native

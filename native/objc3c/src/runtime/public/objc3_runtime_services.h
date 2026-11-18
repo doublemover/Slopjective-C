@@ -190,6 +190,8 @@ void objc3_task_release(objc3_task_t *task);
  * Independently started tasks have no inherited cancellation relationship. */
 void objc3_task_request_cancel(objc3_task_t *task);
 int objc3_task_is_cancel_requested(const objc3_task_t *task);
+/* Observe the active task's request. Returns zero outside a task resume. */
+int objc3_task_current_cancel_requested(void);
 /* Coalesce outstanding wake requests. A wake during an active resume queues
  * one continuation after that callback returns; native resumes never overlap. */
 objc3_service_status objc3_task_schedule_resume(objc3_task_t *task);

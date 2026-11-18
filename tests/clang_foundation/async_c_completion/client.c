@@ -74,6 +74,15 @@ static void cancel_done(void *context, objc_async_completion_status_t status,
   else retained_cancellation = objc_retain(error);
 }
 
+static void checked_cancel_done(void *context, objc_async_completion_status_t status,
+                                int ignored, objc3_async_c_error error) {
+  (void)ignored;
+  unsigned *completed = context;
+  assert(++*completed == 1);
+  assert(status == OBJC_ASYNC_COMPLETION_CANCELLED);
+  assert(error == retained_cancellation);
+}
+
 static void worker_done(void *context, objc_async_completion_status_t status,
                         int result, objc3_async_c_error error) {
   int *expected = context;
@@ -86,10 +95,11 @@ static void worker_done(void *context, objc_async_completion_status_t status,
 }
 
 enum CancellationPoint { Child, SuspendedParent, BeforeAwait };
+enum CancellationOutcome { Cancelled, Optionalized, CheckedError };
 
 static void check_cancelled_await(objc3_executor_t *executor,
                                   objc3_async_frame (*make)(CompletionCancellation *),
-                                  int optional, int private_task,
+                                  enum CancellationOutcome outcome, int private_task,
                                   enum CancellationPoint point) {
   CompletionCancellation state = {0};
   objc3_async_frame frame = make(&state);
@@ -105,18 +115,64 @@ static void check_cancelled_await(objc3_executor_t *executor,
   assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
   objc3_completion result = {0};
   assert(objc3_task_get_completion(task, &result) == OBJC3_SERVICE_OK);
-  if (optional) {
+  if (outcome == Optionalized) {
     assert(result.kind == OBJC3_COMPLETION_SUCCESS && result.has_payload);
     assert(*(const int *)result.payload == 42);
+  } else if (outcome == CheckedError) {
+    assert(completion_checked_cancellation(&result, retained_cancellation));
   } else {
     assert(result.kind == OBJC3_COMPLETION_CANCELLED && !result.has_payload);
   }
   objc3_task_release(task);
-  assert(state.entered == 1 && state.resumed == optional && state.finished == 1);
+  assert(state.entered == 1 && state.resumed == (outcome == Optionalized) && state.finished == 1);
   assert(state.child_destroyed == (point != BeforeAwait || private_task));
 }
 
+static void check_cancelled_join(objc3_executor_t *executor) {
+  CompletionCancellation state = {0};
+  objc3_async_frame frame = completion_cancel_child(&state);
+  objc3_task_t *child = NULL;
+  assert(objc3_async_frame_start(&frame, executor, NULL, &child) == OBJC3_SERVICE_OK);
+  unsigned executed = 0;
+  assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+  objc3_completion original = {0};
+  assert(objc3_task_get_completion(child, &original) == OBJC3_SERVICE_OK);
+  assert(original.kind == OBJC3_COMPLETION_CANCELLED);
+
+  frame = completion_join_frame(child);
+  objc3_task_t *join = NULL;
+  assert(objc3_async_frame_start(&frame, executor, NULL, &join) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+  objc3_completion result = {0};
+  assert(objc3_task_get_completion(join, &result) == OBJC3_SERVICE_OK);
+  assert(completion_checked_cancellation(&result, retained_cancellation));
+  objc3_task_release(join);
+  objc3_task_release(child);
+  assert(state.child_destroyed == 1);
+}
+
+static void check_cancellation_checkpoint(objc3_executor_t *executor, int cancel) {
+  CompletionCancellation state = {0};
+  objc3_async_frame frame = completion_checkpoint_frame(&state);
+  objc3_task_t *task = NULL;
+  assert(objc3_async_frame_start(&frame, executor, NULL, &task) == OBJC3_SERVICE_OK);
+  if (cancel) state.cancel_before_await = task;
+  unsigned executed = 0;
+  assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+  objc3_completion result = {0};
+  assert(objc3_task_get_completion(task, &result) == OBJC3_SERVICE_OK);
+  assert(result.kind == OBJC3_COMPLETION_SUCCESS && result.has_payload);
+  assert(*(const int *)result.payload == 42);
+  assert(state.entered == 1 && state.finished == 1);
+  objc3_task_release(task);
+}
+
+void interface_checkpoint(void);
+
 int main(void) {
+  interface_checkpoint();
+  assert(!objc3_task_current_cancel_requested());
+  assert(!objc3_task_current_cancellation_error());
   objc3_executor_t *manual = NULL;
   assert(objc3_executor_get_main(&manual) == OBJC3_SERVICE_OK);
   objc3_actor_t *actor = NULL;
@@ -149,18 +205,30 @@ int main(void) {
   assert(!objc3_async_c_error_is_cancellation(NULL));
   objc_release(retained_object);
   objc_release(retained_error);
-  objc_release(retained_cancellation);
   _Block_release((const void *)retained_block);
   assert(completion_object_count() == 0);
   objc3_actor_release(actor);
   for (int point = Child; point <= BeforeAwait; ++point) {
-    check_cancelled_await(manual, completion_await_frame, 0, 0, point);
-    check_cancelled_await(manual, completion_optional_frame, 1, 0, point);
+    check_cancelled_await(manual, completion_await_frame, CheckedError, 0, point);
+    check_cancelled_await(manual, completion_optional_frame, Optionalized, 0, point);
+    check_cancelled_await(manual, completion_narrow_frame, Cancelled, 0, point);
 #ifdef OBJC3_COMPLETION_PRIVATE_TASK
-    check_cancelled_await(manual, completion_await_task, 0, 1, point);
-    check_cancelled_await(manual, completion_optional_task, 1, 1, point);
+    check_cancelled_await(manual, completion_await_task, CheckedError, 1, point);
+    check_cancelled_await(manual, completion_optional_task, Optionalized, 1, point);
+    check_cancelled_await(manual, completion_narrow_task, Cancelled, 1, point);
 #endif
   }
+  check_cancelled_join(manual);
+  check_cancellation_checkpoint(manual, 0);
+  check_cancellation_checkpoint(manual, 1);
+  CompletionCancellation checked_state = {0};
+  unsigned checked_completed = 0;
+  completion_checked_cancel_async_c(&checked_state, &checked_completed, checked_cancel_done);
+  assert(!checked_completed);
+  assert(objc3_executor_pump(manual, 1000, &executed) == OBJC3_SERVICE_OK);
+  assert(checked_completed == 1 && checked_state.entered == 1 &&
+         checked_state.finished == 1 && checked_state.child_destroyed == 1);
+  objc_release(retained_cancellation);
   objc3_executor_release(manual);
 
   for (int index = 0; index < WorkerCount; ++index) {

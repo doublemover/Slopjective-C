@@ -13,14 +13,24 @@ on cancellation. C++ task coroutines carry the optionalization policy in the
 compiler-owned checked dependency adapter and use the distinguished cancellation
 value for the failure branch. A known request skips starting another child.
 
-The plain propagation path retains cancelled task completion. An exported C
-completion handler receives the corresponding distinguished Objective-C error.
-Full throwing-join and profile acceptance still require their remaining controls.
+Source 2.244 / System 2.170 extends the checked failure edge to throwing
+awaits with the root `Error` domain, including checked joins of cancelled task
+handles. The failure preserves the distinguished runtime error without copying
+a result. The same route triggers `try!` failure. A narrowed error domain
+continues to carry cancellation as task status, preserving its type contract.
+C exports report the distinguished checked error as cancelled and pass the
+original cancellation object to the callback.
+
+`objc3_task_current_cancel_requested()` observes the active task's sticky flag.
+`objc3_task_check_cancellation()` is an explicit throwing checkpoint in
+`objc3.concurrency`. It throws the same `Error` object at that call site. The
+query reports false outside task execution, and the checkpoint returns normally.
 
 The 96 source/PCH commands cover C17, C23, C++20 and C++23, both ownership modes
-and all four profiles. Eight source-free C client programs exercise 48 native
-frame and 24 private C++ task cancellation cases. They check empty Optional
-results, no result payload on cancelled propagation, one parent defer,
-and exactly one destruction for each child that was constructed. The previous native frame lowering
-fails the new optionalization control. Fresh patch application reproduces the
-maintained parser, type adapter, Sema and code generation changes.
+and all four profiles. Eight source-free C client programs exercise 72 native
+frame and 36 private C++ task cancellation cases. They cover optional and checked
+results, narrowed domains, exact defer and child destruction counts, eight
+throwing joins, 16 checkpoint invocations across both outcomes, source-free
+checkpoint calls, and canonical C callback delivery after checked propagation.
+Fresh patch application reproduces the compiler changes. Full profile and
+matching SDK release acceptance remain open.
