@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.swift-consumer-rows.v4",
+  "schema": "objc3c.swift-consumer-rows.v5",
   "module": "ForeignAPI",
   "cxx_module": "ForeignCxx",
   "rows": [
@@ -37,6 +37,11 @@
       "id": "cxx-owning-value",
       "declaration": "MeterAPI::adjustedOwner",
       "required": true
+    },
+    {
+      "id": "cxx-move-only-value",
+      "declaration": "MeterAPI::adjustedUniqueReading",
+      "required": true
     }
   ],
   "unqualified": [
@@ -58,7 +63,7 @@
     {
       "id": "cxx-wider-ownership-and-template-abi",
       "status": "metadata-preserved",
-      "reason": "C++ crossing is qualified for the admitted trivial record and copyable owning value with nonthrowing lifetimes. Move-only, throwing and template ABI boundaries remain open."
+      "reason": "C++ crossing is qualified for the admitted trivial record and copyable or move-only owning values with nonthrowing lifetimes. Throwing and template ABI boundaries remain open."
     }
   ],
   "targets": [

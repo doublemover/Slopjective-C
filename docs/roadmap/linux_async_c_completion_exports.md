@@ -236,3 +236,16 @@ calls with plain record payloads. Records with managed, borrowed or resource
 storage require their own contracts. Eight linked C clients verify small and
 large aggregate returns and exact error identity, object and Block values and
 source-free replay. LLVM IR tests bind the x86-64 and AArch64 result conventions.
+
+Source 2.274 / System 2.200 preserves pointer nullability in generated C
+declarations, including qualifiers within pointers and typed Block signatures.
+ABI arguments retain explicit source annotations. The outer pointer result is
+nullable because the C envelope uses null on checked failure or cancellation.
+Unspecified pointer annotations retain their unspecified contract. Plain C
+headers omit ARC qualifiers even when the provider is compiled with ARC.
+
+Eight C provider configurations check generated declarations, nullable inputs,
+nested pointers, and null checked results through linked C and source-free
+consumers. Swift 6.4.2 imports a generated checked C header and links the native
+object. It handles the optional result and opaque error, rejects an unwrapped
+optional result, and rejects `nil` for a nonnull parameter.

@@ -23,4 +23,23 @@ ReadingOwner adjustedOwner(ReadingOwner value, int increment) noexcept;
 int ownerAllocations() noexcept;
 int ownerDestructions() noexcept;
 int ownerCopies() noexcept;
+
+class UniqueReading {
+public:
+  explicit UniqueReading(int amount) noexcept;
+  UniqueReading(const UniqueReading &) = delete;
+  UniqueReading(UniqueReading &&other) noexcept;
+  ~UniqueReading() noexcept;
+  int amount() const noexcept;
+  void add(int increment) noexcept;
+
+private:
+  int *storage;
+};
+
+UniqueReading initialUniqueReading(int amount) noexcept;
+UniqueReading adjustedUniqueReading(UniqueReading value, int increment) noexcept;
+int uniqueAllocations() noexcept;
+int uniqueDestructions() noexcept;
+int uniqueMoves() noexcept;
 }

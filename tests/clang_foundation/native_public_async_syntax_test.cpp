@@ -196,7 +196,7 @@ static int generated_checked(int mode) async throws(id<Error>) {
   if (mode) __objc3_throw(generated_failure());
   return 42;
 }
-static id<Error> generated_object(id<Error> input) async { return input; }
+static id<Error> _Nonnull generated_object(id<Error> _Nonnull input) async { return input; }
 typedef int (^GeneratedBlock)(int);
 static GeneratedBlock generated_block(int input) async {
   return ^(int offset) { return input + offset; };
@@ -290,15 +290,23 @@ static int generated_sync_checked(int input) __objc3_throws(id<Error>) __attribu
 static void generated_sync_void(bool fail) __objc3_throws __attribute__((nothrow)) {
   if (fail) __objc3_throw(generated_failure());
 }
-static const int *generated_sync_pointer(const int *value) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+static const int * _Nonnull generated_sync_pointer(const int * _Nullable value)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
   if (!value) __objc3_throw(generated_failure());
   return value;
 }
-static id<Error> generated_sync_object(id<Error> value) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+static int generated_sync_nested(const int * _Nonnull * _Nullable value)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!value) __objc3_throw(generated_failure());
+  return **value;
+}
+static id<Error> _Nonnull generated_sync_object(id<Error> _Nullable value)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
   if (!value) __objc3_throw(generated_failure());
   return value;
 }
-static GeneratedBlock generated_sync_block(GeneratedBlock value) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+static GeneratedBlock _Nonnull generated_sync_block(GeneratedBlock _Nullable value)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
   if (!value) __objc3_throw(generated_failure());
   return value;
 }
@@ -431,7 +439,7 @@ unsigned generated_checked_errors_destroyed(void) {
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
       "GeneratedActor::current", "GeneratedDerivedActor::current", "GeneratedDerivedActor::checked:"};
-  provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer",
+  provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer", "generated_sync_nested",
       "generated_sync_object", "generated_sync_block", "generated_sync_port", "generated_sync_aggregate"};
   provider.c_export_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
@@ -490,6 +498,12 @@ static int generated_unmarked_checked(void) __objc3_throws {return 1;}
     const auto header_before = llvm::MemoryBuffer::getFile(provider.c_export_header_output_path);
     Require(static_cast<bool>(header_before), "generated header missing");
     const std::string generated_header = (*header_before)->getBuffer().str();
+    Require(generated_header.find("const int * _Nullable generated_sync_pointer_throws_c") != std::string::npos &&
+            generated_header.find("const int * _Nonnull * _Nullable") != std::string::npos &&
+            generated_header.find("void * _Nullable generated_sync_object_throws_c_result_t") != std::string::npos &&
+            generated_header.find("void * _Nonnull generated_object_async_c_arg0_t") != std::string::npos &&
+            generated_header.find("void * _Nullable generated_object_async_c_result_t") != std::string::npos,
+            "generated C declarations lost nested nullability or promised a nonnull failure result");
     Write(provider.c_export_header_output_path, "previous header\n");
     auto failed = provider;
     failed.output_path = includes.string();
@@ -706,6 +720,9 @@ int main(void) {
   assert(synchronous_failure == generated_failure());
   assert(generated_sync_pointer_throws_c(&input, &synchronous_failure) == &input && !synchronous_failure);
   assert(!generated_sync_pointer_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());
+  const int * _Nonnull nested = &input;
+  assert(generated_sync_nested_throws_c(&nested, &synchronous_failure) == 41 && !synchronous_failure);
+  assert(generated_sync_nested_throws_c(0, &synchronous_failure) == 0 && synchronous_failure == generated_failure());
   assert(generated_sync_object_throws_c(generated_failure(), &synchronous_failure) == generated_failure());
   assert(!synchronous_failure);
   assert(!generated_sync_object_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());

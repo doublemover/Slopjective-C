@@ -39,14 +39,17 @@ The C++20 cases pass a trivial, padded record and a copyable heap-owning value
 by value through nonthrowing functions. Swift checks the record's layout and
 field types, and it observes distinct original and adjusted owners. The owning
 case requires a native copy, verifies two live owners together, and confirms
-that every allocation is destroyed. The Swift driver uses its bundle's signed
-`clang++` link.
+that every allocation is destroyed. A move-only value crosses a `consume`
+expression and a C++ by-value call. It moves without a second allocation and
+destroys the original allocation once. The Swift driver uses its bundle's
+signed `clang++` link.
 
-Thirteen controls cover independent original import, unmodified emitted import,
+Fourteen controls cover independent original import, unmodified emitted import,
 old spelling, wrong type, nullability, availability, changed public Swift name
 and native fingerprint, a changed C++ field type, a deleted owning destructor,
 and missing provider symbols. The deleted destructor changes native interface
-identity and the independent importer drops the unusable owning value.
+identity and the independent importer drops the unusable owning value. A
+Swift `Copyable` generic constraint rejects the imported move-only value.
 Reports retain compiler versions, targets, resources, loader graphs, input and artifact hashes, commands,
 environments, diagnostics and exact results. Native and Swift installations and
 loaded dependencies are verified again before promotion.
@@ -54,12 +57,12 @@ loaded dependencies are verified again before promotion.
 The existing Linux native assurance workflow selects this gate for foreign
 emitter/module identity, foundation, Swift toolchain/fixture and runner changes,
 unknown comparisons, and its complete periodic/release selection. The terminal
-gate independently requires 16 executions, 13 controls, seven admitted
+gate independently requires 16 executions, 14 controls, eight admitted
 rows, relocation facts and execution oracles. It prepares a sealed development
 tool prefix from current native build products; it builds no SDK archive and
 adds no schedule. Ordinary unrelated stdlib edits do not select Swift.
 
-The expanded matrix passed all 16 executions and 13 controls on Debian 13 x86-64
+The expanded matrix passed all 16 executions and 14 controls on Debian 13 x86-64
 with the LLVM 23.1.5 development SDK. The AArch64 archive has a separately
 verified publisher inventory and its native execution remains in hosted
 qualification. Selected Swift files occupy about 1 GiB. The installer discards
@@ -72,5 +75,5 @@ appropriate negative/execution controls.
 
 The admitted declarations are recorded in `tests/foreign/swift_consumer/rows.json`.
 GNUstep Objective-C object import, Swift async/actor/error bridging, arbitrary
-foreign attributes, move-only or throwing C++ value contracts, and product
+foreign attributes, throwing C++ value contracts, and product
 serialized AST interchange remain open.

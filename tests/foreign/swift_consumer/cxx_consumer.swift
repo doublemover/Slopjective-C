@@ -28,6 +28,23 @@ let allocations = MeterAPI.ownerAllocations()
 let destructions = MeterAPI.ownerDestructions()
 let copies = MeterAPI.ownerCopies()
 precondition(allocations == destructions && copies >= 1)
+
+@inline(never)
+func checkUniqueReading() -> Int32 {
+  let owner = MeterAPI.initialUniqueReading(40)
+  precondition(owner.amount() == 40)
+  let adjusted = MeterAPI.adjustedUniqueReading(consume owner, 2)
+  precondition(MeterAPI.uniqueAllocations() == 1 && MeterAPI.uniqueDestructions() == 0)
+  return adjusted.amount()
+}
+
+let unique = checkUniqueReading()
+let uniqueAllocations = MeterAPI.uniqueAllocations()
+let uniqueDestructions = MeterAPI.uniqueDestructions()
+let uniqueMoves = MeterAPI.uniqueMoves()
+precondition(unique == 42 && uniqueAllocations == 1 && uniqueDestructions == 1 && uniqueMoves >= 1)
 print("{\"before\":\(before.count),\"count\":\(count),\"total\":\(total)," +
       "\"owner_before\":\(ownerBefore),\"owner_after\":\(ownerAfter),\"owner_allocations\":\(allocations)," +
-      "\"owner_destructions\":\(destructions),\"owner_copies\":\(copies)}")
+      "\"owner_destructions\":\(destructions),\"owner_copies\":\(copies),\"unique_value\":\(unique)," +
+      "\"unique_allocations\":\(uniqueAllocations),\"unique_destructions\":\(uniqueDestructions)," +
+      "\"unique_moves\":\(uniqueMoves)}")

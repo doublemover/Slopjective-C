@@ -21,15 +21,17 @@ from .swift_toolchain import environment as swift_environment, verify as verify_
 
 EXPECTED = {'value': 42, 'amount': 42, 'read': 42, 'live': 0}
 CXX_EXPECTED = {'before': 40, 'count': 42, 'total': 2147483690,
-                'owner_before': 40, 'owner_after': 42}
-CXX_LIFETIME = ('owner_allocations', 'owner_destructions', 'owner_copies')
-QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v3'
+                'owner_before': 40, 'owner_after': 42, 'unique_value': 42,
+                'unique_allocations': 1, 'unique_destructions': 1}
+CXX_LIFETIME = ('owner_allocations', 'owner_destructions', 'owner_copies', 'unique_moves')
+QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v4'
 CXX_IMPORT = ('-cxx-interoperability-mode=default', '-Xcc', '-std=c++20')
 REQUIRED_ROWS = {'renamed-primitive': 'objc3_swift_value',
     'nonnull-pointer': 'objc3_swift_read', 'newtype': 'ObjC3SwiftAmount',
     'opaque-c-lifetime': 'ObjC3SwiftToken', 'availability': 'objc3_swift_unavailable',
     'cxx-trivial-value': 'MeterAPI::adjustedReading',
-    'cxx-owning-value': 'MeterAPI::adjustedOwner'}
+    'cxx-owning-value': 'MeterAPI::adjustedOwner',
+    'cxx-move-only-value': 'MeterAPI::adjustedUniqueReading'}
 NEGATIVES = {
     'old-spelling': ('import ForeignAPI\nlet value = objc3_swift_value(41)\n', "'objc3_swift_value' has been renamed to 'projectedValue(_:)'"),
     'wrong-type': ('import ForeignAPI\nlet value: String = projectedValue(41)\n', 'cannot convert value of type'),
@@ -82,7 +84,7 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
 
 def row_manifest(path):
     value = json.loads(path.read_text())
-    if (value.get('schema') != 'objc3c.swift-consumer-rows.v4' or
+    if (value.get('schema') != 'objc3c.swift-consumer-rows.v5' or
             value.get('targets') != [entry[1] for entry in HOSTS.values()] or value.get('module') != 'ForeignAPI' or
             value.get('cxx_module') != 'ForeignCxx' or
             not value.get('rows') or len(value['rows']) != len(REQUIRED_ROWS) or
@@ -111,9 +113,10 @@ def execution_result(text, language='c'):
         raise ValueError('Swift mixed-language value or opaque lifetime contract failed')
     if language == 'cxx':
         counts = [value.get(key, -1) for key in CXX_LIFETIME]
-        allocations, destructions, copies = counts
+        allocations, destructions, copies, moves = counts
         fixed = {key: item for key, item in value.items() if key not in CXX_LIFETIME}
-        if fixed != CXX_EXPECTED or allocations != destructions or not 1 <= copies <= allocations - 2:
+        if (fixed != CXX_EXPECTED or allocations != destructions or
+                not 1 <= copies <= allocations - 2 or moves < 1):
             raise ValueError('Swift mixed-language C++ owning value or destructor contract failed')
     elif value != EXPECTED:
         raise ValueError('Swift mixed-language value or opaque lifetime contract failed')
@@ -303,6 +306,11 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
                 check_changed_contract('deleted-destructor', b'~ReadingOwner() noexcept;',
                     b'~ReadingOwner() = delete;', consumer,
                     "'ReadingOwner' is not a member type", 'destructor-identity-and-consumer')
+                typecheck('cxx-move-only-copy-control', replay_root, b'''import ForeignCxx
+func requiresCopy<T: Copyable>(_ value: T) {}
+func copyUnique(_ value: borrowing MeterAPI.UniqueReading) { requiresCopy(value) }
+''', expected=1, contains=("conform to 'Copyable'",))
+                report['controls'].append({'name': 'cxx-move-only-copy-rejected', 'status': 'PASS'})
 
             driver = [swiftc, '-swift-version', '6', '-use-ld=lld', '-target', rows['target'], *import_args]
             for transport, content in (('original', original_bytes), ('emitted', emitted_bytes)):

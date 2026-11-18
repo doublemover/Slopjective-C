@@ -46,13 +46,53 @@ void PrintThrows(llvm::raw_ostream &source, clang::ASTContext &context,
     source << '(' << effects.ErrorType.getAsString(context.getPrintingPolicy()) << ')';
 }
 
+clang::QualType CExportSpellingType(clang::ASTContext &context, clang::QualType type,
+                                   bool nullable_result = false) {
+  const auto canonical = type.getCanonicalType();
+  clang::QualType spelling = canonical.getLocalUnqualifiedType();
+  if (const auto *pointer = type->getAs<clang::PointerType>()) {
+    spelling = context.getPointerType(CExportSpellingType(context, pointer->getPointeeType()));
+  } else if (const auto *array = context.getAsConstantArrayType(type)) {
+    spelling = context.getConstantArrayType(CExportSpellingType(context, array->getElementType()),
+        array->getSize(), nullptr, array->getSizeModifier(), array->getIndexTypeCVRQualifiers());
+  } else if (const auto *block = type->getAs<clang::BlockPointerType>()) {
+    if (const auto *function = block->getPointeeType()->getAs<clang::FunctionProtoType>()) {
+      llvm::SmallVector<clang::QualType, 4> parameters;
+      for (const auto parameter : function->param_types())
+        parameters.push_back(CExportSpellingType(context, parameter));
+      spelling = context.getBlockPointerType(context.getFunctionType(
+          CExportSpellingType(context, function->getReturnType()), parameters,
+          function->getExtProtoInfo()));
+    }
+  }
+  // Strip native ARC qualifiers before adding an attributed type wrapper,
+  // so neither typed Blocks nor opaque aliases expose ownership to plain C.
+  spelling = context.getQualifiedType(spelling, canonical.getLocalQualifiers().withoutObjCLifetime());
+  auto nullability = type->getNullability();
+  // The ordinary C envelope can transport null on failure or cancellation,
+  // even if the logical source result is nonnull on success.
+  if (type->isPointerType() || type->isObjCRetainableType()) {
+    if (nullable_result) nullability = clang::NullabilityKind::Nullable;
+    else if (!nullability) nullability = clang::NullabilityKind::Unspecified;
+  }
+  if (!nullability) return spelling;
+  clang::attr::Kind attribute;
+  switch (*nullability) {
+  case clang::NullabilityKind::NonNull: attribute = clang::attr::TypeNonNull; break;
+  case clang::NullabilityKind::Nullable: attribute = clang::attr::TypeNullable; break;
+  case clang::NullabilityKind::Unspecified: attribute = clang::attr::TypeNullUnspecified; break;
+  case clang::NullabilityKind::NullableResult: attribute = clang::attr::TypeNullableResult; break;
+  }
+  return context.getAttributedType(attribute, spelling, spelling);
+}
+
 std::optional<std::string> PortableValueType(clang::ASTContext &context,
-                                             clang::QualType type) {
+                                             clang::QualType type,
+                                             bool nullable_result = false) {
   if (clang::containsObjC3BorrowedType(context, type) ||
       clang::getObjC3ResourceTypeContract(context, type).Cleanup)
     return std::nullopt;
-  type = type.getCanonicalType();
-  auto element = type;
+  auto element = type.getCanonicalType();
   while (const auto *pointer = element->getAs<clang::PointerType>()) {
     if (element.hasAddressSpace()) return std::nullopt;
     element = pointer->getPointeeType();
@@ -69,7 +109,7 @@ std::optional<std::string> PortableValueType(clang::ASTContext &context,
     return std::nullopt;
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.Bool = true;
-  return type.getAsString(policy);
+  return CExportSpellingType(context, type, nullable_result).getAsString(policy);
 }
 
 struct CExportType {
@@ -126,9 +166,9 @@ public:
     policy_.SuppressTagKeyword = false;
   }
 
-  std::optional<std::string> Render(clang::QualType type) {
+  std::optional<std::string> Render(clang::QualType type, bool nullable_result) {
     if (!Admit(type)) return std::nullopt;
-    return type.getCanonicalType().getAsString(policy_);
+    return CExportSpellingType(context_, type, nullable_result).getAsString(policy_);
   }
 
   llvm::StringRef declarations() const { return declarations_; }
@@ -180,7 +220,7 @@ private:
           !IsSourceIdentifier(field->getName()) || !Admit(field->getType(), depth + 1))
         return false;
       out << "  ";
-      field->getType().getCanonicalType().print(out, policy_, field->getName());
+      CExportSpellingType(context_, field->getType()).print(out, policy_, field->getName());
       out << ";\n";
     }
 
@@ -211,20 +251,21 @@ private:
 std::optional<CExportType> ExportType(clang::ASTContext &context,
                                      clang::QualType type, llvm::StringRef alias,
                                      llvm::raw_ostream &declarations,
-                                     CExportRecords &records) {
-  if (auto value = PortableValueType(context, type))
+                                     CExportRecords &records,
+                                     bool nullable_result) {
+  if (auto value = PortableValueType(context, type, nullable_result))
     return CExportType{std::move(*value)};
   if (clang::containsObjC3BorrowedType(context, type) ||
       clang::getObjC3ResourceTypeContract(context, type).Cleanup ||
       type.hasAddressSpace())
     return std::nullopt;
 
-  type = type.getCanonicalType();
+  const auto canonical = type.getCanonicalType();
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.Bool = true;
   policy.SuppressLifetimeQualifiers = true;
   const char *kind;
-  if (const auto *object = type->getAs<clang::ObjCObjectPointerType>()) {
+  if (const auto *object = canonical->getAs<clang::ObjCObjectPointerType>()) {
     if (object->isSpecialized()) return std::nullopt;
     kind = "OBJECT";
     declarations << "#ifdef __OBJC__\n";
@@ -232,7 +273,7 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
       declarations << "@class " << interface->getName() << ";\n";
     for (const auto *protocol : object->quals())
       declarations << "@protocol " << protocol->getName() << ";\n";
-  } else if (const auto *block = type->getAs<clang::BlockPointerType>()) {
+  } else if (const auto *block = canonical->getAs<clang::BlockPointerType>()) {
     const auto *signature = block->getPointeeType()->getAs<clang::FunctionProtoType>();
     if (!signature || signature->isVariadic() || signature->getCallConv() != clang::CC_C ||
         signature->getObjC3FunctionEffects().Async ||
@@ -247,18 +288,20 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
     kind = "BLOCK";
     declarations << "#ifdef __BLOCKS__\n";
   } else {
-    if (auto value = records.Render(type))
+    if (auto value = records.Render(type, nullable_result))
       return CExportType{std::move(*value)};
     return std::nullopt;
   }
 
   // Ownership belongs to the bridge. Its aliases must also parse in C
   // consumers using Blocks, where ARC qualifiers are unavailable.
-  type = context.getQualifiedType(type.getLocalUnqualifiedType(),
-                                  type.getLocalQualifiers().withoutObjCLifetime());
+  type = CExportSpellingType(context, type, nullable_result);
   declarations << "typedef ";
   type.print(declarations, policy, alias);
-  declarations << ";\n#else\ntypedef void *" << alias << ";\n#endif\n";
+  declarations << ";\n#else\ntypedef void *";
+  if (const auto nullability = type->getNullability())
+    declarations << ' ' << clang::getNullabilitySpelling(*nullability);
+  declarations << ' ' << alias << ";\n#endif\n";
   return CExportType{alias.str(), kind};
 }
 
@@ -284,8 +327,8 @@ CExportSource GenerateCExports(clang::ASTContext &context,
   auto *tu = context.getTranslationUnitDecl();
   CExportRecords records(context, output.interface_exports);
   auto export_type = [&](clang::QualType type, const std::string &alias,
-                         llvm::raw_ostream &declarations) {
-    auto emitted = ExportType(context, type, alias, declarations, records);
+                         llvm::raw_ostream &declarations, bool nullable_result = false) {
+    auto emitted = ExportType(context, type, alias, declarations, records, nullable_result);
     if (emitted && emitted->spelling == alias) {
       if (!tu->lookup(&context.Idents.get(alias)).empty())
         return std::optional<CExportType>{};
@@ -322,11 +365,11 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     std::string types;
     llvm::raw_string_ostream declarations(types);
     const auto prefix = thunk + '_';
-    const auto result = export_type(prototype->getReturnType(), prefix + "result_t", declarations);
+    const auto result = export_type(prototype->getReturnType(), prefix + "result_t", declarations, true);
     if (!result) return reject("the result has no self-contained C value declaration");
     std::string parameters, inputs;
     for (unsigned index = 0; index < prototype->getNumParams(); ++index) {
-      const auto type = export_type(prototype->getParamType(index),
+      const auto type = export_type(function->getParamDecl(index)->getType(),
                                     prefix + "arg" + std::to_string(index) + "_t", declarations);
       const auto *parameter = function->getParamDecl(index);
       if (!type || prototype->getExtParameterInfo(index).getOpaqueValue() ||
@@ -412,13 +455,13 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     std::string types;
     llvm::raw_string_ostream declarations_text(types);
     const auto type_prefix = name + "_async_c_";
-    auto result = export_type(result_type, type_prefix + "result_t", declarations_text);
+    auto result = export_type(result_type, type_prefix + "result_t", declarations_text, true);
     if (!result)
       return reject("the result has no self-contained C value declaration");
     std::string parameters, inputs;
     bool owning_bridge = actor_method.has_value();
     constexpr llvm::StringLiteral receiver = "__objc3_c_receiver";
-    constexpr llvm::StringLiteral opaque_receiver_type = "void *";
+    constexpr llvm::StringLiteral opaque_receiver_type = "void * _Nonnull ";
     if (actor_method) {
       // The C signature can be imported without exporting the actor's class
       // API. The private frame alone needs its typed receiver.
@@ -428,8 +471,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     std::string message = "[" + receiver.str();
     for (unsigned index = 0; index < source_parameters.size(); ++index) {
       const auto *parameter = source_parameters[index];
-      const auto parameter_type =
-          prototype ? prototype->getParamType(index) : parameter->getType();
+      const auto parameter_type = parameter->getType();
       auto type = export_type(parameter_type,
                               type_prefix + "arg" + std::to_string(index) + "_t", declarations_text);
       if (!type || (prototype && prototype->getExtParameterInfo(index).getOpaqueValue()) ||

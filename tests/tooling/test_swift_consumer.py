@@ -43,10 +43,11 @@ def test_mixed_language_oracle_requires_exact_values_and_lifetime_counts(mutatio
 
 
 @pytest.mark.parametrize('mutation', [None, {'owner_destructions': 4},
-    {'owner_copies': 0}, {'owner_copies': 4}, {'owner_before': 42}, {'owner_allocations': True}])
+    {'owner_copies': 0}, {'owner_copies': 4}, {'owner_before': 42}, {'owner_allocations': True},
+    {'unique_allocations': 2}, {'unique_destructions': 0}, {'unique_moves': 0}])
 def test_cpp_owning_value_requires_copy_and_balanced_destruction(mutation):
     valid = {**owner.CXX_EXPECTED, 'owner_allocations': 5,
-             'owner_destructions': 5, 'owner_copies': 3}
+             'owner_destructions': 5, 'owner_copies': 3, 'unique_moves': 2}
     if mutation is None:
         assert owner.execution_result(json.dumps(valid), 'cxx') == valid
     else:
@@ -205,6 +206,7 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         elif name == 'changed-contract-control': status, text = 1, "cannot find 'projectedValue'"
         elif name == 'cxx-changed-contract-control': status, text = 1, 'cannot convert value of type'
         elif name == 'cxx-deleted-destructor-contract-control': status, text = 1, "'ReadingOwner' is not a member type"
+        elif name == 'cxx-move-only-copy-control': status, text = 1, "conform to 'Copyable'"
         elif name == 'missing-provider-control': status, text = 1, 'objc3_swift_value'
         elif name == 'cxx-missing-provider-control': status, text = 1, 'MeterAPI::initialReading()'
         elif '-typecheck' in argv:
@@ -215,7 +217,7 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         elif '-o' in argv: Path(argv[argv.index('-o')+1]).write_bytes(b'test-only object or binary')
         elif name.endswith('-execute'):
             expected = ({**owner.CXX_EXPECTED, 'owner_allocations': 5,
-                        'owner_destructions': 5, 'owner_copies': 3}
+                        'owner_destructions': 5, 'owner_copies': 3, 'unique_moves': 2}
                         if name.startswith('cxx-') else owner.EXPECTED)
             text = json.dumps({**expected, **({'live': 1} if mutation == 'oracle' else {})})
         log.write_text(text)
@@ -231,7 +233,7 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         assert json.loads((output / 'qualification.json').read_text())['status'] == 'FAIL'
     else:
         report = owner.qualify(repo, output, sdk=sdk, swift_root=swift, symbolizer=symbolizer)
-        assert report['status'] == 'PASS' and len(report['cases']) == 16 and len(report['controls']) == 13
+        assert report['status'] == 'PASS' and len(report['cases']) == 16 and len(report['controls']) == 14
         assert report['relocation'] == {language: {'original_header_hidden': True, 'provider_source_hidden': True,
                                                   'replayed_header_unchanged': True}
                                        for language in ('c', 'cxx')}

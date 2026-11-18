@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 273,
+        "minor": 274,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Generated C exports preserve nested input nullability and expose nullable pointer results on checked failure or cancellation. An independent Swift caller imports and executes the checked C header. The pinned Swift C++ gate also requires a move-only by-value owner, one allocation and destruction, and Copyable rejection. Native AArch64 and matching SDK acceptance pending",
         "Independent pinned Swift import and execution cover nonthrowing copyable owning C++ values, native copies, complete destruction, and a deleted-destructor interface mutation. Native AArch64 and wider Swift ABI qualification pending",
         "Synchronous checked C exports cover plain C-layout aggregate, Objective-C object and Block values. Register and indirect C records preserve the target return ABI and can be optionalized. Linked C and source-free clients verify layout, error identity and borrowed reference lifetime. Matching SDK acceptance pending",
         "Closed statement matches warn in compatibility and fail in strict profiles, with a trapping default fix-it at writable braces. Native parsing rejects empty match bodies and expression guards containing calls, checked expressions or nested matches. Matching SDK acceptance pending",
@@ -421,12 +422,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 199,
+        "minor": 200,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Generated C exports preserve nested input nullability and expose nullable pointer results on checked failure or cancellation. An independent Swift caller imports and executes the checked C header. The pinned Swift C++ gate also requires a move-only by-value owner, one allocation and destruction, and Copyable rejection. Native AArch64 and matching SDK acceptance pending",
         "Independent pinned Swift import and execution cover nonthrowing copyable owning C++ values, native copies, complete destruction, and a deleted-destructor interface mutation. Native AArch64 and wider Swift ABI qualification pending",
         "Synchronous checked C exports cover plain C-layout aggregate, Objective-C object and Block values. Register and indirect C records preserve the target return ABI and can be optionalized. Linked C and source-free clients verify layout, error identity and borrowed reference lifetime. Matching SDK acceptance pending",
         "Closed statement matches warn in compatibility and fail in strict profiles, with a trapping default fix-it at writable braces. Native parsing rejects empty match bodies and expression guards containing calls, checked expressions or nested matches. Matching SDK acceptance pending",

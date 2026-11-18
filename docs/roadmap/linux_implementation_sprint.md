@@ -1,5 +1,11 @@
 # Linux implementation sprint
 
+The [Source 2.274 / System 2.200 foreign ABI span](linux_swift_consumer.md)
+verifies move-only C++ value transport through Swift and
+[nullable generated C signatures](linux_async_c_completion_exports.md#synchronous-c-error-out-exports)
+through linked C and Swift. The C result type allows null on failure, and
+ordinary C declarations preserve source parameter nullability.
+
 The [Source 2.273 / System 2.199 Swift ownership gate](linux_swift_consumer.md)
 qualifies copyable, heap-owning C++ values through the independent Swift
 importer. The terminal checks all allocations retire and binds the deleted

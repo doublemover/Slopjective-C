@@ -207,7 +207,7 @@ def suite_results(root: Path, name: str) -> list[dict]:
             'public-name-identity-and-consumer', 'missing-provider-symbol',
             'cxx-original-header-independent-import', 'cxx-unmodified-emitted-header-import',
             'cxx-field-type-identity-and-consumer', 'cxx-destructor-identity-and-consumer',
-            'cxx-missing-provider-symbol'}
+            'cxx-move-only-copy-rejected', 'cxx-missing-provider-symbol'}
         relocation = {'original_header_hidden': True, 'provider_source_hidden': True, 'replayed_header_unchanged': True}
         interfaces = result.get('interfaces', {})
         if (result.get('schema') != QUALIFICATION_SCHEMA or
