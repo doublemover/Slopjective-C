@@ -813,8 +813,8 @@ if(BUILD_TESTING)
     OBJC3_META_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}")
   objc3c_add_frontend_test(NAME objc3_meta_compilation COMMAND objc3_meta_compilation_test)
   set_tests_properties(objc3_meta_compilation PROPERTIES TIMEOUT 180)
-  objc3c_add_frontend_test(NAME objc3_meta_cli
-    COMMAND "${Python3_EXECUTABLE}" "${_objc3_repo}/tests/clang_foundation/verify-meta-cli.py" "$<TARGET_FILE:objc3c>")
+  objc3c_add_frontend_test(NAME objc3_meta_cli TARGET objc3c
+    COMMAND "${Python3_EXECUTABLE}" -B "${_objc3_repo}/tests/clang_foundation/verify-meta-cli.py" "$<TARGET_FILE:objc3c>")
   set_tests_properties(objc3_meta_cli PROPERTIES TIMEOUT 90)
   add_executable(objc3_meta_program_test "${_objc3_repo}/tests/clang_foundation/meta_program_test.cpp")
   target_include_directories(objc3_meta_program_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
