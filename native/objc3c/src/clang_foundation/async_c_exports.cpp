@@ -30,13 +30,42 @@ bool IsSourceIdentifier(llvm::StringRef name) {
       });
 }
 
-const clang::FunctionDecl *SelectFreeFunction(clang::ASTContext &context,
-                                               llvm::StringRef name) {
-  if (!IsSourceIdentifier(name)) return nullptr;
-  const auto candidates = context.getTranslationUnitDecl()->lookup(&context.Idents.get(name));
-  const auto *entry = !candidates.empty() && std::next(candidates.begin()) == candidates.end()
-      ? llvm::dyn_cast<clang::FunctionDecl>(candidates.front()) : nullptr;
-  return entry && entry->getTemplatedKind() == clang::FunctionDecl::TK_NonTemplate ? entry : nullptr;
+struct CExportFreeFunction {
+  const clang::FunctionDecl *function;
+  std::string symbol;
+  llvm::SmallVector<llvm::StringRef, 4> identifiers;
+};
+
+std::optional<CExportFreeFunction> SelectFreeFunction(clang::ASTContext &context,
+                                                      llvm::StringRef selection) {
+  CExportFreeFunction result{};
+  selection.split(result.identifiers, "::");
+  if (result.identifiers.empty() || !llvm::all_of(result.identifiers, IsSourceIdentifier) ||
+      (result.identifiers.size() > 1 && !context.getLangOpts().CPlusPlus))
+    return std::nullopt;
+  const clang::DeclContext *scope = context.getTranslationUnitDecl();
+  for (std::size_t index = 0; index < result.identifiers.size(); ++index) {
+    const auto identifier = result.identifiers[index];
+    const auto candidates = scope->lookup(&context.Idents.get(identifier));
+    if (candidates.empty() || std::next(candidates.begin()) != candidates.end())
+      return std::nullopt;
+    if (!result.symbol.empty()) result.symbol += '_';
+    result.symbol.append(identifier.data(), identifier.size());
+    const auto *entry = candidates.front();
+    if (index + 1 == result.identifiers.size()) {
+      result.function = llvm::dyn_cast<clang::FunctionDecl>(entry);
+      break;
+    }
+    if (const auto *alias = llvm::dyn_cast<clang::NamespaceAliasDecl>(entry))
+      scope = alias->getNamespace();
+    else if (const auto *name_space = llvm::dyn_cast<clang::NamespaceDecl>(entry))
+      scope = name_space;
+    else
+      return std::nullopt;
+  }
+  if (!result.function || result.function->getTemplatedKind() != clang::FunctionDecl::TK_NonTemplate)
+    return std::nullopt;
+  return result;
 }
 
 void PrintThrows(llvm::raw_ostream &source, clang::ASTContext &context,
@@ -56,14 +85,13 @@ clang::QualType CExportSpellingType(clang::ASTContext &context, clang::QualType 
     spelling = context.getConstantArrayType(CExportSpellingType(context, array->getElementType()),
         array->getSize(), nullptr, array->getSizeModifier(), array->getIndexTypeCVRQualifiers());
   } else if (const auto *block = type->getAs<clang::BlockPointerType>()) {
-    if (const auto *function = block->getPointeeType()->getAs<clang::FunctionProtoType>()) {
-      llvm::SmallVector<clang::QualType, 4> parameters;
-      for (const auto parameter : function->param_types())
-        parameters.push_back(CExportSpellingType(context, parameter));
-      spelling = context.getBlockPointerType(context.getFunctionType(
-          CExportSpellingType(context, function->getReturnType()), parameters,
-          function->getExtProtoInfo()));
-    }
+    spelling = context.getBlockPointerType(CExportSpellingType(context, block->getPointeeType()));
+  } else if (const auto *function = type->getAs<clang::FunctionProtoType>()) {
+    llvm::SmallVector<clang::QualType, 4> parameters;
+    for (const auto parameter : function->param_types())
+      parameters.push_back(CExportSpellingType(context, parameter));
+    spelling = context.getFunctionType(CExportSpellingType(context, function->getReturnType()),
+                                       parameters, function->getExtProtoInfo());
   }
   // Strip native ARC qualifiers before adding an attributed type wrapper,
   // so neither typed Blocks nor opaque aliases expose ownership to plain C.
@@ -110,6 +138,21 @@ std::optional<std::string> PortableValueType(clang::ASTContext &context,
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.Bool = true;
   return CExportSpellingType(context, type, nullable_result).getAsString(policy);
+}
+
+bool SupportsPortableCallback(clang::ASTContext &context,
+                              const clang::FunctionProtoType *signature) {
+  if (!signature || signature->isVariadic() || signature->getCallConv() != clang::CC_C ||
+      signature->getObjC3FunctionEffects().Async ||
+      signature->getObjC3FunctionEffects().Throws != clang::ObjC3ThrowsKind::None ||
+      !signature->getFunctionEffects().empty() ||
+      !PortableValueType(context, signature->getReturnType()))
+    return false;
+  for (unsigned index = 0; index < signature->getNumParams(); ++index)
+    if (!PortableValueType(context, signature->getParamType(index)) ||
+        signature->getExtParameterInfo(index).getOpaqueValue())
+      return false;
+  return true;
 }
 
 struct CExportType {
@@ -264,6 +307,17 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.Bool = true;
   policy.SuppressLifetimeQualifiers = true;
+  if (canonical->isFunctionPointerType()) {
+    const auto *signature = type->getPointeeType()->getAs<clang::FunctionProtoType>();
+    if (!SupportsPortableCallback(context, signature) ||
+        signature->getExtInfo() != clang::FunctionType::ExtInfo(clang::CC_C) ||
+        signature->getExceptionSpecType() != clang::EST_None)
+      return std::nullopt;
+    declarations << "typedef ";
+    CExportSpellingType(context, type, nullable_result).print(declarations, policy, alias);
+    declarations << ";\n";
+    return CExportType{alias.str()};
+  }
   const char *kind;
   if (const auto *object = canonical->getAs<clang::ObjCObjectPointerType>()) {
     if (object->isSpecialized()) return std::nullopt;
@@ -274,17 +328,8 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
     for (const auto *protocol : object->quals())
       declarations << "@protocol " << protocol->getName() << ";\n";
   } else if (const auto *block = canonical->getAs<clang::BlockPointerType>()) {
-    const auto *signature = block->getPointeeType()->getAs<clang::FunctionProtoType>();
-    if (!signature || signature->isVariadic() || signature->getCallConv() != clang::CC_C ||
-        signature->getObjC3FunctionEffects().Async ||
-        signature->getObjC3FunctionEffects().Throws != clang::ObjC3ThrowsKind::None ||
-        !signature->getFunctionEffects().empty() ||
-        !PortableValueType(context, signature->getReturnType()))
+    if (!SupportsPortableCallback(context, block->getPointeeType()->getAs<clang::FunctionProtoType>()))
       return std::nullopt;
-    for (unsigned index = 0; index < signature->getNumParams(); ++index)
-      if (!PortableValueType(context, signature->getParamType(index)) ||
-          signature->getExtParameterInfo(index).getOpaqueValue())
-        return std::nullopt;
     kind = "BLOCK";
     declarations << "#ifdef __BLOCKS__\n";
   } else {
@@ -336,12 +381,13 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     }
     return emitted;
   };
-  for (const auto &name : throws_symbols) {
+  for (const auto &selection : throws_symbols) {
     auto reject = [&](llvm::StringRef reason) {
-      failure = "Cannot export C throwing entry " + name + ": " + reason.str();
+      failure = "Cannot export C throwing entry " + selection + ": " + reason.str();
       return CExportSource{};
     };
-    const auto *function = SelectFreeFunction(context, name);
+    const auto selected_function = SelectFreeFunction(context, selection);
+    const auto *function = selected_function ? selected_function->function : nullptr;
     const auto *prototype = function ? function->getType()->getAs<clang::FunctionProtoType>() : nullptr;
     if (!prototype || prototype->isVariadic())
       return reject("expected one nonvariadic free function with a native prototype");
@@ -357,6 +403,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     if (language.CPlusPlus && !prototype->isNothrow() &&
         !function->hasAttr<clang::NoThrowAttr>())
       return reject("Objective-C++ entries must declare a nonthrowing native exception contract");
+    const auto &name = selected_function->symbol;
     const auto thunk = name + "_throws_c";
     const auto bridge = "__objc3_c_error_bridge_" + name;
     if (!selected.insert(thunk).second || !tu->lookup(&context.Idents.get(thunk)).empty() ||
@@ -386,7 +433,9 @@ CExportSource GenerateCExports(clang::ASTContext &context,
         (parameters.empty() ? "" : parameters + ", ") + "objc3_async_c_error _Nullable * _Nullable);\n";
     header << types << declaration;
     output.interface_exports.push_back(thunk);
-    definitions << "#undef " << name << "\n#undef " << thunk << "\n#undef " << bridge << '\n'
+    for (const auto identifier : selected_function->identifiers)
+      definitions << "#undef " << identifier << '\n';
+    definitions << "#undef " << thunk << "\n#undef " << bridge << '\n'
                 << types << declaration;
     const auto native = linkage.str() + result->spelling + ' ' + bridge + '(' +
         (parameters.empty() ? "void" : parameters) + ')';
@@ -398,7 +447,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     PrintThrows(definitions, context, effects);
     definitions << " { ";
     if (!prototype->getReturnType()->isVoidType()) definitions << "return ";
-    definitions << "__objc3_try(" << (language.CPlusPlus ? "::" : "") << name
+    definitions << "__objc3_try(" << (language.CPlusPlus ? "::" : "") << selection
                 << '(' << inputs << ")); }\n";
   }
   for (const auto &selection : async_symbols) {
@@ -412,11 +461,12 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     clang::QualType result_type;
     llvm::ArrayRef<clang::ParmVarDecl *> source_parameters;
     clang::ObjC3FunctionEffectInfo effects;
-    std::string name = selection;
-    if (llvm::StringRef(selection).contains("::")) {
+    std::string name;
+    const auto selected_function = SelectFreeFunction(context, selection);
+    if (!selected_function && llvm::StringRef(selection).contains("::")) {
       actor_method = SelectActorMethod(context, selection);
       if (!actor_method)
-        return reject("expected an isolated instance selector in the named actor class hierarchy");
+        return reject("expected one qualified free function or an isolated instance selector in the named actor class hierarchy");
       const auto *method = actor_method->method;
       name = actor_method->symbol;
       source = method;
@@ -428,8 +478,9 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       result_type = method->getReturnType();
       source_parameters = method->parameters();
     } else {
-      if (!IsSourceIdentifier(name)) return reject("expected a source identifier");
-      const auto *function = SelectFreeFunction(context, name);
+      if (!selected_function) return reject("expected one nonvariadic free function with a native prototype");
+      name = selected_function->symbol;
+      const auto *function = selected_function->function;
       prototype = function ? function->getType()->getAs<clang::FunctionProtoType>() : nullptr;
       if (!prototype || prototype->isVariadic())
         return reject("expected one nonvariadic free function with a native prototype");
@@ -497,7 +548,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     if (actor_method && source_parameters.empty())
       message += " " + actor_method->method->getSelector().getAsString();
     const auto call = actor_method ? message + ']' :
-        (language.CPlusPlus ? "::" : "") + name + '(' + inputs + ')';
+        (language.CPlusPlus ? "::" : "") + selection + '(' + inputs + ')';
     auto frame = call;
     // The unqualified C preprocessing spelling must select the original
     // declaration even when the provider reuses a name as a macro later.
@@ -506,6 +557,9 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       const auto selector = actor_method->method->getSelector();
       for (unsigned slot = 0; slot < std::max(1u, selector.getNumArgs()); ++slot)
         definitions << "#undef " << selector.getNameForSlot(slot) << '\n';
+    } else {
+      for (const auto identifier : selected_function->identifiers)
+        definitions << "#undef " << identifier << '\n';
     }
     definitions << "#undef " << name << "\n#undef " << thunk << "\n#undef "
                 << callback << "\n" << types << declaration;

@@ -70,6 +70,11 @@ mismatch with libgcc and verifies admission with the projected target. Test
 providers that construct their own Tooling ASTs use the SDK's native target
 settings, and target-attribute controls use architecture-specific spellings.
 
+The combined emitter suite now checks that an admitted `explicit(true)`
+constructor keeps its spelling, metadata and conversion behavior through
+replay. The previous expectation still treated the constructor as an
+unsupported declaration even after explicit specifiers gained native support.
+
 The SDK frontend CTest plan records the executable's command argument index
 from each CMake registration. Direct tests start with their executable. The
 meta, diagnostic and text-file CLI wrappers pass it as an argument. Serial

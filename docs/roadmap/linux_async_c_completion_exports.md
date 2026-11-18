@@ -249,3 +249,26 @@ nested pointers, and null checked results through linked C and source-free
 consumers. Swift 6.4.2 imports a generated checked C header and links the native
 object. It handles the optional result and opaque error, rejects an unwrapped
 optional result, and rejects `nil` for a nonnull parameter.
+
+Source 2.275 / System 2.201 publishes ordinary C function pointers through
+generated synchronous and asynchronous signatures. The header emits typed
+aliases with the original parameter and result annotations, and the public
+function-pointer result allows null on failure or cancellation. The supported
+callback form uses a prototype, C calling convention and portable scalar or raw
+pointer types. Variadic callbacks, checked/async callback effects and native
+exception specifications need a separate adapter contract.
+
+The linked C client passes its callback and caller-owned context to a checked
+entry, sees the same function pointer returned on success and invokes it after
+an async completion. All eight configurations check pointer identity and value
+results. Source-free import checks the function-pointer aliases. AArch64 ARC
+and MRC C clients also execute the indirect aggregate and callback contracts
+under QEMU.
+
+This source milestone also admits qualified Objective-C++ free functions in
+C exports. For example, `--export-c-async API::v1::work` publishes
+`API_v1_work_async_c`, and `--export-c-throws API::v1::check` publishes
+`API_v1_check_throws_c`. Nested namespaces and namespace aliases retain the
+exact native callable. Two selections yielding the same C name are rejected.
+Four C++20/C++23 ARC/MRC providers link ordinary C clients and replay the
+emitted declarations after provider source removal.

@@ -12469,6 +12469,16 @@ void TestBoundedCxxSemanticInterfaces() {
     } else if (llvm::StringRef(source).contains("[](auto value)")) {
       assert(emitted.success);
       assert(emitted.sidecar_json.find("objc3.cxx-generic-local-lambdas.v2")!=std::string::npos);
+    } else if (llvm::StringRef(source).contains("explicit(true)")) {
+      assert(emitted.success);
+      assert(emitted.source_bytes.find("explicit(true) Conditional(int)") != std::string::npos);
+      assert(emitted.sidecar_json.find(kCxxExplicitSpecifierSemantic) != std::string::npos);
+      auto replay = clang::tooling::buildASTFromCodeWithArgs(
+          emitted.source_bytes + "\nstatic_assert(__is_constructible(Conditional, int));\n"
+                                 "static_assert(!__is_convertible(int, Conditional));\n",
+          {"-x", "c++", "-std=c++20", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET},
+          "explicit-consumer.cpp");
+      assert(replay && !replay->getDiagnostics().hasErrorOccurred());
     } else {
       assert(!emitted.success && emitted.source_bytes.empty() && emitted.sidecar_json.empty());
     }

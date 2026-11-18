@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.275 / System 2.201 C callback ABI](linux_async_c_completion_exports.md)
+exports ordinary C function pointers through checked synchronous and async
+entries, with typed aliases, pointer identity and source-free replay. Qualified
+Objective-C++ namespace functions and namespace aliases can export C entries.
+
 The [Source 2.274 / System 2.200 foreign ABI span](linux_swift_consumer.md)
 verifies move-only C++ value transport through Swift and
 [nullable generated C signatures](linux_async_c_completion_exports.md#synchronous-c-error-out-exports)

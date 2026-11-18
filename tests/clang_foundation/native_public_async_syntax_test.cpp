@@ -198,8 +198,12 @@ static int generated_checked(int mode) async throws(id<Error>) {
 }
 static id<Error> _Nonnull generated_object(id<Error> _Nonnull input) async { return input; }
 typedef int (^GeneratedBlock)(int);
+typedef int (*GeneratedCallback)(int, void * _Nullable);
 static GeneratedBlock generated_block(int input) async {
   return ^(int offset) { return input + offset; };
+}
+static GeneratedCallback _Nonnull generated_callback(GeneratedCallback _Nonnull value) async {
+  return value;
 }
 struct GeneratedPort { char flag; int lane; };
 struct GeneratedAggregate { struct GeneratedPort port; long values[2]; };
@@ -310,6 +314,16 @@ static GeneratedBlock _Nonnull generated_sync_block(GeneratedBlock _Nullable val
   if (!value) __objc3_throw(generated_failure());
   return value;
 }
+static int generated_sync_invoke(GeneratedCallback _Nullable callback, void * _Nullable context)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!callback) __objc3_throw(generated_failure());
+  return callback(40, context);
+}
+static GeneratedCallback _Nonnull generated_sync_callback(GeneratedCallback _Nullable callback)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!callback) __objc3_throw(generated_failure());
+  return callback;
+}
 static struct GeneratedPort generated_sync_port(struct GeneratedPort value)
     __objc3_throws(id<Error>) __attribute__((nothrow)) {
   if (!value.flag) __objc3_throw(generated_failure());
@@ -418,6 +432,18 @@ unsigned generated_checked_errors_destroyed(void) {
 }
 #ifdef __cplusplus
 }
+namespace ExportRegion::Nested {
+static int pulse(int input) async { return input + 1; }
+static int check(int input) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (input < 0) __objc3_throw(generated_failure());
+  return input + 2;
+}
+}
+namespace ExportAlias = ExportRegion::Nested;
+#define ExportRegion InvalidExportRegion
+#define ExportAlias InvalidExportAlias
+#define pulse(...) invalid_if_reexpanded
+#define check(...) invalid_if_reexpanded
 #endif
 #define generated_value(...) invalid_if_reexpanded
 #define add invalid_if_reexpanded
@@ -435,12 +461,17 @@ unsigned generated_checked_errors_destroyed(void) {
   provider.emit = EmitKind::Object;
   provider.output_path = (root / "provider.o").string();
   provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
-      "generated_object", "generated_block", "generated_aggregate", "generated_main",
+      "generated_object", "generated_block", "generated_callback", "generated_aggregate", "generated_main",
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
       "GeneratedActor::current", "GeneratedDerivedActor::current", "GeneratedDerivedActor::checked:"};
   provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer", "generated_sync_nested",
-      "generated_sync_object", "generated_sync_block", "generated_sync_port", "generated_sync_aggregate"};
+      "generated_sync_object", "generated_sync_block", "generated_sync_invoke", "generated_sync_callback",
+      "generated_sync_port", "generated_sync_aggregate"};
+  if (cxx) {
+    provider.async_c_exports.push_back("ExportRegion::Nested::pulse");
+    provider.throws_c_exports.push_back("ExportAlias::check");
+  }
   provider.c_export_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GeneratedCompletion";
@@ -474,6 +505,16 @@ static int generated_unmarked_checked(void) __objc3_throws {return 1;}
     const auto unsafe = Compile(rejected);
     Require(!unsafe.success && unsafe.failure.find("nonthrowing native exception contract") != std::string::npos,
             "a potentially unwinding Objective-C++ function was admitted as a synchronous C export");
+    rejected.throws_c_exports = {"ExportRegion::Nested::check", "ExportRegion_Nested::check"};
+    rejected.source_text = source_text + R"(
+#undef check
+namespace ExportRegion_Nested {
+static int check(int input) __objc3_throws __attribute__((nothrow)) {return input;}
+}
+)";
+    const auto conflict = Compile(rejected);
+    Require(!conflict.success && conflict.failure.find("already declared or selected") != std::string::npos,
+            "two namespace selections published the same C symbol");
   }
   if (declaration_only) {
     auto rejected = provider;
@@ -495,6 +536,17 @@ static int generated_unmarked_checked(void) __objc3_throws {return 1;}
     const auto wrong_effect = Compile(rejected);
     Require(!wrong_effect.success && wrong_effect.failure.find("synchronous throwing entry") != std::string::npos,
             "an async entry was admitted as a synchronous C export");
+    rejected.throws_c_exports = {"generated_variadic_pointer"};
+    std::ifstream fixture(source);
+    rejected.source_text = std::string(std::istreambuf_iterator<char>(fixture), {}) + R"(
+typedef int (*Variadic)(int, ...);
+static Variadic generated_variadic_pointer(Variadic callback) __objc3_throws {
+  return callback;
+}
+)";
+    const auto nonportable = Compile(rejected);
+    Require(!nonportable.success && nonportable.failure.find("self-contained C value declaration") != std::string::npos,
+            "a variadic callback was admitted through the generated C header");
     const auto header_before = llvm::MemoryBuffer::getFile(provider.c_export_header_output_path);
     Require(static_cast<bool>(header_before), "generated header missing");
     const std::string generated_header = (*header_before)->getBuffer().str();
@@ -571,6 +623,16 @@ generated_sync_block_throws_c_result_t call_imported_block(generated_sync_block_
                                                            objc3_async_c_error *failure) {
   return generated_sync_block_throws_c(block, failure);
 }
+generated_sync_callback_throws_c_result_t call_imported_callback(generated_sync_callback_throws_c_arg0_t callback,
+                                                                 objc3_async_c_error *failure) {
+  return generated_sync_callback_throws_c(callback, failure);
+}
+)";
+  if (cxx) *imported.source_text += R"(
+int call_imported_namespace(objc3_async_c_error *failure) {
+  ExportRegion_Nested_pulse_async_c(41, 0, observe);
+  return ExportAlias_check_throws_c(40, failure);
+}
 )";
   Compiled(Compile(imported));
   const auto client = root / "client.c";
@@ -601,7 +663,16 @@ static ClientBlock retained_block;
 #else
 typedef void *ClientBlock;
 #endif
-static atomic_int complete[18];
+#ifdef EXPORTED_CPP_NAMESPACE
+static atomic_int complete[20];
+static void namespace_done(void *context, objc_async_completion_status_t status,
+                           int value, objc3_async_c_error error) {
+  assert(context == &complete[19] && status == OBJC_ASYNC_COMPLETION_SUCCESS && value == 42 && !error);
+  assert(atomic_fetch_add(&complete[19], 1) == 0);
+}
+#else
+static atomic_int complete[19];
+#endif
 static atomic_uint paused_workers;
 static atomic_bool resume_workers;
 static void hold_worker(void *unused) {
@@ -692,6 +763,16 @@ static void arguments_done(void *context, objc_async_completion_status_t status,
   }
   assert(atomic_fetch_add((atomic_int *)context, 1) == 0);
 }
+static int add_value(int value, void *context) {
+  return value + *(const int *)context;
+}
+static void callback_done(void *context, objc_async_completion_status_t status,
+                          generated_callback_async_c_result_t value, objc3_async_c_error error) {
+  assert(context == &complete[18] && status == OBJC_ASYNC_COMPLETION_SUCCESS && !error);
+  const int increment = 2;
+  assert(value == add_value && value(40, (void *)&increment) == 42);
+  assert(atomic_fetch_add(&complete[18], 1) == 0);
+}
 int main(void) {
   generated_named_async_c(41, &complete[9], executor_done);
   for (int elapsed = 0; elapsed < 2000 && !atomic_load(&complete[9]); ++elapsed)
@@ -727,6 +808,15 @@ int main(void) {
   assert(!synchronous_failure);
   assert(!generated_sync_object_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());
   assert(!generated_sync_block_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());
+  int increment = 2;
+  assert(generated_sync_invoke_throws_c(add_value, &increment, &synchronous_failure) == 42 && !synchronous_failure);
+  assert(generated_sync_callback_throws_c(add_value, &synchronous_failure) == add_value && !synchronous_failure);
+  assert(!generated_sync_callback_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());
+#ifdef EXPORTED_CPP_NAMESPACE
+  assert(ExportAlias_check_throws_c(40, &synchronous_failure) == 42 && !synchronous_failure);
+  assert(ExportAlias_check_throws_c(-1, &synchronous_failure) == 0 && synchronous_failure == generated_failure());
+  ExportRegion_Nested_pulse_async_c(41, &complete[19], namespace_done);
+#endif
   struct GeneratedPort port = generated_sync_port_throws_c((struct GeneratedPort){'C', 41}, &synchronous_failure);
   assert(!synchronous_failure && port.flag == 'C' && port.lane == 42);
   (void)generated_sync_port_throws_c((struct GeneratedPort){0, 41}, &synchronous_failure);
@@ -752,6 +842,7 @@ int main(void) {
   generated_checked_async_c(1, &complete[3], checked_done);
   generated_object_async_c(generated_failure(), &complete[4], object_done);
   generated_block_async_c(40, &complete[5], block_done);
+  generated_callback_async_c(add_value, &complete[18], callback_done);
   generated_aggregate_async_c(initial, &complete[6], aggregate_done);
   generated_main_async_c(41, &complete[7], executor_done);
   generated_named_async_c(41, &complete[8], executor_done);
@@ -796,9 +887,10 @@ int main(void) {
   for (int elapsed = 0; elapsed < 2000; ++elapsed) {
     unsigned executed = 0;
     assert(objc3_executor_pump(main_executor, 8, &executed) == OBJC3_SERVICE_OK);
-    int count = 0;
-    for (unsigned index = 0; index < 18; ++index) count += atomic_load(&complete[index]);
-    if (count == 18) {
+    unsigned count = 0;
+    for (unsigned index = 0; index < sizeof(complete) / sizeof(complete[0]); ++index)
+      count += atomic_load(&complete[index]);
+    if (count == sizeof(complete) / sizeof(complete[0])) {
 #ifdef __BLOCKS__
       assert(retained_block(2) == 42);
       _Block_release((const void *)retained_block);
@@ -831,6 +923,7 @@ int main(void) {
   consumer.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   consumer.arguments = {"-std=c17", "-I" + includes.string()};
   if (arc) consumer.arguments.push_back("-fblocks");
+  if (cxx) consumer.arguments.push_back("-DEXPORTED_CPP_NAMESPACE");
   Compiled(Compile(consumer));
   if (declaration_only) {
     auto packed = consumer;
