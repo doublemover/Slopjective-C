@@ -43,3 +43,21 @@ execution retain exact owner counts. These remain development-source receipts.
 Extension ABI 24, native frame 1, runtime services 4 and schema 2.2 are unchanged.
 Native C++ carrier by-value call/return qualification, additional construction
 regions, full matched analysis and one replacement SDK remain separate work.
+
+Source 2.249 / System 2.175 enables `try?` for eligible indirect checked C++
+results whose destructors may throw. Some owns the result after the hidden
+error check. None has no payload destructor. Conditional and array
+initializers retain construction guards, and rollback releases both a pending
+element and the constructed prefix when an argument destructor throws.
+
+Discarded carrier values now share the enclosing C++ full-expression cleanup.
+In a comma expression the payload stays alive through the right operand and
+is destroyed before the next statement. Throwing argument destructors unwind
+local and lifetime-extended result storage. Failed static and thread-local
+initialization can retry, and successful results destroy once during teardown.
+
+Four source-free native configurations cover C++20 and C++23 with ARC and MRC.
+They check discard timing, comma evaluation, conditional selection, array
+rollback, catch identity and static/thread-local retry and teardown. Four IR
+controls cover static and thread-local compilation. Nonlocal Optional
+call transport and async value operations retain their existing ABI limits.

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.249 / System 2.175 checked C++ Optional changes](linux_checked_cpp_optionals.md)
+extend throwing-destructor payloads to local and lifetime-extended storage,
+with native full-expression and rollback cleanup.
+
 The [Source 2.248 / System 2.174 checked runtime interface changes](linux_async_c_completion_exports.md)
 bind public cancellation checkpoints, checked group joins and completion
 status references to the exact SDK header in published bodies.

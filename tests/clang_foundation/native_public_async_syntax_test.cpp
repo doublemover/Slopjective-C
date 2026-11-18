@@ -416,6 +416,35 @@ CheckedOwner relay_checked_owner(bool fail, bool explode, bool argument_throws)
   consumer.imported_interfaces = {input};
   consumer.source_text = R"(
 #include <assert.h>
+#include <pthread.h>
+#include <stdlib.h>
+
+using MaybeCheckedOwner = __objc3_optional(CheckedOwner);
+static const MaybeCheckedOwner &stored_owner(bool argument_throws) {
+  static const MaybeCheckedOwner &value =
+      try? make_checked_owner(false, false, CheckedArgument{argument_throws});
+  return value;
+}
+static const MaybeCheckedOwner &thread_owner(bool argument_throws) {
+  static thread_local const MaybeCheckedOwner &value =
+      try? make_checked_owner(false, false, CheckedArgument{argument_throws});
+  return value;
+}
+static void *check_thread_owner(void *) {
+  try {
+    (void)thread_owner(true);
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 99);
+  }
+  assert(!checked_alive() && checked_destroyed() == 12);
+  assert(__objc3_has_value(thread_owner(false)));
+  assert(checked_alive() == 1 && checked_destroyed() == 12);
+  return nullptr;
+}
+static void check_static_teardown() {
+  assert(!checked_alive() && checked_destroyed() == 15);
+}
 int main() {
   __objc3_do {
     CheckedOwner value = try relay_checked_owner(true, true, false);
@@ -455,6 +484,74 @@ int main() {
     assert(error.code == 99);
   }
   assert(!checked_alive() && checked_destroyed() == 4);
+  {
+    MaybeCheckedOwner missing = try? relay_checked_owner(true, true, false);
+    assert(!__objc3_has_value(missing) && !checked_alive() && checked_destroyed() == 4);
+  }
+  try {
+    MaybeCheckedOwner present = try? relay_checked_owner(false, true, false);
+    assert(__objc3_has_value(present) && checked_alive() == 1 && checked_destroyed() == 4);
+  } catch (const DestructorException &error) {
+    assert(error.code == 42);
+  }
+  assert(!checked_alive() && checked_destroyed() == 5);
+  try {
+    try? make_checked_owner(false, true, CheckedArgument{false});
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 42);
+  }
+  assert(!checked_alive() && checked_destroyed() == 6);
+  int alive_during_comma = 0;
+  try {
+    (try? relay_checked_owner(false, true, false), alive_during_comma = checked_alive());
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 42 && alive_during_comma == 1);
+  }
+  assert(!checked_alive() && checked_destroyed() == 7);
+  try {
+    MaybeCheckedOwner value = try? make_checked_owner(false, false, CheckedArgument{true});
+    (void)value;
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 99);
+  }
+  assert(!checked_alive() && checked_destroyed() == 8);
+
+  {
+    MaybeCheckedOwner selected = checked_alive()
+        ? try? relay_checked_owner(true, true, false)
+        : try? relay_checked_owner(false, false, false);
+    assert(__objc3_has_value(selected) && checked_alive() == 1);
+  }
+  assert(!checked_alive() && checked_destroyed() == 9);
+  try {
+    MaybeCheckedOwner values[] = {
+        try? relay_checked_owner(false, false, false),
+        try? make_checked_owner(false, false, CheckedArgument{true})
+    };
+    (void)values;
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 99);
+  }
+  assert(!checked_alive() && checked_destroyed() == 11);
+
+  pthread_t worker;
+  assert(pthread_create(&worker, nullptr, check_thread_owner, nullptr) == 0);
+  assert(pthread_join(worker, nullptr) == 0);
+  assert(!checked_alive() && checked_destroyed() == 13);
+  try {
+    (void)stored_owner(true);
+    __builtin_trap();
+  } catch (const DestructorException &error) {
+    assert(error.code == 99);
+  }
+  assert(!checked_alive() && checked_destroyed() == 14);
+  assert(atexit(check_static_teardown) == 0);
+  assert(__objc3_has_value(stored_owner(false)));
+  assert(checked_alive() == 1 && checked_destroyed() == 14);
 }
 )";
   Compiled(Compile(consumer));

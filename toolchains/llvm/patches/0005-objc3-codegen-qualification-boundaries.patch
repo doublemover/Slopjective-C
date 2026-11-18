@@ -6731,7 +6731,7 @@ index e84e05e8e..0573e2c53 100644
        // If a parameter is pseudo-strong then we can omit the implicit retain.
        if (D.isARCPseudoStrong()) {
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..cd2d2ecee 100644
+index d642d46e2..37d058334 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,15 @@
@@ -6758,7 +6758,7 @@ index 6a0d127fb..cd2d2ecee 100644
  #include "clang/AST/NSAPI.h"
  #include "clang/AST/ParentMapContext.h"
  #include "clang/AST/StmtVisitor.h"
-@@ -257,6 +267,24 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
+@@ -257,6 +267,29 @@ llvm::Value *CodeGenFunction::EvaluateExprAsBool(const Expr *E) {
  /// EmitIgnoredExpr - Emit code to compute the specified expression,
  /// ignoring the result.
  void CodeGenFunction::EmitIgnoredExpr(const Expr *E) {
@@ -6768,6 +6768,11 @@ index 6a0d127fb..cd2d2ecee 100644
 +      (isObjC3ConstructedCppResultInitializer(CGM,E) ||
 +       (supportsObjC3CarrierCppLocalLifetime(CGM,Type) &&
 +        !hasObjC3CarrierCppLocalDestructor(CGM,Type)))) {
++    if (const auto *FullExpr = dyn_cast<ExprWithCleanups>(E)) {
++      RunCleanupsScope Cleanups(*this);
++      EmitIgnoredExpr(FullExpr->getSubExpr());
++      return;
++    }
 +    // A discarded value still constructs and destroys its selected owner.
 +    // Carrier types have no native CXXBindTemporaryExpr, so establish the same
 +    // fresh destination and full-expression cleanup as an ordinary C++ value.
@@ -6783,7 +6788,7 @@ index 6a0d127fb..cd2d2ecee 100644
    if (E->isPRValue())
      return (void)EmitAnyExpr(E, AggValueSlot::ignored(), true);
  
-@@ -519,6 +547,48 @@ static bool isAAPCS(const TargetInfo &TargetInfo) {
+@@ -519,6 +552,48 @@ static bool isAAPCS(const TargetInfo &TargetInfo) {
    return TargetInfo.getABI().starts_with("aapcs");
  }
  
@@ -6832,7 +6837,7 @@ index 6a0d127fb..cd2d2ecee 100644
  LValue CodeGenFunction::
  EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
    const Expr *E = M->getSubExpr();
-@@ -575,12 +645,10 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -575,12 +650,10 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
    SmallVector<SubobjectAdjustment, 2> Adjustments;
    E = E->skipRValueSubobjectAdjustments(CommaLHSs, Adjustments);
  
@@ -6846,7 +6851,7 @@ index 6a0d127fb..cd2d2ecee 100644
        return EmitOpaqueValueLValue(opaque);
      }
    }
-@@ -588,6 +656,42 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -588,6 +661,42 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
    // Create and initialize the reference temporary.
    RawAddress Alloca = Address::invalid();
    RawAddress Object = createReferenceTemporary(*this, M, E, &Alloca);
@@ -6889,7 +6894,7 @@ index 6a0d127fb..cd2d2ecee 100644
    if (auto *Var = dyn_cast<llvm::GlobalVariable>(
            Object.getPointer()->stripPointerCasts())) {
      llvm::Type *TemporaryType = ConvertTypeForMem(E->getType());
-@@ -604,7 +708,7 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -604,7 +713,7 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
                                        Object.getAlignment());
          EmitScalarInit(E, M->getExtendingDecl(), LV, false);
        } else {
@@ -6898,7 +6903,7 @@ index 6a0d127fb..cd2d2ecee 100644
        }
      }
    } else {
-@@ -658,9 +762,22 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
+@@ -658,9 +767,22 @@ EmitMaterializeTemporaryExpr(const MaterializeTemporaryExpr *M) {
      default:
        break;
      }
@@ -6924,7 +6929,7 @@ index 6a0d127fb..cd2d2ecee 100644
  
    // Perform derived-to-base casts and/or field accesses, to get from the
    // temporary object we created (and, potentially, for which we extended
-@@ -1749,6 +1866,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
+@@ -1746,6 +1868,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
  
  LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
                                           KnownNonNull_t IsKnownNonNull) {
@@ -6933,7 +6938,7 @@ index 6a0d127fb..cd2d2ecee 100644
    ApplyDebugLocation DL(*this, E);
    switch (E->getStmtClass()) {
    default: return EmitUnsupportedLValue(E, "l-value expression");
-@@ -1815,6 +1934,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
+@@ -1812,6 +1936,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
  
    case Expr::ExprWithCleanupsClass: {
      const auto *cleanups = cast<ExprWithCleanups>(E);
@@ -6941,7 +6946,7 @@ index 6a0d127fb..cd2d2ecee 100644
      RunCleanupsScope Scope(*this);
      LValue LV = EmitLValue(cleanups->getSubExpr(), IsKnownNonNull);
      if (LV.isSimple()) {
-@@ -4000,8 +4120,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
+@@ -3997,8 +4122,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
                                     getTarget().isBigEndian()
                                         ? llvm::endianness::big
                                         : llvm::endianness::little);
@@ -6952,7 +6957,7 @@ index 6a0d127fb..cd2d2ecee 100644
    }
  
    llvm::Constant *Components[] = {
-@@ -5019,6 +5139,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
+@@ -4989,6 +5114,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
      if (SanOpts.has(SanitizerKind::ArrayBounds))
        EmitBoundsCheck(E, E->getBase(), Idx, IdxTy, Accessed);
  
@@ -6961,7 +6966,7 @@ index 6a0d127fb..cd2d2ecee 100644
      // Extend or truncate the index type to 32 or 64-bits.
      if (Promote && Idx->getType() != IntPtrTy)
        Idx = Builder.CreateIntCast(Idx, IntPtrTy, IdxSigned, "idxprom");
-@@ -6475,10 +6597,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -6445,10 +6572,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
@@ -7057,7 +7062,7 @@ index 6a0d127fb..cd2d2ecee 100644
  
    llvm::scope_exit AddCoroElideSafeOnExit([&] {
      if (E->isCoroElideSafe()) {
-@@ -6702,6 +6908,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
+@@ -6672,6 +6883,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
      return EmitPointerToDataMemberBinaryExpr(E);
  
    assert(E->getOpcode() == BO_Assign && "unexpected binary l-value");
@@ -7066,7 +7071,7 @@ index 6a0d127fb..cd2d2ecee 100644
  
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
-@@ -7314,9 +7522,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7284,9 +7497,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
                                             bool forLValue,
                                             AggValueSlot slot) {
    SmallVector<CodeGenFunction::OpaqueValueMappingData, 4> opaques;
@@ -7091,7 +7096,7 @@ index 6a0d127fb..cd2d2ecee 100644
    LValueOrRValue result;
  
    for (PseudoObjectExpr::const_semantics_iterator
-@@ -7347,7 +7570,38 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7317,7 +7545,38 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
@@ -12500,7 +12505,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,1024 @@
+@@ -0,0 +1,1030 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -12879,7 +12884,9 @@ new file mode 100644
 +      }
 +      return true;
 +    };
-+    if (!NoThrow(NoThrow, Base, 0)) return false;
++    const bool NothrowPayload = NoThrow(NoThrow, Base, 0);
++    if (!NothrowPayload && !CGM.getLangOpts().CXXExceptions)
++      return false;
 +    auto Fresh = [&](auto &&Self, const Expr *Value) -> bool {
 +      if (!Value) return false;
 +      Value = unboundCppCheckedResult(Value);
@@ -12905,18 +12912,27 @@ new file mode 100644
 +        return Self(Self, Conditional->getTrueExpr()) && Self(Self, Conditional->getFalseExpr());
 +      if (const auto *Comma = dyn_cast<BinaryOperator>(Value); Comma && Comma->getOpcode() == BO_Comma)
 +        return Self(Self, Comma->getRHS());
-+      if (isa<CoroutineSuspendExpr>(Value) && Value->isPRValue())
++      if (NothrowPayload && isa<CoroutineSuspendExpr>(Value) && Value->isPRValue())
 +        // A value returned by await_resume owns fresh selected payload storage.
 +        // Reference-valued suspension results remain aliases and cannot acquire
 +        // this provisional temporary owner.
 +        return true;
 +      if (isa<CallExpr,ObjCMessageExpr>(Value) &&
 +          (supportsObjC3CarrierCppCallABI(CGM,Base) || supportsObjC3MixedCarrierCallABI(CGM,Base)))return true;
-+      if (const auto *Try = dyn_cast<ObjC3TryExpr>(Value))
-+        return Try->getKind() == ObjC3TryExpr::Kind::Optionalize ||
-+            ((supportsObjC3CarrierCppCallABI(CGM,Base) || supportsObjC3MixedCarrierCallABI(CGM,Base)) &&
-+             Context.hasSameUnqualifiedType(Try->getOperand()->getType(),Base));
-+      return isa<ObjC3OptionalExpr,ObjC3ResultExpr,ObjC3CarrierTransferExpr>(Value);
++      if (const auto *Try = dyn_cast<ObjC3TryExpr>(Value)) {
++        if (Try->getKind() == ObjC3TryExpr::Kind::Optionalize) {
++          if (NothrowPayload)
++            return true;
++          const auto *Signature = getObjC3AsyncCalleeFunctionType(Try->getOperand());
++          return Signature && !Signature->getObjC3FunctionEffects().Async &&
++                 supportsObjC3CheckedCppResult(CGM, Try->getOperand()->getType());
++        }
++        return (supportsObjC3CarrierCppCallABI(CGM, Base) ||
++                supportsObjC3MixedCarrierCallABI(CGM, Base)) &&
++               Context.hasSameUnqualifiedType(Try->getOperand()->getType(), Base);
++      }
++      return NothrowPayload &&
++             isa<ObjC3OptionalExpr, ObjC3ResultExpr, ObjC3CarrierTransferExpr>(Value);
 +    };
 +    return Fresh(Fresh, Root);
 +  }
@@ -13367,16 +13383,11 @@ new file mode 100644
 +      supportsObjC3CarrierARCLocalLifetime(CGF.CGM, E.getType());
 +  const auto *Signature = getObjC3AsyncCalleeFunctionType(E.getOperand());
 +  QualType Payload = E.getOperand()->getType();
-+  if (Signature && !Signature->getObjC3FunctionEffects().Async &&
-+      !supportsObjC3NothrowCheckedCppResult(CGF.CGM, Payload) &&
-+      supportsObjC3CheckedCppResult(CGF.CGM, Payload)) {
-+    CGF.CGM.ErrorUnsupported(&E, "throwing destructor in a try? Optional payload");
-+    return false;
-+  }
 +  const bool NativeCpp = Signature &&
-+      supportsObjC3NothrowCheckedCppResult(CGF.CGM, Payload) &&
-+      (!Signature->getObjC3FunctionEffects().Async ||
-+       isNativeCAwait(CGF, unboundCppCheckedResult(E.getOperand())));
++      (Signature->getObjC3FunctionEffects().Async
++           ? supportsObjC3NothrowCheckedCppResult(CGF.CGM, Payload) &&
++                 isNativeCAwait(CGF, unboundCppCheckedResult(E.getOperand()))
++           : supportsObjC3CheckedCppResult(CGF.CGM, Payload));
 +  const bool CppLocal = (NativeCpp || getObjC3CheckedAsyncAdapter(E.getOperand())) &&
 +      (supportsObjC3CarrierCppLocalLifetime(CGF.CGM, E.getType()) || supportsObjC3MixedCarrierCallABI(CGF.CGM,E.getType()));
 +  if (!supportsObjC3CarrierCopyPayload(CGF.CGM, E.getType()) &&
@@ -35851,11 +35862,12 @@ diff --git a/clang/test/ObjC3/CodeGen/native-checked-cxx-optional-gates.mm b/cla
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-checked-cxx-optional-gates.mm
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,24 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fblocks -emit-llvm-only -verify -DREGION=1 %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fblocks -emit-llvm-only -verify -DREGION=2 %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fblocks -fobjc-arc -emit-llvm-only -verify -DREGION=1 %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fblocks -fobjc-arc -emit-llvm-only -verify -DREGION=2 %s
++// expected-no-diagnostics
 +@protocol Error
 +@end
 +struct ThrowingOptionalOwner {
@@ -35863,15 +35875,15 @@ new file mode 100644
 +  ~ThrowingOptionalOwner() noexcept(false);
 +};
 +ThrowingOptionalOwner throwing_optional_source() __objc3_throws(id<Error>);
-+typedef __objc3_optional(ThrowingOptionalOwner) UnsupportedOptionalOwner;
++typedef __objc3_optional(ThrowingOptionalOwner) OptionalThrowingOwner;
 +#if REGION == 1
-+const UnsupportedOptionalOwner &unsupported_static_reference() {
-+  static const UnsupportedOptionalOwner &value=__objc3_try_optional(throwing_optional_source()); // expected-error {{throwing destructor in a try? Optional payload}}
++const OptionalThrowingOwner &checked_static_reference() {
++  static const OptionalThrowingOwner &value=__objc3_try_optional(throwing_optional_source());
 +  return value;
 +}
 +#else
-+const UnsupportedOptionalOwner &unsupported_thread_reference() {
-+  static thread_local const UnsupportedOptionalOwner &value=__objc3_try_optional(throwing_optional_source()); // expected-error {{throwing destructor in a try? Optional payload}}
++const OptionalThrowingOwner &checked_thread_reference() {
++  static thread_local const OptionalThrowingOwner &value=__objc3_try_optional(throwing_optional_source());
 +  return value;
 +}
 +#endif

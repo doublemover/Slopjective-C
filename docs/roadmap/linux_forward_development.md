@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.249 / System 2.175 checked C++ Optional changes](linux_checked_cpp_optionals.md)
+extend throwing-destructor payloads to local and lifetime-extended storage,
+with native full-expression and rollback cleanup.
+
 The [Source 2.248 / System 2.174 checked runtime interface changes](linux_async_c_completion_exports.md)
 bind public cancellation checkpoints, checked group joins and completion
 status references to the exact SDK header in published bodies.
@@ -2290,7 +2294,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    System capabilities.
 5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
    next implementation span is coherent, then perform one coordinated SDK
-   cutover. Source 2.154–2.248 still requires its fresh matching campaign; focused
+   cutover. Source 2.154–2.249 still requires its fresh matching campaign; focused
    local receipts do not promote a replacement archive. Avoid repeated archive
    rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native
