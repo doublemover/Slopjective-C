@@ -3384,6 +3384,44 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestNativeDecompositionReplay() {
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source, const char *file) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-xc++", standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.bindings", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.bindings", "test");
+    };
+    const std::string source =
+        "inline int bindings(int input){int values[2]={input,input+1};auto [first,second]=values;return first+second;}"
+        "inline int reference(int input){int values[2]={input,input+1};const auto &[first,second]=values;return first+second;}"
+        "inline int ranged(void){int values[1][2]={{1,2}};int sum=0;for(auto [first,second]:values)sum+=first+second;return sum;}";
+    auto first = emit(source, "bindings-provider.cpp");
+    for (const auto &diagnostic : first.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
+    assert(first.success);
+    assert(first.source_bytes.find("[first, second]") != std::string::npos);
+    assert(first.source_bytes.find("[*]") == std::string::npos);
+    auto relocated = emit("\n\n" + source, "relocated-bindings.cpp");
+    auto replayed = emit(first.source_bytes, "bindings-replay.cpp");
+    assert(relocated.success && replayed.success);
+    assert(first.source_bytes == relocated.source_bytes && first.source_bytes == replayed.source_bytes);
+    assert(first.identity.semantic_fingerprint == relocated.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint == replayed.identity.semantic_fingerprint);
+    auto changed = source;
+    changed.replace(changed.find("auto [first,second]"), std::string("auto [first,second]").size(),
+                    "auto &[first,second]");
+    auto reference_change = emit(changed, "bindings-reference-change.cpp");
+    assert(reference_change.success && reference_change.identity.semantic_fingerprint != first.identity.semantic_fingerprint);
+    changed = source;
+    changed.replace(changed.find("first+second"), std::string("first+second").size(), "first-second");
+    auto body_change = emit(changed, "bindings-body-change.cpp");
+    assert(body_change.success && body_change.identity.semantic_fingerprint != first.identity.semantic_fingerprint);
+  }
+}
+
 void TestCxxLocalExpressions() {
   const auto semantics = CurrentReaderSemantics();
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
@@ -12501,6 +12539,7 @@ int main(int argc,char **argv) {
   cases.Run("TestNativeCControlFlow", TestNativeCControlFlow);
   cases.Run("TestCxxFriends", TestCxxFriends);
   cases.Run("TestNativeExportRoots", TestNativeExportRoots);
+  cases.Run("TestNativeDecompositionReplay", TestNativeDecompositionReplay);
   cases.Run("TestCxxLocalExpressions", TestCxxLocalExpressions);
   cases.Run("TestCxxLocalTypes", TestCxxLocalTypes);
   cases.Run("TestGenericLocalLambdas", TestGenericLocalLambdas);

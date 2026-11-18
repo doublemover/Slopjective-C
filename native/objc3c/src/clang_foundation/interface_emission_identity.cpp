@@ -1144,6 +1144,14 @@ public:
     if (attribute->getCall()) return TraverseStmt(attribute->getInvalid());
     return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseObjCResourceAttr(attribute);
   }
+  bool VisitBindingDecl(clang::BindingDecl *declaration) {
+    // Binding declarations are local values too. Falling back to their USRs
+    // ties a range/body reference to the provider's physical file location.
+    Local(declaration);
+    Add("decomposition-binding");
+    Add(ExpressionType(declaration->getType()));
+    return true;
+  }
   bool VisitVarDecl(clang::VarDecl *declaration) {
     if (declaration->isLocalVarDeclOrParm()) Local(declaration);
     Add(ExpressionType(declaration->getType()));

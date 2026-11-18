@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 232,
+        "minor": 233,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed scalar by-copy captured lambdas retain global/reference/resource writes through mutable operators, copies and aliases, with receiver write/escape checks and conservative captured state; structured bindings/array copies preserve provenance and authored publication, and six named source-free CTest configurations share one executable owner; broader capture/lifetime precision and matching SDK acceptance pending",
         "Immutable native function-pointer targets preserve global/reference writes, returned sources and pure pointee loads through const bindings, aliases, same-target conditionals and standard reference views; exact function prototype/effect identity, closed definitions and bounded target discovery remain required; mutable/runtime-selected targets, foreign callback contracts and matching SDK acceptance pending",
         "Stateless C++ lambda global/reference writes retain caller value and storage sources through consistent operator object/parameter offsets, explicit calls and C++23 static operators; empty-capture/closed-dispatch admission, canonical binding replay and bounded conservative discovery remain required; captured mutable/open callable state and matching SDK acceptance pending",
         "Closed native scalar reference helpers resolve assignments, observations and escapes to complete caller cell sets across local/global/field/fixed-array storage; final binding replay preserves later actual targets of shared callees, receiver-independent/qualified/final member helpers and pure pointer loads retain their value roles, ordinary stores avoid false escapes, and known loan/resource transfers remain rejected; unresolved/open/stateful lifetime precision and matching SDK acceptance pending",
@@ -395,12 +396,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 158,
+        "minor": 159,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed scalar by-copy captured lambdas retain global/reference/resource writes through mutable operators, copies and aliases, with receiver write/escape checks and conservative captured state; structured bindings/array copies preserve provenance and authored publication, and six named source-free CTest configurations share one executable owner; broader capture/lifetime precision and matching SDK acceptance pending",
         "Immutable native function-pointer targets preserve global/reference writes, returned sources and pure pointee loads through const bindings, aliases, same-target conditionals and standard reference views; exact function prototype/effect identity, closed definitions and bounded target discovery remain required; mutable/runtime-selected targets, foreign callback contracts and matching SDK acceptance pending",
         "Stateless C++ lambda global/reference writes retain caller value and storage sources through consistent operator object/parameter offsets, explicit calls and C++23 static operators; empty-capture/closed-dispatch admission, canonical binding replay and bounded conservative discovery remain required; captured mutable/open callable state and matching SDK acceptance pending",
         "Closed native scalar reference helpers resolve assignments, observations and escapes to complete caller cell sets across local/global/field/fixed-array storage; final binding replay preserves later actual targets of shared callees, receiver-independent/qualified/final member helpers and pure pointer loads retain their value roles, ordinary stores avoid false escapes, and known loan/resource transfers remain rejected; unresolved/open/stateful lifetime precision and matching SDK acceptance pending",

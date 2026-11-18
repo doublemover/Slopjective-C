@@ -1,7 +1,7 @@
 #include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
+#include "llvm/Support/FileSystem.h"
 #include <cassert>
-#include <chrono>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -18,15 +18,17 @@ void Require(const CompileResult &result, const std::string &diagnostic = {}) {
   if (result.success != diagnostic.empty() || !found) {
     std::cerr << result.failure << '\n';
     for (const auto &item : result.diagnostics) std::cerr << item.message << '\n';
+    if (result.interface_artifact)
+      for (const auto &item : result.interface_artifact->diagnostics)
+        std::cerr << item.code << ": " << item.subject << ": " << item.message << '\n';
     std::abort();
   }
 }
 void Check(bool arc, const std::string &standard) {
   const bool cxx = standard != "c17";
-  const auto root = fs::temp_directory_path() /
-      ("objc3-global-provenance-" + std::to_string(
-          std::chrono::steady_clock::now().time_since_epoch().count()));
-  fs::create_directory(root);
+  llvm::SmallString<128> temporary;
+  if (llvm::sys::fs::createUniqueDirectory("objc3-global-provenance", temporary)) std::abort();
+  const fs::path root(temporary.c_str());
   struct Cleanup { fs::path path; ~Cleanup() { fs::remove_all(path); } } cleanup{root};
   CompileRequest provider;
   provider.input_path = (root / (cxx ? "provider.mm" : "provider.m")).string();
@@ -70,13 +72,27 @@ void Check(bool arc, const std::string &standard) {
         "};struct PublishedReferenceFinal final:PublishedReferenceReceiver {"
         "void virtual_store(const char *&slot,const char *value)override{slot=value;}};"
         "inline void published_stateless_store(const char *value){auto work=[](const char *input){published_pointer=input;};work(value);}"
-        "inline void published_stateless_reference(const char *&slot,const char *value){auto work=[](const char *&target,const char *input){target=input;};work(slot,value);}";
+        "inline void published_stateless_reference(const char *&slot,const char *value){auto work=[](const char *&target,const char *input){target=input;};work(slot,value);}"
+        "inline void published_captured_store(const char *value){auto work=[saved=value](){published_pointer=saved;};auto copy=work;const auto &alias=copy;alias();}"
+        "inline void published_captured_reference(const char *&slot,const char *value){auto work=[saved=value](const char *&target){target=saved;};work(slot);}"
+        "inline void published_captured_number(int value){auto work=[value](){published_number=value;};work();}"
+        "inline void published_captured_mutable(const char *value){auto work=[saved=value]()mutable{const char *old=saved;saved=\"static\";published_pointer=old;};work();}"
+        "inline void published_captured_binding(const char *value){const char *values[1]={value};auto [saved]=values;auto work=[saved](){published_pointer=saved;};work();}"
+        "inline void published_captured_binding_ref(const char *value){const char *values[1]={value};const auto &[saved]=values;auto work=[saved](){published_pointer=saved;};work();}"
+        "inline int published_binding_range(void){int values[1][2]={{1,2}};int sum=0;for(auto [first,second]:values)sum+=first+second;return sum;}";
     for (const char *name : {"published_reference_store", "published_reference_load", "published_reference_chain", "published_reference_number"})
       provider.interface_exports.push_back(name);
     provider.interface_exports.push_back("PublishedReferenceReceiver");
     provider.interface_exports.push_back("PublishedReferenceFinal");
     provider.interface_exports.push_back("published_stateless_store");
     provider.interface_exports.push_back("published_stateless_reference");
+    provider.interface_exports.push_back("published_captured_store");
+    provider.interface_exports.push_back("published_captured_reference");
+    provider.interface_exports.push_back("published_captured_number");
+    provider.interface_exports.push_back("published_captured_mutable");
+    provider.interface_exports.push_back("published_captured_binding");
+    provider.interface_exports.push_back("published_captured_binding_ref");
+    provider.interface_exports.push_back("published_binding_range");
     if (standard == "c++23") {
       *provider.source_text += "inline void published_static_store(const char *value){auto work=[](const char *input) static {published_pointer=input;};work.operator()(value);work(value);}";
       provider.interface_exports.push_back("published_static_store");
@@ -192,6 +208,28 @@ void Check(bool arc, const std::string &standard) {
     run("\n#include <utility>\nvoid rejected(borrowed const char *loan){auto const work=&published_reference_store;"
         "auto const &alias=work;const char *slot=\"static\";std::as_const(alias)(slot,loan);const char *value=slot;"
         "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void rejected(borrowed const char *loan){published_captured_store(loan);const char *value=published_pointer;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void ordinary(void){published_captured_store(\"static\");const char *value=published_pointer;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    for (const char *call : {"published_captured_mutable", "published_captured_binding", "published_captured_binding_ref"}) {
+      run("void rejected(borrowed const char *loan){" + std::string(call) + "(loan);const char *value=published_pointer;"
+          "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+      run("void ordinary(void){" + std::string(call) + "(\"static\");const char *value=published_pointer;"
+          "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    }
+    run("void ordinary(void){int value=published_binding_range();"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    run("void rejected(borrowed const char *loan){const char *slot=\"static\";published_captured_reference(slot,loan);const char *value=slot;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void ordinary(void){const char *slot=\"static\";published_captured_reference(slot,\"other\");const char *value=slot;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
+        "published_captured_number(descriptor);int value=published_number;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
+    run("template<class Value>void alter(Value &);void rejected(void){const char *slot=\"static\";"
+        "auto work=[saved=(const char *)\"other\"](const char *&target){target=saved;};alter(work);work(slot);"
+        "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
   }
   const std::string crossing = preamble +
       (cxx ? "\n#include \"objc3_task.hpp\"\n" : "") +
@@ -209,7 +247,15 @@ void Check(bool arc, const std::string &standard) {
   std::cout << "Global provenance source-free " << standard << (arc ? " ARC\n" : " MRC\n");
 }
 }
-int main() {
+int main(int argc, char **argv) {
+  if (argc != 1) {
+    if (argc != 3) return 2;
+    const std::string standard = argv[1], ownership = argv[2];
+    if ((standard != "c17" && standard != "c++20" && standard != "c++23") ||
+        (ownership != "arc" && ownership != "mrc")) return 2;
+    Check(ownership == "arc", standard);
+    return 0;
+  }
   for (bool arc : {false, true})
     for (const std::string standard : {"c17", "c++20", "c++23"}) Check(arc, standard);
 }

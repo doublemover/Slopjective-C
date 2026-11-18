@@ -720,8 +720,15 @@ if (BUILD_TESTING)
   target_compile_definitions(objc3_native_global_provenance_test PRIVATE
     OBJC3_GLOBAL_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
   target_link_libraries(objc3_native_global_provenance_test PRIVATE objc3c_clang_foundation)
-  objc3c_add_frontend_test(NAME objc3_native_global_provenance COMMAND objc3_native_global_provenance_test)
-  set_tests_properties(objc3_native_global_provenance PROPERTIES TIMEOUT 180)
+  foreach(_provenance_standard c17 cxx20 cxx23)
+    string(REPLACE "cxx" "c++" _provenance_argument "${_provenance_standard}")
+    foreach(_provenance_ownership arc mrc)
+      set(_provenance_name "objc3_native_global_provenance_${_provenance_standard}_${_provenance_ownership}")
+      objc3c_add_frontend_test(NAME "${_provenance_name}"
+        COMMAND objc3_native_global_provenance_test "${_provenance_argument}" "${_provenance_ownership}")
+      set_tests_properties("${_provenance_name}" PROPERTIES TIMEOUT 180)
+    endforeach()
+  endforeach()
   add_executable(objc3_explicit_capture_lists_test
     ../../../../tests/clang_foundation/explicit_capture_lists_test.cpp)
   target_include_directories(objc3_explicit_capture_lists_test SYSTEM PRIVATE

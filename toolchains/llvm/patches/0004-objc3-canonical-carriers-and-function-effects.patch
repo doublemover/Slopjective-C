@@ -8365,7 +8365,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1913,46 @@
+@@ -985,22 +1913,60 @@
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -8384,6 +8384,15 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 -                       : D->getName());
 +  std::string Name=(isa<ParmVarDecl>(D) && Policy.CleanUglifiedParameters && D->getIdentifier())
 +      ? D->getIdentifier()->deuglifiedName().str() : D->getName().str();
++  if(const auto *Binding=dyn_cast<DecompositionDecl>(D)) {
++    Name="[";
++    for(const auto *Element:Binding->bindings()) {
++      if(Name.size()!=1)Name+=", ";
++      if(Element->isParameterPack())Name+="...";
++      Name+=Element->getName().str();
++    }
++    Name+="]";
++  }
 +  if (Name.empty() && (Policy.PolishForDeclaration || Policy.PrintAsCanonical))
 +    if (const auto *Parameter = dyn_cast<ParmVarDecl>(D))
 +      Name = nativeLifetimeParameterName(Parameter, Policy);
@@ -8408,6 +8417,11 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << ' ' << *Attrs;
  
    Expr *Init = D->getInit();
++  // Array decomposition materializes an implicit element-copy loop. Reprint
++  // its authored source array, rather than the non-language loop/index nodes.
++  if(isa<DecompositionDecl>(D) && Init)
++    if(const auto *Copy=dyn_cast<ArrayInitLoopExpr>(Init->IgnoreParenImpCasts()))
++      Init=Copy->getCommonExpr()->getSourceExpr();
 +  // The original declaration already supplies inherited default arguments.
 +  // Reprinting them on a redeclaration makes a reusable interface ill-formed.
 +  if (const auto *Parameter = dyn_cast<ParmVarDecl>(D);
@@ -8416,7 +8430,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1974,8 @@
+@@ -1022,6 +1988,8 @@
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -8425,7 +8439,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1983,7 @@
+@@ -1029,9 +1997,7 @@
    }
  }
  
@@ -8436,7 +8450,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1998,7 @@
+@@ -1046,8 +2012,7 @@
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -8446,7 +8460,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +2020,8 @@
+@@ -1069,6 +2034,8 @@
      Out << "inline ";
  
    Out << "namespace ";
@@ -8455,7 +8469,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +2048,9 @@
+@@ -1095,6 +2062,9 @@
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -8465,7 +8479,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +2087,8 @@
+@@ -1131,7 +2101,8 @@
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -8475,7 +8489,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +2219,7 @@
+@@ -1262,7 +2233,7 @@
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -8484,7 +8498,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +2239,21 @@
+@@ -1282,12 +2253,21 @@
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -8507,7 +8521,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +2268,11 @@
+@@ -1302,7 +2282,11 @@
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -8520,7 +8534,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +2290,14 @@
+@@ -1320,6 +2304,14 @@
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -8535,7 +8549,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +2355,17 @@
+@@ -1377,13 +2369,17 @@
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -8556,7 +8570,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +2380,18 @@
+@@ -1398,9 +2394,18 @@
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -8577,7 +8591,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +2463,8 @@
+@@ -1472,9 +2477,8 @@
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -8589,7 +8603,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +2473,22 @@
+@@ -1483,8 +2487,22 @@
      Out << name;
  
    if (OMD->isVariadic())
@@ -8613,7 +8627,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +2496,7 @@
+@@ -1492,8 +2510,7 @@
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -8623,7 +8637,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << ';';
  }
  
-@@ -1512,8 +2515,8 @@
+@@ -1512,8 +2529,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8634,7 +8648,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2548,7 @@
+@@ -1545,7 +2562,7 @@
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -8643,7 +8657,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2561,8 @@
+@@ -1558,7 +2575,8 @@
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8653,7 +8667,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2572,8 @@
+@@ -1568,9 +2586,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8665,7 +8679,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2590,8 @@
+@@ -1587,6 +2604,8 @@
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -8674,7 +8688,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2601,8 @@
+@@ -1596,7 +2615,8 @@
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8684,7 +8698,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2625,8 @@
+@@ -1619,6 +2639,8 @@
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -8693,7 +8707,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2635,26 @@
+@@ -1627,13 +2649,26 @@
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -8724,7 +8738,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2666,8 @@
+@@ -1645,8 +2680,8 @@
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -8735,7 +8749,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2774,14 @@
+@@ -1753,15 +2788,14 @@
        }
      }
  
@@ -8757,7 +8771,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2817,14 @@
+@@ -1797,11 +2831,14 @@
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -8775,7 +8789,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2846,7 @@
+@@ -1823,7 +2860,7 @@
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -8784,7 +8798,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
-@@ -1971,7 +2994,14 @@
+@@ -1971,7 +3008,14 @@
    if (IdentifierInfo *II = NTTP->getIdentifier())
      Name =
          Policy.CleanUglifiedParameters ? II->deuglifiedName() : II->getName();
@@ -8800,7 +8814,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (NTTP->hasDefaultArgument() && !NTTP->defaultArgumentWasInherited()) {
      Out << " = ";
-@@ -2023,3 +3053,18 @@
+@@ -2023,3 +3067,18 @@
      }
    }
  }
@@ -53738,7 +53752,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3972 @@
+@@ -0,0 +1,4073 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54817,6 +54831,8 @@ new file mode 100644
 +  llvm::DenseMap<const CallExpr *,const FunctionDecl *> CallDefinitions;
 +  llvm::DenseMap<const FunctionDecl *,SmallVector<const Expr *,4>> ReturnSources;
 +  llvm::SmallPtrSet<const FunctionDecl *,32> IndexedFunctions;
++  llvm::DenseMap<const ValueDecl *,SmallVector<const VarDecl *,4>> CaptureBindings;
++  llvm::SmallPtrSet<const ValueDecl *,32> UnknownCaptures;
 +  bool Indexed=false,Incomplete=false,CallGraphIncomplete=false;
 +  llvm::DenseMap<const FunctionDecl *,const FunctionDecl *> DefinitionCache;
 +  auto ExcludedPolicy=[](const FunctionDecl *Function) {
@@ -54832,6 +54848,69 @@ new file mode 100644
 +  auto ArgumentOffset=[](const CallExpr *Call) {
 +    return isa<CXXOperatorCallExpr>(Call) && isa_and_nonnull<CXXMethodDecl>(Call->getDirectCallee())?1u:0u;
 +  };
++  auto CaptureIdentity=[](const ValueDecl *Value)->const ValueDecl * {
++    if(const auto *Variable=dyn_cast<VarDecl>(Value))return Variable->getCanonicalDecl();
++    return Value;
++  };
++  auto CapturedReceiver=[&](const CallExpr *Call,const CXXMethodDecl *Method)
++      ->std::optional<SmallVector<const VarDecl *,4>> {
++    const auto *Closure=Method->getParent();
++    if(Closure->capture_size()>32){CallGraphIncomplete=true;return std::nullopt;}
++    for(const auto &Capture:Closure->captures()) {
++      if(!Capture.capturesVariable() || Capture.getCaptureKind()!=LCK_ByCopy)return std::nullopt;
++      const auto *Variable=Capture.getCapturedVar();
++      if(!isa<VarDecl,BindingDecl>(Variable))return std::nullopt;
++      if(const auto *Storage=dyn_cast<VarDecl>(Variable);Storage && Storage->hasAttr<BlocksAttr>())return std::nullopt;
++      if(const auto *Binding=dyn_cast<BindingDecl>(Variable);Binding && !Binding->getBinding())return std::nullopt;
++      const auto Value=Variable->getType().getNonReferenceType();
++      if(!Value->isScalarType() || Value->isObjCRetainableType() ||
++          isObjC3NSObjectStorageType(Value) || Value.isVolatileQualified() || Value->isAtomicType())return std::nullopt;
++    }
++    const Expr *Receiver=nullptr;
++    if(const auto *Operator=dyn_cast<CXXOperatorCallExpr>(Call);Operator && Operator->getNumArgs())Receiver=Operator->getArg(0);
++    else if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call))Receiver=Member->getImplicitObjectArgument();
++    SmallVector<const VarDecl *,4> Bindings;
++    llvm::SmallPtrSet<const VarDecl *,16> ActiveBindings;unsigned Work=64;
++    auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->bool {
++      if(!E)return false;
++      if(!Work || Depth>32){CallGraphIncomplete=true;return false;}
++      --Work;E=E->IgnoreParenImpCasts();
++      if(E->getType()->isPointerType()) {
++        auto Pointees=receiverPointees(Context,E);
++        if(Pointees.Truncated)CallGraphIncomplete=true;
++        if(!Pointees.Closed)return false;
++        for(const auto *Target:Pointees.Targets)if(!Self(Self,Target,Depth+1))return false;
++        return true;
++      }
++      if(const auto *Deref=dyn_cast<UnaryOperator>(E);Deref && Deref->getOpcode()==UO_Deref)return Self(Self,Deref->getSubExpr(),Depth+1);
++      if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(E))return Self(Self,Cleanup->getSubExpr(),Depth+1);
++      if(const auto *Temporary=dyn_cast<MaterializeTemporaryExpr>(E))return Self(Self,Temporary->getSubExpr(),Depth+1);
++      if(const auto *Temporary=dyn_cast<CXXBindTemporaryExpr>(E))return Self(Self,Temporary->getSubExpr(),Depth+1);
++      if(const auto *Lambda=dyn_cast<LambdaExpr>(E))return Lambda->getLambdaClass()->getCanonicalDecl()==Closure->getCanonicalDecl();
++      if(const auto *Copy=dyn_cast<CXXConstructExpr>(E))
++        return Copy->getConstructor()->isCopyOrMoveConstructor() && !Copy->getConstructor()->isUserProvided() &&
++            Copy->getNumArgs()==1 && Self(Self,Copy->getArg(0),Depth+1);
++      if(const auto *View=dyn_cast<CallExpr>(E);View && standardReferenceView(View))return Self(Self,View->getArg(0),Depth+1);
++      if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(E)) {
++        if(Choice->getCond()->HasSideEffects(Context))return false;
++        return Self(Self,Choice->getTrueExpr(),Depth+1) && Self(Self,Choice->getFalseExpr(),Depth+1);
++      }
++      const auto *Reference=dyn_cast<DeclRefExpr>(E);
++      const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
++      if(!Variable || Variable->getType().isVolatileQualified() ||
++          (!Variable->hasLocalStorage() && !Variable->getType().isConstQualified()))return false;
++      Variable=Variable->getCanonicalDecl();
++      if(!ActiveBindings.insert(Variable).second)return false;
++      auto Leave=llvm::scope_exit([&]{ActiveBindings.erase(Variable);});
++      if(!llvm::is_contained(Bindings,Variable)) {
++        if(Bindings.size()==32){CallGraphIncomplete=true;return false;}
++        Bindings.push_back(Variable);
++      }
++      return Self(Self,Variable->getAnyInitializer(),Depth+1);
++    };
++    if(!Resolve(Resolve,Receiver,0))return std::nullopt;
++    return Bindings;
++  };
 +  auto ClosedDefinition=[&](const CallExpr *Call)->const FunctionDecl * {
 +    const auto *Function=projectionCallee(Call,Context);
 +    const unsigned Offset=ArgumentOffset(Call);
@@ -54839,10 +54918,31 @@ new file mode 100644
 +        Function->isNoReturn() || Function->isInStdNamespace() ||
 +        Function->getNumParams()+Offset!=Call->getNumArgs() || Function->getNumParams()>16 ||
 +        (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic() &&
-+         ((cast<CXXMethodDecl>(Function)->getParent()->isLambda() && cast<CXXMethodDecl>(Function)->getParent()->capture_size()!=0) || !closedProjectionReceiver(Call,Context))) ||
++         !closedProjectionReceiver(Call,Context)) ||
 +        getObjC3Executor(Function) || isObjC3ActorIsolated(Function))return nullptr;
++    const auto *Method=dyn_cast<CXXMethodDecl>(Function);
++    const bool Captured=Method && Method->getParent()->isLambda() && Method->getParent()->capture_size()!=0;
++    SmallVector<const VarDecl *,4> Bindings;
++    if(Captured) {
++      auto Receiver=CapturedReceiver(Call,Method);if(!Receiver)return nullptr;
++      Bindings=std::move(*Receiver);
++    }
++    auto RegisterCaptures=[&]() {
++      if(!Captured)return;
++      for(const auto &Capture:Method->getParent()->captures()) {
++        const auto *Variable=CaptureIdentity(Capture.getCapturedVar());
++        auto &Owners=CaptureBindings[Variable];
++        for(const auto *Binding:Bindings)if(!llvm::is_contained(Owners,Binding)) {
++          if(Owners.size()==128){CallGraphIncomplete=true;UnknownCaptures.insert(Variable);break;}
++          Owners.push_back(Binding);
++        }
++      }
++    };
 +    auto Cached=DefinitionCache.try_emplace(Function,nullptr);
-+    if(!Cached.second)return Cached.first->second;
++    if(!Cached.second) {
++      if(Cached.first->second)RegisterCaptures();
++      return Cached.first->second;
++    }
 +    const auto *Definition=Function->getDefinition();
 +    if(!Definition || (!Definition->isInlined() && Definition->isExternallyVisible()) ||
 +        Definition->getNumParams()+Offset!=Call->getNumArgs() ||
@@ -54871,6 +54971,7 @@ new file mode 100644
 +      for(const auto *Child:Node->children())if(Child)Pending.push_back(Child);
 +    }
 +    Cached.first->second=Definition;
++    RegisterCaptures();
 +    return Definition;
 +  };
 +  auto Index=[&]() {
@@ -55025,6 +55126,9 @@ new file mode 100644
 +        }
 +        continue;
 +      }
++      if(const auto *Copy=dyn_cast<ArrayInitLoopExpr>(Node)) {
++        Add(Copy->getCommonExpr(),Read);Add(Copy->getSubExpr());continue;
++      }
 +      if(const auto *Lambda=dyn_cast<LambdaExpr>(Node)) {
 +        for(const auto &Capture:Lambda->captures())
 +          if(Capture.capturesVariable() && Capture.getCaptureKind()==LCK_ByRef)
@@ -55167,6 +55271,11 @@ new file mode 100644
 +      if(auto Targets=Cells(Target))for(const auto *Variable:*Targets)Writes[Variable].push_back(Source);
 +    SmallVector<const VarDecl *,16> Escapes(DeferredEscapes.begin(),DeferredEscapes.end());
 +    for(const auto *Variable:Escapes)Escape(Variable);
++    for(const auto &[Variable,Owners]:CaptureBindings)
++      for(const auto *Owner:Owners)
++        if(Escaped.contains(Owner) || Writes.contains(Owner)) {
++          UnknownCaptures.insert(Variable);CallGraphIncomplete=true;break;
++        }
 +  };
 +  // Global/static/TLS values retain initializers and writes visible in this
 +  // native scope. This is a may-source union, not a whole-program proof that
@@ -55227,6 +55336,11 @@ new file mode 100644
 +    if(const auto *Operation=dyn_cast<ObjC3ResourceExpr>(E))
 +      return !BorrowedOnly && Operation->getKind()==ObjC3ResourceExpr::Kind::Take;
 +    if(const auto *Reference=dyn_cast<DeclRefExpr>(E)) {
++      if(Reference->refersToEnclosingVariableOrCapture() &&
++          UnknownCaptures.contains(CaptureIdentity(Reference->getDecl()))) {
++        const auto Value=Reference->getDecl()->getType().getNonReferenceType();
++        if(!BorrowedOnly || Value->isPointerType() || Value->isBlockPointerType())return true;
++      }
 +      if(!BorrowedOnly && managedTransferStorage(Reference->getDecl()))return true;
 +      if(const auto *Binding=dyn_cast<BindingDecl>(Reference->getDecl()))
 +        return Binding->getBinding() && Recurse(Recurse,Binding->getBinding(),Depth+1);
@@ -55279,6 +55393,7 @@ new file mode 100644
 +    if(const auto *Choice=dyn_cast<ChooseExpr>(E);Choice && !Choice->isConditionDependent())
 +      return Recurse(Recurse,Choice->getChosenSubExpr(),Depth+1);
 +    if(const auto *Literal=dyn_cast<CompoundLiteralExpr>(E))return Recurse(Recurse,Literal->getInitializer(),Depth+1);
++    if(const auto *Copy=dyn_cast<ArrayInitLoopExpr>(E))return Recurse(Recurse,Copy->getCommonExpr(),Depth+1);
 +    if(const auto *List=dyn_cast<InitListExpr>(E)) {
 +      for(const auto *Value:List->inits())if(Value && Recurse(Recurse,Value,Depth+1))return true;
 +      return false;
@@ -81927,5 +82042,124 @@ new file mode 100644
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
 +}
 +#endif
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-captured-call-graphs.m b/clang/test/ObjC3/Sema/native-captured-call-graphs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-captured-call-graphs.m
+@@ -0,0 +1,78 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-captured-call-graphs.h"
++#if __OBJC3_PROFILE__ == 3
++const char *captured_graph_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#elif !defined(__cplusplus)
++// expected-no-diagnostics
++#else
++void captured_graph_values(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};work();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++ auto copy=work;const auto &alias=copy;alias();const char *copied=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)copied;}); // expected-error {{borrowed capture}}
++ const char *slot="static";auto store=[saved=loan](const char *&target){target=saved;};store(slot);
++ const char *stored=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)stored;}); // expected-error {{borrowed capture}}
++}
++void captured_graph_mutable(borrowed const char *loan){
++ auto work=[saved=loan]()mutable{const char *old=saved;saved="static";global_projection_pointer=old;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void captured_graph_decomposition(borrowed const char *loan){
++ const char *values[1]={loan};auto [saved]=values;auto work=[saved](){global_projection_pointer=saved;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void captured_graph_record(borrowed const char *loan){
++ CapturedGraphRecord source={loan,42};auto [saved,number]=source;
++ auto work=[saved](){global_projection_pointer=saved;};work();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void captured_graph_bound(borrowed const char *loan){
++ auto work=[saved=loan,value0=0,value1=1,value2=2,value3=3,value4=4,value5=5,value6=6,value7=7,value8=8,value9=9,value10=10,value11=11,value12=12,value13=13,value14=14,value15=15,value16=16,value17=17,value18=18,value19=19,value20=20,value21=21,value22=22,value23=23,value24=24,value25=25,value26=26,value27=27,value28=28,value29=29,value30=30,value31=31,value32=32](){global_projection_pointer=saved;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void captured_graph_alias_bound(borrowed const char *loan){
++ auto value0=[saved=loan](){global_projection_pointer=saved;};
++ auto value1=value0;
++ auto value2=value1;
++ auto value3=value2;
++ auto value4=value3;
++ auto value5=value4;
++ auto value6=value5;
++ auto value7=value6;
++ auto value8=value7;
++ auto value9=value8;
++ auto value10=value9;
++ auto value11=value10;
++ auto value12=value11;
++ auto value13=value12;
++ auto value14=value13;
++ auto value15=value14;
++ auto value16=value15;
++ auto value17=value16;
++ auto value18=value17;
++ auto value19=value18;
++ auto value20=value19;
++ auto value21=value20;
++ value21();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void captured_graph_resources(void){
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ auto work=[descriptor](){global_projection_number=descriptor;};work();int value=global_projection_number;
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void captured_graph_escaped_reference(void){
++ auto work=[saved=(const char *)"static"](const char *&target){target=saved;};captured_graph_unknown(work);
++ const char *slot="static";work(slot);const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void captured_graph_escaped(void){
++ auto work=[saved=(const char *)"static"](){global_projection_external=saved;};captured_graph_unknown(work);work();
++ const char *value=global_projection_external;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-captured-call-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-captured-call-graphs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-captured-call-graphs.h
+@@ -0,0 +1,29 @@
++#ifndef OBJC3_CAPTURED_CALL_GRAPHS_H
++#define OBJC3_CAPTURED_CALL_GRAPHS_H
++#include "native-indirect-call-graphs.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++template<class Value>void captured_graph_unknown(Value &);
++struct CapturedGraphRecord {const char *pointer;int number;};
++static inline void captured_graph_binding(void){
++ const char *values[1]={"static"};auto [saved]=values;
++ auto work=[saved](){global_projection_pointer=saved;};work();int scalar=42;
++ (void)binding_detached(binding_make_scalar(scalar));
++}
++static inline void captured_graph_mutable_ordinary(void){
++ auto work=[saved=(const char *)"static"]()mutable{saved="other";global_projection_pointer=saved;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++ const char *slot="static";auto store=[saved=(const char *)"other"](const char *&target)mutable{saved="static";target=saved;};
++ store(slot);const char *other=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)other;});
++}
++static inline void captured_graph_ordinary(void){
++ auto work=[saved=(const char *)"static"](){global_projection_pointer=saved;};
++ auto copy=work;const auto &alias=copy;alias();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++ const char *slot="static";auto store=[saved=(const char *)"other"](const char *&target){target=saved;};
++ store(slot);const char *other=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)other;});
++}
 +#endif
 +#endif

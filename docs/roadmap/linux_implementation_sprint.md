@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.233 / System 2.159 captured-callable span](linux_native_captured_call_graphs.md)
+retains scalar capture/global/reference writes through bounded mutable callable
+graphs and repairs source-free structured binding and array-copy publication.
+
 The [Source 2.232 / System 2.158 indirect-call span](linux_native_indirect_call_graphs.md)
 retains scalar value/storage sources through one immutable native function-pointer
 target, with exact prototype and conservative target-discovery admission.
