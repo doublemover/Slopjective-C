@@ -53652,7 +53652,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,2640 @@
+@@ -0,0 +1,2843 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54477,9 +54477,11 @@ new file mode 100644
 +// Completed expression nodes are shared across diamonds; active nodes reject
 +// cycles. Both the syntax budget and recursion depth are bounded independently
 +// of the number of source paths through conditional aliases.
++struct FactoryCapture {const Expr *Value;const ParmVarDecl *Parameter;};
 +class ConcurrentBlockValues {
 +  ASTContext &Context;
 +  SmallVectorImpl<const BlockExpr *> &Blocks;
++  SmallVectorImpl<FactoryCapture> *FactoryCaptures;
 +  llvm::SmallPtrSet<const Expr *, 32> Complete, Active;
 +  llvm::SmallPtrSet<const BlockDecl *, 16> Added;
 +  unsigned Budget = 256, ScanBudget = 4096;
@@ -54506,6 +54508,163 @@ new file mode 100644
 +  bool collectInitializer(const VarDecl *Variable,unsigned Depth) {
 +    llvm::SaveAndRestore<const VarDecl *> Owner(InitializerOwner,Variable);
 +    return collect(Variable->getInit(),Depth+1);
++  }
++
++  bool collectFactory(const CallExpr *Call,unsigned Depth) {
++    if(!FactoryCaptures || !Call || Depth>64 || Call->getNumArgs()>32)return false;
++    const auto *Function=Call->getDirectCallee();
++    if(!Function || (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) || Function->isVariadic() ||
++        Function->isMultiVersion() || Function->isNoReturn() ||
++        Function->hasAttr<WeakAttr>() || Function->hasAttr<WeakRefAttr>() || Function->hasAttr<WeakImportAttr>() ||
++        Function->hasAttr<ObjCTaskSpawnAttr>() || Function->hasAttr<ObjCTaskDetachedAttr>() || Function->hasAttr<ObjCTaskGroupAttr>() ||
++        Function->hasAttr<ReturnsTwiceAttr>() || getObjC3Executor(Function) || isObjC3ActorIsolated(Function) ||
++        !Function->getReturnType()->isBlockPointerType() || Function->getNumParams()!=Call->getNumArgs())return false;
++    const auto *Type=getObjC3CallableFunctionType(Function);
++    if(!Type || Type->getObjC3FunctionEffects().Async || Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None)return false;
++    const auto *Definition=Function->getDefinition();
++    if(!Definition || (!Definition->isInlined() && Definition->isExternallyVisible()) ||
++        Definition->getNumParams()!=Call->getNumArgs() || Definition->isMultiVersion() || Definition->isNoReturn() ||
++        Definition->hasAttr<WeakAttr>() || Definition->hasAttr<WeakRefAttr>() || Definition->hasAttr<WeakImportAttr>() ||
++        Definition->hasAttr<ReturnsTwiceAttr>() || Definition->hasAttr<ObjCTaskSpawnAttr>() ||
++        Definition->hasAttr<ObjCTaskDetachedAttr>() || Definition->hasAttr<ObjCTaskGroupAttr>() ||
++        getObjC3Executor(Definition) || isObjC3ActorIsolated(Definition))return false;
++    auto ParameterAllowed=[&](const ParmVarDecl *Parameter) {
++      const auto Type=Parameter->getType();const auto Lifetime=Type.getObjCLifetime();
++      return !managedTransferStorage(Parameter) && !Parameter->hasAttr<NSConsumedAttr>() && !Parameter->hasAttr<CFConsumedAttr>() &&
++          !Type->isReferenceType() && Type->isScalarType() && !Type.isVolatileQualified() && !Type->isAtomicType() &&
++          Lifetime!=Qualifiers::OCL_Weak && Lifetime!=Qualifiers::OCL_ExplicitNone &&
++          !getObjC3ResourceTypeContract(Context,Type).Cleanup;
++    };
++    for(unsigned I=0;I!=Function->getNumParams();++I)
++      if(!ParameterAllowed(Function->getParamDecl(I)) || !ParameterAllowed(Definition->getParamDecl(I)))return false;
++    const auto *Body=dyn_cast_or_null<CompoundStmt>(Definition->getBody());
++    if(!Body)return false;
++    uint32_t Captured=0;
++    auto RuntimeCopy=[](const CallExpr *Copy) {
++      const auto *F=Copy->getDirectCallee();
++      if(!F || Copy->getNumArgs()!=1 || F->getNumParams()!=1 || F->isVariadic() || F->hasBody() ||
++          !F->getIdentifier() || F->getName()!="_Block_copy" || !F->getDeclContext()->getRedeclContext()->isTranslationUnit() ||
++          F->getLanguageLinkage()!=CLanguageLinkage || F->isMultiVersion() || F->isNoReturn() ||
++          F->hasAttr<WeakAttr>() || F->hasAttr<WeakRefAttr>() || F->hasAttr<WeakImportAttr>() || F->hasAttr<ReturnsTwiceAttr>() ||
++          getObjC3Executor(F) || isObjC3ActorIsolated(F) || F->hasAttr<ObjCTaskSpawnAttr>() ||
++          F->hasAttr<ObjCTaskDetachedAttr>() || F->hasAttr<ObjCTaskGroupAttr>() ||
++          !F->getReturnType()->isVoidPointerType() || !F->getParamDecl(0)->getType()->isVoidPointerType())return false;
++      if(const auto *Label=F->getAttr<AsmLabelAttr>();Label && Label->getLabel()!="_Block_copy")return false;
++      const auto *Prototype=F->getType()->getAs<FunctionProtoType>();
++      return Prototype && Prototype->getCallConv()==CC_C && !Prototype->getObjC3FunctionEffects().Async &&
++          Prototype->getObjC3FunctionEffects().Throws==ObjC3ThrowsKind::None;
++    };
++    auto Resolve=[&](auto &&Self,const Expr *E,unsigned Level,bool Copied)->bool {
++      if(!E || !Budget || Level>64)return false;
++      --Budget;E=E->IgnoreParens();
++      if(!E->HasSideEffects(Context) && E->IgnoreParenCasts()->isNullPointerConstant(Context,Expr::NPC_ValueDependentIsNotNull))return true;
++      if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(E))return Self(Self,Cleanup->getSubExpr(),Level+1,Copied);
++      if(const auto *Cast=dyn_cast<CastExpr>(E)) {
++        const auto Allowed=[](QualType T){return T->isBlockPointerType() || T->isVoidPointerType();};
++        if(!Allowed(Cast->getType()) || !Allowed(Cast->getSubExpr()->getType()))return false;
++        return Self(Self,Cast->getSubExpr(),Level+1,Copied);
++      }
++      if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(E)) {
++        if(Choice->getCond()->isTypeDependent() || Choice->getCond()->HasSideEffects(Context))return false;
++        bool Truth;
++        if(!Choice->getCond()->isValueDependent() && Choice->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++          return Self(Self,Truth?Choice->getTrueExpr():Choice->getFalseExpr(),Level+1,Copied);
++        return Self(Self,Choice->getTrueExpr(),Level+1,Copied) && Self(Self,Choice->getFalseExpr(),Level+1,Copied);
++      }
++      if(const auto *Choice=dyn_cast<ChooseExpr>(E);Choice && !Choice->isConditionDependent())
++        return Self(Self,Choice->getChosenSubExpr(),Level+1,Copied);
++      if(const auto *Generic=dyn_cast<GenericSelectionExpr>(E);Generic && !Generic->isResultDependent())
++        return Self(Self,Generic->getResultExpr(),Level+1,Copied);
++      if(const auto *Copy=dyn_cast<CallExpr>(E);Copy && !Copied && RuntimeCopy(Copy))
++        return Self(Self,Copy->getArg(0),Level+1,true);
++      if(E->isNullPointerConstant(Context,Expr::NPC_ValueDependentIsNotNull))return true;
++      const auto *Block=dyn_cast<BlockExpr>(E);
++      if(!Block || !Context.hasSameUnqualifiedType(Block->getType(),Function->getReturnType()) ||
++          Block->getBlockDecl()->capturesCXXThis())return false;
++      if(!Context.getLangOpts().ObjCAutoRefCount && !Copied && Block->getBlockDecl()->hasCaptures())return false;
++      for(const auto &Capture:Block->getBlockDecl()->captures()) {
++        const auto *Parameter=dyn_cast<ParmVarDecl>(Capture.getVariable());
++        if(!Budget || !Parameter || Capture.isByRef() || Capture.getObjC3InitExpr())return false;
++        --Budget;bool Found=false;
++        for(unsigned I=0;I!=Definition->getNumParams();++I)if(Definition->getParamDecl(I)==Parameter){Captured|=uint32_t(1)<<I;Found=true;break;}
++        if(!Found)return false;
++      }
++      return collect(Block,Level+1);
++    };
++    enum :unsigned {Fall=1,Returned=2,Broken=4};
++    auto Sequence=[&](auto &&Visit,llvm::ArrayRef<const Stmt *> Statements,unsigned Level,bool InSwitch)->std::optional<unsigned> {
++      unsigned Flow=Fall;
++      for(const auto *Statement:Statements) {
++        if(!(Flow&Fall))break;
++        auto Next=Visit(Visit,Statement,Level+1,InSwitch);if(!Next)return std::nullopt;
++        Flow=(Flow&~Fall)|*Next;
++      }
++      return Flow;
++    };
++    auto Visit=[&](auto &&Self,const Stmt *Statement,unsigned Level,bool InSwitch)->std::optional<unsigned> {
++      if(!Statement || !Budget || Level>64)return std::nullopt;
++      --Budget;
++      if(const auto *Attributed=dyn_cast<AttributedStmt>(Statement))return Self(Self,Attributed->getSubStmt(),Level+1,InSwitch);
++      if(isa<NullStmt>(Statement))return Fall;
++      if(const auto *Compound=dyn_cast<CompoundStmt>(Statement)) {
++        if(Compound->size()>Budget)return std::nullopt;
++        SmallVector<const Stmt *,16> Statements(Compound->body_begin(),Compound->body_end());
++        return Sequence(Self,Statements,Level,InSwitch);
++      }
++      if(const auto *Return=dyn_cast<ReturnStmt>(Statement))
++        return Resolve(Resolve,Return->getRetValue(),Level+1,false)?std::optional<unsigned>(Returned):std::nullopt;
++      if(const auto *Branch=dyn_cast<IfStmt>(Statement)) {
++        if(Branch->getInit() || Branch->getConditionVariable())return std::nullopt;
++        const auto *Condition=Branch->getCond();
++        if(Condition && (Condition->isTypeDependent() || Condition->HasSideEffects(Context)))return std::nullopt;
++        bool Truth;
++        if(Condition && !Condition->isValueDependent() && Condition->EvaluateAsBooleanCondition(Truth,Context)) {
++          const auto *Chosen=Truth?Branch->getThen():Branch->getElse();
++          return Chosen?Self(Self,Chosen,Level+1,InSwitch):std::optional<unsigned>(Fall);
++        }
++        auto Then=Self(Self,Branch->getThen(),Level+1,InSwitch);
++        auto Else=Branch->getElse()?Self(Self,Branch->getElse(),Level+1,InSwitch):std::optional<unsigned>(Fall);
++        return Then && Else?std::optional<unsigned>(*Then|*Else):std::nullopt;
++      }
++      if(const auto *Switch=dyn_cast<SwitchStmt>(Statement)) {
++        if(Switch->getInit() || Switch->getConditionVariable() ||
++            Switch->getCond()->isTypeDependent() || Switch->getCond()->HasSideEffects(Context))return std::nullopt;
++        SmallVector<const Stmt *,16> Statements;
++        if(const auto *Compound=dyn_cast<CompoundStmt>(Switch->getBody())) {
++          if(Compound->size()>Budget)return std::nullopt;
++          Statements.append(Compound->body_begin(),Compound->body_end());
++        } else Statements.push_back(Switch->getBody());
++        llvm::SmallPtrSet<const SwitchCase *,32> Labels;SmallVector<unsigned,16> Entries;bool HasDefault=false;
++        for(unsigned I=0;I!=Statements.size();++I)if(const auto *Label=dyn_cast<SwitchCase>(Statements[I])) {
++          Entries.push_back(I);
++          while(Label) {
++            if(Labels.size()==32 || !Labels.insert(Label).second)return std::nullopt;
++            HasDefault|=isa<DefaultStmt>(Label);Label=dyn_cast<SwitchCase>(Label->getSubStmt());
++          }
++        }
++        unsigned Listed=0;
++        for(const auto *Label=Switch->getSwitchCaseList();Label;Label=Label->getNextSwitchCase())
++          if(++Listed>Labels.size() || !Labels.contains(Label))return std::nullopt;
++        if(Listed!=Labels.size())return std::nullopt;
++        unsigned Flow=HasDefault?0:Fall;
++        for(unsigned Entry:Entries) {
++          auto Route=Sequence(Self,llvm::ArrayRef<const Stmt *>(Statements).drop_front(Entry),Level,true);
++          if(!Route)return std::nullopt;
++          Flow|=(*Route&~Broken)|((*Route&Broken)?Fall:0);
++        }
++        return Flow;
++      }
++      if(const auto *Label=dyn_cast<SwitchCase>(Statement))return InSwitch?Self(Self,Label->getSubStmt(),Level+1,true):std::nullopt;
++      if(isa<BreakStmt>(Statement))return InSwitch?std::optional<unsigned>(Broken):std::nullopt;
++      return std::nullopt;
++    };
++    auto Flow=Visit(Visit,Body,Depth+1,false);
++    if(!Flow || *Flow!=Returned)return false;
++    for(unsigned I=0;I!=Call->getNumArgs();++I)if(Captured&(uint32_t(1)<<I)) {
++      if(!Budget)return false;--Budget;
++      FactoryCaptures->push_back({Call->getArg(I),Definition->getParamDecl(I)});
++    }
++    return true;
 +  }
 +
 +  bool collectBinding(const VarDecl *Variable, unsigned Depth) {
@@ -54674,8 +54833,8 @@ new file mode 100644
 +  }
 +public:
 +  ConcurrentBlockValues(ASTContext &C, SmallVectorImpl<const BlockExpr *> &B,
-+                        const Stmt *Body=nullptr)
-+      : Context(C), Blocks(B), ScopeBody(Body) {}
++                        const Stmt *Body=nullptr,SmallVectorImpl<FactoryCapture> *Captures=nullptr)
++      : Context(C), Blocks(B), FactoryCaptures(Captures), ScopeBody(Body) {}
 +  bool collectVariable(const VarDecl *Variable) {
 +    return collectBinding(Variable,0) && initializersAcyclic();
 +  }
@@ -54731,6 +54890,7 @@ new file mode 100644
 +            if(Projection->selects(I) && !collect(Call->getArg(I),Depth+1))return false;
 +          return true;
 +        }
++      if(const auto *Call=dyn_cast<CallExpr>(E);Call && collectFactory(Call,Depth+1))return true;
 +      const auto *Reference = dyn_cast<DeclRefExpr>(E);
 +      const auto *Variable = Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
 +      return collectBinding(Variable,Depth);
@@ -54742,13 +54902,49 @@ new file mode 100644
 +};
 +bool knownConcurrentBlocks(ASTContext &C, const Expr *E,
 +                            SmallVectorImpl<const BlockExpr *> &Blocks,
-+                            const Stmt *Body=nullptr) {
-+  return ConcurrentBlockValues(C, Blocks, Body).collectRoot(E);
++                            const Stmt *Body=nullptr,SmallVectorImpl<FactoryCapture> *Captures=nullptr) {
++  return ConcurrentBlockValues(C, Blocks, Body,Captures).collectRoot(E);
 +}
 +struct ConcurrentCaptureProof {
++  llvm::SmallPtrSet<const ParmVarDecl *,32> FactoryParameters;
++  llvm::SmallPtrSet<const Expr *,16> ActiveFactoryValues;
 +  llvm::SmallPtrSet<const BlockDecl *,16> Active, Complete;
 +  unsigned Budget=256;
 +};
++bool checkKnownConcurrentBlock(Sema &, const BlockExpr *, SourceLocation,
++                               bool, ConcurrentCaptureProof &,const Stmt *);
++bool checkFactoryCaptures(Sema &S,ArrayRef<FactoryCapture> Captures,const Stmt *Body,
++                           ConcurrentCaptureProof &Proof,unsigned Depth=0) {
++  bool Invalid=false;
++  for(const auto &Capture:Captures) {
++    Proof.FactoryParameters.insert(Capture.Parameter);
++    const auto *Value=Capture.Value;
++    auto Type=transferSource(Value)->getType();
++    if(Type->isFunctionType())Type=S.Context.getPointerType(Type);
++    if(!Proof.Budget || Depth>32 || !Proof.ActiveFactoryValues.insert(Value).second) {
++      Invalid|=checkTransfer(S,Type,Value->getExprLoc(),"bounded factory capture proof",Capture.Parameter,true);
++      continue;
++    }
++    --Proof.Budget;
++    auto Leave=llvm::scope_exit([&]{Proof.ActiveFactoryValues.erase(Value);});
++    const bool Managed=carriesManagedResourceValue(S.Context,Value,Body);
++    if(Capture.Parameter->getType()->isBlockPointerType()) {
++      if(Managed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),"cleanup-managed capture",Capture.Parameter,true);
++      SmallVector<const BlockExpr *,8> Blocks;SmallVector<FactoryCapture,8> Nested;
++      if(knownConcurrentBlocks(S.Context,Value,Blocks,Body,&Nested)) {
++        Invalid|=checkFactoryCaptures(S,Nested,Body,Proof,Depth+1);
++        for(const auto *Block:Blocks)
++          Invalid|=checkKnownConcurrentBlock(S,Block,Value->getExprLoc(),false,Proof,Body);
++      } else if(unsafeAdmission(S.Context,Type))
++        Invalid|=checkTransfer(S,Type,Value->getExprLoc(),"unchecked concurrent block value",Capture.Parameter);
++      else if(strictConcurrency(S)) {
++        S.Diag(Value->getExprLoc(),diag::err_objc3_task_unknown_capture);Invalid=true;
++      } else checkTransfer(S,Type,Value->getExprLoc(),"unverified concurrent block capture",Capture.Parameter);
++    } else Invalid|=checkTransfer(S,Type,Value->getExprLoc(),
++        Managed?"cleanup-managed capture":"concurrent capture",Capture.Parameter,Managed);
++  }
++  return Invalid;
++}
 +
 +bool isAsyncBlockType(QualType T) {
 +  if (const auto *B = T->getAs<BlockPointerType>())
@@ -55053,8 +55249,10 @@ new file mode 100644
 +          Invalid |= checkTransferValue(S,Argument,TransferType,
 +                                        "concurrent block value",Target,ScopeBody);
 +        SmallVector<const BlockExpr *, 8> Blocks;
-+        if (knownConcurrentBlocks(S.Context, Argument, Blocks, ScopeBody)) {
++        SmallVector<FactoryCapture,8> Captures;
++        if (knownConcurrentBlocks(S.Context, Argument, Blocks, ScopeBody,&Captures)) {
 +          ConcurrentCaptureProof Proof;
++          Invalid|=checkFactoryCaptures(S,Captures,ScopeBody,Proof);
 +          for (const auto *Block : Blocks)
 +            Invalid |= checkKnownConcurrentBlock(
 +                S, Block, Site->getExprLoc(), isAsyncWorkParameter(Target, Index), Proof, ScopeBody);
@@ -55215,6 +55413,9 @@ new file mode 100644
 +         (Capture.getCaptureType().getObjCLifetime() == Qualifiers::OCL_ExplicitNone ||
 +          Capture.getCaptureType()->isObjCInertUnsafeUnretainedType() ||
 +          V->getType()->isObjCInertUnsafeUnretainedType()));
++    // The recipe checks actual caller contracts before visiting this literal.
++    // Plain formal parameter types cannot stand in for those source values.
++    if(const auto *Parameter=dyn_cast<ParmVarDecl>(V);Parameter && Proof.FactoryParameters.contains(Parameter))continue;
 +    bool Managed = managedTransferStorage(V);
 +    Managed |= carriesManagedResourceValue(S.Context,nullptr,ScopeBody,V);
 +    if(const auto *Initializer=Capture.getObjC3InitExpr())
@@ -55231,10 +55432,12 @@ new file mode 100644
 +    } else {
 +      SmallVector<const BlockExpr *, 8> Blocks;
 +      const Expr *Initializer = Capture.getObjC3InitExpr();
++      SmallVector<FactoryCapture,8> FactoryCaptures;
 +      const bool KnownBlocks = !Unsafe && !Managed && V->getType()->isBlockPointerType() &&
-+          (Initializer ? knownConcurrentBlocks(S.Context, Initializer, Blocks, ScopeBody)
-+                       : ConcurrentBlockValues(S.Context,Blocks,ScopeBody).collectVariable(V));
++          (Initializer ? knownConcurrentBlocks(S.Context, Initializer, Blocks, ScopeBody,&FactoryCaptures)
++                       : ConcurrentBlockValues(S.Context,Blocks,ScopeBody,&FactoryCaptures).collectVariable(V));
 +      if (KnownBlocks) {
++        Failed|=checkFactoryCaptures(S,FactoryCaptures,ScopeBody,Proof);
 +        for (const auto *Block : Blocks)
 +          Failed |= checkKnownConcurrentBlock(S, Block, Loc, false, Proof, ScopeBody);
 +      } else {
@@ -78375,3 +78578,137 @@ new file mode 100644
 +void binding_dead_unsafe_definition(UnsafeBlockObject *object){if(0){BindingWork work=^void(void) __objc3_async_frame {(void)object;};(void)binding_detached(work);}} // expected-error {{non-Sendable type}}
 +int binding_mutate_condition(BindingWork *);
 +void binding_effectful_condition(void){BindingWork work=^void(void) __objc3_async_frame {};if((binding_mutate_condition(&work),0)){}(void)binding_detached(work);} // expected-error {{cannot prove Sendable captures}}
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-block-factory-captures.h b/clang/test/ObjC3/Sema/Inputs/native-block-factory-captures.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-block-factory-captures.h
+@@ -0,0 +1,52 @@
++#ifndef OBJC3_NATIVE_BLOCK_FACTORY_CAPTURES_H
++#define OBJC3_NATIVE_BLOCK_FACTORY_CAPTURES_H
++#include "native-block-helper-projections.h"
++#ifdef __cplusplus
++extern "C" {
++#endif
++void *_Block_copy(const void *);
++void _Block_release(const void *);
++#ifdef __cplusplus
++}
++#endif
++#if __has_feature(objc_arc)
++#define BINDING_FACTORY_RESULT(...) (__VA_ARGS__)
++#else
++#define BINDING_FACTORY_RESULT(...) ((BindingWork)_Block_copy((const void *)(__VA_ARGS__)))
++#endif
++static inline BindingWork binding_make_scalar(int value){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}
++static inline BindingWork binding_make_object(SafeBlockObject *object){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)object;});}
++static inline BindingWork binding_make_unsafe(UnsafeBlockObject *object){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)object;});}
++static inline BindingWork binding_make_pair(int choose,SafeBlockObject *left,SafeBlockObject *right){return BINDING_FACTORY_RESULT(choose?^void(void) __objc3_async_frame {(void)left;}:^void(void) __objc3_async_frame {(void)right;});}
++static inline BindingWork binding_make_branches(int choose,int left,int right){if(choose)return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)left;});return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)right;});}
++static inline BindingWork binding_make_switch(int choose,int left,int right){switch(choose){case 0:return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)left;});case 1:case 2:if(choose==2)return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)right;});break;default:return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)right;});}return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)left;});}
++static inline BindingWork binding_make_null(void){return (BindingWork)0;}
++static inline BindingWork binding_make_unused(int ignored){return ^void(void) __objc3_async_frame {};}
++static inline BindingWork binding_make_ignored(int value,UnsafeBlockObject *ignored){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}
++static inline BindingWork binding_wrap_factory(BindingWork callback){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {__objc3_await callback();});}
++static inline void binding_callback_factory_ordinary(SafeBlockObject *safe){const BindingWork base=^void(void) __objc3_async_frame {(void)safe;};BindingWork work=binding_wrap_factory(base);(void)binding_detached(work);
++#if !__has_feature(objc_arc)
++ _Block_release(work);
++#endif
++}
++static inline void binding_factories_ordinary(int choose,SafeBlockObject *safe,UnsafeBlockObject *ignored){
++ BindingWork scalar=binding_make_scalar(42);(void)binding_detached(scalar);
++ BindingWork object=binding_make_object(safe);(void)binding_detached(object);
++ (void)binding_detached(binding_make_pair(choose,safe,safe));
++ (void)binding_detached(binding_make_ignored(42,ignored));
++ (void)binding_detached(binding_make_branches(choose,41,42));
++ (void)binding_detached(binding_make_switch(choose,41,42));
++ (void)binding_detached(binding_make_null());
++#if !__has_feature(objc_arc)
++ _Block_release(scalar);_Block_release(object);
++#endif
++}
++#ifdef __cplusplus
++struct BindingFactory{static BindingWork make(int value){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}};
++static inline void binding_static_factory_ordinary(){BindingWork work=BindingFactory::make(42);(void)binding_detached(work);
++#if !__has_feature(objc_arc)
++ _Block_release(work);
++#endif
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-block-factory-captures.m b/clang/test/ObjC3/Sema/native-block-factory-captures.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-block-factory-captures.m
+@@ -0,0 +1,70 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-block-factory-captures.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-block-factory-captures.h"
++void binding_factory_unsafe(UnsafeBlockObject *object){(void)binding_detached(binding_make_unsafe(object));} // expected-error {{non-Sendable type}}
++void factory_close(int);
++int factory_open(void);
++void binding_factory_resource(void){
++ int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();
++ (void)binding_detached(binding_make_scalar(descriptor)); // expected-error {{cleanup-managed capture}}
++}
++void binding_factory_mutated_resource(void){
++ int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();
++ int copied=0;copied=descriptor;
++ BindingWork work=binding_make_scalar(copied); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(work);
++}
++void binding_factory_nested_resource(void){
++ int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();int copied=descriptor;
++ BindingWork inner=binding_make_scalar(copied); // expected-error {{cleanup-managed capture}}
++ BindingWork outer=^void(void) __objc3_async_frame {__objc3_await inner();};
++ (void)binding_detached(outer);
++}
++void factory_mutate(int *);
++static inline BindingWork binding_stateful_factory(int value){factory_mutate(&value);return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}
++void binding_factory_stateful(void){(void)binding_detached(binding_stateful_factory(42));} // expected-error {{cannot prove Sendable captures}}
++static inline BindingWork binding_factory_block_parameter(BindingWork work){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {__objc3_await work();});}
++void binding_factory_nested_parameter(BindingWork work){(void)binding_detached(binding_factory_block_parameter(work));} // expected-error {{cannot prove Sendable captures}}
++#ifdef __cplusplus
++struct BindingStatefulFactory{int value;BindingWork make(){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}};
++void binding_factory_receiver(BindingStatefulFactory &factory){(void)binding_detached(factory.make());} // expected-error {{cannot prove Sendable captures}}
++#endif
++
++void binding_factory_branches_resource(int choose){
++ int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();
++ (void)binding_detached(binding_make_branches(choose,42,descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_make_switch(choose,descriptor,42)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_make_unused(descriptor));
++}
++__attribute__((weak)) inline BindingWork binding_replaceable_factory(int value){return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}
++void binding_factory_replaceable(void){(void)binding_detached(binding_replaceable_factory(42));} // expected-error {{cannot prove Sendable captures}}
++#ifdef __cplusplus
++namespace BindingFalseCopy {void *_Block_copy(const void *);}
++static inline BindingWork binding_false_copy_factory(int value){
++#if __has_feature(objc_arc)
++ return (__bridge_transfer BindingWork)BindingFalseCopy::_Block_copy((__bridge const void *)^void(void) __objc3_async_frame {(void)value;});
++#else
++ return (BindingWork)BindingFalseCopy::_Block_copy((const void *)^void(void) __objc3_async_frame {(void)value;});
++#endif
++}
++void binding_factory_false_copy(void){(void)binding_detached(binding_false_copy_factory(42));} // expected-error {{cannot prove Sendable captures}}
++#endif
++
++void binding_factory_callback_unsafe(UnsafeBlockObject *object){
++ const BindingWork base=^void(void) __objc3_async_frame {(void)object;};
++ (void)binding_detached(binding_wrap_factory(base)); // expected-error {{non-Sendable type}}
++}
++void binding_factory_callback_resource(void){
++ int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();int copied=descriptor;
++ const BindingWork base=^void(void) __objc3_async_frame {(void)copied;};
++ (void)binding_detached(binding_wrap_factory(base)); // expected-error {{cleanup-managed capture}}
++}
++void binding_factory_callback_cycle(void){BindingWork work=^void(void) __objc3_async_frame {};work=binding_wrap_factory(work); // expected-error {{bounded factory capture proof}}
++ (void)binding_detached(work);
++}

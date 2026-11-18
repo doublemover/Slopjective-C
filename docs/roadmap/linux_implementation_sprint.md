@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.205 / System 2.131 factory-capture span](linux_native_block_factory_captures.md)
+maps newly constructed native work-item environments to their actual caller
+values, preserving resource checks and ARC/MRC lifetime behavior.
+
 The [Source 2.204 / System 2.130 work-item control span](linux_native_block_control_proofs.md)
 prunes provably unexecuted environments while preserving full checks for
 bindings declared inside discarded regions and all live/unknown routes.

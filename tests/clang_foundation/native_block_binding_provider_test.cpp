@@ -15,6 +15,8 @@ extern "C" objc3_task_t *binding_start(BindingWork,objc3_executor_t *) __attribu
 extern "C" void binding_pause(void) __objc3_async_frame;
 extern "C" void binding_release(void *);
 extern "C" BindingWork binding_unresolved_work(void);
+extern "C" void *_Block_copy(const void *);
+extern "C" void _Block_release(const void *);
 )blocks";
 constexpr const char *Source=R"blocks(
 __attribute__((objc_root_class)) @interface BindingOwner<Sendable> {
@@ -31,6 +33,25 @@ inline BindingWork project(BindingWork work){return work;}
 inline BindingWork choose_work(unsigned choose,BindingWork left,BindingWork right){if(choose)return left;return right;}
 inline BindingWork nested_work(unsigned choose,BindingWork left,BindingWork right){const BindingWork work=choose_work(choose,left,right);return choose?project(work):right;}
 inline BindingWork const global_work=^void(void) __objc3_async_frame {};
+#if __has_feature(objc_arc)
+#define FACTORY_RESULT(...) (__VA_ARGS__)
+#else
+#define FACTORY_RESULT(...) ((BindingWork)_Block_copy((const void *)(__VA_ARGS__)))
+#endif
+inline BindingWork factory_work(BindingOwner *owner,unsigned *ran,unsigned *deferred){
+ return FACTORY_RESULT(^void(void) __objc3_async_frame {defer {++*deferred;}*ran+=owner->value;__objc3_await binding_pause();if(owner->value!=1 && owner->value!=2)__builtin_trap();});
+}
+inline BindingWork conditional_factory(unsigned choose,BindingOwner *left,BindingOwner *right,unsigned *ran,unsigned *deferred){
+ if(choose)return FACTORY_RESULT(^void(void) __objc3_async_frame {defer {++*deferred;}*ran+=left->value;__objc3_await binding_pause();});
+ switch(choose){case 1:break;default:return FACTORY_RESULT(^void(void) __objc3_async_frame {defer {++*deferred;}*ran+=right->value;__objc3_await binding_pause();});}
+ return FACTORY_RESULT(^void(void) __objc3_async_frame {defer {++*deferred;}*ran+=left->value;__objc3_await binding_pause();});
+}
+struct Factory{static BindingWork make(BindingOwner *owner,unsigned *ran,unsigned *deferred){
+ return FACTORY_RESULT(^void(void) __objc3_async_frame {defer {++*deferred;}*ran+=owner->value;__objc3_await binding_pause();});
+}};
+inline BindingWork callback_factory(BindingWork callback){return FACTORY_RESULT(^void(void) __objc3_async_frame {__objc3_await callback();});}
+inline BindingWork scalar_factory(int value){return FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}
+inline BindingWork unsafe_factory(BindingUnsafe *owner){return FACTORY_RESULT(^void(void) __objc3_async_frame {(void)owner;});}
 inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned shape,
                            unsigned *destroyed,unsigned *ran,unsigned *deferred) {
  BindingOwner *one=[BindingOwner new],*two=[BindingOwner new];
@@ -52,6 +73,7 @@ inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned s
  BindingWork nested=^void(void) __objc3_async_frame {
   defer {++*deferred;}__objc3_await binding_pause();callback();
  };
+ BindingWork produced=(BindingWork)0;
  BindingWork work=alias;if(shape==1)work=nested;
  if(shape==2)work=choose?first:second;
  if(shape==3){work=(BindingWork)0;work=selected;}
@@ -65,8 +87,19 @@ inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned s
  if(shape==11){(void)(0 && (work=binding_unresolved_work()));(void)(1 || (work=binding_unresolved_work()));}
  if(shape==12){(void)(1?work:(work=binding_unresolved_work()));}
  if(shape==13){if constexpr(false)work=binding_unresolved_work();}
+ if(shape==14){produced=factory_work(choose?one:two,ran,deferred);work=produced;}
+ if(shape==15){produced=conditional_factory(choose,one,two,ran,deferred);work=produced;}
+ if(shape==16){produced=Factory::make(choose?one:two,ran,deferred);work=produced;}
+ if(shape==17){produced=factory_work(choose?one:two,ran,deferred);work=^void(void) __objc3_async_frame {__objc3_await produced();};}
+ if(shape==18){BindingWork base=factory_work(choose?one:two,ran,deferred);produced=callback_factory(base);
+#if !__has_feature(objc_arc)
+ _Block_release((const void *)base);
+#endif
+ work=produced;
+ }
  objc3_task_t *task=binding_start(work,executor);
 #if !__has_feature(objc_arc)
+ if(produced)_Block_release((const void *)produced);
  binding_release((__bridge void *)one);binding_release((__bridge void *)two);
 #endif
  return task;
@@ -78,7 +111,7 @@ constexpr const char *Consumer=R"blocks(
 #include <assert.h>
 static int execute(void) {
  objc3_executor_t *executor=nullptr;assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);
- for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=14;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
+ for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=19;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
   unsigned destroyed=0,ran=0,deferred=0;
   objc3_task_t *task=BindingModule::start(executor,choose,shape,&destroyed,&ran,&deferred);
   assert(task && destroyed==(shape==8?2u:1u) && ran==0 && deferred==0);
@@ -161,9 +194,13 @@ void Run(const fs::path &root,const char *standard,int ownership) {
  for(const char *body:{
   "void rejected(unsigned choose,BindingUnsafe *object){BindingWork bad=^void(void) __objc3_async_frame {(void)object;};BindingWork safe=^void(void) __objc3_async_frame {};binding_start(BindingModule::choose_work(choose,bad,safe),nullptr);}",
   "void rejected(unsigned choose,BindingUnsafe *object){BindingWork bad=^void(void) __objc3_async_frame {(void)object;};BindingWork safe=^void(void) __objc3_async_frame {};binding_start(BindingModule::nested_work(choose,safe,bad),nullptr);}",
-  "void rejected(BindingWork unknown){binding_start(BindingModule::project(unknown),nullptr);}"}) {
+  "void rejected(BindingWork unknown){binding_start(BindingModule::project(unknown),nullptr);}",
+  "void rejected(BindingWork unknown){binding_start(BindingModule::callback_factory(unknown),nullptr);}",
+  "void rejected(BindingUnsafe *owner){binding_start(BindingModule::unsafe_factory(owner),nullptr);}",
+  "void factory_close(int);int factory_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();binding_start(BindingModule::scalar_factory(descriptor),nullptr);}",
+  "void factory_close(int);int factory_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();int copied=descriptor;BindingWork inner=BindingModule::scalar_factory(copied);BindingWork outer=^void(void) __objc3_async_frame {__objc3_await inner();};binding_start(outer,nullptr);}"}) {
   const auto input=root/"bad.mm";Write(input,body);auto value=request(input,root/"bad.o");value.imported_interfaces={external,dependency};auto result=Compile(value);assert(!result.success);
-  bool matched=false;for(const auto &diagnostic:result.diagnostics)matched|=diagnostic.message.find("non-Sendable type")!=std::string::npos || diagnostic.message.find("cannot prove Sendable captures")!=std::string::npos;assert(matched);
+  bool matched=false;for(const auto &diagnostic:result.diagnostics)matched|=diagnostic.message.find("non-Sendable type")!=std::string::npos || diagnostic.message.find("cannot prove Sendable captures")!=std::string::npos || diagnostic.message.find("cleanup-managed capture")!=std::string::npos;assert(matched);
  }
  const auto main=root/"main.mm";Write(main,Main);auto entry=request(main,root/"main.o");entry.imported_interfaces={external,dependency};Success(Compile(entry));
  LinkAndExecute(root,entry.output_path,true,{(root/"c.o").string(),(root/"d.o").string(),OBJC3_BLOCK_BINDING_RUNTIME_LIBRARY,"-pthread"});

@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.205 / System 2.131 factory-capture span](linux_native_block_factory_captures.md)
+maps newly constructed native work-item environments to their actual caller
+values, preserving resource checks and ARC/MRC lifetime behavior.
+
 The [Source 2.204 / System 2.130 work-item control span](linux_native_block_control_proofs.md)
 prunes provably unexecuted environments while preserving full checks for
 bindings declared inside discarded regions and all live/unknown routes.
@@ -163,7 +167,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.204 / System 2.130 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.205 / System 2.131 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
