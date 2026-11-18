@@ -118,6 +118,13 @@ void RunSwiftABI(const fs::path &root,const char *standard,int ownership,const c
   fs::create_directories(root/"provider");
   const auto source=root/"provider/module.mm";
   Write(source,R"swift(
+#if defined(__aarch64__)
+#define NATIVE_VECTOR_ABI aarch64_vector_pcs
+#define SECONDARY_ABI aarch64_sve_pcs
+#else
+#define NATIVE_VECTOR_ABI vectorcall
+#define SECONDARY_ABI regcall
+#endif
 namespace SwiftABI {
 struct Pair {long first;long second;};
 __attribute__((swiftcall,noinline)) int context(int value,void *state __attribute__((swift_context))) {return value+*static_cast<int *>(state);}
@@ -128,6 +135,19 @@ __attribute__((swiftcall,noinline)) int checked(int value,void *state __attribut
 __attribute__((swiftasynccall,noinline)) int resume(void *state __attribute__((swift_async_context))) {return *static_cast<int *>(state);}
 typedef int Callback(int,void * __attribute__((swift_context))) __attribute__((swiftcall));
 inline int invoke(Callback *callback,int value,void *state){return callback(value,state);}
+using ContextCallback = int __attribute__((swiftcall)) (*)(int, void * __attribute__((swift_context)));
+using AsyncCallback = int __attribute__((swiftasynccall)) (*)(void * __attribute__((swift_async_context)));
+template<class T> using VectorCallback = T __attribute__((NATIVE_VECTOR_ABI)) (*)(T, T);
+using SecondaryCallback = int __attribute__((SECONDARY_ABI)) (*)(int, int);
+#if defined(__x86_64__)
+using SysVCallback = int __attribute__((sysv_abi)) (*)(int);
+#endif
+__attribute__((NATIVE_VECTOR_ABI, noinline)) int combine(int a, int b) {return 2*a+b;}
+__attribute__((SECONDARY_ABI, noinline)) int combine_secondary(int a, int b) {return a+3*b;}
+inline int invoke_alias(ContextCallback callback, int value, void *state) {return callback(value,state);}
+inline int invoke_resume(AsyncCallback callback, void *state) {return callback(state);}
+template<class T> inline T invoke_vector(VectorCallback<T> callback, T a, T b) {return callback(a,b);}
+inline int invoke_secondary(SecondaryCallback callback, int a, int b) {return callback(a,b);}
 }
 )swift");
   auto provider=Request(source,root/"provider.o",standard,ownership,optimization,{});
@@ -150,6 +170,13 @@ inline int invoke(Callback *callback,int value,void *state){return callback(valu
       SwiftABI::reference(pair,42);if(pair.first!=42 || pair.second!=44)return 6;
       if(SwiftABI::checked(40,&state,&error)!=42 || error)return 3;
       if(SwiftABI::resume(&state)!=2)return 4;
+      if(SwiftABI::invoke_alias(&SwiftABI::context,40,&state)!=42)return 7;
+      if(SwiftABI::invoke_resume(&SwiftABI::resume,&state)!=2)return 8;
+      if(SwiftABI::invoke_vector(&SwiftABI::combine,17,8)!=42)return 9;
+      if(SwiftABI::invoke_secondary(&SwiftABI::combine_secondary,12,10)!=42)return 10;
+#if defined(__x86_64__)
+      static_assert(__is_same(SwiftABI::SysVCallback, int (*)(int)));
+#endif
       return SwiftABI::checked(-1,&state,&error)!=0 || error!=&state;
     })swift");
     auto consumer=Request(input,root/(std::string(name)+".o"),standard,ownership,optimization,{});
@@ -160,9 +187,28 @@ inline int invoke(Callback *callback,int value,void *state){return callback(valu
     assert(ir.find("swiftcc")!=std::string::npos && ir.find("swiftself")!=std::string::npos);
     assert(ir.find("swifterror")!=std::string::npos && ir.find("sret(")!=std::string::npos);
     assert(ir.find("swifttailcc")!=std::string::npos && ir.find("swiftasync")!=std::string::npos);
+#if defined(__aarch64__)
+    assert(ir.find("call aarch64_vector_pcs")!=std::string::npos);
+    assert(ir.find("call aarch64_sve_vector_pcs")!=std::string::npos);
+#else
+    assert(ir.find("call x86_vectorcallcc")!=std::string::npos);
+    assert(ir.find("call x86_regcallcc")!=std::string::npos);
+#endif
     assert(ir.find("sret(ptr)")==std::string::npos);
     assert(ir.find("sret([0 x i8])")!=std::string::npos);
   }
+  const auto wrong=root/"wrong-convention.mm";
+  Write(wrong,R"swift(
+    int ordinary(int lhs, int rhs) {return lhs+rhs;}
+    SwiftABI::VectorCallback<int> incompatible = ordinary;
+  )swift");
+  auto bad=Request(wrong,root/"wrong-convention.o",standard,ownership,optimization,{});
+  InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;
+  bad.imported_interfaces={imported};
+  const auto rejected=Compile(bad);
+  assert(!rejected.success && std::any_of(rejected.diagnostics.begin(),rejected.diagnostics.end(),[](const auto &d) {
+    return d.message.find("cannot initialize")!=std::string::npos;
+  }));
   Write(root/"main.cpp","extern \"C\" int check_a();extern \"C\" int check_b();int main(){int first=check_a();return first?first:check_b();}");
   auto main=Request(root/"main.cpp",root/"main.o",standard,ownership,optimization,{});Success(Compile(main));
   LinkAndExecute(root,main.output_path,ownership!=0,{});

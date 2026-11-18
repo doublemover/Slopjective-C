@@ -10451,7 +10451,36 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      OS << ')';
      printAfter(T->getInnerType(), OS);
    } else
-@@ -1866,6 +1965,8 @@
+@@ -1857,6 +1956,28 @@
+     printCountAttributedImpl(T, OS, Policy);
+ }
+ 
++static StringRef leadingCallingConvention(attr::Kind Kind,
++                                          bool ForDeclaration) {
++  switch (Kind) {
++  case attr::PreserveNone: return "preserve_none";
++  case attr::PreserveMost: return "preserve_most";
++  case attr::PreserveAll: return "preserve_all";
++  default: break;
++  }
++  if (!ForDeclaration)
++    return {};
++  switch (Kind) {
++  case attr::SwiftCall: return "swiftcall";
++  case attr::SwiftAsyncCall: return "swiftasynccall";
++  case attr::SysVABI: return "sysv_abi";
++  case attr::RegCall: return "regcall";
++  case attr::VectorCall: return "vectorcall";
++  case attr::AArch64VectorPcs: return "aarch64_vector_pcs";
++  case attr::AArch64SVEPcs: return "aarch64_sve_pcs";
++  default: return {};
++  }
++}
++
+ void TypePrinter::printAttributedBefore(const AttributedType *T,
+                                         raw_ostream &OS) {
+   // FIXME: Generate this with TableGen.
+@@ -1866,17 +1987,17 @@
        T->getAttrKind() == attr::ObjCOwnership)
      return printBefore(T->getEquivalentType(), OS);
  
@@ -10460,7 +10489,24 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (T->getAttrKind() == attr::ObjCKindOf)
      OS << "__kindof ";
  
-@@ -1885,6 +1986,10 @@
+-  if (T->getAttrKind() == attr::PreserveNone) {
+-    OS << "__attribute__((preserve_none)) ";
+-    spaceBeforePlaceHolder(OS);
+-  } else if (T->getAttrKind() == attr::PreserveMost) {
+-    OS << "__attribute__((preserve_most)) ";
+-    spaceBeforePlaceHolder(OS);
+-  } else if (T->getAttrKind() == attr::PreserveAll) {
+-    OS << "__attribute__((preserve_all)) ";
++  if (const auto Convention =
++          leadingCallingConvention(T->getAttrKind(), Policy.PolishForDeclaration);
++      !Convention.empty()) {
++    // A GNU suffix after an abstract declarator cannot be parsed in a C++
++    // alias type-id. Emit the written convention before its callable type.
++    OS << "__attribute__((" << Convention << ")) ";
+     spaceBeforePlaceHolder(OS);
+   }
+ 
+@@ -1885,6 +2006,10 @@
    else
      printBefore(T->getModifiedType(), OS);
  
@@ -10471,7 +10517,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (T->isMSTypeSpec()) {
      switch (T->getAttrKind()) {
      default: return;
-@@ -1932,7 +2037,8 @@
+@@ -1932,7 +2057,8 @@
  
    // Some attributes are printed as qualifiers before the type, so we have
    // nothing left to do.
@@ -10481,7 +10527,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
        T->getImmediateNullability() || T->isWebAssemblyFuncrefSpec())
      return;
  
-@@ -1940,10 +2046,8 @@
+@@ -1940,10 +2066,8 @@
    if (T->getAttrKind() == attr::ObjCInertUnsafeUnretained)
      return;
  
@@ -10494,7 +10540,21 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      return;
  
    if (T->getAttrKind() == attr::LifetimeBound) {
-@@ -2030,6 +2134,9 @@
+@@ -1991,12 +2115,8 @@
+     return;
+   }
+ 
+-  if (T->getAttrKind() == attr::PreserveAll ||
+-      T->getAttrKind() == attr::PreserveMost ||
+-      T->getAttrKind() == attr::PreserveNone) {
+-    // This has to be printed before the type.
++  if (!leadingCallingConvention(T->getAttrKind(), Policy.PolishForDeclaration).empty())
+     return;
+-  }
+ 
+   OS << " __attribute__((";
+   switch (T->getAttrKind()) {
+@@ -2030,6 +2150,9 @@
      // AttributedType nodes for them.
      break;
  

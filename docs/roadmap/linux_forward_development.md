@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.268 / System 2.194 native calling convention change](linux_swift_physical_abi.md)
+preserves Swift, x86 and AArch64 conventions on canonical C++ callable
+aliases and alias templates through source-free native execution.
+
 The [Source 2.267 / System 2.193 dependent using contracts](linux_cxx_using.md)
 preserve inherited constructors, typename and value introductions, and pack
 expansions inside source-free C++ class templates.

@@ -32,6 +32,18 @@ and `sret` contracts, and links/runs consumers after deleting provider source.
 Canonical byte replay, changed-role fingerprints and old-reader rejection are
 also checked. The installed async package fixture carries the same APIs.
 
+Source 2.268 / System 2.194 extends canonical publication to C++ function
+pointer and alias template type-ids with Swift call and async call conventions,
+x86 vector and register calls, System V, and AArch64 vector and SVE PCS. The
+printer places the GNU convention specifier before the type so the C++ alias
+declarator reparses. The type identity still binds the native ABI and each Swift
+parameter role.
+
+Linked x86-64 consumers exercise the imported aliases in three C++20/C++23
+ownership and optimization configurations. A separate AArch64 provider and
+source-free consumer retain both PCS opcodes in LLVM IR and execute under
+emulation. Plain function pointers fail conversion to the vector alias.
+
 This work does not establish the complete Swift interoperability or profile
 roadmap. The SDK must be rebuilt from the maintained compiler patches before
 claiming archive acceptance for this span.
