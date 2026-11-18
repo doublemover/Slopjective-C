@@ -29,6 +29,6 @@ fields, reference bindings, source-free helpers, resource numbers, enclosing
 aggregate/closure escapes and shape exhaustion. All 504 new/selected adjacent
 source/PCH commands, six expanded source-free ARC/MRC configurations and 100
 focused tooling checks pass. The preceding compiler misses five new transfer
-diagnostics and rejects two ordinary closed-reference uses. The full isolation
-regression is tracked separately until it finishes. Matching SDK, complete
+diagnostics and rejects two ordinary closed-reference uses. The full isolation regression also passes; final shape-bound controls use the
+completed shape-exhaustion flag. Matching SDK, complete
 profiles and native ARM acceptance remain pending.
