@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.252 / System 2.178 C completion signature changes](linux_async_c_completion_exports.md)
+generate object, Block, and C-layout aggregate bridges, including exact client
+layout checks and source-free C callback execution.
+
 The [Source 2.251 / System 2.177 generated C completion exports](linux_async_c_completion_exports.md)
 compile the canonical typed bridge and C client header from a native async
 declaration. Separate translation units share the exact frame and callback ABI.
@@ -2306,7 +2310,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    System capabilities.
 5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
    next implementation span is coherent, then perform one coordinated SDK
-   cutover. Source 2.154–2.251 still requires its fresh matching campaign; focused
+   cutover. Source 2.154–2.252 still requires its fresh matching campaign; focused
    local receipts do not promote a replacement archive. Avoid repeated archive
    rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native

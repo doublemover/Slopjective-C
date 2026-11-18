@@ -97,6 +97,21 @@ publication fails.
 The separate C clients execute value, void and checked success and failure
 callbacks across C17/C23/C++20/C++23 providers in ARC and MRC. The C17 MRC
 control links the selected declaration to a separately compiled async body.
-The interface keeps its exact SDK completion capability. Aggregate, object
-and Block signatures, destination-specific synthesis, broader foreign adapters
-and matching SDK acceptance remain open.
+The interface keeps its exact SDK completion capability.
+
+Source 2.252 / System 2.178 adds Objective-C references, ordinary typed
+Blocks, and C-layout aggregates to generated exports. The header preserves
+native Objective-C types and exposes their opaque pointer ABI for C. Clang
+clients with Blocks enabled receive the typed Block signature. Copy a Block
+or retain an object in the callback to keep it beyond callback return.
+
+Named portable records carry their field declarations, including nested
+records and fixed arrays. The C header checks the provider's exact size,
+alignment, and field offsets. A consumer with incompatible packing fails to
+compile. Generated records and reference typedefs enter the same semantic
+interface export set as their thunks and callbacks.
+
+The eight separate C executables check object identity, copied Block lifetime,
+and aggregate input and result fields in addition to the scalar, void, and
+checked forms. Destination-specific synthesis, wider foreign types and
+adapters, and matching SDK acceptance remain open.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "llvm/ADT/ArrayRef.h"
 
@@ -13,6 +14,7 @@ namespace objc3::clang_foundation {
 struct AsyncCExportSource {
   std::string header;
   std::string definitions;
+  std::vector<std::string> interface_exports;
 };
 
 // Derive both halves of the C ABI from the same checked source declarations.

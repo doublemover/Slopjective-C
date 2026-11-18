@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.252 / System 2.178 C completion signature changes](linux_async_c_completion_exports.md)
+generate object, Block, and C-layout aggregate bridges, including exact client
+layout checks and source-free C callback execution.
+
 The [Source 2.251 / System 2.177 generated C completion exports](linux_async_c_completion_exports.md)
 compile the canonical typed bridge and C client header from a native async
 declaration. Separate translation units share the exact frame and callback ABI.

@@ -190,6 +190,18 @@ static int generated_checked(int mode) async throws(id<Error>) {
   if (mode) __objc3_throw(generated_failure());
   return 42;
 }
+static id<Error> generated_object(id<Error> input) async { return input; }
+typedef int (^GeneratedBlock)(int);
+static GeneratedBlock generated_block(int input) async {
+  return ^(int offset) { return input + offset; };
+}
+struct GeneratedPort { char flag; int lane; };
+struct GeneratedAggregate { struct GeneratedPort port; long values[2]; };
+static struct GeneratedAggregate generated_aggregate(struct GeneratedAggregate value) async {
+  ++value.port.lane;
+  ++value.values[1];
+  return value;
+}
 #define generated_value(...) invalid_if_reexpanded
 )");
   CompileRequest provider;
@@ -203,14 +215,16 @@ static int generated_checked(int mode) async throws(id<Error>) {
   if (declaration_only) provider.arguments.push_back("-DDECLARATION_ONLY");
   provider.emit = EmitKind::Object;
   provider.output_path = (root / "provider.o").string();
-  provider.async_c_exports = {"generated_value", "generated_void", "generated_checked"};
+  provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
+      "generated_object", "generated_block", "generated_aggregate"};
   provider.async_c_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GeneratedCompletion";
   provider.package_identity = "generated-completion-v1";
   provider.interface_exports = {"generated_value_async_c", "generated_void_async_c",
       "generated_checked_async_c", "generated_value_completion_t",
-      "generated_void_completion_t", "generated_checked_completion_t", "Error"};
+      "generated_void_completion_t", "generated_checked_completion_t",
+      "generated_object_async_c", "generated_block_async_c", "Error"};
   auto generated = Compile(provider);
   Compiled(generated);
   Require(generated.interface_artifact.has_value(), "generated C interface missing");
@@ -264,7 +278,15 @@ int generated_value(bool enabled, const int *value) async {
 #include <time.h>
 #include "generated.h"
 extern objc3_async_c_error generated_failure(void);
-static atomic_int complete[4];
+extern void *_Block_copy(const void *);
+extern void _Block_release(const void *);
+#ifdef __BLOCKS__
+typedef int (^ClientBlock)(int);
+static ClientBlock retained_block;
+#else
+typedef void *ClientBlock;
+#endif
+static atomic_int complete[7];
 static void value_done(void *context, objc_async_completion_status_t status,
                        int value, objc3_async_c_error error) {
   assert(context == &complete[0] && status == OBJC_ASYNC_COMPLETION_SUCCESS);
@@ -286,15 +308,50 @@ static void checked_done(void *context, objc_async_completion_status_t status,
   }
   assert(atomic_fetch_add((atomic_int *)context, 1) == 0);
 }
+static void object_done(void *context, objc_async_completion_status_t status,
+                        objc3_async_c_error value, objc3_async_c_error error) {
+  assert(context == &complete[4] && status == OBJC_ASYNC_COMPLETION_SUCCESS);
+  assert(value == generated_failure() && !error);
+  assert(atomic_fetch_add(&complete[4], 1) == 0);
+}
+static void block_done(void *context, objc_async_completion_status_t status,
+                       ClientBlock value, objc3_async_c_error error) {
+  assert(context == &complete[5] && status == OBJC_ASYNC_COMPLETION_SUCCESS);
+  assert(value && !error);
+#ifdef __BLOCKS__
+  assert(value(2) == 42);
+  retained_block = (ClientBlock)_Block_copy((const void *)value);
+  assert(retained_block);
+#endif
+  assert(atomic_fetch_add(&complete[5], 1) == 0);
+}
+static void aggregate_done(void *context, objc_async_completion_status_t status,
+                           struct GeneratedAggregate value, objc3_async_c_error error) {
+  assert(context == &complete[6] && status == OBJC_ASYNC_COMPLETION_SUCCESS && !error);
+  assert(value.port.flag == 'C' && value.port.lane == 42);
+  assert(value.values[0] == 73 && value.values[1] == 91);
+  assert(atomic_fetch_add(&complete[6], 1) == 0);
+}
 int main(void) {
   const int input = 41;
   generated_value_async_c(true, &input, &complete[0], value_done);
   generated_void_async_c(0, void_done);
   generated_checked_async_c(0, &complete[2], checked_done);
   generated_checked_async_c(1, &complete[3], checked_done);
+  generated_object_async_c(generated_failure(), &complete[4], object_done);
+  generated_block_async_c(40, &complete[5], block_done);
+  struct GeneratedAggregate initial = {{'C', 41}, {73, 90}};
+  generated_aggregate_async_c(initial, &complete[6], aggregate_done);
   for (int elapsed = 0; elapsed < 2000; ++elapsed) {
-    if (atomic_load(&complete[0]) + atomic_load(&complete[1]) +
-        atomic_load(&complete[2]) + atomic_load(&complete[3]) == 4) return 0;
+    int count = 0;
+    for (unsigned index = 0; index < 7; ++index) count += atomic_load(&complete[index]);
+    if (count == 7) {
+#ifdef __BLOCKS__
+      assert(retained_block(2) == 42);
+      _Block_release((const void *)retained_block);
+#endif
+      return 0;
+    }
     nanosleep(&(struct timespec){0, 1000000}, 0);
   }
   return 1;
@@ -307,7 +364,19 @@ int main(void) {
   consumer.emit = EmitKind::Object;
   consumer.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   consumer.arguments = {"-std=c17", "-I" + includes.string()};
+  if (arc) consumer.arguments.push_back("-fblocks");
   Compiled(Compile(consumer));
+  if (declaration_only) {
+    auto packed = consumer;
+    packed.emit = EmitKind::Syntax;
+    packed.output_path.clear();
+    packed.arguments.push_back("-fpack-struct=1");
+    const auto mismatch = Compile(packed);
+    Require(!mismatch.success && std::any_of(mismatch.diagnostics.begin(), mismatch.diagnostics.end(),
+                [](const auto &diagnostic) {
+                  return diagnostic.message.find("C async aggregate layout") != std::string::npos;
+                }), "a C consumer with an incompatible aggregate layout was admitted");
+  }
   LinkAndRun(root, provider.output_path, consumer.output_path, separate_body);
   std::cout << "generated C completion " << standard << (arc ? " ARC\n" : " MRC\n");
 }

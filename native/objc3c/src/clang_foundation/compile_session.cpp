@@ -948,6 +948,10 @@ CompileResult Compile(const CompileRequest &request) {
     auto final = request;
     final.arguments = std::move(collect.arguments);
     final.async_c_exports.clear();
+    if (!final.interface_exports.empty())
+      for (const auto &name : preliminary.async_c_source.interface_exports)
+        if (!llvm::is_contained(final.interface_exports, name))
+          final.interface_exports.push_back(name);
     final.async_c_header = std::move(preliminary.async_c_source.header);
     final.source_text = std::move(*collect.source_text) + preliminary.async_c_source.definitions;
     return Compile(final);
