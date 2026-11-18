@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.246 / System 2.172 mutable callable analysis](linux_native_callable_target_sets.md)
+combines exact initializers and assignments in closed automatic storage while
+preserving conservative analysis for escaped and opaque callable bindings.
+
 The [Source 2.245 / System 2.171 checked group join](linux_async_handle_joins.md)
 waits for native member quiescence and propagates the exact first error across
 nested groups. A cancelled waiter leaves independently owned group members running.
@@ -2278,7 +2282,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    System capabilities.
 5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
    next implementation span is coherent, then perform one coordinated SDK
-   cutover. Source 2.154–2.245 still requires its fresh matching campaign; focused
+   cutover. Source 2.154–2.246 still requires its fresh matching campaign; focused
    local receipts do not promote a replacement archive. Avoid repeated archive
    rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native

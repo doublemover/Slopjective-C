@@ -53802,7 +53802,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4320 @@
+@@ -0,0 +1,4441 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54095,11 +54095,110 @@ new file mode 100644
 +  const auto Name=Function->getIdentifier()->getName();
 +  return Name=="move" || Name=="forward" || Name=="forward_like" || Name=="as_const";
 +}
-+using ProjectionCallees = SmallVector<const FunctionDecl *, 4>;
++// Match only direct storage accesses. Promotion through a reference, address,
++// capture or a glvalue assignment result would let another source write it.
++SmallVector<const Expr *, 8>
++localCallableInitializers(const VarDecl *Variable, const Stmt *Body,
++                          unsigned &Budget) {
++  if (!Body || !Variable->hasLocalStorage() || Variable->getType()->isReferenceType() ||
++      !Variable->hasInit() || Variable->hasAttr<BlocksAttr>() ||
++      Variable->hasAttr<CleanupAttr>())
++    return {};
++  auto IsBinding = [&](const Expr *E) {
++    const auto *Ref = dyn_cast<DeclRefExpr>(E->IgnoreParens());
++    return Ref && Ref->getDecl() == Variable;
++  };
++  struct Use {
++    const Stmt *Node;
++    bool ReadsValue = false;
++    bool DiscardsResult = false;
++  };
++  SmallVector<Use, 32> Pending{{Body}};
++  SmallVector<const Expr *, 8> Values{Variable->getInit()};
++  bool Declared = false;
++  while (!Pending.empty()) {
++    const auto [Node, ReadsValue, DiscardsResult] = Pending.pop_back_val();
++    if (!Node)
++      continue;
++    if (!Budget)
++      return {};
++    --Budget;
++    if (isa<GotoStmt, IndirectGotoStmt, AsmStmt, StmtExpr, CapturedStmt>(Node))
++      return {};
++    if (const auto *Decls = dyn_cast<DeclStmt>(Node))
++      for (const auto *D : Decls->decls()) {
++        Declared |= D == Variable;
++        if (const auto *V = dyn_cast<VarDecl>(D);
++            V && V->getType()->isVariablyModifiedType())
++          return {};
++      }
++    if (const auto *Ref = dyn_cast<DeclRefExpr>(Node)) {
++      if (Ref->getDecl() == Variable && !ReadsValue)
++        return {};
++      continue;
++    }
++    if (const auto *Block = dyn_cast<BlockExpr>(Node)) {
++      for (const auto &Capture : Block->getBlockDecl()->captures()) {
++        if (Capture.getVariable() == Variable)
++          return {};
++        Pending.push_back({Capture.getObjC3InitExpr()});
++      }
++      continue;
++    }
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++      for (const auto &Capture : Lambda->captures())
++        if (Capture.capturesVariable() && Capture.getCapturedVar() == Variable)
++          return {};
++      for (const auto *Init : Lambda->capture_inits())
++        Pending.push_back({Init});
++      continue;
++    }
++    if (const auto *Assignment = dyn_cast<BinaryOperator>(Node);
++        Assignment && Assignment->getOpcode() == BO_Assign &&
++        IsBinding(Assignment->getLHS())) {
++      if ((Assignment->isGLValue() && !ReadsValue && !DiscardsResult) ||
++          Values.size() == 8)
++        return {};
++      Values.push_back(Assignment->getRHS());
++      Pending.push_back({Assignment->getRHS()});
++      continue;
++    }
++    if (const auto *Paren = dyn_cast<ParenExpr>(Node)) {
++      Pending.push_back({Paren->getSubExpr(), ReadsValue, DiscardsResult});
++      continue;
++    }
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Node)) {
++      Pending.push_back({Cleanups->getSubExpr(), ReadsValue, DiscardsResult});
++      continue;
++    }
++    if (const auto *Cast = dyn_cast<CastExpr>(Node)) {
++      const bool Reads = Cast->getCastKind() == CK_LValueToRValue ||
++                         Cast->getCastKind() == CK_ToVoid;
++      Pending.push_back({Cast->getSubExpr(), Reads});
++      continue;
++    }
++    if (const auto *If = dyn_cast<IfStmt>(Node)) {
++      Pending.push_back({If->getInit(), false, true});
++      Pending.push_back({If->getConditionVariableDeclStmt()});
++      Pending.push_back({If->getCond()});
++      Pending.push_back({If->getThen(), false, true});
++      Pending.push_back({If->getElse(), false, true});
++      continue;
++    }
++    for (const Stmt *Child : Node->children())
++      Pending.push_back({Child, false, isa<CompoundStmt>(Node)});
++  }
++  return Declared ? Values : SmallVector<const Expr *, 8>{};
++}
 +
-+// Resolve every target of an immutable native callable choice. The prototype,
++using ProjectionCallees = SmallVector<const FunctionDecl *, 4>;
++using CallableInitializers =
++    llvm::function_ref<SmallVector<const Expr *, 8>(const VarDecl *)>;
++
++// Resolve every target of a closed native callable choice. The prototype,
 +// including calling convention and effects, must match every target exactly.
-+ProjectionCallees projectionCallees(const CallExpr *Call, ASTContext &Context) {
++ProjectionCallees projectionCallees(const CallExpr *Call, ASTContext &Context,
++                                     CallableInitializers LocalSources = nullptr) {
 +  const auto *MemberCall=dyn_cast<BinaryOperator>(Call->getCallee()->IgnoreParenImpCasts());
 +  const bool MemberTarget=MemberCall && MemberCall->isPtrMemOp();
 +  if (!MemberTarget)
@@ -54152,11 +54251,19 @@ new file mode 100644
 +    const auto *Member=Value->getAs<MemberPointerType>();
 +    if((MemberTarget?(!Member || !Member->getPointeeType()->isFunctionType()):
 +        (!Value->isPointerType() || !Value->getPointeeType()->isFunctionType())) ||
-+        !Value.isConstQualified() || Value.isVolatileQualified() || Variable->hasAttr<BlocksAttr>())return false;
++        Value.isVolatileQualified() || Variable->hasAttr<BlocksAttr>())return false;
 +    Variable=Variable->getCanonicalDecl();
 +    if(!Active.insert(Variable).second)return false;
 +    auto Leave=llvm::scope_exit([&]{Active.erase(Variable);});
-+    return Self(Self,Variable->getAnyInitializer(),Depth+1);
++    if (Value.isConstQualified())
++      return Self(Self, Variable->getAnyInitializer(), Depth + 1);
++    if (!LocalSources)
++      return false;
++    const auto Sources = LocalSources(Variable);
++    return !Sources.empty() &&
++           llvm::all_of(Sources, [&](const Expr *Source) {
++             return Self(Self, Source, Depth + 1);
++           });
 +  };
 +  if (!Resolve(Resolve, Target, 0)) return {};
 +  return Targets;
@@ -55137,8 +55244,22 @@ new file mode 100644
 +    RegisterCaptures();
 +    return Definition;
 +  };
++  llvm::DenseMap<const VarDecl *, SmallVector<const Expr *, 8>> CallableSources;
++  unsigned CallableScanBudget = 65536;
++  auto LocalSources = [&](const VarDecl *Variable) {
++    auto [Entry, Inserted] = CallableSources.try_emplace(Variable);
++    if (Inserted) {
++      const auto *Owner = Decl::castFromDeclContext(Variable->getDeclContext());
++      const Stmt *Body = Owner->getBody();
++      Entry->second = localCallableInitializers(
++          Variable, Body ? Body : ScopeBody, CallableScanBudget);
++      if (!CallableScanBudget)
++        CallGraphIncomplete = true;
++    }
++    return Entry->second;
++  };
 +  auto ClosedDefinitions=[&](const CallExpr *Call) {
-+    auto Targets=projectionCallees(Call,Context);
++    auto Targets=projectionCallees(Call,Context,LocalSources);
 +    for(auto *&Target:Targets) {
 +      Target=ClosedDefinition(Call,Target);
 +      if(!Target)return ProjectionCallees{};
@@ -58123,7 +58244,6 @@ new file mode 100644
 +    Diag(Loc, diag::warn_objc3_unnecessary_c_await);
 +  return Operand;
 +}
-
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.h b/clang/lib/Sema/SemaObjC3Isolation.h
 new file mode 100644
 --- /dev/null
@@ -82876,7 +82996,7 @@ diff --git a/clang/test/ObjC3/Sema/native-member-pointer-graphs.m b/clang/test/O
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-member-pointer-graphs.m
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,113 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +#include "Inputs/native-member-pointer-graphs.h"
 +#if __OBJC3_PROFILE__ == 3
@@ -82912,6 +83032,20 @@ new file mode 100644
 +void member_pointer_mutable(){
 + FixedMemberReceiver source;const char *slot="static";auto method=&FixedMemberReceiver::ordinary;(source.*method)(slot);
 + const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++}
++void member_pointer_mutable_escape(){
++ FixedMemberReceiver source;const char *slot="static";auto method=&FixedMemberReceiver::ordinary;
++ extern void replace_member_target(decltype(method) &);
++ replace_member_target(method);
++ (source.*method)(slot);const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void member_pointer_assignment_escape(){
++ FixedMemberReceiver source;const char *slot="static";auto method=&FixedMemberReceiver::ordinary;
++ extern void replace_member_target(decltype(method) &);
++ replace_member_target((method=&FixedMemberReceiver::ordinary));
++ (source.*method)(slot);const char *value=slot;
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
 +}
 +void member_pointer_virtual(){
@@ -82976,7 +83110,6 @@ new file mode 100644
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
 +}
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-member-pointer-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-member-pointer-graphs.h
 new file mode 100644
 --- /dev/null
@@ -83223,7 +83356,7 @@ diff --git a/clang/test/ObjC3/Sema/native-callable-target-sets.m b/clang/test/Ob
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-callable-target-sets.m
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,87 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +#include "Inputs/native-callable-target-sets.h"
@@ -83239,6 +83372,20 @@ new file mode 100644
 +void target_set_read(borrowed const char *loan, int choose) {
 +  global_projection_pointer = loan;
 +  const char *(*const target)(void) = choose ? target_get_literal : target_get_global;
++  const char *value = target();
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; }); // expected-error {{borrowed capture}}
++}
++void target_set_mutable_store(borrowed const char *loan, int choose) {
++  void (*target)(const char *) = target_store_other;
++  if (choose) target = target_store_first;
++  target(loan);
++  const char *value = global_projection_pointer;
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; }); // expected-error {{borrowed capture}}
++}
++void target_set_mutable_read(borrowed const char *loan, int choose) {
++  global_projection_pointer = loan;
++  const char *(*target)(void) = target_get_literal;
++  if (choose) target = target_get_global;
 +  const char *value = target();
 +  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; }); // expected-error {{borrowed capture}}
 +}
@@ -83269,6 +83416,25 @@ new file mode 100644
 +  (void)binding_detached(^void(void) __objc3_async_frame { (void)first; }); // expected-error {{borrowed capture}}
 +  (void)binding_detached(^void(void) __objc3_async_frame { (void)other; }); // expected-error {{borrowed capture}}
 +}
++void member_target_set_mutable_reference(borrowed const char *loan, int choose) {
++  CallableTargetSet receiver;
++  auto target = &CallableTargetSet::store_other;
++  if (choose) target = &CallableTargetSet::store_first;
++  const char *slot = "static";
++  (receiver.*target)(slot, loan);
++  const char *value = slot;
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; }); // expected-error {{borrowed capture}}
++}
++void member_target_set_mutable_cells(borrowed const char *loan, int choose) {
++  CallableTargetSet receiver;
++  auto target = &CallableTargetSet::first_cell;
++  if (choose) target = &CallableTargetSet::other_cell;
++  (receiver.*target)() = loan;
++  const char *first = global_projection_pointer;
++  const char *other = target_other_cell;
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)first; }); // expected-error {{borrowed capture}}
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)other; }); // expected-error {{borrowed capture}}
++}
 +void member_target_set_resource(int choose) {
 +  CallableTargetSet receiver;
 +  auto const target = choose ? &CallableTargetSet::value : &CallableTargetSet::observation;
@@ -83278,12 +83444,11 @@ new file mode 100644
 +}
 +#endif
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/native-callable-target-sets.h b/clang/test/ObjC3/Sema/Inputs/native-callable-target-sets.h
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/native-callable-target-sets.h
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,47 @@
 +#ifndef OBJC3_NATIVE_CALLABLE_TARGET_SETS_H
 +#define OBJC3_NATIVE_CALLABLE_TARGET_SETS_H
 +#include "native-member-pointer-graphs.h"
@@ -83296,6 +83461,15 @@ new file mode 100644
 +  void (*const target)(const char *) = choose ? target_store_first : target_store_other;
 +  target("value");
 +  const char *(*const read)(void) = choose ? target_get_global : target_get_literal;
++  const char *value = read();
++  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; });
++}
++static inline void target_set_mutable_safe(int choose) {
++  void (*target)(const char *) = target_store_first;
++  if (choose) target = target_store_other;
++  target("value");
++  const char *(*read)(void) = target_get_global;
++  if (choose) read = target_get_literal;
 +  const char *value = read();
 +  (void)binding_detached(^void(void) __objc3_async_frame { (void)value; });
 +}
@@ -83322,7 +83496,6 @@ new file mode 100644
 +#endif
 +#endif
 +#endif
-
 diff --git a/clang/test/ObjC3/Sema/public-try-prefixes.m b/clang/test/ObjC3/Sema/public-try-prefixes.m
 new file mode 100644
 --- /dev/null

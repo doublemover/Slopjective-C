@@ -48,6 +48,8 @@ void Check(bool arc, const std::string &standard) {
       "inline const char *published_indirect_load(void){const char *(*const call)(void)=published_load;return call();}"
       "inline void published_literal_store(const char *value){(void)value;published_pointer=\"static\";}"
       "inline void published_selected_store(int choose,const char *value){void (*const call)(const char *)=choose?published_store:published_literal_store;call(value);}"
+      "inline void published_mutable_store(int choose,const char *value){"
+      "void (*call)(const char *)=published_literal_store;if(choose)call=published_store;call(value);}"
       "inline int published_indirect_pointer(const int *value){int (*const call)(const int *)=published_pointer_number;return call(value);}";
   provider.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
   provider.objc3 = true; provider.arc = arc; provider.strict_concurrency = true;
@@ -61,7 +63,7 @@ void Check(bool arc, const std::string &standard) {
       "published_store", "published_load", "published_chain", "published_roundtrip", "published_store_number", "published_load_number",
       "published_pointer_number", "published_pointer_load", "published_pointer_byte",
       "published_indirect_store", "published_indirect_load", "published_indirect_pointer",
-      "published_literal_store", "published_selected_store"};
+      "published_literal_store", "published_selected_store", "published_mutable_store"};
   if (cxx) {
     *provider.source_text +=
         "inline void published_reference_store(const char *&slot,const char *value){slot=value;}"
@@ -111,6 +113,9 @@ void Check(bool arc, const std::string &standard) {
         "inline void published_member_store(const char *&slot,const char *value){PublishedMemberReceiver receiver;auto const call=&PublishedMemberReceiver::store;(receiver.*call)(slot,value);}"
         "inline void published_member_global(const char *value){PublishedMemberReceiver receiver;auto const call=&PublishedMemberReceiver::global;(receiver.*call)(value);}"
         "inline const char *&published_member_selected(int choose){PublishedMemberReceiver receiver;auto *const pointer=&receiver;auto const call=choose?&PublishedMemberReceiver::slot:&PublishedMemberReceiver::other_slot;return (pointer->*call)();}"
+        "inline const char *&published_member_mutable(int choose){PublishedMemberReceiver receiver;"
+        "auto call=&PublishedMemberReceiver::slot;if(choose)call=&PublishedMemberReceiver::other_slot;"
+        "return (receiver.*call)();}"
         "inline int published_member_number(const int &value){PublishedMemberReceiver receiver;auto const call=&PublishedMemberReceiver::number;return (receiver.*call)(value);}";
     for (const char *name : {"published_reference_store", "published_reference_load", "published_reference_chain", "published_reference_number"})
       provider.interface_exports.push_back(name);
@@ -135,7 +140,7 @@ void Check(bool arc, const std::string &standard) {
     for (const char *name : {"PublishedWorkStorage", "published_stored_capture", "published_stored_reference",
          "published_stored_array", "published_stored_number"})
       provider.interface_exports.push_back(name);
-    for (const char *name : {"PublishedMemberReceiver", "published_member_store", "published_member_global", "published_member_number", "published_member_selected"})
+    for (const char *name : {"PublishedMemberReceiver", "published_member_store", "published_member_global", "published_member_number", "published_member_selected", "published_member_mutable"})
       provider.interface_exports.push_back(name);
     if (standard == "c++23") {
       *provider.source_text += "inline void published_static_store(const char *value){auto work=[](const char *input) static {published_pointer=input;};work.operator()(value);work(value);}";
@@ -196,9 +201,17 @@ void Check(bool arc, const std::string &standard) {
       "borrowed capture");
   run("void ordinary(int choose){published_selected_store(choose,\"safe\");"
       "const char *value=published_pointer;global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+  run("void rejected(borrowed const char *loan,int choose){published_mutable_store(choose,loan);"
+      "const char *value=published_pointer;global_detached(^void(void) __objc3_async_frame {(void)value;});}",
+      "borrowed capture");
+  run("void ordinary(int choose){published_mutable_store(choose,\"safe\");"
+      "const char *value=published_pointer;global_detached(^void(void) __objc3_async_frame {(void)value;});}");
   if (cxx) {
     for (const char *cell : {"published_pointer", "published_slots.pointer"}) {
       run("void rejected(borrowed const char *loan,int choose){published_member_selected(choose)=loan;"
+          "const char *value=" + std::string(cell) +
+          ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+      run("void rejected(borrowed const char *loan,int choose){published_member_mutable(choose)=loan;"
           "const char *value=" + std::string(cell) +
           ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
     }

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.246 / System 2.172 mutable callable analysis](linux_native_callable_target_sets.md)
+combines exact initializers and assignments in closed automatic storage while
+preserving conservative analysis for escaped and opaque callable bindings.
+
 The [Source 2.245 / System 2.171 checked group join](linux_async_handle_joins.md)
 waits for native member quiescence and propagates the exact first error across
 nested groups. A cancelled waiter leaves independently owned group members running.

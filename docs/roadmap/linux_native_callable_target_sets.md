@@ -25,3 +25,17 @@ commands. Six source-free ARC/MRC consumers retain the conditional target
 graphs in published C17 and C++20/23 bodies. Fresh maintained patches reproduce
 the production and test files. Matching SDK and native ARM acceptance remain
 open.
+
+Source 2.246 / System 2.172 also resolves initialized mutable automatic callable
+bindings with a complete local use graph. Their initializer and all admitted
+assignments contribute candidate targets. The analysis requires direct
+assignments and rejects escaping references, addresses, captures and glvalue
+assignment results. It uses the complete owning function body when an imported
+helper introduces the binding. Any unresolved expression, mismatched signature
+or exhausted graph bound keeps the conservative transfer checks.
+
+The preceding compiler misses borrowed captures after mutable target writes.
+The mutable target and adjacent reference, indirect and member-pointer cases
+pass 312 source/PCH commands, including escaping assignment-result controls.
+Six ARC/MRC source-free consumers preserve native global writes and returned
+reference cells from imported mutable callable graphs.
