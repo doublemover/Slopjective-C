@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.235 / System 2.161 reference-result span](linux_native_reference_result_graphs.md)
+connects returned native references to exact caller/global storage for writes,
+escapes and concurrency transfers under bounded per-call discovery.
+
 The [Source 2.234 / System 2.160 native-aliasing span](linux_native_aliasing_policies.md)
 retains GNU may-alias policies in typedefs, records and public local aliases,
 with inherited printing and optimized source-free execution controls.

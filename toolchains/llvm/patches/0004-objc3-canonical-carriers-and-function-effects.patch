@@ -53752,7 +53752,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4073 @@
+@@ -0,0 +1,4128 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54951,7 +54951,9 @@ new file mode 100644
 +    const auto *Type=getObjC3CallableFunctionType(Definition);
 +    if(!Type || Type->getObjC3FunctionEffects().Async ||
 +        Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None)return nullptr;
-+    const auto Result=Definition->getReturnType();
++    const auto Result=Definition->getReturnType().getNonReferenceType();
++    if(Definition->getReturnType()->isReferenceType() &&
++        (Captured || Result.isVolatileQualified() || Result->isAtomicType()))return nullptr;
 +    if((!Result->isVoidType() && !Result->isScalarType()) ||
 +        Result->isObjCRetainableType() || isObjC3NSObjectStorageType(Result))return nullptr;
 +    for(const auto *Parameter:Definition->parameters()) {
@@ -54985,6 +54987,8 @@ new file mode 100644
 +    auto Cells=[&](const Expr *Value)->std::optional<CellSet> {
 +      CellSet Result;
 +      llvm::SmallPtrSet<const VarDecl *,16> References;
++      llvm::SmallPtrSet<const FunctionDecl *,16> Returning;
++      llvm::DenseMap<const VarDecl *,const Expr *> ReferenceActuals;
 +      unsigned CellBudget=256;
 +      auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->bool {
 +        if(!E || !CellBudget || Depth>64)return false;
@@ -55015,11 +55019,48 @@ new file mode 100644
 +            for(const auto *Target:Pointees.Targets)if(!Self(Self,Target,Depth+1))return false;
 +            return true;
 +          }
-+          auto Projection=argumentProjection(Call,Context);
-+          if(!Projection || !Projection->Aliases)return false;
-+          for(unsigned I=0;I!=Call->getNumArgs();++I)
-+            if(Projection->selects(I) && !Self(Self,Call->getArg(I),Depth+1))return false;
-+          return true;
++          if(auto Projection=argumentProjection(Call,Context);Projection && Projection->Aliases) {
++            for(unsigned I=0;I!=Call->getNumArgs();++I)
++              if(Projection->selects(I) && !Self(Self,Call->getArg(I),Depth+1))return false;
++            return true;
++          }
++          // A reference result denotes the returned storage, not all of the
++          // arguments and not a temporary value of the result's scalar type.
++          // Resolve it with this call's formal bindings before the scope index
++          // visits helper bodies; discovery order cannot change the cell set.
++          const auto *Definition=ClosedDefinition(Call);
++          if(!Call->isGLValue() || !Definition ||
++              !Definition->getReturnType()->isReferenceType() ||
++              !Returning.insert(Definition).second)return false;
++          const unsigned Offset=ArgumentOffset(Call);
++          for(unsigned I=0;I!=Definition->getNumParams();++I)
++            ReferenceActuals[Definition->getParamDecl(I)->getCanonicalDecl()]=Call->getArg(I+Offset);
++          auto Leave=llvm::scope_exit([&] {
++            for(const auto *Parameter:Definition->parameters())
++              ReferenceActuals.erase(Parameter->getCanonicalDecl());
++            Returning.erase(Definition);
++          });
++          SmallVector<const Stmt *,16> Statements{Definition->getBody()};
++          bool Found=false;
++          while(!Statements.empty()) {
++            if(!CellBudget)return false;--CellBudget;
++            const auto *Statement=Statements.pop_back_val();
++            if(isa<LambdaExpr,BlockExpr>(Statement))continue;
++            if(const auto *Return=dyn_cast<ReturnStmt>(Statement)) {
++              if(!Self(Self,Return->getRetValue(),Depth+1))return false;
++              Found=true;continue;
++            }
++            if(const auto *Branch=dyn_cast<IfStmt>(Statement)) {
++              bool Truth;
++              if(!Branch->getCond()->isValueDependent() && !Branch->getCond()->HasSideEffects(Context) &&
++                  Branch->getCond()->EvaluateAsBooleanCondition(Truth,Context)) {
++                if(const auto *Chosen=Truth?Branch->getThen():Branch->getElse())Statements.push_back(Chosen);
++                continue;
++              }
++            }
++            for(const auto *Child:Statement->children())if(Child)Statements.push_back(Child);
++          }
++          return Found;
 +        }
 +        if(const auto *Subscript=dyn_cast<ArraySubscriptExpr>(E)) {
 +          const auto *Base=Subscript->getBase()->IgnoreParenImpCasts();
@@ -55032,6 +55073,14 @@ new file mode 100644
 +        const auto *Reference=dyn_cast<DeclRefExpr>(E);
 +        const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +        if(!Variable || (!Variable->hasLocalStorage() && !Variable->hasGlobalStorage()))return false;
++        Variable=Variable->getCanonicalDecl();
++        if(auto Found=ReferenceActuals.find(Variable);Found!=ReferenceActuals.end())
++          return Variable->getType()->isReferenceType() && Self(Self,Found->second,Depth+1);
++        // Returning a callee-owned automatic is not a caller storage proof.
++        // Reference locals may name a valid actual/global cell through their
++        // initializer; ordinary automatic locals cannot survive the return.
++        if(!Variable->getType()->isReferenceType() && Variable->hasLocalStorage())
++          if(const auto *Owner=dyn_cast<FunctionDecl>(Variable->getDeclContext());Owner && Returning.contains(Owner))return false;
 +        if(Variable->getType()->isReferenceType()) {
 +          Variable=Variable->getCanonicalDecl();
 +          if(!References.insert(Variable).second)return true;
@@ -55194,9 +55243,15 @@ new file mode 100644
 +      if(const auto *Call=dyn_cast<CallExpr>(Node);Call && CallDefinitions.contains(Call)) {
 +        const auto *Definition=CallDefinitions.find(Call)->second;
 +        const unsigned Offset=ArgumentOffset(Call);
++        bool UnknownReference=false;
++        if(Call->isGLValue() && Use!=Read) {
++          if(auto Targets=Cells(Call)) {
++            if(Use==Unknown)for(const auto *Target:*Targets)Escape(Target);
++          } else {CallGraphIncomplete=true;UnknownReference=true;}
++        }
 +        if(Offset)Add(Call->getArg(0),Read);
 +        for(unsigned I=0;I!=Definition->getNumParams();++I) {
-+          Add(Call->getArg(I+Offset),Read);
++          Add(Call->getArg(I+Offset),UnknownReference && Definition->getParamDecl(I)->getType()->isReferenceType()?Unknown:Read);
 +          if(!Definition->getParamDecl(I)->getType()->isReferenceType())
 +            for(const auto *Target:receiverPointees(Context,Call->getArg(I+Offset)).Targets)Add(Target,Unknown);
 +        }
@@ -82160,6 +82215,189 @@ new file mode 100644
 + const char *slot="static";auto store=[saved=(const char *)"other"](const char *&target){target=saved;};
 + store(slot);const char *other=slot;
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)other;});
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-reference-result-graphs.m b/clang/test/ObjC3/Sema/native-reference-result-graphs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-reference-result-graphs.m
+@@ -0,0 +1,90 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-reference-result-graphs.h"
++#if __OBJC3_PROFILE__ == 3
++const char *reference_result_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#elif !defined(__cplusplus)
++// expected-no-diagnostics
++#else
++void reference_result_write_0(borrowed const char *loan){
++ result_global_slot()=loan;const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_write_1(borrowed const char *loan){
++ result_global_chain()=loan;const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_write_2(borrowed const char *loan){
++ result_global_field()=loan;const char *value=global_projection_record.value;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_write_3(borrowed const char *loan){
++ result_global_array()=loan;const char *value=global_projection_array[1];
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_write_4(borrowed const char *loan){
++ result_local_static()=loan;const char *value=result_local_static();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_write_5(borrowed const char *loan){
++ result_local_thread()=loan;const char *value=result_local_thread();
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_write_6(borrowed const char *loan){
++ result_indirect()=loan;const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_reference(borrowed const char *loan){
++ const char *first="static",*second="static";
++ result_reference_chain(first,loan);result_reference_chain(second,loan);
++ const char *left=first,*right=second;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)left;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)right;}); // expected-error {{borrowed capture}}
++}
++void reference_result_written(borrowed const char *loan){
++ const char *value=result_written_slot(loan);
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_alternatives(borrowed const char *loan,bool choose){
++ const char *left="static",*right="static";
++ result_alternative(choose,left,right)=loan;
++ const char *first=left,*second=right;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)first;}); // expected-error {{borrowed capture}}
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)second;}); // expected-error {{borrowed capture}}
++}
++void reference_result_alias(borrowed const char *loan){
++ const char *&alias=result_global_chain();alias=loan;
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_receiver(borrowed const char *loan){
++ ResultIndependentReceiver receiver;ResultIndependentFinal final_receiver;
++ receiver.slot()=loan;receiver.ResultIndependentReceiver::virtual_slot()=loan;
++ final_receiver.virtual_slot()=loan;
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_resources(){
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ result_resource_slot()=descriptor;int first=global_projection_number;
++ int second=result_resource_written(descriptor);
++ (void)binding_detached(binding_make_scalar(first)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_make_scalar(second)); // expected-error {{cleanup-managed capture}}
++}
++void reference_result_stateless(borrowed const char *loan){
++ auto slot=[]()->const char *&{return global_projection_pointer;};
++ slot()=loan;const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_escape(){
++ reference_graph_unknown(result_global_slot());const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_cycle(bool choose){
++ const char *slot="static";result_cycle(choose,slot)="other";const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void reference_result_bounds(borrowed const char *loan){
++ result_bound_39()=loan;const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-reference-result-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-reference-result-graphs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-reference-result-graphs.h
+@@ -0,0 +1,81 @@
++#ifndef OBJC3_REFERENCE_RESULT_GRAPHS_H
++#define OBJC3_REFERENCE_RESULT_GRAPHS_H
++#include "native-reference-call-graphs.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++static inline const char *&result_global_slot(){return global_projection_pointer;}
++static inline const char *&result_global_chain(){return result_global_slot();}
++static inline const char *&result_written_slot(const char *value){global_projection_pointer=value;return global_projection_pointer;}
++static inline const char *&result_reference_slot(const char *&slot){const char *&alias=slot;return alias;}
++static inline const char *&result_reference_chain(const char *&slot,const char *value){slot=value;return result_reference_slot(slot);}
++static inline const char *&result_alternative(bool choose,const char *&left,const char *&right){
++ if(choose)return result_reference_slot(left);return result_reference_slot(right);
++}
++static inline const char *&result_local_static(){static const char *slot="static";return slot;}
++static inline const char *&result_local_thread(){static thread_local const char *slot="static";return slot;}
++static inline const char *&result_global_field(){return global_projection_record.value;}
++static inline const char *&result_global_array(){return global_projection_array[1];}
++static inline int &result_resource_slot(){return global_projection_number;}
++static inline int &result_resource_written(int value){global_projection_number=value;return global_projection_number;}
++struct ResultIndependentReceiver {
++ const char *&slot(){return result_global_slot();}
++ virtual const char *&virtual_slot(){return result_global_slot();}
++};
++struct ResultIndependentFinal final:ResultIndependentReceiver {
++ const char *&virtual_slot()override{return result_global_slot();}
++};
++static inline const char *&result_indirect(){const char *&(*const call)()=result_global_slot;return call();}
++static inline const char *&result_cycle(bool choose,const char *&slot){if(choose)return slot;return result_cycle(choose,slot);}
++static inline const char *&result_bound_0(){return global_projection_pointer;}
++static inline const char *&result_bound_1(){return result_bound_0();}
++static inline const char *&result_bound_2(){return result_bound_1();}
++static inline const char *&result_bound_3(){return result_bound_2();}
++static inline const char *&result_bound_4(){return result_bound_3();}
++static inline const char *&result_bound_5(){return result_bound_4();}
++static inline const char *&result_bound_6(){return result_bound_5();}
++static inline const char *&result_bound_7(){return result_bound_6();}
++static inline const char *&result_bound_8(){return result_bound_7();}
++static inline const char *&result_bound_9(){return result_bound_8();}
++static inline const char *&result_bound_10(){return result_bound_9();}
++static inline const char *&result_bound_11(){return result_bound_10();}
++static inline const char *&result_bound_12(){return result_bound_11();}
++static inline const char *&result_bound_13(){return result_bound_12();}
++static inline const char *&result_bound_14(){return result_bound_13();}
++static inline const char *&result_bound_15(){return result_bound_14();}
++static inline const char *&result_bound_16(){return result_bound_15();}
++static inline const char *&result_bound_17(){return result_bound_16();}
++static inline const char *&result_bound_18(){return result_bound_17();}
++static inline const char *&result_bound_19(){return result_bound_18();}
++static inline const char *&result_bound_20(){return result_bound_19();}
++static inline const char *&result_bound_21(){return result_bound_20();}
++static inline const char *&result_bound_22(){return result_bound_21();}
++static inline const char *&result_bound_23(){return result_bound_22();}
++static inline const char *&result_bound_24(){return result_bound_23();}
++static inline const char *&result_bound_25(){return result_bound_24();}
++static inline const char *&result_bound_26(){return result_bound_25();}
++static inline const char *&result_bound_27(){return result_bound_26();}
++static inline const char *&result_bound_28(){return result_bound_27();}
++static inline const char *&result_bound_29(){return result_bound_28();}
++static inline const char *&result_bound_30(){return result_bound_29();}
++static inline const char *&result_bound_31(){return result_bound_30();}
++static inline const char *&result_bound_32(){return result_bound_31();}
++static inline const char *&result_bound_33(){return result_bound_32();}
++static inline const char *&result_bound_34(){return result_bound_33();}
++static inline const char *&result_bound_35(){return result_bound_34();}
++static inline const char *&result_bound_36(){return result_bound_35();}
++static inline const char *&result_bound_37(){return result_bound_36();}
++static inline const char *&result_bound_38(){return result_bound_37();}
++static inline const char *&result_bound_39(){return result_bound_38();}
++static inline void result_ordinary(){
++ result_global_slot()="static";result_global_chain()="other";
++ const char *slot="static",*second="other";
++ result_reference_chain(slot,"other")="static";
++ result_alternative(false,slot,second)="static";
++ result_global_field()="static";result_global_array()="static";
++ result_local_static()="static";result_local_thread()="static";
++ const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++ int observed=result_resource_written(42);
++ (void)binding_detached(binding_make_scalar(observed));
 +}
 +#endif
 +#endif

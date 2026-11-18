@@ -79,7 +79,15 @@ void Check(bool arc, const std::string &standard) {
         "inline void published_captured_mutable(const char *value){auto work=[saved=value]()mutable{const char *old=saved;saved=\"static\";published_pointer=old;};work();}"
         "inline void published_captured_binding(const char *value){const char *values[1]={value};auto [saved]=values;auto work=[saved](){published_pointer=saved;};work();}"
         "inline void published_captured_binding_ref(const char *value){const char *values[1]={value};const auto &[saved]=values;auto work=[saved](){published_pointer=saved;};work();}"
-        "inline int published_binding_range(void){int values[1][2]={{1,2}};int sum=0;for(auto [first,second]:values)sum+=first+second;return sum;}";
+        "inline int published_binding_range(void){int values[1][2]={{1,2}};int sum=0;for(auto [first,second]:values)sum+=first+second;return sum;}"
+        "inline const char *&published_result_global(){return published_pointer;}"
+        "inline const char *&published_result_chain(){return published_result_global();}"
+        "inline const char *&published_result_field(){return published_slots.pointer;}"
+        "inline const char *&published_result_array(){return published_array[1];}"
+        "inline const char *&published_result_reference(const char *&slot){const char *&alias=slot;return alias;}"
+        "inline const char *&published_result_written(const char *&slot,const char *value){slot=value;return published_result_reference(slot);}"
+        "inline const char *&published_result_alternative(bool which,const char *&first,const char *&second){if(which)return first;return second;}"
+        "inline int &published_result_number(){return published_number;}";
     for (const char *name : {"published_reference_store", "published_reference_load", "published_reference_chain", "published_reference_number"})
       provider.interface_exports.push_back(name);
     provider.interface_exports.push_back("PublishedReferenceReceiver");
@@ -93,6 +101,10 @@ void Check(bool arc, const std::string &standard) {
     provider.interface_exports.push_back("published_captured_binding");
     provider.interface_exports.push_back("published_captured_binding_ref");
     provider.interface_exports.push_back("published_binding_range");
+    for (const char *name : {"published_result_global", "published_result_chain", "published_result_field",
+         "published_result_array", "published_result_reference", "published_result_written",
+         "published_result_alternative", "published_result_number"})
+      provider.interface_exports.push_back(name);
     if (standard == "c++23") {
       *provider.source_text += "inline void published_static_store(const char *value){auto work=[](const char *input) static {published_pointer=input;};work.operator()(value);work(value);}";
       provider.interface_exports.push_back("published_static_store");
@@ -220,6 +232,29 @@ void Check(bool arc, const std::string &standard) {
     }
     run("void ordinary(void){int value=published_binding_range();"
         "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    for (const auto &[call, slot] : {
+        std::pair{"published_result_global()", "published_pointer"},
+        std::pair{"published_result_chain()", "published_pointer"},
+        std::pair{"published_result_field()", "published_slots.pointer"},
+        std::pair{"published_result_array()", "published_array[1]"}}) {
+      run("void rejected(borrowed const char *loan){" + std::string(call) + "=loan;const char *value=" + slot +
+          ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+      run("void ordinary(void){" + std::string(call) + "=\"static\";const char *value=" + slot +
+          ";global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    }
+    for (const char *slot : {"first", "second"}) {
+      run("void rejected(borrowed const char *loan,bool which){const char *first=\"static\",*second=\"static\";"
+          "published_result_alternative(which,first,second)=loan;const char *value=" + std::string(slot) +
+          ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+      run("void rejected(borrowed const char *loan){const char *first=\"static\",*second=\"static\";"
+          "published_result_written(first,loan);published_result_written(second,loan);const char *value=" + std::string(slot) +
+          ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    }
+    run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
+        "published_result_number()=descriptor;int value=published_number;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
+    run("void rejected(borrowed const char *loan){const char *&alias=published_result_chain();alias=loan;"
+        "const char *value=published_pointer;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
     run("void rejected(borrowed const char *loan){const char *slot=\"static\";published_captured_reference(slot,loan);const char *value=slot;"
         "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
     run("void ordinary(void){const char *slot=\"static\";published_captured_reference(slot,\"other\");const char *value=slot;"
@@ -244,6 +279,16 @@ void Check(bool arc, const std::string &standard) {
       "int rejected(void) __objc3_async_frame {int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
       "published_number=descriptor;return __objc3_await global_remote_number(published_number);}";
   Require(Compile(consumer), "cleanup-managed concurrent value");
+  if (cxx) {
+    consumer.source_text = crossing +
+        "int rejected(borrowed const char *loan) __objc3_async_frame {published_result_chain()=loan;"
+        "return __objc3_await global_remote(published_pointer);}";
+    Require(Compile(consumer), "borrowed concurrent value");
+    consumer.source_text = crossing +
+        "int rejected(void) __objc3_async_frame {int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
+        "published_result_number()=descriptor;return __objc3_await global_remote_number(published_number);}";
+    Require(Compile(consumer), "cleanup-managed concurrent value");
+  }
   std::cout << "Global provenance source-free " << standard << (arc ? " ARC\n" : " MRC\n");
 }
 }
