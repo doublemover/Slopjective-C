@@ -30,6 +30,22 @@ bool IsSourceIdentifier(llvm::StringRef name) {
       });
 }
 
+const clang::FunctionDecl *SelectFreeFunction(clang::ASTContext &context,
+                                               llvm::StringRef name) {
+  if (!IsSourceIdentifier(name)) return nullptr;
+  const auto candidates = context.getTranslationUnitDecl()->lookup(&context.Idents.get(name));
+  const auto *entry = !candidates.empty() && std::next(candidates.begin()) == candidates.end()
+      ? llvm::dyn_cast<clang::FunctionDecl>(candidates.front()) : nullptr;
+  return entry && entry->getTemplatedKind() == clang::FunctionDecl::TK_NonTemplate ? entry : nullptr;
+}
+
+void PrintThrows(llvm::raw_ostream &source, clang::ASTContext &context,
+                 clang::ObjC3FunctionEffectInfo effects) {
+  source << " __objc3_throws";
+  if (effects.Throws == clang::ObjC3ThrowsKind::Typed)
+    source << '(' << effects.ErrorType.getAsString(context.getPrintingPolicy()) << ')';
+}
+
 std::optional<std::string> PortableValueType(clang::ASTContext &context,
                                              clang::QualType type) {
   if (clang::containsObjC3BorrowedType(context, type) ||
@@ -248,14 +264,16 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
 
 }  // namespace
 
-AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
-                                        std::span<const std::string> symbols,
-                                        std::string &failure) {
+CExportSource GenerateCExports(clang::ASTContext &context,
+                               std::span<const std::string> async_symbols,
+                               std::span<const std::string> throws_symbols,
+                               std::string &failure) {
   failure.clear();
-  AsyncCExportSource output;
+  CExportSource output;
   auto &language = context.getLangOpts();
-  if (!language.ObjC3 || !language.Blocks || !context.getTargetInfo().getTriple().isOSLinux()) {
-    failure = "C completion exports require Linux Objective-C 3.0 with Blocks enabled";
+  if (!language.ObjC3 || !context.getTargetInfo().getTriple().isOSLinux() ||
+      (!async_symbols.empty() && !language.Blocks)) {
+    failure = "C exports require Linux Objective-C 3.0, with Blocks enabled for async entries";
     return {};
   }
 
@@ -265,10 +283,71 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
   llvm::StringSet<> selected;
   auto *tu = context.getTranslationUnitDecl();
   CExportRecords records(context, output.interface_exports);
-  for (const auto &selection : symbols) {
+  for (const auto &name : throws_symbols) {
+    auto reject = [&](llvm::StringRef reason) {
+      failure = "Cannot export C throwing entry " + name + ": " + reason.str();
+      return CExportSource{};
+    };
+    const auto *function = SelectFreeFunction(context, name);
+    const auto *prototype = function ? function->getType()->getAs<clang::FunctionProtoType>() : nullptr;
+    if (!prototype || prototype->isVariadic())
+      return reject("expected one nonvariadic free function with a native prototype");
+    const auto effects = prototype->getObjC3FunctionEffects();
+    if (effects.Async || effects.Throws == clang::ObjC3ThrowsKind::None ||
+        clang::getObjC3Executor(function) || prototype->hasObjC3BorrowedResult() ||
+        prototype->getCallConv() != clang::CC_C ||
+        function->hasAttr<clang::CFReturnsRetainedAttr>() ||
+        function->hasAttr<clang::CFReturnsNotRetainedAttr>())
+      return reject("expected a synchronous throwing entry with a portable result lifetime and C calling convention");
+    if (!function->isExternallyVisible() && !function->getDefinition())
+      return reject("the internal throwing declaration needs a definition in this translation unit");
+    if (language.CPlusPlus && !prototype->isNothrow() &&
+        !function->hasAttr<clang::NoThrowAttr>())
+      return reject("Objective-C++ entries must declare a nonthrowing native exception contract");
+    const auto thunk = name + "_throws_c";
+    const auto bridge = "__objc3_c_error_bridge_" + name;
+    if (!selected.insert(thunk).second || !tu->lookup(&context.Idents.get(thunk)).empty() ||
+        !tu->lookup(&context.Idents.get(bridge)).empty())
+      return reject("the generated C symbol or native bridge is already declared or selected");
+    const auto result = PortableValueType(context, prototype->getReturnType());
+    if (!result) return reject("the result has no self-contained scalar or pointer C declaration");
+    std::string parameters, inputs;
+    for (unsigned index = 0; index < prototype->getNumParams(); ++index) {
+      const auto type = PortableValueType(context, prototype->getParamType(index));
+      const auto *parameter = function->getParamDecl(index);
+      if (!type || prototype->getExtParameterInfo(index).getOpaqueValue() ||
+          parameter->hasAttr<clang::NSConsumedAttr>() || parameter->hasAttr<clang::CFConsumedAttr>())
+        return reject("parameter " + std::to_string(index + 1) +
+                      " has no self-contained scalar or pointer C declaration");
+      const auto argument = "__objc3_c_argument_" + std::to_string(index);
+      if (index) { parameters += ", "; inputs += ", "; }
+      parameters += *type + ' ' + argument;
+      inputs += argument;
+    }
+    constexpr llvm::StringLiteral linkage = "__OBJC3_ASYNC_C_LINKAGE ";
+    const auto declaration = linkage.str() + *result + ' ' + thunk + '(' +
+        (parameters.empty() ? "" : parameters + ", ") + "objc3_async_c_error _Nullable * _Nullable);\n";
+    header << declaration;
+    output.interface_exports.push_back(thunk);
+    definitions << "#undef " << name << "\n#undef " << thunk << "\n#undef " << bridge << '\n'
+                << declaration;
+    const auto native = linkage.str() + *result + ' ' + bridge + '(' +
+        (parameters.empty() ? "void" : parameters) + ')';
+    // The native checked entry implements exactly the trailing error-out
+    // parameter in the public C declaration, including null and +0 ownership.
+    definitions << native;
+    PrintThrows(definitions, context, effects);
+    definitions << " __asm__(\"" << thunk << "\");\n" << native;
+    PrintThrows(definitions, context, effects);
+    definitions << " { ";
+    if (!prototype->getReturnType()->isVoidType()) definitions << "return ";
+    definitions << "__objc3_try(" << (language.CPlusPlus ? "::" : "") << name
+                << '(' << inputs << ")); }\n";
+  }
+  for (const auto &selection : async_symbols) {
     auto reject = [&](llvm::StringRef reason) {
       failure = "Cannot export C async entry " + selection + ": " + reason.str();
-      return AsyncCExportSource{};
+      return CExportSource{};
     };
     std::optional<CExportActorMethod> actor_method;
     const clang::Decl *source = nullptr;
@@ -293,13 +372,9 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
       source_parameters = method->parameters();
     } else {
       if (!IsSourceIdentifier(name)) return reject("expected a source identifier");
-      const auto declarations = tu->lookup(&context.Idents.get(name));
-      const auto *function = !declarations.empty() &&
-          std::next(declarations.begin()) == declarations.end()
-          ? llvm::dyn_cast<clang::FunctionDecl>(declarations.front()) : nullptr;
+      const auto *function = SelectFreeFunction(context, name);
       prototype = function ? function->getType()->getAs<clang::FunctionProtoType>() : nullptr;
-      if (!prototype || prototype->isVariadic() ||
-          function->getTemplatedKind() != clang::FunctionDecl::TK_NonTemplate)
+      if (!prototype || prototype->isVariadic())
         return reject("expected one nonvariadic free function with a native prototype");
       effects = prototype->getObjC3FunctionEffects();
       if (!effects.AsyncFrame || clang::isObjC3ActorIsolated(function))
@@ -313,10 +388,9 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
     if (prototype && (prototype->hasObjC3BorrowedResult() ||
                       prototype->getCallConv() != clang::CC_C))
       return reject("the source result lifetime or calling convention cannot cross the C ABI");
-    if (!selected.insert(name).second) return reject("the generated C symbol is already selected");
-
     const auto thunk = name + "_async_c";
     const auto callback = name + "_completion_t";
+    if (!selected.insert(thunk).second) return reject("the generated C symbol is already selected");
     if (!tu->lookup(&context.Idents.get(thunk)).empty() ||
         !tu->lookup(&context.Idents.get(callback)).empty())
       return reject("the generated C thunk or callback name is already declared");
@@ -413,11 +487,7 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
         definitions << "static " << result->spelling << ' ' << bridge << '('
                     << bridge_parameters << ") __objc3_async_frame";
       }
-      if (checked) {
-        definitions << " __objc3_throws";
-        if (effects.Throws == clang::ObjC3ThrowsKind::Typed)
-          definitions << '(' << effects.ErrorType.getAsString(context.getPrintingPolicy()) << ')';
-      }
+      if (checked) PrintThrows(definitions, context, effects);
       definitions << " { ";
       if (!returns_void) definitions << "return ";
       if (checked) definitions << "__objc3_try(";

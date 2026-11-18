@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.270 / System 2.196 C error-out bridge](linux_async_c_completion_exports.md#synchronous-c-error-out-exports)
+exports synchronous checked functions to ordinary C through the native trailing
+error-out convention. It publishes the generated C signature in the semantic
+interface and can share a header with async exports.
+
 The [Source 2.269 / System 2.195 C actor bridge](linux_async_c_completion_exports.md)
 exports inherited isolated methods through subclass receivers and retains
 the superclass signature and checked error contract.

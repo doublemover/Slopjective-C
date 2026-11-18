@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -234,6 +235,7 @@ extern id object_dispose(id);
 extern void *_Block_copy(const void *);
 #if !__has_feature(objc_arc)
 extern void objc_release(id);
+extern id objc_autorelease(id);
 #endif
 #ifdef __cplusplus
 }
@@ -257,6 +259,38 @@ __attribute__((objc_root_class, objc_runtime_name("GeneratedCArgumentRoot")))
 @end
 static int generated_arguments(GeneratedActorRoot *input, GeneratedBlock apply) async {
   return [input contribution] + apply(20);
+}
+static _Atomic(unsigned) generated_sync_errors_destroyed;
+__attribute__((objc_root_class)) @interface GeneratedOwnedError <Error> { Class isa; }
++ (instancetype)new;
+@end
+@implementation GeneratedOwnedError
++ (instancetype)new {return class_createInstance(self, 0);}
+- (void)dealloc {
+  __c11_atomic_fetch_add(&generated_sync_errors_destroyed, 1, __ATOMIC_RELAXED);
+  object_dispose(self);
+}
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
+@end
+static int generated_sync_checked(int input) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (input == -2) {
+    id<Error> error = [GeneratedOwnedError new];
+#if !__has_feature(objc_arc)
+    objc_autorelease(error);
+#endif
+    __objc3_throw(error);
+  }
+  if (input < 0) __objc3_throw(generated_failure());
+  return input + 1;
+}
+static void generated_sync_void(bool fail) __objc3_throws __attribute__((nothrow)) {
+  if (fail) __objc3_throw(generated_failure());
+}
+static const int *generated_sync_pointer(const int *value) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!value) __objc3_throw(generated_failure());
+  return value;
 }
 static int generated_abandoned_arguments(GeneratedActorRoot *input, GeneratedBlock apply) async
     __attribute__((nothrow, objc_executor(named("generated.missing")))) {
@@ -348,6 +382,9 @@ void generated_actor_release(void *actor) {
 unsigned generated_actors_destroyed(void) {
   return __c11_atomic_load(&generated_actor_destructions, __ATOMIC_RELAXED);
 }
+unsigned generated_checked_errors_destroyed(void) {
+  return __c11_atomic_load(&generated_sync_errors_destroyed, __ATOMIC_RELAXED);
+}
 #ifdef __cplusplus
 }
 #endif
@@ -371,7 +408,8 @@ unsigned generated_actors_destroyed(void) {
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
       "GeneratedActor::current", "GeneratedDerivedActor::current", "GeneratedDerivedActor::checked:"};
-  provider.async_c_header_output_path = (root / "generated.h").string();
+  provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer"};
+  provider.c_export_header_output_path = (root / "generated.h").string();
   provider.emit_semantic_interface = true;
   provider.module_name = "test.GeneratedCompletion";
   provider.package_identity = "generated-completion-v1";
@@ -386,10 +424,25 @@ unsigned generated_actors_destroyed(void) {
   Require(interface.source_bytes.find("generated_checked_async_c") != std::string::npos &&
           interface.source_bytes.find("GeneratedActor_add_by_async_c") != std::string::npos &&
           interface.source_bytes.find("GeneratedDerivedActor_checked_async_c") != std::string::npos &&
+          interface.source_bytes.find("generated_sync_checked_throws_c") != std::string::npos &&
           interface.sidecar_json.find(RuntimeCompletionSemantic()) != std::string::npos,
           "generated C callable ABI was omitted from semantic metadata");
 
   std::string separate_body;
+  if (standard == "c++20" && !arc) {
+    auto rejected = provider;
+    rejected.async_c_exports.clear();
+    rejected.throws_c_exports = {"generated_unmarked_checked"};
+    std::ifstream original(source);
+    Require(original.good(), "generated provider fixture is missing");
+    const std::string source_text((std::istreambuf_iterator<char>(original)), {});
+    rejected.source_text = source_text + R"(
+static int generated_unmarked_checked(void) __objc3_throws {return 1;}
+)";
+    const auto unsafe = Compile(rejected);
+    Require(!unsafe.success && unsafe.failure.find("nonthrowing native exception contract") != std::string::npos,
+            "a potentially unwinding Objective-C++ function was admitted as a synchronous C export");
+  }
   if (declaration_only) {
     auto rejected = provider;
     rejected.async_c_exports = {"generated_failure"};
@@ -405,17 +458,22 @@ unsigned generated_actors_destroyed(void) {
     }
     rejected.async_c_exports = {"GeneratedActor::current", "GeneratedActor::current"};
     Require(!Compile(rejected).success, "duplicate actor export was admitted");
-    const auto header_before = llvm::MemoryBuffer::getFile(provider.async_c_header_output_path);
+    rejected.async_c_exports.clear();
+    rejected.throws_c_exports = {"generated_value"};
+    const auto wrong_effect = Compile(rejected);
+    Require(!wrong_effect.success && wrong_effect.failure.find("synchronous throwing entry") != std::string::npos,
+            "an async entry was admitted as a synchronous C export");
+    const auto header_before = llvm::MemoryBuffer::getFile(provider.c_export_header_output_path);
     Require(static_cast<bool>(header_before), "generated header missing");
     const std::string generated_header = (*header_before)->getBuffer().str();
-    Write(provider.async_c_header_output_path, "previous header\n");
+    Write(provider.c_export_header_output_path, "previous header\n");
     auto failed = provider;
     failed.output_path = includes.string();
     Require(!Compile(failed).success, "invalid object destination was accepted");
-    const auto header_after = llvm::MemoryBuffer::getFile(provider.async_c_header_output_path);
+    const auto header_after = llvm::MemoryBuffer::getFile(provider.c_export_header_output_path);
     Require(header_after && (*header_after)->getBuffer() == "previous header\n",
             "failed object publication changed the generated header");
-    Write(provider.async_c_header_output_path, generated_header);
+    Write(provider.c_export_header_output_path, generated_header);
     CompileRequest body;
     body.input_path = (root / "body.m").string();
     body.source_text = R"(
@@ -464,6 +522,9 @@ void call_imported_arguments(generated_arguments_async_c_arg0_t value,
                              generated_arguments_async_c_arg1_t action) {
   generated_arguments_async_c(value, action, 0, observe);
 }
+int call_imported_checked(objc3_async_c_error *failure) {
+  return generated_sync_checked_throws_c(41, failure);
+}
 )";
   Compiled(Compile(imported));
   const auto client = root / "client.c";
@@ -481,6 +542,11 @@ extern void *generated_argument_create(void);
 extern void *generated_argument_block_create(void);
 extern void generated_actor_release(void *);
 extern unsigned generated_actors_destroyed(void);
+extern unsigned generated_checked_errors_destroyed(void);
+extern void *objc_autoreleasePoolPush(void);
+extern void objc_autoreleasePoolPop(void *);
+extern void *objc_retain(void *);
+extern void objc_release(void *);
 extern void *_Block_copy(const void *);
 extern void _Block_release(const void *);
 #ifdef __BLOCKS__
@@ -598,6 +664,25 @@ int main(void) {
   assert(objc3_actor_close(closed_mailbox) == OBJC3_SERVICE_OK);
 
   const int input = 41;
+  objc3_async_c_error synchronous_failure = generated_failure();
+  assert(generated_sync_checked_throws_c(41, &synchronous_failure) == 42 && !synchronous_failure);
+  assert(generated_sync_checked_throws_c(-1, &synchronous_failure) == 0 && synchronous_failure == generated_failure());
+  assert(generated_sync_checked_throws_c(-1, 0) == 0);
+  generated_sync_void_throws_c(false, &synchronous_failure);
+  assert(!synchronous_failure);
+  generated_sync_void_throws_c(true, &synchronous_failure);
+  assert(synchronous_failure == generated_failure());
+  assert(generated_sync_pointer_throws_c(&input, &synchronous_failure) == &input && !synchronous_failure);
+  assert(!generated_sync_pointer_throws_c(0, &synchronous_failure) && synchronous_failure == generated_failure());
+  void *pool = objc_autoreleasePoolPush();
+  assert(generated_sync_checked_throws_c(-2, &synchronous_failure) == 0);
+  assert(synchronous_failure && synchronous_failure != generated_failure());
+  assert(generated_checked_errors_destroyed() == 0);
+  assert(objc_retain(synchronous_failure) == synchronous_failure);
+  objc_autoreleasePoolPop(pool);
+  assert(generated_checked_errors_destroyed() == 0);
+  objc_release(synchronous_failure);
+  assert(generated_checked_errors_destroyed() == 1);
   generated_value_async_c(true, &input, &complete[0], value_done);
   generated_void_async_c(0, void_done);
   generated_checked_async_c(0, &complete[2], checked_done);

@@ -176,14 +176,15 @@ constexpr const char *kEagerRuntimePrelude =
     "/__objc3_import_runtime/prelude.h";
 constexpr const char *kEagerRuntimeReady = "__objc3_import_runtime_ready";
 
-class AsyncCExportConsumer final : public clang::ASTConsumer {
+class CExportConsumer final : public clang::ASTConsumer {
 public:
-  AsyncCExportConsumer(std::span<const std::string> names, CompileResult &result)
-      : names_(names), result_(result) {}
+  CExportConsumer(const CompileRequest &request, CompileResult &result)
+      : request_(request), result_(result) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
     if (context.getDiagnostics().hasErrorOccurred()) return;
-    result_.async_c_source = GenerateAsyncCExports(context, names_, result_.failure);
+    result_.c_export_source = GenerateCExports(context, request_.async_c_exports,
+                                               request_.throws_c_exports, result_.failure);
     if (!result_.failure.empty()) {
       auto &diagnostics = context.getDiagnostics();
       diagnostics.Report(diagnostics.getCustomDiagID(clang::DiagnosticsEngine::Error, "%0"))
@@ -192,7 +193,7 @@ public:
   }
 
 private:
-  std::span<const std::string> names_;
+  const CompileRequest &request_;
   CompileResult &result_;
 };
 
@@ -434,8 +435,8 @@ class ContractAction final : public NativeAction {
       consumers.push_back(std::make_unique<InterfaceImportConsumer>(
           imports_, compiler, lookup_source_, request_, result_));
     if(request_.meta_compilation)consumers.push_back(MakeMetaConsumer(request_));
-    if (!request_.async_c_exports.empty())
-      consumers.push_back(std::make_unique<AsyncCExportConsumer>(request_.async_c_exports, result_));
+    if (!request_.async_c_exports.empty() || !request_.throws_c_exports.empty())
+      consumers.push_back(std::make_unique<CExportConsumer>(request_, result_));
     consumers.push_back(MakeContractConsumer(request_, result_, &compiler.getPreprocessor(),
                                               compiler.getCodeGenOpts().getInlineAsmDialect()));
     std::shared_ptr<CInlineProviderState> c_inline;
@@ -912,11 +913,11 @@ std::string EncodeCompileDiagnostics(const CompileResult &result) {
 }
 
 CompileResult Compile(const CompileRequest &request) {
-  if (!request.async_c_header_output_path.empty() && !request.async_c_header) {
+  if (!request.c_export_header_output_path.empty() && !request.c_export_header) {
     CompileResult rejected;
-    if (request.async_c_exports.empty() || request.emit == EmitKind::Syntax ||
+    if ((request.async_c_exports.empty() && request.throws_c_exports.empty()) || request.emit == EmitKind::Syntax ||
         request.module_owned_names) {
-      rejected.failure = "C completion exports require selected async functions, a native product, and public C linkage";
+      rejected.failure = "C exports require selected effectful entries, a native product, and public C linkage";
       return rejected;
     }
     auto collect = request;
@@ -926,18 +927,19 @@ CompileResult Compile(const CompileRequest &request) {
         input_path = std::filesystem::path(request.working_directory) / input_path;
       auto input = llvm::MemoryBuffer::getFile(input_path.string());
       if (!input) {
-        rejected.failure = "Cannot read C async export source: " + input.getError().message();
+        rejected.failure = "Cannot read C export source: " + input.getError().message();
         return rejected;
       }
       collect.source_text = (*input)->getBuffer().str();
     }
     collect.emit = EmitKind::Syntax;
-    collect.arguments.insert(collect.arguments.begin(),
-        {"-include", "objc3c/runtime/objc3_async_c_export.h"});
+    const char *c_header = request.async_c_exports.empty() ? "objc3c/runtime/objc3_async_c.h"
+                                                         : "objc3c/runtime/objc3_async_c_export.h";
+    collect.arguments.insert(collect.arguments.begin(), {"-include", c_header});
     collect.output_path.clear();
     collect.interface_output_path.clear();
     collect.dependency_record_output_path.clear();
-    collect.async_c_header_output_path.clear();
+    collect.c_export_header_output_path.clear();
     collect.emit_semantic_interface = false;
     collect.interface_exports.clear();
     collect.module_source_root.clear();
@@ -948,12 +950,13 @@ CompileResult Compile(const CompileRequest &request) {
     auto final = request;
     final.arguments = std::move(collect.arguments);
     final.async_c_exports.clear();
+    final.throws_c_exports.clear();
     if (!final.interface_exports.empty())
-      for (const auto &name : preliminary.async_c_source.interface_exports)
+      for (const auto &name : preliminary.c_export_source.interface_exports)
         if (!llvm::is_contained(final.interface_exports, name))
           final.interface_exports.push_back(name);
-    final.async_c_header = std::move(preliminary.async_c_source.header);
-    final.source_text = std::move(*collect.source_text) + preliminary.async_c_source.definitions;
+    final.c_export_header = std::move(preliminary.c_export_source.header);
+    final.source_text = std::move(*collect.source_text) + preliminary.c_export_source.definitions;
     return Compile(final);
   }
   if(!request.meta_compilation && (!request.meta_packages.empty() || !request.meta_lock.empty())) {
@@ -973,7 +976,7 @@ CompileResult Compile(const CompileRequest &request) {
     // No product may replace the manifest or lock that authorized its expansion.
     for(const auto &input:state->packages.inputs)
       for(const auto &output:{request.output_path,request.interface_output_path,request.dependency_record_output_path,
-          request.async_c_header_output_path,
+          request.c_export_header_output_path,
           request.interface_output_path.empty()?std::string():request.interface_output_path+".json"}) {
         if(output.empty())continue;
         std::error_code ec;
@@ -989,7 +992,7 @@ CompileResult Compile(const CompileRequest &request) {
     }
     collect.meta_compilation=state;collect.emit=EmitKind::Syntax;
     collect.output_path.clear();collect.interface_output_path.clear();collect.emit_semantic_interface=false;
-    collect.async_c_header_output_path.clear();collect.async_c_header.reset();
+    collect.c_export_header_output_path.clear();collect.c_export_header.reset();
     collect.interface_exports.clear();collect.projected_arc.reset();collect.dependency_record_output_path.clear();
     auto preliminary=Compile(collect);
     if(state->failed){preliminary.success=false;preliminary.failure=state->error;return preliminary;}
@@ -1087,11 +1090,11 @@ CompileResult Compile(const CompileRequest &request) {
   llvm::SmallString<256> final_output(request.output_path);
   llvm::SmallString<256> interface_output(request.interface_output_path);
   llvm::SmallString<256> record_output(request.dependency_record_output_path);
-  llvm::SmallString<256> async_c_header_output(request.async_c_header_output_path);
+  llvm::SmallString<256> c_export_header_output(request.c_export_header_output_path);
   if ((!final_output.empty() && overlay->makeAbsolute(final_output)) ||
       (!interface_output.empty() && overlay->makeAbsolute(interface_output)) ||
       (!record_output.empty() && overlay->makeAbsolute(record_output)) ||
-      (!async_c_header_output.empty() && overlay->makeAbsolute(async_c_header_output))) {
+      (!c_export_header_output.empty() && overlay->makeAbsolute(c_export_header_output))) {
     result.failure = "Cannot resolve output paths in the compilation working directory";
     return result;
   }
@@ -1110,7 +1113,7 @@ CompileResult Compile(const CompileRequest &request) {
     return !llvm::sys::fs::equivalent(candidate, destination, equivalent) && equivalent;
   };
   auto aliases_record = [&](const std::string &path) { return aliases(record_output, path); };
-  auto aliases_async_c_header = [&](const std::string &path) { return aliases(async_c_header_output, path); };
+  auto aliases_c_export_header = [&](const std::string &path) { return aliases(c_export_header_output, path); };
   if (!record_output.empty()) {
     if (aliases_record(request.input_path) || aliases_record(request.output_path) ||
         aliases_record(request.interface_output_path) ||
@@ -1120,14 +1123,14 @@ CompileResult Compile(const CompileRequest &request) {
       return result;
     }
   }
-  if (!async_c_header_output.empty() &&
-      (!request.async_c_header || request.async_c_header->empty() ||
-       aliases_async_c_header(request.input_path) || aliases_async_c_header(request.output_path) ||
-       aliases_async_c_header(request.dependency_record_output_path) ||
-       aliases_async_c_header(request.interface_output_path) ||
+  if (!c_export_header_output.empty() &&
+      (!request.c_export_header || request.c_export_header->empty() ||
+       aliases_c_export_header(request.input_path) || aliases_c_export_header(request.output_path) ||
+       aliases_c_export_header(request.dependency_record_output_path) ||
+       aliases_c_export_header(request.interface_output_path) ||
        (!request.interface_output_path.empty() &&
-        aliases_async_c_header(request.interface_output_path + ".json")))) {
-    result.failure = "C completion header path conflicts with compilation input or outputs";
+        aliases_c_export_header(request.interface_output_path + ".json")))) {
+    result.failure = "C export header path conflicts with compilation input or outputs";
     return result;
   }
   if (request.emit != EmitKind::Syntax) {
@@ -1219,9 +1222,9 @@ CompileResult Compile(const CompileRequest &request) {
     result.failure = "Dependency record path conflicts with an imported interface artifact";
   }
   if (result.success && std::any_of(result.interface_input_paths.begin(),
-          result.interface_input_paths.end(), aliases_async_c_header)) {
+          result.interface_input_paths.end(), aliases_c_export_header)) {
     result.success = false;
-    result.failure = "C completion header path conflicts with an imported interface artifact";
+    result.failure = "C export header path conflicts with an imported interface artifact";
   }
   if (result.success && !record_output.empty() && result.semantic_dependency_record.empty()) {
     result.success = false;
@@ -1262,13 +1265,13 @@ CompileResult Compile(const CompileRequest &request) {
     return result.success;
   };
   if (result.success) {
-    if (async_c_header_output.empty()) {
+    if (c_export_header_output.empty()) {
       publish_with_record();
     } else {
       std::string publication_failure;
       if (!PublishCompilationProductsWithTextArtifact(
-              std::string(async_c_header_output), *request.async_c_header,
-              publish_with_record, publication_failure, "C completion header")) {
+              std::string(c_export_header_output), *request.c_export_header,
+              publish_with_record, publication_failure, "C export header")) {
         result.success = false;
         if (result.failure.empty()) result.failure = std::move(publication_failure);
         else result.failure += "; " + publication_failure;

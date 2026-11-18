@@ -41,9 +41,10 @@ struct CompileRequest {
   std::optional<bool> projected_arc;
   std::vector<std::string> interface_exports;
   std::vector<std::string> async_c_exports;
-  std::string async_c_header_output_path;
+  std::vector<std::string> throws_c_exports;
+  std::string c_export_header_output_path;
   // The translation-unit collection pass supplies the exact header bytes.
-  std::optional<std::string> async_c_header;
+  std::optional<std::string> c_export_header;
   std::string target_triple;
   std::string objc_runtime;
   std::vector<std::string> arguments;
@@ -98,7 +99,7 @@ struct CompileDiagnostic {
 
 struct CompileResult {
   bool success = false;
-  AsyncCExportSource async_c_source;
+  CExportSource c_export_source;
   std::string failure;
   std::string compiler_identity;
   std::string compiler_driver_path;

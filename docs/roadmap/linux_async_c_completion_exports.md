@@ -127,18 +127,6 @@ entry and distinguished cancellation for a nonthrowing entry. Both controls
 deliver one completion without entering the unavailable destination.
 Wider foreign types and adapters and matching SDK acceptance remain open.
 
-Source 2.269 / System 2.195 resolves an actor export through ordinary instance
-method lookup on the named class. Methods declared on a superclass can use the
-subclass receiver in the emitted bridge. The inherited method supplies the
-signature, checked error contract and isolation. The typed await binds the
-actual receiver's mailbox. Nonisolated inherited methods retain the same
-rejection as directly declared ones.
-
-All eight C17/C23 and C++20/C++23 ARC/MRC configurations call synchronous and
-checked async inherited methods on subclass receivers after provider source
-removal. The C callers check independent receiver state, exact error identity,
-and receiver cleanup after release before worker entry.
-
 Source 2.256 / System 2.182 exports an isolated instance method selected
 with `--export-c-async 'Counter::add:by:'`. The C declaration is
 `Counter_add_by_async_c`. It takes the opaque receiver first, the method
@@ -190,3 +178,47 @@ worker entry, submits, and releases its object and heap Block handles.
 The tests observe the expected value, cancellation at an unavailable
 executor, and destruction of both arguments on each path. Source-free
 callers also compile against the generated interface.
+
+Source 2.269 / System 2.195 resolves an actor export through ordinary instance
+method lookup on the named class. Methods declared on a superclass can use the
+subclass receiver in the emitted bridge. The inherited method supplies the
+signature, checked error contract and isolation. The typed await binds the
+actual receiver's mailbox. Nonisolated inherited methods retain the same
+rejection as directly declared ones.
+
+All eight C17/C23 and C++20/C++23 ARC/MRC configurations call synchronous and
+checked async inherited methods on subclass receivers after provider source
+removal. The C callers check independent receiver state, exact error identity,
+and receiver cleanup after release before worker entry.
+
+## Synchronous C error-out exports
+
+Source 2.270 / System 2.196 implements the trailing error-out surface in
+Part 11 §11.2.2. Add `--export-c-throws lookup --emit-c-header exports.h` to
+the provider's native object or IR emission command. Repeat `--export-c-throws`
+for each entry and add `--export-c-async` selections to share the header with
+completion APIs. Throws-only builds also work with Blocks disabled.
+
+For a checked `int lookup(int key)`, the generated C declaration has this
+shape.
+
+```c
+int lookup_throws_c(int key, objc3_async_c_error _Nullable * _Nullable out_error);
+```
+
+A nonnull slot is cleared on success and receives the exact +0 error on failure.
+Retain the error before the surrounding autorelease pool drains if it is needed
+later. A null slot discards the error. Use the returned value on success.
+The C symbol uses the native trailing error-out convention and is included in
+the semantic interface for source-free consumers.
+
+Global nonvariadic functions with synchronous typed or untyped `throws` and
+portable scalar or pointer parameters and results are supported, including
+`void` results. Objective-C++ entries require a declared native nonthrowing
+contract. The C signature uses ordinary C storage and carries no implicit
+executor, resource cleanup or ownership transfer.
+
+Eight native C17/C23 and C++20/C++23 ARC/MRC provider configurations link an
+ordinary C caller. They exercise value, pointer and void signatures, error-out
+clearing, exact error identity, discarded errors, and retaining an error across
+autorelease pool drainage. Source-free import checks the generated declaration.
