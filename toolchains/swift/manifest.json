@@ -12,6 +12,7 @@
     "swift-frontend",
     "swift-autolink-extract",
     "clang",
+    "clang++",
     "clang-21",
     "ld.lld",
     "lld"
@@ -29,7 +30,7 @@
   "library_files": [
     "usr/lib/libswiftDemangle.so"
   ],
-  "purpose": "Independent stock Swift consumer; text C headers only, no product PCH/AST or compiler/runtime substitution.",
+  "purpose": "Independent stock Swift consumer for admitted textual C and C++ headers.",
   "hosts": {
     "linux-x86_64": {
       "archive_url": "https://download.swift.org/swift-6.4.2-release/debian13/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE-debian13.tar.gz",
@@ -37,7 +38,7 @@
       "archive_bytes": 1122816308,
       "signature_sha256": "3a02212b9a49926a4a5744c1f3624c6ad59976d11b531b70ef47d7997b28d3f3",
       "archive_root": "swift-6.4.2-RELEASE-debian13",
-      "selected_manifest_sha256": "8afeb82716604908e026e83e0ae12559632df6422f1e6c9776b48c8a8ac94634"
+      "selected_manifest_sha256": "edd1a0351ecc1a789b0485a2e03b6920e5cff83ca7d6613f9ef8d40ea96426c3"
     },
     "linux-aarch64": {
       "archive_url": "https://download.swift.org/swift-6.4.2-release/debian13-aarch64/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE-debian13-aarch64.tar.gz",
@@ -45,7 +46,7 @@
       "archive_bytes": 1102615101,
       "signature_sha256": "5848415d1d89e4dac919b872fc27799b6d5531b23e1ee24a5a090f3c5a75a0fb",
       "archive_root": "swift-6.4.2-RELEASE-debian13-aarch64",
-      "selected_manifest_sha256": "e28d893131045dee0ef41e4ec1cff8df6c73765d3b8d307e599070752f8b0e1f"
+      "selected_manifest_sha256": "0f84dd6031f0670ea73b863505197e5ab2e09add11137d810456feb964704125"
     }
   }
 }

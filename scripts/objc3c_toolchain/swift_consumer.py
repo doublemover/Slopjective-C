@@ -20,9 +20,12 @@ from .sdk_example import dependencies
 from .swift_toolchain import environment as swift_environment, verify as verify_swift, require_host
 
 EXPECTED = {'value': 42, 'amount': 42, 'read': 42, 'live': 0}
+CXX_EXPECTED = {'before': 40, 'count': 42, 'total': 2147483690}
+CXX_IMPORT = ('-cxx-interoperability-mode=default', '-Xcc', '-std=c++20')
 REQUIRED_ROWS = {'renamed-primitive': 'objc3_swift_value',
     'nonnull-pointer': 'objc3_swift_read', 'newtype': 'ObjC3SwiftAmount',
-    'opaque-c-lifetime': 'ObjC3SwiftToken', 'availability': 'objc3_swift_unavailable'}
+    'opaque-c-lifetime': 'ObjC3SwiftToken', 'availability': 'objc3_swift_unavailable',
+    'cxx-trivial-value': 'MeterAPI::adjustedReading'}
 NEGATIVES = {
     'old-spelling': ('import ForeignAPI\nlet value = objc3_swift_value(41)\n', "'objc3_swift_value' has been renamed to 'projectedValue(_:)'"),
     'wrong-type': ('import ForeignAPI\nlet value: String = projectedValue(41)\n', 'cannot convert value of type'),
@@ -42,7 +45,7 @@ def _link_or_copy(source, destination):
 
 
 def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
-    """Seal the two built tools and resources for this C pilot, without an archive."""
+    """Seal the two built tools and resources for Swift import, without an archive."""
     stage = stage.resolve(strict=True)
     if prefix.exists() or prefix.resolve().is_relative_to(stage):
         raise ValueError('Swift pilot requires a fresh independent development prefix')
@@ -65,7 +68,7 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
         if source.is_file() and not source.is_symlink():
             _link_or_copy(source, prefix / 'bin' / name)
     receipt = {'schema': SCHEMA, 'source_build_id': source_build_id, 'target': target,
-        'purpose': 'Development-only native C/Swift compiler tools; no packaged SDK qualification',
+        'purpose': 'Development-only native C/C++ compiler tools for Swift import',
         'files': inventory(prefix)}
     receipt['seal_sha256'] = _digest(receipt)
     write_json(prefix / 'objc3-sdk.json', receipt)
@@ -75,8 +78,9 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
 
 def row_manifest(path):
     value = json.loads(path.read_text())
-    if (value.get('schema') != 'objc3c.swift-consumer-rows.v2' or
+    if (value.get('schema') != 'objc3c.swift-consumer-rows.v3' or
             value.get('targets') != [entry[1] for entry in HOSTS.values()] or value.get('module') != 'ForeignAPI' or
+            value.get('cxx_module') != 'ForeignCxx' or
             not value.get('rows') or len(value['rows']) != len(REQUIRED_ROWS) or
             {row.get('id'): row.get('declaration') for row in value['rows']} != REQUIRED_ROWS or
             any(row.get('required') is not True for row in value['rows'])):
@@ -94,12 +98,12 @@ def import_evidence(depfile, work, header, module_map):
     return {str(path): digest(path) for path in paths}
 
 
-def execution_result(text):
+def execution_result(text, language='c'):
     try:
         value = json.loads(text)
     except ValueError as error:
         raise ValueError('Swift consumer omitted its mixed-language result oracle') from error
-    if value != EXPECTED or any(type(item) is not int for item in value.values()):
+    if value != {'c': EXPECTED, 'cxx': CXX_EXPECTED}[language] or any(type(item) is not int for item in value.values()):
         raise ValueError('Swift mixed-language value or opaque lifetime contract failed')
     return value
 
@@ -117,13 +121,14 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
     # No product compiler resources, loader variables, SDKROOT or Swift override
     # variables enter the independent consumer process.
     foreign_env = swift_environment(swift_root)
-    report = {'schema': 'objc3c.swift-consumer-qualification.v1', 'status': 'running',
+    report = {'schema': 'objc3c.swift-consumer-qualification.v2', 'status': 'running',
         'host': require_host(),
         'sdk_seal': installed['seal_sha256'], 'source_build_id': installed['source_build_id'],
         'swift_seal_sha256': digest(swift_root / 'objc3-swift-consumer.json'),
         'swift_archive_sha256': foreign['archive_sha256'], 'rows': rows['rows'],
         'unqualified': rows['unqualified'], 'commands': [], 'cases': [], 'controls': [],
-        'boundaries': 'Textual C declarations and opaque C resources; no product PCH, GNUstep object or async/actor interoperability.',
+        'relocation': {}, 'interfaces': {},
+        'boundaries': 'Textual C declarations, opaque C resources and trivial C++ values with nonthrowing calls.',
         'inputs': {str(path): digest(path) for path in [Path(__file__), *sorted(fixture.iterdir()),
             symbolizer, Path(__file__).with_name('swift_toolchain.py'), Path(__file__).with_name('sdk_example.py')] if path.is_file()}}
     frozen = report['inputs']
@@ -170,109 +175,155 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
                 raise ValueError('Swift loaded product compiler/runtime libraries')
             report.setdefault('loader_graphs', {})[name] = graph
             frozen.update(graph['libraries'])
-        provider = output / 'provider-inputs';provider.mkdir()
-        for name in ('api.h', 'provider.c'):
-            shutil.copyfile(fixture / name, provider / name)
-        consumer = (fixture / 'consumer.swift').read_bytes()
-        def module(directory, content):
-            directory.mkdir(parents=True)
-            header, module_map = directory / 'API.h', directory / 'module.modulemap'
-            header.write_bytes(content)
-            module_map.write_text('module ForeignAPI { header "API.h" export * }\n')
-            return header, module_map
-        def typecheck(name, module_root, text=consumer, *, expected=0, contains=()):
-            work = output / name;work.mkdir()
-            source, depfile = work / 'Consumer.swift', work / 'consumer.d'
-            source.write_bytes(text)
-            run(name, [frontend, '-typecheck', source, '-module-name', 'Consumer', '-swift-version', '6',
-                '-target', rows['target'], '-resource-dir', swift_root / 'usr/lib/swift', '-I', module_root,
-                '-module-cache-path', work / 'fresh-cache', '-emit-dependencies-path', depfile],
-                work=work, foreign=True, expected=expected, contains=contains)
-            if expected == 0:
-                proof = import_evidence(depfile, work, module_root / 'API.h', module_root / 'module.modulemap')
-                frozen.update({path: value for path, value in proof.items() if not Path(path).is_relative_to(output)})
-                return proof
-        original = output / 'original-module'
-        module(original, (fixture / 'api.h').read_bytes())
-        original_imports = typecheck('original-positive-control', original)
-        report['controls'].append({'name': 'original-header-independent-import', 'status': 'PASS', 'imports': original_imports})
-        emitted = output / 'emitted'
-        emitted.mkdir()
-        interface = emitted / 'ForeignAPI.objc3i'
-        def emit(name, source, destination):
-            run(name, [sdk / 'bin/objc3c', source, '--objc3', '--emit-interface', destination,
-                '--module', 'ForeignAPI', '--package', 'swift-consumer-v1', '--', '--no-default-config',
-                '-std=c17', '--target='+rows['target']])
-            return json.loads(destination.with_suffix(destination.suffix+'.json').read_text())
-        sidecar = emit('native-emission', provider / 'api.h', interface)
-        replay = emitted / 'Replay.objc3i'
-        replay_sidecar = emit('native-interface-replay', interface, replay)
-        if interface.read_bytes() != replay.read_bytes() or sidecar['module'] != replay_sidecar['module']:
-            raise ValueError('native foreign metadata replay changed bytes or identity')
-        replay_root = output / 'relocated inputs' / 'module'
-        module(replay_root, interface.read_bytes())
-        replay_imports = typecheck('emitted-positive-control', replay_root)
-        report['module_identity'] = sidecar['module']
-        report['emitted_header_sha256'] = digest(interface)
-        report['controls'].append({'name': 'unmodified-emitted-header-import', 'status': 'PASS', 'imports': replay_imports})
-        for name, (source, diagnostic) in NEGATIVES.items():
-            typecheck('negative-'+name, replay_root, source.encode(), expected=1, contains=(diagnostic,))
-            report['controls'].append({'name': name, 'status': 'PASS'})
-        # A public rename must change both native identity and the actual Swift
-        # API. Keep these deliberately altered control bytes separate.
-        changed = emitted / 'changed.h'
-        changed.write_text((provider / 'api.h').read_text().replace('projectedValue(_:)', 'changedValue(_:)'))
-        changed_interface = emitted / 'Changed.objc3i'
-        altered = emit('changed-public-name', changed, changed_interface)
-        if altered['module']['semantic_fingerprint'] == sidecar['module']['semantic_fingerprint']:
-            raise ValueError('public Swift name change retained its native fingerprint')
-        changed_root = output / 'changed-module';module(changed_root, changed_interface.read_bytes())
-        typecheck('changed-name-control', changed_root, b'import ForeignAPI\nlet value = projectedValue(41)\n',
-                  expected=1, contains=("cannot find 'projectedValue'",))
-        report['controls'].append({'name': 'public-name-identity-and-consumer', 'status': 'PASS'})
-        objects = {}
-        for optimization in ('O0', 'O2'):
-            obj = output / ('provider-'+optimization+'.o')
-            run('provider-'+optimization, [sdk / 'bin/clang', '--no-default-config', '--target='+rows['target'],
-                '-std=c17', '-'+optimization, '-g', '-c', provider / 'provider.c', '-o', obj])
-            objects[optimization] = obj
-        retained = output / 'retained-original';retained.mkdir()
-        shutil.move(provider, retained / 'provider-inputs')
-        shutil.move(original, retained / 'original-module')
-        report['relocation'] = {'original_header_hidden': not original.exists(),
-            'provider_source_hidden': not provider.exists(), 'replayed_header_unchanged': digest(replay_root / 'API.h') == digest(interface)}
-        for transport, content in (('original', (fixture / 'api.h').read_bytes()), ('emitted', interface.read_bytes())):
-            for native_opt, obj in objects.items():
-                for swift_opt in ('Onone', 'O'):
-                    name = '-'.join((transport, native_opt, swift_opt))
-                    case = output / name;case.mkdir()
-                    header, module_map = module(case / 'module', content)
-                    source, binary = case / 'Consumer.swift', case / 'consumer'
-                    source.write_bytes(consumer)
-                    proof = typecheck(name+'-typecheck', case / 'module')
-                    run(name+'-link', [swiftc, '-'+swift_opt, '-swift-version', '6', '-use-ld=lld', '-target', rows['target'],
-                        '-I', case / 'module', '-module-cache-path', case / 'fresh-link-cache', source, obj, '-o', binary],
-                        work=case, foreign=True)
-                    graph = loaded_graph(binary, loader, [], run=lambda suffix, argv, name=name: run(name+'-'+suffix, argv, foreign=True))
-                    if any(Path(path).name.startswith('libobjc') or Path(path).is_relative_to(sdk)
-                           for path in graph['libraries']):
-                        raise ValueError('C/Swift witness accidentally loaded the Objective-C/product runtime')
-                    frozen.update(graph['libraries'])
-                    observed = execution_result(run(name+'-execute', [binary], work=case, foreign=True))
-                    report['cases'].append({'name': name, 'native_optimization': native_opt,
-                        'swift_optimization': swift_opt, 'transport': transport, 'status': 'PASS',
-                        'result': observed, 'imports': proof, 'header_sha256': digest(header),
-                        'module_map_sha256': digest(module_map), 'binary_sha256': digest(binary), 'loaded_graph': graph})
-                    shutil.rmtree(case / 'fresh-link-cache')
-        missing = output / 'missing-symbol';missing.mkdir()
-        source = missing / 'Consumer.swift';source.write_bytes(consumer)
-        run('missing-provider-control', [swiftc, '-Onone', '-use-ld=lld', '-I', replay_root, '-module-cache-path', missing / 'fresh-cache',
-            source, '-o', missing / 'must-not-exist'], work=missing, foreign=True, expected=1,
-            contains=('objc3_swift_value',))
-        if (missing / 'must-not-exist').exists():
-            raise ValueError('missing provider produced a Swift executable')
-        report['controls'].append({'name': 'missing-provider-symbol', 'status': 'PASS'})
-        if len(report['cases']) != 8 or any(digest(Path(path)) != value for path, value in frozen.items()):
+        def qualify_language(language):
+            cxx = language == 'cxx'
+            prefix = 'cxx-' if cxx else ''
+            header_name, provider_name, consumer_name = (
+                ('cxx_api.h', 'cxx_provider.cpp', 'cxx_consumer.swift') if cxx
+                else ('api.h', 'provider.c', 'consumer.swift'))
+            module_name = rows['cxx_module' if cxx else 'module']
+            standard = '-std=c++20' if cxx else '-std=c17'
+            import_args = CXX_IMPORT if cxx else ()
+            required = '  requires cplusplus\n' if cxx else ''
+            provider = output / (prefix + 'provider-inputs')
+            provider.mkdir()
+            for name in (header_name, provider_name):
+                shutil.copyfile(fixture / name, provider / name)
+            original_bytes = (provider / header_name).read_bytes()
+            consumer = (fixture / consumer_name).read_bytes()
+
+            def module(directory, content):
+                directory.mkdir(parents=True)
+                header, module_map = directory / 'API.h', directory / 'module.modulemap'
+                header.write_bytes(content)
+                module_map.write_text(f'module {module_name} {{\n{required}  header "API.h"\n  export *\n}}\n')
+                return header, module_map
+
+            def typecheck(name, module_root, text=consumer, *, expected=0, contains=()):
+                work = output / name
+                work.mkdir()
+                source, depfile = work / 'Consumer.swift', work / 'consumer.d'
+                source.write_bytes(text)
+                run(name, [frontend, '-typecheck', source, '-module-name', 'Consumer', '-swift-version', '6',
+                    '-target', rows['target'], '-resource-dir', swift_root / 'usr/lib/swift', *import_args,
+                    '-I', module_root, '-module-cache-path', work / 'fresh-cache', '-emit-dependencies-path', depfile],
+                    work=work, foreign=True, expected=expected, contains=contains)
+                if expected == 0:
+                    proof = import_evidence(depfile, work, module_root / 'API.h', module_root / 'module.modulemap')
+                    frozen.update({path: value for path, value in proof.items() if not Path(path).is_relative_to(output)})
+                    return proof
+
+            original = output / (prefix + 'original-module')
+            module(original, original_bytes)
+            original_imports = typecheck(prefix + 'original-positive-control', original)
+            report['controls'].append({'name': prefix + 'original-header-independent-import',
+                                       'status': 'PASS', 'imports': original_imports})
+            emitted = output / (prefix + 'emitted')
+            emitted.mkdir()
+            interface = emitted / (module_name + '.objc3i')
+
+            def emit(name, source, destination):
+                run(prefix + name, [sdk / 'bin/objc3c', source, '--objc3', *(['--objcxx'] if cxx else []),
+                    '--emit-interface', destination, '--module', module_name, '--package', 'swift-consumer-v2',
+                    '--', '--no-default-config', standard, '--target='+rows['target']])
+                return json.loads(destination.with_suffix(destination.suffix+'.json').read_text())
+
+            sidecar = emit('native-emission', provider / header_name, interface)
+            replay = emitted / 'Replay.objc3i'
+            replay_sidecar = emit('native-interface-replay', interface, replay)
+            emitted_bytes = interface.read_bytes()
+            if emitted_bytes != replay.read_bytes() or sidecar['module'] != replay_sidecar['module']:
+                raise ValueError('native foreign metadata replay changed bytes or identity')
+            replay_root = output / (prefix + 'relocated inputs') / 'module'
+            module(replay_root, emitted_bytes)
+            report['interfaces'][language] = {'module_identity': sidecar['module'], 'header_sha256': digest(interface)}
+
+            objects = {}
+            for optimization in ('O0', 'O2'):
+                obj = output / (prefix + 'provider-' + optimization + '.o')
+                run(prefix + 'provider-' + optimization, [sdk / 'bin/clang', '--no-default-config',
+                    '--target='+rows['target'], standard, '-'+optimization, '-g', '-c', provider / provider_name, '-o', obj])
+                objects[optimization] = obj
+
+            retained = output / (prefix + 'retained-original')
+            retained.mkdir()
+            shutil.move(provider, retained / 'provider-inputs')
+            shutil.move(original, retained / 'original-module')
+            report['relocation'][language] = {'original_header_hidden': not original.exists(),
+                'provider_source_hidden': not provider.exists(),
+                'replayed_header_unchanged': digest(replay_root / 'API.h') == digest(interface)}
+            replay_imports = typecheck(prefix + 'emitted-positive-control', replay_root)
+            report['controls'].append({'name': prefix + 'unmodified-emitted-header-import',
+                                       'status': 'PASS', 'imports': replay_imports})
+
+            if cxx:
+                before, after = b'int count;', b'long long count;'
+                mismatch_source = consumer
+                mismatch_diagnostic = 'cannot convert value of type'
+                control = 'field-type-identity-and-consumer'
+                symbol = 'MeterAPI::initialReading()'
+            else:
+                for name, (source, diagnostic) in NEGATIVES.items():
+                    typecheck('negative-'+name, replay_root, source.encode(), expected=1, contains=(diagnostic,))
+                    report['controls'].append({'name': name, 'status': 'PASS'})
+                before, after = b'projectedValue(_:)', b'changedValue(_:)'
+                mismatch_source = b'import ForeignAPI\nlet value = projectedValue(41)\n'
+                mismatch_diagnostic = "cannot find 'projectedValue'"
+                control = 'public-name-identity-and-consumer'
+                symbol = 'objc3_swift_value'
+            if original_bytes.count(before) != 1:
+                raise ValueError('Swift consumer mutation must target one declaration')
+            changed = emitted / header_name
+            changed.write_bytes(original_bytes.replace(before, after))
+            changed_interface = emitted / 'Changed.objc3i'
+            altered = emit('changed-public-contract', changed, changed_interface)
+            if altered['module']['semantic_fingerprint'] == sidecar['module']['semantic_fingerprint']:
+                raise ValueError('native fingerprint ignored the changed Swift contract')
+            changed_root = output / (prefix + 'changed-module')
+            module(changed_root, changed_interface.read_bytes())
+            typecheck(prefix + 'changed-contract-control', changed_root, mismatch_source,
+                      expected=1, contains=(mismatch_diagnostic,))
+            report['controls'].append({'name': prefix + control, 'status': 'PASS'})
+
+            driver = [swiftc, '-swift-version', '6', '-use-ld=lld', '-target', rows['target'], *import_args]
+            for transport, content in (('original', original_bytes), ('emitted', emitted_bytes)):
+                for native_opt, obj in objects.items():
+                    for swift_opt in ('Onone', 'O'):
+                        name = prefix + '-'.join((transport, native_opt, swift_opt))
+                        case = output / name
+                        header, module_map = module(case / 'module', content)
+                        source, binary = case / 'Consumer.swift', case / 'consumer'
+                        source.write_bytes(consumer)
+                        proof = typecheck(name+'-typecheck', case / 'module')
+                        cache = case / 'fresh-link-cache'
+                        run(name+'-link', [*driver, '-'+swift_opt, '-I', case / 'module', '-module-cache-path',
+                            cache, source, obj, '-o', binary], work=case, foreign=True)
+                        graph = loaded_graph(binary, loader, [], run=lambda suffix, argv: run(name+'-'+suffix, argv, foreign=True))
+                        if any(Path(path).name.startswith('libobjc') or Path(path).is_relative_to(sdk)
+                               for path in graph['libraries']):
+                            raise ValueError('Swift witness accidentally loaded the Objective-C/product runtime')
+                        frozen.update(graph['libraries'])
+                        observed = execution_result(run(name+'-execute', [binary], work=case, foreign=True), language)
+                        report['cases'].append({'name': name, 'language': language, 'native_optimization': native_opt,
+                            'swift_optimization': swift_opt, 'transport': transport, 'status': 'PASS',
+                            'result': observed, 'imports': proof, 'header_sha256': digest(header),
+                            'module_map_sha256': digest(module_map), 'binary_sha256': digest(binary), 'loaded_graph': graph})
+                        shutil.rmtree(cache)
+            missing = output / (prefix + 'missing-symbol')
+            missing.mkdir()
+            source = missing / 'Consumer.swift'
+            source.write_bytes(consumer)
+            absent = missing / 'must-not-exist'
+            run(prefix + 'missing-provider-control', [*driver, '-Onone', '-I', replay_root,
+                '-module-cache-path', missing / 'fresh-cache', source, '-o', absent], work=missing,
+                foreign=True, expected=1, contains=(symbol,))
+            if absent.exists():
+                raise ValueError('missing provider produced a Swift executable')
+            report['controls'].append({'name': prefix + 'missing-provider-symbol', 'status': 'PASS'})
+
+        for language in ('c', 'cxx'):
+            qualify_language(language)
+        if len(report['cases']) != 16 or any(digest(Path(path)) != value for path, value in frozen.items()):
             raise ValueError('Swift consumer inputs changed or required calls are incomplete')
         if verify_sdk(sdk)['seal_sha256'] != report['sdk_seal']:
             raise ValueError('native SDK changed during Swift qualification')

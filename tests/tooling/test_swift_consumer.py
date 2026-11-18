@@ -86,7 +86,7 @@ def test_selected_toolchain_excludes_unused_development_payloads():
     for name in ('usr/bin/lldb', 'usr/bin/swift-package', 'usr/lib/swift/pm/library',
                  'usr/lib/swift/embedded/library', 'usr/lib/swift/migrator/library'):
         assert tools.wanted(root+name, pin) is None
-    for name in ('usr/bin/swiftc', 'usr/bin/clang-21', 'usr/bin/lld', 'usr/lib/swift/linux/libswiftCore.so'):
+    for name in ('usr/bin/swiftc', 'usr/bin/clang-21', 'usr/bin/clang++', 'usr/bin/lld', 'usr/lib/swift/linux/libswiftCore.so'):
         assert tools.wanted(root+name, pin) == name
 
 
@@ -190,8 +190,10 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
                 'semantic_fingerprint': tools.digest(source)}}))
         elif name.startswith('negative-'):
             status, text = 1, owner.NEGATIVES[name.removeprefix('negative-')][1]
-        elif name == 'changed-name-control': status, text = 1, "cannot find 'projectedValue'"
+        elif name == 'changed-contract-control': status, text = 1, "cannot find 'projectedValue'"
+        elif name == 'cxx-changed-contract-control': status, text = 1, 'cannot convert value of type'
         elif name == 'missing-provider-control': status, text = 1, 'objc3_swift_value'
+        elif name == 'cxx-missing-provider-control': status, text = 1, 'MeterAPI::initialReading()'
         elif '-typecheck' in argv:
             module = Path(argv[argv.index('-I')+1]);depfile = Path(argv[argv.index('-emit-dependencies-path')+1])
             inputs = [module / 'module.modulemap']
@@ -199,7 +201,8 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
             depfile.write_text('consumer: '+ ' '.join(str(path).replace(' ', '\\ ') for path in inputs)+'\n')
         elif '-o' in argv: Path(argv[argv.index('-o')+1]).write_bytes(b'test-only object or binary')
         elif name.endswith('-execute'):
-            text = json.dumps({**owner.EXPECTED, **({'live': 1} if mutation == 'oracle' else {})})
+            expected = owner.CXX_EXPECTED if name.startswith('cxx-') else owner.EXPECTED
+            text = json.dumps({**expected, **({'live': 1} if mutation == 'oracle' else {})})
         log.write_text(text)
         return {'argv': argv, 'exit_code': status, 'timed_out': False, 'log': str(log), 'log_sha256': tools.digest(log)}
     monkeypatch.setattr(owner, 'command', command)
@@ -213,23 +216,30 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         assert json.loads((output / 'qualification.json').read_text())['status'] == 'FAIL'
     else:
         report = owner.qualify(repo, output, sdk=sdk, swift_root=swift, symbolizer=symbolizer)
-        assert report['status'] == 'PASS' and len(report['cases']) == len(report['controls']) == 8
-        assert report['relocation'] == {'original_header_hidden': True, 'provider_source_hidden': True,
-                                      'replayed_header_unchanged': True}
+        assert report['status'] == 'PASS' and len(report['cases']) == 16 and len(report['controls']) == 12
+        assert report['relocation'] == {language: {'original_header_hidden': True, 'provider_source_hidden': True,
+                                                  'replayed_header_unchanged': True}
+                                       for language in ('c', 'cxx')}
         assert {row['status'] for row in report['rows']} == {'swift-call-qualified', 'swift-import-qualified'}
         from scripts.objc3c_assurance.evidence import suite_results
         native_root = repo / 'out/native'
         destination = native_root / 'swift-consumer/consumer'
         destination.parent.mkdir(parents=True)
         shutil.move(output, destination)
-        assert len(suite_results(native_root, 'swift-consumer')) == 8
-        for key in ('cases', 'controls', 'rows', 'relocation'):
+        assert len(suite_results(native_root, 'swift-consumer')) == 16
+        for key in ('cases', 'controls', 'rows', 'relocation', 'interfaces'):
             broken = copy.deepcopy(report)
-            if key == 'relocation': broken[key] = {}
+            if key in ('relocation', 'interfaces'): broken[key] = {}
             else: broken[key].pop()
             (destination / 'qualification.json').write_text(json.dumps(broken))
             with pytest.raises(ValueError, match='incomplete'):
                 suite_results(native_root, 'swift-consumer')
+        broken = copy.deepcopy(report)
+        emitted = next(case for case in broken['cases'] if case['language'] == 'cxx' and case['transport'] == 'emitted')
+        emitted['header_sha256'] = '0' * 64
+        (destination / 'qualification.json').write_text(json.dumps(broken))
+        with pytest.raises(ValueError, match='different emitted interface'):
+            suite_results(native_root, 'swift-consumer')
 
 
 @pytest.mark.parametrize('path', ['native/objc3c/src/clang_foundation/interface_emitter.cpp',

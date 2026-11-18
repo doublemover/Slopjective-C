@@ -1,6 +1,7 @@
 {
-  "schema": "objc3c.swift-consumer-rows.v2",
+  "schema": "objc3c.swift-consumer-rows.v3",
   "module": "ForeignAPI",
+  "cxx_module": "ForeignCxx",
   "rows": [
     {
       "id": "renamed-primitive",
@@ -26,6 +27,11 @@
       "id": "availability",
       "declaration": "objc3_swift_unavailable",
       "required": true
+    },
+    {
+      "id": "cxx-trivial-value",
+      "declaration": "MeterAPI::adjustedReading",
+      "required": true
     }
   ],
   "unqualified": [
@@ -37,12 +43,17 @@
     {
       "id": "foreign-async-actors",
       "status": "metadata-preserved",
-      "reason": "No Swift completion/error/actor execution model is admitted by this C pilot."
+      "reason": "No Swift completion, error or actor execution mapping is admitted."
     },
     {
       "id": "product-pch-import",
       "status": "unsupported",
       "reason": "Swift owns an independent Clang importer; product serialized AST/PCH inputs are not interchangeable."
+    },
+    {
+      "id": "cxx-owning-or-template-abi",
+      "status": "metadata-preserved",
+      "reason": "Only a fixed, self-contained, trivially copyable C++ record and nonthrowing functions cross this boundary."
     }
   ],
   "targets": [
