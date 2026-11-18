@@ -8,6 +8,7 @@
 #include "llvm/Support/JSON.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cassert>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -184,6 +185,67 @@ int main(void) {
   assert(objc3c_frontend_v3_compile(&invalid,&handle)==2 && !handle);
   invalid=options;invalid.struct_size=offsetof(objc3c_frontend_v3_options,meta_lock);
   assert(objc3c_frontend_v3_compile(&invalid,&handle)==2 && !handle);
+  for(const char *standard:{"c++20","c++23"}) {
+    CompileRequest entries;entries.input_path=(root/"entrypoints.cpp").string();
+    entries.language=BaseLanguage::Cxx;entries.arguments={std::string("-std=")+standard};
+    entries.emit_semantic_interface=true;entries.module_name="test.MetaEntries";entries.package_identity="meta-entries-v1";
+    entries.interface_exports={"meta_template","MetaEntries","MetaGenericEntries","meta_redeclared"};
+    entries.source_text=R"entries(
+template<class T> __attribute__((objc_macro)) inline constexpr T meta_template(T value){return value;}
+template<class T> __attribute__((objc_macro)) inline constexpr T meta_redeclared(T value);
+template<class T> inline constexpr T meta_redeclared(T value){return value;}
+struct MetaEntries {
+ __attribute__((objc_macro)) static constexpr int concrete(int value){return value+1;}
+ template<class T> __attribute__((objc_macro)) static constexpr T generic(T value){return value;}
+ __attribute__((objc_macro)) constexpr int member(int value)const{return value;}
+ static constexpr int outlined(int value);
+ struct Nested {__attribute__((objc_macro)) static constexpr int nested(int value){return value;}};
+};
+__attribute__((objc_macro)) constexpr int MetaEntries::outlined(int value){return value;}
+template<class T>struct MetaGenericEntries {
+ __attribute__((objc_macro)) static constexpr T invoke(T value){return value;}
+};
+)entries";
+    auto built=Compile(entries);Success(built);assert(built.interface_artifact);
+    const auto &artifact=*built.interface_artifact;
+    auto sidecar=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,SupportedSemanticInterfaceCapabilities());assert(sidecar);
+    bool template_marked=false,record_marked=false,class_template_marked=false,redeclared_marked=false;
+    std::string original_record_identity;
+    for(const auto &D:sidecar->declarations) {
+      if(D.qualified_name=="meta_redeclared")redeclared_marked=HasMetaprogrammingIdentity(D);
+      if(D.qualified_name=="meta_template")template_marked=HasMetaprogrammingIdentity(D);
+      if(D.qualified_name=="MetaGenericEntries")class_template_marked=HasMetaprogrammingIdentity(D);
+      if(D.qualified_name=="MetaEntries") {
+        original_record_identity=D.canonical_type_identity;
+        record_marked=HasMetaprogrammingIdentity(D);
+        auto section=D.canonical_type_identity.substr(D.canonical_type_identity.find(";expanded-metaprogramming:v1;"));
+        for(const char *name:{"concrete","generic","member","nested","outlined"})assert(section.find(name)!=std::string::npos);
+      }
+    }
+    assert(template_marked && record_marked && class_template_marked && redeclared_marked);
+    auto altered=entries;
+    const std::string marker="__attribute__((objc_macro)) constexpr int member";
+    auto position=altered.source_text->find(marker);assert(position!=std::string::npos);
+    altered.source_text->replace(position,marker.size(),"constexpr int member");
+    auto changed=Compile(altered);Success(changed);assert(changed.interface_artifact);
+    auto changed_sidecar=DecodeSemanticInterfaceSidecar(changed.interface_artifact->sidecar_json,
+        changed.interface_artifact->source_bytes,SupportedSemanticInterfaceCapabilities());assert(changed_sidecar);
+    auto changed_record=std::find_if(changed_sidecar->declarations.begin(),changed_sidecar->declarations.end(),[](const auto &D){return D.qualified_name=="MetaEntries";});
+    assert(changed_record!=changed_sidecar->declarations.end() && changed_record->canonical_type_identity!=original_record_identity);
+    auto forged=*sidecar;
+    auto forged_owner=std::find_if(forged.declarations.begin(),forged.declarations.end(),[](const auto &D){return D.qualified_name=="MetaEntries";});
+    assert(forged_owner!=forged.declarations.end());forged_owner->kind="Var";
+    forged.module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(forged));
+    std::vector<std::string> supported;for(auto C:SupportedSemanticInterfaceCapabilities())supported.push_back(C.str());
+    auto rejected_owner=ValidateSemanticInterface(forged,forged.module,forged.canonical_source_sha256,forged.declarations,supported);
+    assert(std::any_of(rejected_owner.diagnostics.begin(),rejected_owner.diagnostics.end(),[](const auto &D){return D.code=="O3IFC145" && D.message.find("metaprogramming")!=std::string::npos;}));
+    auto interface=root/"MetaEntries.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
+    auto consumer=entries;consumer.emit_semantic_interface=false;consumer.interface_exports.clear();
+    consumer.input_path=(root/"entry-consumer.cpp").string();
+    consumer.source_text="static_assert(meta_template(42)==42);static_assert(MetaEntries::concrete(41)==42);static_assert(MetaEntries::generic(42)==42);constexpr MetaEntries entry;static_assert(entry.member(42)==42);static_assert(MetaEntries::Nested::nested(42)==42);static_assert(MetaGenericEntries<int>::invoke(42)==42);static_assert(meta_redeclared(42)==42);static_assert(MetaEntries::outlined(42)==42);";
+    InterfaceImportInput input;input.source_path=interface.string();input.sidecar_path=interface.string()+".json";input.locked_identity=artifact.identity;
+    consumer.imported_interfaces={input};Success(Compile(consumer));
+  }
   auto behavior=request;behavior.source_text=R"source(
 __attribute__((objc_root_class)) @interface Behavior
 @property(nonatomic) int value;

@@ -2957,9 +2957,37 @@ bool ReadInterfaceDeclarationIdentity(
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
   std::vector<std::string> meta;
-  for(const auto *annotation:representative->specific_attrs<clang::AnnotateAttr>())
-    if(annotation->args_size()==0 && (annotation->getAnnotation()=="objc3.meta.entry.v1" ||
-       annotation->getAnnotation().starts_with("objc3.meta.expanded.v1:")))meta.push_back(annotation->getAnnotation().str());
+  auto collect_meta=[&](const clang::Decl *owner,const std::string &member_id=std::string()) {
+    auto attributes=[&](const clang::Decl *node) {
+      for(const auto *annotation:node->specific_attrs<clang::AnnotateAttr>())
+        if(annotation->args_size()==0 && (annotation->getAnnotation()=="objc3.meta.entry.v1" ||
+           annotation->getAnnotation().starts_with("objc3.meta.expanded.v1:")))meta.push_back(member_id.empty()?annotation->getAnnotation().str():
+               std::to_string(member_id.size())+":"+member_id+annotation->getAnnotation().str());
+    };
+    if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(owner))
+      for(const auto *redeclaration:function->redecls())attributes(redeclaration);
+    else attributes(owner);
+  };
+  collect_meta(representative);
+  if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(representative))
+    collect_meta(pattern->getTemplatedDecl());
+  const clang::CXXRecordDecl *meta_record=llvm::dyn_cast<clang::CXXRecordDecl>(representative);
+  if(const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(representative))meta_record=pattern->getTemplatedDecl();
+  std::vector<const clang::CXXRecordDecl *> pending_meta_records;
+  std::set<const clang::CXXRecordDecl *> seen_meta_records;
+  if(meta_record)pending_meta_records.push_back(meta_record);
+  while(!pending_meta_records.empty()) {
+    const auto *record=pending_meta_records.back()->getDefinition();pending_meta_records.pop_back();
+    if(!record || !seen_meta_records.insert(record).second)continue;
+    for(const auto *member:record->decls()) {
+      if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(member))
+        collect_meta(function,ReadInterfaceDeclarationStableId(function));
+      else if(const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(member))
+        collect_meta(pattern->getTemplatedDecl(),ReadInterfaceDeclarationStableId(pattern));
+      else if(const auto *nested=llvm::dyn_cast<clang::CXXRecordDecl>(member))pending_meta_records.push_back(nested);
+      else if(const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member))pending_meta_records.push_back(pattern->getTemplatedDecl());
+    }
+  }
   if(!meta.empty()) {
     std::sort(meta.begin(),meta.end());meta.erase(std::unique(meta.begin(),meta.end()),meta.end());
     identity.canonical_type_identity+=";expanded-metaprogramming:v1;";

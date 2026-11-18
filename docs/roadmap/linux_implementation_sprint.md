@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.214 / System 2.140 macro-entrypoint span](linux_native_cpp_meta_entrypoints.md)
+binds canonical markers to C++ template/member/record identities and retains
+them through source-free consumer instantiation.
+
 The [Source 2.213 / System 2.139 instance-projection span](linux_native_instance_argument_projections.md)
 preserves caller scalar/reference/Block and factory sources through closed direct
 nonvirtual methods which never inspect or capture their receiver.
