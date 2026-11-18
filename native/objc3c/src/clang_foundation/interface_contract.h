@@ -727,9 +727,9 @@ inline bool HasCxxConceptIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-concepts:v2;") != std::string::npos;
 }
 
-inline constexpr const char *kCxxLocalTypeSemantic = "objc3.cxx-local-types.v1";
+inline constexpr const char *kCxxLocalTypeSemantic = "objc3.cxx-local-types.v2";
 inline bool HasCxxLocalTypeIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-local-types:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-local-types:v2;") != std::string::npos;
 }
 inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
   return (d.kind=="CXXDeductionGuide" && HasCxxDeductionGuideIdentity(d) && IsCxxDeductionGuideOwner(d)) ||

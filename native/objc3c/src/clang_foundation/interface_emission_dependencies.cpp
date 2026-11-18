@@ -1742,14 +1742,21 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   }
   bool supported = IsBoundedClosedParentMembers(declaration) && IsBoundedClosedParentPatterns(declaration);
   if (record && record->isCompleteDefinition()) {
-    bool dependent_factory_local=false;
+    bool dependent_factory_local = false;
+    bool dependent_template_local = false;
     if (IsExpressionLocalTag(record))
       for (const auto *scope=record->getDeclContext();scope;scope=scope->getParent())
         if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
-          dependent_factory_local=IsPublishedDeducedFactory(owner);break;
+          dependent_factory_local = IsPublishedDeducedFactory(owner);
+          // A member of a class template can inherit dependence from its
+          // enclosing class without being a function template itself.
+          dependent_template_local =
+              PublishesFunctionBody(owner) && owner->isDependentContext();
+          break;
         }
+    const bool dependent_local = dependent_factory_local || dependent_template_local;
     supported &=
-        (!record->isDependentContext() || dependent_factory_local) && !record->getDescribedClassTemplate() &&
+        (!record->isDependentContext() || dependent_local) && !record->getDescribedClassTemplate() &&
         (record->getTemplateSpecializationKind() == clang::TSK_Undeclared ||
          (record->getTemplateSpecializationKind() == clang::TSK_ImplicitInstantiation &&
           dependent_factory_local && FactoryResultOrigin(record))) &&
@@ -1823,7 +1830,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
       supported &=
           method && (!method->isTemplated() ||
-              (dependent_factory_local && !method->getDescribedFunctionTemplate() && !method->getPrimaryTemplate())) &&
+              (dependent_local && !method->getDescribedFunctionTemplate() && !method->getPrimaryTemplate())) &&
           (!method->isDefaulted() || IsSupportedDefaultedSpecialMember(method) ||
            IsInClassDefaultedComparison(method)) &&
           !method->getTrailingRequiresClause();

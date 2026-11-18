@@ -18,8 +18,18 @@ Dependency checks distinguish local members and parameters from referenced
 public declarations. Local field and function types still validate external
 dependencies, exports and SPI policy. Local types cannot escape through a public
 deduced return or another exported signature. The [2.38 source extension](linux_cxx_unnamed_local_types.md) adds unnamed local
-records and enums. Generic/dependent bodies, public unnamed nested types and
-unions retain their existing admission boundaries.
+records and enums.
+
+Source 2.264 / System 2.190 extends this contract to local records inside
+published function templates and members of class templates. A dependent local
+record remains part of its written callable body, including its field types,
+member definitions and local aliases. Two source-free C++20 and C++23 clients
+instantiate the imported bodies, copy local records and read an initialized
+local union arm. Relocating the provider preserves the semantic fingerprint.
+
+These interfaces require `objc3.cxx-local-types.v2`. The decoder and contract
+validator bind the capability to the published local-type identity. Readers
+without the capability reject the interface.
 
 Maintained fixtures cover local enums, nested records, nontrivial copying and
 destruction, virtual methods, RTTI, constexpr evaluation and classes inside

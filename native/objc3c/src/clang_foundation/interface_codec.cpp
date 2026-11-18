@@ -107,7 +107,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.cxx-friends.v3",
     kCxxBlockExpressionSemantic,
     "objc3.cxx-statement-expressions.v1",
-    "objc3.cxx-local-types.v1",
+    "objc3.cxx-local-types.v2",
     "objc3.cxx-unnamed-local-types.v1",
     "objc3.cxx-generic-local-lambdas.v2",
     "objc3.cxx-union-values.v1",

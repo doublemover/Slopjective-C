@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 263,
+        "minor": 264,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Published function templates and members of class templates retain dependent local records, local aliases and explicit local union arms in source-free bodies; C++20 and C++23 instantiation pass under cxx-local-types v2 admission; matching SDK acceptance pending",
         "Generated C completion bridges route executor-qualified free entries through native awaits, with verified main and named execution and checked failure or cancellation for unavailable destinations; selected actor-instance exports retain the receiver through callback completion in ARC and MRC, matching SDK acceptance pending",
         "Generated C completion signatures support Objective-C references, typed or opaque Blocks, and C-layout aggregates with verified size, alignment and field offsets; destination-specific synthesis and matching SDK acceptance remain open",
         "Typed C completion thunks and headers are generated for global native free async entries with builtin and pointer signatures, including separately linked definitions, void and checked callbacks and canonical interface metadata; wider signature, destination and SDK acceptance remain open",
@@ -415,12 +416,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 189,
+        "minor": 190,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Published function templates and members of class templates retain dependent local records, local aliases and explicit local union arms in source-free bodies; C++20 and C++23 instantiation pass under cxx-local-types v2 admission; matching SDK acceptance pending",
         "Generated C completion bridges route executor-qualified free entries through native awaits, with verified main and named execution and checked failure or cancellation for unavailable destinations; selected actor-instance exports retain the receiver through callback completion in ARC and MRC, matching SDK acceptance pending",
         "Generated C completion signatures support Objective-C references, typed or opaque Blocks, and C-layout aggregates with verified size, alignment and field offsets; destination-specific synthesis and matching SDK acceptance remain open",
         "Typed C completion thunks and headers are generated for global native free async entries with builtin and pointer signatures, including separately linked definitions, void and checked callbacks and canonical interface metadata; wider signature, destination and SDK acceptance remain open",

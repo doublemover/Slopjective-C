@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.264 / System 2.190 local type contracts](linux_cxx_local_types.md)
+retain dependent local records inside published template bodies, including
+local aliases and member definitions through source-free instantiation.
+
 The [Source 2.263 / System 2.189 Optional runtime calls](linux_checked_cpp_optionals.md)
 carry potentially throwing native owners through synchronous typed selectors
 and Blocks, including nil receiver failure and native exception unwinding.

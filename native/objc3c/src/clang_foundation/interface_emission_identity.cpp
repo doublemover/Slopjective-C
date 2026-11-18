@@ -3584,7 +3584,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasRuntimeDeclarationContract(representative,context))
     identity.canonical_type_identity += ";sdk-runtime-declarations:v1;";
   if (HasDeclarationLocalType(representative))
-    identity.canonical_type_identity += ";cxx-local-types:v1;";
+    identity.canonical_type_identity += ";cxx-local-types:v2;";
   if (HasDeclarationUnnamedLocalType(representative))
     identity.canonical_type_identity += ";cxx-unnamed-local-types:v1;";
   if (context.getLangOpts().CPlusPlus && HasDeclarationThreadLocal(representative)) {

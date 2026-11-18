@@ -25,10 +25,28 @@ int main(){
   provider.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;provider.arguments={std::string("-std=")+standard};
   provider.emit_semantic_interface=true;provider.module_name="test.AnonymousFactories";provider.package_identity="anonymous-factories-v1";
   provider.interface_exports={"make_record","make_nested","make_generic","global_record","other_record","nested_record","read_global","primary","secondary","Primary","third","record_value","NamedObjects","NamedRecord","declared_record","NamedUnion","declared_union"};
+  provider.interface_exports.insert(provider.interface_exports.end(),
+                                    {"read_local_template", "LocalMemberReader"});
   provider.source_text=R"source(
 constexpr auto make_record(){struct {int value;constexpr int read()const{return value;}} result{42};return result;}
 constexpr auto make_nested(){struct {struct {int value;} nested;} result{{42}};return result;}
 template<class T>constexpr auto make_generic(T value){struct {T value;constexpr T read()const{return value;}} result{value};return result;}
+template<class T> constexpr int read_local_template(T value) {
+  struct {
+    T payload;
+    constexpr int project() const { return static_cast<int>(payload); }
+  } local{value};
+  union { int selected; long alternate; } slot{.selected = local.project()};
+  using Local = decltype(local);
+  Local copy{local};
+  return slot.selected + copy.project();
+}
+template<class T> struct LocalMemberReader {
+  static constexpr int read(T value) {
+    struct { T payload; } local{value};
+    return static_cast<int>(local.payload);
+  }
+};
 inline constexpr struct {int value;constexpr int read()const{return value;}} global_record{42};
 inline constexpr struct {int value;constexpr int read()const{return value;}} other_record{7};
 inline constexpr struct {struct Left{int value;constexpr int read()const{return value;}} left;struct Right{int value;constexpr int read()const{return value;}} right;template<class T>constexpr T sum(T n)const{return left.value+right.value+n;}} nested_record{{20},{22}};
@@ -45,6 +63,8 @@ namespace NamedObjects{inline constexpr struct{int value;constexpr int read()con
   auto produced=Compile(provider);Success(produced);assert(produced.interface_artifact && produced.interface_artifact->success);
   const auto &artifact=*produced.interface_artifact;
   auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,SupportedSemanticInterfaceCapabilities());assert(decoded);
+  assert(std::find(decoded->required_semantics.begin(), decoded->required_semantics.end(),
+                   kCxxLocalTypeSemantic) != decoded->required_semantics.end());
   std::set<std::string> ids;bool first=false,second=false;
   for(const auto &D:decoded->declarations){assert(ids.insert(D.stable_id).second);first|=D.export_root=="global_record";second|=D.export_root=="other_record";}
   assert(first && second);
@@ -57,6 +77,11 @@ namespace NamedObjects{inline constexpr struct{int value;constexpr int read()con
   std::vector<llvm::StringRef> old_reader(supported.begin(),supported.end());
   old_reader.erase(std::remove(old_reader.begin(),old_reader.end(),llvm::StringRef(kCxxInlineClosureObjectSemantic)),old_reader.end());
   auto rejected=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,old_reader);assert(!rejected);llvm::consumeError(rejected.takeError());
+  old_reader.assign(supported.begin(), supported.end());
+  std::erase(old_reader, llvm::StringRef(kCxxLocalTypeSemantic));
+  auto old_locals = DecodeSemanticInterfaceSidecar(artifact.sidecar_json, artifact.source_bytes, old_reader);
+  assert(!old_locals);
+  llvm::consumeError(old_locals.takeError());
   auto missing=provider;missing.interface_exports={"read_global"};assert(!Compile(missing).success);
   missing.interface_exports={"secondary"};assert(!Compile(missing).success);
   for(const char *private_member:{"static constexpr int secret(){return 42;}\ninline constexpr struct{int value;constexpr int read()const{return secret();}} global_record{42};",
@@ -86,8 +111,17 @@ namespace NamedObjects{inline constexpr struct{int value;constexpr int read()con
   consumer.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;consumer.arguments={std::string("-std=")+standard};
   InterfaceImportInput imported;imported.source_path=interface.string();imported.sidecar_path=interface.string()+".json";imported.locked_identity=artifact.identity;consumer.imported_interfaces={imported};
   consumer.source_text="static_assert(make_record().read()==42);static_assert(make_nested().nested.value==42);static_assert(make_generic(42).read()==42);static_assert(global_record.read()==42);static_assert(other_record.read()==7);static_assert(nested_record.left.read()==20);static_assert(nested_record.right.read()==22);static_assert(nested_record.sum(0)==42);static_assert(read_global<global_record>()==42);static_assert(primary.read()+secondary.read()==42);static_assert(primary.make().read()==11);static_assert(third.read()==9);static_assert(record_value<secondary> ==31);static_assert(NamedObjects::first.read()+NamedObjects::second.read()==42);extern \"C\" int anonymous_result(){return make_record().read()+make_nested().nested.value+make_generic(42).read();}";
+  *consumer.source_text += R"(
+static_assert(read_local_template(21) == 42);
+static_assert(read_local_template(7.0) == 14);
+static_assert(LocalMemberReader<short>::read(42) == 42);
+extern "C" int dependent_local_result(int value) {
+  return read_local_template(value) + LocalMemberReader<double>::read(value);
+}
+)";
   consumer.emit=EmitKind::Object;consumer.output_path=(root/"consumer.o").string();auto consumed=Compile(consumer);Success(consumed);
-  Write(root/"main.c","int anonymous_result(void);int main(void){return anonymous_result()==126?0:1;}");
+  Write(root/"main.c", "int anonymous_result(void); int dependent_local_result(int);"
+                      "int main(void){return anonymous_result()==126 && dependent_local_result(14)==42?0:1;}");
   Execute({consumed.compiler_driver_path,"--no-default-config","-fuse-ld=lld",consumer.output_path,(root/"main.c").string(),"-o",(root/"witness").string()});Execute({(root/"witness").string()});
  }
 }

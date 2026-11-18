@@ -243,7 +243,7 @@ int main() {
               .ok());
   auto local_types = sidecar;
   auto local_declaration = decl;
-  local_declaration.canonical_type_identity += ";cxx-local-types:v1;";
+  local_declaration.canonical_type_identity += ";cxx-local-types:v2;";
   local_types.declarations = {local_declaration};
   assert(!ValidateSemanticInterface(local_types, module,
                                     local_types.canonical_source_sha256,
