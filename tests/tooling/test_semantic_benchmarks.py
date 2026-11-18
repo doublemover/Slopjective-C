@@ -367,6 +367,72 @@ def test_independent_hosted_receipts_calibrate_observed_variance_and_cost_only(t
     assert json.loads((repo / 'out/calibration/calibration.json').read_text()) == report
 
 
+@pytest.mark.parametrize(('case', 'expected'), [
+    ('pass', 'PASS'), ('slow', 'FAIL'), ('memory', 'FAIL'),
+    ('split', 'INCONCLUSIVE'), ('noise', 'INCONCLUSIVE'), ('rate', 'FAIL'),
+    ('expired', None), ('host', None), ('workload', None), ('infinite', None),
+])
+def test_calibration_enforces_only_matching_reviewed_workload_limits(tmp_path, case, expected):
+    from datetime import datetime, timedelta, timezone
+    from scripts.objc3c_toolchain.semantic_benchmark_calibration import POLICY_SCHEMA, calibrate
+
+    repo = tmp_path / 'repo'
+    (repo / 'out').mkdir(parents=True)
+    receipts = [tmp_path / 'first.json', tmp_path / 'second.json']
+    calibration_receipt(receipts[0], version=CURRENT_WORKLOAD_VERSION)
+    calibration_receipt(receipts[1], offset=0.0002, version=CURRENT_WORKLOAD_VERSION)
+    observed = calibrate(repo, receipts, repo / 'out/observe')
+    workload = next(row for row in observed['observations']
+                    if row['workload'].startswith('runtime-task-')
+                    and 'task_completions_per_second' in row)
+    medians = workload['receipt_medians']
+    spread = workload['between_receipt_median_range_seconds']
+    rss = workload['peak_process_rss_kib']['maximum']
+    budget = {'max_median_seconds': max(medians),
+              'max_median_range_seconds': spread * 2,
+              'max_peak_process_rss_kib': rss}
+    context = {key: observed[key] for key in ('host', 'inputs', 'workload_version')}
+    context['instrumentation'] = observed['sdk']['instrumentation']
+    today = datetime.now(timezone.utc).date()
+    policy = {'schema': POLICY_SCHEMA, 'owner': 'Compiler performance reviewer',
+              'reason': 'Exercise selective reviewed fixture limits',
+              'expires_on': (today + timedelta(days=1)).isoformat(),
+              'context': context, 'workloads': {workload['workload']: budget}}
+    if case == 'slow':
+        budget['max_median_seconds'] = min(medians) * 0.9
+    elif case == 'memory':
+        budget['max_peak_process_rss_kib'] = rss - 1
+    elif case == 'split':
+        budget['max_median_seconds'] = sum(medians) / len(medians)
+    elif case == 'noise':
+        budget['max_median_range_seconds'] = spread / 2
+    elif case == 'rate':
+        budget['min_median_task_completions_per_second'] = 2 * workload['task_completions_per_second']['maximum']
+    elif case == 'expired':
+        policy['expires_on'] = (today - timedelta(days=1)).isoformat()
+    elif case == 'host':
+        context['host']['cpu_model'] = 'wrong reviewed runner'
+    elif case == 'workload':
+        policy['workloads'] = {'wrong-workload': budget}
+    elif case == 'infinite':
+        budget['max_median_seconds'] = float('inf')
+    policy_path = tmp_path / 'review.json'
+    policy_path.write_text(json.dumps(policy))
+    output = repo / 'out/review'
+    if expected is None:
+        with pytest.raises(ValueError):
+            calibrate(repo, receipts, output, policy=policy_path)
+        assert not output.exists()
+        return
+    report = calibrate(repo, receipts, output, policy=policy_path)
+    assert report['status'] == expected and report['decision'] == 'reviewed-workload-limits'
+    assert len(report['review']['workloads']) == 1
+    assert report['review']['workloads'][0]['workload'] == workload['workload']
+    assert sum(row['decision'] == 'observed-runner-variance-only'
+               for row in report['observations']) == len(report['observations']) - 1
+    assert json.loads((output / 'calibration.json').read_text()) == report
+
+
 @pytest.mark.parametrize('mutation', ['duplicate', 'host', 'sdk', 'summary', 'oracle', 'warmup'])
 def test_calibration_rejects_reused_or_incompatible_or_corrupt_receipts(tmp_path, mutation):
     from scripts.objc3c_toolchain.semantic_benchmark_calibration import calibrate

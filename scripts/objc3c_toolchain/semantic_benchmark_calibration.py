@@ -1,20 +1,32 @@
-"""Pool independent hosted semantic-workload receipts without inventing limits."""
+"""Pool independent semantic-workload receipts and apply explicit reviewed limits."""
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 import statistics
 
-from .binary_packages import digest, write_json
+from .binary_packages import write_json
 from .semantic_benchmarks import SCALES, semantic_result, summarize, workload_inventory, workload_names
 from .semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION, completed_task_count,
     validate_delay_controls, validate_task_frame_controls)
 
 SCHEMA = 'objc3c.semantic-benchmark-calibration.v1'
+POLICY_SCHEMA = 'objc3c.semantic-benchmark-review.v1'
 HOST_FIELDS = ('system', 'kernel', 'cpu_model', 'cpu_quota', 'cpuset', 'memory_limit',
                'affinity', 'container', 'runtime_threads', 'noise_limits')
+
+
+def _unambiguous_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('duplicate field in semantic benchmark input: '+key)
+        result[key] = value
+    return result
 
 
 def _read(path):
@@ -22,9 +34,15 @@ def _read(path):
     if candidate.is_symlink():
         raise ValueError('semantic benchmark receipt is linked or excessive')
     path = candidate.resolve(strict=True)
-    if path.stat().st_size > 16*1024**2:
-        raise ValueError('semantic benchmark receipt is linked or excessive')
-    return path, json.loads(path.read_text())
+    limit = 16 * 1024**2
+    if not path.is_file():
+        raise ValueError('semantic benchmark input must be a regular file')
+    with path.open('rb') as stream:
+        data = stream.read(limit + 1)
+    if len(data) > limit:
+        raise ValueError('semantic benchmark input is excessive')
+    return (json.loads(data, object_pairs_hook=_unambiguous_object),
+            hashlib.sha256(data).hexdigest(), len(data))
 
 
 def _host_identity(report):
@@ -55,7 +73,7 @@ def _workload_inputs(report):
 
 
 def _admit(path):
-    path, report = _read(path)
+    report, sha256, byte_count = _read(path)
     summaries, samples, sdks = (report.get(key, []) for key in ('summaries', 'samples', 'sdks'))
     repetitions = report.get('repetitions')
     expected = workload_names(report.get('workload_version'))
@@ -108,14 +126,79 @@ def _admit(path):
             not isinstance(sdk.get('instrumentation'), dict)):
         raise ValueError('semantic benchmark receipt omitted its SDK identity')
     receipt_identity = hashlib.sha256(json.dumps(report, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
-    return {'path': path, 'sha256': digest(path), 'identity': receipt_identity, 'bytes': path.stat().st_size,
+    return {'sha256': sha256, 'identity': receipt_identity, 'bytes': byte_count,
             'report': report, 'host': _host_identity(report), 'inputs': _workload_inputs(report),
             'sdk': {key: sdk.get(key) for key in ('seal_sha256', 'source_build_id', 'instrumentation')},
             'observations': observations}
 
 
-def calibrate(repo, receipts, output, *, labels=()):
-    """Describe observed runner variance; product budgets remain an explicit review."""
+def _apply_review(report, policy_path, admitted):
+    policy, policy_sha256, _ = _read(policy_path)
+    fields = {'schema', 'owner', 'reason', 'expires_on', 'context', 'workloads'}
+    if (not isinstance(policy, dict) or set(policy) != fields or
+            policy['schema'] != POLICY_SCHEMA or any(
+                not isinstance(policy[field], str) or not policy[field].strip()
+                for field in ('owner', 'reason', 'expires_on'))):
+        raise ValueError('semantic benchmark review requires an owner, reason and expiry')
+    today = datetime.now(timezone.utc).date()
+    expiry = datetime.strptime(policy['expires_on'], '%Y-%m-%d').date()
+    if policy['expires_on'] != expiry.isoformat() or expiry < today:
+        raise ValueError('semantic benchmark review has expired or has a noncanonical date')
+    context = {key: report[key] for key in ('host', 'inputs', 'workload_version')}
+    context['instrumentation'] = report['sdk']['instrumentation']
+    if policy['context'] != context:
+        raise ValueError('semantic benchmark review has a different measurement context')
+    workloads = policy['workloads']
+    available = {row['workload']: row for row in report['observations']}
+    if not isinstance(workloads, dict) or not workloads or set(workloads) - set(available):
+        raise ValueError('semantic benchmark review selects an unknown or empty workload set')
+    limits = {'max_median_seconds', 'max_median_range_seconds', 'max_peak_process_rss_kib'}
+    rate_key = 'min_median_task_completions_per_second'
+    results = []
+    for workload, budget in sorted(workloads.items()):
+        if (not isinstance(budget, dict) or not limits <= set(budget) or
+                set(budget) - limits - {rate_key} or any(
+                    type(value) not in (int, float) or value <= 0 or
+                    (type(value) is float and not math.isfinite(value))
+                    for value in budget.values()) or
+                type(budget['max_peak_process_rss_kib']) is not int):
+            raise ValueError('invalid reviewed limits for '+workload)
+        row = available[workload]
+        if rate_key in budget and 'task_completions_per_second' not in row:
+            raise ValueError('reviewed throughput requires a task completion workload')
+
+        medians = row['receipt_medians']
+        slow = [value > budget['max_median_seconds'] for value in medians]
+        noisy = row['between_receipt_median_range_seconds'] > budget['max_median_range_seconds']
+        over_memory = row['peak_process_rss_kib']['maximum'] > budget['max_peak_process_rss_kib']
+        rates = []
+        if rate_key in budget:
+            rates = [statistics.median(sample['task_completions_per_second'] for sample in
+                        receipt['observations'][workload]['rows']) for receipt in admitted]
+        low_rate = [rate < budget[rate_key] for rate in rates]
+        rate_regression = bool(low_rate) and all(low_rate)
+        if over_memory or (not noisy and (all(slow) or rate_regression)):
+            decision = 'regression'
+        elif noisy or any(slow) or any(low_rate):
+            decision = 'inconclusive'
+        else:
+            decision = 'pass'
+        row['decision'] = decision
+        results.append({'workload': workload, 'limits': budget, 'decision': decision,
+                        'noisy_elapsed_time': noisy, 'exceeded_process_rss_limit': over_memory,
+                        'receipt_median_task_completions_per_second': rates})
+    decisions = {row['decision'] for row in results}
+    report['status'] = ('FAIL' if 'regression' in decisions else
+                        'INCONCLUSIVE' if 'inconclusive' in decisions else 'PASS')
+    report['decision'] = 'reviewed-workload-limits'
+    report['gate_policy'] = 'Only the workloads selected by the reviewed policy contribute to this decision.'
+    report['review'] = {'owner': policy['owner'], 'reason': policy['reason'],
+                        'expires_on': policy['expires_on'], 'evaluated_on': today.isoformat(),
+                        'policy_sha256': policy_sha256, 'workloads': results}
+
+
+def calibrate(repo, receipts, output, *, labels=(), policy=None):
+    """Describe observed runner variance and optionally check reviewed limits."""
     repo, output = Path(repo).resolve(strict=True), Path(output).resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('semantic calibration requires fresh owned repository output')
@@ -179,6 +262,8 @@ def calibrate(repo, receipts, output, *, labels=()):
             'wall_seconds': sum(row.get('wall_seconds', 0) for row in all_samples),
             'cpu_seconds': sum(row.get('cpu_seconds', 0) for row in all_samples),
             'receipt_bytes': sum(row['bytes'] for row in admitted)}}
+    if policy is not None:
+        _apply_review(report, policy, admitted)
     output.mkdir(parents=True)
     write_json(output / 'calibration.json', report)
     return report
@@ -189,12 +274,14 @@ def main():
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     parser.add_argument('--receipt', type=Path, action='append', required=True)
     parser.add_argument('--label', action='append', default=[])
+    parser.add_argument('--policy', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
-    result = calibrate(args.repo, args.receipt, args.output, labels=args.label)
+    result = calibrate(args.repo, args.receipt, args.output, labels=args.label, policy=args.policy)
     print(json.dumps({'status': result['status'], 'decision': result['decision'],
                       'independent_receipts': result['independent_receipts']}))
+    return 0 if result['status'] == 'PASS' else 1
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

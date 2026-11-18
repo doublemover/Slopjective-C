@@ -143,6 +143,32 @@ become a regression allowance. Promotion still requires reviewed per-workload
 absolute effects and memory goals. Further workload families remain open under
 #8291.
 
+Pass `--policy path/to/review.json` to evaluate selected workloads using
+approved limits. The policy uses `objc3c.semantic-benchmark-review.v1` and
+records an `owner`, a `reason`, an `expires_on` date in YYYY-MM-DD format,
+and the exact measurement `context`. That context consists of the admitted
+`host`, `inputs`, `workload_version` and SDK `instrumentation` values.
+
+The `workloads` map names each reviewed workload. Each entry gives
+`max_median_seconds`, `max_median_range_seconds` across independent receipts,
+and `max_peak_process_rss_kib` for the largest individual process. Task
+workloads can also set `min_median_task_completions_per_second`. Consistent
+median misses or a process exceeding its memory limit produce a regression.
+Mixed verdicts and timing spread above the reviewed limit are inconclusive.
+The CLI writes the result and exits unsuccessfully for either outcome. The
+report retains the exact policy hash and per-workload decisions. Existing
+automatic timing reports remain advisory until reviewed limits are supplied.
+
+Two independent local measurements of workload version 6 used development
+build `llvmorg-23.1.5-392dfff97d29-718dd03879f4-0fcb354b` on a four-CPU
+quota AMD EPYC 9V74 host. All 39 workloads completed with six retained
+samples per workload. The 440 measured commands used 82.98 cumulative wall
+seconds and 83.21 CPU seconds. The largest between-run median range was
+58.03 ms and the largest individual-process RSS was 217,872 KiB. The two
+qualification receipts totaled 694,664 bytes. Review-tool verification passes
+185 focused Python tests covering timing, memory, throughput, review scope
+and the surrounding assurance admission checks.
+
 ## Import and incremental-build pilot
 
 The separate `semantic_import_benchmarks` owner generates actual ObjC3
