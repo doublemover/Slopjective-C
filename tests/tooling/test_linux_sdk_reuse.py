@@ -295,3 +295,77 @@ def test_native_test_sources_invalidate_qualification_without_rebuilding_foundat
     assert after['frontend'] == before['frontend']
     path.unlink()
     assert linux_sdk.input_identity(repo, prefix)['sha256'] != after['sha256']
+
+
+@pytest.mark.parametrize('shape', ['file', 'directory', 'root', 'cycle', 'broken'])
+def test_qualification_input_resolution_rejects_escaping_or_incomplete_trees(tmp_path, monkeypatch, shape):
+    from scripts.objc3c_toolchain import linux_sdk
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
+    native = repo / 'native/objc3c/tests'
+    native.parent.mkdir(parents=True, exist_ok=True)
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    (outside / 'native_case.cpp').write_text('outside oracle')
+    if shape == 'root':
+        native.symlink_to(outside, target_is_directory=True)
+    else:
+        native.mkdir()
+        target = {'file': outside / 'native_case.cpp', 'directory': outside,
+                  'cycle': native, 'broken': native / 'missing'}[shape]
+        (native / 'linked').symlink_to(target)
+    expected = {'cycle': 'directory cycle', 'broken': 'cannot be resolved'}.get(shape, 'escapes the checkout')
+    with pytest.raises(ValueError, match=expected):
+        linux_sdk.input_identity(repo, prefix)
+
+
+def test_qualification_binds_in_checkout_linked_test_contents_and_target(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import linux_sdk
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
+    native = repo / 'native/objc3c/tests'
+    native.mkdir(parents=True, exist_ok=True)
+    left, right = repo / 'left-fixtures', repo / 'right-fixtures'
+    for directory in (left, right):
+        directory.mkdir()
+        (directory / 'native_case.cpp').write_text('same oracle')
+    link = native / 'shared'
+    link.symlink_to(left, target_is_directory=True)
+    before = linux_sdk.input_identity(repo, prefix)
+    key = 'native/objc3c/tests/shared/native_case.cpp'
+    assert before['input_resolution'][key] == 'left-fixtures/native_case.cpp'
+    link.unlink()
+    link.symlink_to(right, target_is_directory=True)
+    after = linux_sdk.input_identity(repo, prefix)
+    assert after['input_resolution'][key] == 'right-fixtures/native_case.cpp'
+    assert after['inputs'][key] == before['inputs'][key]
+    assert after['sha256'] != before['sha256']
+    assert after['foundation_plan'] == before['foundation_plan']
+
+
+@pytest.mark.parametrize(('status', 'identity', 'reusable'), [
+    ('PASS', 'qualified', True), ('PASS', 'other', False),
+    ('FAIL', 'qualified', False), ('PASS', None, False),
+])
+def test_cache_hit_requires_a_pass_receipt_for_the_selected_identity(
+        tmp_path, monkeypatch, status, identity, reusable):
+    from scripts.objc3c_toolchain import linux_sdk
+    repo = tmp_path / 'repo'
+    directory = repo / 'out/toolchains/linux-sdk-builds/qualified'
+    directory.mkdir(parents=True)
+    prefix = sdk(tmp_path / 'foundation')
+    monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *_: {
+        'source_build_id': 'llvm-build', 'seal_sha256': 'seal', 'target': native_target()})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *_: {'build_id': 'llvm-build'})
+    monkeypatch.setattr(linux_sdk, 'input_identity', lambda *_: {'sha256': 'qualified'})
+    installations = []
+    monkeypatch.setattr(linux_sdk, 'install', lambda *args: installations.append(args) or {})
+    receipt = {'status': status, 'archive': 'expected.tar.zst', 'archive_sha256': 'archive'}
+    if identity is not None:
+        receipt['input_identity'] = identity
+    (directory / 'release.json').write_text(json.dumps(receipt))
+    if reusable:
+        assert linux_sdk.build_sdk(repo, foundation_sdk=prefix)['cache_hit']
+        assert len(installations) == 1
+    else:
+        with pytest.raises(ValueError, match='cached release receipt does not match'):
+            linux_sdk.build_sdk(repo, foundation_sdk=prefix)
+        assert installations == []

@@ -14,7 +14,10 @@ passing tooling checks alone does not complete a native implementation issue.
   compiled stamps and driver versions bind the configuration digest; build
   reports verify the effective assertion/RTTI/EH/project/target configuration.
 - #8322: native frontend/runtime test sources join release qualification identity
-  without invalidating the LLVM foundation for test-only changes.
+  without invalidating the LLVM foundation for test-only changes. Linked
+  in-checkout inputs bind their resolved paths and contents. Escaping, broken
+  and cyclic paths are rejected before release evidence can be reused. Cached
+  completion receipts must match the selected input identity and record a pass.
 - #8323: all 64 optimization-removable Python qualification assertions become
   explicit errors; optimized-interpreter controls defend the gates.
 - #8324: ordinary negative compiler cases require exit 1. Source-build wrappers

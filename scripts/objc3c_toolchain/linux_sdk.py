@@ -73,13 +73,40 @@ def adopt_candidate_foundation(repo: Path, source: Path, prefix: Path,
     return result
 
 
+def _qualification_input_path(repo: Path, path: Path) -> Path:
+    try:
+        resolved = path.resolve(strict=True)
+    except (OSError, RuntimeError) as error:
+        raise ValueError(f'qualification input cannot be resolved: {path}') from error
+    if not resolved.is_relative_to(repo):
+        raise ValueError(f'qualification input escapes the checkout: {path}')
+    return resolved
+
+
 def input_identity(repo: Path, sdk: Path) -> dict:
+    repo = repo.resolve(strict=True)
     files = set()
     for directory in ('scripts/objc3c_toolchain', 'scripts/objc3c_toolchain_runtime',
                       'scripts/objc3c_native_validation', 'tests/clang_foundation',
                       'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'native/objc3c/tests', 'stdlib/include'):
-        files.update(path for path in (repo / directory).rglob('*') if path.is_file()
-                     and '__pycache__' not in path.parts and path.suffix not in ('.pyc',))
+        root = repo / directory
+        if not (root.exists() or root.is_symlink()):
+            continue
+        pending = [(root, frozenset())]
+        while pending:
+            path, ancestors = pending.pop()
+            if path.name == '__pycache__' or path.suffix == '.pyc':
+                continue
+            resolved = _qualification_input_path(repo, path)
+            if resolved.is_dir():
+                if resolved in ancestors:
+                    raise ValueError(f'qualification input directory cycle: {path}')
+                lineage = ancestors | {resolved}
+                pending.extend((path / child.name, lineage) for child in resolved.iterdir())
+            elif resolved.is_file():
+                files.add(path)
+            else:
+                raise ValueError(f'qualification input must be a regular file: {path}')
     # Qualification owners, including editor fixtures and shared executor code,
     # are authoritative inputs to release reuse rather than a second file list.
     from scripts.objc3c_native_validation.plan import build_plan
@@ -91,8 +118,16 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files.add(repo / 'toolchains/linux-hosts.json')
     files.add(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/llvm-tblgen')
     files.add(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/FileCheck')
-    inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
-              for path in sorted(files)}
+    inputs, input_resolution = {}, {}
+    for path in sorted(files):
+        resolved = _qualification_input_path(repo, path)
+        if not resolved.is_file():
+            raise ValueError(f'qualification input must be a regular file: {path}')
+        relative = path.relative_to(repo).as_posix()
+        with resolved.open('rb') as stream:
+            inputs[relative] = hashlib.file_digest(stream, 'sha256').hexdigest()
+        if resolved != path:
+            input_resolution[relative] = resolved.relative_to(repo).as_posix()
     configure = build_plans(repo, host=native_linux_host())['configure']
     # The build plan reports mutable output inventories for consumers. Release
     # reuse binds the actual foundation contents separately; reclaiming its
@@ -105,7 +140,8 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     runtimes = discover_runtimes(repo, Path(os.environ['OBJC3C_BOOTSTRAP_LLVM_ROOT']))
     payload = {'foundation_contents': foundation_identity(sdk), 'foundation_plan': foundation_plan,
                'native_headers': {'sha256': native_headers['sha256']}, 'compiler_runtimes': runtimes,
-               'frontend': facade_identity(repo)['sha256'], 'inputs': inputs}
+               'frontend': facade_identity(repo)['sha256'], 'inputs': inputs,
+               'input_resolution': input_resolution}
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
 
 
@@ -182,6 +218,9 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     receipt_path = directory / 'release.json'
     if receipt_path.exists():
         receipt = json.loads(receipt_path.read_text())
+        if (not isinstance(receipt, dict) or receipt.get('status') != 'PASS' or
+                receipt.get('input_identity') != identity['sha256']):
+            raise ValueError('cached release receipt does not match the qualification identity')
         # Publication makes the checked archive authoritative. The mutable
         # candidate may have been reclaimed or edited after release.
         installed = install(Path(receipt['archive']), receipt['archive_sha256'], install_root)
@@ -284,10 +323,10 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
                                    expected_identity=identity['sha256'])
         report.update(status='PASS', resumed_qualified_archive=False,
                       elapsed_seconds=round(time.monotonic() - started, 6))
-        receipt_path.write_text(json.dumps(report, indent=2) + '\n')
+        write_json(receipt_path, report)
         return {**report, 'cache_hit': False}
     except Exception as error:
         report.update(status='FAIL', error=str(error))
         raise
     finally:
-        (directory / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
+        write_json(directory / 'build-report.json', report)
