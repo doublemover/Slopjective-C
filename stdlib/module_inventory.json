@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 270,
+        "minor": 271,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed statement matches warn in compatibility and fail in strict profiles, with a trapping default fix-it at writable braces. Native parsing rejects empty match bodies and expression guards containing calls, checked expressions or nested matches. Matching SDK acceptance pending",
         "Generated synchronous C throwing entries publish scalar, pointer and void signatures through the native trailing error-out ABI. Linked C and source-free clients verify success clearing, exact +0 error identity, null slots and retention across autorelease pool drainage. Matching SDK acceptance pending",
         "Published function templates and members of class templates retain dependent local records, local aliases and explicit local union arms in source-free bodies; C++20 and C++23 instantiation pass under cxx-local-types v2 admission; matching SDK acceptance pending",
         "Generated C completion bridges route executor-qualified free entries through native awaits, with verified main and named execution and checked failure or cancellation for unavailable destinations; generated exports retain object arguments and actor receivers and copy Block arguments before returning to C in ARC and MRC. Subclass receivers can use inherited isolated selectors. Matching SDK acceptance pending",
@@ -418,12 +419,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 196,
+        "minor": 197,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed statement matches warn in compatibility and fail in strict profiles, with a trapping default fix-it at writable braces. Native parsing rejects empty match bodies and expression guards containing calls, checked expressions or nested matches. Matching SDK acceptance pending",
         "Generated synchronous C throwing entries publish scalar, pointer and void signatures through the native trailing error-out ABI. Linked C and source-free clients verify success clearing, exact +0 error identity, null slots and retention across autorelease pool drainage. Matching SDK acceptance pending",
         "Published function templates and members of class templates retain dependent local records, local aliases and explicit local union arms in source-free bodies; C++20 and C++23 instantiation pass under cxx-local-types v2 admission; matching SDK acceptance pending",
         "Generated C completion bridges route executor-qualified free entries through native awaits, with verified main and named execution and checked failure or cancellation for unavailable destinations; generated exports retain object arguments and actor receivers and copy Block arguments before returning to C in ARC and MRC. Subclass receivers can use inherited isolated selectors. Matching SDK acceptance pending",

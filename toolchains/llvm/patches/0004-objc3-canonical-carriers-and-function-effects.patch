@@ -1402,11 +1402,12 @@ diff --git a/clang/include/clang/Basic/DiagnosticGroups.td b/clang/include/clang
 index b3c3b25aa..5bc4502a8 100644
 --- a/clang/include/clang/Basic/DiagnosticGroups.td
 +++ b/clang/include/clang/Basic/DiagnosticGroups.td
-@@ -2007,3 +2007,5 @@ def ExperimentalOption : DiagGroup<"experimental-option">;
+@@ -2007,3 +2007,6 @@ def ExperimentalOption : DiagGroup<"experimental-option">;
  
  // Warnings about unguarded usages of AMDGPU target specific constructs
  def UnguardedBuiltinUsageAMDGPU : DiagGroup<"amdgpu-unguarded-builtin-usage">;
 +def ObjC3MatchDuplicate : DiagGroup<"objc3-match-duplicate">;
++def ObjC3MatchNonExhaustive : DiagGroup<"objc3-match-non-exhaustive">;
 +def ObjC3MatchUnreachable : DiagGroup<"objc3-match-unreachable">;
 diff --git a/clang/include/clang/Basic/DiagnosticParseKinds.td b/clang/include/clang/Basic/DiagnosticParseKinds.td
 index 7671f003c..44a30c6e2 100644
@@ -1438,8 +1439,8 @@ index 7671f003c..44a30c6e2 100644
  
 +def err_objc3_match_binding_required : Error<"this match pattern requires a binding">;
 +def err_objc3_match_invalid_pattern : Error<"invalid match pattern">;
-+def err_objc3_match_malformed_guard : Error<"guarded patterns require a condition">;
-+def err_objc3_match_form_delimiter : Error<"expected the %0-form match delimiter">;
++def err_objc3_match_malformed_guard : Error<"guarded patterns require a condition of type Bool">;
++def err_objc3_match_form_delimiter : Error<"expected the %select{statement-form match delimiter ':' followed by a compound statement|expression-form match delimiter '=>' followed by an expression and ';'}0">;
 +
 +def err_objc3_guard_expected_condition : Error<
 +  "expected a condition in guard statement">;
@@ -1666,7 +1667,7 @@ index 2cb79b6ba..603ac6e0f 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14529,48 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14529,51 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -1696,13 +1697,16 @@ index 2cb79b6ba..603ac6e0f 100644
 +  InGroup<DiagGroup<"objc3-nullable-receiver">>;
 +
 +def err_objc3_match_pattern_type : Error<"pattern does not match scrutinee type %0">;
-+def err_objc3_match_type_test_disabled : Error<"type-test patterns are optional and disabled">;
++def err_objc3_match_type_test_disabled : Error<"type-test patterns are optional and disabled; check the type explicitly before matching">;
 +def err_objc3_match_move_unsupported : Error<"consuming match bindings are not supported">;
 +def err_objc3_match_void_binding : Error<"a void payload cannot be bound in a match case">;
 +def err_objc3_match_guard_type : Error<"match guard must have Bool type, not %0">;
-+def err_objc3_match_expression_guard_effect : Error<"expression-form match guards must be side-effect-free">;
++def err_objc3_match_expression_guard_effect : Error<"expression-form match guards must be side-effect-free and cannot contain calls, checked expressions or nested matches">;
 +def err_objc3_match_expression_arm_type : Error<"incompatible expression-form match arm result types">;
 +def err_objc3_match_non_exhaustive : Error<"non-exhaustive %select{statement|expression}1-form match over %select{an open domain|Bool|Optional|Result}0">;
++def warn_objc3_match_non_exhaustive : Warning<
++  "non-exhaustive statement-form match over %select{an open domain|Bool|Optional|Result}0">,
++  InGroup<ObjC3MatchNonExhaustive>;
 +def warn_objc3_match_duplicate : Warning<"duplicate unguarded match case">,
 +  InGroup<ObjC3MatchDuplicate>;
 +def warn_objc3_match_unreachable : Warning<"unreachable match case">,
@@ -11085,7 +11089,7 @@ new file mode 100644
 index 000000000..6a84c44ec
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3Match.cpp
-@@ -0,0 +1,383 @@
+@@ -0,0 +1,393 @@
 +#include "clang/AST/ObjC3MatchSemantic.h"
 +#include "clang/Basic/DiagnosticParse.h"
 +#include "clang/Basic/ObjC3Syntax.h"
@@ -11288,6 +11292,11 @@ index 000000000..6a84c44ec
 +    return ExprError();
 +  }
 +  SourceLocation LBraceLoc = ConsumeAnyToken();
++  if (Tok.is(tok::r_brace)) {
++    Diag(Tok, diag::err_expected) << tok::kw_case;
++    ConsumeAnyToken();
++    return ExprError();
++  }
 +  llvm::SmallVector<ObjC3MatchArm *, 8> Arms;
 +
 +  while (Tok.isNot(tok::r_brace) && Tok.isNot(tok::eof)) {
@@ -11338,7 +11347,7 @@ index 000000000..6a84c44ec
 +      }
 +    }
 +    if (Tok.isNot(tok::equal)) {
-+      Diag(Tok, diag::err_objc3_match_form_delimiter) << "expression";
++      Diag(Tok, diag::err_objc3_match_form_delimiter) << true;
 +      SkipUntil(tok::semi, StopAtSemi);
 +      if (Tok.is(tok::semi))
 +        ConsumeAnyToken();
@@ -11399,6 +11408,11 @@ index 000000000..6a84c44ec
 +    return StmtError();
 +  }
 +  SourceLocation LBraceLoc = ConsumeAnyToken();
++  if (Tok.is(tok::r_brace)) {
++    Diag(Tok, diag::err_expected) << tok::kw_case;
++    ConsumeAnyToken();
++    return StmtError();
++  }
 +  llvm::SmallVector<ObjC3MatchArm *, 8> Arms;
 +  while (Tok.isNot(tok::r_brace) && Tok.isNot(tok::eof)) {
 +    bool IsDefault = Tok.is(tok::kw_default);
@@ -11442,7 +11456,7 @@ index 000000000..6a84c44ec
 +      }
 +    }
 +    if (Tok.isNot(tok::colon)) {
-+      Diag(Tok, diag::err_objc3_match_form_delimiter) << "statement";
++      Diag(Tok, diag::err_objc3_match_form_delimiter) << false;
 +      SkipUntil(tok::kw_case, tok::kw_default, tok::r_brace, StopBeforeMatch);
 +      continue;
 +    }
@@ -15807,15 +15821,19 @@ new file mode 100644
 index 000000000..cb0daa45e
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Match.cpp
-@@ -0,0 +1,342 @@
+@@ -0,0 +1,383 @@
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/Expr.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/ObjC3MatchCoverage.h"
 +#include "clang/AST/ObjC3MatchSemantic.h"
 +#include "clang/AST/Stmt.h"
 +#include "clang/Basic/DiagnosticSema.h"
++#include "clang/Basic/SourceManager.h"
++#include "clang/Lex/Lexer.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/Overload.h"
 +#include "clang/Sema/Scope.h"
@@ -15845,7 +15863,8 @@ index 000000000..cb0daa45e
 +
 +void diagnoseCoverageIssue(Sema &S, const objc3::MatchCoverageResult &Result,
 +                           llvm::ArrayRef<ObjC3MatchArm *> Arms,
-+                           bool ExpressionForm, SourceLocation MatchEnd) {
++                           bool ExpressionForm, SourceRange MatchBraces) {
++  SourceLocation MatchEnd = MatchBraces.getEnd();
 +  SourceLocation Loc = Result.Issue == objc3::MatchCoverageIssue::NonExhaustive
 +                           ? MatchEnd
 +                       : Result.ArmIndex < Arms.size()
@@ -15863,11 +15882,46 @@ index 000000000..cb0daa45e
 +  case objc3::MatchCoverageIssue::UnreachableCase:
 +    S.Diag(Loc, diag::warn_objc3_match_unreachable);
 +    return;
-+  case objc3::MatchCoverageIssue::NonExhaustive:
-+    S.Diag(Loc, diag::err_objc3_match_non_exhaustive)
-+        << static_cast<unsigned>(Result.Domain) << ExpressionForm;
++  case objc3::MatchCoverageIssue::NonExhaustive: {
++    const bool IsError = ExpressionForm || S.getLangOpts().ObjC3Profile != 0;
++    auto Diagnostic = S.Diag(Loc, IsError ? diag::err_objc3_match_non_exhaustive
++                                         : diag::warn_objc3_match_non_exhaustive);
++    Diagnostic << static_cast<unsigned>(Result.Domain);
++    if (IsError)
++      Diagnostic << ExpressionForm;
++    if (ExpressionForm || !MatchBraces.isValid() ||
++        MatchBraces.getBegin().isMacroID() || MatchEnd.isMacroID())
++      return;
++
++    const auto &SM = S.getSourceManager();
++    Token ClosingBrace;
++    if (SM.getFileID(MatchBraces.getBegin()) != SM.getFileID(MatchEnd) ||
++        Lexer::getRawToken(MatchEnd, ClosingBrace, SM, S.getLangOpts()) ||
++        ClosingBrace.isNot(tok::r_brace))
++      return;
++    // A generated fallback should fail visibly when a missing case is hit.
++    const auto Indent = Lexer::getIndentationForLine(MatchEnd, SM);
++    const auto Fallback = SM.getSpellingColumnNumber(MatchEnd) == Indent.size() + 1
++        ? ("  default: { __builtin_trap(); }\n" + Indent).str()
++        : " default: { __builtin_trap(); } ";
++    Diagnostic << FixItHint::CreateInsertion(MatchEnd, Fallback);
 +    return;
 +  }
++  }
++}
++
++bool containsRestrictedGuardExpression(const Expr *Guard) {
++  llvm::SmallVector<const Stmt *, 8> Pending{Guard};
++  while (!Pending.empty()) {
++    const Stmt *Node = Pending.pop_back_val();
++    if (isa<CallExpr, CXXConstructExpr, ObjCMessageExpr, ObjC3TryExpr,
++            ObjC3MatchExpr>(Node))
++      return true;
++    for (const Stmt *Child : Node->children())
++      if (Child)
++        Pending.push_back(Child);
++  }
++  return false;
 +}
 +
 +QualType joinMatchArmTypes(Sema &S, llvm::ArrayRef<ObjC3MatchArm *> Arms,
@@ -16061,8 +16115,9 @@ index 000000000..cb0daa45e
 +          << Guard->getType();
 +      return nullptr;
 +    }
-+    if (State.ExpressionForm && !GuardIsDependent &&
-+        Guard->HasSideEffects(Context, true)) {
++    if (State.ExpressionForm &&
++        (containsRestrictedGuardExpression(Guard) ||
++         (!GuardIsDependent && Guard->HasSideEffects(Context, true)))) {
 +      Diag(Guard->getExprLoc(), diag::err_objc3_match_expression_guard_effect);
 +      return nullptr;
 +    }
@@ -16095,7 +16150,7 @@ index 000000000..cb0daa45e
 +      (Coverage.Domain != objc3::MatchDomain::Open &&
 +       !Coverage.IsExhaustive))
 +    diagnoseCoverageIssue(*this, Coverage, Arms, /*ExpressionForm=*/false,
-+                          RBraceLoc);
++                          SourceRange(LBraceLoc, RBraceLoc));
 +  ExprResult Snapshot = PrepareObjC3Snapshot(Scrutinee);
 +  if (Snapshot.isInvalid())
 +    return StmtError();
@@ -16124,11 +16179,11 @@ index 000000000..cb0daa45e
 +  if (Coverage.Issue == objc3::MatchCoverageIssue::DuplicateCase ||
 +      Coverage.Issue == objc3::MatchCoverageIssue::UnreachableCase)
 +    diagnoseCoverageIssue(*this, Coverage, Arms, /*ExpressionForm=*/true,
-+                          RBraceLoc);
++                          SourceRange(LBraceLoc, RBraceLoc));
 +  if (!Context.getCanonicalType(Scrutinee->getType())->isDependentType() &&
 +      !Coverage.IsExhaustive) {
 +    diagnoseCoverageIssue(*this, Coverage, Arms, /*ExpressionForm=*/true,
-+                          RBraceLoc);
++                          SourceRange(LBraceLoc, RBraceLoc));
 +    return ExprError();
 +  }
 +  bool HasDependentArm = Scrutinee->isTypeDependent();
@@ -21005,14 +21060,97 @@ index 000000000..5f69d9c43
 +  };
 +  (void)result;
 +}
+diff --git a/clang/test/ObjC3/Sema/match-result-profile.mm b/clang/test/ObjC3/Sema/match-result-profile.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/match-result-profile.mm
+@@ -0,0 +1,78 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -fdiagnostics-parseable-fixits %s 2>&1 | FileCheck %s --check-prefix=COMPAT
++// RUN: not %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c23 -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -fdiagnostics-parseable-fixits %s 2>&1 | FileCheck %s --check-prefix=STRICT
++// RUN: not %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -Werror=objc3-match-non-exhaustive -fsyntax-only %s 2>&1 | FileCheck %s --check-prefix=PROMOTED
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -Wno-objc3-match-non-exhaustive -fsyntax-only -verify=silenced %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fsyntax-only -DTEST_MACRO -fdiagnostics-parseable-fixits %s 2>&1 | FileCheck %s --check-prefix=MACRO
++// RUN: cp %s %t.mm
++// RUN: not %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc3-profile=strict -fixit %t.mm
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c23 -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=silenced %t.mm
++
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -DTEST_EMPTY -Wno-return-type -verify=empty %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fsyntax-only -DTEST_EMPTY -Wno-return-type -verify=empty %s
++
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -DTEST_GUARDS -verify=guard %s
++
++// silenced-no-diagnostics
++typedef __objc3_result(int, long) Result;
++
++#if defined(TEST_EMPTY)
++int evaluate(void);
++void empty_statement(void) {
++  __objc3_match_stmt (evaluate()) {} // empty-error {{expected case}}
++}
++int empty_expression(void) {
++  return __objc3_match (evaluate()) {}; // empty-error {{expected case}}
++}
++#elif defined(TEST_GUARDS)
++bool pure_guard(void) __attribute__((const));
++int calling_guard(bool value) {
++  return __objc3_match (value) {
++    case true where pure_guard() => 1; // guard-error {{must be side-effect-free}}
++    default => 0;
++  };
++}
++int nested_guard(bool value) {
++  return __objc3_match (value) {
++    case true where (__objc3_match (value) {
++      case true => false;
++      default => true;
++    }) => 1; // guard-error@-3 {{must be side-effect-free}}
++    default => 0;
++  };
++}
++int scalar_guard(bool value, int flag) {
++  return __objc3_match (value) {
++    case true where flag != 0 => 1;
++    default => 0;
++  };
++}
++#elif defined(TEST_MACRO)
++#define INCOMPLETE(R) __objc3_match_stmt (R) { case .Ok(_): {} }
++void macro_match(Result value) { INCOMPLETE(value); }
++// MACRO: warning: non-exhaustive statement-form match over Result
++// MACRO-NOT: fix-it:
++#else
++void guarded_only(Result value) {
++  __objc3_match_stmt (value) {
++    case .Ok(_): {}
++    case .Err(_) where false: {}
++  }
++}
++// COMPAT: warning: non-exhaustive statement-form match over Result [-Wobjc3-match-non-exhaustive]
++// COMPAT: fix-it:"{{.*}}":{{.*}}:"  default: { __builtin_trap(); }\n  "
++// STRICT: error: non-exhaustive statement-form match over Result
++// STRICT: fix-it:"{{.*}}":{{.*}}:"  default: { __builtin_trap(); }\n  "
++// PROMOTED: error: non-exhaustive statement-form match over Result
++
++void inline_match(Result value) {
++  __objc3_match_stmt (value) { case .Err(_): {} }
++}
++// COMPAT: warning: non-exhaustive statement-form match over Result
++// COMPAT: fix-it:"{{.*}}":{{.*}}:" default: { __builtin_trap(); } "
++// STRICT: error: non-exhaustive statement-form match over Result
++// STRICT: fix-it:"{{.*}}":{{.*}}:" default: { __builtin_trap(); } "
++
++void exhaustive(Result value) {
++  __objc3_match_stmt (value) { case .Ok(_): {} case .Err(_): {} }
++}
++#endif
 diff --git a/clang/test/ObjC3/Sema/match-type-directed-negative.mm b/clang/test/ObjC3/Sema/match-type-directed-negative.mm
 new file mode 100644
 index 000000000..057f1024e
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/match-type-directed-negative.mm
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,75 @@
 +// MATCH-PACKET: fixtures for the staged type-directed checker.
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -Wobjc3-match-duplicate -Wobjc3-match-unreachable -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc3-profile=strict -Wobjc3-match-duplicate -Wobjc3-match-unreachable -fsyntax-only -verify %s
 +
 +using R = __objc3_result(int, long long);
 +using O = __objc3_optional(int);
@@ -21086,9 +21224,6 @@ index 000000000..057f1024e
 +  default: { }
 +  }
 +}
-+
-+
-+
 diff --git a/clang/test/ObjC3/Sema/match-type-directed-positive.mm b/clang/test/ObjC3/Sema/match-type-directed-positive.mm
 new file mode 100644
 index 000000000..3d4432b5c

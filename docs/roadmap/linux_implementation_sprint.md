@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.271 / System 2.197 match diagnostics](linux_public_carriers.md)
+apply profile-aware exhaustiveness, provide an editable default fallback, and
+enforce the expression-guard and nonempty-body rules of Part 5.
+
 The [Source 2.270 / System 2.196 C error-out bridge](linux_async_c_completion_exports.md#synchronous-c-error-out-exports)
 exports synchronous checked functions to ordinary C through the native trailing
 error-out convention. It publishes the generated C signature in the semantic
