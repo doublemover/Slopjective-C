@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.210 / System 2.136 local environment span](linux_native_block_factory_local_environments.md)
+composes local producer results and nested literal/produced environments while
+preserving caller transfer contracts and ordinary callback effects.
+
 The [Source 2.209 / System 2.135 local Block-value span](linux_native_block_factory_local_values.md)
 resolves returned literal environments through immutable local bindings and
 aliases while keeping unused local captures outside the transported work.

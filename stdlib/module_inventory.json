@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 209,
+        "minor": 210,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed local Block producer calls and nested literal/produced environments preserve actual caller transfer contracts through factory composition; construction-only validation rolls back unused capture facts, ordinary nested callbacks do not inherit the outer async requirement, and all symbolic bindings are checked before nested environments; Sendable actual values cannot erase explicit unowned capture policies; four cancellation routes retain exact owner/work/defer accounting; MRC copy lowering and bounded proof limits remain native, matching SDK acceptance pending",
         "Closed factories return immutable local literal Block environments through aliases, conditional selections, nulls and explicit MRC copy wrappers; only returned environments contribute capture transfers, unused literal environments do not taint work, and mutable/opaque initializers and uncopied MRC captures remain rejected; matching SDK acceptance pending",
         "Closed native work-item factory chains compose inner constructed environments through pure return/branch graphs and scalar aliases/calculations; every nested binding maps back to actual outer caller values, memoized literals never replace caller contracts, and shared work/depth/cycle limits reject recursive, opaque and stateful construction paths; matching SDK acceptance pending",
         "Closed factory-local scalar calculations retain unions of actual caller dependencies through builtin arithmetic, bitwise/comparison/logical operations, arithmetic casts and conditional alternatives; known short-circuit operands remain unevaluated, concrete template locals bind exact scalar parameter types, and mutation/dereference/opaque conversion recipes remain unproved; matching SDK acceptance pending",
@@ -372,12 +373,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 135,
+        "minor": 136,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed local Block producer calls and nested literal/produced environments preserve actual caller transfer contracts through factory composition; construction-only validation rolls back unused capture facts, ordinary nested callbacks do not inherit the outer async requirement, and all symbolic bindings are checked before nested environments; Sendable actual values cannot erase explicit unowned capture policies; four cancellation routes retain exact owner/work/defer accounting; MRC copy lowering and bounded proof limits remain native, matching SDK acceptance pending",
         "Closed factories return immutable local literal Block environments through aliases, conditional selections, nulls and explicit MRC copy wrappers; only returned environments contribute capture transfers, unused literal environments do not taint work, and mutable/opaque initializers and uncopied MRC captures remain rejected; matching SDK acceptance pending",
         "Closed native work-item factory chains compose inner constructed environments through pure return/branch graphs and scalar aliases/calculations; every nested binding maps back to actual outer caller values, memoized literals never replace caller contracts, and shared work/depth/cycle limits reject recursive, opaque and stateful construction paths; matching SDK acceptance pending",
         "Closed factory-local scalar calculations retain unions of actual caller dependencies through builtin arithmetic, bitwise/comparison/logical operations, arithmetic casts and conditional alternatives; known short-circuit operands remain unevaluated, concrete template locals bind exact scalar parameter types, and mutation/dereference/opaque conversion recipes remain unproved; matching SDK acceptance pending",

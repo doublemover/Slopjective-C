@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.210 / System 2.136 local environment span](linux_native_block_factory_local_environments.md)
+composes local producer results and nested literal/produced environments while
+preserving caller transfer contracts and ordinary callback effects.
+
 The [Source 2.209 / System 2.135 local Block-value span](linux_native_block_factory_local_values.md)
 resolves returned literal environments through immutable local bindings and
 aliases while keeping unused local captures outside the transported work.
@@ -183,7 +187,7 @@ matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
 repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.209 / System 2.135 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.210 / System 2.136 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2046,7 +2050,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.209 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.210 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 
