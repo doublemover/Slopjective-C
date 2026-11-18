@@ -115,3 +115,15 @@ snapshots, throwing copies, exact error identity, and destructor faults after
 successful or typed-failed calls. x86-64 and AArch64 IR controls verify the
 indirect argument, result and checked error slots. Async, runtime-callable
 and no-C++-exceptions admission controls still apply.
+
+Source 2.263 / System 2.189 supports synchronous typed Objective-C methods
+and Blocks with those Optional owners. The runtime descriptor records opaque
+native storage using the existing v13 encoding. The statically selected
+C++ operations own copies, moves and destruction. A nil receiver raises the
+existing native service failure after arguments are constructed. Typed error
+and provisional result slots retain their separate cleanup paths.
+
+Four source-free C++20/C++23 ARC/MRC executions, eight x86-64 separate-TU runs
+and eight AArch64 runs under emulation check argument and result lifetimes.
+Both ABI IR controls cover selector metadata, Block signatures, the nil edge
+and the checked error slot. Async and variadic entry points remain gated.

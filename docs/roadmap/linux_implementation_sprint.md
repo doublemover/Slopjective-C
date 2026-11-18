@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.263 / System 2.189 Optional runtime calls](linux_checked_cpp_optionals.md)
+carry potentially throwing native owners through synchronous typed selectors
+and Blocks, including nil receiver failure and native exception unwinding.
+
 The [Source 2.262 / System 2.188 checked Optional argument change](linux_checked_cpp_optionals.md)
 preserves caller-owned snapshots and provisional result cleanup when a native
 destructor throws after a checked call.

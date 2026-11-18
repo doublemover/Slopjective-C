@@ -192,10 +192,9 @@ index e3f74d73f..3609394b1 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..465064235
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,599 @@
+@@ -0,0 +1,603 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -683,7 +682,7 @@ index 000000000..465064235
 +    return false;
 +  unsigned Budget = 256;
 +  auto Encode = [&](auto &&Self, QualType Carrier, std::string &Out,
-+                    unsigned Depth) -> bool {
++                    unsigned Depth, bool AllowThrowingDestructor) -> bool {
 +    if (Depth > 64 || Budget == 0 || Carrier.isVolatileQualified())
 +      return false;
 +    --Budget;
@@ -699,6 +698,7 @@ index 000000000..465064235
 +    } else {
 +      return false;
 +    }
++    AllowThrowingDestructor &= IsOptional;
 +    const bool Cpp=hasObjC3CarrierCppPayload(Type);
 +    std::string Name = Cpp ? (IsOptional ? "__objc3_v13_optional" : "__objc3_v13_result") :
 +        (IsOptional ? "__objc3_v12_optional" : "__objc3_v12_result");
@@ -715,7 +715,8 @@ index 000000000..465064235
 +        const auto *Destructor=Record?Record->getDestructor():nullptr;
 +        if(!Record || (Record->hasNonTrivialDestructor() && (!Destructor ||
 +            Destructor->isDeleted() || Destructor->getAccess()!=AS_public ||
-+            !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow())) ||
++            (!AllowThrowingDestructor &&
++             !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow()))) ||
 +            (containsObjC3CarrierManagedStorage(Leaf) &&
 +             !Ctx.getLangOpts().ObjCAutoRefCount))return false;
 +        const auto Layout=Ctx.getTypeInfoInChars(Leaf);
@@ -735,7 +736,7 @@ index 000000000..465064235
 +        }
 +      } else if (Nested) {
 +        Ownership = 'N';
-+        if (!Self(Self, Leaf, Field, Depth + 1))
++        if (!Self(Self, Leaf, Field, Depth + 1, AllowThrowingDestructor))
 +          return false;
 +      } else {
 +        if (Leaf->isObjCObjectPointerType() || Leaf->isBlockPointerType()) {
@@ -790,7 +791,9 @@ index 000000000..465064235
 +    return true;
 +  };
 +  std::string Result;
-+  if (!Encode(Encode, Type, Result, 0))
++  const bool AllowThrowingDestructor = Lang.CXXExceptions &&
++      !hasObjC3CarrierManagedPayload(Type);
++  if (!Encode(Encode, Type, Result, 0, AllowThrowingDestructor))
 +    return false;
 +  Encoding += Result;
 +  return true;

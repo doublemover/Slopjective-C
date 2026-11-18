@@ -1093,6 +1093,15 @@ __attribute__((objc_root_class))
 @interface RegisterFactory
 + (RegisterOwner)value:(int)mode __objc3_throws(id<Error>);
 @end
+__attribute__((objc_root_class))
+@interface TransportRecipient { Class isa; }
++ (instancetype)new;
+- (MaybeTransportOwner)echo:(MaybeTransportOwner)value;
++ (MaybeTransportOwner)checked:(MaybeTransportOwner)value mode:(int)mode
+    __objc3_throws(id<Error>);
+@end
+extern "C" id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
+extern "C" id object_dispose(id);
 
 static int live, destroyed, copied, moved, consumed;
 TransportOwner::TransportOwner(int value, int role) : value(value), role(role) {
@@ -1210,6 +1219,21 @@ bool consume_register(MaybeRegister value) {
   return try relay_register(mode);
 }
 @end
+@implementation TransportRecipient
++ (instancetype)new { return class_createInstance(self, 0); }
+- (void)dealloc { object_dispose(self); }
+- (MaybeTransportOwner)echo:(MaybeTransportOwner)value {
+  ++consumed;
+  return static_cast<MaybeTransportOwner &&>(value);
+}
++ (MaybeTransportOwner)checked:(MaybeTransportOwner)value mode:(int)mode
+    __objc3_throws(id<Error>) {
+  ++consumed;
+  if (mode == -2) __objc3_throw(transport_checked_error());
+  if (mode == 1) return transport_make(0);
+  return static_cast<MaybeTransportOwner &&>(value);
+}
+@end
 )");
   CompileRequest provider;
   provider.input_path = provider_path.string();
@@ -1231,7 +1255,7 @@ bool consume_register(MaybeRegister value) {
       "transport_make", "transport_relay", "transport_consume", "transport_pair",
       "transport_checked_error", "transport_checked", "transport_checked_relay",
       "transport_checked_argument",
-      "RegisterOwner", "RegisterPair", "RegisterFactory", "make_register",
+      "RegisterOwner", "RegisterPair", "RegisterFactory", "TransportRecipient", "make_register",
       "relay_register", "make_register_pair", "MaybeRegister", "wrap_register",
       "consume_register"};
   const auto published = Compile(provider);
@@ -1485,6 +1509,61 @@ int main() {
     }
   } catch (const TransportError &error) { require(error.code == 31); }
   count(0, 35, 3, 3, 11);
+
+  {
+    TransportRecipient *receiver = [TransportRecipient new];
+    auto source = transport_make(0);
+    auto echoed = [receiver echo:source];
+    require(__objc3_has_value(echoed));
+    count(2, 36, 4, 4, 12);
+#if !__has_feature(objc_arc)
+    extern void release_recipient(TransportRecipient *) asm("objc_release");
+    release_recipient(receiver);
+#endif
+  }
+  count(0, 38, 4, 4, 12);
+  {
+    auto source = transport_make(0);
+    auto missing = try? [TransportRecipient checked:source mode:-2];
+    require(!__objc3_has_value(missing));
+    count(1, 39, 5, 4, 13);
+  }
+  count(0, 40, 5, 4, 13);
+  try {
+    auto result = try! [TransportRecipient checked:transport_make(1) mode:1];
+    (void)result;
+    __builtin_trap();
+  } catch (const TransportError &error) { require(error.code == 31); }
+  count(0, 42, 5, 4, 14);
+  {
+    // A typed nil result cannot fabricate a native C++ owner.
+    TransportRecipient *nil_receiver = (TransportRecipient *)0;
+    bool failed = false;
+    try { (void)[nil_receiver echo:transport_make(0)]; }
+    catch (...) { failed = true; }
+    require(failed);
+    count(0, 43, 5, 4, 14);
+  }
+  {
+    using CheckedOptional = MaybeTransportOwner (^)(MaybeTransportOwner, int)
+        __objc3_throws(id<Error>);
+    CheckedOptional block =
+        ^MaybeTransportOwner(MaybeTransportOwner value, int mode) __objc3_throws(id<Error>) {
+          if (mode == -2) __objc3_throw(transport_checked_error());
+          if (mode == 1) return transport_make(0);
+          return static_cast<MaybeTransportOwner &&>(value);
+        };
+    auto empty = try! block(transport_make(-1), 0);
+    auto checked_failure = try? block(transport_make(0), -2);
+    require(!__objc3_has_value(empty) && !__objc3_has_value(checked_failure));
+    count(0, 44, 5, 4, 14);
+    try {
+      auto result = try? block(transport_make(1), 1);
+      (void)result;
+      __builtin_trap();
+    } catch (const TransportError &error) { require(error.code == 31); }
+    count(0, 46, 5, 4, 14);
+  }
 }
 )";
   Compiled(Compile(consumer));

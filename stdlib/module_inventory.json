@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 262,
+        "minor": 263,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -106,7 +106,7 @@
         "Lowered isolation properties and native C++ frame inputs preserve by-value reads and explicit receiver contracts, with known loans checked independently of unknown storage and direct by-value captures checked at construction; full release and SDK acceptance remain pending",
         "Optionalized synchronous checked C++ results with throwing destructors have full-expression cleanup and guarded local, conditional, array, static and thread-local initialization; wider call/async transport and matching SDK acceptance remain open",
         "Published inline calls to checked group joins and cancellation checkpoints bind the exact SDK completion header and stable callable identities. Source-free native execution and mutated-header admission controls cover the v2 reader capability, with matching SDK acceptance pending",
-        "Synchronous checked native indirect and register C++ results and qualified by-value Optional arguments support throwing destructors across source-free packages. Caller-owned snapshots and provisional results unwind independently of typed failure. Async value operations, wider runtime-callable Optional transport and matching SDK acceptance remain open",
+        "Synchronous checked native indirect and register C++ results and qualified by-value Optional arguments support throwing destructors across source-free packages. Caller-owned snapshots and provisional results unwind independently of typed failure. Synchronous typed selectors and Blocks use opaque runtime encodings and the same native lifetime operations. Async value operations and matching SDK acceptance remain open",
         "Initialized mutable local function and member pointers combine their exact assignable targets without overlooking reference or address escapes. Their global writes and returned cell sets retain provenance in source-free helpers. Open or escaped mutable storage and matching SDK acceptance remain open",
         "Checked task-group joins preserve the first nested member failure through quiescence and distinguish explicit group cancellation from interruption of only the current wait; C callback and shielded cleanup quiescence remain available, with full profile and matching SDK acceptance pending",
         "Generic throwing await and task joins propagate the distinguished cancellation Error through the typed channel. The active-task query and throwing checkpoint share that value with C completion callbacks. Narrow effect domains retain cooperative cancellation status and optionalizing awaits produce None; full profile and matching SDK acceptance remain pending",
@@ -415,7 +415,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 188,
+        "minor": 189,
         "patch": 0
       },
       "header": "include/objc3/system.h",
@@ -427,7 +427,7 @@
         "Lowered isolation properties and native C++ frame inputs preserve by-value reads and explicit receiver contracts, with known loans checked independently of unknown storage and direct by-value captures checked at construction; full release and SDK acceptance remain pending",
         "Optionalized synchronous checked C++ results with throwing destructors have full-expression cleanup and guarded local, conditional, array, static and thread-local initialization; wider call/async transport and matching SDK acceptance remain open",
         "Published inline calls to checked group joins and cancellation checkpoints bind the exact SDK completion header and stable callable identities. Source-free native execution and mutated-header admission controls cover the v2 reader capability, with matching SDK acceptance pending",
-        "Synchronous checked native indirect and register C++ results and qualified by-value Optional arguments support throwing destructors across source-free packages. Caller-owned snapshots and provisional results unwind independently of typed failure. Async value operations, wider runtime-callable Optional transport and matching SDK acceptance remain open",
+        "Synchronous checked native indirect and register C++ results and qualified by-value Optional arguments support throwing destructors across source-free packages. Caller-owned snapshots and provisional results unwind independently of typed failure. Synchronous typed selectors and Blocks use opaque runtime encodings and the same native lifetime operations. Async value operations and matching SDK acceptance remain open",
         "Initialized mutable local function and member pointers combine their exact assignable targets without overlooking reference or address escapes. Their global writes and returned cell sets retain provenance in source-free helpers. Open or escaped mutable storage and matching SDK acceptance remain open",
         "Checked task-group joins preserve the first nested member failure through quiescence and distinguish explicit group cancellation from interruption of only the current wait; C callback and shielded cleanup quiescence remain available, with full profile and matching SDK acceptance pending",
         "Generic throwing await and task joins propagate the distinguished cancellation Error through the typed channel. The active-task query and throwing checkpoint share that value with C completion callbacks. Narrow effect domains retain cooperative cancellation status and optionalizing awaits produce None; full profile and matching SDK acceptance remain pending",

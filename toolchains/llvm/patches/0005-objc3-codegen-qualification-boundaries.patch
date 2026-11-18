@@ -8635,7 +8635,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,947 @@
+@@ -0,0 +1,944 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -9113,9 +9113,6 @@ new file mode 100644
 +
 +bool CodeGen::supportsObjC3CarrierRuntimeCallABI(CodeGenModule &CGM,
 +                                               QualType CarrierType) {
-+  if (supportsObjC3CarrierCppCallABI(CGM, CarrierType) &&
-+      !supportsObjC3CarrierCppNothrowCallABI(CGM, CarrierType))
-+    return false;
 +  std::string Encoding;
 +  return supportsObjC3OwnedCarrierCallABI(CGM, CarrierType) &&
 +         getObjC3CarrierRuntimeEncoding(CGM.getContext(), CarrierType, Encoding);
@@ -12694,14 +12691,14 @@ new file mode 100644
 +    return false;
 +  if (Destructor &&
 +      !Destructor->getType()->castAs<FunctionProtoType>()->isNothrow()) {
-+    // The synchronous checked caller may spill native register bits into its
-+    // provisional result slot. Only success admits an active object there.
++    // Only synchronous checked calls can use the provisional return owner.
++    // Direct results are admitted on the native Linux ABIs whose normal
++    // result-slot initialization runs before the hidden error check.
 +    if (!AllowThrowingDestructor || !CGM.getLangOpts().CXXExceptions)
 +      return false;
 +    const auto &Triple = CGM.getTarget().getTriple();
-+    const bool NativeLinux =
-+        (Triple.getArch() == llvm::Triple::x86_64 ||
-+         Triple.getArch() == llvm::Triple::aarch64) &&
++    const bool NativeLinux = (Triple.getArch() == llvm::Triple::x86_64 ||
++                              Triple.getArch() == llvm::Triple::aarch64) &&
 +        Triple.isOSLinux() && Triple.isGNUEnvironment() &&
 +        CGM.getTarget().getCXXABI().isItaniumFamily();
 +    return !Record->canPassInRegisters() || NativeLinux;
@@ -12951,7 +12948,7 @@ new file mode 100644
 +        return true;
 +      if (isa<CallExpr, ObjCMessageExpr>(Value) &&
 +          ((isa<ObjCMessageExpr>(Value)
-+                ? supportsObjC3CarrierCppNothrowCallABI(CGM, Base)
++                ? supportsObjC3CarrierRuntimeCallABI(CGM, Base)
 +                : supportsObjC3CarrierCppCallABI(CGM, Base)) ||
 +           supportsObjC3MixedCarrierCallABI(CGM, Base)))
 +        return true;
@@ -13007,7 +13004,7 @@ new file mode 100644
 +    return false;
 +  QualType Result = Method->getReturnType();
 +  if (supportsObjC3CarrierCppCallABI(CGM, Result) &&
-+      !supportsObjC3CarrierCppNothrowCallABI(CGM, Result))
++      !supportsObjC3CarrierRuntimeCallABI(CGM, Result))
 +    return false;
 +  return supportsObjC3ErrorOutFunction(
 +      CGM, Method->getObjC3FunctionType()->castAs<FunctionProtoType>(),
@@ -38144,13 +38141,13 @@ new file mode 100644
 +using RegisterOptional = __objc3_optional(RegisterOwner);
 +RegisterOptional register_owner() { return __objc3_none(RegisterOwner); } // expected-error {{by-value call ABI}}
 +#elif CASE == 4
-+typedef Maybe (^BlockEntry)(void);
-+Maybe invoke(BlockEntry entry) { return entry(); } // expected-error {{runtime callable type encoding}}
++typedef Maybe (^BlockEntry)(int, ...);
++Maybe invoke(BlockEntry entry) { return entry(0); } // expected-error {{runtime callable type encoding}}
 +#elif CASE == 5
 +@protocol OwnerTrait
-+- (Maybe)owner; // expected-error {{by-value call ABI}}
++- (Maybe)owner:(int)value, ...; // expected-error {{by-value call ABI}}
 +@end
-+Maybe message_call(id<OwnerTrait> source) { return [source owner]; }
++Maybe message_call(id<OwnerTrait> source) { return [source owner:0]; }
 +#elif CASE == 6
 +using ResultOwner = __objc3_result(Owner, int);
 +ResultOwner result_owner() { return __objc3_ok(Owner, int, Owner(1)); } // expected-error {{by-value call ABI}}
@@ -38237,3 +38234,57 @@ new file mode 100644
 +  auto optional = try? checked_inout(source, fail);
 +  return __objc3_has_value(optional);
 +}
+diff --git a/clang/test/ObjC3/CodeGen/native-throwing-optional-runtime.mm b/clang/test/ObjC3/CodeGen/native-throwing-optional-runtime.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-throwing-optional-runtime.mm
+@@ -0,0 +1,49 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++
++@protocol Error @end
++id<Error> get_error();
++struct Owner {
++  int value;
++  Owner(int);
++  Owner(const Owner &);
++  ~Owner() noexcept(false);
++};
++using Maybe = __objc3_optional(Owner);
++__attribute__((objc_root_class)) @interface Host
++- (Maybe)echo:(Maybe)owner;
+++ (Maybe)checked:(Maybe)owner fail:(bool)fail __objc3_throws(id<Error>);
++@end
++@implementation Host
++- (Maybe)echo:(Maybe)owner { return __objc3_copy(owner); }
+++ (Maybe)checked:(Maybe)owner fail:(bool)fail __objc3_throws(id<Error>) {
++  if (fail) __objc3_throw(get_error());
++  return static_cast<Maybe &&>(owner);
++}
++@end
++using Checked = Maybe (^)(Maybe, bool) __objc3_throws(id<Error>);
++int call(Host *target, Maybe &source, bool fail) {
++  Checked entry = ^Maybe(Maybe owner, bool should_fail) __objc3_throws(id<Error>) {
++    return try [Host checked:static_cast<Maybe &&>(owner) fail:should_fail];
++  };
++  auto message = [target echo:source];
++  auto block = try? entry(message, fail);
++  return __objc3_has_value(block);
++}
++const char *encode() { return @encode(Maybe); }
++
++// CHECK-DAG: .objc_selector_echo:_{__objc3_v13_optional_C
++// CHECK-DAG: __block_descriptor_{{.*}}__objc3_v13_optional_C
++// CHECK-LABEL: define internal void @_i_Host__echo_(
++// CHECK-SAME: sret({{[^)]*}}) align 4 %agg.result, ptr noundef %self, ptr noundef %_cmd, ptr noundef align 4 %owner)
++// CHECK: %objc3.arc.return.initialized = alloca i1
++// CHECK-LABEL: define internal void @_c_Host__checked_fail_(
++// CHECK-SAME: sret({{[^)]*}}) align 4 %agg.result, ptr noundef %self, ptr noundef %_cmd, ptr noundef align 4 %owner,
++// CHECK-SAME: ptr noundef %0)
++// CHECK-LABEL: define dso_local noundef i32 @_Z4call
++// CHECK: invoke void @objc3_checked_nil_result()
++// CHECK: objc3.try.failed = icmp ne ptr
++// CHECK-LABEL: define internal void @{{.*}}_block_invoke(
++// CHECK-SAME: sret({{[^)]*}}) align 4 %agg.result, ptr noundef %.block_descriptor, ptr noundef align 4 %owner,
++// CHECK-SAME: ptr noundef %0)
++// CHECK: invoke void @objc3_checked_nil_result()
