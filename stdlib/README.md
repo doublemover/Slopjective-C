@@ -28,7 +28,7 @@ fake integer helpers and package metadata are no longer library inputs.
 `objc3.concurrency` are native imports. The development `objc3.system` module is
 available under `-fobjc3-profile=strict-system` and supplies Linux resource
 helpers. The partial native `objc3.keypath` module supplies typed paths and
-immutable metadata; its development version is 2.1.0. Module presence does not claim a
+immutable metadata; its development version is 2.12.0. Module presence does not claim a
 complete Core or Strict profile.
 
 Text uses validated UTF-8 and explicit byte/scalar lengths; embedded NUL is data.
@@ -60,9 +60,8 @@ void-success operations to checked `id<Error>` propagation. `resultFromErrorOut(
 BOOL/error-out APIs: it runs the operation before capturing outputs, ignores
 error storage on success, and lets the domain factory normalize even a missing
 error on failure. It accepts NSError-style object slots without requiring a
-Foundation dependency in the library. Domain-specific factories retain the API's error meaning. The accepted
-[2.9.0 SDK](../docs/support/linux_cxx_class_structure_acceptance.json) includes
-these adapters and their positive/negative strict-profile factory checks.
+Foundation dependency in the library. Domain-specific factories retain the API's error meaning. The native adapter controls cover positive and negative strict-profile factory
+checking. Consult the inventory and matching SDK receipt for delivery status.
 
 The concurrency module exposes the shared task/frame, group, cancellation,
 executor and serial actor ABI. Include `<objc3c/runtime/objc3_task.hpp>` explicitly
@@ -88,14 +87,17 @@ void allocate(void) {
 }
 ```
 
-These headers and their source/PCH/runtime fixtures are authored but unvalidated.
+The headers have focused native source/PCH, publication and runtime controls;
+their existence does not establish complete profile or current-archive acceptance.
 The installed gate is wired for C17/C++20/C++23, ARC/MRC, O0/O2, profile rejection
 and ownership diagnostics. The compiler source now also implements native
 `withLifetime(owner) { ... }` and `keepAlive(owner);` with strong precise owners
 under ARC and MRC. These statements need no library import; `objc3.system`
 imports retain their Strict System gate. Borrowed-pointer contracts and escape
 checking are authored in the native compiler; remaining alias/diagnostic boundaries
-and complete Strict System conformance remain outstanding. The active SDK predates this implementation.
+and complete Strict System conformance remain outstanding. Source 2.236 / System 2.162 is the current development checkpoint. SDK 2.62 /
+extension ABI 21 remains the last accepted archive; extension ABI 24 source
+changes still require one fresh matching SDK campaign.
 
 Run the installed integration gate with:
 
@@ -107,19 +109,21 @@ python3 -B SDK/share/objc3c/source-build/qualify_stdlib.py \
 Builds and tests use disposable directories under `TMPDIR`; receipts and logs
 remain in the requested output directory.
 
-The development `objc3.keypath` module now exposes native typed property literals,
-get/set applications, readonly conversion and immutable metadata. Its compiler
-and runtime slices are authored; remaining traversal/value boundaries are
-recorded in the inventory. Structured runtime development now includes parent
-cancellation propagation, canonical main/global destinations and retained named
-executor lookup. The global destination has four workers; ordinary explicitly
-created executors keep their serial contract. These new slices await the
-coordinated validation batch.
+The development `objc3.keypath` 2.12 module exposes native typed property literals,
+get/set applications, readonly conversion and immutable metadata. Implemented
+lanes include record-field writeback, dependent root/application/pack forms,
+nullable traversal/writeback, native nontrivial records and explicitly owned C++
+resource/union values. Copy, setter and nullable-chain failures retain native
+cleanup contracts. Broader effect/isolation forms, extracted borrowed/raw-resource
+lifetimes and implicit union active-arm cleanup remain in the inventory.
 
-The authored key-path 2.1 source adds record-field writeback, exact readonly
-narrowing, opaque descriptor signatures, nested nullability identity and bounded
-readonly traversal through nullable receivers when the final value is a nullable
-object or Block. Native application snapshots keep owned pointer operands alive
-through later operand evaluation and unwind. Scalar/aggregate or nonnull results
-through nullable intermediates and writable nullable chains remain diagnosed.
-The current installed SDK does not establish validation of these additions.
+Structured runtime development includes parent cancellation propagation,
+canonical main/global destinations and retained named executor lookup. The global
+destination has four workers; explicitly created executors retain their serial
+contract. Concrete task/group APIs, native ownership/cancellation lanes and
+source-free callable graphs have focused controls. Complete profile and matching
+SDK acceptance remain separate gates.
+
+The [Linux roadmap](../docs/roadmap/linux_forward_development.md) links each source
+milestone, its executable controls and its remaining boundaries. Development
+module versions and historical receipts must not be treated as archive promotion.

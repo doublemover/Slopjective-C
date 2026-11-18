@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.236 / System 2.162 reference/record capture span](linux_native_reference_record_captures.md)
+preserves original reference storage and trivial record/array inputs through
+closed native callables, copied aggregate owners and conservative escape checks.
+
 The [Source 2.235 / System 2.161 reference-result span](linux_native_reference_result_graphs.md)
 connects returned native references to exact caller/global storage for writes,
 escapes and concurrency transfers under bounded per-call discovery.

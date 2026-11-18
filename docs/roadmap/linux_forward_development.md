@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.236 / System 2.162 reference/record capture span](linux_native_reference_record_captures.md)
+preserves original reference storage and trivial record/array inputs through
+closed native callables, copied aggregate owners and conservative escape checks.
+
 The [Source 2.235 / System 2.161 reference-result span](linux_native_reference_result_graphs.md)
 connects returned native references to exact caller/global storage for writes,
 escapes and concurrency transfers under bounded per-call discovery.
@@ -2240,13 +2244,14 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    System capabilities.
 5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
    next implementation span is coherent, then perform one coordinated SDK
-   cutover. The current checkpoint has completed that sequence; avoid repeated
-   archive rebuilds during frontloaded source development.
+   cutover. Source 2.154–2.236 still requires its fresh matching campaign; focused
+   local receipts do not promote a replacement archive. Avoid repeated archive
+   rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native
    host. Cross-compilation/emulation can find defects but do not establish native
    support. Repeat the fresh-distribution archive checks for each future cutover.
 
-This is a hard cutover project. Native extension ABI 22 and semantic interface
+This is a hard cutover project. Native extension ABI 24 and semantic interface
 schema 2.2 require explicit physical async ABI and export-root identity; old interfaces/packages
 must be rebuilt. Source, headers, objects, PCH, interfaces, packages and SDK
 artifacts must agree when a

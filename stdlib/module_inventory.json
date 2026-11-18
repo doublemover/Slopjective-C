@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 235,
+        "minor": 236,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed native callables retain reference-captured writes and trivial record/fixed-array value sources through mutable operators, constructor/factory inputs and structured bindings; closure copies, nested closures and aggregate storage owners share final escape checks, with separate bounded shape/cell/receiver graphs; native retained/reference-subobject/nontrivial ownership and matching SDK acceptance remain open",
         "Closed scalar reference-result helpers bind per-call returned storage through globals, static/TLS cells, fields, fixed arrays, reference parameters and aliases; chained/alternative returns preserve writes and unknown escapes under shared bounds, while callee automatic values, captured/open targets and unresolved state retain conservative admission; source-free detached/awaited ARC/MRC controls are implemented, matching SDK and native ARM acceptance pending",
         "GNU may_alias typedef/record policies retain native identity, local public-body contracts and canonical written/inherited printing without duplicate flags; source-free optimized provider/consumer witnesses defend type-based alias analysis behavior, with matching SDK and native ARM acceptance pending",
         "Closed scalar by-copy captured lambdas retain global/reference/resource writes through mutable operators, copies and aliases, with receiver write/escape checks and conservative captured state; structured bindings/array copies preserve provenance and authored publication, and six named source-free CTest configurations share one executable owner; broader capture/lifetime precision and matching SDK acceptance pending",
@@ -398,12 +399,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 161,
+        "minor": 162,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed native callables retain reference-captured writes and trivial record/fixed-array value sources through mutable operators, constructor/factory inputs and structured bindings; closure copies, nested closures and aggregate storage owners share final escape checks, with separate bounded shape/cell/receiver graphs; native retained/reference-subobject/nontrivial ownership and matching SDK acceptance remain open",
         "Closed scalar reference-result helpers bind per-call returned storage through globals, static/TLS cells, fields, fixed arrays, reference parameters and aliases; chained/alternative returns preserve writes and unknown escapes under shared bounds, while callee automatic values, captured/open targets and unresolved state retain conservative admission; source-free detached/awaited ARC/MRC controls are implemented, matching SDK and native ARM acceptance pending",
         "GNU may_alias typedef/record policies retain native identity, local public-body contracts and canonical written/inherited printing without duplicate flags; source-free optimized provider/consumer witnesses defend type-based alias analysis behavior, with matching SDK and native ARM acceptance pending",
         "Closed scalar by-copy captured lambdas retain global/reference/resource writes through mutable operators, copies and aliases, with receiver write/escape checks and conservative captured state; structured bindings/array copies preserve provenance and authored publication, and six named source-free CTest configurations share one executable owner; broader capture/lifetime precision and matching SDK acceptance pending",

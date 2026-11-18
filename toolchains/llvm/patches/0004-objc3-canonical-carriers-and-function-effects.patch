@@ -53752,7 +53752,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4128 @@
+@@ -0,0 +1,4208 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54833,6 +54833,7 @@ new file mode 100644
 +  llvm::SmallPtrSet<const FunctionDecl *,32> IndexedFunctions;
 +  llvm::DenseMap<const ValueDecl *,SmallVector<const VarDecl *,4>> CaptureBindings;
 +  llvm::SmallPtrSet<const ValueDecl *,32> UnknownCaptures;
++  llvm::SmallPtrSet<const CXXRecordDecl *,16> ClosedCaptureClasses;
 +  bool Indexed=false,Incomplete=false,CallGraphIncomplete=false;
 +  llvm::DenseMap<const FunctionDecl *,const FunctionDecl *> DefinitionCache;
 +  auto ExcludedPolicy=[](const FunctionDecl *Function) {
@@ -54857,14 +54858,31 @@ new file mode 100644
 +    const auto *Closure=Method->getParent();
 +    if(Closure->capture_size()>32){CallGraphIncomplete=true;return std::nullopt;}
 +    for(const auto &Capture:Closure->captures()) {
-+      if(!Capture.capturesVariable() || Capture.getCaptureKind()!=LCK_ByCopy)return std::nullopt;
++      if(!Capture.capturesVariable() ||
++          (Capture.getCaptureKind()!=LCK_ByCopy && Capture.getCaptureKind()!=LCK_ByRef))return std::nullopt;
 +      const auto *Variable=Capture.getCapturedVar();
 +      if(!isa<VarDecl,BindingDecl>(Variable))return std::nullopt;
 +      if(const auto *Storage=dyn_cast<VarDecl>(Variable);Storage && Storage->hasAttr<BlocksAttr>())return std::nullopt;
 +      if(const auto *Binding=dyn_cast<BindingDecl>(Variable);Binding && !Binding->getBinding())return std::nullopt;
 +      const auto Value=Variable->getType().getNonReferenceType();
-+      if(!Value->isScalarType() || Value->isObjCRetainableType() ||
-+          isObjC3NSObjectStorageType(Value) || Value.isVolatileQualified() || Value->isAtomicType())return std::nullopt;
++      unsigned ShapeWork=128;
++      auto Shape=[&](auto &&Self,QualType Type,unsigned Depth)->bool {
++        if(!ShapeWork || Depth>16){CallGraphIncomplete=true;return false;}--ShapeWork;
++        Type=Type.getNonReferenceType();
++        if(Type.isVolatileQualified() || Type->isAtomicType() || Type->isObjCRetainableType() ||
++            isObjC3NSObjectStorageType(Type))return false;
++        if(Type->isScalarType())return true;
++        if(const auto *Array=Context.getAsConstantArrayType(Type))
++          return Self(Self,Array->getElementType(),Depth+1);
++        const auto *Record=Type->getAsCXXRecordDecl();
++        if(!Record || !Record->hasDefinition() || !Type.isTriviallyCopyableType(Context))return false;
++        Record=Record->getDefinition();
++        for(const auto &Base:Record->bases())if(!Self(Self,Base.getType(),Depth+1))return false;
++        for(const auto *Field:Record->fields())
++          if(Field->getType()->isReferenceType() || !Self(Self,Field->getType(),Depth+1))return false;
++        return true;
++      };
++      if(!Shape(Shape,Value,0))return std::nullopt;
 +    }
 +    const Expr *Receiver=nullptr;
 +    if(const auto *Operator=dyn_cast<CXXOperatorCallExpr>(Call);Operator && Operator->getNumArgs())Receiver=Operator->getArg(0);
@@ -54929,6 +54947,7 @@ new file mode 100644
 +    }
 +    auto RegisterCaptures=[&]() {
 +      if(!Captured)return;
++      ClosedCaptureClasses.insert(Method->getParent()->getCanonicalDecl());
 +      for(const auto &Capture:Method->getParent()->captures()) {
 +        const auto *Variable=CaptureIdentity(Capture.getCapturedVar());
 +        auto &Owners=CaptureBindings[Variable];
@@ -55071,6 +55090,8 @@ new file mode 100644
 +          return Self(Self,Base,Depth+1);
 +        }
 +        const auto *Reference=dyn_cast<DeclRefExpr>(E);
++        if(const auto *Binding=Reference?dyn_cast<BindingDecl>(Reference->getDecl()):nullptr)
++          return Self(Self,Binding->getBinding(),Depth+1);
 +        const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +        if(!Variable || (!Variable->hasLocalStorage() && !Variable->hasGlobalStorage()))return false;
 +        Variable=Variable->getCanonicalDecl();
@@ -55101,6 +55122,31 @@ new file mode 100644
 +      return Resolve(Resolve,Value,0) && !Result.empty()?std::optional<CellSet>(std::move(Result)):std::nullopt;
 +    };
 +    SmallVector<std::pair<const Expr *,const Expr *>,16> DeferredWrites;
++    SmallVector<std::pair<const VarDecl *,const CXXRecordDecl *>,16> ReferenceCaptures;
++    llvm::DenseMap<const CXXRecordDecl *,SmallVector<const VarDecl *,4>> ClosureStorage;
++    bool ClosureStorageIncomplete=false;
++    // A reference capture may escape through a copied or nested closure in an
++    // aggregate. Track every by-value enclosing storage shape, not only the
++    // object selected as the receiver of an admitted invocation.
++    auto RegisterClosureStorage=[&](const VarDecl *Variable) {
++      unsigned Work=128;llvm::SmallPtrSet<const Type *,16> Seen;
++      auto Scan=[&](auto &&Self,QualType Type,unsigned Depth)->void {
++        Type=Type.getNonReferenceType();
++        if(!Work || Depth>16){ClosureStorageIncomplete=true;return;}--Work;
++        if(!Seen.insert(Type.getTypePtr()).second)return;
++        if(const auto *Array=Context.getAsConstantArrayType(Type)) {Self(Self,Array->getElementType(),Depth+1);return;}
++        const auto *Record=Type->getAsCXXRecordDecl();
++        if(!Record || !(Record=Record->getDefinition()))return;
++        if(Record->isLambda()) {
++          auto &Owners=ClosureStorage[Record->getCanonicalDecl()];
++          if(Owners.size()==128){ClosureStorageIncomplete=true;return;}
++          if(!llvm::is_contained(Owners,Variable->getCanonicalDecl()))Owners.push_back(Variable->getCanonicalDecl());
++        }
++        for(const auto &Base:Record->bases())Self(Self,Base.getType(),Depth+1);
++        for(const auto *Field:Record->fields())Self(Self,Field->getType(),Depth+1);
++      };
++      Scan(Scan,Variable->getType(),0);
++    };
 +    llvm::SmallPtrSet<const VarDecl *,16> DeferredEscapes;
 +    auto Escape=[&](const VarDecl *Variable) {
 +      Variable=Variable->getCanonicalDecl();
@@ -55164,8 +55210,11 @@ new file mode 100644
 +          }
 +        }
 +      if(const auto *Reference=dyn_cast<DeclRefExpr>(Node)) {
-+        if(const auto *V=dyn_cast<VarDecl>(Reference->getDecl());V && (V->hasLocalStorage() || V->hasGlobalStorage()) && Use==Unknown)
-+          Escape(V);
++        const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());
++        if(const auto *Binding=dyn_cast<BindingDecl>(Reference->getDecl()))
++          Variable=dyn_cast<VarDecl>(Binding->getDecomposedDecl());
++        if(Variable && (Variable->hasLocalStorage() || Variable->hasGlobalStorage()) && Use==Unknown)
++          Escape(Variable);
 +        continue;
 +      }
 +      if(const auto *Block=dyn_cast<BlockExpr>(Node)) {
@@ -55179,14 +55228,23 @@ new file mode 100644
 +        Add(Copy->getCommonExpr(),Read);Add(Copy->getSubExpr());continue;
 +      }
 +      if(const auto *Lambda=dyn_cast<LambdaExpr>(Node)) {
-+        for(const auto &Capture:Lambda->captures())
-+          if(Capture.capturesVariable() && Capture.getCaptureKind()==LCK_ByRef)
-+            if(const auto *Variable=dyn_cast<VarDecl>(Capture.getCapturedVar()))Escape(Variable);
-+        for(const auto *Init:Lambda->capture_inits())Add(Init);
-+        continue; // A value capture writes its own environment, not this binding.
++        auto Init=Lambda->capture_init_begin();
++        for(const auto &Capture:Lambda->captures()) {
++          const bool ByRef=Capture.capturesVariable() && Capture.getCaptureKind()==LCK_ByRef;
++          if(ByRef) {
++            const auto *Variable=dyn_cast<VarDecl>(Capture.getCapturedVar());
++            if(const auto *Binding=dyn_cast<BindingDecl>(Capture.getCapturedVar()))
++              Variable=dyn_cast<VarDecl>(Binding->getDecomposedDecl());
++            if(Variable)ReferenceCaptures.push_back({Variable,Lambda->getLambdaClass()->getCanonicalDecl()});
++            else ClosureStorageIncomplete=true;
++          }
++          if(Init!=Lambda->capture_init_end())Add(*Init++,ByRef?Read:Unknown);
++        }
++        continue; // Value captures write their own environment.
 +      }
 +      if(const auto *Declarations=dyn_cast<DeclStmt>(Node)) {
-+        for(const auto *D:Declarations->decls())if(const auto *V=dyn_cast<VarDecl>(D))
++        for(const auto *D:Declarations->decls())if(const auto *V=dyn_cast<VarDecl>(D)) {
++          RegisterClosureStorage(V);
 +          if(V->hasInit()) {
 +            auto Type=V->getType().getNonReferenceType();
 +            auto Pointees=Type->isPointerType() && Type.isConstQualified() && !Type.isVolatileQualified()
@@ -55194,6 +55252,7 @@ new file mode 100644
 +            if(Pointees.Closed)Add(V->getInit(),Read);
 +            else Add(V->getInit(),V->getType()->isReferenceType() && Cells(V->getInit())?Read:Unknown);
 +          }
++        }
 +        continue;
 +      }
 +      if(const auto *Branch=dyn_cast<IfStmt>(Node)) {
@@ -55326,6 +55385,12 @@ new file mode 100644
 +      if(auto Targets=Cells(Target))for(const auto *Variable:*Targets)Writes[Variable].push_back(Source);
 +    SmallVector<const VarDecl *,16> Escapes(DeferredEscapes.begin(),DeferredEscapes.end());
 +    for(const auto *Variable:Escapes)Escape(Variable);
++    for(const auto &[Variable,Class]:ReferenceCaptures) {
++      bool Unknown=ClosureStorageIncomplete || !ClosedCaptureClasses.contains(Class);
++      if(auto Found=ClosureStorage.find(Class);Found!=ClosureStorage.end())
++        for(const auto *Owner:Found->second)Unknown|=Escaped.contains(Owner) || Writes.contains(Owner);
++      if(Unknown)Escape(Variable);
++    }
 +    for(const auto &[Variable,Owners]:CaptureBindings)
 +      for(const auto *Owner:Owners)
 +        if(Escaped.contains(Owner) || Writes.contains(Owner)) {
@@ -55458,6 +55523,11 @@ new file mode 100644
 +      for(const auto *Value:Construction->arguments())if(Recurse(Recurse,Value,Depth+1))return true;
 +      return false;
 +    }
++    if(const auto *Construction=dyn_cast<CXXConstructExpr>(E);
++        Construction && E->getType().isTriviallyCopyableType(Context)) {
++      for(const auto *Value:Construction->arguments())if(Recurse(Recurse,Value,Depth+1))return true;
++      return false;
++    }
 +    if(const auto *List=dyn_cast<CXXParenListInitExpr>(E)) {
 +      for(const auto *Value:List->getInitExprs())if(Value && Recurse(Recurse,Value,Depth+1))return true;
 +      return false;
@@ -55529,6 +55599,16 @@ new file mode 100644
 +        for(const auto *Source:ReturnSources[Found->second])
 +          if(Recurse(Recurse,Source,Depth+1))return true;
 +      }
++    }
++    if(const auto *Call=dyn_cast<CallExpr>(E);Call && E->getType()->isRecordType() &&
++        E->getType().isTriviallyCopyableType(Context)) {
++      // An unproved native record factory must not erase demonstrated sources
++      // supplied to construction. This is a conservative value fallback, not
++      // a proof of the factory's ownership, side effects or returned storage.
++      if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call))
++        if(const auto *Receiver=Member->getImplicitObjectArgument())
++          if(Recurse(Recurse,Receiver,Depth+1))return true;
++      for(const auto *Value:Call->arguments())if(Recurse(Recurse,Value,Depth+1))return true;
 +    }
 +    if(const auto *Call=dyn_cast<CallExpr>(E);Call && Call->isGLValue() &&
 +        (!BorrowedOnly || E->getType()->isPointerType() || E->getType()->isBlockPointerType() || E->getType()->isRecordType())) {
@@ -82398,6 +82478,132 @@ new file mode 100644
 + (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
 + int observed=result_resource_written(42);
 + (void)binding_detached(binding_make_scalar(observed));
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-reference-record-captures.m b/clang/test/ObjC3/Sema/native-reference-record-captures.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-reference-record-captures.m
+@@ -0,0 +1,87 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-reference-record-captures.h"
++#if __OBJC3_PROFILE__ == 3
++const char *capture_storage_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#elif !defined(__cplusplus)
++// expected-no-diagnostics
++#else
++void capture_reference_store(borrowed const char *loan){
++ const char *slot="static";auto work=[&slot,saved=loan](){slot=saved;};work();const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_reference_global(borrowed const char *loan){
++ const char *local=loan;auto work=[&local](){global_projection_pointer=local;};work();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_reference_resource(){
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ int slot=0;auto work=[&slot,&descriptor](){slot=descriptor;};work();int value=slot;
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void capture_record_store(borrowed const char *loan){
++ CaptureScalarRecord record={loan,42};auto work=[record](){global_projection_pointer=record.pointer;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_record_constructed(borrowed const char *loan){
++ CaptureConstructedRecord record(loan);auto work=[record](){global_projection_pointer=record.pointer;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_record_nested(borrowed const char *loan){
++ CaptureNestedRecord record={{loan,42},{"static",loan}};auto work=[record](){global_projection_pointer=record.child.pointer;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_record_mutable(borrowed const char *loan){
++ CaptureScalarRecord record={loan,42};auto work=[record]()mutable{const char *old=record.pointer;record.pointer="static";global_projection_pointer=old;};
++ work();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_record_target(borrowed const char *loan){
++ CaptureScalarRecord record={loan,42};const char *slot="static";
++ auto work=[record](const char *&target){target=record.pointer;};work(slot);const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_reference_escaped_copy(){
++ const char *slot="static";auto work=[&slot](){slot="other";};auto copy=work;capture_storage_unknown(copy);work();
++ const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_reference_escaped_container(){
++ const char *slot="static";auto work=[&slot](){slot="other";};CaptureEnvelope<decltype(work)> box{work};auto copy=box;
++ capture_storage_unknown(copy);work();const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_reference_escaped_outer(){
++ const char *slot="static";auto work=[&slot](){slot="other";};auto outer=[work](){};
++ capture_storage_unknown(outer);work();const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_reference_binding(borrowed const char *loan){
++ const char *values[1]={"static"};auto &[slot]=values;auto work=[&slot,saved=loan](){slot=saved;};work();
++ const char *value=values[0];
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_record_produced(borrowed const char *loan){
++ auto work=[record=capture_record_factory(loan)](){global_projection_pointer=record.pointer;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_record_produced_lambda(borrowed const char *loan){
++ CaptureScalarRecord record={loan,42};auto make=[record](){return record;};
++ auto work=[saved=make()](){global_projection_pointer=saved.pointer;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_array_value(borrowed const char *loan){
++ const char *values[2]={"static",loan};auto work=[values](){global_projection_pointer=values[1];};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void capture_record_shape_bound(borrowed const char *loan){
++ CaptureWideRecord record={loan};auto work=[record](){global_projection_pointer=record.pointer;};work();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-reference-record-captures.h b/clang/test/ObjC3/Sema/Inputs/native-reference-record-captures.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-reference-record-captures.h
+@@ -0,0 +1,27 @@
++#ifndef OBJC3_REFERENCE_RECORD_CAPTURES_H
++#define OBJC3_REFERENCE_RECORD_CAPTURES_H
++#include "native-captured-call-graphs.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++struct CaptureScalarRecord {const char *pointer;int number;};
++struct CaptureNestedRecord {CaptureScalarRecord child;const char *array[2];};
++struct CaptureConstructedRecord {const char *pointer;explicit CaptureConstructedRecord(const char *value):pointer(value){}};
++static inline CaptureScalarRecord capture_record_factory(const char *value){return {value,42};}
++struct CaptureWideRecord {const char *pointer;int value0;int value1;int value2;int value3;int value4;int value5;int value6;int value7;int value8;int value9;int value10;int value11;int value12;int value13;int value14;int value15;int value16;int value17;int value18;int value19;int value20;int value21;int value22;int value23;int value24;int value25;int value26;int value27;int value28;int value29;int value30;int value31;int value32;int value33;int value34;int value35;int value36;int value37;int value38;int value39;int value40;int value41;int value42;int value43;int value44;int value45;int value46;int value47;int value48;int value49;int value50;int value51;int value52;int value53;int value54;int value55;int value56;int value57;int value58;int value59;int value60;int value61;int value62;int value63;int value64;int value65;int value66;int value67;int value68;int value69;int value70;int value71;int value72;int value73;int value74;int value75;int value76;int value77;int value78;int value79;int value80;int value81;int value82;int value83;int value84;int value85;int value86;int value87;int value88;int value89;int value90;int value91;int value92;int value93;int value94;int value95;int value96;int value97;int value98;int value99;int value100;int value101;int value102;int value103;int value104;int value105;int value106;int value107;int value108;int value109;int value110;int value111;int value112;int value113;int value114;int value115;int value116;int value117;int value118;int value119;int value120;int value121;int value122;int value123;int value124;int value125;int value126;int value127;};
++template<class Value>struct CaptureEnvelope {Value value;};
++template<class Value>void capture_storage_unknown(Value &);
++static inline void capture_reference_ordinary(){
++ const char *slot="static";auto work=[&slot](){slot="other";};auto copy=work;const auto &alias=copy;alias();
++ const char *value=slot;(void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++}
++static inline void capture_record_ordinary(){
++ CaptureScalarRecord record={"static",42};auto work=[record](){global_projection_pointer=record.pointer;global_projection_number=record.number;};
++ auto copy=work;copy();const char *value=global_projection_pointer;int number=global_projection_number;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++ (void)binding_detached(binding_make_scalar(number));
++}
++static inline void capture_reference_copy_ordinary(){
++ const char *slot="static";auto work=[&slot](){slot="other";};CaptureEnvelope<decltype(work)> box{work};auto copied=box;
++ (void)copied;work();const char *value=slot;(void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
 +}
 +#endif
 +#endif

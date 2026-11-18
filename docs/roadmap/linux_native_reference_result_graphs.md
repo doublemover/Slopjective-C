@@ -31,5 +31,5 @@ publication owner covers imported reference bodies, ARC/MRC, detached captures
 and awaited executor crossings. Matching SDK and native ARM acceptance remain
 pending. All 72 new source/PCH commands and six expanded source-free
 configurations pass. The preceding compiler misses twelve new transfer/escape
-diagnostics and rejects an ordinary returned-reference use. Adjacent regression
-and tooling results are retained separately until their runs finish.
+diagnostics and rejects an ordinary returned-reference use. All 360 selected adjacent source/PCH commands and 100 focused tooling checks
+also pass.
