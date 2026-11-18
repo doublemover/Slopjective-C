@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 215,
+        "minor": 216,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed native C++ field accessors, nested field/getter graphs and qualified/final targets preserve receiver cleanup/resource provenance through scalar copies and reference views; direct field and projected reference writes update bounded aggregate cell sets, with ordinary getters and boolean/status observations retained; matching SDK acceptance pending",
         "Closed member-helper graphs, qualified/final virtual targets and selected pending concrete method-template bodies retain caller scalar/reference/Block/factory origins under shared receiver work/depth/cycle and bounded targeted-instantiation checks; open dispatch, field state, opaque/cyclic bodies and escaping this remain unproved; matching SDK acceptance pending",
         "Canonical macro entrypoint markers bind function-template and C++ record member identities, including static/instance methods, member templates, nested records and class-template members; source-free C++20/23 consumers retain marker availability, and marker relocation or forged owner kinds cannot erase the contract; matching SDK acceptance pending",
         "Closed direct nonvirtual C++ instance helpers which never inspect or capture this preserve actual caller scalar/reference/Block sources and constructed work environments; bounded receiver/definition checks reject field state, mutation, nested this captures, effectful receivers and virtual/operator/member-pointer targets; matching SDK acceptance pending",
@@ -378,12 +379,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 141,
+        "minor": 142,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Closed native C++ field accessors, nested field/getter graphs and qualified/final targets preserve receiver cleanup/resource provenance through scalar copies and reference views; direct field and projected reference writes update bounded aggregate cell sets, with ordinary getters and boolean/status observations retained; matching SDK acceptance pending",
         "Closed member-helper graphs, qualified/final virtual targets and selected pending concrete method-template bodies retain caller scalar/reference/Block/factory origins under shared receiver work/depth/cycle and bounded targeted-instantiation checks; open dispatch, field state, opaque/cyclic bodies and escaping this remain unproved; matching SDK acceptance pending",
         "Canonical macro entrypoint markers bind function-template and C++ record member identities, including static/instance methods, member templates, nested records and class-template members; source-free C++20/23 consumers retain marker availability, and marker relocation or forged owner kinds cannot erase the contract; matching SDK acceptance pending",
         "Closed direct nonvirtual C++ instance helpers which never inspect or capture this preserve actual caller scalar/reference/Block sources and constructed work environments; bounded receiver/definition checks reject field state, mutation, nested this captures, effectful receivers and virtual/operator/member-pointer targets; matching SDK acceptance pending",

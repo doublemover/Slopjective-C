@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.216 / System 2.142 field-projection span](linux_native_field_projections.md)
+preserves cleanup/resource provenance through closed field accessors and nested
+getter graphs, and tracks writes through native field/reference cells.
+
 The [Source 2.215 / System 2.141 member-graph span](linux_native_member_projection_graphs.md)
 composes closed receiver helpers, qualified/final virtual targets and selected
 concrete method-template bodies while retaining original caller contracts.

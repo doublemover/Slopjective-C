@@ -890,6 +890,12 @@ void CheckManagedBoundaryValues(bool Cxx,bool Arc,const std::string &Standard) {
   Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_packet("+(Cxx?std::string("BoundaryPacket{h}"):std::string("(struct BoundaryPacket){h}"))+ ");}"),"cleanup-managed concurrent value");
   Reject(Make("void rejected(void){"+Open+"boundary_spawn("+(Cxx?std::string("^void() __objc3_async {}"):std::string("boundary_work"))+",h);}"),"cleanup-managed concurrent value");
   if(Cxx) {
+    const std::string FieldPreamble="struct BoundaryField {int value;int get()const{return value;}int forwarded()const{return get();}int &reference()&{return value;}bool valid()const{return value!=0;}};void boundary_field_cleanup(BoundaryField *) noexcept;";
+    Reject(Make(FieldPreamble+"int rejected(void) __objc3_async_frame {BoundaryField source __attribute__((cleanup(boundary_field_cleanup)))={42};return __objc3_await boundary_scalar(source.forwarded());}"),"cleanup-managed concurrent value");
+    Reject(Make(FieldPreamble+"int rejected(void) __objc3_async_frame {"+Open+"BoundaryField source={h};return __objc3_await boundary_scalar(source.get());}"),"cleanup-managed concurrent value");
+    Reject(Make(FieldPreamble+"int rejected(void) __objc3_async_frame {"+Open+"BoundaryField source={42};source.reference()=h;return __objc3_await boundary_scalar(source.get());}"),"cleanup-managed concurrent value");
+    Success(Compile(Make(FieldPreamble+"int ordinary(void) __objc3_async_frame {BoundaryField source={41};source.reference()=42;return __objc3_await boundary_scalar(source.forwarded());}")));
+    Success(Compile(Make(FieldPreamble+"int observation(void) __objc3_async_frame {BoundaryField source __attribute__((cleanup(boundary_field_cleanup)))={42};return __objc3_await boundary_scalar(source.valid());}")));
     Reject(Make("void rejected(void){"+Open+"const int alias=h;boundary_spawn(^void() __objc3_async {(void)alias;},0);}"),"cleanup-managed capture");
     Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"const int &alias=h;return __objc3_await boundary_scalar(alias);}"),"cleanup-managed concurrent value");
     Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_scalar(std::move(h));}"),"cleanup-managed concurrent value");

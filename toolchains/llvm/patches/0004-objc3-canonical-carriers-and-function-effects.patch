@@ -53700,7 +53700,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3213 @@
+@@ -0,0 +1,3294 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54052,6 +54052,74 @@ new file mode 100644
 +  unsigned Work=1024;llvm::SmallPtrSet<const FunctionDecl *,16> Active;
 +  return closedProjectionReceiverImpl(Call,Context,Work,0,Active);
 +}
++// A closed accessor exposes exactly one native field, rather than attesting
++// an arbitrary method result. Keep its receiver storage contract when the
++// field's scalar type has erased a local cleanup attribute.
++struct FieldProjection {
++  const Expr *Receiver;
++  bool Managed;
++  bool Arrow;
++};
++std::optional<FieldProjection> fieldProjectionImpl(const CallExpr *Call,ASTContext &Context,
++    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active) {
++  if(!Work || Depth>16)return std::nullopt;--Work;
++  const auto *Method=Call?dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee()):nullptr;
++  const auto *Member=Call?dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts()):nullptr;
++  if(!Method || !Member || Method->isStatic() || Method->isOverloadedOperator() ||
++      Method->isExplicitObjectMemberFunction() || Call->getNumArgs() ||
++      Method->getNumParams() || Member->getBase()->HasSideEffects(Context) ||
++      (Method->isVirtual() && !Member->hasQualifier() &&
++       !Method->hasAttr<FinalAttr>() && !Method->getParent()->hasAttr<FinalAttr>()))return std::nullopt;
++  const auto *Definition=Method->getDefinition();
++  if(!Definition || !Definition->getBody() || Definition->isVariadic() ||
++      Definition->isMultiVersion() || Definition->isNoReturn() ||
++      getObjC3Executor(Definition) || isObjC3ActorIsolated(Definition) ||
++      (Definition->isExternallyVisible() && !Definition->isInlined()) ||
++      Definition->hasAttr<WeakAttr>() || Definition->hasAttr<WeakRefAttr>() ||
++      Definition->hasAttr<WeakImportAttr>() || Definition->hasAttr<AliasAttr>() ||
++      Definition->hasAttr<IFuncAttr>() || Definition->hasAttr<ReturnsTwiceAttr>())return std::nullopt;
++  if(const auto *Type=getObjC3CallableFunctionType(Definition);
++      !Type || Type->getObjC3FunctionEffects().Async ||
++      Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None)return std::nullopt;
++  if(!Active.insert(Definition->getCanonicalDecl()).second)return std::nullopt;
++  auto Leave=llvm::scope_exit([&]{Active.erase(Definition->getCanonicalDecl());});
++  const auto *Body=dyn_cast<CompoundStmt>(Definition->getBody());
++  if(!Body || Body->size()!=1)return std::nullopt;
++  const auto *Return=dyn_cast<ReturnStmt>(*Body->body_begin());
++  const auto *Value=Return?Return->getRetValue():nullptr;
++  // Boolean predicates are observations, not copies of resource identity.
++  while(const auto *Cast=dyn_cast_or_null<ImplicitCastExpr>(Value)) {
++    if(Cast->getCastKind()!=CK_LValueToRValue && Cast->getCastKind()!=CK_NoOp)
++      return std::nullopt;
++    Value=Cast->getSubExpr();
++  }
++  Value=Value?Value->IgnoreParens():nullptr;
++  bool Managed=false,HasField=false;
++  if(const auto *Nested=dyn_cast_or_null<CallExpr>(Value)) {
++    auto Projection=fieldProjectionImpl(Nested,Context,Work,Depth+1,Active);
++    if(!Projection)return std::nullopt;
++    Managed=Projection->Managed;HasField=true;Value=Projection->Receiver->IgnoreParenImpCasts();
++    // A nested pointer receiver would expose a separate pointee lifetime.
++    if(Projection->Arrow && !isa<CXXThisExpr>(Value))return std::nullopt;
++  }
++  while(const auto *Field=dyn_cast_or_null<MemberExpr>(Value)) {
++    if(!Work)return std::nullopt;--Work;
++    const auto *Declaration=dyn_cast<FieldDecl>(Field->getMemberDecl());
++    if(!Declaration || Declaration->getType().isVolatileQualified() ||
++        Declaration->getType()->isAtomicType())return std::nullopt;
++    Managed|=managedTransferStorage(Declaration) ||
++        getObjC3ResourceTypeContract(Context,Declaration->getType()).Cleanup;
++    HasField=true;Value=Field->getBase()->IgnoreParenImpCasts();
++    if(Field->isArrow() && !isa<CXXThisExpr>(Value))return std::nullopt;
++  }
++  if(!HasField || !isa_and_nonnull<CXXThisExpr>(Value))return std::nullopt;
++  return FieldProjection{Member->getBase(),Managed,Member->isArrow()};
++}
++std::optional<FieldProjection> fieldProjection(const CallExpr *Call,ASTContext &Context) {
++  unsigned Work=256;llvm::SmallPtrSet<const FunctionDecl *,16> Active;
++  return fieldProjectionImpl(Call,Context,Work,0,Active);
++}
++
 +struct ArgumentProjection {
 +  uint32_t Arguments;
 +  bool Aliases;
@@ -54316,7 +54384,12 @@ new file mode 100644
 +          return Self(Self,Conditional->getTrueExpr(),Depth+1) &&
 +              Self(Self,Conditional->getFalseExpr(),Depth+1);
 +        }
++        if(const auto *Member=dyn_cast<MemberExpr>(E);Member && !Member->isArrow() &&
++            isa<FieldDecl>(Member->getMemberDecl()))
++          return Self(Self,Member->getBase(),Depth+1);
 +        if(const auto *Call=dyn_cast<CallExpr>(E)) {
++          if(Call->isGLValue())if(auto Field=fieldProjection(Call,Context);Field && !Field->Arrow)
++            return Self(Self,Field->Receiver,Depth+1);
 +          auto Projection=argumentProjection(Call,Context);
 +          if(!Projection || !Projection->Aliases)return false;
 +          for(unsigned I=0;I!=Call->getNumArgs();++I)
@@ -54412,6 +54485,10 @@ new file mode 100644
 +      if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(Node)){Add(Opaque->getSourceExpr(),Use);continue;}
 +      if(const auto *Default=dyn_cast<CXXDefaultArgExpr>(Node)){Add(Default->getExpr());continue;}
 +      if(const auto *Default=dyn_cast<CXXDefaultInitExpr>(Node)){Add(Default->getExpr());continue;}
++      if(const auto *Call=dyn_cast<CallExpr>(Node))
++        if(auto Field=fieldProjection(Call,Context)) {
++          Add(Field->Receiver,Call->isGLValue()?Use:Read);continue;
++        }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node))
 +        if(auto Projection=argumentProjection(Call,Context)) {
 +          for(unsigned I=0;I!=Call->getNumArgs();++I)
@@ -54565,6 +54642,10 @@ new file mode 100644
 +      for(const auto *Value:List->getInitExprs())if(Value && Recurse(Recurse,Value,Depth+1))return true;
 +      return false;
 +    }
++    if(const auto *Call=dyn_cast<CallExpr>(E))
++      if(auto Field=fieldProjection(Call,Context))
++        return Field->Managed ||
++            (!Field->Arrow && Recurse(Recurse,Field->Receiver,Depth+1));
 +    if(const auto *Call=dyn_cast<CallExpr>(E))
 +      if(auto Projection=argumentProjection(Call,Context)) {
 +        for(unsigned I=0;I!=Call->getNumArgs();++I)
@@ -79861,5 +79942,120 @@ new file mode 100644
 + BindingWork literal(int value)const override{return BindingVirtualGraphs::literal(value);}
 +};
 +static inline void binding_member_graphs_ordinary(void){BindingMemberGraphs source;int scalar=42;source.reference(scalar)=41;const BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(source.work(work));(void)binding_detached(source.literal(42));(void)binding_detached(source.template_factory(42));(void)binding_detached(binding_make_scalar(source.scalar(scalar)));(void)binding_detached(binding_make_scalar(source.scalar_template(scalar)));BindingVirtualGraphs base;(void)binding_detached(base.BindingVirtualGraphs::work(work));(void)binding_detached(base.BindingVirtualGraphs::literal(42));BindingFinalMethodGraphs final_method;(void)binding_detached(final_method.work(work));BindingFinalGraphs final_class;(void)binding_detached(final_class.work(work));(void)binding_detached(final_class.literal(42));}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-field-projections.m b/clang/test/ObjC3/Sema/native-field-projections.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-field-projections.m
+@@ -0,0 +1,61 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-field-projections.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-field-projections.h"
++#ifndef __cplusplus
++// expected-no-diagnostics
++#else
++void field_close(int);int field_open(void);
++void binding_cleaned_field(void) {
++ BindingField source __attribute__((cleanup(binding_field_cleanup)))={42};
++ int value=source.get();(void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++ int forwarded=source.forwarded();(void)binding_detached(binding_make_scalar(forwarded)); // expected-error {{cleanup-managed capture}}
++ int &alias=source.reference();(void)binding_detached(binding_make_scalar(alias)); // expected-error {{cleanup-managed capture}}
++}
++void binding_nested_fields(void) {
++ BindingNestedField source __attribute__((cleanup(binding_nested_field_cleanup)))={{42}};
++ int value=source.get();(void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++ int forwarded=source.forwarded();(void)binding_detached(binding_make_scalar(forwarded)); // expected-error {{cleanup-managed capture}}
++}
++void binding_nested_writes(void) {
++ int descriptor __attribute__((objc_resource(close=field_close,invalid=-1)))=field_open();
++ BindingNestedField source={{42}};source.reference()=descriptor;
++ int value=source.forwarded();(void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void binding_initialized_field(void) {
++ int descriptor __attribute__((objc_resource(close=field_close,invalid=-1)))=field_open();
++ BindingField source={descriptor};int value=source.get();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void binding_written_field(void) {
++ int descriptor __attribute__((objc_resource(close=field_close,invalid=-1)))=field_open();
++ BindingField source={42};source.value=descriptor;int value=source.get();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void binding_written_reference(void) {
++ int descriptor __attribute__((objc_resource(close=field_close,invalid=-1)))=field_open();
++ BindingField source={42};source.reference()=descriptor;int value=source.get();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void binding_written_alias(int choose) {
++ int descriptor __attribute__((objc_resource(close=field_close,invalid=-1)))=field_open();
++ BindingField left={41},right={42};int &alias=choose?left.reference():right.reference();alias=descriptor;
++ int first=left.get();(void)binding_detached(binding_make_scalar(first)); // expected-error {{cleanup-managed capture}}
++ int second=right.get();(void)binding_detached(binding_make_scalar(second)); // expected-error {{cleanup-managed capture}}
++}
++void binding_final_field(void) {
++ int descriptor __attribute__((objc_resource(close=field_close,invalid=-1)))=field_open();
++ BindingFinalField source;source.value=descriptor;int value=source.get();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void binding_qualified_field(void) {
++ int descriptor __attribute__((objc_resource(close=field_close,invalid=-1)))=field_open();
++ BindingVirtualField source;source.value=descriptor;int value=source.BindingVirtualField::get();
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-field-projections.h b/clang/test/ObjC3/Sema/Inputs/native-field-projections.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-field-projections.h
+@@ -0,0 +1,42 @@
++#ifndef OBJC3_FIELD_PROJECTIONS_H
++#define OBJC3_FIELD_PROJECTIONS_H
++#include "native-instance-argument-projections.h"
++#ifdef __cplusplus
++struct BindingField {
++ int value;
++ int get()const{return value;}
++ int forwarded()const{return get();}
++ int &reference()&{return value;}
++ bool valid()const{return value!=0;}
++ bool boolean()const{return value;}
++ int status()const{return value+1;}
++};
++void binding_field_cleanup(BindingField *);
++struct BindingNestedField {
++ BindingField inner;
++ int get()const{return inner.value;}
++ int forwarded()const{return inner.forwarded();}
++ int &reference()&{return inner.reference();}
++};
++void binding_nested_field_cleanup(BindingNestedField *);
++struct BindingVirtualField {
++ int value;
++ virtual int get()const{return value;}
++};
++struct BindingFinalField final:BindingVirtualField {
++ int get()const override{return value;}
++};
++static inline void binding_field_ordinary(void) {
++ BindingField source={42};source.value=41;source.reference()=42;
++ int value=source.get();(void)binding_detached(binding_make_scalar(value));
++ (void)binding_detached(binding_make_scalar(source.forwarded()));
++ BindingNestedField nested={{42}};nested.reference()=41;(void)binding_detached(binding_make_scalar(nested.forwarded()));
++ const BindingField immutable={42};(void)binding_detached(binding_make_scalar(immutable.get()));
++ BindingField cleaned __attribute__((cleanup(binding_field_cleanup)))={42};
++ bool valid=cleaned.valid(),boolean=cleaned.boolean();int status=cleaned.status();
++ (void)binding_detached(binding_make_scalar(valid));
++ (void)binding_detached(binding_make_scalar(boolean));
++ (void)binding_detached(binding_make_scalar(status));
++}
 +#endif
 +#endif
