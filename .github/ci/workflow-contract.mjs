@@ -511,20 +511,37 @@ export function validateImplementationGate(text, releaseText) {
     throw new Error("Extended analysis must remain manual/periodic with exact release sources");
   }
   const gate = workflow.jobs?.gate;
+  const verify = (gate?.steps ?? []).find((step) =>
+    step.run?.includes("scripts.objc3c_implementation_assurance verify"),
+  );
   if (
     gate?.name !== "Extended Linux implementation analysis gate" ||
     gate.if !== "always()" ||
-    JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["analysis", "plan"]) ||
+    JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["analysis", "foundation", "plan"]) ||
     gate["continue-on-error"] ||
-    !(gate.steps ?? []).some(
-      (step) =>
-        step.run?.includes("scripts.objc3c_implementation_assurance verify") &&
-        step.if === "always()",
-    )
+    verify?.if !== "always()" ||
+    !verify.env?.ASSURANCE_OUTCOMES?.includes('"foundation":"${{ needs.foundation.result }}"') ||
+    !verify.env.ASSURANCE_OUTCOMES.includes('"foundation_archive":"${{ needs.foundation.outputs.archive_sha256 }}"')
   ) {
     throw new Error(
-      "Implementation aggregate must always verify both exact-revision prerequisites",
+      "Implementation aggregate must always verify the revision, producer hash and partition results",
     );
+  }
+  const foundation = workflow.jobs?.foundation;
+  const foundationStep = (foundation?.steps ?? []).find((step) => step.id === "foundation-run");
+  const foundationUpload = (foundation?.steps ?? []).find((step) =>
+    step.name === "Preserve the matching compiler and compilation graph",
+  );
+  if (
+    foundation?.needs !== "plan" ||
+    foundation.if !== "needs.plan.outputs.analysis == 'true'" ||
+    foundation.outputs?.archive_sha256 !== "${{ steps.foundation-run.outputs.archive_sha256 }}" ||
+    !foundationStep?.run?.includes("scripts.objc3c_implementation_assurance foundation") ||
+    !foundationUpload?.uses?.startsWith("actions/upload-artifact@") ||
+    !foundationUpload.with?.name?.includes("-${{ github.run_id }}-${{ github.run_attempt }}") ||
+    foundationUpload.with?.["retention-days"] !== 1 || foundationUpload.if
+  ) {
+    throw new Error("Implementation analysis must publish one exact same-attempt compiler foundation");
   }
   const analysis = workflow.jobs?.analysis;
   const execute = (analysis?.steps ?? []).find((step) =>
@@ -533,18 +550,26 @@ export function validateImplementationGate(text, releaseText) {
   const evidence = (analysis?.steps ?? []).find(
     (step) => step.name === "Preserve analysis evidence",
   );
+  const foundationDownload = (analysis?.steps ?? []).find((step) =>
+    step.uses?.startsWith("actions/download-artifact@") &&
+    step.with?.path === "out/implementation-assurance/foundation-input",
+  );
   if (
-    analysis?.if !== "needs.plan.outputs.analysis == 'true'" ||
+    JSON.stringify(analysis?.needs?.toSorted()) !== JSON.stringify(["foundation", "plan"]) ||
+    analysis.if !== "needs.plan.outputs.analysis == 'true' && needs.foundation.result == 'success'" ||
+    analysis.strategy?.matrix?.partition !== "${{ fromJSON(needs.plan.outputs.partitions) }}" ||
     analysis?.["continue-on-error"] ||
     execute?.id !== "analysis-run" ||
     !execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"') ||
+    !execute?.run.includes("--foundation-bundle out/implementation-assurance/foundation-input") ||
+    foundationDownload?.with?.name !== foundationUpload.with.name ||
     evidence?.if !== "always() && steps.analysis-run.outcome != 'skipped'"
   ) {
     throw new Error(
       "Implementation analysis must execute the selected trusted checkout without normalizing failure",
     );
   }
-  for (const id of ["plan", "analysis", "gate"]) {
+  for (const id of ["plan", "foundation", "analysis", "gate"]) {
     const job = workflow.jobs?.[id];
     if (!job || job["continue-on-error"])
       throw new Error(`Missing or failure-normalizing implementation job ${id}`);
@@ -553,9 +578,12 @@ export function validateImplementationGate(text, releaseText) {
         throw new Error("Implementation analysis failures must remain failures");
       if (step.uses && !pinnedAction(step.uses))
         throw new Error("Implementation analysis actions must be SHA-pinned");
+      const failureDiagnostics = id === "foundation" &&
+        step.name === "Preserve compiler producer diagnostics" && step.if === "failure()";
       if (
         step.uses?.startsWith("actions/upload-artifact@") &&
-        (step.with?.["if-no-files-found"] !== "error" || !(step.with?.["retention-days"] <= 7))
+        ((!failureDiagnostics && step.with?.["if-no-files-found"] !== "error") ||
+          !(step.with?.["retention-days"] > 0 && step.with?.["retention-days"] <= 7))
       ) {
         throw new Error("Implementation evidence must fail closed with bounded retention");
       }

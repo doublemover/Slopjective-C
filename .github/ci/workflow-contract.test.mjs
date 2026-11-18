@@ -344,6 +344,26 @@ test("extended implementation analysis retains exact periodic and release gates"
   validateImplementationGate(implementation, release);
 });
 
+for (const [fault, alter] of [
+  ["no producer prerequisite", (jobs) => { jobs.gate.needs = ["plan", "analysis"]; }],
+  ["unbound producer digest", (jobs) => { delete jobs.foundation.outputs.archive_sha256; }],
+  ["consumer starts before shared compilation", (jobs) => { jobs.analysis.needs = ["plan"]; }],
+  ["unmatched compiler download", (jobs) => {
+    jobs.analysis.steps.find((step) => step.with?.path?.endsWith("/foundation-input"))
+      .with.name = "some-other-compiler";
+  }],
+  ["missing terminal digest", (jobs) => {
+    const verify = jobs.gate.steps.find((step) => step.env?.ASSURANCE_OUTCOMES);
+    verify.env.ASSURANCE_OUTCOMES = verify.env.ASSURANCE_OUTCOMES.replace("foundation_archive", "unrelated");
+  }],
+]) {
+  test(`shared implementation foundation rejects ${fault}`, () => {
+    const workflow = yaml.load(implementation);
+    alter(workflow.jobs);
+    assert.throws(() => validateImplementationGate(yaml.dump(workflow), release));
+  });
+}
+
 for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of [
   ["cancelled cold build", "  cancel-in-progress: false", "  cancel-in-progress: true"],
   ["missing aggregate", "  gate:", "  renamed:"],
