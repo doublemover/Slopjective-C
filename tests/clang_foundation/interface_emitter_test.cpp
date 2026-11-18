@@ -3384,6 +3384,46 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestNativeAliasingTypeReplay() {
+  for (const auto &[language, standard] : {
+      std::pair{"-xc", "-std=c17"}, std::pair{"-xc", "-std=c23"},
+      std::pair{"-xc++", "-std=c++20"}, std::pair{"-xc++", "-std=c++23"}}) {
+    auto emit = [&](const std::string &source, const char *file) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {language, standard, "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET}, file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.aliasing", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.aliasing", "test");
+    };
+    const std::string source =
+        "typedef int NativeAliasInt __attribute__((may_alias));"
+        "struct __attribute__((may_alias)) NativeAliasRecord;struct NativeAliasRecord {int value;};"
+        "inline float alias_update(float *value){*value=1.0f;*(NativeAliasInt *)value=0;return *value;}"
+        "inline float alias_local(float *value,int *alias){typedef int LocalAlias __attribute__((may_alias));"
+        "*value=1.0f;*(LocalAlias *)alias=0;return *value;}";
+    auto first = emit(source, "aliasing-provider.c");
+    for (const auto &diagnostic : first.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
+    assert(first.success);
+    assert(first.source_bytes.find("may_alias") != std::string::npos);
+    auto replayed = emit(first.source_bytes, "aliasing-replay.c");
+    auto relocated = emit("\n\n" + source, "relocated-aliasing.c");
+    assert(replayed.success && relocated.success);
+    assert(first.source_bytes == replayed.source_bytes && first.source_bytes == relocated.source_bytes);
+    assert(first.identity.semantic_fingerprint == replayed.identity.semantic_fingerprint);
+    assert(first.identity.semantic_fingerprint == relocated.identity.semantic_fingerprint);
+    for (const bool record : {false, true}) {
+      auto changed = source;
+      const auto position = record ? changed.find("__attribute__((may_alias))", changed.find("struct"))
+                                   : changed.find("__attribute__((may_alias))");
+      changed.erase(position, std::string("__attribute__((may_alias))").size());
+      auto erased = emit(changed, "aliasing-erased.c");
+      assert(erased.success && erased.identity.semantic_fingerprint != first.identity.semantic_fingerprint);
+    }
+  }
+}
+
 void TestNativeDecompositionReplay() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source, const char *file) {
@@ -12539,6 +12579,7 @@ int main(int argc,char **argv) {
   cases.Run("TestNativeCControlFlow", TestNativeCControlFlow);
   cases.Run("TestCxxFriends", TestCxxFriends);
   cases.Run("TestNativeExportRoots", TestNativeExportRoots);
+  cases.Run("TestNativeAliasingTypeReplay", TestNativeAliasingTypeReplay);
   cases.Run("TestNativeDecompositionReplay", TestNativeDecompositionReplay);
   cases.Run("TestCxxLocalExpressions", TestCxxLocalExpressions);
   cases.Run("TestCxxLocalTypes", TestCxxLocalTypes);

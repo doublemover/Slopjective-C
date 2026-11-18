@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.234 / System 2.160 native-aliasing span](linux_native_aliasing_policies.md)
+retains GNU may-alias policies in typedefs, records and public local aliases,
+with inherited printing and optimized source-free execution controls.
+
 The [Source 2.233 / System 2.159 captured-callable span](linux_native_captured_call_graphs.md)
 retains scalar capture/global/reference writes through bounded mutable callable
 graphs and repairs source-free structured binding and array-copy publication.
@@ -281,7 +285,7 @@ matching SDK consolidation follows the implementation batch.
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
 campaign as historical evidence. Its terminal upstream receipt-state bug is
 fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
-Source 2.233 / System 2.159 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+Source 2.234 / System 2.160 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2144,7 +2148,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.233 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.234 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 
