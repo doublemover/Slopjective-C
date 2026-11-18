@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.209 / System 2.135 local Block-value span](linux_native_block_factory_local_values.md)
+resolves returned literal environments through immutable local bindings and
+aliases while keeping unused local captures outside the transported work.
+
 The [Source 2.208 / System 2.134 factory-chain span](linux_native_block_factory_chains.md)
 composes closed native factory return graphs while mapping inner captures to
 actual outer caller contracts under shared work, depth and cycle limits.

@@ -28,5 +28,8 @@ native witness adds independent nested-factory and callback-chain tasks to the
 existing 24 shapes. Two direct and two source-directed consumers retain provider
 removal, exact retirement/work/defer checks and pre-entry cancellation.
 
-Focused verification and matching SDK delivery remain separate; no full-profile
-or replacement-archive acceptance is claimed here.
+The new matrix and six adjacent suites pass 504 source/PCH commands across
+C17/C++20/C++23, ARC/MRC and all four profiles. Four optimized native
+configurations pass 1,664 task scenarios. Full isolation, production codec,
+122 AST controls, fresh maintained patch application and 16 tooling checks
+pass. Matching SDK/archive and full-profile acceptance remain separate.

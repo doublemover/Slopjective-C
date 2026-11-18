@@ -53652,7 +53652,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,2999 @@
+@@ -0,0 +1,3031 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54548,6 +54548,7 @@ new file mode 100644
 +    const auto *Body=dyn_cast_or_null<CompoundStmt>(Definition->getBody());
 +    if(!Body)return false;
 +    llvm::DenseMap<const VarDecl *,uint32_t> Locals;
++    llvm::DenseMap<const VarDecl *,const Expr *> LocalBlocks;
 +    SmallVector<std::pair<const VarDecl *,uint32_t>,8> Bindings;
 +    auto Origin=[&](auto &&Self,const Expr *E,unsigned Level)->std::optional<uint32_t> {
 +      if(!E || !Budget || Level>64)return std::nullopt;
@@ -54615,6 +54616,31 @@ new file mode 100644
 +      return Prototype && Prototype->getCallConv()==CC_C && !Prototype->getObjC3FunctionEffects().Async &&
 +          Prototype->getObjC3FunctionEffects().Throws==ObjC3ThrowsKind::None;
 +    };
++    // Local literal environments are resolved only if returned. Validating
++    // their closed construction here must not transport unused captures.
++    auto LiteralInitializer=[&](auto &&Self,const Expr *E,unsigned Level)->bool {
++      if(!E || !Budget || Level>64)return false;--Budget;E=E->IgnoreParens();
++      if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(E))return Self(Self,Cleanup->getSubExpr(),Level+1);
++      if(!E->HasSideEffects(Context) && E->IgnoreParenCasts()->isNullPointerConstant(Context,Expr::NPC_ValueDependentIsNotNull))return true;
++      if(const auto *Cast=dyn_cast<CastExpr>(E)) {
++        const auto Allowed=[](QualType T){return T->isBlockPointerType() || T->isVoidPointerType();};
++        return Allowed(Cast->getType()) && Allowed(Cast->getSubExpr()->getType()) && Self(Self,Cast->getSubExpr(),Level+1);
++      }
++      if(const auto *Block=dyn_cast<BlockExpr>(E)) {
++        for(const auto &Capture:Block->getBlockDecl()->captures())if(Capture.getObjC3InitExpr())return false;
++        return true;
++      }
++      if(E->isNullPointerConstant(Context,Expr::NPC_ValueDependentIsNotNull))return true;
++      if(const auto *Reference=dyn_cast<DeclRefExpr>(E))
++        if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl()))
++          if(auto Found=LocalBlocks.find(Variable);Found!=LocalBlocks.end())return Self(Self,Found->second,Level+1);
++      if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(E)) {
++        if(Choice->getCond()->isTypeDependent() || Choice->getCond()->HasSideEffects(Context))return false;
++        return Self(Self,Choice->getTrueExpr(),Level+1) && Self(Self,Choice->getFalseExpr(),Level+1);
++      }
++      if(const auto *Copy=dyn_cast<CallExpr>(E);Copy && RuntimeCopy(Copy))return Self(Self,Copy->getArg(0),Level+1);
++      return false;
++    };
 +    auto Resolve=[&](auto &&Self,const Expr *E,unsigned Level,bool Copied)->bool {
 +      if(!E || !Budget || Level>64)return false;
 +      --Budget;E=E->IgnoreParens();
@@ -54638,6 +54664,9 @@ new file mode 100644
 +        return Self(Self,Generic->getResultExpr(),Level+1,Copied);
 +      if(const auto *Copy=dyn_cast<CallExpr>(E);Copy && !Copied && RuntimeCopy(Copy))
 +        return Self(Self,Copy->getArg(0),Level+1,true);
++      if(const auto *Reference=dyn_cast<DeclRefExpr>(E))
++        if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl()))
++          if(auto Found=LocalBlocks.find(Variable);Found!=LocalBlocks.end())return Self(Self,Found->second,Level+1,Copied);
 +      if(const auto *Nested=dyn_cast<CallExpr>(E)) {
 +        if(!Context.hasSameUnqualifiedType(Nested->getType(),Function->getReturnType()))return false;
 +        // Construction arguments must themselves belong to this closed recipe,
@@ -54743,6 +54772,9 @@ new file mode 100644
 +              (!LocalType->isScalarType() && !(Pattern && LocalType->isDependentType())) ||
 +              LocalType->isReferenceType() || Lifetime==Qualifiers::OCL_Weak || Lifetime==Qualifiers::OCL_ExplicitNone ||
 +              getObjC3ResourceTypeContract(Context,LocalType).Cleanup)return std::nullopt;
++          if(LocalType->isBlockPointerType() && LiteralInitializer(LiteralInitializer,Variable->getInit(),Level+1)) {
++            LocalBlocks[Variable]=Variable->getInit();continue;
++          }
 +          auto Sources=Origin(Origin,Variable->getInit(),Level+1);
 +          if(!Sources)return std::nullopt;
 +          bool SameValueType=Context.hasSameUnqualifiedType(LocalType,Variable->getInit()->getType());
@@ -79076,3 +79108,63 @@ new file mode 100644
 +int binding_chain_state(void);
 +static inline BindingWork binding_chain_stateful(int value){return binding_make_unused(binding_chain_state());}
 +void binding_chain_stateful_reject(void){(void)binding_detached(binding_chain_stateful(42));} // expected-error {{cannot prove Sendable captures}}
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-block-factory-local-values.h b/clang/test/ObjC3/Sema/Inputs/native-block-factory-local-values.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-block-factory-local-values.h
+@@ -0,0 +1,16 @@
++#ifndef OBJC3_FACTORY_LOCAL_VALUES_H
++#define OBJC3_FACTORY_LOCAL_VALUES_H
++#include "native-block-factory-chains.h"
++static inline BindingWork binding_local_literal_factory(int value){const BindingWork work=^void(void) __objc3_async_frame {(void)value;};const BindingWork alias=work;return BINDING_FACTORY_RESULT(alias);}
++static inline BindingWork binding_local_owned_factory(SafeBlockObject *object){const BindingWork work=BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)object;});const BindingWork alias=work;return alias;}
++static inline BindingWork binding_local_choice_factory(int choose,int left,int right){const BindingWork work=choose?^void(void) __objc3_async_frame {(void)left;}:^void(void) __objc3_async_frame {(void)right;};return BINDING_FACTORY_RESULT(work);}
++static inline BindingWork binding_local_callback_factory(BindingWork callback){const BindingWork work=^void(void) __objc3_async_frame {__objc3_await callback();};return BINDING_FACTORY_RESULT(work);}
++static inline BindingWork binding_local_null_factory(void){const BindingWork work=(BindingWork)0;const BindingWork alias=work;return alias;}
++typedef void (^BindingPlainWork)(void);
++static inline BindingWork binding_unused_local_environment(SafeBlockObject *safe,UnsafeBlockObject *unused){const BindingPlainWork work=^{(void)unused;};return binding_make_object(safe);}
++static inline void binding_local_factories_ordinary(int choose,SafeBlockObject *safe,UnsafeBlockObject *unused){(void)binding_detached(binding_local_literal_factory(42));(void)binding_detached(binding_local_owned_factory(safe));(void)binding_detached(binding_local_choice_factory(choose,41,42));(void)binding_detached(binding_local_null_factory());(void)binding_detached(binding_unused_local_environment(safe,unused));const BindingWork callback=^void(void) __objc3_async_frame {};(void)binding_detached(binding_local_callback_factory(callback));}
++#ifdef __cplusplus
++template<class T>static inline BindingWork binding_template_local_factory(T value){const T snapshot=value;const BindingWork work=^void(void) __objc3_async_frame {(void)snapshot;};return BINDING_FACTORY_RESULT(work);}
++static inline void binding_template_local_ordinary(SafeBlockObject *safe){(void)binding_detached(binding_template_local_factory(42));(void)binding_detached(binding_template_local_factory(safe));}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-block-factory-local-values.m b/clang/test/ObjC3/Sema/native-block-factory-local-values.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-block-factory-local-values.m
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-block-factory-local-values.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-block-factory-local-values.h"
++void local_factory_close(int);int local_factory_open(void);
++void binding_local_resource(int choose){int descriptor __attribute__((objc_resource(close=local_factory_close,invalid=-1)))=local_factory_open();
++ (void)binding_detached(binding_local_literal_factory(descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_local_choice_factory(choose,descriptor,42)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_local_choice_factory(choose,41,descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_local_choice_factory(descriptor,41,42));
++#ifdef __cplusplus
++ (void)binding_detached(binding_template_local_factory(descriptor)); // expected-error {{cleanup-managed capture}}
++#endif
++}
++void binding_local_callback_unknown(BindingWork unknown){(void)binding_detached(binding_local_callback_factory(unknown));} // expected-error {{cannot prove Sendable captures}}
++BindingWork binding_local_opaque(int);
++static inline BindingWork binding_local_open_initializer(int value){const BindingWork work=binding_local_opaque(value);return binding_make_scalar(value);}
++void binding_local_open_reject(void){(void)binding_detached(binding_local_open_initializer(42));} // expected-error {{cannot prove Sendable captures}}
++static inline BindingWork binding_local_mutable_result(int value){BindingWork work=^void(void) __objc3_async_frame {(void)value;};return BINDING_FACTORY_RESULT(work);}
++void binding_local_mutable_reject(void){(void)binding_detached(binding_local_mutable_result(42));} // expected-error {{cannot prove Sendable captures}}
++static inline BindingWork binding_local_uncopied_result(int value){const BindingWork work=^void(void) __objc3_async_frame {(void)value;};return work;}
++void binding_local_uncopied_boundary(void){(void)binding_detached(binding_local_uncopied_result(42));
++#if !__has_feature(objc_arc)
++ // expected-error@-2 {{cannot prove Sendable captures}}
++ // expected-error@-4 {{returning block that lives on the local stack}}
++#endif
++}
