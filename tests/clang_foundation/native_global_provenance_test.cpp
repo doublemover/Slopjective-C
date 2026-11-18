@@ -92,7 +92,12 @@ void Check(bool arc, const std::string &standard) {
         "inline void published_record_capture(const char *value){PublishedSlots record={value,42};auto work=[record](){published_pointer=record.pointer;};work();}"
         "inline void published_record_mutation(const char *value){PublishedSlots record={value,42};auto work=[record]()mutable{const char *old=record.pointer;record.pointer=\"static\";published_pointer=old;};work();}"
         "inline void published_record_number(int value){PublishedSlots record={nullptr,value};auto work=[record](){published_number=record.number;};work();}"
-        "inline void published_array_capture(const char *value){const char *array[2]={\"static\",value};auto work=[array](){published_pointer=array[1];};work();}";
+        "inline void published_array_capture(const char *value){const char *array[2]={\"static\",value};auto work=[array](){published_pointer=array[1];};work();}"
+        "template<class Work>struct PublishedWorkStorage {int prefix;Work value;};"
+        "inline void published_stored_capture(const char *value){auto work=[value](){published_pointer=value;};PublishedWorkStorage<decltype(work)> box{42,work};auto copy=box;const auto &alias=copy;alias.value();}"
+        "inline void published_stored_reference(const char *&slot,const char *value){auto work=[&slot,&value](){slot=value;};PublishedWorkStorage<decltype(work)> box{42,work};box.value();}"
+        "inline void published_stored_array(const char *value,unsigned index){auto work=[value](){published_pointer=value;};decltype(work) values[2]={work,work};values[index]();}"
+        "inline void published_stored_number(int value){auto work=[value](){published_number=value;};PublishedWorkStorage<decltype(work)> box{42,work};box.value();}";
     for (const char *name : {"published_reference_store", "published_reference_load", "published_reference_chain", "published_reference_number"})
       provider.interface_exports.push_back(name);
     provider.interface_exports.push_back("PublishedReferenceReceiver");
@@ -112,6 +117,9 @@ void Check(bool arc, const std::string &standard) {
       provider.interface_exports.push_back(name);
     for (const char *name : {"published_reference_capture", "published_record_capture", "published_record_mutation",
          "published_record_number", "published_array_capture"})
+      provider.interface_exports.push_back(name);
+    for (const char *name : {"PublishedWorkStorage", "published_stored_capture", "published_stored_reference",
+         "published_stored_array", "published_stored_number"})
       provider.interface_exports.push_back(name);
     if (standard == "c++23") {
       *provider.source_text += "inline void published_static_store(const char *value){auto work=[](const char *input) static {published_pointer=input;};work.operator()(value);work(value);}";
@@ -258,7 +266,7 @@ void Check(bool arc, const std::string &standard) {
           "published_result_written(first,loan);published_result_written(second,loan);const char *value=" + std::string(slot) +
           ";global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
     }
-    for (const char *name : {"published_record_capture", "published_record_mutation", "published_array_capture"}) {
+    for (const char *name : {"published_record_capture", "published_record_mutation", "published_array_capture", "published_stored_capture"}) {
       run("void rejected(borrowed const char *loan){" + std::string(name) + "(loan);const char *value=published_pointer;"
           "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
       run("void ordinary(void){" + std::string(name) + "(\"static\");const char *value=published_pointer;"
@@ -268,6 +276,19 @@ void Check(bool arc, const std::string &standard) {
         "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
     run("void ordinary(void){const char *slot=\"static\";published_reference_capture(slot,\"other\");"
         "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    run("void rejected(borrowed const char *loan){const char *slot=\"static\";published_stored_reference(slot,loan);"
+        "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void ordinary(void){const char *slot=\"static\";published_stored_reference(slot,\"other\");"
+        "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    run("void rejected(borrowed const char *loan,unsigned index){published_stored_array(loan,index);"
+        "const char *value=published_pointer;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+    run("void ordinary(unsigned index){published_stored_array(\"static\",index);"
+        "const char *value=published_pointer;global_detached(^void(void) __objc3_async_frame {(void)value;});}");
+    run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
+        "published_stored_number(descriptor);int value=published_number;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
+    run("void ordinary(void){published_stored_number(42);int value=published_number;"
+        "global_detached(^void(void) __objc3_async_frame {(void)value;});}");
     run("void rejected(void){int descriptor __attribute__((objc_resource(close=global_close,invalid=-1)))=3;"
         "published_record_number(descriptor);int value=published_number;"
         "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");

@@ -53752,7 +53752,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4208 @@
+@@ -0,0 +1,4266 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54889,31 +54889,89 @@ new file mode 100644
 +    else if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call))Receiver=Member->getImplicitObjectArgument();
 +    SmallVector<const VarDecl *,4> Bindings;
 +    llvm::SmallPtrSet<const VarDecl *,16> ActiveBindings;unsigned Work=64;
-+    auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth)->bool {
++    struct StorageComponent {const FieldDecl *Field=nullptr;uint64_t Index=0;};
++    using StoragePath=SmallVector<StorageComponent,4>;
++    auto Resolve=[&](auto &&Self,const Expr *E,unsigned Depth,StoragePath Path)->bool {
 +      if(!E)return false;
-+      if(!Work || Depth>32){CallGraphIncomplete=true;return false;}
++      if(!Work || Depth>32 || Path.size()>16){CallGraphIncomplete=true;return false;}
 +      --Work;E=E->IgnoreParenImpCasts();
++      if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(E))
++        return Self(Self,Opaque->getSourceExpr(),Depth+1,Path);
 +      if(E->getType()->isPointerType()) {
 +        auto Pointees=receiverPointees(Context,E);
 +        if(Pointees.Truncated)CallGraphIncomplete=true;
 +        if(!Pointees.Closed)return false;
-+        for(const auto *Target:Pointees.Targets)if(!Self(Self,Target,Depth+1))return false;
++        for(const auto *Target:Pointees.Targets)if(!Self(Self,Target,Depth+1,Path))return false;
 +        return true;
 +      }
-+      if(const auto *Deref=dyn_cast<UnaryOperator>(E);Deref && Deref->getOpcode()==UO_Deref)return Self(Self,Deref->getSubExpr(),Depth+1);
-+      if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(E))return Self(Self,Cleanup->getSubExpr(),Depth+1);
-+      if(const auto *Temporary=dyn_cast<MaterializeTemporaryExpr>(E))return Self(Self,Temporary->getSubExpr(),Depth+1);
-+      if(const auto *Temporary=dyn_cast<CXXBindTemporaryExpr>(E))return Self(Self,Temporary->getSubExpr(),Depth+1);
-+      if(const auto *Lambda=dyn_cast<LambdaExpr>(E))return Lambda->getLambdaClass()->getCanonicalDecl()==Closure->getCanonicalDecl();
++      if(const auto *Deref=dyn_cast<UnaryOperator>(E);Deref && Deref->getOpcode()==UO_Deref)
++        return Self(Self,Deref->getSubExpr(),Depth+1,Path);
++      if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(E))return Self(Self,Cleanup->getSubExpr(),Depth+1,Path);
++      if(const auto *Temporary=dyn_cast<MaterializeTemporaryExpr>(E))return Self(Self,Temporary->getSubExpr(),Depth+1,Path);
++      if(const auto *Temporary=dyn_cast<CXXBindTemporaryExpr>(E))return Self(Self,Temporary->getSubExpr(),Depth+1,Path);
++      if(const auto *Member=dyn_cast<MemberExpr>(E)) {
++        const auto *Field=dyn_cast<FieldDecl>(Member->getMemberDecl());
++        if(!Field || Field->getType()->isReferenceType())return false;
++        Path.insert(Path.begin(),StorageComponent{Field,0});
++        return Self(Self,Member->getBase(),Depth+1,Path);
++      }
++      if(const auto *Subscript=dyn_cast<ArraySubscriptExpr>(E)) {
++        const auto *Array=Context.getAsConstantArrayType(Subscript->getBase()->IgnoreParenImpCasts()->getType());
++        const auto Index=Subscript->getIdx()->getIntegerConstantExpr(Context);
++        if(!Array || Subscript->getIdx()->HasSideEffects(Context))return false;
++        if(Index) {
++          if(Index->isNegative() || Index->getActiveBits()>64 ||
++              Index->getZExtValue()>=Array->getSize().getLimitedValue())return false;
++          Path.insert(Path.begin(),StorageComponent{nullptr,Index->getZExtValue()});
++          return Self(Self,Subscript->getBase(),Depth+1,Path);
++        }
++        const uint64_t Size=Array->getSize().getLimitedValue();
++        if(!Size || Size>32){CallGraphIncomplete=true;return false;}
++        // Every in-bounds runtime selection has this exact closure class.
++        // Prove the full fixed array; no sample entry can stand for the rest.
++        for(uint64_t I=0;I!=Size;++I) {
++          auto ElementPath=Path;ElementPath.insert(ElementPath.begin(),StorageComponent{nullptr,I});
++          if(!Self(Self,Subscript->getBase(),Depth+1,ElementPath))return false;
++        }
++        return true;
++      }
++      if(const auto *Lambda=dyn_cast<LambdaExpr>(E))
++        return Path.empty() && Lambda->getLambdaClass()->getCanonicalDecl()==Closure->getCanonicalDecl();
 +      if(const auto *Copy=dyn_cast<CXXConstructExpr>(E))
 +        return Copy->getConstructor()->isCopyOrMoveConstructor() && !Copy->getConstructor()->isUserProvided() &&
-+            Copy->getNumArgs()==1 && Self(Self,Copy->getArg(0),Depth+1);
-+      if(const auto *View=dyn_cast<CallExpr>(E);View && standardReferenceView(View))return Self(Self,View->getArg(0),Depth+1);
++            Copy->getNumArgs()==1 && Self(Self,Copy->getArg(0),Depth+1,Path);
++      if(const auto *Copy=dyn_cast<ArrayInitLoopExpr>(E))return Self(Self,Copy->getCommonExpr(),Depth+1,Path);
++      if(const auto *View=dyn_cast<CallExpr>(E);View && standardReferenceView(View))
++        return Self(Self,View->getArg(0),Depth+1,Path);
 +      if(const auto *Choice=dyn_cast<AbstractConditionalOperator>(E)) {
 +        if(Choice->getCond()->HasSideEffects(Context))return false;
-+        return Self(Self,Choice->getTrueExpr(),Depth+1) && Self(Self,Choice->getFalseExpr(),Depth+1);
++        return Self(Self,Choice->getTrueExpr(),Depth+1,Path) && Self(Self,Choice->getFalseExpr(),Depth+1,Path);
++      }
++      if(!Path.empty()) {
++        const InitListExpr *List=dyn_cast<InitListExpr>(E);
++        if(List && !List->isSemanticForm() && List->getSemanticForm())List=List->getSemanticForm();
++        const auto *Paren=dyn_cast<CXXParenListInitExpr>(E);
++        if(List || Paren) {
++          const auto Component=Path.front();Path.erase(Path.begin());
++          uint64_t Index=Component.Index;
++          if(Component.Field) {
++            const auto *Record=E->getType()->getAsCXXRecordDecl();
++            if(!Record || !(Record=Record->getDefinition()) ||
++                Component.Field->getParent()->getCanonicalDecl()!=Record->getCanonicalDecl())return false;
++            if(Record->isUnion()) {
++              if(!List || List->getInitializedFieldInUnion()!=Component.Field)return false;
++              Index=0;
++            } else {
++              Index=Record->getNumBases()+Component.Field->getFieldIndex();
++            }
++          } else if(!Context.getAsConstantArrayType(E->getType()))return false;
++          if(List)return Index<List->getNumInits() && Self(Self,List->getInit(Index),Depth+1,Path);
++          return Index<Paren->getInitExprs().size() && Self(Self,Paren->getInitExprs()[Index],Depth+1,Path);
++        }
 +      }
 +      const auto *Reference=dyn_cast<DeclRefExpr>(E);
++      if(const auto *Binding=Reference?dyn_cast<BindingDecl>(Reference->getDecl()):nullptr)
++        return Self(Self,Binding->getBinding(),Depth+1,Path);
 +      const auto *Variable=Reference?dyn_cast<VarDecl>(Reference->getDecl()):nullptr;
 +      if(!Variable || Variable->getType().isVolatileQualified() ||
 +          (!Variable->hasLocalStorage() && !Variable->getType().isConstQualified()))return false;
@@ -54924,9 +54982,9 @@ new file mode 100644
 +        if(Bindings.size()==32){CallGraphIncomplete=true;return false;}
 +        Bindings.push_back(Variable);
 +      }
-+      return Self(Self,Variable->getAnyInitializer(),Depth+1);
++      return Self(Self,Variable->getAnyInitializer(),Depth+1,Path);
 +    };
-+    if(!Resolve(Resolve,Receiver,0))return std::nullopt;
++    if(!Resolve(Resolve,Receiver,0,{}))return std::nullopt;
 +    return Bindings;
 +  };
 +  auto ClosedDefinition=[&](const CallExpr *Call)->const FunctionDecl * {
@@ -82604,6 +82662,107 @@ new file mode 100644
 +static inline void capture_reference_copy_ordinary(){
 + const char *slot="static";auto work=[&slot](){slot="other";};CaptureEnvelope<decltype(work)> box{work};auto copied=box;
 + (void)copied;work();const char *value=slot;(void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-stored-callables.m b/clang/test/ObjC3/Sema/native-stored-callables.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-stored-callables.m
+@@ -0,0 +1,69 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-stored-callables.h"
++#if __OBJC3_PROFILE__ == 3
++const char *stored_system_reject(borrowed const char *value){return value;} // expected-error {{borrowed pointer escapes through return}}
++#elif !defined(__cplusplus)
++// expected-no-diagnostics
++#else
++void stored_value(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};StoredWork<decltype(work)> box{42,work};box.value();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_reference(borrowed const char *loan){
++ const char *slot="static";auto work=[&slot,saved=loan](){slot=saved;};StoredWork<decltype(work)> box{42,work};box.value();
++ const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_nested(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};StoredNested<decltype(work)> box{{42,work}};box.inner.value();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_alias(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};StoredWork<decltype(work)> box{42,work};auto copy=box;const auto &alias=copy;
++ alias.value();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_pointer(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};StoredWork<decltype(work)> box{42,work};auto *const pointer=&box;
++ pointer->value();const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_array(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};decltype(work) values[2]={work,work};values[1]();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_union(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};StoredUnion<decltype(work)> box{.value=work};box.value();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_resource(){
++ int descriptor __attribute__((objc_resource(close=global_projection_close,invalid=-1)))=global_projection_open();
++ auto work=[descriptor](){global_projection_number=descriptor;};StoredWork<decltype(work)> box{42,work};box.value();
++ int value=global_projection_number;
++ (void)binding_detached(binding_make_scalar(value)); // expected-error {{cleanup-managed capture}}
++}
++void stored_escaped(){
++ const char *slot="static";auto work=[&slot](){slot="other";};StoredWork<decltype(work)> box{42,work};capture_storage_unknown(box);
++ box.value();const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_dynamic_array(borrowed const char *loan,unsigned index){
++ auto work=[saved=loan](){global_projection_pointer=saved;};decltype(work) values[2]={work,work};values[index]();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_array_binding(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};decltype(work) values[2]={work,work};auto &[first,second]=values;second();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++void stored_parenthesized(borrowed const char *loan){
++ auto work=[saved=loan](){global_projection_pointer=saved;};StoredWork<decltype(work)> box(42,work);box.value();
++ const char *value=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;}); // expected-error {{borrowed capture}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-stored-callables.h b/clang/test/ObjC3/Sema/Inputs/native-stored-callables.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-stored-callables.h
+@@ -0,0 +1,20 @@
++#ifndef OBJC3_STORED_CALLABLES_H
++#define OBJC3_STORED_CALLABLES_H
++#include "native-reference-record-captures.h"
++#if defined(__cplusplus) && __OBJC3_PROFILE__ != 3
++template<class Work>struct StoredWork {int prefix;Work value;};
++template<class Work>struct StoredNested {StoredWork<Work> inner;};
++template<class Work>union StoredUnion {int ignored;Work value;};
++static inline void stored_ordinary(){
++ const char *slot="static";auto work=[&slot](){slot="other";};
++ StoredWork<decltype(work)> box{42,work};auto copy=box;const auto &alias=copy;
++ alias.value();const char *value=slot;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)value;});
++ auto write=[saved=(const char *)"static"](){global_projection_pointer=saved;};
++ StoredNested<decltype(write)> nested{{42,write}};nested.inner.value();
++ const char *global=global_projection_pointer;
++ (void)binding_detached(^void(void) __objc3_async_frame {(void)global;});
++ decltype(write) array[2]={write,write};array[1]();
 +}
 +#endif
 +#endif

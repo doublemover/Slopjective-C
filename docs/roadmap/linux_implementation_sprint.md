@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.237 / System 2.163 stored-callable span](linux_native_stored_callables.md)
+resolves closure receivers through aggregate fields, fixed arrays and copied
+storage, retaining complete bounded runtime-index and enclosing-owner checks.
+
 The [Source 2.236 / System 2.162 reference/record capture span](linux_native_reference_record_captures.md)
 preserves original reference storage and trivial record/array inputs through
 closed native callables, copied aggregate owners and conservative escape checks.
