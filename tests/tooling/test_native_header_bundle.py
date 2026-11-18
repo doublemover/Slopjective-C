@@ -113,10 +113,16 @@ def test_complete_native_root_includes_macro_selected_nested_headers(tmp_path):
     assert set(files) == {conditional, architecture, root / 'stdlib.h'}
 
 
-@pytest.mark.parametrize('target,enabled',[('x86_64-unknown-linux-gnu',False),('aarch64-unknown-linux-gnu',True)])
-def test_native_arm_sdk_enables_matching_compiler_rt_dispatch_by_default(tmp_path,target,enabled):
-    value=plan(tmp_path);value['manifest']['target']=target
-    assert ('--rtlib=compiler-rt' in headers.configuration(value['manifest'])) is enabled
+@pytest.mark.parametrize('target,expected', [
+    ('x86_64-unknown-linux-gnu', []),
+    ('aarch64-unknown-linux-gnu', ['--rtlib=compiler-rt', '--unwindlib=libgcc']),
+])
+def test_native_sdk_preserves_gnu_unwinding_with_arm_compiler_rt_builtins(tmp_path, target, expected):
+    value = plan(tmp_path)
+    value['manifest']['target'] = target
+    config = headers.configuration(value['manifest'])
+    assert [line for line in config.splitlines()
+            if line.startswith(('--rtlib=', '--unwindlib='))] == expected
 
 
 def test_foreign_header_plan_cannot_be_installed_on_this_native_host(tmp_path):

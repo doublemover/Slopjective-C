@@ -80,11 +80,17 @@ def main(argv: list[str] | None = None) -> int:
         prepare_source(repo, source, profile)
         checkout(robin, profile["robin_map_source"], profile["robin_map_commit"], profile["robin_map_release"], args.fetch)
         build.mkdir(parents=True, exist_ok=True)
+        link_flags = "-fuse-ld=lld"
+        if args.sanitizer:
+            # The instrumented executable supplies sanitizer runtime symbols.
+            link_flags += " -fsanitize=" + args.sanitizer
+        else:
+            link_flags += " -Wl,-z,defs"
         configure = ["cmake", "-S", str(source), "-B", str(build), "-G", "Ninja",
                      "-DCMAKE_BUILD_TYPE=Release", f"-DCMAKE_INSTALL_PREFIX={stage}",
                      "-DCMAKE_INSTALL_LIBDIR=lib", f"-DFETCHCONTENT_SOURCE_DIR_ROBINMAP={robin}",
                      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON", "-DTESTS=OFF", "-DOLDABI_COMPAT=OFF",
-                     "-DLEGACY_COMPAT=OFF", "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld"]
+                     "-DLEGACY_COMPAT=OFF", f"-DCMAKE_SHARED_LINKER_FLAGS={link_flags}"]
         for language, compiler in (("C", "clang"), ("CXX", "clang++"),
                                     ("OBJC", "clang"), ("OBJCXX", "clang++")):
             configure.append(f"-DCMAKE_{language}_COMPILER={bin_dir / compiler}")
@@ -92,7 +98,6 @@ def main(argv: list[str] | None = None) -> int:
             flags = "-fsanitize=" + args.sanitizer + " -fno-omit-frame-pointer"
             configure += [f"-DCMAKE_{language}_FLAGS={flags}"
                           for language in ("C", "CXX", "OBJC", "OBJCXX")]
-            configure += ["-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -fsanitize=" + args.sanitizer]
         commands = [
             [sys.executable, "-B", str(repo / "scripts/objc3c_toolchain_runtime/verify_runtime_profile.py"),
              "--profile", native_host, "--source", str(source),

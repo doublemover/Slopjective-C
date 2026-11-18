@@ -163,9 +163,9 @@ def configuration(manifest: dict) -> str:
         raise ValueError('native header target is not an admitted Linux architecture')
     lines = ['# Native standard headers shipped with this Objective-C 3 SDK.', '-nostdinc++']
     if manifest['target'] == 'aarch64-unknown-linux-gnu':
-        # ARM function multiversioning uses compiler-rt resolver support. The
-        # SDK builder stages and hashes those matching native builtins next.
-        lines.append('--rtlib=compiler-rt')
+        # FMV uses the SDK's compiler-rt builtins. Keep the GNU host unwinder
+        # used by libstdc++ and libobjc2 when changing the builtins provider.
+        lines.extend(('--rtlib=compiler-rt', '--unwindlib=libgcc'))
     for root in manifest['roots']:
         role = root['role']
         if (role not in ('cxx', 'system', 'externc', 'user', 'resource') or

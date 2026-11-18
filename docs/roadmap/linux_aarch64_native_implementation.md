@@ -52,8 +52,10 @@ little-endian relocatable object; thin, foreign, truncated and non-object archiv
 are rejected. Incomplete sanitizer inventories and foreign shared/startup objects
 are rejected before assembly. These are SDK products rather than reusable
 compiler-foundation inputs, so stale runtime libraries cannot survive reuse. ARM SDK
-configuration selects compiler-rt by default so native FMV resolver support is
-available. Header bundles bind their target and reject cross-host installation.
+configuration selects compiler-rt builtins for native FMV resolver support and
+explicitly retains libgcc's unwinder for the GNU Linux exception ABI. Ordinary
+libobjc2 builds require all shared-library symbols to resolve at link time.
+Header bundles bind their target and reject cross-host installation.
 The self-contained archive installer rejects a foreign target or ELF member
 before publishing its activation pointer.
 
