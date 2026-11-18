@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.215 / System 2.141 member-graph span](linux_native_member_projection_graphs.md)
+composes closed receiver helpers, qualified/final virtual targets and selected
+concrete method-template bodies while retaining original caller contracts.
+
 The [Source 2.214 / System 2.140 macro-entrypoint span](linux_native_cpp_meta_entrypoints.md)
 binds canonical markers to C++ template/member/record identities and retains
 them through source-free consumer instantiation.

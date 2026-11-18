@@ -1,5 +1,9 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.215 / System 2.141 member-graph span](linux_native_member_projection_graphs.md)
+composes closed receiver helpers, qualified/final virtual targets and selected
+concrete method-template bodies while retaining original caller contracts.
+
 The [Source 2.214 / System 2.140 macro-entrypoint span](linux_native_cpp_meta_entrypoints.md)
 binds canonical markers to C++ template/member/record identities and retains
 them through source-free consumer instantiation.
@@ -201,9 +205,10 @@ prospective-destructor selection. Source-free owning optional/variant/expected,
 private result, nil-message and foreign-promise controls defend these boundaries;
 matching SDK consolidation follows the implementation batch.
 
-The [SDK/toolchain refresh](linux_toolchain_refresh.md) runs a Source 2.153
-repair campaign on LLVM 23.1.5 and extension ABI 24. Current development is
-Source 2.214 / System 2.140 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
+The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
+campaign as historical evidence. Its terminal upstream receipt-state bug is
+fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
+Source 2.215 / System 2.141 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
 until the matched release and fresh-host qualification pass. Historical receipts
 below retain their original versions and execution scope.
 
@@ -2066,7 +2071,7 @@ Remaining items below are actual implementation work followed by validation.
 ## Historical accepted SDK checkpoint
 
 The following checkpoint describes the earlier SDK 2.62 / ABI 21 delivery and
-its recorded validation. It does not qualify the subsequent Source 2.154–2.214 /
+its recorded validation. It does not qualify the subsequent Source 2.154–2.215 /
 extension ABI 24 implementation. The current remaining work and pending matching
 archive are described at the start of this roadmap and in PR #8278.
 

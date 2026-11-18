@@ -53700,7 +53700,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,3135 @@
+@@ -0,0 +1,3213 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -53986,24 +53986,37 @@ new file mode 100644
 +  const auto Name=Function->getIdentifier()->getName();
 +  return Name=="move" || Name=="forward" || Name=="forward_like" || Name=="as_const";
 +}
-+bool closedProjectionReceiver(const CallExpr *Call,ASTContext &Context) {
++bool closedProjectionReceiverImpl(const CallExpr *Call,ASTContext &Context,
++    unsigned &Work,unsigned Depth,llvm::SmallPtrSetImpl<const FunctionDecl *> &Active) {
++  if(!Work || Depth>16)return false;--Work;
 +  const auto *Function=Call?Call->getDirectCallee():nullptr;
 +  if(!Function)return false;
 +  const auto *Method=dyn_cast<CXXMethodDecl>(Function);
 +  if(!Method)return true;
-+  if(Method->isOverloadedOperator())return false;
++  if(Method->isOverloadedOperator() || Method->isExplicitObjectMemberFunction())return false;
 +  const auto *Member=dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts());
 +  if(Member && Member->getBase()->HasSideEffects(Context))return false;
 +  if(Method->isStatic())return true;
-+  // Instance views have no receiver-derived source in this contract. Admit
-+  // only direct nonvirtual bodies which never inspect or capture their this.
-+  if(!Member || Method->isVirtual())return false;
++  // A qualified call suppresses virtual dispatch. Otherwise the selected
++  // method or its declaring class must be final before its body is a proof.
++  if(!Member || (Method->isVirtual() && !Member->hasQualifier() &&
++      !Method->hasAttr<FinalAttr>() && !Method->getParent()->hasAttr<FinalAttr>()))return false;
 +  const auto *Definition=Method->getDefinition();
 +  if(!Definition)if(const auto *Pattern=Method->getTemplateInstantiationPattern())
 +    Definition=Pattern->getDefinition();
-+  if(!Definition || !Definition->getBody())return false;
++  if(!Definition || !Definition->getBody() || Definition->isVariadic() ||
++      isa<CoroutineBodyStmt>(Definition->getBody()) || Definition->isMultiVersion() ||
++      Definition->isNoReturn() || getObjC3Executor(Definition) || isObjC3ActorIsolated(Definition) ||
++      (Definition->isExternallyVisible() && !Definition->isInlined()) ||
++      Definition->hasAttr<WeakAttr>() || Definition->hasAttr<WeakRefAttr>() ||
++      Definition->hasAttr<WeakImportAttr>() || Definition->hasAttr<AliasAttr>() ||
++      Definition->hasAttr<IFuncAttr>() || Definition->hasAttr<ReturnsTwiceAttr>())return false;
++  if(const auto *Type=getObjC3CallableFunctionType(Definition);
++      !Type || Type->getObjC3FunctionEffects().Async ||
++      Type->getObjC3FunctionEffects().Throws!=ObjC3ThrowsKind::None)return false;
++  if(!Active.insert(Definition->getCanonicalDecl()).second)return false;
++  auto Leave=llvm::scope_exit([&]{Active.erase(Definition->getCanonicalDecl());});
 +  SmallVector<const Stmt *,32> Pending{Definition->getBody()};
-+  unsigned Work=1024;
 +  while(!Pending.empty()) {
 +    if(!Work)return false;--Work;
 +    const auto *Statement=Pending.pop_back_val();
@@ -54013,6 +54026,16 @@ new file mode 100644
 +      if(Pending.size()>=Work)return false;
 +      Pending.push_back(Child);return true;
 +    };
++    if(const auto *Nested=dyn_cast<CallExpr>(Statement)) {
++      const auto *Callee=dyn_cast<MemberExpr>(Nested->getCallee()->IgnoreParenImpCasts());
++      if(Callee && isa<CXXThisExpr>(Callee->getBase()->IgnoreParenImpCasts())) {
++        // Forwarding this to another closed receiver body does not expose its
++        // identity or state. Arguments still undergo the ordinary this walk.
++        if(!closedProjectionReceiverImpl(Nested,Context,Work,Depth+1,Active))return false;
++        for(const auto *Argument:Nested->arguments())if(!Enqueue(Argument))return false;
++        continue;
++      }
++    }
 +    if(const auto *Block=dyn_cast<BlockExpr>(Statement)) {
 +      if(Block->getBlockDecl()->capturesCXXThis())return false;
 +      if(!Enqueue(Block->getBody()))return false;
@@ -54024,6 +54047,10 @@ new file mode 100644
 +    for(const auto *Child:Statement->children())if(!Enqueue(Child))return false;
 +  }
 +  return true;
++}
++bool closedProjectionReceiver(const CallExpr *Call,ASTContext &Context) {
++  unsigned Work=1024;llvm::SmallPtrSet<const FunctionDecl *,16> Active;
++  return closedProjectionReceiverImpl(Call,Context,Work,0,Active);
 +}
 +struct ArgumentProjection {
 +  uint32_t Arguments;
@@ -54590,6 +54617,10 @@ new file mode 100644
 +};
 +class ConcurrentBlockValues {
 +  ASTContext &Context;
++  Sema *Actions;
++  unsigned PreparationWork=256,Instantiations=16;
++  llvm::SmallPtrSet<const Expr *,32> Prepared;
++  llvm::SmallPtrSet<const FunctionDecl *,16> Materialized;
 +  SmallVectorImpl<const BlockExpr *> &Blocks;
 +  SmallVectorImpl<FactoryCapture> *FactoryCaptures;
 +  llvm::SmallPtrSet<const Expr *, 32> Complete, Active;
@@ -54623,8 +54654,55 @@ new file mode 100644
 +    return collect(Variable->getInit(),Depth+1);
 +  }
 +
++  void prepare(const Expr *Expression) {
++    if(!Actions || &Actions->Context!=&Context || !Expression)return;
++    SmallVector<const Stmt *,16> Pending{Expression};
++    while(!Pending.empty() && PreparationWork) {
++      const auto *Node=Pending.pop_back_val();--PreparationWork;
++      if(const auto *E=dyn_cast<Expr>(Node);E && !Prepared.insert(E).second)continue;
++      if(isa<BlockExpr,LambdaExpr>(Node))continue;
++      if(const auto *Call=dyn_cast<CallExpr>(Node)) {
++        auto *Function=Call->getDirectCallee();
++        const auto *Method=dyn_cast_or_null<CXXMethodDecl>(Function);
++        const auto *Current=Actions->getCurFunctionDecl(true);
++        if(Method && Method->isImplicitObjectMemberFunction() && Instantiations &&
++            !Function->getDefinition() && Function->instantiationIsPending() &&
++            Function->getTemplateSpecializationKind()==TSK_ImplicitInstantiation &&
++            !Function->isDependentContext() && !Function->isInvalidDecl() &&
++            !Function->getType()->isDependentType() &&
++            (!Current || Current->getCanonicalDecl()!=Function->getCanonicalDecl()) &&
++            Materialized.insert(Function->getCanonicalDecl()).second) {
++          const auto *Pattern=Function->getTemplateInstantiationPattern();
++          if(Pattern && Pattern->hasBody() && !Pattern->isLateTemplateParsed()) {
++            bool This=false,DependentCall=false;unsigned Work=256;
++            SmallVector<const Stmt *,16> Body{Pattern->getBody()};
++            while(!Body.empty() && Work) {
++              const auto *Part=Body.pop_back_val();--Work;
++              This|=isa<CXXThisExpr>(Part);
++              if(const auto *Nested=dyn_cast<CallExpr>(Part))
++                DependentCall|=Nested->isTypeDependent() || Nested->isValueDependent();
++              for(const auto *Child:Part->children())if(Child) {
++                if(Body.size()>=Work)break;Body.push_back(Child);
++              }
++            }
++            if(This && DependentCall) {
++              --Instantiations;
++              Actions->InstantiateFunctionDefinition(Call->getExprLoc(),const_cast<FunctionDecl *>(Function),false,false);
++            }
++          }
++        }
++      }
++      if(const auto *Reference=dyn_cast<DeclRefExpr>(Node))
++        if(const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl());Variable && Variable->hasInit())
++          if(Pending.size()<PreparationWork)Pending.push_back(Variable->getInit());
++      for(const auto *Child:Node->children())if(Child) {
++        if(Pending.size()>=PreparationWork)break;Pending.push_back(Child);
++      }
++    }
++  }
 +  bool collectFactory(const CallExpr *Call,unsigned Depth) {
 +    if(!FactoryCaptures || !Call || Depth>64 || Call->getNumArgs()>32)return false;
++    prepare(Call);
 +    const auto *Function=Call->getDirectCallee();
 +    if(!Function || !closedProjectionReceiver(Call,Context) || Function->isVariadic() ||
 +        Function->isMultiVersion() || Function->isNoReturn() ||
@@ -55173,8 +55251,8 @@ new file mode 100644
 +  }
 +public:
 +  ConcurrentBlockValues(ASTContext &C, SmallVectorImpl<const BlockExpr *> &B,
-+                        const Stmt *Body=nullptr,SmallVectorImpl<FactoryCapture> *Captures=nullptr)
-+      : Context(C), Blocks(B), FactoryCaptures(Captures), ScopeBody(Body) {}
++                        const Stmt *Body=nullptr,SmallVectorImpl<FactoryCapture> *Captures=nullptr,Sema *S=nullptr)
++      : Context(C), Actions(S), Blocks(B), FactoryCaptures(Captures), ScopeBody(Body) {}
 +  bool collectVariable(const VarDecl *Variable) {
 +    return collectBinding(Variable,0) && initializersAcyclic();
 +  }
@@ -55183,7 +55261,7 @@ new file mode 100644
 +  }
 +  bool collect(const Expr *E, unsigned Depth = 0) {
 +    if (!E || Depth > 64) return false;
-+    E = transferSource(E);
++    E = transferSource(E);prepare(E);
 +    if (const auto *Reference=dyn_cast<DeclRefExpr>(E))
 +      if (const auto *Variable=dyn_cast<VarDecl>(Reference->getDecl())) {
 +        if (InitializerOwner) {
@@ -55240,10 +55318,10 @@ new file mode 100644
 +    return Proven;
 +  }
 +};
-+bool knownConcurrentBlocks(ASTContext &C, const Expr *E,
++bool knownConcurrentBlocks(Sema &S, const Expr *E,
 +                            SmallVectorImpl<const BlockExpr *> &Blocks,
 +                            const Stmt *Body=nullptr,SmallVectorImpl<FactoryCapture> *Captures=nullptr) {
-+  return ConcurrentBlockValues(C, Blocks, Body,Captures).collectRoot(E);
++  return ConcurrentBlockValues(S.Context, Blocks, Body,Captures,&S).collectRoot(E);
 +}
 +struct ConcurrentCaptureProof {
 +  llvm::SmallPtrSet<const VarDecl *,32> FactoryBindings;
@@ -55274,7 +55352,7 @@ new file mode 100644
 +    if(Capture.TransportType->isBlockPointerType()) {
 +      if(Managed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),"cleanup-managed capture",Capture.Parameter,true);
 +      SmallVector<const BlockExpr *,8> Blocks;SmallVector<FactoryCapture,8> Nested;
-+      if(knownConcurrentBlocks(S.Context,Value,Blocks,Body,&Nested)) {
++      if(knownConcurrentBlocks(S,Value,Blocks,Body,&Nested)) {
 +        Invalid|=checkFactoryCaptures(S,Nested,Body,Proof,Depth+1);
 +        for(const auto *Block:Blocks)
 +          Invalid|=checkKnownConcurrentBlock(S,Block,Value->getExprLoc(),false,Proof,Body);
@@ -55595,7 +55673,7 @@ new file mode 100644
 +                                        "concurrent block value",Target,ScopeBody);
 +        SmallVector<const BlockExpr *, 8> Blocks;
 +        SmallVector<FactoryCapture,8> Captures;
-+        if (knownConcurrentBlocks(S.Context, Argument, Blocks, ScopeBody,&Captures)) {
++        if (knownConcurrentBlocks(S, Argument, Blocks, ScopeBody,&Captures)) {
 +          ConcurrentCaptureProof Proof;
 +          Invalid|=checkFactoryCaptures(S,Captures,ScopeBody,Proof);
 +          for (const auto *Block : Blocks)
@@ -55774,8 +55852,8 @@ new file mode 100644
 +      const Expr *Initializer = Capture.getObjC3InitExpr();
 +      SmallVector<FactoryCapture,8> FactoryCaptures;
 +      const bool KnownBlocks = !Unsafe && !Managed && V->getType()->isBlockPointerType() &&
-+          (Initializer ? knownConcurrentBlocks(S.Context, Initializer, Blocks, ScopeBody,&FactoryCaptures)
-+                       : ConcurrentBlockValues(S.Context,Blocks,ScopeBody,&FactoryCaptures).collectVariable(V));
++          (Initializer ? knownConcurrentBlocks(S, Initializer, Blocks, ScopeBody,&FactoryCaptures)
++                       : ConcurrentBlockValues(S.Context,Blocks,ScopeBody,&FactoryCaptures,&S).collectVariable(V));
 +      if (KnownBlocks) {
 +        Failed|=checkFactoryCaptures(S,FactoryCaptures,ScopeBody,Proof);
 +        for (const auto *Block : Blocks)
@@ -79703,5 +79781,85 @@ new file mode 100644
 + BindingWork nested_this(BindingWork value)const{const auto ignored=[this]{return 42;};return value;}
 +};
 +static inline void binding_instance_ordinary(int choose){BindingInstanceSources source;int value=42;source.reference(value)=41;const BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(source.work(work));(void)binding_detached(source.constructed(42));(void)binding_detached(source.literal(42));(void)binding_detached(source.template_factory(42));(void)binding_detached(binding_make_scalar(source.scalar(value)));(void)binding_detached(binding_make_scalar(source.choice(choose,41,42)));(void)binding_detached(binding_make_scalar(source.project(42)));}
++#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-member-projection-graphs.m b/clang/test/ObjC3/Sema/native-member-projection-graphs.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-member-projection-graphs.m
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -emit-pch -o %t.pch %S/Inputs/native-member-projection-graphs.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -include-pch %t.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "Inputs/native-member-projection-graphs.h"
++#ifndef __cplusplus
++// expected-no-diagnostics
++#else
++void member_graph_close(int);int member_graph_open(void);
++void binding_member_graph_resources(void){BindingMemberGraphs source;BindingFinalGraphs final_source;BindingVirtualGraphs base;
++ int descriptor __attribute__((objc_resource(close=member_graph_close,invalid=-1)))=member_graph_open();
++ (void)binding_detached(binding_make_scalar(source.scalar(descriptor))); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(binding_make_scalar(source.scalar_template(descriptor))); // expected-error {{cleanup-managed capture}}
++ int changed=42;source.reference(changed)=descriptor;(void)binding_detached(binding_make_scalar(changed)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(source.literal(descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(source.template_factory(descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(final_source.literal(descriptor)); // expected-error {{cleanup-managed capture}}
++ (void)binding_detached(base.BindingVirtualGraphs::literal(descriptor)); // expected-error {{cleanup-managed capture}}
++}
++void binding_member_graph_unknown(BindingMemberGraphs &source,BindingVirtualGraphs &base,BindingWork unknown){
++ (void)binding_detached(source.work(unknown)); // expected-error {{cannot prove Sendable captures}}
++ const BindingWork work=^void(void) __objc3_async_frame {};
++ (void)binding_detached(source.opaque(work)); // expected-error {{cannot prove Sendable captures}}
++ (void)binding_detached(source.cycle(work)); // expected-error {{cannot prove Sendable captures}}
++ (void)binding_detached(source.state_work(work)); // expected-error {{cannot prove Sendable captures}}
++ (void)binding_detached(base.open_chain(work)); // expected-error {{cannot prove Sendable captures}}
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-member-projection-graphs.h b/clang/test/ObjC3/Sema/Inputs/native-member-projection-graphs.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-member-projection-graphs.h
+@@ -0,0 +1,36 @@
++#ifndef OBJC3_MEMBER_PROJECTION_GRAPHS_H
++#define OBJC3_MEMBER_PROJECTION_GRAPHS_H
++#include "native-instance-argument-projections.h"
++#ifdef __cplusplus
++struct BindingMemberGraphs {
++ int state;
++ int scalar(int value)const{return scalar_base(value);}
++ int scalar_base(int value)const{return value;}
++ template<class T>int scalar_template(T value)const{return scalar(value);}
++ int &reference(int &value)&{return reference_base(value);}
++ int &reference_base(int &value)&{return value;}
++ BindingWork work(BindingWork value)const{return forward(value);}
++ BindingWork forward(BindingWork value)const{return value;}
++ BindingWork literal(int value)const{return literal_base(value);}
++ BindingWork literal_base(int value)const{return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}
++ template<class T>BindingWork template_factory(T value)const{return literal(value);}
++ BindingWork open(BindingWork)const;
++ BindingWork opaque(BindingWork value)const{return open(value);}
++ BindingWork cycle(BindingWork value)const{return cycle(value);}
++ BindingWork state_work(BindingWork value)const{return state?forward(value):(BindingWork)0;}
++};
++struct BindingVirtualGraphs {
++ virtual BindingWork work(BindingWork value)const{return value;}
++ virtual BindingWork literal(int value)const{return BINDING_FACTORY_RESULT(^void(void) __objc3_async_frame {(void)value;});}
++ BindingWork open_chain(BindingWork value)const{return work(value);}
++};
++struct BindingFinalMethodGraphs:BindingVirtualGraphs {
++ BindingWork work(BindingWork value)const final{return value;}
++};
++struct BindingFinalGraphs final:BindingVirtualGraphs {
++ BindingWork work(BindingWork value)const override{return BindingVirtualGraphs::work(value);}
++ BindingWork literal(int value)const override{return BindingVirtualGraphs::literal(value);}
++};
++static inline void binding_member_graphs_ordinary(void){BindingMemberGraphs source;int scalar=42;source.reference(scalar)=41;const BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(source.work(work));(void)binding_detached(source.literal(42));(void)binding_detached(source.template_factory(42));(void)binding_detached(binding_make_scalar(source.scalar(scalar)));(void)binding_detached(binding_make_scalar(source.scalar_template(scalar)));BindingVirtualGraphs base;(void)binding_detached(base.BindingVirtualGraphs::work(work));(void)binding_detached(base.BindingVirtualGraphs::literal(42));BindingFinalMethodGraphs final_method;(void)binding_detached(final_method.work(work));BindingFinalGraphs final_class;(void)binding_detached(final_class.work(work));(void)binding_detached(final_class.literal(42));}
 +#endif
 +#endif
