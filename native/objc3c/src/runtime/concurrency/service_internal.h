@@ -103,6 +103,9 @@ struct objc3_task final {
   void *frame{nullptr};
   objc3_task_resume resume{nullptr};
   objc3_frame_destroy destroy{nullptr};
+  // Completion-only submission owns the initial reference until all terminal
+  // callbacks finish. Set before the first resume is queued.
+  bool completion_owned{false};
   bool terminal{false};
   bool completion_claimed{false};
   bool resume_after_completion_claim{false};

@@ -17,10 +17,10 @@ task spelling explicit, preventing a printed task type from reparsing as the
 new public frame spelling. PCH and imported interfaces preserve that distinction.
 
 This is source implementation, not full portable async acceptance. Public
-async/actor feature predicates remain reserved. Canonical C completion-handler
-exports, distinguished Objective-C cancellation error mapping, the remaining
-ownership/isolation cases and full Part 7/11 profile acceptance remain open.
-Matching SDK and native ARM execution remain required.
+async/actor feature predicates remain reserved. Source 2.240 adds
+[explicit C completion exports](linux_async_c_completion_exports.md). Broader
+ownership and isolation cases, full Part 7/11 profiles and matching SDK and
+native ARM qualification remain open.
 
 Maintained compiler controls cover public free/indirect/Block/method/lambda
 forms, ordinary identifier reuse, duplicate effects, outside-context diagnostics,

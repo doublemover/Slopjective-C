@@ -13,7 +13,8 @@ SCHEMA = 'objc3c.native-assurance.plan.v1'
 SHA = re.compile(r'[0-9a-f]{40}')
 PROTECTED_DOCS = ('docs/contracts/', 'docs/support/', 'docs/specs/', 'docs/fixtures/')
 RUNTIME = ('native/objc3c/src/runtime/', 'scripts/objc3c_toolchain_runtime/',
-           'tests/clang_foundation/structured_runtime/', 'tests/clang_foundation/native_async/')
+           'tests/clang_foundation/structured_runtime/', 'tests/clang_foundation/native_async/',
+           'tests/clang_foundation/async_c_completion/')
 PACKAGE = ('scripts/install_objc3c_linux.sh', 'scripts/qualify_linux_archive.sh',
            'scripts/objc3c_toolchain/install_sdk.py', 'scripts/objc3c_toolchain/package.py',
            'scripts/objc3c_toolchain/linux_sdk.py', 'tests/clang_foundation/installed_sdk/')

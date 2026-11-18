@@ -877,6 +877,7 @@ if(BUILD_TESTING)
   target_link_libraries(objc3_native_public_async_syntax_test PRIVATE objc3c_clang_foundation)
   target_compile_definitions(objc3_native_public_async_syntax_test PRIVATE
     OBJC3_PUBLIC_ASYNC_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
+    OBJC3_PUBLIC_ASYNC_C_FIXTURES="${_objc3_repo}/tests/clang_foundation/async_c_completion"
     OBJC3_PUBLIC_ASYNC_LINKER="${CMAKE_CXX_COMPILER}"
     OBJC3_PUBLIC_ASYNC_RUNTIME="$<TARGET_FILE:objc3_runtime_services>"
     OBJC3_PUBLIC_ASYNC_OBJC="${_c_inline_objc_runtime}"

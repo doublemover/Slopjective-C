@@ -34,6 +34,24 @@ void Execute(const std::vector<std::string> &command) {
   std::vector<llvm::StringRef> arguments(command.begin(), command.end());
   Require(llvm::sys::ExecuteAndWait(command.front(), arguments) == 0, "command failed: " + command.front());
 }
+void LinkAndRun(const fs::path &root, const std::string &provider,
+                const std::string &consumer) {
+  const auto program = (root / "program").string();
+  std::vector<std::string> link{OBJC3_PUBLIC_ASYNC_LINKER, "--no-default-config",
+                                "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
+  llvm::BumpPtrAllocator allocator;
+  llvm::StringSaver saver(allocator);
+  llvm::SmallVector<const char *, 16> flags;
+  llvm::cl::TokenizeGNUCommandLine(OBJC3_PUBLIC_ASYNC_LINK_FLAGS, saver, flags);
+  link.insert(link.end(), flags.begin(), flags.end());
+  for (const auto &argument : {std::string("-fuse-ld=lld"), provider, consumer,
+       std::string(OBJC3_PUBLIC_ASYNC_RUNTIME), std::string(OBJC3_PUBLIC_ASYNC_OBJC),
+       "-Wl,-rpath," + fs::path(OBJC3_PUBLIC_ASYNC_OBJC).parent_path().string(),
+       std::string("-pthread"), std::string("-ldl"), std::string("-o"), program})
+    link.push_back(argument);
+  Execute(link);
+  Execute({program});
+}
 void Check(const std::string &standard, bool arc) {
   llvm::SmallString<128> temporary;
   Require(!llvm::sys::fs::createUniqueDirectory("objc3-public-async", temporary), "temporary directory failed");
@@ -124,26 +142,57 @@ int main(void){
 }
 )";
   Compiled(Compile(consumer));
-  const auto program = (root / "program").string();
-  std::vector<std::string> link{OBJC3_PUBLIC_ASYNC_LINKER, "--no-default-config", "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
-  llvm::BumpPtrAllocator allocator; llvm::StringSaver saver(allocator);
-  llvm::SmallVector<const char *, 16> flags;
-  llvm::cl::TokenizeGNUCommandLine(OBJC3_PUBLIC_ASYNC_LINK_FLAGS, saver, flags);
-  link.insert(link.end(), flags.begin(), flags.end());
-  for (const auto &argument : {std::string("-fuse-ld=lld"), provider.output_path, consumer.output_path,
-       std::string(OBJC3_PUBLIC_ASYNC_RUNTIME), std::string(OBJC3_PUBLIC_ASYNC_OBJC),
-       "-Wl,-rpath," + fs::path(OBJC3_PUBLIC_ASYNC_OBJC).parent_path().string(),
-       std::string("-pthread"), std::string("-ldl"), std::string("-o"), program})
-    link.push_back(argument);
-  Execute(link);
-  Execute({program});
+  LinkAndRun(root, provider.output_path, consumer.output_path);
   std::cout << "Public async source-free execution " << standard << (arc ? " ARC\n" : " MRC\n");
+}
+
+void CheckCCompletion(const std::string &standard, bool arc) {
+  llvm::SmallString<128> temporary;
+  Require(!llvm::sys::fs::createUniqueDirectory("objc3-c-completion", temporary),
+          "temporary directory failed");
+  const fs::path root(temporary.c_str());
+  struct Cleanup { fs::path path; ~Cleanup() { fs::remove_all(path); } } cleanup{root};
+  const bool cxx = standard.starts_with("c++");
+  const fs::path fixtures(OBJC3_PUBLIC_ASYNC_C_FIXTURES);
+  const auto provider_source = root / (cxx ? "provider.mm" : "provider.m");
+  fs::copy_file(fixtures / "provider.m", provider_source);
+  fs::copy_file(fixtures / "api.h", root / "api.h");
+  const auto client_source = root / "client.c";
+  fs::copy_file(fixtures / "client.c", client_source);
+  CompileRequest provider;
+  provider.input_path = provider_source.string();
+  provider.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
+  provider.objc3 = true;
+  provider.arc = arc;
+  provider.objc_runtime = "gnustep-2.2";
+  provider.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
+  provider.arguments = {"-std=" + standard, "-O2", "-fblocks", "-fobjc-exceptions",
+                        std::string("-I") + OBJC3_PUBLIC_ASYNC_HEADERS};
+  provider.emit = EmitKind::Object;
+  provider.output_path = (root / "provider.o").string();
+  Compiled(Compile(provider));
+  Require(fs::remove(provider_source), "provider source removal failed");
+  CompileRequest client;
+  client.input_path = client_source.string();
+  client.language = BaseLanguage::C;
+  client.target_triple = provider.target_triple;
+  client.arguments = {standard == "c23" || standard == "c++23" ? "-std=c23" : "-std=c17",
+                      "-O2", "-fblocks", "-UNDEBUG",
+                      std::string("-I") + OBJC3_PUBLIC_ASYNC_HEADERS};
+  client.emit = EmitKind::Object;
+  client.output_path = (root / "client.o").string();
+  Compiled(Compile(client));
+  LinkAndRun(root, provider.output_path, client.output_path);
+  std::cout << "C completion source-free execution " << standard << (arc ? " ARC\n" : " MRC\n");
 }
 }
 int main() {
   try {
     for (const std::string standard : {"c17", "c23", "c++20", "c++23"})
-      for (const bool arc : {false, true}) Check(standard, arc);
+      for (const bool arc : {false, true}) {
+        Check(standard, arc);
+        CheckCCompletion(standard, arc);
+      }
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n';
     return 1;

@@ -11,6 +11,8 @@ def facade_identity(repo: Path) -> dict:
     root = repo / 'native/objc3c'
     files = {root / 'CMakeLists.txt', repo / 'scripts/objc3c_toolchain/facade.py',
              root / 'src/runtime/public/objc3_runtime_services.h',
+             root / 'src/runtime/public/objc3_async_c.h',
+             root / 'src/runtime/public/objc3_async_c_export.h',
              root / 'src/runtime/public/objc3_task.hpp',
              root / 'src/runtime/public/objc3_keypath.h'}
     library = repo / 'stdlib'

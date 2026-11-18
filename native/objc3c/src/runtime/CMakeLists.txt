@@ -21,6 +21,7 @@ endif()
 add_library(objc3_runtime_services STATIC
   services/error_service.cpp
   services/objc_task_error.cpp
+  services/objc_async_c.cpp
   services/checked_message_failure.cpp
   services/carrier_service.cpp
   concurrency/service_executor.cpp
@@ -39,7 +40,7 @@ add_library(objc3_runtime_services STATIC
   stdlib/generic_associative_service.cpp)
 # Keep native association ownership in its own archive member. No Foundation
 # classes or Clang libraries are required; Clang supplies the Blocks ABI.
-set_source_files_properties(concurrency/service_actor_association.cpp stdlib/keypath_kvc.cpp PROPERTIES
+set_source_files_properties(concurrency/service_actor_association.cpp stdlib/keypath_kvc.cpp services/objc_async_c.cpp PROPERTIES
   COMPILE_OPTIONS "-x;objective-c++;-fblocks;-fno-objc-arc;-fobjc-exceptions;-fobjc-runtime=gnustep-2.2")
 target_link_libraries(objc3_runtime_services PUBLIC objc3c_build_defaults)
 target_compile_options(objc3_runtime_services PRIVATE

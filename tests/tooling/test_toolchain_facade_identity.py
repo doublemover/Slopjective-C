@@ -9,6 +9,8 @@ def source_repo(tmp_path: Path) -> Path:
     for name in ('native/objc3c/CMakeLists.txt', 'scripts/objc3c_toolchain/facade.py',
                  'native/objc3c/src/clang_foundation/compile_session.cpp',
                  'native/objc3c/src/runtime/public/objc3_runtime_services.h',
+                 'native/objc3c/src/runtime/public/objc3_async_c.h',
+                 'native/objc3c/src/runtime/public/objc3_async_c_export.h',
                  'native/objc3c/src/runtime/public/objc3_task.hpp',
                  'native/objc3c/src/runtime/public/objc3_keypath.h'):
         path = tmp_path / name

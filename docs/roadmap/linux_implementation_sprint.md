@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.240 / System 2.166 C completion exports](linux_async_c_completion_exports.md)
+deliver typed C callbacks from native frames, including distinct cancellation
+errors and callback-scoped result ownership.
+
 The [Source 2.239 / System 2.165 public async syntax span](linux_public_async_syntax.md)
 accepts contextual async/await across native callable forms while retaining
 explicit frame/task ABI identity and reserved full-feature predicates.

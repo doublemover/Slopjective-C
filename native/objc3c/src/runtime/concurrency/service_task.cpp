@@ -2,6 +2,7 @@
 #include "service_autorelease_pool.h"
 #include "service_actor.h"
 #include "service_group.h"
+#include "runtime/public/objc3_async_c.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -549,13 +550,15 @@ namespace {
 objc3_service_status start_task(
     const objc3_task_start_options *options, objc3_task_t **out_task,
     objc3_task_t *parent = nullptr,
-    objc3::services::TaskGroup *group = nullptr, bool scope_body = false) {
-  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  *out_task = nullptr;
+    objc3::services::TaskGroup *group = nullptr, bool scope_body = false,
+    bool completion_owned = false) {
+  if (!out_task && !completion_owned) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (out_task) *out_task = nullptr;
   if (!options || options->struct_size < sizeof(objc3_task_start_options) ||
       options->version != OBJC3_SERVICE_ABI_VERSION ||
       (bool(options->executor) == bool(options->actor)) ||
-      !options->resume || (options->frame && !options->destroy))
+      !options->resume || (options->frame && !options->destroy) ||
+      (completion_owned && (out_task || group || !options->completion)))
     return options && options->version != OBJC3_SERVICE_ABI_VERSION
                ? OBJC3_SERVICE_UNSUPPORTED_VERSION
                : OBJC3_SERVICE_INVALID_ARGUMENT;
@@ -601,6 +604,7 @@ objc3_service_status start_task(
   task->frame_destroyed = options->frame == nullptr;
   task->resume = options->resume;
   task->destroy = options->destroy;
+  task->completion_owned = completion_owned;
   if (options->completion) {
     try {
       task->waiters.push_back({options->completion, options->completion_context});
@@ -678,7 +682,7 @@ objc3_service_status start_task(
     objc3_task_internal_release(task);
     return queued;
   }
-  *out_task = task;
+  if (out_task) *out_task = task;
   return OBJC3_SERVICE_OK;
 }
 } // namespace
@@ -1003,6 +1007,8 @@ extern "C" objc3_service_status objc3_task_complete(
   else
     task->completed.notify_all();
   finish_continuation_owner(task, continuation_owner);
+  if (task->completion_owned)
+    objc3_task_internal_release(task);
   return OBJC3_SERVICE_OK;
 }
 
@@ -1349,6 +1355,38 @@ extern "C" objc3_service_status
 objc3_async_frame_start(objc3_async_frame *frame, objc3_executor_t *executor,
                         objc3_actor_t *actor, objc3_task_t **out_task) {
   return start_async_frame(frame, executor, actor, nullptr, out_task);
+}
+
+extern "C" objc3_service_status objc3_async_frame_submit(
+    objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
+    objc3_completion_callback completion, void *context) {
+  const auto validated = objc3_async_frame_validate(frame);
+  if (validated != OBJC3_SERVICE_OK) return validated;
+  if (!completion || (executor && actor)) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  objc3_executor_t *global = nullptr;
+  if (!executor && !actor) {
+    const auto status = objc3_executor_get_global(&global);
+    if (status != OBJC3_SERVICE_OK) return status;
+    executor = global;
+  }
+  // Clear the caller's carrier before publishing work. The callback may run
+  // and free caller-owned storage before start_task returns.
+  const auto owned = std::exchange(*frame, {});
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.actor = actor;
+  options.frame = owned.context;
+  options.resume = owned.resume;
+  options.destroy = owned.destroy;
+  options.result_type = owned.result_type;
+  options.completion = completion;
+  options.completion_context = context;
+  const auto started = start_task(&options, nullptr, nullptr, nullptr, false, true);
+  if (started != OBJC3_SERVICE_OK) *frame = owned;
+  if (global) objc3_executor_release(global);
+  return started;
 }
 
 extern "C" objc3_service_status

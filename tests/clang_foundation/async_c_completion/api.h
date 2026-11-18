@@ -1,0 +1,40 @@
+#ifndef ASYNC_C_COMPLETION_API_H
+#define ASYNC_C_COMPLETION_API_H
+
+#include "objc3_async_c.h"
+
+#ifdef __OBJC__
+typedef id CompletionObject;
+#else
+typedef void *CompletionObject;
+#endif
+typedef int (^CompletionBlock)(int);
+typedef struct CompletionRecord {
+  long values[4];
+} CompletionRecord;
+
+OBJC3_ASYNC_C_DECLARE(completion_value, CompletionRecord, long first, int second);
+OBJC3_ASYNC_C_DECLARE_VOID(completion_void);
+OBJC3_ASYNC_C_DECLARE(completion_object, CompletionObject _Nullable,
+                      CompletionObject _Nullable object);
+OBJC3_ASYNC_C_DECLARE(completion_block, CompletionBlock _Nullable, int value);
+OBJC3_ASYNC_C_DECLARE(completion_error, int, CompletionObject _Nonnull error);
+OBJC3_ASYNC_C_DECLARE(completion_cancel, int, objc3_actor_t * _Nonnull actor);
+OBJC3_ASYNC_C_DECLARE(completion_worker, int, int value);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+CompletionObject _Nonnull completion_make_object(void)
+#ifdef __OBJC__
+    __attribute__((ns_returns_retained))
+#endif
+    ;
+int completion_object_count(void);
+int completion_cancel_entries(void);
+int completion_error_conforms(CompletionObject _Nonnull error);
+#ifdef __cplusplus
+}
+#endif
+
+#endif
