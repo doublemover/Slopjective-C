@@ -1,5 +1,8 @@
 # Linux implementation sprint
 
+The [Source 2.241 / System 2.167 C completion interfaces](linux_async_c_completion_exports.md)
+retain typed callback signatures and physical symbols in source-free packages.
+
 The [Source 2.240 / System 2.166 C completion exports](linux_async_c_completion_exports.md)
 deliver typed C callbacks from native frames, including distinct cancellation
 errors and callback-scoped result ownership.

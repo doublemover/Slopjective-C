@@ -1,5 +1,7 @@
 #include "native_target_test_support.h"
 #include "clang_foundation/compile_session.h"
+#include "clang_foundation/interface_codec.h"
+#include "clang_foundation/runtime_interface_types.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Program.h"
 #include "llvm/Support/CommandLine.h"
@@ -24,7 +26,7 @@ void Compiled(const CompileResult &result) {
   for (const auto &item : result.interface_import_diagnostics) std::cerr << item.message << '\n';
   if (result.interface_artifact)
     for (const auto &item : result.interface_artifact->diagnostics)
-      std::cerr << item.code << ": " << item.message << '\n';
+      std::cerr << item.code << ": " << item.message << " [" << item.subject << "]\n";
   throw std::runtime_error("native compilation failed");
 }
 void Write(const fs::path &path, const std::string &text) {
@@ -35,7 +37,7 @@ void Execute(const std::vector<std::string> &command) {
   Require(llvm::sys::ExecuteAndWait(command.front(), arguments) == 0, "command failed: " + command.front());
 }
 void LinkAndRun(const fs::path &root, const std::string &provider,
-                const std::string &consumer) {
+                const std::string &consumer, const std::string &interface_client = {}) {
   const auto program = (root / "program").string();
   std::vector<std::string> link{OBJC3_PUBLIC_ASYNC_LINKER, "--no-default-config",
                                 "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
@@ -44,7 +46,9 @@ void LinkAndRun(const fs::path &root, const std::string &provider,
   llvm::SmallVector<const char *, 16> flags;
   llvm::cl::TokenizeGNUCommandLine(OBJC3_PUBLIC_ASYNC_LINK_FLAGS, saver, flags);
   link.insert(link.end(), flags.begin(), flags.end());
-  for (const auto &argument : {std::string("-fuse-ld=lld"), provider, consumer,
+  link.insert(link.end(), {"-fuse-ld=lld", provider, consumer});
+  if (!interface_client.empty()) link.push_back(interface_client);
+  for (const auto &argument : {
        std::string(OBJC3_PUBLIC_ASYNC_RUNTIME), std::string(OBJC3_PUBLIC_ASYNC_OBJC),
        "-Wl,-rpath," + fs::path(OBJC3_PUBLIC_ASYNC_OBJC).parent_path().string(),
        std::string("-pthread"), std::string("-ldl"), std::string("-o"), program})
@@ -170,8 +174,84 @@ void CheckCCompletion(const std::string &standard, bool arc) {
                         std::string("-I") + OBJC3_PUBLIC_ASYNC_HEADERS};
   provider.emit = EmitKind::Object;
   provider.output_path = (root / "provider.o").string();
-  Compiled(Compile(provider));
+  provider.emit_semantic_interface = true;
+  provider.module_name = "test.CCompletion";
+  provider.module_source_root = root.string();
+  provider.package_identity = "c-completion-v1";
+  provider.interface_exports = {"completion_value_async_c", "completion_void_async_c",
+      "completion_object_async_c", "completion_block_async_c", "completion_error_async_c",
+      "completion_cancel_async_c", "completion_worker_async_c", "CompletionRecord",
+      "CompletionObject", "CompletionBlock", "completion_value_completion_t",
+      "completion_void_completion_t", "completion_object_completion_t",
+      "completion_block_completion_t", "completion_error_completion_t",
+      "completion_cancel_completion_t", "completion_worker_completion_t"};
+  const auto publication = Compile(provider);
+  Compiled(publication);
+  Require(publication.interface_artifact && publication.interface_artifact->success,
+          "C completion interface missing");
+  const auto &artifact = *publication.interface_artifact;
+  const auto supported = SupportedSemanticInterfaceCapabilities();
+  auto decoded = DecodeSemanticInterfaceSidecar(artifact.sidecar_json, artifact.source_bytes,
+                                                  supported);
+  if (!decoded) throw std::runtime_error(llvm::toString(decoded.takeError()));
+  const auto completion_semantic = RuntimeCompletionSemantic().str();
+  Require(std::find(decoded->required_semantics.begin(), decoded->required_semantics.end(),
+                    completion_semantic) != decoded->required_semantics.end(),
+          "C completion header was not bound to the interface");
+  for (const auto &symbol : {"completion_value_async_c", "completion_void_async_c",
+                            "completion_block_async_c", "completion_cancel_async_c"})
+    Require(std::any_of(decoded->declarations.begin(), decoded->declarations.end(),
+                       [&](const auto &entry) { return entry.qualified_name == symbol; }),
+            std::string("missing C export declaration: ") + symbol);
+  const auto interface_path = root / "CCompletion.objc3i";
+  Write(interface_path, artifact.source_bytes);
+  Write(interface_path.string() + ".json", artifact.sidecar_json);
+  if (standard == "c17" && !arc) {
+    // Rehash a valid sidecar after removing only the completion capability.
+    // The source still imports those types and must no longer be admissible.
+    std::erase(decoded->required_semantics, completion_semantic);
+    decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(
+        BuildSemanticFingerprintInput(*decoded));
+    auto incomplete = EncodeSemanticInterfaceSidecar(*decoded, supported);
+    if (!incomplete) throw std::runtime_error(llvm::toString(incomplete.takeError()));
+    auto rejected = DecodeSemanticInterfaceSidecar(*incomplete, artifact.source_bytes, supported);
+    Require(!rejected, "a C completion interface lost its required header capability");
+    Require(llvm::toString(rejected.takeError()).find("pinned header capability") != std::string::npos,
+            "header capability rejection did not identify the missing contract");
+  }
   Require(fs::remove(provider_source), "provider source removal failed");
+  // Check physical callable declarations directly from the paired interface.
+  // The ordinary C client below independently uses the public C header.
+  CompileRequest imported;
+  imported.input_path = (root / (cxx ? "interface-client.mm" : "interface-client.m")).string();
+  imported.language = provider.language;
+  imported.objc3 = true;
+  imported.arc = arc;
+  imported.objc_runtime = provider.objc_runtime;
+  imported.target_triple = provider.target_triple;
+  imported.arguments = provider.arguments;
+  imported.emit = EmitKind::Object;
+  imported.output_path = (root / "interface-client.o").string();
+  imported.source_text = R"(
+static void check_value(void *context, objc_async_completion_status_t status,
+                        CompletionRecord value, objc3_async_c_error error) {
+  (void)context; (void)status; (void)value; (void)error;
+}
+static void check_void(void *context, objc_async_completion_status_t status,
+                       objc3_async_c_error error) {
+  (void)context; (void)status; (void)error;
+}
+void interface_client(void) {
+  completion_value_async_c(32, 41, 0, check_value);
+  completion_void_async_c(0, check_void);
+}
+)";
+  InterfaceImportInput input;
+  input.source_path = interface_path.string();
+  input.sidecar_path = interface_path.string() + ".json";
+  input.locked_identity = artifact.identity;
+  imported.imported_interfaces = {input};
+  Compiled(Compile(imported));
   CompileRequest client;
   client.input_path = client_source.string();
   client.language = BaseLanguage::C;
@@ -182,7 +262,7 @@ void CheckCCompletion(const std::string &standard, bool arc) {
   client.emit = EmitKind::Object;
   client.output_path = (root / "client.o").string();
   Compiled(Compile(client));
-  LinkAndRun(root, provider.output_path, client.output_path);
+  LinkAndRun(root, provider.output_path, client.output_path, imported.output_path);
   std::cout << "C completion source-free execution " << standard << (arc ? " ARC\n" : " MRC\n");
 }
 }

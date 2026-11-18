@@ -9,6 +9,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/CanonicalType.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclObjC.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/RecordLayout.h"
 #include "clang/AST/Type.h"
@@ -174,6 +175,39 @@ llvm::StringRef RuntimeInterfaceHeaderSource() {
   return runtime_interface::kHeaderSource;
 }
 
+llvm::StringRef RuntimeCompletionSemantic() {
+  return runtime_interface::kCompletionSemantic;
+}
+
+llvm::StringRef RuntimeCompletionHeaderSource() {
+  return runtime_interface::kCompletionHeaderSource;
+}
+
+bool IsQualifiedRuntimeCompletionDeclaration(const clang::NamedDecl *declaration,
+                                             const clang::ASTContext &context) {
+  if (!declaration || !context.getTargetInfo().getTriple().isOSLinux()) return false;
+  auto from_header = [&](const clang::NamedDecl *candidate) {
+    return DeclarationHeaderMatches(candidate, context,
+                                    runtime_interface::kCompletionHeaderSha256);
+  };
+  if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration)) {
+    if (protocol->getName() != "Error" || !llvm::any_of(protocol->redecls(), from_header))
+      return false;
+    const auto *definition = protocol->getDefinition();
+    return !definition || (definition->decls_empty() &&
+                           definition->protocol_begin() == definition->protocol_end() &&
+                           !definition->hasAttrs());
+  }
+  const auto name = declaration->getQualifiedNameAsString();
+  if (llvm::isa<clang::TypedefNameDecl>(declaration))
+    return (name == "objc_async_completion_status_t" || name == "objc3_async_c_error") &&
+           from_header(declaration);
+  if (const auto *tag = llvm::dyn_cast<clang::EnumDecl>(declaration))
+    return name == "objc_async_completion_status" && from_header(tag) && tag->getDefinition() &&
+           from_header(tag->getDefinition());
+  return false;
+}
+
 llvm::StringRef RuntimeKeyPathHeaderSource() {
   return runtime_interface::kKeyPathHeaderSource;
 }
@@ -308,16 +342,21 @@ bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
 void AddRuntimeInterfaceFiles(
     std::vector<std::pair<std::string, std::string>> &files,
     std::vector<std::string> &arguments, bool cxx_task_definitions,
-    bool complete_standard_headers) {
+    bool complete_standard_headers, bool completion_declarations) {
   constexpr const char *root = "/__objc3_canonical_runtime";
   files.emplace_back(std::string(root) +
                          "/objc3c/runtime/objc3_runtime_services.h",
                      runtime_interface::kHeaderSource);
   files.emplace_back(std::string(root) + "/objc3c/runtime/objc3_keypath.h",
                      runtime_interface::kKeyPathHeaderSource);
-  for (const auto &file : files)
+  for (const auto &file : files) {
     cxx_task_definitions |= file.second.find(
         "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos;
+    completion_declarations |= file.second.find(kRuntimeCompletionInclude) != std::string::npos;
+  }
+  if (completion_declarations)
+    files.emplace_back(std::string(root) + "/objc3c/runtime/objc3_async_c.h",
+                       runtime_interface::kCompletionHeaderSource);
   if (cxx_task_definitions) {
     files.emplace_back(std::string(root) + "/objc3c/runtime/objc3_task.hpp",
                        runtime_interface::kTaskHeaderSource);

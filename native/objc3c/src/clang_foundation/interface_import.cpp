@@ -759,7 +759,8 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
       complete_standard_headers |= std::any_of(dependency.declarations.begin(),dependency.declarations.end(),HasCxxStandardLibraryIdentity);
     AddRuntimeInterfaceFiles(virtual_files, ast_arguments,
         module.source_bytes.find("#include <objc3c/runtime/objc3_task.hpp>") !=
-            std::string::npos,complete_standard_headers);
+            std::string::npos,complete_standard_headers,
+        module.source_bytes.find(kRuntimeCompletionInclude) != std::string::npos);
     for (std::size_t i = mappings_before_runtime; i < virtual_files.size(); ++i)
       if (!charge(usage.parser_input_bytes, virtual_files[i].second.size(), limits.parser_input_bytes, "parser runtime mapping byte"))
         return nullptr;
@@ -1377,6 +1378,13 @@ bool InterfaceImportSession::RequiresTaskHeader() const {
   return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
     return module.source_bytes.find("#include <objc3c/runtime/objc3_task.hpp>") !=
            std::string::npos;
+  });
+}
+
+bool InterfaceImportSession::RequiresCompletionHeader() const {
+  if (!impl_) return false;
+  return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
+    return llvm::is_contained(module.sidecar.required_semantics, RuntimeCompletionSemantic());
   });
 }
 

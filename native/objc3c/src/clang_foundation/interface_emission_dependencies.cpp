@@ -160,6 +160,10 @@ class TypeDependencyVisitor final
        UsesRuntimeFrame=true;
        return true;
      }
+     if (IsQualifiedRuntimeCompletionDeclaration(declaration, context_)) {
+       UsesRuntimeFrame = UsesCCompletion = true;
+       return true;
+     }
      if (IsQualifiedRuntimeTaskDeclaration(declaration,context_)) {
        UsesCxxTaskRuntime=true;
        UsesRuntimeFrame=true;
@@ -1176,6 +1180,7 @@ class TypeDependencyVisitor final
 
   bool UsesCanonicalFunctionEffects = false;
   bool UsesRuntimeFrame = false;
+  bool UsesCCompletion = false;
   bool UsesCxxTaskRuntime = false;
   bool UsesTypedKeyPaths = false;
   bool UsesKeyPathSubscripts = false;
@@ -1209,7 +1214,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            const std::vector<std::string> &exports,
                            const std::string &source_root,
                            bool *uses_typed_keypaths,
-                           bool *uses_keypath_subscripts) {
+                           bool *uses_keypath_subscripts,
+                           bool *uses_c_completion) {
   const auto first_diagnostic=result.diagnostics.size();
   auto qualify_diagnostics=llvm::scope_exit([&] {
     for(auto index=first_diagnostic;index<result.diagnostics.size();++index)
@@ -1393,6 +1399,7 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   uses_cxx_task_runtime |= visitor.UsesCxxTaskRuntime;
   if (uses_typed_keypaths) *uses_typed_keypaths |= visitor.UsesTypedKeyPaths;
   if (uses_keypath_subscripts) *uses_keypath_subscripts |= visitor.UsesKeyPathSubscripts;
+  if (uses_c_completion) *uses_c_completion |= visitor.UsesCCompletion;
   if (visitor.UsesCxxTaskRuntime && !IsQualifiedRuntimeTaskHeader(context))
     AddDiagnostic(result, "O3IFC112",
                   "published bodies using C++ tasks require the exact SDK task runtime header",

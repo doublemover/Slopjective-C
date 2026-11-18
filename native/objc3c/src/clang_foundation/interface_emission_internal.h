@@ -85,7 +85,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            const std::vector<std::string> &exports = {},
                            const std::string &source_root = {},
                            bool *uses_typed_keypaths = nullptr,
-                           bool *uses_keypath_subscripts = nullptr);
+                           bool *uses_keypath_subscripts = nullptr,
+                           bool *uses_c_completion = nullptr);
 
 bool ClassSpecializationArgumentKey(const clang::ClassTemplateSpecializationDecl *specialization,
                                     const clang::ASTContext &context,std::string &key);

@@ -1,5 +1,8 @@
 # Objective-C 3.0 on Linux
 
+The [Source 2.241 / System 2.167 C completion interfaces](linux_async_c_completion_exports.md)
+retain typed callback signatures and physical symbols in source-free packages.
+
 The [Source 2.240 / System 2.166 C completion exports](linux_async_c_completion_exports.md)
 deliver typed C callbacks from native frames, including distinct cancellation
 errors and callback-scoped result ownership.
@@ -2260,7 +2263,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    System capabilities.
 5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
    next implementation span is coherent, then perform one coordinated SDK
-   cutover. Source 2.154–2.236 still requires its fresh matching campaign; focused
+   cutover. Source 2.154–2.241 still requires its fresh matching campaign; focused
    local receipts do not promote a replacement archive. Avoid repeated archive
    rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native

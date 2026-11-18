@@ -116,6 +116,7 @@ public:
   GetSourceArtifacts() const;
   [[nodiscard]] bool RequiresRuntimeHeader() const;
   [[nodiscard]] bool RequiresTaskHeader() const;
+  [[nodiscard]] bool RequiresCompletionHeader() const;
   [[nodiscard]] bool RequiresCoroutineHeader() const;
   [[nodiscard]] std::vector<std::string> StandardLibraryHeaders() const;
   [[nodiscard]] bool RequiresKeyPathHeader() const;

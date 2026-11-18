@@ -19,6 +19,11 @@ bool IsQualifiedRuntimeFrameType(const clang::NamedDecl *declaration,
                                  const clang::ASTContext &context);
 llvm::StringRef RuntimeInterfaceSemantic();
 llvm::StringRef RuntimeInterfaceHeaderSource();
+inline constexpr char kRuntimeCompletionInclude[] = "#include <objc3c/runtime/objc3_async_c.h>";
+llvm::StringRef RuntimeCompletionSemantic();
+llvm::StringRef RuntimeCompletionHeaderSource();
+bool IsQualifiedRuntimeCompletionDeclaration(const clang::NamedDecl *declaration,
+                                             const clang::ASTContext &context);
 llvm::StringRef RuntimeTaskHeaderSource();
 llvm::StringRef RuntimeKeyPathHeaderSource();
 bool IsQualifiedRuntimeTaskHeader(const clang::ASTContext &context);
@@ -42,6 +47,6 @@ bool IsQualifiedStandardLibraryImport(const clang::ImportDecl *declaration,
 void AddRuntimeInterfaceFiles(
     std::vector<std::pair<std::string, std::string>> &files,
     std::vector<std::string> &arguments, bool cxx_task_definitions = false,
-    bool complete_standard_headers = false);
+    bool complete_standard_headers = false, bool completion_declarations = false);
 
 } // namespace objc3::clang_foundation

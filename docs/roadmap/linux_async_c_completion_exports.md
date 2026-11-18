@@ -46,6 +46,15 @@ retained object, Block and checked error lifetimes, nil success, cancellation
 before entry, a closed actor and 256 global-worker callbacks whose contexts are
 freed during delivery. All eight provider/consumer configurations pass locally.
 
-Compiler synthesis from a source declaration, automatic module export
-metadata, other async representations and full SDK and native ARM acceptance
-remain open.
+Source 2.241 / System 2.167 publishes these typed declarations in canonical
+semantic interfaces. The sidecar binds the exact public completion header.
+Import reconstructs that header before merging callable declarations, including
+the callback's native argument order, status enum and Objective-C error type.
+An unowned C ABI package can set its source root to include the shared public
+header and preserve the physical `_async_c` symbols. Eight interface clients
+compile from provider-free published declarations and link with the same
+provider objects as the separate C clients. The reader rejects a rehashed
+sidecar that removes the completion header capability.
+
+Automatic synthesis from a bare async declaration, other async representations
+and full SDK and native ARM acceptance remain open.

@@ -5,6 +5,10 @@ inline constexpr char kHeaderSha256[] = "@_runtime_services_header_sha256@";
 inline constexpr char kSemantic[] =
     "objc3.sdk-runtime-frames.v4.@_runtime_services_header_sha256@";
 inline constexpr char kHeaderSource[] = R"objc3_runtime(@_runtime_services_header_source@)objc3_runtime";
+inline constexpr char kCompletionHeaderSha256[] = "@_runtime_completion_header_sha256@";
+inline constexpr char kCompletionSemantic[] =
+    "objc3.sdk-runtime-c-completion.v1.@_runtime_completion_header_sha256@";
+inline constexpr char kCompletionHeaderSource[] = R"objc3_completion(@_runtime_completion_header_source@)objc3_completion";
 inline constexpr char kTaskHeaderSha256[] = "@_runtime_task_header_sha256@";
 inline constexpr char kTaskHeaderSource[] = R"objc3_task(@_runtime_task_header_source@)objc3_task";
 inline constexpr char kKeyPathHeaderSource[] = R"objc3_keypath(@_runtime_keypath_header_source@)objc3_keypath";

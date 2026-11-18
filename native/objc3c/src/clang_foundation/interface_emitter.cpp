@@ -254,7 +254,7 @@ class InterfaceCollector final
           llvm::isa<clang::TypedefNameDecl>(declaration))
         CheckTypeDependencies(declaration, context_, result_, resolved_ids_,
                               uses_runtime_frame_, uses_cxx_async_bodies_, exports_, source_root_,
-                              &uses_typed_keypaths_, &uses_keypath_subscripts_);
+                              &uses_typed_keypaths_, &uses_keypath_subscripts_, &uses_c_completion_);
       return true;
     }
     if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
@@ -438,7 +438,7 @@ class InterfaceCollector final
     uses_function_effects_ |=
         CheckTypeDependencies(representative, context_, result_, resolved_ids_,
                               uses_runtime_frame_, uses_cxx_async_bodies_, exports_, source_root_,
-                              &uses_typed_keypaths_, &uses_keypath_subscripts_);
+                              &uses_typed_keypaths_, &uses_keypath_subscripts_, &uses_c_completion_);
 
     const auto found = declarations_.find(stable_id);
     if (found == declarations_.end() ||
@@ -477,6 +477,7 @@ class InterfaceCollector final
 
   bool UsesCanonicalFunctionEffects() const { return uses_function_effects_; }
   bool UsesRuntimeFrame() const { return uses_runtime_frame_; }
+  bool UsesCCompletion() const { return uses_c_completion_; }
   bool UsesCxxAsyncBodies() const { return uses_cxx_async_bodies_; }
   bool UsesTypedKeyPaths() const { return uses_typed_keypaths_; }
   bool UsesKeyPathSubscripts() const { return uses_keypath_subscripts_; }
@@ -497,6 +498,7 @@ private:
   std::set<std::string> namespace_roots_;
   bool uses_function_effects_ = false;
   bool uses_runtime_frame_ = false;
+  bool uses_c_completion_ = false;
   bool uses_cxx_async_bodies_ = false;
   bool uses_typed_keypaths_ = false;
   bool uses_keypath_subscripts_ = false;
@@ -1046,6 +1048,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     source << "#include <objc3c/runtime/objc3_task.hpp>\n";
   else if (collector.UsesRuntimeFrame())
     source << "#include <objc3c/runtime/objc3_runtime_services.h>\n";
+  if (collector.UsesCCompletion()) source << kRuntimeCompletionInclude << '\n';
   if (collector.UsesTypedKeyPaths())
     source << "#include <objc3c/runtime/objc3_keypath.h>\n";
   auto ordered_dependencies = resolved_dependencies;
@@ -1091,6 +1094,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   SemanticInterfaceSidecar sidecar;
   if (collector.UsesRuntimeFrame() || collector.UsesCxxAsyncBodies())
     sidecar.required_semantics.push_back(RuntimeInterfaceSemantic().str());
+  if (collector.UsesCCompletion())
+    sidecar.required_semantics.push_back(RuntimeCompletionSemantic().str());
   sidecar.ownership_projection = ownership_projection.str();
   if (!ownership_projection.empty())
     sidecar.required_semantics.push_back("objc3.ownership-projection.v1");
@@ -1456,7 +1461,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   for(const auto &entry:sources_by_name)
     complete_standard_headers |= std::any_of(entry.second->declarations.begin(),entry.second->declarations.end(),HasCxxStandardLibraryIdentity);
   AddRuntimeInterfaceFiles(virtual_files, roundtrip_arguments,
-                           collector.UsesCxxAsyncBodies(),complete_standard_headers);
+                           collector.UsesCxxAsyncBodies(),complete_standard_headers,
+                           collector.UsesCCompletion());
   // Nested canonical dependencies use the same root-relative include spelling.
   roundtrip_arguments.insert(roundtrip_arguments.end(), {"-iquote", "."});
   auto roundtrip = clang::tooling::buildASTFromCodeWithArgs(
@@ -1658,7 +1664,8 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
   clang::tooling::FileContentMappings files;
   AddRuntimeInterfaceFiles(files, arguments, result.source_bytes.find(
       "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos,
-      std::find(original->required_semantics.begin(),original->required_semantics.end(),kCxxStandardLibrarySemantic)!=original->required_semantics.end());
+      std::find(original->required_semantics.begin(),original->required_semantics.end(),kCxxStandardLibrarySemantic)!=original->required_semantics.end(),
+      result.source_bytes.find(kRuntimeCompletionInclude) != std::string::npos);
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       result.source_bytes, arguments,
       context.getLangOpts().CPlusPlus ? "ownership-producer.mm"
@@ -1716,7 +1723,8 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
   }
   AddRuntimeInterfaceFiles(files, arguments, original.source_bytes.find(
       "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos,
-      std::find(original_contract->required_semantics.begin(),original_contract->required_semantics.end(),kCxxStandardLibrarySemantic)!=original_contract->required_semantics.end());
+      std::find(original_contract->required_semantics.begin(),original_contract->required_semantics.end(),kCxxStandardLibrarySemantic)!=original_contract->required_semantics.end(),
+      original.source_bytes.find(kRuntimeCompletionInclude) != std::string::npos);
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       original.source_bytes, arguments,
       producer.getLangOpts().CPlusPlus ? "ownership-consumer.mm"

@@ -169,7 +169,8 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
     "objc3.module-owned-names.v1",
-    RuntimeInterfaceSemantic()
+    RuntimeInterfaceSemantic(),
+    RuntimeCompletionSemantic()
   };
   return supported;
 }
@@ -1546,6 +1547,9 @@ llvm::Error ValidateForEncoding(
   if (required.count("objc3.keypath-subscripts.v1") &&
       !required.count("objc3.typed-keypaths.v1"))
     return Invalid("key-path subscripts are missing their typed key-path capability");
+  if (required.count(RuntimeCompletionSemantic().str()) &&
+      !required.count(RuntimeInterfaceSemantic().str()))
+    return Invalid("C completion declarations require the pinned runtime frame header");
   for (const auto &declaration : sidecar.declarations) {
     const auto &effects = declaration.effects;
     if (!IsValidAsyncABIIdentity(effects))
@@ -1708,6 +1712,9 @@ llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
       return Invalid(llvm::formatv("/required_semantics/{0}: unknown required semantic '{1}'", i, *text).str());
     result.required_semantics.push_back(text->str());
   }
+  if (generated_source_bytes.contains(kRuntimeCompletionInclude) !=
+      bool(seen_semantics.count(RuntimeCompletionSemantic().str())))
+    return Invalid("C completion source and pinned header capability must agree");
 
   auto declarations = RequiredArray(*root, "declarations", "/", kMaxDeclarations);
   if (!declarations) return declarations.takeError();

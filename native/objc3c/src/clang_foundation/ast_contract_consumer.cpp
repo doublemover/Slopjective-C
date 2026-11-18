@@ -27,7 +27,7 @@ class ContractConsumer final : public clang::ASTConsumer,
 
   void Initialize(clang::ASTContext &context) override {
     context_ = &context;
-    if (request_.module_owned_names) {
+    if (request_.module_owned_names || !request_.module_source_root.empty()) {
       source_root_ =
           NormalizeModuleSourceRoot(context, request_.module_source_root);
       const auto main = context.getSourceManager().getLocForStartOfFile(

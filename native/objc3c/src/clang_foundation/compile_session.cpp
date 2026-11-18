@@ -166,6 +166,8 @@ class Diagnostics final : public clang::DiagnosticConsumer {
 // file lets the parser finish the header and its linkage scope before importing.
 constexpr const char *kEagerRuntimeHeader =
     "/__objc3_import_runtime/objc3_runtime_services.h";
+constexpr const char *kEagerCompletionHeader =
+    "/__objc3_import_runtime/objc3_async_c.h";
 constexpr const char *kEagerKeyPathHeader =
     "/__objc3_import_runtime/objc3_keypath.h";
 constexpr const char *kEagerTaskHeader =
@@ -686,6 +688,12 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           preprocessor.addRemappedFile(kEagerTaskHeader,
               llvm::MemoryBuffer::getMemBufferCopy(RuntimeTaskHeaderSource(),kEagerTaskHeader).release());
         prelude+=std::string("#include \"")+(needs_task?kEagerTaskHeader:kEagerRuntimeHeader)+"\"\n";
+        if (import_session_->RequiresCompletionHeader()) {
+          preprocessor.addRemappedFile(kEagerCompletionHeader,
+              llvm::MemoryBuffer::getMemBufferCopy(RuntimeCompletionHeaderSource(),
+                                                    kEagerCompletionHeader).release());
+          prelude += std::string("#include \"") + kEagerCompletionHeader + "\"\n";
+        }
       }
       if (import_session_->RequiresKeyPathHeader()) {
         preprocessor.addRemappedFile(kEagerKeyPathHeader,
@@ -951,7 +959,8 @@ CompileResult Compile(const CompileRequest &request) {
     result.failure = "the ownership-producer module suffix is reserved";
     return result;
   }
-  if ((!request.module_source_root.empty() && !request.module_owned_names) ||
+  if ((!request.module_source_root.empty() && !request.module_owned_names &&
+       !request.emit_semantic_interface) ||
       (request.module_owned_names &&
        (request.module_name.empty() || request.package_identity.empty())) ||
       request.input_path.empty() ||
