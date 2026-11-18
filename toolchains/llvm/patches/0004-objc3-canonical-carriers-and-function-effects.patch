@@ -6828,7 +6828,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  #include "clang/AST/Attr.h"
  #include "clang/AST/Decl.h"
  #include "clang/AST/DeclCXX.h"
-@@ -19,133 +20,317 @@
+@@ -19,133 +20,318 @@
  #include "clang/AST/DeclVisitor.h"
  #include "clang/AST/Expr.h"
  #include "clang/AST/ExprCXX.h"
@@ -6838,6 +6838,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  #include "clang/Basic/Module.h"
  #include "clang/Basic/SourceManager.h"
 +#include "llvm/ADT/STLExtras.h"
++#include "llvm/ADT/SmallString.h"
 +#include "llvm/ADT/SmallVector.h"
  #include "llvm/ADT/StringExtras.h"
 +#include "llvm/ADT/StringSet.h"
@@ -7256,7 +7257,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void TemplateParameterList::print(raw_ostream &Out, const ASTContext &Context,
-@@ -190,30 +375,33 @@
+@@ -190,30 +376,33 @@
    return BaseType;
  }
  
@@ -7299,7 +7300,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      if (isFirst) {
        isFirst = false;
      } else {
-@@ -236,7 +424,7 @@
+@@ -236,7 +425,7 @@
    Printer.VisitDeclContext(const_cast<DeclContext *>(this), /*Indent=*/false);
  }
  
@@ -7308,7 +7309,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -250,27 +438,349 @@
+@@ -250,27 +439,349 @@
    if (ALoc.isInvalid() || DLoc.isInvalid())
      return DeclPrinter::AttrPosAsWritten::Left;
  
@@ -7600,7 +7601,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +           (isa<TypeAliasDecl>(D) && SPI->getAnnotation().starts_with("objc3.alias-owner:")) ||
 +           (isa<ConceptDecl>(D) && SPI->getAnnotation().starts_with("objc3.concept-owner:"))) &&
 +          SPI->args_size() == 0))
-       continue;
++      continue;
 +    if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) &&
 +        nativeObjectPolicySpelling(A)) {
 +      if(Pos!=AttrPosAsWritten::Default && Pos!=AttrPosAsWritten::Left)continue;
@@ -7610,7 +7611,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +          AOut << '(' << ObjCMethodFamilyAttr::ConvertFamilyKindToStr(Family->getFamily()) << ')';
 +        AOut << "))";
 +      }
-+      continue;
+       continue;
 +    }
 +
 +    std::string PredicateSpelling;
@@ -7663,7 +7664,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      switch (A->getKind()) {
  #define ATTR(X)
  #define PRAGMA_SPELLING_ATTR(X) case attr::X:
-@@ -278,11 +788,226 @@
+@@ -278,11 +789,226 @@
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -7891,7 +7892,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        }
        break;
      }
-@@ -348,12 +1073,11 @@
+@@ -348,12 +1074,11 @@
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -7905,7 +7906,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -390,16 +1114,17 @@
+@@ -390,16 +1115,17 @@
      }
  
      if (Expr *Init = BMInitializer->getInit()) {
@@ -7928,7 +7929,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Expr *SimpleInit = nullptr;
        Expr **Args = nullptr;
        unsigned NumArgs = 0;
-@@ -451,7 +1176,7 @@
+@@ -451,7 +1177,7 @@
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -7937,7 +7938,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +1196,15 @@
+@@ -471,6 +1197,15 @@
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -7953,7 +7954,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +1288,12 @@
+@@ -554,9 +1289,12 @@
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -7968,7 +7969,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +1406,106 @@
+@@ -669,45 +1407,106 @@
    Out << Proto;
  }
  
@@ -8090,7 +8091,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +1519,24 @@
+@@ -721,12 +1520,24 @@
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -8117,7 +8118,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +1563,14 @@
+@@ -753,12 +1564,14 @@
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -8134,7 +8135,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1619,10 @@
+@@ -807,7 +1620,10 @@
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -8146,7 +8147,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1633,53 @@
+@@ -818,17 +1634,53 @@
        }
      }
  
@@ -8205,7 +8206,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1701,15 @@
+@@ -850,7 +1702,15 @@
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -8222,7 +8223,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -877,9 +1736,17 @@
+@@ -877,9 +1737,17 @@
          Indentation -= Policy.Indentation;
        }
  
@@ -8243,7 +8244,15 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,21 +1761,29 @@
+@@ -888,27 +1756,48 @@
+ }
+ 
+ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
++  const bool Reparse = Policy.PolishForDeclaration || Policy.PrintAsCanonical ||
++                       Context.getLangOpts().ObjC3;
+   if (TypeSourceInfo *TSI = D->getFriendType()) {
+     unsigned NumTPLists = D->getFriendTypeNumTemplateParameterLists();
+     for (unsigned i = 0; i < NumTPLists; ++i)
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -8261,31 +8270,43 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 -  }
 -  else if (ClassTemplateDecl *CTD =
 -           dyn_cast<ClassTemplateDecl>(D->getFriendDecl())) {
+-    Out << "friend ";
+-    VisitRedeclarableTemplateDecl(CTD);
 +  } else if (FunctionTemplateDecl *FTD =
 +                 dyn_cast<FunctionTemplateDecl>(D->getFriendDecl())) {
-+    // Native grammar puts the template head and its requires-clause before
-+    // friend. Printing friend template<...> changes lookup or fails to parse.
-+    for (TemplateParameterList *TPL : FTD->getTemplatedDecl()->getTemplateParameterLists())
-+      printTemplateParameters(TPL);
-+    printTemplateParameters(FTD->getTemplateParameters());
-     Out << "friend ";
--    VisitRedeclarableTemplateDecl(CTD);
-+    VisitFunctionDecl(FTD->getTemplatedDecl());
++    if (Reparse) {
++      // A source template head and any requires-clause precede friend.
++      for (TemplateParameterList *TPL :
++           FTD->getTemplatedDecl()->getTemplateParameterLists())
++        printTemplateParameters(TPL);
++      printTemplateParameters(FTD->getTemplateParameters());
++      Out << "friend ";
++      VisitFunctionDecl(FTD->getTemplatedDecl());
++    } else {
++      Out << "friend ";
++      VisitFunctionTemplateDecl(FTD);
++    }
 +  } else if (ClassTemplateDecl *CTD =
 +                 dyn_cast<ClassTemplateDecl>(D->getFriendDecl())) {
-+    printTemplateParameters(CTD->getTemplateParameters());
-+    const auto *Record=CTD->getTemplatedDecl();
-+    // Friendship refers to the template, even if lookup selected an already
-+    // defined redeclaration. A friend class clause never prints its body.
-+    Out << "friend " << Record->getKindName() << ' ';
-+    if(auto Attrs=prettyPrintAttributes(Record,AttrPosAsWritten::Left))Out<<*Attrs<<' ';
-+    Record->getQualifier().print(Out,Policy);
-+    Out<<*Record;
-+    if(auto Attrs=prettyPrintAttributes(Record,AttrPosAsWritten::Right))Out<<' '<<*Attrs;
++    if (Reparse) {
++      printTemplateParameters(CTD->getTemplateParameters());
++      const auto *Record = CTD->getTemplatedDecl();
++      // A friend class clause omits the body of a defined redeclaration.
++      Out << "friend " << Record->getKindName() << ' ';
++      if (auto Attrs = prettyPrintAttributes(Record, AttrPosAsWritten::Left))
++        Out << *Attrs << ' ';
++      Record->getQualifier().print(Out, Policy);
++      Out << *Record;
++      if (auto Attrs = prettyPrintAttributes(Record, AttrPosAsWritten::Right))
++        Out << ' ' << *Attrs;
++    } else {
++      Out << "friend ";
++      VisitRedeclarableTemplateDecl(CTD);
++    }
    }
  
    if (D->isPackExpansion())
-@@ -917,14 +1792,22 @@
+@@ -917,14 +1806,22 @@
  
  void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    prettyPrintPragmas(D);
@@ -8310,7 +8331,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -932,6 +1815,9 @@
+@@ -932,6 +1829,9 @@
                                    &Context);
    }
  
@@ -8320,7 +8341,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Expr *Init = D->getInClassInitializer();
    if (!Policy.SuppressInitializers && Init) {
      if (D->getInClassInitStyle() == ICIS_ListInit)
-@@ -940,16 +1826,57 @@
+@@ -940,16 +1840,57 @@
        Out << " = ";
      Init->printPretty(Out, nullptr, Policy, Indentation, "\n", &Context);
    }
@@ -8383,7 +8404,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1886,10 @@
+@@ -959,9 +1900,10 @@
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -8397,7 +8418,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1913,60 @@
+@@ -985,22 +1927,60 @@
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -8462,7 +8483,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1988,8 @@
+@@ -1022,6 +2002,8 @@
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -8471,7 +8492,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1997,7 @@
+@@ -1029,9 +2011,7 @@
    }
  }
  
@@ -8482,7 +8503,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +2012,7 @@
+@@ -1046,8 +2026,7 @@
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -8492,7 +8513,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +2034,8 @@
+@@ -1069,6 +2048,8 @@
      Out << "inline ";
  
    Out << "namespace ";
@@ -8501,7 +8522,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +2062,9 @@
+@@ -1095,6 +2076,9 @@
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -8511,7 +8532,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +2101,8 @@
+@@ -1131,7 +2115,8 @@
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -8521,7 +8542,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +2233,7 @@
+@@ -1262,7 +2247,7 @@
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -8530,7 +8551,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +2253,21 @@
+@@ -1282,12 +2267,21 @@
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -8553,7 +8574,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +2282,11 @@
+@@ -1302,7 +2296,11 @@
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -8566,7 +8587,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +2304,14 @@
+@@ -1320,6 +2318,14 @@
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -8581,7 +8602,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +2369,17 @@
+@@ -1377,13 +2383,17 @@
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -8602,7 +8623,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +2394,18 @@
+@@ -1398,9 +2408,18 @@
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -8623,7 +8644,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +2477,8 @@
+@@ -1472,9 +2491,8 @@
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -8635,7 +8656,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +2487,22 @@
+@@ -1483,8 +2501,22 @@
      Out << name;
  
    if (OMD->isVariadic())
@@ -8659,7 +8680,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +2510,7 @@
+@@ -1492,8 +2524,7 @@
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -8669,7 +8690,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << ';';
  }
  
-@@ -1512,8 +2529,8 @@
+@@ -1512,8 +2543,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8680,7 +8701,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2562,7 @@
+@@ -1545,7 +2576,7 @@
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -8689,7 +8710,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2575,8 @@
+@@ -1558,7 +2589,8 @@
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8699,7 +8720,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2586,8 @@
+@@ -1568,9 +2600,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8711,7 +8732,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2604,8 @@
+@@ -1587,6 +2618,8 @@
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -8720,7 +8741,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2615,8 @@
+@@ -1596,7 +2629,8 @@
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8730,7 +8751,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2639,8 @@
+@@ -1619,6 +2653,8 @@
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -8739,7 +8760,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2649,26 @@
+@@ -1627,13 +2663,26 @@
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -8770,7 +8791,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2680,8 @@
+@@ -1645,8 +2694,8 @@
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -8781,7 +8802,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2788,14 @@
+@@ -1753,15 +2802,14 @@
        }
      }
  
@@ -8803,7 +8824,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2831,14 @@
+@@ -1797,11 +2845,14 @@
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -8821,7 +8842,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2860,7 @@
+@@ -1823,7 +2874,7 @@
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -8830,7 +8851,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
-@@ -1971,7 +3008,14 @@
+@@ -1971,7 +3022,14 @@
    if (IdentifierInfo *II = NTTP->getIdentifier())
      Name =
          Policy.CleanUglifiedParameters ? II->deuglifiedName() : II->getName();
@@ -8846,7 +8867,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (NTTP->hasDefaultArgument() && !NTTP->defaultArgumentWasInherited()) {
      Out << " = ";
-@@ -2023,3 +3067,18 @@
+@@ -2023,3 +3081,23 @@
      }
    }
  }
@@ -8856,16 +8877,20 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +// attributes follow it, where parameter-dependent contracts remain in scope.
 +void clang::printObjC3LambdaAttributes(const CXXMethodDecl *Method,
 +    const PrintingPolicy &Policy, raw_ostream &Out, bool Front) {
-+  if(!Front) {
-+    auto TypePolicy=Policy;TypePolicy.PrintAsCanonical=true;
-+    Out << ' ';printObjC3FunctionTypeAttributes(Method,TypePolicy,Out);
++  if (!Front) {
++    auto TypePolicy = Policy;
++    TypePolicy.PrintAsCanonical = true;
++    SmallString<128> TypeAttributes;
++    llvm::raw_svector_ostream Attributes(TypeAttributes);
++    printObjC3FunctionTypeAttributes(Method, TypePolicy, Attributes);
++    if (!TypeAttributes.empty())
++      Out << ' ' << StringRef(TypeAttributes).rtrim();
 +  }
 +  DeclPrinter Printer(Out, Policy, Method->getASTContext());
 +  if (auto Attributes=Printer.prettyPrintAttributes(Method,
 +          DeclPrinter::AttrPosAsWritten::Default, Front);
 +      Attributes && !Attributes->empty()) Out << ' ' << *Attributes;
 +}
-
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
 index 172a19f8f..4d90ea9bf 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
@@ -10159,6 +10184,15 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  #include "clang/AST/PrettyPrinter.h"
  #include "clang/AST/TemplateBase.h"
  #include "clang/AST/TemplateName.h"
+@@ -123,7 +125,7 @@
+              StringRef PlaceHolder);
+   void print(QualType T, raw_ostream &OS, StringRef PlaceHolder);
+ 
+-  static bool canPrefixQualifiers(const Type *T, bool &NeedARCStrongQualifier);
++  bool canPrefixQualifiers(const Type *T, bool &NeedARCStrongQualifier);
+   void spaceBeforePlaceHolder(raw_ostream &OS);
+   void printTypeSpec(NamedDecl *D, raw_ostream &OS);
+   void printTemplateId(const TemplateSpecializationType *T, raw_ostream &OS,
 @@ -236,6 +238,9 @@
      case Type::InjectedClassName:
      case Type::DependentName:
@@ -10169,22 +10203,23 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      case Type::ObjCTypeParam:
      case Type::ObjCInterface:
      case Type::Atomic:
-@@ -295,6 +300,14 @@
+@@ -295,6 +300,15 @@
        // We still want to print the address_space before the type if it is an
        // address_space attribute.
        const auto *AttrTy = cast<AttributedType>(UnderlyingType);
 +      // Ownership/GC spelling delegates to the equivalent type. Make the
 +      // surrounding qualifier placement follow the same type, including when
 +      // MRC suppresses an otherwise visible lifetime attribute.
-+      if (AttrTy->getAttrKind() == attr::ObjCOwnership ||
-+          AttrTy->getAttrKind() == attr::ObjCGC ||
-+          AttrTy->getAttrKind() == attr::ObjCInertUnsafeUnretained)
++      if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) &&
++          (AttrTy->getAttrKind() == attr::ObjCOwnership ||
++           AttrTy->getAttrKind() == attr::ObjCGC ||
++           AttrTy->getAttrKind() == attr::ObjCInertUnsafeUnretained))
 +        return canPrefixQualifiers(AttrTy->getEquivalentType().getTypePtr(),
 +                                   NeedARCStrongQualifier);
        CanPrefixQualifiers = AttrTy->getAttrKind() == attr::AddressSpace;
        break;
      }
-@@ -401,6 +414,42 @@
+@@ -401,6 +415,42 @@
    printAfter(T->getElementType(), OS);
  }
  
@@ -10227,7 +10262,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  void TypePrinter::printPointerBefore(const PointerType *T, raw_ostream &OS) {
    IncludeStrongLifetimeRAII Strong(Policy);
    SaveAndRestore NonEmptyPH(HasEmptyPlaceHolder, false);
-@@ -987,10 +1036,25 @@
+@@ -987,10 +1037,25 @@
    } else {
      // If needed for precedence reasons, wrap the inner part in grouping parens.
      SaveAndRestore PrevPHIsEmpty(HasEmptyPlaceHolder, false);
@@ -10253,7 +10288,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  }
  
  StringRef clang::getParameterABISpelling(ParameterABI ABI) {
-@@ -1028,6 +1092,7 @@
+@@ -1028,6 +1093,7 @@
  
        auto EPI = T->getExtParameterInfo(i);
        if (EPI.isConsumed()) OS << "__attribute__((ns_consumed)) ";
@@ -10261,7 +10296,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
        if (EPI.isNoEscape())
          OS << "__attribute__((noescape)) ";
        auto ABI = EPI.getABI();
-@@ -1104,15 +1169,28 @@
+@@ -1104,15 +1170,28 @@
    }
    T->printExceptionSpecification(OS, Policy);
  
@@ -10299,7 +10334,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    }
  
    if (T->hasCFIUncheckedCallee())
-@@ -1120,6 +1198,7 @@
+@@ -1120,6 +1199,7 @@
  
    if (T->hasTrailingReturn()) {
      OS << " -> ";
@@ -10307,7 +10342,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      print(T->getReturnType(), OS, StringRef());
    } else
      printAfter(T->getReturnType(), OS);
-@@ -1228,8 +1307,6 @@
+@@ -1228,8 +1308,6 @@
      OS << " __attribute__((noreturn))";
    if (Info.getCmseNSCall())
      OS << " __attribute__((cmse_nonsecure_call))";
@@ -10316,7 +10351,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (Info.getRegParm())
      OS << " __attribute__((regparm ("
         << Info.getRegParm() << ")))";
-@@ -1243,9 +1320,12 @@
+@@ -1243,9 +1321,12 @@
                                               raw_ostream &OS) {
    // If needed for precedence reasons, wrap the inner part in grouping parens.
    SaveAndRestore PrevPHIsEmpty(HasEmptyPlaceHolder, false);
@@ -10329,7 +10364,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
  }
  
  void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
-@@ -1544,6 +1624,14 @@
+@@ -1544,6 +1625,14 @@
  
  void TypePrinter::printPredefinedSugarBefore(const PredefinedSugarType *T,
                                               raw_ostream &OS) {
@@ -10344,7 +10379,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    OS << T->getIdentifier()->getName();
    spaceBeforePlaceHolder(OS);
  }
-@@ -1618,6 +1706,16 @@
+@@ -1618,6 +1707,16 @@
  }
  
  void TypePrinter::printRecordBefore(const RecordType *T, raw_ostream &OS) {
@@ -10361,7 +10396,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    // Print the preferred name if we have one for this type.
    if (Policy.UsePreferredNames) {
      for (const auto *PNA : T->getDecl()
-@@ -1787,7 +1885,7 @@
+@@ -1787,7 +1886,7 @@
                                              raw_ostream &OS) {}
  
  void TypePrinter::printParenBefore(const ParenType *T, raw_ostream &OS) {
@@ -10370,7 +10405,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      printBefore(T->getInnerType(), OS);
      OS << '(';
    } else
-@@ -1795,7 +1893,7 @@
+@@ -1795,7 +1894,7 @@
  }
  
  void TypePrinter::printParenAfter(const ParenType *T, raw_ostream &OS) {
@@ -10379,7 +10414,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      OS << ')';
      printAfter(T->getInnerType(), OS);
    } else
-@@ -1866,6 +1964,8 @@
+@@ -1866,6 +1965,8 @@
        T->getAttrKind() == attr::ObjCOwnership)
      return printBefore(T->getEquivalentType(), OS);
  
@@ -10388,7 +10423,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (T->getAttrKind() == attr::ObjCKindOf)
      OS << "__kindof ";
  
-@@ -1885,6 +1985,10 @@
+@@ -1885,6 +1986,10 @@
    else
      printBefore(T->getModifiedType(), OS);
  
@@ -10399,7 +10434,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    if (T->isMSTypeSpec()) {
      switch (T->getAttrKind()) {
      default: return;
-@@ -1932,7 +2036,8 @@
+@@ -1932,7 +2037,8 @@
  
    // Some attributes are printed as qualifiers before the type, so we have
    // nothing left to do.
@@ -10409,7 +10444,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
        T->getImmediateNullability() || T->isWebAssemblyFuncrefSpec())
      return;
  
-@@ -1940,10 +2045,8 @@
+@@ -1940,10 +2046,8 @@
    if (T->getAttrKind() == attr::ObjCInertUnsafeUnretained)
      return;
  
@@ -10422,7 +10457,7 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
      return;
  
    if (T->getAttrKind() == attr::LifetimeBound) {
-@@ -2030,6 +2133,9 @@
+@@ -2030,6 +2134,9 @@
      // AttributedType nodes for them.
      break;
  
@@ -10432,7 +10467,6 @@ diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
    case attr::CountedBy:
    case attr::CountedByOrNull:
    case attr::SizedBy:
-
 diff --git a/clang/lib/Parse/CMakeLists.txt b/clang/lib/Parse/CMakeLists.txt
 index 8dd120f52..01c123394 100644
 --- a/clang/lib/Parse/CMakeLists.txt

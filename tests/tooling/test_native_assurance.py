@@ -197,6 +197,41 @@ def test_sdk_diagnostics_reject_run_identity_escaping_owned_output(tmp_path):
         preserve(tmp_path, tmp_path / 'evidence', {})
 
 
+def test_failed_sdk_foundation_retains_logs_before_candidate_exists(tmp_path):
+    from scripts.objc3c_assurance.package_evidence import preserve, snapshot
+    from scripts.objc3c_assurance.release_matrix import stage_partial
+
+    build = tmp_path / 'out/toolchains/objc3-development/build-linux-aarch64'
+
+    def record(name, message):
+        run = build / 'foundation-runs' / name
+        run.mkdir(parents=True)
+        log = run / 'test-0.log'
+        log.write_text(message)
+        data = {'status': 'failed', 'run_directory': str(run), 'phases': [
+            {'phase': 'test', 'exit_code': 1, 'log': str(log), 'log_sha256': evidence.digest(log)}]}
+        (run / 'report.json').write_text(json.dumps(data))
+        (build / 'foundation-build-report.json').write_text(json.dumps(data))
+        return log
+
+    record('previous', 'old failure')
+    before = snapshot(tmp_path)
+    log = record('current', 'specific foundation assertion')
+    (log.parent / 'compiler.o').write_bytes(b'excluded build product')
+    result = tmp_path / 'result'
+    preserve(tmp_path, result / 'package/sdk-diagnostics', before)
+    staged = tmp_path / 'staged'
+    stage_partial(result, staged)
+    target = staged / 'package/sdk-diagnostics/foundation/build-linux-aarch64/current'
+    assert (target / 'test-0.log').read_text() == 'specific foundation assertion'
+    assert (target / 'report.json').is_file()
+    assert not (target.parent / 'previous').exists() and not (target / 'compiler.o').exists()
+
+    log.write_text('substituted')
+    with pytest.raises(ValueError, match='recorded command'):
+        preserve(tmp_path, tmp_path / 'altered', before)
+
+
 def test_native_artifact_inventory_includes_retained_product_bytes(tmp_path):
     root = tmp_path / 'sanitizers'
     shared = root / 'campaign/product-evidence-blobs' / ('a'*64+'.zst')
