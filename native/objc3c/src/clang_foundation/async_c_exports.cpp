@@ -394,9 +394,16 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
       }
       // A native await supplies the same executor admission, startup errors,
       // and cancellation propagation as an ordinary Objective-C caller.
-      definitions << "static " << result->spelling << ' ' << bridge << '('
-                  << bridge_parameters
-                  << ") __objc3_async_frame";
+      if (actor_method) {
+        // The native async Block ramp copies its captures before suspending,
+        // including the typed receiver, with the same cleanup in ARC and MRC.
+        definitions << "static objc3_async_frame " << bridge << '('
+                    << bridge_parameters << ") { return (^" << result->spelling
+                    << "(void) __objc3_async_frame";
+      } else {
+        definitions << "static " << result->spelling << ' ' << bridge << '('
+                    << bridge_parameters << ") __objc3_async_frame";
+      }
       if (checked) {
         definitions << " __objc3_throws";
         if (effects.Throws == clang::ObjC3ThrowsKind::Typed)
@@ -407,7 +414,7 @@ AsyncCExportSource GenerateAsyncCExports(clang::ASTContext &context,
       if (checked) definitions << "__objc3_try(";
       definitions << "__objc3_await " << call;
       if (checked) definitions << ')';
-      definitions << "; }\n";
+      definitions << (actor_method ? "; })(); }\n" : "; }\n");
       frame = bridge + '(' + bridge_inputs + ')';
     }
     definitions << "OBJC3_ASYNC_C_DEFINE_" << (returns_void ? "VOID" : result->kind)

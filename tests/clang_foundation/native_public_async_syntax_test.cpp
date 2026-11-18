@@ -237,12 +237,16 @@ extern void objc_release(id);
 #ifdef __cplusplus
 }
 #endif
+static _Atomic(unsigned) generated_actor_destructions;
 __attribute__((objc_root_class)) @interface GeneratedActorRoot { Class isa; }
 + (instancetype)new;
 @end
 @implementation GeneratedActorRoot
 + (instancetype)new { return class_createInstance(self, 0); }
-- (void)dealloc { object_dispose(self); }
+- (void)dealloc {
+  __c11_atomic_fetch_add(&generated_actor_destructions, 1, __ATOMIC_RELAXED);
+  object_dispose(self);
+}
 #if !__has_feature(objc_arc)
 - (void)_ARCCompliantRetainRelease {}
 #endif
@@ -298,6 +302,9 @@ void generated_actor_release(void *actor) {
 #else
   objc_release((id)actor);
 #endif
+}
+unsigned generated_actors_destroyed(void) {
+  return __c11_atomic_load(&generated_actor_destructions, __ATOMIC_RELAXED);
 }
 #ifdef __cplusplus
 }
@@ -421,6 +428,7 @@ void call_imported_actor(void *receiver) {
 extern objc3_async_c_error generated_failure(void);
 extern void *generated_actor_create(void);
 extern void generated_actor_release(void *);
+extern unsigned generated_actors_destroyed(void);
 extern void *_Block_copy(const void *);
 extern void _Block_release(const void *);
 #ifdef __BLOCKS__
@@ -430,6 +438,13 @@ static ClientBlock retained_block;
 typedef void *ClientBlock;
 #endif
 static atomic_int complete[16];
+static atomic_uint paused_workers;
+static atomic_bool resume_workers;
+static void hold_worker(void *unused) {
+  (void)unused;
+  atomic_fetch_add(&paused_workers, 1);
+  while (!atomic_load(&resume_workers)) nanosleep(&(struct timespec){0, 1000000}, 0);
+}
 static void value_done(void *context, objc_async_completion_status_t status,
                        int value, objc3_async_c_error error) {
   assert(context == &complete[0] && status == OBJC_ASYNC_COMPLETION_SUCCESS);
@@ -532,11 +547,24 @@ int main(void) {
   generated_main_async_c(41, &complete[7], executor_done);
   generated_named_async_c(41, &complete[8], executor_done);
   generated_missing_async_c(&complete[10], missing_done);
+  // No bridge body may acquire a receiver until after the C caller releases
+  // its reference. The canonical executor has four shared workers.
+  objc3_executor_t *global = 0;
+  assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
+  for (unsigned worker = 0; worker != 4; ++worker)
+    assert(objc3_executor_enqueue(global, hold_worker, 0) == OBJC3_SERVICE_OK);
+  for (unsigned elapsed = 0; elapsed < 2000 && atomic_load(&paused_workers) != 4; ++elapsed)
+    nanosleep(&(struct timespec){0, 1000000}, 0);
+  assert(atomic_load(&paused_workers) == 4);
+  objc3_executor_release(global);
   GeneratedActor_add_by_async_c(actor, 40, 2, &complete[11], actor_done);
   GeneratedActor_current_async_c(other, &complete[12], actor_done);
   GeneratedActor_checked_async_c(actor, false, &complete[13], actor_done);
   GeneratedActor_checked_async_c(actor, true, &complete[14], actor_done);
   GeneratedActor_current_async_c(closed, &complete[15], actor_done);
+  generated_actor_release(actor);
+  assert(generated_actors_destroyed() == 0);
+  atomic_store(&resume_workers, true);
   for (int elapsed = 0; elapsed < 2000; ++elapsed) {
     unsigned executed = 0;
     assert(objc3_executor_pump(main_executor, 8, &executed) == OBJC3_SERVICE_OK);
@@ -549,10 +577,13 @@ int main(void) {
 #endif
       assert(objc3_executor_unregister_named("generated.completion") == OBJC3_SERVICE_OK);
       assert(objc3_actor_join(closed_mailbox) == OBJC3_SERVICE_OK);
+      assert(objc3_actor_unbind_object(closed) == OBJC3_SERVICE_OK);
       objc3_actor_release(closed_mailbox);
       generated_actor_release(closed);
       generated_actor_release(other);
-      generated_actor_release(actor);
+      for (unsigned wait = 0; wait < 2000 && generated_actors_destroyed() != 3; ++wait)
+        nanosleep(&(struct timespec){0, 1000000}, 0);
+      assert(generated_actors_destroyed() == 3);
       objc3_executor_release(named_executor);
       objc3_executor_release(main_executor);
       return 0;

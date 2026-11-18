@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.257 / System 2.183 receiver ownership change](linux_async_c_completion_exports.md)
+roots generated actor receivers in native Block frames before submission
+returns in ARC and MRC. The C caller can release its reference before entry.
+
 The [Source 2.256 / System 2.182 actor C completions](linux_async_c_completion_exports.md)
 generate a typed native await for a selected instance method and publish an
 opaque C receiver parameter with its callback. Source-free C clients verify

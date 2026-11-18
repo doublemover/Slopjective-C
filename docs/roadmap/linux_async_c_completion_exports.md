@@ -136,7 +136,7 @@ Only the thunk and its C signature enter the exported interface, so clients
 can import it independently of the actor class definition.
 
 The receiver must be a live instance of the named actor class or its subclass.
-C callers keep the receiver alive through completion. Ordinary method
+The receiver must stay live while the thunk builds its frame. Ordinary method
 ownership, isolation and checked error admission apply. The generator admits
 directly declared isolated synchronous methods and native async frame methods,
 including nullary and multi-argument selectors. C++ crossings require the
@@ -147,3 +147,15 @@ Eight separate C clients invoke two live actor instances and a closed mailbox
 through their generated headers. Each body checks its actor identity.
 Callbacks cover isolated state, checked success, the original typed error
 object and distinguished cancellation at the closed destination.
+
+Source 2.257 / System 2.183 roots the typed receiver in the native async
+Block frame before the C thunk returns. ARC and MRC callers may release
+their receiver immediately after submission. Native frame cleanup releases
+the capture after completion or cancellation. Ordinary C pointer parameters
+keep their source borrowing contract.
+
+The eight actor clients pause all global workers, submit the calls, release
+the caller's receiver, and then let the frames enter. The preceding MRC
+bridge destroys the receiver immediately. The owning bridge delivers each
+callback once and destroys all three actor objects after completion and
+explicit mailbox unbind.
