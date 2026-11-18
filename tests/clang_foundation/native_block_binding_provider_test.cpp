@@ -63,6 +63,11 @@ template<class T>struct TemplateFactory{static BindingWork make(T owner,unsigned
 }};
 inline BindingWork callback_alias_factory(BindingWork callback){const BindingWork snapshot=callback;return FACTORY_RESULT(^void(void) __objc3_async_frame {__objc3_await snapshot();});}
 inline BindingWork scalar_alias_factory(int value){const int first=value;const int second=first;return FACTORY_RESULT(^void(void) __objc3_async_frame {(void)first;(void)second;});}
+inline BindingWork calculated_factory(BindingOwner *owner,unsigned value,unsigned *ran,unsigned *deferred){
+ const unsigned tripled=value*3;const unsigned expected=tripled/3;
+ return FACTORY_RESULT(^void(void) __objc3_async_frame {defer {++*deferred;}*ran+=expected;__objc3_await binding_pause();if(owner->value!=expected)__builtin_trap();});
+}
+inline BindingWork calculated_scalar_factory(int left,int right){const long wide=(long)left;const int result=(int)(wide*3+right);return FACTORY_RESULT(^void(void) __objc3_async_frame {(void)result;});}
 inline BindingWork unsafe_factory(BindingUnsafe *owner){return FACTORY_RESULT(^void(void) __objc3_async_frame {(void)owner;});}
 inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned shape,
                            unsigned *destroyed,unsigned *ran,unsigned *deferred) {
@@ -118,6 +123,7 @@ inline objc3_task_t *start(objc3_executor_t *executor,unsigned choose,unsigned s
 #endif
  work=produced;
  }
+ if(shape==23){produced=calculated_factory(choose?one:two,choose?1u:2u,ran,deferred);work=produced;}
  objc3_task_t *task=binding_start(work,executor);
 #if !__has_feature(objc_arc)
  if(produced)_Block_release((const void *)produced);
@@ -132,7 +138,7 @@ constexpr const char *Consumer=R"blocks(
 #include <assert.h>
 static int execute(void) {
  objc3_executor_t *executor=nullptr;assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);
- for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=23;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
+ for(unsigned choose=0;choose!=2;++choose)for(unsigned shape=0;shape!=24;++shape)for(unsigned cancel=0;cancel!=2;++cancel){
   unsigned destroyed=0,ran=0,deferred=0;
   objc3_task_t *task=BindingModule::start(executor,choose,shape,&destroyed,&ran,&deferred);
   assert(task && destroyed==(shape==8?2u:1u) && ran==0 && deferred==0);
@@ -217,6 +223,8 @@ void Run(const fs::path &root,const char *standard,int ownership) {
   "void rejected(unsigned choose,BindingUnsafe *object){BindingWork bad=^void(void) __objc3_async_frame {(void)object;};BindingWork safe=^void(void) __objc3_async_frame {};binding_start(BindingModule::nested_work(choose,safe,bad),nullptr);}",
   "void rejected(BindingWork unknown){binding_start(BindingModule::project(unknown),nullptr);}",
   "void rejected(BindingWork unknown){binding_start(BindingModule::callback_factory(unknown),nullptr);}",
+  "void calculation_close(int);int calculation_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=calculation_close,invalid=-1)))=calculation_open();binding_start(BindingModule::calculated_scalar_factory(descriptor,42),nullptr);}",
+  "void calculation_close(int);int calculation_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=calculation_close,invalid=-1)))=calculation_open();binding_start(BindingModule::calculated_scalar_factory(41,descriptor),nullptr);}",
   "void rejected(BindingWork unknown){binding_start(BindingModule::callback_alias_factory(unknown),nullptr);}",
   "void factory_close(int);int factory_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();binding_start(BindingModule::scalar_alias_factory(descriptor),nullptr);}",
   "void rejected(BindingUnsafe *owner){binding_start(BindingModule::unsafe_factory(owner),nullptr);}",

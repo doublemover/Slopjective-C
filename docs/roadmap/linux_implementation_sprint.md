@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.207 / System 2.133 factory-calculation span](linux_native_block_factory_calculations.md)
+retains caller cleanup/ownership contracts through pure scalar calculations and
+concrete template locals, with separate controls for unevaluated operands.
+
 The [Source 2.206 / System 2.132 factory-alias span](linux_native_block_factory_aliases.md)
 retains caller value contracts through immutable factory-local aliases and
 concrete template patterns, including Clang's deferred dependent captures.

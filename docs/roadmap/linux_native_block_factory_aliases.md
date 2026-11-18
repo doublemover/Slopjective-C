@@ -35,5 +35,9 @@ shapes exercise object/scalar aliases, free/static templates and callback aliase
 with exact object retirement, work/defer counts and pre-entry cancellation.
 Resource-erasing aliases and unknown callback environments must reject.
 
-Focused verification and matching SDK delivery are tracked separately. Full
-profile and replacement-archive acceptance are not implied by this source span.
+The 72-command source/PCH matrix passes across C17/C++20/C++23, ARC/MRC
+and all four profiles, including copied/uncopied dependent captures and bounded
+versus oversized recipes. Four native configurations pass all 1,472 task
+scenarios; the complete isolation suite, production codec, 122 AST controls,
+fresh patch application and 16 tooling checks pass. Matching SDK delivery,
+full-profile and replacement-archive acceptance remain separate.
