@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.243 / System 2.169 checked await changes](linux_checked_await_cancellation.md)
+admit public try prefixes and preserve empty Optional results and cleanup when
+native frames or C++ tasks observe cancellation.
+
 The [Source 2.242 / System 2.168 callable target sets](linux_native_callable_target_sets.md)
 combine writes and returned storage for immutable runtime-selected native callables.
 

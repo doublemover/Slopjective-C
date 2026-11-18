@@ -133,6 +133,7 @@ extern "C" void
 objc3_task_result_block_release(const void *) __asm__("_Block_release");
 extern "C" objc3_error_t *__objc3_task_error_create(void *) noexcept;
 extern "C" void *__objc3_task_error_object(const objc3_error_t *) noexcept;
+extern "C" void *__objc3_task_cancellation_error_object() noexcept;
 
 template <class T>
 inline constexpr bool retained_result =
@@ -343,6 +344,7 @@ namespace task_detail {
 template <class T> struct checked_dependency {
   basic_task<T> dependency;
   void **error;
+  bool optionalizes;
 };
 } // namespace task_detail
 
@@ -741,14 +743,29 @@ public:
     template <class U>
     struct checked_dependency_awaiter : dependency_awaiter<U> {
       void **error;
-      checked_dependency_awaiter(dependency_awaiter<U> dependency, void **error)
-          : dependency_awaiter<U>(std::move(dependency)), error(error) {}
+      bool optionalizes;
+      checked_dependency_awaiter(dependency_awaiter<U> dependency, void **error,
+                                 bool optionalizes)
+          : dependency_awaiter<U>(std::move(dependency)), error(error),
+            optionalizes(optionalizes) {}
+      bool await_ready() const noexcept {
+        return !this->dependency.native_handle();
+      }
       void __objc3_check_error() {
-        if (objc3_task_is_cancel_requested(this->parent))
+        if (objc3_task_is_cancel_requested(this->parent)) {
+          if (optionalizes) {
+            *error = task_detail::__objc3_task_cancellation_error_object();
+            return;
+          }
           throw task_cancelled();
+        }
         objc3_completion completion{};
         task_detail::check(objc3_task_get_completion(
             this->dependency.native_handle(), &completion));
+        if (optionalizes && completion.kind == OBJC3_COMPLETION_CANCELLED) {
+          *error = task_detail::__objc3_task_cancellation_error_object();
+          return;
+        }
         if (completion.kind == OBJC3_COMPLETION_ERROR) {
           if (void *object =
                   task_detail::__objc3_task_error_object(completion.error)) {
@@ -764,8 +781,21 @@ public:
     };
     template <class U>
     auto await_transform(task_detail::checked_dependency<U> checked) {
+      if (checked.optionalizes) {
+        if (objc3_task_is_cancel_requested(owner)) {
+          // The unstarted dependency remains owned by checked and is
+          // reclaimed when the ready cancellation path returns.
+          return checked_dependency_awaiter<U>{dependency_awaiter<U>{owner, {}},
+                                              checked.error, true};
+        }
+        // Child registration inherits a request racing the check above.
+        auto child = std::move(checked.dependency).start_impl(nullptr, nullptr, owner);
+        return checked_dependency_awaiter<U>{
+            dependency_awaiter<U>{owner, std::move(child), true}, checked.error, true};
+      }
       auto dependency = await_transform(std::move(checked.dependency));
-      return checked_dependency_awaiter<U>{std::move(dependency), checked.error};
+      return checked_dependency_awaiter<U>{std::move(dependency), checked.error,
+                                          checked.optionalizes};
     }
 #endif
 
@@ -1273,8 +1303,10 @@ __objc3_async_task<To> __objc3_async_related_task(__objc3_async_task<From> sourc
 
 #ifdef __OBJC__
 template <class T>
-auto __objc3_async_checked(objc3::basic_task<T> dependency, void **error) {
-  return objc3::task_detail::checked_dependency<T>{std::move(dependency), error};
+auto __objc3_async_checked(objc3::basic_task<T> dependency, void **error,
+                          bool optionalizes) {
+  return objc3::task_detail::checked_dependency<T>{std::move(dependency), error,
+                                                   optionalizes};
 }
 #endif
 

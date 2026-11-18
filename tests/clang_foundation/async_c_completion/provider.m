@@ -1,5 +1,8 @@
 #include "api.h"
 #include "objc3_async_c_export.h"
+#ifdef OBJC3_COMPLETION_PRIVATE_TASK
+#include "objc3_task.hpp"
+#endif
 
 @protocol Error
 @end
@@ -67,6 +70,81 @@ static int error_result(id<Error> error) async throws(id<Error>) {
   __objc3_throw(error);
 }
 static int cancel_result(objc3_actor_t *actor) async { ++cancel_entries; return actor != 0; }
+
+static void cancel_child_resume(objc3_task_t *task, void *context) {
+  (void)context;
+  objc3_completion result = {0};
+  result.struct_size = sizeof(result);
+  result.version = OBJC3_SERVICE_ABI_VERSION;
+  result.kind = OBJC3_COMPLETION_CANCELLED;
+  if (objc3_task_complete(task, &result) != OBJC3_SERVICE_OK) __builtin_trap();
+}
+static void cancel_child_destroy(void *context) {
+  ++((CompletionCancellation *)context)->child_destroyed;
+}
+#ifdef __cplusplus
+extern "C" {
+#endif
+int cancel_child(CompletionCancellation *state) async throws(id<Error>)
+    __asm__("completion_cancel_child");
+objc3_async_frame completion_cancel_child(CompletionCancellation *state) {
+  static const char identity[] = __builtin_objc3_type_identity((int *)0);
+  static const objc3_async_result_type type = {sizeof(type), OBJC3_ASYNC_ABI_VERSION,
+      sizeof(int), __alignof__(int), OBJC3_ASYNC_VALUE, 0,
+      identity, sizeof(identity) - 1, 0};
+  objc3_async_frame frame = {sizeof(frame), OBJC3_ASYNC_ABI_VERSION,
+      state, cancel_child_resume, cancel_child_destroy, &type};
+  return frame;
+}
+#ifdef __cplusplus
+}
+#endif
+static int optional_parent(CompletionCancellation *state) async {
+  ++state->entered;
+  __objc3_defer { ++state->finished; }
+  if (state->cancel_before_await) objc3_task_request_cancel(state->cancel_before_await);
+  __objc3_optional(int) result = try? await cancel_child(state);
+  ++state->resumed;
+  return __objc3_has_value(result) ? -1 : 42;
+}
+static int await_parent(CompletionCancellation *state) async throws(id<Error>) {
+  ++state->entered;
+  __objc3_defer { ++state->finished; }
+  if (state->cancel_before_await) objc3_task_request_cancel(state->cancel_before_await);
+  int result = try await cancel_child(state);
+  ++state->resumed;
+  return result;
+}
+objc3_async_frame completion_optional_frame(CompletionCancellation *state) {
+  return optional_parent(state);
+}
+objc3_async_frame completion_await_frame(CompletionCancellation *state) {
+  return await_parent(state);
+}
+#ifdef OBJC3_COMPLETION_PRIVATE_TASK
+static int optional_task(CompletionCancellation *state) __objc3_async {
+  ++state->entered;
+  __objc3_defer { ++state->finished; }
+  if (state->cancel_before_await) objc3_task_request_cancel(state->cancel_before_await);
+  __objc3_optional(int) result = try? await cancel_child(state);
+  ++state->resumed;
+  return __objc3_has_value(result) ? -1 : 42;
+}
+static int await_task(CompletionCancellation *state) __objc3_async throws(id<Error>) {
+  ++state->entered;
+  __objc3_defer { ++state->finished; }
+  if (state->cancel_before_await) objc3_task_request_cancel(state->cancel_before_await);
+  int result = try await cancel_child(state);
+  ++state->resumed;
+  return result;
+}
+objc3_async_frame completion_optional_task(CompletionCancellation *state) {
+  return __objc3_async_to_frame<int>(optional_task(state));
+}
+objc3_async_frame completion_await_task(CompletionCancellation *state) {
+  return __objc3_async_to_frame<int>(await_task(state));
+}
+#endif
 
 static objc3_executor_t *main_executor(void) {
   // The shared process-wide destination outlives every submitted callback.

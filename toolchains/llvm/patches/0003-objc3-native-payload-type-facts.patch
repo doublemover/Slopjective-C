@@ -1883,7 +1883,6 @@ index 000000000..5e6c14eda
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..28c0b59a0
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
 @@ -0,0 +1,277 @@
@@ -2056,7 +2055,7 @@ index 000000000..28c0b59a0
 +  const auto *FD = Call ? Call->getDirectCallee() : nullptr;
 +  if (!FD || !FD->getIdentifier() ||
 +      !FD->getIdentifier()->isStr("__objc3_async_checked") ||
-+      Call->getNumArgs() != 2 ||
++      Call->getNumArgs() != 3 ||
 +      !isa<OpaqueValueExpr>(Call->getArg(1)->IgnoreImpCasts()))
 +    return nullptr;
 +  return Call;

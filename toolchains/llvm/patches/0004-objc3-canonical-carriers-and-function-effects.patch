@@ -16249,10 +16249,9 @@ index 000000000..2c37de629
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3Propagation.cpp
 new file mode 100644
-index 000000000..ddc084310
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,295 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -16465,7 +16464,9 @@ index 000000000..ddc084310
 +      return ExprError();
 +    auto *ErrorSlot = new (Context) OpaqueValueExpr(
 +        KeywordLoc, Context.getPointerType(Context.VoidPtrTy), VK_PRValue);
-+    Expr *Args[] = {Await->getOperand(), ErrorSlot};
++    auto *Optionalizes = new (Context) CXXBoolLiteralExpr(
++        Operation == ObjC3TryExpr::Kind::Optionalize, Context.BoolTy, KeywordLoc);
++    Expr *Args[] = {Await->getOperand(), ErrorSlot, Optionalizes};
 +    ExprResult Adapter = BuildCallExpr(nullptr, Callee.get(), KeywordLoc, Args,
 +                                       RParenLoc);
 +    if (Adapter.isInvalid())
@@ -83317,4 +83318,75 @@ new file mode 100644
 +}
 +#endif
 +#endif
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/public-try-prefixes.m b/clang/test/ObjC3/Sema/public-try-prefixes.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/public-try-prefixes.m
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fsyntax-only -verify %s
++#include "Inputs/public-try-prefixes.h"
++
++#define attempt try
++int macro_try(int value) throws(id<Error>) { return attempt checked_value(value); }
++
++int missing_throwing_context(int value) {
++  return try checked_value(value); // expected-error {{requires a matching throwing function}}
++}
++int missing_await_context(int value) {
++  return try? await checked_work(value); // expected-error {{await}}
++}
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/public-try-prefixes.h b/clang/test/ObjC3/Sema/Inputs/public-try-prefixes.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/public-try-prefixes.h
+@@ -0,0 +1,46 @@
++#ifndef OBJC3_PUBLIC_TRY_PREFIXES_H
++#define OBJC3_PUBLIC_TRY_PREFIXES_H
++
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++
++@protocol Error @end
++int checked_value(int value) throws(id<Error>);
++int checked_work(int value) async throws(id<Error>);
++
++static inline int public_propagate(int value) throws(id<Error>) {
++  return try checked_value(value) + 1;
++}
++static inline int public_force(int value) {
++  try! checked_value(value);
++  return try! (checked_value(value)) + 1;
++}
++static inline int public_optional(int value) {
++  __objc3_optional(int) result = try? checked_value(value);
++  return __objc3_has_value(result);
++}
++static inline int public_optional_async(int value) async {
++  __objc3_optional(int) result = try? await checked_work(value);
++  return __objc3_has_value(result);
++}
++static inline int public_propagate_async(int value) async throws(id<Error>) {
++  return try await checked_work(value) + 1;
++}
++
++#ifdef __cplusplus
++static inline int preserve_native_try(int value) {
++  try { return value; } catch (...) { return 0; }
++}
++struct PreserveFunctionTry {
++  int value;
++  explicit PreserveFunctionTry(int input) try : value(input) {} catch (...) { throw; }
++};
++#else
++static inline int preserve_named_try(int try) {
++  return try ? 1 : 2;
++}
++static inline int preserve_named_try_call(int (*try)(int)) {
++  return try(42);
++}
++#endif
++
 +#endif

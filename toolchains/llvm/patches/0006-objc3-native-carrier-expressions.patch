@@ -1045,16 +1045,17 @@ index fdefb6d6b..20e2109c1 100644
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
-@@ -24,6 +24,8 @@
+@@ -24,6 +24,9 @@
  #include "clang/AST/Availability.h"
  #include "clang/AST/ExprCXX.h"
  #include "clang/AST/LocInfoType.h"
 +#include "clang/AST/ObjC3Async.h"
 +#include "clang/Basic/ObjC3Syntax.h"
++#include "clang/Sema/Lookup.h"
  #include "clang/Basic/PrettyStackTrace.h"
  #include "clang/Lex/LiteralSupport.h"
  #include "clang/Parse/Parser.h"
-@@ -305,6 +307,7 @@
+@@ -305,6 +308,7 @@
  
  bool Parser::isFoldOperator(prec::Level Level) const {
    return Level > prec::Unknown && Level != prec::Conditional &&
@@ -1062,7 +1063,7 @@ diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
           Level != prec::Spaceship;
  }
  
-@@ -328,6 +331,9 @@
+@@ -328,6 +332,9 @@
      // then we are done!
      if (NextTokPrec < MinPrec)
        return LHS;
@@ -1072,7 +1073,7 @@ diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
  
      // Consume the operator, saving the operator token for error reporting.
      Token OpToken = Tok;
-@@ -495,6 +501,7 @@
+@@ -495,6 +502,7 @@
  
      // Assignment and conditional expressions are right-associative.
      bool isRightAssoc = ThisPrec == prec::Conditional ||
@@ -1080,7 +1081,7 @@ diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
                          ThisPrec == prec::Assignment;
  
      // Get the precedence of the operator to the right of the RHS.  If it binds
-@@ -546,6 +553,9 @@
+@@ -546,6 +554,9 @@
          LHS = Actions.CreateRecoveryExpr(LHS.get()->getBeginLoc(),
                                           PrevTokLocation,
                                           {LHS.get()});
@@ -1090,7 +1091,44 @@ diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
        } else if (TernaryMiddle.isInvalid()) {
          // If we're using '>>' as an operator within a template
          // argument list (in C++98), suggest the addition of
-@@ -890,6 +900,114 @@
+@@ -754,6 +765,36 @@
+   auto SavedType = PreferredType;
+   NotCastExpr = false;
+ 
++  if (getLangOpts().ObjC3 &&
++      (Tok.is(tok::kw_try) ||
++       (Tok.is(tok::identifier) && Tok.getIdentifierInfo()->isStr("try"))) &&
++      !NextToken().isOneOf(tok::l_brace, tok::colon, tok::semi, tok::comma,
++                           tok::r_paren, tok::r_square, tok::r_brace)) {
++    bool Prefix = Tok.is(tok::kw_try);
++    if (!Prefix) {
++      // In Objective-C, an ordinary name still owns its baseline expression,
++      // including a ternary condition, a call, and a macro-expanded name.
++      LookupResult Existing(Actions, Tok.getIdentifierInfo(), Tok.getLocation(),
++                            Sema::LookupOrdinaryName);
++      Existing.suppressDiagnostics();
++      Prefix = !Actions.LookupName(Existing, getCurScope());
++    }
++    if (Prefix) {
++      SourceLocation Keyword = ConsumeToken();
++      SourceLocation Operator = Keyword;
++      unsigned Kind = 0;
++      if (Tok.isOneOf(tok::question, tok::exclaim)) {
++        Kind = Tok.is(tok::question) ? 1 : 2;
++        Operator = ConsumeToken();
++      }
++      if (NotPrimaryExpression) *NotPrimaryExpression = true;
++      ExprResult Operand = ParseCastExpression(CastParseKind::AnyCastExpr);
++      if (Operand.isInvalid()) return Operand;
++      return Actions.ActOnObjC3TryExpr(Kind, Keyword, Operator, Operand.get(),
++                                      PrevTokLocation);
++    }
++  }
++
+   // Are postfix-expression suffix operators permitted after this
+   // cast-expression? If not, and we find some, we'll parse them anyway and
+   // diagnose them.
+@@ -890,6 +931,114 @@
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -1205,7 +1243,7 @@ diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
-@@ -1632,6 +1750,7 @@
+@@ -1632,6 +1781,7 @@
  
        [[fallthrough]];
      case tok::period:
@@ -1213,7 +1251,7 @@ diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
      case tok::arrow:
        break;
  
-@@ -1934,6 +2053,21 @@
+@@ -1934,6 +2084,21 @@
  
        break;
      }
@@ -1235,7 +1273,7 @@ diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
      case tok::arrow:
      case tok::period: {
        // postfix-expression: p-e '->' template[opt] id-expression
-@@ -3330,6 +3464,66 @@
+@@ -3330,6 +3495,66 @@
    // Inform sema that we are starting a block.
    Actions.ActOnBlockStart(CaretLoc, getCurScope());
  

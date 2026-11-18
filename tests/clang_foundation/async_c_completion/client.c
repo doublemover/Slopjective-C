@@ -85,6 +85,37 @@ static void worker_done(void *context, objc_async_completion_status_t status,
   assert(!pthread_mutex_unlock(&workers_mutex));
 }
 
+enum CancellationPoint { Child, SuspendedParent, BeforeAwait };
+
+static void check_cancelled_await(objc3_executor_t *executor,
+                                  objc3_async_frame (*make)(CompletionCancellation *),
+                                  int optional, int private_task,
+                                  enum CancellationPoint point) {
+  CompletionCancellation state = {0};
+  objc3_async_frame frame = make(&state);
+  objc3_task_t *task = NULL;
+  assert(objc3_async_frame_start(&frame, executor, NULL, &task) == OBJC3_SERVICE_OK);
+  unsigned executed = 0;
+  if (point == BeforeAwait) state.cancel_before_await = task;
+  if (point == SuspendedParent) {
+    assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+    assert(executed == 1 && state.entered == 1 && state.resumed == 0);
+    objc3_task_request_cancel(task);
+  }
+  assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+  objc3_completion result = {0};
+  assert(objc3_task_get_completion(task, &result) == OBJC3_SERVICE_OK);
+  if (optional) {
+    assert(result.kind == OBJC3_COMPLETION_SUCCESS && result.has_payload);
+    assert(*(const int *)result.payload == 42);
+  } else {
+    assert(result.kind == OBJC3_COMPLETION_CANCELLED && !result.has_payload);
+  }
+  objc3_task_release(task);
+  assert(state.entered == 1 && state.resumed == optional && state.finished == 1);
+  assert(state.child_destroyed == (point != BeforeAwait || private_task));
+}
+
 int main(void) {
   objc3_executor_t *manual = NULL;
   assert(objc3_executor_get_main(&manual) == OBJC3_SERVICE_OK);
@@ -122,6 +153,14 @@ int main(void) {
   _Block_release((const void *)retained_block);
   assert(completion_object_count() == 0);
   objc3_actor_release(actor);
+  for (int point = Child; point <= BeforeAwait; ++point) {
+    check_cancelled_await(manual, completion_await_frame, 0, 0, point);
+    check_cancelled_await(manual, completion_optional_frame, 1, 0, point);
+#ifdef OBJC3_COMPLETION_PRIVATE_TASK
+    check_cancelled_await(manual, completion_await_task, 0, 1, point);
+    check_cancelled_await(manual, completion_optional_task, 1, 1, point);
+#endif
+  }
   objc3_executor_release(manual);
 
   for (int index = 0; index < WorkerCount; ++index) {

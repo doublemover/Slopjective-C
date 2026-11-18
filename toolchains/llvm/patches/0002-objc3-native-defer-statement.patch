@@ -1380,7 +1380,6 @@ index 000000000..8132bdb55
 +                                        Parens.getCloseLocation(), Semi);
 +}
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 44b51a985..0be5a6d31 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -11,8 +11,10 @@
@@ -1394,7 +1393,7 @@ index 44b51a985..0be5a6d31 100644
  #include "clang/Basic/PrettyStackTrace.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/Basic/TokenKinds.h"
-@@ -138,16 +140,28 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
+@@ -138,16 +140,28 @@
    const char *SemiError = nullptr;
    StmtResult Res;
    SourceLocation GNUAttributeLoc;
@@ -1423,7 +1422,7 @@ index 44b51a985..0be5a6d31 100644
        AtLoc = ConsumeToken();  // consume @
        return ParseObjCAtStatement(AtLoc, StmtCtx);
      }
-@@ -161,6 +175,35 @@ Retry:
+@@ -161,6 +175,35 @@
    case tok::identifier:
    ParseIdentifier: {
      Token Next = NextToken();
@@ -1459,7 +1458,7 @@ index 44b51a985..0be5a6d31 100644
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-@@ -173,7 +216,19 @@ Retry:
+@@ -173,7 +216,19 @@
  
      // Look up the identifier, and typo-correct it to a keyword if it's not
      // found.
@@ -1480,7 +1479,7 @@ index 44b51a985..0be5a6d31 100644
        // Try to limit which sets of keywords should be included in typo
        // correction based on what the next token is.
        StatementFilterCCC CCC(Next);
-@@ -196,6 +251,7 @@ Retry:
+@@ -196,6 +251,7 @@
    }
  
    default: {
@@ -1488,7 +1487,7 @@ index 44b51a985..0be5a6d31 100644
      if (getLangOpts().CPlusPlus && MaybeParseCXX11Attributes(CXX11Attrs, true))
        goto Retry;
  
-@@ -208,7 +264,8 @@ Retry:
+@@ -208,7 +264,8 @@
      // in C++, we always allow a declaration, but in C we need to check whether
      // we're in a statement context that allows declarations. e.g., in C, the
      // following is invalid: if (1) int x;
@@ -1498,7 +1497,7 @@ index 44b51a985..0be5a6d31 100644
           (StmtCtx & ParsedStmtContext::AllowDeclarationsInC) !=
               ParsedStmtContext()) &&
          ((GNUAttributeLoc.isValid() && !(HaveAttrs && AllAttrsAreStmtAttrs)) ||
-@@ -296,6 +353,8 @@ Retry:
+@@ -296,6 +353,8 @@
    }
  
    case tok::kw_if:                  // C99 6.8.4.1: if-statement
@@ -1507,7 +1506,18 @@ index 44b51a985..0be5a6d31 100644
      return ParseIfStatement(TrailingElseLoc);
    case tok::kw_switch:              // C99 6.8.4.2: switch-statement
      return ParseSwitchStatement(TrailingElseLoc, PrecedingLabel);
-@@ -2464,6 +2523,16 @@ StmtResult Parser::ParseReturnStatement() {
+@@ -372,7 +431,9 @@
+     // a new scope.
+     return StmtEmpty();
+ 
+-  case tok::kw_try:                 // C++ 15: try-block
++  case tok::kw_try:                 // C++ 15: try-block or Objective-C 3 prefix
++    if (getLangOpts().ObjC3 && !NextToken().isOneOf(tok::l_brace, tok::colon))
++      return ParseExprStatement(StmtCtx);
+     return ParseCXXTryBlock();
+ 
+   case tok::kw___try:
+@@ -2464,6 +2525,16 @@
    assert((Tok.is(tok::kw_return) || Tok.is(tok::kw_co_return)) &&
           "Not a return stmt!");
    bool IsCoreturn = Tok.is(tok::kw_co_return);
@@ -1524,6 +1534,7 @@ index 44b51a985..0be5a6d31 100644
    SourceLocation ReturnLoc = ConsumeToken();  // eat the 'return'.
  
    ExprResult R;
+
 diff --git a/clang/lib/Serialization/ASTReaderStmt.cpp b/clang/lib/Serialization/ASTReaderStmt.cpp
 index 87cec16a7..25757cda1 100644
 --- a/clang/lib/Serialization/ASTReaderStmt.cpp

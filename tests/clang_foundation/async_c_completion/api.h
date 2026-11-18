@@ -12,6 +12,13 @@ typedef int (^CompletionBlock)(int);
 typedef struct CompletionRecord {
   long values[4];
 } CompletionRecord;
+typedef struct CompletionCancellation {
+  objc3_task_t *cancel_before_await;
+  int entered;
+  int resumed;
+  int finished;
+  int child_destroyed;
+} CompletionCancellation;
 
 OBJC3_ASYNC_C_DECLARE(completion_value, CompletionRecord, long first, int second);
 OBJC3_ASYNC_C_DECLARE_VOID(completion_void);
@@ -33,6 +40,12 @@ CompletionObject _Nonnull completion_make_object(void)
 int completion_object_count(void);
 int completion_cancel_entries(void);
 int completion_error_conforms(CompletionObject _Nonnull error);
+objc3_async_frame completion_optional_frame(CompletionCancellation * _Nonnull state);
+objc3_async_frame completion_await_frame(CompletionCancellation * _Nonnull state);
+#ifdef OBJC3_COMPLETION_PRIVATE_TASK
+objc3_async_frame completion_optional_task(CompletionCancellation * _Nonnull state);
+objc3_async_frame completion_await_task(CompletionCancellation * _Nonnull state);
+#endif
 #ifdef __cplusplus
 }
 #endif

@@ -73,6 +73,10 @@ extern "C" int objc3_async_c_error_is_cancellation(objc3_async_c_error error) {
   return error == cancellation_error();
 }
 
+extern "C" void *__objc3_task_cancellation_error_object() noexcept {
+  return (void *)cancellation_error();
+}
+
 extern "C" objc3_async_c_error
 __objc3_async_c_completion_error(const objc3_completion *completion) {
   switch (completion->kind) {

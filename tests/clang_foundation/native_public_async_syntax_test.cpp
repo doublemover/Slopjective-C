@@ -172,6 +172,10 @@ void CheckCCompletion(const std::string &standard, bool arc) {
   provider.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
   provider.arguments = {"-std=" + standard, "-O2", "-fblocks", "-fobjc-exceptions",
                         std::string("-I") + OBJC3_PUBLIC_ASYNC_HEADERS};
+  if (cxx) {
+    provider.arguments.push_back("-DOBJC3_COMPLETION_PRIVATE_TASK=1");
+    provider.arguments.push_back("-fcoro-aligned-allocation");
+  }
   provider.emit = EmitKind::Object;
   provider.output_path = (root / "provider.o").string();
   provider.emit_semantic_interface = true;
@@ -259,6 +263,7 @@ void interface_client(void) {
   client.arguments = {standard == "c23" || standard == "c++23" ? "-std=c23" : "-std=c17",
                       "-O2", "-fblocks", "-UNDEBUG",
                       std::string("-I") + OBJC3_PUBLIC_ASYNC_HEADERS};
+  if (cxx) client.arguments.push_back("-DOBJC3_COMPLETION_PRIVATE_TASK=1");
   client.emit = EmitKind::Object;
   client.output_path = (root / "client.o").string();
   Compiled(Compile(client));
