@@ -604,6 +604,13 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasCxxExplicitSpecifierIdentity(d) || IsCxxExplicitSpecifierOwner(d);});
   if(explicit_specifiers!=explicit_capability || !explicit_owners)
     Add(result,"O3IFC145","conditional explicit specifier identity and required capability must agree",expected.canonical_name);
+  const bool meta=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasMetaprogrammingIdentity);
+  const bool meta_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kMetaprogrammingSemantic)!=sidecar.required_semantics.end();
+  const bool meta_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &D){
+    return !HasMetaprogrammingIdentity(D) || D.kind=="ObjCInterface" || D.kind=="ObjCProperty" || D.kind=="Function";
+  });
+  if(meta!=meta_capability || !meta_owners)
+    Add(result,"O3IFC145","metaprogramming identity and required capability must agree",expected.canonical_name);
   const bool object_policies=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeObjectPolicyIdentity);
   const bool object_policy_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeObjectPolicySemantic)!=sidecar.required_semantics.end();
   const bool object_policy_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),

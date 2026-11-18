@@ -93,6 +93,8 @@ PACKETS = {
         "clang/lib/Sema/SemaObjC3Borrowed.h",
         "clang/lib/Sema/SemaObjC3Isolation.cpp",
         "clang/lib/Sema/SemaObjC3Isolation.h",
+        "clang/lib/Sema/SemaObjC3Metaprogramming.cpp",
+        "clang/include/clang/Sema/ObjC3Metaprogramming.h",
         "clang/lib/Sema/SemaObjC3KeyPath.cpp",
         "clang/lib/Sema/SemaObjC3KeyPath.h",
         "clang/lib/Sema/SemaPseudoObject.cpp",

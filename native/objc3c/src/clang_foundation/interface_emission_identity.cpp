@@ -2956,6 +2956,16 @@ bool ReadInterfaceDeclarationIdentity(
     identity.qualified_name = declaration->getNameAsString();
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
+  std::vector<std::string> meta;
+  for(const auto *annotation:representative->specific_attrs<clang::AnnotateAttr>())
+    if(annotation->args_size()==0 && (annotation->getAnnotation()=="objc3.meta.entry.v1" ||
+       annotation->getAnnotation().starts_with("objc3.meta.expanded.v1:")))meta.push_back(annotation->getAnnotation().str());
+  if(!meta.empty()) {
+    std::sort(meta.begin(),meta.end());meta.erase(std::unique(meta.begin(),meta.end()),meta.end());
+    identity.canonical_type_identity+=";expanded-metaprogramming:v1;";
+    for(const auto &item:meta)identity.canonical_type_identity+=std::to_string(item.size())+":"+item;
+    identity.canonical_type_identity+=';';
+  }
   if(NativeUnnamedEnumeration(representative))
     identity.canonical_type_identity+=";native-unnamed-enums:v1;";
   if (identity.canonical_type_identity.empty()) return false;

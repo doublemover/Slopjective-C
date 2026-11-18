@@ -7,6 +7,9 @@ endif()
 
 add_library(objc3c_clang_foundation STATIC
   compile_session.cpp
+  meta_package.cpp
+  meta_program.cpp
+  meta_compilation.cpp
   driver_native.cpp
   sdk_identity.cpp
   source_identity.cpp
@@ -803,6 +806,26 @@ endif()
 # CTest's JSON omits commands for missing binaries, so record target paths at
 # generation time and cross-check this inventory before serial qualification.
 if(BUILD_TESTING)
+  add_executable(objc3_meta_compilation_test "${_objc3_repo}/tests/clang_foundation/meta_compilation_test.cpp")
+  target_include_directories(objc3_meta_compilation_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_meta_compilation_test PRIVATE objc3c_frontend_v2)
+  target_compile_definitions(objc3_meta_compilation_test PRIVATE
+    OBJC3_META_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}")
+  objc3c_add_frontend_test(NAME objc3_meta_compilation COMMAND objc3_meta_compilation_test)
+  set_tests_properties(objc3_meta_compilation PROPERTIES TIMEOUT 180)
+  objc3c_add_frontend_test(NAME objc3_meta_cli
+    COMMAND "${Python3_EXECUTABLE}" "${_objc3_repo}/tests/clang_foundation/verify-meta-cli.py" "$<TARGET_FILE:objc3c>")
+  set_tests_properties(objc3_meta_cli PROPERTIES TIMEOUT 90)
+  add_executable(objc3_meta_program_test "${_objc3_repo}/tests/clang_foundation/meta_program_test.cpp")
+  target_include_directories(objc3_meta_program_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_meta_program_test PRIVATE objc3c_clang_foundation)
+  objc3c_add_frontend_test(NAME objc3_meta_program COMMAND objc3_meta_program_test)
+  set_tests_properties(objc3_meta_program PROPERTIES TIMEOUT 20)
+  add_executable(objc3_meta_package_test "${_objc3_repo}/tests/clang_foundation/meta_package_test.cpp")
+  target_include_directories(objc3_meta_package_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_meta_package_test PRIVATE objc3c_clang_foundation)
+  objc3c_add_frontend_test(NAME objc3_meta_package COMMAND objc3_meta_package_test)
+  set_tests_properties(objc3_meta_package PROPERTIES TIMEOUT 20)
   objc3c_write_frontend_test_inventory()
   get_property(_custom_compile_rows GLOBAL PROPERTY OBJC3C_CUSTOM_COMPILE_ROWS)
   list(JOIN _custom_compile_rows ",\n" _custom_compile_json)

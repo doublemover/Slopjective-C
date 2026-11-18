@@ -45,6 +45,7 @@ llvm::ArrayRef<llvm::StringRef> SupportedSemanticInterfaceCapabilities() {
     kCxxOutOfLineDefinitionSemantic,
     kCxxExplicitSpecifierSemantic,
     kCxxDeductionGuideSemantic,
+    kMetaprogrammingSemantic,
     kNativeObjectPolicySemantic,
     kNativeObjectExpressionSemantic,
     kNativeFunctionEffectSemantic,

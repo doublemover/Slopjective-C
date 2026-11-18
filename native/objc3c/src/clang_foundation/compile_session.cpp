@@ -1,4 +1,6 @@
 #include "clang_foundation/compile_session.h"
+#include "clang_foundation/meta_compilation.h"
+#include <filesystem>
 #include "interface_reparse_options.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/interface_include_guard.h"
@@ -352,6 +354,7 @@ class ContractAction final : public NativeAction {
     if (imports_ || request_.source_directed_imports)
       consumers.push_back(std::make_unique<InterfaceImportConsumer>(
           imports_, compiler, lookup_source_, request_, result_));
+    if(request_.meta_compilation)consumers.push_back(MakeMetaConsumer(request_));
     consumers.push_back(MakeContractConsumer(request_, result_, &compiler.getPreprocessor(),
                                               compiler.getCodeGenOpts().getInlineAsmDialect()));
     std::shared_ptr<CInlineProviderState> c_inline;
@@ -390,6 +393,28 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
                      clang::FileManager *files,
                      std::shared_ptr<clang::PCHContainerOperations> containers,
                      clang::DiagnosticConsumer *diagnostics) override {
+    if(request_.meta_compilation && request_.meta_compilation->collecting) {
+      invocation->getFrontendOpts().SkipFunctionBodies=true;
+      invocation->getDependencyOutputOpts()={};
+    }
+    if(request_.meta_compilation && !request_.meta_compilation->collecting) {
+      auto &dependencies=invocation->getDependencyOutputOpts();
+      llvm::SmallString<256> dependency_output(dependencies.OutputFile);
+      if(!dependency_output.empty() && dependency_output!="-") {
+        if(auto error=files->getVirtualFileSystem().makeAbsolute(dependency_output)) {
+          result_.failure="Cannot resolve dependency output: "+error.message();return false;
+        }
+        for(const auto &input:request_.meta_compilation->packages.inputs) {
+          std::error_code ec;
+          if(std::filesystem::path(std::string(dependency_output)).lexically_normal()==input.path ||
+             std::filesystem::equivalent(std::string(dependency_output),input.path,ec)) {
+            result_.failure="Dependency output aliases a metaprogramming input";return false;
+          }
+        }
+      }
+      for(const auto &input:request_.meta_compilation->packages.inputs)
+        dependencies.ExtraDeps.emplace_back(input.path,clang::EDK_DepFileEntry);
+    }
     const auto &language = invocation->getLangOpts();
     const bool cxx = request_.language == BaseLanguage::Cxx ||
                      request_.language == BaseLanguage::ObjectiveCxx;
@@ -747,6 +772,14 @@ void BuildDependencyRecord(const CompileRequest &request,
             ",\"error_type\":" + JsonQuote(decl.effects.error_type_identity) +
             '}';
   }
+  json += "],\"metaprogramming\":[";
+  if(request.meta_compilation) {
+    bool first=true;
+    for(const auto &input:request.meta_compilation->packages.inputs) {
+      if(!first)json+=',';first=false;
+      json+="{\"path\":"+JsonQuote(input.path)+",\"sha256\":"+JsonQuote(input.sha256)+'}';
+    }
+  }
   json += "]}";
   result.semantic_dependency_record = std::move(json);
 }
@@ -758,6 +791,48 @@ struct TemporaryOutput {
 }  // namespace
 
 CompileResult Compile(const CompileRequest &request) {
+  if(!request.meta_compilation && (!request.meta_packages.empty() || !request.meta_lock.empty())) {
+    CompileResult rejected;
+    if(!request.objc3) {rejected.failure="Metaprogramming requires Objective-C 3.0";return rejected;}
+    auto path=[&](const std::string &value) {
+      std::filesystem::path p(value);
+      if(p.is_relative() && !request.working_directory.empty())p=std::filesystem::path(request.working_directory)/p;
+      return std::filesystem::absolute(p).lexically_normal().string();
+    };
+    std::vector<std::string> packages;
+    for(const auto &input:request.meta_packages)packages.push_back(path(input));
+    std::string error;
+    auto loaded=MetaPackageSet::Load(packages,request.meta_lock.empty()?"":path(request.meta_lock),error);
+    if(!loaded){rejected.failure=error;return rejected;}
+    auto state=std::make_shared<MetaCompilation>();state->packages=std::move(*loaded);
+    // No product may replace the manifest or lock that authorized its expansion.
+    for(const auto &input:state->packages.inputs)
+      for(const auto &output:{request.output_path,request.interface_output_path,request.dependency_record_output_path,
+          request.interface_output_path.empty()?std::string():request.interface_output_path+".json"}) {
+        if(output.empty())continue;
+        std::error_code ec;
+        if(path(output)==input.path || std::filesystem::equivalent(path(output),input.path,ec)) {
+          rejected.failure="Compilation output aliases a metaprogramming input";return rejected;
+        }
+      }
+    auto collect=request;
+    if(!collect.source_text) {
+      auto input=llvm::MemoryBuffer::getFile(path(request.input_path));
+      if(!input){rejected.failure="Cannot read metaprogramming source: "+input.getError().message();return rejected;}
+      collect.source_text=(*input)->getBuffer().str();
+    }
+    collect.meta_compilation=state;collect.emit=EmitKind::Syntax;
+    collect.output_path.clear();collect.interface_output_path.clear();collect.emit_semantic_interface=false;
+    collect.interface_exports.clear();collect.projected_arc.reset();collect.dependency_record_output_path.clear();
+    auto preliminary=Compile(collect);
+    if(state->failed){preliminary.success=false;preliminary.failure=state->error;return preliminary;}
+    if(!state->packages.VerifyInputs(error)){rejected.failure=error;return rejected;}
+    // Generated members can resolve source errors in this structural first pass.
+    // The second pass type-checks every original and generated function body.
+    state->collecting=false;
+    auto final=request;final.source_text=std::move(collect.source_text);final.meta_compilation=std::move(state);
+    return Compile(final);
+  }
   CompileResult result;
   result.compiler_identity = clang::getClangFullRepositoryVersion() +
       " Frontend-inputs=" + CompiledFrontendSourceIdentity();
@@ -941,12 +1016,17 @@ CompileResult Compile(const CompileRequest &request) {
       std::make_shared<clang::PCHContainerOperations>());
   invocation.setDiagnosticConsumer(&diagnostics);
   result.success = invocation.run() && diagnostics.getNumErrors() == 0;
+  if(result.success && request.meta_compilation &&
+      (request.meta_compilation->failed || !request.meta_compilation->packages.VerifyInputs(result.failure))) {
+    result.success=false;
+    if(result.failure.empty())result.failure=request.meta_compilation->error;
+  }
   if (result.success && request.emit_semantic_interface &&
       (!result.interface_artifact || !result.interface_artifact->success)) {
     result.success = false;
     result.failure = "Semantic interface emission failed";
   }
-  if (result.success && !result.resolved_module_identities.empty())
+  if (result.success && (!result.resolved_module_identities.empty() || request.meta_compilation))
     BuildDependencyRecord(request, result);
   if (result.success && std::any_of(result.interface_input_paths.begin(),
           result.interface_input_paths.end(), aliases_record)) {

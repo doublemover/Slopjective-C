@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.212 / System 2.138 metaprogramming span](linux_native_metaprogramming.md)
+adds explicit locked package programs, real class/member expansion, checked
+property-behavior dispatch and source-free expanded declaration transport.
+
 The [Source 2.211 / System 2.137 static-projection span](linux_native_static_argument_projections.md)
 extends native scalar/reference/Block views to closed static C++ helpers and
 factory composition without admitting hidden object-qualifier side effects.

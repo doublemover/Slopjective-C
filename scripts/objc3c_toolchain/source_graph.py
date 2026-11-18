@@ -81,6 +81,24 @@ def validate_mode(config: dict, source: Path) -> None:
         raise ValueError('ownership must be arc/mrc for Objective-C modes or none for C++')
 
 
+def metaprogramming_inputs(config: dict, root: Path) -> list[Path]:
+    if 'metaprogramming' not in config:
+        return []
+    value = config['metaprogramming']
+    fields(value, {'packages', 'lock'}, 'metaprogramming')
+    packages = value['packages']
+    if (config['language'] not in ('objective-c', 'objective-c++') or
+            not isinstance(packages, list) or not 1 <= len(packages) <= 64):
+        raise ValueError('metaprogramming requires 1..64 explicit Objective-C package manifests')
+    manifests = [within(root, name, 'metaprogramming manifest') for name in packages]
+    if len(set(manifests)) != len(manifests) or any(path.name != 'objc3-meta.json' for path in manifests):
+        raise ValueError('metaprogramming manifests must be distinct objc3-meta.json files')
+    lock = within(root, value['lock'], 'metaprogramming lock')
+    if lock in manifests:
+        raise ValueError('metaprogramming lock must be separate from its manifests')
+    return [*manifests, lock]
+
+
 def validate_provider(config: dict) -> None:
     mode = config['provider_ownership']
     if mode not in (('none',) if config['language'] == 'c++' else ('arc', 'mrc')):
@@ -111,7 +129,7 @@ def load_graph(workspace: Path) -> dict:
     for name in data['packages']:
         path = within(root, name, 'package manifest')
         config = json.loads(path.read_text())
-        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'provider_ownership', 'exports', 'language', 'standard', 'dependencies'}, str(path))
+        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'provider_ownership', 'exports', 'language', 'standard', 'dependencies'} | ({'metaprogramming'} if isinstance(config, dict) and 'metaprogramming' in config else set()), str(path))
         config['exports'] = validate_exports(config['exports'])
         module = config['name']
         if (config['schema'] != PACKAGE or not isinstance(module, str) or not NAME.fullmatch(module) or
@@ -126,16 +144,18 @@ def load_graph(workspace: Path) -> dict:
         validate_mode(config, source)
         config['dependencies'] = locks(config['dependencies'], module)
         validate_provider(config)
+        metaprogramming_inputs(config, directory)
         packages[module] = {**config, 'root': directory, 'input': source, 'manifest': path}
         manifests[path] = digest(path)
     app = data['application']
-    fields(app, {'root', 'source', 'ownership', 'language', 'standard', 'dependencies'}, 'application')
+    fields(app, {'root', 'source', 'ownership', 'language', 'standard', 'dependencies'} | ({'metaprogramming'} if isinstance(app, dict) and 'metaprogramming' in app else set()), 'application')
     app_root = within(root, app['root'], 'application root', directory=True)
     if any(app_root.is_relative_to(other) or other.is_relative_to(app_root) for other in source_roots):
         raise ValueError('application and package source roots must be separate')
     app = {**app, 'root': app_root, 'input': within(app_root, app['source'], 'application source'),
            'dependencies': locks(app['dependencies'], 'application')}
     validate_mode(app, app['input'])
+    metaprogramming_inputs(app, app_root)
     ordered, active, visited = [], set(), set()
 
     def visit(config):
@@ -241,6 +261,11 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
             command.append('--arc')
         if provider_mode != config['ownership']:
             command += ['--project-ownership', config['ownership']]
+        meta_inputs = metaprogramming_inputs(config, config['root'])
+        if meta_inputs:
+            for manifest in meta_inputs[:-1]:
+                command += ['--meta-package', str(manifest)]
+            command += ['--meta-lock', str(meta_inputs[-1])]
         products = [obj, depfile]
         if name != APP:
             interface = paths[name]
@@ -276,6 +301,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
                 command.append('--reexport-import' if dependency['visibility'] == 'public' else '--private-import')
                 for group in dependency.get('spi', []):
                     command += ['--import-spi', group]
+        if direct or meta_inputs:
             dependency_record = directory / 'dependencies.json'
             command += ['--emit-dependency-record', str(dependency_record)]
             products.append(dependency_record)

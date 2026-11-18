@@ -28,7 +28,7 @@ bool UsesInterfaceCompiler(int argc, char **argv) {
         arg == "--export-declaration" || arg == "--module-source-root" ||
         arg == "--module-owned-names" || arg == "--import-spi" ||
         arg == "--import-module" || arg == "--emit-dependency-record" ||
-        arg == "--source-imports")
+        arg == "--source-imports" || arg == "--meta-package" || arg == "--meta-lock")
       return true;
   }
   return false;

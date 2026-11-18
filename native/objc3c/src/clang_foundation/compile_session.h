@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -14,7 +15,12 @@ enum class BaseLanguage { C, Cxx, ObjectiveC, ObjectiveCxx };
 enum class EmitKind { Syntax, Object, LLVM };
 enum class SemanticProfile { Compatibility, Strict, StrictConcurrency, StrictSystem };
 
+struct MetaCompilation;
 struct CompileRequest {
+  std::vector<std::string> meta_packages;
+  std::string meta_lock;
+  // In-process expansion state; never crosses the public C embedding ABI.
+  std::shared_ptr<MetaCompilation> meta_compilation;
   std::string input_path;
   std::optional<std::string> source_text;
   std::string working_directory;

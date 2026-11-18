@@ -89,6 +89,11 @@ typedef struct objc3c_frontend_v3_options {
   uint8_t module_owned_names;
   /* Optional tail: owning source/header tree; NULL uses the input directory. */
   const char *module_source_root;
+  /* Explicit deterministic metaprogramming inputs, with an exact package lock.
+   * No ambient package search. The complete optional tail is atomic. */
+  const char *const *meta_packages;
+  size_t meta_package_count;
+  const char *meta_lock;
 } objc3c_frontend_v3_options;
 
 typedef struct objc3c_frontend_v2_location {
@@ -104,7 +109,7 @@ int objc3c_frontend_v2_compile(const objc3c_frontend_v2_options *options,
 int objc3c_frontend_v3_compile(const objc3c_frontend_v3_options *options,
                              objc3c_frontend_v2_result **out_result);
 /* Compiler/import identity record for cache and editor invalidation. Borrowed
- * from the result handle and present only after a successful imported compile. */
+ * from the result handle after a successful imported or metaprogramming compile. */
 const char *objc3c_frontend_v3_result_dependency_record(
     const objc3c_frontend_v2_result *result);
 void objc3c_frontend_v2_result_destroy(objc3c_frontend_v2_result *result);

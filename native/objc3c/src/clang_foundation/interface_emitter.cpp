@@ -278,6 +278,10 @@ class InterfaceCollector final
       return true;
     }
     for (const auto *attribute : declaration->attrs()) {
+      if(const auto *meta=llvm::dyn_cast<clang::AnnotateAttr>(attribute);
+          meta && meta->args_size()==0 &&
+          (meta->getAnnotation()=="objc3.meta.entry.v1" ||
+           meta->getAnnotation().starts_with("objc3.meta.expanded.v1:")))continue;
       if (attribute->isImplicit() || IsForeignImportAttribute(attribute) ||
           (!llvm::isa<clang::NamespaceDecl>(declaration) && IsPublishedNativeAttribute(attribute))) continue;
       if (const auto *annotation = llvm::dyn_cast<clang::AnnotateAttr>(attribute);
@@ -1150,6 +1154,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxDeductionGuideSemantic);
     if(HasCxxExplicitSpecifierIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxExplicitSpecifierSemantic);
+    if(HasMetaprogrammingIdentity(declaration))
+      sidecar.required_semantics.push_back(kMetaprogrammingSemantic);
     if(HasNativeObjectPolicyIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeObjectPolicySemantic);
     if(HasNativeObjectExpressionIdentity(declaration))

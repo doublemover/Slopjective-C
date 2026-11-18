@@ -382,3 +382,48 @@ def test_transitive_interface_lookup_replays_virtual_aliases_with_stable_depende
     assert all('.lookup-' not in path for row in before.values() for path in row['dependencies'])
     header.write_text('#define ANSWER 42\n')
     assert lookup() != before
+
+
+def test_locked_metaprogramming_is_a_content_sensitive_source_input(workspace):
+    import os
+    from scripts.objc3c_toolchain.source_graph import metaprogramming_inputs
+    root = workspace.parent / 'leaf'
+    (root / 'meta').mkdir()
+    manifest = root / 'meta/objc3-meta.json'
+    manifest.write_text('{}')
+    lock = root / 'meta.lock'
+    lock.write_text('{}')
+    edit(root / 'package.json', lambda data: data.update(
+        metaprogramming={'packages': ['meta/objc3-meta.json'], 'lock': 'meta.lock'}))
+    config = load_graph(workspace)['packages']['fixture.Leaf']
+    assert metaprogramming_inputs(config, root) == [manifest, lock]
+    original = source_inputs(root)
+    stamp = manifest.stat()
+    manifest.write_text('{"changed":true}')
+    os.utime(manifest, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    assert source_inputs(root) != original
+
+
+@pytest.mark.parametrize('case', ['duplicate', 'escape', 'unknown', 'empty', 'lock-alias', 'cpp'])
+def test_metaprogramming_locks_keep_source_graph_boundaries(workspace, case):
+    from scripts.objc3c_toolchain.source_graph import metaprogramming_inputs
+    root = workspace.parent / 'leaf'
+    (root / 'objc3-meta.json').write_text('{}')
+    (root / 'meta.lock').write_text('{}')
+    config = {'language': 'objective-c', 'metaprogramming': {
+        'packages': ['objc3-meta.json'], 'lock': 'meta.lock'}}
+    value = config['metaprogramming']
+    if case == 'duplicate':
+        value['packages'] *= 2
+    elif case == 'escape':
+        value['lock'] = '../workspace.json'
+    elif case == 'unknown':
+        value['ambient_search'] = True
+    elif case == 'empty':
+        value['packages'] = []
+    elif case == 'lock-alias':
+        value['lock'] = 'objc3-meta.json'
+    elif case == 'cpp':
+        config['language'] = 'c++'
+    with pytest.raises(ValueError):
+        metaprogramming_inputs(config, root)

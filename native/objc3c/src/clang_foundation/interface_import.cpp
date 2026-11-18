@@ -35,6 +35,8 @@
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Frontend/TextDiagnosticBuffer.h"
+#include "clang/Options/Options.h"
+#include "llvm/Option/ArgList.h"
 #include "clang/Tooling/Tooling.h"
 #include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "llvm/ADT/ArrayRef.h"
@@ -533,28 +535,29 @@ std::vector<std::string> BuildInterfaceASTArguments(
     llvm::StringRef standard, const InterfaceImportTarget &target) {
   std::vector<std::string> args = {"-fsyntax-only", "-x", language.str(),
                                    "-std=" + standard.str()};
-  for (std::size_t i = 0; i < user_arguments.size(); ++i) {
-    const auto &arg = user_arguments[i];
-    if (arg == "-c" || arg == "-S" || arg == "-emit-llvm" ||
-        arg == "-fsyntax-only")
-      continue;
-    if (arg == "-o" || arg == "-x" || arg == "-target" ||
-        arg == "--target") {
-      ++i;
-      continue;
-    }
-    if (arg == "-I" || arg == "-isystem" || arg == "-iquote" ||
-        arg == "-idirafter" || arg == "-include" || arg == "-imacros" ||
-        arg == "-D" || arg == "-U" || arg == "-F" ||
-        arg == "-resource-dir" || arg == "-working-directory") {
-      if (i + 1 < user_arguments.size()) {
-        args.push_back(arg);
-        args.push_back(user_arguments[++i]);
-      }
-      continue;
-    }
-    if (arg.empty()) continue;
-    if (arg.front() == '-') args.push_back(arg);
+  // Retain complete semantic options, using the driver's own operand arity.
+  // Dependency/output options must not consume a later header-root option or
+  // publish files while a provider interface is reparsed.
+  llvm::SmallVector<const char *,32> input;
+  for(const auto &argument:user_arguments)input.push_back(argument.c_str());
+  unsigned missing_index=0,missing_count=0;
+  auto parsed=clang::getDriverOptTable().ParseArgs(input,missing_index,missing_count,
+      llvm::opt::Visibility(clang::options::ClangOption));
+  for(const auto *argument:parsed) {
+    const auto &option=argument->getOption();
+    using namespace clang::options;
+    // Restricting visibility excludes joined clang-cl spellings such as /w,
+    // which otherwise misinterpret an absolute POSIX executable path.
+    // Preserve normal diagnostics for unknown GNU option spellings.
+    if(option.matches(OPT_UNKNOWN) && !argument->getSpelling().starts_with("-"))continue;
+    if(option.matches(OPT_INPUT) || option.matches(OPT_Action_Group) ||
+       option.matches(OPT_M_Group) || option.matches(OPT_o) ||
+       option.matches(OPT_x) || option.matches(OPT_target) ||
+       option.matches(OPT__serialize_diags) || option.matches(OPT_save_temps_EQ) ||
+       option.matches(OPT_ftime_trace) || option.matches(OPT_ftime_trace_EQ) ||
+       option.matches(OPT_dependency_file))continue;
+    llvm::opt::ArgStringList rendered;argument->render(parsed,rendered);
+    for(const char *value:rendered)args.emplace_back(value);
   }
   if (!target.target_triple.empty())
     args.push_back("--target=" + target.target_triple);

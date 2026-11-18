@@ -190,6 +190,10 @@ inline bool HasCxxExplicitSpecifierIdentity(const InterfaceDeclarationIdentity &
 inline bool IsCxxExplicitSpecifierOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d) || d.kind=="CXXDeductionGuide";
 }
+inline constexpr const char *kMetaprogrammingSemantic="objc3.expanded-metaprogramming.v1";
+inline bool HasMetaprogrammingIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";expanded-metaprogramming:v1;")!=std::string::npos;
+}
 inline constexpr const char *kNativeObjectPolicySemantic = "objc3.native-object-policies.v1";
 inline bool HasNativeObjectPolicyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-object-policies:v1;")!=std::string::npos;

@@ -1,5 +1,6 @@
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/driver_native.h"
+#include "clang_foundation/meta_package.h"
 #include "llvm/Support/FileSystem.h"
 #include "clang/Driver/Driver.h"
 #include "llvm/ADT/SmallVector.h"
@@ -23,7 +24,7 @@ int RunCompiler(int argc, char **argv) {
            "[--export-declaration name] [--module-owned-names] "
            "[--module-source-root dir] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
-           "[--sdk-root dir] "
+           "[--sdk-root dir] [--meta-package dir-or-manifest] [--meta-lock file] "
            "[--import-module name fingerprint package "
            "[--private-import] [--reexport-import] [--import-spi group]] "
            "[--source-imports] "
@@ -70,7 +71,11 @@ int RunCompiler(int argc, char **argv) {
         request.arguments.emplace_back(argv[i]);
       break;
     }
-    if (argument == "--module-source-root" && has_values(1))
+    if(argument=="--meta-package" && has_values(1))
+      request.meta_packages.emplace_back(argv[++i]);
+    else if(argument=="--meta-lock" && has_values(1) && request.meta_lock.empty())
+      request.meta_lock=argv[++i];
+    else if (argument == "--module-source-root" && has_values(1))
       request.module_source_root = argv[++i];
     else if (argument == "--module-owned-names")
       request.module_owned_names = true;
@@ -178,11 +183,11 @@ int RunCompiler(int argc, char **argv) {
         (request.language != BaseLanguage::ObjectiveC &&
          request.language != BaseLanguage::ObjectiveCxx) ||
         request.module_imports.empty())) ||
-      (!dependency_record_path.empty() && request.module_imports.empty())) {
+      (!dependency_record_path.empty() && request.module_imports.empty() && request.meta_packages.empty())) {
     std::cerr << "module imports require search paths; source imports require "
                  "an ObjC3 Objective-C or Objective-C++ source and a locked "
                  "module registry; "
-                 "dependency records require imports\n";
+                 "dependency records require imports or locked metaprogramming packages\n";
     return 2;
   }
   if (!dependency_record_path.empty()) {
@@ -242,6 +247,12 @@ int main(int argc, char **argv) {
     }
     std::vector<char *> expanded;
     for (auto argument : arguments) expanded.push_back(const_cast<char *>(argument));
+    if(expanded.size()==3 && std::string_view(expanded[1])=="--meta-package-fingerprint") {
+      std::string error;
+      auto fingerprint=objc3::clang_foundation::ComputeMetaPackageFingerprintFromFile(expanded[2],error);
+      if(!fingerprint){std::cerr<<error<<'\n';return 1;}
+      std::cout<<*fingerprint<<'\n';return 0;
+    }
     return UsesInterfaceCompiler(expanded.size(), expanded.data())
         ? RunCompiler(expanded.size(), expanded.data())
         : RunNativeDriver(expanded.size(), expanded.data());

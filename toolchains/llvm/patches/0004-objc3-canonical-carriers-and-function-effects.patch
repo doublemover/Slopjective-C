@@ -7276,7 +7276,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -250,27 +438,332 @@
+@@ -250,27 +438,347 @@
    if (ALoc.isInvalid() || DLoc.isInvalid())
      return DeclPrinter::AttrPosAsWritten::Left;
  
@@ -7448,6 +7448,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    llvm::ListSeparator LS(" ");
 -  for (auto *A : D->getAttrs()) {
 -    if (A->isInherited() || A->isImplicit())
++  llvm::StringSet<> PrintedMetaAnnotations;
 +  llvm::StringSet<> PrintedPredicates;
 +  llvm::StringSet<> PrintedThreadContracts;
 +  llvm::StringSet<> PrintedFunctionPolicies;
@@ -7483,6 +7484,20 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 +    // must not put this definition-only attribute on a prototype.
 +    if (Policy.TerseOutput && isa<NoBuiltinAttr>(A))
 +      continue;
++    if(const auto *Meta=dyn_cast<AnnotateAttr>(A);Meta && Meta->args_size()==0) {
++      if(Meta->getAnnotation()=="objc3.meta.entry.v1" ||
++          Meta->getAnnotation().starts_with("objc3.meta.expanded.v1:")) {
++        auto MetaPos=isa<FunctionDecl>(D)?AttrPosAsWritten::Right:AttrPosAsWritten::Left;
++        if(Pos!=AttrPosAsWritten::Default && Pos!=MetaPos)continue;
++        if(!PrintedMetaAnnotations.insert(Meta->getAnnotation()).second)continue;
++      }
++      if(Meta->getAnnotation()=="objc3.meta.entry.v1") {
++        AOut<<LS<<"__attribute__((objc_macro))";continue;
++      }
++      if(Meta->getAnnotation().starts_with("objc3.meta.expanded.v1:")) {
++        AOut<<LS;Meta->printPretty(AOut,Policy);continue;
++      }
++    }
 +    if (A->isImplicit() ||
 +        (A->isInherited() &&
 +         !(Policy.PolishForDeclaration &&
@@ -7614,7 +7629,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      switch (A->getKind()) {
  #define ATTR(X)
  #define PRAGMA_SPELLING_ATTR(X) case attr::X:
-@@ -278,11 +771,226 @@
+@@ -278,11 +786,226 @@
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -7842,7 +7857,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        }
        break;
      }
-@@ -348,12 +1056,11 @@
+@@ -348,12 +1071,11 @@
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -7856,7 +7871,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -390,16 +1097,17 @@
+@@ -390,16 +1112,17 @@
      }
  
      if (Expr *Init = BMInitializer->getInit()) {
@@ -7879,7 +7894,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Expr *SimpleInit = nullptr;
        Expr **Args = nullptr;
        unsigned NumArgs = 0;
-@@ -451,7 +1159,7 @@
+@@ -451,7 +1174,7 @@
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -7888,7 +7903,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +1179,15 @@
+@@ -471,6 +1194,15 @@
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -7904,7 +7919,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +1271,12 @@
+@@ -554,9 +1286,12 @@
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -7919,7 +7934,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +1389,106 @@
+@@ -669,45 +1404,106 @@
    Out << Proto;
  }
  
@@ -8041,7 +8056,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +1502,24 @@
+@@ -721,12 +1517,24 @@
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -8068,7 +8083,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +1546,14 @@
+@@ -753,12 +1561,14 @@
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -8085,7 +8100,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1602,10 @@
+@@ -807,7 +1617,10 @@
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -8097,7 +8112,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1616,53 @@
+@@ -818,17 +1631,53 @@
        }
      }
  
@@ -8156,7 +8171,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1684,15 @@
+@@ -850,7 +1699,15 @@
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -8173,7 +8188,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -877,9 +1719,17 @@
+@@ -877,9 +1734,17 @@
          Indentation -= Policy.Indentation;
        }
  
@@ -8194,7 +8209,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,21 +1744,29 @@
+@@ -894,21 +1759,29 @@
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -8236,7 +8251,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    }
  
    if (D->isPackExpansion())
-@@ -917,14 +1775,22 @@
+@@ -917,14 +1790,22 @@
  
  void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    prettyPrintPragmas(D);
@@ -8261,7 +8276,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -932,6 +1798,9 @@
+@@ -932,6 +1813,9 @@
                                    &Context);
    }
  
@@ -8271,7 +8286,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Expr *Init = D->getInClassInitializer();
    if (!Policy.SuppressInitializers && Init) {
      if (D->getInClassInitStyle() == ICIS_ListInit)
-@@ -940,16 +1809,57 @@
+@@ -940,16 +1824,57 @@
        Out << " = ";
      Init->printPretty(Out, nullptr, Policy, Indentation, "\n", &Context);
    }
@@ -8334,7 +8349,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1869,10 @@
+@@ -959,9 +1884,10 @@
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -8348,7 +8363,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1896,46 @@
+@@ -985,22 +1911,46 @@
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -8399,7 +8414,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1957,8 @@
+@@ -1022,6 +1972,8 @@
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -8408,7 +8423,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1966,7 @@
+@@ -1029,9 +1981,7 @@
    }
  }
  
@@ -8419,7 +8434,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1981,7 @@
+@@ -1046,8 +1996,7 @@
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -8429,7 +8444,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +2003,8 @@
+@@ -1069,6 +2018,8 @@
      Out << "inline ";
  
    Out << "namespace ";
@@ -8438,7 +8453,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +2031,9 @@
+@@ -1095,6 +2046,9 @@
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -8448,7 +8463,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +2070,8 @@
+@@ -1131,7 +2085,8 @@
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -8458,7 +8473,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +2202,7 @@
+@@ -1262,7 +2217,7 @@
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -8467,7 +8482,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +2222,21 @@
+@@ -1282,12 +2237,21 @@
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -8490,7 +8505,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +2251,11 @@
+@@ -1302,7 +2266,11 @@
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -8503,7 +8518,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +2273,14 @@
+@@ -1320,6 +2288,14 @@
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -8518,7 +8533,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +2338,17 @@
+@@ -1377,13 +2353,17 @@
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -8539,7 +8554,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +2363,18 @@
+@@ -1398,9 +2378,18 @@
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -8560,7 +8575,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +2446,8 @@
+@@ -1472,9 +2461,8 @@
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -8572,7 +8587,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +2456,22 @@
+@@ -1483,8 +2471,22 @@
      Out << name;
  
    if (OMD->isVariadic())
@@ -8596,7 +8611,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +2479,7 @@
+@@ -1492,8 +2494,7 @@
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -8606,7 +8621,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Out << ';';
  }
  
-@@ -1512,8 +2498,8 @@
+@@ -1512,8 +2513,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8617,7 +8632,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +2531,7 @@
+@@ -1545,7 +2546,7 @@
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -8626,7 +8641,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +2544,8 @@
+@@ -1558,7 +2559,8 @@
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8636,7 +8651,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +2555,8 @@
+@@ -1568,9 +2570,8 @@
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -8648,7 +8663,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +2573,8 @@
+@@ -1587,6 +2588,8 @@
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -8657,7 +8672,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +2584,8 @@
+@@ -1596,7 +2599,8 @@
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -8667,7 +8682,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2608,8 @@
+@@ -1619,6 +2623,8 @@
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -8676,7 +8691,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1627,13 +2618,26 @@
+@@ -1627,13 +2633,26 @@
    if (auto TypeParams = PID->getTypeParamList()) {
      PrintObjCTypeParams(TypeParams);
    }
@@ -8707,7 +8722,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2649,8 @@
+@@ -1645,8 +2664,8 @@
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -8718,7 +8733,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2757,14 @@
+@@ -1753,15 +2772,14 @@
        }
      }
  
@@ -8740,7 +8755,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2800,14 @@
+@@ -1797,11 +2815,14 @@
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -8758,7 +8773,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2829,7 @@
+@@ -1823,7 +2844,7 @@
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -8767,7 +8782,7 @@ diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
        Out << (I == D->varlist_begin() ? '(' : ',');
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
-@@ -2023,3 +3029,18 @@
+@@ -2023,3 +3044,18 @@
      }
    }
  }
@@ -11467,7 +11482,6 @@ index 000000000..cba165426
 +      SecondType.get(), Parens.getCloseLocation());
 +}
 diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
-index eb50b0e85..72e10b55d 100644
 --- a/clang/lib/Parse/ParseObjc.cpp
 +++ b/clang/lib/Parse/ParseObjc.cpp
 @@ -11,6 +11,8 @@
@@ -11479,15 +11493,18 @@ index eb50b0e85..72e10b55d 100644
  #include "clang/AST/ExprObjC.h"
  #include "clang/AST/ODRDiagsEmitter.h"
  #include "clang/AST/PrettyDeclStackTrace.h"
-@@ -25,6 +27,7 @@
+@@ -23,8 +25,10 @@
+ #include "clang/Sema/Scope.h"
+ #include "clang/Sema/SemaCodeCompletion.h"
  #include "clang/Sema/SemaObjC.h"
++#include "clang/Sema/ObjC3Metaprogramming.h"
  #include "llvm/ADT/STLForwardCompat.h"
  #include "llvm/ADT/SmallVector.h"
 +#include "llvm/Support/SaveAndRestore.h"
  
  using namespace clang;
  
-@@ -45,6 +48,14 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+@@ -45,6 +49,14 @@
                                ParsedAttributes &DeclSpecAttrs) {
    DeclAttrs.takeAllPrependingFrom(DeclSpecAttrs);
  
@@ -11502,7 +11519,7 @@ index eb50b0e85..72e10b55d 100644
    SourceLocation AtLoc = ConsumeToken(); // the "@"
  
    if (Tok.is(tok::code_completion)) {
-@@ -88,7 +99,8 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+@@ -88,7 +100,8 @@
      SingleDecl = ParseObjCPropertyDynamic(AtLoc);
      break;
    case tok::objc_import:
@@ -11512,7 +11529,7 @@ index eb50b0e85..72e10b55d 100644
        Sema::ModuleImportState IS = Sema::ModuleImportState::NotACXX20Module;
        SingleDecl = ParseModuleImport(AtLoc, IS);
        break;
-@@ -189,8 +201,9 @@ void Parser::CheckNestedObjCContexts(SourceLocation AtLoc)
+@@ -189,8 +202,9 @@
  }
  
  Decl *Parser::ParseObjCAtInterfaceDeclaration(SourceLocation AtLoc,
@@ -11524,7 +11541,7 @@ index eb50b0e85..72e10b55d 100644
           "ParseObjCAtInterfaceDeclaration(): Expected @interface");
    CheckNestedObjCContexts(AtLoc);
    ConsumeToken(); // the "interface" identifier
-@@ -222,6 +235,12 @@ Decl *Parser::ParseObjCAtInterfaceDeclaration(SourceLocation AtLoc,
+@@ -222,6 +236,12 @@
      typeParameterList = parseObjCTypeParamListOrProtocolRefs(
          typeParamScope, LAngleLoc, ProtocolIdents, EndProtoLoc);
  
@@ -11537,7 +11554,7 @@ index eb50b0e85..72e10b55d 100644
    if (Tok.is(tok::l_paren) &&
        !isKnownToBeTypeSpecifier(GetLookAheadToken(1))) { // we have a category.
  
-@@ -340,6 +359,9 @@ Decl *Parser::ParseObjCAtInterfaceDeclaration(SourceLocation AtLoc,
+@@ -340,6 +360,9 @@
        SourceRange(typeArgsLAngleLoc, typeArgsRAngleLoc), protocols.data(),
        protocols.size(), protocolLocs.data(), EndProtoLoc, attrs, &SkipBody);
  
@@ -11547,7 +11564,7 @@ index eb50b0e85..72e10b55d 100644
    if (Tok.is(tok::l_brace))
      ParseObjCClassInstanceVariables(ClsType, tok::objc_protected, AtLoc);
  
-@@ -347,6 +369,16 @@ Decl *Parser::ParseObjCAtInterfaceDeclaration(SourceLocation AtLoc,
+@@ -347,6 +370,16 @@
  
    if (SkipBody.CheckSameAsPrevious) {
      auto *PreviousDef = cast<ObjCInterfaceDecl>(SkipBody.Previous);
@@ -11564,7 +11581,15 @@ index eb50b0e85..72e10b55d 100644
      if (Actions.ActOnDuplicateODRHashDefinition(ClsType, PreviousDef)) {
        ClsType->mergeDuplicateDefinitionWithCommon(PreviousDef->getDefinition());
      } else {
-@@ -1206,8 +1238,31 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -565,6 +598,7 @@
+   tok::ObjCKeywordKind MethodImplKind = tok::objc_not_keyword;
+ 
+   SourceRange AtEnd;
++  injectObjC3MetaMembers(Actions,PP,dyn_cast_or_null<ObjCContainerDecl>(CDecl),Tok);
+ 
+   while (true) {
+     // If this is a method prototype, parse it.
+@@ -1206,8 +1240,31 @@
      return nullptr;
    }
  
@@ -11596,7 +11621,7 @@ index eb50b0e85..72e10b55d 100644
      // If attributes exist after the method, parse them.
      MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
                           methodAttrs);
-@@ -1216,7 +1271,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1216,7 +1273,7 @@
      Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
          getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType,
          selLoc, Sel, nullptr, CParamInfo.data(), CParamInfo.size(), methodAttrs,
@@ -11605,7 +11630,7 @@ index eb50b0e85..72e10b55d 100644
      PD.complete(Result);
      return Result;
    }
-@@ -1280,6 +1335,18 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1280,6 +1337,18 @@
        return nullptr;
      }
  
@@ -11624,7 +11649,7 @@ index eb50b0e85..72e10b55d 100644
      // Check for another keyword selector.
      SelIdent = ParseObjCSelectorPiece(selLoc);
      if (!SelIdent && Tok.isNot(tok::colon))
-@@ -1335,6 +1402,8 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1335,6 +1404,8 @@
      ObjCParamInfo.push_back(Param);
    }
  
@@ -11633,7 +11658,7 @@ index eb50b0e85..72e10b55d 100644
    // FIXME: Add support for optional parameter list...
    // If attributes exist after the method, parse them.
    MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
-@@ -1348,7 +1417,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1348,7 +1419,7 @@
    Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
        getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType, KeyLocs,
        Sel, ObjCParamInfo.data(), CParamInfo.data(), CParamInfo.size(),
@@ -11642,7 +11667,15 @@ index eb50b0e85..72e10b55d 100644
  
    PD.complete(Result);
    return Result;
-@@ -2515,6 +2584,11 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
+@@ -1996,6 +2067,7 @@
+ 
+   {
+     ObjCImplParsingDataRAII ObjCImplParsing(*this, ObjCImpDecl);
++    injectObjC3MetaMembers(Actions,PP,ObjCImpDecl,Tok);
+     while (!ObjCImplParsing.isFinished() && !isEofOrEom()) {
+       ParsedAttributes DeclAttrs(AttrFactory);
+       MaybeParseCXX11Attributes(DeclAttrs);
+@@ -2515,6 +2587,11 @@
  }
  
  ExprResult Parser::ParseObjCAtExpression(SourceLocation AtLoc) {
@@ -11654,7 +11687,7 @@ index eb50b0e85..72e10b55d 100644
    switch (Tok.getKind()) {
    case tok::code_completion:
      cutOffParsing();
-@@ -2732,6 +2806,13 @@ ExprResult Parser::ParseObjCMessageExpression() {
+@@ -2732,6 +2809,13 @@
    }
  
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -11668,7 +11701,7 @@ index eb50b0e85..72e10b55d 100644
  
    if (getLangOpts().CPlusPlus) {
      // We completely separate the C and C++ cases because C++ requires
-@@ -2822,6 +2903,16 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
+@@ -2822,6 +2906,16 @@
                                         ParsedType ReceiverType,
                                         Expr *ReceiverExpr) {
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -11685,7 +11718,7 @@ index eb50b0e85..72e10b55d 100644
  
    if (Tok.is(tok::code_completion)) {
      cutOffParsing();
-@@ -2978,10 +3069,74 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
+@@ -2978,10 +3072,74 @@
      return Actions.ObjC().ActOnClassMessage(getCurScope(), ReceiverType, Sel,
                                              LBracLoc, KeyLocs, RBracLoc,
                                              KeyExprs);
@@ -11760,6 +11793,7 @@ index eb50b0e85..72e10b55d 100644
  ExprResult Parser::ParseObjCStringLiteral(SourceLocation AtLoc) {
    ExprResult Res(ParseStringLiteralExpression());
    if (Res.isInvalid()) return Res;
+
 diff --git a/clang/lib/Parse/ParseTentative.cpp b/clang/lib/Parse/ParseTentative.cpp
 index 1477fc38b..42e2dd14e 100644
 --- a/clang/lib/Parse/ParseTentative.cpp
@@ -11906,10 +11940,9 @@ diff --git a/clang/lib/Parse/Parser.cpp b/clang/lib/Parse/Parser.cpp
  
 
 diff --git a/clang/lib/Sema/CMakeLists.txt b/clang/lib/Sema/CMakeLists.txt
-index ef729e22c..ccf09d124 100644
 --- a/clang/lib/Sema/CMakeLists.txt
 +++ b/clang/lib/Sema/CMakeLists.txt
-@@ -46,6 +46,7 @@ add_clang_library(clangSema
+@@ -46,6 +46,7 @@
    SemaConcept.cpp
    SemaConsumer.cpp
    SemaCoroutine.cpp
@@ -11917,12 +11950,13 @@ index ef729e22c..ccf09d124 100644
    SemaCUDA.cpp
    SemaDirectX.cpp
    SemaDecl.cpp
-@@ -71,6 +72,29 @@ add_clang_library(clangSema
+@@ -71,6 +72,30 @@
    SemaMSP430.cpp
    SemaModule.cpp
    SemaNVPTX.cpp
 +  SemaObjC3Effects.cpp
 +  SemaObjC3Isolation.cpp
++  SemaObjC3Metaprogramming.cpp
 +  SemaObjC3Carriers.cpp
 +  SemaObjC3KeyPath.cpp
 +  SemaObjC3CarrierTransfer.cpp
@@ -11947,6 +11981,7 @@ index ef729e22c..ccf09d124 100644
    SemaObjC.cpp
    SemaObjCProperty.cpp
    SemaOpenACC.cpp
+
 diff --git a/clang/lib/Sema/DeclSpec.cpp b/clang/lib/Sema/DeclSpec.cpp
 index 2add7c6aa..7bdd4e4b1 100644
 --- a/clang/lib/Sema/DeclSpec.cpp
@@ -13368,7 +13403,12 @@ index b0669c602..3b5c9bf01 100644
 diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
 --- a/clang/lib/Sema/SemaDeclObjC.cpp
 +++ b/clang/lib/Sema/SemaDeclObjC.cpp
-@@ -11,8 +11,13 @@
+@@ -1,3 +1,4 @@
++#include "clang/Sema/ObjC3Metaprogramming.h"
+ //===--- SemaDeclObjC.cpp - Semantic Analysis for ObjC Declarations -------===//
+ //
+ // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+@@ -11,8 +12,13 @@
  //===----------------------------------------------------------------------===//
  
  #include "TypeLocBuilder.h"
@@ -13382,7 +13422,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
  #include "clang/AST/ASTMutationListener.h"
  #include "clang/AST/DeclObjC.h"
  #include "clang/AST/DynamicRecursiveASTVisitor.h"
-@@ -137,8 +142,51 @@
+@@ -137,8 +143,51 @@
          << cast<ObjCMethodDecl>(NewD->getDeclContext());
  }
  
@@ -13434,7 +13474,15 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
    ASTContext &Context = getASTContext();
    if (Overridden->hasRelatedResultType() &&
        !NewMethod->hasRelatedResultType()) {
-@@ -1290,16 +1338,16 @@
+@@ -1105,6 +1154,7 @@
+     IDecl->setEndOfDefinitionLoc(EndProtoLoc);
+   }
+ 
++  applyObjC3MetaProtocols(SemaRef, IDecl);
+   CheckObjCDeclScope(IDecl);
+   ActOnObjCContainerStartDefinition(IDecl);
+   return IDecl;
+@@ -1290,16 +1340,16 @@
    return PDecl;
  }
  
@@ -13454,7 +13502,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
        UndefinedProtocol = PI;
        return true;
      }
-@@ -1349,7 +1397,7 @@
+@@ -1349,7 +1399,7 @@
      ObjCProtocolDecl *UndefinedProtocol;
  
      if (WarnOnDeclarations &&
@@ -13463,7 +13511,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
        Diag(Pair.getLoc(), diag::warn_undef_protocolref)
            << Pair.getIdentifierInfo();
        Diag(UndefinedProtocol->getLocation(), diag::note_protocol_decl_undefined)
-@@ -1479,7 +1527,7 @@
+@@ -1479,7 +1529,7 @@
        // FIXME: Recover nicely in the hidden case.
        ObjCProtocolDecl *forwardDecl = nullptr;
        if (warnOnIncompleteProtocols &&
@@ -13472,7 +13520,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
          Diag(identifierLocs[i], diag::warn_undef_protocolref)
            << proto->getDeclName();
          Diag(forwardDecl->getLocation(), diag::note_protocol_decl_undefined)
-@@ -2595,6 +2643,7 @@
+@@ -2595,6 +2645,7 @@
  void SemaObjC::WarnConflictingTypedMethods(ObjCMethodDecl *ImpMethodDecl,
                                             ObjCMethodDecl *MethodDecl,
                                             bool IsProtocolMethodDecl) {
@@ -13480,7 +13528,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
    if (getLangOpts().ObjCAutoRefCount &&
        checkMethodFamilyMismatch(SemaRef, ImpMethodDecl, MethodDecl))
      return;
-@@ -3269,6 +3318,8 @@
+@@ -3269,6 +3320,8 @@
                                            const ObjCMethodDecl *right,
                                            MethodMatchStrategy strategy) {
    ASTContext &Context = getASTContext();
@@ -13489,7 +13537,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
    if (!matchTypes(Context, strategy, left->getReturnType(),
                    right->getReturnType()))
      return false;
-@@ -3600,6 +3651,19 @@
+@@ -3600,6 +3653,19 @@
  void SemaObjC::DiagnoseMultipleMethodInGlobalPool(
      SmallVectorImpl<ObjCMethodDecl *> &Methods, Selector Sel, SourceRange R,
      bool receiverIdOrClass) {
@@ -13509,7 +13557,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
    // We found multiple methods, so we may have to complain.
    bool issueDiagnostic = false, issueError = false;
  
-@@ -4094,6 +4158,7 @@
+@@ -4094,6 +4160,7 @@
        for (auto *I : CDecl->properties())
          ProcessPropertyDecl(I);
      CDecl->setAtEndRange(AtEnd);
@@ -13517,7 +13565,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
    }
    if (ObjCImplementationDecl *IC=dyn_cast<ObjCImplementationDecl>(ClassDecl)) {
      IC->setAtEndRange(AtEnd);
-@@ -4462,6 +4527,7 @@
+@@ -4462,6 +4529,7 @@
    // overriding the same method in the interface or its categories.
    bool hasOverriddenMethodsInBaseOrProtocol = false;
    for (ObjCMethodDecl *overridden : overrides) {
@@ -13525,7 +13573,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
      if (!hasOverriddenMethodsInBaseOrProtocol) {
        if (isa<ObjCProtocolDecl>(overridden->getDeclContext()) ||
            !IsMethodInCurrentClass(overridden) || overridden->isOverriding()) {
-@@ -4788,7 +4854,8 @@
+@@ -4788,7 +4856,8 @@
      ParmVarDecl **ArgInfo, DeclaratorChunk::ParamInfo *CParamInfo,
      unsigned CNumArgs, // c-style args
      const ParsedAttributesView &AttrList, tok::ObjCKeywordKind MethodDeclKind,
@@ -13535,7 +13583,7 @@ diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
    ASTContext &Context = getASTContext();
    // Make sure we can establish a context for the method.
    if (!SemaRef.CurContext->isObjCContainer()) {
-@@ -4848,6 +4915,26 @@
+@@ -4848,6 +4917,26 @@
    }
  
    ObjCMethod->setMethodParams(Context, Params, SelectorLocs);
@@ -79364,4 +79412,197 @@ new file mode 100644
 +}
 +void binding_static_unknown(BindingWork unknown){(void)binding_detached(BindingStaticSources::work(unknown));} // expected-error {{cannot prove Sendable captures}}
 +void binding_static_opaque_receiver(void){const BindingWork work=^void(void) __objc3_async_frame {};(void)binding_detached(binding_opaque_static_receiver().work(work));} // expected-error {{cannot prove Sendable captures}}
++#endif
+
+diff --git a/clang/lib/Sema/SemaObjC3Metaprogramming.cpp b/clang/lib/Sema/SemaObjC3Metaprogramming.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3Metaprogramming.cpp
+@@ -0,0 +1,122 @@
++//===--- SemaObjC3Metaprogramming.cpp - Explicit macro/derive attributes ------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/Sema/ObjC3Metaprogramming.h"
++#include "clang/AST/Attr.h"
++#include "clang/AST/DeclObjC.h"
++#include "clang/AST/Expr.h"
++#include "clang/Basic/ParsedAttrInfo.h"
++#include "clang/Sema/ParsedAttr.h"
++#include "clang/Sema/Sema.h"
++#include "clang/Basic/SourceManager.h"
++#include "clang/Basic/FileManager.h"
++#include "clang/Lex/Preprocessor.h"
++#include "clang/Lex/Lexer.h"
++#include "llvm/Support/MemoryBuffer.h"
++#include <map>
++#include <mutex>
++using namespace clang;
++namespace {
++std::mutex CallbacksMutex;
++std::map<Sema *,ObjC3MetaCallbacks> Callbacks;
++ObjC3MetaCallbacks callbacks(Sema &S) {
++  std::lock_guard<std::mutex> Lock(CallbacksMutex);
++  auto I=Callbacks.find(&S);return I==Callbacks.end()?ObjC3MetaCallbacks{}:I->second;
++}
++class MetaAttributeInfo : public ParsedAttrInfo {
++  ObjC3MetaAttribute Kind;
++public:
++  MetaAttributeInfo(ObjC3MetaAttribute K,llvm::ArrayRef<Spelling> Names):Kind(K) {
++    Spellings=Names;NumArgs=K==ObjC3MetaAttribute::Entrypoint?0:1;
++  }
++  bool diagAppertainsToDecl(Sema &S,const ParsedAttr &A,const Decl *D) const override {
++    bool Allowed=Kind==ObjC3MetaAttribute::Entrypoint?isa<FunctionDecl>(D):
++                 Kind==ObjC3MetaAttribute::PropertyBehavior?isa<ObjCPropertyDecl>(D):isa<ObjCInterfaceDecl>(D);
++    if(!Allowed)S.Diag(A.getLoc(),S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "metaprogramming attribute does not apply to this declaration"));
++    return Allowed;
++  }
++  AttrHandling handleDeclAttribute(Sema &S,Decl *D,const ParsedAttr &A) const override {
++    if(Kind!=ObjC3MetaAttribute::Entrypoint && !S.getLangOpts().ObjC3) {
++      S.Diag(A.getLoc(),S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++          "metaprogramming expansion requires Objective-C 3.0 mode"));
++      return AttributeNotApplied;
++    }
++    llvm::StringRef Name;
++    if(Kind!=ObjC3MetaAttribute::Entrypoint) {
++      const auto *Literal=A.getNumArgs()==1 && A.isArgExpr(0)?dyn_cast<StringLiteral>(A.getArgAsExpr(0)->IgnoreParenImpCasts()):nullptr;
++      if(!Literal || Literal->getCharByteWidth()!=1 || Literal->getBytes().empty() ||
++          Literal->getBytes().size()>192 || Literal->getBytes().contains('\0')) {
++        S.Diag(A.getLoc(),S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++            "metaprogramming entrypoint name must be a nonempty UTF-8 string literal"));
++        return AttributeNotApplied;
++      }
++      Name=Literal->getBytes();
++    }
++    auto Host=callbacks(S);
++    if(Host.Attribute)
++      return Host.Attribute(Host.Context,S,D,Kind,Name,A.getRange())?AttributeApplied:AttributeNotApplied;
++    if(Kind==ObjC3MetaAttribute::Entrypoint) {
++      for(const auto *A:D->specific_attrs<AnnotateAttr>())
++        if(A->getAnnotation()=="objc3.meta.entry.v1")return AttributeApplied;
++      D->addAttr(AnnotateAttr::CreateImplicit(S.Context,"objc3.meta.entry.v1",nullptr,0,A.getRange()));
++      return AttributeApplied;
++    }
++    S.Diag(A.getLoc(),S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "metaprogramming request '%0' requires explicit locked packages through the Objective-C 3 compiler frontend"))<<Name;
++    return AttributeNotApplied;
++  }
++};
++#define META_ATTRIBUTE(Name,Kind) \
++class Name##Info final : public MetaAttributeInfo { \
++  static constexpr Spelling Names[]={{AttributeCommonInfo::AS_GNU,#Name}}; \
++public:Name##Info():MetaAttributeInfo(ObjC3MetaAttribute::Kind,Names){} \
++}; \
++static ParsedAttrInfoRegistry::Add<Name##Info> Name##Registration(#Name,"Objective-C 3 metaprogramming attribute");
++META_ATTRIBUTE(objc_derive,Derive)
++META_ATTRIBUTE(objc_expand,Expand)
++META_ATTRIBUTE(objc_property_behavior,PropertyBehavior)
++META_ATTRIBUTE(objc_macro,Entrypoint)
++#undef META_ATTRIBUTE
++}
++void clang::setObjC3MetaCallbacks(Sema &S,ObjC3MetaCallbacks Value) {
++  std::lock_guard<std::mutex> Lock(CallbacksMutex);Callbacks[&S]=Value;
++}
++void clang::clearObjC3MetaCallbacks(Sema &S) {
++  std::lock_guard<std::mutex> Lock(CallbacksMutex);Callbacks.erase(&S);
++}
++void clang::applyObjC3MetaProtocols(Sema &S,ObjCInterfaceDecl *D) {
++  auto Host=callbacks(S);if(Host.Interface)Host.Interface(Host.Context,S,D);
++}
++void clang::ensureObjC3MetaAttributesRegistered() {}
++
++void clang::injectObjC3MetaMembers(Sema &S,Preprocessor &PP,
++                                  ObjCContainerDecl *D,Token &Current) {
++  auto Host=callbacks(S);
++  if(!D || !Host.Members)return;
++  std::string Text=Host.Members(Host.Context,S,D);
++  if(Text.empty())return;
++  auto &SM=PP.getSourceManager();
++  std::string Name=SM.getFilename(SM.getExpansionLoc(D->getLocation())).str();
++  Name+=".objc3-meta-"+std::to_string(SM.local_sloc_entry_size())+".inc";
++  auto ID=SM.createFileID(llvm::MemoryBuffer::getMemBufferCopy(Text,Name),
++                          SrcMgr::C_User,0,0,D->getLocation());
++  auto Buffer=SM.getBufferData(ID);
++  Lexer Raw(SM.getLocForStartOfFile(ID),PP.getLangOpts(),Buffer.begin(),Buffer.begin(),Buffer.end());
++  // Generated declarations belong to the annotated container for ownership,
++  // while their spelling locations retain the reconstructible package output.
++  auto Start=SM.getLocForStartOfFile(ID);
++  auto Expansion=SM.createExpansionLoc(Start,D->getLocation(),D->getLocation(),Text.size());
++  SmallVector<Token,64> Tokens;
++  for(;;) {
++    Token T;Raw.LexFromRawLexer(T);
++    if(T.is(tok::eof))break;
++    if(T.is(tok::raw_identifier))PP.LookUpIdentifierInfo(T);
++    T.setLocation(Expansion.getLocWithOffset(SM.getFileOffset(T.getLocation())));
++    Tokens.push_back(T);
++  }
++  Tokens.push_back(Current);
++  auto Owned=std::make_unique<Token[]>(Tokens.size());
++  std::copy(Tokens.begin(),Tokens.end(),Owned.get());
++  PP.EnterTokenStream(std::move(Owned),Tokens.size(),true,false);
++  PP.Lex(Current);
++}
+
+diff --git a/clang/include/clang/Sema/ObjC3Metaprogramming.h b/clang/include/clang/Sema/ObjC3Metaprogramming.h
+new file mode 100644
+--- /dev/null
++++ b/clang/include/clang/Sema/ObjC3Metaprogramming.h
+@@ -0,0 +1,25 @@
++//===--- ObjC3Metaprogramming.h - Explicit metaprogramming host hooks --------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_SEMA_OBJC3METAPROGRAMMING_H
++#define LLVM_CLANG_SEMA_OBJC3METAPROGRAMMING_H
++#include "clang/Basic/SourceLocation.h"
++#include "llvm/ADT/StringRef.h"
++#include <string>
++namespace clang {
++class Decl;class ObjCInterfaceDecl;class ObjCContainerDecl;class Sema;class Preprocessor;class Token;
++enum class ObjC3MetaAttribute { Derive, Expand, PropertyBehavior, Entrypoint };
++struct ObjC3MetaCallbacks {
++  void *Context=nullptr;
++  bool (*Attribute)(void *,Sema &,Decl *,ObjC3MetaAttribute,llvm::StringRef,SourceRange)=nullptr;
++  std::string (*Members)(void *,Sema &,ObjCContainerDecl *)=nullptr;
++  void (*Interface)(void *,Sema &,ObjCInterfaceDecl *)=nullptr;
++};
++// Hooks belong to one Sema, never an ambient package search path. The owner
++// removes them in ForgetSema; nested interface readers have independent owners.
++void setObjC3MetaCallbacks(Sema &,ObjC3MetaCallbacks);
++void clearObjC3MetaCallbacks(Sema &);
++void applyObjC3MetaProtocols(Sema &,ObjCInterfaceDecl *);
++void injectObjC3MetaMembers(Sema &,Preprocessor &,ObjCContainerDecl *,Token &);
++void ensureObjC3MetaAttributesRegistered();
++}
++#endif
+
+diff --git a/clang/test/ObjC3/Sema/native-meta-attributes.m b/clang/test/ObjC3/Sema/native-meta-attributes.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-meta-attributes.m
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -fobjc-version=3 -emit-pch -o %t %S/Inputs/native-meta-attributes.h
++// RUN: %clang_cc1 -include-pch %t -fobjc-version=3 -fsyntax-only -verify %s
++#ifndef OBJC3_NATIVE_META_ATTRIBUTES_H
++#include "Inputs/native-meta-attributes.h"
++#endif
++__attribute__((objc_root_class,objc_derive("Equality"))) // expected-error {{requires explicit locked packages}}
++@interface MissingDerive @end
++__attribute__((objc_root_class,objc_expand("Example"))) // expected-error {{requires explicit locked packages}}
++@interface MissingMacro @end
++__attribute__((objc_root_class)) @interface Properties
++@property int value __attribute__((objc_property_behavior("Observed"))); // expected-error {{requires explicit locked packages}}
++@end
++__attribute__((objc_macro)) int wrong_subject; // expected-error {{does not apply to this declaration}}
++__attribute__((objc_root_class,objc_derive(1))) // expected-error {{must be a nonempty UTF-8 string literal}}
++@interface BadName @end
++__attribute__((objc_macro("argument"))) void bad_arity(void); // expected-error {{takes no arguments}}
+
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-meta-attributes.h b/clang/test/ObjC3/Sema/Inputs/native-meta-attributes.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-meta-attributes.h
+@@ -0,0 +1,5 @@
++#ifndef OBJC3_NATIVE_META_ATTRIBUTES_H
++#define OBJC3_NATIVE_META_ATTRIBUTES_H
++__attribute__((objc_macro)) void meta_entry(void);
++__attribute__((objc_macro,objc_macro)) void repeated_meta_entry(void);
 +#endif
