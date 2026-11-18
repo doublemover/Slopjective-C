@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.222 / System 2.148 transparent-union span](linux_native_transparent_union_arguments.md)
+preserves native C argument conversion/ABI contracts and their exact source-free
+identity through matching C17/C23 provider and consumer compilation.
+
 The [Source 2.221 / System 2.147 borrowed-projection span](linux_native_borrowed_transfer_projections.md)
 retains known borrowed identities through native getters and aliases at task and
 executor boundaries, independently of resource unsafe admission.

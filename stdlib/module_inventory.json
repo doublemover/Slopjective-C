@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 221,
+        "minor": 222,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "GNU transparent-union C argument contracts retain canonical attributes and native-declaration identity through source-free publication; matching C17/C23 provider/consumer objects execute the pointer ABI, invalid members and cross-revision imports remain rejected, and attribute removal changes the union identity; matching SDK acceptance pending",
         "Known borrowed identities survive native getter/helper/template/cast/conditional/offset projections, scalar aliases and writes at concurrent boundaries, including source-free C++ imports and lambda init captures; borrowed rejection remains independent of resource unsafe admission, while boolean/scalar observations and independently stored values retain their roles; matching SDK acceptance pending",
         "Immutable native pointer views preserve known cleanup/resource targets through conditional/partial aliases, scalar/member dereferences and projected reference writes; unknown calls retain pointee escapes and initializer effects, bounded discovery fails closed on truncation, and opaque/open/member-pointer/operator results from declared managed receivers retain their contract; native weak-reference-unavailable class policy survives source-free publication and subclass checking, matching SDK acceptance pending",
         "Selected pending concrete native field getter/method-template bodies retain cleanup provenance at task/executor boundaries; casts, unary-plus, comma/conditional field returns and returned reference writes preserve identity, while bounded pure boolean/arithmetic/literal observations keep receiver read roles without false escapes; matching SDK acceptance pending",
@@ -384,12 +385,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 147,
+        "minor": 148,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "GNU transparent-union C argument contracts retain canonical attributes and native-declaration identity through source-free publication; matching C17/C23 provider/consumer objects execute the pointer ABI, invalid members and cross-revision imports remain rejected, and attribute removal changes the union identity; matching SDK acceptance pending",
         "Known borrowed identities survive native getter/helper/template/cast/conditional/offset projections, scalar aliases and writes at concurrent boundaries, including source-free C++ imports and lambda init captures; borrowed rejection remains independent of resource unsafe admission, while boolean/scalar observations and independently stored values retain their roles; matching SDK acceptance pending",
         "Immutable native pointer views preserve known cleanup/resource targets through conditional/partial aliases, scalar/member dereferences and projected reference writes; unknown calls retain pointee escapes and initializer effects, bounded discovery fails closed on truncation, and opaque/open/member-pointer/operator results from declared managed receivers retain their contract; native weak-reference-unavailable class policy survives source-free publication and subclass checking, matching SDK acceptance pending",
         "Selected pending concrete native field getter/method-template bodies retain cleanup provenance at task/executor boundaries; casts, unary-plus, comma/conditional field returns and returned reference writes preserve identity, while bounded pure boolean/arithmetic/literal observations keep receiver read roles without false escapes; matching SDK acceptance pending",
