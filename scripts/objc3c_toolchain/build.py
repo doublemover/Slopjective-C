@@ -19,6 +19,22 @@ def _digest_file(path: Path):
     with path.open('rb') as stream: return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def _print_failed_command(path: Path, phase: str, index: int, code: int):
+    # A GitHub Actions failure should identify the compiler/test error before
+    # the runner and its files disappear. Keep the complete log in evidence.
+    with path.open('rb') as stream:
+        offset = max(0, stream.seek(0, os.SEEK_END) - 16 * 1024)
+        stream.seek(offset)
+        output = stream.read(16 * 1024).decode('utf-8', errors='replace')
+    if offset and '\n' in output:
+        output = output.split('\n', 1)[1]
+    print(f'foundation {phase} [{index + 1}] exited {code}. Recent output:', flush=True)
+    # Preserve C++ qualified names while keeping process output distinct
+    # from GitHub workflow annotations, including the older ##[ form.
+    for line in output.splitlines():
+        print('  | ' + line.replace('##[', '## ['))
+
+
 def configuration_input_identity(plan):
     # The complete plan also inventories generated/staged consumers. Their
     # appearance after a successful cold build is an output, not invalidation.
@@ -255,6 +271,7 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
                 history_path.write_text(json.dumps(report, indent=2) + "\n")
                 report_path.write_text(json.dumps(report, indent=2) + "\n")
                 if result.returncode:
+                    _print_failed_command(log_path, phase, index, result.returncode)
                     if phase == 'test':
                         failed_tests.append(str(log_path))
                         continue

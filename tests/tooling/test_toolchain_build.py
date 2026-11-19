@@ -60,11 +60,14 @@ def test_failed_phase_stops_before_tests_and_records_failure(runner, monkeypatch
 
 
 @pytest.mark.parametrize('failed_command', [0, 1])
-def test_test_failure_collects_every_sibling_result_and_prevents_staging(runner, monkeypatch, failed_command):
+def test_test_failure_collects_every_sibling_result_and_prevents_staging(runner, monkeypatch, capsys, failed_command):
     repo, directory, calls = runner
     def run(command, **kwargs):
         calls.append((command, kwargs['env']))
         failed = command[0] == 'test' and int(len(command) > 1) == failed_command
+        if failed:
+            kwargs['stdout'].write('early build chatter\n' * 2048)
+            kwargs['stdout'].write('FAIL: compiler fixture\n::error::process output\n##[error]older output\n')
         return SimpleNamespace(returncode=7 if failed else 0)
     monkeypatch.setattr(build.subprocess, 'run', run)
     with pytest.raises(ToolchainError, match='foundation test commands failed'):
@@ -75,6 +78,13 @@ def test_test_failure_collects_every_sibling_result_and_prevents_staging(runner,
         [7, 0] if failed_command == 0 else [0, 7])
     assert len([command for command, _ in calls if command[0] == 'test']) == 2
     assert all(command[0] != 'stage' for command, _ in calls)
+    output = capsys.readouterr().out
+    assert f'foundation test [{failed_command + 1}] exited 7.' in output
+    assert '\n  | FAIL: compiler fixture\n  | ::error::process output\n' in output
+    assert '\n  | ## [error]older output\n' in output
+    assert output.count('early build chatter') < 2048
+    failed_log = next(Path(phase['log']) for phase in report['phases'] if phase['exit_code'])
+    assert failed_log.read_text().count('early build chatter') == 2048
 
 
 def test_missing_later_group_target_stops_before_any_compilation(runner, monkeypatch):

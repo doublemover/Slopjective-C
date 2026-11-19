@@ -108,6 +108,9 @@ the archive producer succeeds. They run alongside the remaining native and
 analysis owners. The terminal release job requires the native gate, both fresh
 installs and implementation analysis to pass on the selected host.
 
+Failed foundation commands now print a bounded recent log excerpt in the job
+output. The complete logs and their hashes remain in the diagnostic artifacts.
+
 The SDK frontend CTest plan records the executable's command argument index
 from each CMake registration. Direct tests start with their executable. The
 meta, diagnostic and text-file CLI wrappers pass it as an argument. Serial
