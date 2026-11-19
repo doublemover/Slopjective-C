@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+Source 2.297 / System 2.223 follows designated union storage aliases through
+borrowed flow. Native debug emission preserves the implicit actor receiver's
+object-pointer type. [Borrowed aliases](linux_native_borrowed_transfer_projections.md)
+· [Actor debug types](linux_native_isolation_sendable.md)
+
 The [Source 2.296 / System 2.222 scope dependency change](linux_checked_await_cancellation.md)
 rejects cycles through implicit group membership without allocating during
 finalization. Native normal and shielded joins exercise the shared admission.

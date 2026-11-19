@@ -94,13 +94,14 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 296,
+        "minor": 297,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
         "Implicit task-group scopes admit membership through the same dependency graph as direct task waits and closed-group joins. A late or simultaneous membership cannot close a cycle, and finalization uses its reserved waiter. Matching SDK acceptance pending",
+        "Native DWARF treats isolated and nonisolated implicit actor receivers as object pointers, with C and C++ ARC/MRC controls for x86-64 and AArch64. Matching SDK acceptance pending",
         "The concurrency header makes the errors module visible before using its shared runtime task declarations. The installed feature gate executes all 72 strict async source/PCH configurations; matched native SDK acceptance pending",
         "Generated C checked and async entries accept a unique native effect in an Objective-C or Objective-C++ free-function overload set. The adapter calls the exact selected signature. Matching SDK acceptance pending",
         "Generated Swift 6.4.2 checked and async wrappers preserve native SIMD in C vectors and pointer-free aggregates. Eight linked x86-64 configurations verify values, vector fields and checked outcomes. Matching SDK acceptance pending",
@@ -445,13 +446,14 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 222,
+        "minor": 223,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
         "Active task dependency cycle admission and terminal edge retirement share the published runtime registration. Matching SDK acceptance pending",
+        "Borrowed flow uses the designated semantic union arm and skips unnamed bit-field initializer slots. Native pointer and C++ reference writes update the original local cells. Matching SDK acceptance pending",
         "Native fixed vectors copy through active Optional arms and checked C records maintain indirect result handling and the hidden error slot. x86-64 and AArch64 IR controls cover ARC and MRC. Matching SDK acceptance pending",
         "Source-free C exports preserve generic ext_vector_type and vector_size argument and result aliases on Linux x86-64 and AArch64. Wider vectors retain their calling convention admission boundary. Matching SDK acceptance pending",
         "Forced task-group scope finalization retires the prior ordinary body await before replacing it with a shielded cleanup continuation. The body registration is reclaimed while the previous external dependency is still suspended. Matching SDK acceptance pending",

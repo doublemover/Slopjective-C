@@ -1,5 +1,10 @@
 # Native Linux isolation and Sendable contracts
 
+Source 2.297 / System 2.223 uses the normalized native receiver type when
+looking up the DWARF entry for implicit `self`. Both isolated and nonisolated
+methods preserve object-pointer metadata. Four IR checks cover C17 and
+C++20/23, ARC/MRC, O0/O2, and x86-64 and AArch64.
+
 This slice implements native declaration and transfer semantics from Part 7
 §§7.3–7.8, the concurrency attribute catalog, and the actor declaration grammar.
 The implementation is in the canonical Clang source under

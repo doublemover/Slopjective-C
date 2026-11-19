@@ -1,5 +1,13 @@
 # Native borrowed transfer projections
 
+Source 2.297 / System 2.223 follows the active arm in Clang's semantic union
+initializer. A designated record arm retains its local pointer and C++
+reference bindings. Unnamed bit-fields consume no initializer slot. Writes
+through these aliases update the original cell. The compiler diagnoses escape
+of a borrowed value from that cell and accepts an independent replacement.
+The union controls pass 36 Strict System source and PCH commands for x86-64
+and AArch64, including C17 and C++20/23 in ARC and MRC.
+
 Source 2.221 / System 2.147 preserves known borrowed pointer identities at
 concurrency boundaries when a native C++ getter returns a borrowed field through
 an unqualified pointer result. The strict-concurrency path previously classified

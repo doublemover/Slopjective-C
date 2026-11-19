@@ -46820,7 +46820,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,7301 @@
+@@ -0,0 +1,7321 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -47975,6 +47975,15 @@ new file mode 100644
 +    if (const auto *Catch = dyn_cast<CXXCatchStmt>(Node)) return Catch->getExceptionDecl();
 +    return nullptr;
 +  }
++  static const Expr *fieldInitializer(const InitListExpr *List,
++                                      const FieldDecl *Field, unsigned Index) {
++    if (!List || Field->isUnnamedBitField()) return nullptr;
++    if (Field->getParent()->isUnion()) {
++      if (List->getInitializedFieldInUnion() != Field) return nullptr;
++      Index = 0;
++    }
++    return Index < List->getNumInits() ? List->getInit(Index) : nullptr;
++  }
 +  void collectBindings(const Stmt *Node) {
 +    if (!Node || isa<BlockExpr>(Node))
 +      return;
@@ -47993,16 +48002,20 @@ new file mode 100644
 +      for (const Decl *D : Declarations->decls())
 +        if (const auto *V = dyn_cast<VarDecl>(D); V && V->getType()->isReferenceType() && V->hasInit())
 +          markEmbeddedAddressUse(V->getInit());
-+    if (const auto *List = dyn_cast<InitListExpr>(Node))
++    if (const auto *List = dyn_cast<InitListExpr>(Node)) {
++      if (List->getSemanticForm()) List = List->getSemanticForm();
 +      if (const auto *Record = List->getType()->getAsRecordDecl()) {
 +        unsigned Index = 0;
 +        if (const auto *Class = dyn_cast<CXXRecordDecl>(Record)) Index = Class->getNumBases();
 +        for (const auto *Field : Record->fields()) {
-+          if (Index >= List->getNumInits()) break;
-+          if (Field->getType()->isReferenceType()) markEmbeddedAddressUse(List->getInit(Index));
++          if (Field->isUnnamedBitField()) continue;
++          if (Field->getType()->isReferenceType())
++            if (const Expr *Initializer = fieldInitializer(List, Field, Index))
++              markEmbeddedAddressUse(Initializer);
 +          ++Index;
 +        }
 +      }
++    }
 +    if (const auto *Binding = dyn_cast<ObjC3BindingCondition>(Node))
 +      BindingSnapshots[Binding->getBindingDecl()] = Binding->getSnapshotDecl();
 +    if (const auto *Match = dyn_cast<ObjC3MatchStmt>(Node))
@@ -49371,6 +49384,12 @@ new file mode 100644
 +      if (Component.BaseRecord || Component.Field) {
 +        const auto *Record = E->getType()->getAs<RecordType>();
 +        if (!Record) return false;
++        if (Record->getDecl()->isUnion()) {
++          const auto *Field = dyn_cast_or_null<FieldDecl>(Component.Field);
++          return Field && Field->getParent()->getCanonicalDecl() == Record->getDecl()->getCanonicalDecl() &&
++              readCallableInitializer(fieldInitializer(List, Field, 0),
++              Components.drop_front(), State, Result, Owners, Unowned);
++        }
 +        Index = 0; bool Found = false;
 +        if (const auto *CXX = dyn_cast<CXXRecordDecl>(Record->getDecl()))
 +          for (const auto &Base : CXX->bases()) {
@@ -49382,6 +49401,7 @@ new file mode 100644
 +          }
 +        if (!Component.BaseRecord)
 +          for (const FieldDecl *Field : Record->getDecl()->fields()) {
++            if (Field->isUnnamedBitField()) continue;
 +            if (Field == Component.Field) {Found = true;break;}
 +            ++Index;
 +          }
@@ -50629,8 +50649,8 @@ new file mode 100644
 +          ++I;
 +        }
 +      for (const FieldDecl *Field : Record->getDecl()->fields()) {
-+        const Expr *FieldInit = List && I < List->getNumInits()
-+                                    ? List->getInit(I) : nullptr;
++        if (Field->isUnnamedBitField()) continue;
++        const Expr *FieldInit = fieldInitializer(List, Field, I);
 +        initializeAggregate(Operation, fieldStorage(Destination, Field),
 +                            Field->getType(), FieldInit, State, Emit, Depth + 1);
 +        ++I;
@@ -54122,7 +54142,6 @@ new file mode 100644
 +      DeclGroupRef(Variable), Variable->getBeginLoc(), Variable->getEndLoc());
 +  return BorrowedFlow(S, nullptr, Declaration).check();
 +}
-
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.h b/clang/lib/Sema/SemaObjC3Borrowed.h
 new file mode 100644
 index 000000000..d78d0e4c0
@@ -77010,10 +77029,10 @@ index 000000000..0bd76007e
 +#endif
 diff --git a/clang/test/ObjC3/Sema/borrowed-union-byte-storage.m b/clang/test/ObjC3/Sema/borrowed-union-byte-storage.m
 new file mode 100644
-index 000000000..1dae1e618
+index 000000000..42cab67ac
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-union-byte-storage.m
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,147 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-union-byte-storage.h -o %t-c17-False.pch
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
@@ -77117,6 +77136,48 @@ index 000000000..1dae1e618
 +  PointerUnion value={0};
 +  auto callback=[value,owner]()mutable{value.second=union_bytes(owner);}; // expected-error {{persistent storage}}
 +  (void)callback;
++}
++#endif
++
++struct UnionCell {
++  unsigned : 0;
++  const char **cell;
++};
++union DesignatedCell {
++  int marker;
++  struct UnionCell record;
++};
++
++void designated_union_cell_store(void *owner) {
++  const char *source = "independent";
++  union DesignatedCell route = {.record = {&source}};
++  *route.record.cell = union_bytes(owner);
++  union_escape(source); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++
++void designated_union_cell_replaces_loan(void *owner) {
++  const char *source = union_bytes(owner);
++  union DesignatedCell route = {.record = {&source}};
++  *route.record.cell = "independent";
++  union_escape(source);
++}
++
++#ifdef __cplusplus
++struct UnionReference { const char *&cell; };
++union DesignatedReference { int marker; UnionReference record; };
++
++void designated_union_reference_store(void *owner) {
++  const char *source = "independent";
++  DesignatedReference route = {.record = {source}};
++  route.record.cell = union_bytes(owner);
++  union_escape(source); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++
++void designated_union_reference_replaces_loan(void *owner) {
++  const char *source = union_bytes(owner);
++  DesignatedReference route = {.record = {source}};
++  route.record.cell = "independent";
++  union_escape(source);
 +}
 +#endif
 diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h b/clang/test/ObjC3/Sema/Inputs/borrowed-static-control-flow.h

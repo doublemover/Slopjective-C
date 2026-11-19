@@ -7,6 +7,10 @@ Ninja dependency owners, including selected precompiled headers. The terminal
 job binds all partitions to the producer's archive SHA-256 and verifies the
 complete disjoint variant inventory. The shared archive expires after one day.
 
+Source 2.297 / System 2.223 preserves pointer and reference aliases in
+[designated union arms](linux_native_borrowed_transfer_projections.md) and
+retains native [actor receiver debug types](linux_native_isolation_sendable.md).
+
 The [Source 2.296 / System 2.222 scope dependency change](linux_checked_await_cancellation.md)
 checks membership alongside task and group waits before a cycle can reach the
 implicit finalizer.
