@@ -396,10 +396,10 @@
         "Explicit C++ aggregate/union lifetime crossings and static member entries, source/PCH materialized argument snapshots, recovered storage-hook diagnostics and dependent native-frame awaits rebuilt after substitution with required publication semantics (source authored; 32 new compiler commands and 296 native scenarios pass; frontend/package consolidation pending)"
       ],
       "remaining": [
-        "remaining spawn/capture forms and supported-value ownership/cancellation acceptance",
-        "remaining awaited isolation/executor crossing forms",
+        "remaining spawn forms and supported-value ownership/cancellation acceptance beyond the implemented child, detached, group, direct-wait and generated C/Swift entry contracts",
+        "implicit managed-union and other storage crossings that lack an explicit native lifetime owner",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining dependent/unnamed-type and dependent lookup/unmodeled-attribute/profile publication contracts"
+        "remaining dependent/unnamed-type, dependent lookup, unmodeled-attribute and profile publication contracts"
       ]
     },
     {
@@ -432,12 +432,12 @@
         "Dependent C++ template applications for get/set/metadata/readonly/KVC operations, argument packs, typed instantiation and canonical source-free publication (source authored; native verification pending)",
         "Nullable routing preserves Value: explicitly nullable results return null, other results trap on missing reads; writes skip missing routes, with exact descriptor/sidecar capability admission (source authored; native compiler verification pending)",
         "Dependent-root C++ key-path literals, qualified root lookup and packs revalidate concrete property/field/ownership/nullable contracts at instantiation; public printing, structural profiles and required source-free semantics (source authored; native verification pending)",
-        "Dependent KeyPath/WritableKeyPath type constructors with native root/value deduction, packs, alias/class templates, partial ordering, source locations, AST import/PCH and source-free capabilities; instantiation preserves concrete record ABI (source authored; native verification pending)"
+        "Dependent KeyPath/WritableKeyPath type constructors with native root/value deduction, packs, alias/class templates, partial ordering, source locations, AST import/PCH and source-free capabilities; instantiation preserves concrete record ABI (source authored; native verification pending)",
+        "Installed source-free package validation for typed key paths, including property, nullable, record, C++ resource and explicitly owned managed-union contracts"
       ],
       "remaining": [
         "effectful and isolated paths",
-        "borrowed and raw-resource value semantics outside explicit native owner lifetimes; implicit union active-arm ownership",
-        "complete installed contract validation"
+        "borrowed and raw-resource value semantics outside explicit native owner lifetimes; implicit union active-arm ownership"
       ]
     },
     {
