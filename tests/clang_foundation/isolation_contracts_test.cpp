@@ -296,6 +296,8 @@ void *detach(Work) __attribute__((objc_task_detached));
 void *group_spawn(Work) __attribute__((objc_task_group, objc_task_spawn));
 void *group_spawn(Work) __attribute__((objc_task_group));
 void group_scope(Work, int configuration) __attribute__((objc_task_group));
+template<class GroupWork>
+void group_scope_cpp(GroupWork, int configuration) __attribute__((objc_task_group));
 #define SPAWN(e) spawn(e)
 struct Packet { int value; Counter *actor; };
 )";
@@ -320,6 +322,7 @@ void shared_source_snapshot(void) {
 }
 void group_scope_capture(struct Packet packet, SafeMessage *message) {
   group_scope(^void() __objc3_async { (void)packet.value; (void)message; }, 42);
+  group_scope_cpp([packet]() __objc3_async { (void)packet.value; }, 42);
 }
 void additional_sync_block(int value) {
   extern void *with_callback(Work, void (^)(void)) __attribute__((objc_task_spawn));
@@ -366,6 +369,12 @@ void unknown(Work block) { spawn(block); }
   Reject(Make(R"(
 void group_scope_unsafe(MutableMessage *object) {
   group_scope(^void() __objc3_async { (void)object; }, 42);
+}
+)"),
+         "concurrent capture");
+  Reject(Make(R"(
+void group_scope_cpp_unsafe(MutableMessage *object) {
+  group_scope_cpp([object]() __objc3_async { (void)object; }, 42);
 }
 )"),
          "concurrent capture");
