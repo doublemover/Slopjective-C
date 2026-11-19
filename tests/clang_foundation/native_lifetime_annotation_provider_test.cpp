@@ -119,11 +119,11 @@ void Run(const fs::path &root,const char *standard,int ownership){
  auto excluded=Compile(hidden_request);assert(excluded.interface_artifact && !excluded.interface_artifact->success);
  assert(std::any_of(excluded.interface_artifact->diagnostics.begin(),excluded.interface_artifact->diagnostics.end(),[](const auto &d){return d.code=="O3IFC156" || d.code=="O3IFC112";}));
  // A well-formed changed capture promise must fail at the semantic identity gate.
- auto changed=artifact.source_bytes;const std::string before="lifetime_capture_by_global",after="lifetime_capture_by_unknown";const auto at=changed.find(before);assert(at!=std::string::npos);changed.replace(at,before.size(),after);
+ const auto changed=EditCanonicalInterface(artifact.source_bytes,"lifetime_capture_by_global","lifetime_capture_by_unknown");
  auto mutation=*decoded;mutation.canonical_source_sha256=ComputeInterfaceSourceSha256(changed);auto metadata=EncodeSemanticInterfaceSidecar(mutation,reader);assert(metadata);
  const auto altered=root/"Altered.objc3i";Write(altered,changed);Write(altered.string()+".json",*metadata);Write(root/"mutation.mm","int mutation_control(){return 42;}");
  auto bad=request(root/"mutation.mm",root/"altered.o");auto altered_dependency=dependency;altered_dependency.source_path=altered.string();bad.imported_interfaces={altered_dependency};auto altered_result=Compile(bad);assert(!altered_result.success);
- assert(std::any_of(altered_result.interface_import_diagnostics.begin(),altered_result.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139";}));
+ RejectedImport(altered_result,"O3IFC139");
  const auto main=root/"main.cpp";Write(main,"extern \"C\" int check_a();extern \"C\" int check_b();int main(){return check_a()||check_b();}");
  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{});
 }

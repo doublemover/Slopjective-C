@@ -65,11 +65,11 @@ void Run(const fs::path &root,const char *standard,int ownership){
   if(std::string(standard)!="c17")text+="extern \"C\" ";text+="int check_"+std::string(name)+"(void){return execute();}\n";
   Write(input,text);auto value=request(input,root/(std::string(name)+".o"));value.imported_interfaces={dependency};Success(Compile(value));}
  // A valid source rehash cannot conceal a changed branch result.
- auto changed=artifact.source_bytes;const auto at=changed.find("return 42;");assert(at!=std::string::npos);changed.replace(at,10,"return 43;");
+ const auto changed=EditCanonicalInterface(artifact.source_bytes,"return 42;","return 43;");
  auto mutation=*decoded;mutation.canonical_source_sha256=ComputeInterfaceSourceSha256(changed);auto metadata=EncodeSemanticInterfaceSidecar(mutation,reader);assert(metadata);
  const auto altered=root/"Altered.objc3i";Write(altered,changed);Write(altered.string()+".json",*metadata);Write(root/"mutation.mm","int mutation_control(void){return 0;}");
  auto bad=request(root/"mutation.mm",root/"altered.o");auto altered_dependency=dependency;altered_dependency.source_path=altered.string();bad.imported_interfaces={altered_dependency};auto rejected=Compile(bad);assert(!rejected.success);
- assert(std::any_of(rejected.interface_import_diagnostics.begin(),rejected.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139";}));
+ RejectedImport(rejected,"O3IFC139");
  Write(root/"main.mm",std::string(std::string(standard)=="c17"?"":"extern \"C\" ")+"int check_a(void);\n"+(std::string(standard)=="c17"?"":"extern \"C\" ")+"int check_b(void);int main(void){return check_a()||check_b();}\n");
  auto main=request(root/"main.mm",root/"main.o");Success(Compile(main));LinkAndExecute(root,main.output_path,ownership!=0,{});
  if(ownership){

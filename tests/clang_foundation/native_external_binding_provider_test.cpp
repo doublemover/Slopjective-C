@@ -162,11 +162,11 @@ void Run(const fs::path &root,const char *standard,int ownership){
  Write(source,Source);auto owned=request(source,root/"owned.o");owned.module_name="fixture.OwnedBindings";owned.package_identity="owned-bindings-v1";owned.module_owned_names=true;owned.module_source_root=(root/"provider").string();owned.emit_semantic_interface=true;
  auto rejected=Compile(owned);assert(!rejected.success);assert(std::any_of(rejected.diagnostics.begin(),rejected.diagnostics.end(),[](const auto &d){return d.message.find("explicit native name conflicts")!=std::string::npos;}));
  assert(fs::remove(source));
- auto changed=artifact.source_bytes;const auto at=changed.find("ffi_first");assert(at!=std::string::npos);changed.replace(at,9,"ffi_other");
+ const auto changed=EditCanonicalInterface(artifact.source_bytes,"ffi_first","ffi_other");
  auto mutation=*decoded;mutation.canonical_source_sha256=ComputeInterfaceSourceSha256(changed);auto metadata=EncodeSemanticInterfaceSidecar(mutation,reader);assert(metadata);
  const auto altered=root/"Altered.objc3i";Write(altered,changed);Write(altered.string()+".json",*metadata);Write(root/"mutation.mm","int mutation_control(void){return 42;}");
  auto bad=request(root/"mutation.mm",root/"altered.o");auto altered_dependency=dependency;altered_dependency.source_path=altered.string();bad.imported_interfaces={altered_dependency};auto altered_result=Compile(bad);assert(!altered_result.success);
- assert(std::any_of(altered_result.interface_import_diagnostics.begin(),altered_result.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139";}));
+ RejectedImport(altered_result,"O3IFC139");
  const auto main=root/"main.mm";Write(main,Main);auto entry=request(main,root/"main.o");if(ownership)entry.imported_interfaces={dependency};Success(Compile(entry));LinkAndExecute(root,entry.output_path,ownership!=0,{});
 }
 }

@@ -76,7 +76,9 @@ static void work(unsigned size, unsigned seed, bool cancel) {
     unsigned consumed = 0;
     while (true) {
       objc3_task_t *task = nullptr;const auto status = objc3_task_group_next(group, &task);
-      if (status == OBJC3_SERVICE_CLOSED) break;
+      if (status == (cancel ? OBJC3_SERVICE_CANCELLED : OBJC3_SERVICE_CLOSED)) {
+        require(task == nullptr);break;
+      }
       checked(status);require(task != nullptr);
       objc3_completion completion{};checked(objc3_task_get_completion(task, &completion));
       require(completion.kind == (cancel ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS));

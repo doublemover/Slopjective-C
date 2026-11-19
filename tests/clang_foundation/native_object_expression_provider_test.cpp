@@ -227,11 +227,11 @@ void Run(const fs::path &root,const char *standard,int ownership){
  // Rehashing a different reflection expression cannot retain the old semantic identity.
  for(const auto &change:{std::pair<std::string,std::string>{"@selector(writeValue:)","@selector(readValue)"},
                          {"@encode(struct ObjectExpressionPayload)","@encode(int)"}}){
-  auto changed=artifact.source_bytes;const auto at=changed.find(change.first);assert(at!=std::string::npos);changed.replace(at,change.first.size(),change.second);
+  const auto changed=EditCanonicalInterface(artifact.source_bytes,change.first,change.second);
   auto mutation=*decoded;mutation.canonical_source_sha256=ComputeInterfaceSourceSha256(changed);auto metadata=EncodeSemanticInterfaceSidecar(mutation,reader);assert(metadata);
   const auto altered=root/"Altered.objc3i";Write(altered,changed);Write(altered.string()+".json",*metadata);Write(root/"mutation.mm","int mutation_control(void){return 42;}");
   auto bad=request(root/"mutation.mm",root/"altered.o");auto altered_dependency=dependency;altered_dependency.source_path=altered.string();bad.imported_interfaces={altered_dependency};
-  auto result=Compile(bad);assert(!result.success);assert(std::any_of(result.interface_import_diagnostics.begin(),result.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139";}));
+  auto result=Compile(bad);assert(!result.success);RejectedImport(result,"O3IFC139");
  }
  const auto main=root/"main.mm";Write(main,Main);auto entry=request(main,root/"main.o");entry.imported_interfaces={dependency};Success(Compile(entry));LinkAndExecute(root,entry.output_path,true,{});
  assert(fs::remove(root/"Altered.objc3i"));assert(fs::remove(root/"Altered.objc3i.json"));

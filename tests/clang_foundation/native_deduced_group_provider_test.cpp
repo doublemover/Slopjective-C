@@ -122,15 +122,16 @@ inline auto transferred(int value){return objc3::with_task_group(TransferFactory
     InterfaceImportInput imported;imported.source_path=interface.string();imported.locked_identity=artifact.identity;
     consumer.imported_interfaces={imported};Success(Compile(consumer));
   }
-  const auto fixtures=fs::path(__FILE__).parent_path();
   const auto main=root/"main.mm";
-  Write(main,"#include \""+(fixtures/"../../stdlib/include/objc3/concurrency.h").string()+"\"\n"+
-      "#include \""+(fixtures/"task_spawning/task_transfers.h").string()+"\"\n"+
-      "extern \"C\" int check_a();extern \"C\" int check_b();int main(){"+
-      "if(check_a() || check_b())return 1;objc3_executor_t *executor=nullptr;"+
-      "assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);"+
+  Write(main,"#include <objc3/concurrency.h>\n#include \"task_transfers.h\"\n"
+      "extern \"C\" int check_a();extern \"C\" int check_b();int main(){"
+      "if(check_a() || check_b())return 1;objc3_executor_t *executor=nullptr;"
+      "assert(objc3_executor_create(1,&executor)==OBJC3_SERVICE_OK);"
       "task_transfers::contract(executor);objc3_executor_release(executor);return 0;}\n");
-  auto entry=request(main,root/"main.o");Success(Compile(entry));LinkAndExecute(root,entry.output_path,true,{OBJC3_GROUP_TEST_RUNTIME_LIBRARY,"-pthread"});
+  auto entry=request(main,root/"main.o");
+  entry.arguments.push_back("-I" OBJC3_GROUP_TEST_STDLIB);
+  entry.arguments.push_back("-I" OBJC3_GROUP_TEST_FIXTURES);
+  Success(Compile(entry));LinkAndExecute(root,entry.output_path,true,{OBJC3_GROUP_TEST_RUNTIME_LIBRARY,"-pthread"});
 }
 }
 int main() {

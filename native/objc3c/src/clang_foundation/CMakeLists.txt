@@ -475,6 +475,8 @@ if (BUILD_TESTING)
     OBJC3_ACTOR_BINDING_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>")
   add_dependencies(objc3_native_actor_receiver_provider_test objc3_runtime_services)
   target_compile_definitions(objc3_native_deduced_group_provider_test PRIVATE
+    OBJC3_GROUP_TEST_FIXTURES="${_objc3_repo}/tests/clang_foundation/task_spawning"
+    OBJC3_GROUP_TEST_STDLIB="${_objc3_repo}/stdlib/include"
     OBJC3_GROUP_TEST_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
     OBJC3_GROUP_TEST_RUNTIME_LIBRARY="$<TARGET_FILE:objc3_runtime_services>")
   add_dependencies(objc3_native_deduced_group_provider_test objc3_runtime_services)
@@ -542,10 +544,20 @@ if (BUILD_TESTING)
     COMMAND objc3_native_friend_template_provider_test)
   set_tests_properties(objc3_native_friend_template_provider PROPERTIES
     LABELS "native;publication;extended" TIMEOUT 300)
-  objc3c_add_frontend_test(NAME objc3_native_block_binding_provider
-    COMMAND objc3_native_block_binding_provider_test)
-  set_tests_properties(objc3_native_block_binding_provider PROPERTIES
-    LABELS "native;ownership;concurrency;extended" TIMEOUT 300)
+  foreach(_block_cxx IN ITEMS 20 23)
+    foreach(_block_mode IN ITEMS arc mrc)
+      if(_block_mode STREQUAL "arc")
+        set(_block_ownership 2)
+      else()
+        set(_block_ownership 1)
+      endif()
+      set(_block_test "objc3_native_block_binding_provider_cxx${_block_cxx}_${_block_mode}")
+      objc3c_add_frontend_test(NAME "${_block_test}"
+        COMMAND objc3_native_block_binding_provider_test "c++${_block_cxx}" "${_block_ownership}")
+      set_tests_properties("${_block_test}" PROPERTIES
+        LABELS "native;ownership;concurrency;extended" TIMEOUT 300)
+    endforeach()
+  endforeach()
   objc3c_add_frontend_test(NAME objc3_native_deduction_guide_provider
     COMMAND objc3_native_deduction_guide_provider_test)
   set_tests_properties(objc3_native_deduction_guide_provider PROPERTIES

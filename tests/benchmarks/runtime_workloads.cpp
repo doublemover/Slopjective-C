@@ -189,11 +189,13 @@ static void task_work(unsigned size, unsigned seed) {
 }
 
 static void consume_group(objc3_task_group_t *group, unsigned count, objc3_completion_kind kind) {
+  const auto drained = kind == OBJC3_COMPLETION_CANCELLED ? OBJC3_SERVICE_CANCELLED
+                                                         : OBJC3_SERVICE_CLOSED;
   unsigned consumed = 0;
   while (true) {
     objc3_task_t *task = nullptr;
     const auto status = objc3_task_group_next(group, &task);
-    if (status == OBJC3_SERVICE_CLOSED) break;
+    if (status == drained) { require(task == nullptr); break; }
     checked(status);require(task != nullptr);
     objc3_completion completion{};checked(objc3_task_get_completion(task, &completion));
     require(completion.kind == kind);

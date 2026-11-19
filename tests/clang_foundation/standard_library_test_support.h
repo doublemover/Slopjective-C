@@ -3,16 +3,19 @@
 #include "compile_test_diagnostics.h"
 #include "isolated_test_cases.h"
 #include "clang_foundation/compile_session.h"
+#include "clang_foundation/interface_include_guard.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Program.h"
 #include "llvm/Support/StringSaver.h"
+#include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace objc3::clang_foundation::standard_library_test {
@@ -20,6 +23,31 @@ namespace fs=std::filesystem;
 inline void Success(const CompileResult &result) {
   test::ReportFailure(result);
   assert(result.success);
+}
+inline void RejectedImport(const CompileResult &result, std::string_view code) {
+  const bool matched = !result.success && std::ranges::any_of(
+      result.interface_import_diagnostics, [code](const auto &diagnostic) {
+        return diagnostic.code == code;
+      });
+  if (!matched) {
+    std::cerr << "Expected import rejection " << code << '\n';
+    test::ReportFailure(result);
+  }
+  assert(matched);
+}
+inline std::string EditCanonicalInterface(llvm::StringRef source,
+                                          llvm::StringRef before,
+                                          llvm::StringRef after) {
+  const auto guard = ReadCanonicalInterfaceIncludeGuard(source);
+  assert(!guard.empty());
+  auto body = source.split("#define " + guard + "\n").second;
+  const bool removed_footer = body.consume_back("#endif // " + guard + "\n");
+  assert(removed_footer);
+  const auto position = body.find(before);
+  assert(position != llvm::StringRef::npos);
+  auto changed = body.str();
+  changed.replace(position, before.size(), after.str());
+  return WrapCanonicalInterfaceSource(changed);
 }
 inline void Write(const fs::path &path,const std::string &text) {
   std::ofstream file(path);file<<text;assert(file.good());

@@ -8,7 +8,7 @@ import time
 
 VERSION = 1
 LIMITS = {'operations': 96, 'tasks': 8, 'jobs': 8, 'groups': 1, 'actors': 1, 'worker_threads': 1}
-OK, NOT_READY, CLOSED = 0, 5, 6
+OK, NOT_READY, CLOSED, CANCELLED = 0, 5, 6, 7
 OPCODES = ('task', 'waiter', 'retain-task', 'release-task', 'add', 'close-group',
     'cancel-group', 'actor-job', 'close-actor', 'cancel-actor', 'drain',
     'join-group', 'join-actor', 'next', 'observe')
@@ -138,7 +138,7 @@ class Model:
                 output = min(allowed) if selected is None else selected
                 if output not in allowed: raise ValueError('completion-order result was absent or consumed twice')
                 self.consumed.add(output)
-            else: status = CLOSED
+            else: status = CANCELLED if self.group_cancelled else CLOSED
         else: raise ValueError('unmodeled runtime operation')
         transition = name+':'+('rejected' if status else 'accepted')+':'+('drained' if self.drained else 'queued')
         self.transitions.add(transition)

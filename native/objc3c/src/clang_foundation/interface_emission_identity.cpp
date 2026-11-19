@@ -1326,6 +1326,16 @@ public:
           method && method->getParent()->isLambda()) Local(parameter);
     if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration);
         tag && IsExpressionLocalTag(tag)) Local(tag);
+    // Canonical dependent types can refer to a template parameter from a
+    // different declaration with the same depth and index. Use that binding
+    // consistently for expressions and types, independent of lexical slots.
+    if (const auto *parameter = llvm::dyn_cast<clang::NonTypeTemplateParmDecl>(declaration)) {
+      Add("non-type-template-parameter");
+      Add(std::to_string(parameter->getDepth()));
+      Add(std::to_string(parameter->getIndex()));
+      Add(parameter->isParameterPack() ? "pack" : "single");
+      return;
+    }
     if (const auto found = locals_.find(declaration->getCanonicalDecl()); found != locals_.end()) {
       Add("local:" + std::to_string(found->second)); return;
     }

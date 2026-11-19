@@ -1,6 +1,7 @@
 #include "standard_library_test_support.h"
 #include "clang_foundation/interface_module_resolver.h"
 #include "llvm/ADT/ScopeExit.h"
+#include <string_view>
 
 using namespace objc3::clang_foundation;
 using namespace objc3::clang_foundation::standard_library_test;
@@ -429,10 +430,16 @@ void Run(const fs::path &root,const char *standard,int ownership) {
  LinkAndExecute(root,entry.output_path,true,{(root/"c.o").string(),(root/"d.o").string(),OBJC3_BLOCK_BINDING_RUNTIME_LIBRARY,"-pthread"});
 }
 }
-int main(){
+int main(int argc,char **argv){
+ if(argc!=1 && (argc!=3 || (std::string_view(argv[1])!="c++20" && std::string_view(argv[1])!="c++23") ||
+                           (std::string_view(argv[2])!="1" && std::string_view(argv[2])!="2"))) {
+  std::cerr<<"usage: "<<argv[0]<<" [c++20|c++23 1|2]\n";
+  return 2;
+ }
  test::IsolatedCases cases;llvm::SmallString<128> temporary;assert(!llvm::sys::fs::createUniqueDirectory("objc3-block-bindings",temporary));
  const fs::path root(temporary.c_str());auto cleanup=llvm::scope_exit([&]{fs::remove_all(root);});
  for(const char *standard:{"c++20","c++23"})for(int ownership:{1,2}){
+  if(argc==3 && (std::string_view(argv[1])!=standard || argv[2][0]!='0'+ownership))continue;
   const auto name=std::string(standard)+"-"+std::to_string(ownership);cases.Run(name,[&]{Run(root/name,standard,ownership);});}
  return cases.Finish();
 }

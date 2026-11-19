@@ -75,6 +75,23 @@ constructor keeps its spelling, metadata and conversion behavior through
 replay. The previous expectation still treated the constructor as an
 unsupported declaration even after explicit specifiers gained native support.
 
+The x86-64 SDK producer retained five mutation suites that changed canonical
+interface bodies without regenerating their content-bound include guards. The
+repaired fixtures use the production guard wrapper and reach semantic identity
+validation after source admission. Dependent array bounds now identify non-type
+template parameters by depth and index, including canonical types that reuse a
+parameter node from another declaration. Source-free storage witnesses exercise
+the repaired contract under C++20 and C++23.
+
+The deduced group witness uses configured include directories independent of its
+test executable's `__FILE__` and working directory. Four Block binding CTest
+entries share one executable and give each ARC/MRC and C++20/23 combination its
+own timeout. The source coverage inventory requires all four. Provenance tests
+report the failing source fragment and distinguish unknown capture lifetime from
+a traced loan. The runtime workload and schedule oracles expect cancellation
+after draining an explicitly cancelled group and still require all terminal
+children to be consumed.
+
 The SDK frontend CTest plan records the executable's command argument index
 from each CMake registration. Direct tests start with their executable. The
 meta, diagnostic and text-file CLI wrappers pass it as an argument. Serial

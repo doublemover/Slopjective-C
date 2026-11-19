@@ -11,11 +11,13 @@
 using namespace objc3::clang_foundation;
 namespace fs = std::filesystem;
 namespace {
-void Require(const CompileResult &result, const std::string &diagnostic = {}) {
+void Require(const CompileResult &result, const std::string &diagnostic = {},
+             const std::string &body = {}) {
   bool found = diagnostic.empty();
   for (const auto &item : result.diagnostics)
     found |= item.message.find(diagnostic) != std::string::npos;
   if (result.success != diagnostic.empty() || !found) {
+    if (!body.empty()) std::cerr << body << '\n';
     std::cerr << result.failure << '\n';
     for (const auto &item : result.diagnostics) std::cerr << item.message << '\n';
     if (result.interface_artifact)
@@ -167,7 +169,7 @@ void Check(bool arc, const std::string &standard) {
       "void *global_detached(GlobalWork) __attribute__((objc_task_detached));"
       "void global_close(int) __attribute__((nothrow));";
   auto run = [&](const std::string &body, const std::string &diagnostic = {}) {
-    consumer.source_text = preamble + body; Require(Compile(consumer), diagnostic);
+    consumer.source_text = preamble + body; Require(Compile(consumer), diagnostic, body);
   };
   for (const char *slot : {"published_pointer", "published_slots.pointer", "published_array[1]"}) {
     run("void rejected(borrowed const char *loan){" + std::string(slot) +
@@ -362,7 +364,8 @@ void Check(bool arc, const std::string &standard) {
         "global_detached(^void(void) __objc3_async_frame {(void)value;});}", "cleanup-managed capture");
     run("template<class Value>void alter(Value &);void rejected(void){const char *slot=\"static\";"
         "auto work=[saved=(const char *)\"other\"](const char *&target){target=saved;};alter(work);work(slot);"
-        "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}", "borrowed capture");
+        "const char *value=slot;global_detached(^void(void) __objc3_async_frame {(void)value;});}",
+        "unverified capture lifetime");
   }
   const std::string crossing = preamble +
       (cxx ? "\n#include \"objc3_task.hpp\"\n" : "") +
