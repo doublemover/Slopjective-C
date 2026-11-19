@@ -21587,24 +21587,32 @@ index 000000000..51dd68396
 +// CHECK: call{{.*}} i32 @{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
 new file mode 100644
-index 000000000..7952af7c9
+index 000000000..00e332756
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,46 @@
 +// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=4 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=4 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_KIND=4 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=5 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=4 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_KIND=4 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=5 -emit-llvm -o /dev/null -verify %s
 +@protocol Error @end
 +typedef id<Error> E;
 +struct Aggregate { int x; };
++struct Flexible { int count; int data[]; };
 +@interface Receiver
 +#if TEST_KIND <= 2
 +- (int)value:(int)x __objc3_throws(E);
 +#elif TEST_KIND == 3
 +- (int)value __objc3_async __objc3_throws(E); // expected-error {{ObjC3 async/throws method ABI lowering}}
++#elif TEST_KIND == 4
++- (struct Aggregate)value __objc3_throws(E);
 +#else
-+- (struct Aggregate)value __objc3_throws(E); // expected-error {{ObjC3 async/throws method ABI lowering}}
++- (struct Flexible)value __objc3_throws(E); // expected-error {{ObjC3 async/throws method ABI lowering}}
 +#endif
 +@end
 +#if TEST_KIND == 1
@@ -21619,8 +21627,15 @@ index 000000000..7952af7c9
 +int unsupported(Receiver *receiver) {
 +  return __objc3_try_force([receiver value]); // expected-error {{native Objective-C async frame calls require the installed}}
 +}
++#elif TEST_KIND == 4
++struct Aggregate checked_record(Receiver *receiver) {
++  return __objc3_try_force([receiver value]);
++}
++// CHECK-LABEL: define{{.*}} i32 @checked_record(
++// CHECK: call i32 %{{.*}}(ptr {{.*}}, ptr {{.*}}, ptr {{.*}}%objc3.error.out)
++// CHECK: br i1 {{.*}}, label %objc3.try.failure, label %objc3.try.success
 +#else
-+struct Aggregate unsupported(Receiver *receiver) { return __objc3_try_force([receiver value]); }
++struct Flexible unsupported(Receiver *receiver) { return __objc3_try_force([receiver value]); }
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-message-direct.m b/clang/test/ObjC3/CodeGen/typed-error-message-direct.m
 new file mode 100644
