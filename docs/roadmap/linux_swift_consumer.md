@@ -90,6 +90,15 @@ enum transport, checked failure and exact destruction, pre-submission
 cancellation and actor isolation with the provider source removed. The gate
 retains the overlay source and verifies the same digest in every native row.
 
+Source 2.291 / System 2.217 adds pointer-free C structs to the generated
+checked and async entries. Swift imports the same C definitions, including
+nested structs, fixed enums and inline arrays. The native generator checks
+every field before using a struct as a Swift continuation value. The C
+boundary retains its independent layout checks. The same eight Swift
+configurations verify by-value arguments and indirect results with a nested
+enum and four-word array. A native control admits a record with nested
+pointers to C and rejects it at the Swift boundary.
+
 Reports retain compiler versions, targets, resources, loader graphs, input and
 artifact hashes, commands, environments, diagnostics and exact results. The
 gate rechecks native and Swift installations and the loaded dependencies.

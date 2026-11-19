@@ -78,6 +78,28 @@ static enum SwiftBridgeChoice swift_bridge_enum(enum SwiftBridgeChoice value) as
   return value == SwiftBridgeAbsent ? SwiftBridgeAnswer : SwiftBridgeAbsent;
 }
 
+struct SwiftBridgeMetadata {
+  enum SwiftBridgeChoice choice;
+  bool accepted;
+};
+struct SwiftBridgeRecord {
+  struct SwiftBridgeMetadata metadata;
+  long values[4];
+};
+
+static struct SwiftBridgeRecord swift_bridge_record(struct SwiftBridgeRecord value) async {
+  value.metadata.choice = SwiftBridgeAnswer;
+  value.metadata.accepted = true;
+  value.values[0] += 43;
+  return value;
+}
+
+static struct SwiftBridgeRecord swift_bridge_checked_record(struct SwiftBridgeRecord value)
+    throws(id<Error>) {
+  value.values[2] = __objc3_try(swift_bridge_checked((int)value.values[2]));
+  return value;
+}
+
 static int swift_bridge_work(int value) async throws(id<Error>) {
   if (value < 0) {
     id<Error> error = [SwiftBridgeFailure new];

@@ -203,6 +203,16 @@ private struct Consumer {
         try await ForeignAsyncNative.swift_bridge_void()
         let generatedEnum = try await ForeignAsyncNative.swift_bridge_enum(SwiftBridgeChoice(rawValue: -1))
         precondition(generatedEnum.rawValue == 42)
+        let record = SwiftBridgeRecord(
+            metadata: SwiftBridgeMetadata(choice: SwiftBridgeChoice(rawValue: -1), accepted: false),
+            values: (-1, 7, 41, CLong.max)
+        )
+        let asyncRecord = try await ForeignAsyncNative.swift_bridge_record(record)
+        precondition(asyncRecord.metadata.choice.rawValue == 42 && asyncRecord.metadata.accepted)
+        precondition(asyncRecord.values == (42, 7, 41, CLong.max))
+        let checkedRecord = try ForeignAsyncNative.swift_bridge_checked_record(asyncRecord)
+        precondition(checkedRecord.metadata.choice.rawValue == 42 && checkedRecord.metadata.accepted)
+        precondition(checkedRecord.values == (42, 7, 42, CLong.max))
         do {
             _ = try await ForeignAsyncNative.swift_bridge_work(-1)
             preconditionFailure("generated Swift wrapper returned after checked failure")
@@ -224,6 +234,18 @@ private struct Consumer {
         try ForeignAsyncNative.swift_bridge_checked_void(true)
         try checkGeneratedSynchronousError()
         precondition(objc3_swift_sync_errors_retired() == 1)
-        print("{\"value\":\(value),\"checked_error\":true,\"cancellation\":true,\"pre_cancelled\":true,\"cancelled_after_submit\":true,\"actor\":\(finalValue),\"other_actor\":\(secondValue),\"generated_value\":\(generatedValue),\"generated_error\":true,\"generated_cancellation\":true,\"generated_scalars\":\(scalarABI),\"generated_void\":true,\"generated_enum\":\(generatedEnum.rawValue),\"generated_checked_value\":\(generatedChecked),\"generated_checked_error\":true}")
+        print(#"""
+            {
+                "value": \#(value), "checked_error": true, "cancellation": true,
+                "pre_cancelled": true, "cancelled_after_submit": true,
+                "actor": \#(finalValue), "other_actor": \#(secondValue),
+                "generated_value": \#(generatedValue), "generated_error": true,
+                "generated_cancellation": true, "generated_scalars": \#(scalarABI),
+                "generated_void": true, "generated_enum": \#(generatedEnum.rawValue),
+                "generated_checked_value": \#(generatedChecked), "generated_checked_error": true,
+                "generated_async_record": \#(asyncRecord.values.0),
+                "generated_checked_record": \#(checkedRecord.values.2)
+            }
+            """#)
     }
 }

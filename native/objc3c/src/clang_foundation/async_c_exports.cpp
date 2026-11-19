@@ -443,6 +443,32 @@ std::string SwiftScalar(clang::QualType type, llvm::StringRef module) {
   }
 }
 
+std::string SwiftValue(clang::ASTContext &context, clang::QualType type, llvm::StringRef module) {
+  if (type.isVolatileQualified()) return {};
+  if (auto scalar = SwiftScalar(type, module); !scalar.empty()) return scalar;
+  const auto *record_type = type->getAs<clang::RecordType>();
+  const auto *record = record_type ? record_type->getDecl()->getDefinition() : nullptr;
+  // The C boundary has already verified field layout and trivial transport.
+  // A Swift continuation also needs the complete by-value graph to be Sendable.
+  llvm::SmallPtrSet<const clang::RecordDecl *, 16> visited;
+  auto can_send = [&](auto &&walk, const clang::RecordDecl *definition) -> bool {
+    if (!definition || !definition->isStruct()) return false;
+    if (!visited.insert(definition).second) return true;
+    for (const auto *field : definition->fields()) {
+      auto element = field->getType();
+      while (const auto *array = context.getAsConstantArrayType(element))
+        element = array->getElementType();
+      if (element.isVolatileQualified()) return false;
+      if (!SwiftScalar(element, module).empty()) continue;
+      const auto *nested = element->getAs<clang::RecordType>();
+      if (!nested || !walk(walk, nested->getDecl()->getDefinition())) return false;
+    }
+    return true;
+  };
+  if (!can_send(can_send, record)) return {};
+  return "`" + module.str() + "`.`" + record->getName().str() + "`";
+}
+
 void WriteSwiftSupport(llvm::raw_ostream &out, llvm::StringRef module) {
   out << "import `" << module << "`\nimport Synchronization\n\n";
   out << "public final class " << module << "NativeError: Error, @unchecked Sendable {\n";
@@ -524,13 +550,13 @@ private final class ObjC3Pending<Value: Sendable>: Sendable {
   out << "public enum " << module << "Native {\n";
 }
 
-bool WriteSwiftEntry(llvm::raw_ostream &out, llvm::StringRef module,
+bool WriteSwiftEntry(clang::ASTContext &context, llvm::raw_ostream &out, llvm::StringRef module,
                      llvm::StringRef name, llvm::StringRef symbol,
                      clang::QualType result, llvm::ArrayRef<clang::ParmVarDecl *> parameters,
                      bool is_async, bool actor, std::string &failure) {
-  const auto result_type = SwiftScalar(result, module);
+  const auto result_type = SwiftValue(context, result, module);
   if (result_type.empty()) {
-    failure = "Swift overlay requires a portable scalar or void result";
+    failure = "Swift overlay requires a portable scalar, pointer-free struct or void result";
     return false;
   }
   const bool is_void = result->isVoidType();
@@ -541,9 +567,10 @@ bool WriteSwiftEntry(llvm::raw_ostream &out, llvm::StringRef module,
     call << "receiver, ";
   }
   for (unsigned index = 0; index < parameters.size(); ++index) {
-    const auto type = SwiftScalar(parameters[index]->getType(), module);
+    const auto type = SwiftValue(context, parameters[index]->getType(), module);
     if (type.empty()) {
-      failure = "Swift overlay has no portable scalar type for parameter " + std::to_string(index + 1);
+      failure = "Swift overlay has no portable scalar or pointer-free struct type for parameter " +
+                std::to_string(index + 1);
       return false;
     }
     if (index || actor) signature << ", ";
@@ -640,7 +667,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       failure = "Duplicate Swift overlay entry " + name.str();
       return false;
     }
-    if (WriteSwiftEntry(swift, swift_module, name, symbol, result, parameters, is_async, actor, failure))
+    if (WriteSwiftEntry(context, swift, swift_module, name, symbol, result, parameters, is_async, actor, failure))
       return true;
     failure = "Cannot generate Swift overlay for " + selection.str() + ": " + failure;
     return false;

@@ -648,7 +648,8 @@ static enum GeneratedUnfixed generated_unfixed_enum(void) __objc3_throws {
     auto swift = provider;
     swift.emit_semantic_interface = false;
     swift.interface_exports.clear();
-    swift.async_c_exports = {"generated_void", "generated_checked", "GeneratedActor::add:by:"};
+    swift.async_c_exports = {"generated_void", "generated_checked", "generated_aggregate",
+                             "GeneratedActor::add:by:"};
     swift.throws_c_exports = {"generated_sync_checked"};
     swift.output_path = (root / "swift-provider.o").string();
     swift.c_export_header_output_path = (root / "swift-generated.h").string();
@@ -663,10 +664,24 @@ static enum GeneratedUnfixed generated_unfixed_enum(void) __objc3_throws {
             (*swift_source)->getBuffer().contains("`NativeContract`.generated_sync_checked_throws_c"),
             "Swift overlay omitted its typed native entry");
     auto unsupported_overlay = swift;
-    unsupported_overlay.async_c_exports = {"generated_aggregate"};
+    unsupported_overlay.input_path = (root / (cxx ? "pointer-shape.mm" : "pointer-shape.m")).string();
+    unsupported_overlay.source_text = R"(
+struct BorrowedData { const int *value; };
+struct NestedPointers { struct BorrowedData slots[2]; };
+static struct NestedPointers pointer_shape(struct NestedPointers input) async { return input; }
+)";
+    unsupported_overlay.async_c_exports = {"pointer_shape"};
+    unsupported_overlay.throws_c_exports.clear();
+    unsupported_overlay.output_path = (root / "pointer-shape.o").string();
+    unsupported_overlay.c_export_header_output_path = (root / "pointer-shape.h").string();
+    unsupported_overlay.swift_overlay_output_path = (root / "PointerShape.swift").string();
+    auto pointer_c = unsupported_overlay;
+    pointer_c.swift_overlay_output_path.clear();
+    pointer_c.swift_c_module.clear();
+    Compiled(Compile(pointer_c));
     const auto unsupported = Compile(unsupported_overlay);
-    Require(!unsupported.success && unsupported.failure.find("Swift overlay requires a portable scalar") != std::string::npos,
-            "a non-scalar result was silently omitted from the requested Swift overlay");
+    Require(!unsupported.success && unsupported.failure.find("pointer-free struct") != std::string::npos,
+            "a nested pointer result was admitted by the Swift overlay");
     auto aliased_overlay = swift;
     aliased_overlay.swift_overlay_output_path = swift.c_export_header_output_path;
     Require(!Compile(aliased_overlay).success, "Swift overlay replaced the C export header");

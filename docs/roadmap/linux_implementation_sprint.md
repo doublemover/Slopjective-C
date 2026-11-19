@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.291 / System 2.217 Swift value bridge](linux_swift_consumer.md)
+passes pointer-free C records through generated checked and async wrappers.
+The independent Swift clients verify nested enum values and indirect returns.
+
 The [Source 2.290 / System 2.216 dependent closure change](linux_cxx_local_types.md)
 preserves `constexpr` on returned generic closures and dependent by-value
 captures. Source-free clients execute both forms using the published patterns.
