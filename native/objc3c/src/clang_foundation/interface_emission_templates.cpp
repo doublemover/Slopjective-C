@@ -133,6 +133,46 @@ bool IsPublishedSemanticAttribute(const clang::Attr *attribute) {
           clang::ObjCFamilyAutoreleaseAttr>(attribute);
 }
 
+// Clang erases lightweight type parameters to their bounds in canonical
+// QualTypes. Preserve their substitution sites in published signatures.
+class ObjCGenericReferences final : public clang::DynamicRecursiveASTVisitor {
+public:
+  explicit ObjCGenericReferences(const clang::ASTContext &context) : context_(context) {}
+
+  bool TraverseDecl(clang::Decl *) override { return true; }
+  bool TraverseStmt(clang::Stmt *) override { return true; }
+  bool TraverseType(clang::QualType type, bool traverse_qualifier = true) override {
+    while (!type.isNull()) {
+      if (++work_ > 4096) return false;
+      if (const auto *reference = llvm::dyn_cast<clang::ObjCTypeParamType>(type.getTypePtr())) {
+        const auto *parameter = reference->getDecl();
+        const auto *owner = llvm::dyn_cast<clang::NamedDecl>(parameter->getDeclContext());
+        const auto name = owner ? ReadInterfaceDeclarationStableId(owner) : std::string{};
+        key += std::to_string(position_++) + ':' + std::to_string(name.size()) + ':' +
+               name + ':' + std::to_string(parameter->getIndex()) + ';';
+        return true;
+      }
+      // Object types and non-alias template specializations retain their
+      // written type arguments even when their canonical arguments are erased.
+      const auto *specialization = llvm::dyn_cast<clang::TemplateSpecializationType>(type.getTypePtr());
+      if (llvm::isa<clang::ObjCObjectType>(type.getTypePtr()) ||
+          (specialization && !specialization->isTypeAlias())) break;
+      const auto desugared = type.getSingleStepDesugaredType(context_);
+      if (desugared == type) break;
+      type = desugared;
+    }
+    if (type.isNull()) return true;
+    ++position_;
+    return clang::DynamicRecursiveASTVisitor::TraverseType(type, traverse_qualifier);
+  }
+
+  std::string key;
+
+private:
+  const clang::ASTContext &context_;
+  unsigned work_ = 0;
+  unsigned position_ = 0;
+};
 
 std::string CanonicalType(clang::QualType type,
                           const clang::ASTContext &context) {
@@ -165,6 +205,12 @@ std::string CanonicalType(clang::QualType type,
   } enums;
   if(!enums.TraverseType(type.getCanonicalType()))spelling+=";!unmodeled-native-enum-type-graph;";
   else if(!enums.key.empty())spelling+=";native-unnamed-enums:v1;type-owners="+ComputeInterfaceSourceSha256(enums.key)+";";
+  if (context.getLangOpts().ObjC) {
+    ObjCGenericReferences references(context);
+    if (!references.TraverseType(type)) spelling += ";!unmodeled-objc-generic-type-graph;";
+    else if (!references.key.empty())
+      spelling += ";objc-generic-parameter-refs:v1;bindings=" + ComputeInterfaceSourceSha256(references.key) + ';';
+  }
   const auto origins=FactoryTypeKey(type,context);
   if(!origins.empty())spelling+=";factory-type-origins="+ComputeInterfaceSourceSha256(origins)+";";
   const auto members=UnnamedTemplateTypeKey(type,context);

@@ -69,6 +69,14 @@ Commit `0f9632db9` addresses fourteen additional findings:
   required/optional state, generic variance/bounds and specialized superclasses
   retain identity, printing and dependency admission.
 
+Source 2.279 / System 2.205 preserves the positions of lightweight Objective-C
+generic parameters through property types, method signatures and specialized
+superclasses. Parameters with the same bound retain distinct substitution sites
+when Clang erases their canonical types to that bound. Renaming a parameter
+keeps its position. Published interfaces require `objc3.objc-generic-signatures.v1`.
+The source-free regression checks changed return types and stale lock rejection
+through eager and source-directed imports in C17, C23, C++20 and C++23.
+
 The latest batch passes **36 frontend suites**, **239 native unit tests**,
 **415 compiler regressions** and **144 focused tooling tests**. Three compiler
 cases remain unsupported. Normal guard/pool/record and ASan/UBSan checks each

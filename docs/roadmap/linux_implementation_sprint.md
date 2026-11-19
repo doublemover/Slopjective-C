@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.279 / System 2.205 Objective-C generic signature change](linux_open_issue_sprint.md)
+preserves parameter positions through member types and specialized superclasses
+in source-free clients.
+
 The [Source 2.278 / System 2.204 property behavior diagnostics](linux_native_metaprogramming.md)
 implement the v1 reservation for behavior blocks with a note pointing to the
 supported attribute syntax.

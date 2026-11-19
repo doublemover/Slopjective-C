@@ -1189,6 +1189,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kNativeObjectPolicySemantic);
     if(HasNativeObjectExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeObjectExpressionSemantic);
+    if (HasObjCGenericSignatureIdentity(declaration))
+      sidecar.required_semantics.push_back(kObjCGenericSignaturesSemantic);
     if(HasNativeFunctionPolicyIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeFunctionPolicySemantic);
     if(HasNativeControlFlowIdentity(declaration))

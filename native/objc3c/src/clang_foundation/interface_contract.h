@@ -208,6 +208,11 @@ inline bool HasNativeObjectExpressionIdentity(const InterfaceDeclarationIdentity
 inline bool IsNativeObjectExpressionOwner(const InterfaceDeclarationIdentity &d) {
   return IsNativeFunctionEffectOwner(d);
 }
+inline constexpr const char *kObjCGenericSignaturesSemantic = "objc3.objc-generic-signatures.v1";
+inline bool HasObjCGenericSignatureIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";objc-generics:v1;") != std::string::npos ||
+         d.canonical_type_identity.find(";objc-generic-parameter-refs:v1;") != std::string::npos;
+}
 inline constexpr const char *kNativeExternalBindingSemantic = "objc3.native-external-bindings.v1";
 inline constexpr const char *kNativeExternalBindingMarker = ";native-external-binding:v1;symbol=";
 inline bool HasNativeExternalBindingIdentity(const InterfaceDeclarationIdentity &d) {

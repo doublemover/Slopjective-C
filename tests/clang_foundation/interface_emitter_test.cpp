@@ -205,6 +205,119 @@ void TestCanonicalInterfaceIncludeGuards() {
  }
 }
 
+void TestObjCGenericParameterReferences() {
+  llvm::SmallString<128> temporary;
+  assert(!llvm::sys::fs::createUniqueDirectory("objc3-generic-parameter-references", temporary));
+  const std::filesystem::path root(temporary.c_str());
+  auto cleanup = llvm::scope_exit([&] { std::filesystem::remove_all(root); });
+  const std::string provider = R"objc(
+__attribute__((objc_root_class)) @interface Object @end
+@interface Animal : Object @end
+@interface Dog : Animal @end
+@interface Box<__covariant Input, __covariant Output> : Object
+@property(nonatomic, readonly) Input value;
+- (Output) transform:(Input)value;
+@end
+@interface Child<Source, Destination> : Box<Source, Destination> @end
+)objc";
+  auto edit = [](std::string text, llvm::StringRef before, llvm::StringRef after) {
+    auto position = text.find(before.str());
+    assert(position != std::string::npos);
+    text.replace(position, before.size(), after.str());
+    return text;
+  };
+  for (const std::string standard : {"c17", "c23", "c++20", "c++23"}) {
+    CompileRequest request;
+    const bool cxx = standard.starts_with("c++");
+    request.input_path = (root / (cxx ? "source.mm" : "source.m")).string();
+    request.language = cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
+    request.emit = EmitKind::Syntax;
+    request.objc3 = true;
+    request.objc_runtime = "gnustep-2.2";
+    request.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
+    request.arguments = {"-std=" + standard, "-Werror=incompatible-pointer-types"};
+    auto emit = [&](const std::string &source) {
+      auto input = request;
+      input.module_name = "fixture.GenericReferences";
+      input.package_identity = "generic-references";
+      input.source_text = source;
+      input.emit_semantic_interface = true;
+      auto result = Compile(input);
+      if (!result.success) {
+        std::fprintf(stderr, "%s\n", result.failure.c_str());
+        for (const auto &diag : result.diagnostics)
+          std::fprintf(stderr, "%s\n", diag.message.c_str());
+        if (result.interface_artifact)
+          for (const auto &diag : result.interface_artifact->diagnostics)
+            std::fprintf(stderr, "%s: %s\n", diag.code.c_str(), diag.message.c_str());
+      }
+      assert(result.success && result.interface_artifact && result.interface_artifact->success);
+      return std::move(*result.interface_artifact);
+    };
+    const auto original = emit(provider);
+    const auto property = emit(edit(provider, "Input value;", "Output value;"));
+    const auto method = emit(edit(provider, "transform:(Input)", "transform:(Output)"));
+    const auto base = emit(edit(provider, "Box<Source, Destination>", "Box<Destination, Source>"));
+    for (const auto *changed : {&property, &method, &base})
+      assert(changed->identity.semantic_fingerprint != original.identity.semantic_fingerprint);
+    auto renamed = edit(provider, "__covariant Input", "__covariant Argument");
+    renamed = edit(renamed, "Input value;", "Argument value;");
+    renamed = edit(renamed, "transform:(Input)", "transform:(Argument)");
+    assert(emit(renamed).identity.semantic_fingerprint == original.identity.semantic_fingerprint);
+
+    const auto supported = CurrentReaderSemantics();
+    auto decoded = DecodeSemanticInterfaceSidecar(original.sidecar_json, original.source_bytes, supported);
+    assert(decoded && std::ranges::find(decoded->required_semantics, kObjCGenericSignaturesSemantic) !=
+                       decoded->required_semantics.end());
+    auto prior = supported;
+    std::erase(prior, kObjCGenericSignaturesSemantic);
+    auto rejected = DecodeSemanticInterfaceSidecar(original.sidecar_json, original.source_bytes, prior);
+    assert(!rejected);
+    llvm::consumeError(rejected.takeError());
+    std::erase(decoded->required_semantics, kObjCGenericSignaturesSemantic);
+    auto missing = EncodeSemanticInterfaceSidecar(*decoded, supported);
+    assert(!missing);
+    llvm::consumeError(missing.takeError());
+
+    auto consume = [&](const auto &artifact, const InterfaceModuleIdentity &identity, bool directed) {
+      const auto path = root / "GenericReferences.objc3i";
+      std::ofstream(path) << artifact.source_bytes;
+      std::ofstream(path.string() + ".json") << artifact.sidecar_json;
+      auto client = request;
+      client.source_text = "Dog *projected(Child<Dog *, Animal *> *box) { return [box value]; }";
+      if (directed) {
+        client.source_text->insert(0, "@import fixture.GenericReferences;\n");
+        client.source_directed_imports = true;
+        client.interface_search_paths = {root.string()};
+        InterfaceModuleRequest input;
+        input.canonical_name = identity.canonical_name;
+        input.locked_identity = identity;
+        input.initially_visible = false;
+        client.module_imports = {std::move(input)};
+      } else {
+        InterfaceImportInput input;
+        input.source_path = path.string();
+        input.locked_identity = identity;
+        client.imported_interfaces = {std::move(input)};
+      }
+      return Compile(client);
+    };
+    for (bool directed : {false, true}) {
+      assert(consume(original, original.identity, directed).success);
+      for (const auto *changed : {&property, &base}) {
+        const auto substituted = consume(*changed, changed->identity, directed);
+        assert(!substituted.success && std::ranges::any_of(substituted.diagnostics, [](const auto &diag) {
+          return diag.message.find("incompatible pointer types") != std::string::npos ||
+                 diag.message.find("cannot initialize return object") != std::string::npos;
+        }));
+        const auto locked = consume(*changed, original.identity, directed);
+        assert(!locked.success && std::ranges::any_of(locked.interface_import_diagnostics,
+            [](const auto &diag) { return diag.code == "O3IFC134"; }));
+      }
+    }
+  }
+}
+
 void TestOrdinaryCDeclarationsRoundTrip() {
   constexpr llvm::StringRef source =
       "typedef struct Point { int x; int y; } Point;\n"
@@ -12538,6 +12651,7 @@ int main(int argc,char **argv) {
   cases.Run("TestIndependentCxxAndObjCExceptionModes",TestIndependentCxxAndObjCExceptionModes);
   cases.Run("TestPrimitiveAndObjectiveCContractIdentity", TestPrimitiveAndObjectiveCContractIdentity);
   cases.Run("TestCanonicalInterfaceIncludeGuards", TestCanonicalInterfaceIncludeGuards);
+  cases.Run("TestObjCGenericParameterReferences", TestObjCGenericParameterReferences);
   cases.Run("TestOrdinaryCDeclarationsRoundTrip", TestOrdinaryCDeclarationsRoundTrip);
   cases.Run("TestStandardLibraryImportsAndInstancetype", TestStandardLibraryImportsAndInstancetype);
   cases.Run("TestNativeOwnershipContractsRoundTrip", TestNativeOwnershipContractsRoundTrip);

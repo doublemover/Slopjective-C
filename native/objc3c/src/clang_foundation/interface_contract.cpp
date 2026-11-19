@@ -626,6 +626,13 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasNativeObjectExpressionIdentity(d) || IsNativeObjectExpressionOwner(d);});
   if(object_expressions!=object_capability || !object_owners)
     Add(result,"O3IFC145","native object expression identity and required capability must agree",expected.canonical_name);
+  const bool objc_generic_signatures = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                                                  HasObjCGenericSignatureIdentity);
+  const bool objc_generic_capability = std::ranges::find(sidecar.required_semantics, kObjCGenericSignaturesSemantic) !=
+                                      sidecar.required_semantics.end();
+  if (objc_generic_signatures != objc_generic_capability)
+    Add(result, "O3IFC145", "Objective-C generic signature identity and required capability must agree",
+        expected.canonical_name);
   const bool external_bindings=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasNativeExternalBindingIdentity);
   const bool external_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kNativeExternalBindingSemantic)!=sidecar.required_semantics.end();
   const bool external_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
