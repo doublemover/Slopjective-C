@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.278 / System 2.204 property behavior diagnostics](linux_native_metaprogramming.md)
+implement the v1 reservation for behavior blocks with a note pointing to the
+supported attribute syntax.
+
 The [Source 2.277 / System 2.203 Swift completion bridge](linux_swift_consumer.md)
 exercises native task results, checked errors, cancellation and isolated actors
 through generated C headers and independent Swift continuations.

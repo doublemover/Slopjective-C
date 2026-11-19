@@ -157,3 +157,10 @@ option table now retains complete semantic operands and removes action, output
 and dependency options. In particular, an orphaned `-MF` can no longer consume
 the following resource-directory option, and clang-cl joined spellings cannot
 misclassify an absolute Linux compiler path.
+
+Source 2.278 / System 2.204 implements the Part 10 v1 reservation for property
+behavior blocks. The property parser reports the reserved syntax and points to
+`objc_property_behavior` with a separate note. It recovers after balanced
+blocks in property declarations and attribute lists. Ordinary identifiers and
+selectors named `behavior` retain their meaning. The diagnostics pass 32
+target, language standard and profile combinations.

@@ -1410,7 +1410,6 @@ index b3c3b25aa..5bc4502a8 100644
 +def ObjC3MatchNonExhaustive : DiagGroup<"objc3-match-non-exhaustive">;
 +def ObjC3MatchUnreachable : DiagGroup<"objc3-match-unreachable">;
 diff --git a/clang/include/clang/Basic/DiagnosticParseKinds.td b/clang/include/clang/Basic/DiagnosticParseKinds.td
-index 7671f003c..44a30c6e2 100644
 --- a/clang/include/clang/Basic/DiagnosticParseKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticParseKinds.td
 @@ -11,7 +11,19 @@
@@ -1433,12 +1432,16 @@ index 7671f003c..44a30c6e2 100644
  // C++11 compatibility with C++98.
  defm enum_fixed_underlying_type : CXX11Compat<
    "enumeration types with a fixed underlying type are",
-@@ -1920,4 +1932,24 @@ def err_hlsl_number_literal_underflow : Error<
+@@ -1920,4 +1932,28 @@
    "float literal has a magnitude that is too small to be represented as a float type">;
  def err_hlsl_rootsig_non_zero_flag : Error<"flag value is neither a literal 0 nor a named value">;
  
 +def err_objc3_match_binding_required : Error<"this match pattern requires a binding">;
 +def err_objc3_match_invalid_pattern : Error<"invalid match pattern">;
++def err_objc3_reserved_behavior_block : Error<
++  "property behavior blocks are reserved for a future Objective-C revision">;
++def note_objc3_apply_property_behavior_attribute : Note<
++  "apply a behavior with the objc_property_behavior attribute">;
 +def err_objc3_match_malformed_guard : Error<"guarded patterns require a condition of type Bool">;
 +def err_objc3_match_form_delimiter : Error<"expected the %select{statement-form match delimiter ':' followed by a compound statement|expression-form match delimiter '=>' followed by an expression and ';'}0">;
 +
@@ -11717,10 +11720,11 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
  
  using namespace clang;
  
-@@ -45,6 +49,14 @@
+@@ -44,6 +48,14 @@
+ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
                                ParsedAttributes &DeclSpecAttrs) {
    DeclAttrs.takeAllPrependingFrom(DeclSpecAttrs);
- 
++
 +  if (isObjC3ResourceAttributeAhead()) {
 +    if (ParseObjC3ScopeCleanupPrefix(DeclAttrs))
 +      return nullptr;
@@ -11728,10 +11732,9 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
 +    return ParseDeclaration(DeclaratorContext::File, DeclEnd, DeclSpecAttrs,
 +                            DeclAttrs);
 +  }
-+
+ 
    SourceLocation AtLoc = ConsumeToken(); // the "@"
  
-   if (Tok.is(tok::code_completion)) {
 @@ -88,7 +100,8 @@
      SingleDecl = ParseObjCPropertyDynamic(AtLoc);
      break;
@@ -11796,7 +11799,30 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      if (Actions.ActOnDuplicateODRHashDefinition(ClsType, PreviousDef)) {
        ClsType->mergeDuplicateDefinitionWithCommon(PreviousDef->getDefinition());
      } else {
-@@ -565,6 +600,7 @@
+@@ -558,6 +593,22 @@
+   }
+ }
+ 
++static bool RejectObjC3PropertyBehaviorBlock(Parser &P) {
++  const Token &Tok = P.getCurToken();
++  if (!P.getLangOpts().ObjC3 || !Tok.is(tok::identifier) ||
++      !Tok.getIdentifierInfo()->isStr("behavior") ||
++      P.NextToken().isNot(tok::l_brace))
++    return false;
++
++  SourceLocation BehaviorLoc = P.ConsumeToken();
++  P.Diag(BehaviorLoc, diag::err_objc3_reserved_behavior_block);
++  P.Diag(BehaviorLoc, diag::note_objc3_apply_property_behavior_attribute);
++  BalancedDelimiterTracker Block(P, tok::l_brace);
++  if (!Block.consumeOpen())
++    Block.skipToEnd();
++  return true;
++}
++
+ void Parser::ParseObjCInterfaceDeclList(tok::ObjCKeywordKind contextKey,
+                                         Decl *CDecl) {
+   SmallVector<Decl *, 32> allMethods;
+@@ -565,6 +616,7 @@
    tok::ObjCKeywordKind MethodImplKind = tok::objc_not_keyword;
  
    SourceRange AtEnd;
@@ -11804,7 +11830,42 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
  
    while (true) {
      // If this is a method prototype, parse it.
-@@ -1206,8 +1242,31 @@
+@@ -697,6 +749,10 @@
+         LParenLoc = Tok.getLocation();
+         ParseObjCPropertyAttribute(OCDS);
+       }
++      if (RejectObjC3PropertyBehaviorBlock(*this)) {
++        TryConsumeToken(tok::semi);
++        break;
++      }
+ 
+       bool addedToDeclSpec = false;
+       auto ObjCPropertyCallback = [&](ParsingFieldDeclarator &FD) -> Decl * {
+@@ -744,7 +800,10 @@
+       ParsingDeclSpec DS(*this);
+       ParseStructDeclaration(DS, ObjCPropertyCallback);
+ 
+-      ExpectAndConsume(tok::semi, diag::err_expected_semi_decl_list);
++      if (RejectObjC3PropertyBehaviorBlock(*this))
++        TryConsumeToken(tok::semi);
++      else
++        ExpectAndConsume(tok::semi, diag::err_expected_semi_decl_list);
+       break;
+     }
+   }
+@@ -792,6 +851,11 @@
+   T.consumeOpen();
+ 
+   while (true) {
++    if (RejectObjC3PropertyBehaviorBlock(*this)) {
++      if (!TryConsumeToken(tok::comma))
++        break;
++      continue;
++    }
+     if (Tok.is(tok::code_completion)) {
+       cutOffParsing();
+       Actions.CodeCompletion().CodeCompleteObjCPropertyFlags(getCurScope(), DS);
+@@ -1206,8 +1270,31 @@
      return nullptr;
    }
  
@@ -11836,7 +11897,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      // If attributes exist after the method, parse them.
      MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
                           methodAttrs);
-@@ -1216,7 +1275,7 @@
+@@ -1216,7 +1303,7 @@
      Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
          getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType,
          selLoc, Sel, nullptr, CParamInfo.data(), CParamInfo.size(), methodAttrs,
@@ -11845,10 +11906,11 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      PD.complete(Result);
      return Result;
    }
-@@ -1280,6 +1339,19 @@
+@@ -1279,6 +1366,19 @@
+           /*AtParameterName=*/false, ReturnType, KeyIdents);
        return nullptr;
      }
- 
++
 +    // Effect spellings terminate the selector only in suffix position.
 +    // A selector component with the same identifier followed by ':' is native.
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
@@ -11861,11 +11923,10 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
 +           Tok.getIdentifierInfo()->isStr("throws"))) &&
 +        NextToken().isNot(tok::colon))
 +      break;
-+
+ 
      // Check for another keyword selector.
      SelIdent = ParseObjCSelectorPiece(selLoc);
-     if (!SelIdent && Tok.isNot(tok::colon))
-@@ -1335,6 +1407,8 @@
+@@ -1335,6 +1435,8 @@
      ObjCParamInfo.push_back(Param);
    }
  
@@ -11874,7 +11935,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
    // FIXME: Add support for optional parameter list...
    // If attributes exist after the method, parse them.
    MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
-@@ -1348,7 +1422,7 @@
+@@ -1348,7 +1450,7 @@
    Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
        getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType, KeyLocs,
        Sel, ObjCParamInfo.data(), CParamInfo.data(), CParamInfo.size(),
@@ -11883,7 +11944,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
  
    PD.complete(Result);
    return Result;
-@@ -1705,8 +1779,16 @@
+@@ -1705,8 +1807,16 @@
  
    BalancedDelimiterTracker T(*this, tok::l_brace);
    T.consumeOpen();
@@ -11901,7 +11962,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      // Each iteration of this loop reads one objc-instance-variable-decl.
  
      // Check for extraneous top-level semicolon.
-@@ -1996,6 +2078,7 @@
+@@ -1996,6 +2106,7 @@
  
    {
      ObjCImplParsingDataRAII ObjCImplParsing(*this, ObjCImpDecl);
@@ -11909,7 +11970,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
      while (!ObjCImplParsing.isFinished() && !isEofOrEom()) {
        ParsedAttributes DeclAttrs(AttrFactory);
        MaybeParseCXX11Attributes(DeclAttrs);
-@@ -2515,6 +2598,11 @@
+@@ -2515,6 +2626,11 @@
  }
  
  ExprResult Parser::ParseObjCAtExpression(SourceLocation AtLoc) {
@@ -11921,7 +11982,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
    switch (Tok.getKind()) {
    case tok::code_completion:
      cutOffParsing();
-@@ -2732,6 +2820,13 @@
+@@ -2732,6 +2848,13 @@
    }
  
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -11935,7 +11996,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
  
    if (getLangOpts().CPlusPlus) {
      // We completely separate the C and C++ cases because C++ requires
-@@ -2822,6 +2917,16 @@
+@@ -2822,6 +2945,16 @@
                                         ParsedType ReceiverType,
                                         Expr *ReceiverExpr) {
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -11952,7 +12013,7 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
  
    if (Tok.is(tok::code_completion)) {
      cutOffParsing();
-@@ -2978,10 +3083,74 @@
+@@ -2978,8 +3111,72 @@
      return Actions.ObjC().ActOnClassMessage(getCurScope(), ReceiverType, Sel,
                                              LBracLoc, KeyLocs, RBracLoc,
                                              KeyExprs);
@@ -11962,8 +12023,8 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
 +        OptionalLoc);
    return Actions.ObjC().ActOnInstanceMessage(
        getCurScope(), ReceiverExpr, Sel, LBracLoc, KeyLocs, RBracLoc, KeyExprs);
- }
- 
++}
++
 +bool Parser::isObjC3OptionalSendIndicatorAhead(Expr *Receiver) {
 +  if (!getLangOpts().ObjC3 || !ObjC3ParsingMessageReceiver ||
 +      !Tok.is(tok::question) || ParenCount != ObjC3ReceiverParenDepth ||
@@ -12022,12 +12083,9 @@ diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
 +    default: break;
 +    }
 +  }
-+}
-+
+ }
+ 
  ExprResult Parser::ParseObjCStringLiteral(SourceLocation AtLoc) {
-   ExprResult Res(ParseStringLiteralExpression());
-   if (Res.isInvalid()) return Res;
-
 diff --git a/clang/lib/Parse/ParseTentative.cpp b/clang/lib/Parse/ParseTentative.cpp
 --- a/clang/lib/Parse/ParseTentative.cpp
 +++ b/clang/lib/Parse/ParseTentative.cpp
@@ -84102,3 +84160,22 @@ new file mode 100644
 +  (void)@keypath(SplitAccessors, consumingRead); // expected-error {{key paths cannot erase consuming accessor ownership}}
 +  (void)@keypath(SplitAccessors, effectfulRead); // expected-error {{key-path accessors must be synchronous and nonthrowing}}
 +}
+diff --git a/clang/test/ObjC3/Parse/property-behavior-reservation.m b/clang/test/ObjC3/Parse/property-behavior-reservation.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parse/property-behavior-reservation.m
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -x objective-c -std=c17 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc3-profile=strict-system -x objective-c++ -std=c++23 -fsyntax-only -verify %s
++
++typedef int behavior;
++
++@protocol Properties
++@property behavior ordinary;
++@property int behavior;
++@property(getter=behavior) int ordinaryGetter;
++@property behavior { storage { int ignored; } }; // expected-error {{property behavior blocks are reserved for a future Objective-C revision}} expected-note {{apply a behavior with the objc_property_behavior attribute}}
++@property (nonatomic, behavior { validate {} }, readonly) int reservedAttribute; // expected-error {{property behavior blocks are reserved}} expected-note {{objc_property_behavior attribute}}
++@property int reservedSuffix behavior { get {} set {} }; // expected-error {{property behavior blocks are reserved}} expected-note {{objc_property_behavior attribute}}
++@property int after;
++@end
