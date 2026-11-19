@@ -1,5 +1,8 @@
 # Linux implementation sprint
 
+The [Source 2.293 / System 2.219 C vector bridge](linux_async_c_completion_exports.md)
+is exercised by native C clients on x86-64 and AArch64 clients under emulation.
+
 The [Source 2.292 / System 2.218 group dependency change](linux_checked_await_cancellation.md)
 rejects cycles through nested and mutually waiting closed groups. Forced
 scope cleanup retires the body's registration before taking over its wait.

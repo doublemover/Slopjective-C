@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 292,
+        "minor": 293,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Generated C checked and async entries transport fixed 64-bit and 128-bit generic vectors. Native x86-64 and emulated AArch64 callers verify register values and completion callbacks. Matching native SDK acceptance pending",
         "Closed-group joins and direct task waits share cycle admission. Nested members, two groups, simultaneous admission and interrupted registrations preserve pending outcomes across the native task-service controls. Matching SDK acceptance pending",
         "Generated Swift checked and async wrappers carry pointer-free C structs by value, including nested structs, fixed enums and inline arrays. Eight linked x86-64 configurations verify indirect aggregate results. Native AArch64 and archive acceptance pending",
         "Source-free C++ function and member templates preserve explicit constexpr on dependent closures returned by value, including captured unnamed records and C++23 parameterless spelling. Matching SDK acceptance pending",
@@ -440,13 +441,14 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 218,
+        "minor": 219,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
         "Active task dependency cycle admission and terminal edge retirement share the published runtime registration. Matching SDK acceptance pending",
+        "Source-free C exports preserve generic ext_vector_type and vector_size argument and result aliases on Linux x86-64 and AArch64. Wider vectors retain their calling convention admission boundary. Matching SDK acceptance pending",
         "Forced task-group scope finalization retires the prior ordinary body await before replacing it with a shielded cleanup continuation. The body registration is reclaimed while the previous external dependency is still suspended. Matching SDK acceptance pending",
         "Swift overlay publication checks every field in a by-value struct graph before crossing the foreign boundary. Its independent C publisher still accepts admitted native pointer fields that Swift transport rejects. Matching SDK acceptance pending",
         "Dependent returned closures keep their explicitly written constexpr, noexcept and captured record identity in published template bodies. Private provider instantiations do not change the package identity. Matching SDK acceptance pending",

@@ -221,6 +221,16 @@ static GeneratedCallback _Nonnull generated_callback(GeneratedCallback _Nonnull 
 }
 struct GeneratedPort { char flag; int lane; };
 struct GeneratedAggregate { struct GeneratedPort port; long values[2]; };
+typedef float GeneratedFloatVector __attribute__((ext_vector_type(4)));
+typedef int GeneratedIntVector __attribute__((vector_size(8)));
+static GeneratedFloatVector generated_vector(GeneratedFloatVector value) async {
+  return value + (GeneratedFloatVector){1, 2, 3, 4};
+}
+static GeneratedIntVector generated_checked_vector(GeneratedIntVector value)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (value[0] < 0) __objc3_throw(generated_failure());
+  return value * (GeneratedIntVector){3, 7};
+}
 static struct GeneratedAggregate generated_aggregate(struct GeneratedAggregate value) async {
   ++value.port.lane;
   ++value.values[1];
@@ -528,14 +538,14 @@ namespace ExportAlias = ExportRegion::Nested;
   provider.output_path = (root / "provider.o").string();
   provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
       "generated_cancelled", "generated_consumed", "GeneratedActor::consume:",
-      "generated_object", "generated_block", "generated_callback", "generated_enum", "generated_aggregate", "generated_main",
+      "generated_object", "generated_block", "generated_callback", "generated_enum", "generated_aggregate", "generated_vector", "generated_main",
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
       "GeneratedActor::current", "GeneratedDerivedActor::current", "GeneratedDerivedActor::checked:"};
   provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer", "generated_sync_nested",
       "generated_sync_object", "generated_sync_block", "generated_sync_invoke", "generated_sync_callback",
       "generated_sync_port", "generated_sync_aggregate", "generated_consumed_sync", "generated_sync_enum",
-      "generated_sync_enum_box", "generated_sync_enum_block"};
+      "generated_sync_enum_box", "generated_sync_enum_block", "generated_checked_vector"};
   if (cxx) {
     provider.async_c_exports.push_back("ExportRegion::Nested::pulse");
     provider.throws_c_exports.push_back("ExportAlias::check");
@@ -558,6 +568,8 @@ namespace ExportAlias = ExportRegion::Nested;
           interface.source_bytes.find("GeneratedDerivedActor_checked_async_c") != std::string::npos &&
           interface.source_bytes.find("generated_sync_checked_throws_c") != std::string::npos &&
           interface.source_bytes.find("generated_sync_enum_throws_c") != std::string::npos &&
+          interface.source_bytes.find("generated_vector_async_c") != std::string::npos &&
+          interface.source_bytes.find("generated_checked_vector_throws_c") != std::string::npos &&
           interface.sidecar_json.find(RuntimeCompletionSemantic()) != std::string::npos,
           "generated C callable ABI was omitted from semantic metadata");
 
@@ -627,6 +639,21 @@ static enum GeneratedUnfixed generated_unfixed_enum(void) __objc3_throws {
     const auto unfixed = Compile(rejected);
     Require(!unfixed.success && unfixed.failure.find("self-contained C value declaration") != std::string::npos,
             "an enum without an explicit representation was admitted through the generated C header");
+    auto wide = provider;
+    wide.input_path = (root / "wide-vector.mm").string();
+    wide.source_text = R"(
+@protocol Error @end
+typedef float WideVector __attribute__((ext_vector_type(8)));
+static WideVector wide_vector(WideVector value) __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  return value;
+}
+)";
+    wide.async_c_exports.clear();
+    wide.throws_c_exports = {"wide_vector"};
+    wide.emit_semantic_interface = false;
+    const auto rejected_wide = Compile(wide);
+    Require(!rejected_wide.success && rejected_wide.failure.find("self-contained C value declaration") != std::string::npos,
+            "a 256-bit vector was admitted without a wide-vector calling convention contract");
     const auto header_before = llvm::MemoryBuffer::getFile(provider.c_export_header_output_path);
     Require(static_cast<bool>(header_before), "generated header missing");
     const std::string generated_header = (*header_before)->getBuffer().str();
@@ -757,6 +784,10 @@ struct GeneratedAggregate call_imported_aggregate(struct GeneratedAggregate valu
 enum GeneratedMode call_imported_enum(enum GeneratedMode mode, objc3_async_c_error *failure) {
   return generated_sync_enum_throws_c(mode, failure);
 }
+generated_checked_vector_throws_c_result_t call_imported_vector(
+    generated_checked_vector_throws_c_arg0_t value, objc3_async_c_error *failure) {
+  return generated_checked_vector_throws_c(value, failure);
+}
 generated_sync_block_throws_c_result_t call_imported_block(generated_sync_block_throws_c_arg0_t block,
                                                            objc3_async_c_error *failure) {
   return generated_sync_block_throws_c(block, failure);
@@ -830,6 +861,13 @@ static void enum_done(void *context, objc_async_completion_status_t status,
   assert(context == &enum_calls && status == OBJC_ASYNC_COMPLETION_SUCCESS);
   assert(value == GeneratedWideMax && !error);
   assert(atomic_fetch_add(&enum_calls, 1) == 0);
+}
+static atomic_int vector_calls;
+static void vector_done(void *context, objc_async_completion_status_t status,
+                        generated_vector_async_c_result_t value, objc3_async_c_error error) {
+  assert(!context && status == OBJC_ASYNC_COMPLETION_SUCCESS && !error);
+  assert(value[0] == 42 && value[1] == -0.5f && value[2] == 10 && value[3] == 13);
+  assert(atomic_fetch_add(&vector_calls, 1) == 0);
 }
 static void release_submitted(objc3_task_t *task) {
   assert(task);
@@ -1005,6 +1043,14 @@ int main(void) {
   assert(aggregate.values[0] == 73 && aggregate.values[1] == 91);
   (void)generated_sync_aggregate_throws_c((struct GeneratedAggregate){0}, &synchronous_failure);
   assert(synchronous_failure == generated_failure());
+  static_assert(sizeof(generated_vector_async_c_result_t) == 16, "128-bit C vector");
+  static_assert(sizeof(generated_checked_vector_throws_c_result_t) == 8, "64-bit C vector");
+  generated_checked_vector_throws_c_result_t values = generated_checked_vector_throws_c(
+      (generated_checked_vector_throws_c_arg0_t){14, -6}, &synchronous_failure);
+  assert(!synchronous_failure && values[0] == 42 && values[1] == -42);
+  (void)generated_checked_vector_throws_c((generated_checked_vector_throws_c_arg0_t){-1, 0}, &synchronous_failure);
+  assert(synchronous_failure == generated_failure());
+  generated_vector_async_c((generated_vector_async_c_arg0_t){41, -2.5f, 7, 9}, 0, vector_done);
   static_assert(sizeof(enum GeneratedMode) == 1 && GeneratedModeInvalid < 0, "signed C enum");
   static_assert(sizeof(enum GeneratedWide) == 8 && GeneratedWideMax == 18446744073709551615ULL, "wide C enum");
   assert(generated_sync_enum_throws_c(GeneratedModeAnswer, &synchronous_failure) == GeneratedModeAnswer && !synchronous_failure);
@@ -1123,7 +1169,7 @@ int main(void) {
     unsigned consumed_count = 0;
     for (unsigned index = 0; index < 4; ++index) consumed_count += atomic_load(&consumed_calls[index]);
     if (count == sizeof(complete) / sizeof(complete[0]) && atomic_load(&cancelled_task) == 1 &&
-        consumed_count == 4 && atomic_load(&enum_calls) == 1) {
+        consumed_count == 4 && atomic_load(&enum_calls) == 1 && atomic_load(&vector_calls) == 1) {
 #ifdef __BLOCKS__
       assert(retained_block(2) == 42);
       _Block_release((const void *)retained_block);
@@ -1147,6 +1193,7 @@ int main(void) {
     if (!atomic_load(&complete[index])) fprintf(stderr, "Missing generated completion %u\n", index);
   if (!atomic_load(&cancelled_task)) fprintf(stderr, "Missing requested native cancellation\n");
   if (!atomic_load(&enum_calls)) fprintf(stderr, "Missing enum completion\n");
+  if (!atomic_load(&vector_calls)) fprintf(stderr, "Missing vector completion\n");
   for (unsigned index = 0; index < 4; ++index)
     if (!atomic_load(&consumed_calls[index])) fprintf(stderr, "Missing consumed completion %u\n", index);
   return 1;

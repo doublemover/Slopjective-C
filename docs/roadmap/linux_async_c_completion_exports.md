@@ -1,5 +1,17 @@
 # Native async exports to C
 
+Source 2.293 / System 2.219 admits fully populated 64-bit and 128-bit
+generic C vectors through generated checked and async entries on Linux
+x86-64 and AArch64. The generated headers preserve GNU `vector_size` and
+Clang `ext_vector_type` declarations. Wider and target-specific vector types
+still need their own calling convention contracts.
+
+Native x86-64 C17/C23 callers exercise exact checked results, original error
+identity and asynchronous vector callbacks across ARC/MRC and all provider
+standards. Source-free imports preserve the declarations. Four AArch64 QEMU
+clients verify both vector widths with the AArch64 GNUstep and service runtime.
+Native AArch64 archive qualification remains pending.
+
 Source 2.240 / System 2.166 implements explicit C completion exports for
 native async frames. The SDK header `<objc3c/runtime/objc3_async_c.h>` declares a
 typed `f_completion_t` and `f_async_c` from the original parameter list and

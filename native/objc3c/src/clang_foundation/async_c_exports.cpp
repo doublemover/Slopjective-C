@@ -141,6 +141,23 @@ std::optional<std::string> PortableValueType(clang::ASTContext &context,
   return CExportSpellingType(context, type, nullable_result).getAsString(policy);
 }
 
+bool IsPortableVector(clang::ASTContext &context, clang::QualType type) {
+  const auto *vector = type->getAs<clang::VectorType>();
+  if (!vector || vector->getVectorKind() != clang::VectorKind::Generic || type.hasAddressSpace())
+    return false;
+  const auto &target = context.getTargetInfo().getTriple();
+  if (!(target.getArch() == llvm::Triple::x86_64 || target.getArch() == llvm::Triple::aarch64))
+    return false;
+  const auto element = vector->getElementType();
+  const auto width = context.getTypeSize(type);
+  const auto lane = context.getTypeSize(element);
+  // The common Linux SIMD calling conventions transport fully populated
+  // 64/128-bit vectors without an optional wide-vector ISA contract.
+  return (width == 64 || width == 128) && lane <= 64 &&
+         width == lane * vector->getNumElements() && !element->isBooleanType() &&
+         PortableValueType(context, element).has_value();
+}
+
 struct CExportType {
   std::string spelling;
   const char *kind = "VALUE";
@@ -265,7 +282,7 @@ private:
     if (depth > 32 || clang::containsObjC3BorrowedType(context_, type) ||
         clang::getObjC3ResourceTypeContract(context_, type).Cleanup)
       return false;
-    if (PortableValueType(context_, type)) return true;
+    if (PortableValueType(context_, type) || IsPortableVector(context_, type)) return true;
     type = type.getCanonicalType();
     if (type.hasAddressSpace()) return false;
     if (const auto *array = context_.getAsConstantArrayType(type))
@@ -355,6 +372,12 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
   policy.Bool = true;
   policy.SuppressTagKeyword = false;
   policy.SuppressLifetimeQualifiers = true;
+  if (IsPortableVector(context, type)) {
+    declarations << "typedef ";
+    CExportSpellingType(context, type).print(declarations, policy, alias);
+    declarations << ";\n";
+    return CExportType{alias.str()};
+  }
   if (canonical->isFunctionPointerType()) {
     const auto *signature = type->getPointeeType()->getAs<clang::FunctionProtoType>();
     if (!values.SupportsCallback(signature) ||

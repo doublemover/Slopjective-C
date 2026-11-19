@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.293 / System 2.219 C vector bridge](linux_async_c_completion_exports.md)
+preserves native Linux vector argument and result conventions in generated
+checked and async C entries.
+
 The [Source 2.292 / System 2.218 group dependency change](linux_checked_await_cancellation.md)
 rejects cycles spanning direct task waits and closed-group joins. Forced
 scope cleanup promptly retires an interrupted body wait.
