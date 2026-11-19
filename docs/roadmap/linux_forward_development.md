@@ -12,6 +12,17 @@ Concurrency diagnostics and identifies failed unsafe assertions around borrowed
 values without weakening their lifetime rejection.
 [Isolation and Sendable](linux_native_isolation_sendable.md)
 
+The defined Objective-C 3.0 v1 source backlog closes at Source 2.300 / System
+2.223 / keypath 2.14. Every normative profile-checklist implementation row is
+checked, Parts 3, 7 and 8 carry no open v1 issues, and the maintained module
+inventory now separates matching release evidence from source implementation.
+Effectful/isolated key paths have no v1 semantics. Part 8 explicitly leaves
+implicit managed-union active-arm cleanup to a future revision; raw borrowed or
+resource extraction outside an explicit lifetime owner remains a required
+rejection, not a missing convenience. Unbounded publication of every C++ vendor
+extension is likewise outside the specified v1 profile. These extensions do not
+block the Linux hard cutover.
+
 Source 2.299 makes unsafe admission of cleanup-managed resource wrappers
 explicitly auditable in Strict Concurrency, including resources nested in
 Optional/Result payloads, arrays, record fields and C++ bases.

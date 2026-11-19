@@ -9,6 +9,24 @@ import pytest
 from scripts.objc3c_toolchain import qualify_stdlib as qualification
 
 
+def test_partial_modules_track_release_evidence_not_undefined_extensions():
+    inventory_path = (Path(__file__).resolve().parents[2] /
+                      'stdlib/module_inventory.json')
+    inventory = json.loads(inventory_path.read_text())
+    partial = [row for row in inventory['canonical_modules']
+               if row['status'] == 'partial']
+    assert {row['module'] for row in partial} == {
+        'objc3.concurrency', 'objc3.keypath', 'objc3.system'
+    }
+    for module in partial:
+        remaining = module['remaining']
+        assert remaining and all('evidence' in item for item in remaining)
+        joined = ' '.join(remaining)
+        assert 'effectful and isolated paths' not in joined
+        assert 'implicit union active-arm ownership' not in joined
+        assert 'complete strict concurrency' not in joined
+
+
 @pytest.mark.parametrize('module,prefix', [
     ('objc3.core', 'OBJC3_STDLIB_VERSION'),
     ('objc3.keypath', 'OBJC3_KEYPATH_MODULE_SEMVER'),

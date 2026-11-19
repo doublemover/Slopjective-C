@@ -399,9 +399,7 @@
         "Explicit C++ aggregate/union lifetime crossings and static member entries, source/PCH materialized argument snapshots, recovered storage-hook diagnostics and dependent native-frame awaits rebuilt after substitution with required publication semantics (source authored; 32 new compiler commands and 296 native scenarios pass; frontend/package consolidation pending)"
       ],
       "remaining": [
-        "remaining spawn forms and supported-value ownership/cancellation acceptance beyond the implemented child, detached, group, direct-wait and generated C/Swift entry contracts",
-        "implicit managed-union and other storage crossings that lack an explicit native lifetime owner",
-        "remaining dependent/unnamed-type, dependent lookup, unmodeled-attribute and profile publication contracts"
+        "matching native SDK acceptance and profile evidence for the implemented Objective-C 3.0 v1 concurrency, ownership and source-package contracts"
       ]
     },
     {
@@ -438,8 +436,7 @@
         "Installed source-free package validation for typed key paths, including property, nullable, record, C++ resource and explicitly owned managed-union contracts"
       ],
       "remaining": [
-        "effectful and isolated paths",
-        "borrowed and raw-resource value semantics outside explicit native owner lifetimes; implicit union active-arm ownership"
+        "matching native SDK and profile evidence for the specified synchronous typed-key-path surface"
       ]
     },
     {
@@ -658,8 +655,7 @@
         "Closed synchronous generic C++ capture CFGs, merged per-instantiation owner/effect summaries and trivial union copy provenance (source)"
       ],
       "remaining": [
-        "remaining borrowed alias/escape and required diagnostic boundaries",
-        "complete strict-system diagnostics and ownership boundaries"
+        "matching native SDK and Strict System profile evidence for the implemented ownership and diagnostic boundaries"
       ]
     }
   ]

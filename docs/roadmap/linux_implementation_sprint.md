@@ -4,6 +4,11 @@ Source 2.300 closes the remaining Part 7 §7.8 diagnostic distinction for
 declaration/expression-managed resources and rejected unsafe borrowed wrappers.
 [Isolation and Sendable](linux_native_isolation_sendable.md)
 
+This closes the defined Objective-C 3.0 v1 source implementation backlog. The
+remaining module-inventory entries are exact-head SDK/profile evidence. Undefined
+effectful/isolated key paths, implicit managed-union cleanup and unbounded vendor
+C++ projection are future language design, not Linux cutover requirements.
+
 Source 2.299 retains cleanup/resource provenance through recursive Sendable
 classification and warns when `objc_unsafe_sendable` supplies the only admission
 for a resource-bearing transfer. [Isolation and Sendable](linux_native_isolation_sendable.md)
