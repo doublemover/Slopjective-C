@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.292 / System 2.218 group dependency change](linux_checked_await_cancellation.md)
+rejects cycles spanning direct task waits and closed-group joins. Forced
+scope cleanup promptly retires an interrupted body wait.
+
 The [Source 2.291 / System 2.217 Swift value bridge](linux_swift_consumer.md)
 extends checked and async overlays to pointer-free C structs with nested
 records, fixed enums and inline arrays.

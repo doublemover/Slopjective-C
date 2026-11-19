@@ -1602,6 +1602,164 @@ void test_task_dependency_cycle_rejection() {
   }
 }
 
+void test_cross_group_dependency_cycles() {
+  enum Scenario { DirectClosesCycle, JoinClosesCycle, TwoClosedGroups, Simultaneous,
+                  CancelledJoin, RetiredJoin };
+  for (auto scenario : {DirectClosesCycle, JoinClosesCycle, TwoClosedGroups, Simultaneous,
+                        CancelledJoin, RetiredJoin}) {
+    struct Frame {
+      objc3_task_group_t *group{};
+      objc3_task_t *dependency{};
+      std::barrier<> *start{};
+      objc3_service_status admission{OBJC3_SERVICE_NOT_READY};
+      objc3_service_status result{OBJC3_SERVICE_UNSUPPORTED_VERSION};
+      unsigned resumes{};
+      bool cancel_on_entry{};
+    };
+    std::barrier start(3);
+    std::array<Frame, 4> frames{};
+    std::array<objc3_task_t *, 4> tasks{};
+    std::array<objc3_executor_t *, 4> executors{};
+    for (size_t index = 0; index < tasks.size(); ++index) {
+      executors[index] = manual_executor();
+      auto &frame = frames[index];
+      frame.start = scenario == Simultaneous && index < 3 ? &start : nullptr;
+      frame.cancel_on_entry = scenario == CancelledJoin && index == 0;
+      objc3_task_start_options options{};
+      options.struct_size = sizeof(options);
+      options.version = OBJC3_SERVICE_ABI_VERSION;
+      options.executor = executors[index];
+      options.frame = &frame;
+      options.destroy = [](void *) {};
+      options.resume = [](objc3_task_t *task, void *opaque) {
+        auto &state = *static_cast<Frame *>(opaque);
+        if (++state.resumes == 1) {
+          if (state.start) state.start->arrive_and_wait();
+          if (state.cancel_on_entry) objc3_task_request_cancel(task);
+          if (state.group)
+            state.admission = objc3_task_group_await(state.group, task, &state.result);
+          else if (state.dependency)
+            state.admission = objc3_task_await(task, state.dependency);
+          if (state.group || state.dependency) {
+            if (state.admission == OBJC3_SERVICE_OK) return;
+            assert(state.admission == OBJC3_SERVICE_INVALID_ARGUMENT);
+            assert(state.result == OBJC3_SERVICE_UNSUPPORTED_VERSION);
+          }
+        } else if (state.dependency) {
+          objc3_completion dependency{};
+          assert(objc3_task_get_completion(state.dependency, &dependency) == OBJC3_SERVICE_OK);
+          assert(dependency.kind == OBJC3_COMPLETION_SUCCESS);
+        }
+        const objc3_completion success{sizeof(success), OBJC3_SERVICE_ABI_VERSION,
+            OBJC3_COMPLETION_SUCCESS, 0, nullptr, nullptr, nullptr, nullptr};
+        assert(objc3_task_complete(task, &success) == OBJC3_SERVICE_OK);
+      };
+      assert(objc3_task_start(&options, &tasks[index]) == OBJC3_SERVICE_OK);
+    }
+    objc3_task_group_t *outer = nullptr, *inner = nullptr, *rival = nullptr;
+    assert(objc3_task_group_create(nullptr, &outer) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_create(outer, &inner) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_add(inner, tasks[1]) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_add(outer, tasks[3]) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_close(inner) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_close(outer) == OBJC3_SERVICE_OK);
+    frames[0].group = outer;
+    frames[1].dependency = tasks[2];
+    if (scenario == TwoClosedGroups) {
+      assert(objc3_task_group_create(nullptr, &rival) == OBJC3_SERVICE_OK);
+      assert(objc3_task_group_add(rival, tasks[0]) == OBJC3_SERVICE_OK);
+      assert(objc3_task_group_close(rival) == OBJC3_SERVICE_OK);
+      frames[2].group = rival;
+    } else {
+      frames[2].dependency = tasks[0];
+    }
+
+    auto enter = [](objc3_executor_t *executor) {
+      uint32_t work = 0;
+      assert(objc3_executor_pump(executor, 1, &work) == OBJC3_SERVICE_OK && work == 1);
+    };
+    if (scenario == Simultaneous) {
+      std::array<std::thread, 3> threads{std::thread(enter, executors[0]),
+          std::thread(enter, executors[1]), std::thread(enter, executors[2])};
+      for (auto &thread : threads) thread.join();
+    } else if (scenario == JoinClosesCycle || scenario == CancelledJoin) {
+      enter(executors[1]);
+      enter(executors[2]);
+      enter(executors[0]);
+      assert(frames[0].admission == (scenario == JoinClosesCycle
+          ? OBJC3_SERVICE_INVALID_ARGUMENT : OBJC3_SERVICE_OK));
+    } else {
+      enter(executors[0]);
+      enter(executors[1]);
+      if (scenario == RetiredJoin) objc3_task_request_cancel(tasks[0]);
+      enter(executors[2]);
+      assert(frames[2].admission == (scenario == RetiredJoin
+          ? OBJC3_SERVICE_OK : OBJC3_SERVICE_INVALID_ARGUMENT));
+    }
+    enter(executors[3]);
+    for (size_t pass = 0; pass < tasks.size(); ++pass)
+      for (auto *executor : executors) {
+        uint32_t work = 0;
+        assert(objc3_executor_pump(executor, 1, &work) == OBJC3_SERVICE_OK);
+      }
+    unsigned rejected = 0;
+    for (size_t index = 0; index < tasks.size(); ++index) {
+      objc3_completion completion{};
+      assert(objc3_task_get_completion(tasks[index], &completion) == OBJC3_SERVICE_OK);
+      assert(completion.kind == OBJC3_COMPLETION_SUCCESS);
+      const auto &state = frames[index];
+      const bool invalid = state.admission == OBJC3_SERVICE_INVALID_ARGUMENT;
+      rejected += invalid;
+      assert(state.resumes == (invalid || index == 3 ? 1U : 2U));
+      objc3_task_release(tasks[index]);
+      objc3_executor_release(executors[index]);
+    }
+    const bool cancelled = scenario == CancelledJoin || scenario == RetiredJoin;
+    assert(rejected == (cancelled ? 0U : 1U));
+    if (frames[0].admission == OBJC3_SERVICE_OK)
+      assert(frames[0].result == (cancelled ? OBJC3_SERVICE_CANCELLED : OBJC3_SERVICE_OK));
+    assert(objc3_task_group_join(outer) == OBJC3_SERVICE_OK);
+    if (rival) assert(objc3_task_group_join(rival) == OBJC3_SERVICE_OK);
+    objc3_task_group_release(rival);
+    objc3_task_group_release(inner);
+    objc3_task_group_release(outer);
+  }
+}
+
+void test_forced_scope_join_retires_body_await() {
+  auto *executor = manual_executor();
+  std::atomic<int> dependency_destroyed{0};
+  auto *dependency = start_task(executor, new Frame{executor, 0, 0, false, &dependency_destroyed});
+  uint32_t work = 0;
+  assert(objc3_executor_pump(executor, 1, &work) == OBJC3_SERVICE_OK && work == 1);
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.frame = dependency;
+  options.destroy = [](void *) {};
+  options.resume = [](objc3_task_t *task, void *opaque) {
+    assert(objc3_task_group_scope_enter(task) == OBJC3_SERVICE_OK);
+    assert(objc3_task_await(task, static_cast<objc3_task_t *>(opaque)) == OBJC3_SERVICE_OK);
+  };
+  objc3_task_t *parent = nullptr;
+  assert(objc3_task_start(&options, &parent) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(executor, 1, &work) == OBJC3_SERVICE_OK && work == 1);
+  std::weak_ptr<objc3_task::AwaitTarget> ticket = parent->await_target;
+  assert(objc3::services::task_group_scope_abort(parent));
+  assert(objc3_executor_pump(executor, 4, &work) == OBJC3_SERVICE_OK);
+  objc3_completion completion{};
+  assert(objc3_task_get_completion(parent, &completion) == OBJC3_SERVICE_OK);
+  assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+  objc3_task_release(parent);
+  assert(ticket.expired());
+  assert(objc3_task_get_completion(dependency, &completion) == OBJC3_SERVICE_NOT_READY);
+  assert(dependency_destroyed == 0);
+  objc3_task_release(dependency);
+  assert(dependency_destroyed == 1);
+  objc3_executor_release(executor);
+}
+
 void noop_executor_callback(void *opaque) {
   ++*static_cast<std::atomic<int> *>(opaque);
 }
@@ -1978,6 +2136,8 @@ int main() {
   test_interrupted_group_waiters_release_registration();
   test_interrupted_dependency_waiters_release_registration();
   test_task_dependency_cycle_rejection();
+  test_cross_group_dependency_cycles();
+  test_forced_scope_join_retires_body_await();
   test_executor_admission_and_queue_saturation();
   test_saturated_resume_can_retry_without_lost_wakeup();
   test_refcount_saturation_fails_without_losing_ownership();

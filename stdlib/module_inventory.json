@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 291,
+        "minor": 292,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Closed-group joins and direct task waits share cycle admission. Nested members, two groups, simultaneous admission and interrupted registrations preserve pending outcomes across the native task-service controls. Matching SDK acceptance pending",
         "Generated Swift checked and async wrappers carry pointer-free C structs by value, including nested structs, fixed enums and inline arrays. Eight linked x86-64 configurations verify indirect aggregate results. Native AArch64 and archive acceptance pending",
         "Source-free C++ function and member templates preserve explicit constexpr on dependent closures returned by value, including captured unnamed records and C++23 parameterless spelling. Matching SDK acceptance pending",
         "Generated Swift 6.4.2 overlays expose typed native checked and async entries for scalars, fixed enums and void, including isolated actor calls through opaque receivers. Eight linked x86-64 configurations preserve native error identity, error destruction, cancellation and actor state. Native AArch64 and archive acceptance pending",
@@ -439,13 +440,14 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 217,
+        "minor": 218,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
         "Active task dependency cycle admission and terminal edge retirement share the published runtime registration. Matching SDK acceptance pending",
+        "Forced task-group scope finalization retires the prior ordinary body await before replacing it with a shielded cleanup continuation. The body registration is reclaimed while the previous external dependency is still suspended. Matching SDK acceptance pending",
         "Swift overlay publication checks every field in a by-value struct graph before crossing the foreign boundary. Its independent C publisher still accepts admitted native pointer fields that Swift transport rejects. Matching SDK acceptance pending",
         "Dependent returned closures keep their explicitly written constexpr, noexcept and captured record identity in published template bodies. Private provider instantiations do not change the package identity. Matching SDK acceptance pending",
         "The native compiler emits a Swift overlay and companion C header in the same publication transaction as object code. The independent Swift 6.4.2 clients retain the original checked errors beyond callback and autorelease scope. Native AArch64 and matching archive acceptance pending",

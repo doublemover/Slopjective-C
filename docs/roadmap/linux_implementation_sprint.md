@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.292 / System 2.218 group dependency change](linux_checked_await_cancellation.md)
+rejects cycles through nested and mutually waiting closed groups. Forced
+scope cleanup retires the body's registration before taking over its wait.
+
 The [Source 2.291 / System 2.217 Swift value bridge](linux_swift_consumer.md)
 passes pointer-free C records through generated checked and async wrappers.
 The independent Swift clients verify nested enum values and indirect returns.

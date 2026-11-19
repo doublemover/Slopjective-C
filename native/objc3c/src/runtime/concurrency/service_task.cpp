@@ -7,10 +7,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <unordered_set>
 #include <utility>
 
 namespace {
-// Protects AwaitTarget::waiting_dependency and serializes direct wait admission.
+// Protects AwaitTarget::waiting_dependencies and serializes wait admission.
 std::mutex task_dependency_graph;
 }
 
@@ -18,24 +19,18 @@ struct ObjC3TaskDependencyWaiter {
   enum class State { Pending, Linked, Detached };
 
   explicit ObjC3TaskDependencyWaiter(std::shared_ptr<objc3_task::AwaitTarget> target)
-      : dependency(std::move(target)) {}
+      : edges{std::move(target), {}} {}
 
-  const std::shared_ptr<objc3_task::AwaitTarget> dependency;
+  ObjC3TaskAwaitEdges edges;
   ObjC3TaskAwaitContinuation continuation;
   std::list<objc3_task::Waiter>::iterator position;
   State state{State::Pending}; // Protected by the dependency's task mutex.
 
-  void clear_dependency_path() const noexcept {
-    std::lock_guard<std::mutex> graph(task_dependency_graph);
-    auto &waiting = continuation.target->waiting_dependency;
-    if (waiting.lock().get() == this) waiting.reset();
-  }
-
   static void unlink(void *opaque) noexcept {
     auto &registration = *static_cast<ObjC3TaskDependencyWaiter *>(opaque);
-    registration.clear_dependency_path();
-    std::lock_guard<std::mutex> lifetime(registration.dependency->mutex);
-    if (auto *task = registration.dependency->task) {
+    const auto &dependency = registration.edges.direct;
+    std::lock_guard<std::mutex> lifetime(dependency->mutex);
+    if (auto *task = dependency->task) {
       std::lock_guard<std::mutex> lock(task->mutex);
       if (registration.state == State::Linked)
         task->waiters.erase(registration.position);
@@ -100,16 +95,35 @@ objc3_async_result_type_equal(const objc3_async_result_type *left,
 }
 
 namespace {
-bool dependency_reaches(std::shared_ptr<objc3_task::AwaitTarget> node,
-                        const std::shared_ptr<objc3_task::AwaitTarget> &target) {
-  while (node != target) {
-    auto registration = node->waiting_dependency.lock();
-    if (!registration) return false;
-    node = registration->dependency;
+using AwaitTarget = objc3_task::AwaitTarget;
+
+bool group_dependencies_reach(const ObjC3TaskAwaitEdges &start, const AwaitTarget *target) {
+  auto pending = start.members;
+  std::unordered_set<const AwaitTarget *> visited;
+  while (!pending.empty()) {
+    auto node = std::move(pending.back());
+    pending.pop_back();
+    if (node.get() == target) return true;
+    if (!visited.insert(node.get()).second) continue;
+    const auto edges = node->waiting_dependencies.lock();
+    if (!edges || !edges->active.load(std::memory_order_acquire)) continue;
+    if (edges->direct) pending.push_back(edges->direct);
+    else pending.insert(pending.end(), edges->members.begin(), edges->members.end());
   }
-  return true;
+  return false;
 }
 
+bool dependency_reaches(const ObjC3TaskAwaitEdges &start, const AwaitTarget *target) {
+  if (!start.direct) return group_dependencies_reach(start, target);
+  // Ordinary chains stay allocation-free. Only a closed-group edge branches.
+  for (auto node = start.direct;;) {
+    if (node.get() == target) return true;
+    const auto edges = node->waiting_dependencies.lock();
+    if (!edges || !edges->active.load(std::memory_order_acquire)) return false;
+    if (!edges->direct) return group_dependencies_reach(*edges, target);
+    node = edges->direct;
+  }
+}
 
 thread_local objc3_task_t *current_service_task = nullptr;
 
@@ -267,8 +281,8 @@ void wake_awaiting_task(objc3_task_t *task, bool force_cancel) noexcept {
 }
 
 void dependency_completed(void *context, const objc3_completion *) {
-  const auto &registration = *static_cast<ObjC3TaskDependencyWaiter *>(context);
-  registration.clear_dependency_path();
+  auto &registration = *static_cast<ObjC3TaskDependencyWaiter *>(context);
+  registration.edges.active.store(false, std::memory_order_release);
   objc3_task_finish_await(registration.continuation);
 }
 
@@ -474,6 +488,7 @@ objc3_task::AwaitTarget::~AwaitTarget() {
 }
 
 objc3_task_t::~objc3_task() {
+  objc3_task_retire_await_edges_locked(this);
   if (await_target) {
     std::lock_guard<std::mutex> lock(await_target->mutex);
     await_target->task = nullptr;
@@ -843,6 +858,7 @@ bool mark_cancel_tree(const CancellationTarget &root) {
         task->await_result_task = nullptr;
         task->awaiting = false;
         task->await_cancellation_shielded = false;
+        objc3_task_retire_await_edges_locked(task);
         if (task->await_retirement.ticket)
           task->cancel_retirement = std::exchange(task->await_retirement, {});
         task->cancel_wake_pending = true;
@@ -1046,6 +1062,7 @@ extern "C" objc3_service_status objc3_task_complete(
     task->cancel_after_cleanup = false;
     task->await_status = nullptr;
     task->await_result_task = nullptr;
+    objc3_task_retire_await_edges_locked(task);
     retirement = std::exchange(task->await_retirement, {});
     cancelled_retirement = std::exchange(task->cancel_retirement, {});
     task->completion_claimed = false;
@@ -1155,10 +1172,13 @@ objc3_service_status objc3_task_add_group_observers(
 objc3_service_status objc3_task_prepare_await(
     objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
     objc3_service_status *status, objc3_task_t **result_task,
-    bool cancellation_shielded, ObjC3TaskAwaitRetirement retirement) {
+    bool cancellation_shielded, ObjC3TaskAwaitRetirement retirement,
+    std::shared_ptr<ObjC3TaskAwaitEdges> edges) {
   if (!parent || current_service_task != parent)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   try {
+    std::unique_lock<std::mutex> graph(task_dependency_graph, std::defer_lock);
+    if (edges) graph.lock();
     std::lock_guard<std::mutex> lock(parent->mutex);
     if (parent->terminal || parent->completion_claimed)
       return OBJC3_SERVICE_ALREADY_COMPLETED;
@@ -1171,6 +1191,13 @@ objc3_service_status objc3_task_prepare_await(
       return OBJC3_SERVICE_NOT_READY;
     if (!parent->await_target)
       parent->await_target = std::make_shared<objc3_task::AwaitTarget>(parent);
+    if (edges && (cancellation_shielded || !objc3_task_is_cancel_requested(parent))) {
+      if (dependency_reaches(*edges, parent->await_target.get()))
+        return OBJC3_SERVICE_INVALID_ARGUMENT;
+      edges->active.store(true, std::memory_order_release);
+      parent->await_target->waiting_dependencies = edges;
+      parent->await_edges = std::move(edges);
+    }
     continuation = {parent->await_target, ++parent->await_generation};
     parent->await_status = status;
     parent->await_result_task = result_task;
@@ -1212,6 +1239,7 @@ ObjC3TaskAwaitClaim objc3_task_claim_await(
       parent->await_result_task = nullptr;
       parent->awaiting = false;
       parent->await_cancellation_shielded = false;
+      objc3_task_retire_await_edges_locked(parent);
       parent->await_retirement = {};
       claim.cancel_after_cleanup = std::exchange(parent->cancel_after_cleanup, false);
       parent->continuation_owner = std::move(continuation_owner);
@@ -1250,17 +1278,11 @@ extern "C" objc3_service_status objc3_task_await(
     registration = std::make_shared<Registration>(dependency->await_target);
     waiter.push_back({dependency_completed, registration.get(), registration});
   } catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
-  {
-    std::lock_guard<std::mutex> graph(task_dependency_graph);
-    const bool cancelled = objc3_task_is_cancel_requested(parent);
-    if (!cancelled && dependency_reaches(registration->dependency, parent->await_target))
-      return OBJC3_SERVICE_INVALID_ARGUMENT;
-    const auto preparation = objc3_task_prepare_await(
-        parent, registration->continuation, nullptr, nullptr, false,
-        {registration, Registration::unlink});
-    if (preparation != OBJC3_SERVICE_OK) return preparation;
-    if (!cancelled) registration->continuation.target->waiting_dependency = registration;
-  }
+  auto edges = std::shared_ptr<ObjC3TaskAwaitEdges>(registration, &registration->edges);
+  const auto preparation = objc3_task_prepare_await(
+      parent, registration->continuation, nullptr, nullptr, false,
+      {registration, Registration::unlink}, std::move(edges));
+  if (preparation != OBJC3_SERVICE_OK) return preparation;
   objc3_completion borrowed{};
   bool call_now = false;
   {
@@ -1284,7 +1306,7 @@ extern "C" objc3_service_status objc3_task_await(
   }
   if (call_now) invoke_waiters(dependency, waiter, borrowed);
   else {
-    registration->clear_dependency_path();
+    registration->edges.active.store(false, std::memory_order_release);
     objc3_task_finish_await(registration->continuation);
   }
   return OBJC3_SERVICE_OK;

@@ -296,6 +296,15 @@ bool closed_tree_locked(const TaskGroup *group) {
   return true;
 }
 
+void snapshot_join_dependencies_locked(const TaskGroup *group, ObjC3TaskAwaitEdges &edges) {
+  for (const auto &entry : group->tasks)
+    edges.members.push_back(entry.task->await_target);
+  for (auto *child : group->children) {
+    std::lock_guard<std::mutex> lock(child->mutex);
+    snapshot_join_dependencies_locked(child, edges);
+  }
+}
+
 // The immutable closed tree uses the same parent-to-child lock order as group
 // cancellation. Failure wins over pending work, so an observer never remains
 // unreachable after failure-publication resource exhaustion.
@@ -1027,11 +1036,20 @@ objc3_service_status await_group(TaskGroup *group, objc3_task_t *parent,
     const auto state = cleanup ? cleanup_join_state_locked(group)
                                : join_state_locked(group);
     if (state == JoinState::Failed) waiter.status = OBJC3_SERVICE_NOT_READY;
+    std::shared_ptr<ObjC3TaskAwaitEdges> edges;
+    if (state == JoinState::Pending && (cleanup || !objc3_task_is_cancel_requested(parent))) {
+      try {
+        edges = std::make_shared<ObjC3TaskAwaitEdges>();
+        snapshot_join_dependencies_locked(group, *edges);
+      } catch (...) {
+        return OBJC3_SERVICE_OUT_OF_MEMORY;
+      }
+    }
     // Nodes, optional ownership and control blocks already exist. Splice and
     // prepare publish exactly one suspension owner without fallible work after.
     const auto status = objc3_task_prepare_await(
         parent, waiter.continuation, out_status, nullptr, cleanup,
-        {waiter.retirement, Registration::unlink});
+        {waiter.retirement, Registration::unlink}, std::move(edges));
     if (status != OBJC3_SERVICE_OK) return status;
     // Check after publishing suspension so cancellation either sees this
     // waiter or is already visible to the registering task.
@@ -1234,6 +1252,7 @@ objc3_service_status task_group_scope_finish(objc3_task_t *parent, bool cancel,
 
 bool task_group_scope_abort(objc3_task_t *parent) noexcept {
   std::shared_ptr<ObjC3TaskGroupScope> scope;
+  ObjC3TaskAwaitRetirement interrupted;
   bool arm;
   bool earlier_cleanup = false;
   {
@@ -1251,9 +1270,14 @@ bool task_group_scope_abort(objc3_task_t *parent) noexcept {
     } else {
       parent->group_scope_forced = true;
       arm = !parent->group_scope_joining;
-      if (arm) prepare_scope_join_locked(parent, nullptr);
+      if (arm) {
+        interrupted = std::exchange(parent->await_retirement, {});
+        objc3_task_retire_await_edges_locked(parent);
+        prepare_scope_join_locked(parent, nullptr);
+      }
     }
   }
+  interrupted.retire();
   objc3_task_request_cancel(parent);
   if (earlier_cleanup) return true;
   close_scope_tree(scope->group);

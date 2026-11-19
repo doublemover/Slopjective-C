@@ -69,3 +69,16 @@ cancellation follows its cancellation continuation without adding an edge.
 Three native controls cover sequential and simultaneous cycle formation and the
 pre-cancelled closing wait. The tasks admitted before the rejected edge retain
 their normal dependency completion and executor behavior.
+
+Source 2.292 / System 2.218 checks the same dependency graph when a task
+joins a closed group. The join snapshots its nested membership before
+suspending, so admission can reject a cycle through a direct wait or
+another closed group. Rejection leaves the frame's status slot untouched.
+Completion and cancellation retire the active edges independently of the
+observer ticket. Forced scope cleanup also unlinks a previous body wait
+before installing its reserved cleanup continuation.
+
+Native controls exercise both closing-edge orders, simultaneous admission,
+two groups, pre-cancellation and cancellation after registration. A forced
+cleanup witness verifies that the old waiting task is reclaimed while its
+external dependency is still suspended.

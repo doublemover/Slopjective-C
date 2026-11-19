@@ -14,6 +14,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace objc3::services {
@@ -64,6 +65,7 @@ struct ObjC3TaskQuiescenceObserver {
 
 struct ObjC3TaskGroupScope;
 struct ObjC3TaskDependencyWaiter;
+struct ObjC3TaskAwaitEdges;
 
 // The retirement context owns a registration ticket, independent of the
 // source task and awaited owner. Unlink only after dropping task locks.
@@ -87,7 +89,7 @@ struct objc3_task final {
     size_t structured_index{0};
     std::vector<std::weak_ptr<AwaitTarget>> structured_children;
     // Task dependency graph edges never own the frame or registration.
-    std::weak_ptr<ObjC3TaskDependencyWaiter> waiting_dependency;
+    std::weak_ptr<ObjC3TaskAwaitEdges> waiting_dependencies;
     explicit AwaitTarget(objc3_task_t *value) : task(value) {}
     ~AwaitTarget();
   };
@@ -142,6 +144,7 @@ struct objc3_task final {
   objc3_service_status *await_status{nullptr};
   objc3_task_t **await_result_task{nullptr};
   std::shared_ptr<AwaitTarget> await_target;
+  std::shared_ptr<ObjC3TaskAwaitEdges> await_edges;
   ObjC3TaskAwaitRetirement await_retirement;
   ObjC3TaskAwaitRetirement cancel_retirement;
   std::shared_ptr<void> continuation_owner;
@@ -194,10 +197,23 @@ struct ObjC3TaskAwaitContinuation {
   std::shared_ptr<objc3_task::AwaitTarget> target;
   uint64_t generation{0};
 };
+// A direct wait owns one target token. A closed group join owns a snapshot of
+// its members, whose completion is jointly required. No token owns a task.
+struct ObjC3TaskAwaitEdges {
+  std::shared_ptr<objc3_task::AwaitTarget> direct;
+  std::vector<std::shared_ptr<objc3_task::AwaitTarget>> members;
+  std::atomic<bool> active{false};
+};
+// Called with the task state lock, or after exclusive destruction begins.
+inline void objc3_task_retire_await_edges_locked(objc3_task_t *task) noexcept {
+  if (auto edges = std::move(task->await_edges))
+    edges->active.store(false, std::memory_order_release);
+}
 objc3_service_status objc3_task_prepare_await(
     objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
     objc3_service_status *status = nullptr, objc3_task_t **result_task = nullptr,
-    bool cancellation_shielded = false, ObjC3TaskAwaitRetirement retirement = {});
+    bool cancellation_shielded = false, ObjC3TaskAwaitRetirement retirement = {},
+    std::shared_ptr<ObjC3TaskAwaitEdges> edges = {});
 struct ObjC3TaskAwaitClaim {
   objc3_task_t *parent{nullptr};
   bool wake{false};
