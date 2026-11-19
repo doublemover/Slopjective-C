@@ -31,6 +31,20 @@ def checkout(path: Path, url: str, revision: str, tag: str, fetch: bool, *, allo
         raise ValueError(f"pinned runtime dependency is dirty: {path}; preserving it")
 
 
+def runtime_profile(repo: Path, host: str) -> dict:
+    return json.loads((repo / "scripts/objc3c_toolchain_runtime/runtime-profile.json").read_text())["profiles"][host]
+
+
+def runtime_sources(repo: Path, profile: dict, *, fetch: bool) -> tuple[Path, Path]:
+    source = repo / "out/toolchains/libobjc2-v2.3/src"
+    robin = repo / f"out/toolchains/robin-map-{profile['robin_map_release']}/src"
+    checkout(source, profile["runtime_source"], profile["runtime_commit"], "v" + profile["runtime_release"], fetch,
+             allow_owned_changes=True)
+    prepare_source(repo, source, profile)
+    checkout(robin, profile["robin_map_source"], profile["robin_map_commit"], profile["robin_map_release"], fetch)
+    return source, robin
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=ROOT)
@@ -47,9 +61,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("native Linux, a compiler root, and a positive job count are required")
     repo = args.repo.resolve()
     native_host = native_linux_host()
-    profile = json.loads((repo / "scripts/objc3c_toolchain_runtime/runtime-profile.json").read_text())["profiles"][native_host]
-    source = repo / "out/toolchains/libobjc2-v2.3/src"
-    robin = repo / f"out/toolchains/robin-map-{profile['robin_map_release']}/src"
+    profile = runtime_profile(repo, native_host)
     bin_dir = args.compiler_root.resolve() / "bin"
     for tool in ('clang', 'clang++', 'ld.lld'):
         require_elf(bin_dir / tool)
@@ -75,10 +87,7 @@ def main(argv: list[str] | None = None) -> int:
               "started_utc": datetime.now(timezone.utc).isoformat(),
               "configuration": configuration, "build_key": build_key, "source_commit": profile["runtime_commit"], "robin_map_commit": profile["robin_map_commit"]}
     try:
-        checkout(source, profile["runtime_source"], profile["runtime_commit"], "v" + profile["runtime_release"], args.fetch,
-                 allow_owned_changes=True)
-        prepare_source(repo, source, profile)
-        checkout(robin, profile["robin_map_source"], profile["robin_map_commit"], profile["robin_map_release"], args.fetch)
+        source, robin = runtime_sources(repo, profile, fetch=args.fetch)
         build.mkdir(parents=True, exist_ok=True)
         link_flags = "-fuse-ld=lld"
         if args.sanitizer:

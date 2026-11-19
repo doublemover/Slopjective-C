@@ -96,6 +96,42 @@ def test_dependency_symbol_probe_uses_owned_environment(tmp_path, monkeypatch):
     assert len(calls) == 1
 
 
+def test_runtime_sources_are_prepared_before_the_scrubbed_build(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain_runtime import build_linux
+
+    root = tmp_path / 'tools'
+    resource = root / 'lib/clang/23'
+    resource.mkdir(parents=True)
+    compiler, symbolizer = root / 'bin/clang++', root / 'bin/llvm-symbolizer'
+    library = tmp_path / 'stage/lib/libobjc.so'
+    library.parent.mkdir(parents=True)
+    library.touch()
+    monkeypatch.setenv('HTTPS_PROXY', 'http://localhost:4123')
+    monkeypatch.setattr(profiles, '_tools', lambda *args: {
+        'compiler': compiler, 'symbolizer': symbolizer, 'cmake': compiler,
+        'ninja': compiler, 'nm': compiler})
+    monkeypatch.setattr(build_linux, 'runtime_profile', lambda repo, host: {'host': host})
+    acquired = []
+
+    def prepare(repo, profile, *, fetch):
+        assert fetch and os.environ['HTTPS_PROXY'] == 'http://localhost:4123'
+        acquired.append(repo)
+
+    def build(argv, **kwargs):
+        assert acquired == [tmp_path] and '--fetch' not in argv
+        assert 'HTTPS_PROXY' not in kwargs['env'] and 'halt_on_error=1' in kwargs['env']['ASAN_OPTIONS']
+        argv[-1].write_text(json.dumps({'stage': str(library.parent.parent)}))
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr(build_linux, 'runtime_sources', prepare)
+    monkeypatch.setattr(profiles.subprocess, 'run', build)
+    monkeypatch.setattr(profiles, '_matching_objc_runtime', lambda *args, **kwargs: None)
+    owner = profiles.RuntimeProfiles(tmp_path, root, resource, tmp_path / 'out/qualification')
+    assert owner._dependency('address,undefined', None) == library
+    assert owner._dependency('address,undefined', None) == library
+    assert acquired == [tmp_path]
+
+
 def test_installed_compiler_config_isolates_explicit_sanitizer_resource(tmp_path):
     compiler = tmp_path / 'sdk'
     (compiler / 'bin').mkdir(parents=True)

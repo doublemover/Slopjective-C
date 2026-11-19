@@ -20,6 +20,7 @@ import sys
 import time
 
 from .binary_packages import digest, disjoint, write_json
+from .linux_host import native_linux_host
 from .sanitizer_policy import strict_environment
 
 
@@ -118,6 +119,8 @@ class RuntimeProfiles:
         if requested is not None:
             dependency = requested.resolve(strict=True)
         else:
+            from scripts.objc3c_toolchain_runtime.build_linux import runtime_profile, runtime_sources
+
             self.output.mkdir(parents=True, exist_ok=True)
             label = sanitizer.replace(',', '-')
             report = self.output / ('gnustep-'+label+'.json')
@@ -128,6 +131,10 @@ class RuntimeProfiles:
             lock.parent.mkdir(parents=True, exist_ok=True)
             with lock.open('a') as held, log.open('w') as stream:
                 fcntl.flock(held, fcntl.LOCK_EX)
+                # Git uses the host's network configuration for missing
+                # sources. The build revalidates those pins in its scrubbed
+                # instrumentation environment without network acquisition.
+                runtime_sources(self.repo, runtime_profile(self.repo, native_linux_host()), fetch=True)
                 result = subprocess.run([sys.executable, '-B', '-m',
                     'scripts.objc3c_toolchain_runtime.build_linux', '--repo', self.repo,
                     '--compiler-root', self.resource.parents[2], '--sanitizer', sanitizer,

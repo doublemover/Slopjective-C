@@ -108,6 +108,11 @@ the archive producer succeeds. They run alongside the remaining native and
 analysis owners. The terminal release job requires the native gate, both fresh
 installs and implementation analysis to pass on the selected host.
 
+On a fresh runner the runtime instrumentation owner acquires the pinned GNUstep
+and robin-map sources using the host Git configuration. The instrumented build
+revalidates their commits and checked patches with the scrubbed environment and
+uses the local source cache. The same lock covers acquisition and compilation.
+
 Failed foundation commands now print a bounded recent log excerpt in the job
 output. The complete logs and their hashes remain in the diagnostic artifacts.
 
