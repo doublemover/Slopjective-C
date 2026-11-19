@@ -1465,7 +1465,7 @@ diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/cl
 index 2cb79b6ba..603ac6e0f 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -11,7 +11,135 @@
+@@ -11,7 +11,138 @@
  //===----------------------------------------------------------------------===//
  
  let Component = "Sema" in {
@@ -1502,6 +1502,9 @@ index 2cb79b6ba..603ac6e0f 100644
 +  InGroup<DiagGroup<"objc3-sendable">>;
 +def note_objc3_unchecked_sendable : Note<
 +  "unchecked concurrency transfer of %0 relies on objc_unsafe_sendable">;
++def warn_objc3_unchecked_sendable_resource : Warning<
++  "concurrency transfer of resource-bearing type %0 is user-asserted by objc_unsafe_sendable and not compiler-proven">,
++  InGroup<DiagGroup<"objc3-sendable">>;
 +def note_objc3_sendable_boundary : Note<
 +  "concurrency boundary is declared here">;
 +def note_objc3_sendable_capture : Note<
@@ -54175,7 +54178,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4628 @@
+@@ -0,0 +1,4676 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54254,6 +54257,7 @@ new file mode 100644
 +  bool Safe = false;
 +  bool Unchecked = false;
 +  bool Borrowed = false;
++  bool Resource = false;
 +};
 +bool carriesManagedResourceValue(ASTContext &, const Expr *, const Stmt * = nullptr,
 +                                  const VarDecl * = nullptr, Sema * = nullptr, bool = false,
@@ -54280,51 +54284,67 @@ new file mode 100644
 +    bool Unchecked = unsafeAdmission(C, T);
 +    bool Resource = getObjC3ResourceTypeContract(C, T).Cleanup;
 +    if (Resource && !Unchecked)
-+      return {};
++      return {false, false, false, true};
 +    if (T->isReferenceType())
 +      return {};
 +    if (T->isDependentType())
-+      return {true, false};
++      return {true, Resource, false, Resource};
 +    if (T->isVoidType())
-+      return {true, false};
-+    if (const auto *Optional = T->getAs<ObjC3OptionalType>())
-+      return classify(Optional->getElementType());
++      return {true, Resource, false, Resource};
++    if (const auto *Optional = T->getAs<ObjC3OptionalType>()) {
++      auto Part = classify(Optional->getElementType());
++      if (Part.Borrowed)
++        return Part;
++      return {Part.Safe || Unchecked,
++              Part.Unchecked || (!Part.Safe && Unchecked), false,
++              Part.Resource || Resource};
++    }
 +    if (const auto *Result = T->getAs<ObjC3ResultType>()) {
 +      auto A = classify(Result->getSuccessType());
 +      auto B = classify(Result->getErrorType());
-+      return {A.Safe && B.Safe, A.Unchecked || B.Unchecked,
-+              A.Borrowed || B.Borrowed};
++      bool Borrowed = A.Borrowed || B.Borrowed;
++      bool Safe = A.Safe && B.Safe;
++      return {!Borrowed && (Safe || Unchecked),
++              A.Unchecked || B.Unchecked || (!Safe && Unchecked), Borrowed,
++              A.Resource || B.Resource || Resource};
 +    }
-+    if (const auto *Array = C.getAsArrayType(T))
-+      return classify(Array->getElementType());
++    if (const auto *Array = C.getAsArrayType(T)) {
++      auto Part = classify(Array->getElementType());
++      if (Part.Borrowed)
++        return Part;
++      return {Part.Safe || Unchecked,
++              Part.Unchecked || (!Part.Safe && Unchecked), false,
++              Part.Resource || Resource};
++    }
 +    // Class metadata is immutable; transferring a Class value does not transfer
 +    // an instance or attest the instance type's Sendable conformance.
-+    if (T->isObjCClassType())return {true, false};
++    if (T->isObjCClassType())return {true, Resource, false, Resource};
 +    if (const auto *Object = T->getAs<ObjCObjectPointerType>()) {
 +      if (isObjC3Actor(Object->getInterfaceDecl()))
-+        return {true, false};
++        return {true, Resource, false, Resource};
 +      llvm::SmallPtrSet<const ObjCProtocolDecl *, 16> Protocols;
 +      for (const auto *P : Object->quals())
 +        if (protocolIsSendable(P, Protocols))
-+          return {true, false};
++          return {true, Resource, false, Resource};
 +      for (const auto *I = Object->getInterfaceDecl(); I;
 +           I = I->getSuperClass())
 +        for (const auto *P : I->all_referenced_protocols())
 +          if (protocolIsSendable(P, Protocols))
-+            return {true, false};
-+      return {Unchecked, Unchecked};
++            return {true, Resource, false, Resource};
++      return {Unchecked, Unchecked, false, Resource};
 +    }
 +    // A block's type cannot attest its capture set. Literal checking below
 +    // reasons about capture provenance rather than accepting all block types.
 +    if (T->isBlockPointerType())
-+      return {Unchecked, Unchecked};
++      return {Unchecked, Unchecked, false, Resource};
 +    if (const auto *Record = T->getAs<RecordType>()) {
 +      const auto *Definition = Record->getDecl()->getDefinition();
 +      if (!Definition)
-+        return {Unchecked, Unchecked};
++        return {Unchecked, Unchecked, false, Resource};
 +      if (!Active.insert(Record).second)
 +        return {};
 +      bool Safe = true, ReliesOnPromise = Resource;
++      bool ResourceBearing = Resource;
 +      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition)) {
 +        // An implicit ARC destructor only releases the fields checked below.
 +        // User-provided destruction still needs explicit unsafe admission.
@@ -54392,6 +54412,7 @@ new file mode 100644
 +        }
 +        Safe &= Part.Safe;
 +        ReliesOnPromise |= Part.Unchecked;
++        ResourceBearing |= Part.Resource;
 +      }
 +      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
 +        for (const auto &Base : Class->bases()) {
@@ -54402,14 +54423,16 @@ new file mode 100644
 +          }
 +          Safe &= Part.Safe;
 +          ReliesOnPromise |= Part.Unchecked;
++          ResourceBearing |= Part.Resource;
 +        }
 +      Active.erase(Record);
-+      return {Safe || Unchecked, ReliesOnPromise || (!Safe && Unchecked)};
++      return {Safe || Unchecked, ReliesOnPromise || (!Safe && Unchecked),
++              false, ResourceBearing};
 +    }
 +    // C scalars (including raw non-borrowed pointers) and enums are value-like.
 +    if (T->isScalarType() || T->isVectorType())
-+      return {true, Resource};
-+    return {Unchecked, Unchecked};
++      return {true, Resource, false, Resource};
++    return {Unchecked, Unchecked, false, Resource};
 +  }
 +};
 +
@@ -54431,6 +54454,9 @@ new file mode 100644
 +  if (strictConcurrency(S) && (Classification.Unchecked || ForceUnsafe) &&
 +      !S.getDiagnostics().getSuppressAllDiagnostics() &&
 +      !S.getDiagnostics().hasFatalErrorOccurred()) {
++    if (Classification.Resource)
++      S.getDiagnostics().Report(Loc,
++          diag::warn_objc3_unchecked_sendable_resource) << T;
 +    // This is a required standalone transfer note, not a child of a preceding
 +    // warning. Emit it even when the previous diagnostic was suppressed.
 +    S.getDiagnostics().Report(Loc, diag::note_objc3_unchecked_sendable)

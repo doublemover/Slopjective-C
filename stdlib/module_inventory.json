@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 298,
+        "minor": 299,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Strict Concurrency recursively preserves cleanup/resource provenance through Optional, Result, arrays, fields and bases. Unsafe admission of a resource-bearing wrapper emits both the required unchecked-transfer note and an additional user-asserted/not-compiler-proven warning. Matching SDK acceptance pending",
         "Strict Concurrency checks group-only structured callback parameters carrying native async Blocks, function pointers or C++ callable/task factories. Non-Sendable captures and opaque Block environments reject while independent scalar group configuration remains synchronous. Matching SDK acceptance pending",
         "Implicit task-group scopes admit membership through the same dependency graph as direct task waits and closed-group joins. A late or simultaneous membership cannot close a cycle, and finalization uses its reserved waiter. Matching SDK acceptance pending",
         "Native DWARF treats isolated and nonisolated implicit actor receivers as object pointers, with C and C++ ARC/MRC controls for x86-64 and AArch64. Matching SDK acceptance pending",

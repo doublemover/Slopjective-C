@@ -1,5 +1,11 @@
 # Native Linux isolation and Sendable contracts
 
+Source 2.299 preserves cleanup/resource provenance through recursive Sendable
+classification. When an unsafe wrapper admits a cleanup-managed handle, strict
+mode emits the required unchecked-transfer note and an additional warning that
+the resource transfer is user-asserted rather than compiler-proven. Borrowed
+lifetime failures remain non-waivable.
+
 Source 2.298 extends Strict Concurrency transfer checking to group-only
 structured callback parameters. Native async Blocks, function pointers and C++
 callable/task factories carry their actual captures through the same bounded
@@ -161,7 +167,10 @@ Borrowed type markers are rejected before unsafe admission. Borrowed fields and
 bases propagate a non-waivable failure through nested wrappers, including a
 wrapper marked `objc_unsafe_sendable`. Resource/cleanup contracts remain
 non-Sendable unless the type provides explicit admission; successful reliance
-on unsafe admission produces a strict transfer-site note.
+on unsafe admission produces a strict transfer-site note. Cleanup/resource
+provenance propagates through Optional and Result payloads, arrays, record fields
+and C++ bases; an accepted resource-bearing wrapper also produces the Part 7
+user-asserted/not-compiler-proven warning.
 
 Enforcement covers cross-isolation arguments, logical results and typed errors;
 nonisolated actor signatures; and recognized child/detached API work-item
@@ -196,7 +205,8 @@ instead of selecting an arbitrary global method-pool candidate.
 
 `tests/clang_foundation/isolation_contracts_test.cpp` and its native CMake target
 cover C17 and Objective-C++20/23, ARC/MRC, same-actor/executor proof, actor storage,
-nonisolated signatures, strict transfer diagnostics, unsafe notes, recursive
+nonisolated signatures, strict transfer diagnostics, unsafe notes and
+resource-bearing unsafe warnings, recursive
 borrowed/resource aggregates, direct and macro spawn captures, metadata-erasing
 pointers, source-free interface reconstruction, PCH serialization, native AST
 import conflicts, and ODR hash identity. The native C async diagnostics fixture

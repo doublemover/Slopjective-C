@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+Source 2.299 retains cleanup/resource provenance through recursive Sendable
+classification and warns when `objc_unsafe_sendable` supplies the only admission
+for a resource-bearing transfer. [Isolation and Sendable](linux_native_isolation_sendable.md)
+
 Source 2.298 checks group-only structured callback parameters with the same
 bounded Sendable capture proof used by child and detached entry while leaving
 non-work group configuration synchronous. [Isolation and Sendable](linux_native_isolation_sendable.md)

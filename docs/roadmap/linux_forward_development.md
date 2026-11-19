@@ -7,6 +7,11 @@ Ninja dependency owners, including selected precompiled headers. The terminal
 job binds all partitions to the producer's archive SHA-256 and verifies the
 complete disjoint variant inventory. The shared archive expires after one day.
 
+Source 2.299 makes unsafe admission of cleanup-managed resource wrappers
+explicitly auditable in Strict Concurrency, including resources nested in
+Optional/Result payloads, arrays, record fields and C++ bases.
+[Isolation and Sendable](linux_native_isolation_sendable.md)
+
 Source 2.298 checks group-only structured callback transfers under Strict
 Concurrency without treating independent scalar configuration arguments as
 concurrent values. The bounded Block/factory proof is shared with child and

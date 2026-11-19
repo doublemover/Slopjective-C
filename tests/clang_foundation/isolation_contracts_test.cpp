@@ -277,6 +277,36 @@ typedef struct ResourcePacket { Handle handle; } ResourcePacket;
 @end
 )"),
          "non-Sendable type");
+  auto UnsafeResource = Compile(Make(Root.str() + R"(
+void close_handle(int);
+typedef int Handle __attribute__((objc_requires_cleanup(close_handle)));
+typedef struct ResourceLeaf { Handle handles[2]; } ResourceLeaf;
+typedef struct __attribute__((objc_unsafe_sendable)) ResourcePacket {
+  ResourceLeaf nested;
+} ResourcePacket;
+@interface Counter (UnsafeResources)
+- (ResourcePacket)resource __attribute__((objc_nonisolated));
+@end
+)"));
+  Success(UnsafeResource);
+  assert(Has(UnsafeResource, "relies on objc_unsafe_sendable"));
+  assert(Has(UnsafeResource, "resource-bearing type"));
+  assert(Has(UnsafeResource, "user-asserted"));
+  assert(Has(UnsafeResource, "not compiler-proven"));
+  if (Cxx) {
+    auto UnsafeResourceBase = Compile(Make(Root.str() + R"(
+void close_handle(int);
+typedef int Handle __attribute__((objc_requires_cleanup(close_handle)));
+struct ResourceBase { Handle handle; };
+struct __attribute__((objc_unsafe_sendable)) ResourceDerived : ResourceBase {};
+@interface Counter (UnsafeResourceBases)
+- (ResourceDerived)resourceBase __attribute__((objc_nonisolated));
+@end
+)"));
+    Success(UnsafeResourceBase);
+    assert(Has(UnsafeResourceBase, "resource-bearing type"));
+    assert(Has(UnsafeResourceBase, "not compiler-proven"));
+  }
   Reject(Make(Root.str() + R"(
 typedef struct BorrowPacket { borrowed int *pointer; } BorrowPacket;
 typedef struct __attribute__((objc_unsafe_sendable)) OuterPacket { BorrowPacket inner; } OuterPacket;
