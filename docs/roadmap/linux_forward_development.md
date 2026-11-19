@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.283 / System 2.209 consumed C arguments](linux_async_c_completion_exports.md)
+preserve the C caller's borrowed references while native checked, async and
+isolated callees receive their own object, Block or receiver ownership claim.
+
 The [Source 2.282 / System 2.208 constant inline objects](linux_native_inline_anonymous_objects.md)
 preserve anonymous record identity and constant initialization through
 source-free `inline const` and `constinit` declarations.

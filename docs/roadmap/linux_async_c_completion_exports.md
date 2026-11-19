@@ -110,6 +110,19 @@ closed actor leaves the unsubmitted frame owned by its caller. Independent
 Swift clients cancel before and after the handle is installed. See the
 [Swift consumer evidence](linux_swift_consumer.md).
 
+Source 2.283 / System 2.209 admits consumed Objective-C object and Block
+parameters in generated checked synchronous functions and async free functions
+and actor entries. C callers lend their original references. The native callee
+receives an independent claim through ordinary ARC transfer or the generated
+MRC retain or Block copy. An async bridge owns its captures before submission
+returns and makes the consumed handoff when it enters the native call. Actor
+methods can consume the receiver under the same convention.
+
+The eight C clients check reuse of borrowed synchronous inputs after success
+and typed failure, async cancellation before entry, consumed actor receivers,
+exactly-once callbacks and all input destructions. Source-free clients reimport
+the generated typed declaration.
+
 The separate C clients execute value, void and checked success and failure
 callbacks across C17/C23/C++20/C++23 providers in ARC and MRC. The C17 MRC
 control links the selected declaration to a separately compiled async body.

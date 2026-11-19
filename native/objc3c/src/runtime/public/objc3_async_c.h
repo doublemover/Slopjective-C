@@ -58,6 +58,11 @@ void __objc3_async_c_check_result(const objc3_async_frame *,
                                  size_t, size_t);
 #endif
 
+#ifdef __OBJC__
+/* Backing operation for a generated MRC export's retainable +1 handoff. */
+void *__objc3_c_export_retain(void *value, int block);
+#endif
+
 #ifdef __cplusplus
 }
 #define __OBJC3_ASYNC_C_LINKAGE extern "C"

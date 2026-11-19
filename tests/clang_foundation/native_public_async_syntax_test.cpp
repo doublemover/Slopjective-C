@@ -243,6 +243,7 @@ extern "C" {
 extern id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
 extern id object_dispose(id);
 extern void *_Block_copy(const void *);
+extern void _Block_release(const void *);
 #if !__has_feature(objc_arc)
 extern void objc_release(id);
 extern id objc_autorelease(id);
@@ -269,6 +270,29 @@ __attribute__((objc_root_class, objc_runtime_name("GeneratedCArgumentRoot")))
 @end
 static int generated_arguments(GeneratedActorRoot *input, GeneratedBlock apply) async {
   return [input contribution] + apply(20);
+}
+static __attribute__((nothrow)) int generated_consumed_sync(bool fail,
+    GeneratedActorRoot *input __attribute__((ns_consumed)),
+    GeneratedBlock apply __attribute__((ns_consumed)))
+    __objc3_throws(id<Error>) {
+  int result = [input contribution] + apply(20);
+#if !__has_feature(objc_arc)
+  objc_release(input);
+  _Block_release((const void *)apply);
+#endif
+  if (fail) __objc3_throw(generated_failure());
+  return result;
+}
+static int generated_consumed(bool fail,
+    GeneratedActorRoot *input __attribute__((ns_consumed)),
+    GeneratedBlock apply __attribute__((ns_consumed))) async throws(id<Error>) {
+  int result = [input contribution] + apply(20);
+#if !__has_feature(objc_arc)
+  objc_release(input);
+  _Block_release((const void *)apply);
+#endif
+  if (fail) __objc3_throw(generated_failure());
+  return result;
 }
 static _Atomic(unsigned) generated_sync_errors_destroyed;
 __attribute__((objc_root_class)) @interface GeneratedOwnedError <Error> { Class isa; }
@@ -351,6 +375,8 @@ actor class GeneratedActor : GeneratedActorRoot { int value; }
 - (int)add:(int)left by:(int)right __attribute__((nothrow));
 - (int)current __attribute__((nothrow));
 - (int)checked:(bool)fail async throws(id<GeneratedActorError>) __attribute__((nothrow));
+- (int)consume:(GeneratedActorRoot *)__attribute__((ns_consumed))input
+    __attribute__((nothrow, ns_consumes_self));
 - (void)ordinary __attribute__((objc_nonisolated));
 @end
 static void *generated_actor_pointer(GeneratedActor *object) {
@@ -378,6 +404,15 @@ static void generated_actor_check(GeneratedActor *object) {
   generated_actor_check(self);
   if (fail) __objc3_throw((id<GeneratedActorError>)generated_failure());
   return 42;
+}
+- (int)consume:(GeneratedActorRoot *)input {
+  generated_actor_check(self);
+  int result = [input contribution] + 31;
+#if !__has_feature(objc_arc)
+  objc_release(input);
+  objc_release(self);
+#endif
+  return result;
 }
 - (void)ordinary {}
 @end
@@ -465,14 +500,14 @@ namespace ExportAlias = ExportRegion::Nested;
   provider.emit = EmitKind::Object;
   provider.output_path = (root / "provider.o").string();
   provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
-      "generated_cancelled",
+      "generated_cancelled", "generated_consumed", "GeneratedActor::consume:",
       "generated_object", "generated_block", "generated_callback", "generated_aggregate", "generated_main",
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
       "GeneratedActor::current", "GeneratedDerivedActor::current", "GeneratedDerivedActor::checked:"};
   provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer", "generated_sync_nested",
       "generated_sync_object", "generated_sync_block", "generated_sync_invoke", "generated_sync_callback",
-      "generated_sync_port", "generated_sync_aggregate"};
+      "generated_sync_port", "generated_sync_aggregate", "generated_consumed_sync"};
   if (cxx) {
     provider.async_c_exports.push_back("ExportRegion::Nested::pulse");
     provider.throws_c_exports.push_back("ExportAlias::check");
@@ -618,6 +653,10 @@ void call_imported_arguments(generated_arguments_async_c_arg0_t value,
                              generated_arguments_async_c_arg1_t action) {
   generated_arguments_async_c(value, action, 0, observe);
 }
+void call_imported_consumed(generated_consumed_async_c_arg1_t value,
+                            generated_consumed_async_c_arg2_t action) {
+  objc3_task_release(generated_consumed_async_c_task(0, value, action, 0, observe));
+}
 int call_imported_checked(objc3_async_c_error *failure) {
   return generated_sync_checked_throws_c(41, failure);
 }
@@ -682,6 +721,7 @@ static atomic_int complete[19];
 static atomic_uint paused_workers;
 static atomic_bool resume_workers;
 static atomic_int cancelled_task;
+static atomic_int consumed_calls[4];
 static void release_submitted(objc3_task_t *task) {
   assert(task);
   objc3_task_release(task);
@@ -757,6 +797,18 @@ static void cancelled_task_done(void *context, objc_async_completion_status_t st
   assert(context == &cancelled_task && status == OBJC_ASYNC_COMPLETION_CANCELLED);
   assert(objc3_async_c_error_is_cancellation(error));
   assert(atomic_fetch_add(&cancelled_task, 1) == 0);
+}
+static void consumed_done(void *context, objc_async_completion_status_t status,
+                          int value, objc3_async_c_error error) {
+  if (context == &consumed_calls[1]) {
+    assert(status == OBJC_ASYNC_COMPLETION_ERROR && error == generated_failure());
+  } else if (context == &consumed_calls[2]) {
+    assert(status == OBJC_ASYNC_COMPLETION_CANCELLED && objc3_async_c_error_is_cancellation(error));
+  } else {
+    assert(context == &consumed_calls[0] || context == &consumed_calls[3]);
+    assert(status == OBJC_ASYNC_COMPLETION_SUCCESS && value == 42 && !error);
+  }
+  assert(atomic_fetch_add((atomic_int *)context, 1) == 0);
 }
 static void actor_done(void *context, objc_async_completion_status_t status,
                        int value, objc3_async_c_error error) {
@@ -853,6 +905,16 @@ int main(void) {
   assert(generated_checked_errors_destroyed() == 0);
   objc_release(synchronous_failure);
   assert(generated_checked_errors_destroyed() == 1);
+  void *sync_input = generated_argument_create();
+  void *sync_apply = generated_argument_block_create();
+  assert(generated_consumed_sync_throws_c(false, sync_input, (ClientBlock)sync_apply,
+      &synchronous_failure) == 42 && !synchronous_failure);
+  assert(generated_consumed_sync_throws_c(true, sync_input, (ClientBlock)sync_apply,
+      &synchronous_failure) == 0 && synchronous_failure == generated_failure());
+  assert(generated_actors_destroyed() == 0);
+  generated_actor_release(sync_input);
+  _Block_release(sync_apply);
+  assert(generated_actors_destroyed() == 2);
   generated_value_async_c(true, &input, &complete[0], value_done);
   generated_void_async_c(0, void_done);
   generated_checked_async_c(0, &complete[2], checked_done);
@@ -880,6 +942,23 @@ int main(void) {
   objc3_task_request_cancel(cancel);
   assert(objc3_task_is_cancel_requested(cancel) && !atomic_load(&cancelled_task));
   objc3_task_release(cancel);
+  for (int index = 0; index < 3; ++index) {
+    void *input = generated_argument_create();
+    void *apply = generated_argument_block_create();
+    objc3_task_t *task = generated_consumed_async_c_task(index == 1, input, (ClientBlock)apply,
+                                                        &consumed_calls[index], consumed_done);
+    assert(task);
+    if (index == 2) objc3_task_request_cancel(task);
+    objc3_task_release(task);
+    generated_actor_release(input);
+    _Block_release(apply);
+  }
+  void *consuming_actor = generated_actor_create();
+  void *consumed_input = generated_argument_create();
+  release_submitted(GeneratedActor_consume_async_c_task(consuming_actor, consumed_input,
+                                                        &consumed_calls[3], consumed_done));
+  generated_actor_release(consuming_actor);
+  generated_actor_release(consumed_input);
   release_submitted(GeneratedActor_add_by_async_c_task(actor, 40, 2, &complete[11], actor_done));
   GeneratedDerivedActor_current_async_c(other, &complete[12], actor_done);
   GeneratedDerivedActor_checked_async_c(actor, false, &complete[13], actor_done);
@@ -905,7 +984,7 @@ int main(void) {
   generated_actor_release(abandoned_object);
   _Block_release(action);
   _Block_release(abandoned_action);
-  assert(generated_actors_destroyed() == 0);
+  assert(generated_actors_destroyed() == 2);
   atomic_store(&resume_workers, true);
   for (int elapsed = 0; elapsed < 2000; ++elapsed) {
     unsigned executed = 0;
@@ -913,7 +992,10 @@ int main(void) {
     unsigned count = 0;
     for (unsigned index = 0; index < sizeof(complete) / sizeof(complete[0]); ++index)
       count += atomic_load(&complete[index]);
-    if (count == sizeof(complete) / sizeof(complete[0]) && atomic_load(&cancelled_task) == 1) {
+    unsigned consumed_count = 0;
+    for (unsigned index = 0; index < 4; ++index) consumed_count += atomic_load(&consumed_calls[index]);
+    if (count == sizeof(complete) / sizeof(complete[0]) && atomic_load(&cancelled_task) == 1 &&
+        consumed_count == 4) {
 #ifdef __BLOCKS__
       assert(retained_block(2) == 42);
       _Block_release((const void *)retained_block);
@@ -924,9 +1006,9 @@ int main(void) {
       objc3_actor_release(closed_mailbox);
       generated_actor_release(closed);
       generated_actor_release(other);
-      for (unsigned wait = 0; wait < 2000 && generated_actors_destroyed() != 7; ++wait)
+      for (unsigned wait = 0; wait < 2000 && generated_actors_destroyed() != 17; ++wait)
         nanosleep(&(struct timespec){0, 1000000}, 0);
-      assert(generated_actors_destroyed() == 7);
+      assert(generated_actors_destroyed() == 17);
       objc3_executor_release(named_executor);
       objc3_executor_release(main_executor);
       return 0;
@@ -936,6 +1018,8 @@ int main(void) {
   for (unsigned index = 0; index < sizeof(complete) / sizeof(complete[0]); ++index)
     if (!atomic_load(&complete[index])) fprintf(stderr, "Missing generated completion %u\n", index);
   if (!atomic_load(&cancelled_task)) fprintf(stderr, "Missing requested native cancellation\n");
+  for (unsigned index = 0; index < 4; ++index)
+    if (!atomic_load(&consumed_calls[index])) fprintf(stderr, "Missing consumed completion %u\n", index);
   return 1;
 }
 )");

@@ -193,7 +193,6 @@ std::optional<CExportActorMethod> SelectActorMethod(clang::ASTContext &context,
   const auto *method = actor->lookupInstanceMethod(selector);
   if (!method || !llvm::isa<clang::ObjCInterfaceDecl>(method->getDeclContext()) ||
       method->isVariadic() || !clang::isObjC3ActorIsolated(method) ||
-      method->hasAttr<clang::NSConsumesSelfAttr>() ||
       method->hasAttr<clang::ObjCReturnsInnerPointerAttr>())
     return std::nullopt;
   return CExportActorMethod{actor, method, std::move(symbol)};
@@ -350,6 +349,23 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
   return CExportType{alias.str(), kind};
 }
 
+std::string RetainedInput(llvm::StringRef type, llvm::StringRef argument, bool block) {
+  return "(" + type.str() + ")__objc3_c_export_retain((void *)" + argument.str() +
+      (block ? ", 1)" : ", 0)");
+}
+
+std::optional<std::string> NativeInput(
+    const clang::ParmVarDecl *parameter, clang::FunctionProtoType::ExtParameterInfo attributes,
+    llvm::StringRef type, llvm::StringRef argument, bool arc) {
+  const bool consumed = attributes.isConsumed() || parameter->hasAttr<clang::NSConsumedAttr>();
+  const auto native_type = parameter->getType();
+  const bool block = native_type->isBlockPointerType();
+  if (attributes.withIsConsumed(false).getOpaqueValue() || parameter->hasAttr<clang::CFConsumedAttr>() ||
+      (consumed && !native_type->isObjCObjectPointerType() && !block))
+    return std::nullopt;
+  return consumed && !arc ? RetainedInput(type, argument, block) : argument.str();
+}
+
 }  // namespace
 
 CExportSource GenerateCExports(clang::ASTContext &context,
@@ -419,14 +435,15 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       const auto type = export_type(function->getParamDecl(index)->getType(),
                                     prefix + "arg" + std::to_string(index) + "_t", declarations);
       const auto *parameter = function->getParamDecl(index);
-      if (!type || prototype->getExtParameterInfo(index).getOpaqueValue() ||
-          parameter->hasAttr<clang::NSConsumedAttr>() || parameter->hasAttr<clang::CFConsumedAttr>())
+      const auto argument = "__objc3_c_argument_" + std::to_string(index);
+      auto input = type ? NativeInput(parameter, prototype->getExtParameterInfo(index),
+                                     type->spelling, argument, language.ObjCAutoRefCount) : std::nullopt;
+      if (!input)
         return reject("parameter " + std::to_string(index + 1) +
                       " has no self-contained C value declaration");
-      const auto argument = "__objc3_c_argument_" + std::to_string(index);
       if (index) { parameters += ", "; inputs += ", "; }
       parameters += type->spelling + ' ' + argument;
-      inputs += argument;
+      inputs += *input;
     }
     constexpr llvm::StringLiteral linkage = "__OBJC3_ASYNC_C_LINKAGE ";
     const auto declaration = linkage.str() + result->spelling + ' ' + thunk + '(' +
@@ -511,7 +528,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     auto result = export_type(result_type, type_prefix + "result_t", declarations_text, true);
     if (!result)
       return reject("the result has no self-contained C value declaration");
-    std::string parameters, inputs;
+    std::string parameters, inputs, native_inputs;
     bool owning_bridge = actor_method.has_value();
     constexpr llvm::StringLiteral receiver = "__objc3_c_receiver";
     constexpr llvm::StringLiteral opaque_receiver_type = "void * _Nonnull ";
@@ -522,22 +539,32 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       inputs = receiver.str();
     }
     std::string message = "[" + receiver.str();
+    if (actor_method && actor_method->method->hasAttr<clang::NSConsumesSelfAttr>() &&
+        !language.ObjCAutoRefCount)
+      message = '[' + RetainedInput(actor_method->actor->getName().str() + " *", receiver, false);
     for (unsigned index = 0; index < source_parameters.size(); ++index) {
       const auto *parameter = source_parameters[index];
       const auto parameter_type = parameter->getType();
       auto type = export_type(parameter_type,
                               type_prefix + "arg" + std::to_string(index) + "_t", declarations_text);
-      if (!type || (prototype && prototype->getExtParameterInfo(index).getOpaqueValue()) ||
-          parameter->hasAttr<clang::NSConsumedAttr>() || parameter->hasAttr<clang::CFConsumedAttr>())
+      const auto argument = "__objc3_c_argument_" + std::to_string(index);
+      const auto attributes = prototype ? prototype->getExtParameterInfo(index)
+                                        : clang::FunctionProtoType::ExtParameterInfo{};
+      auto input = type ? NativeInput(parameter, attributes, type->spelling, argument,
+                                     language.ObjCAutoRefCount) : std::nullopt;
+      if (!input)
         return reject("parameter " + std::to_string(index + 1) +
                       " has no self-contained C value declaration");
-      const auto argument = "__objc3_c_argument_" + std::to_string(index);
       owning_bridge |= parameter_type->isObjCRetainableType();
       parameters += ", " + type->spelling + " " + argument;
       if (!inputs.empty()) inputs += ", ";
       inputs += argument;
-      if (actor_method)
-        message += " " + actor_method->method->getSelector().getNameForSlot(index).str() + ':' + argument;
+      if (actor_method) {
+        message += " " + actor_method->method->getSelector().getNameForSlot(index).str() + ':' + *input;
+      } else {
+        if (!native_inputs.empty()) native_inputs += ", ";
+        native_inputs += *input;
+      }
     }
 
     const bool returns_void = result_type->isVoidType();
@@ -555,7 +582,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     if (actor_method && source_parameters.empty())
       message += " " + actor_method->method->getSelector().getAsString();
     const auto call = actor_method ? message + ']' :
-        (language.CPlusPlus ? "::" : "") + selection + '(' + inputs + ')';
+        (language.CPlusPlus ? "::" : "") + selection + '(' + native_inputs + ')';
     auto frame = call;
     // The unqualified C preprocessing spelling must select the original
     // declaration even when the provider reuses a name as a macro later.
