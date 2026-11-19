@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.290 / System 2.216 dependent closure change](linux_cxx_local_types.md)
+preserves `constexpr` on returned generic closures and dependent by-value
+captures. Source-free clients execute both forms using the published patterns.
+
 The [Source 2.289 / System 2.215 Swift overlay](linux_swift_consumer.md)
 generates typed checked and async Swift entrypoints. Eight independent Swift
 6.4.2 clients verify the scalar and enum ABI, original checked error ownership,

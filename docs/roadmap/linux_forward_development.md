@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.290 / System 2.216 dependent closure change](linux_cxx_local_types.md)
+preserves explicitly `constexpr` lambda patterns through package replay and
+source-free C++20 and C++23 instantiation.
+
 The [Source 2.289 / System 2.215 Swift overlay](linux_swift_consumer.md) generates
 typed wrappers for selected native checked functions, async functions and
 isolated actor calls through the C ABI.

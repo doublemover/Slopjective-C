@@ -29,7 +29,7 @@ int main(){
                                     {"read_local_template", "LocalMemberReader", "open_closure",
                                      "OpenClosure", "ClosureOwner", "initial_value",
                                      "constant_record", "ConstantRecord", "read_constant",
-                                     "constinit_record"});
+                                     "constinit_record", "Curried"});
   provider.source_text=R"source(
 constexpr auto make_record(){struct {int value;constexpr int read()const{return value;}} result{42};return result;}
 constexpr auto make_nested(){struct {struct {int value;} nested;} result{{42}};return result;}
@@ -69,6 +69,26 @@ struct ClosureOwner {
   inline static constexpr auto calculate = [](auto value) { return value * 2; };
 };
 
+namespace Curried {
+template<class T> constexpr auto sum(T base) {
+  return [base](auto input) constexpr noexcept(noexcept(base + input)) {
+    return base + input;
+  };
+}
+template<class T> struct Owner {
+  T base;
+  constexpr auto reader() const {
+    struct { T value; } snapshot{base};
+    return [snapshot]() constexpr { return snapshot.value; };
+  }
+};
+#if __cplusplus >= 202302L
+template<class T> constexpr auto direct_reader(T base) {
+  return [base] constexpr { return base; };
+}
+#endif
+}
+
 inline constexpr int initial_value(int value) { return value + 1; }
 inline const struct { int value; int read() const { return value; } }
     constant_record{initial_value(41)};
@@ -85,6 +105,8 @@ struct Token { int value; };
 constexpr int operator+(Token token, int delta) { return token.value + delta; }
 static_assert(open_closure(Token{41}) == 42);
 static_assert(ClosureOwner::calculate(21L) == 42L);
+static_assert(Curried::sum(10u)(32L) == 42L);
+static_assert(Curried::Owner<int>{42}.reader()() == 42);
 }
 )";
   auto from_used_pattern = Compile(with_private_calls);
@@ -93,6 +115,8 @@ static_assert(ClosureOwner::calculate(21L) == 42L);
   assert(from_used_pattern.interface_artifact->identity.semantic_fingerprint ==
          artifact.identity.semantic_fingerprint);
   assert(artifact.source_bytes.find("constinit inline const struct") != std::string::npos);
+  assert(artifact.source_bytes.find("[base](auto input) constexpr") != std::string::npos);
+  assert(artifact.source_bytes.find("[snapshot]() constexpr") != std::string::npos);
   auto hidden_adl = provider;
   hidden_adl.interface_exports = {"HiddenADL::Argument", "HiddenADL::call", "HiddenADL::run"};
   hidden_adl.source_text = R"(
@@ -169,8 +193,17 @@ static_assert(LocalMemberReader<short>::read(42) == 42);
 static_assert(noexcept(open_closure(41)) && open_closure(41u) == 42u);
 static_assert(OpenClosure{}(41L) == 42L);
 static_assert(ClosureOwner::calculate(21.0) == 42.0);
+constexpr auto curried = Curried::sum(7);
+static_assert(noexcept(curried(3.0)) && curried(3.0) == 10.0);
+static_assert(Curried::Owner<short>{42}.reader()() == 42);
+#if __cplusplus >= 202302L
+static_assert(Curried::direct_reader(42L)() == 42L);
+#endif
 extern "C" int dependent_local_result(int value) {
   return open_closure(read_local_template(value)) + ClosureOwner::calculate(value);
+}
+extern "C" int curried_result(int value) {
+  return Curried::sum(value)(20) + Curried::Owner<int>{2}.reader()();
 }
 extern "C" int constant_object_result() {
   return read_constant(constant_record) + constinit_record.value;
@@ -178,9 +211,9 @@ extern "C" int constant_object_result() {
 )";
   consumer.emit=EmitKind::Object;consumer.output_path=(root/"consumer.o").string();auto consumed=Compile(consumer);Success(consumed);
   Write(root/"main.c", "int anonymous_result(void); int dependent_local_result(int);"
-                      "int constant_object_result(void);"
+                      "int constant_object_result(void); int curried_result(int);"
                       "int main(void){return anonymous_result()==126 && dependent_local_result(14)==57 && "
-                      "constant_object_result()==49?0:1;}");
+                      "constant_object_result()==49 && curried_result(20)==42?0:1;}");
   Execute({consumed.compiler_driver_path,"--no-default-config","-fuse-ld=lld",consumer.output_path,(root/"main.c").string(),"-o",(root/"witness").string()});Execute({(root/"witness").string()});
  }
 }

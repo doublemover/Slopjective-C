@@ -78798,6 +78798,7 @@ new file mode 100644
 +void thread_unchecked(ThreadSafety::Counter &counter) __attribute__((no_thread_safety_analysis)){counter.bump();}
 
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
+index f025c55..b3b1339 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -46,6 +46,7 @@
@@ -78818,7 +78819,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
  
  //===----------------------------------------------------------------------===//
  // StmtPrinter Visitor
-@@ -327,7 +331,7 @@
+@@ -327,7 +331,7 @@ void StmtPrinter::PrintRawIfStmt(IfStmt *If) {
      return;
    }
  
@@ -78827,7 +78828,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
    if (If->getInit())
      PrintInitStmt(If->getInit(), 4);
    if (const DeclStmt *DS = If->getConditionVariableDeclStmt())
-@@ -541,7 +545,9 @@
+@@ -541,7 +545,9 @@ void StmtPrinter::VisitReturnStmt(ReturnStmt *Node) {
  }
  
  void StmtPrinter::VisitGCCAsmStmt(GCCAsmStmt *Node) {
@@ -78838,7 +78839,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
  
    if (Node->isVolatile())
      OS << "volatile ";
-@@ -553,7 +559,7 @@
+@@ -553,7 +559,7 @@ void StmtPrinter::VisitGCCAsmStmt(GCCAsmStmt *Node) {
    Visit(Node->getAsmStringExpr());
  
    // Outputs
@@ -78847,7 +78848,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
        Node->getNumClobbers() != 0 || Node->getNumLabels() != 0)
      OS << " : ";
  
-@@ -694,7 +700,21 @@
+@@ -694,7 +700,21 @@ void StmtPrinter::VisitObjCAtThrowStmt(ObjCAtThrowStmt *Node) {
  
  void StmtPrinter::VisitObjCAvailabilityCheckExpr(
      ObjCAvailabilityCheckExpr *Node) {
@@ -78870,7 +78871,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
  }
  
  void StmtPrinter::VisitObjCAtSynchronizedStmt(ObjCAtSynchronizedStmt *Node) {
-@@ -2800,9 +2820,11 @@
+@@ -2800,9 +2820,17 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
    }
  
    CXXMethodDecl *Method = Node->getCallOperator();
@@ -78879,11 +78880,25 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
    const bool HasObjC3Effects=LambdaEffects.Async || LambdaEffects.Throws!=ObjC3ThrowsKind::None;
 -  if (Node->hasExplicitParameters() || Method->isConsteval() || Method->isStatic() || HasObjC3Effects) {
 +  const bool HasNativeEffects=!Method->getType()->castAs<FunctionProtoType>()->getFunctionEffects().empty();
-+  if (Node->hasExplicitParameters() || Method->isConsteval() || Method->isStatic() || HasObjC3Effects || HasNativeEffects || Method->hasAttrs()) {
++  // A dependent closure cannot acquire implicit constexpr before instantiation.
++  // Preserve the written specifier so the template pattern has the same contract.
++  const bool HasDependentConstexpr = Method->isConstexprSpecified() &&
++                                    Node->getLambdaClass()->isDependentContext();
++  if (Node->hasExplicitParameters() || Method->isConsteval() ||
++      HasDependentConstexpr || Method->isStatic() || HasObjC3Effects ||
++      HasNativeEffects || Method->hasAttrs()) {
      OS << '(';
      NeedComma = false;
      for (const auto *P : Method->parameters()) {
-@@ -2831,7 +2853,14 @@
+@@ -2825,13 +2853,22 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+       OS << " mutable";
+     if (Method->isConsteval())
+       OS << " consteval";
++    else if (HasDependentConstexpr)
++      OS << " constexpr";
+     if (Method->isStatic())
+       OS << " static";
+ 
      auto *Proto = Method->getType()->castAs<FunctionProtoType>();
      Proto->printExceptionSpecification(OS, Policy);
  
@@ -78899,7 +78914,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
  
      // Print the trailing return type if it was specified in the source.
      if (Node->hasExplicitResultType()) {
-@@ -3281,7 +3310,7 @@
+@@ -3281,7 +3318,7 @@ void StmtPrinter::VisitObjCMessageExpr(ObjCMessageExpr *Mess) {
  
    case ObjCMessageExpr::SuperInstance:
    case ObjCMessageExpr::SuperClass:
@@ -78908,7 +78923,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
      break;
    }
  
-@@ -3317,7 +3346,7 @@
+@@ -3317,7 +3354,7 @@ StmtPrinter::VisitObjCIndirectCopyRestoreExpr(ObjCIndirectCopyRestoreExpr *E) {
  
  void
  StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
@@ -78917,7 +78932,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
    E->getType().print(OS, Policy);
    OS << ')';
    PrintExpr(E->getSubExpr());
-@@ -3350,6 +3379,7 @@
+@@ -3350,6 +3387,7 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
    } else if (!BD->param_empty() || cast<FunctionProtoType>(AFT)->isVariadic() ||
               cast<FunctionProtoType>(AFT)->getObjC3FunctionEffects().Async ||
               cast<FunctionProtoType>(AFT)->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None ||
@@ -78925,7 +78940,7 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
               cast<FunctionProtoType>(AFT)->hasNoexceptExceptionSpec()) {
      OS << '(';
      if (BD->param_empty() && !cast<FunctionProtoType>(AFT)->isVariadic()) OS << "void";
-@@ -3385,6 +3415,13 @@
+@@ -3385,6 +3423,13 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
        if (Effects.Throws == ObjC3ThrowsKind::Typed)
          OS << '(' << Effects.ErrorType.getAsString(Policy) << ')';
      }
@@ -78939,7 +78954,6 @@ diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
    }
    OS << ' ';
    // Native coroutine Blocks wrap the written body in a synthetic compound.
-
 diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-indirect-family.h b/clang/test/ObjC3/Sema/Inputs/borrowed-indirect-family.h
 new file mode 100644
 --- /dev/null

@@ -16,9 +16,9 @@ and ownership projection recognize the same capability.
 
 Dependency checks distinguish local members and parameters from referenced
 public declarations. Local field and function types still validate external
-dependencies, exports and SPI policy. Local types cannot escape through a public
-deduced return or another exported signature. The [2.38 source extension](linux_cxx_unnamed_local_types.md) adds unnamed local
-records and enums.
+dependencies, exports and SPI policy. The initial named local type contract
+keeps the type within its callable. The [2.38 source extension](linux_cxx_unnamed_local_types.md)
+adds unnamed local records and enums.
 
 Source 2.264 / System 2.190 extends this contract to local records inside
 published function templates and members of class templates. A dependent local
@@ -30,6 +30,13 @@ local union arm. Relocating the provider preserves the semantic fingerprint.
 These interfaces require `objc3.cxx-local-types.v2`. The decoder and contract
 validator bind the capability to the published local-type identity. Readers
 without the capability reject the interface.
+
+Source 2.290 / System 2.216 preserves explicitly written `constexpr` on
+dependent lambda patterns, including generic closures returned from function
+templates and closures that capture an unnamed dependent record by value.
+Canonical replay normalizes the C++23 parameterless spelling. Source-free
+C++20 and C++23 clients instantiate, constant-evaluate and link the factories.
+Private provider instantiations leave the published pattern identity stable.
 
 Maintained fixtures cover local enums, nested records, nontrivial copying and
 destruction, virtual methods, RTTI, constexpr evaluation and classes inside
