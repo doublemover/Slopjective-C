@@ -117,6 +117,16 @@ diff --git a/clang/lib/CodeGen/Targets/AArch64.cpp b/clang/lib/CodeGen/Targets/A
 diff --git a/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp b/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
 --- a/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
 +++ b/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
+@@ -263,7 +263,8 @@ bool CodeGen::supportsObjC3AtomicManagedProperty(CodeGenModule &CGM,QualType Type) {
+   const auto &Triple=CGM.getTarget().getTriple();
+   if(!CGM.getLangOpts().ObjCAutoRefCount ||
+       CGM.getLangOpts().ObjCRuntime.getAsString()!="gnustep-2.2" ||
+-      Triple.getArch()!=llvm::Triple::x86_64 || !Triple.isOSLinux() ||
++      (Triple.getArch()!=llvm::Triple::x86_64 &&
++       Triple.getArch()!=llvm::Triple::aarch64) || !Triple.isOSLinux() ||
+       !Triple.isGNUEnvironment() ||
+       (!containsObjC3CarrierManagedStorage(Type) &&
+        !(Type->isRecordType() && Type.isDestructedType()!=QualType::DK_none)))return false;
 @@ -316,6 +316,7 @@ bool CodeGen::supportsObjC3ManagedRecordCallABI(CodeGenModule &CGM,
           CGM.getLangOpts().ObjCAutoRefCount && Triple.isOSLinux() &&
           Triple.isGNUEnvironment() &&
@@ -126,6 +136,17 @@ diff --git a/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp b/clang/lib/CodeGen/CGO
           CGM.getLangOpts().ObjCRuntime.getAsString() == "gnustep-2.2" &&
           supportsObjC3ManagedRecordLifetime(CGM, Type);
  }
+diff --git a/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp b/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
+--- a/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
++++ b/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
+@@ -202,5 +202,6 @@ bool CodeGen::supportsObjC3MixedCarrierCallABI(CodeGenModule &CGM,QualType Type) {
+   const auto &Triple=CGM.getTarget().getTriple();
+-  if(Triple.getArch()!=llvm::Triple::x86_64 || !Triple.isOSLinux() || !Triple.isGNUEnvironment() ||
++  if((Triple.getArch()!=llvm::Triple::x86_64 &&
++      Triple.getArch()!=llvm::Triple::aarch64) || !Triple.isOSLinux() || !Triple.isGNUEnvironment() ||
+       !CGM.getTarget().getCXXABI().isItaniumFamily() || !supportsObjC3MixedCarrierLocalLifetime(CGM,Type))return false;
+   auto NoThrow=[&](auto &&Self,QualType T,unsigned Depth)->bool {
+     if(Depth>64)return false;
 diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
 --- a/clang/lib/Sema/SemaChecking.cpp
 +++ b/clang/lib/Sema/SemaChecking.cpp
@@ -188,3 +209,23 @@ diff --git a/clang/test/ObjC3/CodeGen/carrier-managed-records.m b/clang/test/Obj
  // Ordinary C and C++ records share an indirect result and callee-owned argument.
  typedef __objc3_optional(id) Strong;
  typedef __objc3_optional(id __weak) Weak;
+diff --git a/clang/test/ObjC3/CodeGen/native-atomic-forward-record.m b/clang/test/ObjC3/CodeGen/native-atomic-forward-record.m
+--- a/clang/test/ObjC3/CodeGen/native-atomic-forward-record.m
++++ b/clang/test/ObjC3/CodeGen/native-atomic-forward-record.m
+@@ -1,5 +1,7 @@
+ // RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
+ // RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
+ struct AtomicForwardRecord;
+ typedef __objc3_optional(id) ForwardStrong;
+ typedef __objc3_optional(id __weak) ForwardWeak;
+diff --git a/clang/test/ObjC3/CodeGen/native-mixed-carrier-calls.mm b/clang/test/ObjC3/CodeGen/native-mixed-carrier-calls.mm
+--- a/clang/test/ObjC3/CodeGen/native-mixed-carrier-calls.mm
++++ b/clang/test/ObjC3/CodeGen/native-mixed-carrier-calls.mm
+@@ -1,4 +1,5 @@
+ // RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple aarch64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
+ // RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t-core-c++20-True %S/Inputs/native-checked-cxx-results.h
+ // RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t-core-c++20-True -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
+ // RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s

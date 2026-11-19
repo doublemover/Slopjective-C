@@ -39,7 +39,7 @@
     },
     {
       "file": "0008-objc3-linux-aarch64-native-contracts.patch",
-      "sha256": "2dd28d90b467951f48561d2ca7adbfadd2d5f12ce539802c649286eb28f484f9"
+      "sha256": "a616a321bd9dcc792447a6697508076e5ce84bcd603e117211d0719d0797d5ec"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-23.1.5-392dfff97d29-pristine-v1",

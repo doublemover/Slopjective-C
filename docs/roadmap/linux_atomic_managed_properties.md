@@ -16,6 +16,12 @@ public extension ABI 24/frame 1/services 4/schema 2.2 layouts unchanged. Records
 with custom C++ special members, bases, volatile fields or unqualified storage do
 not acquire the fieldwise managed-property admission.
 
+The current Linux source admits the same lock-backed managed accessors on
+x86-64 and AArch64. Direct C17 and Objective-C++23 AArch64 CodeGen witnesses
+cover forward-declared managed records; the helper ABI and fieldwise ownership
+operations are shared rather than falling back to an unsupported ordinary
+atomic copy.
+
 `objc3.atomic-managed-properties.v1` binds published atomic declarations and
 accessor bodies, including ordinary ARC record properties. Three source-free
 profiles cover relocation, exact replay, atomic-to-nonatomic identity changes,

@@ -1,6 +1,6 @@
 # Mixed ARC/C++ carrier calls
 
-Source 2.135 / System 2.61 extends native Linux x86-64 carrier call ownership
+Source 2.135 / System 2.61 extends native Linux carrier call ownership
 to selected trees containing both C++ values and ARC strong, weak or unsafe
 references. Ordinary functions, function pointers, Objective-C messages and
 Block invocation use caller-owned argument snapshots and fresh indirect results.
@@ -20,6 +20,11 @@ validator require the capability to agree exactly with the declaration identity;
 missing, invented and unsupported capabilities reject. Source-free replay checks
 cover C++20/23, module relocation and method/Block boundaries. Runtime metadata
 uses the existing v13 selected-arm layout encoding.
+
+The current source admits this indirect owned-value ABI on both x86-64 and
+AArch64. A direct Objective-C++23 AArch64 CodeGen witness covers ordinary,
+checked, message and Block calls and verifies that the same selected-arm
+storage contract is used with AAPCS64 indirect arguments and results.
 
 This span retains ARC-only admission for mixed ownership and the existing public,
 nondeleted, nonthrowing C++ destructor requirement. Enclosing records/arrays,
