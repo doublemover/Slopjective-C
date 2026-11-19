@@ -62,6 +62,15 @@ directory entries without recursing into their object files and checks their
 restoration before running analysis. This preserves relative source-path
 resolution and the exact dependency inventory on both Linux architectures.
 
+The Source 2.280 x86-64 analysis restored the compiler and ran frontend and
+runtime variants before reaching the maintained-Clang compilation database.
+The database still listed generated PCH stub sources for unrelated LLVM
+targets. The analyser now checks membership before requiring the selected
+source to exist, including when a module map uses a relative input. A real
+CMake/Ninja archive round trip verifies exact selected commands after omitting
+an unrelated PCH source. The retained hosted graph has all 180 maintained
+Clang object inputs in the producer archive.
+
 Interface admission reparses providers using the consumer's effective target
 CPU, ABI and feature options. The AArch64 SDK driver config enables FMV via
 compiler-rt. Clang Tooling reparses now preserve that setting through the same

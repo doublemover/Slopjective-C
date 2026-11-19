@@ -272,11 +272,12 @@ def test_shared_foundation_rejects_an_archive_link_outside_the_owned_roots(tmp_p
 
 
 def test_shared_foundation_selects_real_configured_compiler_inputs(tmp_path):
-    from scripts.objc3c_implementation_assurance.shared_foundation import _build_files
+    from scripts.objc3c_implementation_assurance.shared_foundation import _archive, _build_files
+    from scripts.objc3c_toolchain.implementation_analysis import inventory
 
     cmake, ninja = shutil.which('cmake'), shutil.which('ninja')
-    if not all((cmake, ninja, shutil.which('c++'))):
-        pytest.skip('CMake, Ninja and a C++ compiler are required for graph capture')
+    if not all((cmake, ninja, shutil.which('c++'), shutil.which('zstd'))):
+        pytest.skip('CMake, Ninja, a C++ compiler and zstd are required for graph transport')
     source, build = tmp_path / 'source', tmp_path / 'out/build'
     (source / 'clang/lib').mkdir(parents=True)
     (source / 'clang/lib/owned.cpp').write_text('#include "table.inc"\nint selected() { return value; }\n')
@@ -294,6 +295,7 @@ add_library(LLVM SHARED clang/lib/owned.cpp ordinary.cpp)
 target_include_directories(LLVM PRIVATE "${CMAKE_BINARY_DIR}/include/llvm")
 set_target_properties(LLVM PROPERTIES VERSION 23.1 SOVERSION 23)
 add_library(clang-cpp SHARED ordinary.cpp)
+target_precompile_headers(clang-cpp PRIVATE <utility>)
 set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
 ''')
     subprocess.run([cmake, '-S', source, '-B', build, '-G', 'Ninja',
@@ -304,6 +306,11 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
     working_directory.mkdir()
     database = build / 'compile_commands.json'
     commands = json.loads(database.read_text())
+    pch_sources = {
+        Path(row['directory']) / row['file'] for row in commands
+        if Path(row['file']).name.startswith('cmake_pch.')
+    }
+    assert pch_sources and all(path.is_file() for path in pch_sources)
     for row in commands:
         if Path(row['file']).name == 'ordinary.cpp':
             row['directory'] = str(working_directory)
@@ -329,6 +336,16 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
         'libLLVM.so', 'libLLVM.so.23', 'libLLVM.so.23.1',
         'libclang-cpp.so', 'libclang-cpp.so.23', 'libclang-cpp.so.23.1',
     }
+    units = {source / 'clang/lib/owned.cpp'}
+    graph = subprocess.check_output([ninja, '-C', build, '-t', 'commands'], text=True)
+    original = inventory(database, graph, units)
+    bundle = tmp_path / 'foundation.tar.zst'
+    _archive(tmp_path, bundle, (build,), selected)
+    shutil.rmtree(build)
+    subprocess.run(['tar', '-I', 'zstd', '-xf', bundle, '-C', tmp_path], check=True)
+    assert not any(path.exists() for path in pch_sources)
+    restored_graph = subprocess.check_output([ninja, '-C', build, '-t', 'commands'], text=True)
+    assert inventory(database, restored_graph, units) == original
     tablegen.unlink()
     with pytest.raises(ValueError, match='executable llvm-tblgen'):
         _build_files(tmp_path, configuration)

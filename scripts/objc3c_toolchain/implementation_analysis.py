@@ -101,9 +101,12 @@ def inventory(database, graph, selected_sources):
         raise ValueError('analysis graph omitted selected implementation translation units')
     rows, outputs = [], set()
     for row in json.loads(database.read_text()):
-        unit = (Path(row['directory']) / row['file']).resolve(strict=True)
-        if unit not in selected_sources:
+        source = Path(row['directory']) / row['file']
+        # The database also names generated sources from unrelated targets,
+        # such as CMake's PCH stubs. A shared foundation omits those files.
+        if source.resolve() not in selected_sources:
             continue
+        unit = source.resolve(strict=True)
         output = output_path(row)
         if output not in expected or output in outputs or expected[output][0] != unit:
             raise ValueError('duplicate, conflicting or unowned analysis compilation variant')
@@ -480,7 +483,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             # that has not been compiled. Materialize its owned scan output;
             # analysis must not invent or silently omit those flags.
             for entry in json.loads(database.read_text()):
-                if Path(entry['file']).resolve() not in units:
+                if (Path(entry['directory']) / entry['file']).resolve() not in units:
                     continue
                 for arg in arguments(entry):
                     if arg.startswith('@'):
