@@ -92,6 +92,12 @@ a traced loan. The runtime workload and schedule oracles expect cancellation
 after draining an explicitly cancelled group and still require all terminal
 children to be consumed.
 
+The generated worker schedule witness now joins the group and actor before
+recording a drained epoch. An executor barrier alone can finish before a
+later actor mailbox turn destroys its context. Native verification matched
+all 64 maintained history seeds on the manual backend and 20 worker executions
+per seed, for 1,344 matching traces.
+
 The SDK frontend CTest plan records the executable's command argument index
 from each CMake registration. Direct tests start with their executable. The
 meta, diagnostic and text-file CLI wrappers pass it as an argument. Serial

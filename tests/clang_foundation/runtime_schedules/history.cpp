@@ -174,6 +174,10 @@ int main(int argc, char **argv) {
         std::unique_lock lock(gate.mutex);gate.open = true;gate.changed.notify_all();
         assert(gate.changed.wait_for(lock, std::chrono::seconds(10), [&] { return gate.barrier; }));
       }
+      // A worker barrier covers direct submissions. Actor mailboxes can
+      // enqueue later turns and invoke discard destructors after that barrier.
+      assert(objc3_task_group_join(group) == OBJC3_SERVICE_OK);
+      assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
     } else if (operation == "join-group") {
       assert(drained);status = objc3_task_group_join(group);
     } else if (operation == "join-actor") {
