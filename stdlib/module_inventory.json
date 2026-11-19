@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 299,
+        "minor": 300,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Strict Concurrency audits cleanup/resource provenance attached to declarations and expressions as well as their transported types. Accepted unsafe transfers emit the resource assertion warning; rejected unsafe borrowed wrappers emit a distinct warning that the assertion cannot waive lifetime rules. Matching SDK acceptance pending",
         "Strict Concurrency recursively preserves cleanup/resource provenance through Optional, Result, arrays, fields and bases. Unsafe admission of a resource-bearing wrapper emits both the required unchecked-transfer note and an additional user-asserted/not-compiler-proven warning. Matching SDK acceptance pending",
         "Strict Concurrency checks group-only structured callback parameters carrying native async Blocks, function pointers or C++ callable/task factories. Non-Sendable captures and opaque Block environments reject while independent scalar group configuration remains synchronous. Matching SDK acceptance pending",
         "Implicit task-group scopes admit membership through the same dependency graph as direct task waits and closed-group joins. A late or simultaneous membership cannot close a cycle, and finalization uses its reserved waiter. Matching SDK acceptance pending",
@@ -400,7 +401,6 @@
       "remaining": [
         "remaining spawn forms and supported-value ownership/cancellation acceptance beyond the implemented child, detached, group, direct-wait and generated C/Swift entry contracts",
         "implicit managed-union and other storage crossings that lack an explicit native lifetime owner",
-        "complete strict concurrency and Sendable enforcement",
         "remaining dependent/unnamed-type, dependent lookup, unmodeled-attribute and profile publication contracts"
       ]
     },

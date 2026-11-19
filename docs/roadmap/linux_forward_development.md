@@ -7,6 +7,11 @@ Ninja dependency owners, including selected precompiled headers. The terminal
 job binds all partitions to the producer's archive SHA-256 and verifies the
 complete disjoint variant inventory. The shared archive expires after one day.
 
+Source 2.300 carries cleanup/resource provenance from values into Strict
+Concurrency diagnostics and identifies failed unsafe assertions around borrowed
+values without weakening their lifetime rejection.
+[Isolation and Sendable](linux_native_isolation_sendable.md)
+
 Source 2.299 makes unsafe admission of cleanup-managed resource wrappers
 explicitly auditable in Strict Concurrency, including resources nested in
 Optional/Result payloads, arrays, record fields and C++ bases.

@@ -307,14 +307,17 @@ struct __attribute__((objc_unsafe_sendable)) ResourceDerived : ResourceBase {};
     assert(Has(UnsafeResourceBase, "resource-bearing type"));
     assert(Has(UnsafeResourceBase, "not compiler-proven"));
   }
-  Reject(Make(Root.str() + R"(
+  auto UnsafeBorrowed = Compile(Make(Root.str() + R"(
 typedef struct BorrowPacket { borrowed int *pointer; } BorrowPacket;
 typedef struct __attribute__((objc_unsafe_sendable)) OuterPacket { BorrowPacket inner; } OuterPacket;
 @interface Counter (Borrowed)
 - (OuterPacket)borrowedPacket __attribute__((objc_nonisolated));
 @end
-)"),
-         "non-Sendable type");
+)"));
+  assert(!UnsafeBorrowed.success);
+  assert(Has(UnsafeBorrowed, "non-Sendable type"));
+  assert(Has(UnsafeBorrowed, "user-asserted"));
+  assert(Has(UnsafeBorrowed, "cannot waive borrowed lifetime requirements"));
 }
 
 void CheckConcurrentCaptures(bool Arc, const std::string &Standard) {
@@ -359,6 +362,18 @@ void additional_sync_block(int value) {
   with_callback(^void() __objc3_async {}, ^{ (void)value; });
 }
 )")));
+  auto UnsafeManagedCapture = Compile(Make(R"(
+typedef int UnsafeHandle __attribute__((objc_unsafe_sendable));
+void close_unsafe_handle(UnsafeHandle *) noexcept;
+void unsafe_managed_capture(void) {
+  UnsafeHandle handle __attribute__((cleanup(close_unsafe_handle))) = 1;
+  spawn(^void() __objc3_async { (void)handle; });
+}
+)"));
+  Success(UnsafeManagedCapture);
+  assert(Has(UnsafeManagedCapture, "relies on objc_unsafe_sendable"));
+  assert(Has(UnsafeManagedCapture, "resource-bearing type"));
+  assert(Has(UnsafeManagedCapture, "not compiler-proven"));
   Reject(Make(R"(
 void unsafe(MutableMessage *object) {
   SPAWN(^void() __objc3_async { (void)object; });
@@ -939,6 +954,12 @@ void CheckManagedBoundaryValues(bool Cxx,bool Arc,const std::string &Standard) {
     Reject(Make("int rejected(int flag) __objc3_async_frame {"+Open+"return __objc3_await boundary_scalar("+Argument+");}"),"cleanup-managed concurrent value");
   Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"const int alias=h;return __objc3_await boundary_scalar(alias);}"),"cleanup-managed concurrent value");
   Reject(Make("int rejected(void) __objc3_async_frame {int h __attribute__((cleanup(boundary_cleanup)))=3;return __objc3_await boundary_scalar(h);}"),"cleanup-managed concurrent value");
+  auto UnsafeCleanup = Compile(Make("int accepted(void) __objc3_async_frame {BoundaryUnchecked h __attribute__((cleanup(boundary_cleanup)))=3;return __objc3_await boundary_unchecked(h);}"));
+  Success(UnsafeCleanup);
+  assert(Has(UnsafeCleanup,"relies on objc_unsafe_sendable"));
+  assert(Has(UnsafeCleanup,"resource-bearing type"));
+  assert(Has(UnsafeCleanup,"user-asserted"));
+  assert(Has(UnsafeCleanup,"not compiler-proven"));
   Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"return __objc3_await boundary_packet("+(Cxx?std::string("BoundaryPacket{h}"):std::string("(struct BoundaryPacket){h}"))+ ");}"),"cleanup-managed concurrent value");
   Reject(Make("void rejected(void){"+Open+"boundary_spawn("+(Cxx?std::string("^void() __objc3_async {}"):std::string("boundary_work"))+",h);}"),"cleanup-managed concurrent value");
   Reject(Make("int rejected(void) __objc3_async_frame {"+Open+"int *const view=&h;return __objc3_await boundary_scalar(*view);}"),"cleanup-managed concurrent value");

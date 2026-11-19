@@ -1,5 +1,13 @@
 # Native Linux isolation and Sendable contracts
 
+Source 2.300 extends the audit to cleanup/resource provenance carried by a
+declaration or expression rather than its canonical type. Accepted unsafe
+transfers receive the same resource warning. An unsafe wrapper around a borrowed
+value remains rejected and now receives a separate warning that the user
+assertion cannot waive borrowed lifetime requirements. The complete Part 7 §7.8
+minimum matrix and cross-module metadata controls are represented by maintained
+tests; matching rebuilt-SDK acceptance remains pending.
+
 Source 2.299 preserves cleanup/resource provenance through recursive Sendable
 classification. When an unsafe wrapper admits a cleanup-managed handle, strict
 mode emits the required unchecked-transfer note and an additional warning that
@@ -171,6 +179,12 @@ on unsafe admission produces a strict transfer-site note. Cleanup/resource
 provenance propagates through Optional and Result payloads, arrays, record fields
 and C++ bases; an accepted resource-bearing wrapper also produces the Part 7
 user-asserted/not-compiler-proven warning.
+
+Cleanup provenance attached directly to a declaration or expression is supplied
+to the same diagnostic path even when canonical type desugaring cannot carry it.
+Unsafe borrowed wrappers remain hard errors; strict mode additionally identifies
+the failed user assertion instead of silently presenting it as an ordinary
+non-Sendable type.
 
 Enforcement covers cross-isolation arguments, logical results and typed errors;
 nonisolated actor signatures; and recognized child/detached API work-item

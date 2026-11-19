@@ -1465,7 +1465,7 @@ diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/cl
 index 2cb79b6ba..603ac6e0f 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -11,7 +11,138 @@
+@@ -11,7 +11,141 @@
  //===----------------------------------------------------------------------===//
  
  let Component = "Sema" in {
@@ -1504,6 +1504,9 @@ index 2cb79b6ba..603ac6e0f 100644
 +  "unchecked concurrency transfer of %0 relies on objc_unsafe_sendable">;
 +def warn_objc3_unchecked_sendable_resource : Warning<
 +  "concurrency transfer of resource-bearing type %0 is user-asserted by objc_unsafe_sendable and not compiler-proven">,
++  InGroup<DiagGroup<"objc3-sendable">>;
++def warn_objc3_unchecked_sendable_borrowed : Warning<
++  "borrowed transfer of type %0 was user-asserted by objc_unsafe_sendable, which cannot waive borrowed lifetime requirements">,
 +  InGroup<DiagGroup<"objc3-sendable">>;
 +def note_objc3_sendable_boundary : Note<
 +  "concurrency boundary is declared here">;
@@ -11629,7 +11632,7 @@ new file mode 100644
 index 000000000..cba165426
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3Type.cpp
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,78 @@
 +//===--- ParseObjC3Type.cpp - ObjC3 carrier type parser ------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -54178,7 +54181,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4676 @@
+@@ -0,0 +1,4682 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54438,7 +54441,7 @@ new file mode 100644
 +
 +bool checkTransfer(Sema &S, QualType T, SourceLocation Loc, StringRef Reason,
 +                   const Decl *Boundary, bool ForceUnsafe = false,bool ForceBorrowed=false,
-+                   const Stmt *ScopeBody=nullptr) {
++                   const Stmt *ScopeBody=nullptr,bool ForceResource=false) {
 +  auto Classification = SendableClassifier(S.Context,&S,ScopeBody).classify(T);
 +  if(ForceBorrowed){Classification.Safe=false;Classification.Borrowed=true;}
 +  if (ForceUnsafe && !unsafeAdmission(S.Context, T))
@@ -54447,6 +54450,12 @@ new file mode 100644
 +    S.Diag(Loc, strictConcurrency(S) ? diag::err_objc3_sendable_transfer
 +                                     : diag::warn_objc3_sendable_transfer)
 +        << T << Reason;
++    if (strictConcurrency(S) && Classification.Borrowed &&
++        unsafeAdmission(S.Context, T) &&
++        !S.getDiagnostics().getSuppressAllDiagnostics() &&
++        !S.getDiagnostics().hasFatalErrorOccurred())
++      S.getDiagnostics().Report(Loc,
++          diag::warn_objc3_unchecked_sendable_borrowed) << T;
 +    if (Boundary)
 +      S.Diag(Boundary->getLocation(), diag::note_objc3_sendable_boundary);
 +    return strictConcurrency(S);
@@ -54454,7 +54463,7 @@ new file mode 100644
 +  if (strictConcurrency(S) && (Classification.Unchecked || ForceUnsafe) &&
 +      !S.getDiagnostics().getSuppressAllDiagnostics() &&
 +      !S.getDiagnostics().hasFatalErrorOccurred()) {
-+    if (Classification.Resource)
++    if (Classification.Resource || ForceResource)
 +      S.getDiagnostics().Report(Loc,
 +          diag::warn_objc3_unchecked_sendable_resource) << T;
 +    // This is a required standalone transfer note, not a child of a preceding
@@ -56475,7 +56484,7 @@ new file mode 100644
 +  const bool Managed=carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S);
 +  const bool Borrowed=carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S,true);
 +  return checkTransfer(S,Type,Value->getExprLoc(),Borrowed?StringRef("borrowed concurrent value"):
-+      Managed?StringRef("cleanup-managed concurrent value"):Reason,Boundary,Managed,Borrowed,ScopeBody);
++      Managed?StringRef("cleanup-managed concurrent value"):Reason,Boundary,Managed,Borrowed,ScopeBody,Managed);
 +}
 +// Prove every possible capture environment before diagnosing its transfers.
 +// Completed expression nodes are shared across diamonds; active nodes reject
@@ -57247,7 +57256,7 @@ new file mode 100644
 +        UnprovenLifetime && Type->isPointerType() ? "unverified capture lifetime" :
 +        Managed ? "cleanup-managed capture" : "concurrent capture";
 +    if(Capture.TransportType->isBlockPointerType()) {
-+      if(Managed || Borrowed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),CaptureReason,Capture.Parameter,Managed,Borrowed,Body);
++      if(Managed || Borrowed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),CaptureReason,Capture.Parameter,Managed,Borrowed,Body,Managed);
 +      SmallVector<const BlockExpr *,8> Blocks;SmallVector<FactoryCapture,8> Nested;
 +      if(knownConcurrentBlocks(S,Value,Blocks,Body,&Nested)) {
 +        Invalid|=checkFactoryCaptures(S,Nested,Body,Proof,Depth+1);
@@ -57259,7 +57268,7 @@ new file mode 100644
 +        S.Diag(Value->getExprLoc(),diag::err_objc3_task_unknown_capture);Invalid=true;
 +      } else checkTransfer(S,Type,Value->getExprLoc(),"unverified concurrent block capture",Capture.Parameter);
 +    } else Invalid|=checkTransfer(S,Type,Value->getExprLoc(),
-+        CaptureReason,Capture.Parameter,Managed,Borrowed,Body);
++        CaptureReason,Capture.Parameter,Managed,Borrowed,Body,Managed);
 +  }
 +  for(const auto &Capture:Captures)if(Capture.Environment)
 +    Invalid|=checkKnownConcurrentBlock(S,Capture.Environment,Capture.Environment->getExprLoc(),false,Proof,Body);
@@ -57801,7 +57810,7 @@ new file mode 100644
 +          Failed |= checkKnownConcurrentBlock(S, Block, Loc, false, Proof, ScopeBody);
 +      } else {
 +        Failed = checkTransfer(S, V->getType(), Loc, "concurrent capture",
-+                               nullptr, Unsafe || Managed,Borrowed,ScopeBody);
++                               nullptr, Unsafe || Managed,Borrowed,ScopeBody,Managed);
 +      }
 +    }
 +    if (Failed)
@@ -79300,7 +79309,7 @@ diff --git a/clang/lib/AST/DeclObjC.cpp b/clang/lib/AST/DeclObjC.cpp
        }
      }
      data().IvarListMissingImplementation = true;
-@@ -1716,23 +1732,15 @@
+@@ -1716,24 +1732,16 @@
                               IV->getASTContext().getTypeSize(IV->getType()), IV));
            continue;
          }
