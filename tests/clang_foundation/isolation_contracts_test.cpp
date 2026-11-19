@@ -330,7 +330,9 @@ void *group_spawn(Work) __attribute__((objc_task_group, objc_task_spawn));
 void *group_spawn(Work) __attribute__((objc_task_group));
 void group_scope(Work, int configuration) __attribute__((objc_task_group));
 template<class GroupWork>
-void group_scope_cpp(GroupWork, int configuration) __attribute__((objc_task_group));
+void group_scope_cpp(GroupWork, int configuration) __attribute__((objc_task_group)) {
+  (void)configuration;
+}
 #define SPAWN(e) spawn(e)
 struct Packet { int value; Counter *actor; };
 )";

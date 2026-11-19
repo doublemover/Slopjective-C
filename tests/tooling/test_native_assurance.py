@@ -630,6 +630,46 @@ def test_coverage_producer_failure_retains_typed_receipt(tmp_path, monkeypatch):
     assert receipt['error'] == 'RuntimeError: pytest failed'
 
 
+def test_coverage_producer_preserves_prepare_error_without_a_source_tree(tmp_path, monkeypatch):
+    from scripts.objc3c_assurance import coverage_matrix
+    from scripts.objc3c_toolchain.core import ToolchainError
+
+    def fail_preparation(*args, **kwargs):
+        raise ToolchainError('locked patch does not apply')
+
+    repo = tmp_path.resolve()
+    plan = {'revision': dict(REV), 'sha256': 'p' * 64}
+    monkeypatch.setattr(coverage_matrix, 'validate', lambda _: None)
+    monkeypatch.setattr(coverage_matrix, '_require_checkout', lambda *_: None)
+    monkeypatch.setattr(coverage_matrix.subprocess, 'run', lambda *args, **kwargs: None)
+    monkeypatch.setattr(coverage_matrix, 'junit', lambda _: [None] * 4)
+    monkeypatch.setattr(coverage_matrix, 'build_foundation', fail_preparation)
+    output = repo / 'out/coverage-producer'
+
+    with pytest.raises(ToolchainError, match='locked patch does not apply'):
+        coverage_matrix.produce(repo, plan, output, repo / 'out/profile.tar.zst')
+
+    receipt = json.loads((output / 'producer.json').read_text())
+    assert receipt['status'] == 'FAIL'
+    assert receipt['error'] == 'ToolchainError: locked patch does not apply'
+
+
+def test_product_producer_blocks_upstream_when_package_build_fails(tmp_path):
+    from scripts.objc3c_assurance.execution import execute_suites
+
+    def fail_package(suite, directory):
+        assert suite['id'] == 'package'
+        raise RuntimeError('source preparation failed')
+
+    report = {'suites': []}
+    with pytest.raises(ValueError, match=r'^native suites failed: package$'):
+        execute_suites([{'id': 'package'}, {'id': 'upstream'}], output=tmp_path,
+                       report=report, execute=fail_package, save=lambda: None)
+
+    assert [row['status'] for row in report['suites']] == ['FAIL', 'BLOCKED']
+    assert report['suites'][0]['error'] == 'source preparation failed'
+
+
 def test_coverage_partition_restore_failure_retains_typed_receipt(tmp_path, monkeypatch):
     from scripts.objc3c_assurance import coverage_matrix
     repo = tmp_path / 'repo';(repo / 'out').mkdir(parents=True)

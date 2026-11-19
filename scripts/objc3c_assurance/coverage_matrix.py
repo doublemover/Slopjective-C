@@ -72,12 +72,14 @@ def _produce_profile(repo: Path, plan: dict, output: Path, bundle: Path,
 
     evidence = output / 'foundations' / PROFILE
     evidence.mkdir(parents=True)
+    host = native_linux_host()
+    receipt = (repo / 'out/toolchains/objc3-development' /
+               f'build-{host}-{PROFILE}' / 'foundation-build-report.json')
     try:
-        foundation = build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
+        foundation = build_foundation(repo, host=host, fetch=True, stage=True,
                                       instrumentation_profile=PROFILE, test_results=evidence)
     finally:
-        configured = _profile_plan(repo)
-        receipt = Path(configured['paths']['build']) / 'foundation-build-report.json'
+        # Preparation may fail before there is a sealed source tree to plan.
         if receipt.is_file():
             saved = json.loads(receipt.read_text())
             write_json(evidence / 'foundation.json', saved)

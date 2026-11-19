@@ -54181,7 +54181,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4682 @@
+@@ -0,0 +1,4690 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -54395,6 +54395,7 @@ new file mode 100644
 +              }
 +              Managed |= carriesManagedResourceValue(C,Init);
 +            }
++            ResourceBearing |= Managed;
 +            if (Unowned || Managed) {
 +              bool Admitted = unsafeAdmission(C, CaptureType);
 +              Safe &= Admitted;
@@ -54450,14 +54451,14 @@ new file mode 100644
 +    S.Diag(Loc, strictConcurrency(S) ? diag::err_objc3_sendable_transfer
 +                                     : diag::warn_objc3_sendable_transfer)
 +        << T << Reason;
++    if (Boundary)
++      S.Diag(Boundary->getLocation(), diag::note_objc3_sendable_boundary);
 +    if (strictConcurrency(S) && Classification.Borrowed &&
 +        unsafeAdmission(S.Context, T) &&
 +        !S.getDiagnostics().getSuppressAllDiagnostics() &&
 +        !S.getDiagnostics().hasFatalErrorOccurred())
 +      S.getDiagnostics().Report(Loc,
 +          diag::warn_objc3_unchecked_sendable_borrowed) << T;
-+    if (Boundary)
-+      S.Diag(Boundary->getLocation(), diag::note_objc3_sendable_boundary);
 +    return strictConcurrency(S);
 +  }
 +  if (strictConcurrency(S) && (Classification.Unchecked || ForceUnsafe) &&
@@ -56481,10 +56482,14 @@ new file mode 100644
 +}
 +bool checkTransferValue(Sema &S,const Expr *Value,QualType Type,
 +                        StringRef Reason,const Decl *Boundary,const Stmt *ScopeBody=nullptr) {
-+  const bool Managed=carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S);
++  bool UnprovenLifetime = false;
++  const bool Managed = carriesManagedResourceValue(
++      S.Context, Value, ScopeBody, nullptr, &S, false, &UnprovenLifetime);
 +  const bool Borrowed=carriesManagedResourceValue(S.Context,Value,ScopeBody,nullptr,&S,true);
-+  return checkTransfer(S,Type,Value->getExprLoc(),Borrowed?StringRef("borrowed concurrent value"):
-+      Managed?StringRef("cleanup-managed concurrent value"):Reason,Boundary,Managed,Borrowed,ScopeBody,Managed);
++  return checkTransfer(S, Type, Value->getExprLoc(),
++      Borrowed ? StringRef("borrowed concurrent value") :
++      Managed ? StringRef("cleanup-managed concurrent value") : Reason,
++      Boundary, Managed, Borrowed, ScopeBody, Managed && !UnprovenLifetime);
 +}
 +// Prove every possible capture environment before diagnosing its transfers.
 +// Completed expression nodes are shared across diamonds; active nodes reject
@@ -57256,7 +57261,9 @@ new file mode 100644
 +        UnprovenLifetime && Type->isPointerType() ? "unverified capture lifetime" :
 +        Managed ? "cleanup-managed capture" : "concurrent capture";
 +    if(Capture.TransportType->isBlockPointerType()) {
-+      if(Managed || Borrowed)Invalid|=checkTransfer(S,Type,Value->getExprLoc(),CaptureReason,Capture.Parameter,Managed,Borrowed,Body,Managed);
++      if (Managed || Borrowed)
++        Invalid |= checkTransfer(S, Type, Value->getExprLoc(), CaptureReason,
++            Capture.Parameter, Managed, Borrowed, Body, Managed && !UnprovenLifetime);
 +      SmallVector<const BlockExpr *,8> Blocks;SmallVector<FactoryCapture,8> Nested;
 +      if(knownConcurrentBlocks(S,Value,Blocks,Body,&Nested)) {
 +        Invalid|=checkFactoryCaptures(S,Nested,Body,Proof,Depth+1);
@@ -57268,7 +57275,7 @@ new file mode 100644
 +        S.Diag(Value->getExprLoc(),diag::err_objc3_task_unknown_capture);Invalid=true;
 +      } else checkTransfer(S,Type,Value->getExprLoc(),"unverified concurrent block capture",Capture.Parameter);
 +    } else Invalid|=checkTransfer(S,Type,Value->getExprLoc(),
-+        CaptureReason,Capture.Parameter,Managed,Borrowed,Body,Managed);
++        CaptureReason,Capture.Parameter,Managed,Borrowed,Body,Managed && !UnprovenLifetime);
 +  }
 +  for(const auto &Capture:Captures)if(Capture.Environment)
 +    Invalid|=checkKnownConcurrentBlock(S,Capture.Environment,Capture.Environment->getExprLoc(),false,Proof,Body);
@@ -57810,7 +57817,8 @@ new file mode 100644
 +          Failed |= checkKnownConcurrentBlock(S, Block, Loc, false, Proof, ScopeBody);
 +      } else {
 +        Failed = checkTransfer(S, V->getType(), Loc, "concurrent capture",
-+                               nullptr, Unsafe || Managed,Borrowed,ScopeBody,Managed);
++                               nullptr, Unsafe || Managed, Borrowed, ScopeBody,
++                               Managed && !UnprovenLifetime);
 +      }
 +    }
 +    if (Failed)
@@ -70894,7 +70902,7 @@ index 000000000..272407eac
 +  (void)capture_detach([handle]() mutable __objc3_async_frame {return ++handle;}); // expected-error {{non-Sendable type}}
 +  (void)capture_spawn([handle](auto... args) __objc3_async_frame {return handle;}); // expected-error {{non-Sendable type}}
 +  CaptureAdmittedHandle unchecked __attribute__((cleanup(capture_admitted_cleanup)))=1;
-+  (void)capture_spawn([unchecked]() __objc3_async_frame {return unchecked;}); // expected-note {{relies on objc_unsafe_sendable}}
++  (void)capture_spawn([unchecked]() __objc3_async_frame {return unchecked;}); // expected-warning {{is user-asserted by objc_unsafe_sendable and not compiler-proven}} expected-note {{relies on objc_unsafe_sendable}}
 +  (void)capture_spawn([&number]() __objc3_async_frame {return number;}); // expected-error {{non-Sendable type}}
 +  auto nested=[unsafe_safe]() __objc3_async_frame {return unsafe_safe != 0;};
 +  auto alias=nested;
@@ -71868,7 +71876,7 @@ index 000000000..7c61985c2
 +  int run(int) noexcept __attribute__((objc_executor(main)));
 +};
 +static int rejects_borrowed_receiver(BorrowedMemberEntry &value) __objc3_async_frame {
-+  return __objc3_await value.run(1); // expected-error {{non-Sendable type}}
++  return __objc3_await value.run(1); // expected-error {{non-Sendable type}} expected-warning {{cannot waive borrowed lifetime requirements}}
 +}
 +struct IncompatibleExecutorOverride : MemberEntry {
 +  int dispatch(int) noexcept __attribute__((objc_executor(global))) override; // expected-error {{does not match the previous declaration}}
@@ -79336,7 +79344,7 @@ diff --git a/clang/lib/AST/DeclObjC.cpp b/clang/lib/AST/DeclObjC.cpp
        }
      }
    }
- 
+   return data().IvarList;
 
 diff --git a/clang/test/ObjC3/Sema/Inputs/actor-receiver-bindings.h b/clang/test/ObjC3/Sema/Inputs/actor-receiver-bindings.h
 new file mode 100644

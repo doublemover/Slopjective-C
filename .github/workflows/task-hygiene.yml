@@ -74,6 +74,7 @@ jobs:
           tests/tooling/test_product_command_evidence.py
           tests/tooling/test_sanitizer_product_campaign.py
           tests/tooling/test_objc3c_toolchain_prepare.py
+          tests/tooling/test_llvm_patch_hunks.py
           tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py
           tests/tooling/test_toolchain_install.py

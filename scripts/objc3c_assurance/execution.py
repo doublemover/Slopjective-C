@@ -90,6 +90,10 @@ def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, s
             row.update(status='BLOCKED', error='Private SDK package prerequisite did not pass')
             save()
             continue
+        if suite['id'] == 'upstream' and 'package' in failures and 'foundation' not in passed:
+            row.update(status='BLOCKED', error='SDK producer did not prepare the upstream test build')
+            save()
+            continue
         save()
         try:
             row['executions'] = execute(suite, directory)
