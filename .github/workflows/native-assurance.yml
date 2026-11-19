@@ -376,7 +376,7 @@ jobs:
       - name: Preserve qualified SDK archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             out/toolchains/sdk-cache/*.tar.zst
             out/toolchains/sdk-cache/*.tar.json
@@ -438,7 +438,7 @@ jobs:
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: /release
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -486,7 +486,7 @@ jobs:
 
   asan-foundation-producer:
     name: Build exact sanitizer compiler producer
-    needs: plan
+    needs: [plan, product-producer]
     if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
@@ -615,7 +615,7 @@ jobs:
           path: out/native-assurance/selection
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: /release
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -678,7 +678,7 @@ jobs:
 
   independent-native:
     name: Execute independent native owner (frontend-fuzz)
-    needs: plan
+    needs: [plan, product-producer]
     if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
@@ -743,7 +743,7 @@ jobs:
 
   coverage-producer:
     name: Build exact source-coverage compiler producer
-    needs: plan
+    needs: [plan, product-producer]
     if: needs.plan.outputs.native == 'true' && !inputs.diagnostic_core_only && inputs.diagnostic_transport_run == ''
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
@@ -954,28 +954,34 @@ jobs:
       fail-fast: false
       matrix:
         distribution: ["debian:13", "ubuntu:26.04"]
-    container:
-      image: ${{ matrix.distribution }}
-      options: --security-opt seccomp=unconfined
+        include:
+          - distribution: "debian:13"
+            receipt: debian-13
+          - distribution: "ubuntu:26.04"
+            receipt: ubuntu-26.04
+    timeout-minutes: 120
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
-          path: /release
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/release-download
       - name: Install, relocate, build, embed, debug and run the shipped archive
-        shell: sh
+        env:
+          DISTRIBUTION: ${{ matrix.distribution }}
         run: |
-          archive_count=$(find /release -name '*.tar.zst' -type f | wc -l)
-          receipt_count=$(find /release -name '*.tar.json' -type f | wc -l)
-          if [ "$archive_count" -ne 1 ] || [ "$receipt_count" -ne 1 ]; then
-            echo "expected one archive and one receipt; found $archive_count and $receipt_count" >&2
-            exit 1
-          fi
-          archive=$(find /release -name '*.tar.zst' -type f)
-          receipt=$(find /release -name '*.tar.json' -type f)
-          expected_sha=$(sed -n 's/ *"archive_sha256": "\([a-f0-9]*\)".*/\1/p' "$receipt")
-          [ "${#expected_sha}" -eq 64 ] || { echo 'archive receipt has no SHA-256' >&2; exit 1; }
-          sh /release/scripts/qualify_linux_archive.sh "$archive" "$expected_sha" /opt/objc3c
+          python3 -B -m scripts.objc3c_toolchain.release_install \
+            --directory out/release-download --output out/archive-install/result.json \
+            --host "$OBJC3C_REQUESTED_HOST" --distribution "$DISTRIBUTION"
+      - name: Preserve clean-install release receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: objc3c-linux-install-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.receipt }}
+          path: out/archive-install/result.json
+          if-no-files-found: error
+          retention-days: 7
 
   gate:
     name: Extended Linux native assurance gate

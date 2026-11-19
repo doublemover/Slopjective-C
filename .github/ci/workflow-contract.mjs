@@ -461,7 +461,8 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     (step) => step.name === "Preserve the exact implementation analysis bundle",
   );
   const releaseGate = release.jobs?.release;
-  const sdkArtifact = "objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}";
+  const sdkArtifact =
+    "objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}";
   const hostInput = "${{ inputs.linux_host }}";
   const archive =
     native.jobs?.["product-producer"]?.steps?.filter(
@@ -499,7 +500,11 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     install.strategy?.["fail-fast"] !== false ||
     JSON.stringify(install.strategy?.matrix?.distribution) !==
       JSON.stringify(["debian:13", "ubuntu:26.04"]) ||
-    install.container?.image !== "${{ matrix.distribution }}" ||
+    !install.steps?.some(
+      (step) =>
+        step.env?.DISTRIBUTION === "${{ matrix.distribution }}" &&
+        step.run?.includes("scripts.objc3c_toolchain.release_install"),
+    ) ||
     !nativeGate.needs?.includes("archive-install") ||
     installCheck?.env?.INSTALL_REQUIRED !== "${{ inputs.archive_install }}" ||
     installCheck.env.INSTALL_RESULT !== "${{ needs.archive-install.result }}" ||

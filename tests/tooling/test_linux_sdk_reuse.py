@@ -200,7 +200,7 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
             kwargs['stdout'].write('Cloning runtime dependencies...\n')
         return SimpleNamespace(returncode=0)
 
-    def package(*args):
+    def package(*args, checkpoint):
         nonlocal changed
         changed = True
         return {'archive': str(tmp_path / 'sdk.tar.zst'), 'archive_sha256': 'archive', 'seal_sha256': 'seal'}

@@ -48,8 +48,34 @@ jobs:
           uv run python -m scripts.objc3c_toolchain.stage_linux_release \
             --repo "$GITHUB_REPOSITORY" --revision "$GITHUB_SHA" \
             --tag "$RELEASE_VERSION" --x86-run "$X86_RUN" --arm-run "$ARM_RUN" \
-            --downloads out/release-downloads --output out/release-draft
-          gh release create "$RELEASE_VERSION" out/release-draft/* \
-            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --prerelease \
-            --title "Objective-C 3.0 Linux SDK $RELEASE_VERSION" \
-            --notes-file docs/releases/linux-preview-notes.md
+            --downloads out/release-downloads --output out/release-draft \
+            --publish-draft docs/releases/linux-preview-notes.md
+  rehearse:
+    name: Install exact draft downloads (${{ matrix.host }})
+    needs: draft
+    runs-on: ${{ matrix.host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [linux-x86_64, linux-aarch64]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download the exact draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_HOST: ${{ matrix.host }}
+        run: |
+          gh release download "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --dir out/draft-assets \
+            --pattern "objc3-sdk-$RELEASE_VERSION-$RELEASE_HOST.tar.zst" \
+            --pattern linux-release.json --pattern SHA256SUMS \
+            --pattern install-linux.sh --pattern install-sdk.py
+      - name: Provision, install, and compile using the public entry point
+        env:
+          RELEASE_HOST: ${{ matrix.host }}
+        run: python3 -B -m scripts.objc3c_toolchain.release_install --host "$RELEASE_HOST" --directory out/draft-assets

@@ -17,7 +17,7 @@ from .core import build_plans, verify_development
 from .facade import facade_identity
 from .frontend_tests import qualify as qualify_frontend_tests
 from .install_sdk import install
-from .package import inventory, package_sdk, verify_sdk
+from .package import _archive_sdk, inventory, package_sdk, verify_sdk
 from .qualify_installed import qualify_installed
 from .sdk_example import write_json
 from .native_headers import discover as discover_native_headers, materialize as materialize_native_headers
@@ -246,6 +246,27 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         finally:
             write_json(directory / 'build-report.json', report)
     prefix = directory / 'prefix'
+    cache_dir = repo / 'out/toolchains/sdk-cache'
+    checkpoint = directory / 'archive-inputs.json'
+    if checkpoint.is_file():
+        report = json.loads(checkpoint.read_bytes())
+        receipt = report.pop('archive_inputs')
+        archive = Path(receipt['archive'])
+        if (report.get('input_identity') != identity['sha256'] or
+                report.get('build_prefix') != str(prefix) or prefix.is_symlink() or
+                archive.parent != cache_dir):
+            raise ValueError('archive publication checkpoint differs from the qualified SDK build')
+        verify_sdk(prefix, receipt['seal_sha256'])
+        report.update(_archive_sdk(prefix, archive, receipt), status='awaiting-installation')
+        if input_identity(repo, prefix) != identity:
+            raise ValueError('SDK inputs changed while resuming archive publication')
+        _install_qualified_archive(report, directory, install_root,
+                                   expected_identity=identity['sha256'])
+        report.update(status='PASS', resumed_qualified_archive=True,
+                      elapsed_seconds=round(time.monotonic() - started, 6))
+        write_json(receipt_path, report)
+        write_json(directory / 'build-report.json', report)
+        return {**report, 'cache_hit': False}
     if prefix.exists():
         raise ValueError(f'incomplete SDK build preserved at {directory}; inspect it before removing it and retrying')
     # This is a mutable build candidate. Only a sealed archive is published to
@@ -320,7 +341,8 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         if input_identity(repo, sdk) != identity:
             raise ValueError('SDK inputs changed during qualification; candidate has not been published')
         receipt = package_sdk(repo, prefix, repo / 'out/native-validation' / run_id / 'summary.json',
-                              repo / 'out/toolchains/sdk-cache')
+                              cache_dir, checkpoint=lambda inputs: write_json(
+                                  checkpoint, {**report, 'archive_inputs': inputs}))
         # Packaging now runs substantial installed-source qualification. Bind
         # its scripts and fixtures through publication, not just through the
         # preceding native validation batch.

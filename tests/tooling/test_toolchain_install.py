@@ -50,6 +50,61 @@ def test_install_reuse_and_relocation(tmp_path):
     package.verify_sdk((moved / 'current').resolve(), first['seal_sha256'])
 
 
+def test_archive_publication_resumes_and_reuses_without_extraction(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import install_sdk
+
+    release(tmp_path)
+    prefix = tmp_path / 'source'
+    data = package.verify_sdk(prefix)
+    archive = tmp_path / 'candidate.tar.zst'
+    receipt = {'seal_sha256': data['seal_sha256']}
+    replace = package.os.replace
+    with monkeypatch.context() as patch:
+        def interrupt(source, destination):
+            if destination == archive.with_suffix('.json'):
+                raise OSError('interrupted receipt publication')
+            replace(source, destination)
+        patch.setattr(package.os, 'replace', interrupt)
+        with pytest.raises(OSError, match='interrupted receipt'):
+            package._archive_sdk(prefix, archive, receipt)
+    assert archive.is_file() and not archive.with_suffix('.json').exists()
+    repaired = package._archive_sdk(prefix, archive, receipt)
+    assert not repaired['cache_hit']
+    assert package._archive_sdk(prefix, archive, receipt)['cache_hit']
+
+    root = tmp_path / 'installed'
+    installed = install(archive, repaired['archive_sha256'], root)
+    with monkeypatch.context() as patch:
+        patch.setattr(tarfile.TarFile, 'extractall', lambda *a, **kw: pytest.fail('re-extracted'))
+        reused = install(archive, repaired['archive_sha256'], root)
+        assert reused['cost']['prefix_reused'] and reused['prefix'] == installed['prefix']
+        (Path(reused['prefix']) / 'bin/objc3c').write_text('tampered')
+        with pytest.raises(ValueError, match='differ'):
+            install(archive, repaired['archive_sha256'], root)
+
+
+def test_explicit_reactivation_replaces_old_path_and_is_idempotent(tmp_path):
+    import subprocess
+    from scripts.objc3c_toolchain.install_sdk import activate
+
+    root = tmp_path / 'install with spaces'
+    first, second = root / 'sdks/one', root / 'sdks/two'
+    for prefix in first, second:
+        (prefix / 'bin').mkdir(parents=True)
+    activate(root, first)
+    command = '. "$1/activate.sh"; printf "ready\\n"; read go; . "$1/activate.sh"; . "$1/activate.sh"; printf "%s" "$PATH"'
+    with subprocess.Popen(['sh', '-ec', command, 'sh', str(root)], stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE, text=True) as shell:
+        assert shell.stdout.readline() == 'ready\n'
+        activate(root, second)
+        output, _ = shell.communicate('continue\n', timeout=10)
+        assert shell.returncode == 0
+    entries = output.split(':')
+    assert entries[0] == str(second / 'bin')
+    assert entries.count(str(second / 'bin')) == 1
+    assert str(first / 'bin') not in entries
+
+
 def test_bad_archive_and_tampered_prefix_preserve_activation(tmp_path):
     archive, digest = release(tmp_path)
     root = tmp_path / 'installed'
