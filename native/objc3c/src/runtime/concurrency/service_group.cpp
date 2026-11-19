@@ -14,6 +14,7 @@
 namespace objc3::services {
 
 struct TaskGroup;
+template<class Waiter> struct GroupAwaitRegistration;
 
 struct GroupParentLink final {
   std::mutex mutex;
@@ -36,6 +37,7 @@ struct TaskGroup final {
   };
   struct NextWaiter {
     ObjC3TaskAwaitContinuation continuation;
+    std::shared_ptr<GroupAwaitRegistration<NextWaiter>> retirement;
     objc3_async_result_type expected{};
     std::string identity;
     bool typed{false};
@@ -44,6 +46,7 @@ struct TaskGroup final {
   };
   struct JoinWaiter {
     ObjC3TaskAwaitContinuation continuation;
+    std::shared_ptr<GroupAwaitRegistration<JoinWaiter>> retirement;
     objc3_service_status status{OBJC3_SERVICE_OK};
     bool cleanup{false};
     objc3_task_t *owned_parent{nullptr};
@@ -94,6 +97,34 @@ struct TaskGroup final {
     for (const auto &entry : tasks) objc3_task_release(entry.task);
     for (auto *child : children) task_group_release(child);
     objc3_error_release(first_failure);
+  }
+};
+
+template<class Waiter>
+struct GroupAwaitRegistration {
+  using Queue = std::list<Waiter> TaskGroup::*;
+  const std::shared_ptr<GroupParentLink> link;
+  const Queue queue;
+  const typename std::list<Waiter>::iterator position;
+  bool linked{false}; // Serialized by the group's mutex.
+
+  GroupAwaitRegistration(TaskGroup *group, Queue queue,
+                         typename std::list<Waiter>::iterator position)
+      : link(group->self_link), queue(queue), position(position) {}
+
+  static void unlink(void *opaque) noexcept {
+    auto &registration = *static_cast<GroupAwaitRegistration *>(opaque);
+    std::list<Waiter> retired;
+    {
+      std::lock_guard<std::mutex> lifetime(registration.link->mutex);
+      if (auto *group = registration.link->group) {
+        std::lock_guard<std::mutex> lock(group->mutex);
+        if (registration.linked) {
+          registration.linked = false;
+          retired.splice(retired.end(), group->*registration.queue, registration.position);
+        }
+      }
+    }
   }
 };
 
@@ -335,6 +366,7 @@ void take_next_notifications_locked(
         break;
     }
     auto &waiter = group->next_waiters.front();
+    waiter.retirement->linked = false;
     if (entry && waiter.typed) {
       const objc3_async_result_type *type = nullptr;
       if (objc3_task_get_result_type(entry->task, &type) != OBJC3_SERVICE_OK ||
@@ -424,6 +456,7 @@ std::shared_ptr<GroupParentLink> take_join_notifications(
       if (state != JoinState::Pending) {
         current->status = state == JoinState::Failed ? OBJC3_SERVICE_NOT_READY
                                                     : OBJC3_SERVICE_OK;
+        if (current->retirement) current->retirement->linked = false;
         waiters.splice(waiters.end(), group->join_waiters, current);
       }
     }
@@ -958,9 +991,14 @@ objc3_service_status await_group(TaskGroup *group, objc3_task_t *parent,
                                  objc3_service_status *out_status, bool cleanup) {
   if (!group || !parent || !out_status || objc3_task_current_callback() != parent)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
+  using Registration = GroupAwaitRegistration<TaskGroup::JoinWaiter>;
   std::list<TaskGroup::JoinWaiter> registration;
-  try { registration.emplace_back(); }
-  catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
+  try {
+    registration.emplace_back();
+    if (!cleanup)
+      registration.front().retirement = std::make_shared<Registration>(
+          group, &TaskGroup::join_waiters, registration.begin());
+  } catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
   auto &waiter = registration.front();
   waiter.cleanup = cleanup;
   if (cleanup) {
@@ -988,16 +1026,21 @@ objc3_service_status await_group(TaskGroup *group, objc3_task_t *parent,
       if (contains_task(child, parent)) return OBJC3_SERVICE_INVALID_ARGUMENT;
     const auto state = cleanup ? cleanup_join_state_locked(group)
                                : join_state_locked(group);
-    notify = (!cleanup && objc3_task_is_cancel_requested(parent)) ||
-             state != JoinState::Pending;
     if (state == JoinState::Failed) waiter.status = OBJC3_SERVICE_NOT_READY;
     // Nodes, optional ownership and control blocks already exist. Splice and
     // prepare publish exactly one suspension owner without fallible work after.
     const auto status = objc3_task_prepare_await(
-        parent, waiter.continuation, out_status, nullptr, cleanup);
+        parent, waiter.continuation, out_status, nullptr, cleanup,
+        {waiter.retirement, Registration::unlink});
     if (status != OBJC3_SERVICE_OK) return status;
-    if (!notify)
+    // Check after publishing suspension so cancellation either sees this
+    // waiter or is already visible to the registering task.
+    notify = (!cleanup && objc3_task_is_cancel_requested(parent)) ||
+             state != JoinState::Pending;
+    if (!notify) {
+      if (waiter.retirement) waiter.retirement->linked = true;
       group->join_waiters.splice(group->join_waiters.end(), registration);
+    }
   }
   // Even an empty or previously joined group queues the continuation. Native
   // resumes remain serialized and keep the caller's selected destination.
@@ -1230,9 +1273,12 @@ objc3_service_status task_group_await_next(
     const auto status = objc3_async_result_type_validate(expected_type);
     if (status != OBJC3_SERVICE_OK) return status;
   }
+  using Registration = GroupAwaitRegistration<TaskGroup::NextWaiter>;
   std::list<TaskGroup::NextWaiter> registration;
   try {
     registration.emplace_back();
+    registration.front().retirement = std::make_shared<Registration>(
+        group, &TaskGroup::next_waiters, registration.begin());
     if (expected_type) {
       auto &waiter = registration.front();
       waiter.expected = *expected_type;
@@ -1251,16 +1297,18 @@ objc3_service_status task_group_await_next(
       if (entry.task == parent) return OBJC3_SERVICE_INVALID_ARGUMENT;
     for (auto *child : group->children)
       if (contains_task(child, parent)) return OBJC3_SERVICE_INVALID_ARGUMENT;
+    auto &waiter = registration.front();
     const auto status = objc3_task_prepare_await(
-        parent, registration.front().continuation, out_status, out_task);
+        parent, waiter.continuation, out_status, out_task, false,
+        {waiter.retirement, Registration::unlink});
     if (status != OBJC3_SERVICE_OK) return status;
     // All descriptor/node allocation precedes suspension publication. Splice
     // and reservation cannot fail after the caller's output slots become live.
     if (objc3_task_is_cancel_requested(parent)) {
-      registration.front().claim = objc3_task_claim_await(
-          registration.front().continuation, OBJC3_SERVICE_CANCELLED);
+      waiter.claim = objc3_task_claim_await(waiter.continuation, OBJC3_SERVICE_CANCELLED);
       ready.splice(ready.end(), registration);
     } else {
+      waiter.retirement->linked = true;
       group->next_waiters.splice(group->next_waiters.end(), registration);
       take_next_notifications_locked(group, ready);
     }

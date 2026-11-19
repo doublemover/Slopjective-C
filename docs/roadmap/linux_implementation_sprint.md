@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.284 / System 2.210 group waiter change](linux_checked_await_cancellation.md)
+removes abandoned registrations on cancellation, external completion and last
+handle release. Terminal evidence checks all required runtime schedule profiles.
+
 The [Source 2.283 / System 2.209 consumed C arguments](linux_async_c_completion_exports.md)
 preserve the C caller's borrowed references while native checked, async and
 isolated callees receive their own object, Block or receiver ownership claim.

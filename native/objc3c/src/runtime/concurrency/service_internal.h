@@ -64,6 +64,15 @@ struct ObjC3TaskQuiescenceObserver {
 
 struct ObjC3TaskGroupScope;
 
+// The retirement context owns a registration ticket, independent of the
+// source task and awaited group. Unlink only after dropping task locks.
+struct ObjC3TaskAwaitRetirement {
+  std::shared_ptr<void> ticket;
+  void (*unlink)(void *) noexcept = nullptr;
+
+  void retire() const noexcept { if (ticket) unlink(ticket.get()); }
+};
+
 struct objc3_task final {
   struct AwaitTarget {
     std::mutex mutex;
@@ -127,6 +136,8 @@ struct objc3_task final {
   objc3_service_status *await_status{nullptr};
   objc3_task_t **await_result_task{nullptr};
   std::shared_ptr<AwaitTarget> await_target;
+  ObjC3TaskAwaitRetirement await_retirement;
+  ObjC3TaskAwaitRetirement cancel_retirement;
   std::shared_ptr<void> continuation_owner;
   // Releasing a cleanup-join lease can destroy group-owned task/error payloads.
   // That work remains part of this task's quiescence after its frame is gone.
@@ -180,7 +191,7 @@ struct ObjC3TaskAwaitContinuation {
 objc3_service_status objc3_task_prepare_await(
     objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
     objc3_service_status *status = nullptr, objc3_task_t **result_task = nullptr,
-    bool cancellation_shielded = false);
+    bool cancellation_shielded = false, ObjC3TaskAwaitRetirement retirement = {});
 struct ObjC3TaskAwaitClaim {
   objc3_task_t *parent{nullptr};
   bool wake{false};

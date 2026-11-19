@@ -41,3 +41,13 @@ completions available and its cleanup join still waits for quiescence. C
 polling reports `CANCELLED`, unchecked native frame iteration completes as
 cancelled, and the checked root `Error` path observes the distinguished
 cancellation value. C++ `group.next<T>()` resumes with `task_cancelled`.
+
+Source 2.284 / System 2.210 releases ordinary group join and iteration
+registrations as soon as the waiting task is cancelled, externally completed,
+or loses its last handle. Registration and cancellation coordinate through the
+published suspension state, including when cancellation arrives during
+registration. Shielded cleanup joins still wait for group quiescence. Six
+native controls keep a member suspended and verify that each abandoned waiter
+releases its registration before a later group event, then consume the member's
+result and join the group. The schedule evidence gate requires those controls
+in the complete sanitizer and optimization matrix.

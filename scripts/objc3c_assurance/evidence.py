@@ -346,16 +346,27 @@ def suite_results(root: Path, name: str) -> list[dict]:
             raise ValueError('sanitizer product owner/profile matrix is incomplete')
         return sorted(rows, key=lambda row: row['name'])
     if name == 'runtime-schedules':
+        from scripts.objc3c_toolchain.runtime_schedules import SCENARIO_INVENTORY
+
         result = read('campaign/qualification.json')
         histories, cases = result.get('histories', []), result.get('cases', [])
         scenarios, controls = result.get('scenario_cases', []), result.get('controls', [])
-        expected_scenarios = set(result.get('scenario_inventory', {}))
-        if (len(histories) != 8 or len(cases) != 8*2*2*3 or len(scenarios) != 2*2*3 or
+        configurations = {(sanitizer, optimization, fixture)
+                          for sanitizer in ('address,undefined', 'thread')
+                          for optimization in ('O0', 'O2')
+                          for fixture in SCENARIO_INVENTORY.values()}
+        if (len(histories) != 8 or len(cases) != 8*2*2*3 or
+                len(scenarios) != len(configurations) or
+                result.get('scenario_inventory') != SCENARIO_INVENTORY or
+                {(row.get('sanitizer'), row.get('client_optimization'), row.get('fixture'))
+                 for row in scenarios if row.get('status') == 'PASS' and row.get('service_optimization') == 'O1'}
+                != configurations or
+                any(row.get('scenarios') != sorted(name for name, owner in SCENARIO_INVENTORY.items()
+                                                   if owner == row.get('fixture')) for row in scenarios) or
                 len(controls) != 5 or {row.get('name') for row in controls} != {
                     'missing-frame-destruction', 'duplicate-waiter-delivery',
                     'premature-quiescence-publication', 'overlapping-actor-jobs',
                     'type-mismatched-next-consumption'} or
-                {scenario for row in scenarios for scenario in row.get('scenarios', [])} != expected_scenarios or
                 result.get('reduction', {}).get('status') != 'PASS' or
                 result.get('model_coverage', {}).get('missing_transitions') or
                 result.get('model_coverage', {}).get('missing_pairs') or

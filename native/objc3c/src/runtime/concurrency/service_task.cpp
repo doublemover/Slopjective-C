@@ -798,6 +798,8 @@ bool mark_cancel_tree(const CancellationTarget &root) {
         task->await_result_task = nullptr;
         task->awaiting = false;
         task->await_cancellation_shielded = false;
+        if (task->await_retirement.ticket)
+          task->cancel_retirement = std::exchange(task->await_retirement, {});
         task->cancel_wake_pending = true;
         wake = true;
       }
@@ -816,12 +818,15 @@ void wake_cancelled_tree(const CancellationTarget &root) {
     if (task) {
       TaskReleaseGuard guard{task};
       bool wake;
+      ObjC3TaskAwaitRetirement retirement;
       {
         std::lock_guard<std::mutex> lock(task->mutex);
         wake = std::exchange(task->cancel_wake_pending, false) && !task->terminal;
+        retirement = std::exchange(task->cancel_retirement, {});
       }
       // No token or group lock spans dispatch, which may synchronously invoke
       // completion or frame cleanup if admission fails.
+      retirement.retire();
       if (wake) wake_awaiting_task(std::exchange(guard.task, nullptr));
     }
   }
@@ -976,6 +981,7 @@ extern "C" objc3_service_status objc3_task_complete(
   objc3_frame_destroy frame_destructor = nullptr;
   objc3_completion borrowed{};
   std::shared_ptr<void> continuation_owner;
+  ObjC3TaskAwaitRetirement retirement, cancelled_retirement;
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     task->kind = completion->kind;
@@ -995,6 +1001,8 @@ extern "C" objc3_service_status objc3_task_complete(
     task->cancel_after_cleanup = false;
     task->await_status = nullptr;
     task->await_result_task = nullptr;
+    retirement = std::exchange(task->await_retirement, {});
+    cancelled_retirement = std::exchange(task->cancel_retirement, {});
     task->completion_claimed = false;
     task->resume_after_completion_claim = false;
     task->resume_requested = false;
@@ -1009,6 +1017,8 @@ extern "C" objc3_service_status objc3_task_complete(
     }
     borrowed = task_view(task);
   }
+  retirement.retire();
+  cancelled_retirement.retire();
   task->completed.notify_all();
   invoke_waiters(task, waiters, borrowed);
   if (frame_to_destroy)
@@ -1099,7 +1109,7 @@ objc3_service_status objc3_task_add_group_observers(
 objc3_service_status objc3_task_prepare_await(
     objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
     objc3_service_status *status, objc3_task_t **result_task,
-    bool cancellation_shielded) {
+    bool cancellation_shielded, ObjC3TaskAwaitRetirement retirement) {
   if (!parent || current_service_task != parent)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   try {
@@ -1119,6 +1129,7 @@ objc3_service_status objc3_task_prepare_await(
     parent->await_status = status;
     parent->await_result_task = result_task;
     parent->await_cancellation_shielded = cancellation_shielded;
+    parent->await_retirement = std::move(retirement);
     parent->awaiting = true;
   } catch (...) {
     return OBJC3_SERVICE_OUT_OF_MEMORY;
@@ -1155,6 +1166,7 @@ ObjC3TaskAwaitClaim objc3_task_claim_await(
       parent->await_result_task = nullptr;
       parent->awaiting = false;
       parent->await_cancellation_shielded = false;
+      parent->await_retirement = {};
       claim.cancel_after_cleanup = std::exchange(parent->cancel_after_cleanup, false);
       parent->continuation_owner = std::move(continuation_owner);
       claim.wake = true;

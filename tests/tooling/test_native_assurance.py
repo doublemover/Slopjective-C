@@ -81,6 +81,38 @@ def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_a
     assert "command('archive-install'" not in source
 
 
+def test_runtime_schedule_gate_requires_each_scenario_in_each_configuration(tmp_path):
+    from scripts.objc3c_toolchain.runtime_schedules import SCENARIO_INVENTORY
+
+    scenarios = [{
+        'fixture': fixture, 'status': 'PASS', 'service_optimization': 'O1',
+        'client_optimization': optimization, 'sanitizer': sanitizer,
+        'scenarios': sorted(name for name, owner in SCENARIO_INVENTORY.items() if owner == fixture),
+    } for sanitizer in ('address,undefined', 'thread') for optimization in ('O0', 'O2')
+       for fixture in sorted(set(SCENARIO_INVENTORY.values()))]
+    report = {'status': 'PASS', 'histories': [{}]*8, 'cases': [{}]*96,
+        'scenario_inventory': SCENARIO_INVENTORY, 'scenario_cases': scenarios,
+        'controls': [{'name': name} for name in ('missing-frame-destruction',
+            'duplicate-waiter-delivery', 'premature-quiescence-publication',
+            'overlapping-actor-jobs', 'type-mismatched-next-consumption')],
+        'reduction': {'status': 'PASS'}, 'sanitizer_policy': dict.fromkeys(range(4))}
+    receipt = tmp_path / 'runtime-schedules/campaign/qualification.json'
+    receipt.parent.mkdir(parents=True)
+    receipt.write_text(json.dumps(report))
+    assert len(evidence.suite_results(tmp_path, 'runtime-schedules')) == 113
+    for mutation in ('scenario', 'configuration', 'inventory'):
+        broken = deepcopy(report)
+        if mutation == 'configuration':
+            broken['scenario_cases'][-1] = broken['scenario_cases'][0]
+        elif mutation == 'scenario':
+            broken['scenario_cases'][0]['scenarios'].pop()
+        else:
+            del broken['scenario_inventory']['interrupted-group-waiter-registration-retirement']
+        receipt.write_text(json.dumps(broken))
+        with pytest.raises(ValueError, match='runtime schedule matrix'):
+            evidence.suite_results(tmp_path, 'runtime-schedules')
+
+
 def test_product_consumers_keep_the_exact_sdk_immutable_and_skip_development_scanner():
     source = (Path(__file__).resolve().parents[2] /
               'scripts/objc3c_assurance/runner.py').read_text()

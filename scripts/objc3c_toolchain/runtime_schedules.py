@@ -14,6 +14,18 @@ from .runtime_schedule_model import check, coverage_domain, generate, protocol, 
 from .sanitizer_policy import SanitizerQualification
 
 
+SCENARIO_INVENTORY = {
+    'concurrent-registration-cancellation-publication': 'task-services',
+    'interrupted-group-waiter-registration-retirement': 'task-services',
+    'global-pool-multi-actor-and-task-exclusion': 'task-services',
+    'queued-discard-and-named-binding-retirement': 'task-services',
+    'nested-and-last-owner-abandoned-awaits': 'structured-runtime',
+    'typed-next-mismatch-nonconsumption': 'async-handle-joins',
+    'allocation-publication-and-copy-failure-injection': 'async-handle-joins',
+    'unforced-worker-group-and-actor-stress': 'structured-runtime',
+}
+
+
 def observations(text):
     if len(text) > 256*1024: raise ValueError('runtime schedule trace exceeded its byte bound')
     try: rows = [json.loads(line) for line in text.splitlines()]
@@ -43,14 +55,7 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=(0, 1, 2, 3, 7,
     report = {'schema': 'objc3c.generated-runtime-schedules.v1', 'status': 'running', 'commands': [],
         'histories': histories, 'history_hashes': list(map(signature, histories)), 'cases': [], 'controls': [],
         'scope': 'Bounded generated public-C histories plus current public-contract scenario fixtures. Manual/gated replay is complemented by unforced worker/global-pool executions; this is not exhaustive scheduler or memory-model verification.',
-        'scenario_inventory': {
-            'concurrent-registration-cancellation-publication': 'task-services',
-            'global-pool-multi-actor-and-task-exclusion': 'task-services',
-            'queued-discard-and-named-binding-retirement': 'task-services',
-            'nested-and-last-owner-abandoned-awaits': 'structured-runtime',
-            'typed-next-mismatch-nonconsumption': 'async-handle-joins',
-            'allocation-publication-and-copy-failure-injection': 'async-handle-joins',
-            'unforced-worker-group-and-actor-stress': 'structured-runtime'},
+        'scenario_inventory': SCENARIO_INVENTORY,
         'bounds': {'generated_operations': 96, 'generated_tasks': 8, 'generated_actors': 1,
                    'worker_fixture_timeout_seconds': 90, 'native_reduction_trials': 32}}
     tick = time.monotonic()

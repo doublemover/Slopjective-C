@@ -1378,6 +1378,81 @@ void test_recursive_group_close_and_join() {
   objc3_executor_release(executor);
 }
 
+void test_interrupted_group_waiters_release_registration() {
+  using namespace objc3::services;
+  auto *executor = manual_executor();
+  TaskGroup *group = nullptr;
+  assert(task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
+  std::atomic<int> destroyed{0};
+  auto *member = start_task(executor, new Frame{executor, 0, 0, false, &destroyed});
+  assert(task_group_add_task(group, member) == OBJC3_SERVICE_OK);
+  assert(task_group_close(group) == OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK && executed == 1);
+
+  const objc3_completion cancelled{sizeof(cancelled), OBJC3_SERVICE_ABI_VERSION,
+                                    OBJC3_COMPLETION_CANCELLED, 0, nullptr, nullptr, nullptr, nullptr};
+  struct AwaitGroup {
+    TaskGroup *group;
+    bool next;
+    objc3_service_status status{OBJC3_SERVICE_NOT_READY};
+    objc3_task_t *result{nullptr};
+    unsigned resumes{0};
+  };
+  enum End { Cancel, CompleteExternally, DropLastOwner };
+  for (bool next : {false, true}) {
+    for (End end : {Cancel, CompleteExternally, DropLastOwner}) {
+      AwaitGroup wait{group, next};
+      objc3_task_start_options options{};
+      options.struct_size = sizeof(options);
+      options.version = OBJC3_SERVICE_ABI_VERSION;
+      options.executor = executor;
+      options.frame = &wait;
+      options.destroy = [](void *) {};
+      options.resume = [](objc3_task_t *task, void *opaque) {
+        auto &state = *static_cast<AwaitGroup *>(opaque);
+        if (++state.resumes == 1) {
+          assert((state.next ? task_group_await_next(state.group, task, nullptr,
+                     &state.status, &state.result)
+                             : task_group_await(state.group, task, &state.status)) ==
+                 OBJC3_SERVICE_OK);
+          return;
+        }
+        assert(state.resumes == 2 && state.status == OBJC3_SERVICE_CANCELLED && !state.result);
+        const objc3_completion completion{sizeof(completion), OBJC3_SERVICE_ABI_VERSION,
+                                          OBJC3_COMPLETION_CANCELLED, 0, nullptr, nullptr, nullptr, nullptr};
+        assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+      };
+      objc3_task_t *task = nullptr;
+      assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+      assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK && executed == 1);
+      assert(wait.resumes == 1 && wait.status == OBJC3_SERVICE_NOT_READY);
+      std::weak_ptr<objc3_task::AwaitTarget> registration = task->await_target;
+      if (end == Cancel) objc3_task_request_cancel(task);
+      if (end == CompleteExternally)
+        assert(objc3_task_complete(task, &cancelled) == OBJC3_SERVICE_OK);
+      if (end == DropLastOwner) {
+        objc3_task_release(task);
+        task = nullptr;
+      }
+      assert(objc3_executor_pump(executor, 8, &executed) == OBJC3_SERVICE_OK);
+      if (end == Cancel) assert(wait.resumes == 2);
+      objc3_task_release(task);
+      // The member remains parked throughout. The group must stop retaining
+      // the interrupted worker's token without waiting for any group event.
+      assert(destroyed == 0 && registration.expired());
+    }
+  }
+  assert(objc3_task_complete(member, &cancelled) == OBJC3_SERVICE_OK);
+  objc3_task_t *result = nullptr;
+  assert(task_group_try_next_completed(group, &result) == OBJC3_SERVICE_OK && result == member);
+  objc3_task_release(result);
+  assert(task_group_join(group) == OBJC3_SERVICE_OK && destroyed == 1);
+  task_group_release(group);
+  objc3_task_release(member);
+  objc3_executor_release(executor);
+}
+
 void noop_executor_callback(void *opaque) {
   ++*static_cast<std::atomic<int> *>(opaque);
 }
@@ -1751,6 +1826,7 @@ int main() {
   test_group_failure_release_defers_reentrant_destruction_until_unlocked();
   test_group_failure_cancels_siblings_before_delivery();
   test_recursive_group_close_and_join();
+  test_interrupted_group_waiters_release_registration();
   test_executor_admission_and_queue_saturation();
   test_saturated_resume_can_retry_without_lost_wakeup();
   test_refcount_saturation_fails_without_losing_ownership();

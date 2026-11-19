@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.284 / System 2.210 group waiter change](linux_checked_await_cancellation.md)
+removes abandoned registrations promptly. Later child results and shielded
+cleanup joins keep their existing ownership and quiescence requirements.
+
 The [Source 2.283 / System 2.209 consumed C arguments](linux_async_c_completion_exports.md)
 preserve the C caller's borrowed references while native checked, async and
 isolated callees receive their own object, Block or receiver ownership claim.
