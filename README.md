@@ -11,6 +11,8 @@ native x86-64 and AArch64 archives.
 Start with the [Linux release and install guide](docs/releases/linux.md) or the
 [Linux tutorial](docs/tutorials/getting_started.md). The
 [showcase catalog](showcase/README.md) links installed examples.
+The [Linux release status](docs/releases/status.md) tracks the current candidate
+and remaining acceptance gates.
 
 The authoritative versions are in
 [`toolchains/llvm/manifest.json`](toolchains/llvm/manifest.json). The current

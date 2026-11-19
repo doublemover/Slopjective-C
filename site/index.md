@@ -11,6 +11,8 @@ x86-64 and AArch64 on Debian 13 and Ubuntu 26.04.
 
 [Linux release downloads and installation](https://github.com/doublemover/Slopjective-C/blob/main/docs/releases/linux.md)
 
+[Linux release status](https://github.com/doublemover/Slopjective-C/blob/main/docs/releases/status.md)
+
 ## Current implementation <a id="intro"></a>
 
 `objc3c` uses Clang's parser, AST, ownership model, native CodeGen and linker.

@@ -4,11 +4,13 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'scripts/check_pages_navigation.py'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
   pull_request:
     paths:
       - 'site/**'
+      - 'scripts/check_pages_navigation.py'
       - 'scripts/build_pages.py'
       - '.github/workflows/pages.yml'
 permissions:
@@ -35,31 +37,7 @@ jobs:
           source: ./site
           destination: ./_site
       - name: Verify rendered navigation at the deployed project root
-        run: |
-          python3 - <<'PY'
-          from html.parser import HTMLParser
-          from pathlib import Path
-          from urllib.parse import urljoin, urlsplit
-          import os
-
-          class Navigation(HTMLParser):
-              links = []
-              def handle_starttag(self, tag, attrs):
-                  href = dict(attrs).get('href')
-                  if tag == 'a' and href:
-                      self.links.append(href)
-
-          page = Navigation()
-          page.feed(Path('_site/index.html').read_text())
-          owner, name = os.environ['GITHUB_REPOSITORY'].split('/')
-          root = f'https://{owner}.github.io/{name}/'
-          for link in page.links:
-              target = urlsplit(urljoin(root, link))
-              if target.netloc == urlsplit(root).netloc and not target.path.startswith(f'/{name}/'):
-                  raise SystemExit(f'Navigation leaves the deployed project root: {link}')
-          if not any('/docs/releases/linux.md' in link for link in page.links):
-              raise SystemExit('Rendered site omits Linux release instructions')
-          PY
+        run: python3 -B scripts/check_pages_navigation.py --repo "$GITHUB_REPOSITORY" --html _site/index.html
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
@@ -70,11 +48,19 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
         id: deploy
+      - name: Verify published Linux navigation
+        env:
+          PUBLISHED_SITE: ${{ steps.deploy.outputs.page_url }}
+        run: python3 -B scripts/check_pages_navigation.py --repo "$GITHUB_REPOSITORY" --published "$PUBLISHED_SITE"

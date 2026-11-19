@@ -7,6 +7,7 @@ compiler build identities, architecture, extension ABI, Linux ABI minimums, and
 qualification run links. The release notes describe the supported feature set and rebuild
 requirements. If there is no published preview, the source build is available
 through the [maintainer workflow](../runbooks/objc3c_maintainer_workflows.md).
+See [Linux release status](status.md) for the current candidate and open gates.
 
 ## Install and run
 
@@ -49,10 +50,14 @@ ordinary users. Administrators control access to an existing root.
 2. Run **Stage Linux SDK release draft** from that commit on `main`, passing
    both qualification run IDs and a new preview version. The workflow verifies
    the source, archive hashes, seals, and installer pair before creating a
-   draft. Qualification artifacts expire seven days after upload.
+   draft. The release manifest preserves both distributions' installation
+   receipts and image digests for each architecture. Qualification artifacts
+   expire seven days after upload. For a new qualification attempt, use
+   **Re-run all jobs** or dispatch the same revision again.
 3. Review the draft release notes, archive permissions, expected asset names,
-   approved project license, and published reporting route. Test the above
-   commands using the exact draft assets on a clean host for each architecture.
+   approved project license, and published reporting route. Require passing
+   draft-download rehearsals on both architectures. A partial upload can
+   resume with the same version, revision, and qualification runs.
 4. Reconcile the release receipts with the [tracked Linux acceptance work](../roadmap/linux_acceptance_followups.md).
    Review workload observations under [#8291](https://github.com/doublemover/Slopjective-C/issues/8291).
    Publish after the owner has reviewed the release. Open the public release

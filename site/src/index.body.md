@@ -6,6 +6,8 @@ x86-64 and AArch64 on Debian 13 and Ubuntu 26.04.
 
 [Linux release downloads and installation](../../docs/releases/linux.md)
 
+[Linux release status](../../docs/releases/status.md)
+
 ## Current implementation {#intro}
 
 `objc3c` uses Clang's parser, AST, ownership model, native CodeGen and linker.
