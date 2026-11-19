@@ -1,5 +1,8 @@
+import ast
+import inspect
 import json
 from pathlib import Path
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -8,6 +11,22 @@ from scripts.objc3c_toolchain import qualify_native_async as qualification
 from scripts.objc3c_toolchain import qualify_native_async_sanitizers as sanitizers
 from scripts.objc3c_toolchain import qualify_native_async_packages as native_packages
 from scripts.objc3c_toolchain import run_linux_factory_batch as factory_batch
+
+
+def test_package_metadata_checks_use_current_compiler_contracts():
+    foundation = Path(native_packages.__file__).resolve().parents[2] / 'native/objc3c/src/clang_foundation'
+    contract = (foundation / 'interface_contract.h').read_text()
+    codec = (foundation / 'interface_codec.cpp').read_text()
+    for checker in (native_packages.check_factory_metadata, native_packages.check_cpp_metadata):
+        literals = {
+            node.value for node in ast.walk(ast.parse(inspect.getsource(checker)))
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+        capabilities = {value for value in literals if re.fullmatch(r'objc3\.[a-z-]+\.v\d+', value)}
+        markers = {value for value in literals if re.fullmatch(r';[a-z-]+:v\d+;', value)}
+        assert capabilities and markers
+        assert not {value for value in capabilities if f'"{value}"' not in contract + codec}
+        assert not {value for value in markers if value not in contract}
 
 
 def test_native_async_matrix_covers_objcpp_standards_and_ownership():
