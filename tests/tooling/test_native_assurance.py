@@ -654,7 +654,7 @@ def test_coverage_producer_preserves_prepare_error_without_a_source_tree(tmp_pat
     assert receipt['error'] == 'ToolchainError: locked patch does not apply'
 
 
-def test_product_producer_blocks_upstream_when_package_build_fails(tmp_path):
+def test_product_producer_blocks_upstream_when_package_build_fails(tmp_path, capsys):
     from scripts.objc3c_assurance.execution import execute_suites
 
     def fail_package(suite, directory):
@@ -668,6 +668,7 @@ def test_product_producer_blocks_upstream_when_package_build_fails(tmp_path):
 
     assert [row['status'] for row in report['suites']] == ['FAIL', 'BLOCKED']
     assert report['suites'][0]['error'] == 'source preparation failed'
+    assert 'native assurance package failed: source preparation failed' in capsys.readouterr().err
 
 
 def test_coverage_partition_restore_failure_retains_typed_receipt(tmp_path, monkeypatch):
