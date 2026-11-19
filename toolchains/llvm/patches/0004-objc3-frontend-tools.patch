@@ -1,0 +1,4174 @@
+diff --git a/clang/CMakeLists.txt b/clang/CMakeLists.txt
+index 89f584c5d..bf2c43690 100644
+--- a/clang/CMakeLists.txt
++++ b/clang/CMakeLists.txt
+@@ -440,6 +440,7 @@ if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
+     FILES_MATCHING
+     PATTERN "*.def"
+     PATTERN "*.h"
++    PATTERN "*.inc"
+     PATTERN "config.h" EXCLUDE
+     )
+ 
+diff --git a/clang/include/clang/Basic/DiagnosticGroups.td b/clang/include/clang/Basic/DiagnosticGroups.td
+index b3c3b25aa..5bc4502a8 100644
+--- a/clang/include/clang/Basic/DiagnosticGroups.td
++++ b/clang/include/clang/Basic/DiagnosticGroups.td
+@@ -2007,3 +2007,6 @@ def ExperimentalOption : DiagGroup<"experimental-option">;
+ 
+ // Warnings about unguarded usages of AMDGPU target specific constructs
+ def UnguardedBuiltinUsageAMDGPU : DiagGroup<"amdgpu-unguarded-builtin-usage">;
++def ObjC3MatchDuplicate : DiagGroup<"objc3-match-duplicate">;
++def ObjC3MatchNonExhaustive : DiagGroup<"objc3-match-non-exhaustive">;
++def ObjC3MatchUnreachable : DiagGroup<"objc3-match-unreachable">;
+diff --git a/clang/include/clang/Basic/DiagnosticParseKinds.td b/clang/include/clang/Basic/DiagnosticParseKinds.td
+--- a/clang/include/clang/Basic/DiagnosticParseKinds.td
++++ b/clang/include/clang/Basic/DiagnosticParseKinds.td
+@@ -11,7 +11,19 @@
+ //===----------------------------------------------------------------------===//
+ 
+ let Component = "Parse" in {
++def err_objc3_await_context : Error<
++  "native await requires an async Objective-C or Objective-C++20/23 function context">;
++
+ let CategoryName = "Parse Issue" in {
++
++def err_objc3_duplicate_function_effect : Error<
++  "duplicate ObjC3 function effect '%0'">;
++def err_objc3_throws_requires_payload : Error<
++  "'throws' requires exactly one type payload in parentheses">;
++def err_objc3_invalid_throws_payload : Error<
++  "'throws' payload must be exactly one type">;
++def err_objc3_unterminated_throws_payload : Error<
++  "expected ')' to close 'throws' payload">;
+ // C++11 compatibility with C++98.
+ defm enum_fixed_underlying_type : CXX11Compat<
+   "enumeration types with a fixed underlying type are",
+@@ -1920,4 +1932,28 @@
+   "float literal has a magnitude that is too small to be represented as a float type">;
+ def err_hlsl_rootsig_non_zero_flag : Error<"flag value is neither a literal 0 nor a named value">;
+ 
++def err_objc3_match_binding_required : Error<"this match pattern requires a binding">;
++def err_objc3_match_invalid_pattern : Error<"invalid match pattern">;
++def err_objc3_reserved_behavior_block : Error<
++  "property behavior blocks are reserved for a future Objective-C revision">;
++def note_objc3_apply_property_behavior_attribute : Note<
++  "apply a behavior with the objc_property_behavior attribute">;
++def err_objc3_match_malformed_guard : Error<"guarded patterns require a condition of type Bool">;
++def err_objc3_match_form_delimiter : Error<"expected the %select{statement-form match delimiter ':' followed by a compound statement|expression-form match delimiter '=>' followed by an expression and ';'}0">;
++
++def err_objc3_guard_expected_condition : Error<
++  "expected a condition in guard statement">;
++def err_objc3_optional_send_instance : Error<
++  "optional send requires a receiver expression, not a class name or 'super'">;
++def err_objc3_expected_binding : Error<
++  "expected an optional binding of the form 'identifier = expression'">;
++def err_objc3_if_binding_repeated_head : Error<
++  "a binding list has only one 'let' or 'var' introducer">;
++def err_objc3_guard_expected_else : Error<
++  "expected 'else' after guard conditions">;
++def err_objc3_condition_expected_separator : Error<
++  "expected ',' or %select{'{'|'else'}0 after condition">;
++def err_objc3_condition_expected_compound : Error<
++  "expected a compound statement after %select{guard 'else'|if binding conditions|if binding 'else'}0">;
++
+ } // end of Parser diagnostics
+diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
+index 2cb79b6ba..603ac6e0f 100644
+--- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
++++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
+@@ -11,7 +11,141 @@
+ //===----------------------------------------------------------------------===//
+ 
+ let Component = "Sema" in {
++
++// Objective-C 3 actor/executor isolation and checked transfers.
++def err_objc3_isolation_mode : Error<
++  "Objective-C 3 concurrency attribute requires Objective-C 3 mode">;
++def err_objc3_isolation_conflict : Error<
++  "conflicting Objective-C 3 isolation or task boundary on %0">;
++def err_objc3_ambiguous_method_isolation : Error<
++  "ambiguous Objective-C 3 isolation or task-boundary metadata for message %0">;
++def err_objc3_isolation_redeclaration : Error<
++  "isolation or task boundary of %0 does not match the previous declaration">;
++def err_objc3_callable_metadata_erasure : Error<
++  "cannot form an indirect callable for %0 that erases isolation or task-boundary metadata">;
++def note_objc3_callable_metadata_erasure : Note<
++  "candidate %0 requires isolation or task-boundary metadata that an indirect callable cannot preserve">;
++def err_objc3_nonisolated_context : Error<
++  "objc_nonisolated requires an actor instance method or property">;
++def err_objc3_actor_nonreentrant_deferred : Error<
++  "explicit actor nonreentrancy is deferred in v1">;
++def err_objc3_isolation_requires_await : Error<
++  "cross-%select{actor|executor}0 entry requires an explicit await">;
++def err_objc3_isolation_hop_unavailable : Error<
++  "native %select{actor|executor}0 crossing requires executor-hop lowering">;
++def err_objc3_isolation_hop_shape : Error<
++  "awaited isolated entry requires a direct, non-variadic synchronous or native-frame call with qualified value/ownership contracts and a nonthrowing C++ exception specification">;
++def err_objc3_isolated_state : Error<
++  "actor-isolated state %0 is accessible only on the same actor; use an awaited actor member">;
++def err_objc3_sendable_transfer : Error<
++  "non-Sendable type %0 cannot cross a concurrency boundary (%1)">;
++def warn_objc3_sendable_transfer : Warning<
++  "non-Sendable type %0 crosses a concurrency boundary (%1)">,
++  InGroup<DiagGroup<"objc3-sendable">>;
++def note_objc3_unchecked_sendable : Note<
++  "unchecked concurrency transfer of %0 relies on objc_unsafe_sendable">;
++def warn_objc3_unchecked_sendable_resource : Warning<
++  "concurrency transfer of resource-bearing type %0 is user-asserted by objc_unsafe_sendable and not compiler-proven">,
++  InGroup<DiagGroup<"objc3-sendable">>;
++def warn_objc3_unchecked_sendable_borrowed : Warning<
++  "borrowed transfer of type %0 was user-asserted by objc_unsafe_sendable, which cannot waive borrowed lifetime requirements">,
++  InGroup<DiagGroup<"objc3-sendable">>;
++def note_objc3_sendable_boundary : Note<
++  "concurrency boundary is declared here">;
++def note_objc3_sendable_capture : Note<
++  "concurrent capture of %0 is declared here">;
++def err_objc3_task_async_work : Error<
++  "task spawn or detached API requires an async block work-item parameter">;
++def err_objc3_task_handle_result : Error<
++  "task spawn or detached API must return a task handle">;
++def warn_objc3_unused_task_handle : Warning<
++  "child task handle is unused; await or join the task, or use the detached API explicitly">,
++  InGroup<DiagGroup<"objc3-unused-task">>;
++def err_objc3_task_unknown_capture : Error<
++  "cannot prove Sendable captures of this concurrent block value; pass a literal or a bounded local block value with provable captures">;
++
++def err_objc3_type_identity_pointer : Error<
++  "Objective-C 3 type identity requires a pointer to the result type">;
++def err_objc3_group_next_plan_payload : Error<
++  "native group-next Optional payload requires supported plain storage or an ARC managed carrier">;
++def err_objc3_group_next_plan_type : Error<
++  "native group-next plan requires a pointer to a complete Optional<T> in Linux x86-64/AArch64 GNUstep 2.2 Objective-C C mode">;
++def err_objc3_async_task_unsupported : Error<
++  "native async task lowering requires a non-variadic Linux x86-64/AArch64 Objective-C++20/23 callable with a concrete value or void result">;
++def err_objc3_async_covariant_return : Error<
++  "native async overrides require identical logical result types">;
++def err_objc3_async_defer_suspend : Error<"cannot suspend from a defer statement">;
++def err_objc3_async_synchronized_suspend : Error<
++  "cannot suspend while holding an @synchronized monitor">;
++def note_objc3_async_synchronized_scope : Note<
++  "monitor is acquired here and must be released on the same thread">;
++
++def err_objc3_async_task_header : Error<
++  "native async task lowering requires the installed <objc3_task.hpp> header">;
++def err_objc3_async_task_abi_context : Error<
++  "C++ task async entry ABI cannot be lowered in Objective-C C mode">;
++def err_objc3_group_scope_exceptions : Error<
++  "native structured group scopes require Objective-C exception handling when exceptions are enabled">;
++def err_objc3_group_scope_promise : Error<
++  "structured task-group coroutine requires promise member '__objc3_group_initial_suspend' in %0">;
++def err_objc3_async_frame_cpp_definition : Error<
++  "C frame async definitions use native return and __objc3_await, not C++ coroutine keywords">;
++def err_objc3_async_frame_cpp_storage : Error<
++  "C++ frame async definitions require value parameters and cannot capture an implicit this parameter">;
++def err_objc3_async_frame_cpp_hook : Error<
++  "typed C++ frame storage requires installed <objc3_task.hpp> template '%0'">;
++def err_objc3_async_c_frame_header : Error<
++  "native Objective-C async frame calls require the installed <objc3_runtime_services.h> frame declaration">;
++def err_objc3_async_c_frame_layout : Error<
++  "native Objective-C async frame carrier has an incompatible runtime layout">;
++def err_objc3_async_c_frame_target : Error<
++  "native Objective-C async frame calls require a non-variadic Linux x86-64/AArch64 GNUstep 2.2 Objective-C callable with a concrete value or void logical result">;
++def err_objc3_async_c_frame_symbol : Error<
++  "native Objective-C async frame declarations require an explicit asm name for a frame-returning C entry point">;
++def err_objc3_async_c_frame_ownership : Error<
++  "native Objective-C async frame object return ownership requires a retainable logical result">;
++def err_objc3_async_c_frame_noreturn : Error<
++  "native Objective-C async frame entry returns a lazy frame and cannot be noreturn">;
++def warn_objc3_unnecessary_c_await : Warning<
++  "native await operand does not suspend">,
++  InGroup<DiagGroup<"objc3-unnecessary-await">>;
++def err_objc3_async_c_await_operand : Error<
++  "native C await requires a direct async call or a provably non-suspending operand">;
++def err_objc3_async_c_dynamic_storage : Error<
++  "native Objective-C async frames require fixed-size automatic storage">;
+ let CategoryName = "Semantic Issue" in {
++def err_objc3_ambiguous_method_effect : Error<
++  "ambiguous ObjC3 async/throws effects for message %0">;
++def err_objc3_method_effect_mismatch : Error<
++  "async/throws effects of method %0 do not match the previous declaration">;
++def err_objc3_invalid_function_effect_shape : Error<
++  "invalid ObjC3 function effect payload">;
++def err_objc3_call_requires_check : Error<
++  "throwing call requires an explicit tryValue, tryOptional or tryForce expression">;
++def err_objc3_try_requires_prvalue : Error<
++  "an ObjC3 try currently requires a throwing call that returns a prvalue">;
++def err_objc3_try_requires_throwing_call : Error<
++  "an ObjC3 try operation requires a throwing call expression">;
++def err_objc3_try_requires_throwing_context : Error<
++  "propagating ObjC3 try requires a matching throwing function">;
++def err_objc3_try_effect_mismatch : Error<
++  "the ObjC3 try error type does not match the enclosing function's throws type">;
++def err_objc3_do_catch_requires_clause : Error<
++  "an ObjC3 do handler requires at least one catch clause">;
++def err_objc3_catch_type_mismatch : Error<
++  "the ObjC3 catch type %0 is incompatible with thrown error type %1">;
++def err_objc3_catch_untyped_mismatch : Error<
++  "the ObjC3 catch type %0 cannot handle an untyped error">;
++def err_objc3_unhandled_error_effect : Error<
++  "an ObjC3 error is neither caught here nor compatible with the enclosing throws effect">;
++def err_objc3_catch_binding_requires_type : Error<
++    "an ObjC3 catch binding requires a typed catch pattern">;
++def err_objc3_throw_requires_throwing_context : Error<
++  "an ObjC3 throw requires a throwing function">;
++def err_objc3_throw_static_nil : Error<
++  "an ObjC3 throw payload must not be statically nil">;
++def err_objc3_throw_payload_mismatch : Error<
++  "the ObjC3 throw payload type does not match the enclosing function's throws type">;
+ // C++11 compatibility with C++98.
+ defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
+ defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
+@@ -6986,6 +7114,8 @@ def note_protected_by_variable_non_pod : Note<
+   "jump bypasses initialization of non-POD variable">;
+ def note_protected_by_cleanup : Note<
+   "jump bypasses initialization of variable with __attribute__((cleanup))">;
++def note_protected_by_objc_resource : Note<
++  "jump bypasses initialization of a variable with objc_resource">;
+ def note_protected_by_vla_typedef : Note<
+   "jump bypasses initialization of VLA typedef">;
+ def note_protected_by_vla_type_alias : Note<
+@@ -7010,6 +7140,13 @@ def note_protected_by_objc_synchronized : Note<
+   "jump bypasses initialization of @synchronized block">;
+ def note_protected_by_objc_autoreleasepool : Note<
+   "jump bypasses auto release push of @autoreleasepool block">;
++def note_protected_by_objc3_do : Note<
++  "jump bypasses initialization of ObjC3 do block">;
++def note_protected_by_objc3_catch : Note<
++  "jump bypasses initialization of ObjC3 catch block">;
++def note_exits_objc3_do : Note<"jump exits ObjC3 do block">;
++def note_exits_objc3_catch : Note<"jump exits ObjC3 catch block">;
++def err_objc3_error_exits_defer : Error<"an ObjC3 error may not escape a defer body">;
+ def note_protected_by_cxx_try : Note<
+   "jump bypasses initialization of try block">;
+ def note_protected_by_cxx_catch : Note<
+@@ -7026,6 +7163,10 @@ def note_protected_by_objc_strong_init : Note<
+   "jump bypasses initialization of __strong variable">;
+ def note_protected_by_objc_weak_init : Note<
+   "jump bypasses initialization of __weak variable">;
++def note_protected_by_objc3_managed_init : Note<
++  "jump bypasses initialization of managed carrier storage">;
++def note_exits_objc3_managed : Note<
++  "jump exits lifetime of managed carrier storage">;
+ def note_protected_by_non_trivial_c_struct_init : Note<
+   "jump bypasses initialization of variable of non-trivial C struct type">;
+ def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
+@@ -7046,6 +7187,8 @@ def note_enters_defer_stmt : Note<"jump enters a defer statement">;
+ 
+ def note_exits_cleanup : Note<
+   "jump exits scope of variable with __attribute__((cleanup))">;
++def note_exits_objc_resource : Note<
++  "jump exits scope of a variable with objc_resource">;
+ def note_exits_dtor : Note<
+   "jump exits scope of variable with non-trivial destructor">;
+ def note_exits_temporary_dtor : Note<
+@@ -8001,6 +8144,25 @@ def warn_param_mismatched_alignment : Warning<
+ 
+ def err_objc_object_assignment : Error<
+   "cannot assign to class object (%0 invalid)">;
++def err_objc3_is_ok_requires_result : Error<
++  "argument to '__objc3_is_ok' must have a Result type (got %0)">;
++
++def err_objc3_has_value_requires_optional : Error<
++  "argument to '__objc3_has_value' must have an Optional type (got %0)">;
++
++def err_objc3_carrier_payload_unsupported : Error<
++  "payload type %0 is not supported in an Objective-C 3 value carrier">;
++def err_objc3_carrier_transfer_requires_carrier : Error<
++  "argument to '%0' must have an Optional or Result carrier type (got %1)">;
++def err_objc3_carrier_transfer_requires_glvalue : Error<
++  "argument to '%0' must be an existing carrier glvalue; carrier temporaries are not supported">;
++def err_objc3_carrier_copy_requires_lvalue : Error<
++  "argument to 'copyValue' must be an existing carrier lvalue">;
++def err_objc3_carrier_transfer_requires_cpp : Error<
++  "'%0' carrier transfer requires C++ mode">;
++def err_objc3_carrier_transfer_volatile : Error<
++  "volatile carrier copy and move construction is not supported">;
++
+ def err_typecheck_invalid_operands : Error<
+   "invalid operands to binary expression (%0 and %1)">, Deferrable;
+ def note_typecheck_invalid_operands_converted : Note<
+@@ -14367,4 +14529,51 @@ def err_cuda_device_kernel_launch_not_supported
+ def err_cuda_device_kernel_launch_require_rdc
+     : Error<"kernel launch from __device__ or __global__ function requires "
+             "relocatable device code (i.e. requires -fgpu-rdc)">;
++def err_objc3_guard_must_exit : Error<"guard else body must exit the current scope on every reachable path">;
++def err_objc3_guard_exit_unsupported : Error<"cannot prove guard scope exit for this cleanup or control-flow construct">;
++def note_protected_by_objc3_lifetime : Note<"jump bypasses initialization of a precise lifetime binding">;
++def note_exits_objc3_lifetime : Note<"jump exits a precise lifetime binding">;
++def note_protected_by_objc3_binding : Note<"jump bypasses initialization of an optional binding">;
++def note_exits_objc3_binding : Note<"jump exits an initialized optional binding">;
++def err_objc3_condition_type : Error<"condition must have Bool type, not %0">;
++def err_objc3_binding_requires_optional : Error<"binding requires an Optional or Objective-C reference, not %0">;
++def err_objc3_binding_void_payload : Error<"a void payload cannot be bound in a condition">;
++def err_objc3_coalesce_requires_optional : Error<
++  "left operand of coalescing operator must be an Optional or Objective-C reference, not %0">;
++def err_objc3_coalesce_fallback_type : Error<
++  "fallback type %0 is not compatible with unwrapped type %1">;
++def err_objc3_coalesce_void_payload : Error<
++  "a void payload cannot be unwrapped by coalescing operator">;
++def err_objc3_optional_access_receiver : Error<
++  "optional access requires an Objective-C object receiver, not %0">;
++def err_objc3_optional_access_result : Error<
++  "optional %select{member access|message send}0 cannot return %1; only object and block pointers%select{| or void}0 are permitted">;
++def err_objc3_nullable_receiver : Error<
++  "ordinary message send requires a nonnull receiver; use an optional send or 'guard let'">;
++def warn_objc3_nullable_receiver : Warning<
++  "ordinary message send on a nullable receiver; use an optional send or 'guard let'">,
++  InGroup<DiagGroup<"objc3-nullable-receiver">>;
++
++def err_objc3_match_pattern_type : Error<"pattern does not match scrutinee type %0">;
++def err_objc3_match_type_test_disabled : Error<"type-test patterns are optional and disabled; check the type explicitly before matching">;
++def err_objc3_match_move_unsupported : Error<"consuming match bindings are not supported">;
++def err_objc3_match_void_binding : Error<"a void payload cannot be bound in a match case">;
++def err_objc3_match_guard_type : Error<"match guard must have Bool type, not %0">;
++def err_objc3_match_expression_guard_effect : Error<"expression-form match guards must be side-effect-free and cannot contain calls, checked expressions or nested matches">;
++def err_objc3_match_expression_arm_type : Error<"incompatible expression-form match arm result types">;
++def err_objc3_match_non_exhaustive : Error<"non-exhaustive %select{statement|expression}1-form match over %select{an open domain|Bool|Optional|Result}0">;
++def warn_objc3_match_non_exhaustive : Warning<
++  "non-exhaustive statement-form match over %select{an open domain|Bool|Optional|Result}0">,
++  InGroup<ObjC3MatchNonExhaustive>;
++def warn_objc3_match_duplicate : Warning<"duplicate unguarded match case">,
++  InGroup<ObjC3MatchDuplicate>;
++def warn_objc3_match_unreachable : Warning<"unreachable match case">,
++  InGroup<ObjC3MatchUnreachable>;
++
++// Objective-C 3 constrained standard-library Error factories.
++def err_objc3_error_factory_mode : Error<
++  "error factory validation requires Objective-C 3.0 language mode">;
++def err_objc3_error_factory_result : Error<
++  "error factory result of type %0 must conform to Objective-C protocol 'Error' in this profile">;
++
+ } // end of sema component.
+diff --git a/clang/include/clang/Basic/TypeNodes.td b/clang/include/clang/Basic/TypeNodes.td
+index a9965a4a8..a84428406 100644
+--- a/clang/include/clang/Basic/TypeNodes.td
++++ b/clang/include/clang/Basic/TypeNodes.td
+@@ -45,6 +45,11 @@ class AlwaysCanonical {}
+ def Type : TypeNode<?, 1>;
+ def BuiltinType : TypeNode<Type>, AlwaysCanonical;
+ def ComplexType : TypeNode<Type>;
++// Carrier nodes retain payload spelling/annotations. Canonical nodes contain
++// canonical payloads and own the target-contextual native representation.
++def ObjC3OptionalType : TypeNode<Type>;
++def ObjC3ResultType : TypeNode<Type>;
++def ObjC3DependentKeyPathType : TypeNode<Type>, AlwaysDependent;
+ def PointerType : TypeNode<Type>;
+ def BlockPointerType : TypeNode<Type>;
+ def ReferenceType : TypeNode<Type, 1>;
+diff --git a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
+index 5f689ad32..7cc622168 100644
+--- a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
++++ b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
+@@ -13,6 +13,12 @@
+ #include "clang/AST/DeclTemplate.h"
+ #include "clang/AST/DeclVisitor.h"
+ #include "clang/AST/ODRHash.h"
++#include "clang/AST/StableExpressionProfile.h"
++#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/ADT/StringExtras.h"
++#include "llvm/Support/Allocator.h"
++#include "llvm/Support/SHA256.h"
++#include "llvm/ADT/ScopeExit.h"
+ #include "clang/Lex/PreprocessingRecord.h"
+ #include "llvm/Support/Path.h"
+ #include "llvm/Support/raw_ostream.h"
+@@ -86,6 +92,7 @@ class USRGenerator : public ConstDeclVisitor<USRGenerator> {
+   ASTContext *Context;
+   const LangOptions &LangOpts;
+   bool IgnoreResults = false;
++  llvm::SmallPtrSet<const FunctionDecl *,8> ActivePredicates;
+   // The flag below ensures that, when a source location needs to be printed,
+   // the filename is printed at most once during the recursive visit.  The
+   // offset part may be printed multiple times, since sub-decls along the
+@@ -122,6 +129,7 @@ public:
+   void VisitTypedefDecl(const TypedefDecl *D);
+   void VisitTemplateTypeParmDecl(const TemplateTypeParmDecl *D);
+   void VisitVarDecl(const VarDecl *D);
++  void VisitTemplateParamObjectDecl(const TemplateParamObjectDecl *D);
+   void VisitBindingDecl(const BindingDecl *D);
+   void VisitNonTypeTemplateParmDecl(const NonTypeTemplateParmDecl *D);
+   void VisitTemplateTemplateParmDecl(const TemplateTemplateParmDecl *D);
+@@ -212,7 +220,27 @@ bool USRGenerator::EmitDeclName(const NamedDecl *D) {
+   return false;
+ }
+ 
++// Objective-C 3 publication gives unnamed template members a lexical owner.
++// Locations cannot distinguish their native USRs after interface relocation.
++static bool hasObjC3UnnamedTemplateOwner(const NamedDecl *D) {
++  if (D->getParentFunctionOrMethod()) return false;
++  bool Unnamed=false;
++  const DeclContext *Start=dyn_cast<DeclContext>(D);
++  if (!Start) Start=D->getDeclContext();
++  for (const DeclContext *DC=Start; DC; DC=DC->getParent()) {
++    const auto *Record=dyn_cast<CXXRecordDecl>(DC);
++    if (!Record) continue;
++    if (Record->isLambda() || Record->isLocalClass()) return false;
++    Unnamed |= !Record->getIdentifier() && !Record->getTypedefNameForAnonDecl();
++    if (Unnamed && (Record->getDescribedClassTemplate() ||
++                    isa<ClassTemplateSpecializationDecl>(Record))) return true;
++  }
++  return false;
++}
++
+ bool USRGenerator::ShouldGenerateLocation(const NamedDecl *D) {
++  if (Context->getLangOpts().ObjC3 && hasObjC3UnnamedTemplateOwner(D))
++    return false;
+   if (D->isExternallyVisible())
+     return false;
+   if (D->getParentFunctionOrMethod())
+@@ -299,9 +327,12 @@ void USRGenerator::VisitFunctionDecl(const FunctionDecl *D) {
+   QualType CanonicalType = D->getType().getCanonicalType();
+   // Mangle in type information for the arguments.
+   if (const auto *FPT = CanonicalType->getAs<FunctionProtoType>()) {
+-    for (QualType PT : FPT->param_types()) {
++    for (unsigned I=0;I<FPT->getNumParams();++I) {
+       Out << '#';
+-      VisitType(PT);
++      VisitType(FPT->getParamType(I));
++      if(LangOpts.ObjC3 && I<D->getNumParams())
++        if(const auto *Size=D->getParamDecl(I)->getAttr<PassObjectSizeAttr>())
++          Out << ":objc3.object-size<" << Size->getType() << ',' << Size->isDynamic() << '>';
+     }
+   }
+   if (D->isVariadic())
+@@ -315,6 +346,32 @@ void USRGenerator::VisitFunctionDecl(const FunctionDecl *D) {
+     Out << '#';
+     VisitType(D->getReturnType());
+   }
++  if(D->hasAttr<EnableIfAttr>() && ActivePredicates.insert(D->getCanonicalDecl()).second) {
++    auto Restore=llvm::scope_exit([&]{ActivePredicates.erase(D->getCanonicalDecl());});
++    Out << ":objc3.enable-if<";
++    for(const auto *Attribute:D->specific_attrs<EnableIfAttr>()) {
++      llvm::FoldingSetNodeID Profile;
++      auto Capture=[&](auto Emit,llvm::FoldingSetNodeID &ID) {
++        const auto Start=Buf.size();Emit();
++        std::string Identity(Buf.begin()+Start,Buf.end());Buf.resize(Start);ID.AddString(Identity);
++      };
++      profileStableExpression(Attribute->getCond(),*Context,Profile,
++          [&](const Decl *Reference,auto &ID){Capture([&]{Visit(Reference);},ID);},
++          [&](QualType Type,auto &ID){
++            if(const auto *Builtin=dyn_cast<BuiltinType>(Type.getTypePtr());Builtin && Type->isDependentType())
++              ID.AddString("!dependent:"+std::to_string(unsigned(Builtin->getKind())));
++            else Capture([&]{VisitType(Type);},ID);
++          },
++          [&](TemplateName Name,auto &ID){Capture([&]{VisitTemplateArgument(TemplateArgument(Name));},ID);},
++          [&](const TemplateArgument &Argument,auto &ID){Capture([&]{VisitTemplateArgument(Argument);},ID);});
++      llvm::BumpPtrAllocator Storage;const auto Data=Profile.Intern(Storage);
++      std::string Bytes;llvm::raw_string_ostream Serialized(Bytes);
++      for(size_t I=0;I<Data.getSize();++I)Serialized << Data.getData()[I] << ',';
++      const auto Digest=llvm::SHA256::hash(llvm::ArrayRef<uint8_t>(reinterpret_cast<const uint8_t *>(Bytes.data()),Bytes.size()));
++      Out << llvm::toHex(Digest,true) << ';';
++    }
++    Out << '>';
++  }
+   Out << '#';
+   if (const CXXMethodDecl *MD = dyn_cast<CXXMethodDecl>(D)) {
+     if (MD->isStatic())
+@@ -348,6 +405,20 @@ void USRGenerator::VisitNamedDecl(const NamedDecl *D) {
+   }
+ }
+ 
++void USRGenerator::VisitTemplateParamObjectDecl(const TemplateParamObjectDecl *D) {
++  if (!LangOpts.ObjC3) {
++    VisitNamedDecl(D);
++    return;
++  }
++  // A structural parameter object has no authored name. Its converted type
++  // and value identify the argument, including callable-owned local types.
++  Out << "S";
++  VisitType(D->getType());
++  ODRHash Hash;
++  Hash.AddStructuralValue(D->getValue());
++  Out << Hash.CalculateHash();
++}
++
+ void USRGenerator::VisitVarDecl(const VarDecl *D) {
+   // VarDecls can be declared 'extern' within a function or method body,
+   // but their enclosing DeclContext is the function, not the TU.  We need
+@@ -613,7 +684,26 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
+       Buf[off] = 'A';
+       Out << '@' << *TD;
+     } else {
+-      if (D->isEmbeddedInDeclarator() && !D->isFreeStanding()) {
++      const auto *Record=dyn_cast<CXXRecordDecl>(D);
++      // An externally visible local type is owned by its enclosing callable.
++      // Its native disambiguator survives source relocation and AST replay.
++      if (Context->getLangOpts().ObjC3 && D->isExternallyVisible() &&
++          D->getParentFunctionOrMethod() && !(Record && Record->isLambda())) {
++        Out << "local@" << Context->getManglingNumber(D);
++      } else if (Context->getLangOpts().ObjC3 && Record &&
++                 hasObjC3UnnamedTemplateOwner(D)) {
++        const auto *Parent=cast<CXXRecordDecl>(Record->getDeclContext());
++        unsigned Index=0;bool Found=false;
++        for (const auto *Member:Parent->decls()) {
++          const auto *Sibling=dyn_cast<CXXRecordDecl>(Member);
++          if (!Sibling || Sibling->isImplicit() || Sibling->getIdentifier() ||
++              Sibling->getTypedefNameForAnonDecl()) continue;
++          if (Sibling->getCanonicalDecl()==Record->getCanonicalDecl()) {Found=true;break;}
++          ++Index;
++        }
++        if (!Found) {IgnoreResults=true;return;}
++        Out << "template-member@" << Index;
++      } else if (D->isEmbeddedInDeclarator() && !D->isFreeStanding()) {
+         printLoc(Out, D->getLocation(), Context->getSourceManager(), true);
+       } else {
+         Buf[off] = 'a';
+@@ -725,6 +815,29 @@ void USRGenerator::VisitType(QualType T) {
+       T = Expansion->getPattern();
+     }
+ 
++    // Source carrier identity must not collapse to the generic unhandled
++    // type marker. In particular, overload parameters and imported symbols
++    // distinguish canonical payloads, independently of storage record names.
++    if (const auto *OT = T->getAs<ObjC3OptionalType>()) {
++      Out << ":objc3.optional<";
++      VisitType(OT->getElementType());
++      Out << '>';
++      return;
++    }
++    if (const auto *KP = T->getAs<ObjC3DependentKeyPathType>()) {
++      Out << (KP->isWritable() ? ":objc3.writable-keypath<" : ":objc3.keypath<");
++      VisitType(KP->getRootType()); Out << ',';
++      VisitType(KP->getValueType()); Out << '>';
++      return;
++    }
++    if (const auto *RT = T->getAs<ObjC3ResultType>()) {
++      Out << ":objc3.result<";
++      VisitType(RT->getSuccessType());
++      Out << ',';
++      VisitType(RT->getErrorType());
++      Out << '>';
++      return;
++    }
+     if (const BuiltinType *BT = T->getAs<BuiltinType>()) {
+       switch (BT->getKind()) {
+       case BuiltinType::Void:
+@@ -989,13 +1102,37 @@ void USRGenerator::VisitType(QualType T) {
+       Out << 'F';
+       VisitType(FT->getReturnType());
+       Out << '(';
+-      for (const auto &I : FT->param_types()) {
++      for (unsigned I = 0; I != FT->getNumParams(); ++I) {
+         Out << '#';
+-        VisitType(I);
++        VisitType(FT->getParamType(I));
++        if (LangOpts.ObjC3 && FT->getExtParameterInfo(I).getOpaqueValue())
++          Out << ":objc3.parameter<"
++              << unsigned(FT->getExtParameterInfo(I).getOpaqueValue()) << '>';
+       }
+       Out << ')';
++      if (LangOpts.ObjC3 && FT->getExtInfo().getProducesResult())
++        Out << ":objc3.retained";
+       if (FT->isVariadic())
+         Out << '.';
++      if (FT->hasObjC3BorrowedResult()) Out << ":objc3.borrowed-result";
++      if (unsigned Owner = FT->getObjC3BorrowedOwner())
++        Out << ":objc3.borrowed-owner<" << (Owner - 1) << '>';
++      auto Effects = FT->getObjC3FunctionEffects();
++      if (Effects.Async || Effects.Throws != ObjC3ThrowsKind::None) {
++        Out << ":objc3.effects<" << unsigned(Effects.Async) << ','
++            << unsigned(Effects.AsyncFrame) << ',' << unsigned(Effects.Throws);
++        if (Effects.Throws == ObjC3ThrowsKind::Typed) {
++          Out << ',';
++          VisitType(Effects.ErrorType);
++        }
++        Out << '>';
++      }
++      return;
++    }
++    if (const auto *FT = T->getAs<FunctionNoProtoType>()) {
++      Out << "F(?)";
++      VisitType(FT->getReturnType());
++      if (FT->hasObjC3BorrowedResult()) Out << ":objc3.borrowed-result";
+       return;
+     }
+     if (const BlockPointerType *BT = T->getAs<BlockPointerType>()) {
+diff --git a/clang/include/clang/Basic/ObjC3Syntax.h b/clang/include/clang/Basic/ObjC3Syntax.h
+new file mode 100644
+index 000000000..9baac04dc
+--- /dev/null
++++ b/clang/include/clang/Basic/ObjC3Syntax.h
+@@ -0,0 +1,80 @@
++//===--- ObjC3Syntax.h - Contextual native carrier syntax ---------*- C++
++//-*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_BASIC_OBJC3SYNTAX_H
++#define LLVM_CLANG_BASIC_OBJC3SYNTAX_H
++#include "llvm/ADT/StringRef.h"
++#include "llvm/ADT/StringSwitch.h"
++namespace clang {
++enum class ObjC3Syntax {
++  Unknown,
++  OptionalType,
++  ResultType,
++  Some,
++  None,
++  HasValue,
++  Ok,
++  Err,
++  IsOk,
++  Copy,
++  Move,
++  Take,
++  Reset,
++  Discard,
++  MatchExpression,
++  MatchStatement,
++  TryValue,
++  TryOptional,
++  TryForce,
++  KeyPathGet,
++  KeyPathSet,
++  KeyPathMetadata,
++  KeyPathAsReadOnly
++};
++/// Public spellings are contextual before '('. Reserved compiler spellings
++/// remain internal entry points for native AST and adversarial owner tests.
++inline ObjC3Syntax classifyObjC3Syntax(llvm::StringRef Name,
++                                       bool FollowedByParen = true) {
++  if (!FollowedByParen && !Name.starts_with("__objc3_"))
++    return ObjC3Syntax::Unknown;
++  return llvm::StringSwitch<ObjC3Syntax>(Name)
++      .Cases({"Optional", "__objc3_optional"}, ObjC3Syntax::OptionalType)
++      .Cases({"Result", "__objc3_result"}, ObjC3Syntax::ResultType)
++      .Cases({"Some", "__objc3_some"}, ObjC3Syntax::Some)
++      .Cases({"None", "__objc3_none"}, ObjC3Syntax::None)
++      .Cases({"hasValue", "__objc3_has_value"}, ObjC3Syntax::HasValue)
++      .Cases({"Ok", "__objc3_ok"}, ObjC3Syntax::Ok)
++      .Cases({"Err", "__objc3_err"}, ObjC3Syntax::Err)
++      .Cases({"isOk", "__objc3_is_ok"}, ObjC3Syntax::IsOk)
++      .Cases({"copyValue", "__objc3_copy"}, ObjC3Syntax::Copy)
++      .Cases({"moveValue", "__objc3_move"}, ObjC3Syntax::Move)
++      .Case("take", ObjC3Syntax::Take)
++      .Case("reset", ObjC3Syntax::Reset)
++      .Case("discard", ObjC3Syntax::Discard)
++      .Cases({"match", "__objc3_match"}, ObjC3Syntax::MatchExpression)
++      .Case("__objc3_match_stmt", ObjC3Syntax::MatchStatement)
++      .Cases({"tryValue", "__objc3_try"}, ObjC3Syntax::TryValue)
++      .Cases({"tryOptional", "__objc3_try_optional"}, ObjC3Syntax::TryOptional)
++      .Cases({"tryForce", "__objc3_try_force"}, ObjC3Syntax::TryForce)
++      .Case("KeyPathGet", ObjC3Syntax::KeyPathGet)
++      .Case("KeyPathSet", ObjC3Syntax::KeyPathSet)
++      .Case("KeyPathMetadata", ObjC3Syntax::KeyPathMetadata)
++      .Case("KeyPathAsReadOnly", ObjC3Syntax::KeyPathAsReadOnly)
++      .Default(ObjC3Syntax::Unknown);
++}
++inline bool isObjC3TypeSyntax(llvm::StringRef Name, bool FollowedByParen) {
++  // These are reserved type constructors with angle delimiters. Keep their
++  // recognition shared by declaration and tentative-declaration parsing.
++  if (Name == "KeyPath" || Name == "WritableKeyPath")
++    return true;
++  auto Kind = classifyObjC3Syntax(Name, FollowedByParen);
++  return Kind == ObjC3Syntax::OptionalType || Kind == ObjC3Syntax::ResultType;
++}
++inline bool isObjC3ExpressionSyntax(llvm::StringRef Name) {
++  auto Kind = classifyObjC3Syntax(Name);
++  return Kind != ObjC3Syntax::Unknown && Kind != ObjC3Syntax::OptionalType &&
++         Kind != ObjC3Syntax::ResultType && Kind != ObjC3Syntax::MatchStatement;
++}
++} // namespace clang
++#endif
+diff --git a/clang/include/clang/Basic/TokenKinds.def b/clang/include/clang/Basic/TokenKinds.def
+index f07d8ebb7..daad42f69 100644
+--- a/clang/include/clang/Basic/TokenKinds.def
++++ b/clang/include/clang/Basic/TokenKinds.def
+@@ -244,6 +244,8 @@ PUNCTUATOR(pipe,                "|")
+ PUNCTUATOR(pipepipe,            "||")
+ PUNCTUATOR(pipeequal,           "|=")
+ PUNCTUATOR(question,            "?")
++PUNCTUATOR(questionquestion,    "??")
++PUNCTUATOR(questionperiod,      "?.")
+ PUNCTUATOR(colon,               ":")
+ PUNCTUATOR(semi,                ";")
+ PUNCTUATOR(equal,               "=")
+@@ -603,6 +605,8 @@ TYPE_TRAIT_1(__is_object, IsObject, KEYCXX)
+ TYPE_TRAIT_1(__is_scalar, IsScalar, KEYCXX)
+ TYPE_TRAIT_1(__is_compound, IsCompound, KEYCXX)
+ TYPE_TRAIT_1(__is_pointer, IsPointer, KEYCXX)
++TYPE_TRAIT_1(__objc3_is_object_pointer, ObjC3IsObjectPointer, KEYCXX)
++TYPE_TRAIT_1(__objc3_is_block_pointer, ObjC3IsBlockPointer, KEYCXX)
+ TYPE_TRAIT_1(__is_member_object_pointer, IsMemberObjectPointer, KEYCXX)
+ TYPE_TRAIT_1(__is_member_function_pointer, IsMemberFunctionPointer, KEYCXX)
+ TYPE_TRAIT_1(__is_member_pointer, IsMemberPointer, KEYCXX)
+diff --git a/clang/include/clang/Basic/Builtins.td b/clang/include/clang/Basic/Builtins.td
+index 344a712dd..e91f0e6be 100644
+--- a/clang/include/clang/Basic/Builtins.td
++++ b/clang/include/clang/Basic/Builtins.td
+@@ -550,6 +550,43 @@ def BuiltinSetFltRounds : Builtin {
+ }
+ 
+ // GCC-compatible C99 CMPLX implementation.
++// A language-independent, unevaluated identity for a pointed-to result type.
++def ObjC3TypeIdentity : Builtin {
++  let Spellings = ["__builtin_objc3_type_identity"];
++  let Attributes = [NoThrow, Const, CustomTypeChecking, Constexpr];
++  let Prototype = "char const*(...)";
++}
++
++// A compiler-owned Optional layout and operation plan for native group awaits.
++def ObjC3AsyncGroupNextPlan : Builtin {
++  let Spellings = ["__builtin_objc3_async_group_next_plan"];
++  let Attributes = [NoThrow, Const, CustomTypeChecking];
++  let Prototype = "void const*(...)";
++}
++
++// Type-check an Error-constrained library factory without changing its value.
++def ObjC3CheckedError : Builtin {
++  let Spellings = ["__builtin_objc3_checked_error"];
++  let Attributes = [NoThrow, CustomTypeChecking];
++  let Prototype = "void(...)";
++}
++
++def ObjC3ResourceTake : Builtin {
++  let Spellings = ["__builtin_objc3_resource_take"];
++  let Attributes = [NoThrow, CustomTypeChecking];
++  let Prototype = "void(...)";
++}
++def ObjC3ResourceReset : Builtin {
++  let Spellings = ["__builtin_objc3_resource_reset"];
++  let Attributes = [CustomTypeChecking];
++  let Prototype = "void(...)";
++}
++def ObjC3ResourceDiscard : Builtin {
++  let Spellings = ["__builtin_objc3_resource_discard"];
++  let Attributes = [CustomTypeChecking];
++  let Prototype = "void(...)";
++}
++
+ def BuiltinComplex : Builtin {
+   let Spellings = ["__builtin_complex"];
+   let Attributes = [NoThrow, Const, CustomTypeChecking, Constexpr];
+diff --git a/clang/test/Index/objc3-condition-cursors.mm b/clang/test/Index/objc3-condition-cursors.mm
+new file mode 100644
+index 000000000..9b1ce88ca
+--- /dev/null
++++ b/clang/test/Index/objc3-condition-cursors.mm
+@@ -0,0 +1,46 @@
++// RUN: c-index-test -test-load-source all %s -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s --check-prefix=CURSORS
++// RUN: c-index-test -test-annotate-tokens=%s:5:1:16:1 %s -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s --check-prefix=TOKENS
++
++using Maybe = __objc3_optional(int);
++int condition_cursors(Maybe source, bool enabled) {
++  guard let first = source, enabled else { return -1; }
++  if var second = source, second > first {
++    second += first;
++    return second;
++  } else {
++    return first;
++  }
++}
++
++// CURSORS: FunctionDecl=condition_cursors:
++// CURSORS: UnexposedStmt=
++// CURSORS: UnexposedStmt=
++// CURSORS: VarDecl=first:
++// CURSORS: DeclRefExpr=source:
++// CURSORS: DeclRefExpr=enabled:
++// CURSORS: IfStmt=
++// CURSORS: UnexposedStmt=
++// CURSORS: VarDecl=second:
++// CURSORS: DeclRefExpr=source:
++// CURSORS: DeclRefExpr=second:
++// CURSORS: DeclRefExpr=first:
++// CURSORS: DeclRefExpr=second:
++// CURSORS: DeclRefExpr=first:
++// CURSORS: DeclRefExpr=second:
++// CURSORS: DeclRefExpr=first:
++// CURSORS-NOT: NotImplemented
++
++// TOKENS: Identifier: "guard" {{.*}} UnexposedStmt=
++// TOKENS: Identifier: "first" {{.*}} VarDecl=first:
++// TOKENS: Identifier: "source" {{.*}} DeclRefExpr=source:
++// TOKENS: Identifier: "enabled" {{.*}} DeclRefExpr=enabled:
++// TOKENS: Keyword: "if" {{.*}} IfStmt=
++// TOKENS: Identifier: "second" {{.*}} VarDecl=second:
++// TOKENS: Identifier: "source" {{.*}} DeclRefExpr=source:
++// TOKENS: Identifier: "second" {{.*}} DeclRefExpr=second:
++// TOKENS: Identifier: "first" {{.*}} DeclRefExpr=first:
++// TOKENS: Identifier: "second" {{.*}} DeclRefExpr=second:
++// TOKENS: Identifier: "first" {{.*}} DeclRefExpr=first:
++// TOKENS: Identifier: "second" {{.*}} DeclRefExpr=second:
++// TOKENS: Identifier: "first" {{.*}} DeclRefExpr=first:
++
+diff --git a/clang/test/Index/objc3-native-expression-cursors.mm b/clang/test/Index/objc3-native-expression-cursors.mm
+new file mode 100644
+index 000000000..dd1d9af24
+--- /dev/null
++++ b/clang/test/Index/objc3-native-expression-cursors.mm
+@@ -0,0 +1,50 @@
++// RUN: c-index-test -test-load-source all %s -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s
++
++using Count = int;
++using Failure = long;
++using Maybe = __objc3_optional(Count);
++using Outcome = __objc3_result(Count, Failure);
++int typed(Count value) __objc3_throws(Failure);
++
++void constructors(Maybe source) {
++  Maybe present = __objc3_some(Count, 7);
++  Outcome success = __objc3_ok(Count, Failure, 9);
++  Maybe copied = __objc3_copy(source);
++  __objc3_do {
++    (void)__objc3_try(typed(4));
++  } __objc3_catch(Failure error) {
++    (void)error;
++  }
++}
++
++// CHECK: TypeAliasDecl=Maybe:
++// CHECK: TypeRef=Count:
++// CHECK: TypeAliasDecl=Outcome:
++// CHECK: TypeRef=Count:
++// CHECK: TypeRef=Failure:
++// CHECK: FunctionDecl=typed:
++// CHECK: ParmDecl=value:
++// CHECK: TypeRef=Count:
++// CHECK: TypeRef=Failure:
++// CHECK: FunctionDecl=constructors:
++// CHECK: VarDecl=present:
++// CHECK: UnexposedExpr=
++// CHECK: TypeRef=Count:
++// CHECK: IntegerLiteral=
++// CHECK: VarDecl=success:
++// CHECK: UnexposedExpr=
++// CHECK: TypeRef=Count:
++// CHECK: TypeRef=Failure:
++// CHECK: IntegerLiteral=
++// CHECK: VarDecl=copied:
++// CHECK: UnexposedExpr=
++// CHECK: DeclRefExpr=source:
++// CHECK: UnexposedStmt=
++// CHECK: UnexposedExpr=
++// CHECK: CallExpr=typed:
++// CHECK: UnexposedStmt=
++// CHECK: TypeRef=Failure:
++// CHECK: VarDecl=error:
++// CHECK: DeclRefExpr=error:
++// CHECK-NOT: NotImplemented
++
+diff --git a/clang/tools/libclang/CIndex.cpp b/clang/tools/libclang/CIndex.cpp
+index 6e30ffd6b..ad8a3ec0c 100644
+--- a/clang/tools/libclang/CIndex.cpp
++++ b/clang/tools/libclang/CIndex.cpp
+@@ -1766,6 +1766,36 @@ bool CursorVisitor::VisitFunctionTypeLoc(FunctionTypeLoc TL,
+       if (Visit(MakeCXCursor(D, TU, RegionOfInterest)))
+         return true;
+ 
++  if (auto FPTL = TL.getAs<FunctionProtoTypeLoc>())
++    if (TypeSourceInfo *Error = FPTL.getObjC3ThrowsPayloadInfo())
++      if (Visit(Error->getTypeLoc()))
++        return true;
++
++  return false;
++}
++
++bool CursorVisitor::VisitObjC3OptionalTypeLoc(ObjC3OptionalTypeLoc TL) {
++  if (TypeSourceInfo *Element = TL.getElementLoc())
++    return Visit(Element->getTypeLoc());
++  return false;
++}
++
++bool CursorVisitor::VisitObjC3ResultTypeLoc(ObjC3ResultTypeLoc TL) {
++  if (TypeSourceInfo *Success = TL.getSuccessLoc())
++    if (Visit(Success->getTypeLoc()))
++      return true;
++  if (TypeSourceInfo *Error = TL.getErrorLoc())
++    return Visit(Error->getTypeLoc());
++  return false;
++}
++
++bool CursorVisitor::VisitObjC3DependentKeyPathTypeLoc(
++    ObjC3DependentKeyPathTypeLoc TL) {
++  if (TypeSourceInfo *Root = TL.getRootLoc())
++    if (Visit(Root->getTypeLoc()))
++      return true;
++  if (TypeSourceInfo *Value = TL.getValueLoc())
++    return Visit(Value->getTypeLoc());
+   return false;
+ }
+ 
+@@ -2112,6 +2142,14 @@ public:
+   void VisitForStmt(const ForStmt *FS);
+   void VisitGotoStmt(const GotoStmt *GS);
+   void VisitIfStmt(const IfStmt *If);
++  void VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S);
++  void VisitObjC3BindingCondition(const ObjC3BindingCondition *S);
++  void VisitObjC3CoalesceExpr(const ObjC3CoalesceExpr *E);
++  void VisitObjC3OptionalAccessExpr(const ObjC3OptionalAccessExpr *E);
++  void VisitObjC3OptionalExpr(const ObjC3OptionalExpr *E);
++  void VisitObjC3ResultExpr(const ObjC3ResultExpr *E);
++  void VisitObjC3CarrierTransferExpr(const ObjC3CarrierTransferExpr *E);
++  void VisitObjC3CatchStmt(const ObjC3CatchStmt *S);
+   void VisitInitListExpr(const InitListExpr *IE);
+   void VisitMemberExpr(const MemberExpr *M);
+   void VisitOffsetOfExpr(const OffsetOfExpr *E);
+@@ -2242,6 +2280,7 @@ public:
+ 
+   // Attributes
+   void VisitAnnotateAttr(const AnnotateAttr *A);
++  void VisitObjCResourceAttr(const ObjCResourceAttr *A);
+ 
+ private:
+   void AddDeclarationNameInfo(const Stmt *S);
+@@ -3172,6 +3211,58 @@ void EnqueueVisitor::VisitIfStmt(const IfStmt *If) {
+   AddStmt(If->getInit());
+   AddDecl(If->getConditionVariable());
+ }
++
++void EnqueueVisitor::VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S) {
++  AddStmt(S->getBody());
++  AddStmt(S->getOperand());
++}
++
++void EnqueueVisitor::VisitObjC3BindingCondition(
++    const ObjC3BindingCondition *S) {
++  // Libclang exposes written source. The implicit snapshot owns the source
++  // initializer, and the binding initializer is only a semantic extraction
++  // recipe. Expose the user declaration and source expression once each.
++  // Worklist entries are consumed in reverse order.
++  AddStmt(S->getSource());
++  AddDecl(S->getBindingDecl());
++}
++
++void EnqueueVisitor::VisitObjC3OptionalExpr(const ObjC3OptionalExpr *E) {
++  AddStmt(E->getPayload());
++  AddTypeLoc(E->getPayloadTypeInfo());
++}
++
++void EnqueueVisitor::VisitObjC3CoalesceExpr(const ObjC3CoalesceExpr *E) {
++  // The semantic conditional reuses operands and generated opaque values.
++  // Cursors describe each written operand exactly once.
++  AddStmt(E->getRHS());
++  AddStmt(E->getLHS());
++}
++
++void EnqueueVisitor::VisitObjC3OptionalAccessExpr(
++    const ObjC3OptionalAccessExpr *E) {
++  AddStmt(E->getAccess());
++  AddStmt(E->getReceiver());
++}
++
++void EnqueueVisitor::VisitObjC3ResultExpr(const ObjC3ResultExpr *E) {
++  AddStmt(E->getPayload());
++  AddTypeLoc(E->getErrorTypeInfo());
++  AddTypeLoc(E->getSuccessTypeInfo());
++}
++
++void EnqueueVisitor::VisitObjC3CarrierTransferExpr(
++    const ObjC3CarrierTransferExpr *E) {
++  // Initialization recipes contain compiler-generated operations sharing the
++  // source location. They must not shadow the written source in token queries.
++  AddStmt(E->getSource());
++}
++
++void EnqueueVisitor::VisitObjC3CatchStmt(const ObjC3CatchStmt *S) {
++  AddStmt(S->getHandlerBody());
++  AddStmt(S->getBindingDeclStmt());
++  AddTypeLoc(S->getCatchTypeInfo());
++}
+ void EnqueueVisitor::VisitInitListExpr(const InitListExpr *IE) {
+   // We care about the syntactic form of the initializer list, only.
+   if (InitListExpr *Syntactic = IE->getSyntacticForm())
+@@ -3728,6 +3819,13 @@ void EnqueueVisitor::VisitAnnotateAttr(const AnnotateAttr *A) {
+   EnqueueChildren(A);
+ }
+ 
++void EnqueueVisitor::VisitObjCResourceAttr(const ObjCResourceAttr *A) {
++  // Call is an implicit cleanup recipe. The callback and invalid value are
++  // the only attribute expressions spelled by the user.
++  AddStmt(A->getInvalid());
++  AddStmt(A->getClose());
++}
++
+ void CursorVisitor::EnqueueWorkList(VisitorWorkList &WL, const Stmt *S) {
+   EnqueueVisitor(WL, MakeCXCursor(S, StmtParent, TU, RegionOfInterest))
+       .ConstStmtVisitor::Visit(S);
+diff --git a/clang/tools/libclang/CXCursor.cpp b/clang/tools/libclang/CXCursor.cpp
+index fb0b3c150..e48e62946 100644
+--- a/clang/tools/libclang/CXCursor.cpp
++++ b/clang/tools/libclang/CXCursor.cpp
+@@ -185,9 +185,33 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
+     break;
+ 
+   case Stmt::IfStmtClass:
++  case Stmt::ObjC3IfBindingStmtClass:
+     K = CXCursor_IfStmt;
+     break;
+ 
++  case Stmt::ObjC3BindingConditionClass:
++  case Stmt::ObjC3LifetimeStmtClass:
++  case Stmt::ObjC3GuardStmtClass:
++  case Stmt::ObjC3MatchArmClass:
++  case Stmt::ObjC3MatchStmtClass:
++  case Stmt::ObjC3ThrowStmtClass:
++  case Stmt::ObjC3CatchStmtClass:
++  case Stmt::ObjC3DoCatchStmtClass:
++    // Preserve the existing C API while retaining traversable native nodes.
++    K = CXCursor_UnexposedStmt;
++    break;
++
++  case Stmt::ObjC3CarrierTransferExprClass:
++  case Stmt::ObjC3CoalesceExprClass:
++  case Stmt::ObjC3OptionalAccessExprClass:
++  case Stmt::ObjC3ResourceExprClass:
++  case Stmt::ObjC3OptionalExprClass:
++  case Stmt::ObjC3ResultExprClass:
++  case Stmt::ObjC3MatchExprClass:
++  case Stmt::ObjC3TryExprClass:
++    K = CXCursor_UnexposedExpr;
++    break;
++
+   case Stmt::SwitchStmtClass:
+     K = CXCursor_SwitchStmt;
+     break;
+diff --git a/clang-tools-extra/test/clang-query/objc3-conditions.mm b/clang-tools-extra/test/clang-query/objc3-conditions.mm
+new file mode 100644
+index 000000000..9f9f1ee5e
+--- /dev/null
++++ b/clang-tools-extra/test/clang-query/objc3-conditions.mm
+@@ -0,0 +1,20 @@
++// RUN: clang-query -c 'set bind-root false' \
++// RUN:   -c 'match objc3GuardStmt(objc3ConditionCountIs(2), hasObjC3Condition(0, objc3BindingCondition(hasObjC3Binding(varDecl(hasName("first")))))).bind("guard")' \
++// RUN:   -c 'match objc3IfBindingStmt(hasObjC3Condition(0, objc3BindingCondition(isObjC3MutableBinding())), hasThen(compoundStmt())).bind("branch")' \
++// RUN:   -c 'set traversal IgnoreUnlessSpelledInSource' \
++// RUN:   -c 'match declRefExpr(to(parmVarDecl(hasName("source"))), hasParent(objc3BindingCondition())).bind("source")' \
++// RUN:   %s -- -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s
++
++int query_conditions(Optional(int) source, bool enabled) {
++  guard let first = source, enabled else { return -1; }
++  if var second = source { return first + second; }
++  return first;
++}
++
++// CHECK: note: "guard" binds here
++// CHECK: 1 match.
++// CHECK: note: "branch" binds here
++// CHECK: 1 match.
++// CHECK: note: "source" binds here
++// CHECK: note: "source" binds here
++// CHECK: 2 matches.
+diff --git a/clang/include/clang/ASTMatchers/ASTMatchers.h b/clang/include/clang/ASTMatchers/ASTMatchers.h
+index 8108ee559..9e48fd1e9 100644
+--- a/clang/include/clang/ASTMatchers/ASTMatchers.h
++++ b/clang/include/clang/ASTMatchers/ASTMatchers.h
+@@ -2229,6 +2229,139 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, BlockExpr> blockExpr;
+ /// \endcode
+ extern const internal::VariadicDynCastAllOfMatcher<Stmt, IfStmt> ifStmt;
+ 
++/// Matches a native ObjC3 guard and its ordered conditions and failure body.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3GuardStmt>
++    objc3GuardStmt;
++
++/// Matches a native ObjC3 if-let or if-var statement.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3IfBindingStmt>
++    objc3IfBindingStmt;
++
++/// Matches precise native lifetime control, preserving the written operand.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3LifetimeStmt>
++    objc3LifetimeStmt;
++AST_MATCHER(ObjC3LifetimeStmt, isObjC3KeepAlive) { return Node.isKeepAlive(); }
++AST_MATCHER_P(ObjC3LifetimeStmt, hasObjC3LifetimeOperand,
++              internal::Matcher<Expr>, InnerMatcher) {
++  return InnerMatcher.matches(*Node.getOperand(), Finder, Builder);
++}
++
++/// Matches one optional binding in an ObjC3 condition list.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3BindingCondition>
++    objc3BindingCondition;
++
++/// Matches native ObjC3 Optional construction and presence queries.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3OptionalExpr>
++    objc3OptionalExpr;
++
++/// Matches native ObjC3 Result construction and arm queries.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3ResultExpr>
++    objc3ResultExpr;
++
++/// Matches explicit native ObjC3 carrier copy or move construction.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CarrierTransferExpr>
++    objc3CarrierTransferExpr;
++
++/// Matches native ObjC3 checked propagation, optionalization or forcing.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3TryExpr>
++    objc3TryExpr;
++
++/// Matches native ObjC3 typed error transfer.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3ThrowStmt>
++    objc3ThrowStmt;
++
++/// Matches an individual native ObjC3 catch clause.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CatchStmt>
++    objc3CatchStmt;
++
++/// Matches native ObjC3 do/catch statements.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3DoCatchStmt>
++    objc3DoCatchStmt;
++
++/// Matches an ordered arm of either native ObjC3 match form.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchArm>
++    objc3MatchArm;
++
++/// Matches native ObjC3 statement-form matches.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchStmt>
++    objc3MatchStmt;
++
++/// Matches native ObjC3 expression-form matches.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchExpr>
++    objc3MatchExpr;
++
++/// Matches a native nil-coalescing expression, including dependent operands.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CoalesceExpr>
++    objc3CoalesceExpr;
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3OptionalAccessExpr>
++    objc3OptionalAccessExpr;
++
++AST_MATCHER(ObjC3OptionalAccessExpr, isObjC3OptionalMessage) {
++  return Node.isMessage();
++}
++AST_MATCHER_P(ObjC3OptionalAccessExpr, hasObjC3OptionalReceiver,
++              internal::Matcher<Expr>, InnerMatcher) {
++  return InnerMatcher.matches(*Node.getReceiver(), Finder, Builder);
++}
++
++/// Matches the written source operand of a native nil-coalescing expression.
++AST_MATCHER_P(ObjC3CoalesceExpr, hasObjC3CoalesceSource,
++              internal::Matcher<Expr>, InnerMatcher) {
++  return InnerMatcher.matches(*Node.getLHS(), Finder, Builder);
++}
++
++/// Matches the lazy written fallback, before implicit conversion or lowering.
++AST_MATCHER_P(ObjC3CoalesceExpr, hasObjC3CoalesceFallback,
++              internal::Matcher<Expr>, InnerMatcher) {
++  return InnerMatcher.matches(*Node.getRHS(), Finder, Builder);
++}
++
++/// Matches the number of ordered conditions, including both bindings and Bool
++/// expressions, in an ObjC3 guard or if binding.
++AST_POLYMORPHIC_MATCHER_P(
++    objc3ConditionCountIs,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3GuardStmt, ObjC3IfBindingStmt),
++    unsigned, Count) {
++  return Node.getNumConditions() == Count;
++}
++
++/// Matches a condition at its zero-based source position. An index outside the
++/// list fails to match. Binding conditions remain distinct from Bool Exprs.
++AST_POLYMORPHIC_MATCHER_P2(
++    hasObjC3Condition,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3GuardStmt, ObjC3IfBindingStmt),
++    unsigned, Index, internal::Matcher<Stmt>, InnerMatcher) {
++  return Index < Node.getNumConditions() &&
++         InnerMatcher.matches(*Node.getCondition(Index), Finder, Builder);
++}
++
++/// Matches the source-facing declaration introduced by a condition or match
++/// arm. Compiler-owned snapshot declarations are not candidates.
++AST_POLYMORPHIC_MATCHER_P(
++    hasObjC3Binding,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3BindingCondition, ObjC3MatchArm),
++    internal::Matcher<VarDecl>, InnerMatcher) {
++  const VarDecl *Binding = Node.getBindingDecl();
++  return Binding && InnerMatcher.matches(*Binding, Finder, Builder);
++}
++
++/// Matches `var` bindings in native ObjC3 conditions or match arms.
++AST_POLYMORPHIC_MATCHER(
++    isObjC3MutableBinding,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3BindingCondition, ObjC3MatchArm)) {
++  return Node.isMutableBinding();
++}
++
++/// Matches the evaluated source of an optional binding or carrier transfer.
++AST_POLYMORPHIC_MATCHER_P(
++    hasObjC3Source,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3BindingCondition,
++                                  ObjC3CarrierTransferExpr),
++    internal::Matcher<Expr>, InnerMatcher) {
++  const Expr *Source = Node.getSource();
++  return Source && InnerMatcher.matches(*Source, Finder, Builder);
++}
++
+ /// Matches for statements.
+ ///
+ /// Example matches 'for (;;) {}'
+@@ -5729,26 +5862,33 @@ AST_POLYMORPHIC_MATCHER_P(
+           InnerMatcher.matches(*Condition, Finder, Builder));
+ }
+ 
+-/// Matches the then-statement of an if statement.
++/// Matches the then-statement of an if statement, including a native ObjC3
++/// if-let or if-var statement.
+ ///
+ /// Examples matches the if statement
+ ///   (matcher = ifStmt(hasThen(cxxBoolLiteral(equals(true)))))
+ /// \code
+ ///   if (false) true; else false;
+ /// \endcode
+-AST_MATCHER_P(IfStmt, hasThen, internal::Matcher<Stmt>, InnerMatcher) {
++AST_POLYMORPHIC_MATCHER_P(
++    hasThen, AST_POLYMORPHIC_SUPPORTED_TYPES(IfStmt, ObjC3IfBindingStmt),
++    internal::Matcher<Stmt>, InnerMatcher) {
+   const Stmt *const Then = Node.getThen();
+   return (Then != nullptr && InnerMatcher.matches(*Then, Finder, Builder));
+ }
+ 
+-/// Matches the else-statement of an if statement.
++/// Matches the else-statement of an if statement or the mandatory failure body
++/// of a native ObjC3 guard.
+ ///
+ /// Examples matches the if statement
+ ///   (matcher = ifStmt(hasElse(cxxBoolLiteral(equals(true)))))
+ /// \code
+ ///   if (false) false; else true;
+ /// \endcode
+-AST_MATCHER_P(IfStmt, hasElse, internal::Matcher<Stmt>, InnerMatcher) {
++AST_POLYMORPHIC_MATCHER_P(
++    hasElse,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(IfStmt, ObjC3GuardStmt, ObjC3IfBindingStmt),
++    internal::Matcher<Stmt>, InnerMatcher) {
+   const Stmt *const Else = Node.getElse();
+   return (Else != nullptr && InnerMatcher.matches(*Else, Finder, Builder));
+ }
+diff --git a/clang/lib/ASTMatchers/ASTMatchFinder.cpp b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
+index 004a02c27..0dd11d636 100644
+--- a/clang/lib/ASTMatchers/ASTMatchFinder.cpp
++++ b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
+@@ -510,7 +510,35 @@ public:
+   bool TraverseAttr(Attr *AttrNode);
+ 
+   bool dataTraverseNode(Stmt *S, DataRecursionQueue *Queue) {
+-    if (auto *RF = dyn_cast<CXXForRangeStmt>(S)) {
++    if (auto *Lifetime = dyn_cast<ObjC3LifetimeStmt>(S)) {
++      {
++        ASTNodeNotAsIsSourceScope RAII(this, true);
++        if (!TraverseStmt(Lifetime->getOperand())) return false;
++      }
++      {
++        ASTNodeNotSpelledInSourceScope RAII(this, true);
++        if (!TraverseStmt(Lifetime->getBindingStatement())) return false;
++      }
++      return TraverseStmt(Lifetime->getBody());
++    }
++    if (auto *Binding = dyn_cast<ObjC3BindingCondition>(S)) {
++      {
++        // The source expression is written by the user, although its owning
++        // snapshot declaration is implicit. Source-oriented matchers must see
++        // it without inheriting the snapshot's implicit traversal scope.
++        ASTNodeNotAsIsSourceScope RAII(this, true);
++        if (!TraverseStmt(Binding->getSource()))
++          return false;
++      }
++      {
++        // Preserve the complete semantic ownership tree for TK_AsIs, and keep
++        // source-oriented matching from reporting the initializer twice.
++        ASTNodeNotSpelledInSourceScope RAII(this, true);
++        if (!TraverseStmt(Binding->getSnapshotStatement()))
++          return false;
++      }
++      return TraverseStmt(Binding->getBindingStatement());
++    } else if (auto *RF = dyn_cast<CXXForRangeStmt>(S)) {
+       {
+         ASTNodeNotAsIsSourceScope RAII(this, true);
+         TraverseStmt(RF->getInit());
+diff --git a/clang/lib/ASTMatchers/ASTMatchersInternal.cpp b/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
+index 5cbf13462..e1d4885b6 100644
+--- a/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
++++ b/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
+@@ -941,6 +941,29 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, DependentScopeDeclRefExpr>
+ const internal::VariadicDynCastAllOfMatcher<Stmt, ObjCIvarRefExpr> objcIvarRefExpr;
+ const internal::VariadicDynCastAllOfMatcher<Stmt, BlockExpr> blockExpr;
+ const internal::VariadicDynCastAllOfMatcher<Stmt, IfStmt> ifStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3LifetimeStmt> objc3LifetimeStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3GuardStmt> objc3GuardStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3IfBindingStmt>
++    objc3IfBindingStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3BindingCondition>
++    objc3BindingCondition;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3OptionalExpr>
++    objc3OptionalExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3ResultExpr> objc3ResultExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CarrierTransferExpr>
++    objc3CarrierTransferExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3TryExpr> objc3TryExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3ThrowStmt> objc3ThrowStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CatchStmt> objc3CatchStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3DoCatchStmt>
++    objc3DoCatchStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchArm> objc3MatchArm;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchStmt> objc3MatchStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchExpr> objc3MatchExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CoalesceExpr>
++    objc3CoalesceExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3OptionalAccessExpr>
++    objc3OptionalAccessExpr;
+ const internal::VariadicDynCastAllOfMatcher<Stmt, ForStmt> forStmt;
+ const internal::VariadicDynCastAllOfMatcher<Stmt, CXXForRangeStmt>
+     cxxForRangeStmt;
+diff --git a/clang/lib/ASTMatchers/Dynamic/Registry.cpp b/clang/lib/ASTMatchers/Dynamic/Registry.cpp
+index a04070971..7cc86e8a6 100644
+--- a/clang/lib/ASTMatchers/Dynamic/Registry.cpp
++++ b/clang/lib/ASTMatchers/Dynamic/Registry.cpp
+@@ -386,6 +386,27 @@ RegistryMaps::RegistryMaps() {
+   REGISTER_MATCHER(hasUnqualifiedLoc);
+   REGISTER_MATCHER(hasValueType);
+   REGISTER_MATCHER(ifStmt);
++  REGISTER_MATCHER(objc3LifetimeStmt);
++  REGISTER_MATCHER(isObjC3KeepAlive);
++  REGISTER_MATCHER(hasObjC3LifetimeOperand);
++  REGISTER_MATCHER(objc3GuardStmt);
++  REGISTER_MATCHER(objc3IfBindingStmt);
++  REGISTER_MATCHER(objc3BindingCondition);
++  REGISTER_MATCHER(objc3OptionalExpr);
++  REGISTER_MATCHER(objc3ResultExpr);
++  REGISTER_MATCHER(objc3CarrierTransferExpr);
++  REGISTER_MATCHER(objc3TryExpr);
++  REGISTER_MATCHER(objc3ThrowStmt);
++  REGISTER_MATCHER(objc3CatchStmt);
++  REGISTER_MATCHER(objc3DoCatchStmt);
++  REGISTER_MATCHER(objc3MatchArm);
++  REGISTER_MATCHER(objc3MatchStmt);
++  REGISTER_MATCHER(objc3MatchExpr);
++  REGISTER_MATCHER(objc3ConditionCountIs);
++  REGISTER_MATCHER(hasObjC3Condition);
++  REGISTER_MATCHER(hasObjC3Binding);
++  REGISTER_MATCHER(isObjC3MutableBinding);
++  REGISTER_MATCHER(hasObjC3Source);
+   REGISTER_MATCHER(ignoringElidableConstructorCall);
+   REGISTER_MATCHER(ignoringImpCasts);
+   REGISTER_MATCHER(ignoringImplicit);
+diff --git a/clang/unittests/ASTMatchers/CMakeLists.txt b/clang/unittests/ASTMatchers/CMakeLists.txt
+index 955566cf6..5be63dc02 100644
+--- a/clang/unittests/ASTMatchers/CMakeLists.txt
++++ b/clang/unittests/ASTMatchers/CMakeLists.txt
+@@ -20,3 +20,23 @@ add_clang_unittest(ASTMatchersTests
+   )
+ 
+ add_subdirectory(Dynamic)
++
++# Keep Objective-C 3 source traversal qualification independently buildable.
++add_distinct_clang_unittest(ObjC3MatchersTests
++  PARTIAL_SOURCES_INTENDED
++  ObjC3MatchersTest.cpp
++  CLANG_LIBS
++  clangAST
++  clangASTMatchers
++  clangBasic
++  clangFrontend
++  clangSerialization
++  clangTooling
++  LINK_LIBS
++  clangTesting
++  LLVMTestingSupport
++  LLVM_COMPONENTS
++  FrontendOpenMP
++  Support
++  TargetParser
++  )
+diff --git a/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp b/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp
+index 013bb912d..f9d8cd8a8 100644
+--- a/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp
++++ b/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp
+@@ -155,6 +155,55 @@ TEST_F(RegistryTest, ConstructWithSimpleArgs) {
+   EXPECT_FALSE(matches("void foo(int);", Value));
+ }
+ 
++TEST_F(RegistryTest, ObjC3NativeNodeMatchersAreRegistered) {
++  for (StringRef Name : {"objc3GuardStmt", "objc3IfBindingStmt",
++                        "objc3BindingCondition", "objc3OptionalExpr",
++                        "objc3ResultExpr", "objc3CarrierTransferExpr",
++                        "objc3TryExpr", "objc3ThrowStmt", "objc3CatchStmt",
++                        "objc3DoCatchStmt", "objc3MatchArm", "objc3MatchStmt",
++                        "objc3MatchExpr"}) {
++    SCOPED_TRACE(Name);
++    EXPECT_TRUE(lookupMatcherCtor(Name));
++    EXPECT_TRUE(constructMatcher(Name).hasTypedMatcher<Stmt>());
++  }
++}
++
++TEST_F(RegistryTest, ObjC3OrderedConditionPredicatesComposeDynamically) {
++  auto AST = buildASTFromCodeWithArgs(R"(
++    int inspect(Optional(int) source, bool enabled) {
++      guard let first = source, enabled else { return -1; }
++      if var second = source { return first + second; }
++      return first;
++    }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      "objc3-dynamic-matchers.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  Matcher<Stmt> Guard =
++      constructMatcher("objc3GuardStmt",
++                       constructMatcher("objc3ConditionCountIs", 2))
++          .getTypedMatcher<Stmt>();
++  EXPECT_EQ(1u, match(Guard, AST->getASTContext()).size());
++  Matcher<Stmt> MutableIf =
++      constructMatcher(
++          "objc3IfBindingStmt",
++          constructMatcher(
++              "hasObjC3Condition", 0,
++              constructMatcher("objc3BindingCondition",
++                               constructMatcher("isObjC3MutableBinding"))))
++          .getTypedMatcher<Stmt>();
++  EXPECT_EQ(1u, match(MutableIf, AST->getASTContext()).size());
++  Matcher<Stmt> Binding =
++      constructMatcher(
++          "objc3BindingCondition",
++          constructMatcher("hasObjC3Binding",
++                           constructMatcher("varDecl",
++                                            constructMatcher("hasName",
++                                                             StringRef("first")))))
++          .getTypedMatcher<Stmt>();
++  EXPECT_EQ(1u, match(Binding, AST->getASTContext()).size());
++}
++
+ TEST_F(RegistryTest, ConstructWithMatcherArgs) {
+   Matcher<Decl> HasInitializerSimple = constructMatcher(
+       "varDecl", constructMatcher("hasInitializer", constructMatcher("stmt")))
+diff --git a/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp b/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp
+new file mode 100644
+index 000000000..6dcb1f806
+--- /dev/null
++++ b/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp
+@@ -0,0 +1,206 @@
++//===--- ObjC3MatchersTest.cpp - Native ObjC3 matcher consumers -----------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/AST/ASTContext.h"
++#include "clang/ASTMatchers/ASTMatchFinder.h"
++#include "clang/ASTMatchers/ASTMatchers.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++using namespace clang;
++using namespace clang::ast_matchers;
++
++namespace {
++
++std::unique_ptr<ASTUnit> buildObjC3AST(StringRef Code) {
++  return tooling::buildASTFromCodeWithArgs(
++      Code, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      "objc3-matchers.mm");
++}
++
++constexpr llvm::StringLiteral Conditions = R"(
++  using Maybe = Optional(int);
++  int conditions(Maybe source, bool enabled) {
++    guard let first = source, enabled else { return -1; }
++    if var second = source, second > first {
++      second += first;
++      return second;
++    } else {
++      return first;
++    }
++  }
++)";
++
++} // namespace
++
++TEST(ObjC3Matchers, PreservesOrderedConditionsAndUserBindingIdentity) {
++  auto AST = buildObjC3AST(Conditions);
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto Enabled = ignoringParenImpCasts(
++      declRefExpr(to(parmVarDecl(hasName("enabled")))));
++  auto Results = match(
++      objc3GuardStmt(
++          objc3ConditionCountIs(2),
++          hasObjC3Condition(
++              0, objc3BindingCondition(
++                     unless(isObjC3MutableBinding()),
++                     hasObjC3Binding(varDecl(hasName("first")).bind("binding")))
++                     .bind("condition")),
++          hasObjC3Condition(1, expr(Enabled)))
++          .bind("guard"),
++      AST->getASTContext());
++  ASSERT_EQ(1u, Results.size());
++  const auto *Condition =
++      Results.front().getNodeAs<ObjC3BindingCondition>("condition");
++  ASSERT_TRUE(Condition);
++  EXPECT_EQ(Condition->getBindingDecl(),
++            Results.front().getNodeAs<VarDecl>("binding"));
++  EXPECT_EQ(Condition,
++            Results.front().getNodeAs<ObjC3GuardStmt>("guard")->getCondition(0));
++  EXPECT_TRUE(match(objc3GuardStmt(hasObjC3Condition(2, stmt())),
++                    AST->getASTContext()).empty());
++  EXPECT_TRUE(match(objc3GuardStmt(objc3ConditionCountIs(1)),
++                    AST->getASTContext()).empty());
++  auto MutableSecond = objc3BindingCondition(
++      isObjC3MutableBinding(), hasObjC3Binding(varDecl(hasName("second"))));
++  EXPECT_EQ(1u, match(objc3IfBindingStmt(hasObjC3Condition(0, MutableSecond)),
++                      AST->getASTContext()).size());
++}
++
++TEST(ObjC3Matchers, BranchMatchersApplyToNativeConditionStatements) {
++  auto AST = buildObjC3AST(Conditions);
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  EXPECT_EQ(1u,
++            match(objc3GuardStmt(hasElse(compoundStmt(has(returnStmt())))),
++                  AST->getASTContext()).size());
++  EXPECT_EQ(1u,
++            match(objc3IfBindingStmt(
++                      hasThen(compoundStmt(hasDescendant(
++                          binaryOperator(hasOperatorName("+="))))),
++                      hasElse(compoundStmt(has(returnStmt())))),
++                  AST->getASTContext()).size());
++  auto WithoutElse = buildObjC3AST(R"(
++    void use(Optional(int) source) { if let value = source { (void)value; } }
++  )");
++  ASSERT_TRUE(WithoutElse);
++  ASSERT_FALSE(WithoutElse->getDiagnostics().hasErrorOccurred());
++  EXPECT_TRUE(match(objc3IfBindingStmt(hasElse(stmt())),
++                    WithoutElse->getASTContext()).empty());
++  // Existing IfStmt consumers retain the same matcher syntax.
++  auto Ordinary = tooling::buildASTFromCode("void f() { if (true) {} else {} }");
++  ASSERT_TRUE(Ordinary);
++  EXPECT_EQ(1u, match(ifStmt(hasThen(compoundStmt()), hasElse(compoundStmt())),
++                      Ordinary->getASTContext()).size());
++}
++
++TEST(ObjC3Matchers, SourceMatcherFindsWrittenSourceWithoutSnapshotNames) {
++  auto AST = buildObjC3AST(Conditions);
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto SourceParameter = declRefExpr(to(parmVarDecl(hasName("source"))));
++  auto SourceExpression = expr(anyOf(SourceParameter,
++                                     hasDescendant(SourceParameter)));
++  EXPECT_EQ(2u, match(objc3BindingCondition(hasObjC3Source(SourceExpression)),
++                      AST->getASTContext()).size());
++  EXPECT_TRUE(match(objc3BindingCondition(hasObjC3Binding(varDecl(isImplicit()))),
++                    AST->getASTContext()).empty());
++  EXPECT_EQ(2u,
++            match(traverse(TK_IgnoreUnlessSpelledInSource,
++                           declRefExpr(to(parmVarDecl(hasName("source"))))),
++                  AST->getASTContext()).size());
++  EXPECT_EQ(2u,
++            match(traverse(TK_IgnoreUnlessSpelledInSource,
++                           declRefExpr(to(parmVarDecl(hasName("source"))),
++                                       hasParent(objc3BindingCondition()))),
++                  AST->getASTContext()).size());
++  EXPECT_TRUE(match(declRefExpr(to(parmVarDecl(hasName("source"))),
++                                hasParent(objc3BindingCondition())),
++                    AST->getASTContext()).empty());
++  EXPECT_EQ(2u,
++            match(declRefExpr(to(parmVarDecl(hasName("source"))),
++                              hasAncestor(varDecl(isImplicit()))),
++                  AST->getASTContext()).size());
++  EXPECT_TRUE(match(traverse(TK_IgnoreUnlessSpelledInSource,
++                             declRefExpr(to(parmVarDecl(hasName("source"))),
++                                         hasAncestor(varDecl(isImplicit())))),
++                    AST->getASTContext()).empty());
++  EXPECT_EQ(1u,
++            match(traverse(TK_IgnoreUnlessSpelledInSource,
++                           declRefExpr(to(parmVarDecl(hasName("source"))),
++                                       hasAncestor(objc3GuardStmt()))),
++                  AST->getASTContext()).size());
++}
++
++TEST(ObjC3Matchers, NativeExpressionErrorAndMatchKindsRemainQueryable) {
++  auto AST = buildObjC3AST(R"(
++    struct Error {};
++    using Maybe = Optional(int);
++    int typed() throws(Error);
++    void expressions(Maybe source) {
++      Maybe present = Some(int, 1);
++      Result(int, long) result = Ok(int, long, 4);
++      Maybe copied = copyValue(source);
++      handle { (void)tryValue(typed()); }
++      catch(Error error) { (void)error; }
++      catch { }
++    }
++    int raise() throws(Error) { throwError(Error{}); }
++    void statement_match(Maybe source) {
++      match(source) {
++        case .Some(var payload): { ++payload; }
++        case .None: { }
++      }
++    }
++    int expression_match(Maybe source) {
++      return match(source) {
++        case .Some(let payload) => payload;
++        case .None => 0;
++      };
++    }
++  )");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &C = AST->getASTContext();
++  EXPECT_FALSE(match(objc3OptionalExpr(), C).empty());
++  EXPECT_FALSE(match(objc3ResultExpr(), C).empty());
++  EXPECT_EQ(1u, match(objc3CarrierTransferExpr(), C).size());
++  EXPECT_EQ(1u, match(objc3TryExpr(), C).size());
++  EXPECT_EQ(1u, match(objc3ThrowStmt(), C).size());
++  EXPECT_EQ(2u, match(objc3CatchStmt(), C).size());
++  EXPECT_EQ(1u, match(objc3DoCatchStmt(), C).size());
++  EXPECT_EQ(1u, match(objc3MatchStmt(), C).size());
++  EXPECT_EQ(1u, match(objc3MatchExpr(), C).size());
++  EXPECT_EQ(4u, match(objc3MatchArm(), C).size());
++  EXPECT_EQ(1u,
++            match(objc3MatchArm(isObjC3MutableBinding(),
++                                hasObjC3Binding(varDecl(hasName("payload")))), C)
++                .size());
++  EXPECT_EQ(2u,
++            match(objc3MatchArm(hasObjC3Binding(varDecl(hasName("payload")))), C)
++                .size());
++}
++
++TEST(ObjC3Matchers, LifetimeOwnersExposeWrittenReferencesAndParents) {
++  auto AST = buildObjC3AST(R"(
++    void example(id source) { keepAlive(source); withLifetime(source) {} }
++  )");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto &Ctx = AST->getASTContext();
++  EXPECT_EQ(1u, match(objc3LifetimeStmt(isObjC3KeepAlive()), Ctx).size());
++  EXPECT_EQ(1u,
++            match(objc3LifetimeStmt(unless(isObjC3KeepAlive())), Ctx).size());
++  EXPECT_EQ(2u, match(objc3LifetimeStmt(hasObjC3LifetimeOperand(
++                          declRefExpr(to(parmVarDecl(hasName("source")))))),
++                      Ctx)
++                    .size());
++  auto Written = match(traverse(TK_IgnoreUnlessSpelledInSource,
++                                declRefExpr(to(parmVarDecl(hasName("source"))),
++                                            hasParent(objc3LifetimeStmt()))),
++                       Ctx);
++  EXPECT_EQ(2u, Written.size());
++}
+diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
+index 2c62f46d4..f89bfad91 100644
+--- a/clang/include/clang/Basic/Attr.td
++++ b/clang/include/clang/Basic/Attr.td
+@@ -241,6 +241,9 @@ class IdentifierArgument<string name, bit opt = 0> : Argument<name, opt>;
+ class IntArgument<string name, bit opt = 0> : Argument<name, opt>;
+ class StringArgument<string name, bit opt = 0> : Argument<name, opt>;
+ class ExprArgument<string name, bit opt = 0> : Argument<name, opt>;
++class FakeExprArgument<string name> : ExprArgument<name> {
++  let Fake = 1;
++}
+ class DeclArgument<DeclNode kind, string name, bit opt = 0, bit fake = 0>
+     : Argument<name, opt, fake> {
+   DeclNode Kind = kind;
+@@ -856,7 +859,7 @@ class IgnoredAttr : Attr {
+ def AbiTag : Attr {
+   let Spellings = [GCC<"abi_tag", /*AllowInC*/0>];
+   let Args = [VariadicStringArgument<"Tags">];
+-  let Subjects = SubjectList<[Struct, Var, Function, Namespace], ErrorDiag>;
++  let Subjects = SubjectList<[Record, Var, Function, Namespace], ErrorDiag>;
+   let MeaningfulToClassTemplateDefinition = 1;
+   let Documentation = [AbiTagsDocs];
+ }
+@@ -1450,6 +1453,99 @@ def OSConsumesThis : InheritableAttr {
+   let SimpleHandler = 1;
+ }
+ 
++// The contextual borrowed spelling is synthesized by the declarator parser.
++// This is type sugar: layout and calling convention remain ordinary pointers.
++def ObjC3Borrowed : TypeAttr {
++  let Spellings = [];
++  let SemaHandler = 0;
++  let Documentation = [InternalOnly];
++}
++
++def ObjCReturnsBorrowed : DeclOrTypeAttr {
++  let Spellings = [GNU<"objc_returns_borrowed">];
++  let Args = [UnsignedArgument<"OwnerIndex">];
++  let HasCustomParsing = 1;
++  let Documentation = [ObjCReturnsBorrowedDocs];
++}
++
++def ObjCRequiresCleanup : InheritableAttr {
++  let Spellings = [GNU<"objc_requires_cleanup">];
++  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
++  let Args = [ExprArgument<"Close">];
++  let Documentation = [ObjCResourceTypeDocs];
++}
++
++def ObjCRetainableFamily : InheritableAttr {
++  let Spellings = [GNU<"objc_retainable_family">];
++  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCRetainableFamilyDocs];
++}
++
++def ObjCFamilyRetain : InheritableAttr {
++  let Spellings = [GNU<"objc_family_retain">];
++  let Subjects = SubjectList<[Function], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCRetainableFamilyDocs];
++}
++
++def ObjCFamilyRelease : InheritableAttr {
++  let Spellings = [GNU<"objc_family_release">];
++  let Subjects = SubjectList<[Function], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCRetainableFamilyDocs];
++}
++
++def ObjCFamilyAutorelease : InheritableAttr {
++  let Spellings = [GNU<"objc_family_autorelease">];
++  let Subjects = SubjectList<[Function], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCRetainableFamilyDocs];
++}
++
++def ObjCResourceFamily : InheritableAttr {
++  let Spellings = [GNU<"objc_resource_family">];
++  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCResourceTypeDocs];
++}
++
++def ObjCInvalid : InheritableAttr {
++  let Spellings = [GNU<"objc_invalid">];
++  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
++  let Args = [ExprArgument<"Invalid">];
++  let Documentation = [ObjCResourceTypeDocs];
++}
++
++// Reverse ownership association survives redeclarations, PCH and AST import.
++// There is no ABI change or public function attribute spelling.
++def ObjCResourceCloseFor : InheritableAttr {
++  let Spellings = [];
++  let SemaHandler = 0;
++  let Subjects = SubjectList<[Function]>;
++  let Args = [DeclArgument<TypedefName, "ResourceTypedef">];
++  let Documentation = [InternalOnly];
++}
++
++def ObjCCleanup : InheritableAttr {
++  let Spellings = [GNU<"objc_cleanup">];
++  let Subjects = SubjectList<[LocalVar], ErrorDiag>;
++  let Args = [ExprArgument<"Close">,
++              BoolArgument<"ByAddress", /*opt=*/0, /*fake=*/1>,
++              FakeExprArgument<"Call">];
++  let Documentation = [ObjCCleanupDocs];
++}
++
++def ObjCResource : InheritableAttr {
++  let Spellings = [GNU<"objc_resource">];
++  let Subjects = SubjectList<[LocalVar], ErrorDiag>;
++  let Args = [ExprArgument<"Close">, ExprArgument<"Invalid">,
++              BoolArgument<"ByAddress", /*opt=*/0, /*fake=*/1>,
++              FakeExprArgument<"Call">];
++  let HasCustomParsing = 1;
++  let Documentation = [ObjCResourceDocs];
++}
++
+ def Cleanup : InheritableAttr {
+   let Spellings = [GCC<"cleanup">];
+   let Args = [DeclArgument<Function, "FunctionDecl">];
+@@ -1469,6 +1565,8 @@ public:
+   }];
+ }
+ 
++def : MutualExclusions<[Cleanup, ObjCResource]>;
++
+ def CmseNSEntry : InheritableAttr, TargetSpecificAttr<TargetARM> {
+   let Spellings = [GNU<"cmse_nonsecure_entry">];
+   let Subjects = SubjectList<[Function]>;
+@@ -2812,9 +2910,14 @@ def StrictGuardStackCheck : InheritableAttr {
+   let SimpleHandler = 1;
+ }
+ 
++// Objective-C 3.0 executor-entry thunks require an explicit native-EH
++// contract for synchronous methods in Objective-C++ as well as functions.
++def ObjC3Method : SubsetSubject<ObjCMethod,
++    [{S->getASTContext().getLangOpts().ObjC3}], "Objective-C 3.0 methods">;
++
+ def NoThrow : InheritableAttr {
+   let Spellings = [GCC<"nothrow">, Declspec<"nothrow">];
+-  let Subjects = SubjectList<[FunctionLike]>;
++  let Subjects = SubjectList<[FunctionLike, ObjC3Method]>;
+   let Documentation = [NoThrowDocs];
+ }
+ 
+@@ -2922,6 +3025,14 @@ def ObjCIndependentClass : InheritableAttr {
+   let Documentation = [Undocumented];
+ }
+ 
++// Semantic binding owned by withLifetime/keepAlive, including MRC retention.
++def ObjC3LifetimeBinding : InheritableAttr {
++  let Spellings = [];
++  let SemaHandler = 0;
++  let Subjects = SubjectList<[LocalVar]>;
++  let Documentation = [InternalOnly];
++}
++
+ def ObjCPreciseLifetime : InheritableAttr {
+   let Spellings = [Clang<"objc_precise_lifetime">];
+   let Subjects = SubjectList<[Var], ErrorDiag>;
+@@ -5503,3 +5614,58 @@ def Personality : InheritableAttr {
+   let Subjects = SubjectList<[Function]>;
+   let Documentation = [PersonalityDocs];
+ }
++
++// Objective-C 3 isolation identity is serialized as ordinary AST attributes.
++// Actor is introduced by the canonical `actor class` grammar, not an attribute.
++def ObjC3Actor : InheritableAttr {
++  let Spellings = [];
++  let SemaHandler = 0;
++  let Subjects = SubjectList<[ObjCInterface]>;
++  let Documentation = [InternalOnly];
++}
++// A private lazy native frame which enters an executor before invoking the
++// original synchronous declaration. Never accepted as a source attribute.
++def ObjC3IsolationThunk : InheritableAttr {
++  let Spellings = [];
++  let SemaHandler = 0;
++  let Subjects = SubjectList<[Function]>;
++  let Args = [BoolArgument<"ActorEntry">, BoolArgument<"OwnedResult">];
++  let Documentation = [InternalOnly];
++}
++def ObjCExecutor : InheritableAttr {
++  let Spellings = [GNU<"objc_executor">];
++  let Subjects = SubjectList<[Function, ObjCMethod, ObjCInterface], ErrorDiag>;
++  let Args = [StringArgument<"Executor">];
++  let HasCustomParsing = 1;
++  let Documentation = [ObjC3ExecutorDocs];
++}
++def ObjCNonisolated : InheritableAttr {
++  let Spellings = [Clang<"objc_nonisolated">];
++  let Subjects = SubjectList<[ObjCMethod, ObjCProperty], ErrorDiag>;
++  let Documentation = [ObjC3NonisolatedDocs];
++}
++def ObjCUnsafeSendable : InheritableAttr {
++  let Spellings = [Clang<"objc_unsafe_sendable">];
++  let Subjects = SubjectList<[ObjCInterface, ObjCImplementation, TypedefName, Record], ErrorDiag>;
++  let Documentation = [ObjC3UnsafeSendableDocs];
++}
++def ObjCActorNonreentrant : InheritableAttr {
++  let Spellings = [Clang<"objc_actor_nonreentrant">];
++  let Subjects = SubjectList<[ObjCMethod, ObjCProperty], ErrorDiag>;
++  let Documentation = [ObjC3ActorNonreentrantDocs];
++}
++def ObjCTaskSpawn : InheritableAttr {
++  let Spellings = [Clang<"objc_task_spawn">];
++  let Subjects = SubjectList<[Function, ObjCMethod], ErrorDiag>;
++  let Documentation = [ObjC3TaskBoundaryDocs];
++}
++def ObjCTaskDetached : InheritableAttr {
++  let Spellings = [Clang<"objc_task_detached">];
++  let Subjects = SubjectList<[Function, ObjCMethod], ErrorDiag>;
++  let Documentation = [ObjC3TaskBoundaryDocs];
++}
++def ObjCTaskGroup : InheritableAttr {
++  let Spellings = [Clang<"objc_task_group">];
++  let Subjects = SubjectList<[Function, ObjCMethod], ErrorDiag>;
++  let Documentation = [ObjC3TaskBoundaryDocs];
++}
+diff --git a/clang/include/clang/Basic/AttrDocs.td b/clang/include/clang/Basic/AttrDocs.td
+index 0fe41671c..fc442b004 100644
+--- a/clang/include/clang/Basic/AttrDocs.td
++++ b/clang/include/clang/Basic/AttrDocs.td
+@@ -9502,6 +9502,72 @@ this usage is debugger-dependent.
+   }];
+ }
+ 
++def ObjCResourceTypeDocs : Documentation {
++  let Category = DocCatType;
++  let Content = [{
++Objective-C 3.0 typedefs may declare ``objc_requires_cleanup(F)``,
++``objc_resource_family(Name)`` and ``objc_invalid(X)``. The corresponding prefix
++spellings are ``@requires_cleanup(F)``, ``@resource_family(Name)`` and
++``@invalid(X)``. Contracts follow typedef/using alias sugar; they do not change
++the scalar ABI or create distinct nominal C types.
++
++The cleanup must be a synchronous, nondependent, named single-parameter function
++applicable to the scalar handle or its address. Sentinels are converted to the
++handle type and must be constant. Contradictory alias annotations are rejected.
++In strict-system mode, automatic handle values must be closed, transferred by a
++compatible typed return, or protected by resource/cleanup/defer actions on every
++exit. Family associations reject wrong cleanup functions, repeated cleanup and
++unproven reuse after consumption. Resource field annotations remain outside v1.
++  }];
++}
++
++def ObjCCleanupDocs : Documentation {
++  let Category = DocCatVariable;
++  let Content = [{
++In Objective-C 3.0, ``cleanup(F)`` and the prefix ``@cleanup(F)`` register a
++native scope-exit call after an automatic variable's successful initialization.
++The callback receives the final value, a directly bound reference, or the
++variable's address according to ordinary parameter initialization. An exact
++address parameter takes precedence; otherwise value/reference passing wins
++when both are applicable. Cleanup runs unconditionally, including zero values,
++and does not invalidate the variable. It shares LIFO action order with
++``defer`` and resource cleanup, before deferred managed source-scope releases.
++
++The callback must name a nondependent, synchronous function with one parameter
++and an ordinary scalar or void result. Scalar values, direct references, and
++addresses of complete fixed-size objects are supported. Retainable results,
++argument temporaries and ARC writeback are rejected. Record copying, dependent or variable
++size storage, checked-error callbacks, asynchronous callbacks, and competing
++cleanup owners are diagnosed. Native exception unwinding uses ordinary Clang
++cleanup machinery; profile conformance is not implied by this attribute.
++The native AST stores the checked call in ``ObjCCleanupAttr``; emitted headers
++use the canonical ``cleanup(F)`` spelling.
++  }];
++}
++
++def ObjCResourceDocs : Documentation {
++  let Category = DocCatVariable;
++  let Content = [{
++``objc_resource(close=F, invalid=X)`` gives an automatic scalar handle an
++explicit scope-exit action in Objective-C 3.0. After successful initialization,
++normal exits and native exception unwinding call ``F`` if the current handle
++differs from ``X``, then store ``X`` into the handle. An invalid handle is not
++closed. These actions share native LIFO ordering with ``cleanup`` and ``defer``;
++implicit ARC releases in the same source scope follow the actions.
++
++The initial native implementation supports mutable integer, enumeration and
++ordinary pointer handles with an explicit initializer and a constant sentinel.
++``F`` must name a nondependent function with one scalar parameter and a scalar
++or void result. The parameter must accept the handle value or its address;
++an exact parameter match takes precedence, then value passing when both apply.
++Native C++ and Objective-C
++exceptions are supported. Checked-error and asynchronous close functions,
++dependent handle types, resource fields, and resource movement operations are
++diagnosed or remain outside this attribute's support boundary. This attribute
++does not by itself claim strict-system ownership-flow checking.
++  }];
++}
++
+ def CleanupDocs : Documentation {
+   let Category = DocCatVariable;
+   let Content = [{
+@@ -10485,3 +10551,76 @@ The attribute is also supported with blocks and in Objective-C.
+   }
+   }];
+ }
++
++
++def ObjCReturnsBorrowedDocs : Documentation {
++  let Category = DocCatFunction;
++  let Content = [{
++``objc_returns_borrowed(owner_index=N)`` associates a ``borrowed T *`` return
++value with the zero-based formal owner parameter N. The contract is preserved
++in PCH and modules and participates in Objective-C 3.0 declaration identity.
++Strict-system semantic analysis checks that the pointer does not escape its
++owner, including through ordinary pointer and integer aliases.
++  }];
++}
++
++def ObjC3ExecutorDocs : Documentation {
++  let Category = DocCatFunction;
++  let Content = [{
++``objc_executor(main)``, ``objc_executor(global)`` and
++``objc_executor(named("identity"))`` describe callable executor affinity.
++Objective-C types provide the default affinity for their members. Executor
++identity is preserved by AST serialization and import. A call from a context
++whose executor cannot be proven equal requires an explicit await and a
++supported executor-hop lowering; the compiler diagnoses unavailable lowering.
++  }];
++}
++def ObjC3NonisolatedDocs : Documentation {
++  let Category = DocCatFunction;
++  let Content = [{
++``objc_nonisolated`` removes the default actor isolation of an actor instance
++method or property. It cannot remove an explicit executor requirement. Its
++parameters, result, and checked error must be Sendable at checked boundaries.
++Access to the actor's isolated state still requires an actor entry.
++  }];
++}
++def ObjC3UnsafeSendableDocs : Documentation {
++  let Category = DocCatType;
++  let Content = [{
++``objc_unsafe_sendable`` explicitly promises that a type may cross concurrency
++boundaries. Every acceptance relying on this promise emits a transfer-site
++note. The promise does not waive borrowed lifetime or cleanup correctness.
++  }];
++}
++def ObjC3ActorNonreentrantDocs : Documentation {
++  let Category = DocCatFunction;
++  let Content = [{
++``objc_actor_nonreentrant`` is reserved. Explicit actor nonreentrancy is deferred
++in Objective-C 3 v1 and use is diagnosed as an error.
++  }];
++}
++def ObjC3TaskBoundaryDocs : Documentation {
++  let Category = DocCatFunction;
++  let Content = [{
++``objc_task_spawn``, ``objc_task_detached`` and ``objc_task_group`` identify
++standard-library concurrency APIs. Child and detached boundaries check async
++work-item captures and explicit values for Sendable transfer. These attributes
++preserve classification in interfaces; they do not implement task creation or
++change a library function's calling convention.
++  }];
++}
++
++def ObjCRetainableFamilyDocs : Documentation {
++  let Category = DocCatDecl;
++  let Content = [{
++Objective-C 3.0 identifies retainable pointer typedefs with
++``objc_retainable_family(Name)`` and their unary operations with
++``objc_family_retain(Name)``, ``objc_family_release(Name)`` and
++``objc_family_autorelease(Name)``. The parameter must name the declared family;
++retain/autorelease return the same family type and release returns void.
++Aliases cannot change their family and redeclarations cannot change operations.
++ObjC-integrated families additionally use ``NSObject``; ARC prohibits direct
++manual family operations on these types. These contracts preserve the native
++pointer ABI and are serialized in PCH and reusable declarations.
++  }];
++}
+diff --git a/clang/include/clang/Basic/OperatorPrecedence.h b/clang/include/clang/Basic/OperatorPrecedence.h
+index 9bda3eb28..9e5d989dd 100644
+--- a/clang/include/clang/Basic/OperatorPrecedence.h
++++ b/clang/include/clang/Basic/OperatorPrecedence.h
+@@ -28,18 +28,19 @@ namespace prec {
+     Comma           = 1,    // ,
+     Assignment      = 2,    // =, *=, /=, %=, +=, -=, <<=, >>=, &=, ^=, |=
+     Conditional     = 3,    // ?
+-    LogicalOr       = 4,    // ||
+-    LogicalAnd      = 5,    // &&
+-    InclusiveOr     = 6,    // |
+-    ExclusiveOr     = 7,    // ^
+-    And             = 8,    // &
+-    Equality        = 9,    // ==, !=
+-    Relational      = 10,   //  >=, <=, >, <
+-    Spaceship       = 11,   // <=>
+-    Shift           = 12,   // <<, >>
+-    Additive        = 13,   // -, +
+-    Multiplicative  = 14,   // *, /, %
+-    PointerToMember = 15    // .*, ->*
++    NilCoalescing   = 4,    // ?? (ObjC3)
++    LogicalOr       = 5,    // ||
++    LogicalAnd      = 6,    // &&
++    InclusiveOr     = 7,    // |
++    ExclusiveOr     = 8,    // ^
++    And             = 9,    // &
++    Equality        = 10,   // ==, !=
++    Relational      = 11,   //  >=, <=, >, <
++    Spaceship       = 12,   // <=>
++    Shift           = 13,   // <<, >>
++    Additive        = 14,   // -, +
++    Multiplicative  = 15,   // *, /, %
++    PointerToMember = 16    // .*, ->*
+   };
+ }
+ 
+diff --git a/clang/lib/Basic/OperatorPrecedence.cpp b/clang/lib/Basic/OperatorPrecedence.cpp
+index f328d1efa..b66ee947b 100644
+--- a/clang/lib/Basic/OperatorPrecedence.cpp
++++ b/clang/lib/Basic/OperatorPrecedence.cpp
+@@ -51,6 +51,7 @@ prec::Level getBinOpPrecedence(tok::TokenKind Kind, bool GreaterThanIsOperator,
+   case tok::caretequal:
+   case tok::pipeequal:            return prec::Assignment;
+   case tok::question:             return prec::Conditional;
++  case tok::questionquestion:     return prec::NilCoalescing;
+   case tok::pipepipe:             return prec::LogicalOr;
+   case tok::ampamp:               return prec::LogicalAnd;
+   case tok::pipe:                 return prec::InclusiveOr;
+diff --git a/clang/lib/Lex/Lexer.cpp b/clang/lib/Lex/Lexer.cpp
+index d5085ca6d..8fd8cc34a 100644
+--- a/clang/lib/Lex/Lexer.cpp
++++ b/clang/lib/Lex/Lexer.cpp
+@@ -1280,6 +1280,7 @@ SourceLocation Lexer::getSourceLocation(const char *Loc,
+ /// Diag - Forwarding function for diagnostics.  This translate a source
+ /// position in the current buffer into a SourceLocation object for rendering.
+ DiagnosticBuilder Lexer::Diag(const char *Loc, unsigned DiagID) const {
++  assert(PP && "Diagnostics require a preprocessor-backed lexer");
+   return PP->Diag(getSourceLocation(Loc), DiagID);
+ }
+ 
+@@ -2848,7 +2849,8 @@ bool Lexer::SaveLineComment(Token &Result, const char *CurPtr) {
+     return true;
+ 
+   // If this Line-style comment is in a macro definition, transmogrify it into
+-  // a C-style block comment.
++  // a C-style block comment. Raw lexers returned above and never need PP.
++  assert(PP && "Directive comment rewriting requires a preprocessor");
+   bool Invalid = false;
+   std::string Spelling = PP->getSpelling(Result, &Invalid);
+   if (Invalid)
+@@ -3864,6 +3866,16 @@ LexStart:
+ 
+   unsigned SizeTmp, SizeTmp2;   // Temporaries for use in cases below.
+ 
++  // ObjC3's coalescing punctuator takes precedence over phase-one trigraph
++  // interpretation. In particular a??(b) is coalescing before a parenthesized
++  // fallback even when C trigraphs are enabled. Other modes retain their
++  // inherited tokenization, including their trigraph diagnostics.
++  if (LangOpts.ObjC3 && CurPtr[0] == '?' && CurPtr[1] == '?') {
++    MIOpt.ReadToken();
++    FormTokenWithChars(Result, CurPtr + 2, tok::questionquestion);
++    return true;
++  }
++
+   // Read a character, advancing over it.
+   char Char = getAndAdvanceChar(CurPtr, Result);
+   tok::TokenKind Kind;
+@@ -4150,7 +4162,18 @@ LexStart:
+ 
+   // C99 6.4.6: Punctuators.
+   case '?':
+-    Kind = tok::question;
++    // The fast path above handles adjacent source characters, including
++    // sequences that would otherwise begin a trigraph. This path also joins
++    // question marks separated by a phase-two escaped newline.
++    if (LangOpts.ObjC3 && getCharAndSize(CurPtr, SizeTmp) == '?') {
++      Kind = tok::questionquestion;
++      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
++    } else if (LangOpts.ObjC3 && getCharAndSize(CurPtr, SizeTmp) == '.') {
++      Kind = tok::questionperiod;
++      CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
++    } else {
++      Kind = tok::question;
++    }
+     break;
+   case '[':
+     Kind = tok::l_square;
+diff --git a/clang/utils/TableGen/ClangAttrEmitter.cpp b/clang/utils/TableGen/ClangAttrEmitter.cpp
+index 5987cb4a0..e0f18034a 100644
+--- a/clang/utils/TableGen/ClangAttrEmitter.cpp
++++ b/clang/utils/TableGen/ClangAttrEmitter.cpp
+@@ -1452,6 +1452,14 @@ namespace {
+       OS << "  }";
+     }
+ 
++    std::string emitAttrArgEqualityCheck() const override {
++      // Optional type arguments have no TypeSourceInfo when omitted. The
++      // QualType accessor requires a present argument, so compare locations
++      // through the null-safe type-argument overload instead.
++      std::string Accessor = "get" + getUpperName().str() + "Loc()";
++      return "equalAttrArgs(" + Accessor + ", Other." + Accessor + ", Context)";
++    }
++
+     void writeASTVisitorTraversal(raw_ostream &OS) const override {
+       OS << "  if (auto *TSI = A->get" << getUpperName() << "Loc())\n";
+       OS << "    if (!getDerived().TraverseTypeLoc(TSI->getTypeLoc()))\n";
+@@ -1739,7 +1747,7 @@ writePrettyPrintFunction(const Record &R,
+       llvm_unreachable("Unknown attribute syntax variety!");
+     }
+ 
+-    Spelling += Name;
++    Spelling += R.getName() == "ObjCCleanup" ? "cleanup" : Name;
+ 
+     OS << "  case " << Idx << " : {\n"
+        << "    OS << \"" << Prefix << Spelling << "\";\n";
+@@ -1752,7 +1760,26 @@ writePrettyPrintFunction(const Record &R,
+       continue;
+     }
+ 
+-    if (Spelling == "availability") {
++    if (R.getName() == "ObjCExecutor") {
++      OS << R"objc3(    OS << "(";
++    if (getExecutor().starts_with("named:")) {
++      OS << "named(\"";
++      OS.write_escaped(getExecutor().drop_front(6));
++      OS << "\")";
++    } else {
++      OS << getExecutor();
++    }
++    OS << ")";
++)objc3";
++    } else if (Spelling == "objc_returns_borrowed") {
++      OS << "    OS << \"(owner_index=\" << getOwnerIndex() << \")\";\n";
++    } else if (Spelling == "objc_resource") {
++      OS << "    OS << \"(close=\";\n"
++         << "    getClose()->printPretty(OS, nullptr, Policy);\n"
++         << "    OS << \", invalid=\";\n"
++         << "    getInvalid()->printPretty(OS, nullptr, Policy);\n"
++         << "    OS << \")\";\n";
++    } else if (Spelling == "availability") {
+       OS << "    OS << \"(";
+       writeAvailabilityValue(OS);
+       OS << ")\";\n";
+@@ -4184,8 +4211,17 @@ void EmitClangAttrASTVisitor(const RecordKeeper &Records, raw_ostream &OS) {
+        << "  if (!getDerived().Visit" << R.getName() << "Attr(A))\n"
+        << "    return false;\n";
+ 
+-    for (const auto *Arg : R.getValueAsListOfDefs("Args"))
++    for (const auto *Arg : R.getValueAsListOfDefs("Args")) {
++      // Fake expressions are semantic recipes, not additional written source.
++      // Keep them available to analyses which explicitly request implicit code.
++      bool Implicit = Arg->isSubClassOf("ExprArgument") &&
++                      Arg->getValueAsBit("Fake");
++      if (Implicit)
++        OS << "  if (getDerived().shouldVisitImplicitCode()) {\n";
+       createArgument(*Arg, R.getName())->writeASTVisitorTraversal(OS);
++      if (Implicit)
++        OS << "  }\n";
++    }
+ 
+     if (Attr->getValueAsBit("AcceptsExprPack"))
+       VariadicExprArgument("DelayedArgs", R.getName())
+diff --git a/clang-tools-extra/clangd/FindTarget.cpp b/clang-tools-extra/clangd/FindTarget.cpp
+index 41c9cddfe..9b4e778df 100644
+--- a/clang-tools-extra/clangd/FindTarget.cpp
++++ b/clang-tools-extra/clangd/FindTarget.cpp
+@@ -8,6 +8,7 @@
+ 
+ #include "FindTarget.h"
+ #include "AST.h"
++#include "ObjC3SourceInfo.h"
+ #include "support/Logger.h"
+ #include "clang/AST/ASTConcept.h"
+ #include "clang/AST/ASTTypeTraits.h"
+@@ -22,6 +23,7 @@
+ #include "clang/AST/ExprConcepts.h"
+ #include "clang/AST/ExprObjC.h"
+ #include "clang/AST/NestedNameSpecifier.h"
++#include "clang/AST/ObjC3KeyPath.h"
+ #include "clang/AST/PrettyPrinter.h"
+ #include "clang/AST/RecursiveASTVisitor.h"
+ #include "clang/AST/StmtVisitor.h"
+@@ -40,6 +42,7 @@
+ #include "llvm/ADT/StringExtras.h"
+ #include "llvm/Support/Casting.h"
+ #include "llvm/Support/Compiler.h"
++#include "llvm/Support/SaveAndRestore.h"
+ #include "llvm/Support/raw_ostream.h"
+ #include <iterator>
+ #include <string>
+@@ -269,6 +272,11 @@ public:
+         Outer.add(D, Flags);
+       }
+       void VisitMemberExpr(const MemberExpr *ME) {
++        const Expr *Path = nullptr;
++        if (getObjC3KeyPathMember(ME, Path) != ObjC3KeyPathMemberKind::None) {
++          Outer.add(Path, Flags);
++          return;
++        }
+         const Decl *D = ME->getMemberDecl();
+         if (auto *USD =
+                 llvm::dyn_cast<UsingShadowDecl>(ME->getFoundDecl().getDecl()))
+@@ -340,6 +348,9 @@ public:
+         Outer.add(OVE->getSourceExpr(), Flags);
+       }
+       void VisitPseudoObjectExpr(const PseudoObjectExpr *POE) {
++        ObjC3KeyPathApplicationInfo Application;
++        if (getObjC3KeyPathApplication(POE, Application))
++          return;
+         Outer.add(POE->getSyntacticForm(), Flags);
+       }
+       void VisitCXXNewExpr(const CXXNewExpr *CNE) {
+@@ -751,6 +762,9 @@ llvm::SmallVector<ReferenceLoc> refInStmt(const Stmt *S,
+     }
+ 
+     void VisitMemberExpr(const MemberExpr *E) {
++      const Expr *Path = nullptr;
++      if (getObjC3KeyPathMember(E, Path) != ObjC3KeyPathMemberKind::None)
++        return;
+       // Skip destructor calls to avoid duplication: TypeLoc within will be
+       // visited separately.
+       if (llvm::isa<CXXDestructorDecl>(E->getFoundDecl().getDecl()))
+@@ -862,6 +876,9 @@ refInTypeLoc(TypeLoc L, const HeuristicResolver *Resolver) {
+     }
+ 
+     void VisitTagTypeLoc(TagTypeLoc L) {
++      ObjC3KeyPathInfo KeyPath;
++      if (getObjC3KeyPathInfo(L.getType(), KeyPath))
++        return;
+       Refs.push_back(ReferenceLoc{L.getQualifierLoc(),
+                                   L.getNameLoc(),
+                                   /*IsDecl=*/false,
+@@ -949,14 +966,64 @@ public:
+   }
+ 
+   bool TraverseOpaqueValueExpr(OpaqueValueExpr *OVE) {
++    if (isObjC3OptionalReceiver(*OVE, OptionalReceiver))
++      return true;
+     visitNode(DynTypedNode::create(*OVE));
+     // Not clear why the source expression is skipped by default...
+     // FIXME: can we just make RecursiveASTVisitor do this?
+     return RecursiveASTVisitor::TraverseStmt(OVE->getSourceExpr());
+   }
+ 
++  bool TraverseObjC3OptionalAccessExpr(ObjC3OptionalAccessExpr *E) {
++    visitNode(DynTypedNode::create(*E));
++    if (!TraverseStmt(E->getReceiver()))
++      return false;
++    llvm::SaveAndRestore<const Expr *> Receiver(OptionalReceiver,
++                                                E->getReceiver());
++    return TraverseStmt(E->getAccess());
++  }
++
++  bool TraverseBlockDecl(BlockDecl *D) {
++    if (!D->hasObjC3CaptureList())
++      return RecursiveASTVisitor::TraverseBlockDecl(D);
++    visitNode(DynTypedNode::create(*D));
++    if (const auto *Signature = D->getSignatureAsWritten())
++      if (!TraverseTypeLoc(Signature->getTypeLoc()))
++        return false;
++    for (const auto &Capture : D->captures())
++      if (Capture.isObjC3Explicit())
++        reportReference({NestedNameSpecifierLoc(),
++                         Capture.getObjC3CaptureRange().getEnd(),
++                         false,
++                         {Capture.getVariable()}},
++                        DynTypedNode::create(*D));
++    // Creation/heap-copy recipes are semantic operations at the same token;
++    // report the one written capture rather than their generated references.
++    return TraverseStmt(D->getBody());
++  }
++
++  bool TraverseObjC3LifetimeStmt(ObjC3LifetimeStmt *S) {
++    visitNode(DynTypedNode::create(*S));
++    return TraverseStmt(S->getOperand()) && TraverseStmt(S->getBody());
++  }
++
++  bool TraverseObjC3BindingCondition(ObjC3BindingCondition *S) {
++    visitNode(DynTypedNode::create(*S));
++    // The inferred TypeLoc and extraction initializer are both located on the
++    // binding's name. Neither is a written reference at that location.
++    visitNode(DynTypedNode::create(*S->getBindingDecl()));
++    return TraverseStmt(S->getSource());
++  }
++
+   bool TraversePseudoObjectExpr(PseudoObjectExpr *POE) {
+     visitNode(DynTypedNode::create(*POE));
++    ObjC3KeyPathApplicationInfo Application;
++    if (getObjC3KeyPathApplication(POE, Application)) {
++      for (const Expr *Argument : Application.Syntax->arguments())
++        if (!TraverseStmt(const_cast<Expr *>(Argument)))
++          return false;
++      return true;
++    }
+     // Traverse only the syntactic form to find the *written* references.
+     // (The semantic form also contains lots of duplication)
+     return RecursiveASTVisitor::TraverseStmt(POE->getSyntacticForm());
+@@ -1029,6 +1096,7 @@ public:
+   }
+ 
+ private:
++  const Expr *OptionalReceiver = nullptr;
+   /// Obtain information about a reference directly defined in \p N. Does not
+   /// recurse into child nodes, e.g. do not expect references for constructor
+   /// initializers
+diff --git a/clang-tools-extra/clangd/Hover.cpp b/clang-tools-extra/clangd/Hover.cpp
+index fab77af3e..f992ecc00 100644
+--- a/clang-tools-extra/clangd/Hover.cpp
++++ b/clang-tools-extra/clangd/Hover.cpp
+@@ -14,6 +14,7 @@
+ #include "FindTarget.h"
+ #include "Headers.h"
+ #include "IncludeCleaner.h"
++#include "ObjC3SourceInfo.h"
+ #include "ParsedAST.h"
+ #include "Protocol.h"
+ #include "Selection.h"
+@@ -36,6 +37,10 @@
+ #include "clang/AST/DeclTemplate.h"
+ #include "clang/AST/Expr.h"
+ #include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3Async.h"
++#include "clang/AST/ObjC3Borrowed.h"
++#include "clang/AST/ObjC3Isolation.h"
++#include "clang/AST/ObjC3KeyPath.h"
+ #include "clang/AST/OperationKinds.h"
+ #include "clang/AST/PrettyPrinter.h"
+ #include "clang/AST/RecordLayout.h"
+@@ -48,10 +53,12 @@
+ #include "clang/Basic/Specifiers.h"
+ #include "clang/Basic/TokenKinds.h"
+ #include "clang/Index/IndexSymbol.h"
++#include "clang/Lex/Lexer.h"
+ #include "clang/Tooling/Syntax/Tokens.h"
+ #include "llvm/ADT/ArrayRef.h"
+ #include "llvm/ADT/DenseSet.h"
+ #include "llvm/ADT/STLExtras.h"
++#include "llvm/ADT/SmallString.h"
+ #include "llvm/ADT/SmallVector.h"
+ #include "llvm/ADT/StringExtras.h"
+ #include "llvm/ADT/StringRef.h"
+@@ -140,9 +147,32 @@ std::string getNamespaceScope(const Decl *D) {
+   return "";
+ }
+ 
++std::string printWrittenExpr(const Expr &E, const ASTContext &Ctx,
++                             const PrintingPolicy &PP) {
++  bool Invalid = false;
++  StringRef Text =
++      Lexer::getSourceText(CharSourceRange::getTokenRange(E.getSourceRange()),
++                           Ctx.getSourceManager(), Ctx.getLangOpts(), &Invalid);
++  if (!Invalid && !Text.empty())
++    return Text.str();
++  std::string Result;
++  llvm::raw_string_ostream OS(Result);
++  E.printPretty(OS, nullptr, PP);
++  return Result;
++}
++
+ std::string printDefinition(const Decl *D, PrintingPolicy PP,
+                             const syntax::TokenBuffer &TB) {
+   if (auto *VD = llvm::dyn_cast<VarDecl>(D)) {
++    if (const auto *Binding = getObjC3Binding(*VD)) {
++      std::string Definition = Binding->isMutableBinding() ? "var " : "let ";
++      Definition += VD->getNameAsString();
++      if (TB.expandedTokens(Binding->getSource()->getSourceRange()).size() <=
++          200)
++        Definition += " = " + printWrittenExpr(*Binding->getSource(),
++                                               VD->getASTContext(), PP);
++      return Definition;
++    }
+     if (auto *IE = VD->getInit()) {
+       // Initializers might be huge and result in lots of memory allocations in
+       // some catostrophic cases. Such long lists are not useful in hover cards
+@@ -721,6 +751,57 @@ HoverInfo getHoverContents(const NamedDecl *D, const PrintingPolicy &PP,
+   }
+ 
+   HI.Definition = printDefinition(D, PP, TB);
++  if (const auto *Resource = D->getAttr<ObjCResourceAttr>()) {
++    // Report the declared contract, never the generated cleanup Call recipe.
++    if (!HI.Documentation.empty())
++      HI.Documentation += "\n\n";
++    HI.Documentation += "Resource ownership: closes with `" +
++                        printWrittenExpr(*Resource->getClose(), Ctx, PP) +
++                        "`; invalid value is `" +
++                        printWrittenExpr(*Resource->getInvalid(), Ctx, PP) +
++                        "`.";
++    if (Resource->getByAddress())
++      HI.Documentation +=
++          " The close callback receives the resource by address.";
++  }
++  if (Ctx.getLangOpts().ObjC3) {
++    auto AddContract = [&](const std::string &Text) {
++      if (!HI.Documentation.empty())
++        HI.Documentation += "\n\n";
++      HI.Documentation += Text;
++    };
++    if (const auto *Value = dyn_cast<ValueDecl>(D)) {
++      if (containsObjC3BorrowedType(Ctx, Value->getType()))
++        AddContract(
++            "Borrowed pointer: this value depends on its owner's lifetime; "
++            "it does not transfer ownership.");
++      ObjC3KeyPathInfo Path;
++      if (getObjC3KeyPathInfo(Value->getType(), Path))
++        AddContract(Path.Set ? "Writable typed key path: accesses the declared "
++                               "Root/Value contract."
++                             : "Readonly typed key path: accesses the declared "
++                               "Root/Value contract.");
++    }
++    if (const auto *Borrowed = getObjC3BorrowedReturnContract(D))
++      AddContract("The returned pointer borrows from parameter " +
++                  std::to_string(Borrowed->getOwnerIndex() + 1) + ".");
++    if (isObjC3ActorIsolated(D))
++      AddContract("Actor-isolated member: cross-actor entry requires await.");
++    if (isObjC3Nonisolated(D))
++      AddContract(
++          "Nonisolated member: actor binding is removed for this entry.");
++    if (const auto *Executor = getObjC3Executor(D))
++      AddContract("Executor affinity: `" + Executor->getExecutor().str() +
++                  "`.");
++    if (const auto *Function = getObjC3CallableFunctionType(D))
++      if (const auto Effects = Function->getObjC3FunctionEffects();
++          Effects.Async)
++        AddContract(Effects.AsyncFrame
++                        ? "Async entry returns the shared C frame ABI. Await "
++                          "reads its logical result."
++                        : "Async entry returns the C++ task ABI. Await reads "
++                          "its logical result.");
++  }
+   return HI;
+ }
+ 
+@@ -959,6 +1040,67 @@ std::optional<HoverInfo> getHoverContents(const SelectionTree::Node *N,
+                                           const SymbolIndex *Index) {
+   std::optional<HoverInfo> HI;
+ 
++  if (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(E)) {
++    ObjC3KeyPathApplicationInfo Application;
++    if (getObjC3KeyPathApplication(Pseudo, Application)) {
++      HI.emplace();
++      HI->Name = getObjC3KeyPathOperationName(Application.Operation).str();
++      HI->Definition = printWrittenExpr(*Pseudo, AST.getASTContext(), PP);
++      HI->Type = printType(Pseudo->getType(), AST.getASTContext(), PP);
++      HI->Documentation =
++          "Typed key-path operation: each written operand is "
++          "evaluated once through its declared accessor contract.";
++      return HI;
++    }
++  }
++  if (const auto *Literal = dyn_cast<CompoundLiteralExpr>(E)) {
++    if (const auto *Path = getObjC3KeyPathLiteralPath(Literal)) {
++      HI.emplace();
++      HI->Name = "@keypath";
++      HI->Definition = printWrittenExpr(*Literal, AST.getASTContext(), PP);
++      HI->Type = printType(Literal->getType(), AST.getASTContext(), PP);
++      HI->Documentation =
++          "Typed key path `" + Path->getString().str() +
++          "`: creating the path does not evaluate or capture a root object.";
++      return HI;
++    }
++  }
++
++  if (const auto *Resource = dyn_cast<ObjC3ResourceExpr>(E)) {
++    HI.emplace();
++    switch (Resource->getKind()) {
++    case ObjC3ResourceExpr::Kind::Take:
++      HI->Name = "__builtin_objc3_resource_take";
++      HI->Documentation =
++          "Transfers the resource value and replaces the local slot with its "
++          "declared invalid value.";
++      break;
++    case ObjC3ResourceExpr::Kind::Reset:
++      HI->Name = "__builtin_objc3_resource_reset";
++      HI->Documentation = "Closes the current resource when valid, then "
++                          "installs the replacement "
++                          "value.";
++      break;
++    case ObjC3ResourceExpr::Kind::Discard:
++      HI->Name = "__builtin_objc3_resource_discard";
++      HI->Documentation =
++          "Closes the current resource when valid and replaces the local slot "
++          "with its declared invalid value.";
++      break;
++    }
++    llvm::SmallString<64> SpellingBuffer;
++    const StringRef WrittenName =
++        Lexer::getSpelling(Resource->getBuiltinLoc(), SpellingBuffer,
++                           AST.getSourceManager(),
++                           AST.getASTContext().getLangOpts());
++    if (WrittenName == "take" || WrittenName == "reset" ||
++        WrittenName == "discard")
++      HI->Name = WrittenName;
++    HI->Definition = printWrittenExpr(*Resource, AST.getASTContext(), PP);
++    HI->Type = printType(Resource->getType(), AST.getASTContext(), PP);
++    return HI;
++  }
++
+   if (const StringLiteral *SL = dyn_cast<StringLiteral>(E)) {
+     // Print the type and the size for string literals
+     HI = getStringLiteralContents(SL, PP);
+@@ -1377,9 +1519,59 @@ std::optional<HoverInfo> getHover(ParsedAST &AST, Position Pos,
+         SelectionTree::createRight(AST.getASTContext(), TB, Offset, Offset);
+     if (const SelectionTree::Node *N = ST.commonAncestor()) {
+       // FIXME: Fill in HighlightRange with range coming from N->ASTNode.
++      // The ownership modifier belongs to the Block, while its following name
++      // references the original variable. Resolve modifier hovers separately.
++      const auto SelectedToken = TokensTouchingCursor.back().location();
++      for (auto *Owner = N; Owner && !HI; Owner = Owner->Parent) {
++        const BlockDecl *Block = Owner->ASTNode.get<BlockDecl>();
++        if (const auto *Expression = Owner->ASTNode.get<BlockExpr>())
++          Block = Expression->getBlockDecl();
++        if (!Block || !Block->hasObjC3CaptureList())
++          continue;
++        for (const auto &Capture : Block->captures()) {
++          const auto Range = Capture.getObjC3CaptureRange();
++          if (!Capture.isObjC3Explicit() ||
++              Range.getBegin() == Range.getEnd() ||
++              Range.getBegin() != SelectedToken)
++            continue;
++          HI = getHoverContents(Capture.getVariable(), PP, Index, TB);
++          HI->Name =
++              BlockDecl::getObjC3CaptureKindName(Capture.getObjC3CaptureKind());
++          HI->Definition =
++              HI->Name + " " + Capture.getVariable()->getNameAsString();
++          HI->Type =
++              printType(Capture.getCaptureType(), AST.getASTContext(), PP);
++          if (!HI->Documentation.empty())
++            HI->Documentation += "\n\n";
++          HI->Documentation +=
++              "Explicit Block capture: evaluated at Block creation with "
++              "the selected ownership and field lifetime.";
++          break;
++        }
++      }
++      if (HI) {
++        HoverCountMetric.record(1, "objc3-capture");
++      } else if (const auto *Lifetime = N->ASTNode.get<ObjC3LifetimeStmt>()) {
++        HI.emplace();
++        HI->Name = Lifetime->isKeepAlive() ? "keepAlive" : "withLifetime";
++        HI->Definition =
++            HI->Name + "(" +
++            printWrittenExpr(*Lifetime->getOperand(), AST.getASTContext(), PP) +
++            ")";
++        HI->Documentation =
++            Lifetime->isKeepAlive()
++                ? "Evaluates once and keeps an independent owner until the "
++                  "current lexical scope exits, after explicit deferred "
++                  "actions."
++                : "Evaluates once and keeps an independent owner through the "
++                  "statement body, after its explicit deferred actions.";
++        HoverCountMetric.record(1, "objc3-lifetime");
++      }
+       auto Decls = explicitReferenceTargets(N->ASTNode, DeclRelation::Alias,
+                                             AST.getHeuristicResolver());
+-      if (const auto *DeclToUse = pickDeclToUse(Decls)) {
++      if (HI) {
++        // Native source contracts above already provide the selected hover.
++      } else if (const auto *DeclToUse = pickDeclToUse(Decls)) {
+         HoverCountMetric.record(1, "decl");
+         HI = getHoverContents(DeclToUse, PP, Index, TB);
+         // Layout info only shown when hovering on the field/class itself.
+diff --git a/clang-tools-extra/clangd/ObjC3SourceInfo.h b/clang-tools-extra/clangd/ObjC3SourceInfo.h
+new file mode 100644
+index 000000000..55c98571f
+--- /dev/null
++++ b/clang-tools-extra/clangd/ObjC3SourceInfo.h
+@@ -0,0 +1,49 @@
++//===--- ObjC3SourceInfo.h - Native Objective-C source relationships -------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#ifndef LLVM_CLANG_TOOLS_EXTRA_CLANGD_OBJC3SOURCEINFO_H
++#define LLVM_CLANG_TOOLS_EXTRA_CLANGD_OBJC3SOURCEINFO_H
++
++#include "clang/AST/Expr.h"
++#include "clang/AST/ParentMapContext.h"
++#include "clang/Basic/LangOptions.h"
++
++namespace clang::clangd {
++
++// An optional access has a written receiver and an opaque nonnull receiver in
++// the selected access. Visitors which unwrap OpaqueValueExpr must not report
++// the same source again while walking that selected access.
++inline bool isObjC3OptionalReceiver(const OpaqueValueExpr &Opaque,
++                                  const Expr *WrittenReceiver) {
++  return WrittenReceiver && Opaque.getSourceExpr() &&
++         Opaque.getSourceExpr()->IgnoreParenImpCasts() ==
++             WrittenReceiver->IgnoreParenImpCasts();
++}
++
++// Bindings infer their type and have a semantic payload-extraction initializer.
++// Recover the source condition rather than presenting that recipe as source.
++inline const ObjC3BindingCondition *getObjC3Binding(const VarDecl &Variable) {
++  ASTContext &Ctx = Variable.getASTContext();
++  if (!Ctx.getLangOpts().ObjC3 || !Variable.isLocalVarDecl())
++    return nullptr;
++  TraversalKindScope Scope(Ctx, TK_AsIs);
++  for (const auto &Parent : Ctx.getParents(Variable)) {
++    const auto *Statement = Parent.get<DeclStmt>();
++    if (!Statement)
++      continue;
++    for (const auto &Owner : Ctx.getParents(*Statement))
++      if (const auto *Binding = Owner.get<ObjC3BindingCondition>())
++        if (Binding->getBindingDecl() == &Variable)
++          return Binding;
++  }
++  return nullptr;
++}
++
++} // namespace clang::clangd
++
++#endif
+diff --git a/clang-tools-extra/clangd/Selection.cpp b/clang-tools-extra/clangd/Selection.cpp
+index b79ffc7d5..7ee0efeea 100644
+--- a/clang-tools-extra/clangd/Selection.cpp
++++ b/clang-tools-extra/clangd/Selection.cpp
+@@ -8,6 +8,7 @@
+ 
+ #include "Selection.h"
+ #include "AST.h"
++#include "ObjC3SourceInfo.h"
+ #include "support/Logger.h"
+ #include "support/Trace.h"
+ #include "clang/AST/ASTConcept.h"
+@@ -16,6 +17,7 @@
+ #include "clang/AST/DeclCXX.h"
+ #include "clang/AST/Expr.h"
+ #include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3KeyPath.h"
+ #include "clang/AST/PrettyPrinter.h"
+ #include "clang/AST/RecursiveASTVisitor.h"
+ #include "clang/AST/TypeLoc.h"
+@@ -29,6 +31,7 @@
+ #include "llvm/ADT/STLExtras.h"
+ #include "llvm/ADT/StringExtras.h"
+ #include "llvm/Support/Casting.h"
++#include "llvm/Support/SaveAndRestore.h"
+ #include "llvm/Support/raw_ostream.h"
+ #include <algorithm>
+ #include <optional>
+@@ -194,17 +197,17 @@ void update(SelectionTree::Selection &Result, SelectionTree::Selection New) {
+ // They're not properly claimed as expr-statement is missing from the AST.
+ bool shouldIgnore(const syntax::Token &Tok) {
+   switch (Tok.kind()) {
+-    // Even "attached" comments are not considered part of a node's range.
+-    case tok::comment:
+-    // The AST doesn't directly store locations for terminating semicolons.
+-    case tok::semi:
+-    // We don't have locations for cvr-qualifiers: see QualifiedTypeLoc.
+-    case tok::kw_const:
+-    case tok::kw_volatile:
+-    case tok::kw_restrict:
+-      return true;
+-    default:
+-      return false;
++  // Even "attached" comments are not considered part of a node's range.
++  case tok::comment:
++  // The AST doesn't directly store locations for terminating semicolons.
++  case tok::semi:
++  // We don't have locations for cvr-qualifiers: see QualifiedTypeLoc.
++  case tok::kw_const:
++  case tok::kw_volatile:
++  case tok::kw_restrict:
++    return true;
++  default:
++    return false;
+   }
+ }
+ 
+@@ -718,11 +721,64 @@ public:
+   }
+   // OpaqueValueExpr blocks traversal, we must explicitly traverse it.
+   bool TraverseOpaqueValueExpr(OpaqueValueExpr *E) {
++    if (isObjC3OptionalReceiver(*E, OptionalReceiver))
++      return true;
+     return traverseNode(E, [&] { return TraverseStmt(E->getSourceExpr()); });
+   }
++  bool TraverseObjC3OptionalAccessExpr(ObjC3OptionalAccessExpr *E) {
++    return traverseNode(E, [&] {
++      if (!TraverseStmt(E->getReceiver()))
++        return false;
++      llvm::SaveAndRestore<const Expr *> Receiver(OptionalReceiver,
++                                                  E->getReceiver());
++      return TraverseStmt(E->getAccess());
++    });
++  }
++  bool TraverseBlockDecl(BlockDecl *D) {
++    if (!D->hasObjC3CaptureList())
++      return Base::TraverseBlockDecl(D);
++    if (const auto *Signature = D->getSignatureAsWritten())
++      if (!TraverseTypeLoc(Signature->getTypeLoc()))
++        return false;
++    for (const auto &Capture : D->captures()) {
++      if (!Capture.isObjC3Explicit())
++        continue;
++      const SourceRange Name(Capture.getObjC3CaptureRange().getEnd());
++      // A capture names the existing declaration at a new source location.
++      // Keep its original AST identity for references/rename, while claiming
++      // only the written capture token, without allocating synthetic AST nodes.
++      push(DynTypedNode::create(*Capture.getVariable()), Name);
++      pop(Name);
++    }
++    return TraverseStmt(D->getBody());
++  }
++
++  bool TraverseObjC3LifetimeStmt(ObjC3LifetimeStmt *S) {
++    return traverseNode(S, [&] {
++      return TraverseStmt(S->getOperand()) && TraverseStmt(S->getBody());
++    });
++  }
++
++  bool TraverseObjC3BindingCondition(ObjC3BindingCondition *S) {
++    return traverseNode(S, [&] {
++      // The binding has no written type or initializer. Let its VarDecl own
++      // the name token, and the condition own the keyword and '=' tokens.
++      return traverseNode(S->getBindingDecl(), [] { return true; }) &&
++             TraverseStmt(S->getSource());
++    });
++  }
+   // We only want to traverse the *syntactic form* to understand the selection.
+   bool TraversePseudoObjectExpr(PseudoObjectExpr *E) {
+-    return traverseNode(E, [&] { return TraverseStmt(E->getSyntacticForm()); });
++    return traverseNode(E, [&] {
++      ObjC3KeyPathApplicationInfo Application;
++      if (getObjC3KeyPathApplication(E, Application)) {
++        for (const Expr *Argument : Application.Syntax->arguments())
++          if (!TraverseStmt(const_cast<Expr *>(Argument)))
++            return false;
++        return true;
++      }
++      return TraverseStmt(E->getSyntacticForm());
++    });
+   }
+   bool TraverseTypeConstraint(const TypeConstraint *C) {
+     if (auto *E = C->getImmediatelyDeclaredConstraint()) {
+@@ -744,6 +800,7 @@ public:
+ 
+ private:
+   using Base = RecursiveASTVisitor<SelectionVisitor>;
++  const Expr *OptionalReceiver = nullptr;
+ 
+   SelectionVisitor(ASTContext &AST, const syntax::TokenBuffer &Tokens,
+                    const PrintingPolicy &PP, unsigned SelBegin, unsigned SelEnd,
+@@ -844,8 +901,9 @@ private:
+ 
+   // Pushes a node onto the ancestor stack. Pairs with pop().
+   // Performs early hit detection for some nodes (on the earlySourceRange).
+-  void push(DynTypedNode Node) {
+-    SourceRange Early = earlySourceRange(Node);
++  void push(DynTypedNode Node, SourceRange WrittenRange = {}) {
++    SourceRange Early =
++        WrittenRange.isValid() ? WrittenRange : earlySourceRange(Node);
+     dlog("{2}push: {0} {1}", printNodeToString(Node, PrintPolicy),
+          Node.getSourceRange().printToString(SM), indent());
+     Nodes.emplace_back();
+@@ -858,10 +916,13 @@ private:
+ 
+   // Pops a node off the ancestor stack, and finalizes it. Pairs with push().
+   // Performs primary hit detection.
+-  void pop() {
++  void pop(SourceRange WrittenRange = {}) {
+     Node &N = *Stack.top();
+     dlog("{1}pop: {0}", printNodeToString(N.ASTNode, PrintPolicy), indent(-1));
+-    claimTokensFor(N.ASTNode, N.Selected);
++    if (WrittenRange.isValid())
++      claimRange(WrittenRange, N.Selected);
++    else
++      claimTokensFor(N.ASTNode, N.Selected);
+     if (N.Selected == NoTokens)
+       N.Selected = SelectionTree::Unselected;
+     if (N.Selected || !N.Children.empty()) {
+diff --git a/clang-tools-extra/clangd/SemanticHighlighting.cpp b/clang-tools-extra/clangd/SemanticHighlighting.cpp
+index 5d9336fa6..e0e6887c8 100644
+--- a/clang-tools-extra/clangd/SemanticHighlighting.cpp
++++ b/clang-tools-extra/clangd/SemanticHighlighting.cpp
+@@ -22,6 +22,7 @@
+ #include "clang/AST/DeclTemplate.h"
+ #include "clang/AST/DeclarationName.h"
+ #include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3KeyPath.h"
+ #include "clang/AST/RecursiveASTVisitor.h"
+ #include "clang/AST/TypeLoc.h"
+ #include "clang/Basic/SourceLocation.h"
+@@ -671,6 +672,65 @@ public:
+     return true;
+   }
+ 
++  bool TraversePseudoObjectExpr(PseudoObjectExpr *E) {
++    ObjC3KeyPathApplicationInfo Application;
++    if (!getObjC3KeyPathApplication(E, Application)) {
++      Expr *Syntax = E->getSyntacticForm()->IgnoreParenImpCasts();
++      Expr *BaseExpression = Syntax;
++      if (auto *Assignment = dyn_cast<BinaryOperator>(BaseExpression);
++          Assignment && Assignment->isAssignmentOp())
++        BaseExpression = Assignment->getLHS()->IgnoreParenImpCasts();
++      if (auto *Increment = dyn_cast<UnaryOperator>(BaseExpression);
++          Increment && Increment->isIncrementDecrementOp())
++        BaseExpression = Increment->getSubExpr()->IgnoreParenImpCasts();
++      auto *Subscript = dyn_cast<ObjCSubscriptRefExpr>(BaseExpression);
++      ObjC3KeyPathInfo Info;
++      if (Subscript && getObjC3KeyPathInfo(Subscript->getKeyExpr()->getType(), Info))
++        return TraverseStmt(Syntax);
++      return Base::TraversePseudoObjectExpr(E);
++    }
++    H.addToken(Application.Syntax->getBeginLoc(), HighlightingKind::Operator);
++    for (const Expr *Argument : Application.Syntax->arguments())
++      if (!TraverseStmt(const_cast<Expr *>(Argument)))
++        return false;
++    return true;
++  }
++
++  bool VisitObjC3CoalesceExpr(ObjC3CoalesceExpr *E) {
++    H.addToken(E->getOperatorLoc(), HighlightingKind::Operator);
++    return true;
++  }
++
++  bool VisitObjC3OptionalAccessExpr(ObjC3OptionalAccessExpr *E) {
++    H.addToken(E->getOperatorLoc(), HighlightingKind::Operator);
++    return true;
++  }
++
++  bool VisitObjC3ResourceExpr(ObjC3ResourceExpr *E) {
++    H.addToken(E->getBuiltinLoc(), HighlightingKind::Operator);
++    return true;
++  }
++
++  bool VisitObjC3LifetimeStmt(ObjC3LifetimeStmt *S) {
++    H.addToken(S->getKeywordLoc(), HighlightingKind::Modifier);
++    return true;
++  }
++
++  bool VisitBlockDecl(BlockDecl *D) {
++    for (const auto &Capture : D->captures()) {
++      const SourceRange Range = Capture.getObjC3CaptureRange();
++      // A bare item such as [weak] captures an ordinary variable named weak.
++      if (Capture.isObjC3Explicit() && Range.getBegin() != Range.getEnd())
++        H.addToken(Range.getBegin(), HighlightingKind::Modifier);
++    }
++    return true;
++  }
++
++  bool VisitObjC3BindingCondition(ObjC3BindingCondition *S) {
++    H.addToken(S->getKeywordLoc(), HighlightingKind::Modifier);
++    return true;
++  }
++
+   bool VisitConditionalOperator(ConditionalOperator *Op) {
+     H.addToken(Op->getQuestionLoc(), HighlightingKind::Operator);
+     H.addToken(Op->getColonLoc(), HighlightingKind::Operator);
+@@ -962,6 +1022,7 @@ public:
+     switch (A->getKind()) {
+     case attr::Override:
+     case attr::Final:
++    case attr::ObjCResource:
+       H.addToken(A->getLocation(), HighlightingKind::Modifier);
+       break;
+     default:
+@@ -1064,7 +1125,7 @@ getSemanticHighlightings(ParsedAST &AST, bool IncludeInactiveRegionTokens) {
+                   {SymbolTag::Virtual, HighlightingModifier::Virtual},
+                   {SymbolTag::Abstract, HighlightingModifier::Abstract},
+                   // Declaration and Definition are handled separately below.
+-              };
++          };
+ 
+           for (const auto &[Tag, Modifier] : TagModifierMap) {
+             if (SymbolTags & toSymbolTagBitmask(Tag))
+diff --git a/clang-tools-extra/clangd/unittests/CMakeLists.txt b/clang-tools-extra/clangd/unittests/CMakeLists.txt
+index d596ba77e..bfa65d4f3 100644
+--- a/clang-tools-extra/clangd/unittests/CMakeLists.txt
++++ b/clang-tools-extra/clangd/unittests/CMakeLists.txt
+@@ -31,6 +31,7 @@ gen_decision_forest(${CMAKE_CURRENT_SOURCE_DIR}/decision_forest_model DecisionFo
+ add_custom_target(ClangdUnitTests)
+ set_target_properties(ClangdUnitTests PROPERTIES FOLDER "Clang Tools Extra/Tests")
+ add_unittest(ClangdUnitTests ClangdTests
++  PARTIAL_SOURCES_INTENDED
+   Annotations.cpp
+   ASTTests.cpp
+   ASTSignalsTests.cpp
+@@ -200,6 +201,26 @@ if (CLANGD_BUILD_XPC)
+   add_subdirectory(xpc)
+ endif ()
+ 
++# Keep the native source-tooling contract runnable without the broad clangd
++# suite, while exercising the production rename, references and hover paths.
++add_unittest(ClangdUnitTests ObjC3SourceToolsTests
++  PARTIAL_SOURCES_INTENDED
++  ObjC3SourceToolsTests.cpp
++  Annotations.cpp
++  TestFS.cpp
++  TestTU.cpp
++)
++clang_target_link_libraries(ObjC3SourceToolsTests PRIVATE
++  clangAST clangASTMatchers clangBasic clangFormat clangFrontend clangIndex
++  clangLex clangSema clangSerialization clangTooling clangToolingCore
++  clangToolingInclusions clangToolingInclusionsStdlib clangToolingRefactoring
++  clangToolingSyntax
++)
++target_link_libraries(ObjC3SourceToolsTests PRIVATE
++  LLVMTestingAnnotations LLVMTestingSupport clangDaemon clangIncludeCleaner
++  clangTesting clangTidy clangTidyUtils clangdSupport
++)
++
+ configure_lit_site_cfg(
+   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.py.in
+   ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py)
+diff --git a/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
+new file mode 100644
+index 000000000..c9cedad52
+--- /dev/null
++++ b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
+@@ -0,0 +1,476 @@
++//===--- ObjC3SourceToolsTests.cpp - Native Objective-C editor contracts
++//----===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "Annotations.h"
++#include "CodeComplete.h"
++#include "Compiler.h"
++#include "FindTarget.h"
++#include "Hover.h"
++#include "Preamble.h"
++#include "Selection.h"
++#include "SemanticHighlighting.h"
++#include "SourceCode.h"
++#include "TestFS.h"
++#include "TestTU.h"
++#include "XRefs.h"
++#include "refactor/Rename.h"
++#include "clang/AST/Decl.h"
++#include "clang/Basic/Diagnostic.h"
++#include "clang/Format/Format.h"
++#include "clang/Lex/Lexer.h"
++#include "llvm/Support/Error.h"
++#include "gmock/gmock.h"
++#include "gtest/gtest.h"
++
++namespace clang::clangd {
++namespace {
++using ::testing::HasSubstr;
++using ::testing::UnorderedElementsAreArray;
++
++TestTU objc3TU(StringRef Code) {
++  auto TU = TestTU::withCode(Code);
++  TU.Filename = "ObjC3Source.mm";
++  TU.ExtraArgs = {"-xobjective-c++", "-std=c++20", "-fobjc-version=3",
++                  "-fobjc-runtime=gnustep-2.2"};
++  return TU;
++}
++
++void expectLocalEdits(ParsedAST &AST, const TestTU &TU, const Annotations &A,
++                      StringRef Group = "") {
++  auto Renamed = rename({A.point(), "renamed", AST, testPath(TU.Filename)});
++  if (!Renamed) {
++    ADD_FAILURE() << llvm::toString(Renamed.takeError());
++    return;
++  }
++  EXPECT_THAT(Renamed->LocalChanges,
++              UnorderedElementsAreArray(A.ranges(Group)));
++  std::vector<Range> References, Highlights;
++  for (const auto &Reference : findReferences(AST, A.point(), 0).References)
++    References.push_back(Reference.Loc.range);
++  for (const auto &Highlight : findDocumentHighlights(AST, A.point()))
++    Highlights.push_back(Highlight.range);
++  EXPECT_THAT(References, UnorderedElementsAreArray(A.ranges(Group)));
++  EXPECT_THAT(Highlights, UnorderedElementsAreArray(A.ranges(Group)));
++}
++
++TEST(ObjC3SourceTools, GuardBindingSelectionHoverAndRename) {
++  Annotations A(R"objc(
++    using Maybe = __objc3_optional(int);
++    int consume(Maybe source) {
++      guard let [[val^ue]] = source else { return -1; }
++      if var other = source, other > [[value]] {
++        other += [[value]];
++      }
++      return [[value]];
++    }
++  )objc");
++  auto TU = objc3TU(A.code());
++  auto AST = TU.build();
++  auto Offset = llvm::cantFail(positionToOffset(A.code(), A.point()));
++  auto Selection = SelectionTree::createRight(AST.getASTContext(),
++                                              AST.getTokens(), Offset, Offset);
++  ASSERT_TRUE(Selection.commonAncestor());
++  ASSERT_TRUE(Selection.commonAncestor()->ASTNode.get<VarDecl>());
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Hover);
++  EXPECT_EQ(Hover->Name, "value");
++  EXPECT_EQ(Hover->Definition, "let value = source");
++  ASSERT_TRUE(Hover->Type);
++  EXPECT_EQ(Hover->Type->Type, "const int");
++  expectLocalEdits(AST, TU, A);
++}
++
++TEST(ObjC3SourceTools, IfBindingRenameRespectsElseAndContinuationScopes) {
++  Annotations A(R"objc(
++    using Maybe = __objc3_optional(int);
++    int consume(Maybe source) {
++      int value = 1;
++      if var [[val^ue]] = source {
++        [[value]] += 2;
++        return [[value]];
++      } else {
++        value += 3;
++      }
++      return value;
++    }
++  )objc");
++  auto TU = objc3TU(A.code());
++  auto AST = TU.build();
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Hover);
++  EXPECT_EQ(Hover->Definition, "var value = source");
++  ASSERT_TRUE(Hover->Type);
++  EXPECT_EQ(Hover->Type->Type, "int");
++  expectLocalEdits(AST, TU, A);
++}
++
++TEST(ObjC3SourceTools, OptionalAccessHasOneWrittenReceiverAndArgument) {
++  Annotations A(R"objc(
++    __attribute__((objc_root_class))
++    @interface Box
++    @property Box *child;
++    - (Box *)choose:(Box *)value;
++    @end
++    Box *select(Box *[[b^ox]], Box *fallback) {
++      return [[box]]?.child ?? [ [[box]]? choose:fallback];
++    }
++  )objc");
++  auto TU = objc3TU(A.code());
++  auto AST = TU.build();
++  expectLocalEdits(AST, TU, A);
++  unsigned ReceiverReferences = 0, FallbackReferences = 0;
++  findExplicitReferences(
++      AST.getASTContext(),
++      [&](ReferenceLoc Ref) {
++        if (Ref.IsDecl)
++          return;
++        for (const auto *Target : Ref.Targets) {
++          ReceiverReferences +=
++              Target->getIdentifier() && Target->getName() == "box";
++          FallbackReferences +=
++              Target->getIdentifier() && Target->getName() == "fallback";
++        }
++      },
++      AST.getHeuristicResolver());
++  EXPECT_EQ(ReceiverReferences, 2u);
++  EXPECT_EQ(FallbackReferences, 1u);
++}
++
++TEST(ObjC3SourceTools, ResourceCallbackIsOneWrittenReference) {
++  Annotations A(R"objc(
++    void [[cl^ose_handle]](int);
++    int work() {
++      int handle __attribute__((objc_resource(close = [[close_handle]],
++                                              invalid = -1))) = 7;
++      __builtin_objc3_resource_reset(handle, 8);
++      return __builtin_objc3_resource_take(handle);
++    }
++  )objc");
++  auto TU = objc3TU(A.code());
++  auto AST = TU.build();
++  expectLocalEdits(AST, TU, A);
++  unsigned References = 0;
++  findExplicitReferences(
++      AST.getASTContext(),
++      [&](ReferenceLoc Ref) {
++        if (!Ref.IsDecl)
++          for (const auto *Target : Ref.Targets)
++            References +=
++                Target->getIdentifier() && Target->getName() == "close_handle";
++      },
++      AST.getHeuristicResolver());
++  EXPECT_EQ(References, 1u);
++}
++
++TEST(ObjC3SourceTools, ResourceHoverShowsContractAndTransferOperation) {
++  Annotations A(R"objc(
++    void close_handle(int);
++    int work() {
++      int $slot^handle __attribute__((objc_resource(close = close_handle,
++                                                  invalid = -1))) = 7;
++      return $take^__builtin_objc3_resource_take(handle);
++    }
++  )objc");
++  auto AST = objc3TU(A.code()).build();
++  auto Slot = getHover(AST, A.point("slot"), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Slot);
++  EXPECT_THAT(Slot->Documentation, HasSubstr("closes with `close_handle`"));
++  EXPECT_THAT(Slot->Documentation, HasSubstr("invalid value is `-1`"));
++  auto Take = getHover(AST, A.point("take"), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Take);
++  EXPECT_EQ(Take->Name, "__builtin_objc3_resource_take");
++  EXPECT_EQ(Take->Definition, "__builtin_objc3_resource_take(handle)");
++  EXPECT_THAT(Take->Documentation, HasSubstr("Transfers the resource value"));
++}
++
++TEST(ObjC3SourceTools, NativeOperatorsAndBindingsHaveSemanticTokens) {
++  Annotations A(R"objc(
++    using Maybe = __objc3_optional(int);
++    void close_handle(int);
++    int work(Maybe source) {
++      guard $binding[[let]] value = source else { return -1; }
++      int handle __attribute__(($attr[[objc_resource]](close = close_handle,
++                                                      invalid = -1))) = 7;
++      int taken = $operation[[__builtin_objc3_resource_take]](handle);
++      return (source $coalesce[[??]] taken) + value;
++    }
++  )objc");
++  auto AST = objc3TU(A.code()).build();
++  auto Tokens = getSemanticHighlightings(AST, false);
++  for (auto [Name, Kind] :
++       {std::pair("binding", HighlightingKind::Modifier),
++        std::pair("attr", HighlightingKind::Modifier),
++        std::pair("operation", HighlightingKind::Operator),
++        std::pair("coalesce", HighlightingKind::Operator)}) {
++    const auto ExpectedRange = A.range(Name);
++    auto Found = llvm::find_if(Tokens, [&](const HighlightingToken &Token) {
++      return Token.R == ExpectedRange;
++    });
++    ASSERT_NE(Found, Tokens.end()) << Name;
++    EXPECT_EQ(Found->Kind, Kind) << Name;
++  }
++}
++
++TEST(ObjC3SourceTools, CompletionFollowsGuardAndIfBindingScopes) {
++  for (const auto &[Code, Expected] : {std::pair(R"objc(
++          using Maybe = __objc3_optional(int);
++          int work(Maybe source) {
++            guard let guarded = source else { return -1; }
++            guard^;
++          })objc",
++                                                 true),
++                                       std::pair(R"objc(
++          using Maybe = __objc3_optional(int);
++          int work(Maybe source) {
++            if let guarded = source { return guarded; }
++            guard^;
++          })objc",
++                                                 false)}) {
++    Annotations A(Code);
++    auto TU = objc3TU(A.code());
++    MockFS FS;
++    auto Inputs = TU.inputs(FS);
++    IgnoreDiagnostics Diagnostics;
++    auto Invocation = buildCompilerInvocation(Inputs, Diagnostics);
++    ASSERT_TRUE(Invocation);
++    auto Preamble = buildPreamble(testPath(TU.Filename), *Invocation, Inputs,
++                                  true, nullptr);
++    auto Result = codeComplete(testPath(TU.Filename), A.point(), Preamble.get(),
++                               Inputs, {});
++    EXPECT_EQ(llvm::any_of(Result.Completions,
++                           [](const CodeCompletion &Completion) {
++                             return Completion.Name == "guarded";
++                           }),
++              Expected);
++  }
++}
++TEST(ObjC3SourceTools, ExplicitCaptureReferencesAndRenameStartAtCapture) {
++  Annotations A(R"objc(
++    int work(int [[value]]) {
++      void (^block)(void) = ^[move [[val~ue]]] { (void)[[value]]; };
++      block();
++      return [[value]];
++    }
++  )objc", llvm::Annotations::Markers().setPoint("~"));
++  auto TU = objc3TU(A.code());
++  TU.ExtraArgs.push_back("-fblocks");
++  auto AST = TU.build();
++  const auto Offset = llvm::cantFail(positionToOffset(A.code(), A.point()));
++  auto Selection = SelectionTree::createRight(AST.getASTContext(),
++                                              AST.getTokens(), Offset, Offset);
++  ASSERT_TRUE(Selection.commonAncestor());
++  const auto *Variable = Selection.commonAncestor()->ASTNode.get<VarDecl>();
++  ASSERT_TRUE(Variable);
++  EXPECT_EQ(Variable->getName(), "value");
++  expectLocalEdits(AST, TU, A);
++}
++
++TEST(ObjC3SourceTools, CaptureModifiersAreContextualAndHaveOwnershipHover) {
++  Annotations A(R"objc(
++    void work(id object, int weak) {
++      void (^owned)(void) = ^[$modifier[[str~ong]] object] { (void)object; };
++      void (^named)(void) = ^[$name[[weak]]] { (void)weak; };
++      owned(); named();
++    }
++  )objc", llvm::Annotations::Markers().setPoint("~"));
++  auto TU = objc3TU(A.code());
++  TU.ExtraArgs.push_back("-fblocks");
++  auto AST = TU.build();
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Hover);
++  EXPECT_EQ(Hover->Name, "strong");
++  EXPECT_EQ(Hover->Definition, "strong object");
++  EXPECT_THAT(Hover->Documentation, HasSubstr("Explicit Block capture"));
++  const auto Tokens = getSemanticHighlightings(AST, false);
++  auto At = [&](StringRef Name) {
++    return llvm::find_if(Tokens, [&](const HighlightingToken &Token) {
++      return Token.R == A.range(Name);
++    });
++  };
++  ASSERT_NE(At("modifier"), Tokens.end());
++  EXPECT_EQ(At("modifier")->Kind, HighlightingKind::Modifier);
++  ASSERT_NE(At("name"), Tokens.end());
++  // The bare capture names the original parameter; it is not a modifier or
++  // a new local declaration.
++  EXPECT_EQ(At("name")->Kind, HighlightingKind::Parameter);
++}
++
++TEST(ObjC3SourceTools, LifetimeOperatorsHaveHoverTokensAndSingleReferences) {
++  Annotations A(R"objc(
++    void work(id [[object]]) {
++      $keep[[keepA^live]]([[object]]);
++      $with[[withLifetime]]([[object]]) { (void)[[object]]; }
++    }
++  )objc");
++  auto TU = objc3TU(A.code());
++  auto AST = TU.build();
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Hover);
++  EXPECT_EQ(Hover->Name, "keepAlive");
++  EXPECT_EQ(Hover->Definition, "keepAlive(object)");
++  EXPECT_THAT(Hover->Documentation,
++              HasSubstr("after explicit deferred actions"));
++  std::vector<Range> References;
++  findExplicitReferences(
++      AST.getASTContext(),
++      [&](ReferenceLoc Ref) {
++        for (const auto *Target : Ref.Targets)
++          if (Target->getIdentifier() && Target->getName() == "object")
++            References.push_back(
++                halfOpenToRange(AST.getSourceManager(),
++                                Lexer::makeFileCharRange(
++                                    CharSourceRange::getTokenRange(Ref.NameLoc),
++                                    AST.getSourceManager(),
++                                    AST.getASTContext().getLangOpts())));
++      },
++      AST.getHeuristicResolver());
++  EXPECT_THAT(References, UnorderedElementsAreArray(A.ranges()));
++  const auto Tokens = getSemanticHighlightings(AST, false);
++  for (StringRef Name : {"keep", "with"}) {
++    auto Token = llvm::find_if(Tokens, [&](const HighlightingToken &Token) {
++      return Token.R == A.range(Name);
++    });
++    ASSERT_NE(Token, Tokens.end());
++    EXPECT_EQ(Token->Kind, HighlightingKind::Modifier);
++  }
++}
++
++TEST(ObjC3SourceTools, BorrowedReturnHoverPreservesContract) {
++  Annotations A(R"objc(
++    borrowed char *lo^an(void *owner)
++        __attribute__((objc_returns_borrowed(owner_index=0)));
++  )objc");
++  auto AST = objc3TU(A.code()).build();
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Hover);
++  EXPECT_THAT(Hover->Documentation, HasSubstr("borrows from parameter 1"));
++  EXPECT_THAT(Hover->Definition, HasSubstr("borrowed"));
++}
++
++TEST(ObjC3SourceTools, CaptureReferencesRemainDistinctAcrossUnusedItems) {
++  Annotations A(R"objc(
++    int work(int [[left]], int right) {
++      void (^block)(void) = ^[move [[le~ft]], move right] {};
++      block();
++      return [[left]] + right;
++    }
++  )objc", llvm::Annotations::Markers().setPoint("~"));
++  auto TU = objc3TU(A.code());
++  TU.ExtraArgs.push_back("-fblocks");
++  auto AST = TU.build();
++  expectLocalEdits(AST, TU, A);
++}
++
++TEST(ObjC3SourceTools, PublicResourceOperatorHoverUsesWrittenName) {
++  Annotations A(R"objc(
++    void close_handle(int);
++    int work() {
++      int handle __attribute__((objc_resource(close=close_handle, invalid=-1))) = 7;
++      return ta^ke(handle);
++    }
++  )objc");
++  auto AST = objc3TU(A.code()).build();
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Hover);
++  EXPECT_EQ(Hover->Name, "take");
++  EXPECT_EQ(Hover->Definition, "take(handle)");
++}
++
++TEST(ObjC3SourceTools, ExecutorHoverRetainsExactNamedIdentity) {
++  Annotations A(R"objc(
++    __attribute__((objc_executor(named("io.serial")))) int va^lue(void);
++  )objc");
++  auto AST = objc3TU(A.code()).build();
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Hover);
++  EXPECT_THAT(Hover->Documentation,
++              HasSubstr("Executor affinity: `named:io.serial`"));
++}
++
++TEST(ObjC3SourceTools,
++     KeyPathApplicationOwnsOperatorAndReferencesEachArgumentOnce) {
++  Annotations A(R"objc(
++    __attribute__((objc_root_class)) @interface Node @end
++    int read(KeyPath<Node *, int> [[path]], Node * _Nonnull root) {
++      return $op[[KeyPa^thGet]]([[path]], root);
++    }
++  )objc");
++  auto TU = objc3TU(A.code());
++  auto AST = TU.build();
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
++  ASSERT_TRUE(Hover);
++  EXPECT_EQ(Hover->Name, "KeyPathGet");
++  EXPECT_EQ(Hover->Definition, "KeyPathGet(path, root)");
++  EXPECT_THAT(Hover->Documentation, HasSubstr("each written operand"));
++  const auto Tokens = getSemanticHighlightings(AST, false);
++  auto Token = llvm::find_if(Tokens, [&](const HighlightingToken &Token) {
++    return Token.R == A.range("op");
++  });
++  ASSERT_NE(Token, Tokens.end());
++  EXPECT_EQ(Token->Kind, HighlightingKind::Operator);
++  unsigned PathReferences = 0;
++  findExplicitReferences(
++      AST.getASTContext(),
++      [&](ReferenceLoc Ref) {
++        if (Ref.IsDecl)
++          return;
++        for (const auto *Target : Ref.Targets) {
++          PathReferences +=
++              Target->getIdentifier() && Target->getName() == "path";
++          EXPECT_FALSE(llvm::StringRef(Target->getNameAsString())
++                           .starts_with("__objc3_"));
++          EXPECT_NE(Target->getNameAsString(), "KeyPathGet");
++        }
++      },
++      AST.getHeuristicResolver());
++  EXPECT_EQ(PathReferences, 1u);
++}
++
++TEST(ObjC3SourceTools, KeyPathOperandRenameDoesNotExposePrivateFields) {
++  Annotations A(R"objc(
++    __attribute__((objc_root_class)) @interface Node @end
++    int read(KeyPath<Node *, int> [[path]], Node * _Nonnull root) {
++      return KeyPathGet([[pa^th]], root);
++    }
++  )objc");
++  auto TU = objc3TU(A.code());
++  auto AST = TU.build();
++  expectLocalEdits(AST, TU, A);
++}
++
++TEST(ObjC3SourceTools, KeyPathSubscriptReferencesAndHighlightingUseWrittenOperands) {
++  Annotations A(R"objc(
++    __attribute__((objc_root_class)) @interface Node @end
++    int update(WritableKeyPath<Node*,int> [[path]],Node *_Nonnull root) {
++      $root[[root]][ [[pa^th]] ]+=2;
++      return root[ [[path]] ]++;
++    }
++  )objc");
++  auto TU=objc3TU(A.code());auto AST=TU.build();
++  expectLocalEdits(AST,TU,A);
++  auto Hover=getHover(AST,A.point(),format::getLLVMStyle(),nullptr);
++  ASSERT_TRUE(Hover);EXPECT_EQ(Hover->Name,"path");
++  const auto Tokens=getSemanticHighlightings(AST,false);
++  auto Token=llvm::find_if(Tokens,[&](const HighlightingToken &Token){return Token.R==A.range("root");});
++  ASSERT_NE(Token,Tokens.end());EXPECT_EQ(Token->Kind,HighlightingKind::Parameter);
++  unsigned PathReferences=0;
++  findExplicitReferences(AST.getASTContext(),[&](ReferenceLoc Ref){
++    if (Ref.IsDecl) return;
++    for (const auto *Target:Ref.Targets) {
++      PathReferences+=Target->getIdentifier() && Target->getName()=="path";
++      EXPECT_FALSE(llvm::StringRef(Target->getNameAsString()).starts_with("__objc3_"));
++      EXPECT_NE(Target->getNameAsString(),"KeyPathGet");
++      EXPECT_NE(Target->getNameAsString(),"KeyPathSet");
++    }
++  },AST.getHeuristicResolver());
++  EXPECT_EQ(PathReferences,2u);
++}
++
++} // namespace
++} // namespace clang::clangd
+diff --git a/clang/include/clang/Basic/DiagnosticSerializationKinds.td b/clang/include/clang/Basic/DiagnosticSerializationKinds.td
+index 5c74caf01..5d5e0d375 100644
+--- a/clang/include/clang/Basic/DiagnosticSerializationKinds.td
++++ b/clang/include/clang/Basic/DiagnosticSerializationKinds.td
+@@ -15,6 +15,10 @@ def err_fe_not_a_pch_file : Error<
+     "input is not a PCH file: '%0'">;
+ def err_fe_ast_file_malformed : Error<
+     "malformed or corrupted precompiled file: '%0'">, DefaultFatal;
++def err_objc3_ast_compiler_identity : Error<
++    "Objective-C 3 precompiled file '%0' has %select{no compiler identity|"
++    "a malformed compiler identity|a different compiler identity}1; "
++    "rebuild it with this toolchain">;
+ def err_fe_pch_malformed_block : Error<
+     "malformed block record in PCH file: '%0'">, DefaultFatal;
+ def err_fe_ast_file_modified : Error<
+diff --git a/clang/lib/Index/IndexBody.cpp b/clang/lib/Index/IndexBody.cpp
+index 1979117d4..ee6b0880c 100644
+--- a/clang/lib/Index/IndexBody.cpp
++++ b/clang/lib/Index/IndexBody.cpp
+@@ -95,6 +95,14 @@ public:
+         Roles |= (unsigned)SymbolRole::AddressOf;
+       }
+ 
++    } else if (auto Resource = dyn_cast<ObjC3ResourceExpr>(Parent)) {
++      // Ownership operations read and invalidate/replace the resource slot.
++      // Only the slot is written; references in reset's replacement retain
++      // their ordinary expression roles.
++      if (Resource->getOperand()->IgnoreParenCasts() == E) {
++        Roles |= (unsigned)SymbolRole::Read;
++        Roles |= (unsigned)SymbolRole::Write;
++      }
+     } else if (auto CE = dyn_cast<CallExpr>(Parent)) {
+       if (CE->getCallee()->IgnoreParenCasts() == E) {
+         addCallRole(Roles, Relations);
+@@ -381,6 +389,23 @@ public:
+     return base::TraverseCXXOperatorCallExpr(E, Q);
+   }
+ 
++  bool TraverseDeclStmt(DeclStmt *S, DataRecursionQueue *Q = nullptr) {
++    // indexDeclGroupRef already traverses each initializer. Walking the same
++    // local declaration again duplicates references in its initializer.
++    if (IndexCtx.shouldIndexFunctionLocalSymbols()) {
++      if (!WalkUpFromDeclStmt(S))
++        return false;
++      // Declaration indexing covers types and initializers, but attributes
++      // still contain written callback/sentinel references.
++      for (Decl *D : S->decls())
++        for (Attr *A : D->attrs())
++          if (!TraverseAttr(A))
++            return false;
++      return true;
++    }
++    return base::TraverseDeclStmt(S, Q);
++  }
++
+   bool VisitDeclStmt(DeclStmt *S) {
+     if (IndexCtx.shouldIndexFunctionLocalSymbols()) {
+       IndexCtx.indexDeclGroupRef(S->getDeclGroup());
+@@ -399,6 +424,23 @@ public:
+     return true;
+   }
+ 
++  bool VisitBlockExpr(BlockExpr *Expression) {
++    if (!IndexCtx.shouldIndexFunctionLocalSymbols())
++      return true;
++    for (const auto &Capture : Expression->getBlockDecl()->captures()) {
++      if (!Capture.isObjC3Explicit())
++        continue;
++      SymbolRoleSet Roles = static_cast<unsigned>(SymbolRole::Read);
++      if (Capture.getObjC3CaptureKind() == BlockDecl::ObjC3CaptureKind::Move)
++        Roles |= static_cast<unsigned>(SymbolRole::Write);
++      if (!IndexCtx.handleReference(Capture.getVariable(),
++                                    Capture.getObjC3CaptureRange().getEnd(),
++                                    Parent, ParentDC, Roles))
++        return false;
++    }
++    return true;
++  }
++
+   bool TraverseLambdaCapture(LambdaExpr *LE, const LambdaCapture *C,
+                              Expr *Init) {
+     if (C->capturesThis() || C->capturesVLAType())
+diff --git a/clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt b/clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt
+index b6db7ce62..a3da6b338 100644
+--- a/clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt
++++ b/clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-add_clang_unittest(DynamicASTMatchersTests
++add_distinct_clang_unittest(DynamicASTMatchersTests
+   VariantValueTest.cpp
+   ParserTest.cpp
+   RegistryTest.cpp
+diff --git a/clang/lib/Analysis/RetainSummaryManager.cpp b/clang/lib/Analysis/RetainSummaryManager.cpp
+index b622027ee..33498e677 100644
+--- a/clang/lib/Analysis/RetainSummaryManager.cpp
++++ b/clang/lib/Analysis/RetainSummaryManager.cpp
+@@ -14,6 +14,7 @@
+ 
+ #include "clang/Analysis/RetainSummaryManager.h"
+ #include "clang/AST/Attr.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
+ #include "clang/AST/DeclCXX.h"
+ #include "clang/AST/DeclObjC.h"
+ #include "clang/ASTMatchers/ASTMatchFinder.h"
+@@ -540,6 +541,20 @@ RetainSummaryManager::getFunctionSummary(const FunctionDecl *FD) {
+   if (I != FuncSummaries.end())
+     return I->second;
+ 
++  // Canonical ObjC3 families are semantic operations, independent of naming
++  // conventions. AnyObj matches the actual CF/ObjC tracked argument kind.
++  if (Ctx.getLangOpts().ObjC3)
++    if (const Attr *Operation = getObjC3FamilyOperation(FD)) {
++      ArgEffectKind Kind = isa<ObjCFamilyRetainAttr>(Operation) ? IncRef :
++                           isa<ObjCFamilyReleaseAttr>(Operation) ? DecRef : Autorelease;
++      ArgEffects Arguments = AF.add(AF.getEmptyMap(), 0,
++                                    ArgEffect(Kind, ObjKind::AnyObj));
++      const RetainSummary *Summary = getPersistentSummary(
++          RetEffect::MakeNoRet(), Arguments, ArgEffect(DoNothing), ArgEffect(DoNothing));
++      FuncSummaries[FD] = Summary;
++      return Summary;
++    }
++
+   // No summary?  Generate one.
+   bool AllowAnnotations = true;
+   const RetainSummary *S = generateSummary(FD, AllowAnnotations);
+@@ -716,6 +731,11 @@ std::optional<RetainSummaryManager::BehaviorSummary>
+ RetainSummaryManager::canEval(const CallExpr *CE, const FunctionDecl *FD,
+                               bool &hasTrustedImplementationAnnotation) {
+ 
++  if (Ctx.getLangOpts().ObjC3)
++    if (const Attr *Operation = getObjC3FamilyOperation(FD);
++        Operation && !isa<ObjCFamilyReleaseAttr>(Operation))
++      return BehaviorSummary::Identity;
++
+   IdentifierInfo *II = FD->getIdentifier();
+   if (!II)
+     return std::nullopt;
+diff --git a/clang/unittests/Lex/LexerTest.cpp b/clang/unittests/Lex/LexerTest.cpp
+index eaac861fa..402c0b17c 100644
+--- a/clang/unittests/Lex/LexerTest.cpp
++++ b/clang/unittests/Lex/LexerTest.cpp
+@@ -741,6 +741,23 @@ TEST_F(LexerTest, RawAndNormalLexSameForLineComments) {
+   EXPECT_TRUE(ToksView.empty());
+ }
+ 
++TEST_F(LexerTest, RawDirectiveLineCommentDoesNotNeedPreprocessor) {
++  const llvm::StringLiteral Source = "// retained directive comment\n";
++  auto Buffer = llvm::MemoryBuffer::getMemBuffer(Source);
++  const char *Begin = Buffer->getBufferStart();
++  FileID File = SourceMgr.createFileID(std::move(Buffer));
++  Lexer Raw(SourceMgr.getLocForStartOfFile(File), LangOpts, Begin, Begin,
++            Begin + Source.size());
++  Raw.setParsingPreprocessorDirective(true);
++  Raw.SetCommentRetentionState(true);
++  EXPECT_EQ(Raw.getPP(), nullptr);
++
++  Token Comment;
++  Raw.LexFromRawLexer(Comment);
++  EXPECT_TRUE(Comment.is(tok::comment));
++  EXPECT_EQ(Comment.getLength(), Source.size() - 1);
++}
++
+ TEST_F(LexerTest, GetRawTokenOnEscapedNewLineChecksWhitespace) {
+   const llvm::StringLiteral Source = R"cc(
+   #define ONE \
+diff --git a/clang/test/AST/ast-dump-template-name.cpp b/clang/test/AST/ast-dump-template-name.cpp
+index b0a99cf27..ce6cc5587 100644
+--- a/clang/test/AST/ast-dump-template-name.cpp
++++ b/clang/test/AST/ast-dump-template-name.cpp
+@@ -55,3 +55,18 @@ namespace subst {
+ // CHECK-NEXT:     | |-associated ClassTemplateSpecialization {{.+}} 'B'{{$}}
+ // CHECK-NEXT:     | `-replacement:
+ // CHECK-NEXT:     |   `-ClassTemplateDecl {{.+}} A external-linkage{{$}}
++
++namespace using_name {
++  namespace definition { template <class> struct A; }
++  using definition::A;
++  using TestUsing = N<A>;
++} // namespace using_name
++
++// CHECK:      Dumping using_name::TestUsing:
++// CHECK-NEXT: TypeAliasDecl
++// CHECK-NEXT: `-TemplateSpecializationType
++// CHECK-NEXT:   |-name: 'N' qualified
++// CHECK-NEXT:   | `-TypeAliasTemplateDecl
++// CHECK-NEXT:   |-TemplateArgument template 'A':'using_name::definition::A' qualified
++// CHECK-NEXT:   | |-UsingShadowDecl {{.+}} 'A'
++// CHECK-NEXT:   | `-target: ClassTemplateDecl {{.+}} A external-linkage
+diff --git a/clang/include/clang/ASTMatchers/ASTMatchersInternal.h b/clang/include/clang/ASTMatchers/ASTMatchersInternal.h
+index cb12d10d6..cfdb408f1 100644
+--- a/clang/include/clang/ASTMatchers/ASTMatchersInternal.h
++++ b/clang/include/clang/ASTMatchers/ASTMatchersInternal.h
+@@ -1184,16 +1184,11 @@ template <class T> struct ExtractFunctionArgMeta<void(T)> {
+   using type = T;
+ };
+ 
+-template <class T, class Tuple, std::size_t... I>
+-constexpr T *new_from_tuple_impl(Tuple &&t, std::index_sequence<I...>) {
+-  return new T(std::get<I>(std::forward<Tuple>(t))...);
+-}
+-
+ template <class T, class Tuple> constexpr T *new_from_tuple(Tuple &&t) {
+-  return new_from_tuple_impl<T>(
+-      std::forward<Tuple>(t),
+-      std::make_index_sequence<
+-          std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
++  // Forward the tuple once; make_from_tuple forwards each distinct element.
++  // C++17 guaranteed copy elision constructs even nonmovable matcher objects
++  // directly in their final heap storage.
++  return new T(std::make_from_tuple<T>(std::forward<Tuple>(t)));
+ }
+ 
+ /// Default type lists for ArgumentAdaptingMatcher matchers.
+diff --git a/clang/test/Index/objc3-dependent-keypath-cursors.mm b/clang/test/Index/objc3-dependent-keypath-cursors.mm
+new file mode 100644
+index 000000000..b6034bdd6
+--- /dev/null
++++ b/clang/test/Index/objc3-dependent-keypath-cursors.mm
+@@ -0,0 +1,24 @@
++// RUN: c-index-test -test-load-source all %s -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s
++
++// Exercise both dependent component TypeLocs rather than merely linking
++// libclang. Nested carrier components must retain their references as well.
++template<class Root, class Value>
++using ReadPath = KeyPath<Root, Value>;
++template<class Root, class Value>
++using WritePath = WritableKeyPath<Root, Value>;
++template<class Root, class Value>
++using NestedPath = KeyPath<Root, __objc3_optional(Value)>;
++
++// CHECK: TypeAliasTemplateDecl=ReadPath:
++// CHECK: TypeAliasDecl=ReadPath:
++// CHECK: TypeRef=Root:
++// CHECK: TypeRef=Value:
++// CHECK: TypeAliasTemplateDecl=WritePath:
++// CHECK: TypeAliasDecl=WritePath:
++// CHECK: TypeRef=Root:
++// CHECK: TypeRef=Value:
++// CHECK: TypeAliasTemplateDecl=NestedPath:
++// CHECK: TypeAliasDecl=NestedPath:
++// CHECK: TypeRef=Root:
++// CHECK: TypeRef=Value:
++// CHECK-NOT: NotImplemented
+diff --git a/clang/unittests/Lex/CMakeLists.txt b/clang/unittests/Lex/CMakeLists.txt
+index cf338eef0..6c7e6b53a 100644
+--- a/clang/unittests/Lex/CMakeLists.txt
++++ b/clang/unittests/Lex/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-add_clang_unittest(LexTests
++add_distinct_clang_unittest(LexTests
+   DependencyDirectivesScannerTest.cpp
+   HeaderMapTest.cpp
+   HeaderSearchTest.cpp
+diff --git a/clang/docs/LibASTMatchersReference.html b/clang/docs/LibASTMatchersReference.html
+index 7e0bbbcb1..735535a5e 100644
+--- a/clang/docs/LibASTMatchersReference.html
++++ b/clang/docs/LibASTMatchersReference.html
+@@ -2188,6 +2188,85 @@ nullStmt()
+ </pre></td></tr>
+ 
+ 
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3BindingCondition0')"><a name="objc3BindingCondition0Anchor">objc3BindingCondition</a></td><td>Matcher&lt;ObjC3BindingCondition&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3BindingCondition0"><pre>Matches one optional binding in an ObjC3 condition list.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3CarrierTransferExpr0')"><a name="objc3CarrierTransferExpr0Anchor">objc3CarrierTransferExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3CarrierTransferExpr.html">ObjC3CarrierTransferExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3CarrierTransferExpr0"><pre>Matches explicit native ObjC3 carrier copy or move construction.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3CatchStmt0')"><a name="objc3CatchStmt0Anchor">objc3CatchStmt</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3CatchStmt.html">ObjC3CatchStmt</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3CatchStmt0"><pre>Matches an individual native ObjC3 catch clause.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3CoalesceExpr0')"><a name="objc3CoalesceExpr0Anchor">objc3CoalesceExpr</a></td><td>Matcher&lt;ObjC3CoalesceExpr&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3CoalesceExpr0"><pre>Matches a native nil-coalescing expression, including dependent operands.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3DoCatchStmt0')"><a name="objc3DoCatchStmt0Anchor">objc3DoCatchStmt</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3DoCatchStmt.html">ObjC3DoCatchStmt</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3DoCatchStmt0"><pre>Matches native ObjC3 do/catch statements.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3GuardStmt0')"><a name="objc3GuardStmt0Anchor">objc3GuardStmt</a></td><td>Matcher&lt;ObjC3GuardStmt&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3GuardStmt0"><pre>Matches a native ObjC3 guard and its ordered conditions and failure body.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3IfBindingStmt0')"><a name="objc3IfBindingStmt0Anchor">objc3IfBindingStmt</a></td><td>Matcher&lt;ObjC3IfBindingStmt&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3IfBindingStmt0"><pre>Matches a native ObjC3 if-let or if-var statement.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3LifetimeStmt0')"><a name="objc3LifetimeStmt0Anchor">objc3LifetimeStmt</a></td><td>Matcher&lt;ObjC3LifetimeStmt&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3LifetimeStmt0"><pre>Matches precise native lifetime control, preserving the written operand.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3MatchArm0')"><a name="objc3MatchArm0Anchor">objc3MatchArm</a></td><td>Matcher&lt;ObjC3MatchArm&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3MatchArm0"><pre>Matches an ordered arm of either native ObjC3 match form.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3MatchExpr0')"><a name="objc3MatchExpr0Anchor">objc3MatchExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3MatchExpr.html">ObjC3MatchExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3MatchExpr0"><pre>Matches native ObjC3 expression-form matches.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3MatchStmt0')"><a name="objc3MatchStmt0Anchor">objc3MatchStmt</a></td><td>Matcher&lt;ObjC3MatchStmt&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3MatchStmt0"><pre>Matches native ObjC3 statement-form matches.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3OptionalAccessExpr0')"><a name="objc3OptionalAccessExpr0Anchor">objc3OptionalAccessExpr</a></td><td>Matcher&lt;ObjC3OptionalAccessExpr&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3OptionalAccessExpr0"><pre></pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3OptionalExpr0')"><a name="objc3OptionalExpr0Anchor">objc3OptionalExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3OptionalExpr.html">ObjC3OptionalExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3OptionalExpr0"><pre>Matches native ObjC3 Optional construction and presence queries.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3ResultExpr0')"><a name="objc3ResultExpr0Anchor">objc3ResultExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3ResultExpr.html">ObjC3ResultExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3ResultExpr0"><pre>Matches native ObjC3 Result construction and arm queries.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3ThrowStmt0')"><a name="objc3ThrowStmt0Anchor">objc3ThrowStmt</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3ThrowStmt.html">ObjC3ThrowStmt</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3ThrowStmt0"><pre>Matches native ObjC3 typed error transfer.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objc3TryExpr0')"><a name="objc3TryExpr0Anchor">objc3TryExpr</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3TryExpr.html">ObjC3TryExpr</a>&gt;...</td></tr>
++<tr><td colspan="4" class="doc" id="objc3TryExpr0"><pre>Matches native ObjC3 checked propagation, optionalization or forcing.
++</pre></td></tr>
++
++
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt;</td><td class="name" onclick="toggle('objcCatchStmt0')"><a name="objcCatchStmt0Anchor">objcCatchStmt</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjCAtCatchStmt.html">ObjCAtCatchStmt</a>&gt;...</td></tr>
+ <tr><td colspan="4" class="doc" id="objcCatchStmt0"><pre>Matches Objective-C @catch statements.
+ 
+@@ -5415,6 +5494,36 @@ Given
+ </pre></td></tr>
+ 
+ 
++<tr><td>Matcher&lt;ObjC3BindingCondition&gt;</td><td class="name" onclick="toggle('isObjC3MutableBinding0')"><a name="isObjC3MutableBinding0Anchor">isObjC3MutableBinding</a></td><td></td></tr>
++<tr><td colspan="4" class="doc" id="isObjC3MutableBinding0"><pre>Matches `var` bindings in native ObjC3 conditions or match arms.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3GuardStmt&gt;</td><td class="name" onclick="toggle('objc3ConditionCountIs0')"><a name="objc3ConditionCountIs0Anchor">objc3ConditionCountIs</a></td><td>unsigned Count</td></tr>
++<tr><td colspan="4" class="doc" id="objc3ConditionCountIs0"><pre>Matches the number of ordered conditions, including both bindings and Bool
++expressions, in an ObjC3 guard or if binding.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3IfBindingStmt&gt;</td><td class="name" onclick="toggle('objc3ConditionCountIs1')"><a name="objc3ConditionCountIs1Anchor">objc3ConditionCountIs</a></td><td>unsigned Count</td></tr>
++<tr><td colspan="4" class="doc" id="objc3ConditionCountIs1"><pre>Matches the number of ordered conditions, including both bindings and Bool
++expressions, in an ObjC3 guard or if binding.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3LifetimeStmt&gt;</td><td class="name" onclick="toggle('isObjC3KeepAlive0')"><a name="isObjC3KeepAlive0Anchor">isObjC3KeepAlive</a></td><td></td></tr>
++<tr><td colspan="4" class="doc" id="isObjC3KeepAlive0"><pre></pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3MatchArm&gt;</td><td class="name" onclick="toggle('isObjC3MutableBinding1')"><a name="isObjC3MutableBinding1Anchor">isObjC3MutableBinding</a></td><td></td></tr>
++<tr><td colspan="4" class="doc" id="isObjC3MutableBinding1"><pre>Matches `var` bindings in native ObjC3 conditions or match arms.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3OptionalAccessExpr&gt;</td><td class="name" onclick="toggle('isObjC3OptionalMessage0')"><a name="isObjC3OptionalMessage0Anchor">isObjC3OptionalMessage</a></td><td></td></tr>
++<tr><td colspan="4" class="doc" id="isObjC3OptionalMessage0"><pre></pre></td></tr>
++
++
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html">ObjCInterfaceDecl</a>&gt;</td><td class="name" onclick="toggle('isDerivedFrom3')"><a name="isDerivedFrom3Anchor">isDerivedFrom</a></td><td>std::string BaseName</td></tr>
+ <tr><td colspan="4" class="doc" id="isDerivedFrom3"><pre>Overloaded method as shortcut for isDerivedFrom(hasName(...)).
+ </pre></td></tr>
+@@ -9313,7 +9422,8 @@ hasConditionVariableStatement(...)
+ 
+ 
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1IfStmt.html">IfStmt</a>&gt;</td><td class="name" onclick="toggle('hasElse0')"><a name="hasElse0Anchor">hasElse</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
+-<tr><td colspan="4" class="doc" id="hasElse0"><pre>Matches the else-statement of an if statement.
++<tr><td colspan="4" class="doc" id="hasElse0"><pre>Matches the else-statement of an if statement or the mandatory failure body
++of a native ObjC3 guard.
+ 
+ Examples matches the if statement
+   (matcher = ifStmt(hasElse(cxxBoolLiteral(equals(true)))))
+@@ -9345,7 +9455,8 @@ cxxForRangeStmt(hasInitStatement(anything()))
+ 
+ 
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1IfStmt.html">IfStmt</a>&gt;</td><td class="name" onclick="toggle('hasThen0')"><a name="hasThen0Anchor">hasThen</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
+-<tr><td colspan="4" class="doc" id="hasThen0"><pre>Matches the then-statement of an if statement.
++<tr><td colspan="4" class="doc" id="hasThen0"><pre>Matches the then-statement of an if statement, including a native ObjC3
++if-let or if-var statement.
+ 
+ Examples matches the if statement
+   (matcher = ifStmt(hasThen(cxxBoolLiteral(equals(true)))))
+@@ -9681,6 +9792,84 @@ Given
+ </pre></td></tr>
+ 
+ 
++<tr><td>Matcher&lt;ObjC3BindingCondition&gt;</td><td class="name" onclick="toggle('hasObjC3Binding0')"><a name="hasObjC3Binding0Anchor">hasObjC3Binding</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1VarDecl.html">VarDecl</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Binding0"><pre>Matches the source-facing declaration introduced by a condition or match
++arm. Compiler-owned snapshot declarations are not candidates.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3BindingCondition&gt;</td><td class="name" onclick="toggle('hasObjC3Source0')"><a name="hasObjC3Source0Anchor">hasObjC3Source</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Source0"><pre>Matches the evaluated source of an optional binding or carrier transfer.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjC3CarrierTransferExpr.html">ObjC3CarrierTransferExpr</a>&gt;</td><td class="name" onclick="toggle('hasObjC3Source1')"><a name="hasObjC3Source1Anchor">hasObjC3Source</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Source1"><pre>Matches the evaluated source of an optional binding or carrier transfer.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3CoalesceExpr&gt;</td><td class="name" onclick="toggle('hasObjC3CoalesceFallback0')"><a name="hasObjC3CoalesceFallback0Anchor">hasObjC3CoalesceFallback</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3CoalesceFallback0"><pre>Matches the lazy written fallback, before implicit conversion or lowering.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3CoalesceExpr&gt;</td><td class="name" onclick="toggle('hasObjC3CoalesceSource0')"><a name="hasObjC3CoalesceSource0Anchor">hasObjC3CoalesceSource</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3CoalesceSource0"><pre>Matches the written source operand of a native nil-coalescing expression.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3GuardStmt&gt;</td><td class="name" onclick="toggle('hasElse1')"><a name="hasElse1Anchor">hasElse</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasElse1"><pre>Matches the else-statement of an if statement or the mandatory failure body
++of a native ObjC3 guard.
++
++Examples matches the if statement
++  (matcher = ifStmt(hasElse(cxxBoolLiteral(equals(true)))))
++  if (false) false; else true;
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3GuardStmt&gt;</td><td class="name" onclick="toggle('hasObjC3Condition0')"><a name="hasObjC3Condition0Anchor">hasObjC3Condition</a></td><td>unsigned Index, Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Condition0"><pre>Matches a condition at its zero-based source position. An index outside the
++list fails to match. Binding conditions remain distinct from Bool Exprs.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3IfBindingStmt&gt;</td><td class="name" onclick="toggle('hasElse2')"><a name="hasElse2Anchor">hasElse</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasElse2"><pre>Matches the else-statement of an if statement or the mandatory failure body
++of a native ObjC3 guard.
++
++Examples matches the if statement
++  (matcher = ifStmt(hasElse(cxxBoolLiteral(equals(true)))))
++  if (false) false; else true;
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3IfBindingStmt&gt;</td><td class="name" onclick="toggle('hasObjC3Condition1')"><a name="hasObjC3Condition1Anchor">hasObjC3Condition</a></td><td>unsigned Index, Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Condition1"><pre>Matches a condition at its zero-based source position. An index outside the
++list fails to match. Binding conditions remain distinct from Bool Exprs.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3IfBindingStmt&gt;</td><td class="name" onclick="toggle('hasThen1')"><a name="hasThen1Anchor">hasThen</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Stmt.html">Stmt</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasThen1"><pre>Matches the then-statement of an if statement, including a native ObjC3
++if-let or if-var statement.
++
++Examples matches the if statement
++  (matcher = ifStmt(hasThen(cxxBoolLiteral(equals(true)))))
++  if (false) true; else false;
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3MatchArm&gt;</td><td class="name" onclick="toggle('hasObjC3Binding1')"><a name="hasObjC3Binding1Anchor">hasObjC3Binding</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1VarDecl.html">VarDecl</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3Binding1"><pre>Matches the source-facing declaration introduced by a condition or match
++arm. Compiler-owned snapshot declarations are not candidates.
++</pre></td></tr>
++
++
++<tr><td>Matcher&lt;ObjC3OptionalAccessExpr&gt;</td><td class="name" onclick="toggle('hasObjC3OptionalReceiver0')"><a name="hasObjC3OptionalReceiver0Anchor">hasObjC3OptionalReceiver</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Expr.html">Expr</a>&gt; InnerMatcher</td></tr>
++<tr><td colspan="4" class="doc" id="hasObjC3OptionalReceiver0"><pre></pre></td></tr>
++
++
+ <tr><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html">ObjCInterfaceDecl</a>&gt;</td><td class="name" onclick="toggle('hasType9')"><a name="hasType9Anchor">hasType</a></td><td>Matcher&lt;<a href="https://clang.llvm.org/doxygen/classclang_1_1Decl.html">Decl</a>&gt; InnerMatcher</td></tr>
+ <tr><td colspan="4" class="doc" id="hasType9"><pre>Overloaded to match the declaration of the expression's or value
+ declaration's type.
+diff --git a/clang/test/AST/ast-dump-expr-json.m b/clang/test/AST/ast-dump-expr-json.m
+index 3c502c049..477f8eba2 100644
+--- a/clang/test/AST/ast-dump-expr-json.m
++++ b/clang/test/AST/ast-dump-expr-json.m
+@@ -234,7 +234,7 @@ void TestObjCBoolLiteral(void) {
+ // CHECK-NEXT:        "valueCategory": "lvalue",
+ // CHECK-NEXT:        "encodedType": {
+ // CHECK-NEXT:         "desugaredQualType": "void (^)(void)",
+-// CHECK-NEXT:         "qualType": "typeof (^{ })"
++// CHECK-NEXT:         "qualType": "typeof (^ {\n ;\n})"
+ // CHECK-NEXT:        }
+ // CHECK-NEXT:       }
+ // CHECK-NEXT:      ]
+diff --git a/clang/test/AST/ast-print-attr.c b/clang/test/AST/ast-print-attr.c
+index 8e047f16b..786cdee03 100644
+--- a/clang/test/AST/ast-print-attr.c
++++ b/clang/test/AST/ast-print-attr.c
+@@ -7,8 +7,7 @@ using A = __kindof id (*)[1];
+ using B = int ** __ptr32 *[3];
+ 
+ // FIXME: This is the wrong spelling for the attribute.
+-// FIXME: Too many parens here!
+-// CHECK: using C = int ((*))() __attribute__((cdecl));
++// CHECK: using C = int (*)() __attribute__((cdecl));
+ using C = int (*)() [[gnu::cdecl]];
+ 
+ // CHECK: int fun_asm() asm("test");
+diff --git a/clang/test/AST/ast-print-cconv-preserve.cpp b/clang/test/AST/ast-print-cconv-preserve.cpp
+index 1cb488a9c..b6ea404bf 100644
+--- a/clang/test/AST/ast-print-cconv-preserve.cpp
++++ b/clang/test/AST/ast-print-cconv-preserve.cpp
+@@ -6,9 +6,9 @@ void (__attribute__((preserve_none)) *none)();
+ 
+ __attribute__((preserve_all)) void (*all)();
+ 
+-// CHECK: __attribute__((preserve_all)) void ((*all))();
++// CHECK: __attribute__((preserve_all)) void (*all)();
+ 
+ __attribute__((preserve_most)) void (*most)();
+ 
+-// CHECK: __attribute__((preserve_most)) void ((*most))();
++// CHECK: __attribute__((preserve_most)) void (*most)();
+ 
+diff --git a/clang/test/AST/ast-print-method-decl.cpp b/clang/test/AST/ast-print-method-decl.cpp
+index cb5d10096..a4116c6a3 100644
+--- a/clang/test/AST/ast-print-method-decl.cpp
++++ b/clang/test/AST/ast-print-method-decl.cpp
+@@ -20,7 +20,7 @@ struct DelegatingCtor2 {
+   template <typename Ty> DelegatingCtor2(Ty);
+ 
+   // FIXME: Implicitly specialized method should not be output
+-  // CHECK-NEXT: template<> DelegatingCtor2<float>(float);
++  // CHECK-NEXT: template<> DelegatingCtor2(float);
+ 
+   // CHECK-NEXT: DelegatingCtor2(int X) : DelegatingCtor2((float)X) {
+   DelegatingCtor2(int X) : DelegatingCtor2((float)X) {
+@@ -36,7 +36,7 @@ struct DelegatingCtor3 {
+   DelegatingCtor3(auto);
+ 
+   // FIXME: Implicitly specialized method should not be output
+-  // CHECK: template<> DelegatingCtor3<const char *>(const char *);
++  // CHECK: template<> DelegatingCtor3(const char *);
+ 
+   // CHECK: DelegatingCtor3(int) : DelegatingCtor3("") {
+   DelegatingCtor3(int) : DelegatingCtor3("") {
+diff --git a/clang/test/Modules/odr_hash-blocks.cpp b/clang/test/Modules/odr_hash-blocks.cpp
+index b1e62a1cf..4125e8edf 100644
+--- a/clang/test/Modules/odr_hash-blocks.cpp
++++ b/clang/test/Modules/odr_hash-blocks.cpp
+@@ -41,7 +41,7 @@
+ #define ACCESS private:
+ #endif
+ 
+-// TODO: S1 and S2 should generate errors.
++// Parameter spelling is not an ODR difference; a different Block body is.
+ namespace Blocks {
+ #if defined(FIRST)
+ struct S1 {
+@@ -65,6 +65,8 @@ struct S2 {
+ };
+ #else
+ S2 s2;
++// expected-error@second.h:* {{'Blocks::S2' has different definitions in different modules; first difference is definition in module 'SecondModule' found field 'block' with an initializer}}
++// expected-note@first.h:* {{but in 'FirstModule' found field 'block' with a different initializer}}
+ #endif
+ 
+ #if defined(FIRST)
+diff --git a/clang/test/PCH/objc_stmts.m b/clang/test/PCH/objc_stmts.m
+index ee7b78073..3507f9ce4 100644
+--- a/clang/test/PCH/objc_stmts.m
++++ b/clang/test/PCH/objc_stmts.m
+@@ -9,4 +9,4 @@
+ 
+ // CHECK: @catch(A *a)
+ // CHECK: @catch(B *b)
+-// CHECK: @catch()
++// CHECK: @catch(...)
+diff --git a/clang/test/SemaObjC/attr-ns_returns_retained.m b/clang/test/SemaObjC/attr-ns_returns_retained.m
+index 37e1416d5..2c7448eae 100644
+--- a/clang/test/SemaObjC/attr-ns_returns_retained.m
++++ b/clang/test/SemaObjC/attr-ns_returns_retained.m
+@@ -3,7 +3,7 @@
+ 
+ #if __has_feature(objc_arc)
+ __attribute__((ns_returns_retained)) id (^invalidBlockRedecl)(void); // expected-note {{previous definition is here}}
+-id (^invalidBlockRedecl)(void); //expected-error {{redefinition of 'invalidBlockRedecl' with a different type: 'id (^__strong)(void)' vs 'id ((^__strong))(void) __attribute__((ns_returns_retained))'}}
++id (^invalidBlockRedecl)(void); //expected-error {{redefinition of 'invalidBlockRedecl' with a different type: 'id (^__strong)(void)' vs 'id (__attribute__((ns_returns_retained)) ^__strong)(void)'}}
+ #else
+ __attribute__((ns_returns_retained)) id (^invalidBlockRedecl)(void);
+ id (^invalidBlockRedecl)(void);
+diff --git a/clang/test/Modules/Inputs/malformed-submodule.py b/clang/test/Modules/Inputs/malformed-submodule.py
+new file mode 100644
+index 000000000..057f292e8
+--- /dev/null
++++ b/clang/test/Modules/Inputs/malformed-submodule.py
+@@ -0,0 +1,112 @@
++"""Change a real PCM definition abbreviation into an attribute, in place.
++
++Keep every bit offset and block length intact so the production lazy module
++reader, rather than an unrelated container check, diagnoses the missing owner.
++"""
++import sys
++from pathlib import Path
++
++
++class Bits:
++    def __init__(self, data):
++        self.data, self.pos = data, 32
++        self.shared = {}
++
++    def read(self, count):
++        value = 0
++        for shift in range(count):
++            value |= ((self.data[self.pos // 8] >> (self.pos % 8)) & 1) << shift
++            self.pos += 1
++        return value
++
++    def vbr(self, width):
++        value, shift = 0, 0
++        while True:
++            chunk = self.read(width)
++            value |= (chunk & ((1 << (width - 1)) - 1)) << shift
++            if chunk < 1 << (width - 1):
++                return value
++            shift += width - 1
++
++    def align(self):
++        self.pos = (self.pos + 31) // 32 * 32
++
++    def operand(self, op):
++        kind, width, _ = op
++        if kind == 0:
++            return width
++        if kind == 1:
++            return self.read(width)
++        if kind == 2:
++            return self.vbr(width)
++        if kind == 4:
++            return self.read(6)
++        raise ValueError('unexpected scalar encoding')
++
++    def block(self, block, width, end):
++        abbrevs = list(self.shared.get(block, []))
++        owner = None
++        while self.pos < end:
++            code = self.read(width)
++            if code == 0:
++                self.align()
++                return False
++            if code == 1:
++                child, child_width = self.vbr(8), self.vbr(4)
++                self.align()
++                words = self.read(32)
++                child_end = self.pos + words * 32
++                if child in (0, 8, 13):
++                    if self.block(child, child_width, child_end):
++                        return True
++                self.pos = child_end
++                continue
++            if code == 2:
++                ops = []
++                for _ in range(self.vbr(5)):
++                    if self.read(1):
++                        offset = self.pos
++                        ops.append((0, self.vbr(8), offset))
++                    else:
++                        kind = self.read(3)
++                        ops.append((kind, self.vbr(5) if kind in (1, 2) else 0, None))
++                if block == 13 and ops[0][:2] == (0, 1):
++                    offset = ops[0][2]
++                    # SUBMODULE_DEFINITION=1 -> SUBMODULE_TOPHEADER=4; both
++                    # fit in the same single VBR8 group.
++                    for shift in range(8):
++                        bit = offset + shift
++                        self.data[bit // 8] &= ~(1 << (bit % 8))
++                        self.data[bit // 8] |= ((4 >> shift) & 1) << (bit % 8)
++                    return True
++                (self.shared.setdefault(owner, []) if block == 0 else abbrevs).append(ops)
++                continue
++            if code == 3:
++                record = self.vbr(6)
++                values = [self.vbr(6) for _ in range(self.vbr(6))]
++            else:
++                values, index = [], 0
++                ops = abbrevs[code - 4]
++                while index < len(ops):
++                    op = ops[index]
++                    if op[0] == 3:
++                        index += 1
++                        values.extend(self.operand(ops[index]) for _ in range(self.vbr(6)))
++                    elif op[0] == 5:
++                        size = self.vbr(6)
++                        self.align()
++                        self.pos += size * 8
++                        self.align()
++                    else:
++                        values.append(self.operand(op))
++                    index += 1
++                record, *values = values
++            if block == 0 and record == 1:
++                owner = values[0]
++        return False
++
++
++data = bytearray(Path(sys.argv[1]).read_bytes())
++assert data[:4] == b'CPCH'
++assert Bits(data).block(None, 2, len(data) * 8), 'missing definition abbreviation'
++Path(sys.argv[2]).write_bytes(data)
+diff --git a/clang/test/Modules/malformed-submodule.m b/clang/test/Modules/malformed-submodule.m
+new file mode 100644
+index 000000000..fa67e0498
+--- /dev/null
++++ b/clang/test/Modules/malformed-submodule.m
+@@ -0,0 +1,16 @@
++// RUN: split-file %s %t
++// RUN: %clang_cc1 -x objective-c -fmodules -emit-module -fmodule-name=Owner %t/module.modulemap -o %t/valid.pcm
++// RUN: %clang_cc1 -x objective-c -fmodules -fmodule-file=%t/valid.pcm -fsyntax-only %t/use.m
++// RUN: %python %S/Inputs/malformed-submodule.py %t/valid.pcm %t/bad.pcm
++// RUN: not %clang_cc1 -x objective-c -fmodules -fmodule-file=%t/bad.pcm -fsyntax-only %t/use.m 2>&1 | FileCheck %s
++// CHECK-NOT: PLEASE submit a bug report
++// CHECK: malformed module definition
++// CHECK-NOT: PLEASE submit a bug report
++
++//--- module.modulemap
++module Owner { header "owner.h" export * }
++//--- owner.h
++int owned(void);
++//--- use.m
++@import Owner;
++int use(void) { return owned(); }
+diff --git a/clang/include/clang/Basic/AttributeCommonInfo.h b/clang/include/clang/Basic/AttributeCommonInfo.h
+--- a/clang/include/clang/Basic/AttributeCommonInfo.h
++++ b/clang/include/clang/Basic/AttributeCommonInfo.h
+@@ -182,6 +182,7 @@
+ 
+   AttributeCommonInfo(AttributeCommonInfo &&) = default;
+   AttributeCommonInfo(const AttributeCommonInfo &) = default;
++  AttributeCommonInfo &operator=(const AttributeCommonInfo &) = default;
+ 
+   Kind getParsedKind() const { return Kind(AttrKind); }
+   Syntax getSyntax() const { return Syntax(SyntaxUsed); }
+

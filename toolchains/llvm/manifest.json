@@ -22,12 +22,68 @@
       "sha256": "48d3f6e1a6d8362ba8c32d1335ef4d6430bda16192aa57af44bd8fa3ee5649e3"
     },
     {
-      "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "6415662b664e14aabb3b28dd797e68a4cc16cf364bdbc2b1c6c445d1336a6559"
+      "file": "0004-objc3-ast.patch",
+      "sha256": "1d625bbabf9d486ecd6e1ddef092c21d3e1dec05c4605cb9a24ab4f1ce4a274f"
     },
     {
-      "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "fe3485becfef7f76fa41c13794ffe1cd1896a0adac34aba475388a2f49e40ce3"
+      "file": "0004-objc3-ast-and-parser-tests.patch",
+      "sha256": "c18e4e023286d748e1f77080923be2fb03090da52591926e2eeff9129e14dd29"
+    },
+    {
+      "file": "0004-objc3-concurrency-and-effects.patch",
+      "sha256": "69123a9fa322b37db84905342f2f07d58fd226e81dd6f4258707fb3c2be6bfbe"
+    },
+    {
+      "file": "0004-objc3-frontend-tools.patch",
+      "sha256": "48f46083d2d74accfc5ca81252219a55562163583a2bc4d277bf8d966c4c94c2"
+    },
+    {
+      "file": "0004-objc3-language-tests.patch",
+      "sha256": "9b1837e0b8dceef0405e3df84f059227393bae9d3e77d832b9f78b574e0cf1a6"
+    },
+    {
+      "file": "0004-objc3-ownership.patch",
+      "sha256": "86f098b077951ec633e26ed696c1f0ca1cf5a57fd5a47cfe41b5f82740a49bb5"
+    },
+    {
+      "file": "0004-objc3-parser.patch",
+      "sha256": "234f703ce601bc398dc456180a4d29c8403e8362e5db2abbaafb285914e09e3f"
+    },
+    {
+      "file": "0004-objc3-sema.patch",
+      "sha256": "7d28b3879a7e41f964e6540e2701520770a883c58c65004af75c3ee13e8add20"
+    },
+    {
+      "file": "0004-objc3-sema-tests.patch",
+      "sha256": "2164881c70b20124eae589582d949961ac2e2ccf59996fc37b45807c233924ae"
+    },
+    {
+      "file": "0004-objc3-serialization.patch",
+      "sha256": "fe67da3b0b15e4554873af3756b4dd0aaaf8a8d6256a309a6edb03d72b193317"
+    },
+    {
+      "file": "0005-objc3-analysis.patch",
+      "sha256": "c7264435c3fa28ffd784d9e96141d8126a94a4257336fad877a1d73ce714943f"
+    },
+    {
+      "file": "0005-objc3-async-lowering.patch",
+      "sha256": "1751699e95490b2d37c7a44ecee11aba036decf938017bb19fd0ad483e0bbd93"
+    },
+    {
+      "file": "0005-objc3-carrier-lowering.patch",
+      "sha256": "a83b658561dd0e85c8b7c56e3c8ebd8616e0eae7c48594d167bd58d730e9058f"
+    },
+    {
+      "file": "0005-objc3-carrier-tests.patch",
+      "sha256": "e0cf7be1ea9091d8edbd3d127ed469b06bb7ff5471995de4ce7cac078b66767b"
+    },
+    {
+      "file": "0005-objc3-codegen.patch",
+      "sha256": "dae2844841865844c1ad47e6af9dac437af953274473de7c4e2b0465117b09e6"
+    },
+    {
+      "file": "0005-objc3-codegen-tests.patch",
+      "sha256": "f6a8435c3f3af98f8036c620914c9729b9affa0078abf3e9013964a90458356b"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
@@ -278,7 +334,7 @@
     "compile_jobs": 4,
     "link_jobs": 1,
     "test_binaries": [
-      "tools/clang/unittests/AST/ObjC3TypeContractsTests.exe",
+      "tools/clang/unittests/AST/ObjC3TypeContractsTests",
       "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
       "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests",
       "tools/clang/tools/extra/clangd/unittests/ObjC3SourceToolsTests",

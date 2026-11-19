@@ -1,0 +1,30 @@
+diff --git a/clang/test/ObjC3/Inputs/keypath-abi.h b/clang/test/ObjC3/Inputs/keypath-abi.h
+new file mode 100644
+index 000000000..db307630e
+--- /dev/null
++++ b/clang/test/ObjC3/Inputs/keypath-abi.h
+@@ -0,0 +1,24 @@
++#ifndef KEY_PATH_ABI_FIXTURE_H
++#define KEY_PATH_ABI_FIXTURE_H
++/* This mirrors the public native metadata ABI without a target sysroot. The
++ * maintained native-library fixtures import the installed objc3.keypath. */
++typedef struct objc3_keypath_component_v2 {
++  const char *owner_type;
++  const char *declaration_owner;
++  const char *member;
++  const char *value_type;
++  const char *getter_selector;
++  const char *setter_selector;
++  __UINT32_TYPE__ flags;
++  __UINT32_TYPE__ reserved;
++} objc3_keypath_component_v2;
++typedef struct objc3_keypath_descriptor_v2 {
++  __UINT32_TYPE__ abi_version;
++  __UINT32_TYPE__ flags;
++  __UINT64_TYPE__ component_count;
++  const char *root_type;
++  const char *value_type;
++  const char *path;
++  const objc3_keypath_component_v2 *components;
++} objc3_keypath_descriptor_v2;
++#endif

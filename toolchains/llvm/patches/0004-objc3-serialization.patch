@@ -1,0 +1,504 @@
+diff --git a/clang/include/clang/Serialization/ASTBitCodes.h b/clang/include/clang/Serialization/ASTBitCodes.h
+index 671341488..d5784a526 100644
+--- a/clang/include/clang/Serialization/ASTBitCodes.h
++++ b/clang/include/clang/Serialization/ASTBitCodes.h
+@@ -56,6 +56,10 @@ const unsigned VERSION_MAJOR = 39;
+ /// should be increased.
+ const unsigned VERSION_MINOR = 0;
+ 
++/// Domain tag for the sealed ObjC3 compiler identity in raw PCH/PCM files.
++inline constexpr char ObjC3CompilerIdentityPrefix[] =
++    "objc3-compiler-identity-v1:";
++
+ /// An ID number that refers to an identifier in an AST file.
+ ///
+ /// The ID numbers of identifiers are consecutive (in order of discovery)
+@@ -367,6 +371,11 @@ enum ControlRecordTypes {
+ 
+   /// Record code for the module build directory.
+   MODULE_DIRECTORY,
++
++  /// Exact ObjC3 extension ABI, language revision, and sealed patch digest.
++  /// Mandatory immediately after METADATA for ObjC3 artifacts, even when
++  /// ordinary precompiled-file validation is disabled.
++  OBJC3_COMPILER_IDENTITY,
+ };
+ 
+ /// Record types that occur within the options block inside
+@@ -2091,6 +2100,23 @@ enum StmtCode {
+   EXPR_HLSL_OUT_ARG,
+ 
+   STMT_DEFER,
++  EXPR_OBJC3_OPTIONAL,
++  EXPR_OBJC3_RESULT,
++  STMT_OBJC3_THROW,
++  EXPR_OBJC3_TRY,
++  STMT_OBJC3_CATCH,
++  STMT_OBJC3_DO_CATCH,
++  STMT_OBJC3_BINDING_CONDITION,
++  STMT_OBJC3_GUARD,
++  STMT_OBJC3_IF_BINDING,
++  STMT_OBJC3_MATCH_ARM,
++  STMT_OBJC3_MATCH,
++  EXPR_OBJC3_MATCH,
++  EXPR_OBJC3_CARRIER_TRANSFER,
++  EXPR_OBJC3_COALESCE,
++  EXPR_OBJC3_OPTIONAL_ACCESS,
++  EXPR_OBJC3_RESOURCE,
++  STMT_OBJC3_LIFETIME,
+ };
+ 
+ /// The kinds of designators that can occur in a
+diff --git a/clang/include/clang/Serialization/TypeBitCodes.def b/clang/include/clang/Serialization/TypeBitCodes.def
+index 9f1da65e0..217ee79d4 100644
+--- a/clang/include/clang/Serialization/TypeBitCodes.def
++++ b/clang/include/clang/Serialization/TypeBitCodes.def
+@@ -70,5 +70,8 @@ TYPE_BIT_CODE(HLSLInlineSpirv, HLSL_INLINE_SPIRV, 60)
+ TYPE_BIT_CODE(PredefinedSugar, PREDEFINED_SUGAR, 61)
+ TYPE_BIT_CODE(SubstBuiltinTemplatePack, SUBST_BUILTIN_TEMPLATE_PACK, 62)
+ TYPE_BIT_CODE(OverflowBehavior, OVERFLOWBEHAVIOR, 63)
++TYPE_BIT_CODE(ObjC3Optional, OBJC3_OPTIONAL, 64)
++TYPE_BIT_CODE(ObjC3Result, OBJC3_RESULT, 65)
++TYPE_BIT_CODE(ObjC3DependentKeyPath, OBJC3_DEPENDENT_KEYPATH, 66)
+ 
+ #undef TYPE_BIT_CODE
+diff --git a/clang/lib/Serialization/ASTReader.cpp b/clang/lib/Serialization/ASTReader.cpp
+index 1a437f3eb..ff6255636 100644
+--- a/clang/lib/Serialization/ASTReader.cpp
++++ b/clang/lib/Serialization/ASTReader.cpp
+@@ -55,6 +55,7 @@
+ #include "clang/Basic/LangOptions.h"
+ #include "clang/Basic/Module.h"
+ #include "clang/Basic/ObjCRuntime.h"
++#include "clang/Basic/ObjC3Foundation.h"
+ #include "clang/Basic/OpenACCKinds.h"
+ #include "clang/Basic/OpenMPKinds.h"
+ #include "clang/Basic/OperatorKinds.h"
+@@ -3273,6 +3274,16 @@ ASTReader::ReadControlBlock(ModuleFile &F,
+ 
+   bool DisableValidation = shouldDisableValidationForFile(F);
+ 
++  // ObjC3 changes native AST and attribute schemas without changing the pinned
++  // upstream revision. Its compiler identity is a format requirement, not an
++  // input freshness check, and must survive -fno-validate-pch and module reuse.
++  bool RequireObjC3Identity = PP.getLangOpts().ObjC3;
++  bool ReadObjC3Identity = false;
++  auto RejectObjC3Identity = [&](unsigned Reason) {
++    Diag(diag::err_objc3_ast_compiler_identity) << F.FileName << Reason;
++    return VersionMismatch;
++  };
++
+   // Read all of the records and blocks in the control block.
+   RecordData Record;
+   unsigned NumInputs = 0;
+@@ -3286,6 +3297,10 @@ ASTReader::ReadControlBlock(ModuleFile &F,
+     }
+     llvm::BitstreamEntry Entry = MaybeEntry.get();
+ 
++    if (RequireObjC3Identity && !ReadObjC3Identity &&
++        Entry.Kind != llvm::BitstreamEntry::Record)
++      return RejectObjC3Identity(0);
++
+     switch (Entry.Kind) {
+     case llvm::BitstreamEntry::Error:
+       Error("malformed block record in AST file");
+@@ -3431,8 +3446,16 @@ ASTReader::ReadControlBlock(ModuleFile &F,
+       Error(MaybeRecordType.takeError());
+       return Failure;
+     }
++    if (RequireObjC3Identity && !ReadObjC3Identity &&
++        MaybeRecordType.get() != METADATA &&
++        MaybeRecordType.get() != OBJC3_COMPILER_IDENTITY)
++      return RejectObjC3Identity(0);
+     switch ((ControlRecordTypes)MaybeRecordType.get()) {
+     case METADATA: {
++      // The trailing bit is present only in the ObjC3 metadata layout. This
++      // also requires the identity when an ObjC3 file is loaded by an ordinary
++      // language invocation with configuration validation disabled.
++      RequireObjC3Identity |= Record.size() > 8 && Record[8];
+       if (Record[0] != VERSION_MAJOR && !DisableValidation) {
+         if ((ClientLoadCapabilities & ARR_VersionMismatch) == 0)
+           Diag(Record[0] < VERSION_MAJOR ? diag::err_ast_file_version_too_old
+@@ -3482,6 +3505,21 @@ ASTReader::ReadControlBlock(ModuleFile &F,
+       break;
+     }
+ 
++    case OBJC3_COMPILER_IDENTITY: {
++      StringRef Digest = Blob;
++      if (ReadObjC3Identity || Record.size() != 2 ||
++          !Digest.consume_front(ObjC3CompilerIdentityPrefix) ||
++          Digest.size() != 64 ||
++          Digest.find_first_not_of("0123456789abcdef") != StringRef::npos)
++        return RejectObjC3Identity(1);
++      if (Record[0] != CLANG_OBJC3_EXTENSION_ABI_REVISION ||
++          Record[1] != CLANG_OBJC3_LANGUAGE_REVISION ||
++          Digest != getObjC3PatchDigest())
++        return RejectObjC3Identity(2);
++      ReadObjC3Identity = true;
++      break;
++    }
++
+     case IMPORT: {
+       // Validate the AST before processing any imports (otherwise, untangling
+       // them can be error-prone and expensive).  A module will have a name and
+@@ -6397,6 +6435,19 @@ Module *ASTReader::getSubmodule(uint32_t GlobalID) {
+     }
+     auto Kind = static_cast<SubmoduleRecordTypes>(MaybeKind.get());
+ 
++    // Attributes belong to a definition. Corrupt offsets or record codes must
++    // not turn a missing definition into a null Module dereference.
++    if ((!CurrentModule && Kind != SUBMODULE_DEFINITION) ||
++        (CurrentModule && Kind == SUBMODULE_DEFINITION) ||
++        ((Kind == SUBMODULE_REQUIRES || Kind == SUBMODULE_LINK_LIBRARY ||
++          Kind == SUBMODULE_CONFLICT || Kind == SUBMODULE_CHILD) &&
++         Record.empty()) ||
++        (Kind == SUBMODULE_EXPORTS && Record.size() % 2 != 0)) {
++      Error(llvm::createStringError(std::errc::illegal_byte_sequence,
++                                   "malformed module definition"));
++      return nullptr;
++    }
++
+     switch (Kind) {
+     case SUBMODULE_END:
+       if (!CurrentModule) {
+@@ -6407,7 +6458,7 @@ Module *ASTReader::getSubmodule(uint32_t GlobalID) {
+       return CurrentModule;
+ 
+     case SUBMODULE_DEFINITION: {
+-      if (Record.size() < 13) {
++      if (Record.size() < 15) {
+         Error(llvm::createStringError(std::errc::illegal_byte_sequence,
+                                       "malformed module definition"));
+         return nullptr;
+@@ -6442,6 +6493,11 @@ Module *ASTReader::getSubmodule(uint32_t GlobalID) {
+ 
+       CurrentModule = std::invoke(CreateModule, &ModMap, Name, ParentModule,
+                                   IsFramework, IsExplicit);
++      if (!CurrentModule) {
++        Error(llvm::createStringError(std::errc::illegal_byte_sequence,
++                                     "malformed module definition"));
++        return nullptr;
++      }
+ 
+       if (!ParentModule) {
+         if ([[maybe_unused]] const ModuleFileKey *CurFileKey =
+@@ -7426,7 +7482,10 @@ QualType ASTReader::readTypeRecord(TypeID ID) {
+   }
+ 
+   serialization::AbstractTypeReader<ASTRecordReader> TypeReader(Record);
+-  return TypeReader.read(*maybeClass);
++  QualType Result = TypeReader.read(*maybeClass);
++  if (Result.isNull())
++    Error("Malformed AST file: invalid type record");
++  return Result;
+ }
+ 
+ namespace clang {
+@@ -7485,6 +7544,31 @@ void TypeLocReader::VisitComplexTypeLoc(ComplexTypeLoc TL) {
+   TL.setNameLoc(readSourceLocation());
+ }
+ 
++void TypeLocReader::VisitObjC3OptionalTypeLoc(ObjC3OptionalTypeLoc TL) {
++  TL.setKeywordLoc(readSourceLocation());
++  TL.setLParenLoc(readSourceLocation());
++  TL.setRParenLoc(readSourceLocation());
++  TL.setElementLoc(Reader.readTypeSourceInfo());
++}
++
++void TypeLocReader::VisitObjC3ResultTypeLoc(ObjC3ResultTypeLoc TL) {
++  TL.setKeywordLoc(readSourceLocation());
++  TL.setLParenLoc(readSourceLocation());
++  TL.setCommaLoc(readSourceLocation());
++  TL.setRParenLoc(readSourceLocation());
++  TL.setSuccessLoc(Reader.readTypeSourceInfo());
++  TL.setErrorLoc(Reader.readTypeSourceInfo());
++}
++
++void TypeLocReader::VisitObjC3DependentKeyPathTypeLoc(ObjC3DependentKeyPathTypeLoc TL) {
++  TL.setKeywordLoc(readSourceLocation());
++  TL.setLAngleLoc(readSourceLocation());
++  TL.setCommaLoc(readSourceLocation());
++  TL.setRAngleLoc(readSourceLocation());
++  TL.setRootLoc(Reader.readTypeSourceInfo());
++  TL.setValueLoc(Reader.readTypeSourceInfo());
++}
++
+ void TypeLocReader::VisitPointerTypeLoc(PointerTypeLoc TL) {
+   TL.setStarLoc(readSourceLocation());
+ }
+@@ -7595,6 +7679,10 @@ void TypeLocReader::VisitFunctionTypeLoc(FunctionTypeLoc TL) {
+   TL.setRParenLoc(readSourceLocation());
+   TL.setExceptionSpecRange(readSourceRange());
+   TL.setLocalRangeEnd(readSourceLocation());
++  TL.setObjC3AsyncLoc(readSourceLocation());
++  TL.setObjC3ThrowsLoc(readSourceLocation());
++  TL.setObjC3ThrowsPayloadRange(readSourceRange());
++  TL.setObjC3ThrowsPayloadInfo(Reader.readTypeSourceInfo());
+   for (unsigned i = 0, e = TL.getNumParams(); i != e; ++i) {
+     TL.setParam(i, Reader.readDeclAs<ParmVarDecl>());
+   }
+diff --git a/clang/lib/Serialization/ASTReaderDecl.cpp b/clang/lib/Serialization/ASTReaderDecl.cpp
+index 4d5c8648f..0b12994fa 100644
+--- a/clang/lib/Serialization/ASTReaderDecl.cpp
++++ b/clang/lib/Serialization/ASTReaderDecl.cpp
+@@ -1196,6 +1196,7 @@ void ASTDeclReader::VisitObjCMethodDecl(ObjCMethodDecl *MD) {
+   MD->setObjCDeclQualifier((Decl::ObjCDeclQualifier)Record.readInt());
+   MD->setRelatedResultType(Record.readInt());
+   MD->setReturnType(Record.readType());
++  MD->setObjC3FunctionType(Record.readType());
+   MD->setReturnTypeSourceInfo(readTypeSourceInfo());
+   MD->DeclEndLoc = readSourceLocation();
+   unsigned NumParams = Record.readInt();
+@@ -1797,6 +1798,7 @@ void ASTDeclReader::VisitBlockDecl(BlockDecl *BD) {
+   BD->setIsConversionFromLambda(Record.readInt());
+   BD->setDoesNotEscape(Record.readInt());
+   BD->setCanAvoidCopyToHeap(Record.readInt());
++  BD->setObjC3CaptureListRange(Record.readSourceRange());
+ 
+   bool capturesCXXThis = Record.readInt();
+   unsigned numCaptures = Record.readInt();
+@@ -1808,8 +1810,14 @@ void ASTDeclReader::VisitBlockDecl(BlockDecl *BD) {
+     bool byRef = (flags & 1);
+     bool nested = (flags & 2);
+     Expr *copyExpr = ((flags & 4) ? Record.readExpr() : nullptr);
++    Expr *initExpr = ((flags & 8) ? Record.readExpr() : nullptr);
+ 
+-    captures.push_back(BlockDecl::Capture(decl, byRef, nested, copyExpr));
++    auto Kind = static_cast<BlockDecl::ObjC3CaptureKind>(Record.readInt());
++    QualType CaptureType = Record.readType();
++    SourceRange Range = Record.readSourceRange();
++    bool ResourceCapture = Record.readInt();
++    captures.emplace_back(decl, byRef, nested, copyExpr, Kind, CaptureType, Range,
++                          ResourceCapture, initExpr);
+   }
+   BD->setCaptures(Reader.getContext(), captures, capturesCXXThis);
+ }
+@@ -3312,7 +3320,11 @@ bool ASTReader::isConsumerInterestedIn(Decl *D) {
+            (Var->isThisDeclarationADefinition() == VarDecl::Definition ||
+             OMPDeclareTargetDeclAttr::isDeclareTargetDeclaration(Var));
+   if (const auto *Func = dyn_cast<FunctionDecl>(D))
+-    return Func->doesThisDeclarationHaveABody() || PendingBodies.count(D);
++    // Alias and indirect-function attributes define symbols without a body.
++    // They must reach CodeGen after PCH/module loading just like definitions;
++    // otherwise references silently become unresolved ordinary declarations.
++    return Func->doesThisDeclarationHaveABody() || PendingBodies.count(D) ||
++           Func->hasAttr<AliasAttr>() || Func->hasAttr<IFuncAttr>();
+ 
+   if (auto *ES = D->getASTContext().getExternalSource())
+     if (ES->hasExternalDefinitions(D) == ExternalASTSource::EK_Never)
+diff --git a/clang/lib/Serialization/ASTWriter.cpp b/clang/lib/Serialization/ASTWriter.cpp
+index 1e3be005a..478584130 100644
+--- a/clang/lib/Serialization/ASTWriter.cpp
++++ b/clang/lib/Serialization/ASTWriter.cpp
+@@ -48,6 +48,7 @@
+ #include "clang/Basic/LangOptions.h"
+ #include "clang/Basic/Module.h"
+ #include "clang/Basic/ObjCRuntime.h"
++#include "clang/Basic/ObjC3Foundation.h"
+ #include "clang/Basic/OpenACCKinds.h"
+ #include "clang/Basic/OpenCLOptions.h"
+ #include "clang/Basic/SourceLocation.h"
+@@ -355,6 +356,31 @@ void TypeLocWriter::VisitComplexTypeLoc(ComplexTypeLoc TL) {
+   addSourceLocation(TL.getNameLoc());
+ }
+ 
++void TypeLocWriter::VisitObjC3OptionalTypeLoc(ObjC3OptionalTypeLoc TL) {
++  addSourceLocation(TL.getKeywordLoc());
++  addSourceLocation(TL.getLParenLoc());
++  addSourceLocation(TL.getRParenLoc());
++  Record.AddTypeSourceInfo(TL.getElementLoc());
++}
++
++void TypeLocWriter::VisitObjC3ResultTypeLoc(ObjC3ResultTypeLoc TL) {
++  addSourceLocation(TL.getKeywordLoc());
++  addSourceLocation(TL.getLParenLoc());
++  addSourceLocation(TL.getCommaLoc());
++  addSourceLocation(TL.getRParenLoc());
++  Record.AddTypeSourceInfo(TL.getSuccessLoc());
++  Record.AddTypeSourceInfo(TL.getErrorLoc());
++}
++
++void TypeLocWriter::VisitObjC3DependentKeyPathTypeLoc(ObjC3DependentKeyPathTypeLoc TL) {
++  addSourceLocation(TL.getKeywordLoc());
++  addSourceLocation(TL.getLAngleLoc());
++  addSourceLocation(TL.getCommaLoc());
++  addSourceLocation(TL.getRAngleLoc());
++  Record.AddTypeSourceInfo(TL.getRootLoc());
++  Record.AddTypeSourceInfo(TL.getValueLoc());
++}
++
+ void TypeLocWriter::VisitPointerTypeLoc(PointerTypeLoc TL) {
+   addSourceLocation(TL.getStarLoc());
+ }
+@@ -465,6 +491,10 @@ void TypeLocWriter::VisitFunctionTypeLoc(FunctionTypeLoc TL) {
+   addSourceLocation(TL.getRParenLoc());
+   addSourceRange(TL.getExceptionSpecRange());
+   addSourceLocation(TL.getLocalRangeEnd());
++  addSourceLocation(TL.getObjC3AsyncLoc());
++  addSourceLocation(TL.getObjC3ThrowsLoc());
++  addSourceRange(TL.getObjC3ThrowsPayloadRange());
++  Record.AddTypeSourceInfo(TL.getObjC3ThrowsPayloadInfo());
+   for (unsigned i = 0, e = TL.getNumParams(); i != e; ++i)
+     Record.AddDeclRef(TL.getParam(i));
+ }
+@@ -796,6 +826,8 @@ static void AddStmtsExprs(llvm::BitstreamWriter &Stream,
+   RECORD(EXPR_ADDR_LABEL);
+   RECORD(EXPR_STMT);
+   RECORD(EXPR_CHOOSE);
++  RECORD(EXPR_OBJC3_OPTIONAL);
++  RECORD(EXPR_OBJC3_RESULT);
+   RECORD(EXPR_GNU_NULL);
+   RECORD(EXPR_SHUFFLE_VECTOR);
+   RECORD(EXPR_BLOCK);
+@@ -1449,12 +1481,17 @@ void ASTWriter::WriteControlBlock(Preprocessor &PP, StringRef isysroot) {
+   MetadataAbbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Fixed, 1));
+   MetadataAbbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Fixed, 1)); // Timestamps
+   MetadataAbbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Fixed, 1)); // Errors
++  // Ordinary Clang artifacts retain their existing metadata layout. ObjC3
++  // artifacts declare that the following identity record is mandatory.
++  const bool ObjC3 = PP.getLangOpts().ObjC3;
++  if (ObjC3)
++    MetadataAbbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Fixed, 1));
+   MetadataAbbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Blob)); // SVN branch/tag
+   unsigned MetadataAbbrevCode = Stream.EmitAbbrev(std::move(MetadataAbbrev));
+   assert((!WritingModule || isysroot.empty()) &&
+          "writing module as a relocatable PCH?");
+   {
+-    RecordData::value_type Record[] = {METADATA,
++    RecordData Record = {METADATA,
+                                        VERSION_MAJOR,
+                                        VERSION_MINOR,
+                                        CLANG_VERSION_MAJOR,
+@@ -1463,10 +1500,27 @@ void ASTWriter::WriteControlBlock(Preprocessor &PP, StringRef isysroot) {
+                                        isWritingStdCXXNamedModules(),
+                                        IncludeTimestamps,
+                                        ASTHasCompilerErrors};
++    if (ObjC3)
++      Record.push_back(true);
+     Stream.EmitRecordWithBlob(MetadataAbbrevCode, Record,
+                               getClangFullRepositoryVersion());
+   }
+ 
++  if (ObjC3) {
++    auto IdentityAbbrev = std::make_shared<BitCodeAbbrev>();
++    IdentityAbbrev->Add(BitCodeAbbrevOp(OBJC3_COMPILER_IDENTITY));
++    IdentityAbbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::VBR, 6)); // ABI
++    IdentityAbbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::VBR, 6)); // Language
++    IdentityAbbrev->Add(BitCodeAbbrevOp(BitCodeAbbrevOp::Blob));
++    unsigned Code = Stream.EmitAbbrev(std::move(IdentityAbbrev));
++    RecordData Identity = {OBJC3_COMPILER_IDENTITY,
++                           CLANG_OBJC3_EXTENSION_ABI_REVISION,
++                           CLANG_OBJC3_LANGUAGE_REVISION};
++    Stream.EmitRecordWithBlob(
++        Code, Identity,
++        (Twine(ObjC3CompilerIdentityPrefix) + getObjC3PatchDigest()).str());
++  }
++
+   if (WritingModule) {
+     // Module name
+     auto Abbrev = std::make_shared<BitCodeAbbrev>();
+diff --git a/clang/lib/Serialization/ASTWriterDecl.cpp b/clang/lib/Serialization/ASTWriterDecl.cpp
+index d8f5ed9af..3287b9c5b 100644
+--- a/clang/lib/Serialization/ASTWriterDecl.cpp
++++ b/clang/lib/Serialization/ASTWriterDecl.cpp
+@@ -989,6 +989,7 @@ void ASTDeclWriter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+   Record.push_back(D->getObjCDeclQualifier());
+   Record.push_back(D->hasRelatedResultType());
+   Record.AddTypeRef(D->getReturnType());
++  Record.AddTypeRef(D->getObjC3FunctionType());
+   Record.AddTypeSourceInfo(D->getReturnTypeSourceInfo());
+   Record.AddSourceLocation(D->getEndLoc());
+   Record.push_back(D->param_size());
+@@ -1469,6 +1470,7 @@ void ASTDeclWriter::VisitBlockDecl(BlockDecl *D) {
+   Record.push_back(D->isConversionFromLambda());
+   Record.push_back(D->doesNotEscape());
+   Record.push_back(D->canAvoidCopyToHeap());
++  Record.AddSourceRange(D->getObjC3CaptureListRange());
+   Record.push_back(D->capturesCXXThis());
+   Record.push_back(D->getNumCaptures());
+   for (const auto &capture : D->captures()) {
+@@ -1478,9 +1480,15 @@ void ASTDeclWriter::VisitBlockDecl(BlockDecl *D) {
+     if (capture.isByRef()) flags |= 1;
+     if (capture.isNested()) flags |= 2;
+     if (capture.hasCopyExpr()) flags |= 4;
++    if (capture.getObjC3InitExpr()) flags |= 8;
+     Record.push_back(flags);
+ 
+     if (capture.hasCopyExpr()) Record.AddStmt(capture.getCopyExpr());
++    if (capture.getObjC3InitExpr()) Record.AddStmt(capture.getObjC3InitExpr());
++    Record.push_back(static_cast<unsigned>(capture.getObjC3CaptureKind()));
++    Record.AddTypeRef(capture.getCaptureType());
++    Record.AddSourceRange(capture.getObjC3CaptureRange());
++    Record.push_back(capture.isObjC3ResourceCapture());
+   }
+ 
+   Code = serialization::DECL_BLOCK;
+diff --git a/clang/lib/Serialization/TemplateArgumentHasher.cpp b/clang/lib/Serialization/TemplateArgumentHasher.cpp
+index 6b598d26c..2a59bc5d7 100644
+--- a/clang/lib/Serialization/TemplateArgumentHasher.cpp
++++ b/clang/lib/Serialization/TemplateArgumentHasher.cpp
+@@ -300,6 +300,12 @@ public:
+     for (auto ParamType : T->getParamTypes())
+       AddQualType(ParamType);
+ 
++    auto ObjC3 = T->getObjC3FunctionEffects();
++    Hash.AddInteger(ObjC3.Async);
++    Hash.AddInteger(static_cast<unsigned>(ObjC3.Throws));
++    if (ObjC3.Throws == ObjC3ThrowsKind::Typed)
++      AddQualType(ObjC3.ErrorType);
++
+     VisitFunctionType(T);
+   }
+ 
+diff --git a/clang/lib/Serialization/MultiOnDiskHashTable.h b/clang/lib/Serialization/MultiOnDiskHashTable.h
+index a179016d4..50ed738e9 100644
+--- a/clang/lib/Serialization/MultiOnDiskHashTable.h
++++ b/clang/lib/Serialization/MultiOnDiskHashTable.h
+@@ -31,6 +31,7 @@
+ #include "llvm/Support/raw_ostream.h"
+ #include <algorithm>
+ #include <cstdint>
++#include <memory>
+ #include <vector>
+ 
+ namespace clang {
+@@ -142,8 +143,11 @@ private:
+ 
+   void condense() {
+     MergedTable *Merged = getMergedTable();
+-    if (!Merged)
+-      Merged = new MergedTable;
++    std::unique_ptr<MergedTable> NewMerged;
++    if (!Merged) {
++      NewMerged = std::make_unique<MergedTable>();
++      Merged = NewMerged.get();
++    }
+ 
+     // Read in all the tables and merge them together.
+     // FIXME: Be smarter about which tables we merge.
+@@ -168,6 +172,9 @@ private:
+ 
+     Tables.clear();
+     Tables.push_back(Table(Merged).getOpaqueValue());
++    // Publication transfers a newly allocated table to Tables' existing
++    // ownership protocol. Keep it owned throughout decoding and merging.
++    (void)NewMerged.release();
+   }
+ 
+ public:
+@@ -217,10 +224,11 @@ public:
+         OnDiskTable::HashTable::readNumBucketsAndEntries(Buckets);
+ 
+     // Register the table.
+-    Table NewTable = new OnDiskTable(File, NumBucketsAndEntries.first,
+-                                     NumBucketsAndEntries.second,
+-                                     Buckets, Ptr, Data, std::move(InfoObj));
+-    Tables.push_back(NewTable.getOpaqueValue());
++    auto NewTable = std::make_unique<OnDiskTable>(
++        File, NumBucketsAndEntries.first, NumBucketsAndEntries.second,
++        Buckets, Ptr, Data, std::move(InfoObj));
++    Tables.push_back(Table(NewTable.get()).getOpaqueValue());
++    (void)NewTable.release();
+   }
+ 
+   /// Find and read the lookup results for \p EKey.

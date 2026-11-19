@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 from unittest.mock import patch
 
+import pytest
+
 from scripts.objc3c_toolchain import export_development_patches as exporter
 
 
@@ -79,4 +81,46 @@ def test_export_identity_survives_intent_to_add_and_new_files(tmp_path):
         exporter.export(['tracked'])
         assert b'diff --git a/tracked b/tracked' not in packet.read_bytes()
         assert b'+first\n' in packet.read_bytes()
+
+
+def test_export_preserves_ordered_overlay(tmp_path):
+    source = tmp_path / 'source'
+    source.mkdir()
+
+    def git(*args):
+        return subprocess.check_output(['git', '-C', str(source), *args])
+
+    git('init', '-q')
+    git('config', 'user.name', 'Patch export test')
+    git('config', 'user.email', 'patch-export@example.invalid')
+    tracked = source / 'tracked'
+    tracked.write_text('upstream\n')
+    git('add', 'tracked')
+    git('commit', '-qm', 'upstream')
+    table = source / 'clang/include/clang/Basic/ObjC3Features.def'
+    table.parent.mkdir(parents=True)
+    table.write_text('features\n')
+    manifest = tmp_path / 'toolchains/llvm/manifest.json'
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(json.dumps({'upstream': {'commit': git('rev-parse', 'HEAD').decode().strip()}}))
+    authority = tmp_path / 'authority.json'
+    authority.write_text('{}')
+    stack = tmp_path / 'patches'
+    stack.mkdir()
+    overlay = stack / 'overlay.patch'
+    tracked.write_text('overlay\n')
+    overlay.write_bytes(git('diff', 'HEAD', '--', 'tracked'))
+    import hashlib
+    saved = json.loads(manifest.read_text())
+    saved['patches'] = [{'file': overlay.name, 'sha256': hashlib.sha256(overlay.read_bytes()).hexdigest()}]
+    manifest.write_text(json.dumps(saved))
+    with patch.multiple(exporter, ROOT=tmp_path, SOURCE=source, STACK=stack, AUTHORITY=authority,
+                        PACKETS={'features.patch': [str(table.relative_to(source))]}), \
+         patch.object(exporter, 'generated', return_value=('features\n', None)), \
+         redirect_stdout(StringIO()):
+        exporter.export()
+        assert json.loads(manifest.read_text())['patches'][0] == saved['patches'][0]
+        tracked.write_text('unfinished overlay edit\n')
+        with pytest.raises(RuntimeError, match='layered paths'):
+            exporter.export()
 
