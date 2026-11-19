@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 293,
+        "minor": 294,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Generated Swift 6.4.2 checked and async wrappers preserve native SIMD in C vectors and pointer-free aggregates. Eight linked x86-64 configurations verify values, vector fields and checked outcomes. Matching SDK acceptance pending",
         "Generated C checked and async entries transport fixed 64-bit and 128-bit generic vectors. Native x86-64 and emulated AArch64 callers verify register values and completion callbacks. Matching native SDK acceptance pending",
         "Closed-group joins and direct task waits share cycle admission. Nested members, two groups, simultaneous admission and interrupted registrations preserve pending outcomes across the native task-service controls. Matching SDK acceptance pending",
         "Generated Swift checked and async wrappers carry pointer-free C structs by value, including nested structs, fixed enums and inline arrays. Eight linked x86-64 configurations verify indirect aggregate results. Native AArch64 and archive acceptance pending",
@@ -441,13 +442,14 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 219,
+        "minor": 220,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
         "Active task dependency cycle admission and terminal edge retirement share the published runtime registration. Matching SDK acceptance pending",
+        "Native fixed vectors copy through active Optional arms and checked C records maintain indirect result handling and the hidden error slot. x86-64 and AArch64 IR controls cover ARC and MRC. Matching SDK acceptance pending",
         "Source-free C exports preserve generic ext_vector_type and vector_size argument and result aliases on Linux x86-64 and AArch64. Wider vectors retain their calling convention admission boundary. Matching SDK acceptance pending",
         "Forced task-group scope finalization retires the prior ordinary body await before replacing it with a shielded cleanup continuation. The body registration is reclaimed while the previous external dependency is still suspended. Matching SDK acceptance pending",
         "Swift overlay publication checks every field in a by-value struct graph before crossing the foreign boundary. Its independent C publisher still accepts admitted native pointer fields that Swift transport rejects. Matching SDK acceptance pending",

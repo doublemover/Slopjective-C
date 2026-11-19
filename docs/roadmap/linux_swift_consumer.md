@@ -99,6 +99,17 @@ configurations verify by-value arguments and indirect results with a nested
 enum and four-word array. A native control admits a record with nested
 pointers to C and rejects it at the Swift boundary.
 
+Source 2.294 / System 2.220 exposes the supported native C vectors as Swift
+SIMD values in checked and async overlays. The generated signatures refer to
+the exact imported C aliases. SIMD fields also retain their representation in
+pointer-free C structs. The eight independent Swift clients check signed and
+floating-point lanes, aggregate snapshots and exact checked value transport.
+
+The compiler copies native fixed-width vector payloads through the active
+Optional arm, and C checked record returns preserve their indirect result ABI
+when a field has vector type. x86-64 and AArch64 IR checks cover the typed
+loads, lane extraction and checked error branch in ARC and MRC.
+
 Reports retain compiler versions, targets, resources, loader graphs, input and
 artifact hashes, commands, environments, diagnostics and exact results. The
 gate rechecks native and Swift installations and the loaded dependencies.

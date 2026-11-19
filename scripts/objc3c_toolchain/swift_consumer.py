@@ -29,10 +29,11 @@ ASYNC_EXPECTED = {'value': 42, 'checked_error': True, 'cancellation': True,
                   'generated_value': 42, 'generated_error': True, 'generated_cancellation': True,
                   'generated_scalars': True, 'generated_void': True, 'generated_enum': 42,
                   'generated_checked_value': 42, 'generated_checked_error': True,
-                  'generated_async_record': 42, 'generated_checked_record': 42}
+                  'generated_async_record': 42, 'generated_checked_record': 42,
+                  'generated_async_vector': 42, 'generated_checked_vector': 42}
 ASYNC_CASES = {(ownership, native, swift) for ownership in ('arc', 'mrc')
                for native in ('O0', 'O2') for swift in ('Onone', 'O')}
-QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v8'
+QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v9'
 CXX_IMPORT = ('-cxx-interoperability-mode=default', '-Xcc', '-std=c++20')
 REQUIRED_ROWS = {'renamed-primitive': 'objc3_swift_value',
     'nonnull-pointer': 'objc3_swift_read', 'newtype': 'ObjC3SwiftAmount',
@@ -174,9 +175,10 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
                 'swift_bridge_cancelled', '--export-c-async', 'swift_bridge_cancellable',
                 '--export-c-async', 'swift_bridge_scalars', '--export-c-async', 'swift_bridge_void',
                 '--export-c-async', 'swift_bridge_enum', '--export-c-async', 'swift_bridge_record',
+                '--export-c-async', 'swift_bridge_vector',
                 '--export-c-async', 'SwiftBridgeCounter::add:', '--export-c-throws', 'swift_bridge_checked',
                 '--export-c-throws', 'swift_bridge_checked_void', '--export-c-throws', 'swift_bridge_checked_record',
-                '--emit-c-header',
+                '--export-c-throws', 'swift_bridge_checked_vector', '--emit-c-header',
                 header, '--emit-swift-overlay', emitted_overlay, '--swift-c-module', 'ForeignAsync',
                 '--', '-std=c17', '-' + native_opt, '-fblocks', '-fobjc-runtime=gnustep-2.2',
                 '-fobjc-exceptions', *(['-fobjc-arc', '-fobjc-arc-exceptions'] if ownership == 'arc'

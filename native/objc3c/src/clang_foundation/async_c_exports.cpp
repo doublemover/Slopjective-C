@@ -18,6 +18,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace objc3::clang_foundation {
@@ -466,9 +467,18 @@ std::string SwiftScalar(clang::QualType type, llvm::StringRef module) {
   }
 }
 
-std::string SwiftValue(clang::ASTContext &context, clang::QualType type, llvm::StringRef module) {
+std::string SwiftValue(clang::ASTContext &context, clang::QualType type, llvm::StringRef module,
+                       llvm::StringRef c_alias) {
   if (type.isVolatileQualified()) return {};
   if (auto scalar = SwiftScalar(type, module); !scalar.empty()) return scalar;
+  auto is_simd = [&](clang::QualType element) {
+    const auto *vector = element->getAs<clang::VectorType>();
+    return vector && vector->getNumElements() >= 2 && IsPortableVector(context, element) &&
+           !SwiftScalar(vector->getElementType(), module).empty();
+  };
+  // Refer to the imported typedef so the C module owns the exact Swift SIMD
+  // element spelling, even for platform-specific C integer typedefs.
+  if (is_simd(type)) return "`" + module.str() + "`.`" + c_alias.str() + "`";
   const auto *record_type = type->getAs<clang::RecordType>();
   const auto *record = record_type ? record_type->getDecl()->getDefinition() : nullptr;
   // The C boundary has already verified field layout and trivial transport.
@@ -482,7 +492,7 @@ std::string SwiftValue(clang::ASTContext &context, clang::QualType type, llvm::S
       while (const auto *array = context.getAsConstantArrayType(element))
         element = array->getElementType();
       if (element.isVolatileQualified()) return false;
-      if (!SwiftScalar(element, module).empty()) continue;
+      if (!SwiftScalar(element, module).empty() || is_simd(element)) continue;
       const auto *nested = element->getAs<clang::RecordType>();
       if (!nested || !walk(walk, nested->getDecl()->getDefinition())) return false;
     }
@@ -574,12 +584,12 @@ private final class ObjC3Pending<Value: Sendable>: Sendable {
 }
 
 bool WriteSwiftEntry(clang::ASTContext &context, llvm::raw_ostream &out, llvm::StringRef module,
-                     llvm::StringRef name, llvm::StringRef symbol,
+                     llvm::StringRef name, llvm::StringRef symbol, llvm::StringRef type_prefix,
                      clang::QualType result, llvm::ArrayRef<clang::ParmVarDecl *> parameters,
                      bool is_async, bool actor, std::string &failure) {
-  const auto result_type = SwiftValue(context, result, module);
+  const auto result_type = SwiftValue(context, result, module, (type_prefix + "result_t").str());
   if (result_type.empty()) {
-    failure = "Swift overlay requires a portable scalar, pointer-free struct or void result";
+    failure = "Swift overlay requires a portable scalar, SIMD vector, pointer-free struct or void result";
     return false;
   }
   const bool is_void = result->isVoidType();
@@ -590,9 +600,10 @@ bool WriteSwiftEntry(clang::ASTContext &context, llvm::raw_ostream &out, llvm::S
     call << "receiver, ";
   }
   for (unsigned index = 0; index < parameters.size(); ++index) {
-    const auto type = SwiftValue(context, parameters[index]->getType(), module);
+    const auto type = SwiftValue(context, parameters[index]->getType(), module,
+                                 (type_prefix + "arg" + llvm::Twine(index) + "_t").str());
     if (type.empty()) {
-      failure = "Swift overlay has no portable scalar or pointer-free struct type for parameter " +
+      failure = "Swift overlay has no portable scalar, SIMD vector or pointer-free struct type for parameter " +
                 std::to_string(index + 1);
       return false;
     }
@@ -683,6 +694,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
   definitions << "\n\n#include <stdbool.h>\n";
   llvm::StringSet<> selected, swift_names;
   auto export_swift = [&](llvm::StringRef selection, llvm::StringRef name, llvm::StringRef symbol,
+                          llvm::StringRef type_prefix,
                           clang::QualType result, llvm::ArrayRef<clang::ParmVarDecl *> parameters,
                           bool is_async, bool actor) {
     if (swift_module.empty()) return true;
@@ -690,7 +702,8 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       failure = "Duplicate Swift overlay entry " + name.str();
       return false;
     }
-    if (WriteSwiftEntry(context, swift, swift_module, name, symbol, result, parameters, is_async, actor, failure))
+    if (WriteSwiftEntry(context, swift, swift_module, name, symbol, type_prefix, result, parameters,
+                        is_async, actor, failure))
       return true;
     failure = "Cannot generate Swift overlay for " + selection.str() + ": " + failure;
     return false;
@@ -776,7 +789,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     if (!prototype->getReturnType()->isVoidType()) definitions << "return ";
     definitions << "__objc3_try(" << (language.CPlusPlus ? "::" : "") << selection
                 << '(' << inputs << ")); }\n";
-    if (!export_swift(selection, name, thunk, prototype->getReturnType(), function->parameters(), false, false))
+    if (!export_swift(selection, name, thunk, prefix, prototype->getReturnType(), function->parameters(), false, false))
       return {};
   }
   for (const auto &selection : async_symbols) {
@@ -957,7 +970,8 @@ CExportSource GenerateCExports(clang::ASTContext &context,
                 << ") { " << submit << "(0, " << forwarded << "); }\n"
                 << task_entry << " { objc3_task_t *__objc3_task = 0; " << submit
                 << "(&__objc3_task, " << forwarded << "); return __objc3_task; }\n";
-    if (!export_swift(selection, name, cancellable, result_type, source_parameters, true, actor_method.has_value()))
+    if (!export_swift(selection, name, cancellable, type_prefix, result_type, source_parameters,
+                      true, actor_method.has_value()))
       return {};
   }
   if (!swift_module.empty()) swift << "}\n";

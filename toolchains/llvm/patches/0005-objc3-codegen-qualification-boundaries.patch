@@ -9683,7 +9683,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Ca
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1452 @@
+@@ -0,0 +1,1467 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -9723,6 +9723,21 @@ new file mode 100644
 +  if (const auto *Array = Ctx.getAsArrayType(T))
 +    return isa<ConstantArrayType>(Array) &&
 +           hasOnlyTrivialCallABILeaves(Ctx, Array->getElementType());
++  if (const auto *Vector = T->getAs<VectorType>()) {
++    const auto &Triple = Ctx.getTargetInfo().getTriple();
++    if (!Triple.isOSLinux() ||
++        (Triple.getArch() != llvm::Triple::x86_64 &&
++         Triple.getArch() != llvm::Triple::aarch64) ||
++        Vector->getVectorKind() != VectorKind::Generic || T.hasAddressSpace())
++      return false;
++    const auto Element = Vector->getElementType();
++    const auto Width = Ctx.getTypeSize(T);
++    const auto Lane = Ctx.getTypeSize(Element);
++    return (Width == 64 || Width == 128) && Lane <= 64 &&
++           Width == Lane * Vector->getNumElements() &&
++           !Element->isBooleanType() &&
++           (Element->isIntegerType() || Element->isRealFloatingType());
++  }
 +  if (T->isVoidType() || T->isIntegerType() || T->isEnumeralType() ||
 +      T->isRealFloatingType() || T->isPointerType() ||
 +      T->isAnyComplexType() || T->isMemberPointerType())
@@ -9761,7 +9776,7 @@ new file mode 100644
 +    return true;
 +  }
 +
-+  // Includes C++ records, ARC-qualified storage, vectors, and any type whose
++  // Includes C++ records, ARC-qualified storage, and any type whose
 +  // actual use-site special-member/lifetime facts are not available here.
 +  return false;
 +}
@@ -10118,7 +10133,7 @@ new file mode 100644
 +                           IsInitialization);
 +    return true;
 +  }
-+  if (Ty->isScalarType()) {
++  if (Ty->isScalarType() || Ty->isVectorType()) {
 +    llvm::Value *Value =
 +        CGF.EmitLoadOfScalar(Source, SrcVolatile, PayloadType, Loc);
 +    if (!Value)
@@ -38393,3 +38408,48 @@ new file mode 100644
 +// CHECK-SAME: sret({{[^)]*}}) align 4 %agg.result, ptr noundef %.block_descriptor, ptr noundef align 4 %owner,
 +// CHECK-SAME: ptr noundef %0)
 +// CHECK: invoke void @objc3_checked_nil_result()
+diff --git a/clang/test/ObjC3/CodeGen/native-c-fixed-vector-carriers.m b/clang/test/ObjC3/CodeGen/native-c-fixed-vector-carriers.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-c-fixed-vector-carriers.m
+@@ -0,0 +1,40 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple aarch64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++
++@protocol Error @end
++extern id<Error> vector_error(void);
++typedef float Four __attribute__((ext_vector_type(4)));
++struct Packet { Four lanes; long stamp[3]; };
++
++// CHECK-LABEL: define {{.*}}@checked_packet(
++// CHECK-SAME: sret(%struct.Packet) align 16
++// CHECK: fadd <4 x float>
++struct Packet checked_packet(struct Packet input, int fail) throws(id<Error>) {
++  if (fail) __objc3_throw(vector_error());
++  input.lanes += (Four){1, 2, 3, 4};
++  return input;
++}
++
++// CHECK-LABEL: define {{.*}}@copied_optional_lane(
++// CHECK: load <4 x float>, ptr %objc3.carrier.payload.addr
++// CHECK: store <4 x float>
++// CHECK: extractelement <4 x float>
++float copied_optional_lane(Four input) {
++  Optional(Four) first = Some(Four, input);
++  Optional(Four) second = None(Four);
++  second = first;
++  return match(second) {
++    case .Some(let lane) => lane[2];
++    case .None => -1.0f;
++  };
++}
++
++// CHECK-LABEL: define {{.*}}@checked_lane(
++// CHECK: call void @checked_packet(
++// CHECK-SAME: ptr noundef %objc3.error.out
++// CHECK: br i1 {{.*}}, label %objc3.try.failure, label %objc3.try.success
++// CHECK: extractelement <4 x float>
++float checked_lane(struct Packet input) {
++  struct Packet packet = try! checked_packet(input, 0);
++  return packet.lanes[2];
++}

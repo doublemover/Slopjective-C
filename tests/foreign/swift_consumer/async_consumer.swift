@@ -205,14 +205,20 @@ private struct Consumer {
         precondition(generatedEnum.rawValue == 42)
         let record = SwiftBridgeRecord(
             metadata: SwiftBridgeMetadata(choice: SwiftBridgeChoice(rawValue: -1), accepted: false),
-            values: (-1, 7, 41, CLong.max)
+            values: (-1, 7, 41, CLong.max), projection: SIMD2<Int32>(32, -32)
         )
         let asyncRecord = try await ForeignAsyncNative.swift_bridge_record(record)
         precondition(asyncRecord.metadata.choice.rawValue == 42 && asyncRecord.metadata.accepted)
         precondition(asyncRecord.values == (42, 7, 41, CLong.max))
+        precondition(asyncRecord.projection == SIMD2<Int32>(42, -42))
         let checkedRecord = try ForeignAsyncNative.swift_bridge_checked_record(asyncRecord)
         precondition(checkedRecord.metadata.choice.rawValue == 42 && checkedRecord.metadata.accepted)
         precondition(checkedRecord.values == (42, 7, 42, CLong.max))
+        precondition(checkedRecord.projection == asyncRecord.projection)
+        let vector = try await ForeignAsyncNative.swift_bridge_vector(SIMD4<Float>(41, -2.5, 7, 9))
+        precondition(vector == SIMD4<Float>(42, -0.5, 10, 13))
+        let checkedVector = try ForeignAsyncNative.swift_bridge_checked_vector(SIMD2<Int32>(41, -6))
+        precondition(checkedVector == SIMD2<Int32>(42, -42))
         do {
             _ = try await ForeignAsyncNative.swift_bridge_work(-1)
             preconditionFailure("generated Swift wrapper returned after checked failure")
@@ -244,7 +250,9 @@ private struct Consumer {
                 "generated_void": true, "generated_enum": \#(generatedEnum.rawValue),
                 "generated_checked_value": \#(generatedChecked), "generated_checked_error": true,
                 "generated_async_record": \#(asyncRecord.values.0),
-                "generated_checked_record": \#(checkedRecord.values.2)
+                "generated_checked_record": \#(checkedRecord.values.2),
+                "generated_async_vector": \#(Int(vector[0])),
+                "generated_checked_vector": \#(checkedVector[0])
             }
             """#)
     }

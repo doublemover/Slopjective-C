@@ -78,6 +78,9 @@ static enum SwiftBridgeChoice swift_bridge_enum(enum SwiftBridgeChoice value) as
   return value == SwiftBridgeAbsent ? SwiftBridgeAnswer : SwiftBridgeAbsent;
 }
 
+typedef float SwiftBridgeFloatVector __attribute__((ext_vector_type(4)));
+typedef int SwiftBridgeIntVector __attribute__((vector_size(8)));
+
 struct SwiftBridgeMetadata {
   enum SwiftBridgeChoice choice;
   bool accepted;
@@ -85,18 +88,31 @@ struct SwiftBridgeMetadata {
 struct SwiftBridgeRecord {
   struct SwiftBridgeMetadata metadata;
   long values[4];
+  SwiftBridgeIntVector projection;
 };
 
 static struct SwiftBridgeRecord swift_bridge_record(struct SwiftBridgeRecord value) async {
   value.metadata.choice = SwiftBridgeAnswer;
   value.metadata.accepted = true;
   value.values[0] += 43;
+  value.projection += (SwiftBridgeIntVector){10, -10};
   return value;
 }
 
 static struct SwiftBridgeRecord swift_bridge_checked_record(struct SwiftBridgeRecord value)
     throws(id<Error>) {
   value.values[2] = __objc3_try(swift_bridge_checked((int)value.values[2]));
+  return value;
+}
+
+static SwiftBridgeFloatVector swift_bridge_vector(SwiftBridgeFloatVector value) async {
+  return value + (SwiftBridgeFloatVector){1, 2, 3, 4};
+}
+
+static SwiftBridgeIntVector swift_bridge_checked_vector(SwiftBridgeIntVector value)
+    throws(id<Error>) {
+  value[0] = __objc3_try(swift_bridge_checked(value[0]));
+  value[1] *= 7;
   return value;
 }
 

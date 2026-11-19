@@ -7,6 +7,10 @@ Ninja dependency owners, including selected precompiled headers. The terminal
 job binds all partitions to the producer's archive SHA-256 and verifies the
 complete disjoint variant inventory. The shared archive expires after one day.
 
+The [Source 2.294 / System 2.220 Swift SIMD bridge](linux_swift_consumer.md)
+extends the typed overlay to native C vectors and structs with vector fields.
+Native Optional copies preserve the active vector payload.
+
 The [Source 2.293 / System 2.219 C vector bridge](linux_async_c_completion_exports.md)
 preserves native Linux vector argument and result conventions in generated
 checked and async C entries.

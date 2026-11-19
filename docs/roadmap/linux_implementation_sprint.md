@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.294 / System 2.220 Swift SIMD bridge](linux_swift_consumer.md)
+preserves native C vector aliases in checked and async calls. Native IR checks
+also verify vector Optional copies and C records with vector fields.
+
 The [Source 2.293 / System 2.219 C vector bridge](linux_async_c_completion_exports.md)
 is exercised by native C clients on x86-64 and AArch64 clients under emulation.
 
