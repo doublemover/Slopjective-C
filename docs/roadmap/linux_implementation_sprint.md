@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.288 / System 2.214 task dependency change](linux_checked_await_cancellation.md)
+rejects a closing task-to-task edge during sequential and concurrent admission.
+A pre-cancelled task resumes through cancellation without creating an edge.
+
 The [Source 2.287 / System 2.213 C value exports](linux_async_c_completion_exports.md)
 extend generated checked and async boundaries to fixed enums and aggregate
 callback values. Source-free and independent native C clients exercise the ABI.

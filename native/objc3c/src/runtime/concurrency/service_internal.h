@@ -86,6 +86,8 @@ struct objc3_task final {
     // Protected by structured_parent's mutex; stable after parent cancellation.
     size_t structured_index{0};
     std::vector<std::weak_ptr<AwaitTarget>> structured_children;
+    // Task dependency graph edges never own the frame or registration.
+    std::weak_ptr<ObjC3TaskDependencyWaiter> waiting_dependency;
     explicit AwaitTarget(objc3_task_t *value) : task(value) {}
     ~AwaitTarget();
   };

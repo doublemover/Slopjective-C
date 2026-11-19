@@ -3,7 +3,9 @@
 #include "runtime/concurrency/service_group.h"
 #include "runtime/concurrency/service_actor.h"
 
+#include <array>
 #include <atomic>
+#include <barrier>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -1514,6 +1516,92 @@ void test_interrupted_dependency_waiters_release_registration() {
   objc3_executor_release(executor);
 }
 
+void test_task_dependency_cycle_rejection() {
+  struct Await {
+    objc3_task_t *dependency{nullptr};
+    std::barrier<> *start{nullptr};
+    objc3_service_status admission{OBJC3_SERVICE_NOT_READY};
+    unsigned resumes{0};
+    bool cancel_before_await{false};
+  };
+  enum Admission { Sequential, Concurrent, CancelledClosingWait };
+  for (Admission mode : {Sequential, Concurrent, CancelledClosingWait}) {
+    std::barrier start(3);
+    std::array<Await, 3> states{};
+    std::array<objc3_task_t *, 3> tasks{};
+    std::array<objc3_executor_t *, 3> executors{};
+    for (size_t index = 0; index < tasks.size(); ++index) {
+      executors[index] = manual_executor();
+      states[index].start = mode == Concurrent ? &start : nullptr;
+      states[index].cancel_before_await = mode == CancelledClosingWait && index == tasks.size() - 1;
+      objc3_task_start_options options{};
+      options.struct_size = sizeof(options);
+      options.version = OBJC3_SERVICE_ABI_VERSION;
+      options.executor = executors[index];
+      options.frame = &states[index];
+      options.destroy = [](void *) {};
+      options.resume = [](objc3_task_t *task, void *opaque) {
+        auto &wait = *static_cast<Await *>(opaque);
+        if (++wait.resumes == 1) {
+          if (wait.start) wait.start->arrive_and_wait();
+          if (wait.cancel_before_await) objc3_task_request_cancel(task);
+          wait.admission = objc3_task_await(task, wait.dependency);
+          if (wait.admission == OBJC3_SERVICE_OK) return;
+          assert(wait.admission == OBJC3_SERVICE_INVALID_ARGUMENT);
+        } else {
+          objc3_completion dependency_result{};
+          assert(wait.resumes == 2 && wait.admission == OBJC3_SERVICE_OK);
+          if (wait.cancel_before_await) {
+            assert(objc3_task_is_cancel_requested(task));
+            assert(objc3_task_get_completion(wait.dependency, &dependency_result) == OBJC3_SERVICE_NOT_READY);
+          } else {
+            assert(objc3_task_get_completion(wait.dependency, &dependency_result) == OBJC3_SERVICE_OK);
+            assert(dependency_result.kind == OBJC3_COMPLETION_SUCCESS);
+          }
+        }
+        const objc3_completion success{sizeof(success), OBJC3_SERVICE_ABI_VERSION,
+                                       OBJC3_COMPLETION_SUCCESS, 0, nullptr, nullptr, nullptr, nullptr};
+        assert(objc3_task_complete(task, &success) == OBJC3_SERVICE_OK);
+      };
+      assert(objc3_task_start(&options, &tasks[index]) == OBJC3_SERVICE_OK);
+    }
+    for (size_t index = 0; index < tasks.size(); ++index)
+      states[index].dependency = tasks[(index + 1) % tasks.size()];
+    auto enter = [](objc3_executor_t *executor) {
+      uint32_t executed = 0;
+      assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK && executed == 1);
+    };
+    if (mode == Concurrent) {
+      std::array<std::thread, 3> threads{
+          std::thread(enter, executors[0]), std::thread(enter, executors[1]),
+          std::thread(enter, executors[2])};
+      for (auto &thread : threads) thread.join();
+    } else {
+      for (auto *executor : executors) enter(executor);
+      assert(states.back().admission == (mode == Sequential ? OBJC3_SERVICE_INVALID_ARGUMENT : OBJC3_SERVICE_OK));
+    }
+    // Each completed node wakes its predecessor. At most two reverse queue
+    // hops remain after the rejected edge, even if they share no pump thread.
+    for (size_t pass = 0; pass < tasks.size(); ++pass)
+      for (auto *executor : executors) {
+        uint32_t executed = 0;
+        assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+      }
+    unsigned rejected = 0;
+    for (size_t index = 0; index < tasks.size(); ++index) {
+      objc3_completion completion{};
+      assert(objc3_task_get_completion(tasks[index], &completion) == OBJC3_SERVICE_OK);
+      assert(completion.kind == OBJC3_COMPLETION_SUCCESS);
+      const bool invalid = states[index].admission == OBJC3_SERVICE_INVALID_ARGUMENT;
+      assert(states[index].resumes == (invalid ? 1U : 2U));
+      rejected += invalid;
+      objc3_task_release(tasks[index]);
+      objc3_executor_release(executors[index]);
+    }
+    assert(rejected == (mode == CancelledClosingWait ? 0U : 1U));
+  }
+}
+
 void noop_executor_callback(void *opaque) {
   ++*static_cast<std::atomic<int> *>(opaque);
 }
@@ -1889,6 +1977,7 @@ int main() {
   test_recursive_group_close_and_join();
   test_interrupted_group_waiters_release_registration();
   test_interrupted_dependency_waiters_release_registration();
+  test_task_dependency_cycle_rejection();
   test_executor_admission_and_queue_saturation();
   test_saturated_resume_can_retry_without_lost_wakeup();
   test_refcount_saturation_fails_without_losing_ownership();

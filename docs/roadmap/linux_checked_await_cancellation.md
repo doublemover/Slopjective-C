@@ -60,3 +60,12 @@ cancellation, external completion, last-handle release, dependency completion
 after registration, and dependencies already complete at registration. The
 task-service suite passes at O0 and O2 with both ASan/UBSan and TSan, using
 the pinned LLVM 23.1.5 compiler and a matching instrumented GNUstep runtime.
+
+Source 2.288 / System 2.214 rejects a direct task await that would close a
+cycle of active task dependencies. Admission publishes the edge before another
+task can inspect it. Completion, cancellation and abandonment detach the edge
+through the same registration ticket. A task that has already requested
+cancellation follows its cancellation continuation without adding an edge.
+Three native controls cover sequential and simultaneous cycle formation and the
+pre-cancelled closing wait. The tasks admitted before the rejected edge retain
+their normal dependency completion and executor behavior.

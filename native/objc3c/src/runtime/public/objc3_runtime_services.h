@@ -214,7 +214,8 @@ objc3_service_status objc3_task_add_waiter(objc3_task_t *task,
 /* Register one dependency from the parent's active resume. Always suspend
  * after success, even for a completed dependency: continuation runs on the
  * parent's executor. Cancellation wakes a suspended parent without cancelling
- * a shared dependency. Self-await and overlapping awaits are rejected. Keep
+ * a shared dependency. Self-await, cycles of active task-to-task waits and
+ * overlapping awaits are rejected with INVALID_ARGUMENT. Keep
  * the dependency alive while its completion is needed. Dispatch failure
  * cancels the parent, rather than leaving an unreachable suspended frame. */
 objc3_service_status objc3_task_await(objc3_task_t *parent,

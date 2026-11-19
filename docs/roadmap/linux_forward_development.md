@@ -7,6 +7,9 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.288 / System 2.214 task dependency change](linux_checked_await_cancellation.md)
+rejects direct wait cycles and preserves cancellation and completion delivery.
+
 The [Source 2.287 / System 2.213 C value exports](linux_async_c_completion_exports.md)
 preserve explicit enum representations and let C callbacks transport admitted
 native aggregates.
