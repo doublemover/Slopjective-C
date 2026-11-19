@@ -121,14 +121,41 @@ inline void finish(objc3_executor_t *source,const objc3::task_handle<int> &task)
   }
   assert(!"manual frame factory failed to quiesce");
 }
-inline void finish_retirement(State &state,unsigned expected_pins) {
+inline void finish_retirement(State &state,unsigned shape,unsigned route,unsigned expected_pins) {
   for(unsigned step=0;step!=1000000;++step) {
     if(state.destroyed==1 && state.pins==expected_pins)return;
     std::this_thread::yield();
   }
-  assert(!"detached manual frame did not release its callable after completion");
+  std::fprintf(stderr,
+      "manual frame retirement: shape=%u route=%u factories=%u resumes=%u destroyed=%u pins=%u expected_pins=%u\n",
+      shape,route,state.factories.load(),state.resumes.load(),state.destroyed.load(),
+      state.pins.load(),expected_pins);
+  assert(!"manual frame did not release its callable after completion");
 }
 inline void contract(objc3_executor_t *source) {
+  {
+    State state;
+    Token token{&state};
+    auto check_block_ownership = [&](void *stack_block) {
+      using namespace objc3::task_detail;
+      assert(state.pins == 2);
+      void *retained = objc3_task_result_retain(stack_block);
+      assert(retained == stack_block && state.pins == 2);
+      objc3_task_result_release(retained);
+      void *copied = objc3_task_result_block_copy(stack_block);
+      assert(copied && copied != stack_block && state.pins == 3);
+      retained = objc3_task_result_retain(copied);
+      assert(retained == copied && state.pins == 3);
+      objc3_task_result_block_release(copied);
+      assert(state.pins == 3);
+      objc3_task_result_release(retained);
+      assert(state.pins == 2);
+    };
+    {
+      check_block_ownership((__bridge void *)^int { return token.value; });
+    }
+    assert(state.pins == 1);
+  }
   for(unsigned route=0;route!=4;++route) {
     auto parent=task_function_parent(route).start(source);
     finish(source,parent);assert(parent.result()==42);
@@ -148,7 +175,7 @@ inline void contract(objc3_executor_t *source) {
       // Completion can publish before the parent worker retires its frame.
       // Preserve producer storage until that final callable cleanup for every
       // route, including a structured child that the parent already joined.
-      finish_retirement(state,shape==3?1u:0u);
+      finish_retirement(state,shape,route,shape==3?1u:0u);
       function_owner.reset();
       if(shape==3){function_state=nullptr;function_value=nullptr;}
       if(state.factories!=1 || state.resumes!=1 || state.destroyed!=1 || state.pins!=0)

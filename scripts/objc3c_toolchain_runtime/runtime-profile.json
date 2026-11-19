@@ -62,7 +62,7 @@
       "source_patches": [
         {
           "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
-          "sha256": "bd1274cf13e5ca5efdcc7f8fec35a0123b95815913c7373ce0bb5cb62ee40244"
+          "sha256": "3347434003c9730b64b113ff5448349040fe9c6cc7ff6cca13469590b8f19485"
         }
       ],
       "autorelease_pool_policy": "native-arc-only"
@@ -103,7 +103,7 @@
       "source_patches": [
         {
           "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
-          "sha256": "bd1274cf13e5ca5efdcc7f8fec35a0123b95815913c7373ce0bb5cb62ee40244"
+          "sha256": "3347434003c9730b64b113ff5448349040fe9c6cc7ff6cca13469590b8f19485"
         }
       ],
       "autorelease_pool_policy": "native-arc-only"

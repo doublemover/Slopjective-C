@@ -673,11 +673,11 @@ def check_cpp_metadata(metadata):
         ('objc3.cxx-unnamed-local-types.v1', 'native_unnamed_nested', ';cxx-unnamed-local-types:v1;'),
         ('objc3.cxx-generic-local-lambdas.v2', 'native_generic_local', ';cxx-generic-local-lambdas:v2;'),
         ('objc3.cxx-union-values.v1', 'NativePlainUnion', ';cxx-union-values:v1;'),
-        ('objc3.cxx-concepts.v1', 'NativeNumber', ';cxx-concepts:v1;'),
+        ('objc3.cxx-concepts.v2', 'NativeNumber', ';cxx-concepts:v2;'),
         ('objc3.cxx-function-templates.v2', 'native_template_add', ';cxx-function-templates:v2;'),
-        ('objc3.cxx-alias-templates.v1', 'NativeTemplatePointer', ';cxx-alias-templates:v1;'),
-        ('objc3.cxx-variable-templates.v1', 'native_template_answer', ';cxx-variable-templates:v1;'),
-        ('objc3.cxx-class-templates.v2', 'NativeTemplateBox', ';cxx-class-templates:v2;'),
+        ('objc3.cxx-alias-templates.v2', 'NativeTemplatePointer', ';cxx-alias-templates:v2;'),
+        ('objc3.cxx-variable-templates.v2', 'native_template_answer', ';cxx-variable-templates:v2;'),
+        ('objc3.cxx-class-templates.v4', 'NativeTemplateBox', ';cxx-class-templates:v4;'),
         ('objc3.cxx-template-structure.v1', 'NativeTemplateRoot', ';cxx-template-structure:v1;'),
         ('objc3.cxx-template-deduction.v1', 'native_template_deduced_add', ';cxx-template-deduction:v1;'),
     ):
@@ -695,10 +695,10 @@ def check_cpp_metadata(metadata):
     for name in ('native_thread_value', 'native_inline_thread_value', 'NativeThreadState', 'native_local_thread_value'):
         if ';cxx-thread-local:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
             raise AssertionError('missing C++ thread-local identity: ' + name)
-    if 'objc3.cxx-lambda-expressions.v1' not in metadata.get('required_semantics', []):
+    if 'objc3.cxx-lambda-expressions.v2' not in metadata.get('required_semantics', []):
         raise ValueError('C++ package lost its lambda-expression capability')
     for name in ('native_closure', 'NativeClosureDefaults', 'native_closure_frame'):
-        if ';cxx-lambda-expressions:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+        if ';cxx-lambda-expressions:v2;' not in names.get(name, {}).get('canonical_type_identity', ''):
             raise ValueError('C++ package lost lambda-expression identity: ' + name)
     if 'objc3.cxx-namespace-attributes.v1' not in metadata.get('required_semantics', []):
         raise ValueError('C++ package lost its namespace attribute capability')
