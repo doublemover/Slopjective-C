@@ -1,5 +1,9 @@
 # Semantic Analysis
 
+This page records the previous compiler's semantic evidence. The
+[language capability inventory](../../schemas/objc3-language-capabilities.json)
+tracks the native compiler's supported features.
+
 Semantic support claims require canonical diagnostics or executable tests.
 Rejected behavior is represented by diagnostics, not alternate acceptance paths.
 
@@ -11,7 +15,7 @@ and unsupported foreign-carrier fail-closed records. Value optionals now have se
 for canonical `Optional<T>` type signatures,
 plus a sema-owned absent/present lowering contract and checked unwrap/binding
 failure diagnostics plus bounded packed runtime ABI support for `i32`, `bool`,
-and `id` object-handle payloads plus Optional<i64> language call/return ABI
+and `id` object-handle payloads plus `Optional<i64>` language call/return ABI
 through the wide `{has_value,i64}` carrier, direct functions, and direct
 dispatch path.
 Nested/generic payload runtime lowering, property/ivar storage, unchecked unwrap, nullability bridges,
@@ -43,7 +47,7 @@ nullable-pointer conversion, nil-to-scalar coercion, throws/result conversion,
 unchecked unwrap, unsupported payload ABI lowering, broad runtime constructor
 support, property/ivar storage, or nullable-pointer erasure. The executable v1
 path is the checked packed `Optional<i32>`, `Optional<bool>`, and
-`Optional<id>` runtime ABI plus Optional<i64> direct-function and direct-dispatch
+`Optional<id>` runtime ABI plus `Optional<i64>` direct-function and direct-dispatch
 language ABI through the wide `{has_value,i64}` carrier.
 
 Generic callable reification is similarly bounded. Semantic records may publish
@@ -72,13 +76,13 @@ single-payload error-out ABI, catch/bridge policy, runtime-dispatch, and `try?`
 evidence into multi-payload, unsupported foreign-carrier, async propagation, or
 erased runtime behavior,
 and value optionals cannot widen past their bounded packed i32/bool/id-handle ABI,
-wide Optional<i64> direct ABI, and checked lowering contract into broad
+wide `Optional<i64>` direct ABI, and checked lowering contract into broad
 nested/generic/property/ivar/nullability/nil or unchecked runtime support.
 Runtime generic reification, type-test match
 patterns, and strict-system profile support cannot be widened from source
 metadata, generated reports, or Objective-C 2 compatibility paths.
 Statement-form guarded match and bounded expression-form match are the admitted
-#8236 surfaces.
+\#8236 surfaces.
 
 The semantic-analysis owner boundary is:
 

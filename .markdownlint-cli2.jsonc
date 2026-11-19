@@ -26,6 +26,10 @@
     "!tests/tooling/fixtures/**",
     "!tmp/**",
     "!temp/**",
-    "!out/toolchains/**",
+    "!out/**",
+    "!.venv/**",
+    // Frozen projections of the pre-native toolchain evidence.
+    "!docs/support/capability_matrix.md",
+    "!docs/support/umbrella_readiness.md",
   ],
 }

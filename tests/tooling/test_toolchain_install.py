@@ -1,5 +1,6 @@
 from __future__ import annotations
 from compression import zstd
+import fcntl
 import hashlib
 import json
 from pathlib import Path
@@ -15,7 +16,7 @@ from scripts.objc3c_toolchain.install_sdk import file_hash, install
 pytestmark = pytest.mark.skipif(not shutil.which('zstd'), reason='installer needs zstd')
 
 
-def release(tmp_path: Path, compiler='compiler'):
+def release(tmp_path: Path, compiler='compiler', trailing_padding=0):
     prefix = tmp_path / 'source'
     (prefix / 'bin').mkdir(parents=True)
     (prefix / 'bin/objc3c').write_text(compiler)
@@ -32,6 +33,7 @@ def release(tmp_path: Path, compiler='compiler'):
     with zstd.ZstdFile(archive, 'wb') as stream:
         with tarfile.open(fileobj=stream, mode='w|') as tar:
             tar.add(prefix, arcname='objc3-sdk')
+        stream.write(bytes(trailing_padding))
     return archive, file_hash(archive)
 
 
@@ -58,6 +60,47 @@ def test_bad_archive_and_tampered_prefix_preserve_activation(tmp_path):
     with pytest.raises(ValueError, match='differ'):
         install(archive, digest, root)
     assert (root / 'current').resolve() == Path(installed['prefix'])
+
+
+def test_installer_drains_decoder_after_end_of_tar(tmp_path):
+    archive, digest = release(tmp_path, trailing_padding=1024 * 1024)
+    assert install(archive, digest, tmp_path / 'installed')['status'] == 'PASS'
+
+
+def test_existing_installation_permissions_survive_install_and_lock_contention(tmp_path):
+    archive, digest = release(tmp_path)
+    root = tmp_path / 'private-install'
+    root.mkdir(mode=0o700)
+    generations = root / 'sdks'
+    generations.mkdir(mode=0o750)
+    generations.chmod(0o750)
+    with (root / '.install.lock').open('a+b') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(BlockingIOError):
+            install(archive, digest, root)
+        assert root.stat().st_mode & 0o777 == 0o700
+        assert not (root / 'current').exists()
+    installed = install(archive, digest, root)
+    assert root.stat().st_mode & 0o777 == 0o700
+    assert generations.stat().st_mode & 0o777 == 0o750
+    assert (root / 'current').resolve() == Path(installed['prefix'])
+
+
+def test_failed_verification_preserves_existing_private_root(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import install_sdk
+
+    archive, digest = release(tmp_path)
+    root = tmp_path / 'private-install'
+    root.mkdir(mode=0o700)
+
+    def reject_sdk(*args, **kwargs):
+        raise ValueError('rejected SDK')
+
+    monkeypatch.setattr(install_sdk, 'verify', reject_sdk)
+    with pytest.raises(ValueError, match='rejected SDK'):
+        install(archive, digest, root)
+    assert root.stat().st_mode & 0o777 == 0o700
+    assert not (root / 'current').exists()
 
 
 def test_full_install_reports_postcommit_cleanup_failure_and_keeps_old_shell_pinned(tmp_path, monkeypatch):

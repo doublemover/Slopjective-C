@@ -1,8 +1,16 @@
 # Support Boundary Contract
 
-This directory owns the public Objective-C 3.0 support boundary. Other docs,
-spec chapters, site pages, runbooks, and generated-output rows may
-summarize support, but they must not widen it beyond these files.
+The current Linux release boundary is recorded in the
+[Linux release guide](../releases/linux.md) and the
+[native language capability inventory](../../schemas/objc3-language-capabilities.json).
+Published release manifests bind support claims to the shipped SDK.
+
+The matrix, evidence map, and validation commands below preserve the earlier
+toolchain's evidence contracts. Use the [native CLI reference](../runbooks/objc3c_public_command_surface.md)
+for runnable commands on the current Linux toolchain.
+The archived generated projections refer to source files removed by the native
+cutover. The [native capability reference](clang_foundation_capabilities.json)
+is generated from the current feature authority.
 
 ## Canonical Files
 

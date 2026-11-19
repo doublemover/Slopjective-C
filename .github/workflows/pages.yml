@@ -1,0 +1,80 @@
+name: Publish compiler documentation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'site/**'
+      - 'scripts/build_pages.py'
+      - '.github/workflows/pages.yml'
+permissions:
+  contents: read
+concurrency:
+  group: compiler-documentation-pages-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  build:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1
+        with:
+          source: ./site
+          destination: ./_site
+      - name: Verify rendered navigation at the deployed project root
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urljoin, urlsplit
+          import os
+
+          class Navigation(HTMLParser):
+              links = []
+              def handle_starttag(self, tag, attrs):
+                  href = dict(attrs).get('href')
+                  if tag == 'a' and href:
+                      self.links.append(href)
+
+          page = Navigation()
+          page.feed(Path('_site/index.html').read_text())
+          owner, name = os.environ['GITHUB_REPOSITORY'].split('/')
+          root = f'https://{owner}.github.io/{name}/'
+          for link in page.links:
+              target = urlsplit(urljoin(root, link))
+              if target.netloc == urlsplit(root).netloc and not target.path.startswith(f'/{name}/'):
+                  raise SystemExit(f'Navigation leaves the deployed project root: {link}')
+          if not any('/docs/releases/linux.md' in link for link in page.links):
+              raise SystemExit('Rendered site omits Linux release instructions')
+          PY
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: ./_site
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        id: deploy

@@ -580,11 +580,10 @@ private result, nil-message and foreign-promise controls defend these boundaries
 matching SDK consolidation follows the implementation batch.
 
 The [SDK/toolchain refresh](linux_toolchain_refresh.md) retains the failed Source 2.153
-campaign as historical evidence. Its terminal upstream receipt-state bug is
-fixed; a fresh current-source LLVM 23.1.5 / ABI 24 campaign supersedes that run. Current development is
-Source 2.234 / System 2.160 and requires its own matching SDK acceptance. The last accepted archive remains SDK 2.62.0
-until the matched release and fresh-host qualification pass. Historical receipts
-below retain their original versions and execution scope.
+campaign as historical evidence. The subsequent Source 2.234 / System 2.160
+checkpoint repaired its terminal upstream receipt-state bug. The last accepted
+archive is SDK 2.62.0. The [Linux release guide](../releases/linux.md) tracks
+delivery of a new preview from the native qualification runs.
 
 The [sanitizer product matrix](linux_sanitizer_product_matrix.md) splits thirteen
 product owners across eight independently restored consumers. Selected runtime
@@ -1076,7 +1075,7 @@ records implemented and remaining module contracts. The current
 [completion sprint](linux_completion_sprint.md) tracks active feature gaps,
 authored changes and the consolidated SDK delivery sequence. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current **2.62.0 SDK** delivers source milestones through 2.62, System 2.14
+The accepted **2.62.0 SDK checkpoint** delivers source milestones through 2.62, System 2.14
 and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.

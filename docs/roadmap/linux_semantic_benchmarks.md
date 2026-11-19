@@ -141,7 +141,7 @@ medians, actual deviation, per-workload RSS, scaling points and total runner and
 receipt cost. The output remains explicitly advisory: measured spread does not
 become a regression allowance. Promotion still requires reviewed per-workload
 absolute effects and memory goals. Further workload families remain open under
-#8291.
+\#8291.
 
 Pass `--policy path/to/review.json` to evaluate selected workloads using
 approved limits. The policy uses `objc3c.semantic-benchmark-review.v1` and

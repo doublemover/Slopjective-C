@@ -60,6 +60,19 @@ def test_rejects_generated_site_drift(reader_tree):
         check(reader_tree)
 
 
+def test_site_navigation_resolves_at_deployed_project_root():
+    from urllib.parse import urljoin
+
+    from scripts.build_pages import REPOSITORY_DOCUMENTS, render_markdown_source
+
+    origin = 'https://doublemover.github.io/Slopjective-C/'
+    text = render_markdown_source(ROOT / 'site/src/index.body.md')
+    expected = REPOSITORY_DOCUMENTS + 'docs/releases/linux.md'
+    assert f']({expected})' in text
+    assert urljoin(origin, expected) == expected
+    assert '](../' not in text
+
+
 def test_rejects_disconnected_example_qualification(reader_tree):
     page = reader_tree / 'showcase/portfolio.json'
     page.write_text(page.read_text().replace('installed_source_graph', 'unexecuted_example'))

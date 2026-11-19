@@ -3,8 +3,7 @@
 Concurrency source 2.112 adds the required
 `objc3.cxx-standard-library-headers.v1` interface capability. Public declarations
 can use native standard-library types and algorithms without republishing their
-implementation as package-owned declarations. The compiler extension ABI remains
-24. Accepted SDK 2.62 remains unchanged while implementation continues.
+implementation as package-owned declarations. The compiler extension ABI remains 24. Accepted SDK 2.62 remains unchanged while implementation continues.
 
 The dependency walker recognizes declarations supplied by system headers reached
 through a closed list of public C++ standard headers. Namespace spelling alone

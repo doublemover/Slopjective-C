@@ -180,7 +180,6 @@ policy controls; hosted completion of the new layout is still required. No repos
 protection setting or billing/private-schedule variable was changed. Keep #8283
 open until those acceptance conditions are established.
 
-
 Native checked commands now use bounded subprocess sessions. Timeout and
 interruption kill compiler descendants even when they start separate process
 groups. Fresh logs and CTest XML are required before execution, so a previous

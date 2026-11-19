@@ -115,6 +115,10 @@ def input_identity(repo: Path, sdk: Path) -> dict:
         files.update(repo / name for name in node['identity_inputs'])
     files.add(repo / 'scripts/install_objc3c_linux.sh')
     files.add(repo / 'stdlib/module_inventory.json')
+    from .package import distribution_license
+    license_file = distribution_license(repo)
+    if license_file is not None:
+        files.add(license_file)
     files.add(repo / 'toolchains/linux-hosts.json')
     files.add(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/llvm-tblgen')
     files.add(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/FileCheck')

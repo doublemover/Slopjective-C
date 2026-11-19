@@ -94,15 +94,15 @@ stable diagnostic metadata, not retired route acceptance.
 
 Behavior ownership is phase-first:
 
-| Boundary | Positive authority | Rejection / strict-error authority |
-| --- | --- | --- |
-| parser | `tests/native/parser/positive` | `tests/native/parser/negative` for old-mode literals and removed mode/retired-route flags |
-| semantic | `tests/native/sema/{types,ownership,objc,control_flow,concurrency}` | `tests/native/sema/{negative,errors,concurrency}` for retired adapter gates and unsupported feature claims |
-| lowering ABI | `tests/native/lowering` and canonical `tests/conformance/lowering_abi` ABI fixtures | `tests/native/lowering/errors` and strict lowering/link diagnostics for removed runtime retired route paths |
-| IR/module | `tests/native/ir/{module,function,metadata,runtime_calls}` | `tests/native/ir/runtime_calls` strict linkage evidence for unsupported runtime helpers |
-| runtime | `tests/native/runtime/{object_model,storage,arc,blocks,concurrency}` and runtime probe ownership metadata | `tests/native/runtime/{dispatch,errors}` for strict dispatch and unresolved-symbol outcomes |
-| e2e | `tests/native/e2e/{smoke,feature_matrix}` | `tests/native/e2e/negative_execution` for execution-boundary rejection and strict-error outcomes |
-| generated fixtures | none | none; generated artifacts are replay/schema provenance only |
+| Boundary           | Positive authority                                                                                        | Rejection / strict-error authority                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| parser             | `tests/native/parser/positive`                                                                            | `tests/native/parser/negative` for old-mode literals and removed mode/retired-route flags                   |
+| semantic           | `tests/native/sema/{types,ownership,objc,control_flow,concurrency}`                                       | `tests/native/sema/{negative,errors,concurrency}` for retired adapter gates and unsupported feature claims  |
+| lowering ABI       | `tests/native/lowering` and canonical `tests/conformance/lowering_abi` ABI fixtures                       | `tests/native/lowering/errors` and strict lowering/link diagnostics for removed runtime retired route paths |
+| IR/module          | `tests/native/ir/{module,function,metadata,runtime_calls}`                                                | `tests/native/ir/runtime_calls` strict linkage evidence for unsupported runtime helpers                     |
+| runtime            | `tests/native/runtime/{object_model,storage,arc,blocks,concurrency}` and runtime probe ownership metadata | `tests/native/runtime/{dispatch,errors}` for strict dispatch and unresolved-symbol outcomes                 |
+| e2e                | `tests/native/e2e/{smoke,feature_matrix}`                                                                 | `tests/native/e2e/negative_execution` for execution-boundary rejection and strict-error outcomes            |
+| generated fixtures | none                                                                                                      | none; generated artifacts are replay/schema provenance only                                                 |
 
 `tests/conformance/hard_cutover_fixture_boundary_contracts.json` is the
 machine-readable owner matrix for these boundaries. `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json`

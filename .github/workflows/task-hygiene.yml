@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
       - name: Initialize tooling diagnostics
         run: |
           mkdir -p out/tooling
@@ -24,6 +26,15 @@ jobs:
         run: |
           uv run python -m scripts.objc3c_toolchain check-host-tools
           uv run python -m scripts.objc3c_toolchain.generate_features --check
+      - name: Check LLVM patch application for changes to the locked stack
+        env:
+          BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if git cat-file -e "$BASE_REVISION^{commit}" 2>/dev/null &&
+            git diff --quiet "$BASE_REVISION" HEAD -- toolchains/llvm/manifest.json toolchains/llvm/patches scripts/objc3c_toolchain/check_llvm_patch_application.py; then
+            exit 0
+          fi
+          uv run python -m scripts.objc3c_toolchain.check_llvm_patch_application
       - name: Python syntax and undefined names
         run: uv run ruff check --select F821 scripts tests/tooling
       - name: SDK integrity, installer and native validation owners
@@ -78,6 +89,8 @@ jobs:
           tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py
           tests/tooling/test_toolchain_install.py
+          tests/tooling/test_linux_archive_debugger_gate.py
+          tests/tooling/test_stage_linux_release.py
           tests/tooling/test_linux_sdk_reuse.py
           tests/tooling/test_frontend_serial_tests.py
           tests/tooling/test_frontend_runtime_dependency.py

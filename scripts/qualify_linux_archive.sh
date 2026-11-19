@@ -49,7 +49,9 @@ python3 - "$scratch/debugger.log" <<'PY'
 from pathlib import Path
 import sys
 text = Path(sys.argv[1]).read_text()
-assert all(value in text for value in ('cleanup_order = 0', ' = 42', 'exited with status = 0'))
+missing = [value for value in ('cleanup_order = 0', ' = 42', 'exited with status = 0') if value not in text]
+if missing:
+    raise SystemExit(f'LLDB transcript is missing expected output: {missing}')
 PY
 # CMake is needed only to qualify the embedding consumer, not normal compiler use.
 python3 -m venv "$scratch/cmake"

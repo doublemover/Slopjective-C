@@ -1,5 +1,10 @@
 # Parser
 
+This page records the previous parser's evidence. See the
+[LLVM development guide](../../toolchains/llvm/README.md) and
+[language capabilities](../../schemas/objc3-language-capabilities.json) for the
+current native parser.
+
 Parser behavior is described through capability rows and executable tests.
 Unsupported grammar remains rejected or reserved until the capability matrix
 marks the behavior implemented.
@@ -13,7 +18,7 @@ ABI and `Optional<i64>` language call/return lowering through the wide
 value-optional payload lowering, property/ivar storage,
 unchecked unwrap, nullability bridges, implicit nil, nil-to-scalar coercion,
 throws/result conversion, expression-position `match`, and `=>` match arms. For
-#8233, empty, multi, malformed, and non-type parenthesized `throws(...)` payload
+\#8233, empty, multi, malformed, and non-type parenthesized `throws(...)` payload
 shapes are parser-owned `O3P182` rejections and are never erased into bare
 untyped `throws`; exactly one type payload is preserved through interface
 contracts and hidden error-out ABI lowering, with direct-call, runtime-dispatch,

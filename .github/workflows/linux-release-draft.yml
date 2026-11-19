@@ -1,0 +1,55 @@
+name: Stage Linux SDK release draft
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: New Git tag, such as v0.1.0-preview.1
+        type: string
+        required: true
+      x86_64_run:
+        description: Successful x86-64 Linux SDK release qualification run ID
+        type: string
+        required: true
+      aarch64_run:
+        description: Successful AArch64 Linux SDK release qualification run ID
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: linux-release-draft
+  cancel-in-progress: false
+jobs:
+  draft:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/python-tools
+      - name: Stage exact qualified archives and create a draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          X86_RUN: ${{ inputs.x86_64_run }}
+          ARM_RUN: ${{ inputs.aarch64_run }}
+        shell: bash
+        run: |
+          if [[ ! -f LICENSE && ! -f LICENSE.md && ! -f COPYING ]]; then
+            echo 'The project needs an approved distribution license before release staging.' >&2
+            exit 1
+          fi
+          uv run python -m scripts.objc3c_toolchain.stage_linux_release \
+            --repo "$GITHUB_REPOSITORY" --revision "$GITHUB_SHA" \
+            --tag "$RELEASE_VERSION" --x86-run "$X86_RUN" --arm-run "$ARM_RUN" \
+            --downloads out/release-downloads --output out/release-draft
+          gh release create "$RELEASE_VERSION" out/release-draft/* \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --prerelease \
+            --title "Objective-C 3.0 Linux SDK $RELEASE_VERSION" \
+            --notes-file docs/releases/linux-preview-notes.md

@@ -54,6 +54,16 @@ def verify(prefix: Path, *, verifier: Path | None = None) -> dict:
     return module.verify_sdk(prefix)
 
 
+def create_install_directory(path: Path, *, parents: bool = False) -> None:
+    try:
+        path.mkdir(parents=parents)
+    except FileExistsError:
+        if not path.is_dir() or path.is_symlink():
+            raise
+    else:
+        path.chmod(0o755)
+
+
 def activate(root: Path, prefix: Path) -> None:
     active = root / 'current'
     if active.exists() and not active.is_symlink():
@@ -127,8 +137,7 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             if Path('/sys/fs/cgroup/memory.max').is_file() else None,
         'cpu_model': next((line.split(':', 1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines()
                            if line.startswith('model name')), None)}
-    root.mkdir(parents=True, exist_ok=True)
-    root.chmod(0o755)
+    create_install_directory(root, parents=True)
     cleanup_warnings = []
     with (root / '.install.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -141,6 +150,10 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
                 try:
                     with tarfile.open(fileobj=decoder.stdout, mode='r|') as tar:
                         tar.extractall(destination, filter='data')
+                    # tar stops at its end marker. Drain the decoder so trailing
+                    # tar padding cannot turn successful extraction into EPIPE.
+                    with open(os.devnull, 'wb') as sink:
+                        shutil.copyfileobj(decoder.stdout, sink)
                 finally:
                     decoder.stdout.close()
                 if decoder.wait() != 0:
@@ -161,8 +174,7 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             data = verify(candidate)
             admit_native_sdk(candidate, data)
             prefix = root / 'sdks' / data['seal_sha256']
-            prefix.parent.mkdir(exist_ok=True)
-            prefix.parent.chmod(0o755)
+            create_install_directory(prefix.parent)
             reused = prefix.exists()
             if prefix.exists():
                 # Cached contents, including their verifier, are inputs to

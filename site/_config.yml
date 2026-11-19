@@ -1,3 +1,6 @@
 title: Objective-C 3.0 Draft Specification
 description: Working draft specification for Objective-C 3.0.
 theme: minima
+url: https://doublemover.github.io
+baseurl: /Slopjective-C
+exclude: [src]

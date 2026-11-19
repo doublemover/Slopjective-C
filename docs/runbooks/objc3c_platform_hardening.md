@@ -113,7 +113,7 @@ toolchain evidence; it is not a prose support statement.
 
 ## #8206 Umbrella Closure Boundary
 
-#8206 is the platform expansion readiness umbrella, not a broad platform
+\#8206 is the platform expansion readiness umbrella, not a broad platform
 success claim. It closes only over checked-in source contracts:
 
 - #8228 `linux-x64` remains an unsupported, fail-closed row until build,
@@ -229,7 +229,7 @@ carry arm64 dSYM UUID records and binary-to-dSYM UUID matching. These generated
 fields remain `support_truth=false` and cannot promote `darwin-arm64` without
 reviewed checked-source rows.
 
-#8206 has a source-owned fail-closed closure boundary and a separate future
+\#8206 has a source-owned fail-closed closure boundary and a separate future
 public platform-promotion boundary. The source-owned boundary keeps the
 umbrella matrix row `internal`, keeps Windows x64 as the only supported
 projection, keeps #8228 and #8229 rejected/fail-closed, and keeps hosted
@@ -237,7 +237,7 @@ Linux/macOS evidence as review input rather than support truth. Public platform
 promotion is valid only after the umbrella matrix row is promoted from
 `internal`, #8228 and #8229 are promoted with the evidence above, sanitizer
 package rows remain bounded by their Windows x64 runtime-promotion gates, and
-#8232 native object emission is coherent through `llc --filetype=obj` with no
+\#8232 native object emission is coherent through `llc --filetype=obj` with no
 clang-substitute success path.
 
 ## Host And Toolchain Claim Boundary

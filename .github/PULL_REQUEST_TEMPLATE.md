@@ -1,4 +1,4 @@
-## Summary
+# Summary
 
 - Primary issue:
 - Budget impact: `no_budget_growth | within_existing_budget | requires_exception_record`

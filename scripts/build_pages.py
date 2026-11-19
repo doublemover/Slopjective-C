@@ -14,6 +14,7 @@ CONFIG_PATH = SRC_DIR / "index.contract.json"
 HEADING_ANCHOR_RE = re.compile(r"^(#{1,6})\s+(.*?)\s+\{#([A-Za-z0-9_.-]+)\}\s*$")
 SITE_EXCLUDE_START = "<!-- SITE:EXCLUDE-START -->"
 SITE_EXCLUDE_END = "<!-- SITE:EXCLUDE-END -->"
+REPOSITORY_DOCUMENTS = "https://github.com/doublemover/Slopjective-C/blob/main/"
 
 
 class ContractConfig:
@@ -71,6 +72,9 @@ def render_markdown_source(path: Path) -> str:
     text = path.read_text(encoding="utf-8").rstrip("\n")
     text = strip_site_excluded_blocks(text)
     text = rewrite_heading_anchors(text)
+    # The deployed index is at the Pages project root. Repository paths
+    # adjacent to site/ are not published by the Pages build.
+    text = re.sub(r"(\]\()\.\./\.\./(?=[\w.])", rf"\g<1>{REPOSITORY_DOCUMENTS}", text)
     return text + "\n"
 
 
