@@ -24,14 +24,20 @@ CXX_EXPECTED = {'before': 40, 'count': 42, 'total': 2147483690,
                 'owner_before': 40, 'owner_after': 42, 'unique_value': 42,
                 'unique_allocations': 1, 'unique_destructions': 1}
 CXX_LIFETIME = ('owner_allocations', 'owner_destructions', 'owner_copies', 'unique_moves')
-QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v4'
+ASYNC_EXPECTED = {'value': 42, 'checked_error': True, 'cancellation': True, 'actor': 42, 'other_actor': 7}
+ASYNC_CASES = {(ownership, native, swift) for ownership in ('arc', 'mrc')
+               for native in ('O0', 'O2') for swift in ('Onone', 'O')}
+QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v5'
 CXX_IMPORT = ('-cxx-interoperability-mode=default', '-Xcc', '-std=c++20')
 REQUIRED_ROWS = {'renamed-primitive': 'objc3_swift_value',
     'nonnull-pointer': 'objc3_swift_read', 'newtype': 'ObjC3SwiftAmount',
     'opaque-c-lifetime': 'ObjC3SwiftToken', 'availability': 'objc3_swift_unavailable',
     'cxx-trivial-value': 'MeterAPI::adjustedReading',
     'cxx-owning-value': 'MeterAPI::adjustedOwner',
-    'cxx-move-only-value': 'MeterAPI::adjustedUniqueReading'}
+    'cxx-move-only-value': 'MeterAPI::adjustedUniqueReading',
+    'async-c-continuation': 'swift_bridge_work_async_c',
+    'async-c-cancellation': 'swift_bridge_cancelled_async_c',
+    'c-actor-continuation': 'SwiftBridgeCounter_add_async_c'}
 NEGATIVES = {
     'old-spelling': ('import ForeignAPI\nlet value = objc3_swift_value(41)\n', "'objc3_swift_value' has been renamed to 'projectedValue(_:)'"),
     'wrong-type': ('import ForeignAPI\nlet value: String = projectedValue(41)\n', 'cannot convert value of type'),
@@ -51,7 +57,7 @@ def _link_or_copy(source, destination):
 
 
 def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
-    """Seal the two built tools and resources for Swift import, without an archive."""
+    """Seal current native compiler and runtime inputs without building an archive."""
     stage = stage.resolve(strict=True)
     if prefix.exists() or prefix.resolve().is_relative_to(stage):
         raise ValueError('Swift pilot requires a fresh independent development prefix')
@@ -60,21 +66,22 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
         (prefix / 'bin').mkdir(exist_ok=True)
         _link_or_copy(stage / 'bin' / name, prefix / 'bin' / name)
     (prefix / 'lib').mkdir()
-    for name in ('libLLVM.so', 'libclang-cpp.so'):
-        source = find_installed_shared_library(stage / 'lib', name)
+    for name in ('libLLVM.so', 'libclang-cpp.so', 'libobjc.so', 'libobjc3_runtime_services.a'):
+        source = ((stage / 'lib' / name).resolve(strict=True)
+                  if name.startswith('libobjc') else find_installed_shared_library(stage / 'lib', name))
         if source is None:
             continue
         _link_or_copy(source, prefix / 'lib' / source.name)
         if source.name != name:
             (prefix / 'lib' / name).symlink_to(source.name)
-    shutil.copytree(stage / 'lib/clang/23', prefix / 'lib/clang/23',
-                    copy_function=_link_or_copy)
+    for name in ('lib/clang/23', 'include/objc', 'include/objc3c/runtime'):
+        shutil.copytree(stage / name, prefix / name, copy_function=_link_or_copy)
     for name in ('clang.cfg', 'clang++.cfg'):
         source = stage / 'bin' / name
         if source.is_file() and not source.is_symlink():
             _link_or_copy(source, prefix / 'bin' / name)
     receipt = {'schema': SCHEMA, 'source_build_id': source_build_id, 'target': target,
-        'purpose': 'Development-only native C/C++ compiler tools for Swift import',
+        'purpose': 'Development-only compiler and runtime inputs for Swift interop',
         'files': inventory(prefix)}
     receipt['seal_sha256'] = _digest(receipt)
     write_json(prefix / 'objc3-sdk.json', receipt)
@@ -84,7 +91,7 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
 
 def row_manifest(path):
     value = json.loads(path.read_text())
-    if (value.get('schema') != 'objc3c.swift-consumer-rows.v5' or
+    if (value.get('schema') != 'objc3c.swift-consumer-rows.v6' or
             value.get('targets') != [entry[1] for entry in HOSTS.values()] or value.get('module') != 'ForeignAPI' or
             value.get('cxx_module') != 'ForeignCxx' or
             not value.get('rows') or len(value['rows']) != len(REQUIRED_ROWS) or
@@ -109,6 +116,11 @@ def execution_result(text, language='c'):
         value = json.loads(text)
     except ValueError as error:
         raise ValueError('Swift consumer omitted its mixed-language result oracle') from error
+    if language == 'async':
+        if (value != ASYNC_EXPECTED or
+                any(type(value[key]) is not type(expected) for key, expected in ASYNC_EXPECTED.items())):
+            raise ValueError('Swift async completion, checked error, cancellation or actor contract failed')
+        return value
     if not isinstance(value, dict) or any(type(item) is not int for item in value.values()):
         raise ValueError('Swift mixed-language value or opaque lifetime contract failed')
     if language == 'cxx':
@@ -121,6 +133,90 @@ def execution_result(text, language='c'):
     elif value != EXPECTED:
         raise ValueError('Swift mixed-language value or opaque lifetime contract failed')
     return value
+
+
+def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, report):
+    runtime = (sdk / 'lib/libobjc.so').resolve(strict=True)
+    services = sdk / 'lib/libobjc3_runtime_services.a'
+    headers = ('objc3_async_c.h', 'objc3_runtime_services.h')
+    swiftc, frontend = (swift_root / 'usr/bin' / name for name in ('swiftc', 'swift-frontend'))
+    driver = [swiftc, '-swift-version', '6', '-parse-as-library', '-use-ld=lld', '-target', target]
+    module = output / 'async-module'
+    support = module / 'objc3c/runtime'
+    support.mkdir(parents=True)
+    for name in headers:
+        shutil.copyfile(sdk / 'include/objc3c/runtime' / name, support / name)
+    shutil.copyfile(fixture / 'async_api.h', module / 'AsyncAPI.h')
+    module_map = module / 'module.modulemap'
+    module_map.write_text('module ForeignAsync {\n  header "Generated.h"\n  header "AsyncAPI.h"\n  export *\n}\n')
+    source = output / 'AsyncConsumer.swift'
+    shutil.copyfile(fixture / 'async_consumer.swift', source)
+    generated = module / 'Generated.h'
+    report['inputs'][str(services)] = digest(services)
+    for ownership in ('arc', 'mrc'):
+        for native_opt in ('O0', 'O2'):
+            name = f'async-{ownership}-{native_opt}'
+            provider = output / name
+            provider.mkdir()
+            for filename in ('async_provider.m', 'async_api.h'):
+                shutil.copyfile(fixture / filename, provider / filename)
+            obj, header = provider / 'provider.o', provider / 'generated.h'
+            run(name + '-provider', [sdk / 'bin/objc3c', provider / 'async_provider.m', '--objc3',
+                '--emit-object', obj, '--export-c-async', 'swift_bridge_work', '--export-c-async',
+                'swift_bridge_cancelled', '--export-c-async', 'SwiftBridgeCounter::add:', '--emit-c-header',
+                header, '--', '-std=c17', '-' + native_opt, '-fblocks', '-fobjc-runtime=gnustep-2.2',
+                '-fobjc-exceptions', *(['-fobjc-arc', '-fobjc-arc-exceptions'] if ownership == 'arc'
+                                       else ['-fno-objc-arc']),
+                '-I' + str(sdk / 'include')], work=provider)
+            if generated.exists():
+                if generated.read_bytes() != header.read_bytes():
+                    raise ValueError('Swift async C signature changed between native modes')
+            else:
+                shutil.copyfile(header, generated)
+            for filename in ('async_provider.m', 'async_api.h', 'generated.h'):
+                (provider / filename).unlink()
+            for swift_opt in ('Onone', 'O'):
+                case = provider / swift_opt
+                case.mkdir()
+                name_opt = name + '-' + swift_opt
+                depfile, binary = case / 'swift.d', case / 'consumer'
+                run(name_opt + '-typecheck', [frontend, '-typecheck', '-parse-as-library',
+                    '-swift-version', '6', '-module-name', 'AsyncConsumer', '-target', target,
+                    '-resource-dir', swift_root / 'usr/lib/swift', '-I', module,
+                    '-module-cache-path', case / 'fresh-cache', '-emit-dependencies-path', depfile,
+                    source], work=case, foreign=True)
+                imports = import_evidence(depfile, case, generated, module_map)
+                for path in (module / 'AsyncAPI.h', *(support / header for header in headers)):
+                    if imports.get(str(path)) != digest(path):
+                        raise ValueError('Swift async importer omitted a bridge header')
+                run(name_opt + '-link', [*driver, '-' + swift_opt, '-I', module,
+                    '-module-cache-path', case / 'fresh-link-cache', source, obj, services, runtime,
+                    '-Xlinker', '-lstdc++', '-Xlinker', '-rpath', '-Xlinker', runtime.parent,
+                    '-o', binary], work=case, foreign=True)
+                graph = loaded_graph(binary, loader, [], required=(runtime,),
+                    run=lambda suffix, argv: run(name_opt + '-' + suffix, argv, foreign=True))
+                if {path for path in graph['libraries'] if Path(path).is_relative_to(sdk)} != {str(runtime)}:
+                    raise ValueError('Swift async witness loaded unexpected product libraries')
+                result = execution_result(run(name_opt + '-execute', [binary], work=case, foreign=True), 'async')
+                report['async_cases'].append({'name': name_opt, 'ownership': ownership,
+                    'native_optimization': native_opt, 'swift_optimization': swift_opt, 'status': 'PASS',
+                    'header_sha256': digest(generated), 'binary_sha256': digest(binary), 'imports': imports,
+                    'loaded_graph': graph, 'result': result})
+                report['inputs'].update(graph['libraries'])
+                for cache in ('fresh-cache', 'fresh-link-cache'):
+                    shutil.rmtree(case / cache)
+    report['async_interface'] = {'header_sha256': digest(generated), 'runtime': str(runtime),
+        'runtime_sha256': digest(runtime), 'services': str(services),
+        'services_sha256': digest(services), 'provider_source_removed': True}
+    invalid = output / 'AsyncNullActor.swift'
+    invalid.write_text('import ForeignAsync\nfunc rejected() {\n'
+        '    SwiftBridgeCounter_add_async_c(nil, 1, nil) { _, _, _, _ in }\n}\n')
+    cache = output / 'fresh-async-control-cache'
+    run('async-null-actor-control', [swiftc, '-typecheck', '-swift-version', '6', '-target', target,
+        '-I', module, '-module-cache-path', cache, invalid], foreign=True,
+        expected=1, contains=("'nil' is not compatible",))
+    shutil.rmtree(cache)
+    report['controls'].append({'name': 'async-null-actor-handle', 'status': 'PASS'})
 
 
 def qualify(repo, output, *, sdk, swift_root, symbolizer):
@@ -142,8 +238,8 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
         'swift_seal_sha256': digest(swift_root / 'objc3-swift-consumer.json'),
         'swift_archive_sha256': foreign['archive_sha256'], 'rows': rows['rows'],
         'unqualified': rows['unqualified'], 'commands': [], 'cases': [], 'controls': [],
-        'relocation': {}, 'interfaces': {},
-        'boundaries': 'Textual C declarations, opaque C resources and trivial or owning C++ values with nonthrowing calls.',
+        'relocation': {}, 'interfaces': {}, 'async_cases': [],
+        'boundaries': 'Textual C and C++ declarations, opaque C resources, nonthrowing C++ values and generated C task and actor completions.',
         'inputs': {str(path): digest(path) for path in [Path(__file__), *sorted(fixture.iterdir()),
             symbolizer, Path(__file__).with_name('swift_toolchain.py'), Path(__file__).with_name('sdk_example.py')] if path.is_file()}}
     frozen = report['inputs']
@@ -350,7 +446,9 @@ func copyUnique(_ value: borrowing MeterAPI.UniqueReading) { requiresCopy(value)
 
         for language in ('c', 'cxx'):
             qualify_language(language)
-        if len(report['cases']) != 16 or any(digest(Path(path)) != value for path, value in frozen.items()):
+        qualify_async_bridge(output, fixture, sdk, swift_root, rows['target'], loader, run, report)
+        if (len(report['cases']) != 16 or len(report['async_cases']) != len(ASYNC_CASES) or
+                any(digest(Path(path)) != value for path, value in frozen.items())):
             raise ValueError('Swift consumer inputs changed or required calls are incomplete')
         if verify_sdk(sdk)['seal_sha256'] != report['sdk_seal']:
             raise ValueError('native SDK changed during Swift qualification')
@@ -374,7 +472,8 @@ def main():
     for name in ('output', 'sdk', 'swift-root', 'symbolizer'):
         parser.add_argument('--'+name, type=Path, required=True)
     result = qualify(**vars(parser.parse_args()))
-    print(json.dumps({'status': result['status'], 'cases': len(result['cases']), 'controls': len(result['controls'])}))
+    print(json.dumps({'status': result['status'], 'cases': len(result['cases']) + len(result['async_cases']),
+                      'async_cases': len(result['async_cases']), 'controls': len(result['controls'])}))
 
 
 if __name__ == '__main__':

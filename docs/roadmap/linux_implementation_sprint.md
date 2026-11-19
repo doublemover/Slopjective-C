@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.277 / System 2.203 Swift completion bridge](linux_swift_consumer.md)
+exercises native task results, checked errors, cancellation and isolated actors
+through generated C headers and independent Swift continuations.
+
 The [Source 2.276 / System 2.202 group cancellation](linux_checked_await_cancellation.md)
 wakes pending C and C++ group iteration and keeps later results and cleanup
 joins available.

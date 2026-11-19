@@ -173,6 +173,11 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
     shutil.copytree(REPO / 'tests/foreign/swift_consumer', fixture)
     for root in (sdk, swift): root.mkdir()
     (sdk / 'lib').mkdir()
+    (sdk / 'lib/libobjc.so').write_bytes(b'test-only runtime')
+    (sdk / 'lib/libobjc3_runtime_services.a').write_bytes(b'test-only runtime services')
+    (sdk / 'include/objc3c/runtime').mkdir(parents=True)
+    for name in ('objc3_async_c.h', 'objc3_runtime_services.h'):
+        (sdk / 'include/objc3c/runtime' / name).write_text(name)
     (swift / 'objc3-swift-consumer.json').write_text('test-only seal')
     symbolizer = tmp_path / 'llvm-symbolizer';symbolizer.touch()
     calls = []
@@ -187,7 +192,9 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
     monkeypatch.setattr(owner, 'verify_sdk', verify_sdk)
     monkeypatch.setattr(owner, 'verify_swift', verify_swift)
     monkeypatch.setattr(owner, 'require_host', lambda: {'host': 'test-only'})
-    monkeypatch.setattr(owner, 'loaded_graph', lambda *args, **kwargs: {'libraries': {}})
+    monkeypatch.setattr(owner, 'loaded_graph', lambda binary, *args, **kwargs: {
+        'sha256': tools.digest(binary) if binary.is_file() else None,
+        'libraries': {str(path): tools.digest(path) for path in kwargs.get('required', ())}})
     def command(argv, *, cwd, environment, log, timeout):
         argv = list(map(str, argv));name = log.stem
         status, text = 0, ''
@@ -201,6 +208,9 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
             destination.write_bytes(source.read_bytes())
             destination.with_suffix(destination.suffix+'.json').write_text(json.dumps({'module': {
                 'semantic_fingerprint': tools.digest(source)}}))
+        elif '--emit-c-header' in argv:
+            Path(argv[argv.index('--emit-c-header')+1]).write_text('test-only C export')
+            Path(argv[argv.index('--emit-object')+1]).write_bytes(b'test-only native provider')
         elif name.startswith('negative-'):
             status, text = 1, owner.NEGATIVES[name.removeprefix('negative-')][1]
         elif name == 'changed-contract-control': status, text = 1, "cannot find 'projectedValue'"
@@ -209,16 +219,22 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         elif name == 'cxx-move-only-copy-control': status, text = 1, "conform to 'Copyable'"
         elif name == 'missing-provider-control': status, text = 1, 'objc3_swift_value'
         elif name == 'cxx-missing-provider-control': status, text = 1, 'MeterAPI::initialReading()'
+        elif name == 'async-null-actor-control': status, text = 1, "'nil' is not compatible"
         elif '-typecheck' in argv:
             module = Path(argv[argv.index('-I')+1]);depfile = Path(argv[argv.index('-emit-dependencies-path')+1])
             inputs = [module / 'module.modulemap']
-            if mutation != 'dependencies': inputs.append(module / 'API.h')
+            if name.startswith('async-'):
+                inputs.extend(module / header for header in (
+                    'Generated.h', 'AsyncAPI.h', 'objc3c/runtime/objc3_async_c.h',
+                    'objc3c/runtime/objc3_runtime_services.h'))
+            elif mutation != 'dependencies': inputs.append(module / 'API.h')
             depfile.write_text('consumer: '+ ' '.join(str(path).replace(' ', '\\ ') for path in inputs)+'\n')
         elif '-o' in argv: Path(argv[argv.index('-o')+1]).write_bytes(b'test-only object or binary')
         elif name.endswith('-execute'):
             expected = ({**owner.CXX_EXPECTED, 'owner_allocations': 5,
                         'owner_destructions': 5, 'owner_copies': 3, 'unique_moves': 2}
-                        if name.startswith('cxx-') else owner.EXPECTED)
+                        if name.startswith('cxx-') else owner.ASYNC_EXPECTED
+                        if name.startswith('async-') else owner.EXPECTED)
             text = json.dumps({**expected, **({'live': 1} if mutation == 'oracle' else {})})
         log.write_text(text)
         return {'argv': argv, 'exit_code': status, 'timed_out': False, 'log': str(log), 'log_sha256': tools.digest(log)}
@@ -233,7 +249,8 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         assert json.loads((output / 'qualification.json').read_text())['status'] == 'FAIL'
     else:
         report = owner.qualify(repo, output, sdk=sdk, swift_root=swift, symbolizer=symbolizer)
-        assert report['status'] == 'PASS' and len(report['cases']) == 16 and len(report['controls']) == 14
+        assert report['status'] == 'PASS' and len(report['cases']) == 16 and len(report['controls']) == 15
+        assert len(report['async_cases']) == 8
         assert report['relocation'] == {language: {'original_header_hidden': True, 'provider_source_hidden': True,
                                                   'replayed_header_unchanged': True}
                                        for language in ('c', 'cxx')}
@@ -243,10 +260,10 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         destination = native_root / 'swift-consumer/consumer'
         destination.parent.mkdir(parents=True)
         shutil.move(output, destination)
-        assert len(suite_results(native_root, 'swift-consumer')) == 16
-        for key in ('cases', 'controls', 'rows', 'relocation', 'interfaces'):
+        assert len(suite_results(native_root, 'swift-consumer')) == 24
+        for key in ('cases', 'controls', 'rows', 'relocation', 'interfaces', 'async_cases', 'async_interface'):
             broken = copy.deepcopy(report)
-            if key in ('relocation', 'interfaces'): broken[key] = {}
+            if key in ('relocation', 'interfaces', 'async_interface'): broken[key] = {}
             else: broken[key].pop()
             (destination / 'qualification.json').write_text(json.dumps(broken))
             with pytest.raises(ValueError, match='incomplete'):
@@ -257,6 +274,12 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         (destination / 'qualification.json').write_text(json.dumps(broken))
         with pytest.raises(ValueError, match='different emitted interface'):
             suite_results(native_root, 'swift-consumer')
+        for field in ('checked_error', 'cancellation'):
+            broken = copy.deepcopy(report)
+            broken['async_cases'][0]['result'][field] = 1
+            (destination / 'qualification.json').write_text(json.dumps(broken))
+            with pytest.raises(ValueError, match='Swift async completion'):
+                suite_results(native_root, 'swift-consumer')
 
 
 @pytest.mark.parametrize('path', ['native/objc3c/src/clang_foundation/interface_emitter.cpp',
@@ -271,8 +294,18 @@ def test_foreign_contract_changes_require_the_existing_native_ci_consumer(path):
     assert 'swift-consumer' not in {suite['id'] for suite in select(['stdlib/ObjC3Map.h'], **revision)['suites']}
 
 
-def test_development_pilot_prefix_seals_only_current_native_tools_without_an_archive(tmp_path):
-    stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
+@pytest.fixture
+def swift_native_stage(tmp_path):
+    stage = tmp_path / 'stage'
+    for relative in ('lib/libobjc.so.4.6', 'lib/libobjc3_runtime_services.a', 'include/objc/runtime.h',
+                     'include/objc3c/runtime/objc3_async_c.h'):
+        path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
+    (stage / 'lib/libobjc.so').symlink_to('libobjc.so.4.6')
+    return stage
+
+
+def test_development_pilot_prefix_seals_current_native_tools_and_runtime(tmp_path, swift_native_stage):
+    stage, prefix = swift_native_stage, tmp_path / 'prefix'
     for relative in ('bin/clang', 'bin/objc3c', 'lib/libLLVM.so.23.1', 'lib/libclang-cpp.so.23.1',
                      'lib/clang/23/include/stddef.h', 'lib/clang/23/lib/linux/libclang_rt.builtins.a',
                      'bin/clang.cfg', 'bin/clang++.cfg'):
@@ -283,14 +316,16 @@ def test_development_pilot_prefix_seals_only_current_native_tools_without_an_arc
     assert (prefix / 'bin/clang').stat().st_ino == (stage / 'bin/clang').stat().st_ino
     assert (prefix / 'lib/libLLVM.so').resolve() == prefix / 'lib/libLLVM.so.23.1'
     assert (prefix / 'lib/libclang-cpp.so').resolve() == prefix / 'lib/libclang-cpp.so.23.1'
+    assert (prefix / 'lib/libobjc.so').resolve() == prefix / 'lib/libobjc.so.4.6'
+    assert (prefix / 'include/objc3c/runtime/objc3_async_c.h').is_file()
     assert (prefix / 'lib/clang/23/lib/linux/libclang_rt.builtins.a').is_file()
     assert (prefix / 'bin/clang.cfg').read_text() == (stage / 'bin/clang.cfg').read_text()
     with pytest.raises(ValueError, match='fresh independent'):
         owner.prepare_compiler_prefix(stage, prefix, source_build_id='current-build', target='target')
 
 
-def test_development_pilot_prefix_accepts_a_static_compiler_stage(tmp_path):
-    stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
+def test_development_pilot_prefix_accepts_a_static_compiler_stage(tmp_path, swift_native_stage):
+    stage, prefix = swift_native_stage, tmp_path / 'prefix'
     for relative in ('bin/clang', 'bin/objc3c', 'lib/clang/23/include/stddef.h'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
     value = owner.prepare_compiler_prefix(stage, prefix, source_build_id='static-build',
@@ -300,8 +335,8 @@ def test_development_pilot_prefix_accepts_a_static_compiler_stage(tmp_path):
     assert not (prefix / 'lib/libclang-cpp.so').exists()
 
 
-def test_development_pilot_prefix_copies_across_filesystems(tmp_path, monkeypatch):
-    stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
+def test_development_pilot_prefix_copies_across_filesystems(tmp_path, monkeypatch, swift_native_stage):
+    stage, prefix = swift_native_stage, tmp_path / 'prefix'
     for relative in ('bin/clang', 'bin/objc3c', 'bin/clang.cfg',
                      'lib/clang/23/include/stddef.h', 'lib/clang/23/lib/linux/runtime.a'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)

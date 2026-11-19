@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.swift-consumer-rows.v5",
+  "schema": "objc3c.swift-consumer-rows.v6",
   "module": "ForeignAPI",
   "cxx_module": "ForeignCxx",
   "rows": [
@@ -42,6 +42,21 @@
       "id": "cxx-move-only-value",
       "declaration": "MeterAPI::adjustedUniqueReading",
       "required": true
+    },
+    {
+      "id": "async-c-continuation",
+      "declaration": "swift_bridge_work_async_c",
+      "required": true
+    },
+    {
+      "id": "async-c-cancellation",
+      "declaration": "swift_bridge_cancelled_async_c",
+      "required": true
+    },
+    {
+      "id": "c-actor-continuation",
+      "declaration": "SwiftBridgeCounter_add_async_c",
+      "required": true
     }
   ],
   "unqualified": [
@@ -51,9 +66,9 @@
       "reason": "No Linux Swift/GNUstep Objective-C object ABI contract is provided."
     },
     {
-      "id": "foreign-async-actors",
+      "id": "direct-swift-async-actors",
       "status": "metadata-preserved",
-      "reason": "No Swift completion, error or actor execution mapping is admitted."
+      "reason": "Native actors and checked errors cross the generated C continuation bridge. Direct Swift importer synthesis and Swift cancellation of native tasks remain open."
     },
     {
       "id": "product-pch-import",

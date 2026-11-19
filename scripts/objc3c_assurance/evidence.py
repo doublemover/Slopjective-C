@@ -197,7 +197,8 @@ def suite_results(root: Path, name: str) -> list[dict]:
             raise ValueError('upstream test tool inventory is incomplete')
         return lit(directory / 'lit.json')
     if name == 'swift-consumer':
-        from scripts.objc3c_toolchain.swift_consumer import QUALIFICATION_SCHEMA, REQUIRED_ROWS, execution_result
+        from scripts.objc3c_toolchain.swift_consumer import (
+            ASYNC_CASES, QUALIFICATION_SCHEMA, REQUIRED_ROWS, execution_result)
         result = read('consumer/qualification.json')
         cases, controls, rows = (result.get(key, []) for key in ('cases', 'controls', 'rows'))
         expected = {(language, transport, native, swift) for language in ('c', 'cxx')
@@ -207,7 +208,7 @@ def suite_results(root: Path, name: str) -> list[dict]:
             'public-name-identity-and-consumer', 'missing-provider-symbol',
             'cxx-original-header-independent-import', 'cxx-unmodified-emitted-header-import',
             'cxx-field-type-identity-and-consumer', 'cxx-destructor-identity-and-consumer',
-            'cxx-move-only-copy-rejected', 'cxx-missing-provider-symbol'}
+            'cxx-move-only-copy-rejected', 'cxx-missing-provider-symbol', 'async-null-actor-handle'}
         relocation = {'original_header_hidden': True, 'provider_source_hidden': True, 'replayed_header_unchanged': True}
         interfaces = result.get('interfaces', {})
         if (result.get('schema') != QUALIFICATION_SCHEMA or
@@ -228,7 +229,39 @@ def suite_results(root: Path, name: str) -> list[dict]:
             if row['transport'] == 'emitted' and row['header_sha256'] != interfaces[row['language']]['header_sha256']:
                 raise ValueError('independent Swift execution imported a different emitted interface')
             execution_result(json.dumps(row.get('result')), row['language'])
-        return cases
+        async_cases, interface = result.get('async_cases', []), result.get('async_interface', {})
+        if (len(async_cases) != len(ASYNC_CASES) or
+                {(row.get('ownership'), row.get('native_optimization'), row.get('swift_optimization'))
+                 for row in async_cases if row.get('status') == 'PASS'} != ASYNC_CASES or
+                interface.get('provider_source_removed') is not True):
+            raise ValueError('independent Swift async execution inventory is incomplete')
+        digests = result.get('artifacts', {})
+        inputs = result.get('inputs', {})
+        if (not interface.get('runtime') or not interface.get('services') or
+                interface.get('runtime_sha256') != inputs.get(interface['runtime']) or
+                interface.get('services_sha256') != inputs.get(interface['services']) or
+                not interface.get('header_sha256') or
+                interface['header_sha256'] != digests.get('async-module/Generated.h') or
+                not re.fullmatch('[0-9a-f]{64}', interface.get('services_sha256', ''))):
+            raise ValueError('independent Swift async interface and runtime inventory is incomplete')
+        for row in async_cases:
+            provider = f"async-{row['ownership']}-{row['native_optimization']}"
+            binary = f"{provider}/{row['swift_optimization']}/consumer"
+            graph = row.get('loaded_graph', {})
+            libraries = graph.get('libraries', {})
+            imports = {Path(path).name: digest for path, digest in row.get('imports', {}).items()}
+            if (row.get('name') != provider + '-' + row['swift_optimization'] or
+                    row.get('header_sha256') != interface['header_sha256'] or
+                    not row.get('binary_sha256') or row['binary_sha256'] != digests.get(binary) or
+                    graph.get('sha256') != row['binary_sha256'] or
+                    libraries.get(interface['runtime']) != interface['runtime_sha256'] or
+                    any(imports.get(Path(path).name) != digests.get(path) or not digests.get(path)
+                        for path in ('async-module/Generated.h', 'async-module/AsyncAPI.h',
+                                     'async-module/module.modulemap', 'async-module/objc3c/runtime/objc3_async_c.h',
+                                     'async-module/objc3c/runtime/objc3_runtime_services.h'))):
+                raise ValueError('independent Swift async execution changed its interface or runtime')
+            execution_result(json.dumps(row.get('result')), 'async')
+        return cases + async_cases
     if name == 'semantic-workloads':
         from scripts.objc3c_toolchain.semantic_benchmarks import semantic_result, summarize, workload_inventory, workload_names
         from scripts.objc3c_toolchain.semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION,

@@ -44,25 +44,37 @@ expression and a C++ by-value call. It moves without a second allocation and
 destroys the original allocation once. The Swift driver uses its bundle's
 signed `clang++` link.
 
-Fourteen controls cover independent original import, unmodified emitted import,
+Fourteen C and C++ controls cover independent original import, unmodified emitted import,
 old spelling, wrong type, nullability, availability, changed public Swift name
 and native fingerprint, a changed C++ field type, a deleted owning destructor,
 and missing provider symbols. The deleted destructor changes native interface
 identity and the independent importer drops the unusable owning value. A
 Swift `Copyable` generic constraint rejects the imported move-only value.
-Reports retain compiler versions, targets, resources, loader graphs, input and artifact hashes, commands,
-environments, diagnostics and exact results. Native and Swift installations and
-loaded dependencies are verified again before promotion.
+Source 2.277 / System 2.203 adds eight Swift executions of generated C task and
+actor completions. The native providers use ARC or MRC and O0 or O2. Swift uses
+Onone or O, imports one byte-identical generated header after provider source
+removal, and verifies the loaded GNUstep runtime by its installed file hash.
+
+The Swift consumer uses a checked continuation with the caller's existing actor
+isolation. Native success returns a scalar. A typed Objective-C error is
+translated to a Swift error while its original object is live in the callback.
+The native cancellation object maps to Swift `CancellationError`. Opaque actor
+receivers dispatch through the native actor executor and keep independent state.
+An additional type-checking control rejects a null receiver.
+
+Reports retain compiler versions, targets, resources, loader graphs, input and
+artifact hashes, commands, environments, diagnostics and exact results. The
+gate rechecks native and Swift installations and the loaded dependencies.
 
 The existing Linux native assurance workflow selects this gate for foreign
 emitter/module identity, foundation, Swift toolchain/fixture and runner changes,
 unknown comparisons, and its complete periodic/release selection. The terminal
-gate independently requires 16 executions, 14 controls, eight admitted
-rows, relocation facts and execution oracles. It prepares a sealed development
-tool prefix from current native build products; it builds no SDK archive and
-adds no schedule. Ordinary unrelated stdlib edits do not select Swift.
+gate independently requires 24 executions, 15 controls, eleven admitted
+rows, relocation facts and execution oracles. It seals the compiler and runtime
+inputs from current native build products for the existing qualification job.
+Ordinary unrelated stdlib edits do not select Swift.
 
-The expanded matrix passed all 16 executions and 14 controls on Debian 13 x86-64
+The expanded matrix passed all 24 executions and 15 controls on Debian 13 x86-64
 with the LLVM 23.1.5 development SDK. The AArch64 archive has a separately
 verified publisher inventory and its native execution remains in hosted
 qualification. Selected Swift files occupy about 1 GiB. The installer discards
@@ -74,6 +86,6 @@ upgrades; do not expand its row inventory without an independent positive and
 appropriate negative/execution controls.
 
 The admitted declarations are recorded in `tests/foreign/swift_consumer/rows.json`.
-GNUstep Objective-C object import, Swift async/actor/error bridging, arbitrary
-foreign attributes, throwing C++ value contracts, and product
-serialized AST interchange remain open.
+Direct GNUstep Objective-C object import, Swift importer synthesis of async and
+actor methods, Swift-to-native task cancellation, arbitrary foreign attributes,
+throwing C++ value contracts and serialized AST interchange remain open.

@@ -285,7 +285,7 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
                                     target=report['product']['host_environment']['target_triple'])
             result = qualify(repo, directory / 'consumer', sdk=prefix, swift_root=root,
                              symbolizer=bootstrap / 'bin/llvm-symbolizer')
-            return result['cases']
+            return result['cases'] + result['async_cases']
         if name == 'semantic-workloads':
             from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix, measure
             from scripts.objc3c_toolchain.semantic_import_benchmarks import measure as measure_imports
