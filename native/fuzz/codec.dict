@@ -83,8 +83,8 @@
 "objc3.actor-receiver-bindings.v1"
 ";actor-receiver-bindings:v1;"
 
-"objc3.native-function-policies.v1"
-";native-function-policies:v1;"
+"objc3.native-function-policies.v2"
+";native-function-policies:v2;"
 "objc3.native-function-effects.v1"
 ";native-function-effects:v1;"
 "objc3.native-lifetime-annotations.v1"

@@ -52,6 +52,42 @@ template<class T> struct Promise {
 };
 template<class T> using Handle=std::coroutine_handle<Promise<T>>;
 struct Bridge {Handle<int> handle;};
+struct [[clang::coro_return_type, clang::coro_lifetimebound,
+          clang::coro_await_elidable, clang::coro_only_destroy_when_complete]] PolicyTask {
+  struct promise_type;
+  using PolicyHandle = std::coroutine_handle<promise_type>;
+  PolicyHandle handle;
+  explicit PolicyTask(PolicyHandle handle) : handle(handle) {}
+  PolicyTask(PolicyTask &&other) noexcept : handle(other.handle) { other.handle = nullptr; }
+  PolicyTask(const PolicyTask &) = delete;
+  ~PolicyTask() { if (handle) handle.destroy(); }
+  struct promise_type {
+    int value = 0;
+    [[clang::coro_wrapper]] PolicyTask get_return_object() {
+      return PolicyTask(PolicyHandle::from_promise(*this));
+    }
+    std::suspend_never initial_suspend() const noexcept { return {}; }
+    std::suspend_always final_suspend() const noexcept { return {}; }
+    void return_value(int result) noexcept { value = result; }
+    void unhandled_exception() noexcept { __builtin_trap(); }
+  };
+  int get() const noexcept { return handle.promise().value; }
+  bool await_ready() const noexcept { return true; }
+  void await_suspend(std::coroutine_handle<>) const noexcept {}
+  int await_resume() const noexcept { return get(); }
+};
+inline PolicyTask policy_value(int value) { co_return value; }
+inline PolicyTask policy_borrow(const int &value) { co_return value; }
+[[clang::coro_wrapper, clang::coro_disable_lifetimebound]]
+inline PolicyTask policy_copy(const int &value) { return policy_value(value); }
+[[clang::coro_wrapper]]
+inline PolicyTask policy_forward([[clang::coro_await_elidable_argument]] PolicyTask task) {
+  return static_cast<PolicyTask &&>(task);
+}
+inline PolicyTask policy_pipeline(int value) {
+  int result = co_await policy_forward(policy_value(value));
+  co_return result + 2;
+}
 inline std::coroutine_handle<> erase(Handle<int> handle){return handle;}
 inline std::noop_coroutine_handle noop(){return std::noop_coroutine();}
 Task<int> provider_task(int value);

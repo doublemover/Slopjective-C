@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.286 / System 2.212 coroutine policies](linux_native_function_policies.md)
+bind coroutine return, lifetime, frame elision and completion-only destruction
+annotations. C++20 and C++23 clients import and execute the annotated pipeline
+after provider removal.
+
 The [Source 2.285 / System 2.211 task dependency change](linux_checked_await_cancellation.md)
 retires interrupted direct awaits. Task services pass at O0 and O2 under
 ASan/UBSan and TSan with a matching instrumented GNUstep runtime.

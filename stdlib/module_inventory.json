@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 285,
+        "minor": 286,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Source-free C++ coroutine return, wrapper, lifetime, frame elision and destruction policies are bound to native declarations and parameters. C++20/23 clients preserve dangling-reference diagnostics and execute annotated coroutines at O0/O2. Matching SDK acceptance pending",
         "Interrupted task-to-task awaits unlink promptly while dependencies remain parked. Native task services verify cancellation, external completion, last-handle release and pending or completed dependency delivery at O0/O2 under ASan/UBSan and TSan. Matching SDK acceptance pending",
         "Cancelled, externally completed and abandoned ordinary group join and iteration waiters unlink promptly. Six native controls keep the member parked while verifying registration retirement, then consume its result and join the group. Matching SDK acceptance pending",
         "Generated checked and async C entries preserve caller-owned references when native parameters consume objects or Blocks, including consumed actor receivers. Native C17/C23/C++20/C++23 ARC/MRC clients check exact success, typed failure, pre-entry cancellation and destruction. Matching SDK acceptance pending",
@@ -433,12 +434,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 211,
+        "minor": 212,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Source-free C++ coroutine policies bind declaration and parameter markers through native-function policies v2, with exact source replay and changed-fingerprint controls. Matching SDK acceptance pending",
         "Task-to-task completion registrations preserve callback order and unlink during cancellation or terminalization. The same runtime fork verifies task services at O0/O2 under ASan/UBSan and TSan. Matching SDK acceptance pending",
         "Cancelled, externally completed and abandoned ordinary group join and iteration waiters unlink promptly. The terminal runtime schedule gate checks the exact sanitizer, optimization and fixture matrix. Matching SDK acceptance pending",
         "Generated checked and async C entries preserve caller-owned references when native parameters consume objects or Blocks, including consumed actor receivers. Native C17/C23/C++20/C++23 ARC/MRC clients check exact success, typed failure, pre-entry cancellation and destruction. Matching SDK acceptance pending",

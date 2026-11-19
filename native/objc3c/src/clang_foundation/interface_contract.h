@@ -226,9 +226,9 @@ inline bool IsNativeExternalBindingOwner(const InterfaceDeclarationIdentity &d) 
 inline std::string NativeExternalBindingIdentity(const std::string &symbol) {
   return std::string(kNativeExternalBindingMarker)+std::to_string(symbol.size())+":"+symbol+";";
 }
-inline constexpr const char *kNativeFunctionPolicySemantic = "objc3.native-function-policies.v1";
+inline constexpr const char *kNativeFunctionPolicySemantic = "objc3.native-function-policies.v2";
 inline bool HasNativeFunctionPolicyIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";native-function-policies:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";native-function-policies:v2;") != std::string::npos;
 }
 inline bool IsNativeFunctionPolicyOwner(const InterfaceDeclarationIdentity &d) {
   return d.kind=="Function" || d.kind=="FunctionTemplate" || d.kind=="Field" || IsCxxMemberDeclarationKind(d.kind) ||

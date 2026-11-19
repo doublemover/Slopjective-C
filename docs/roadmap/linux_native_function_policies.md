@@ -53,3 +53,17 @@ This source span does not promote an SDK or claim every native/vendor contract
 or full language/profile conformance. A matching current-source SDK/ABI 24
 campaign remains necessary; SDK 2.62 / ABI 21 remains accepted until its
 replacement passes the complete release gates.
+
+Source 2.286 / System 2.212 extends the required
+`objc3.native-function-policies.v2` contract to native C++ coroutine policies.
+Canonical declarations retain coroutine return and wrapper markers, inferred
+lifetime bounds and per-callable overrides, allocation elision on return types
+and parameters, and the declaration that destruction occurs after completion.
+The compiler binds these markers to their declaration or parameter. Removing
+the elision marker from a parameter changes the semantic fingerprint.
+
+Source-free C++20 and C++23 consumers preserve the dangling-reference diagnostic
+and the explicit override on a wrapper that copies its input before returning.
+Linked clients execute the published coroutine pipeline at O0 and O2 after
+provider removal. The fixture runs each task to its final suspension before
+destroying it. Matching native SDK acceptance remains pending.

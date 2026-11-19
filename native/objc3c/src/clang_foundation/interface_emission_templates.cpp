@@ -95,7 +95,10 @@ bool IsPublishedNativeFunctionPolicy(const clang::Attr *attribute) {
       clang::EnforceTCBAttr,clang::EnforceTCBLeafAttr,
       clang::NoSplitStackAttr,clang::SpeculativeLoadHardeningAttr,
       clang::NoSpeculativeLoadHardeningAttr,clang::PatchableFunctionEntryAttr,
-      clang::ZeroCallUsedRegsAttr>(attribute);
+      clang::ZeroCallUsedRegsAttr,clang::CoroReturnTypeAttr,clang::CoroWrapperAttr,
+      clang::CoroLifetimeBoundAttr,clang::CoroDisableLifetimeBoundAttr,
+      clang::CoroAwaitElidableAttr,clang::CoroAwaitElidableArgumentAttr,
+      clang::CoroOnlyDestroyWhenCompleteAttr>(attribute);
 }
 
 bool IsPublishedNativeObjectPolicy(const clang::Attr *attribute) {

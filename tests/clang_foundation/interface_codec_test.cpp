@@ -159,7 +159,7 @@ int main() {
       {";native-control-flow-contracts:v1;",kNativeControlFlowSemantic},
       {";c-overloadable-functions:v1;",kCOverloadableSemantic},
       {";actor-receiver-bindings:v1;",kActorReceiverBindingSemantic},
-      {";native-function-policies:v1;",kNativeFunctionPolicySemantic},
+      {";native-function-policies:v2;",kNativeFunctionPolicySemantic},
       {";native-function-effects:v1;",kNativeFunctionEffectSemantic},
       {";native-lifetime-annotations:v1;",kNativeLifetimeAnnotationSemantic},
       {";native-object-expressions:v2;",kNativeObjectExpressionSemantic},
@@ -210,14 +210,14 @@ int main() {
   // Function policy markers remain scoped when a legitimate owner coexists.
   {
     auto valid=*decoded;valid.declarations.front().kind="Function";
-    valid.declarations.front().canonical_type_identity+=";native-function-policies:v1;";
+    valid.declarations.front().canonical_type_identity+=";native-function-policies:v2;";
     valid.required_semantics.push_back(kNativeFunctionPolicySemantic);
     std::vector<llvm::StringRef> reader(std::begin(supported),std::end(supported));reader.push_back(kNativeFunctionPolicySemantic);
     assert(EncodeSemanticInterfaceSidecar(valid,reader));
     for(const char *kind:{"Namespace","Typedef","Enum","EnumConstant","ObjCProperty","ObjCIvar"}) {
       auto invalid=valid;auto owner=original.declarations.front();
       owner.stable_id="c:@bad-policy-owner";owner.qualified_name=owner.export_root="A::bad_policy_owner";owner.kind=kind;
-      owner.canonical_type_identity+=";native-function-policies:v1;";
+      owner.canonical_type_identity+=";native-function-policies:v2;";
       invalid.declarations.push_back(owner);assert(Fails(EncodeSemanticInterfaceSidecar(invalid,reader)));
     }
   }

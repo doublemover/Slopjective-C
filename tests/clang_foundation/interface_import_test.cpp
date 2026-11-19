@@ -720,9 +720,11 @@ void TestStandardCoroutineTypesAndTraitsImports() {
           "auto generic=NativeStandardCoroutines::generic(40L);auto partial=NativeStandardCoroutines::external_generic(40);"
           "auto full=NativeStandardCoroutines::external_full(40L);auto no_op=NativeStandardCoroutines::noop();"
           "auto other=OtherStandardCoroutines::external_generic(40);"
-          "return task.run()+int(generic.run())+partial.run()+int(full.run())+int(no_op.done())+other.run();}");
+          "auto copied=NativeStandardCoroutines::policy_copy(40);"
+          "auto annotated=NativeStandardCoroutines::policy_pipeline(copied.get());"
+          "return task.run()+int(generic.run())+partial.run()+int(full.run())+int(no_op.done())+other.run()+annotated.get();}");
       consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
-      consumer.arguments={standard};consumer.emit_semantic_interface=false;
+      consumer.arguments={standard,"-Werror=dangling"};consumer.emit_semantic_interface=false;
       consumer.source_directed_imports=directed;
       if(directed) {
         InterfaceModuleRequest locked;locked.canonical_name="test.standard_coroutines";
@@ -736,6 +738,13 @@ void TestStandardCoroutineTypesAndTraitsImports() {
       if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
       for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
       assert(result.success);
+      consumer.source_text = *consumer.source_text +
+          "\nvoid wrong(){auto borrowed=NativeStandardCoroutines::policy_borrow(42);(void)borrowed;}";
+      auto rejected = Compile(consumer);
+      assert(!rejected.success);
+      assert(std::any_of(rejected.diagnostics.begin(), rejected.diagnostics.end(), [](const auto &diagnostic) {
+        return diagnostic.message.find("will be destroyed at the end of the full-expression") != std::string::npos;
+      }));
     }
     auto only=provider;only.module_name="test.standard_types_only";
     only.interface_output_path=(root/"test.standard_types_only.objc3i").string();

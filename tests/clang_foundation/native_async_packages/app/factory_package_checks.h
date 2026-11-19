@@ -117,6 +117,8 @@ int factory_package_checks() {
       Standard::Worker worker{40};auto member=worker.run(2);if(member.run()!=42)return 186;
       auto factory=Standard::closure(40);auto closure=factory(2);if(closure.run()!=42)return 187;
       auto throwing=Standard::throwing();throwing.run();if(throwing.error()!=73)return 188;
+      auto copied=Standard::policy_copy(40);
+      auto annotated=Standard::policy_pipeline(copied.get());if(annotated.get()!=42)return 188;
       auto no_op=Standard::noop();if(!no_op || no_op.done())return 189;no_op.resume();no_op.destroy();
       {auto cancelled=Standard::external(40);if(!cancelled.resume() || Standard::Counts::values!=1)return 190;}
       if(Standard::Counts::values)return 191;

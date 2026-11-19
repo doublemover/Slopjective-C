@@ -5111,13 +5111,17 @@ void TestStandardCoroutineTypesAndTraits() {
       if (text.find("#include <coroutine>")!=std::string::npos)
         assert(names.declarations && names.non_identifiers);
       assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.standard_coroutines","test",{}));
-      return EmitSemanticInterface(ast->getASTContext(),"fixture.standard_coroutines","test",{},{},{},{"NativeStandardCoroutines"});
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.standard_coroutines","test",{},{},{},{"NativeStandardCoroutines"},{},&ast->getPreprocessor());
     };
     auto first=emit(source);
     for(const auto &d:first.diagnostics)std::fprintf(stderr,"STD %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
     assert(first.success);
     assert(first.source_bytes.find("#include <coroutine>")!=std::string::npos);
     assert(first.source_bytes.find("coroutine_traits<")!=std::string::npos);
+    for (const char *policy : {"coro_return_type", "coro_wrapper", "coro_lifetimebound",
+                              "coro_disable_lifetimebound", "coro_await_elidable",
+                              "coro_await_elidable_argument", "coro_only_destroy_when_complete"})
+      assert(first.source_bytes.find(policy) != std::string::npos);
     auto replay=emit(first.source_bytes);
     for(const auto &d:replay.diagnostics)std::fprintf(stderr,"STD REPLAY %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
     assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
@@ -5129,6 +5133,14 @@ void TestStandardCoroutineTypesAndTraits() {
     for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
     auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
     assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),HasCxxStandardCoroutineIdentity));
+    assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),HasNativeFunctionPolicyIdentity));
+    auto changed_policy = source;
+    const std::string elide_argument = "[[clang::coro_await_elidable_argument]] ";
+    const auto policy_site = changed_policy.find(elide_argument);
+    assert(policy_site != std::string::npos);
+    changed_policy.erase(policy_site, elide_argument.size());
+    auto altered_policy = emit(changed_policy);
+    assert(altered_policy.success && altered_policy.identity.semantic_fingerprint != first.identity.semantic_fingerprint);
     assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),[](const auto &d){return d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;")!=std::string::npos;})==2);
     auto missing=*decoded;std::erase(missing.required_semantics,kCxxStandardCoroutineSemantic);
     auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());

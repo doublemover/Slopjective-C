@@ -3478,7 +3478,7 @@ bool ReadInterfaceDeclarationIdentity(
   if(HasDeclarationNativeObjectExpressions(representative))
     identity.canonical_type_identity+=";native-object-expressions:v2;";
   if (HasDeclarationNativeFunctionPolicy(representative))
-    identity.canonical_type_identity+=";native-function-policies:v1;";
+    identity.canonical_type_identity+=";native-function-policies:v2;";
   if (HasDeclarationNativeEmissionPolicy(representative))
     identity.canonical_type_identity+=";native-emission-policies:v3;";
   if (NativeCPUVariant(representative))
