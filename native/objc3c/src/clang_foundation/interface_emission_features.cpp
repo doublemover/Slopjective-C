@@ -1451,7 +1451,12 @@ const clang::VarDecl *InlineClosureObjectOrigin(const clang::TagDecl *tag) {
       const auto *candidate=llvm::dyn_cast<clang::VarDecl>(next);
       if(candidate && candidate->getType()->getAsCXXRecordDecl() &&
           candidate->getType()->getAsCXXRecordDecl()->getCanonicalDecl()==record->getCanonicalDecl() &&
-          candidate->isInline() && candidate->isConstexpr()) {object=candidate;break;}
+          candidate->isInline() && candidate->getType().isConstQualified() &&
+          !candidate->getType().isVolatileQualified() &&
+          (candidate->isConstexpr() || candidate->hasConstantInitialization())) {
+        object = candidate;
+        break;
+      }
     }
   }
   if(!object || !(object=object->getDefinition()) || !object->isInline() ||

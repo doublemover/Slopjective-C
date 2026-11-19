@@ -19,13 +19,20 @@ independently of private instantiations. Public signatures bind the owning
 object. A selected specialization binds its template arguments and callable
 type, and dependency analysis checks its instantiated body for private lookup
 targets. Consumers can instantiate the published pattern with their own types.
-The `objc3.cxx-inline-closure-objects.v5` reader contract requires the updated
-identity. Production sidecar checks reject missing capabilities and forged owners.
+The updated identity binds the public pattern and its owning declaration.
 
 The C++20 and C++23 native consumers instantiate namespace and static member
 closure objects after provider removal. Private specializations leave published
 bytes and fingerprints identical. A selected argument-dependent call to a
 private helper is rejected during publication.
+
+Source 2.282 / System 2.208 also admits `inline const` anonymous records with
+constant initialization, including explicit `constinit`. Admission requires
+nonvolatile storage and the same immutable, trivially copyable subobjects.
+The canonical declaration retains native `constinit` and the exact unnamed
+record owner across aliases and references. C++20 and C++23 source-free clients
+link and read both forms. The `objc3.cxx-inline-closure-objects.v6` reader
+requires the updated semantic identity and owner.
 
 Admission bounds record ancestry to 32 contexts, owner discovery to 32 following
 declarations, and immutable subobject inspection to 1,024 steps / 32 levels.

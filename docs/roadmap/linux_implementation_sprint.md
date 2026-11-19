@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.282 / System 2.208 constant inline objects](linux_native_inline_anonymous_objects.md)
+preserve anonymous record identity and constant initialization through
+source-free `inline const` and `constinit` declarations.
+
 The [Source 2.281 / System 2.207 generic closure publication](linux_native_inline_anonymous_objects.md)
 gives source-free clients the public pattern with stable native identity across
 private provider instantiations. Selected calls still validate their dependencies.
