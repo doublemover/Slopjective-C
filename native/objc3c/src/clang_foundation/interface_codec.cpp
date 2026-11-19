@@ -711,7 +711,7 @@ llvm::Error ValidateForEncoding(
   const bool inline_closures=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxInlineClosureObjectIdentity);
   const bool closure_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxInlineClosureObjectSemantic)!=sidecar.required_semantics.end();
   const bool closure_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
-      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-inline-closure-objects:v4;")==std::string::npos;});
+      [](const auto &d){return d.kind!="Namespace" || d.canonical_type_identity.find(";cxx-inline-closure-objects:v5;")==std::string::npos;});
   if(inline_closures!=closure_capability || !closure_owners)
     return Invalid("C++ inline closure object identity and required capability must agree");
   const bool base_adjustment=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxBaseAdjustmentIdentity);

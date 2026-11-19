@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.281 / System 2.207 generic closure publication](linux_native_inline_anonymous_objects.md)
+gives source-free clients the public pattern with stable native identity across
+private provider instantiations. Selected calls still validate their dependencies.
+
 The [Source 2.280 / System 2.206 cancellable C async export](linux_async_c_completion_exports.md)
 returns a retained task handle from a companion entry. Independent Swift
 clients verify cancellation before and after handle installation.

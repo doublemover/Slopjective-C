@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 280,
+        "minor": 281,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Public generic inline closure patterns keep stable source-free identity across unselected private instantiations. Selected calls retain exact template arguments and dependency checks. C++20 and C++23 native consumers instantiate namespace and static member objects after provider removal. Matching SDK acceptance pending",
         "Generated C completion companions return independent retained task handles. C clients cancel and release them while completion remains active. Swift task cancellation reaches the native task before or after the Swift handler receives its handle across eight native x86-64 configurations. Native AArch64 and matching archive acceptance pending",
         "Source-free Objective-C generic signatures bind parameter positions in properties, methods and specialized superclasses before canonical type erasure, while accepting parameter renames. Eager and source-directed C17/C23/C++20/C++23 checks verify substitution and stale lock rejection. Matching SDK acceptance pending",
         "Reserved property behavior block syntax has a dedicated v1 parser error and notes the supported objc_property_behavior attribute. Ordinary behavior identifiers remain usable. Matching SDK acceptance pending",
@@ -428,12 +429,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 206,
+        "minor": 207,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Public generic inline closure patterns keep stable source-free identity across unselected private instantiations. Selected calls retain exact template arguments and dependency checks. C++20 and C++23 native consumers instantiate namespace and static member objects after provider removal. Matching SDK acceptance pending",
         "Generated C completion companions return independent retained task handles. C clients cancel and release them while completion remains active. Swift task cancellation reaches the native task before or after the Swift handler receives its handle across eight native x86-64 configurations. Native AArch64 and matching archive acceptance pending",
         "Source-free Objective-C generic signatures bind parameter positions in properties, methods and specialized superclasses before canonical type erasure, while accepting parameter renames. Eager and source-directed C17/C23/C++20/C++23 checks verify substitution and stale lock rejection. Matching SDK acceptance pending",
         "Reserved property behavior block syntax has a dedicated v1 parser error and notes the supported objc_property_behavior attribute. Ordinary behavior identifiers remain usable. Matching SDK acceptance pending",

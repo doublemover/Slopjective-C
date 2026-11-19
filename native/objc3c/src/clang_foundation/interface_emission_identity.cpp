@@ -580,8 +580,15 @@ bool GenericLambdaBodies(const clang::LambdaExpr *expression,
   if (!expression->isGenericLambda()) return true;
   const auto *pattern=expression->getCallOperator()->getDescribedFunctionTemplate();
   if (!pattern) return false;
+  const bool published_object = InlineClosureObjectOrigin(expression->getLambdaClass()) != nullptr;
   std::map<std::string,const clang::FunctionDecl *> ordered;
   for (const auto *specialization:pattern->specializations()) {
+    // An inline closure object exposes its generic pattern to consumers.
+    // Implicit instances may come from unrelated code excluded by the export
+    // policy. Bind their selected uses in the corresponding declaration.
+    if (published_object &&
+        specialization->getTemplateSpecializationKind() == clang::TSK_ImplicitInstantiation)
+      continue;
     const auto *definition=specialization->getDefinition();
     const auto *arguments=specialization->getTemplateSpecializationArgs();
     if (!definition || !arguments || definition->getType()->isDependentType() || ordered.size()>=256)
@@ -1339,6 +1346,19 @@ public:
     if (const auto found = locals_.find(declaration->getCanonicalDecl()); found != locals_.end()) {
       Add("local:" + std::to_string(found->second)); return;
     }
+    if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
+      if (const auto *arguments = method->getTemplateSpecializationArgs())
+        if (const auto *object = InlineClosureObjectOrigin(method->getParent())) {
+          Add("inline-closure-specialization");
+          Add(ReadInterfaceDeclarationStableId(object));
+          Add(ReadNativeSymbolName(object));
+          for (const auto &argument : arguments->asArray()) {
+            std::string key;
+            if (GenericArgumentKey(argument, context_, key)) Add(key);
+          }
+          Add(ExpressionType(method->getType()));
+          return;
+        }
     if (const auto *owner = llvm::dyn_cast<clang::TagDecl>(declaration->getDeclContext());
         owner && (IsExpressionLocalTag(owner) ||
                   (llvm::isa<clang::CXXRecordDecl>(owner) &&
@@ -3403,7 +3423,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationCheckedKeyPathRead(representative))
     identity.canonical_type_identity += ";keypath-checked-reads:v1;";
   if (HasDeclarationInlineClosureObject(representative))
-    identity.canonical_type_identity+=";cxx-inline-closure-objects:v4;";
+    identity.canonical_type_identity+=";cxx-inline-closure-objects:v5;";
   if (HasDeclarationCxxBaseAdjustment(representative))
     identity.canonical_type_identity+=";cxx-base-adjustment-expressions:v1;";
   if (HasDeclarationCxxSpecialMemberSelection(representative))

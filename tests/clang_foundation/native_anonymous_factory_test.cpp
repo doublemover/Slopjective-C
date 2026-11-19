@@ -26,7 +26,8 @@ int main(){
   provider.emit_semantic_interface=true;provider.module_name="test.AnonymousFactories";provider.package_identity="anonymous-factories-v1";
   provider.interface_exports={"make_record","make_nested","make_generic","global_record","other_record","nested_record","read_global","primary","secondary","Primary","third","record_value","NamedObjects","NamedRecord","declared_record","NamedUnion","declared_union"};
   provider.interface_exports.insert(provider.interface_exports.end(),
-                                    {"read_local_template", "LocalMemberReader"});
+                                    {"read_local_template", "LocalMemberReader", "open_closure",
+                                     "OpenClosure", "ClosureOwner"});
   provider.source_text=R"source(
 constexpr auto make_record(){struct {int value;constexpr int read()const{return value;}} result{42};return result;}
 constexpr auto make_nested(){struct {struct {int value;} nested;} result{{42}};return result;}
@@ -59,9 +60,46 @@ struct NamedRecord{int value;};extern const NamedRecord declared_record;
 union NamedUnion{int value;long other;};extern const NamedUnion declared_union;
 namespace NamedObjects{inline constexpr struct{int value;constexpr int read()const{return value;}} first{12},second{30};}
 
+inline constexpr auto open_closure = []<class T>(T value) noexcept(noexcept(value + 1))
+    requires requires(T candidate) { candidate + 1; } { return value + 1; };
+using OpenClosure = decltype(open_closure);
+struct ClosureOwner {
+  inline static constexpr auto calculate = [](auto value) { return value * 2; };
+};
 )source";
   auto produced=Compile(provider);Success(produced);assert(produced.interface_artifact && produced.interface_artifact->success);
   const auto &artifact=*produced.interface_artifact;
+  auto with_private_calls = provider;
+  *with_private_calls.source_text += R"(
+namespace PrivateArguments {
+struct Token { int value; };
+constexpr int operator+(Token token, int delta) { return token.value + delta; }
+static_assert(open_closure(Token{41}) == 42);
+static_assert(ClosureOwner::calculate(21L) == 42L);
+}
+)";
+  auto from_used_pattern = Compile(with_private_calls);
+  Success(from_used_pattern);
+  assert(from_used_pattern.interface_artifact->source_bytes == artifact.source_bytes);
+  assert(from_used_pattern.interface_artifact->identity.semantic_fingerprint ==
+         artifact.identity.semantic_fingerprint);
+  auto hidden_adl = provider;
+  hidden_adl.interface_exports = {"HiddenADL::Argument", "HiddenADL::call", "HiddenADL::run"};
+  hidden_adl.source_text = R"(
+namespace HiddenADL {
+struct Argument {};
+inline constexpr auto call = [](auto value) { return project(value); };
+static int project(Argument) { return 42; }
+inline int run() { return call(Argument{}); }
+}
+)";
+  auto rejected_adl = Compile(hidden_adl);
+  assert(!rejected_adl.success && rejected_adl.interface_artifact);
+  assert(std::any_of(rejected_adl.interface_artifact->diagnostics.begin(),
+      rejected_adl.interface_artifact->diagnostics.end(), [](const auto &diagnostic) {
+        return (diagnostic.code == "O3IFC112" || diagnostic.code == "O3IFC156") &&
+               diagnostic.subject == "HiddenADL::project";
+      }));
   auto decoded=DecodeSemanticInterfaceSidecar(artifact.sidecar_json,artifact.source_bytes,SupportedSemanticInterfaceCapabilities());assert(decoded);
   assert(std::find(decoded->required_semantics.begin(), decoded->required_semantics.end(),
                    kCxxLocalTypeSemantic) != decoded->required_semantics.end());
@@ -115,13 +153,16 @@ namespace NamedObjects{inline constexpr struct{int value;constexpr int read()con
 static_assert(read_local_template(21) == 42);
 static_assert(read_local_template(7.0) == 14);
 static_assert(LocalMemberReader<short>::read(42) == 42);
+static_assert(noexcept(open_closure(41)) && open_closure(41u) == 42u);
+static_assert(OpenClosure{}(41L) == 42L);
+static_assert(ClosureOwner::calculate(21.0) == 42.0);
 extern "C" int dependent_local_result(int value) {
-  return read_local_template(value) + LocalMemberReader<double>::read(value);
+  return open_closure(read_local_template(value)) + ClosureOwner::calculate(value);
 }
 )";
   consumer.emit=EmitKind::Object;consumer.output_path=(root/"consumer.o").string();auto consumed=Compile(consumer);Success(consumed);
   Write(root/"main.c", "int anonymous_result(void); int dependent_local_result(int);"
-                      "int main(void){return anonymous_result()==126 && dependent_local_result(14)==42?0:1;}");
+                      "int main(void){return anonymous_result()==126 && dependent_local_result(14)==57?0:1;}");
   Execute({consumed.compiler_driver_path,"--no-default-config","-fuse-ld=lld",consumer.output_path,(root/"main.c").string(),"-o",(root/"witness").string()});Execute({(root/"witness").string()});
  }
 }

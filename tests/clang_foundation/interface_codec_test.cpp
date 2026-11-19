@@ -169,7 +169,7 @@ int main() {
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
       {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},
       {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic},
-      {";cxx-inline-closure-objects:v4;",kCxxInlineClosureObjectSemantic},
+      {";cxx-inline-closure-objects:v5;",kCxxInlineClosureObjectSemantic},
       {";cxx-base-adjustment-expressions:v1;",kCxxBaseAdjustmentSemantic},
       {";native-cpu-variant:v1;",kNativeEmissionPolicySemantic}}) {
     auto invalid=*decoded;
@@ -241,7 +241,7 @@ int main() {
       {";cxx-virtual-call-expressions:v1;",kCxxVirtualCallSemantic},
       {";native-cxx-async-import:v1;",kNativeCxxAsyncImportSemantic},
       {";cxx-special-member-selection:v1;",kCxxSpecialMemberSelectionSemantic},
-      {";cxx-inline-closure-objects:v4;",kCxxInlineClosureObjectSemantic},
+      {";cxx-inline-closure-objects:v5;",kCxxInlineClosureObjectSemantic},
       {";cxx-base-adjustment-expressions:v1;",kCxxBaseAdjustmentSemantic}}) {
     auto legitimate=*decoded;legitimate.declarations.front().canonical_type_identity+=marker;
     legitimate.required_semantics.push_back(capability);

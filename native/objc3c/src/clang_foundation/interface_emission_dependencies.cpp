@@ -302,6 +302,14 @@ class TypeDependencyVisitor final
 
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target))
       if (const auto *pattern = function->getPrimaryTemplate()) {
+        if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(function))
+          if (const auto *object = InlineClosureObjectOrigin(method->getParent())) {
+            CheckExpressionReference(object);
+            if (const auto *arguments = function->getTemplateSpecializationArgs())
+              for (const auto &argument : arguments->asArray())
+                if (!CheckGenericArgument(argument)) UnsupportedExpression();
+            return;
+          }
         if (IsExplicitNamespaceFunctionSpecialization(function)) {
           CheckVisibility(function);
           if (!IsInMainFile(context_,function->getLocation()) && !IsResolved(function))
@@ -732,7 +740,13 @@ class TypeDependencyVisitor final
     return true;
   }
   bool VisitDeclRefExpr(clang::DeclRefExpr *expression) {
-    CheckExpressionReference(expression->getDecl()); return true;
+    const auto *target = expression->getDecl();
+    CheckExpressionReference(target);
+    if (expression->isNonOdrUse() == clang::NOUR_None)
+      if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(target);
+          method && method->getPrimaryTemplate() && InlineClosureObjectOrigin(method->getParent()))
+        return CheckInlineClosureInstantiation(method);
+    return true;
   }
   bool VisitUnresolvedLookupExpr(clang::UnresolvedLookupExpr *expression) {
     for (const auto *declaration : expression->decls())
@@ -1019,17 +1033,40 @@ class TypeDependencyVisitor final
   }
 
   void CheckFactoryReference(const clang::FunctionDecl *function) {
-    if(const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);method && (method->getParent()->isLambda() || IsExpressionLocalTag(method->getParent()) || InlineClosureObjectOrigin(method->getParent()))) {
-      if(const auto *owner=FactoryResultOrigin(method->getParent()))CheckFactoryReference(owner);
-      if(const auto *object=InlineClosureObjectOrigin(method->getParent()))CheckExpressionReference(object);
-      if(const auto *arguments=function->getTemplateSpecializationArgs())
-        for(const auto &argument:arguments->asArray())
-          if(!CheckGenericArgument(argument))UnsupportedExpression();
-      for(const auto *parameter:function->parameters())TraverseType(parameter->getType());
-      return;
+    if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(function)) {
+      const auto *parent = method->getParent();
+      const auto *object = InlineClosureObjectOrigin(parent);
+      if (parent->isLambda() || IsExpressionLocalTag(parent) || object) {
+        if (const auto *owner = FactoryResultOrigin(parent)) CheckFactoryReference(owner);
+        if (object) CheckExpressionReference(object);
+        if (const auto *arguments = function->getTemplateSpecializationArgs())
+          for (const auto &argument : arguments->asArray())
+            if (!CheckGenericArgument(argument)) UnsupportedExpression();
+        for (const auto *parameter : function->parameters()) TraverseType(parameter->getType());
+        if (object && function->getPrimaryTemplate()) CheckInlineClosureInstantiation(method);
+        return;
+      }
     }
     CheckExpressionReference(function);
     CheckEnclosingClassArguments(function);
+  }
+
+  bool CheckInlineClosureInstantiation(const clang::CXXMethodDecl *method) {
+    const auto *definition = method->getDefinition();
+    if (!definition || checked_closure_instantiations_.count(definition->getCanonicalDecl()))
+      return true;
+    if (checked_closure_instantiations_.size() >= 256)
+      return UnsupportedExpression("too many selected inline closure instantiations");
+    checked_closure_instantiations_.insert(definition->getCanonicalDecl());
+    const auto previous = lambda_contexts_;
+    auto restore = llvm::scope_exit([&] { lambda_contexts_ = previous; });
+    lambda_contexts_.insert(definition->getCanonicalDecl());
+    const auto *pattern = method->getPrimaryTemplate()->getTemplatedDecl();
+    lambda_contexts_.insert(pattern->getCanonicalDecl());
+    if (!TraverseType(definition->getType())) return false;
+    auto *body = const_cast<clang::Stmt *>(PublishedFunctionBody(definition));
+    callable_bodies_[body] = definition;
+    return TraverseStmt(body);
   }
 
   bool VisitTagType(clang::TagType *type) {
@@ -1198,6 +1235,7 @@ private:
   std::set<const clang::Decl *> factory_results_;
   std::set<const clang::Decl *> lambda_contexts_;
   std::set<const clang::Decl *> lambda_locals_;
+  std::set<const clang::Decl *> checked_closure_instantiations_;
   const clang::Decl *body_function_ = nullptr;
   std::map<const clang::Stmt *,const clang::Decl *> callable_bodies_;
   const clang::ASTContext &context_;
