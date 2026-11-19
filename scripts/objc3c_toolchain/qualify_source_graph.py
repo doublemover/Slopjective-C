@@ -11,6 +11,22 @@ import shutil
 import subprocess
 import tempfile
 
+if __package__:
+    from .diagnostic_termination import require_diagnostic_exit
+else:
+    from diagnostic_termination import require_diagnostic_exit
+
+
+def require_private_visibility_exit(wrapper: subprocess.CompletedProcess, outcome: Path,
+                                    log: Path, expected: str) -> int:
+    code = json.loads(outcome.read_text())['exit_code']
+    try:
+        require_diagnostic_exit(wrapper.returncode, wrapper.stdout, 'package build failed:')
+        require_diagnostic_exit(code, log.read_text(errors='replace'), expected)
+    except ValueError as error:
+        raise ValueError(f'private visibility rejection failed; see {log}; {error}') from error
+    return code
+
 
 def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownership: str, optimization: str) -> tuple[list, list]:
     output.mkdir(parents=True, exist_ok=True)
@@ -104,30 +120,36 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         manifest.write_text(json.dumps(data))
         command = [str(sdk / 'bin/objc3c-build'), '--workspace', str(sources / 'workspace.json'),
                    '--output-dir', str(build), '--optimization', optimization]
-        rejected = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=180)
-        if (rejected.returncode != 1 or 'identity lock' not in rejected.stderr or
-                (build / 'build-report.json').read_bytes() != prior_report):
+        rejected = subprocess.run(command, cwd=root, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, text=True, errors='replace', timeout=180)
+        require_diagnostic_exit(rejected.returncode, rejected.stdout, 'package build failed:', 'identity lock')
+        if (build / 'build-report.json').read_bytes() != prior_report:
             raise ValueError('wrong package lock did not reject before changing a prior build record')
         manifest.write_bytes(content)
-        negatives.append({'language': language, 'standard': standard, 'ownership': ownership, 'optimization': optimization, 'case': 'package-lock', 'prior_record_preserved': True})
+        negatives.append({'language': language, 'standard': standard, 'ownership': ownership,
+                          'optimization': optimization, 'case': 'package-lock',
+                          'prior_record_preserved': True, 'exit_code': rejected.returncode,
+                          'expected_exit_code': 1, 'expected_termination': 'wrapper-validation-exit'})
         # Top re-exports Left -> Leaf, while its Right edge is private.
         # The cold application already used Leaf's transitive public type.
         app = sources / ('app/main' + suffix)
         app.write_bytes(original['app/main.m'].replace(b'@fixture.Top.answer()', b'@fixture.Right.right()') if language != 'c++' else original['app/main.m'].replace(b'answer() == 42', b'right() == 42'))
         obj = build / 'application/module.o'
         before = hashlib.sha256(obj.read_bytes()).hexdigest()
-        rejected = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=180)
+        rejected = subprocess.run(command, cwd=root, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, text=True, errors='replace', timeout=180)
         log = build / 'application/compile.log'
-        outcome = json.loads((build / 'application/compile-result.json').read_text())
-        if (rejected.returncode != 1 or outcome['exit_code'] != 1 or ('fixture.Right' if language != 'c++' else 'right') not in log.read_text() or
-                hashlib.sha256(obj.read_bytes()).hexdigest() != before or
+        retained_log = output / f'{case_prefix}-private-visibility.log'
+        shutil.copyfile(log, retained_log)
+        name = 'right' if language == 'c++' else 'fixture.Right'
+        code = require_private_visibility_exit(rejected, build / 'application/compile-result.json', retained_log, name)
+        if (hashlib.sha256(obj.read_bytes()).hexdigest() != before or
                 (build / 'build-report.json').exists()):
             raise ValueError('private transitive visibility did not reject with the object preserved')
-        shutil.copyfile(log, output / f'{case_prefix}-private-visibility.log')
         negatives.append({'language': language, 'standard': standard, 'ownership': ownership, 'optimization': optimization, 'case': 'private-transitive-visibility',
                           'prior_object_preserved': True, 'failed_build_record_removed': True,
-                          'exit_code': rejected.returncode, 'compiler_exit_code': outcome['exit_code'],
-                          'expected_exit_code': 1})
+                          'exit_code': rejected.returncode, 'compiler_exit_code': code,
+                          'expected_exit_code': 1, 'expected_termination': 'diagnostic-exit'})
     return records, negatives
 
 

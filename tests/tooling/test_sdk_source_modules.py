@@ -72,6 +72,8 @@ def test_installed_managed_example_retains_fresh_lookup_failure_after_temporary_
     import subprocess
     from scripts.objc3c_toolchain import qualify_source_modules
     sdk, output = tmp_path / 'sdk', tmp_path / 'evidence'
+    output.mkdir()
+    (output / 'summary.json').write_text('{"status":"PASS"}')
     sources = sdk / 'share/objc3c/examples/managed/src'
     sources.mkdir(parents=True)
     for name in ('provider.m', 'managed-value-support.h', 'main.m'):
@@ -88,3 +90,4 @@ def test_installed_managed_example_retains_fresh_lookup_failure_after_temporary_
         qualify_source_modules.qualify(sdk, output)
     assert builds and not builds[0].exists()
     assert 'provider.m:7' in (output / 'O0-cold-lookup.log').read_text()
+    assert not (output / 'summary.json').exists()

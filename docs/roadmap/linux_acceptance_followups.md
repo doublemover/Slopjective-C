@@ -8,6 +8,13 @@ and source-qualified; hosted aggregate acceptance remains open.
 
 ## Repaired requirements
 
+- **#8324 — compiler rejection termination:** the compiler witnesses, standard
+  library, source modules and installed package graph require an ordinary
+  diagnostic exit. The package graph checks the wrapper and exact inner
+  command result. Signals, translated driver crashes and fatal diagnostics
+  accompanying exit 1 are rejected. The managed-module runner invalidates an
+  earlier success receipt before starting. Runtime trap controls keep their own
+  termination expectations.
 - **#8286 — clean-host tool ordering:** admit the complete foundation before
   resolving optional development tools, build `opt`/`llvm-dis`/`llvm-reduce`, then
   perform strict tool admission. Removing `opt` before the real campaign proves

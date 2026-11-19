@@ -12,10 +12,12 @@ import tempfile
 
 if __package__:
     from . import binary_packages as packages
+    from .diagnostic_termination import require_diagnostic_exit
     from .sdk_example import environment
 else:
     sys.dont_write_bytecode = True
     import binary_packages as packages
+    from diagnostic_termination import require_diagnostic_exit
     from sdk_example import environment
 
 
@@ -55,11 +57,15 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
                                     stdout=stream, stderr=subprocess.STDOUT, timeout=120)
         commands.append({'name': label, 'exit_code': result.returncode,
                          'expected_exit_code': 1 if failure is not None else 0,
+                         'expected_termination': 'diagnostic-exit' if failure is not None else 'success',
                          'log_sha256': packages.digest(log)})
         if failure is None and result.returncode != 0:
             raise ValueError('standard library failed: ' + label)
-        if failure is not None and (result.returncode != 1 or failure not in log.read_text()):
-            raise ValueError('standard library rejection missing: ' + label)
+        if failure is not None:
+            try:
+                require_diagnostic_exit(result.returncode, log.read_text(errors='replace'), failure)
+            except ValueError as error:
+                raise ValueError(f'standard library rejection failed: {label}; see {log}; {error}') from error
 
     try:
         initial_inputs = inputs()

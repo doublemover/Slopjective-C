@@ -18,6 +18,7 @@ SCHEMA = 'objc3.sdk.v2'
 SOURCE_BUILD_HELPERS = (
     ('source_graph.py', 'build.py'),
     ('sdk_example.py', 'sdk_example.py'),
+    ('diagnostic_termination.py', 'diagnostic_termination.py'),
     ('qualify_source_graph.py', 'qualify.py'),
     ('binary_packages.py', 'binary_packages.py'),
     ('sanitizer_policy.py', 'sanitizer_policy.py'),
@@ -236,6 +237,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     shutil.copyfile(repo / 'tests/clang_foundation/native_package/consumer-source.m', sources / 'main.m')
     shutil.copyfile(Path(__file__).with_name('sdk_example.py'), example / 'build.py')
     shutil.copyfile(Path(__file__).with_name('qualify_source_modules.py'), example / 'qualify.py')
+    shutil.copyfile(Path(__file__).with_name('diagnostic_termination.py'), example / 'diagnostic_termination.py')
     builder = prefix / 'share/objc3c/source-build'
     builder.mkdir(parents=True, exist_ok=True)
     install_source_build_helpers(builder, repo=repo)

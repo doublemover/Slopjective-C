@@ -11,9 +11,19 @@ import subprocess
 import tempfile
 import time
 
+if __package__:
+    from .diagnostic_termination import require_diagnostic_exit
+else:
+    from diagnostic_termination import require_diagnostic_exit
+
 
 def qualify(sdk: Path, output: Path) -> dict:
+    sdk, output = sdk.resolve(), output.resolve()
+    if output.is_relative_to(sdk) or sdk.is_relative_to(output):
+        raise ValueError('source module qualification output must be disjoint from the SDK')
     output.mkdir(parents=True, exist_ok=True)
+    receipt = output / 'summary.json'
+    receipt.unlink(missing_ok=True)
     example = sdk / 'share/objc3c/examples/managed'
     records = []
     negative = []
@@ -107,12 +117,20 @@ def qualify(sdk: Path, output: Path) -> dict:
                 if arc:
                     command.append('--arc')
                 command += ['--', '--no-default-config', '-fblocks', '-' + optimization]
-                result = subprocess.run(command, cwd=client, capture_output=True, text=True, timeout=180)
-                (output / f'{optimization}-reject-{case}.log').write_text(result.stdout + result.stderr)
-                if result.returncode != 1 or code not in result.stderr or obj.exists() or deps.exists():
+                result = subprocess.run(command, cwd=client, stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT, text=True, errors='replace', timeout=180)
+                log = output / f'{optimization}-reject-{case}.log'
+                log.write_text(result.stdout)
+                try:
+                    require_diagnostic_exit(result.returncode, result.stdout, code)
+                except ValueError as error:
+                    raise ValueError(f'{optimization} {case}: invalid import rejection; see {log}; {error}') from error
+                if obj.exists() or deps.exists():
                     raise ValueError(f'{optimization} {case}: invalid import did not fail atomically with {code}')
                 negative.append({'optimization': optimization, 'case': case,
-                                 'exit_code': result.returncode, 'diagnostic': code, 'outputs_absent': True})
+                                 'exit_code': result.returncode, 'expected_exit_code': 1,
+                                 'expected_termination': 'diagnostic-exit',
+                                 'diagnostic': code, 'outputs_absent': True})
             if dependency_record['modules'][0]['fingerprint'] != identity['semantic_fingerprint']:
                 raise ValueError('dependency lock did not update after the API edit')
             # These headers live outside source membership/old depfiles. Fresh
@@ -149,7 +167,7 @@ def qualify(sdk: Path, output: Path) -> dict:
               'builds': records, 'rejected_imports': negative,
               'source_builder_sha256': hashlib.sha256((example / 'build.py').read_bytes()).hexdigest(),
               'limits': 'Example module graph, not a general package manager. Build timings exclude full SDK admission and final verification; elapsed timings include both. The native linker runs on every invocation.'}
-    (output / 'summary.json').write_text(json.dumps(result, indent=2) + '\n')
+    receipt.write_text(json.dumps(result, indent=2) + '\n')
     return result
 
 

@@ -9,8 +9,10 @@ import subprocess
 import tempfile
 
 if __package__:
+    from .diagnostic_termination import require_diagnostic_exit
     from .sdk_example import digest, environment, sdk_verification, write_json
 else:
+    from diagnostic_termination import require_diagnostic_exit
     from sdk_example import digest, environment, sdk_verification, write_json
 
 MODES = (('objective-c', 'c17'), ('objective-c++', 'c++20'),
@@ -42,15 +44,21 @@ def qualify(sdk: Path, output: Path, *, fixtures: Path | None = None,
     commands, cases, negatives = [], [], []
     env = environment(sdk)
 
-    def run(label, command, *, cwd, expected=0, stdin=None):
+    def run(label, command, *, cwd, diagnostics=(), stdin=None):
         log = output / (label + '.log')
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, command)), cwd=cwd, env=env,
                 stdin=stdin, stdout=stream, stderr=subprocess.STDOUT, timeout=180)
         commands.append({'name': label, 'argv': list(map(str, command)),
-                         'exit_code': result.returncode, 'expected': expected,
+                         'exit_code': result.returncode, 'expected': 1 if diagnostics else 0,
+                         'expected_termination': 'diagnostic-exit' if diagnostics else 'success',
                          'log_sha256': digest(log)})
-        if result.returncode != expected:
+        if diagnostics:
+            try:
+                require_diagnostic_exit(result.returncode, log.read_text(errors='replace'), *diagnostics)
+            except ValueError as error:
+                raise ValueError(f'compiler witness failed: {label}; see {log}; {error}') from error
+        elif result.returncode != 0:
             raise ValueError('compiler witness failed: ' + label + '; see ' + str(log))
         return log
 
@@ -86,15 +94,15 @@ def qualify(sdk: Path, output: Path, *, fixtures: Path | None = None,
                             '-fobjc3-strict-concurrency', '-fsyntax-only', '-Xclang', '-verify',
                             work / 'task_spawning/diagnostics.m'], cwd=work)
                         for variant in ('', *STRICT_ERRORS):
+                            diagnostics = ()
+                            if variant:
+                                message, line = STRICT_ERRORS[variant]
+                                diagnostics = (message, f'strict_resource.m:{line}:')
                             log = run(label + '-strict-' + (variant or 'success'),
                                 [compiler, *flags, '-fobjc3-profile=strict-system', '-fsyntax-only',
                                  *(['-D' + variant] if variant else []), captures / 'strict_resource.m'],
-                                cwd=work, expected=1 if variant else 0)
+                                cwd=work, diagnostics=diagnostics)
                             if variant:
-                                message, line = STRICT_ERRORS[variant]
-                                text = log.read_text()
-                                if message not in text or f'strict_resource.m:{line}:' not in text:
-                                    raise ValueError('strict capture witness lost its owning diagnostic: ' + variant)
                                 negatives.append({'mode': label, 'case': variant,
                                                   'log_sha256': digest(log)})
                         for optimization in ('O0', 'O2'):
