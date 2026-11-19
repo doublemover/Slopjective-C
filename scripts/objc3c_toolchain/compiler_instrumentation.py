@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import shlex
 import shutil
+import struct
 import subprocess
 import tempfile
 import time
@@ -396,7 +397,48 @@ def verify_owned_shared_libraries(build: Path, libraries: list[Path], records: l
     return evidence
 
 
+def elf_gnu_build_id(path: Path) -> str:
+    """Read one canonical SHA-1 NT_GNU_BUILD_ID without executing the ELF."""
+    data = path.read_bytes()
+    if data[:6] != b'\x7fELF\x02\x01' or len(data) < 64:
+        raise ValueError('loaded dependency is not a little-endian ELF64 image: '+str(path))
+    program_offset = struct.unpack_from('<Q', data, 32)[0]
+    program_size, program_count = struct.unpack_from('<HH', data, 54)
+    if (program_size != 56 or not program_count or
+            program_offset+program_size*program_count > len(data)):
+        raise ValueError('loaded dependency has an invalid ELF program inventory: '+str(path))
+    identities = []
+    for index in range(program_count):
+        header = struct.unpack_from('<IIQQQQQQ', data, program_offset+program_size*index)
+        if header[0] != 4:  # PT_NOTE
+            continue
+        offset, size = header[2], header[5]
+        if offset+size > len(data):
+            raise ValueError('loaded dependency has a truncated ELF note: '+str(path))
+        cursor, end = offset, offset+size
+        while cursor < end:
+            if cursor+12 > end:
+                raise ValueError('loaded dependency has a malformed ELF note: '+str(path))
+            name_size, value_size, note_type = struct.unpack_from('<III', data, cursor)
+            cursor += 12
+            name_end = cursor+name_size
+            value_start = (name_end+3) & ~3
+            value_end = value_start+value_size
+            next_note = (value_end+3) & ~3
+            if name_end > end or value_end > end or next_note > end:
+                raise ValueError('loaded dependency has a malformed ELF note: '+str(path))
+            if note_type == 3 and data[cursor:name_end] == b'GNU\0':
+                if value_size != 20:
+                    raise ValueError('loaded dependency lacks a canonical SHA-1 build identity: '+str(path))
+                identities.append(data[value_start:value_end].hex())
+            cursor = next_note
+    if len(identities) != 1:
+        raise ValueError('loaded dependency lacks one GNU build identity: '+str(path))
+    return identities[0]
+
+
 def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=(), run) -> dict:
+    """Admit the loader's real graph and bind every resolved DSO to its build ID."""
     output = run('loader', [loader, '--list', binary])
     paths = set()
     for line in output.splitlines():
@@ -409,8 +451,16 @@ def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=
     for path in paths:
         if path.name.startswith(('libLLVM', 'libclang-cpp')) and path not in owned:
             raise ValueError('compiler executable loaded an unselected LLVM/Clang library')
+    build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(paths)}
+    # Exact paths prevent same-SONAME substitution. Build IDs make that
+    # admission independently inspectable and prevent a later receipt reader
+    # from accepting different bytes under a previously admitted path.
+    selected_build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(paths & owned)}
+    if any(build_ids[path] != identity for path, identity in selected_build_ids.items()):
+        raise ValueError('loaded LLVM/Clang build identity differs from its selected build')
     return {'binary': str(binary), 'sha256': digest(binary),
-            'libraries': {str(path): digest(path) for path in sorted(paths)}}
+            'libraries': {str(path): digest(path) for path in sorted(paths)},
+            'build_ids': build_ids, 'selected_build_ids': selected_build_ids}
 
 
 def borrowed_base_pch_matrix(compiler: Path, source: Path, output: Path, *, run):

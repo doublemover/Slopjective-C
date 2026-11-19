@@ -61,9 +61,10 @@ def verify_installation(canonical: Path, installed: Path, build: Path) -> dict:
     before_tag, position, before = runpath(old)
     after_tag, destination, after = runpath(new)
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/' + native_target()
-    if (len(old) != len(new) or before_tag != after_tag or position != destination or after != expected or
+    if (len(old) != len(new) or before_tag != 'RPATH' or after_tag != 'RPATH' or
+            position != destination or after != expected or
             before not in (expected+':', expected+':'+str(build / 'lib')+':')):
-        raise ValueError('unowned LLVM install-time ELF RUNPATH transition')
+        raise ValueError('unowned LLVM install-time ELF RPATH transition')
     # The overwritten tail must be zeros, not arbitrary hidden changes. Every
     # other byte (including the ELF dynamic tables and code) must be identical.
     canonical_bytes = old[:position]+(after.encode()+b'\0').ljust(len(before)+1, b'\0')+old[position+len(before)+1:]

@@ -165,16 +165,26 @@ def test_install_identity_allows_only_exact_cmake_runpath_transition(tmp_path):
     expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
     before = expected+':'+str(tmp_path / 'build/lib')+':'
     canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
-    canonical.write_bytes(elf(before, 160))
-    installed.write_bytes(elf(expected, 160))
+    canonical.write_bytes(elf(before, 160, 15))
+    installed.write_bytes(elf(expected, 160, 15))
     assert verify_installation(canonical, installed, tmp_path / 'build')['status'] == 'PASS'
     data = bytearray(installed.read_bytes())
     data[-1] ^= 1
     installed.write_bytes(data)
     with pytest.raises(ValueError, match='outside its exact'):
         verify_installation(canonical, installed, tmp_path / 'build')
-    installed.write_bytes(elf('/tmp/unowned', 160))
-    with pytest.raises(ValueError, match='RUNPATH transition'):
+    installed.write_bytes(elf('/tmp/unowned', 160, 15))
+    with pytest.raises(ValueError, match='RPATH transition'):
+        verify_installation(canonical, installed, tmp_path / 'build')
+
+
+def test_install_identity_rejects_lower_precedence_runpath(tmp_path):
+    expected = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
+    before = expected+':'+str(tmp_path / 'build/lib')+':'
+    canonical, installed = tmp_path / 'build.elf', tmp_path / 'installed.elf'
+    canonical.write_bytes(elf(before, 160))
+    installed.write_bytes(elf(expected, 160))
+    with pytest.raises(ValueError, match='RPATH transition'):
         verify_installation(canonical, installed, tmp_path / 'build')
 
 

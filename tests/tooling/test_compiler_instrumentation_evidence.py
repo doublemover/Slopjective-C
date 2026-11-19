@@ -2,12 +2,19 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 
 import pytest
 
 from scripts.objc3c_toolchain.compiler_instrumentation import graph_records, verify_symbols, verify_owned_shared_libraries
+
+
+def test_host_loader_has_one_canonical_gnu_build_identity():
+    from scripts.objc3c_toolchain.compiler_instrumentation import elf_gnu_build_id
+    from scripts.objc3c_toolchain.linux_host import native_loader
+    assert re.fullmatch(r'[0-9a-f]{40}', elf_gnu_build_id(native_loader()))
 
 
 @pytest.fixture
@@ -159,7 +166,7 @@ file(GENERATE OUTPUT "${{CMAKE_BINARY_DIR}}/custom-compile-records.json" CONTENT
 
 
 def test_actual_loader_rejects_a_foreign_llvm_library(native_graph, tmp_path):
-    from scripts.objc3c_toolchain.compiler_instrumentation import loaded_graph
+    from scripts.objc3c_toolchain.compiler_instrumentation import elf_gnu_build_id, loaded_graph
     source, build, compiler, nm, run, collect = native_graph
     owned, foreign = (tmp_path / name for name in ('owned', 'foreign'))
     for directory in (owned, foreign):
@@ -170,17 +177,20 @@ def test_actual_loader_rejects_a_foreign_llvm_library(native_graph, tmp_path):
     main.write_text('extern "C" int probe(); int main() { return probe() == 42 ? 0 : 1; }\n')
     for directory in (owned, foreign):
         run('shared', [compiler, '-shared', '-fPIC', '-fuse-ld=lld', library_source,
-                       '-o', directory / 'libLLVMcontrol.so'])
+                       '-Wl,--build-id=sha1', '-o', directory / 'libLLVMcontrol.so'])
     selected = owned / 'libLLVMcontrol.so'
     loader = Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True)
     for directory in (owned, foreign):
         binary = build / directory.name
         run('link', [compiler, '-fuse-ld=lld', main, '-L'+str(directory), '-lLLVMcontrol',
+                     '-Wl,--build-id=sha1', '-Wl,--disable-new-dtags',
                      '-Wl,-rpath,'+str(directory), '-o', binary])
         run('semantic-control', [binary])
         if directory == owned:
             graph = loaded_graph(binary, loader, [selected], required=(selected,), run=run)
             assert str(selected) in graph['libraries']
+            assert graph['build_ids'][str(selected)] == elf_gnu_build_id(selected)
+            assert graph['selected_build_ids'] == {str(selected): elf_gnu_build_id(selected)}
         else:
             with pytest.raises(ValueError, match='unselected LLVM/Clang library'):
                 loaded_graph(binary, loader, [selected], run=run)
