@@ -57322,6 +57322,15 @@ new file mode 100644
 +           isAsyncBlockType((M->param_begin()[Index])->getType());
 +  return false;
 +}
++bool isConcurrentWorkParameter(Sema &S, const Decl *D, unsigned Index) {
++  if (const auto *F = dyn_cast<FunctionDecl>(D))
++    return Index < F->getNumParams() &&
++           asyncWorkType(S, F->getParamDecl(Index)->getType());
++  if (const auto *M = dyn_cast<ObjCMethodDecl>(D))
++    return Index < M->param_size() &&
++           asyncWorkType(S, (M->param_begin()[Index])->getType());
++  return false;
++}
 +bool checkKnownConcurrentBlock(Sema &, const BlockExpr *, SourceLocation,
 +                               bool RequireAsync, ConcurrentCaptureProof &,
 +                               const Stmt *ScopeBody);
@@ -57517,15 +57526,29 @@ new file mode 100644
 +    if (!CheckTaskBoundaries)
 +      return;
 +    unsigned TaskKind = getObjC3TaskBoundaryKind(Target);
-+    if (!(TaskKind & 3))
++    if (!TaskKind)
 +      return;
 +    // A dependent declaration is checked again after substitution; a generic
 +    // attribute cannot turn an arbitrary scalar argument into asynchronous work.
 +    if(!hasAsyncWork(S,Target)) {
-+      S.Diag(Site->getExprLoc(),diag::err_objc3_task_async_work);Invalid=true;return;
++      // A group annotation may mark an async function whose body establishes
++      // the scope without transporting a callback through this call. Spawn and
++      // detached declarations always require an asynchronous work parameter.
++      if (TaskKind & 3) {
++        S.Diag(Site->getExprLoc(),diag::err_objc3_task_async_work);Invalid=true;
++      }
++      return;
 +    }
 +    unsigned Index = 0;
 +    for (const Expr *Argument : Arguments) {
++      // A group-scope callback is concurrent work, but independent scalar
++      // configuration arguments stay ordinary synchronous call operands. A
++      // declaration that is also spawn/detached retains the stronger rule that
++      // every explicitly transported work-item argument is checked.
++      if (TaskKind == 4 && !isConcurrentWorkParameter(S, Target, Index)) {
++        ++Index;
++        continue;
++      }
 +      QualType TransferType = transferSource(Argument)->getType();
 +      // The source designator is a function lvalue; its transported value is
 +      // the stable function address produced by the ordinary decay conversion.
@@ -57566,7 +57589,9 @@ new file mode 100644
 +        }
 +      } else {
 +        Invalid |= checkTransferValue(S,Argument,TransferType,
-+                                      "spawned work-item argument",Target,ScopeBody);
++                                      TaskKind == 4 ? "structured group argument"
++                                                    : "spawned work-item argument",
++                                      Target,ScopeBody);
 +      }
 +      ++Index;
 +    }

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+Source 2.298 checks group-only structured callback parameters with the same
+bounded Sendable capture proof used by child and detached entry while leaving
+non-work group configuration synchronous. [Isolation and Sendable](linux_native_isolation_sendable.md)
+
 Source 2.297 / System 2.223 follows designated union storage aliases through
 borrowed flow. Native debug emission preserves the implicit actor receiver's
 object-pointer type. [Borrowed aliases](linux_native_borrowed_transfer_projections.md)

@@ -7,6 +7,11 @@ Ninja dependency owners, including selected precompiled headers. The terminal
 job binds all partitions to the producer's archive SHA-256 and verifies the
 complete disjoint variant inventory. The shared archive expires after one day.
 
+Source 2.298 checks group-only structured callback transfers under Strict
+Concurrency without treating independent scalar configuration arguments as
+concurrent values. The bounded Block/factory proof is shared with child and
+detached entry. [Isolation and Sendable](linux_native_isolation_sendable.md)
+
 Source 2.297 / System 2.223 preserves pointer and reference aliases in
 [designated union arms](linux_native_borrowed_transfer_projections.md) and
 retains native [actor receiver debug types](linux_native_isolation_sendable.md).
