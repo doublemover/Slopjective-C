@@ -59,8 +59,8 @@ def selected_targets(build: Path, component: str, names: list[str]) -> dict[str,
     return {name: owners[name] for name in names}
 
 
-def suite_timeout(policy: dict, component: str, name: str) -> int:
-    """Return a reviewed, bounded timeout for an instrumented test shard."""
+def suite_timeout(policy: dict, component: str, name: str, *, properties=()) -> int:
+    """Return the effective CTest deadline, including its explicit test property."""
     values = policy.get('test_timeouts_seconds')
     selected = {f'{owner}:{test}' for owner in ('frontend', 'runtime')
                 for test in policy.get(owner+'_tests', [])}
@@ -69,7 +69,15 @@ def suite_timeout(policy: dict, component: str, name: str) -> int:
             any(type(value) is not int or not 1 <= value <= MAX_TEST_TIMEOUT
                 for value in values.values())):
         raise ValueError('source coverage policy has invalid test timeout budgets')
-    return values.get(f'{component}:{name}', values['default'])
+    explicit = [row['value'] for row in properties if row['name'] == 'TIMEOUT']
+    if not explicit:
+        return values.get(f'{component}:{name}', values['default'])
+    if (len(explicit) != 1 or type(explicit[0]) not in (int, float) or
+            not 1 <= explicit[0] <= MAX_TEST_TIMEOUT or explicit[0] % 1):
+        raise ValueError('source coverage discovered an invalid CTest TIMEOUT property: ' + name)
+    # The CTest command-line default is ignored when the test sets TIMEOUT.
+    # Use the same effective deadline to bound the Python subprocess.
+    return int(explicit[0])
 
 
 def profile_runtime(bootstrap: Path, target: str) -> tuple[Path, Path]:
@@ -457,7 +465,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
                 raw = work / 'raw';raw.mkdir()
                 case_env = suite_profile_environment(env, raw)
                 result = work / 'tests.xml'
-                timeout = suite_timeout(policy, component, name)
+                timeout = suite_timeout(policy, component, name,
+                                        properties=current[0].get('properties', ()))
                 run(component+'-'+name, ['ctest', '--test-dir', build, '--no-tests=error', '--output-on-failure',
                     '-R', '^'+re.escape(name)+'$', '--timeout', str(timeout),
                     '--test-output-size-passed', str(CTEST_OUTPUT_LIMIT),

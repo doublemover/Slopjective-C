@@ -66,8 +66,9 @@ void TestProvenanceAndModeLocks(const fs::path &root, bool producer_arc,
       sidecar.ownership_projection, built.interface_artifact->source_bytes,
       semantics));
   assert(producer.ownership_projection.empty());
-  assert(sidecar.module.language_profile.find(intel?";native-inline-asm-dialect:v1;mode=1":";native-inline-asm-dialect:v1;mode=0")!=std::string::npos);
-  assert(producer.module.language_profile.find(intel?";native-inline-asm-dialect:v1;mode=1":";native-inline-asm-dialect:v1;mode=0")!=std::string::npos);
+  const auto dialect = intel ? ";native-inline-asm-dialect:v1;mode=1" : ";native-inline-asm-dialect:v1;mode=0";
+  assert(sidecar.module.language_profile.find(dialect) != std::string::npos);
+  assert(producer.module.language_profile.find(dialect) != std::string::npos);
   assert(producer.module.canonical_name == "Projected.__ownership_producer");
   assert(producer.module.runtime_abi != sidecar.module.runtime_abi);
   auto client = Request(
@@ -194,8 +195,9 @@ int main() {
     for (bool producer_arc : {false, true}) {
       TestProvenanceAndModeLocks(root, producer_arc,
                                  std::string(standard) != "c17", standard);
-      TestProvenanceAndModeLocks(root, producer_arc,
-                                 std::string(standard) != "c17", standard, true);
+      if (!test::NativeAArch64)
+        TestProvenanceAndModeLocks(root, producer_arc,
+                                   std::string(standard) != "c17", standard, true);
       TestNativeRuntimeAliases(root, producer_arc,
                                std::string(standard) != "c17", standard);
     }

@@ -60,6 +60,14 @@ def test_instrumented_suite_timeouts_are_reviewed_and_bounded():
               'test_timeouts_seconds': {'default': 120, 'frontend:heavy': 300}}
     assert suite_timeout(policy, 'frontend', 'ordinary') == 120
     assert suite_timeout(policy, 'frontend', 'heavy') == 300
+    assert suite_timeout(policy, 'frontend', 'ordinary',
+                         properties=[{'name': 'TIMEOUT', 'value': 300.0}]) == 300
+    assert suite_timeout(policy, 'frontend', 'heavy',
+                         properties=[{'name': 'TIMEOUT', 'value': 90.0}]) == 90
+    for invalid_property in (0, 901, '300', True, float('nan')):
+        with pytest.raises(ValueError, match='invalid CTest TIMEOUT'):
+            suite_timeout(policy, 'frontend', 'heavy',
+                          properties=[{'name': 'TIMEOUT', 'value': invalid_property}])
     for invalid in (
             {'default': 0},
             {'default': 120, 'frontend:unknown': 300},

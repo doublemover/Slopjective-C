@@ -1,4 +1,5 @@
 #include "native_target_test_support.h"
+#include "compile_test_diagnostics.h"
 #include "thread_safety_test_source.h"
 #include "lambda_contracts_test_source.h"
 #include "isolated_test_cases.h"
@@ -60,8 +61,7 @@ void ExpectCurrentPublication(Emit emit,const std::string &source) {
 
 void TestPrimitiveAndObjectiveCContractIdentity() {
   auto emit = [](const std::string &source, std::vector<std::string> flags) {
-    flags.push_back("--target=" OBJC3_TEST_NATIVE_LINUX_TARGET);
-    auto ast = clang::tooling::buildASTFromCodeWithArgs(source, flags, "contract.m");
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(source, test::NativeToolArguments(std::move(flags)), "contract.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.contracts", "contracts");
     for (const auto &diagnostic : result.diagnostics)
@@ -72,7 +72,9 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
   const std::vector<std::string> c = {"-x", "c", "-std=c17"};
   const std::vector<std::string> objc = {"-x", "objective-c", "-std=c17", "-fobjc-runtime=gnustep-2.2"};
   const std::string byte = "char api_byte(void);\n";
-  auto signed_byte = emit(byte, c);
+  auto signed_flags = c;
+  signed_flags.push_back("-fsigned-char");
+  auto signed_byte = emit(byte, signed_flags);
   auto unsigned_flags = c;
   unsigned_flags.push_back("-funsigned-char");
   auto unsigned_byte = emit(byte, unsigned_flags);
@@ -122,12 +124,14 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
              nullable.identity.semantic_fingerprint);
     }
   }
-  auto avx_flags = c;
-  avx_flags.push_back("-mavx2");
-  auto avx = emit(byte, avx_flags);
-  assert(avx.identity.language_profile != signed_byte.identity.language_profile);
-  avx_flags.push_back("-mavx2");
-  assert(emit(byte, avx_flags).identity.language_profile == avx.identity.language_profile);
+  auto feature_flags = c;
+  feature_flags.push_back(test::NativeFeatureDisabled);
+  const auto without_feature = emit(byte, feature_flags);
+  feature_flags.back() = test::NativeFeatureEnabled;
+  const auto with_feature = emit(byte, feature_flags);
+  assert(with_feature.identity.language_profile != without_feature.identity.language_profile);
+  feature_flags.push_back(test::NativeFeatureEnabled);
+  assert(emit(byte, feature_flags).identity.language_profile == with_feature.identity.language_profile);
   const std::string object = "__attribute__((objc_root_class)) @interface Object @end\n";
   auto width_one = emit(object + "@interface Flags : Object { @public unsigned flag : 1; unsigned neighbor : 2; } @end\n", objc);
   auto width_two = emit(object + "@interface Flags : Object { @public unsigned flag : 2; unsigned neighbor : 2; } @end\n", objc);
@@ -2486,9 +2490,9 @@ void TestAsyncConsumedOwnershipCapability() {
 void TestKeyPathSubscriptBodies() {
   for (const char *standard : {"c++20", "c++23"}) {
     for (bool arc : {false, true}) {
-      std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
-          "-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
-          "--target=" OBJC3_TEST_NATIVE_LINUX_TARGET};
+      const auto native_options = test::NativeToolArguments({std::string("-std=") + standard});
+      auto args = native_options;
+      args.insert(args.end(), {"-x", "objective-c++", "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2"});
       if (arc) args.push_back("-fobjc-arc");
       clang::tooling::FileContentMappings files;
       AddRuntimeInterfaceFiles(files,args);
@@ -2559,12 +2563,13 @@ void TestKeyPathSubscriptBodies() {
           "return explicit_literal(root)+checked_literal(root)+projected_literal(root);}\n";
       request.language=BaseLanguage::ObjectiveCxx;request.objc3=true;request.arc=arc;
       request.objc_runtime="gnustep-2.2";request.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
-      request.arguments={std::string("-std=")+standard,"-O0","-I"+root.string(),
-          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+      request.arguments = native_options;
+      request.arguments.insert(request.arguments.end(), {"-O0", "-I" + root.string(),
+          "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR});
       request.imported_interfaces={input};request.emit=EmitKind::LLVM;
       request.output_path=(root/"consumer.ll").string();
       const auto compiled=Compile(request);
-      for(const auto &d:compiled.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+      test::ReportFailure(compiled);
       assert(compiled.success);
       std::ifstream ir_file(request.output_path);
       const std::string ir((std::istreambuf_iterator<char>(ir_file)),{});

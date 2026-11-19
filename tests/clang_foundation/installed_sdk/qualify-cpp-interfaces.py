@@ -169,10 +169,12 @@ def qualify(sdk: Path, output: Path) -> dict:
                     'executable_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()})
                 held.rename(original)
         for case in (1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14):
-            admitted = case in (2, 3, 4, 5, 8, 10, 11, 14)
-            interface = output / ('rejected-' + str(case) + '.objc3i')
-            run('rejected-interface-' + str(case), [compiler, 'cpp-data-rejected.mm', '--objc3',
-                '--objcxx', '--arc', '--emit-interface', interface, '--module', 'Rejected',
+            admitted = case not in (7, 13)
+            directory = output / ('publication-control-' + str(case))
+            directory.mkdir()
+            interface = directory / 'PublicationControl.objc3i'
+            run('publication-control-' + str(case), [compiler, 'cpp-data-rejected.mm', '--objc3',
+                '--objcxx', '--arc', '--emit-interface', interface, '--module', 'PublicationControl',
                 '--package', 'cpp-data-v1', '--', '-std=c++20', '-DCASE=' + str(case)], expected=0 if admitted else 1,
                 diagnostic=None if admitted else ('O3IFC112' if case == 7 else 'O3IFC101'))
             if admitted:
@@ -180,10 +182,33 @@ def qualify(sdk: Path, output: Path) -> dict:
                 if not interface.is_file() or not metadata.is_file():
                     raise ValueError('admitted interface did not publish both artifacts')
                 document=json.loads(metadata.read_text())
-                if document['module']['canonical_name']!='Rejected' or not document['declarations']:
+                if document['module']['canonical_name'] != 'PublicationControl' or not document['declarations']:
                     raise ValueError('admitted interface lost its module or declaration contract')
                 report['admissions'].append({'case':case,'interface_sha256':hashlib.sha256(interface.read_bytes()).hexdigest(),
                     'metadata_sha256':hashlib.sha256(metadata.read_bytes()).hexdigest()})
+                if case in (1, 12):
+                    key = 'publication-control-client-' + str(case)
+                    client = sources / (key + '.mm')
+                    obj, binary = output / (key + '.o'), output / key
+                    body = ('return Nested::open(41) != 41 || Nested::open(2.0) != 2.0;'
+                            if case == 1 else
+                            'Overlap<int>::Inner value{.one = 41}; return value.one != 41;')
+                    client.write_text('@import PublicationControl;\nint main() { ' + body + ' }\n')
+                    original = sources / 'cpp-data-rejected.mm'
+                    held = output / 'held-publication-control.mm'
+                    original.rename(held)
+                    try:
+                        run(key + '-compile', [compiler, client, '--objc3', '--objcxx', '--arc',
+                            '--source-imports', '--module-search-path', directory, '--import-module',
+                            'PublicationControl', document['module']['semantic_fingerprint'],
+                            'cpp-data-v1', '--emit-object', obj, '--', '-std=c++20', '-O2'])
+                        run(key + '-link', [sdk / 'bin/clang++', '--no-default-config', '-fuse-ld=lld',
+                            obj, '-L' + str(sdk / 'lib'), '-lobjc', '-Wl,-rpath,' + str(sdk / 'lib'), '-o', binary])
+                        run(key + '-execute', [binary])
+                    finally:
+                        held.rename(original)
+                    report['executions'].append({'name': key, 'source_free': True,
+                        'executable_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()})
                 continue
             if interface.exists() or interface.with_suffix('.objc3i.json').exists():
                 raise ValueError('rejected interface left published output')
@@ -200,9 +225,9 @@ def qualify(sdk: Path, output: Path) -> dict:
             obj = output / ('rejected-visibility-' + str(case) + '.o')
             run('rejected-visibility-' + str(case), [*import_command('c++20', directory, identity,
                 'cpp-data-import-rejected.mm', obj), '-DCASE=' + str(case)], expected=1)
-        if len(report['executions']) != 14 or len(report['rejections']) != 8 or len(report['admissions']) != 8:
+        if len(report['executions']) != 16 or len(report['rejections']) != 6 or len(report['admissions']) != 10:
             raise ValueError('C++ interface execution/rejection inventory is incomplete')
-        if len(report['commands']) != 117:
+        if len(report['commands']) != 123:
             raise ValueError('C++ interface command inventory is incomplete')
         for language in ('c++', 'objective-c++'):
             for standard in ('c++20', 'c++23'):

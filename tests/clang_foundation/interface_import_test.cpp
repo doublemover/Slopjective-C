@@ -193,25 +193,31 @@ void TestPrimitiveABIProfilesRejectMismatchedConsumers() {
   const auto root = fs::temp_directory_path() / "objc3-primitive-abi-import-test";
   fs::remove_all(root);
   fs::create_directories(root);
-  for (const auto &flag : {"-funsigned-char", "-fshort-wchar", "-fshort-enums",
-                           "-fpack-struct=1", "-mavx2"}) {
+  const std::pair<const char *, const char *> variants[] = {
+      {"-funsigned-char", "-fsigned-char"}, {"-fshort-wchar", nullptr},
+      {"-fshort-enums", nullptr}, {"-fpack-struct=1", nullptr},
+      {test::NativeFeatureEnabled, test::NativeFeatureDisabled}};
+  for (const auto &[flag, baseline] : variants) {
     const auto path = root / "provider.objc3i";
     auto provider = ModuleRequest(root / "provider.m", "fixture.abi",
                                   "char byte_value(void); extern int counter;");
     provider.arguments.push_back(flag);
     provider.interface_output_path = path.string();
     auto emitted = Compile(provider);
+    test::ReportFailure(emitted);
     assert(emitted.success && emitted.interface_artifact);
     auto consumer = ModuleRequest(root / "consumer.m", "",
                                   "int use(void) { return byte_value() + counter; }");
     consumer.emit_semantic_interface = false;
     consumer.imported_interfaces = {ImportOf(path, emitted.interface_artifact->identity)};
+    if (baseline) consumer.arguments.push_back(baseline);
     auto rejected = Compile(consumer);
     assert(!rejected.success && rejected.imported_declarations.empty());
     assert(std::any_of(rejected.interface_import_diagnostics.begin(),
                        rejected.interface_import_diagnostics.end(),
                        [](const auto &d) { return d.code == "O3IFC135"; }));
-    consumer.arguments.push_back(flag);
+    if (baseline) consumer.arguments.back() = flag;
+    else consumer.arguments.push_back(flag);
     auto admitted = Compile(consumer);
     for (const auto &d : admitted.interface_import_diagnostics)
       std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());

@@ -135,3 +135,26 @@ The public C embedding implementation compiles with the native source include
 root and the standard C++ library. Its internal async export state uses
 `std::span` for entry selections, so dependency scanning requires no LLVM
 headers through the embedding API.
+
+Native AArch64 SDK jobs exposed x86-specific assumptions in the frontend test
+fixtures. The primitive checks explicitly select both plain `char` signedness
+modes and use an architecture-specific CPU feature pair. The Intel syntax
+variant runs on x86-64. AArch64 still exercises ownership mode and source
+import checks with its native assembly profile. The typed subscript key-path
+producer and consumer now share the native driver target options, including
+compiler-rt on AArch64.
+
+The coverage process reads the effective CTest deadline from discovery. CTest
+honors a test's explicit `TIMEOUT` before its command-line default. The outer
+process uses that same deadline plus its bounded cleanup allowance. This fixes
+four Block binding coverage jobs and the boundary-resource coverage job that
+stopped at 150 seconds despite a configured 300-second test deadline.
+
+The installed C++ suite now executes namespace generic closures and dependent
+nested unions after hiding the provider source. The retained x86-64 producer
+had reached SDK qualification before stopping on the stale generic closure
+rejection. The updated suite still rejects private default-initializer
+dependencies, deleted function specializations, mismatched consumer profiles
+and inaccessible declarations. It passed locally with 16 linked executions,
+10 publication admissions, six rejections and 124 recorded commands using a
+development prefix with the current relinked compiler.
