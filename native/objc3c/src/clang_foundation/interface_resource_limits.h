@@ -33,6 +33,13 @@ struct InterfaceResourceUsage {
   std::uint64_t candidate_pairs = 0;
   std::uint64_t coalesced_duplicates = 0;
   std::uint64_t decoded_declarations = 0;
+  // Live/peak candidate bodies are measured only during compact indexing.
+  // A successful or rejected resolution must return with both live counters
+  // at zero: selected bodies have a separate budget below.
+  std::uint64_t resident_candidate_bytes = 0;
+  std::uint64_t peak_resident_candidate_bytes = 0;
+  std::uint64_t resident_candidate_declarations = 0;
+  std::uint64_t peak_resident_candidate_declarations = 0;
   std::uint64_t selected_bytes = 0;
   std::uint64_t selected_declarations = 0;
   std::uint64_t selected_modules = 0;

@@ -3,9 +3,12 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import signal
 import sys
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+
+import pytest
 
 SCRIPTS_ROOT = Path(__file__).resolve().parents[2] / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
@@ -29,10 +32,22 @@ def run_main(argv: list[str]) -> tuple[int, str, str]:
 
 
 def write_fake_compiler(path: Path, *, mode: str) -> None:
-    if mode not in {"safe_fail", "unsafe_zero"}:
+    modes = {
+        "safe_fail": (1, "error: synthetic diagnostic O3P901 digest=", 0),
+        "unsafe_zero": (0, "error: synthetic diagnostic O3P901 digest=", 0),
+        "silent_one": (1, "", 0),
+        "silent_two": (2, "", 0),
+        "exit_86": (86, "error: synthetic diagnostic O3P901 digest=", 0),
+        "sanitizer_one": (1, "error: synthetic diagnostic O3P901\n==42==ERROR: AddressSanitizer: heap-buffer-overflow", 0),
+        "cli_one": (1, "error: unknown argument '--pretend-source-error'", 0),
+        "signal_abrt": (-signal.SIGABRT, "", 0),
+        "signal_segv": (-signal.SIGSEGV, "", 0),
+        "timeout": (1, "error: too late", 1),
+    }
+    if mode not in modes:
         raise ValueError(f"unsupported fake compiler mode: {mode}")
 
-    exit_code = "1" if mode == "safe_fail" else "0"
+    exit_code, diagnostic, delay = modes[mode]
     body = """#!/usr/bin/env python3
 import argparse
 import hashlib
@@ -52,12 +67,22 @@ def main() -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "module.ll").write_text("; fake ir " + digest + "\\n", encoding="utf-8")
-    print("error: synthetic diagnostic O3P901 digest=" + digest, file=sys.stderr)
-    return {exit_code}
+    diagnostic = {diagnostic!r}
+    delay = {delay}
+    if delay:
+        import time
+        time.sleep(delay)
+    if diagnostic:
+        print(diagnostic + (digest if diagnostic.endswith("digest=") else ""), file=sys.stderr)
+    exit_code = {exit_code}
+    if exit_code < 0:
+        import os, signal
+        os.kill(os.getpid(), -exit_code)
+    return exit_code
 
 if __name__ == "__main__":
     raise SystemExit(main())
-""".format(exit_code=exit_code)
+""".format(exit_code=exit_code, diagnostic=diagnostic, delay=delay)
     path.write_text(body, encoding="utf-8")
 
 
@@ -126,12 +151,16 @@ def test_contract_mode_happy_path_is_deterministic(tmp_path: Path) -> None:
     payload = json.loads(first_stdout)
     assert payload["mode"] == run_objc3c_fuzz_safety.MODE
     assert payload["schema_version"] == run_objc3c_fuzz_safety.SCHEMA_VERSION
+    assert payload["schema_version"] == "objc3c-fuzz-safety-report.v2"
     assert payload["status"] == "PASS"
     assert payload["violation_count"] == 0
     assert payload["config"]["case_count"] == 8
     assert payload["corpus_strategy"]["strategy_id"] == "objc3c-malformed-corpus-with-manifest-v2"
     assert payload["corpus_strategy"]["manifest_path"] == "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json"
     assert payload["corpus_strategy"]["manifest_case_count"] == 7
+    assert all(result["run1_termination"] == "diagnostic-exit" for result in payload["results"])
+    assert all(result["run1_diagnostic_class"] == "ordinary-source-diagnostic"
+               for result in payload["results"])
 
 
 def test_contract_mode_fails_on_zero_exit_for_malformed_inputs(tmp_path: Path) -> None:
@@ -162,6 +191,47 @@ def test_contract_mode_fails_on_zero_exit_for_malformed_inputs(tmp_path: Path) -
     assert payload["violation_count"] > 0
     violation_ids = {item["check_id"] for item in payload["violations"]}
     assert "SAFE-001" in violation_ids
+
+
+@pytest.mark.parametrize(
+    ("mode", "required_check"),
+    [
+        ("silent_one", "SAFE-002"),
+        ("silent_two", "SAFE-001"),
+        ("exit_86", "SAFE-001"),
+        ("sanitizer_one", "SAFE-005"),
+        ("cli_one", "SAFE-005"),
+        ("signal_abrt", "SAFE-004"),
+        ("signal_segv", "SAFE-004"),
+        ("timeout", "SAFE-003"),
+    ],
+)
+def test_contract_mode_rejects_abnormal_statuses_and_diagnostics(
+    tmp_path: Path, mode: str, required_check: str
+) -> None:
+    fake_compiler = tmp_path / (mode + ".py")
+    write_fake_compiler(fake_compiler, mode=mode)
+
+    code, stdout, stderr = run_main(
+        [
+            "--compiler", str(fake_compiler),
+            "--python-launcher", sys.executable,
+            "--out-root", str(tmp_path / (mode + "-out")),
+            "--max-cases", "1",
+            "--timeout-sec", "0.05" if mode == "timeout" else "5",
+            "--generated-at-utc", "2026-02-27T00:00:00Z",
+            "--contract-mode",
+        ]
+    )
+
+    assert code == 1 and stderr == ""
+    payload = json.loads(stdout)
+    assert payload["status"] == "FAIL"
+    assert required_check in {row["check_id"] for row in payload["violations"]}
+    result = payload["results"][0]
+    assert result["run1_exit_code"] == result["run2_exit_code"]
+    assert result["run1_termination"] == result["run2_termination"]
+    assert result["run1_diagnostic_class"] == result["run2_diagnostic_class"]
 
 
 def test_missing_compiler_returns_input_error(tmp_path: Path) -> None:

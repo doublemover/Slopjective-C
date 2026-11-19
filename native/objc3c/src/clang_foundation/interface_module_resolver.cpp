@@ -109,6 +109,35 @@ struct Candidate {
   }
 };
 
+class CandidateResidency {
+ public:
+  CandidateResidency(InterfaceResourceUsage &usage, std::uint64_t bytes)
+      : usage_(usage), bytes_(bytes) {
+    usage_.resident_candidate_bytes += bytes_;
+    usage_.peak_resident_candidate_bytes =
+        std::max(usage_.peak_resident_candidate_bytes,
+                 usage_.resident_candidate_bytes);
+  }
+  CandidateResidency(const CandidateResidency &) = delete;
+  CandidateResidency &operator=(const CandidateResidency &) = delete;
+  ~CandidateResidency() {
+    usage_.resident_candidate_declarations -= declarations_;
+    usage_.resident_candidate_bytes -= bytes_;
+  }
+  void declarations(std::uint64_t count) {
+    usage_.resident_candidate_declarations += count;
+    declarations_ += count;
+    usage_.peak_resident_candidate_declarations =
+        std::max(usage_.peak_resident_candidate_declarations,
+                 usage_.resident_candidate_declarations);
+  }
+
+ private:
+  InterfaceResourceUsage &usage_;
+  std::uint64_t bytes_ = 0;
+  std::uint64_t declarations_ = 0;
+};
+
 bool Resource(InterfaceModuleResolution &result, std::uint64_t &used,
                std::uint64_t amount, std::uint64_t limit, llvm::StringRef name) {
   if (ChargeInterfaceResource(used, amount, limit)) return true;
@@ -129,10 +158,11 @@ std::string BuildInterfaceIncludePath(llvm::StringRef canonical_module_name) {
   return path;
 }
 
-InterfaceModuleResolution ResolveInterfaceModules(
+InterfaceModuleResolution ResolveInterfaceModulesForTesting(
     const std::vector<std::string> &search_roots,
     const std::vector<InterfaceModuleRequest> &requested_modules,
-    const InterfaceImportTarget &target) {
+    const InterfaceImportTarget &target,
+    const std::function<void()> &after_index) {
   InterfaceModuleResolution result;
   // Compact index: no source bodies, JSON buffers or unselected declarations
   // survive one candidate iteration. Identical copies share one chosen path.
@@ -202,6 +232,7 @@ InterfaceModuleResolution ResolveInterfaceModules(
           return result;
         continue;
       }
+      CandidateResidency residency(usage, source_bytes.size() + sidecar_bytes.size());
       ++usage.candidate_pairs;
       auto decoded = DecodeSemanticInterfaceSidecar(
           sidecar_bytes, source_bytes, llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
@@ -210,6 +241,7 @@ InterfaceModuleResolution ResolveInterfaceModules(
             llvm::toString(decoded.takeError()), candidate.sidecar_path);
         continue;
       }
+      residency.declarations(decoded->declarations.size());
       if (!Resource(result, usage.decoded_declarations, decoded->declarations.size(),
                     limits.decoded_declarations, "decoded declaration work")) return result;
       candidate.identity = decoded->module;
@@ -242,6 +274,7 @@ InterfaceModuleResolution ResolveInterfaceModules(
   }
   if (!result.diagnostics.empty()) return result;
   candidate_paths.clear(); // release scan strings before retaining selected bodies
+  if (after_index) after_index();
 
   std::map<std::string, SemanticInterfaceSidecar> selected;
   std::map<std::string, InterfaceImportInput> inputs;
@@ -404,6 +437,14 @@ InterfaceModuleResolution ResolveInterfaceModules(
   result.visible_module_names.assign(visible.begin(), visible.end());
   result.success = true;
   return result;
+}
+
+InterfaceModuleResolution ResolveInterfaceModules(
+    const std::vector<std::string> &search_roots,
+    const std::vector<InterfaceModuleRequest> &requested_modules,
+    const InterfaceImportTarget &target) {
+  return ResolveInterfaceModulesForTesting(search_roots, requested_modules,
+                                           target, {});
 }
 
 } // namespace objc3::clang_foundation

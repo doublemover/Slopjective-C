@@ -14,8 +14,8 @@ ARTIFACT_IDENTITY = current_host_artifact_identity()
 DEFAULT_COMPILER = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 DEFAULT_OUT_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-native" / "fuzz-safety"
 DEFAULT_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "parser_sema_fuzz_manifest.json"
-MODE = "objc3c-fuzz-safety-v1"
-SCHEMA_VERSION = "objc3c-fuzz-safety-report.v1"
+MODE = "objc3c-fuzz-safety-v2"
+SCHEMA_VERSION = "objc3c-fuzz-safety-report.v2"
 
 EXIT_OK = 0
 EXIT_GUARD_FAIL = 1

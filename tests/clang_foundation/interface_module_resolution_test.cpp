@@ -153,6 +153,12 @@ void TestCompactIndexBudgets(const std::filesystem::path &root,
   assert(usage.index_modules == 2 && usage.selected_modules == 1);
   assert(usage.read_bytes > usage.selected_bytes * 6);
   assert(usage.selected_declarations > 0);
+  assert(usage.resident_candidate_bytes == 0);
+  assert(usage.resident_candidate_declarations == 0);
+  assert(usage.peak_resident_candidate_bytes > 0 &&
+         usage.peak_resident_candidate_bytes < usage.read_bytes);
+  assert(usage.peak_resident_candidate_declarations > 0 &&
+         usage.peak_resident_candidate_declarations < usage.decoded_declarations);
   auto reversed = resolve(target, true);
   assert(reversed.success && reversed.artifacts.front().source_path == baseline.artifacts.front().source_path);
   using Field = std::uint64_t InterfaceResourceLimits::*;
@@ -175,6 +181,29 @@ void TestCompactIndexBudgets(const std::filesystem::path &root,
     assert(std::any_of(rejected.diagnostics.begin(), rejected.diagnostics.end(),
         [](const auto &d) { return d.code == kInterfaceResourceDiagnostic; }));
   }
+
+  const auto selected_path = std::filesystem::path(baseline.artifacts.front().source_path);
+  std::ifstream selected_input(selected_path, std::ios::binary);
+  const std::string selected_bytes((std::istreambuf_iterator<char>(selected_input)), {});
+  selected_input.close();
+  bool mutated = false;
+  auto changed = ResolveInterfaceModulesForTesting(
+      {left.string(), right.string()}, {Locked(artifact.identity)}, target, [&] {
+        std::ofstream output(selected_path, std::ios::binary | std::ios::app);
+        output << "// deterministic post-index replacement\n";
+        assert(output.good());
+        mutated = true;
+      });
+  assert(mutated && !changed.success && changed.artifacts.empty());
+  assert(changed.resource_usage.resident_candidate_bytes == 0);
+  assert(changed.resource_usage.resident_candidate_declarations == 0);
+  assert(std::any_of(changed.diagnostics.begin(), changed.diagnostics.end(),
+      [](const auto &d) { return d.code == "O3IFC134"; }));
+  std::ofstream restore(selected_path, std::ios::binary | std::ios::trunc);
+  restore.write(selected_bytes.data(), selected_bytes.size());
+  assert(restore.good());
+  restore.close();
+  assert(resolve(target).success);
   std::filesystem::remove_all(dir);
 }
 

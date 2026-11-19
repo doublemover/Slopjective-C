@@ -8,10 +8,47 @@ import subprocess
 from pathlib import Path
 
 from objc3c_tooling.paths import display_path
+from objc3c_toolchain.diagnostic_termination import ABNORMAL_DIAGNOSTIC
 
 from .corpus import CorpusCase, normalize_text
 
-DIAGNOSTIC_SIGNAL_PATTERN = re.compile(r"(error|O3[A-Z]\d{3})", re.IGNORECASE)
+DIAGNOSTIC_SIGNAL_PATTERN = re.compile(
+    r"(?:^|\n)(?:[^:\n]+:\d+(?::\d+)?:\s*)?(?:fatal error|error):"
+    r"|\bO3[A-Z]\d{3}\b",
+    re.IGNORECASE,
+)
+INFRASTRUCTURE_DIAGNOSTIC_PATTERN = re.compile(
+    r"(?:^|\n)Traceback \(most recent call last\):"
+    r"|\b(?:unknown|unrecognized|unsupported) (?:argument|option)\b"
+    r"|\b(?:no input files|no such file or directory)\b"
+    r"|\berror while loading shared libraries\b"
+    r"|\bsymbol lookup error\b"
+    r"|\b(?:cannot|unable to) (?:load|open) (?:shared |dynamic )?(?:library|object)\b"
+    r"|\bterminate called after throwing\b",
+    re.IGNORECASE,
+)
+
+
+def classify_termination(exit_code: object, timed_out: object) -> str:
+    if timed_out is True:
+        return "timeout"
+    if type(exit_code) is not int:
+        return "missing-status"
+    if exit_code < 0:
+        return "signal"
+    if exit_code == 1:
+        return "diagnostic-exit"
+    return "unexpected-exit"
+
+
+def classify_diagnostic(transcript: str) -> str:
+    if ABNORMAL_DIAGNOSTIC.search(transcript):
+        return "abnormal-runtime"
+    if INFRASTRUCTURE_DIAGNOSTIC_PATTERN.search(transcript):
+        return "infrastructure-error"
+    if DIAGNOSTIC_SIGNAL_PATTERN.search(transcript):
+        return "ordinary-source-diagnostic"
+    return "missing-source-diagnostic"
 
 
 def hash_output(stdout_text: str, stderr_text: str) -> str:
@@ -117,35 +154,46 @@ def run_case(
     run2_exit = run2["exit_code"]
     run1_output = f"{run1['stdout']}\n{run1['stderr']}"
     run2_output = f"{run2['stdout']}\n{run2['stderr']}"
+    run1_termination = classify_termination(run1_exit, run1["timed_out"])
+    run2_termination = classify_termination(run2_exit, run2["timed_out"])
+    run1_diagnostic = classify_diagnostic(run1_output)
+    run2_diagnostic = classify_diagnostic(run2_output)
 
-    if run1_exit is not None and run1_exit >= 0 and run1_exit == 0:
-        unsafe_errors.append(
-            {
-                "check_id": "SAFE-001",
-                "detail": "run1 returned exit code 0 for malformed corpus case",
-            }
-        )
-    if run2_exit is not None and run2_exit >= 0 and run2_exit == 0:
-        unsafe_errors.append(
-            {
-                "check_id": "SAFE-001",
-                "detail": "run2 returned exit code 0 for malformed corpus case",
-            }
-        )
-    if run1_exit is not None and run1_exit < 0:
-        unsafe_errors.append(
-            {
-                "check_id": "SAFE-004",
-                "detail": f"run1 terminated by signal ({run1_exit})",
-            }
-        )
-    if run2_exit is not None and run2_exit < 0:
-        unsafe_errors.append(
-            {
-                "check_id": "SAFE-004",
-                "detail": f"run2 terminated by signal ({run2_exit})",
-            }
-        )
+    for iteration, exit_code, termination, diagnostic in (
+        (1, run1_exit, run1_termination, run1_diagnostic),
+        (2, run2_exit, run2_termination, run2_diagnostic),
+    ):
+        if termination != "diagnostic-exit":
+            unsafe_errors.append(
+                {
+                    "check_id": "SAFE-001",
+                    "detail": (
+                        f"run{iteration} expected ordinary diagnostic exit 1, "
+                        f"got {exit_code} ({termination})"
+                    ),
+                }
+            )
+        if termination == "signal":
+            unsafe_errors.append(
+                {
+                    "check_id": "SAFE-004",
+                    "detail": f"run{iteration} terminated by signal ({exit_code})",
+                }
+            )
+        if diagnostic in ("abnormal-runtime", "infrastructure-error"):
+            unsafe_errors.append(
+                {
+                    "check_id": "SAFE-005",
+                    "detail": f"run{iteration} reported {diagnostic}",
+                }
+            )
+        elif termination == "diagnostic-exit" and diagnostic != "ordinary-source-diagnostic":
+            unsafe_errors.append(
+                {
+                    "check_id": "SAFE-002",
+                    "detail": f"run{iteration} missing an ordinary source diagnostic",
+                }
+            )
 
     if (
         run1_exit is not None
@@ -173,36 +221,16 @@ def run_case(
             }
         )
 
-    if (
-        not run1["timed_out"]
-        and run1_exit == 0
-        and not DIAGNOSTIC_SIGNAL_PATTERN.search(run1_output)
-    ):
-        unsafe_errors.append(
-            {
-                "check_id": "SAFE-002",
-                "detail": "run1 missing diagnostic signal token (error/O3*)",
-            }
-        )
-    if (
-        not run2["timed_out"]
-        and run2_exit == 0
-        and not DIAGNOSTIC_SIGNAL_PATTERN.search(run2_output)
-    ):
-        unsafe_errors.append(
-            {
-                "check_id": "SAFE-002",
-                "detail": "run2 missing diagnostic signal token (error/O3*)",
-            }
-        )
-
     checks = {
-        "nonzero_exit": not any(item["check_id"] == "SAFE-001" for item in unsafe_errors),
-        "diagnostic_signal_present": not any(
+        "diagnostic_exit": not any(item["check_id"] == "SAFE-001" for item in unsafe_errors),
+        "ordinary_source_diagnostic": not any(
             item["check_id"] == "SAFE-002" for item in unsafe_errors
         ),
         "timeout_free": not any(item["check_id"] == "SAFE-003" for item in unsafe_errors),
         "no_crash_signal": not any(item["check_id"] == "SAFE-004" for item in unsafe_errors),
+        "no_abnormal_diagnostic": not any(
+            item["check_id"] == "SAFE-005" for item in unsafe_errors
+        ),
         "deterministic_exit": not any(item["check_id"] == "DET-001" for item in unsafe_errors),
         "deterministic_output": not any(
             item["check_id"] == "DET-002" for item in unsafe_errors
@@ -215,6 +243,14 @@ def run_case(
         "source_path": display_path(source_path),
         "run1_exit_code": run1_exit,
         "run2_exit_code": run2_exit,
+        "run1_signal": -run1_exit if type(run1_exit) is int and run1_exit < 0 else None,
+        "run2_signal": -run2_exit if type(run2_exit) is int and run2_exit < 0 else None,
+        "run1_timed_out": run1["timed_out"],
+        "run2_timed_out": run2["timed_out"],
+        "run1_termination": run1_termination,
+        "run2_termination": run2_termination,
+        "run1_diagnostic_class": run1_diagnostic,
+        "run2_diagnostic_class": run2_diagnostic,
         "run1_output_sha256": run1["output_sha256"],
         "run2_output_sha256": run2["output_sha256"],
         "checks": checks,

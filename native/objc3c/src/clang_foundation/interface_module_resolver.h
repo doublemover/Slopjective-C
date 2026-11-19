@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -39,6 +40,14 @@ struct InterfaceModuleResolution {
     const std::vector<std::string> &search_roots,
     const std::vector<InterfaceModuleRequest> &requested_modules,
     const InterfaceImportTarget &target);
+
+// Deterministic test boundary for replacing an indexed artifact before its
+// selected bytes are reread. Production callers use ResolveInterfaceModules.
+[[nodiscard]] InterfaceModuleResolution ResolveInterfaceModulesForTesting(
+    const std::vector<std::string> &search_roots,
+    const std::vector<InterfaceModuleRequest> &requested_modules,
+    const InterfaceImportTarget &target,
+    const std::function<void()> &after_index);
 
 // Stable relative include spelling emitted into canonical interfaces.
 [[nodiscard]] std::string BuildInterfaceIncludePath(

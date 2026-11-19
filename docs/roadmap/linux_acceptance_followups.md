@@ -14,7 +14,10 @@ and source-qualified; hosted aggregate acceptance remains open.
   command result. Signals, translated driver crashes and fatal diagnostics
   accompanying exit 1 are rejected. The managed-module runner invalidates an
   earlier success receipt before starting. Runtime trap controls keep their own
-  termination expectations.
+  termination expectations. The retained deterministic malformed-corpus gate
+  now uses report v2: only exit 1 with an ordinary source diagnostic passes;
+  repeatable exits 0/2/86, silent rejection, sanitizer or loader/CLI diagnostics,
+  signals and timeouts retain their exact termination class and fail.
 - **#8286 — clean-host tool ordering:** admit the complete foundation before
   resolving optional development tools, build `opt`/`llvm-dis`/`llvm-reduce`, then
   perform strict tool admission. Removing `opt` before the real campaign proves

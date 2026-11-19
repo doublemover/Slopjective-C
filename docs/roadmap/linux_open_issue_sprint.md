@@ -257,7 +257,11 @@ conflicting identities or source digests still fail admission. Canonical path
 ordering makes duplicate selection independent of search-root and directory
 iteration order. Selected pairs are reread and both digests are checked before
 loading their dependency closure. Direct-file imports apply the same selected
-input, graph and parser-work budgets.
+input, graph and parser-work budgets. The resolver now records the live and
+peak candidate bytes/declarations during indexing; both live counters must be
+zero on return. A deterministic post-index mutation hook proves that replacing
+the selected bytes before reread is rejected by the stored digest rather than
+admitting a stale index.
 
 | Resource                                          | Default limit |
 | ------------------------------------------------- | ------------- |
