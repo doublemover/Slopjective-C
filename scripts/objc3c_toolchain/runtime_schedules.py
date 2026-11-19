@@ -17,6 +17,7 @@ from .sanitizer_policy import SanitizerQualification
 SCENARIO_INVENTORY = {
     'concurrent-registration-cancellation-publication': 'task-services',
     'interrupted-group-waiter-registration-retirement': 'task-services',
+    'interrupted-dependency-waiter-registration-retirement': 'task-services',
     'global-pool-multi-actor-and-task-exclusion': 'task-services',
     'queued-discard-and-named-binding-retirement': 'task-services',
     'nested-and-last-owner-abandoned-awaits': 'structured-runtime',

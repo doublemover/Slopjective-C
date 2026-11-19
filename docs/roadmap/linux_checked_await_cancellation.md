@@ -51,3 +51,12 @@ native controls keep a member suspended and verify that each abandoned waiter
 releases its registration before a later group event, then consume the member's
 result and join the group. The schedule evidence gate requires those controls
 in the complete sanitizer and optimization matrix.
+
+Source 2.285 / System 2.211 extends prompt retirement to task-to-task awaits.
+An interrupted parent drops its registration while the dependency remains
+suspended. Completion and cancellation each claim the same published node,
+and the existing completion queue order is retained. Native controls cover
+cancellation, external completion, last-handle release, dependency completion
+after registration, and dependencies already complete at registration. The
+task-service suite passes at O0 and O2 with both ASan/UBSan and TSan, using
+the pinned LLVM 23.1.5 compiler and a matching instrumented GNUstep runtime.

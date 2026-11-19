@@ -1453,6 +1453,67 @@ void test_interrupted_group_waiters_release_registration() {
   objc3_executor_release(executor);
 }
 
+void test_interrupted_dependency_waiters_release_registration() {
+  auto *executor = manual_executor();
+  std::atomic<int> destroyed{0};
+  auto *dependency = start_task(executor, new Frame{executor, 0, 0, false, &destroyed});
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK && executed == 1);
+  const objc3_completion success{sizeof(success), OBJC3_SERVICE_ABI_VERSION,
+                                 OBJC3_COMPLETION_SUCCESS, 0, nullptr, nullptr, nullptr, nullptr};
+  enum End { Cancel, CompleteExternally, DropLastOwner, DependencyFinishes, AlreadyComplete };
+  struct Wait {
+    objc3_task_t *dependency;
+    unsigned resumes{0};
+    bool cancelled{false};
+  };
+  for (End end : {Cancel, CompleteExternally, DropLastOwner, DependencyFinishes, AlreadyComplete}) {
+    Wait wait{dependency};
+    objc3_task_start_options options{};
+    options.struct_size = sizeof(options);
+    options.version = OBJC3_SERVICE_ABI_VERSION;
+    options.executor = executor;
+    options.frame = &wait;
+    options.destroy = [](void *) {};
+    options.resume = [](objc3_task_t *task, void *opaque) {
+      auto &state = *static_cast<Wait *>(opaque);
+      if (++state.resumes == 1) {
+        assert(objc3_task_await(task, state.dependency) == OBJC3_SERVICE_OK);
+        return;
+      }
+      assert(state.resumes == 2);
+      state.cancelled = objc3_task_current_cancel_requested();
+      objc3_completion completion{};
+      completion.struct_size = sizeof(completion);
+      completion.version = OBJC3_SERVICE_ABI_VERSION;
+      completion.kind = state.cancelled ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS;
+      assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+    };
+    objc3_task_t *task = nullptr;
+    assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+    assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK && executed == 1);
+    assert(wait.resumes == 1);
+    std::weak_ptr<objc3_task::AwaitTarget> registration = task->await_target;
+    if (end == Cancel) objc3_task_request_cancel(task);
+    if (end == CompleteExternally)
+      assert(objc3_task_complete(task, &success) == OBJC3_SERVICE_OK);
+    if (end == DropLastOwner) {
+      objc3_task_release(task);
+      task = nullptr;
+    }
+    if (end == DependencyFinishes)
+      assert(objc3_task_complete(dependency, &success) == OBJC3_SERVICE_OK);
+    assert(objc3_executor_pump(executor, 8, &executed) == OBJC3_SERVICE_OK);
+    assert(wait.resumes == (end == CompleteExternally || end == DropLastOwner ? 1 : 2));
+    assert(wait.cancelled == (end == Cancel));
+    objc3_task_release(task);
+    assert(registration.expired());
+    assert(destroyed == (end == DependencyFinishes || end == AlreadyComplete ? 1 : 0));
+  }
+  objc3_task_release(dependency);
+  objc3_executor_release(executor);
+}
+
 void noop_executor_callback(void *opaque) {
   ++*static_cast<std::atomic<int> *>(opaque);
 }
@@ -1827,6 +1888,7 @@ int main() {
   test_group_failure_cancels_siblings_before_delivery();
   test_recursive_group_close_and_join();
   test_interrupted_group_waiters_release_registration();
+  test_interrupted_dependency_waiters_release_registration();
   test_executor_admission_and_queue_saturation();
   test_saturated_resume_can_retry_without_lost_wakeup();
   test_refcount_saturation_fails_without_losing_ownership();

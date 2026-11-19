@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.285 / System 2.211 task dependency change](linux_checked_await_cancellation.md)
+retires interrupted direct awaits. Task services pass at O0 and O2 under
+ASan/UBSan and TSan with a matching instrumented GNUstep runtime.
+
 The [Source 2.284 / System 2.210 group waiter change](linux_checked_await_cancellation.md)
 removes abandoned registrations on cancellation, external completion and last
 handle release. Terminal evidence checks all required runtime schedule profiles.

@@ -9,6 +9,29 @@
 #include <new>
 #include <utility>
 
+struct ObjC3TaskDependencyWaiter {
+  enum class State { Pending, Linked, Detached };
+
+  explicit ObjC3TaskDependencyWaiter(std::shared_ptr<objc3_task::AwaitTarget> target)
+      : dependency(std::move(target)) {}
+
+  const std::shared_ptr<objc3_task::AwaitTarget> dependency;
+  ObjC3TaskAwaitContinuation continuation;
+  std::list<objc3_task::Waiter>::iterator position;
+  State state{State::Pending}; // Protected by the dependency's task mutex.
+
+  static void unlink(void *opaque) noexcept {
+    auto &registration = *static_cast<ObjC3TaskDependencyWaiter *>(opaque);
+    std::lock_guard<std::mutex> lifetime(registration.dependency->mutex);
+    if (auto *task = registration.dependency->task) {
+      std::lock_guard<std::mutex> lock(task->mutex);
+      if (registration.state == State::Linked)
+        task->waiters.erase(registration.position);
+      registration.state = State::Detached;
+    }
+  }
+};
+
 extern "C" objc3_service_status
 objc3_async_result_type_validate(const objc3_async_result_type *type) {
   if (!type || type->struct_size < sizeof(*type))
@@ -222,9 +245,8 @@ void wake_awaiting_task(objc3_task_t *task, bool force_cancel) noexcept {
 }
 
 void dependency_completed(void *context, const objc3_completion *) {
-  std::unique_ptr<ObjC3TaskAwaitContinuation> continuation(
-      static_cast<ObjC3TaskAwaitContinuation *>(context));
-  objc3_task_finish_await(*continuation);
+  const auto &registration = *static_cast<ObjC3TaskDependencyWaiter *>(context);
+  objc3_task_finish_await(registration.continuation);
 }
 
 void *allocate_payload(uint64_t size, uint64_t alignment) noexcept {
@@ -340,7 +362,7 @@ void notify_quiescence(objc3_task_t *task) noexcept {
 }
 
 void invoke_waiters(objc3_task_t *task,
-                    const std::vector<objc3_task::Waiter> &waiters,
+                    const std::list<objc3_task::Waiter> &waiters,
                     const objc3_completion &value) noexcept {
   for (const auto &waiter : waiters) {
     {
@@ -607,7 +629,7 @@ objc3_service_status start_task(
   task->completion_owned = completion_owned;
   if (options->completion) {
     try {
-      task->waiters.push_back({options->completion, options->completion_context});
+      task->waiters.push_back({options->completion, options->completion_context, {}});
     } catch (...) {
       task->frame = nullptr; // Ownership transfers only after start succeeds.
       delete task;
@@ -976,7 +998,7 @@ extern "C" objc3_service_status objc3_task_complete(
     return copy_status;
   }
 
-  std::vector<objc3_task::Waiter> waiters;
+  std::list<objc3_task::Waiter> waiters;
   void *frame_to_destroy = nullptr;
   objc3_frame_destroy frame_destructor = nullptr;
   objc3_completion borrowed{};
@@ -1008,6 +1030,9 @@ extern "C" objc3_service_status objc3_task_complete(
     task->resume_requested = false;
     continuation_owner = std::move(task->continuation_owner);
     if (continuation_owner) ++task->continuation_owners_active;
+    for (const auto &waiter : task->waiters)
+      if (waiter.registration)
+        waiter.registration->state = ObjC3TaskDependencyWaiter::State::Detached;
     waiters.swap(task->waiters);
     task->callbacks_active += static_cast<uint32_t>(waiters.size());
     if (!task->resume_active && task->frame) {
@@ -1045,7 +1070,7 @@ extern "C" objc3_service_status objc3_task_add_waiter(
       ++task->callbacks_active;
       call_now = true;
     } else {
-      try { task->waiters.push_back({callback, context}); }
+      try { task->waiters.push_back({callback, context, {}}); }
       catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
     }
   }
@@ -1078,12 +1103,10 @@ objc3_service_status objc3_task_add_group_observers(
     // Allocate the completion slot before publishing either observer. A
     // completed task cannot consume context and then fail registration.
     if (!task->terminal)
-      task->waiters.reserve(task->waiters.size() + 1);
+      task->waiters.push_back({completion, context, {}});
     quiescence->next = task->quiescence_observers;
     task->quiescence_observers = std::move(quiescence);
-    if (!task->terminal) {
-      task->waiters.push_back({completion, context});
-    } else {
+    if (task->terminal) {
       borrowed = task_view(task);
       ++task->callbacks_active;
       call_now = true;
@@ -1190,41 +1213,48 @@ void objc3_task_finish_await(const ObjC3TaskAwaitContinuation &continuation,
       continuation, status, nullptr, std::move(continuation_owner)));
 }
 
-void objc3_task_abort_await(
-    objc3_task_t *parent, const ObjC3TaskAwaitContinuation &continuation) {
-  std::lock_guard<std::mutex> lock(parent->mutex);
-  if (parent->await_generation == continuation.generation) {
-    parent->awaiting = false;
-    parent->await_cancellation_shielded = false;
-    parent->await_status = nullptr;
-    parent->await_result_task = nullptr;
-  }
-}
-
 extern "C" objc3_service_status objc3_task_await(
     objc3_task_t *parent, objc3_task_t *dependency) {
   if (!parent || !dependency || parent == dependency)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
-  auto continuation = std::unique_ptr<ObjC3TaskAwaitContinuation>(
-      new (std::nothrow) ObjC3TaskAwaitContinuation);
-  if (!continuation) return OBJC3_SERVICE_OUT_OF_MEMORY;
-  const auto preparation = objc3_task_prepare_await(parent, *continuation);
+  if (current_service_task != parent) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (!objc3_task_internal_retain(dependency)) return OBJC3_SERVICE_NOT_READY;
+  TaskReleaseGuard guard{dependency};
+  using Registration = ObjC3TaskDependencyWaiter;
+  std::shared_ptr<Registration> registration;
+  std::list<objc3_task::Waiter> waiter;
+  try {
+    registration = std::make_shared<Registration>(dependency->await_target);
+    waiter.push_back({dependency_completed, registration.get(), registration});
+  } catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
+  const auto preparation = objc3_task_prepare_await(
+      parent, registration->continuation, nullptr, nullptr, false,
+      {registration, Registration::unlink});
   if (preparation != OBJC3_SERVICE_OK) return preparation;
-  if (objc3_task_is_cancel_requested(parent)) {
-    // Queue the cancellation observation after the active resume returns.
-    objc3_task_finish_await(*continuation);
-    return OBJC3_SERVICE_OK;
+  objc3_completion borrowed{};
+  bool call_now = false;
+  {
+    std::lock_guard<std::mutex> lock(dependency->mutex);
+    // Cancellation or terminal publication may retire the ticket even before
+    // the dependency acquires its list node. No allocation follows suspension.
+    if (registration->state == Registration::State::Detached)
+      return OBJC3_SERVICE_OK;
+    if (!objc3_task_is_cancel_requested(parent)) {
+      if (!dependency->terminal) {
+        registration->position = waiter.begin();
+        registration->state = Registration::State::Linked;
+        dependency->waiters.splice(dependency->waiters.end(), waiter);
+        return OBJC3_SERVICE_OK;
+      }
+      borrowed = task_view(dependency);
+      ++dependency->callbacks_active;
+      call_now = true;
+    }
+    registration->state = Registration::State::Detached;
   }
-  // A completed dependency can call back before add_waiter returns. Transfer
-  // the independent token first and never touch it on successful registration.
-  auto *context = continuation.release();
-  const auto status = objc3_task_add_waiter(dependency, dependency_completed,
-                                           context);
-  if (status != OBJC3_SERVICE_OK) {
-    std::unique_ptr<ObjC3TaskAwaitContinuation> failed(context);
-    objc3_task_abort_await(parent, *failed);
-  }
-  return status;
+  if (call_now) invoke_waiters(dependency, waiter, borrowed);
+  else objc3_task_finish_await(registration->continuation);
+  return OBJC3_SERVICE_OK;
 }
 
 extern "C" objc3_service_status objc3_task_get_completion(

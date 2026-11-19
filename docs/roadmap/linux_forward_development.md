@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.285 / System 2.211 task dependency change](linux_checked_await_cancellation.md)
+removes interrupted task-to-task registrations without waiting for the dependency.
+Native tests cover both pending and already-completed dependencies.
+
 The [Source 2.284 / System 2.210 group waiter change](linux_checked_await_cancellation.md)
 removes abandoned registrations promptly. Later child results and shielded
 cleanup joins keep their existing ownership and quiescence requirements.

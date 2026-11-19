@@ -63,9 +63,10 @@ struct ObjC3TaskQuiescenceObserver {
 };
 
 struct ObjC3TaskGroupScope;
+struct ObjC3TaskDependencyWaiter;
 
 // The retirement context owns a registration ticket, independent of the
-// source task and awaited group. Unlink only after dropping task locks.
+// source task and awaited owner. Unlink only after dropping task locks.
 struct ObjC3TaskAwaitRetirement {
   std::shared_ptr<void> ticket;
   void (*unlink)(void *) noexcept = nullptr;
@@ -91,6 +92,9 @@ struct objc3_task final {
   struct Waiter {
     objc3_completion_callback callback;
     void *context;
+    // Runtime-owned await registrations hold callback context independently
+    // of the originating frame. Public callback context remains caller-owned.
+    std::shared_ptr<ObjC3TaskDependencyWaiter> registration;
   };
 
   std::atomic<uint32_t> references{1};
@@ -157,7 +161,7 @@ struct objc3_task final {
   std::string result_identity;
   bool result_type_set{false};
   objc3_error_t *error{nullptr};
-  std::vector<Waiter> waiters;
+  std::list<Waiter> waiters;
   // Internal observers run after terminal publication, native frame cleanup,
   // and completion callbacks. They never execute while holding the task lock.
   std::shared_ptr<ObjC3TaskQuiescenceObserver> quiescence_observers;
@@ -209,8 +213,6 @@ void objc3_task_finish_await(
     const ObjC3TaskAwaitContinuation &continuation,
     objc3_service_status status = OBJC3_SERVICE_OK,
     std::shared_ptr<void> continuation_owner = {});
-void objc3_task_abort_await(objc3_task_t *parent,
-                           const ObjC3TaskAwaitContinuation &continuation);
 // Marking cannot invoke callbacks. Wake only after releasing group/publication
 // locks; failed dispatch can synchronously complete the task and its observers.
 bool objc3_task_mark_cancel(objc3_task_t *task);
