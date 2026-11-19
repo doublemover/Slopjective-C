@@ -306,7 +306,7 @@ for (const fault of [
     if (fault === "discard active source") owner.concurrency["cancel-in-progress"] = true;
     if (fault === "foreign build host") caller.jobs.build.with.linux_host = "linux-aarch64";
     if (fault === "foreign analysis host")
-      caller.jobs["implementation-analysis"].with.linux_host = "linux-aarch64";
+      owner.jobs["implementation-analysis"].with.linux_host = "linux-aarch64";
     if (fault === "unbound producer archive")
       owner.jobs["product-producer"].steps.find(
         (step) => step.name === "Preserve qualified SDK archive",
@@ -320,7 +320,10 @@ for (const fault of [
     if (fault === "skipped install matrix") caller.jobs.build.with.archive_install = false;
     if (fault === "missing install outcome")
       owner.jobs.gate.needs = owner.jobs.gate.needs.filter((id) => id !== "archive-install");
-    if (fault === "optional release analysis") caller.jobs.release.needs = ["build"];
+    if (fault === "optional release analysis")
+      owner.jobs.gate.needs = owner.jobs.gate.needs.filter(
+        (id) => id !== "implementation-analysis",
+      );
 
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
@@ -351,7 +354,7 @@ for (const target of ["native-assurance.yml", "platform-host-evidence.yml"]) {
 }
 
 test("extended implementation analysis retains exact periodic and release gates", () => {
-  validateImplementationGate(implementation, release);
+  validateImplementationGate(implementation);
 });
 
 for (const [fault, alter] of [
@@ -370,7 +373,7 @@ for (const [fault, alter] of [
   test(`shared implementation foundation rejects ${fault}`, () => {
     const workflow = yaml.load(implementation);
     alter(workflow.jobs);
-    assert.throws(() => validateImplementationGate(yaml.dump(workflow), release));
+    assert.throws(() => validateImplementationGate(yaml.dump(workflow)));
   });
 }
 
@@ -386,14 +389,10 @@ for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of
   ],
   ["missing evidence", "if-no-files-found: error", "if-no-files-found: ignore"],
   ["floating action", "@3d3c42e5aac5ba805825da76410c181273ba90b1", "@main"],
-  ["release dependency", "", "", "    needs: [build, implementation-analysis]", "    needs: build"],
 ]) {
   test(`implementation workflow rejects ${name}`, () => {
     assert.throws(() =>
-      validateImplementationGate(
-        implementation.replace(workflowBefore ?? "", workflowAfter ?? ""),
-        release.replace(releaseBefore ?? "", releaseAfter ?? ""),
-      ),
+      validateImplementationGate(implementation.replace(workflowBefore ?? "", workflowAfter ?? "")),
     );
   });
 }

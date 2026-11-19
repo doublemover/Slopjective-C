@@ -154,6 +154,7 @@ export function validateNativeGate(text) {
     "coverage-aggregate",
     "coverage-partitions",
     "coverage-producer",
+    "implementation-analysis",
     "independent-native",
     "instrumented-product-consumers",
     "plan",
@@ -448,6 +449,17 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
   const install = native.jobs?.["archive-install"];
   const nativeGate = native.jobs?.gate;
   const installCheck = nativeGate?.steps?.find((step) => step.env?.INSTALL_RESULT);
+  const implementationCheck = nativeGate?.steps?.find(
+    (step) => step.env?.IMPLEMENTATION_ANALYSIS_RESULT,
+  );
+  const implementationCall = native.jobs?.["implementation-analysis"];
+  const sanitizerProducer = native.jobs?.["asan-foundation-producer"];
+  const analysisFoundation = (sanitizerProducer?.steps ?? []).find(
+    (step) => step.id === "analysis-foundation",
+  );
+  const analysisArchive = (sanitizerProducer?.steps ?? []).find(
+    (step) => step.name === "Preserve the exact implementation analysis bundle",
+  );
   const releaseGate = release.jobs?.release;
   const sdkArtifact = "objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}";
   const hostInput = "${{ inputs.linux_host }}";
@@ -468,18 +480,16 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     call.with?.archive_install !== true ||
     native.on.workflow_call.inputs?.archive_install?.type !== "boolean" ||
     native.on.workflow_call.inputs.archive_install.default !== false ||
-    release.jobs?.["implementation-analysis"]?.with?.linux_host !== hostInput ||
     Object.hasOwn(call.with ?? {}, "diagnostic_core_only") ||
     call["continue-on-error"] ||
-    JSON.stringify(releaseGate?.needs?.toSorted()) !==
-      JSON.stringify(["build", "implementation-analysis"]) ||
+    releaseGate?.needs !== "build" ||
     releaseGate.if !== "always()" ||
     releaseGate["continue-on-error"] ||
     !releaseGate.steps?.some(
       (step) =>
         step.env?.SDK_RESULT === "${{ needs.build.result }}" &&
-        step.env?.ANALYSIS_RESULT === "${{ needs.implementation-analysis.result }}" &&
-        step.run?.includes('[[ "$SDK_RESULT" != success || "$ANALYSIS_RESULT" != success ]]') &&
+        !Object.hasOwn(step.env, "ANALYSIS_RESULT") &&
+        step.run?.includes('[[ "$SDK_RESULT" != success ]]') &&
         step.run?.includes("exit 1") &&
         !step["continue-on-error"],
     ) ||
@@ -497,6 +507,36 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
       '[[ "$INSTALL_REQUIRED" == true && "$INSTALL_RESULT" != success ]]',
     ) ||
     !installCheck.run.includes("exit 1") ||
+    implementationCall?.needs !== "asan-foundation-producer" ||
+    implementationCall.if !==
+      "inputs.archive_install && needs.asan-foundation-producer.outputs.analysis_archive_sha256 != ''" ||
+    implementationCall.uses !== "./.github/workflows/implementation-analysis.yml" ||
+    implementationCall.with?.source_sha !== "${{ github.sha }}" ||
+    implementationCall.with?.linux_host !== hostInput ||
+    implementationCall.with?.foundation_archive_sha256 !==
+      "${{ needs.asan-foundation-producer.outputs.analysis_archive_sha256 }}" ||
+    implementationCall["continue-on-error"] ||
+    sanitizerProducer?.outputs?.analysis_archive_sha256 !==
+      "${{ steps.analysis-foundation.outputs.archive_sha256 }}" ||
+    analysisFoundation?.if !== "inputs.archive_install" ||
+    !analysisFoundation.run?.includes("scripts.objc3c_implementation_assurance foundation") ||
+    !analysisFoundation.run.includes(
+      "--sanitizer-producer out/instrumented-foundation/producer",
+    ) ||
+    analysisArchive?.if !== "inputs.archive_install" ||
+    !analysisArchive.uses?.startsWith("actions/upload-artifact@") ||
+    analysisArchive.with?.name !==
+      "implementation-foundation-${{ github.sha }}-${{ inputs.linux_host || 'linux-x86_64' }}-${{ github.run_id }}-${{ github.run_attempt }}" ||
+    analysisArchive.with?.path !== "out/implementation-assurance/foundation-product/" ||
+    analysisArchive.with?.["if-no-files-found"] !== "error" ||
+    !nativeGate.needs?.includes("implementation-analysis") ||
+    implementationCheck?.env?.INSTALL_REQUIRED !== "${{ inputs.archive_install }}" ||
+    implementationCheck.env.IMPLEMENTATION_ANALYSIS_RESULT !==
+      "${{ needs.implementation-analysis.result }}" ||
+    !implementationCheck.run?.includes(
+      '[[ "$INSTALL_REQUIRED" == true && "$IMPLEMENTATION_ANALYSIS_RESULT" != success ]]',
+    ) ||
+    !implementationCheck.run.includes("exit 1") ||
     archive.length !== 1 ||
     archive[0].if ||
     !(install.steps ?? []).some(
@@ -517,7 +557,7 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
   }
 }
 
-export function validateImplementationGate(text, releaseText) {
+export function validateImplementationGate(text) {
   const workflow = yaml.load(text);
   if (workflow.concurrency?.["cancel-in-progress"] !== false || !workflow.concurrency?.group) {
     throw new Error(
@@ -535,6 +575,8 @@ export function validateImplementationGate(text, releaseText) {
     !Object.hasOwn(events, "workflow_dispatch") ||
     !events.workflow_call?.inputs?.source_sha?.required ||
     events.workflow_call.inputs.source_sha.type !== "string" ||
+    events.workflow_call.inputs?.foundation_archive_sha256?.type !== "string" ||
+    events.workflow_call.inputs.foundation_archive_sha256.default !== "" ||
     Object.hasOwn(events, "pull_request_target") ||
     events.pull_request?.paths ||
     events.pull_request?.["paths-ignore"] ||
@@ -552,8 +594,12 @@ export function validateImplementationGate(text, releaseText) {
     JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["analysis", "foundation", "plan"]) ||
     gate["continue-on-error"] ||
     verify?.if !== "always()" ||
-    !verify.env?.ASSURANCE_OUTCOMES?.includes('"foundation":"${{ needs.foundation.result }}"') ||
-    !verify.env.ASSURANCE_OUTCOMES.includes('"foundation_archive":"${{ needs.foundation.outputs.archive_sha256 }}"')
+    !verify.env?.ASSURANCE_OUTCOMES?.includes(
+      '"foundation":"${{ inputs.foundation_archive_sha256 != \'\' && \'success\' || needs.foundation.result }}"',
+    ) ||
+    !verify.env.ASSURANCE_OUTCOMES.includes(
+      '"foundation_archive":"${{ inputs.foundation_archive_sha256 || needs.foundation.outputs.archive_sha256 }}"',
+    )
   ) {
     throw new Error(
       "Implementation aggregate must always verify the revision, producer hash and partition results",
@@ -566,7 +612,8 @@ export function validateImplementationGate(text, releaseText) {
   );
   if (
     foundation?.needs !== "plan" ||
-    foundation.if !== "needs.plan.outputs.analysis == 'true'" ||
+    foundation.if !==
+      "needs.plan.outputs.analysis == 'true' && inputs.foundation_archive_sha256 == ''" ||
     foundation.outputs?.archive_sha256 !== "${{ steps.foundation-run.outputs.archive_sha256 }}" ||
     !foundationStep?.run?.includes("scripts.objc3c_implementation_assurance foundation") ||
     !foundationUpload?.uses?.startsWith("actions/upload-artifact@") ||
@@ -588,12 +635,16 @@ export function validateImplementationGate(text, releaseText) {
   );
   if (
     JSON.stringify(analysis?.needs?.toSorted()) !== JSON.stringify(["foundation", "plan"]) ||
-    analysis.if !== "needs.plan.outputs.analysis == 'true' && needs.foundation.result == 'success'" ||
+    analysis.if !==
+      "always() && needs.plan.outputs.analysis == 'true' && (needs.foundation.result == 'success' || inputs.foundation_archive_sha256 != '')" ||
     analysis.strategy?.matrix?.partition !== "${{ fromJSON(needs.plan.outputs.partitions) }}" ||
     analysis?.["continue-on-error"] ||
     execute?.id !== "analysis-run" ||
     !execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"') ||
     !execute?.run.includes("--foundation-bundle out/implementation-assurance/foundation-input") ||
+    !execute.run.includes('--foundation-archive-sha256 "$ANALYSIS_FOUNDATION_SHA256"') ||
+    analysis.env?.ANALYSIS_FOUNDATION_SHA256 !==
+      "${{ inputs.foundation_archive_sha256 || needs.foundation.outputs.archive_sha256 }}" ||
     foundationDownload?.with?.name !== foundationUpload.with.name ||
     evidence?.if !== "always() && steps.analysis-run.outcome != 'skipped'"
   ) {
@@ -620,17 +671,6 @@ export function validateImplementationGate(text, releaseText) {
         throw new Error("Implementation evidence must fail closed with bounded retention");
       }
     }
-  }
-  const release = yaml.load(releaseText);
-  const call = release.jobs?.["implementation-analysis"];
-  const releaseNeeds = release.jobs?.release?.needs;
-  if (
-    call?.uses !== "./.github/workflows/implementation-analysis.yml" ||
-    call.with?.source_sha !== "${{ github.sha }}" ||
-    !Array.isArray(releaseNeeds) ||
-    JSON.stringify(releaseNeeds.toSorted()) !== JSON.stringify(["build", "implementation-analysis"])
-  ) {
-    throw new Error("Linux SDK release must depend on exact-SHA implementation analysis");
   }
 }
 

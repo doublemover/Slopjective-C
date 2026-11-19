@@ -11626,7 +11626,7 @@ new file mode 100644
 index 000000000..cba165426
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3Type.cpp
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,77 @@
 +//===--- ParseObjC3Type.cpp - ObjC3 carrier type parser ------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -54175,7 +54175,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Iso
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,4604 @@
+@@ -0,0 +1,4628 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -56059,6 +56059,19 @@ new file mode 100644
 +          }
 +          continue;
 +        }
++      if (const auto *Message = dyn_cast<ObjCMessageExpr>(Node)) {
++        const auto *Signature = getObjC3CallableFunctionType(Message->getMethodDecl());
++        Add(Message->getInstanceReceiver(), Read);
++        for (unsigned I = 0; I != Message->getNumArgs(); ++I) {
++          const auto *Argument = Message->getArg(I);
++          const bool Aliases = Signature && I < Signature->getNumParams() &&
++              Signature->getParamType(I)->isReferenceType();
++          Add(Argument, Aliases ? Unknown : Read);
++          for (const auto *Target : receiverPointees(Context, Argument).Targets)
++            Add(Target, Unknown);
++        }
++        continue;
++      }
 +      if(const auto *Paren=dyn_cast<ParenExpr>(Node)){Add(Paren->getSubExpr(),Use);continue;}
 +      if(const auto *Cleanup=dyn_cast<ExprWithCleanups>(Node)){Add(Cleanup->getSubExpr(),Use);continue;}
 +      if(const auto *Opaque=dyn_cast<OpaqueValueExpr>(Node)){Add(Opaque->getSourceExpr(),Use);continue;}
@@ -56097,11 +56110,22 @@ new file mode 100644
 +        Add(Call->getCallee(),Read);continue;
 +      }
 +      if(const auto *Call=dyn_cast<CallExpr>(Node)) {
-+        for(const auto *Argument:Call->arguments())
-+          for(const auto *Target:receiverPointees(Context,Argument).Targets)Add(Target,Unknown);
++        const auto *Signature = getObjC3AsyncCalleeFunctionType(Call);
++        const unsigned Offset = ArgumentOffset(Call);
++        for (unsigned I = 0; I != Call->getNumArgs(); ++I) {
++          const auto *Argument = Call->getArg(I);
++          const bool Aliases = Signature && I >= Offset &&
++              I - Offset < Signature->getNumParams() &&
++              Signature->getParamType(I - Offset)->isReferenceType();
++          Add(Argument, !Signature || Aliases ? Unknown : Read);
++          for(const auto *Target:receiverPointees(Context,Argument).Targets)
++            Add(Target,Unknown);
++        }
 +        if(const auto *Member=dyn_cast<CXXMemberCallExpr>(Call))
 +          if(const auto *Receiver=Member->getImplicitObjectArgument())
 +            for(const auto *Target:receiverPointees(Context,Receiver).Targets)Add(Target,Unknown);
++        Add(Call->getCallee(), Read);
++        continue;
 +      }
 +      if(const auto *Cast=dyn_cast<CastExpr>(Node)) {
 +        Add(Cast->getSubExpr(),(Cast->getCastKind()==CK_LValueToRValue || Cast->getCastKind()==CK_ToVoid)?Read:Use);continue;
@@ -78461,6 +78485,17 @@ diff --git a/clang/lib/Sema/SemaTemplateInstantiateDecl.cpp b/clang/lib/Sema/Sem
      if (auto *A = dyn_cast<CleanupAttr>(TmplAttr)) {
        if (!New->hasAttr<CleanupAttr>()) {
          auto *NewAttr = A->clone(Context);
+@@ -6440,6 +6456,10 @@
+                                      PatternDecl, Def, TSK,
+                                      /*Complain*/DefinitionRequired))
+     return;
++  // A missing definition has either been deferred above or diagnosed by
++  // DiagnoseUninstantiableTemplate. Do not let a recovery path dereference it.
++  if (!Def)
++    return;
+ 
+   // C++11 [temp.explicit]p10:
+   //   Except for inline functions, const variables of literal types, variables
 
 diff --git a/clang/test/ObjC3/Sema/Inputs/dependent-cleanup.h b/clang/test/ObjC3/Sema/Inputs/dependent-cleanup.h
 new file mode 100644
@@ -79168,6 +79203,79 @@ diff --git a/clang/lib/AST/DeclObjC.cpp b/clang/lib/AST/DeclObjC.cpp
 +  }
    return selfTy;
  }
+ 
+@@ -1672,7 +1684,16 @@
+   if (!hasDefinition())
+     return nullptr;
+ 
+-  ObjCIvarDecl *curIvar = nullptr;
++  ObjCIvarDecl *curIvar = data().IvarList;
++  while (curIvar && curIvar->getNextIvar())
++    curIvar = curIvar->getNextIvar();
++  auto appendIvar = [&](ObjCIvarDecl *Next) {
++    if (curIvar)
++      curIvar->setNextIvar(Next);
++    else
++      data().IvarList = Next;
++    curIvar = Next;
++  };
+   if (!data().IvarList) {
+     // Force ivar deserialization upfront, before building IvarList.
+     (void)ivar_empty();
+@@ -1681,9 +1702,8 @@
+     }
+     if (!ivar_empty()) {
+       ObjCInterfaceDecl::ivar_iterator I = ivar_begin(), E = ivar_end();
+-      data().IvarList = *I; ++I;
+-      for (curIvar = data().IvarList; I != E; curIvar = *I, ++I)
+-        curIvar->setNextIvar(*I);
++      for (; I != E; ++I)
++        appendIvar(*I);
+     }
+ 
+     for (const auto *Ext : known_extensions()) {
+@@ -1691,12 +1711,8 @@
+         ObjCCategoryDecl::ivar_iterator
+           I = Ext->ivar_begin(),
+           E = Ext->ivar_end();
+-        if (!data().IvarList) {
+-          data().IvarList = *I; ++I;
+-          curIvar = data().IvarList;
+-        }
+-        for ( ;I != E; curIvar = *I, ++I)
+-          curIvar->setNextIvar(*I);
++        for (; I != E; ++I)
++          appendIvar(*I);
+       }
+     }
+     data().IvarListMissingImplementation = true;
+@@ -1716,23 +1732,15 @@
+                              IV->getASTContext().getTypeSize(IV->getType()), IV));
+           continue;
+         }
+-        if (!data().IvarList)
+-          data().IvarList = IV;
+-        else
+-          curIvar->setNextIvar(IV);
+-        curIvar = IV;
++        appendIvar(IV);
+       }
+ 
+       if (!layout.empty()) {
+         // Order synthesized ivars by their size.
+         llvm::stable_sort(layout);
+         unsigned Ix = 0, EIx = layout.size();
+-        if (!data().IvarList) {
+-          data().IvarList = layout[0].Ivar; Ix++;
+-          curIvar = data().IvarList;
+-        }
+-        for ( ; Ix != EIx; curIvar = layout[Ix].Ivar, Ix++)
+-          curIvar->setNextIvar(layout[Ix].Ivar);
++        for (; Ix != EIx; ++Ix)
++          appendIvar(layout[Ix].Ivar);
+       }
+     }
+   }
  
 
 diff --git a/clang/test/ObjC3/Sema/Inputs/actor-receiver-bindings.h b/clang/test/ObjC3/Sema/Inputs/actor-receiver-bindings.h
@@ -79977,7 +80085,7 @@ diff --git a/clang/test/ObjC3/Sema/Inputs/mutable-managed-values.h b/clang/test/
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/mutable-managed-values.h
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,77 @@
 +#ifndef OBJC3_MUTABLE_MANAGED_VALUES_H
 +#define OBJC3_MUTABLE_MANAGED_VALUES_H
 +#include "../../CodeGen/Inputs/native-c-async-frame.h"
@@ -79997,6 +80105,14 @@ new file mode 100644
 +}
 +struct ManagedPair {int value;};
 +void managed_pair_close(struct ManagedPair *) __attribute__((nothrow));
++typedef struct ManagedPlainPacket {int value;double weights[3];} ManagedPlainPacket;
++ManagedPlainPacket managed_packet_remote(ManagedPlainPacket)
++    __attribute__((nothrow,objc_executor(named("managed.remote"))));
++__attribute__((objc_root_class)) @interface ManagedPacketRoot<Sendable> @end
++actor class ManagedPacketHost : ManagedPacketRoot
++- (ManagedPlainPacket)echo:(ManagedPlainPacket)value
++    __attribute__((nothrow,objc_executor(named("managed.remote"))));
++@end
 +static inline void mutable_managed_ordinary(int choose) {
 + int first=40,second=first;first=second;second=choose?first:42;first=second;
 + for(int n=0;n!=2;++n)first+=n;
@@ -80052,7 +80168,7 @@ diff --git a/clang/test/ObjC3/Sema/mutable-managed-values.m b/clang/test/ObjC3/S
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/mutable-managed-values.m
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,93 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
@@ -80095,6 +80211,17 @@ new file mode 100644
 + int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
 + int copied=0;copied=descriptor;
 + return __objc3_await managed_remote(copied); // expected-error {{cleanup-managed concurrent value}}
++}
++int mutable_plain_packet(ManagedPacketHost *host) __objc3_async_frame {
++ ManagedPlainPacket source={40,{10,20,30}};
++ ManagedPlainPacket packet=__objc3_await managed_packet_remote(source);
++ packet=__objc3_await [host echo:packet];
++ return packet.value;
++}
++int mutable_managed_packet(void) __objc3_async_frame {
++ int descriptor __attribute__((objc_resource(close=managed_close,invalid=-1)))=managed_open();
++ ManagedPlainPacket packet={descriptor,{10,20,30}};
++ return (__objc3_await managed_packet_remote(packet)).value; // expected-error {{cleanup-managed concurrent value}}
 +}
 +void mutable_managed_aggregate(void) {
 + struct ManagedPair original __attribute__((cleanup(managed_pair_close)))={42};

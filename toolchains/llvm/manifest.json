@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "de43ffbbcb9ae4cc4253cc3fd1775eb987354cbf340337b987dc24af4b01e893"
+      "sha256": "37b2204a394c6c4e3b14cd7244831c2d853e622509921e3cc077115ad176612e"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
@@ -39,7 +39,7 @@
     },
     {
       "file": "0008-objc3-linux-aarch64-native-contracts.patch",
-      "sha256": "abbf6ea4e9afcf19a1d4b1127fe432731e8416e63549b2f0d6acb83777da0201"
+      "sha256": "2dd28d90b467951f48561d2ca7adbfadd2d5f12ce539802c649286eb28f484f9"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-23.1.5-392dfff97d29-pristine-v1",

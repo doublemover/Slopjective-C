@@ -50,7 +50,15 @@ static void check_checked_missing_reads(void) {
       int status = 0;
       pid_t waited;
       do { waited = waitpid(pid, &status, 0); } while (waited < 0 && errno == EINTR);
-      assert(waited == pid && WIFSIGNALED(status) && WTERMSIG(status) == SIGILL);
+#if defined(__aarch64__)
+      const int trap_signal = SIGTRAP;
+#elif defined(__x86_64__)
+      const int trap_signal = SIGILL;
+#else
+#error "typed keypath trap qualification requires a supported Linux architecture"
+#endif
+      assert(waited == pid && WIFSIGNALED(status) &&
+             WTERMSIG(status) == trap_signal);
     }
     root.optionalNext = child;
     child.child = root;
