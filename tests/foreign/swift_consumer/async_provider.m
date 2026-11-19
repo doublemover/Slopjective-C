@@ -1,6 +1,7 @@
 #include "async_api.h"
 #include <objc/runtime.h>
 #include <objc3c/runtime/objc3_async_c.h>
+#include <stdbool.h>
 
 @protocol Error @end
 
@@ -9,6 +10,7 @@ __attribute__((objc_root_class))
   Class isa;
 }
 + (id)new;
+- (void)dealloc;
 @end
 
 @implementation SwiftBridgeRoot
@@ -24,12 +26,57 @@ __attribute__((objc_root_class))
 @implementation SwiftBridgeFailure
 @end
 
+static _Atomic(int) retired_sync_errors;
+
+@interface SwiftSyncFailure : SwiftBridgeRoot <Error>
+@end
+@implementation SwiftSyncFailure
+- (void)dealloc {
+  __c11_atomic_fetch_add(&retired_sync_errors, 1, __ATOMIC_RELAXED);
+#if !__has_feature(objc_arc)
+  [super dealloc];
+#endif
+}
+@end
+
 #if !__has_feature(objc_arc)
 extern id objc_autorelease(id);
 extern void objc_release(id);
 #endif
 
+static int swift_bridge_checked(int value) throws(id<Error>) {
+  if (value < 0) {
+    id<Error> error = [SwiftSyncFailure new];
+#if !__has_feature(objc_arc)
+    error = objc_autorelease(error);
+#endif
+    __objc3_throw(error);
+  }
+  return value + 1;
+}
+
+static void swift_bridge_checked_void(bool succeed) throws(id<Error>) {
+  (void)__objc3_try(swift_bridge_checked(succeed ? 0 : -1));
+}
+
 static int increment(int value) async { return value + 1; }
+
+static bool swift_bridge_scalars(bool enabled, char plain, signed char byte, unsigned char narrow,
+                                 short small, unsigned short count, int integer, unsigned int flags,
+                                 long offset, unsigned long length, long long minimum,
+                                 unsigned long long maximum, float fraction, double real) async {
+  return enabled && plain == 42 && byte == -8 && narrow == 250 && small == -11 && count == 60000 &&
+      integer == -1 && flags == 7 && offset == -42 && length == 41 &&
+      minimum == -9223372036854775807LL - 1 && maximum == 18446744073709551615ULL &&
+      fraction == 1.25f && real == 0.5;
+}
+
+static void swift_bridge_void(void) async {}
+
+enum SwiftBridgeChoice : signed char { SwiftBridgeAbsent = -1, SwiftBridgeAnswer = 42 };
+static enum SwiftBridgeChoice swift_bridge_enum(enum SwiftBridgeChoice value) async {
+  return value == SwiftBridgeAbsent ? SwiftBridgeAnswer : SwiftBridgeAbsent;
+}
 
 static int swift_bridge_work(int value) async throws(id<Error>) {
   if (value < 0) {
@@ -93,5 +140,12 @@ void objc3_swift_counter_release(void * _Nonnull counter) {
 
 int objc3_swift_error_code(void * _Nullable error) {
   if (objc3_async_c_error_is_cancellation((__bridge id<Error>)error)) return 2;
-  return error && object_getClass((__bridge id)error) == objc_getClass("SwiftBridgeFailure") ? 1 : 0;
+  if (!error) return 0;
+  Class type = object_getClass((__bridge id)error);
+  if (type == objc_getClass("SwiftBridgeFailure")) return 1;
+  return type == objc_getClass("SwiftSyncFailure") ? 3 : 0;
+}
+
+int objc3_swift_sync_errors_retired(void) {
+  return __c11_atomic_load(&retired_sync_errors, __ATOMIC_RELAXED);
 }

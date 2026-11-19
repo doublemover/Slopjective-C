@@ -13,7 +13,7 @@ typedef struct CompletionRecord {
   long values[4];
 } CompletionRecord;
 typedef struct CompletionCancellation {
-  objc3_task_t *cancel_before_await;
+  objc3_task_t * _Nullable cancel_before_await;
   int entered;
   int resumed;
   int finished;

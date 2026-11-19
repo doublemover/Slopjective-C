@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.289 / System 2.215 Swift overlay](linux_swift_consumer.md) generates
+typed wrappers for selected native checked functions, async functions and
+isolated actor calls through the C ABI.
+
 The [Source 2.288 / System 2.214 task dependency change](linux_checked_await_cancellation.md)
 rejects direct wait cycles and preserves cancellation and completion delivery.
 

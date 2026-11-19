@@ -45,6 +45,9 @@ struct CompileRequest {
   std::string c_export_header_output_path;
   // The translation-unit collection pass supplies the exact header bytes.
   std::optional<std::string> c_export_header;
+  std::string swift_c_module;
+  std::string swift_overlay_output_path;
+  std::optional<std::string> swift_overlay;
   std::string target_triple;
   std::string objc_runtime;
   std::vector<std::string> arguments;

@@ -211,6 +211,7 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         elif '--emit-c-header' in argv:
             Path(argv[argv.index('--emit-c-header')+1]).write_text('test-only C export')
             Path(argv[argv.index('--emit-object')+1]).write_bytes(b'test-only native provider')
+            Path(argv[argv.index('--emit-swift-overlay')+1]).write_text('test-only Swift export')
         elif name.startswith('negative-'):
             status, text = 1, owner.NEGATIVES[name.removeprefix('negative-')][1]
         elif name == 'changed-contract-control': status, text = 1, "cannot find 'projectedValue'"
@@ -274,7 +275,13 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         (destination / 'qualification.json').write_text(json.dumps(broken))
         with pytest.raises(ValueError, match='different emitted interface'):
             suite_results(native_root, 'swift-consumer')
-        for field in ('checked_error', 'cancellation', 'pre_cancelled', 'cancelled_after_submit'):
+        broken = copy.deepcopy(report)
+        broken['async_cases'][0]['overlay_sha256'] = '0' * 64
+        (destination / 'qualification.json').write_text(json.dumps(broken))
+        with pytest.raises(ValueError, match='changed its interface'):
+            suite_results(native_root, 'swift-consumer')
+        for field in ('checked_error', 'cancellation', 'pre_cancelled', 'cancelled_after_submit',
+                      'generated_error', 'generated_cancellation', 'generated_checked_error'):
             broken = copy.deepcopy(report)
             broken['async_cases'][0]['result'][field] = 1
             (destination / 'qualification.json').write_text(json.dumps(broken))

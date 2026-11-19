@@ -71,6 +71,25 @@ submission and after the handle is installed. They also release the handle of
 a successful task immediately and observe its normal callback. All eight
 ARC/MRC and optimization combinations pass on x86-64.
 
+Source 2.289 / System 2.215 generates Swift source for selected checked and
+async C entries. Pass `--emit-c-header Generated.h --emit-swift-overlay
+Generated.swift --swift-c-module ForeignAsync` alongside the existing
+`--export-c-throws` or `--export-c-async` selections. Expose the generated
+C header in the named Clang module and compile the Swift file with Swift 6.4.2.
+The overlay adds typed `throws` and `async throws` entries for C scalars,
+explicitly represented named enums and `Void`. Async actor entries take a
+borrowed opaque receiver and dispatch through its native mailbox.
+
+Checked failures retain the original native error so Swift can inspect its
+identity after the native callback or autorelease pool ends. Synchronous calls
+drain their autorelease pool on the calling thread. Async wrappers translate
+recognized native cancellation to `CancellationError` and keep the retained
+native task alive while a Swift cancellation handler requests cancellation.
+The eight x86-64 executions of the generated source cover the scalar ABI,
+enum transport, checked failure and exact destruction, pre-submission
+cancellation and actor isolation with the provider source removed. The gate
+retains the overlay source and verifies the same digest in every native row.
+
 Reports retain compiler versions, targets, resources, loader graphs, input and
 artifact hashes, commands, environments, diagnostics and exact results. The
 gate rechecks native and Swift installations and the loaded dependencies.
@@ -95,6 +114,6 @@ upgrades; do not expand its row inventory without an independent positive and
 appropriate negative/execution controls.
 
 The admitted declarations are recorded in `tests/foreign/swift_consumer/rows.json`.
-Direct GNUstep Objective-C object import, Swift importer synthesis of async and
-actor methods, arbitrary foreign attributes,
-throwing C++ value contracts and serialized AST interchange remain open.
+Direct GNUstep Objective-C object import, async and actor synthesis in the Swift
+importer, arbitrary foreign attributes, throwing C++ value contracts and
+serialized AST interchange remain open.

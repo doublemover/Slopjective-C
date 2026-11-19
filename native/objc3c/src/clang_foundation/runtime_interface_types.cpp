@@ -204,8 +204,9 @@ bool IsQualifiedRuntimeCompletionDeclaration(const clang::NamedDecl *declaration
            from_header(declaration);
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
     static constexpr llvm::StringLiteral public_functions[] = {
-        "objc3_async_c_error_is_cancellation", "objc3_async_frame_submit",
-        "objc3_async_frame_submit_task",
+        "objc3_async_c_error_is_cancellation", "objc3_async_c_error_retain",
+        "objc3_async_c_error_release", "objc3_c_autorelease_pool_push",
+        "objc3_c_autorelease_pool_pop", "objc3_async_frame_submit", "objc3_async_frame_submit_task",
         "objc3_task_current_cancellation_error", "objc3_task_check_cancellation",
         "objc3_task_group_join_checked"};
     return llvm::is_contained(public_functions, name) &&

@@ -644,6 +644,42 @@ static enum GeneratedUnfixed generated_unfixed_enum(void) __objc3_throws {
     Require(header_after && (*header_after)->getBuffer() == "previous header\n",
             "failed object publication changed the generated header");
     Write(provider.c_export_header_output_path, generated_header);
+
+    auto swift = provider;
+    swift.emit_semantic_interface = false;
+    swift.interface_exports.clear();
+    swift.async_c_exports = {"generated_void", "generated_checked", "GeneratedActor::add:by:"};
+    swift.throws_c_exports = {"generated_sync_checked"};
+    swift.output_path = (root / "swift-provider.o").string();
+    swift.c_export_header_output_path = (root / "swift-generated.h").string();
+    swift.swift_overlay_output_path = (root / "GeneratedAsync.swift").string();
+    swift.swift_c_module = "NativeContract";
+    Compiled(Compile(swift));
+    const auto swift_source = llvm::MemoryBuffer::getFile(swift.swift_overlay_output_path);
+    const auto swift_header = llvm::MemoryBuffer::getFile(swift.c_export_header_output_path);
+    Require(swift_source && swift_header &&
+            (*swift_source)->getBuffer().contains("public enum NativeContractNative") &&
+            (*swift_source)->getBuffer().contains("`NativeContract`.GeneratedActor_add_by_async_c_task") &&
+            (*swift_source)->getBuffer().contains("`NativeContract`.generated_sync_checked_throws_c"),
+            "Swift overlay omitted its typed native entry");
+    auto unsupported_overlay = swift;
+    unsupported_overlay.async_c_exports = {"generated_aggregate"};
+    const auto unsupported = Compile(unsupported_overlay);
+    Require(!unsupported.success && unsupported.failure.find("Swift overlay requires a portable scalar") != std::string::npos,
+            "a non-scalar result was silently omitted from the requested Swift overlay");
+    auto aliased_overlay = swift;
+    aliased_overlay.swift_overlay_output_path = swift.c_export_header_output_path;
+    Require(!Compile(aliased_overlay).success, "Swift overlay replaced the C export header");
+    auto failed_overlay = swift;
+    failed_overlay.output_path = includes.string();
+    Require(!Compile(failed_overlay).success, "Swift overlay admitted an invalid object destination");
+    const auto preserved_overlay = llvm::MemoryBuffer::getFile(swift.swift_overlay_output_path);
+    const auto preserved_header = llvm::MemoryBuffer::getFile(swift.c_export_header_output_path);
+    Require(preserved_overlay && preserved_header &&
+            (*preserved_overlay)->getBuffer() == (*swift_source)->getBuffer() &&
+            (*preserved_header)->getBuffer() == (*swift_header)->getBuffer(),
+            "rejected Swift export changed its previous output files");
+
     CompileRequest body;
     body.input_path = (root / "body.m").string();
     body.source_text = R"(
@@ -974,11 +1010,13 @@ int main(void) {
   assert(generated_sync_checked_throws_c(-2, &synchronous_failure) == 0);
   assert(synchronous_failure && synchronous_failure != generated_failure());
   assert(generated_checked_errors_destroyed() == 0);
-  assert(objc_retain(synchronous_failure) == synchronous_failure);
+  assert(objc3_async_c_error_retain(synchronous_failure) == synchronous_failure);
   objc_autoreleasePoolPop(pool);
   assert(generated_checked_errors_destroyed() == 0);
-  objc_release(synchronous_failure);
+  objc3_async_c_error_release(synchronous_failure);
   assert(generated_checked_errors_destroyed() == 1);
+  assert(!objc3_async_c_error_retain(0));
+  objc3_async_c_error_release(0);
   void *sync_input = generated_argument_create();
   void *sync_apply = generated_argument_block_create();
   assert(generated_consumed_sync_throws_c(false, sync_input, (ClientBlock)sync_apply,

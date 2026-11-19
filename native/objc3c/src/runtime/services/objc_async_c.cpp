@@ -7,6 +7,7 @@
 extern "C" void *_Block_copy(const void *);
 extern "C" void _Block_release(const void *);
 extern "C" void *objc_retain(void *);
+extern "C" void objc_release(void *);
 extern "C" void *__objc3_task_error_object(const objc3_error_t *) noexcept;
 
 @protocol Error
@@ -81,6 +82,22 @@ void deliver(void *context, const objc3_completion *completion) noexcept {
 
 extern "C" int objc3_async_c_error_is_cancellation(objc3_async_c_error error) {
   return error == cancellation_error();
+}
+
+extern "C" void *objc3_async_c_error_retain(void *error) {
+  return error ? objc_retain(error) : nullptr;
+}
+
+extern "C" void objc3_async_c_error_release(void *error) {
+  if (error) objc_release(error);
+}
+
+extern "C" void *objc3_c_autorelease_pool_push(void) {
+  return objc_autoreleasePoolPush && objc_autoreleasePoolPop ? objc_autoreleasePoolPush() : nullptr;
+}
+
+extern "C" void objc3_c_autorelease_pool_pop(void *token) {
+  if (objc_autoreleasePoolPush && objc_autoreleasePoolPop) objc_autoreleasePoolPop(token);
 }
 
 extern "C" void *__objc3_c_export_retain(void *value, int block) {

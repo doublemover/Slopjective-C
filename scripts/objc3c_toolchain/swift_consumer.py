@@ -25,10 +25,13 @@ CXX_EXPECTED = {'before': 40, 'count': 42, 'total': 2147483690,
                 'unique_allocations': 1, 'unique_destructions': 1}
 CXX_LIFETIME = ('owner_allocations', 'owner_destructions', 'owner_copies', 'unique_moves')
 ASYNC_EXPECTED = {'value': 42, 'checked_error': True, 'cancellation': True,
-                  'pre_cancelled': True, 'cancelled_after_submit': True, 'actor': 42, 'other_actor': 7}
+                  'pre_cancelled': True, 'cancelled_after_submit': True, 'actor': 42, 'other_actor': 7,
+                  'generated_value': 42, 'generated_error': True, 'generated_cancellation': True,
+                  'generated_scalars': True, 'generated_void': True, 'generated_enum': 42,
+                  'generated_checked_value': 42, 'generated_checked_error': True}
 ASYNC_CASES = {(ownership, native, swift) for ownership in ('arc', 'mrc')
                for native in ('O0', 'O2') for swift in ('Onone', 'O')}
-QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v6'
+QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v7'
 CXX_IMPORT = ('-cxx-interoperability-mode=default', '-Xcc', '-std=c++20')
 REQUIRED_ROWS = {'renamed-primitive': 'objc3_swift_value',
     'nonnull-pointer': 'objc3_swift_read', 'newtype': 'ObjC3SwiftAmount',
@@ -154,6 +157,7 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
     source = output / 'AsyncConsumer.swift'
     shutil.copyfile(fixture / 'async_consumer.swift', source)
     generated = module / 'Generated.h'
+    swift_overlay = output / 'GeneratedAsync.swift'
     report['inputs'][str(services)] = digest(services)
     for ownership in ('arc', 'mrc'):
         for native_opt in ('O0', 'O2'):
@@ -163,11 +167,16 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
             for filename in ('async_provider.m', 'async_api.h'):
                 shutil.copyfile(fixture / filename, provider / filename)
             obj, header = provider / 'provider.o', provider / 'generated.h'
+            emitted_overlay = provider / 'generated.swift'
             run(name + '-provider', [sdk / 'bin/objc3c', provider / 'async_provider.m', '--objc3',
                 '--emit-object', obj, '--export-c-async', 'swift_bridge_work', '--export-c-async',
                 'swift_bridge_cancelled', '--export-c-async', 'swift_bridge_cancellable',
-                '--export-c-async', 'SwiftBridgeCounter::add:', '--emit-c-header',
-                header, '--', '-std=c17', '-' + native_opt, '-fblocks', '-fobjc-runtime=gnustep-2.2',
+                '--export-c-async', 'swift_bridge_scalars', '--export-c-async', 'swift_bridge_void',
+                '--export-c-async', 'swift_bridge_enum',
+                '--export-c-async', 'SwiftBridgeCounter::add:', '--export-c-throws', 'swift_bridge_checked',
+                '--export-c-throws', 'swift_bridge_checked_void', '--emit-c-header',
+                header, '--emit-swift-overlay', emitted_overlay, '--swift-c-module', 'ForeignAsync',
+                '--', '-std=c17', '-' + native_opt, '-fblocks', '-fobjc-runtime=gnustep-2.2',
                 '-fobjc-exceptions', *(['-fobjc-arc', '-fobjc-arc-exceptions'] if ownership == 'arc'
                                        else ['-fno-objc-arc']),
                 '-I' + str(sdk / 'include')], work=provider)
@@ -176,7 +185,12 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
                     raise ValueError('Swift async C signature changed between native modes')
             else:
                 shutil.copyfile(header, generated)
-            for filename in ('async_provider.m', 'async_api.h', 'generated.h'):
+            if swift_overlay.exists():
+                if swift_overlay.read_bytes() != emitted_overlay.read_bytes():
+                    raise ValueError('generated Swift overlay changed between native modes')
+            else:
+                shutil.copyfile(emitted_overlay, swift_overlay)
+            for filename in ('async_provider.m', 'async_api.h', 'generated.h', 'generated.swift'):
                 (provider / filename).unlink()
             for swift_opt in ('Onone', 'O'):
                 case = provider / swift_opt
@@ -187,13 +201,13 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
                     '-swift-version', '6', '-module-name', 'AsyncConsumer', '-target', target,
                     '-resource-dir', swift_root / 'usr/lib/swift', '-I', module,
                     '-module-cache-path', case / 'fresh-cache', '-emit-dependencies-path', depfile,
-                    source], work=case, foreign=True)
+                    swift_overlay, source], work=case, foreign=True)
                 imports = import_evidence(depfile, case, generated, module_map)
                 for path in (module / 'AsyncAPI.h', *(support / header for header in headers)):
                     if imports.get(str(path)) != digest(path):
                         raise ValueError('Swift async importer omitted a bridge header')
                 run(name_opt + '-link', [*driver, '-' + swift_opt, '-I', module,
-                    '-module-cache-path', case / 'fresh-link-cache', source, obj, services, runtime,
+                    '-module-cache-path', case / 'fresh-link-cache', swift_overlay, source, obj, services, runtime,
                     '-Xlinker', '-lstdc++', '-Xlinker', '-rpath', '-Xlinker', runtime.parent,
                     '-o', binary], work=case, foreign=True)
                 graph = loaded_graph(binary, loader, [], required=(runtime,),
@@ -203,12 +217,14 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
                 result = execution_result(run(name_opt + '-execute', [binary], work=case, foreign=True), 'async')
                 report['async_cases'].append({'name': name_opt, 'ownership': ownership,
                     'native_optimization': native_opt, 'swift_optimization': swift_opt, 'status': 'PASS',
-                    'header_sha256': digest(generated), 'binary_sha256': digest(binary), 'imports': imports,
+                    'header_sha256': digest(generated), 'overlay_sha256': digest(swift_overlay),
+                    'binary_sha256': digest(binary), 'imports': imports,
                     'loaded_graph': graph, 'result': result})
                 report['inputs'].update(graph['libraries'])
                 for cache in ('fresh-cache', 'fresh-link-cache'):
                     shutil.rmtree(case / cache)
-    report['async_interface'] = {'header_sha256': digest(generated), 'runtime': str(runtime),
+    report['async_interface'] = {'header_sha256': digest(generated),
+        'overlay_sha256': digest(swift_overlay), 'runtime': str(runtime),
         'runtime_sha256': digest(runtime), 'services': str(services),
         'services_sha256': digest(services), 'provider_source_removed': True}
     invalid = output / 'AsyncNullActor.swift'

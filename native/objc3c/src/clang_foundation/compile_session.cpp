@@ -184,7 +184,8 @@ public:
   void HandleTranslationUnit(clang::ASTContext &context) override {
     if (context.getDiagnostics().hasErrorOccurred()) return;
     result_.c_export_source = GenerateCExports(context, request_.async_c_exports,
-                                               request_.throws_c_exports, result_.failure);
+                                               request_.throws_c_exports, result_.failure,
+                                               request_.swift_c_module);
     if (!result_.failure.empty()) {
       auto &diagnostics = context.getDiagnostics();
       diagnostics.Report(diagnostics.getCustomDiagID(clang::DiagnosticsEngine::Error, "%0"))
@@ -914,6 +915,12 @@ std::string EncodeCompileDiagnostics(const CompileResult &result) {
 }
 
 CompileResult Compile(const CompileRequest &request) {
+  if (!request.swift_overlay_output_path.empty() &&
+      (request.c_export_header_output_path.empty() || request.swift_c_module.empty())) {
+    CompileResult rejected;
+    rejected.failure = "Swift overlay publication requires a C export header and C module identifier";
+    return rejected;
+  }
   if (!request.c_export_header_output_path.empty() && !request.c_export_header) {
     CompileResult rejected;
     if ((request.async_c_exports.empty() && request.throws_c_exports.empty()) || request.emit == EmitKind::Syntax ||
@@ -941,6 +948,7 @@ CompileResult Compile(const CompileRequest &request) {
     collect.interface_output_path.clear();
     collect.dependency_record_output_path.clear();
     collect.c_export_header_output_path.clear();
+    collect.swift_overlay_output_path.clear();
     collect.emit_semantic_interface = false;
     collect.interface_exports.clear();
     collect.module_source_root.clear();
@@ -957,6 +965,7 @@ CompileResult Compile(const CompileRequest &request) {
         if (!llvm::is_contained(final.interface_exports, name))
           final.interface_exports.push_back(name);
     final.c_export_header = std::move(preliminary.c_export_source.header);
+    final.swift_overlay = std::move(preliminary.c_export_source.swift_overlay);
     final.source_text = std::move(*collect.source_text) + preliminary.c_export_source.definitions;
     return Compile(final);
   }
@@ -978,6 +987,7 @@ CompileResult Compile(const CompileRequest &request) {
     for(const auto &input:state->packages.inputs)
       for(const auto &output:{request.output_path,request.interface_output_path,request.dependency_record_output_path,
           request.c_export_header_output_path,
+          request.swift_overlay_output_path,
           request.interface_output_path.empty()?std::string():request.interface_output_path+".json"}) {
         if(output.empty())continue;
         std::error_code ec;
@@ -994,6 +1004,7 @@ CompileResult Compile(const CompileRequest &request) {
     collect.meta_compilation=state;collect.emit=EmitKind::Syntax;
     collect.output_path.clear();collect.interface_output_path.clear();collect.emit_semantic_interface=false;
     collect.c_export_header_output_path.clear();collect.c_export_header.reset();
+    collect.swift_overlay_output_path.clear();collect.swift_overlay.reset();
     collect.interface_exports.clear();collect.projected_arc.reset();collect.dependency_record_output_path.clear();
     auto preliminary=Compile(collect);
     if(state->failed){preliminary.success=false;preliminary.failure=state->error;return preliminary;}
@@ -1092,10 +1103,12 @@ CompileResult Compile(const CompileRequest &request) {
   llvm::SmallString<256> interface_output(request.interface_output_path);
   llvm::SmallString<256> record_output(request.dependency_record_output_path);
   llvm::SmallString<256> c_export_header_output(request.c_export_header_output_path);
+  llvm::SmallString<256> swift_overlay_output(request.swift_overlay_output_path);
   if ((!final_output.empty() && overlay->makeAbsolute(final_output)) ||
       (!interface_output.empty() && overlay->makeAbsolute(interface_output)) ||
       (!record_output.empty() && overlay->makeAbsolute(record_output)) ||
-      (!c_export_header_output.empty() && overlay->makeAbsolute(c_export_header_output))) {
+      (!c_export_header_output.empty() && overlay->makeAbsolute(c_export_header_output)) ||
+      (!swift_overlay_output.empty() && overlay->makeAbsolute(swift_overlay_output))) {
     result.failure = "Cannot resolve output paths in the compilation working directory";
     return result;
   }
@@ -1115,6 +1128,7 @@ CompileResult Compile(const CompileRequest &request) {
   };
   auto aliases_record = [&](const std::string &path) { return aliases(record_output, path); };
   auto aliases_c_export_header = [&](const std::string &path) { return aliases(c_export_header_output, path); };
+  auto aliases_swift_overlay = [&](const std::string &path) { return aliases(swift_overlay_output, path); };
   if (!record_output.empty()) {
     if (aliases_record(request.input_path) || aliases_record(request.output_path) ||
         aliases_record(request.interface_output_path) ||
@@ -1132,6 +1146,17 @@ CompileResult Compile(const CompileRequest &request) {
        (!request.interface_output_path.empty() &&
         aliases_c_export_header(request.interface_output_path + ".json")))) {
     result.failure = "C export header path conflicts with compilation input or outputs";
+    return result;
+  }
+  if (!swift_overlay_output.empty() &&
+      (!request.swift_overlay || request.swift_overlay->empty() ||
+       aliases_swift_overlay(request.input_path) || aliases_swift_overlay(request.output_path) ||
+       aliases_swift_overlay(request.dependency_record_output_path) ||
+       aliases_swift_overlay(request.c_export_header_output_path) ||
+       aliases_swift_overlay(request.interface_output_path) ||
+       (!request.interface_output_path.empty() &&
+        aliases_swift_overlay(request.interface_output_path + ".json")))) {
+    result.failure = "Swift overlay path conflicts with compilation input or outputs";
     return result;
   }
   if (request.emit != EmitKind::Syntax) {
@@ -1227,6 +1252,11 @@ CompileResult Compile(const CompileRequest &request) {
     result.success = false;
     result.failure = "C export header path conflicts with an imported interface artifact";
   }
+  if (result.success && std::any_of(result.interface_input_paths.begin(),
+          result.interface_input_paths.end(), aliases_swift_overlay)) {
+    result.success = false;
+    result.failure = "Swift overlay path conflicts with an imported interface artifact";
+  }
   if (result.success && !record_output.empty() && result.semantic_dependency_record.empty()) {
     result.success = false;
     result.failure = "No imported semantic dependency record was produced";
@@ -1265,7 +1295,7 @@ CompileResult Compile(const CompileRequest &request) {
     }
     return result.success;
   };
-  if (result.success) {
+  auto publish_with_header = [&]() {
     if (c_export_header_output.empty()) {
       publish_with_record();
     } else {
@@ -1273,6 +1303,20 @@ CompileResult Compile(const CompileRequest &request) {
       if (!PublishCompilationProductsWithTextArtifact(
               std::string(c_export_header_output), *request.c_export_header,
               publish_with_record, publication_failure, "C export header")) {
+        result.success = false;
+        if (result.failure.empty()) result.failure = std::move(publication_failure);
+        else result.failure += "; " + publication_failure;
+      }
+    }
+    return result.success;
+  };
+  if (result.success) {
+    if (swift_overlay_output.empty()) {
+      publish_with_header();
+    } else {
+      std::string publication_failure;
+      if (!PublishCompilationProductsWithTextArtifact(std::string(swift_overlay_output),
+              *request.swift_overlay, publish_with_header, publication_failure, "Swift overlay")) {
         result.success = false;
         if (result.failure.empty()) result.failure = std::move(publication_failure);
         else result.failure += "; " + publication_failure;

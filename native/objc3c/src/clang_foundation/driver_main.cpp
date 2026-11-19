@@ -24,6 +24,7 @@ int RunCompiler(int argc, char **argv) {
            "[--export-declaration name] [--module-owned-names] "
            "[--export-c-async name|Namespace::name|Actor::selector --emit-c-async-header file.h] "
            "[--export-c-throws name|Namespace::name --emit-c-header file.h] "
+           "[--emit-swift-overlay file.swift --swift-c-module module] "
            "[--module-source-root dir] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
            "[--sdk-root dir] [--meta-package dir-or-manifest] [--meta-lock file] "
@@ -86,6 +87,10 @@ int RunCompiler(int argc, char **argv) {
     else if ((argument == "--emit-c-header" || argument == "--emit-c-async-header") && has_values(1) &&
              request.c_export_header_output_path.empty())
       request.c_export_header_output_path = argv[++i];
+    else if (argument == "--emit-swift-overlay" && has_values(1) && request.swift_overlay_output_path.empty())
+      request.swift_overlay_output_path = argv[++i];
+    else if (argument == "--swift-c-module" && has_values(1) && request.swift_c_module.empty())
+      request.swift_c_module = argv[++i];
     else if (argument == "--module-source-root" && has_values(1))
       request.module_source_root = argv[++i];
     else if (argument == "--module-owned-names")
@@ -174,6 +179,10 @@ int RunCompiler(int argc, char **argv) {
   }
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
+  if (request.swift_overlay_output_path.empty() != request.swift_c_module.empty()) {
+    std::cerr << "Swift overlay requires both --emit-swift-overlay and --swift-c-module\n";
+    return 2;
+  }
   if ((!request.interface_exports.empty() &&
        !request.emit_semantic_interface) ||
       (request.projected_arc.has_value() &&

@@ -242,6 +242,8 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 interface.get('services_sha256') != inputs.get(interface['services']) or
                 not interface.get('header_sha256') or
                 interface['header_sha256'] != digests.get('async-module/Generated.h') or
+                not interface.get('overlay_sha256') or
+                interface['overlay_sha256'] != digests.get('GeneratedAsync.swift') or
                 not re.fullmatch('[0-9a-f]{64}', interface.get('services_sha256', ''))):
             raise ValueError('independent Swift async interface and runtime inventory is incomplete')
         for row in async_cases:
@@ -252,6 +254,7 @@ def suite_results(root: Path, name: str) -> list[dict]:
             imports = {Path(path).name: digest for path, digest in row.get('imports', {}).items()}
             if (row.get('name') != provider + '-' + row['swift_optimization'] or
                     row.get('header_sha256') != interface['header_sha256'] or
+                    row.get('overlay_sha256') != interface['overlay_sha256'] or
                     not row.get('binary_sha256') or row['binary_sha256'] != digests.get(binary) or
                     graph.get('sha256') != row['binary_sha256'] or
                     libraries.get(interface['runtime']) != interface['runtime_sha256'] or

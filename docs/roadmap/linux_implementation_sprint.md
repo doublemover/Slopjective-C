@@ -1,5 +1,10 @@
 # Linux implementation sprint
 
+The [Source 2.289 / System 2.215 Swift overlay](linux_swift_consumer.md)
+generates typed checked and async Swift entrypoints. Eight independent Swift
+6.4.2 clients verify the scalar and enum ABI, original checked error ownership,
+cancellation and isolated receiver state across ARC/MRC and optimization modes.
+
 The [Source 2.288 / System 2.214 task dependency change](linux_checked_await_cancellation.md)
 rejects a closing task-to-task edge during sequential and concurrent admission.
 A pre-cancelled task resumes through cancellation without creating an edge.

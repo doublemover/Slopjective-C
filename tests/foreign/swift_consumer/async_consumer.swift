@@ -153,6 +153,16 @@ private func checkSwiftCancellation(afterSubmission: Bool) async throws {
     } catch is CancellationError {}
 }
 
+private func checkGeneratedSynchronousError() throws {
+    do {
+        try ForeignAsyncNative.swift_bridge_checked_void(false)
+        preconditionFailure("generated Swift wrapper returned after synchronous failure")
+    } catch let error as ForeignAsyncNativeError {
+        precondition(objc3_swift_sync_errors_retired() == 0)
+        precondition(error.withBorrowedNativeError { objc3_swift_error_code($0) } == 3)
+    }
+}
+
 @main
 private struct Consumer {
     static func main() async throws {
@@ -183,6 +193,37 @@ private struct Consumer {
         let secondValue = try await awaitResult { SwiftBridgeCounter_add_async_c(second, 7, $0, $1) }
         let finalValue = try await awaitResult { SwiftBridgeCounter_add_async_c(first, 2, $0, $1) }
         precondition(value == 42 && taskValue == 42 && firstValue == 40 && secondValue == 7 && finalValue == 42)
-        print("{\"value\":\(value),\"checked_error\":true,\"cancellation\":true,\"pre_cancelled\":true,\"cancelled_after_submit\":true,\"actor\":\(finalValue),\"other_actor\":\(secondValue)}")
+
+        let generatedValue = try await ForeignAsyncNative.swift_bridge_work(41)
+        precondition(generatedValue == 42)
+        let scalarABI = try await ForeignAsyncNative.swift_bridge_scalars(
+            true, 42, -8, 250, -11, 60000, -1, 7, -42, 41, Int64.min, UInt64.max, 1.25, 0.5
+        )
+        precondition(scalarABI)
+        try await ForeignAsyncNative.swift_bridge_void()
+        let generatedEnum = try await ForeignAsyncNative.swift_bridge_enum(SwiftBridgeChoice(rawValue: -1))
+        precondition(generatedEnum.rawValue == 42)
+        do {
+            _ = try await ForeignAsyncNative.swift_bridge_work(-1)
+            preconditionFailure("generated Swift wrapper returned after checked failure")
+        } catch let error as ForeignAsyncNativeError {
+            precondition(error.withBorrowedNativeError { objc3_swift_error_code($0) } == 1)
+        }
+        let cancelled = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            try await ForeignAsyncNative.swift_bridge_cancellable()
+        }
+        do {
+            try await cancelled.value
+            preconditionFailure("generated Swift wrapper discarded cancellation")
+        } catch is CancellationError {}
+        let generatedActor = try await ForeignAsyncNative.SwiftBridgeCounter_add(first, 0)
+        precondition(generatedActor == finalValue)
+        let generatedChecked = try ForeignAsyncNative.swift_bridge_checked(41)
+        precondition(generatedChecked == 42)
+        try ForeignAsyncNative.swift_bridge_checked_void(true)
+        try checkGeneratedSynchronousError()
+        precondition(objc3_swift_sync_errors_retired() == 1)
+        print("{\"value\":\(value),\"checked_error\":true,\"cancellation\":true,\"pre_cancelled\":true,\"cancelled_after_submit\":true,\"actor\":\(finalValue),\"other_actor\":\(secondValue),\"generated_value\":\(generatedValue),\"generated_error\":true,\"generated_cancellation\":true,\"generated_scalars\":\(scalarABI),\"generated_void\":true,\"generated_enum\":\(generatedEnum.rawValue),\"generated_checked_value\":\(generatedChecked),\"generated_checked_error\":true}")
     }
 }

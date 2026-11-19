@@ -415,12 +415,201 @@ std::optional<std::string> NativeInput(
   return consumed && !arc ? RetainedInput(type, argument, block) : argument.str();
 }
 
+std::string SwiftScalar(clang::QualType type, llvm::StringRef module) {
+  // C admission already checked that this is a named, fixed-underlying enum
+  // and published its exact tag in the companion header.
+  if (const auto *enumeration = type->getAs<clang::EnumType>())
+    return "`" + module.str() + "`.`" + enumeration->getDecl()->getName().str() + "`";
+  const auto *builtin = type.getCanonicalType()->getAs<clang::BuiltinType>();
+  if (!builtin) return {};
+  switch (builtin->getKind()) {
+  case clang::BuiltinType::Void: return "Void";
+  case clang::BuiltinType::Bool: return "Bool";
+  case clang::BuiltinType::Char_S:
+  case clang::BuiltinType::Char_U: return "CChar";
+  case clang::BuiltinType::SChar: return "Int8";
+  case clang::BuiltinType::UChar: return "UInt8";
+  case clang::BuiltinType::Short: return "CShort";
+  case clang::BuiltinType::UShort: return "CUnsignedShort";
+  case clang::BuiltinType::Int: return "CInt";
+  case clang::BuiltinType::UInt: return "CUnsignedInt";
+  case clang::BuiltinType::Long: return "CLong";
+  case clang::BuiltinType::ULong: return "CUnsignedLong";
+  case clang::BuiltinType::LongLong: return "CLongLong";
+  case clang::BuiltinType::ULongLong: return "CUnsignedLongLong";
+  case clang::BuiltinType::Float: return "Float";
+  case clang::BuiltinType::Double: return "Double";
+  default: return {};
+  }
+}
+
+void WriteSwiftSupport(llvm::raw_ostream &out, llvm::StringRef module) {
+  out << "import `" << module << "`\nimport Synchronization\n\n";
+  out << "public final class " << module << "NativeError: Error, @unchecked Sendable {\n";
+  out << R"swift(    private let pointer: UnsafeMutableRawPointer
+
+    fileprivate init(_ error: UnsafeMutableRawPointer) {
+        self.pointer = objc3_async_c_error_retain(error)!
+    }
+
+    deinit { objc3_async_c_error_release(pointer) }
+
+    public func withBorrowedNativeError<T>(_ body: (UnsafeMutableRawPointer) throws -> T) rethrows -> T {
+        try withExtendedLifetime(self) { try body(pointer) }
+    }
+}
+
+private enum ObjC3CompletionContractError: Error { case invalidCompletion }
+
+private final class ObjC3NativeTask: @unchecked Sendable {
+    let handle: OpaquePointer
+
+    init(_ handle: OpaquePointer) { self.handle = handle }
+    deinit { objc3_task_release(handle) }
+
+    func cancel() { objc3_task_request_cancel(handle) }
+}
+
+private final class ObjC3Cancellation: Sendable {
+    private struct State {
+        var task: ObjC3NativeTask?
+        var requested = false
+        var finished = false
+    }
+
+    private let state = Mutex(State())
+
+    func install(_ handle: OpaquePointer?) {
+        guard let handle else { return }
+        let task = ObjC3NativeTask(handle)
+        let requested = state.withLock { state in
+            guard !state.finished else { return false }
+            state.task = task
+            return state.requested
+        }
+        if requested { task.cancel() }
+    }
+
+    func cancel() {
+        let task = state.withLock { state in
+            state.requested = true
+            return state.task
+        }
+        // Dispatch failure can invoke the callback synchronously.
+        task?.cancel()
+    }
+
+    func finish() {
+        let task = state.withLock { state in
+            state.finished = true
+            let task = state.task
+            state.task = nil
+            return task
+        }
+        withExtendedLifetime(task) {}
+    }
+}
+
+private final class ObjC3Pending<Value: Sendable>: Sendable {
+    let continuation: CheckedContinuation<Value, any Error>
+    let cancellation: ObjC3Cancellation
+
+    init(_ continuation: CheckedContinuation<Value, any Error>, _ cancellation: ObjC3Cancellation) {
+        self.continuation = continuation
+        self.cancellation = cancellation
+    }
+}
+
+)swift";
+  out << "public enum " << module << "Native {\n";
+}
+
+bool WriteSwiftEntry(llvm::raw_ostream &out, llvm::StringRef module,
+                     llvm::StringRef name, llvm::StringRef symbol,
+                     clang::QualType result, llvm::ArrayRef<clang::ParmVarDecl *> parameters,
+                     bool is_async, bool actor, std::string &failure) {
+  const auto result_type = SwiftScalar(result, module);
+  if (result_type.empty()) {
+    failure = "Swift overlay requires a portable scalar or void result";
+    return false;
+  }
+  const bool is_void = result->isVoidType();
+  std::string declaration, arguments;
+  llvm::raw_string_ostream signature(declaration), call(arguments);
+  if (actor) {
+    signature << "_ receiver: UnsafeMutableRawPointer";
+    call << "receiver, ";
+  }
+  for (unsigned index = 0; index < parameters.size(); ++index) {
+    const auto type = SwiftScalar(parameters[index]->getType(), module);
+    if (type.empty()) {
+      failure = "Swift overlay has no portable scalar type for parameter " + std::to_string(index + 1);
+      return false;
+    }
+    if (index || actor) signature << ", ";
+    signature << "_ argument" << index << ": " << type;
+    call << "argument" << index << ", ";
+  }
+  out << "    public static " << (is_async ? "nonisolated(nonsending) " : "")
+      << "func `" << name << "`(" << declaration << ") "
+      << (is_async ? "async " : "") << "throws -> " << result_type << " {\n";
+  if (!is_async) {
+    out << R"swift(        let pool = objc3_c_autorelease_pool_push()
+        defer { objc3_c_autorelease_pool_pop(pool) }
+        var error: UnsafeMutableRawPointer?
+)swift";
+    out << "        " << (is_void ? "" : "let value = ") << '`' << module << "`." << symbol << '('
+        << arguments << "&error)\n"
+        << "        if let error { throw " << module << "NativeError(error) }\n"
+        << "        return " << (is_void ? "()" : "value") << "\n    }\n\n";
+    return true;
+  }
+  out << R"swift(        let cancellation = ObjC3Cancellation()
+        return try await withTaskCancellationHandler {
+)swift";
+  out << "            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<"
+      << result_type << ", any Error>) in\n"
+      << "                let context = Unmanaged.passRetained(ObjC3Pending(continuation, cancellation)).toOpaque()\n";
+  out << "                let task = `" << module << "`." << symbol << '(' << arguments << "context) { context, status, "
+      << (is_void ? "" : "value, ") << "error in\n";
+  out << "                    guard let context else { preconditionFailure(\"missing native completion context\") }\n"
+      << "                    let pending = Unmanaged<ObjC3Pending<" << result_type
+      << ">>.fromOpaque(context).takeRetainedValue()\n";
+  out << R"swift(                    pending.cancellation.finish()
+                    switch status {
+                    case OBJC_ASYNC_COMPLETION_SUCCESS where error == nil:
+)swift";
+  out << "                        pending.continuation.resume(returning: " << (is_void ? "()" : "value") << ")\n";
+  out << R"swift(                    case OBJC_ASYNC_COMPLETION_CANCELLED where objc3_async_c_error_is_cancellation(error) != 0:
+                        pending.continuation.resume(throwing: CancellationError())
+                    case OBJC_ASYNC_COMPLETION_ERROR:
+                        if let error, objc3_async_c_error_is_cancellation(error) == 0 {
+)swift";
+  out << "                            pending.continuation.resume(throwing: " << module << "NativeError(error))\n";
+  out << R"swift(                        } else {
+                            pending.continuation.resume(throwing: ObjC3CompletionContractError.invalidCompletion)
+                        }
+                    default:
+                        pending.continuation.resume(throwing: ObjC3CompletionContractError.invalidCompletion)
+                    }
+                }
+                cancellation.install(task)
+            }
+        } onCancel: {
+            cancellation.cancel()
+        }
+    }
+
+)swift";
+  return true;
+}
+
 }  // namespace
 
 CExportSource GenerateCExports(clang::ASTContext &context,
                                std::span<const std::string> async_symbols,
                                std::span<const std::string> throws_symbols,
-                               std::string &failure) {
+                               std::string &failure, std::string_view swift_module_name) {
   failure.clear();
   CExportSource output;
   auto &language = context.getLangOpts();
@@ -432,8 +621,30 @@ CExportSource GenerateCExports(clang::ASTContext &context,
 
   std::string entries;
   llvm::raw_string_ostream header(entries), definitions(output.definitions);
+  const llvm::StringRef swift_module(swift_module_name);
+  llvm::raw_string_ostream swift(output.swift_overlay);
+  if (!swift_module.empty()) {
+    if ((async_symbols.empty() && throws_symbols.empty()) || !IsSourceIdentifier(swift_module)) {
+      failure = "Swift overlay requires selected native entries and a C module identifier";
+      return {};
+    }
+    WriteSwiftSupport(swift, swift_module);
+  }
   definitions << "\n\n#include <stdbool.h>\n";
-  llvm::StringSet<> selected;
+  llvm::StringSet<> selected, swift_names;
+  auto export_swift = [&](llvm::StringRef selection, llvm::StringRef name, llvm::StringRef symbol,
+                          clang::QualType result, llvm::ArrayRef<clang::ParmVarDecl *> parameters,
+                          bool is_async, bool actor) {
+    if (swift_module.empty()) return true;
+    if (!swift_names.insert(name).second) {
+      failure = "Duplicate Swift overlay entry " + name.str();
+      return false;
+    }
+    if (WriteSwiftEntry(swift, swift_module, name, symbol, result, parameters, is_async, actor, failure))
+      return true;
+    failure = "Cannot generate Swift overlay for " + selection.str() + ": " + failure;
+    return false;
+  };
   auto *tu = context.getTranslationUnitDecl();
   CExportValues values(context, output.interface_exports);
   auto export_type = [&](clang::QualType type, const std::string &alias,
@@ -515,6 +726,8 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     if (!prototype->getReturnType()->isVoidType()) definitions << "return ";
     definitions << "__objc3_try(" << (language.CPlusPlus ? "::" : "") << selection
                 << '(' << inputs << ")); }\n";
+    if (!export_swift(selection, name, thunk, prototype->getReturnType(), function->parameters(), false, false))
+      return {};
   }
   for (const auto &selection : async_symbols) {
     auto reject = [&](llvm::StringRef reason) {
@@ -694,7 +907,10 @@ CExportSource GenerateCExports(clang::ASTContext &context,
                 << ") { " << submit << "(0, " << forwarded << "); }\n"
                 << task_entry << " { objc3_task_t *__objc3_task = 0; " << submit
                 << "(&__objc3_task, " << forwarded << "); return __objc3_task; }\n";
+    if (!export_swift(selection, name, cancellable, result_type, source_parameters, true, actor_method.has_value()))
+      return {};
   }
+  if (!swift_module.empty()) swift << "}\n";
   output.header = "#pragma once\n#include <stdbool.h>\n"
                   "#include <objc3c/runtime/objc3_async_c.h>\n\n";
   if (!values.declarations().empty()) {
