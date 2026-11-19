@@ -1,5 +1,12 @@
 # Native async exports to C
 
+Source 2.295 / System 2.221 allows an overload set to supply a generated C
+entry when it has exactly one non-template native function with the selected
+effect. Objective-C `overloadable` families and qualified Objective-C++ free
+functions use an exact function pointer in the generated adapter. This protects
+the selected calling contract when an ordinary overload could bind the same
+arguments. More than one native candidate with the selected effect is rejected.
+
 Source 2.293 / System 2.219 admits fully populated 64-bit and 128-bit
 generic C vectors through generated checked and async entries on Linux
 x86-64 and AArch64. The generated headers preserve GNU `vector_size` and

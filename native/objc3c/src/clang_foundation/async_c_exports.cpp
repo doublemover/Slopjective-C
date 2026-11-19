@@ -36,10 +36,11 @@ struct CExportFreeFunction {
   const clang::FunctionDecl *function;
   std::string symbol;
   llvm::SmallVector<llvm::StringRef, 4> identifiers;
+  bool overloaded = false;
 };
 
 std::optional<CExportFreeFunction> SelectFreeFunction(clang::ASTContext &context,
-                                                      llvm::StringRef selection) {
+                                                      llvm::StringRef selection, bool async) {
   CExportFreeFunction result{};
   selection.split(result.identifiers, "::");
   if (result.identifiers.empty() || !llvm::all_of(result.identifiers, IsSourceIdentifier) ||
@@ -49,15 +50,33 @@ std::optional<CExportFreeFunction> SelectFreeFunction(clang::ASTContext &context
   for (std::size_t index = 0; index < result.identifiers.size(); ++index) {
     const auto identifier = result.identifiers[index];
     const auto candidates = scope->lookup(&context.Idents.get(identifier));
-    if (candidates.empty() || std::next(candidates.begin()) != candidates.end())
-      return std::nullopt;
+    if (candidates.empty()) return std::nullopt;
+    const bool multiple = std::next(candidates.begin()) != candidates.end();
     if (!result.symbol.empty()) result.symbol += '_';
     result.symbol.append(identifier.data(), identifier.size());
     const auto *entry = candidates.front();
     if (index + 1 == result.identifiers.size()) {
-      result.function = llvm::dyn_cast<clang::FunctionDecl>(entry);
+      if (!multiple) {
+        result.function = llvm::dyn_cast<clang::FunctionDecl>(entry);
+      } else {
+        for (const auto *candidate : candidates) {
+          const auto *function = llvm::dyn_cast<clang::FunctionDecl>(candidate);
+          if (!function || function->getTemplatedKind() != clang::FunctionDecl::TK_NonTemplate)
+            continue;
+          const auto *proto = function->getType()->getAs<clang::FunctionProtoType>();
+          if (!proto) continue;
+          const auto effects = proto->getObjC3FunctionEffects();
+          const bool matches = async ? effects.AsyncFrame
+              : !effects.Async && effects.Throws != clang::ObjC3ThrowsKind::None;
+          if (!matches) continue;
+          if (result.function) return std::nullopt;
+          result.function = function;
+          result.overloaded = true;
+        }
+      }
       break;
     }
+    if (multiple) return std::nullopt;
     if (const auto *alias = llvm::dyn_cast<clang::NamespaceAliasDecl>(entry))
       scope = alias->getNamespace();
     else if (const auto *name_space = llvm::dyn_cast<clang::NamespaceDecl>(entry))
@@ -68,6 +87,21 @@ std::optional<CExportFreeFunction> SelectFreeFunction(clang::ASTContext &context
   if (!result.function || result.function->getTemplatedKind() != clang::FunctionDecl::TK_NonTemplate)
     return std::nullopt;
   return result;
+}
+
+std::string FreeFunctionCallee(clang::ASTContext &context, const CExportFreeFunction &entry,
+                               llvm::StringRef selection) {
+  const bool cxx = context.getLangOpts().CPlusPlus;
+  const auto name = (cxx ? "::" : "") + selection.str();
+  if (!entry.overloaded) return name;
+  // A C argument snapshot is an lvalue. Ordinary overload resolution could
+  // select or conflict with a reference overload that has a different ABI.
+  clang::PrintingPolicy policy(context.getLangOpts());
+  policy.FullyQualifiedName = true;
+  policy.PrintAsCanonical = true;
+  const auto pointer = context.getPointerType(entry.function->getType()).getAsString(policy);
+  if (cxx) return "(*static_cast<" + pointer + ">(&" + name + "))";
+  return "(*(" + pointer + ")&" + name + ')';
 }
 
 void PrintThrows(llvm::raw_ostream &source, clang::ASTContext &context,
@@ -725,7 +759,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       failure = "Cannot export C throwing entry " + selection + ": " + reason.str();
       return CExportSource{};
     };
-    const auto selected_function = SelectFreeFunction(context, selection);
+    const auto selected_function = SelectFreeFunction(context, selection, false);
     const auto *function = selected_function ? selected_function->function : nullptr;
     const auto *prototype = function ? function->getType()->getAs<clang::FunctionProtoType>() : nullptr;
     if (!prototype || prototype->isVariadic())
@@ -787,7 +821,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     PrintThrows(definitions, context, effects);
     definitions << " { ";
     if (!prototype->getReturnType()->isVoidType()) definitions << "return ";
-    definitions << "__objc3_try(" << (language.CPlusPlus ? "::" : "") << selection
+    definitions << "__objc3_try(" << FreeFunctionCallee(context, *selected_function, selection)
                 << '(' << inputs << ")); }\n";
     if (!export_swift(selection, name, thunk, prefix, prototype->getReturnType(), function->parameters(), false, false))
       return {};
@@ -804,7 +838,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     llvm::ArrayRef<clang::ParmVarDecl *> source_parameters;
     clang::ObjC3FunctionEffectInfo effects;
     std::string name;
-    const auto selected_function = SelectFreeFunction(context, selection);
+    const auto selected_function = SelectFreeFunction(context, selection, true);
     if (!selected_function && llvm::StringRef(selection).contains("::")) {
       actor_method = SelectActorMethod(context, selection);
       if (!actor_method)
@@ -907,7 +941,7 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     if (actor_method && source_parameters.empty())
       message += " " + actor_method->method->getSelector().getAsString();
     const auto call = actor_method ? message + ']' :
-        (language.CPlusPlus ? "::" : "") + selection + '(' + native_inputs + ')';
+        FreeFunctionCallee(context, *selected_function, selection) + '(' + native_inputs + ')';
     auto frame = call;
     // The unqualified C preprocessing spelling must select the original
     // declaration even when the provider reuses a name as a macro later.

@@ -196,6 +196,10 @@ static void generated_cancelled(void) async throws(id<Error>) {
   try objc3_task_check_cancellation();
   __builtin_trap();
 }
+#ifndef __cplusplus
+__attribute__((overloadable, unused)) static int generated_checked(double mode) { return (int)mode + 91; }
+__attribute__((overloadable))
+#endif
 static int generated_checked(int mode) async throws(id<Error>) {
   if (mode) __objc3_throw(generated_failure());
   return 42;
@@ -328,6 +332,10 @@ __attribute__((objc_root_class)) @interface GeneratedOwnedError <Error> { Class 
 - (void)_ARCCompliantRetainRelease {}
 #endif
 @end
+#ifndef __cplusplus
+__attribute__((overloadable, unused)) static int generated_sync_checked(double input) { return (int)input + 91; }
+__attribute__((overloadable))
+#endif
 static int generated_sync_checked(int input) __objc3_throws(id<Error>) __attribute__((nothrow)) {
   if (input == -2) {
     id<Error> error = [GeneratedOwnedError new];
@@ -510,10 +518,12 @@ unsigned generated_checked_errors_destroyed(void) {
 }
 namespace ExportRegion::Nested {
 static int pulse(int input) async { return input + 1; }
+[[maybe_unused]] static int pulse(int &input) { return input + 91; }
 static int check(int input) __objc3_throws(id<Error>) __attribute__((nothrow)) {
   if (input < 0) __objc3_throw(generated_failure());
   return input + 2;
 }
+[[maybe_unused]] static int check(int &input) { return input + 91; }
 }
 namespace ExportAlias = ExportRegion::Nested;
 #define ExportRegion InvalidExportRegion
@@ -597,6 +607,18 @@ static int check(int input) __objc3_throws __attribute__((nothrow)) {return inpu
     const auto conflict = Compile(rejected);
     Require(!conflict.success && conflict.failure.find("already declared or selected") != std::string::npos,
             "two namespace selections published the same C symbol");
+    rejected.async_c_exports = {"ExportRegion::Nested::pulse"};
+    rejected.throws_c_exports.clear();
+    rejected.source_text = source_text + R"(
+#undef ExportRegion
+#undef pulse
+namespace ExportRegion::Nested {
+static int pulse(double input) async { return (int)input + 1; }
+}
+)";
+    const auto ambiguous = Compile(rejected);
+    Require(!ambiguous.success && ambiguous.failure.find("expected one qualified free function") != std::string::npos,
+            "an overload set with two native async candidates published an arbitrary C entry");
   }
   if (declaration_only) {
     auto rejected = provider;

@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.295 / System 2.221 C overload selection](linux_async_c_completion_exports.md)
+keeps checked and async entries bound to their exact native signatures when a
+source overload family also contains ordinary functions.
+
 The [Source 2.294 / System 2.220 Swift SIMD bridge](linux_swift_consumer.md)
 preserves native C vector aliases in checked and async calls. Native IR checks
 also verify vector Optional copies and C records with vector fields.
