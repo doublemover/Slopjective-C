@@ -5,11 +5,20 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 
 import pytest
 
 from scripts.objc3c_native_validation import fixture_nodes as fixtures
+from scripts.objc3c_toolchain.linux_host import llvm_trap_signal
+
+
+def test_llvm_trap_signal_depends_on_the_sealed_linux_target():
+    assert llvm_trap_signal('x86_64-unknown-linux-gnu') == signal.SIGILL
+    assert llvm_trap_signal('aarch64-unknown-linux-gnu') == signal.SIGTRAP
+    with pytest.raises(ValueError, match='unsupported LLVM trap target'):
+        llvm_trap_signal('riscv64-unknown-linux-gnu')
 
 
 def _hash(path: Path) -> str:

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import platform
 import re
+import signal
 from urllib.parse import urlsplit
 
 
@@ -37,6 +38,14 @@ def host_identity(host: str | None = None, *, require_native=False) -> dict:
 
 def native_target() -> str:
     return host_identity()['target_triple']
+
+
+def llvm_trap_signal(target: str) -> signal.Signals:
+    if target == HOSTS['linux-x86_64'][1]:
+        return signal.SIGILL  # ud2
+    if target == HOSTS['linux-aarch64'][1]:
+        return signal.SIGTRAP  # brk
+    raise ValueError('unsupported LLVM trap target: ' + target)
 
 
 def native_loader() -> Path:

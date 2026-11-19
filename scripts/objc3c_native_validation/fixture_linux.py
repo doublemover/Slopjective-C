@@ -6,9 +6,10 @@ import json
 import os
 from pathlib import Path
 import resource
-import signal
 import subprocess
 import time
+
+from scripts.objc3c_toolchain.linux_host import llvm_trap_signal
 
 
 def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict) -> dict:
@@ -92,7 +93,8 @@ def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict
                 execute([str(executable)])
                 count += 1
                 for trap in _CASES[suite][1:]:
-                    execute([str(executable), trap.removeprefix("typed-error-").removesuffix("-trap")], expected=-signal.SIGILL)
+                    execute([str(executable), trap.removeprefix("typed-error-").removesuffix("-trap")],
+                            expected=-llvm_trap_signal(toolchain["target_triple"]))
                     count += 1
                 continue
             for case in _CASES[suite]:

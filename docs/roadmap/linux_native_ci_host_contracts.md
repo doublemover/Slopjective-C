@@ -1,5 +1,10 @@
 # Native host CI and installed helper contracts
 
+Native package validation compares the linked ELF machine, class, byte order
+and exact GNUstep dependency with the selected Linux target. Intentional LLVM
+trap tests check the target's actual signal on both the native fixture and
+installed SDK routes. x86-64 uses `SIGILL` and AArch64 uses `SIGTRAP`.
+
 The checks at Source 2.187 exposed three stale CI assumptions after the native
 Linux AArch64 cutover. The release policy searched for the retired architecture-
 independent archive name; installed-helper tests copied an incomplete dependency

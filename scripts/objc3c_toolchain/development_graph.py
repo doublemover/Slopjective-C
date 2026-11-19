@@ -74,6 +74,7 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
         shutil.copyfile(repo / 'tests/clang_foundation/native_package' / source, sources / name)
     shutil.copyfile(Path(__file__).with_name('sdk_example.py'), example / 'build.py')
     shutil.copyfile(Path(__file__).with_name('qualify_source_modules.py'), example / 'qualify.py')
+    shutil.copyfile(Path(__file__).with_name('diagnostic_termination.py'), example / 'diagnostic_termination.py')
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'

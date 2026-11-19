@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 import shutil
-import signal
+from runpy import run_path
 import subprocess
 import sys
 import time
@@ -24,7 +24,10 @@ def qualify(sdk: Path, output: Path) -> dict:
              'carrier-direct-module.m', 'carrier-direct-import.m')
     for name in names:
         shutil.copyfile(Path(__file__).parent / name, sources / name)
-    seal = json.loads((sdk / 'objc3-sdk.json').read_text())['seal_sha256']
+    manifest = json.loads((sdk / 'objc3-sdk.json').read_text())
+    seal = manifest['seal_sha256']
+    host = run_path(str(sdk / 'share/objc3c/source-build/linux_host.py'))
+    trap_signal = host['llvm_trap_signal'](manifest['target'])
     report = {'schema': 'objc3c.installed-direct-carrier-calls.v1', 'status': 'running',
               'sdk_seal': seal, 'commands': [], 'executions': [],
               'forced_failures': [], 'source_hashes': {name: hashlib.sha256((sources / name).read_bytes()).hexdigest()
@@ -70,9 +73,9 @@ def qualify(sdk: Path, output: Path) -> dict:
                 run(key + '-link', [compiler, *link_flags, base, errors, provider, consumer, '-o', executable])
                 execute(key, executable)
                 for mode in ('force-class', 'force-instance'):
-                    run(key + '-' + mode, [executable, mode], expected=-signal.SIGILL)
+                    run(key + '-' + mode, [executable, mode], expected=-trap_signal)
                     report['forced_failures'].append({'configuration': key, 'mode': mode,
-                                                       'signal': 'SIGILL'})
+                                                       'signal': trap_signal.name})
                 if language == 'objective-c' and optimization in ('O0', 'O2'):
                     module_directory = output / (key + '-module')
                     module_directory.mkdir(exist_ok=True)
