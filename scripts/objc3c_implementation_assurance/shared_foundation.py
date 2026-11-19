@@ -13,11 +13,15 @@ from scripts.objc3c_assurance.evidence import artifact, native_files
 from scripts.objc3c_assurance.instrumented_foundation import (
     PROFILE, _identity, _portable_identity, _retain_foundation_evidence,
 )
+from scripts.objc3c_assurance.plan import from_checkout as native_plan_from_checkout
 from scripts.objc3c_toolchain.binary_packages import digest, write_json
 from scripts.objc3c_toolchain.build import _build_foundation, foundation_lock
 from scripts.objc3c_toolchain.core import build_plans, prepare, seal_development
-from scripts.objc3c_toolchain.implementation_analysis import dependencies, inventory, patch_units
+from scripts.objc3c_toolchain.implementation_analysis import (
+    dependencies, dependency_query, inventory, patch_units, textual_pch,
+)
 from scripts.objc3c_toolchain.linux_host import native_linux_host, require_elf
+from .plan import from_checkout
 
 SCHEMA = 'objc3c.implementation-analysis-foundation.v3'
 TABLEGEN = Path('bin/llvm-tblgen')
@@ -46,9 +50,13 @@ def _build_files(repo: Path, configuration: dict) -> set[Path]:
     graph = subprocess.check_output([ninja, '-C', build, '-t', 'commands'], text=True)
     rows = inventory(database, graph, {source / name for name in patch_units(repo)})
     outputs = {row['output'] for row in rows}
-    recorded = dependencies(subprocess.check_output([ninja, '-C', build, '-t', 'deps',
-        *(str(Path(path).relative_to(build)) for path in sorted(outputs))], text=True),
+    projections = [entry for row in rows for entry in textual_pch(row, include_identity=False)[1]]
+    precompiled = {entry['bootstrap_pch'] for entry in projections}
+    outputs.update(precompiled)
+    recorded = dependencies(subprocess.check_output(dependency_query(ninja, build, sorted(outputs)), text=True),
         build=build, selected_outputs=outputs)
+    if precompiled - set(recorded):
+        raise ValueError('analysis foundation PCH has no recorded Ninja dependency closure')
 
     paths = {
         database, build / 'CMakeCache.txt', build / 'build.ninja', build / '.ninja_deps',
@@ -58,6 +66,7 @@ def _build_files(repo: Path, configuration: dict) -> set[Path]:
     # Ninja checks the recorded object's nanosecond mtime to authenticate its
     # dependency closure. Retain only the compiled objects that own those rows.
     paths.update(map(Path, recorded))
+    paths.update(Path(entry['textual_wrapper']) for entry in projections)
     paths.update(_build_directories(build, database))
     paths.update(path for path in build.rglob('*')
                  if path.is_file() and path.suffix in ('.ninja', '.modmap', '.dd'))
@@ -117,9 +126,8 @@ def _archive_members(archive: Path, prefixes: tuple[str, ...]) -> list[str]:
     return names
 
 
-def produce(repo: Path, plan: dict, output: Path) -> dict:
+def produce(repo: Path, plan: dict, output: Path, *, sanitizer_producer: Path | None = None) -> dict:
     from .runner import owned_path
-    from .plan import from_checkout
 
     repo = repo.resolve(strict=True)
     output = owned_path(repo, output)
@@ -137,17 +145,43 @@ def produce(repo: Path, plan: dict, output: Path) -> dict:
     try:
         owned_path(repo, development / '.foundation-build.lock')
         with foundation_lock(repo):
-            foundation = _build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
-                                          instrumentation_profile=PROFILE, test_results=evidence)
+            if sanitizer_producer is None:
+                foundation = _build_foundation(repo, host=native_linux_host(), fetch=True, stage=True,
+                                              instrumentation_profile=PROFILE, test_results=evidence)
+            else:
+                sanitizer_producer = owned_path(repo, sanitizer_producer).resolve(strict=True)
+                receipt = sanitizer_producer / 'producer.json'
+                receipt_artifact = artifact(sanitizer_producer, receipt)
+                retained = json.loads(receipt.read_text())
+                native_plan = native_plan_from_checkout(repo, **plan['revision'], periodic=plan['periodic'])
+                if (not plan['periodic'] or retained.get('schema') != 'objc3c.instrumented-foundation-bundle.v1' or
+                        retained.get('status') != 'PASS' or retained.get('revision') != plan['revision'] or
+                        retained.get('plan_sha256') != native_plan['sha256']):
+                    raise ValueError('analysis requires the successful exact-revision sanitizer producer')
+                original = sanitizer_producer / 'foundation'
+                if original.is_symlink() or not original.is_dir():
+                    raise ValueError('analysis requires the sanitizer producer diagnostic directory')
+                for path in native_files(original):
+                    entry = artifact(original, path)
+                    destination = evidence / entry['path']
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(path, destination)
+                foundation = json.loads((evidence / 'foundation.json').read_text())
+                report['sanitizer_producer_sha256'] = receipt_artifact['sha256']
             configuration = build_plans(repo, host=native_linux_host(), instrumentation_profile=PROFILE)['configure']
             portable = _portable_identity(repo)
             if foundation['status'] != 'passed' or foundation['source_identity'] != portable['source_build_id']:
                 raise ValueError('shared analysis foundation did not complete qualification')
             stage, build = (Path(configuration['paths'][key]).resolve(strict=True) for key in ('stage', 'build'))
+            identity = _identity(portable, stage)
+            if sanitizer_producer is not None and (identity != retained['identity'] or
+                    retained['foundation_identity'] != portable or
+                    digest(build / 'foundation-build-report.json') != digest(evidence / 'foundation.json')):
+                raise ValueError('analysis compiler/build graph differs from the sanitizer producer')
             files = _build_files(repo, configuration)
             files.update(path for path in stage.rglob('*') if path.is_file() or path.is_symlink())
             _retain_foundation_evidence(repo, configuration, evidence)
-            report.update(status='PASS', identity=_identity(portable, stage),
+            report.update(status='PASS', identity=identity,
                           foundation_artifacts=[artifact(evidence, path) for path in native_files(evidence)],
                           archive=_archive(repo, output / 'foundation.tar.zst', (stage, build), files))
         return report
@@ -159,12 +193,15 @@ def produce(repo: Path, plan: dict, output: Path) -> dict:
         write_json(output / 'producer.json', report)
 
 
-def restore(repo: Path, plan: dict, bundle: Path, evidence: Path) -> tuple[dict, dict]:
+def restore(repo: Path, plan: dict, bundle: Path, evidence: Path, *,
+            expected_archive_sha256: str | None = None) -> tuple[dict, dict]:
     archive = bundle / 'foundation.tar.zst'
     receipt = bundle / 'producer.json'
     artifact(bundle, receipt)
     report = json.loads(receipt.read_text())
     archive_identity = artifact(bundle, archive)
+    if expected_archive_sha256 is not None and archive_identity['sha256'] != expected_archive_sha256:
+        raise ValueError('analysis foundation archive differs from the producer job output')
     portable = _portable_identity(repo)
     stage = Path(portable['paths']['stage'])
     build = repo / 'out/toolchains/objc3-development' / ('build-' + native_linux_host() + '-' + PROFILE)

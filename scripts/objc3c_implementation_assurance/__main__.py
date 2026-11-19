@@ -23,6 +23,8 @@ def main(argv=None):
     parser.add_argument('--periodic-sha')
     parser.add_argument('--partition-index', type=int, default=0)
     parser.add_argument('--foundation-bundle', type=Path)
+    parser.add_argument('--foundation-archive-sha256')
+    parser.add_argument('--sanitizer-producer', type=Path)
     args = parser.parse_args(argv)
     repo = args.repo.resolve()
     revisions = (dict.fromkeys(('head', 'base', 'tested'), sha(args.periodic_sha))
@@ -43,9 +45,13 @@ def main(argv=None):
             raise ValueError('downloaded plan differs from the exact source revision')
         if not args.output:
             parser.error('--output is required for foundation, run and verify')
+        if args.sanitizer_producer is not None and args.command != 'foundation':
+            parser.error('--sanitizer-producer is only accepted by foundation')
+        if args.foundation_archive_sha256 is not None and (args.command != 'run' or not args.foundation_bundle):
+            parser.error('--foundation-archive-sha256 requires run with --foundation-bundle')
         if args.command == 'foundation':
             from .shared_foundation import produce
-            produced = produce(repo, plan, args.output)
+            produced = produce(repo, plan, args.output, sanitizer_producer=args.sanitizer_producer)
             report = {'status': produced['status'], 'identity': produced['identity'],
                       'archive_sha256': produced['archive']['sha256'],
                       'archive_bytes': produced['archive']['bytes']}
@@ -55,7 +61,8 @@ def main(argv=None):
         elif args.command == 'run':
             from .runner import run
             report = run(repo, plan, args.output, partition_index=args.partition_index,
-                         foundation_bundle=args.foundation_bundle)
+                         foundation_bundle=args.foundation_bundle,
+                         foundation_archive_sha256=args.foundation_archive_sha256)
         else:
             from .evidence import aggregate
             report = aggregate(plan, args.output,

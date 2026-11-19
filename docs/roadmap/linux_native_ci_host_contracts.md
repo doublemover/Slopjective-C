@@ -158,3 +158,18 @@ dependencies, deleted function specializations, mismatched consumer profiles
 and inaccessible declarations. It passed locally with 16 linked executions,
 10 publication admissions, six rejections and 124 recorded commands using a
 development prefix with the current relinked compiler.
+
+The native AArch64 analysis run exposed a missing selected
+`LLVMSupport` precompiled header after the source-selection fix. The analysis
+archive now includes every bootstrap PCH named by a maintained compilation
+command, its textual wrapper and the header dependencies recorded by Ninja.
+A real CMake and Ninja round trip restores the selected PCH byte for byte and
+keeps unrelated generated sources outside the archive.
+
+Release qualification now seals the analysis archive from the same
+ASan/UBSan compiler build used by the sanitizer consumers. The exporter checks
+the exact source plan, compiler identity and build report. Each partition checks
+the producer's archive SHA-256 before extraction, and the terminal gate checks
+the complete partition inventory. Scheduled and manually dispatched analysis
+can still build its own compiler. The ordinary SDK, coverage and frontend jobs
+start independently of this shared build.

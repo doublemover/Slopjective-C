@@ -1,11 +1,11 @@
 # Objective-C 3.0 on Linux
 
-The implementation-analysis matrix uses a single same-run sanitizer compiler
-producer per host. Each partition restores its staged compiler, matching
-configured build inputs and recorded Ninja dependency owners. The terminal
-job binds all partitions to the producer's archive SHA-256 and still verifies
-the complete disjoint variant inventory. The shared archive expires after
-one day.
+Linux release qualification shares one same-run ASan/UBSan compiler build per
+host between the sanitizer consumers and implementation-analysis matrix. Each
+analysis partition restores its staged compiler, configured inputs and recorded
+Ninja dependency owners, including selected precompiled headers. The terminal
+job binds all partitions to the producer's archive SHA-256 and verifies the
+complete disjoint variant inventory. The shared archive expires after one day.
 
 The [Source 2.293 / System 2.219 C vector bridge](linux_async_c_completion_exports.md)
 preserves native Linux vector argument and result conventions in generated

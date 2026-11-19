@@ -18,12 +18,6 @@ concurrency:
   group: ${{ inputs.linux_host || 'linux-x86_64' }}-linux-sdk-release-${{ github.sha }}
   cancel-in-progress: false
 jobs:
-  implementation-analysis:
-    name: Fork-matched implementation release gate
-    uses: ./.github/workflows/implementation-analysis.yml
-    with:
-      source_sha: ${{ github.sha }}
-      linux_host: ${{ inputs.linux_host }}
   build:
     name: Current native qualification and SDK archive
     uses: ./.github/workflows/native-assurance.yml
@@ -32,7 +26,7 @@ jobs:
       archive_install: true
   release:
     name: Require complete native SDK release evidence
-    needs: [build, implementation-analysis]
+    needs: build
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 5
     if: always()
@@ -40,10 +34,9 @@ jobs:
       - name: Require archive, clean installs and implementation analysis
         env:
           SDK_RESULT: ${{ needs.build.result }}
-          ANALYSIS_RESULT: ${{ needs.implementation-analysis.result }}
         shell: bash
         run: |
-          if [[ "$SDK_RESULT" != success || "$ANALYSIS_RESULT" != success ]]; then
-            echo "SDK and install qualification: $SDK_RESULT, implementation analysis: $ANALYSIS_RESULT" >&2
+          if [[ "$SDK_RESULT" != success ]]; then
+            echo "SDK, analysis and install qualification: $SDK_RESULT" >&2
             exit 1
           fi

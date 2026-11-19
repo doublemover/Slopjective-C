@@ -191,14 +191,17 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     assert 'needs: [plan, foundation]' in workflow
     assert 'needs: [plan, foundation, analysis]' in workflow
     assert '--foundation-bundle out/implementation-assurance/foundation-input' in workflow
+    assert '--foundation-archive-sha256 "$ANALYSIS_FOUNDATION_SHA256"' in workflow
     assert '--retain-builds' not in workflow
     release = (root / '.github/workflows/platform-host-evidence.yml').read_text()
-    assert 'uses: ./.github/workflows/implementation-analysis.yml' in release
-    assert 'needs: [build, implementation-analysis]' in release
     assert 'uses: ./.github/workflows/native-assurance.yml' in release
     assert 'build-sdk --fetch' not in release
     native = (root / '.github/workflows/native-assurance.yml').read_text()
     assert 'workflow_call:' in native
+    assert 'uses: ./.github/workflows/implementation-analysis.yml' in native
+    assert '--sanitizer-producer out/instrumented-foundation/producer' in native
+    assert 'needs: asan-foundation-producer' in native
+    assert 'IMPLEMENTATION_ANALYSIS_RESULT: ${{ needs.implementation-analysis.result }}' in native
     assert 'product-producer:' in native and 'Preserve qualified SDK archive' in native
     assert 'needs: [plan, product-producer]' in native
     installer = native.split('  archive-install:\n', 1)[1].split('  gate:\n', 1)[0]
@@ -209,6 +212,65 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     runner = (root / 'scripts/objc3c_implementation_assurance/runner.py').read_text()
     assert "PROFILE = 'compiler-asan-ubsan'" in runner
     assert 'with foundation_lock(repo)' in runner
+
+
+@pytest.mark.parametrize('fault', ['', 'revision', 'compiler', 'build-report'])
+def test_release_analysis_archives_matching_sanitizer_build_once(tmp_path, monkeypatch, fault):
+    from scripts.objc3c_assurance import plan as native_selection
+    from scripts.objc3c_implementation_assurance import plan as analysis_selection, shared_foundation
+    from scripts.objc3c_toolchain.binary_packages import digest
+
+    revision = dict.fromkeys(REV, REV['tested'])
+    selected = analysis_selection.select([], **revision, periodic=True)
+    native = native_selection.select([], **revision, periodic=True)
+    monkeypatch.setattr(shared_foundation, 'from_checkout', lambda *args, **kwargs: selected)
+    monkeypatch.setattr(shared_foundation, 'native_plan_from_checkout', lambda *args, **kwargs: native)
+    monkeypatch.setattr(shared_foundation, '_build_foundation',
+                        lambda *args, **kwargs: pytest.fail('release rebuilt the sanitizer compiler'))
+
+    development = tmp_path / 'out/toolchains/objc3-development'
+    stage, build = development / 'stage', development / 'build'
+    native_producer = tmp_path / 'out/sanitizer'
+    for directory in (stage, build, native_producer / 'foundation'):
+        directory.mkdir(parents=True)
+    staged_tool = stage / 'clang'
+    shutil.copyfile('/bin/true', staged_tool)
+    compiled_unit = build / 'selected-unit.o'
+    compiled_unit.write_bytes(b'selected build input')
+    report = build / 'foundation-build-report.json'
+    report.write_text(json.dumps({'status': 'passed', 'source_identity': 'exact-build', 'phases': []}))
+    shutil.copyfile(report, native_producer / 'foundation/foundation.json')
+    receipt_path = native_producer / 'producer.json'
+    portable = {'source_build_id': 'exact-build'}
+    identity = {'source_build_id': 'exact-build', 'files': {'clang': digest(staged_tool)}}
+    retained = {'schema': 'objc3c.instrumented-foundation-bundle.v1', 'status': 'PASS',
+                'revision': revision, 'plan_sha256': native['sha256'], 'identity': identity,
+                'foundation_identity': portable}
+    if fault == 'revision':
+        retained['revision'] = REV
+    if fault == 'compiler':
+        retained['identity'] = {**identity, 'files': {'clang': '0'*64}}
+    if fault == 'build-report':
+        report.write_text(report.read_text() + '\n')
+    receipt_path.write_text(json.dumps(retained))
+    monkeypatch.setattr(shared_foundation, '_portable_identity', lambda *args: portable)
+    monkeypatch.setattr(shared_foundation, '_identity', lambda *args: identity)
+    monkeypatch.setattr(shared_foundation, '_build_files', lambda *args: {compiled_unit})
+    monkeypatch.setattr(shared_foundation, 'build_plans', lambda *args, **kwargs:
+        {'configure': {'paths': {'build': str(build), 'stage': str(stage)}}})
+    destination = tmp_path / 'out/analysis'
+    if fault:
+        with pytest.raises(ValueError, match='sanitizer producer'):
+            shared_foundation.produce(tmp_path, selected, destination, sanitizer_producer=native_producer)
+        assert not (destination / 'foundation.tar.zst').exists()
+        return
+    result = shared_foundation.produce(tmp_path, selected, destination, sanitizer_producer=native_producer)
+    assert result['status'] == 'PASS' and result['identity'] == identity
+    assert result['sanitizer_producer_sha256'] == digest(receipt_path)
+    assert result['archive']['members'] == [str(path.relative_to(tmp_path)) for path in (compiled_unit, staged_tool)]
+    with pytest.raises(ValueError, match='differs from the producer job output'):
+        shared_foundation.restore(tmp_path, selected, destination, tmp_path / 'evidence',
+                                  expected_archive_sha256='0'*64)
 
 
 def test_shared_foundation_preserves_actual_ninja_dependencies(tmp_path):
@@ -273,33 +335,38 @@ def test_shared_foundation_rejects_an_archive_link_outside_the_owned_roots(tmp_p
 
 def test_shared_foundation_selects_real_configured_compiler_inputs(tmp_path):
     from scripts.objc3c_implementation_assurance.shared_foundation import _archive, _build_files
-    from scripts.objc3c_toolchain.implementation_analysis import inventory
+    from scripts.objc3c_toolchain.implementation_analysis import dependencies, dependency_query, inventory, textual_pch
 
     cmake, ninja = shutil.which('cmake'), shutil.which('ninja')
-    if not all((cmake, ninja, shutil.which('c++'), shutil.which('zstd'))):
-        pytest.skip('CMake, Ninja, a C++ compiler and zstd are required for graph transport')
+    compiler = shutil.which('clang++')
+    if not all((cmake, ninja, compiler, shutil.which('zstd'))):
+        pytest.skip('CMake, Ninja, Clang and zstd are required for graph transport')
     source, build = tmp_path / 'source', tmp_path / 'out/build'
     (source / 'clang/lib').mkdir(parents=True)
     (source / 'clang/lib/owned.cpp').write_text('#include "table.inc"\nint selected() { return value; }\n')
     (source / 'ordinary.cpp').write_text('int unselected() { return 0; }\n')
     (source / 'tablegen.cpp').write_text('int main() { return 0; }\n')
     (source / 'table.in').write_text('constexpr int value = 42;\n')
+    (source / 'support.in').write_text('constexpr int owned_support = 7;\n')
     (source / 'CMakeLists.txt').write_text('''
 cmake_minimum_required(VERSION 3.20)
 project(shared-foundation-control LANGUAGES CXX)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 configure_file(table.in "${CMAKE_BINARY_DIR}/include/llvm/table.inc" COPYONLY)
+configure_file(support.in "${CMAKE_BINARY_DIR}/support/generated.hpp" COPYONLY)
 add_executable(llvm-tblgen tablegen.cpp)
 add_library(LLVM SHARED clang/lib/owned.cpp ordinary.cpp)
 target_include_directories(LLVM PRIVATE "${CMAKE_BINARY_DIR}/include/llvm")
+target_precompile_headers(LLVM PRIVATE "${CMAKE_BINARY_DIR}/support/generated.hpp")
 set_target_properties(LLVM PROPERTIES VERSION 23.1 SOVERSION 23)
 add_library(clang-cpp SHARED ordinary.cpp)
 target_precompile_headers(clang-cpp PRIVATE <utility>)
 set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
 ''')
     subprocess.run([cmake, '-S', source, '-B', build, '-G', 'Ninja',
-                    f'-DCMAKE_MAKE_PROGRAM={ninja}', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'],
+                    f'-DCMAKE_MAKE_PROGRAM={ninja}', f'-DCMAKE_CXX_COMPILER={compiler}',
+                    '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON'],
                    check=True, capture_output=True)
     subprocess.run([cmake, '--build', build], check=True, capture_output=True)
     working_directory = build / 'lib/IR'
@@ -308,7 +375,7 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
     commands = json.loads(database.read_text())
     pch_sources = {
         Path(row['directory']) / row['file'] for row in commands
-        if Path(row['file']).name.startswith('cmake_pch.')
+        if Path(row['file']).name.startswith('cmake_pch.') and 'clang-cpp.dir' in row['file']
     }
     assert pch_sources and all(path.is_file() for path in pch_sources)
     for row in commands:
@@ -328,6 +395,8 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
     tablegen = build / 'bin/llvm-tblgen'
     assert tablegen in selected
     assert build / 'include/llvm/table.inc' in selected
+    generated_support = build / 'support/generated.hpp'
+    assert generated_support in selected
     assert build / 'CMakeFiles/rules.ninja' in selected
     assert working_directory in selected
     assert any(path.name == 'owned.cpp.o' for path in selected)
@@ -339,6 +408,8 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
     units = {source / 'clang/lib/owned.cpp'}
     graph = subprocess.check_output([ninja, '-C', build, '-t', 'commands'], text=True)
     original = inventory(database, graph, units)
+    _, pch_proof = textual_pch(original[0])
+    assert len(pch_proof) == 1 and Path(pch_proof[0]['bootstrap_pch']) in selected
     bundle = tmp_path / 'foundation.tar.zst'
     _archive(tmp_path, bundle, (build,), selected)
     shutil.rmtree(build)
@@ -346,6 +417,10 @@ set_target_properties(clang-cpp PROPERTIES VERSION 23.1 SOVERSION 23)
     assert not any(path.exists() for path in pch_sources)
     restored_graph = subprocess.check_output([ninja, '-C', build, '-t', 'commands'], text=True)
     assert inventory(database, restored_graph, units) == original
+    assert textual_pch(original[0])[1] == pch_proof
+    pch = pch_proof[0]['bootstrap_pch']
+    closure = subprocess.check_output(dependency_query(ninja, build, [pch]), text=True)
+    assert str(generated_support) in dependencies(closure, build=build, selected_outputs={pch})[pch]
     tablegen.unlink()
     with pytest.raises(ValueError, match='executable llvm-tblgen'):
         _build_files(tmp_path, configuration)

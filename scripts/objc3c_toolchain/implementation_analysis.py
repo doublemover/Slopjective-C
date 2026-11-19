@@ -225,7 +225,7 @@ def owner_changes(repo, owner, changed):
     return relevant or None
 
 
-def textual_pch(row, *, replacement=None):
+def textual_pch(row, *, replacement=None, include_identity=True):
     """Use exact wrapper text or a newly built fork-matched serialization."""
     original, result, projections = row['arguments'], [], []
     index = 0
@@ -243,10 +243,12 @@ def textual_pch(row, *, replacement=None):
                     original[index+4:index+7] != ['-Xclang', '-include', '-Xclang'] or
                     (Path(row['directory']) / original[index+7]).resolve() != wrapper):
                 raise ValueError('analysis PCH lacks its exact CMake textual include counterpart')
-            projections.append({'bootstrap_pch': str(pch), 'pch_sha256': digest(pch),
-                'textual_wrapper': str(wrapper), 'wrapper_sha256': digest(wrapper),
+            projection = {'bootstrap_pch': str(pch), 'textual_wrapper': str(wrapper),
                 'reason': ('The matched fork cannot deserialize bootstrap PCH. Rebuild this exact wrapper with '
-                           'the admitted fork, or preserve the forced textual include as the fail-closed fallback.')})
+                           'the admitted fork, or preserve the forced textual include as the fail-closed fallback.')}
+            if include_identity:
+                projection.update(pch_sha256=digest(pch), wrapper_sha256=digest(wrapper))
+            projections.append(projection)
             if replacement is not None:
                 replacement = Path(replacement)
                 if (replacement.is_symlink() or not replacement.is_file() or

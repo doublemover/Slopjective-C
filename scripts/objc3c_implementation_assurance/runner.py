@@ -37,7 +37,7 @@ def owned_path(repo: Path, path: Path) -> Path:
 
 
 def run(repo: Path, plan: dict, output: Path, *, partition_index=0,
-        foundation_bundle: Path | None = None) -> dict:
+        foundation_bundle: Path | None = None, foundation_archive_sha256: str | None = None) -> dict:
     repo = repo.resolve(strict=True)
     output = owned_path(repo, output)
     try:
@@ -50,7 +50,7 @@ def run(repo: Path, plan: dict, output: Path, *, partition_index=0,
         # The locked builder is used below so it does not reacquire this same lock.
         owned_path(repo, repo / 'out/toolchains/objc3-development/.foundation-build.lock')
         with foundation_lock(repo):
-            return _run_locked(repo, plan, output, partition, foundation_bundle)
+            return _run_locked(repo, plan, output, partition, foundation_bundle, foundation_archive_sha256)
     except BaseException as error:
         if not output.exists():
             output.mkdir(parents=True)
@@ -67,7 +67,7 @@ def run(repo: Path, plan: dict, output: Path, *, partition_index=0,
 
 
 def _run_locked(repo: Path, plan: dict, output: Path, partition: dict,
-                foundation_bundle: Path | None) -> dict:
+                foundation_bundle: Path | None, foundation_archive_sha256: str | None) -> dict:
     if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
         raise ValueError('implementation assurance source changed before execution')
     if output.exists():
@@ -145,7 +145,8 @@ def _run_locked(repo: Path, plan: dict, output: Path, partition: dict,
             bundle = owned_path(repo, foundation_bundle)
             if output.is_relative_to(bundle) or bundle.is_relative_to(output):
                 raise ValueError('shared foundation input overlaps analysis evidence')
-            configuration, producer = restore(repo, plan, bundle, output / 'foundation')
+            configuration, producer = restore(repo, plan, bundle, output / 'foundation',
+                                              expected_archive_sha256=foundation_archive_sha256)
             report['shared_foundation_sha256'] = producer['archive']['sha256']
         stage = Path(configuration['paths']['stage']).resolve(strict=True)
         bootstrap = Path(configuration['host_environment']['bootstrap_root']).resolve(strict=True)

@@ -18,6 +18,10 @@ on:
       source_sha:
         required: true
         type: string
+      foundation_archive_sha256:
+        description: Exact analysis bundle from the same-run sanitizer compiler producer
+        type: string
+        default: ''
 env:
   OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
 permissions:
@@ -62,7 +66,7 @@ jobs:
   foundation:
     name: Build the exact shared analysis compiler
     needs: plan
-    if: needs.plan.outputs.analysis == 'true'
+    if: needs.plan.outputs.analysis == 'true' && inputs.foundation_archive_sha256 == ''
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
@@ -135,7 +139,7 @@ jobs:
       matrix:
         partition: ${{ fromJSON(needs.plan.outputs.partitions) }}
     needs: [plan, foundation]
-    if: needs.plan.outputs.analysis == 'true' && needs.foundation.result == 'success'
+    if: always() && needs.plan.outputs.analysis == 'true' && (needs.foundation.result == 'success' || inputs.foundation_archive_sha256 != '')
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     container:
       image: debian:13
@@ -145,6 +149,7 @@ jobs:
       OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
       SOURCE_SHA: ${{ inputs.source_sha }}
       ANALYSIS_PARTITION_INDEX: ${{ matrix.partition }}
+      ANALYSIS_FOUNDATION_SHA256: ${{ inputs.foundation_archive_sha256 || needs.foundation.outputs.archive_sha256 }}
     steps:
       - name: Development prerequisites
         run: |
@@ -182,7 +187,7 @@ jobs:
           elif [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
           fi
-          python3 -B -m scripts.objc3c_implementation_assurance run --plan out/implementation-assurance/selection/plan.json --output out/implementation-assurance/results --foundation-bundle out/implementation-assurance/foundation-input --partition-index "$ANALYSIS_PARTITION_INDEX" "${periodic[@]}"
+          python3 -B -m scripts.objc3c_implementation_assurance run --plan out/implementation-assurance/selection/plan.json --output out/implementation-assurance/results --foundation-bundle out/implementation-assurance/foundation-input --foundation-archive-sha256 "$ANALYSIS_FOUNDATION_SHA256" --partition-index "$ANALYSIS_PARTITION_INDEX" "${periodic[@]}"
       - name: Preserve setup diagnostics
         if: always() && steps.host-tools.outcome != 'skipped'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -231,7 +236,8 @@ jobs:
       - name: Require exact-revision complete passing analysis
         if: always()
         env:
-          ASSURANCE_OUTCOMES: '{"plan":"${{ needs.plan.result }}","foundation":"${{ needs.foundation.result }}","foundation_archive":"${{ needs.foundation.outputs.archive_sha256 }}","analysis":"${{ needs.analysis.result }}"}'
+          ASSURANCE_OUTCOMES: >-
+            {"plan":"${{ needs.plan.result }}","foundation":"${{ inputs.foundation_archive_sha256 != '' && 'success' || needs.foundation.result }}","foundation_archive":"${{ inputs.foundation_archive_sha256 || needs.foundation.outputs.archive_sha256 }}","analysis":"${{ needs.analysis.result }}"}
           SOURCE_SHA: ${{ inputs.source_sha }}
         shell: bash
         run: |
