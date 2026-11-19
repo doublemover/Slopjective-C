@@ -14,6 +14,7 @@
 #include "clang/AST/RecordLayout.h"
 #include "clang/Basic/TargetInfo.h"
 #include "llvm/ADT/SmallPtrSet.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/StringExtras.h"
@@ -140,21 +141,6 @@ std::optional<std::string> PortableValueType(clang::ASTContext &context,
   return CExportSpellingType(context, type, nullable_result).getAsString(policy);
 }
 
-bool SupportsPortableCallback(clang::ASTContext &context,
-                              const clang::FunctionProtoType *signature) {
-  if (!signature || signature->isVariadic() || signature->getCallConv() != clang::CC_C ||
-      signature->getObjC3FunctionEffects().Async ||
-      signature->getObjC3FunctionEffects().Throws != clang::ObjC3ThrowsKind::None ||
-      !signature->getFunctionEffects().empty() ||
-      !PortableValueType(context, signature->getReturnType()))
-    return false;
-  for (unsigned index = 0; index < signature->getNumParams(); ++index)
-    if (!PortableValueType(context, signature->getParamType(index)) ||
-        signature->getExtParameterInfo(index).getOpaqueValue())
-      return false;
-  return true;
-}
-
 struct CExportType {
   std::string spelling;
   const char *kind = "VALUE";
@@ -200,9 +186,9 @@ std::optional<CExportActorMethod> SelectActorMethod(clang::ASTContext &context,
 
 // Serialize a C spelling of each reachable storage type and verify the
 // provider's size, alignment and field offsets when the client compiles it.
-class CExportRecords {
+class CExportValues {
 public:
-  CExportRecords(clang::ASTContext &context, std::vector<std::string> &exports)
+  CExportValues(clang::ASTContext &context, std::vector<std::string> &exports)
       : context_(context), exports_(exports), policy_(context.getLangOpts()) {
     policy_.Bool = true;
     policy_.SuppressTagKeyword = false;
@@ -215,7 +201,66 @@ public:
 
   llvm::StringRef declarations() const { return declarations_; }
 
+  bool SupportsCallback(const clang::FunctionProtoType *signature) {
+    if (!signature || signature->isVariadic() || signature->getCallConv() != clang::CC_C ||
+        signature->getObjC3FunctionEffects().Async ||
+        signature->getObjC3FunctionEffects().Throws != clang::ObjC3ThrowsKind::None ||
+        !signature->getFunctionEffects().empty() ||
+        !Admit(signature->getReturnType()))
+      return false;
+    for (unsigned index = 0; index < signature->getNumParams(); ++index)
+      if (signature->getExtParameterInfo(index).getOpaqueValue() ||
+          !Admit(signature->getParamType(index)))
+        return false;
+    return true;
+  }
+
 private:
+  bool AdmitEnum(const clang::EnumDecl *declaration) {
+    const auto *definition = declaration->getDefinition();
+    if (!definition || !definition->isFixed() || declaration->isScoped() ||
+        definition->enumerator_begin() == definition->enumerator_end() || !declaration->getIdentifier() ||
+        !IsSourceIdentifier(declaration->getName()) ||
+        !declaration->getDeclContext()->getRedeclContext()->isTranslationUnit() ||
+        definition->hasAttrs() || definition->getIntegerType().isNull())
+      return false;
+    if (enums_.contains(declaration)) return true;
+    const auto integer = definition->getIntegerType();
+    const auto spelling = PortableValueType(context_, integer);
+    if (!spelling || context_.getTypeSize(integer) > 64) return false;
+
+    const std::string tag = "enum " + declaration->getName().str();
+    std::string body;
+    llvm::raw_string_ostream out(body);
+    // Fixed underlying types are standard in C23 and C++. Clang supports
+    // their C17 spelling through __extension__ without dropping diagnostics
+    // on the surrounding client's declarations.
+    out << "__extension__ " << tag << " : " << *spelling << " {\n";
+    for (const auto *constant : definition->enumerators()) {
+      if (!IsSourceIdentifier(constant->getName()) || constant->hasAttrs()) return false;
+      const auto &value = constant->getInitVal();
+      out << "  " << constant->getName() << " = ";
+      if (value.isSigned() && value.isNegative() && value.isMinSignedValue() &&
+          value.getBitWidth() == 64) {
+        out << "(-9223372036854775807LL - 1LL)";
+      } else {
+        llvm::SmallString<32> decimal;
+        value.toString(decimal, 10);
+        out << decimal << (value.isSigned() ? "LL" : "ULL");
+      }
+      out << ",\n";
+    }
+    out << "};\n";
+    const auto type = context_.getCanonicalTagType(definition);
+    out << "static_assert(sizeof(" << tag << ") == " << context_.getTypeSizeInChars(type).getQuantity()
+        << " && __alignof__(" << tag << ") == " << context_.getTypeAlignInChars(type).getQuantity()
+        << ", \"C export enum layout\");\n";
+    declarations_ += body;
+    enums_.insert(declaration);
+    exports_.push_back(declaration->getName().str());
+    return true;
+  }
+
   bool Admit(clang::QualType type, unsigned depth = 0) {
     if (depth > 32 || clang::containsObjC3BorrowedType(context_, type) ||
         clang::getObjC3ResourceTypeContract(context_, type).Cleanup)
@@ -232,6 +277,8 @@ private:
       type = pointer->getPointeeType();
       if (type.hasAddressSpace()) return false;
     }
+    if (const auto *enumeration = type->getAs<clang::EnumType>())
+      return AdmitEnum(enumeration->getDecl()->getCanonicalDecl());
     const auto *record_type = type->getAs<clang::RecordType>();
     const auto *record = record_type
         ? llvm::cast<clang::RecordDecl>(record_type->getDecl()->getCanonicalDecl()) : nullptr;
@@ -288,12 +335,13 @@ private:
   clang::PrintingPolicy policy_;
   std::string declarations_;
   llvm::SmallPtrSet<const clang::RecordDecl *, 16> forwarded_, complete_, active_;
+  llvm::SmallPtrSet<const clang::EnumDecl *, 8> enums_;
 };
 
 std::optional<CExportType> ExportType(clang::ASTContext &context,
                                      clang::QualType type, llvm::StringRef alias,
                                      llvm::raw_ostream &declarations,
-                                     CExportRecords &records,
+                                     CExportValues &values,
                                      bool nullable_result) {
   if (auto value = PortableValueType(context, type, nullable_result))
     return CExportType{std::move(*value)};
@@ -305,10 +353,11 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
   const auto canonical = type.getCanonicalType();
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.Bool = true;
+  policy.SuppressTagKeyword = false;
   policy.SuppressLifetimeQualifiers = true;
   if (canonical->isFunctionPointerType()) {
     const auto *signature = type->getPointeeType()->getAs<clang::FunctionProtoType>();
-    if (!SupportsPortableCallback(context, signature) ||
+    if (!values.SupportsCallback(signature) ||
         signature->getExtInfo() != clang::FunctionType::ExtInfo(clang::CC_C) ||
         signature->getExceptionSpecType() != clang::EST_None)
       return std::nullopt;
@@ -327,12 +376,12 @@ std::optional<CExportType> ExportType(clang::ASTContext &context,
     for (const auto *protocol : object->quals())
       declarations << "@protocol " << protocol->getName() << ";\n";
   } else if (const auto *block = canonical->getAs<clang::BlockPointerType>()) {
-    if (!SupportsPortableCallback(context, block->getPointeeType()->getAs<clang::FunctionProtoType>()))
+    if (!values.SupportsCallback(block->getPointeeType()->getAs<clang::FunctionProtoType>()))
       return std::nullopt;
     kind = "BLOCK";
     declarations << "#ifdef __BLOCKS__\n";
   } else {
-    if (auto value = records.Render(type, nullable_result))
+    if (auto value = values.Render(type, nullable_result))
       return CExportType{std::move(*value)};
     return std::nullopt;
   }
@@ -386,10 +435,10 @@ CExportSource GenerateCExports(clang::ASTContext &context,
   definitions << "\n\n#include <stdbool.h>\n";
   llvm::StringSet<> selected;
   auto *tu = context.getTranslationUnitDecl();
-  CExportRecords records(context, output.interface_exports);
+  CExportValues values(context, output.interface_exports);
   auto export_type = [&](clang::QualType type, const std::string &alias,
                          llvm::raw_ostream &declarations, bool nullable_result = false) {
-    auto emitted = ExportType(context, type, alias, declarations, records, nullable_result);
+    auto emitted = ExportType(context, type, alias, declarations, values, nullable_result);
     if (emitted && emitted->spelling == alias) {
       if (!tu->lookup(&context.Idents.get(alias)).empty())
         return std::optional<CExportType>{};
@@ -648,9 +697,9 @@ CExportSource GenerateCExports(clang::ASTContext &context,
   }
   output.header = "#pragma once\n#include <stdbool.h>\n"
                   "#include <objc3c/runtime/objc3_async_c.h>\n\n";
-  if (!records.declarations().empty()) {
+  if (!values.declarations().empty()) {
     output.header += "#include <assert.h>\n#include <stddef.h>\n\n";
-    output.header += records.declarations();
+    output.header += values.declarations();
   }
   output.header += entries;
   return output;

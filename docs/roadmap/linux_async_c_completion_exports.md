@@ -123,6 +123,22 @@ and typed failure, async cancellation before entry, consumed actor receivers,
 exactly-once callbacks and all input destructions. Source-free clients reimport
 the generated typed declaration.
 
+Source 2.287 / System 2.213 admits named unscoped C-compatible enums with
+explicit underlying integer types. Generated declarations preserve signedness,
+the exact enumerator values and native size and alignment. The same enum can
+appear in a checked or async signature, an aggregate field, or a callback.
+Function pointer and Block callback signatures can carry the same admitted
+plain aggregates as direct C entries. Generated headers verify their complete
+size, alignment and field offsets.
+
+Eight independent C17/C23 clients check ARC and MRC providers in C17, C23,
+C++20 and C++23. They exercise an async callback with a signed-byte input and
+an unsigned 64-bit result, checked enum failure, and a callback that passes an
+aggregate containing the signed 64-bit minimum through the indirect ABI.
+Four AArch64 QEMU executions also exercise the checked aggregate and its
+callback in ARC and MRC with C17 and C23 callers. Source-free imports preserve
+the enum signature. Matching SDK acceptance remains pending.
+
 The separate C clients execute value, void and checked success and failure
 callbacks across C17/C23/C++20/C++23 providers in ARC and MRC. The C17 MRC
 control links the selected declaration to a separately compiled async body.

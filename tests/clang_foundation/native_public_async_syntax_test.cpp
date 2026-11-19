@@ -203,6 +203,16 @@ static int generated_checked(int mode) async throws(id<Error>) {
 static id<Error> _Nonnull generated_object(id<Error> _Nonnull input) async { return input; }
 typedef int (^GeneratedBlock)(int);
 typedef int (*GeneratedCallback)(int, void * _Nullable);
+enum GeneratedMode : signed char { GeneratedModeInvalid = -4, GeneratedModeAnswer = 42 };
+enum GeneratedWide : unsigned long long { GeneratedWideMax = 18446744073709551615ULL };
+enum GeneratedSignedWide : long long { GeneratedSignedWideMin = -9223372036854775807LL - 1LL };
+struct GeneratedEnumBox { enum GeneratedSignedWide minimum; enum GeneratedMode mode; long long values[2]; };
+typedef struct GeneratedEnumBox (*GeneratedEnumTransform)(struct GeneratedEnumBox);
+typedef struct GeneratedEnumBox (^GeneratedEnumBlock)(struct GeneratedEnumBox);
+typedef enum GeneratedWide (*GeneratedEnumCallback)(enum GeneratedMode);
+static enum GeneratedWide generated_enum(enum GeneratedMode mode, GeneratedEnumCallback callback) async {
+  return callback(mode);
+}
 static GeneratedBlock generated_block(int input) async {
   return ^(int offset) { return input + offset; };
 }
@@ -351,6 +361,23 @@ static GeneratedCallback _Nonnull generated_sync_callback(GeneratedCallback _Nul
     __objc3_throws(id<Error>) __attribute__((nothrow)) {
   if (!callback) __objc3_throw(generated_failure());
   return callback;
+}
+static enum GeneratedMode generated_sync_enum(enum GeneratedMode mode)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (mode == GeneratedModeInvalid) __objc3_throw(generated_failure());
+  return mode;
+}
+static struct GeneratedEnumBox generated_sync_enum_box(struct GeneratedEnumBox value,
+                                                        GeneratedEnumTransform transform)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  value.mode = __objc3_try(generated_sync_enum(value.mode));
+  return transform(value);
+}
+static struct GeneratedEnumBox generated_sync_enum_block(struct GeneratedEnumBox value,
+                                                          GeneratedEnumBlock transform)
+    __objc3_throws(id<Error>) __attribute__((nothrow)) {
+  if (!transform) __objc3_throw(generated_failure());
+  return transform(value);
 }
 static struct GeneratedPort generated_sync_port(struct GeneratedPort value)
     __objc3_throws(id<Error>) __attribute__((nothrow)) {
@@ -501,13 +528,14 @@ namespace ExportAlias = ExportRegion::Nested;
   provider.output_path = (root / "provider.o").string();
   provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
       "generated_cancelled", "generated_consumed", "GeneratedActor::consume:",
-      "generated_object", "generated_block", "generated_callback", "generated_aggregate", "generated_main",
+      "generated_object", "generated_block", "generated_callback", "generated_enum", "generated_aggregate", "generated_main",
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
       "GeneratedActor::current", "GeneratedDerivedActor::current", "GeneratedDerivedActor::checked:"};
   provider.throws_c_exports = {"generated_sync_checked", "generated_sync_void", "generated_sync_pointer", "generated_sync_nested",
       "generated_sync_object", "generated_sync_block", "generated_sync_invoke", "generated_sync_callback",
-      "generated_sync_port", "generated_sync_aggregate", "generated_consumed_sync"};
+      "generated_sync_port", "generated_sync_aggregate", "generated_consumed_sync", "generated_sync_enum",
+      "generated_sync_enum_box", "generated_sync_enum_block"};
   if (cxx) {
     provider.async_c_exports.push_back("ExportRegion::Nested::pulse");
     provider.throws_c_exports.push_back("ExportAlias::check");
@@ -529,6 +557,7 @@ namespace ExportAlias = ExportRegion::Nested;
           interface.source_bytes.find("GeneratedActor_add_by_async_c") != std::string::npos &&
           interface.source_bytes.find("GeneratedDerivedActor_checked_async_c") != std::string::npos &&
           interface.source_bytes.find("generated_sync_checked_throws_c") != std::string::npos &&
+          interface.source_bytes.find("generated_sync_enum_throws_c") != std::string::npos &&
           interface.sidecar_json.find(RuntimeCompletionSemantic()) != std::string::npos,
           "generated C callable ABI was omitted from semantic metadata");
 
@@ -588,6 +617,16 @@ static Variadic generated_variadic_pointer(Variadic callback) __objc3_throws {
     const auto nonportable = Compile(rejected);
     Require(!nonportable.success && nonportable.failure.find("self-contained C value declaration") != std::string::npos,
             "a variadic callback was admitted through the generated C header");
+    rejected.throws_c_exports = {"generated_unfixed_enum"};
+    *rejected.source_text += R"(
+enum GeneratedUnfixed { GeneratedUnfixedZero };
+static enum GeneratedUnfixed generated_unfixed_enum(void) __objc3_throws {
+  return GeneratedUnfixedZero;
+}
+)";
+    const auto unfixed = Compile(rejected);
+    Require(!unfixed.success && unfixed.failure.find("self-contained C value declaration") != std::string::npos,
+            "an enum without an explicit representation was admitted through the generated C header");
     const auto header_before = llvm::MemoryBuffer::getFile(provider.c_export_header_output_path);
     Require(static_cast<bool>(header_before), "generated header missing");
     const std::string generated_header = (*header_before)->getBuffer().str();
@@ -664,6 +703,9 @@ struct GeneratedAggregate call_imported_aggregate(struct GeneratedAggregate valu
                                                     objc3_async_c_error *failure) {
   return generated_sync_aggregate_throws_c(value, failure);
 }
+enum GeneratedMode call_imported_enum(enum GeneratedMode mode, objc3_async_c_error *failure) {
+  return generated_sync_enum_throws_c(mode, failure);
+}
 generated_sync_block_throws_c_result_t call_imported_block(generated_sync_block_throws_c_arg0_t block,
                                                            objc3_async_c_error *failure) {
   return generated_sync_block_throws_c(block, failure);
@@ -722,6 +764,22 @@ static atomic_uint paused_workers;
 static atomic_bool resume_workers;
 static atomic_int cancelled_task;
 static atomic_int consumed_calls[4];
+static atomic_int enum_calls;
+static enum GeneratedWide wide_value(enum GeneratedMode mode) {
+  assert(mode == GeneratedModeAnswer);
+  return GeneratedWideMax;
+}
+static struct GeneratedEnumBox transform_enum_box(struct GeneratedEnumBox value) {
+  assert(value.minimum == GeneratedSignedWideMin && value.mode == GeneratedModeAnswer);
+  value.values[0] += value.values[1];
+  return value;
+}
+static void enum_done(void *context, objc_async_completion_status_t status,
+                      enum GeneratedWide value, objc3_async_c_error error) {
+  assert(context == &enum_calls && status == OBJC_ASYNC_COMPLETION_SUCCESS);
+  assert(value == GeneratedWideMax && !error);
+  assert(atomic_fetch_add(&enum_calls, 1) == 0);
+}
 static void release_submitted(objc3_task_t *task) {
   assert(task);
   objc3_task_release(task);
@@ -896,6 +954,22 @@ int main(void) {
   assert(aggregate.values[0] == 73 && aggregate.values[1] == 91);
   (void)generated_sync_aggregate_throws_c((struct GeneratedAggregate){0}, &synchronous_failure);
   assert(synchronous_failure == generated_failure());
+  static_assert(sizeof(enum GeneratedMode) == 1 && GeneratedModeInvalid < 0, "signed C enum");
+  static_assert(sizeof(enum GeneratedWide) == 8 && GeneratedWideMax == 18446744073709551615ULL, "wide C enum");
+  assert(generated_sync_enum_throws_c(GeneratedModeAnswer, &synchronous_failure) == GeneratedModeAnswer && !synchronous_failure);
+  (void)generated_sync_enum_throws_c(GeneratedModeInvalid, &synchronous_failure);
+  assert(synchronous_failure == generated_failure());
+  struct GeneratedEnumBox box = {GeneratedSignedWideMin, GeneratedModeAnswer, {40, 2}};
+  box = generated_sync_enum_box_throws_c(box, transform_enum_box, &synchronous_failure);
+  assert(!synchronous_failure && box.mode == GeneratedModeAnswer && box.minimum == (-9223372036854775807LL - 1LL));
+  assert(box.values[0] == 42 && box.values[1] == 2);
+#ifdef __BLOCKS__
+  box = generated_sync_enum_block_throws_c(box, ^struct GeneratedEnumBox(struct GeneratedEnumBox value) {
+    value.values[1] += value.mode;
+    return value;
+  }, &synchronous_failure);
+  assert(!synchronous_failure && box.values[0] == 42 && box.values[1] == 44);
+#endif
   void *pool = objc_autoreleasePoolPush();
   assert(generated_sync_checked_throws_c(-2, &synchronous_failure) == 0);
   assert(synchronous_failure && synchronous_failure != generated_failure());
@@ -923,6 +997,7 @@ int main(void) {
   release_submitted(generated_block_async_c_task(40, &complete[5], block_done));
   generated_callback_async_c(add_value, &complete[18], callback_done);
   release_submitted(generated_aggregate_async_c_task(initial, &complete[6], aggregate_done));
+  release_submitted(generated_enum_async_c_task(GeneratedModeAnswer, wide_value, &enum_calls, enum_done));
   generated_main_async_c(41, &complete[7], executor_done);
   generated_named_async_c(41, &complete[8], executor_done);
   generated_missing_async_c(&complete[10], missing_done);
@@ -995,7 +1070,7 @@ int main(void) {
     unsigned consumed_count = 0;
     for (unsigned index = 0; index < 4; ++index) consumed_count += atomic_load(&consumed_calls[index]);
     if (count == sizeof(complete) / sizeof(complete[0]) && atomic_load(&cancelled_task) == 1 &&
-        consumed_count == 4) {
+        consumed_count == 4 && atomic_load(&enum_calls) == 1) {
 #ifdef __BLOCKS__
       assert(retained_block(2) == 42);
       _Block_release((const void *)retained_block);
@@ -1018,6 +1093,7 @@ int main(void) {
   for (unsigned index = 0; index < sizeof(complete) / sizeof(complete[0]); ++index)
     if (!atomic_load(&complete[index])) fprintf(stderr, "Missing generated completion %u\n", index);
   if (!atomic_load(&cancelled_task)) fprintf(stderr, "Missing requested native cancellation\n");
+  if (!atomic_load(&enum_calls)) fprintf(stderr, "Missing enum completion\n");
   for (unsigned index = 0; index < 4; ++index)
     if (!atomic_load(&consumed_calls[index])) fprintf(stderr, "Missing consumed completion %u\n", index);
   return 1;
@@ -1029,7 +1105,7 @@ int main(void) {
   consumer.language = BaseLanguage::C;
   consumer.emit = EmitKind::Object;
   consumer.target_triple = OBJC3_TEST_NATIVE_LINUX_TARGET;
-  consumer.arguments = {"-std=c17", "-I" + includes.string()};
+  consumer.arguments = {standard.ends_with("23") ? "-std=c23" : "-std=c17", "-I" + includes.string()};
   if (arc) consumer.arguments.push_back("-fblocks");
   if (cxx) consumer.arguments.push_back("-DEXPORTED_CPP_NAMESPACE");
   Compiled(Compile(consumer));

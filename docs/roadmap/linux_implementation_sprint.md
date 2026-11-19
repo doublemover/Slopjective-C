@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.287 / System 2.213 C value exports](linux_async_c_completion_exports.md)
+extend generated checked and async boundaries to fixed enums and aggregate
+callback values. Source-free and independent native C clients exercise the ABI.
+
 The [Source 2.286 / System 2.212 coroutine policies](linux_native_function_policies.md)
 bind coroutine return, lifetime, frame elision and completion-only destruction
 annotations. C++20 and C++23 clients import and execute the annotated pipeline
