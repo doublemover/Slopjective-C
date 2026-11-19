@@ -17,6 +17,11 @@ else:
     from sdk_example import environment
 
 
+def named_int_values(text: str) -> list[int]:
+    """Return frame-variable integers without admitting LLDB expression temporaries."""
+    return list(map(int, re.findall(r'\(int\) [^$\s=]+ = (-?\d+)', text)))
+
+
 def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
             foundation: Path | None = None, fixture: Path | None = None) -> dict:
     sdk, output = sdk.resolve(strict=True), output.resolve()
@@ -104,15 +109,14 @@ def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
                         queries += ['run']
                         expected = []
                         variable = 'object' if frame_kind == 'function' else 'self'
-                        for index, (value, bias) in enumerate(((20, 1), (41, 2)), 1):
+                        for index, value in enumerate((20, 41), 1):
                             if frame_kind == 'method':
                                 queries += ['breakpoint disable ' + str(index)]
                             queries += ['frame variable ' + variable, 'expression -- shared_global',
                                         'expression -- shared_helper()', 'expression -- debugger_marker()']
                             expected += [value, 1, value]
                             if language.endswith('++'):
-                                queries += ['expression -- private_tls']
-                                expected += [bias]
+                                queries += ['frame variable private_tls']
                             queries += ['expression -- (int)[RuntimeTwin value]',
                                         'expression -- (int)[RuntimeTwin directValue]',
                                         'expression -- (int)[RuntimeChild childValue]',
@@ -127,12 +131,15 @@ def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
                         log = run(label + '-' + frame_kind + '-lldb', [*debugger, executable], directory)
                         text = log.read_text()
                         values = list(map(int, re.findall(r'\(int\) \$\d+ = (-?\d+)', text)))
+                        tls_values = named_int_values(text)
                         source_type = '(RuntimeTwin *) object =' if frame_kind == 'function' else 'Class) self ='
                         if (values != expected or text.count(source_type) != 2 or
+                                tls_values != ([1, 2] if language.endswith('++') else []) or
                                 'exited with status = 0' not in text):
                             raise ValueError('private-name debugger selected another provider or lost its source type: ' + label + '-' + frame_kind)
                         cases.append({'language': language, 'standard': standard, 'ownership': ownership,
                             'frame_kind': frame_kind, 'values': values, 'source_types_preserved': True,
+                            'private_tls_values': tls_values,
                             'continued_exit_code': 0, 'executable_sha256': packages.digest(executable),
                             'log_sha256': packages.digest(log)})
         report = {'schema': 'objc3c.module-names-collision-debugger.v1', 'status': 'PASS',

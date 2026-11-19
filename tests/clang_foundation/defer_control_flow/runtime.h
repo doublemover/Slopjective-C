@@ -1,4 +1,7 @@
 #pragma once
+#if defined(__aarch64__)
+#include <setjmp.h>
+#endif
 #ifndef __cplusplus
 #define bool _Bool
 #endif
@@ -318,10 +321,18 @@ static void cleanup_cpp_actions(bool fail) {
 }
 #endif
 static void cleanup_local_jump(void) {
+#if defined(__aarch64__)
+  jmp_buf target;
+#else
   void *target[5];
+#endif
   @cleanup(close_resource) int value = 1;
   defer { second(); }
+#if defined(__aarch64__)
+  if(setjmp(target) == 0) longjmp(target, 1);
+#else
   if(__builtin_setjmp(target) == 0) __builtin_longjmp(target, 1);
+#endif
   record(3);
 }
 static void cleanup_ordering(void) {

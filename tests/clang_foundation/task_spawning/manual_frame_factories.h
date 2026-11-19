@@ -145,10 +145,10 @@ inline void contract(objc3_executor_t *source) {
       finish(source,parent);
       assert(parent.result()==42);
       parent={};
-      // Detached completion can publish before its worker retires the frame.
-      // Preserve producer storage through that cleanup; structured routes are
-      // already joined by the parent's compiler-owned scope.
-      if(route==1)finish_retirement(state,shape==3?1u:0u);
+      // Completion can publish before the parent worker retires its frame.
+      // Preserve producer storage until that final callable cleanup for every
+      // route, including a structured child that the parent already joined.
+      finish_retirement(state,shape==3?1u:0u);
       function_owner.reset();
       if(shape==3){function_state=nullptr;function_value=nullptr;}
       if(state.factories!=1 || state.resumes!=1 || state.destroyed!=1 || state.pins!=0)
