@@ -20,6 +20,7 @@ SCENARIO_INVENTORY = {
     'interrupted-dependency-waiter-registration-retirement': 'task-services',
     'transitive-task-dependency-cycle-rejection': 'task-services',
     'mixed-task-and-closed-group-dependency-cycles': 'task-services',
+    'implicit-scope-membership-dependency-cycles': 'task-services',
     'forced-scope-join-retires-interrupted-body-await': 'task-services',
     'global-pool-multi-actor-and-task-exclusion': 'task-services',
     'queued-discard-and-named-binding-retirement': 'task-services',

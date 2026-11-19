@@ -1,9 +1,8 @@
 #ifndef OBJC3_CONCURRENCY_H
 #define OBJC3_CONCURRENCY_H
 
-#include "core.h"
+#include "errors.h"
 #include <objc3c/runtime/objc3_async_c.h>
-#include <objc3c/runtime/objc3_runtime_services.h>
 
 #define OBJC3_CONCURRENCY_CAPABILITY_ID "objc3.cap.concurrency"
 

@@ -7,6 +7,10 @@ Ninja dependency owners, including selected precompiled headers. The terminal
 job binds all partitions to the producer's archive SHA-256 and verifies the
 complete disjoint variant inventory. The shared archive expires after one day.
 
+The [Source 2.296 / System 2.222 scope dependency change](linux_checked_await_cancellation.md)
+checks membership alongside task and group waits before a cycle can reach the
+implicit finalizer.
+
 The [Source 2.295 / System 2.221 C overload selection](linux_async_c_completion_exports.md)
 exports the uniquely matching native effect in an Objective-C or Objective-C++
 free function overload set.

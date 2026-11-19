@@ -94,12 +94,14 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 295,
+        "minor": 296,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Implicit task-group scopes admit membership through the same dependency graph as direct task waits and closed-group joins. A late or simultaneous membership cannot close a cycle, and finalization uses its reserved waiter. Matching SDK acceptance pending",
+        "The concurrency header makes the errors module visible before using its shared runtime task declarations. The installed feature gate executes all 72 strict async source/PCH configurations; matched native SDK acceptance pending",
         "Generated C checked and async entries accept a unique native effect in an Objective-C or Objective-C++ free-function overload set. The adapter calls the exact selected signature. Matching SDK acceptance pending",
         "Generated Swift 6.4.2 checked and async wrappers preserve native SIMD in C vectors and pointer-free aggregates. Eight linked x86-64 configurations verify values, vector fields and checked outcomes. Matching SDK acceptance pending",
         "Generated C checked and async entries transport fixed 64-bit and 128-bit generic vectors. Native x86-64 and emulated AArch64 callers verify register values and completion callbacks. Matching native SDK acceptance pending",
@@ -443,7 +445,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 221,
+        "minor": 222,
         "patch": 0
       },
       "header": "include/objc3/system.h",

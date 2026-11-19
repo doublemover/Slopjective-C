@@ -459,8 +459,9 @@ objc3_service_status objc3_task_group_await_cleanup(
  * admitted per task; enter/finish require that task's active resume. The current
  * accessor returns a borrowed group only inside that task's callback. Retain it
  * explicitly to keep a separate owner. Its tree admits only structured
- * descendants of the scope task, including through released intermediates;
- * independent tasks and ancestor cycles are rejected.
+ * descendants of the scope task, including through released intermediates.
+ * Membership obliges the scope to wait for the member. A new membership,
+ * task wait, or closed-group join that closes a dependency cycle is rejected.
  * Finish closes the tree, optionally cancels it, and always queues a shielded
  * continuation after task/frame/callback quiescence. out_status remains in the
  * native frame until resumption. Enter reserves the final waiter; scope close

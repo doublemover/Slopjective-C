@@ -33,13 +33,15 @@ helper import controls also pass.
 The maintained `strict_async_profiles` runtime fixture checks lazy frames,
 structured children, typed joins, C Optional result iteration, ordinary C++
 source async tasks, owned group callbacks, exact defer work, cancellation before
-entry and unstarted frame disposal. The feature runner's optional
-`--feature strict-async` selection covers 72 language/ownership/optimization/
-source-PCH/profile configurations. It is installed with the SDK; ordinary default
-feature selections retain their scope. All thirty-six selected instrumented development configurations pass 126
-compile/PCH/link/execution commands across every strict profile, language and
-ownership mode. The complete optional optimization cross-product remains in
-final consolidation.
+entry and unstarted frame disposal. Source 2.296 includes all 72
+language/ownership/optimization/source-PCH/profile configurations in the
+standard installed SDK and clean-archive checks. All 252 compile, PCH, link and
+execution commands passed on x86-64 using the development runtime. Thirty-six
+instrumented configurations passed in the earlier development campaign.
+
+The concurrency header imports `objc3.errors` before using the shared task
+declarations. A consumer using only `<objc3/concurrency.h>` now sees the same
+types when Clang builds its module or reads a PCH.
 
 This span supplies profile admission and preserves existing semantic checks.
 Complete Strict Concurrency/Strict System conformance, remaining ownership and

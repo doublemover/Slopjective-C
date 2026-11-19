@@ -97,14 +97,17 @@ objc3_async_result_type_equal(const objc3_async_result_type *left,
 namespace {
 using AwaitTarget = objc3_task::AwaitTarget;
 
-bool group_dependencies_reach(const ObjC3TaskAwaitEdges &start, const AwaitTarget *target) {
-  auto pending = start.members;
+bool branching_dependencies_reach(std::vector<std::shared_ptr<AwaitTarget>> pending,
+                                  const AwaitTarget *target) {
   std::unordered_set<const AwaitTarget *> visited;
   while (!pending.empty()) {
     auto node = std::move(pending.back());
     pending.pop_back();
     if (node.get() == target) return true;
     if (!visited.insert(node.get()).second) continue;
+    for (const auto &weak_registration : node->scope_dependencies)
+      if (auto registration = weak_registration.lock())
+        pending.push_back(registration->member);
     const auto edges = node->waiting_dependencies.lock();
     if (!edges || !edges->active.load(std::memory_order_acquire)) continue;
     if (edges->direct) pending.push_back(edges->direct);
@@ -114,13 +117,15 @@ bool group_dependencies_reach(const ObjC3TaskAwaitEdges &start, const AwaitTarge
 }
 
 bool dependency_reaches(const ObjC3TaskAwaitEdges &start, const AwaitTarget *target) {
-  if (!start.direct) return group_dependencies_reach(start, target);
-  // Ordinary chains stay allocation-free. Only a closed-group edge branches.
+  if (!start.direct) return branching_dependencies_reach(start.members, target);
+  // Ordinary chains stay allocation-free until a group obligation branches.
   for (auto node = start.direct;;) {
     if (node.get() == target) return true;
+    if (!node->scope_dependencies.empty())
+      return branching_dependencies_reach({node}, target);
     const auto edges = node->waiting_dependencies.lock();
     if (!edges || !edges->active.load(std::memory_order_acquire)) return false;
-    if (!edges->direct) return group_dependencies_reach(*edges, target);
+    if (!edges->direct) return branching_dependencies_reach(edges->members, target);
     node = edges->direct;
   }
 }
@@ -1167,6 +1172,28 @@ objc3_service_status objc3_task_add_group_observers(
     notify_quiescence(task);
   }
   return OBJC3_SERVICE_OK;
+}
+
+objc3_service_status objc3_task_register_scope_dependency(
+    const std::shared_ptr<AwaitTarget> &owner, const std::shared_ptr<AwaitTarget> &member,
+    std::shared_ptr<ObjC3TaskScopeDependency> &registration) {
+  try {
+    std::lock_guard<std::mutex> graph(task_dependency_graph);
+    ObjC3TaskAwaitEdges dependency;
+    dependency.direct = member;
+    if (dependency_reaches(dependency, owner.get())) return OBJC3_SERVICE_INVALID_ARGUMENT;
+    auto ticket = std::make_shared<ObjC3TaskScopeDependency>(member);
+    owner->scope_dependencies.push_back(ticket);
+    registration = std::move(ticket);
+  } catch (...) {
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
+  return OBJC3_SERVICE_OK;
+}
+
+void objc3_task_retire_scope_dependencies(const std::shared_ptr<AwaitTarget> &owner) {
+  std::lock_guard<std::mutex> graph(task_dependency_graph);
+  decltype(owner->scope_dependencies){}.swap(owner->scope_dependencies);
 }
 
 objc3_service_status objc3_task_prepare_await(

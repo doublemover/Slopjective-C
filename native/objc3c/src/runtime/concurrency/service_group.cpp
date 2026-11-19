@@ -28,6 +28,7 @@ struct FailurePublicationState final {
 struct TaskGroup final {
   struct TaskEntry {
     objc3_task_t *task{};
+    std::shared_ptr<ObjC3TaskScopeDependency> scope_dependency;
     bool completed{false};
     bool consumed{false};
     bool failed{false};
@@ -413,6 +414,7 @@ void dispatch_join_notifications(std::list<TaskGroup::JoinWaiter> &waiters) {
       continue;
     }
     auto *parent = waiter.owned_parent;
+    objc3_task_retire_scope_dependencies(parent->await_target);
     bool forced;
     {
       std::lock_guard<std::mutex> lock(parent->mutex);
@@ -566,6 +568,7 @@ void task_completed(void *opaque, const objc3_completion *completion) {
                                 return entry.task == task;
                               });
     if (found != group->tasks.end() && !found->completed) {
+      found->scope_dependency.reset();
       found->failed = completion->kind == OBJC3_COMPLETION_ERROR;
       publish_completion = !group->failure_propagation_failed &&
                            propagation_status == OBJC3_SERVICE_OK;
@@ -727,9 +730,8 @@ objc3_service_status task_group_create(TaskGroup *parent, TaskGroup **out_group)
 objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task,
                                         bool scope_body) {
   if (!group || !task) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  // A compiler scope admits only its structured descendants. Cancellation
-  // ancestry therefore also proves that adding this task cannot introduce an
-  // ancestor cycle, including through nested groups or released intermediates.
+  // A compiler scope admits only its structured descendants, including
+  // through nested groups or released intermediate task handles.
   if (group->scope_target) {
     bool child = false;
     for (auto target = task->await_target->structured_parent; target;
@@ -774,11 +776,21 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task,
       insertion = OBJC3_SERVICE_INVALID_ARGUMENT;
     else {
       try {
-        group->tasks.push_back({task});
-        group->tasks.back().scope_body = scope_body;
-        ++group->registrations_inflight;
-        cancelled = group->cancelled &&
-                    (!scope_body || group->explicitly_cancelled);
+        auto &entry = group->tasks.emplace_back();
+        entry.task = task;
+        entry.scope_body = scope_body;
+        // Every member must finish before the scope's finalizer. Publish that
+        // obligation with membership, so finalization needs no graph allocation
+        // and cannot introduce a cycle after installing its cleanup waiter.
+        if (group->scope_target)
+          insertion = objc3_task_register_scope_dependency(group->scope_target,
+              task->await_target, entry.scope_dependency);
+        if (insertion == OBJC3_SERVICE_OK) {
+          ++group->registrations_inflight;
+          cancelled = group->cancelled && (!scope_body || group->explicitly_cancelled);
+        } else {
+          group->tasks.pop_back();
+        }
       } catch (...) { insertion = OBJC3_SERVICE_OUT_OF_MEMORY; }
     }
   }

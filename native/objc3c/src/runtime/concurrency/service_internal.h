@@ -66,6 +66,7 @@ struct ObjC3TaskQuiescenceObserver {
 struct ObjC3TaskGroupScope;
 struct ObjC3TaskDependencyWaiter;
 struct ObjC3TaskAwaitEdges;
+struct ObjC3TaskScopeDependency;
 
 // The retirement context owns a registration ticket, independent of the
 // source task and awaited owner. Unlink only after dropping task locks.
@@ -90,6 +91,9 @@ struct objc3_task final {
     std::vector<std::weak_ptr<AwaitTarget>> structured_children;
     // Task dependency graph edges never own the frame or registration.
     std::weak_ptr<ObjC3TaskAwaitEdges> waiting_dependencies;
+    // A scoped group owns membership tickets. The graph lock serializes both
+    // this list and publication of ordinary task and closed-group awaits.
+    std::vector<std::weak_ptr<ObjC3TaskScopeDependency>> scope_dependencies;
     explicit AwaitTarget(objc3_task_t *value) : task(value) {}
     ~AwaitTarget();
   };
@@ -204,6 +208,14 @@ struct ObjC3TaskAwaitEdges {
   std::vector<std::shared_ptr<objc3_task::AwaitTarget>> members;
   std::atomic<bool> active{false};
 };
+struct ObjC3TaskScopeDependency {
+  std::shared_ptr<objc3_task::AwaitTarget> member;
+};
+objc3_service_status objc3_task_register_scope_dependency(
+    const std::shared_ptr<objc3_task::AwaitTarget> &owner,
+    const std::shared_ptr<objc3_task::AwaitTarget> &member,
+    std::shared_ptr<ObjC3TaskScopeDependency> &registration);
+void objc3_task_retire_scope_dependencies(const std::shared_ptr<objc3_task::AwaitTarget> &owner);
 // Called with the task state lock, or after exclusive destruction begins.
 inline void objc3_task_retire_await_edges_locked(objc3_task_t *task) noexcept {
   if (auto edges = std::move(task->await_edges))

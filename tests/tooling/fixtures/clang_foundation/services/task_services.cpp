@@ -1726,6 +1726,131 @@ void test_cross_group_dependency_cycles() {
   }
 }
 
+void test_implicit_scope_dependency_cycles() {
+  enum Scenario { Direct, ClosedJoin, LateMembership, Simultaneous, Ungrouped };
+  for (auto scenario : {Direct, ClosedJoin, LateMembership, Simultaneous, Ungrouped}) {
+    struct State {
+      Scenario scenario;
+      objc3_executor_t *child_executor;
+      std::barrier<> start{2};
+      objc3_task_group_t *nested{};
+      objc3_task_group_t *external{};
+      objc3_task_t *parent{};
+      objc3_task_t *child{};
+      unsigned parent_resumes{};
+      unsigned child_resumes{};
+      objc3_service_status membership{OBJC3_SERVICE_NOT_READY};
+      objc3_service_status admission{OBJC3_SERVICE_NOT_READY};
+      objc3_service_status cleanup{OBJC3_SERVICE_NOT_READY};
+      objc3_service_status external_join{OBJC3_SERVICE_NOT_READY};
+    } state{scenario, manual_executor()};
+    auto *parent_executor = manual_executor();
+    objc3_task_start_options options{};
+    options.struct_size = sizeof(options);
+    options.version = OBJC3_SERVICE_ABI_VERSION;
+    options.executor = parent_executor;
+    options.frame = &state;
+    options.destroy = [](void *) {};
+    options.resume = [](objc3_task_t *task, void *opaque) {
+      auto &state = *static_cast<State *>(opaque);
+      if (++state.parent_resumes == 1) {
+        assert(objc3_task_group_scope_enter(task) == OBJC3_SERVICE_OK);
+        assert(objc3_task_group_create(objc3_task_group_scope_current(), &state.nested) == OBJC3_SERVICE_OK);
+        objc3_task_start_options child{};
+        child.struct_size = sizeof(child);
+        child.version = OBJC3_SERVICE_ABI_VERSION;
+        child.executor = state.child_executor;
+        child.frame = &state;
+        child.destroy = [](void *) {};
+        child.resume = [](objc3_task_t *task, void *opaque) {
+          auto &state = *static_cast<State *>(opaque);
+          if (++state.child_resumes == 1) {
+            if (state.scenario == Simultaneous) state.start.arrive_and_wait();
+            state.admission = state.scenario == ClosedJoin
+                ? objc3_task_group_await_cleanup(state.external, task, &state.external_join)
+                : objc3_task_await(task, state.parent);
+            if (state.admission == OBJC3_SERVICE_OK) return;
+            assert(state.admission == OBJC3_SERVICE_INVALID_ARGUMENT);
+            assert(state.external_join == OBJC3_SERVICE_NOT_READY);
+          } else {
+            objc3_completion parent{};
+            assert(state.child_resumes == 2);
+            assert(objc3_task_get_completion(state.parent, &parent) == OBJC3_SERVICE_OK);
+            assert(parent.kind == OBJC3_COMPLETION_SUCCESS);
+          }
+          const objc3_completion success{sizeof(success), OBJC3_SERVICE_ABI_VERSION,
+              OBJC3_COMPLETION_SUCCESS, 0, nullptr, nullptr, nullptr, nullptr};
+          assert(objc3_task_complete(task, &success) == OBJC3_SERVICE_OK);
+        };
+        assert(objc3_task_start_child_on(task, &child, &state.child) == OBJC3_SERVICE_OK);
+        if (state.scenario == LateMembership || state.scenario == Simultaneous) {
+          assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_OK);
+          return;
+        }
+        if (state.scenario != Ungrouped) {
+          state.membership = objc3_task_group_add(state.nested, state.child);
+          assert(state.membership == OBJC3_SERVICE_OK);
+        }
+        assert(objc3_task_group_scope_finish(task, false, &state.cleanup) == OBJC3_SERVICE_OK);
+        return;
+      }
+      if (state.parent_resumes == 2 &&
+          (state.scenario == LateMembership || state.scenario == Simultaneous)) {
+        if (state.scenario == Simultaneous) state.start.arrive_and_wait();
+        state.membership = objc3_task_group_add(state.nested, state.child);
+        assert(state.membership == OBJC3_SERVICE_OK || state.membership == OBJC3_SERVICE_INVALID_ARGUMENT);
+        assert(objc3_task_group_scope_finish(task, false, &state.cleanup) == OBJC3_SERVICE_OK);
+        return;
+      }
+      assert(state.cleanup == OBJC3_SERVICE_OK);
+      const objc3_completion success{sizeof(success), OBJC3_SERVICE_ABI_VERSION,
+          OBJC3_COMPLETION_SUCCESS, 0, nullptr, nullptr, nullptr, nullptr};
+      assert(objc3_task_complete(task, &success) == OBJC3_SERVICE_OK);
+    };
+    assert(objc3_task_start(&options, &state.parent) == OBJC3_SERVICE_OK);
+    if (scenario == ClosedJoin) {
+      assert(objc3_task_group_create(nullptr, &state.external) == OBJC3_SERVICE_OK);
+      assert(objc3_task_group_add(state.external, state.parent) == OBJC3_SERVICE_OK);
+      assert(objc3_task_group_close(state.external) == OBJC3_SERVICE_OK);
+    }
+    auto enter = [](objc3_executor_t *executor) {
+      uint32_t work = 0;
+      assert(objc3_executor_pump(executor, 1, &work) == OBJC3_SERVICE_OK && work == 1);
+    };
+    enter(parent_executor);
+    if (scenario == Simultaneous) {
+      std::thread parent(enter, parent_executor);
+      std::thread child(enter, state.child_executor);
+      parent.join();
+      child.join();
+    } else {
+      enter(state.child_executor);
+      if (scenario == LateMembership) enter(parent_executor);
+    }
+    if (scenario == Direct || scenario == ClosedJoin)
+      assert(state.membership == OBJC3_SERVICE_OK && state.admission == OBJC3_SERVICE_INVALID_ARGUMENT);
+    if (scenario == LateMembership)
+      assert(state.membership == OBJC3_SERVICE_INVALID_ARGUMENT && state.admission == OBJC3_SERVICE_OK);
+    if (scenario == Simultaneous)
+      assert((state.membership == OBJC3_SERVICE_OK) != (state.admission == OBJC3_SERVICE_OK));
+    if (scenario == Ungrouped) assert(state.admission == OBJC3_SERVICE_OK);
+    enter(parent_executor);
+    if (state.admission == OBJC3_SERVICE_OK) enter(state.child_executor);
+    assert(state.cleanup == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_join(state.nested) == OBJC3_SERVICE_OK);
+    if (state.external) assert(objc3_task_group_join(state.external) == OBJC3_SERVICE_OK);
+    std::weak_ptr<objc3_task::AwaitTarget> parent = state.parent->await_target;
+    std::weak_ptr<objc3_task::AwaitTarget> child = state.child->await_target;
+    objc3_task_group_release(state.external);
+    objc3_task_group_release(state.nested);
+    objc3_task_release(state.child);
+    objc3_task_release(state.parent);
+    assert(child.expired() && parent.expired());
+    objc3_executor_release(state.child_executor);
+    objc3_executor_release(parent_executor);
+  }
+}
+
 void test_forced_scope_join_retires_body_await() {
   auto *executor = manual_executor();
   std::atomic<int> dependency_destroyed{0};
@@ -2137,6 +2262,7 @@ int main() {
   test_interrupted_dependency_waiters_release_registration();
   test_task_dependency_cycle_rejection();
   test_cross_group_dependency_cycles();
+  test_implicit_scope_dependency_cycles();
   test_forced_scope_join_retires_body_await();
   test_executor_admission_and_queue_saturation();
   test_saturated_resume_can_retry_without_lost_wakeup();

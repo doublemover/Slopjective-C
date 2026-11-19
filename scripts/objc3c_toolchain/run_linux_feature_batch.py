@@ -25,8 +25,8 @@ else:
     from product_evidence import ProductCommands
 
 ROOT = Path(__file__).resolve().parents[2]
-FEATURES = ("captures", "keypaths", "async", "isolation", "spawn")
-OPTIONAL_FEATURES = ("strict-async", "nil-results", "properties", "exceptions", "catch-bindings", "runtime-scopes")
+FEATURES = ("captures", "keypaths", "async", "isolation", "spawn", "strict-async")
+OPTIONAL_FEATURES = ("nil-results", "properties", "exceptions", "catch-bindings", "runtime-scopes")
 PCH_MARKERS = {"captures": "CAPTURE_RUNTIME_PCH",
                "keypaths": "TYPED_KEYPATH_RUNTIME_PCH",
                "strict-async": "OBJC3_STRICT_ASYNC_PROFILES_PCH",

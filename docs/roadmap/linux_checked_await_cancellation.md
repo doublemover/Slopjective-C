@@ -82,3 +82,14 @@ Native controls exercise both closing-edge orders, simultaneous admission,
 two groups, pre-cancellation and cancellation after registration. A forced
 cleanup witness verifies that the old waiting task is reclaimed while its
 external dependency is still suspended.
+
+Source 2.296 / System 2.222 adds compiler-owned group membership to dependency
+admission. A scope already owes completion to each admitted member, so adding
+that member can close a cycle before finalization. Direct awaits and explicit
+closed-group joins see the same obligation. Cancellation ancestry alone still
+permits a child outside the scope's groups to wait for its parent.
+
+Membership tickets keep the reserved scope finalizer allocation-free. The
+native tests exercise nested group membership, shielded joins, simultaneous
+admission, rejection of late membership, and an independent ancestry control.
+All 96 instrumented schedule replays and 12 scenario configurations pass.

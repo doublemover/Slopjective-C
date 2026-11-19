@@ -1,5 +1,9 @@
 # Linux implementation sprint
 
+The [Source 2.296 / System 2.222 scope dependency change](linux_checked_await_cancellation.md)
+rejects cycles through implicit group membership without allocating during
+finalization. Native normal and shielded joins exercise the shared admission.
+
 The [Source 2.295 / System 2.221 C overload selection](linux_async_c_completion_exports.md)
 keeps checked and async entries bound to their exact native signatures when a
 source overload family also contains ordinary functions.
