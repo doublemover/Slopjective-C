@@ -89,7 +89,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         source, robin = runtime_sources(repo, profile, fetch=args.fetch)
         build.mkdir(parents=True, exist_ok=True)
-        link_flags = "-fuse-ld=lld"
+        # Runtime DSOs belong to the sealed SDK loader graph. Keep their
+        # owned rpaths ahead of ambient LD_LIBRARY_PATH with old ELF dtags.
+        link_flags = "-fuse-ld=lld -Wl,--disable-new-dtags"
         if args.sanitizer:
             # The instrumented executable supplies sanitizer runtime symbols.
             link_flags += " -fsanitize=" + args.sanitizer

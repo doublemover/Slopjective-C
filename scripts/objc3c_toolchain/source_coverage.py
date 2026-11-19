@@ -400,7 +400,9 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
                 '-DCMAKE_MAKE_PROGRAM='+plan['host_environment']['ninja_path'],
                 '-DCMAKE_CXX_COMPILER='+str(compiler), '-DCMAKE_BUILD_TYPE=Debug',
                 '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g0 -resource-dir='+str(resource),
-                '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
+                '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+                '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+                '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
                 '-DOBJC3C_SOURCE_COVERAGE=ON', '-DOBJC3C_LINK_CLANG_CPP=ON',
                 '-DBUILD_TESTING=ON', '-DPython3_EXECUTABLE='+__import__('sys').executable]
             if component == 'frontend':

@@ -141,9 +141,19 @@ def test_source_coverage_profile_owns_lit_support_tools(owned):
     assert 'llvm-config' in profile['build']['build_targets']
     assert 'llvm-config' in profile['build']['distribution_components']
     assert 'c-index-test' in profile['build']['build_targets']
-    assert all('-Wl,--build-id=sha1' in profile['cmake'][key]
+    assert all({'-Wl,--build-id=sha1', '-Wl,--disable-new-dtags'} <=
+               set(profile['cmake'][key].split())
                for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS',
                            'CMAKE_MODULE_LINKER_FLAGS'))
+
+
+def test_every_instrumented_linux_profile_forces_old_dtags(owned):
+    repo, _, _ = owned
+    document = json.loads((repo / 'toolchains/llvm/instrumentation-profiles.json').read_text())
+    for profile in document['profiles'].values():
+        assert all('-Wl,--disable-new-dtags' in profile['cmake'][key].split()
+                   for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS',
+                               'CMAKE_MODULE_LINKER_FLAGS'))
 
 
 @pytest.mark.parametrize('mutation', ['recovery', 'disabled-asan', 'mixed-linkage', 'wrong-subject',

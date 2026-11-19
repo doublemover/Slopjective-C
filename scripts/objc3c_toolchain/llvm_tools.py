@@ -56,7 +56,7 @@ def runpath(data: bytes) -> tuple[str, int, str]:
 
 
 def verify_installation(canonical: Path, installed: Path, build: Path) -> dict:
-    """CMake edits RUNPATH at install time; admit exactly that byte transition."""
+    """CMake edits old-dtag RPATH at install time; admit only that transition."""
     old, new = canonical.read_bytes(), installed.read_bytes()
     before_tag, position, before = runpath(old)
     after_tag, destination, after = runpath(new)
@@ -108,7 +108,7 @@ def selected(repo: Path) -> tuple[dict, dict, dict]:
         tools[name] = stage / 'bin' / name
         canonical = (build / 'bin' / name).resolve(strict=True)
         verify_installation(canonical, tools[name], build)
-    # CMake changes only the owned RUNPATH during installation. Code and every
+    # CMake changes only the owned RPATH during installation. Code and every
     # other byte must match; both actual loader graphs are independently bound.
     for name in ('libLLVM.so', 'libclang-cpp.so'):
         verify_installation(build / 'lib' / name,

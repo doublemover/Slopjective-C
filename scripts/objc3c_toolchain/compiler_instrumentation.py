@@ -618,7 +618,9 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
             run=lambda name, cmd: run('foundation-'+name, cmd))
         run('embedding-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', facade, '-G', 'Ninja',
             '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'), '-DCMAKE_BUILD_TYPE=Release',
-            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld',
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
             '-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
             '-DOBJC3_LIBOBJC2_BUILD_DIR='+dependency['root'],
             '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE='+PROFILE])

@@ -61,7 +61,10 @@ bash "$OBJC3C_SDK_ROOT/share/objc3c/install-cmake-linux.sh" "$scratch/cmake-rele
 test "$("$scratch/cmake-release/bin/cmake" --version | head -n 1)" = "cmake version $cmake_version"
 export PATH="$scratch/cmake-release/bin:$scratch/cmake/bin:$PATH"
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$OBJC3C_SDK_ROOT" \
-  -DCMAKE_CXX_COMPILER="$OBJC3C_SDK_ROOT/bin/clang++" -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
+  -DCMAKE_CXX_COMPILER="$OBJC3C_SDK_ROOT/bin/clang++" \
+  "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags" \
+  "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags" \
+  "-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags"
 cmake --build build --parallel 2
 ./build/embedding "$OBJC3C_SDK_ROOT"
 "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./build/embedding

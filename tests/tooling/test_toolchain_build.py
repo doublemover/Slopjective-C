@@ -157,6 +157,14 @@ def test_effective_cache_must_match_intended_configuration(tmp_path, value):
             'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'}})
 
 
+def test_linux_foundation_cache_forces_old_dtag_rpaths():
+    cache = (Path(__file__).resolve().parents[2] /
+             'toolchains/llvm/cmake/ObjC3LLVMCache.cmake').read_text()
+    for kind in ('EXE', 'SHARED', 'MODULE'):
+        assert (f'set(CMAKE_{kind}_LINKER_FLAGS "-Wl,--disable-new-dtags" '
+                'CACHE STRING "" FORCE)') in cache
+
+
 @pytest.mark.parametrize('outside', [False, True])
 def test_cmake_executed_include_must_belong_to_configuration_inventory(tmp_path, outside):
     import subprocess

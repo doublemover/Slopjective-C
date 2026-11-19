@@ -293,7 +293,11 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         frontend = repo / ('out/toolchains/objc3-facade/build-' + native_linux_host())
         configure = ['cmake', '-S', repo / 'native/objc3c', '-B', frontend, '-G', 'Ninja',
             f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={Path(bootstrap) / "bin/clang++"}',
-            f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DBUILD_TESTING=ON']
+            f'-DPython3_EXECUTABLE={sys.executable}',
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DBUILD_TESTING=ON']
         ccache = shutil.which('ccache')
         if ccache:
             configure.append(f'-DCMAKE_CXX_COMPILER_LAUNCHER={ccache}')

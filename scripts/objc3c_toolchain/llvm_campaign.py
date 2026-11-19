@@ -104,7 +104,9 @@ def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3) ->
             raise ValueError('LLVM campaign runtime dependency did not pass')
         run('facade-configure', [host['cmake_path'], '-S', repo / 'native/objc3c', '-B', facade, '-G', 'Ninja',
             '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'), '-DCMAKE_BUILD_TYPE=Release',
-            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld',
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
             '-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
             '-DBUILD_TESTING=OFF',
             '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE=compiler-asan-ubsan'])

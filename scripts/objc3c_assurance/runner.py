@@ -185,7 +185,10 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
               if profile == 'compiler-asan-ubsan' and environment.get('OBJC3C_ASAN_FOUNDATION_IDENTITY') else []),
             '-DOBJC3C_BUILD_SCAN_DEPS=OFF', '-DBUILD_TESTING=OFF',
             f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}', '-DCMAKE_BUILD_TYPE=Release',
-            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', f'-DPython3_EXECUTABLE={sys.executable}'],
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            f'-DPython3_EXECUTABLE={sys.executable}'],
             environment_override=profile_environment)
         command(key+'-build', ['cmake', '--build', build, '--target', 'objc3c', 'objc3c_frontend_v2',
                                '--parallel', '2'], environment_override=profile_environment)
@@ -247,7 +250,10 @@ def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None,
             build = repo / ('out/toolchains/objc3-facade/build-' + native_linux_host())
             command('configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
                 f'-DOBJC3C_CLANG_FOUNDATION_ROOT={sdk}', f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
-                f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
+                f'-DPython3_EXECUTABLE={sys.executable}',
+                '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+                '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+                '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
                 '-DOBJC3C_BUILD_SCAN_DEPS=OFF', '-DBUILD_TESTING=ON'])
             jobs = _consumer_compile_jobs(repo)
             command('build', ['cmake', '--build', build, '--target', 'objc3c', '--parallel', str(jobs)])

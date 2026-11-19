@@ -37,7 +37,8 @@ def plan(repo: Path) -> dict:
     tablegen = (build / 'bin/llvm-tblgen').resolve(strict=True)
     tablegen_library = (build / 'lib/libLLVMTableGen.a').resolve(strict=True)
     sanitizer_library = (bootstrap / 'lib/clang/23/lib' / native_target() / 'libclang_rt.asan.so').resolve(strict=True)
-    link_flags = '-shared-libasan -L'+str(build / 'lib')+' -Wl,-rpath,'+str(sanitizer_library.parent)
+    link_flags = ('-shared-libasan -L'+str(build / 'lib')+' -Wl,-rpath,'+
+                  str(sanitizer_library.parent)+' -Wl,--disable-new-dtags')
     argv = [foundation['host_environment']['cmake_path'], '-S', str(source / 'lldb'), '-B', str(root), '-G', 'Ninja',
         '-DCMAKE_C_COMPILER='+str(bootstrap / 'bin/clang'), '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'),
         '-DCMAKE_MAKE_PROGRAM='+foundation['host_environment']['ninja_path'],
@@ -47,6 +48,7 @@ def plan(repo: Path) -> dict:
         # LLDB's own matched tablegen helper needs that canonical build archive.
         '-DCMAKE_EXE_LINKER_FLAGS='+link_flags,
         '-DCMAKE_SHARED_LINKER_FLAGS='+link_flags,
+        '-DCMAKE_MODULE_LINKER_FLAGS='+link_flags,
         '-DCMAKE_INSTALL_PREFIX='+str(root / 'stage'),
         *('-D'+key+'='+value for key, value in document['cmake'].items())]
     return {'schema': 'objc3c.llvm-development-debugger-plan.v1', 'identity': key,
@@ -66,7 +68,8 @@ def adopt(configuration: dict, build: Path, previous: dict) -> dict:
         # generated headers and foundation identities still match exactly;
         # CMake reruns affected link edges and the new graph is checked below.
         return [arg.replace(plan['build'], '{build}') for arg in plan['configure']
-                if not arg.startswith(('-DCMAKE_EXE_LINKER_FLAGS=', '-DCMAKE_SHARED_LINKER_FLAGS='))]
+                if not arg.startswith(('-DCMAKE_EXE_LINKER_FLAGS=', '-DCMAKE_SHARED_LINKER_FLAGS=',
+                                       '-DCMAKE_MODULE_LINKER_FLAGS='))]
     if (binding(previous) != binding(configuration) or recipe(previous) != recipe(configuration) or
             previous['tablegen_sha256'] != configuration['tablegen_sha256'] or
             previous['targets'] != configuration['targets'] or str(build) != previous['build']):
@@ -85,6 +88,7 @@ def qualify_shared_sanitizer_route(*, output: Path, run, compiler: Path,
              '-std=c++20', '-O1', '-g', '-fno-omit-frame-pointer',
              '-fno-sanitize-recover=undefined', '-fsanitize=address,undefined',
              '-shared-libasan', '-fuse-ld=lld', '-pthread',
+             '-Wl,--disable-new-dtags',
              '-Wl,-rpath,'+str(sanitizer.parent),
              '-Wl,-rpath,'+str(libraries[0].parent)]
     results = []

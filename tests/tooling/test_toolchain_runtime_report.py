@@ -33,7 +33,10 @@ def test_cold_checkout_noise_cannot_contaminate_the_structured_report(tmp_path, 
             path.mkdir(parents=True)
             print(f'Cloning into {path}...\nDetached HEAD advice {{not JSON}}', file=sys.stderr)
 
+    commands = []
+
     def execute(command, **kwargs):
+        commands.append(command)
         if command[:2] == ['cmake', '--install']:
             stage = Path(command[command.index('--prefix') + 1])
             (stage / 'lib').mkdir(parents=True)
@@ -53,3 +56,7 @@ def test_cold_checkout_noise_cannot_contaminate_the_structured_report(tmp_path, 
     assert data == json.loads(streams.out)
     assert data['status'] == 'passed'
     assert Path(data['stage']).joinpath('lib/libobjc.so').is_file()
+    configure = next(command for command in commands if command[:2] == ['cmake', '-S'])
+    shared_flags = next(argument for argument in configure
+                        if argument.startswith('-DCMAKE_SHARED_LINKER_FLAGS='))
+    assert '-Wl,--disable-new-dtags' in shared_flags.split()

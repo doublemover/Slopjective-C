@@ -47,7 +47,8 @@ def select(repo: Path, name: str, host: str, base_build: dict, sealed: dict, ups
         if (profile.get('coverage_flags') != required or not profile.get('facade_source_coverage') or
                 any(not set(required) <= set(shlex.split(cmake.get(key, '')))
                     for key in ('CMAKE_C_FLAGS_RELEASE', 'CMAKE_CXX_FLAGS_RELEASE')) or
-                any(not {'-fprofile-instr-generate', '-Wl,--build-id=sha1'} <=
+                any(not {'-fprofile-instr-generate', '-Wl,--build-id=sha1',
+                         '-Wl,--disable-new-dtags'} <=
                     set(shlex.split(cmake.get(key, '')))
                     for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS', 'CMAKE_MODULE_LINKER_FLAGS'))):
             raise ValueError('compiler source coverage requires the owned compile/link counter recipe')

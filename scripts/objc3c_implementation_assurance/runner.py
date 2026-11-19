@@ -167,14 +167,20 @@ def _run_locked(repo: Path, plan: dict, output: Path, partition: dict,
             '-G', 'Ninja', f'-DOBJC3C_CLANG_FOUNDATION_ROOT={stage}',
             f'-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE={PROFILE}', '-DOBJC3C_LINK_CLANG_CPP=ON',
             f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
-            f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
+            f'-DPython3_EXECUTABLE={sys.executable}',
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
             '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_TESTING=OFF'], environment)
         command('frontend-build', [cmake, '--build', frontend_build, '--target', 'objc3c',
             'clang-scan-deps', '--parallel', str(jobs)], environment)
         command('runtime-configure', [cmake, '-S', repo / 'native/objc3c/src/runtime',
             '-B', runtime_build, '-G', 'Ninja',
             f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
-            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DCMAKE_BUILD_TYPE=Release',
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld -Wl,--disable-new-dtags',
+            '-DCMAKE_BUILD_TYPE=Release',
             '-DBUILD_TESTING=ON'], environment)
         command('runtime-build', [cmake, '--build', runtime_build,
             '--target', 'objc3_runtime_services', '--parallel', str(jobs)], environment)
