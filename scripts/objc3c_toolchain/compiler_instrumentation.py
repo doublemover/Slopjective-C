@@ -439,28 +439,33 @@ def elf_gnu_build_id(path: Path) -> str:
 
 def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=(), run) -> dict:
     """Admit the loader's real graph and bind every resolved DSO to its build ID."""
+    owned = {path.resolve(strict=True) for path in libraries}
+    # Snapshot selection before asking the loader to resolve the graph. Exact
+    # paths alone cannot detect replacement at the admitted pathname between
+    # selection and resolution.
+    expected_build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(owned)}
     output = run('loader', [loader, '--list', binary])
     paths = set()
     for line in output.splitlines():
         value = line.split(' => ', 1)[-1].strip().rsplit(' (0x', 1)[0]
         if value.startswith('/'):
             paths.add(Path(value).resolve(strict=True))
-    owned = {path.resolve(strict=True) for path in libraries}
     if not paths or 'not found' in output or not set(required).issubset(paths):
         raise ValueError('compiler executable did not load its required instrumented libraries')
     for path in paths:
         if path.name.startswith(('libLLVM', 'libclang-cpp')) and path not in owned:
             raise ValueError('compiler executable loaded an unselected LLVM/Clang library')
     build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(paths)}
-    # Exact paths prevent same-SONAME substitution. Build IDs make that
-    # admission independently inspectable and prevent a later receipt reader
-    # from accepting different bytes under a previously admitted path.
+    # Exact paths prevent same-SONAME substitution. The pre-resolution build-ID
+    # snapshot also rejects replacement at an otherwise admitted pathname.
     selected_build_ids = {str(path): elf_gnu_build_id(path) for path in sorted(paths & owned)}
-    if any(build_ids[path] != identity for path, identity in selected_build_ids.items()):
+    if any(build_ids[path] != identity or expected_build_ids[path] != identity
+           for path, identity in selected_build_ids.items()):
         raise ValueError('loaded LLVM/Clang build identity differs from its selected build')
     return {'binary': str(binary), 'sha256': digest(binary),
             'libraries': {str(path): digest(path) for path in sorted(paths)},
-            'build_ids': build_ids, 'selected_build_ids': selected_build_ids}
+            'build_ids': build_ids, 'expected_build_ids': expected_build_ids,
+            'selected_build_ids': selected_build_ids}
 
 
 def borrowed_base_pch_matrix(compiler: Path, source: Path, output: Path, *, run):

@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 
 import pytest
 
@@ -15,6 +16,25 @@ def test_host_loader_has_one_canonical_gnu_build_identity():
     from scripts.objc3c_toolchain.compiler_instrumentation import elf_gnu_build_id
     from scripts.objc3c_toolchain.linux_host import native_loader
     assert re.fullmatch(r'[0-9a-f]{40}', elf_gnu_build_id(native_loader()))
+
+
+def test_loader_graph_rejects_selected_path_replacement_without_executing_it(tmp_path):
+    from scripts.objc3c_toolchain.compiler_instrumentation import loaded_graph
+    from scripts.objc3c_toolchain.linux_host import native_loader
+
+    selected = tmp_path / 'libLLVMcontrol.so'
+    replacement = tmp_path / 'replacement.so'
+    shutil.copyfile(native_loader(), selected)
+    shutil.copyfile(Path(sys.executable).resolve(strict=True), replacement)
+
+    def replace_then_resolve(name, argv):
+        assert name == 'loader'
+        os.replace(replacement, selected)
+        return f'libLLVMcontrol.so => {selected} (0x00000001)\n'
+
+    with pytest.raises(ValueError, match='build identity differs'):
+        loaded_graph(Path(sys.executable).resolve(strict=True), native_loader(),
+                     [selected], required=(selected,), run=replace_then_resolve)
 
 
 @pytest.fixture
@@ -190,12 +210,57 @@ def test_actual_loader_rejects_a_foreign_llvm_library(native_graph, tmp_path):
             graph = loaded_graph(binary, loader, [selected], required=(selected,), run=run)
             assert str(selected) in graph['libraries']
             assert graph['build_ids'][str(selected)] == elf_gnu_build_id(selected)
+            assert graph['expected_build_ids'] == {str(selected): elf_gnu_build_id(selected)}
             assert graph['selected_build_ids'] == {str(selected): elf_gnu_build_id(selected)}
         else:
             with pytest.raises(ValueError, match='unselected LLVM/Clang library'):
                 loaded_graph(binary, loader, [selected], run=run)
             with pytest.raises(ValueError, match='required instrumented libraries'):
                 loaded_graph(binary, loader, [selected], required=(selected,), run=run)
+
+
+def test_actual_loader_rejects_same_path_build_identity_replacement(tmp_path):
+    from scripts.objc3c_toolchain.compiler_instrumentation import loaded_graph
+    from scripts.objc3c_toolchain.linux_host import native_loader
+
+    root = os.environ.get('OBJC3C_BOOTSTRAP_LLVM_ROOT')
+    if not root:
+        pytest.skip('requires the explicitly selected native bootstrap LLVM')
+    compiler = Path(root) / 'bin' / 'clang++'
+    source = tmp_path / 'source'
+    source.mkdir()
+    def run(name, argv):
+        return subprocess.check_output(list(map(str, argv)), stderr=subprocess.STDOUT,
+                                       text=True, timeout=60)
+    directory = tmp_path / 'selected'
+    directory.mkdir()
+    selected = directory / 'libLLVMcontrol.so'
+    replacement = directory / 'replacement.so'
+    library_source = source / 'library.cpp'
+    main = source / 'main.cpp'
+    library_source.write_text('extern "C" int llvm_control() { return 7; }\n')
+    main.write_text('extern "C" int llvm_control(); int main() { return llvm_control() != 9; }\n')
+    run('selected-library', [compiler, '-shared', '-fPIC', library_source,
+                            '-Wl,--build-id=sha1', '-Wl,-soname,libLLVMcontrol.so',
+                            '-o', selected])
+    library_source.write_text('extern "C" int llvm_control() { return 9; }\n')
+    run('replacement-library', [compiler, '-shared', '-fPIC', library_source,
+                               '-Wl,--build-id=sha1', '-Wl,-soname,libLLVMcontrol.so',
+                               '-o', replacement])
+    binary = tmp_path / 'loader-control'
+    run('loader-control-link', [compiler, '-fuse-ld=lld', main, '-L'+str(directory),
+                               '-lLLVMcontrol', '-Wl,--build-id=sha1',
+                               '-Wl,--disable-new-dtags', '-Wl,-rpath,'+str(directory),
+                               '-o', binary])
+
+    def replace_before_resolution(name, argv):
+        if name == 'loader':
+            os.replace(replacement, selected)
+        return run(name, argv)
+
+    with pytest.raises(ValueError, match='build identity differs'):
+        loaded_graph(binary, native_loader(), [selected], required=(selected,),
+                     run=replace_before_resolution)
 
 
 def test_real_cxx20_module_scanning_does_not_duplicate_compiler_objects(native_graph):
