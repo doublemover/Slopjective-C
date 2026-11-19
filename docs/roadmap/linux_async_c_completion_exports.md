@@ -94,6 +94,22 @@ the selected declaration has external linkage. The compiler publishes the
 header with its native product and restores an existing header if product
 publication fails.
 
+Source 2.280 / System 2.206 also publishes `f_async_c_task` alongside the
+canonical `f_async_c`. The companion takes the same parameters, context and
+callback. On successful submission it returns an independent retained
+`objc3_task_t *`. Call `objc3_task_request_cancel` to request cooperative
+cancellation and `objc3_task_release` when finished with the handle. The
+runtime keeps the callback alive if the handle is released early. A callback
+can arrive before either entry returns. A null return signals that submission
+was rejected and the callback still records the terminal status.
+
+The separate C and source-free clients exercise task handles for checked
+failures, portable records, objects, Blocks and isolated selectors. The
+runtime tests cancel after suspension and check that rejected start on a
+closed actor leaves the unsubmitted frame owned by its caller. Independent
+Swift clients cancel before and after the handle is installed. See the
+[Swift consumer evidence](linux_swift_consumer.md).
+
 The separate C clients execute value, void and checked success and failure
 callbacks across C17/C23/C++20/C++23 providers in ARC and MRC. The C17 MRC
 control links the selected declaration to a separately compiled async body.

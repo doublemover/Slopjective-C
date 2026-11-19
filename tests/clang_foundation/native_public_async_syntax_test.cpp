@@ -192,6 +192,10 @@ static Integer generated_value(bool enabled, Input value) async {
 }
 #endif
 static void generated_void(void) async {}
+static void generated_cancelled(void) async throws(id<Error>) {
+  try objc3_task_check_cancellation();
+  __builtin_trap();
+}
 static int generated_checked(int mode) async throws(id<Error>) {
   if (mode) __objc3_throw(generated_failure());
   return 42;
@@ -461,6 +465,7 @@ namespace ExportAlias = ExportRegion::Nested;
   provider.emit = EmitKind::Object;
   provider.output_path = (root / "provider.o").string();
   provider.async_c_exports = {"generated_value", "generated_void", "generated_checked",
+      "generated_cancelled",
       "generated_object", "generated_block", "generated_callback", "generated_aggregate", "generated_main",
       "generated_named", "generated_missing", "generated_arguments",
       "generated_abandoned_arguments", "GeneratedActor::add:by:",
@@ -485,6 +490,7 @@ namespace ExportAlias = ExportRegion::Nested;
   Require(generated.interface_artifact.has_value(), "generated C interface missing");
   const auto &interface = *generated.interface_artifact;
   Require(interface.source_bytes.find("generated_checked_async_c") != std::string::npos &&
+          interface.source_bytes.find("generated_checked_async_c_task") != std::string::npos &&
           interface.source_bytes.find("GeneratedActor_add_by_async_c") != std::string::npos &&
           interface.source_bytes.find("GeneratedDerivedActor_checked_async_c") != std::string::npos &&
           interface.source_bytes.find("generated_sync_checked_throws_c") != std::string::npos &&
@@ -605,7 +611,7 @@ static void observe(void *context, objc_async_completion_status_t status,
   (void)context; (void)status; (void)value; (void)error;
 }
 void call_imported_actor(void *receiver) {
-  GeneratedActor_add_by_async_c(receiver, 40, 2, 0, observe);
+  objc3_task_release(GeneratedActor_add_by_async_c_task(receiver, 40, 2, 0, observe));
   GeneratedDerivedActor_checked_async_c(receiver, 0, 0, observe);
 }
 void call_imported_arguments(generated_arguments_async_c_arg0_t value,
@@ -630,7 +636,7 @@ generated_sync_callback_throws_c_result_t call_imported_callback(generated_sync_
 )";
   if (cxx) *imported.source_text += R"(
 int call_imported_namespace(objc3_async_c_error *failure) {
-  ExportRegion_Nested_pulse_async_c(41, 0, observe);
+  objc3_task_release(ExportRegion_Nested_pulse_async_c_task(41, 0, observe));
   return ExportAlias_check_throws_c(40, failure);
 }
 )";
@@ -675,6 +681,11 @@ static atomic_int complete[19];
 #endif
 static atomic_uint paused_workers;
 static atomic_bool resume_workers;
+static atomic_int cancelled_task;
+static void release_submitted(objc3_task_t *task) {
+  assert(task);
+  objc3_task_release(task);
+}
 static void hold_worker(void *unused) {
   (void)unused;
   atomic_fetch_add(&paused_workers, 1);
@@ -740,6 +751,12 @@ static void missing_done(void *context, objc_async_completion_status_t status,
   assert(context == &complete[10] && status == OBJC_ASYNC_COMPLETION_CANCELLED);
   assert(objc3_async_c_error_is_cancellation(error));
   assert(atomic_fetch_add(&complete[10], 1) == 0);
+}
+static void cancelled_task_done(void *context, objc_async_completion_status_t status,
+                                objc3_async_c_error error) {
+  assert(context == &cancelled_task && status == OBJC_ASYNC_COMPLETION_CANCELLED);
+  assert(objc3_async_c_error_is_cancellation(error));
+  assert(atomic_fetch_add(&cancelled_task, 1) == 0);
 }
 static void actor_done(void *context, objc_async_completion_status_t status,
                        int value, objc3_async_c_error error) {
@@ -839,11 +856,11 @@ int main(void) {
   generated_value_async_c(true, &input, &complete[0], value_done);
   generated_void_async_c(0, void_done);
   generated_checked_async_c(0, &complete[2], checked_done);
-  generated_checked_async_c(1, &complete[3], checked_done);
-  generated_object_async_c(generated_failure(), &complete[4], object_done);
-  generated_block_async_c(40, &complete[5], block_done);
+  release_submitted(generated_checked_async_c_task(1, &complete[3], checked_done));
+  release_submitted(generated_object_async_c_task(generated_failure(), &complete[4], object_done));
+  release_submitted(generated_block_async_c_task(40, &complete[5], block_done));
   generated_callback_async_c(add_value, &complete[18], callback_done);
-  generated_aggregate_async_c(initial, &complete[6], aggregate_done);
+  release_submitted(generated_aggregate_async_c_task(initial, &complete[6], aggregate_done));
   generated_main_async_c(41, &complete[7], executor_done);
   generated_named_async_c(41, &complete[8], executor_done);
   generated_missing_async_c(&complete[10], missing_done);
@@ -857,7 +874,13 @@ int main(void) {
     nanosleep(&(struct timespec){0, 1000000}, 0);
   assert(atomic_load(&paused_workers) == 4);
   objc3_executor_release(global);
-  GeneratedActor_add_by_async_c(actor, 40, 2, &complete[11], actor_done);
+  objc3_task_t *cancel = generated_cancelled_async_c_task(&cancelled_task, cancelled_task_done);
+  assert(cancel && !objc3_task_is_cancel_requested(cancel));
+  objc3_task_request_cancel(cancel);
+  objc3_task_request_cancel(cancel);
+  assert(objc3_task_is_cancel_requested(cancel) && !atomic_load(&cancelled_task));
+  objc3_task_release(cancel);
+  release_submitted(GeneratedActor_add_by_async_c_task(actor, 40, 2, &complete[11], actor_done));
   GeneratedDerivedActor_current_async_c(other, &complete[12], actor_done);
   GeneratedDerivedActor_checked_async_c(actor, false, &complete[13], actor_done);
   GeneratedDerivedActor_checked_async_c(actor, true, &complete[14], actor_done);
@@ -890,7 +913,7 @@ int main(void) {
     unsigned count = 0;
     for (unsigned index = 0; index < sizeof(complete) / sizeof(complete[0]); ++index)
       count += atomic_load(&complete[index]);
-    if (count == sizeof(complete) / sizeof(complete[0])) {
+    if (count == sizeof(complete) / sizeof(complete[0]) && atomic_load(&cancelled_task) == 1) {
 #ifdef __BLOCKS__
       assert(retained_block(2) == 42);
       _Block_release((const void *)retained_block);
@@ -912,6 +935,7 @@ int main(void) {
   }
   for (unsigned index = 0; index < sizeof(complete) / sizeof(complete[0]); ++index)
     if (!atomic_load(&complete[index])) fprintf(stderr, "Missing generated completion %u\n", index);
+  if (!atomic_load(&cancelled_task)) fprintf(stderr, "Missing requested native cancellation\n");
   return 1;
 }
 )");

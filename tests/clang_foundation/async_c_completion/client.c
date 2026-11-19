@@ -247,6 +247,61 @@ static void check_cancellation_checkpoint(objc3_executor_t *executor, int cancel
   objc3_task_release(task);
 }
 
+typedef struct SubmittedResult {
+  unsigned callbacks;
+  objc3_completion_kind kind;
+  int value;
+} SubmittedResult;
+
+static void submitted_done(void *context, const objc3_completion *completion) {
+  SubmittedResult *result = context;
+  assert(++result->callbacks == 1);
+  result->kind = completion->kind;
+  result->value = completion->has_payload ? *(const int *)completion->payload : 0;
+}
+
+static void check_retained_submission(objc3_executor_t *executor) {
+  CompletionCancellation state = {0};
+  SubmittedResult result = {0};
+  objc3_async_frame frame = completion_narrow_frame(&state);
+  objc3_task_t *task = NULL;
+  assert(objc3_async_frame_submit_task(&frame, executor, NULL, submitted_done, &result, &task)
+         == OBJC3_SERVICE_OK);
+  assert(task && !frame.context);
+  unsigned executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && state.entered == 1 && state.resumed == 0 && !result.callbacks);
+  objc3_task_request_cancel(task);
+  objc3_task_request_cancel(task);
+  objc3_task_release(task);
+  assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+  assert(result.callbacks == 1 && result.kind == OBJC3_COMPLETION_CANCELLED);
+  assert(state.finished == 1 && state.child_destroyed == 1);
+
+  state = (CompletionCancellation){0};
+  result = (SubmittedResult){0};
+  frame = completion_checkpoint_frame(&state);
+  assert(objc3_async_frame_submit_task(&frame, executor, NULL, submitted_done, &result, &task)
+         == OBJC3_SERVICE_OK);
+  assert(task && !frame.context && !result.callbacks);
+  objc3_task_release(task);
+  assert(objc3_executor_pump(executor, 1000, &executed) == OBJC3_SERVICE_OK);
+  assert(result.callbacks == 1 && result.kind == OBJC3_COMPLETION_SUCCESS && result.value == 42);
+  assert(state.finished == 1);
+
+  state = (CompletionCancellation){0};
+  result = (SubmittedResult){0};
+  frame = completion_cancel_child(&state);
+  objc3_actor_t *actor = NULL;
+  assert(objc3_actor_create(executor, &actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+  assert(objc3_async_frame_submit_task(&frame, NULL, actor, submitted_done, &result, &task)
+         == OBJC3_SERVICE_CLOSED);
+  assert(!task && frame.context == &state && !result.callbacks && !state.child_destroyed);
+  assert(objc3_async_frame_dispose(&frame) == OBJC3_SERVICE_OK && state.child_destroyed == 1);
+  objc3_actor_release(actor);
+}
+
 void interface_checkpoint(void);
 
 int main(void) {
@@ -305,6 +360,7 @@ int main(void) {
   check_group_join(manual, NestedFailure);
   check_cancellation_checkpoint(manual, 0);
   check_cancellation_checkpoint(manual, 1);
+  check_retained_submission(manual);
   CompletionCancellation checked_state = {0};
   unsigned checked_completed = 0;
   completion_checked_cancel_async_c(&checked_state, &checked_completed, checked_cancel_done);

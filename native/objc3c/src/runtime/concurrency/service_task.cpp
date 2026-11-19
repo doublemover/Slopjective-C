@@ -558,7 +558,7 @@ objc3_service_status start_task(
       options->version != OBJC3_SERVICE_ABI_VERSION ||
       (bool(options->executor) == bool(options->actor)) ||
       !options->resume || (options->frame && !options->destroy) ||
-      (completion_owned && (out_task || group || !options->completion)))
+      (completion_owned && (group || !options->completion)))
     return options && options->version != OBJC3_SERVICE_ABI_VERSION
                ? OBJC3_SERVICE_UNSUPPORTED_VERSION
                : OBJC3_SERVICE_INVALID_ARGUMENT;
@@ -661,6 +661,10 @@ objc3_service_status start_task(
       return registered;
     }
   }
+  // Keep the caller's handle independent of the completion lease before
+  // scheduling. The callback may finish on a worker before start returns.
+  const bool caller_and_completion = out_task && completion_owned;
+  if (caller_and_completion) task->references.fetch_add(1, std::memory_order_relaxed);
   const objc3_service_status queued = objc3_task_schedule_resume(task);
   if (queued != OBJC3_SERVICE_OK) {
     {
@@ -679,6 +683,7 @@ objc3_service_status start_task(
       cancelled.kind = OBJC3_COMPLETION_CANCELLED;
       (void)objc3_task_complete(task, &cancelled);
     }
+    if (caller_and_completion) objc3_task_internal_release(task);
     objc3_task_internal_release(task);
     return queued;
   }
@@ -1361,9 +1366,11 @@ objc3_async_frame_start(objc3_async_frame *frame, objc3_executor_t *executor,
   return start_async_frame(frame, executor, actor, nullptr, out_task);
 }
 
-extern "C" objc3_service_status objc3_async_frame_submit(
+namespace {
+objc3_service_status submit_async_frame(
     objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
-    objc3_completion_callback completion, void *context) {
+    objc3_completion_callback completion, void *context, objc3_task_t **out_task) {
+  if (out_task) *out_task = nullptr;
   const auto validated = objc3_async_frame_validate(frame);
   if (validated != OBJC3_SERVICE_OK) return validated;
   if (!completion || (executor && actor)) return OBJC3_SERVICE_INVALID_ARGUMENT;
@@ -1387,10 +1394,24 @@ extern "C" objc3_service_status objc3_async_frame_submit(
   options.result_type = owned.result_type;
   options.completion = completion;
   options.completion_context = context;
-  const auto started = start_task(&options, nullptr, nullptr, nullptr, false, true);
+  const auto started = start_task(&options, out_task, nullptr, nullptr, false, true);
   if (started != OBJC3_SERVICE_OK) *frame = owned;
   if (global) objc3_executor_release(global);
   return started;
+}
+} // namespace
+
+extern "C" objc3_service_status objc3_async_frame_submit(
+    objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
+    objc3_completion_callback completion, void *context) {
+  return submit_async_frame(frame, executor, actor, completion, context, nullptr);
+}
+
+extern "C" objc3_service_status objc3_async_frame_submit_task(
+    objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
+    objc3_completion_callback completion, void *context, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  return submit_async_frame(frame, executor, actor, completion, context, out_task);
 }
 
 extern "C" objc3_service_status

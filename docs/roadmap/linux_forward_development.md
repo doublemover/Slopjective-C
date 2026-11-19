@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.280 / System 2.206 cancellable C async export](linux_async_c_completion_exports.md)
+returns a retained task handle from a companion entry. Independent Swift
+clients verify cancellation before and after handle installation.
+
 The [Source 2.279 / System 2.205 Objective-C generic signature change](linux_open_issue_sprint.md)
 preserves parameter positions through member types and specialized superclasses
 in source-free clients.

@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.swift-consumer-rows.v6",
+  "schema": "objc3c.swift-consumer-rows.v7",
   "module": "ForeignAPI",
   "cxx_module": "ForeignCxx",
   "rows": [
@@ -54,6 +54,11 @@
       "required": true
     },
     {
+      "id": "swift-task-cancellation",
+      "declaration": "swift_bridge_cancellable_async_c_task",
+      "required": true
+    },
+    {
       "id": "c-actor-continuation",
       "declaration": "SwiftBridgeCounter_add_async_c",
       "required": true
@@ -68,7 +73,7 @@
     {
       "id": "direct-swift-async-actors",
       "status": "metadata-preserved",
-      "reason": "Native actors and checked errors cross the generated C continuation bridge. Direct Swift importer synthesis and Swift cancellation of native tasks remain open."
+      "reason": "Native actors, checked errors and bidirectional task cancellation cross the generated C continuation bridge. Direct Swift importer synthesis remains open."
     },
     {
       "id": "product-pch-import",

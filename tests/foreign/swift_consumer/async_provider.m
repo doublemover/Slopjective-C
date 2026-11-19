@@ -42,6 +42,13 @@ static int swift_bridge_work(int value) async throws(id<Error>) {
   return await increment(value);
 }
 
+static void swift_bridge_cancellable(void) async throws(id<Error>) {
+  for (;;) {
+    try objc3_task_check_cancellation();
+    (void)await increment(0);
+  }
+}
+
 static __attribute__((nothrow, objc_executor(named("swift.no-registered-executor"))))
 int swift_bridge_cancelled(void) async {
   __builtin_trap();

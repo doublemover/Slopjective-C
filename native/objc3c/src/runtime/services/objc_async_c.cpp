@@ -105,14 +105,17 @@ __objc3_async_c_completion_error(const objc3_completion *completion) {
   std::abort();
 }
 
-extern "C" void __objc3_async_c_submit(
+extern "C" void __objc3_async_c_submit_with_task(
     objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
-    int checked, __objc3_async_c_delivery delivery) {
+    int checked, __objc3_async_c_delivery delivery, objc3_task_t **out_task) {
   if (!delivery) std::abort();
+  if (out_task) *out_task = nullptr;
   void *owned = _Block_copy((const void *)delivery);
+  const auto callback = checked ? deliver<true> : deliver<false>;
   const auto started = owned
-      ? objc3_async_frame_submit(frame, executor, actor,
-                                checked ? deliver<true> : deliver<false>, owned)
+      ? (out_task ? objc3_async_frame_submit_task(frame, executor, actor,
+                                                callback, owned, out_task)
+                  : objc3_async_frame_submit(frame, executor, actor, callback, owned))
       : OBJC3_SERVICE_OUT_OF_MEMORY;
   if (started == OBJC3_SERVICE_OK) return;
   if (owned) _Block_release(owned);

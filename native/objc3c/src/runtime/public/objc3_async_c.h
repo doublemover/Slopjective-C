@@ -37,12 +37,21 @@ objc3_service_status objc3_async_frame_submit(
     objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
     objc3_completion_callback completion, void *context);
 
+/* Submit with the same completion ownership and return a separate retained
+ * task. The caller can request cancellation and must release the handle.
+ * Releasing it leaves the completion's lease active. The caller keeps the
+ * output slot valid until submission returns. Failure stores null in it. */
+objc3_service_status objc3_async_frame_submit_task(
+    objc3_async_frame *frame, objc3_executor_t *executor, objc3_actor_t *actor,
+    objc3_completion_callback completion, void *context,
+    objc3_task_t **out_task);
+
 #if defined(__OBJC__) && defined(__BLOCKS__)
 /* Backing operations for the typed export declarations. */
 typedef void (^__objc3_async_c_delivery)(const objc3_completion *);
-void __objc3_async_c_submit(objc3_async_frame *, objc3_executor_t *,
-                           objc3_actor_t *, int checked,
-                           __objc3_async_c_delivery);
+void __objc3_async_c_submit_with_task(objc3_async_frame *, objc3_executor_t *,
+                                    objc3_actor_t *, int checked,
+                                    __objc3_async_c_delivery, objc3_task_t **);
 objc3_async_c_error __objc3_async_c_completion_error(const objc3_completion *);
 void __objc3_async_c_check_result(const objc3_async_frame *,
                                  objc3_async_result_kind, const char *,

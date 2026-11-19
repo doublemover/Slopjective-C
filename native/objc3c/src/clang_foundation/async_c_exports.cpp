@@ -497,11 +497,13 @@ CExportSource GenerateCExports(clang::ASTContext &context,
                       prototype->getCallConv() != clang::CC_C))
       return reject("the source result lifetime or calling convention cannot cross the C ABI");
     const auto thunk = name + "_async_c";
+    const auto cancellable = thunk + "_task";
     const auto callback = name + "_completion_t";
-    if (!selected.insert(thunk).second) return reject("the generated C symbol is already selected");
-    if (!tu->lookup(&context.Idents.get(thunk)).empty() ||
-        !tu->lookup(&context.Idents.get(callback)).empty())
-      return reject("the generated C thunk or callback name is already declared");
+    const auto submit = "__objc3_c_submit_" + name;
+    for (const auto &symbol : {thunk, cancellable, callback, submit}) {
+      if (!selected.insert(symbol).second || !tu->lookup(&context.Idents.get(symbol)).empty())
+        return reject("the generated name " + symbol + " is already declared or selected");
+    }
 
     std::string types;
     llvm::raw_string_ostream declarations_text(types);
@@ -542,8 +544,13 @@ CExportSource GenerateCExports(clang::ASTContext &context,
     const auto declaration = (returns_void
         ? "OBJC3_ASYNC_C_DECLARE_VOID(" + name
         : "OBJC3_ASYNC_C_DECLARE(" + name + ", " + result->spelling) + parameters + ");\n";
-    header << types << declaration;
+    const auto c_parameters = (parameters.empty() ? "" : parameters.substr(2) + ", ") +
+        "void * _Nullable __objc3_context, " + callback + " _Nonnull __objc3_completion";
+    const auto task_entry = "__OBJC3_ASYNC_C_LINKAGE objc3_task_t * _Nullable " +
+        cancellable + '(' + c_parameters + ')';
+    header << types << declaration << task_entry << ";\n";
     output.interface_exports.push_back(thunk);
+    output.interface_exports.push_back(cancellable);
     output.interface_exports.push_back(callback);
     if (actor_method && source_parameters.empty())
       message += " " + actor_method->method->getSelector().getAsString();
@@ -562,7 +569,8 @@ CExportSource GenerateCExports(clang::ASTContext &context,
         definitions << "#undef " << identifier << '\n';
     }
     definitions << "#undef " << name << "\n#undef " << thunk << "\n#undef "
-                << callback << "\n" << types << declaration;
+                << cancellable << "\n#undef " << submit << "\n#undef " << callback
+                << "\n" << types << declaration;
     if (owning_bridge || clang::getObjC3Executor(source)) {
       const auto bridge = "__objc3_c_executor_bridge_" + name;
       if (!tu->lookup(&context.Idents.get(bridge)).empty())
@@ -597,12 +605,19 @@ CExportSource GenerateCExports(clang::ASTContext &context,
       definitions << (owning_bridge ? "; })(); }\n" : "; }\n");
       frame = bridge + '(' + bridge_inputs + ')';
     }
-    definitions << "OBJC3_ASYNC_C_DEFINE_" << (returns_void ? "VOID" : result->kind)
-                << '(' << name;
-    if (!returns_void) definitions << ", " << result->spelling;
-    definitions << ", " << frame << ", "
+    definitions << "static void " << submit << "(objc3_task_t **__objc3_task_out, "
+                << c_parameters << ") { OBJC3_ASYNC_C_START_"
+                << (returns_void ? "VOID" : result->kind) << '(';
+    if (!returns_void) definitions << result->spelling << ", ";
+    definitions << frame << ", "
                 << (effects.Throws == clang::ObjC3ThrowsKind::None ? 0 : 1)
-                << ", 0, 0" << parameters << ")\n";
+                << ", 0, 0, __objc3_task_out); }\n";
+    const auto forwarded = (inputs.empty() ? "" : inputs + ", ") +
+        "__objc3_context, __objc3_completion";
+    definitions << "__OBJC3_ASYNC_C_LINKAGE void " << thunk << '(' << c_parameters
+                << ") { " << submit << "(0, " << forwarded << "); }\n"
+                << task_entry << " { objc3_task_t *__objc3_task = 0; " << submit
+                << "(&__objc3_task, " << forwarded << "); return __objc3_task; }\n";
   }
   output.header = "#pragma once\n#include <stdbool.h>\n"
                   "#include <objc3c/runtime/objc3_async_c.h>\n\n";

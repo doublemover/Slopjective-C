@@ -62,6 +62,15 @@ The native cancellation object maps to Swift `CancellationError`. Opaque actor
 receivers dispatch through the native actor executor and keep independent state.
 An additional type-checking control rejects a null receiver.
 
+Source 2.280 / System 2.206 uses generated task handles to propagate a Swift
+task's cancellation to the same native task that will deliver the callback.
+The Swift handler records cancellation that arrives before it receives the
+handle and keeps a retained reference while it requests cancellation. The
+callback owns continuation completion. The positive cases cancel before
+submission and after the handle is installed. They also release the handle of
+a successful task immediately and observe its normal callback. All eight
+ARC/MRC and optimization combinations pass on x86-64.
+
 Reports retain compiler versions, targets, resources, loader graphs, input and
 artifact hashes, commands, environments, diagnostics and exact results. The
 gate rechecks native and Swift installations and the loaded dependencies.
@@ -69,7 +78,7 @@ gate rechecks native and Swift installations and the loaded dependencies.
 The existing Linux native assurance workflow selects this gate for foreign
 emitter/module identity, foundation, Swift toolchain/fixture and runner changes,
 unknown comparisons, and its complete periodic/release selection. The terminal
-gate independently requires 24 executions, 15 controls, eleven admitted
+gate independently requires 24 executions, 15 controls, twelve admitted
 rows, relocation facts and execution oracles. It seals the compiler and runtime
 inputs from current native build products for the existing qualification job.
 Ordinary unrelated stdlib edits do not select Swift.
@@ -87,5 +96,5 @@ appropriate negative/execution controls.
 
 The admitted declarations are recorded in `tests/foreign/swift_consumer/rows.json`.
 Direct GNUstep Objective-C object import, Swift importer synthesis of async and
-actor methods, Swift-to-native task cancellation, arbitrary foreign attributes,
+actor methods, arbitrary foreign attributes,
 throwing C++ value contracts and serialized AST interchange remain open.

@@ -274,7 +274,7 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
         (destination / 'qualification.json').write_text(json.dumps(broken))
         with pytest.raises(ValueError, match='different emitted interface'):
             suite_results(native_root, 'swift-consumer')
-        for field in ('checked_error', 'cancellation'):
+        for field in ('checked_error', 'cancellation', 'pre_cancelled', 'cancelled_after_submit'):
             broken = copy.deepcopy(report)
             broken['async_cases'][0]['result'][field] = 1
             (destination / 'qualification.json').write_text(json.dumps(broken))

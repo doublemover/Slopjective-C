@@ -24,10 +24,11 @@ CXX_EXPECTED = {'before': 40, 'count': 42, 'total': 2147483690,
                 'owner_before': 40, 'owner_after': 42, 'unique_value': 42,
                 'unique_allocations': 1, 'unique_destructions': 1}
 CXX_LIFETIME = ('owner_allocations', 'owner_destructions', 'owner_copies', 'unique_moves')
-ASYNC_EXPECTED = {'value': 42, 'checked_error': True, 'cancellation': True, 'actor': 42, 'other_actor': 7}
+ASYNC_EXPECTED = {'value': 42, 'checked_error': True, 'cancellation': True,
+                  'pre_cancelled': True, 'cancelled_after_submit': True, 'actor': 42, 'other_actor': 7}
 ASYNC_CASES = {(ownership, native, swift) for ownership in ('arc', 'mrc')
                for native in ('O0', 'O2') for swift in ('Onone', 'O')}
-QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v5'
+QUALIFICATION_SCHEMA = 'objc3c.swift-consumer-qualification.v6'
 CXX_IMPORT = ('-cxx-interoperability-mode=default', '-Xcc', '-std=c++20')
 REQUIRED_ROWS = {'renamed-primitive': 'objc3_swift_value',
     'nonnull-pointer': 'objc3_swift_read', 'newtype': 'ObjC3SwiftAmount',
@@ -37,6 +38,7 @@ REQUIRED_ROWS = {'renamed-primitive': 'objc3_swift_value',
     'cxx-move-only-value': 'MeterAPI::adjustedUniqueReading',
     'async-c-continuation': 'swift_bridge_work_async_c',
     'async-c-cancellation': 'swift_bridge_cancelled_async_c',
+    'swift-task-cancellation': 'swift_bridge_cancellable_async_c_task',
     'c-actor-continuation': 'SwiftBridgeCounter_add_async_c'}
 NEGATIVES = {
     'old-spelling': ('import ForeignAPI\nlet value = objc3_swift_value(41)\n', "'objc3_swift_value' has been renamed to 'projectedValue(_:)'"),
@@ -91,7 +93,7 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
 
 def row_manifest(path):
     value = json.loads(path.read_text())
-    if (value.get('schema') != 'objc3c.swift-consumer-rows.v6' or
+    if (value.get('schema') != 'objc3c.swift-consumer-rows.v7' or
             value.get('targets') != [entry[1] for entry in HOSTS.values()] or value.get('module') != 'ForeignAPI' or
             value.get('cxx_module') != 'ForeignCxx' or
             not value.get('rows') or len(value['rows']) != len(REQUIRED_ROWS) or
@@ -163,7 +165,8 @@ def qualify_async_bridge(output, fixture, sdk, swift_root, target, loader, run, 
             obj, header = provider / 'provider.o', provider / 'generated.h'
             run(name + '-provider', [sdk / 'bin/objc3c', provider / 'async_provider.m', '--objc3',
                 '--emit-object', obj, '--export-c-async', 'swift_bridge_work', '--export-c-async',
-                'swift_bridge_cancelled', '--export-c-async', 'SwiftBridgeCounter::add:', '--emit-c-header',
+                'swift_bridge_cancelled', '--export-c-async', 'swift_bridge_cancellable',
+                '--export-c-async', 'SwiftBridgeCounter::add:', '--emit-c-header',
                 header, '--', '-std=c17', '-' + native_opt, '-fblocks', '-fobjc-runtime=gnustep-2.2',
                 '-fobjc-exceptions', *(['-fobjc-arc', '-fobjc-arc-exceptions'] if ownership == 'arc'
                                        else ['-fno-objc-arc']),
