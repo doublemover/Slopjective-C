@@ -6,6 +6,16 @@ import pytest
 from scripts.objc3c_toolchain import qualify_module_names_collision_debugger as qualification
 
 
+def test_named_frame_values_exclude_expression_temporaries():
+    transcript = """\
+(int) $0 = 20
+(int) __objc3_m_123_private_tls = 1
+(int) $15 = 42
+(int) private_tls = -2
+"""
+    assert qualification.named_int_values(transcript) == [1, -2]
+
+
 def test_collision_debugger_failure_replaces_prior_success(tmp_path, monkeypatch):
     sdk = tmp_path / 'sdk'
     (sdk / 'bin').mkdir(parents=True)
