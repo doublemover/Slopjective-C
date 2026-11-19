@@ -3,8 +3,8 @@
 The [GitHub Releases page](https://github.com/doublemover/Slopjective-C/releases)
 is the public download location. Each published Linux SDK preview provides a
 versioned release manifest with the source commit, archive digests, SDK seals,
-compiler build identities, architecture, Linux ABI minimums, and qualification
-run IDs. The release notes describe the supported feature set and rebuild
+compiler build identities, architecture, extension ABI, Linux ABI minimums, and
+qualification run links. The release notes describe the supported feature set and rebuild
 requirements. If there is no published preview, the source build is available
 through the [maintainer workflow](../runbooks/objc3c_maintainer_workflows.md).
 

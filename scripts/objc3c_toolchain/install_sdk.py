@@ -104,7 +104,8 @@ export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
         pending.unlink(missing_ok=True)
         temporary.unlink(missing_ok=True)
         raise
-    # Sole commit point. No required writes or fallible cleanup follow it.
+    # The pointer replacement commits activation. The caller reports any
+    # later staging-directory cleanup error separately.
     try:
         os.replace(temporary, active)
     except BaseException:

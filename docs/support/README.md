@@ -5,8 +5,8 @@ The current Linux release boundary is recorded in the
 [native language capability inventory](../../schemas/objc3-language-capabilities.json).
 Published release manifests bind support claims to the shipped SDK.
 
-The matrix, evidence map, and validation commands below preserve the earlier
-toolchain's evidence contracts. Use the [native CLI reference](../runbooks/objc3c_public_command_surface.md)
+The matrix and evidence map below preserve the earlier toolchain's contracts.
+Use the [native CLI reference](../runbooks/objc3c_public_command_surface.md)
 for runnable commands on the current Linux toolchain.
 The archived generated projections refer to source files removed by the native
 cutover. The [native capability reference](clang_foundation_capabilities.json)
@@ -81,7 +81,7 @@ reserved rows. It can explain missing prerequisites and blockers, but it cannot
 promote an umbrella row or create a public support claim unless the matrix row
 itself changes to `implemented` with evidence.
 
-## Change Rules
+## Historical change rules
 
 - Add or change a support claim in `capability_matrix.json` first.
 - Add matching evidence rows in `evidence_map.json`; the row key must match
@@ -118,17 +118,16 @@ itself changes to `implemented` with evidence.
   validation, push, and remote issue actions explicitly deferred unless those
   operations actually ran.
 
-## Validation Owner Modules
+## Historical validation owners
 
-`scripts/validate_capability_docs.py` remains the stable public validator
-entrypoint. Its implementation is split under
+`scripts/validate_capability_docs.py` was the validator entrypoint for these
+records. Its implementation is split under
 `scripts/capability_docs_validator/` so matrix shape, support-claim manifest
 state rules, evidence-map projection keys, docs references, and CLI behavior have
 separate owners.
 
-`scripts/build_capability_support_docs.py` owns the generated markdown
+`scripts/build_capability_support_docs.py` generated the Markdown
 projections for `capability_matrix.md`, `evidence_map.md`, and
-`umbrella_readiness.md`. The validator checks those generated files for drift,
-so public support prose fails closed if it claims a behavior above the support
-matrix, evidence map, umbrella readiness gates, canonical fixture manifest, or
-conformance phase-owner contract.
+`umbrella_readiness.md` against the previous toolchain's source evidence.
+Current documentation CI checks the native inventory with
+`python -m scripts.objc3c_toolchain.generate_features --check`.
