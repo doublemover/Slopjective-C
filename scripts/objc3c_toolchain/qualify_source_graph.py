@@ -13,8 +13,10 @@ import tempfile
 
 if __package__:
     from .diagnostic_termination import require_diagnostic_exit
+    from .sdk_example import dependencies
 else:
     from diagnostic_termination import require_diagnostic_exit
+    from sdk_example import dependencies
 
 
 def require_private_visibility_exit(wrapper: subprocess.CompletedProcess, outcome: Path,
@@ -80,6 +82,13 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
             return report
 
         cold = run('cold', ())
+        if language == 'c++':
+            app_dependencies = set(dependencies(build / 'application/module.d', build))
+            imported = {path for name in cold['modules']
+                        for path in (build / 'modules' / name / (name + '.objc3i'),
+                                     build / 'modules' / name / (name + '.objc3i.json'))}
+            if not imported <= app_dependencies or any(not path.is_file() for path in app_dependencies):
+                raise ValueError('C++ compilation depfile must bind the real source and sidecar of every admitted import')
         warm = run('warm', all_nodes)
         installation = cold['installation']
         expected_mode = {'language': language, 'standard': standard, 'ownership': ownership}
@@ -141,8 +150,9 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         log = build / 'application/compile.log'
         retained_log = output / f'{case_prefix}-private-visibility.log'
         shutil.copyfile(log, retained_log)
-        name = 'right' if language == 'c++' else 'fixture.Right'
-        code = require_private_visibility_exit(rejected, build / 'application/compile-result.json', retained_log, name)
+        diagnostic = ("error: use of undeclared identifier 'right'" if language == 'c++' else
+            "error: module-qualified name '@fixture.Right.right' refers to a module that is not imported")
+        code = require_private_visibility_exit(rejected, build / 'application/compile-result.json', retained_log, diagnostic)
         if (hashlib.sha256(obj.read_bytes()).hexdigest() != before or
                 (build / 'build-report.json').exists()):
             raise ValueError('private transitive visibility did not reject with the object preserved')

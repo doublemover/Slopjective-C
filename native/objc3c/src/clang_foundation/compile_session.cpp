@@ -27,6 +27,7 @@
 #include "clang/Frontend/CompilerInvocation.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Frontend/MultiplexConsumer.h"
+#include "clang/Frontend/Utils.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Lex/Lexer.h"
 #include "llvm/Support/JSON.h"
@@ -174,7 +175,25 @@ constexpr const char *kEagerTaskHeader =
     "/__objc3_import_runtime/objc3_task.hpp";
 constexpr const char *kEagerRuntimePrelude =
     "/__objc3_import_runtime/prelude.h";
+constexpr const char *kAdmittedInterfaceGuards = "/__objc3_admitted_interface_guards.h";
 constexpr const char *kEagerRuntimeReady = "__objc3_import_runtime_ready";
+
+class InterfaceDependencyFileGenerator final : public clang::DependencyFileGenerator {
+ public:
+  InterfaceDependencyFileGenerator(const clang::DependencyOutputOptions &options,
+                                   std::vector<std::string> memory_inputs)
+      : DependencyFileGenerator(options), memory_inputs_(std::move(memory_inputs)) {}
+
+  void maybeAddDependency(llvm::StringRef filename, bool from_module, bool is_system,
+                          bool is_module, bool direct_import, bool missing) override {
+    if (llvm::is_contained(memory_inputs_, filename)) return;
+    DependencyFileGenerator::maybeAddDependency(filename, from_module, is_system, is_module,
+                                                direct_import, missing);
+  }
+
+ private:
+  std::vector<std::string> memory_inputs_;
+};
 
 class CExportConsumer final : public clang::ASTConsumer {
 public:
@@ -408,6 +427,28 @@ class ContractAction final : public NativeAction {
       : request_(request), result_(result), imports_(imports),
         lookup_source_(std::move(lookup)) {}
  protected:
+  bool BeginInvocation(clang::CompilerInstance &compiler) override {
+    if (!NativeAction::BeginInvocation(compiler)) return false;
+    auto &options = compiler.getDependencyOutputOpts();
+    if (!imports_ || options.OutputFile.empty()) return true;
+    // Prepared imports have real artifact inputs and synthetic forced includes.
+    // Only the artifact paths can be read and hashed by an external build tool.
+    for (const auto &input : result_.interface_input_paths)
+      options.ExtraDeps.emplace_back(input, clang::EDK_DepFileEntry);
+    std::vector<std::string> memory_inputs;
+    for (const auto &[name, _] : compiler.getPreprocessorOpts().RemappedFileBuffers)
+      if (name == kAdmittedInterfaceGuards || name == kEagerRuntimePrelude ||
+          name == kEagerRuntimeHeader || name == kEagerTaskHeader ||
+          name == kEagerCompletionHeader || name == kEagerKeyPathHeader)
+        memory_inputs.push_back(name);
+    if (!memory_inputs.empty()) {
+      compiler.addDependencyCollector(std::make_shared<InterfaceDependencyFileGenerator>(
+          options, std::move(memory_inputs)));
+      options.OutputFile.clear();
+    }
+    return true;
+  }
+
   bool BeginSourceFileAction(clang::CompilerInstance &compiler) override {
     if (!NativeAction::BeginSourceFileAction(compiler)) return false;
     if (!request_.module_imports.empty()) {
@@ -741,11 +782,10 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
         // Parser lookahead can enter a dependency include before the deferred
         // AST-import callback runs. Establish the admitted guards before any
         // source tokens, without putting them in user -D/reparse arguments.
-        constexpr const char *path="/__objc3_admitted_interface_guards.h";
         auto &preprocessor=invocation->getPreprocessorOpts();
-        preprocessor.addRemappedFile(path,
-            llvm::MemoryBuffer::getMemBufferCopy(guards,path).release());
-        preprocessor.Includes.insert(preprocessor.Includes.begin(),path);
+        preprocessor.addRemappedFile(kAdmittedInterfaceGuards,
+            llvm::MemoryBuffer::getMemBufferCopy(guards,kAdmittedInterfaceGuards).release());
+        preprocessor.Includes.insert(preprocessor.Includes.begin(),kAdmittedInterfaceGuards);
       }
     }
     return FrontendActionFactory::runInvocation(std::move(invocation), files,
