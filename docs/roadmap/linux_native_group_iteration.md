@@ -40,6 +40,11 @@ consumes that item and releases its reserved owner during frame destruction.
 Cancelling or disposing this adapter does not explicitly cancel the shared
 group; ordinary last-owner rules still apply.
 
+Explicit cancellation of the group wakes pending next calls whenever no child
+is ready. Ready children retain completion-order priority, and later terminal
+children can still be polled. The group's cleanup join continues to wait for
+children to finish. [Checked cancellation](linux_checked_await_cancellation.md)
+
 The compiler builtin `__builtin_objc3_async_group_next_plan((Optional(T) *)0)`
 returns immutable metadata generated from the canonical AST carrier representation.
 The operand is unevaluated. The plan carries the actual element/result descriptors,

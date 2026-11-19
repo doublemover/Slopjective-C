@@ -412,7 +412,9 @@ objc3_service_status objc3_task_group_close(objc3_task_group_t *group);
 objc3_service_status objc3_task_group_cancel(objc3_task_group_t *group);
 /* next never blocks or pumps. It returns one retained direct child task in
  * completion order, NOT_READY while none is ready, or CLOSED after a closed
- * group drains. Nested groups are joined recursively, not flattened here. */
+ * group drains. If the group is explicitly cancelled and no child is ready,
+ * it returns CANCELLED. A later terminal child remains available. Nested
+ * groups are joined recursively, not flattened here. */
 objc3_service_status objc3_task_group_next(objc3_task_group_t *group,
                                           objc3_task_t **out_task);
 /* join waits for closed groups, terminal tasks, callbacks and frame cleanup.
@@ -479,6 +481,8 @@ objc3_service_status objc3_task_group_scope_finish(
  * all direct tasks were consumed. Nested groups are not flattened. An optional
  * expected_type is copied and checked before consumption. TYPE_MISMATCH leaves
  * the task available. Rejected registration leaves both slots unchanged.
+ * Explicit group cancellation wakes waiters without a ready child with
+ * CANCELLED. It leaves later child completions available for polling.
  * Cancellation before reservation consumes nothing; after reservation the
  * frame owns its task even if cancellation or dispatch failure prevents normal
  * result access. Frame cleanup must release a nonnull result slot. Failed

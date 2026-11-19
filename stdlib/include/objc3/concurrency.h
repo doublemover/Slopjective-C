@@ -238,6 +238,7 @@ static inline objc3_task_t *objc3_task_detached(objc3_task_throwing_work work)
  * support record, object and Block element types. The compiler supplies exact
  * Optional layout and ownership operations. Construction retains the group
  * immediately; first resume closes its tree. A present nil remains Some(nil).
+ * Explicit group cancellation wakes iteration when no child is ready.
  * A typed mismatch leaves the selected task available for another consumer.
  * The physical local shim has the ordinary shared-frame C ABI; callers see
  * only the logical async declaration, including its checked error domain. */

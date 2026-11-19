@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 275,
+        "minor": 276,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Explicit group cancellation wakes pending C and C++ next calls without a ready child, preserves later completion-order results and leaves the quiescence join intact. Checked C await exposes the distinguished cancellation Error. Matching SDK acceptance pending",
         "Generated C checked and async signatures support ordinary native C function pointers with typed aliases, nullable failure results, pointer identity and source-free replay. Namespace-qualified free functions and namespace aliases preserve native lookup and reject flattened C name collisions. Variadic and effectful callbacks require separate adapters. Matching SDK acceptance pending",
         "Generated C exports preserve nested input nullability and expose nullable pointer results on checked failure or cancellation. An independent Swift caller imports and executes the checked C header. The pinned Swift C++ gate also requires a move-only by-value owner, one allocation and destruction, and Copyable rejection. Native AArch64 and matching SDK acceptance pending",
         "Independent pinned Swift import and execution cover nonthrowing copyable owning C++ values, native copies, complete destruction, and a deleted-destructor interface mutation. Native AArch64 and wider Swift ABI qualification pending",
@@ -423,12 +424,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 201,
+        "minor": 202,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Explicit group cancellation wakes pending C and C++ next calls without a ready child, preserves later completion-order results and leaves the quiescence join intact. Checked C await exposes the distinguished cancellation Error. Matching SDK acceptance pending",
         "Generated C checked and async signatures support ordinary native C function pointers with typed aliases, nullable failure results, pointer identity and source-free replay. Namespace-qualified free functions and namespace aliases preserve native lookup and reject flattened C name collisions. Variadic and effectful callbacks require separate adapters. Matching SDK acceptance pending",
         "Generated C exports preserve nested input nullability and expose nullable pointer results on checked failure or cancellation. An independent Swift caller imports and executes the checked C header. The pinned Swift C++ gate also requires a move-only by-value owner, one allocation and destruction, and Copyable rejection. Native AArch64 and matching SDK acceptance pending",
         "Independent pinned Swift import and execution cover nonthrowing copyable owning C++ values, native copies, complete destruction, and a deleted-destructor interface mutation. Native AArch64 and wider Swift ABI qualification pending",

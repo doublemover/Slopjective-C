@@ -728,7 +728,8 @@ public:
             &status, &result));
       }
       task_handle<U> await_resume() {
-        if (objc3_task_is_cancel_requested(parent)) throw task_cancelled();
+        if (status == OBJC3_SERVICE_CANCELLED || objc3_task_is_cancel_requested(parent))
+          throw task_cancelled();
         if (status == OBJC3_SERVICE_CLOSED) return {};
         task_detail::check(status);
         return task_handle<U>::adopt_native(&result);

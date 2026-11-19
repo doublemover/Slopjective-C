@@ -34,3 +34,10 @@ throwing joins, 16 checkpoint invocations across both outcomes, source-free
 checkpoint calls, and canonical C callback delivery after checked propagation.
 Fresh patch application reproduces the compiler changes. Full profile and
 matching SDK release acceptance remain open.
+
+Source 2.276 / System 2.202 wakes suspended group iteration after explicit
+cancellation if there is no ready child. The shared group leaves later child
+completions available and its cleanup join still waits for quiescence. C
+polling reports `CANCELLED`, unchecked native frame iteration completes as
+cancelled, and the checked root `Error` path observes the distinguished
+cancellation value. C++ `group.next<T>()` resumes with `task_cancelled`.

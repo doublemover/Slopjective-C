@@ -112,6 +112,14 @@ static int group_checked_error(objc3_task_group_t *group) __objc3_async_frame {
     return hasValue(item)?0:-1;
   } __objc3_catch(id<Error> error) { return error?79:0; }
 }
+static int group_checked_cancellation(objc3_task_group_t *group) __objc3_async_frame {
+  __objc3_do {
+    Optional(int) item=try await next_existing_checked(group);
+    return hasValue(item)?1:0;
+  } __objc3_catch(id<Error> error) {
+    return objc3_async_c_error_is_cancellation(error)?42:-1;
+  }
+}
 static int group_actor_sum(objc3_task_group_t *group,uint64_t actor,uint64_t executor,
                            unsigned *entered)
     __objc3_async_frame {
@@ -142,6 +150,41 @@ static void group_gate_resume(objc3_task_t *task,void *context) {
   completion.version=OBJC3_SERVICE_ABI_VERSION;completion.kind=OBJC3_COMPLETION_SUCCESS;
   assert(objc3_task_get_result_type(task,&completion.result_type)==OBJC3_SERVICE_OK);
   assert(objc3_task_complete(task,&completion)==OBJC3_SERVICE_OK);
+}
+static void group_explicit_cancellation(objc3_executor_t *executor) {
+  objc3_task_t *model=join_start(executor,group_int_source(42));
+  (void)join_completion(executor,model);
+  const objc3_async_result_type *type=NULL;
+  assert(objc3_task_get_result_type(model,&type)==OBJC3_SERVICE_OK);
+  GroupNextGate gate={0};
+  objc3_task_start_options options={0};
+  options.struct_size=sizeof(options);options.version=OBJC3_SERVICE_ABI_VERSION;
+  options.executor=executor;options.frame=&gate;options.resume=group_gate_resume;
+  options.destroy=group_gate_destroy;options.result_type=type;
+  objc3_task_t *held=NULL;
+  assert(objc3_task_start(&options,&held)==OBJC3_SERVICE_OK);
+  objc3_task_group_t *group=group_with(held);
+  objc3_task_t *plain=join_start(executor,group_sum(group));
+  objc3_task_t *checked=join_start(executor,group_checked_cancellation(group));
+  uint32_t executed=0;
+  assert(objc3_executor_pump(executor,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);
+  objc3_completion completion={0};
+  assert(objc3_task_get_completion(plain,&completion)==OBJC3_SERVICE_NOT_READY);
+  assert(objc3_task_get_completion(checked,&completion)==OBJC3_SERVICE_NOT_READY);
+  assert(objc3_task_group_cancel(group)==OBJC3_SERVICE_OK);
+  assert(join_completion(executor,plain).kind==OBJC3_COMPLETION_CANCELLED);
+  join_check_value(executor,checked,42);
+  assert(objc3_task_get_completion(held,&completion)==OBJC3_SERVICE_NOT_READY);
+  completion=(objc3_completion){0};
+  completion.struct_size=sizeof(completion);completion.version=OBJC3_SERVICE_ABI_VERSION;
+  completion.kind=OBJC3_COMPLETION_CANCELLED;
+  assert(objc3_task_complete(held,&completion)==OBJC3_SERVICE_OK);
+  objc3_task_t *selected=NULL;
+  assert(objc3_task_group_next(group,&selected)==OBJC3_SERVICE_OK && selected==held);
+  objc3_task_release(selected);
+  assert(objc3_task_group_join(group)==OBJC3_SERVICE_OK);
+  objc3_task_release(plain);objc3_task_release(held);objc3_task_release(model);
+  objc3_task_group_release(group);
 }
 static int group_gated_source(objc3_task_t *gate) __objc3_async_frame {
   __objc3_await join_existing_void(gate);return 42;
@@ -207,6 +250,7 @@ static void group_next_witnesses(objc3_executor_t *executor) {
   group=group_with(NULL);join_check_value(executor,join_start(executor,group_sum(group)),0);
   objc3_task_group_release(group);
   join_check_failure(executor,join_start(executor,group_sum(NULL)),OBJC3_SERVICE_INVALID_ARGUMENT);
+  group_explicit_cancellation(executor);
 
   unsigned destroyed=0;
   SpawnOwner *owner=[SpawnOwner new];owner->destroyed=&destroyed;owner->number=42;

@@ -7,6 +7,10 @@ job binds all partitions to the producer's archive SHA-256 and still verifies
 the complete disjoint variant inventory. The shared archive expires after
 one day.
 
+The [Source 2.276 / System 2.202 group cancellation](linux_checked_await_cancellation.md)
+wakes pending C and C++ group iteration and keeps later results and cleanup
+joins available.
+
 The [Source 2.275 / System 2.201 C callback ABI](linux_async_c_completion_exports.md)
 exports ordinary C function pointers through checked synchronous and async
 entries, with typed aliases, pointer identity and source-free replay. Qualified

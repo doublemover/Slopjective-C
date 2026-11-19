@@ -461,7 +461,7 @@ void next_resume(objc3_task_t *task, void *opaque) {
            OBJC3_SERVICE_INVALID_ARGUMENT);
     return;
   }
-  if (objc3_task_is_cancel_requested(task)) {
+  if (objc3_task_is_cancel_requested(task) || frame.status == OBJC3_SERVICE_CANCELLED) {
     assert(frame.status == OBJC3_SERVICE_CANCELLED && !frame.result);
     complete(task, OBJC3_COMPLETION_CANCELLED);
   } else {
@@ -522,6 +522,50 @@ void next_c_slots_and_descriptor_copy() {
     objc3_task_release(parent);
     objc3_task_release(child);
   }
+  objc3_executor_release(destination);
+}
+
+void next_explicit_group_cancellation() {
+  auto *destination = executor();
+  auto group = objc3::task_group_handle::create();
+  auto nested = group.child();
+  HeldFrame child_frame;
+  auto *child = start_held(destination, child_frame, objc3::task_detail::result_type<int>());
+  assert(objc3_task_group_add(nested.native_handle(), child) == OBJC3_SERVICE_OK);
+  group.close();
+  NextFrame raw_frame{};
+  raw_frame.group = nested.native_handle();
+  auto *raw = start_next(destination, raw_frame);
+  auto cpp = next_task<int>(nested).start(destination);
+  pump(destination);
+  assert(raw_frame.resumes == 1);
+  pending(child);
+  pending(cpp.native_handle());
+
+  group.cancel();
+  group.cancel();
+  objc3_task_t *polled = nullptr;
+  assert(objc3_task_group_next(nested.native_handle(), &polled) == OBJC3_SERVICE_CANCELLED);
+  assert(!polled && objc3_task_is_cancel_requested(child));
+  assert(!objc3_task_is_cancel_requested(raw));
+  pump(destination);
+  assert(raw_frame.resumes == 2 && raw_frame.destroyed == 1 && !raw_frame.result);
+  assert(raw_frame.status == OBJC3_SERVICE_CANCELLED);
+  bool cancelled = false;
+  try { (void)cpp.result(); }
+  catch (const objc3::task_cancelled &) { cancelled = true; }
+  assert(cancelled);
+  pending(child);
+
+  complete(child, OBJC3_COMPLETION_CANCELLED);
+  assert(objc3_task_group_next(nested.native_handle(), &polled) == OBJC3_SERVICE_OK);
+  assert(polled == child);
+  objc3_task_release(polled);
+  assert(objc3_task_group_next(nested.native_handle(), &polled) == OBJC3_SERVICE_CANCELLED);
+  assert(!polled);
+  group.wait();
+  objc3_task_release(raw);
+  objc3_task_release(child);
   objc3_executor_release(destination);
 }
 
@@ -1585,6 +1629,7 @@ int main() {
   next_cancellation_ownership();
   next_dispatch_failure_cleanup();
   next_c_slots_and_descriptor_copy();
+  next_explicit_group_cancellation();
   next_nested_and_actor_destinations();
   next_worker_registration_races();
   next_failed_and_cancelled_results();
