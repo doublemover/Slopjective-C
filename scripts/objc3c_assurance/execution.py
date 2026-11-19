@@ -5,6 +5,7 @@ import json
 import math
 from pathlib import Path
 import subprocess
+import sys
 import time
 
 from scripts.objc3c_toolchain.binary_packages import write_json
@@ -107,6 +108,7 @@ def execute_suites(suites: list[dict], *, output: Path, report: dict, execute, s
             row.update(status='FAIL', error=str(error))
             if not isinstance(error, Exception) or suite['id'] in ('foundation', 'runtime'):
                 raise
+            print(f"native assurance {suite['id']} failed: {error}", file=sys.stderr, flush=True)
             failures.append(suite['id'])
         finally:
             save()
