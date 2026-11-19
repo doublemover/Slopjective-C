@@ -98,6 +98,16 @@ later actor mailbox turn destroys its context. Native verification matched
 all 64 maintained history seeds on the manual backend and 20 worker executions
 per seed, for 1,344 matching traces.
 
+The ordinary, sanitizer and analysis compilers shared a stale rejection for a
+checked method returning a plain C record. Its replacement checks the register
+ABI and hidden error branch on x86-64 and AArch64 in ARC and MRC. A flexible-array
+record still receives the unsupported-ABI diagnostic.
+
+Release qualification starts the fresh Debian and Ubuntu installs as soon as
+the archive producer succeeds. They run alongside the remaining native and
+analysis owners. The terminal release job requires the native gate, both fresh
+installs and implementation analysis to pass on the selected host.
+
 The SDK frontend CTest plan records the executable's command argument index
 from each CMake registration. Direct tests start with their executable. The
 meta, diagnostic and text-file CLI wrappers pass it as an argument. Serial

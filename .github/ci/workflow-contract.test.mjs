@@ -285,6 +285,10 @@ for (const fault of [
   "foreign analysis host",
   "unbound producer archive",
   "foreign installed archive",
+  "install waits for other consumers",
+  "skipped install matrix",
+  "missing install outcome",
+  "optional release analysis",
 ]) {
   test(`SDK release rejects ${fault}`, () => {
     const owner = yaml.load(native),
@@ -308,9 +312,15 @@ for (const fault of [
         (step) => step.name === "Preserve qualified SDK archive",
       ).with.name = "objc3c-linux-sdk";
     if (fault === "foreign installed archive")
-      caller.jobs.install.steps.find((step) =>
+      owner.jobs["archive-install"].steps.find((step) =>
         step.uses?.startsWith("actions/download-artifact@"),
       ).with.name = "objc3c-linux-sdk-linux-aarch64";
+    if (fault === "install waits for other consumers")
+      owner.jobs["archive-install"].needs.push("coverage-aggregate");
+    if (fault === "skipped install matrix") caller.jobs.build.with.archive_install = false;
+    if (fault === "missing install outcome")
+      owner.jobs.gate.needs = owner.jobs.gate.needs.filter((id) => id !== "archive-install");
+    if (fault === "optional release analysis") caller.jobs.release.needs = ["build"];
 
     assert.throws(() => validateNativeRelease(yaml.dump(owner), yaml.dump(caller)));
   });
@@ -407,6 +417,11 @@ test("native containers admit TSan personality and debugger process controls", a
     }
   }
 });
+test("native workflow rejects a missing terminal dependency", () => {
+  const owner = yaml.load(native);
+  owner.jobs.gate.needs = owner.jobs.gate.needs.filter((id) => id !== "product-producer");
+  assert.throws(() => validateNativeGate(yaml.dump(owner)));
+});
 for (const [name, before, after] of [
   ["missing aggregate", "  gate:", "  renamed:"],
   [
@@ -416,11 +431,6 @@ for (const [name, before, after] of [
   ],
   ["automatic expensive PR", "on:\n", "on:\n  pull_request:\n"],
   ["privileged PR trigger", "on:\n", "on:\n  pull_request_target:\n"],
-  [
-    "missing dependency",
-    "    needs: [plan, product-producer, product-consumers, asan-foundation-producer, instrumented-product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]",
-    "    needs: [plan, product-producer]",
-  ],
   ["missing artifact normalized", "if-no-files-found: error", "if-no-files-found: ignore"],
   [
     "missing activated checkout trust",

@@ -29,32 +29,21 @@ jobs:
     uses: ./.github/workflows/native-assurance.yml
     with:
       linux_host: ${{ inputs.linux_host }}
-  install:
+      archive_install: true
+  release:
+    name: Require complete native SDK release evidence
     needs: [build, implementation-analysis]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        distribution: ["debian:13", "ubuntu:26.04"]
-    container:
-      image: ${{ matrix.distribution }}
-      options: --security-opt seccomp=unconfined
+    timeout-minutes: 5
+    if: always()
     steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
-          path: /release
-      - name: Install, relocate, build, embed, debug and run the shipped archive
-        shell: sh
+      - name: Require archive, clean installs and implementation analysis
+        env:
+          SDK_RESULT: ${{ needs.build.result }}
+          ANALYSIS_RESULT: ${{ needs.implementation-analysis.result }}
+        shell: bash
         run: |
-          archive_count=$(find /release -name '*.tar.zst' -type f | wc -l)
-          receipt_count=$(find /release -name '*.tar.json' -type f | wc -l)
-          if [ "$archive_count" -ne 1 ] || [ "$receipt_count" -ne 1 ]; then
-            echo "expected one archive and one receipt; found $archive_count and $receipt_count" >&2
+          if [[ "$SDK_RESULT" != success || "$ANALYSIS_RESULT" != success ]]; then
+            echo "SDK and install qualification: $SDK_RESULT, implementation analysis: $ANALYSIS_RESULT" >&2
             exit 1
           fi
-          archive=$(find /release -name '*.tar.zst' -type f)
-          receipt=$(find /release -name '*.tar.json' -type f)
-          expected_sha=$(sed -n 's/ *"archive_sha256": "\([a-f0-9]*\)".*/\1/p' "$receipt")
-          [ "${#expected_sha}" -eq 64 ] || { echo 'archive receipt has no SHA-256' >&2; exit 1; }
-          sh /release/scripts/qualify_linux_archive.sh "$archive" "$expected_sha" /opt/objc3c

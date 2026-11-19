@@ -201,7 +201,10 @@ def test_workflow_has_periodic_full_gate_and_automatic_cleanup():
     assert 'workflow_call:' in native
     assert 'product-producer:' in native and 'Preserve qualified SDK archive' in native
     assert 'needs: [plan, product-producer]' in native
-    assert 'name: objc3c-linux-sdk' in native and 'name: objc3c-linux-sdk' in release
+    installer = native.split('  archive-install:\n', 1)[1].split('  gate:\n', 1)[0]
+    assert 'archive_install: true' in release
+    assert 'needs: [plan, product-producer]' in installer
+    assert 'name: objc3c-linux-sdk' in installer
     assert 'out/toolchains/sdk-cache/*.tar.zst' in native
     runner = (root / 'scripts/objc3c_implementation_assurance/runner.py').read_text()
     assert "PROFILE = 'compiler-asan-ubsan'" in runner

@@ -40,6 +40,10 @@ on:
         description: Native compiler and SDK architecture
         type: string
         default: linux-x86_64
+      archive_install:
+        description: Require fresh Debian and Ubuntu installations of the produced SDK
+        type: boolean
+        default: false
 env:
   OBJC3C_REQUESTED_HOST: ${{ inputs.linux_host || 'linux-x86_64' }}
 permissions:
@@ -907,10 +911,55 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  archive-install:
+    name: Install the exact Linux SDK (${{ matrix.distribution }})
+    needs: [plan, product-producer]
+    if: inputs.archive_install && needs.plan.outputs.native == 'true'
+    runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        distribution: ["debian:13", "ubuntu:26.04"]
+    container:
+      image: ${{ matrix.distribution }}
+      options: --security-opt seccomp=unconfined
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}
+          path: /release
+      - name: Install, relocate, build, embed, debug and run the shipped archive
+        shell: sh
+        run: |
+          archive_count=$(find /release -name '*.tar.zst' -type f | wc -l)
+          receipt_count=$(find /release -name '*.tar.json' -type f | wc -l)
+          if [ "$archive_count" -ne 1 ] || [ "$receipt_count" -ne 1 ]; then
+            echo "expected one archive and one receipt; found $archive_count and $receipt_count" >&2
+            exit 1
+          fi
+          archive=$(find /release -name '*.tar.zst' -type f)
+          receipt=$(find /release -name '*.tar.json' -type f)
+          expected_sha=$(sed -n 's/ *"archive_sha256": "\([a-f0-9]*\)".*/\1/p' "$receipt")
+          [ "${#expected_sha}" -eq 64 ] || { echo 'archive receipt has no SHA-256' >&2; exit 1; }
+          sh /release/scripts/qualify_linux_archive.sh "$archive" "$expected_sha" /opt/objc3c
+
   gate:
     name: Extended Linux native assurance gate
     if: always() && !inputs.diagnostic_core_only
-    needs: [plan, product-producer, product-consumers, asan-foundation-producer, instrumented-product-consumers, independent-native, coverage-producer, coverage-partitions, core-aggregate, coverage-aggregate]
+    needs:
+      [
+        plan,
+        product-producer,
+        product-consumers,
+        asan-foundation-producer,
+        instrumented-product-consumers,
+        independent-native,
+        coverage-producer,
+        coverage-partitions,
+        core-aggregate,
+        coverage-aggregate,
+        archive-install,
+      ]
     runs-on: ${{ inputs.linux_host == 'linux-aarch64' && 'ubuntu-26.04-arm' || 'ubuntu-26.04' }}
     timeout-minutes: 10
     steps:
@@ -939,11 +988,17 @@ jobs:
           COVERAGE_PARTITIONS_RESULT: ${{ needs.coverage-partitions.result }}
           CORE_RESULT: ${{ needs.core-aggregate.result }}
           COVERAGE_RESULT: ${{ needs.coverage-aggregate.result }}
+          INSTALL_REQUIRED: ${{ inputs.archive_install }}
+          INSTALL_RESULT: ${{ needs.archive-install.result }}
         shell: bash
         run: |
           for result in "$PRODUCER_RESULT" "$CONSUMERS_RESULT" "$ASAN_PRODUCER_RESULT" "$INSTRUMENTED_CONSUMERS_RESULT" "$FUZZ_RESULT" "$COVERAGE_PRODUCER_RESULT" "$COVERAGE_PARTITIONS_RESULT" "$CORE_RESULT" "$COVERAGE_RESULT"; do
             [[ "$result" == success ]]
           done
+          if [[ "$INSTALL_REQUIRED" == true && "$INSTALL_RESULT" != success ]]; then
+            echo "Fresh SDK installation matrix: $INSTALL_RESULT" >&2
+            exit 1
+          fi
           export ASSURANCE_OUTCOMES="{\"plan\":\"$PLAN_RESULT\",\"native\":\"success\"}"
           python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()

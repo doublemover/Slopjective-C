@@ -148,6 +148,7 @@ export function validateNativeGate(text) {
   const jobs = workflow.jobs ?? {};
   const gate = jobs.gate;
   const requiredGateNeeds = [
+    "archive-install",
     "asan-foundation-producer",
     "core-aggregate",
     "coverage-aggregate",
@@ -414,6 +415,7 @@ export function validateNativeGate(text) {
     "coverage-partitions",
     "core-aggregate",
     "coverage-aggregate",
+    "archive-install",
     "gate",
   ]) {
     const job = jobs[id];
@@ -443,7 +445,10 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
   const native = yaml.load(nativeText);
   const release = yaml.load(releaseText);
   const call = release.jobs?.build;
-  const install = release.jobs?.install;
+  const install = native.jobs?.["archive-install"];
+  const nativeGate = native.jobs?.gate;
+  const installCheck = nativeGate?.steps?.find((step) => step.env?.INSTALL_RESULT);
+  const releaseGate = release.jobs?.release;
   const sdkArtifact = "objc3c-linux-sdk-${{ inputs.linux_host || 'linux-x86_64' }}";
   const hostInput = "${{ inputs.linux_host }}";
   const archive =
@@ -460,11 +465,38 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     call?.uses !== "./.github/workflows/native-assurance.yml" ||
     call.if ||
     call.with?.linux_host !== hostInput ||
+    call.with?.archive_install !== true ||
+    native.on.workflow_call.inputs?.archive_install?.type !== "boolean" ||
+    native.on.workflow_call.inputs.archive_install.default !== false ||
     release.jobs?.["implementation-analysis"]?.with?.linux_host !== hostInput ||
     Object.hasOwn(call.with ?? {}, "diagnostic_core_only") ||
     call["continue-on-error"] ||
-    JSON.stringify(install?.needs?.toSorted()) !==
+    JSON.stringify(releaseGate?.needs?.toSorted()) !==
       JSON.stringify(["build", "implementation-analysis"]) ||
+    releaseGate.if !== "always()" ||
+    releaseGate["continue-on-error"] ||
+    !releaseGate.steps?.some(
+      (step) =>
+        step.env?.SDK_RESULT === "${{ needs.build.result }}" &&
+        step.env?.ANALYSIS_RESULT === "${{ needs.implementation-analysis.result }}" &&
+        step.run?.includes('[[ "$SDK_RESULT" != success || "$ANALYSIS_RESULT" != success ]]') &&
+        step.run?.includes("exit 1") &&
+        !step["continue-on-error"],
+    ) ||
+    JSON.stringify(install?.needs?.toSorted()) !== JSON.stringify(["plan", "product-producer"]) ||
+    install.if !== "inputs.archive_install && needs.plan.outputs.native == 'true'" ||
+    install["runs-on"] !== native.jobs["product-producer"]["runs-on"] ||
+    install.strategy?.["fail-fast"] !== false ||
+    JSON.stringify(install.strategy?.matrix?.distribution) !==
+      JSON.stringify(["debian:13", "ubuntu:26.04"]) ||
+    install.container?.image !== "${{ matrix.distribution }}" ||
+    !nativeGate.needs?.includes("archive-install") ||
+    installCheck?.env?.INSTALL_REQUIRED !== "${{ inputs.archive_install }}" ||
+    installCheck.env.INSTALL_RESULT !== "${{ needs.archive-install.result }}" ||
+    !installCheck.run?.includes(
+      '[[ "$INSTALL_REQUIRED" == true && "$INSTALL_RESULT" != success ]]',
+    ) ||
+    !installCheck.run.includes("exit 1") ||
     archive.length !== 1 ||
     archive[0].if ||
     !(install.steps ?? []).some(
@@ -591,14 +623,14 @@ export function validateImplementationGate(text, releaseText) {
   }
   const release = yaml.load(releaseText);
   const call = release.jobs?.["implementation-analysis"];
-  const installNeeds = release.jobs?.install?.needs;
+  const releaseNeeds = release.jobs?.release?.needs;
   if (
     call?.uses !== "./.github/workflows/implementation-analysis.yml" ||
     call.with?.source_sha !== "${{ github.sha }}" ||
-    !Array.isArray(installNeeds) ||
-    JSON.stringify(installNeeds.toSorted()) !== JSON.stringify(["build", "implementation-analysis"])
+    !Array.isArray(releaseNeeds) ||
+    JSON.stringify(releaseNeeds.toSorted()) !== JSON.stringify(["build", "implementation-analysis"])
   ) {
-    throw new Error("Linux SDK installation must depend on exact-SHA implementation analysis");
+    throw new Error("Linux SDK release must depend on exact-SHA implementation analysis");
   }
 }
 
