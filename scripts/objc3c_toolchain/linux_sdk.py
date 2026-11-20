@@ -118,6 +118,10 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files.add(repo / 'toolchains/linux-hosts.json')
     files.add(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/llvm-tblgen')
     files.add(repo / ('out/toolchains/objc3-development/build-' + native_linux_host()) / 'bin/FileCheck')
+    from .package import distribution_license
+    license_file = distribution_license(repo)
+    if license_file is not None:
+        files.add(license_file)
     inputs, input_resolution = {}, {}
     for path in sorted(files):
         resolved = _qualification_input_path(repo, path)

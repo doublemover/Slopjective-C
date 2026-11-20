@@ -5,6 +5,14 @@ SDK. `objc3c` is the public compiler. It uses Clang's parser, semantic analysis,
 AST, ownership model, native CodeGen and linker driver. Linux x86-64 with the
 GNUstep 2.2 ABI and pinned libobjc2 runtime is the active distribution target.
 
+## License
+
+Original Slopjective-C code is licensed under the
+[GNU General Public License, version 2 only](LICENSE) (`GPL-2.0-only`).
+Third-party code, including upstream code reproduced in patches, remains
+under its original license. LLVM and Clang use the Apache License 2.0 with
+LLVM Exceptions.
+
 ## Build and use
 
 Start with the [Linux tutorial](docs/tutorials/getting_started.md), or choose an
