@@ -170,11 +170,24 @@ def summarize(rows, field='wall_seconds'):
         'samples': len(values)}
 
 
+def cpu_model(cpuinfo: str, architecture: str) -> str:
+    fields = {}
+    for line in cpuinfo.splitlines():
+        name, separator, value = line.partition(':')
+        if separator and value.strip():
+            fields.setdefault(name.strip(), value.strip())
+    if 'model name' in fields:
+        return fields['model name']
+    if 'CPU implementer' in fields and 'CPU part' in fields:
+        return f"{architecture} implementer {fields['CPU implementer']} part {fields['CPU part']}"
+    return fields.get('Hardware', architecture)
+
+
 def host_context():
     def read(path):
         return Path(path).read_text().strip()
     return {'system': platform.platform(), 'kernel': platform.release(),
-        'cpu_model': next(line.split(':', 1)[1].strip() for line in read('/proc/cpuinfo').splitlines() if line.startswith('model name')),
+        'cpu_model': cpu_model(read('/proc/cpuinfo'), platform.machine()),
         'cpu_quota': read('/sys/fs/cgroup/cpu.max'), 'cpuset': read('/sys/fs/cgroup/cpuset.cpus.effective'),
         'memory_limit': read('/sys/fs/cgroup/memory.max'), 'affinity': sorted(os.sched_getaffinity(0)),
         'container': Path('/.dockerenv').exists(),

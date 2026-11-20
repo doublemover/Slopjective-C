@@ -13,6 +13,7 @@ import subprocess
 
 from scripts.objc3c_toolchain.binary_packages import installed_shared_library, write_json
 from scripts.objc3c_toolchain.build import build_foundation
+from scripts.objc3c_toolchain.compiler_instrumentation import elf_gnu_build_id
 from scripts.objc3c_toolchain.core import build_plans, planned_development_identity
 from scripts.objc3c_toolchain.instrumentation_profiles import select
 from scripts.objc3c_toolchain.sanitizer_policy import strict_environment
@@ -137,6 +138,9 @@ def _identity(portable: dict, stage: Path) -> dict:
     return {'source_build_id': portable['source_build_id'],
             'build_config_digest': portable['build_config_digest'],
             'profile': PROFILE, 'stage': str(stage),
+            'library_build_ids': {path.relative_to(stage).as_posix(): elf_gnu_build_id(path)
+                                  for path in paths
+                                  if path.name.startswith(('libLLVM.so', 'libclang-cpp.so'))},
             'files': {str(Path(path).relative_to(stage)): digest(Path(path)) for path in paths}}
 
 

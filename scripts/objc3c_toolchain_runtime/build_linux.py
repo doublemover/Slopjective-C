@@ -67,8 +67,17 @@ def main(argv: list[str] | None = None) -> int:
         require_elf(bin_dir / tool)
     with (bin_dir / 'clang').open('rb') as compiler:
         compiler_sha256 = hashlib.file_digest(compiler, 'sha256').hexdigest()
+    # Keep owned rpaths ahead of ambient LD_LIBRARY_PATH and give the loader
+    # admission checks a canonical ELF identity for every built runtime.
+    link_flags = "-fuse-ld=lld -Wl,--disable-new-dtags -Wl,--build-id=sha1"
+    if args.sanitizer:
+        # The instrumented executable supplies sanitizer runtime symbols.
+        link_flags += " -fsanitize=" + args.sanitizer
+    else:
+        link_flags += " -Wl,-z,defs"
     configuration = {'compiler_root': str(args.compiler_root.resolve()), 'profile': profile, 'compiler_sha256': compiler_sha256,
-                     'build_type': 'Release', 'oldabi': False, 'legacy_compat': False}
+                     'build_type': 'Release', 'oldabi': False, 'legacy_compat': False,
+                     'shared_linker_flags': link_flags}
     if args.sanitizer:
         resource_root = Path(subprocess.check_output(
             [str(bin_dir / 'clang'), '-print-resource-dir'], text=True).strip()).resolve(strict=True)
@@ -89,14 +98,6 @@ def main(argv: list[str] | None = None) -> int:
     try:
         source, robin = runtime_sources(repo, profile, fetch=args.fetch)
         build.mkdir(parents=True, exist_ok=True)
-        # Runtime DSOs belong to the sealed SDK loader graph. Keep their
-        # owned rpaths ahead of ambient LD_LIBRARY_PATH with old ELF dtags.
-        link_flags = "-fuse-ld=lld -Wl,--disable-new-dtags"
-        if args.sanitizer:
-            # The instrumented executable supplies sanitizer runtime symbols.
-            link_flags += " -fsanitize=" + args.sanitizer
-        else:
-            link_flags += " -Wl,-z,defs"
         configure = ["cmake", "-S", str(source), "-B", str(build), "-G", "Ninja",
                      "-DCMAKE_BUILD_TYPE=Release", f"-DCMAKE_INSTALL_PREFIX={stage}",
                      "-DCMAKE_INSTALL_LIBDIR=lib", f"-DFETCHCONTENT_SOURCE_DIR_ROBINMAP={robin}",
@@ -127,6 +128,8 @@ def main(argv: list[str] | None = None) -> int:
         if not (stage / "lib/libobjc.so").is_file():
             raise ValueError("runtime installation did not produce lib/libobjc.so")
         require_elf(stage / "lib/libobjc.so")
+        from scripts.objc3c_toolchain.compiler_instrumentation import elf_gnu_build_id
+        report["runtime_build_id"] = elf_gnu_build_id(stage / "lib/libobjc.so")
         verify_source(repo, source, profile)
         checkout(robin, profile["robin_map_source"], profile["robin_map_commit"], profile["robin_map_release"], False)
         report.update(status="passed", stage=str(stage), robin_map_source=str(robin))
