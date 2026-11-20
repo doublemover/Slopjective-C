@@ -92,7 +92,10 @@ def dependencies(path: Path, cwd: Path, *, preserve_spelling: bool = False) -> l
     # Decode Clang's DependencyFile.cpp spelling, rather than shell quoting.
     # Quotes are literal; ordinary backslashes remain literal, while runs
     # before spaces are doubled. Before # Clang escapes only the # character.
-    text = path.read_text().replace('\\\n', '').split(':', 1)[1]
+    # Swift can write a make rule for each input source into the same
+    # depfile. Strip each target before decoding the prerequisite paths.
+    rules = path.read_text().replace('\\\n', '').splitlines()
+    text = ' '.join(rule.split(':', 1)[1] for rule in rules if rule.strip())
     names, current = [], []
     i = 0
     while i < len(text):

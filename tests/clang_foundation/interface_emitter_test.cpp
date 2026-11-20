@@ -4710,7 +4710,8 @@ void TestOpaqueStandardLibrarySpecializations() {
         "NativeOpaqueStandard::BoxHash *consume_box_hash(NativeOpaqueStandard::BoxHash *value){return value;}\n";
     request.language=BaseLanguage::ObjectiveCxx;request.objc3=true;request.arc=true;
     request.objc_runtime="gnustep-2.2";request.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
-    request.arguments={std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    request.arguments=test::NativeToolArguments(
+        {std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR});
     request.source_directed_imports=true;request.interface_search_paths={module_root.string()};
     InterfaceModuleRequest module;module.canonical_name=first.identity.canonical_name;
     module.locked_identity=first.identity;module.initially_visible=false;

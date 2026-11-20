@@ -598,10 +598,15 @@ if (BUILD_TESTING)
     COMMAND objc3_native_function_effect_provider_test)
   set_tests_properties(objc3_native_function_effect_provider PROPERTIES
     LABELS "native;publication;extended" TIMEOUT 300)
-  objc3c_add_frontend_test(NAME objc3_native_boundary_resource_provider
-    COMMAND objc3_native_boundary_resource_provider_test)
-  set_tests_properties(objc3_native_boundary_resource_provider PROPERTIES
-    LABELS "native;ownership;isolation;extended" TIMEOUT 300)
+  foreach(_boundary_standard IN ITEMS 20 23)
+    foreach(_boundary_mode IN ITEMS 1 2)
+      set(_boundary_test "objc3_native_boundary_resource_provider_cxx${_boundary_standard}_${_boundary_mode}")
+      objc3c_add_frontend_test(NAME "${_boundary_test}"
+        COMMAND objc3_native_boundary_resource_provider_test "c++${_boundary_standard}" "${_boundary_mode}")
+      set_tests_properties("${_boundary_test}" PROPERTIES
+        LABELS "native;ownership;isolation;extended" TIMEOUT 300)
+    endforeach()
+  endforeach()
   objc3c_add_frontend_test(NAME objc3_native_function_policy_provider
     COMMAND objc3_native_function_policy_provider_test)
   set_tests_properties(objc3_native_function_policy_provider PROPERTIES TIMEOUT 300)

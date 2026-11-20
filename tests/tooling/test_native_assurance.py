@@ -133,11 +133,16 @@ def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_pat
     (root / 'controls').mkdir();(root / 'first-party').mkdir();(root / 'compiler').mkdir()
     (root / 'controls/qualification.json').write_text(json.dumps({
         'status': 'PASS', 'controls': [{'status': 'PASS'} for _ in range(5)]}))
-    native_suites = [{'name': 'native-'+str(index), 'component': 'frontend', 'status': 'PASS',
-                      'source_coverage': {'source.cpp': {'state': 'executed'}}} for index in range(13)]
-    (root / 'first-party/qualification.json').write_text(json.dumps({
+    policy = json.loads((Path(__file__).resolve().parents[2] /
+                         'toolchains/llvm/source-coverage.json').read_text())
+    native_suites = [{'name': name, 'component': component, 'status': 'PASS',
+                      'source_coverage': {'source.cpp': {'state': 'executed'}}}
+                     for component in ('frontend', 'runtime') for name in policy[component + '_tests']]
+    native_receipt = root / 'first-party/qualification.json'
+    native_report = {
         'status': 'PASS', 'emitter_partition': {'proof': 'exact'}, 'suites': native_suites,
-        'temporary_build_reclaimed': True}))
+        'temporary_build_reclaimed': True, 'policy': policy}
+    native_receipt.write_text(json.dumps(native_report))
     units = {'/build/bin/unit-'+str(index): 'a'*40 for index in range(5)}
     compiler_suites = [{'name': 'ObjC3-lit', 'status': 'PASS'}] + [
         {'name': Path(path).name, 'status': 'PASS'} for path in units]
@@ -146,9 +151,13 @@ def test_source_coverage_reader_derives_current_compiler_suite_inventory(tmp_pat
         'eligible': {'clang/lib/source.cpp': 'a'*64},
         'source_coverage': {'clang/lib/source.cpp': {'state': 'executed'}},
         'binary_ids': ['b'*40]}))
-    monkeypatch.setattr(emitter_shards, 'EMITTER_TESTS', ())
     monkeypatch.setattr(emitter_shards, 'emitter_partition', lambda *_: {'proof': 'exact'})
-    assert len(evidence.suite_results(tmp_path, 'source-coverage')) == 2 + 13 + 6
+    assert len(evidence.suite_results(tmp_path, 'source-coverage')) == 2 + len(native_suites) + 6
+    native_receipt.write_text(json.dumps({**native_report, 'suites': [
+        *native_suites[:-1], {**native_suites[-1], 'name': 'substituted-runtime-test'}]}))
+    with pytest.raises(ValueError, match='source coverage is incomplete'):
+        evidence.suite_results(tmp_path, 'source-coverage')
+    native_receipt.write_text(json.dumps(native_report))
     compiler_suites.pop()
     (root / 'compiler/qualification.json').write_text(json.dumps({
         'status': 'PASS', 'suites': compiler_suites, 'executed_unit_binary_ids': units,

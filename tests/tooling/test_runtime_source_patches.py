@@ -93,13 +93,20 @@ def test_invalid_patch_inventory_cannot_change_source(tmp_path, damage):
     assert (source / 'runtime.m').read_text() == 'original runtime\n'
 
 
-def test_dwarf_leb_decoding_is_defined_across_full_width_values(tmp_path):
+def test_dwarf_decoding_handles_full_width_values_and_packed_fields(tmp_path):
     import shutil
+    from scripts.objc3c_toolchain_runtime.build_linux import runtime_profile
+    from scripts.objc3c_toolchain.linux_host import native_linux_host
+
     repo = Path(__file__).resolve().parents[2]
-    source = repo / 'out/toolchains/libobjc2-v2.3/src'
+    checkout = repo / 'out/toolchains/libobjc2-v2.3/src'
     compiler = shutil.which('clang')
-    if not compiler or not source.is_dir():
+    if not compiler or not checkout.is_dir():
         pytest.skip('requires Clang and the pinned native runtime source')
+    source = tmp_path / 'source'
+    subprocess.run(['git', '-c', 'advice.detachedHead=false', 'clone',
+                    '--quiet', '--shared', str(checkout), str(source)], check=True)
+    prepare_source(repo, source, runtime_profile(repo, native_linux_host()))
     executable = tmp_path / 'dwarf-leb'
     subprocess.run([compiler, '--no-default-config', '-std=c17',
                     '-fsanitize=undefined', '-fno-sanitize-recover=undefined',

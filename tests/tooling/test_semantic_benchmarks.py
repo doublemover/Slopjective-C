@@ -7,9 +7,19 @@ from pathlib import Path
 
 import pytest
 
-from scripts.objc3c_toolchain.semantic_benchmarks import (SCALES, expected_runtime,
+from scripts.objc3c_toolchain.semantic_benchmarks import (SCALES, cpu_model, expected_runtime,
     frontend_source, runtime_result, sample, summarize)
 from scripts.objc3c_toolchain.semantic_runtime_oracles import CURRENT_WORKLOAD_VERSION, completed_task_count
+
+
+@pytest.mark.parametrize(('cpuinfo', 'arch', 'expected'), [
+    ('processor : 0\nmodel name\t: Test Xeon\n', 'x86_64', 'Test Xeon'),
+    ('processor : 0\nCPU implementer : 0x41\nCPU part : 0xd0c\n', 'aarch64',
+     'aarch64 implementer 0x41 part 0xd0c'),
+    ('processor : 0\n', 'aarch64', 'aarch64'),
+])
+def test_cpu_model_uses_native_linux_fields(cpuinfo, arch, expected):
+    assert cpu_model(cpuinfo, arch) == expected
 
 
 def calibration_receipt(path, *, offset=0.0, version=1):

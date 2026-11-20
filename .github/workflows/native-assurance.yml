@@ -1028,17 +1028,20 @@ jobs:
           IMPLEMENTATION_ANALYSIS_RESULT: ${{ needs.implementation-analysis.result }}
         shell: bash
         run: |
-          for result in "$PRODUCER_RESULT" "$CONSUMERS_RESULT" "$ASAN_PRODUCER_RESULT" "$INSTRUMENTED_CONSUMERS_RESULT" "$FUZZ_RESULT" "$COVERAGE_PRODUCER_RESULT" "$COVERAGE_PARTITIONS_RESULT" "$CORE_RESULT" "$COVERAGE_RESULT"; do
-            [[ "$result" == success ]]
+          failed=0
+          results=(PLAN_RESULT PRODUCER_RESULT CONSUMERS_RESULT ASAN_PRODUCER_RESULT
+            INSTRUMENTED_CONSUMERS_RESULT FUZZ_RESULT COVERAGE_PRODUCER_RESULT
+            COVERAGE_PARTITIONS_RESULT CORE_RESULT COVERAGE_RESULT)
+          if [[ "$INSTALL_REQUIRED" == true ]]; then
+            results+=(INSTALL_RESULT IMPLEMENTATION_ANALYSIS_RESULT)
+          fi
+          for name in "${results[@]}"; do
+            if [[ "${!name}" != success ]]; then
+              echo "Required job outcome $name = ${!name}" >&2
+              failed=1
+            fi
           done
-          if [[ "$INSTALL_REQUIRED" == true && "$INSTALL_RESULT" != success ]]; then
-            echo "Fresh SDK installation matrix: $INSTALL_RESULT" >&2
-            exit 1
-          fi
-          if [[ "$INSTALL_REQUIRED" == true && "$IMPLEMENTATION_ANALYSIS_RESULT" != success ]]; then
-            echo "Exact-revision implementation analysis: $IMPLEMENTATION_ANALYSIS_RESULT" >&2
-            exit 1
-          fi
+          [[ "$failed" == 0 ]]
           export ASSURANCE_OUTCOMES="{\"plan\":\"$PLAN_RESULT\",\"native\":\"success\"}"
           python3 -B scripts/objc3c_toolchain/linux_host.py --expect-host "$OBJC3C_REQUESTED_HOST" --field host
           periodic=()
