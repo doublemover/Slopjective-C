@@ -15,6 +15,11 @@ MANIFEST = 'objc3-sdk.json'
 SCHEMA = 'objc3.sdk.v2'
 
 
+def distribution_license(repo: Path) -> Path | None:
+    return next((repo / name for name in ('LICENSE', 'LICENSE.md', 'COPYING')
+                 if (repo / name).is_file()), None)
+
+
 def _digest(value) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
@@ -148,6 +153,14 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         destination = prefix / 'share/licenses' / project
         destination.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source_root / project / 'LICENSE.TXT', destination / 'LICENSE.TXT')
+    license_file = distribution_license(repo)
+    if license_file is not None:
+        destination = prefix / 'share/licenses/slopjective-c'
+        destination.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(license_file, destination / 'LICENSE')
+    destination = prefix / 'share/licenses/libobjc2'
+    destination.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(repo / 'out/toolchains/libobjc2-v2.3/src/COPYING', destination / 'COPYING')
     example = prefix / 'share/objc3c/examples/managed'
     example.mkdir(parents=True, exist_ok=True)
     sources = example / 'src'

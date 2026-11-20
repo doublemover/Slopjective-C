@@ -82,6 +82,10 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files.add(repo / 'scripts/install_objc3c_linux.sh')
     files.add(repo / 'stdlib/module_inventory.json')
     files.add(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen')
+    from .package import distribution_license
+    license_file = distribution_license(repo)
+    if license_file is not None:
+        files.add(license_file)
     inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
               for path in sorted(files)}
     configure = build_plans(repo, host='linux-x86_64')['configure']
