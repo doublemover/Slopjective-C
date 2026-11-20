@@ -546,10 +546,8 @@ if (BUILD_TESTING)
     LABELS "native;publication;extended" TIMEOUT 300)
   set(_block_binding_timeout 300)
   if(OBJC3C_SOURCE_COVERAGE)
-    # The provider deliberately launches many compiler processes. The
-    # compiler-implementation coverage profile makes each process several
-    # times slower on native AArch64, while the four ownership/standard modes
-    # remain independently scheduled and bounded.
+    # Profiled builds run both the frontend and the instrumented compiler for
+    # each ownership/standard mode, including interface and runtime checks.
     set(_block_binding_timeout 900)
   endif()
   foreach(_block_cxx IN ITEMS 20 23)
