@@ -17,6 +17,50 @@ REVISION = 'a' * 40
 RUNS = {'linux-x86_64': 123, 'linux-aarch64': 456}
 
 
+@pytest.mark.parametrize('fault', [None, 'missing', 'failed', 'duplicate', 'image', 'archive', 'transcript'])
+def test_clean_install_requires_every_scope_with_the_same_image_and_archive(tmp_path, monkeypatch, fault):
+    install = owner.release_install
+    monkeypatch.setenv('GITHUB_SHA', REVISION)
+    monkeypatch.setenv('GITHUB_RUN_ID', '123')
+    monkeypatch.setenv('GITHUB_RUN_ATTEMPT', '1')
+    transcript = b'Sample execution transcript\n'
+    for scope in install.SCOPES:
+        if scope == 'smoke' and fault == 'missing':
+            continue
+        directory = tmp_path / scope
+        directory.mkdir()
+        row = {'schema': install.SCOPE_SCHEMA, 'status': 'PASS', 'host': 'linux-x86_64',
+               'distribution': 'debian:13', 'revision': REVISION, 'run': 123, 'attempt': 1,
+               'scope': scope, 'image': 'debian@sha256:' + 'a' * 64, 'image_id': 'sha256:' + 'b' * 64,
+               'archive_sha256': 'c' * 64, 'seal_sha256': 'd' * 64, 'source_build_id': 'sdk-identity',
+               'log_sha256': hashlib.sha256(transcript).hexdigest()}
+        if scope == 'smoke':
+            if fault == 'failed':
+                row['status'] = 'FAIL'
+            elif fault == 'image':
+                row['image_id'] = 'sha256:' + 'e' * 64
+            elif fault == 'archive':
+                row['archive_sha256'] = 'e' * 64
+        (directory / 'result.json').write_text(json.dumps(row))
+        (directory / 'install.log').write_bytes(b'changed' if scope == 'smoke' and fault == 'transcript' else transcript)
+    if fault == 'duplicate':
+        (tmp_path / 'second').mkdir()
+        for name in ('result.json', 'install.log'):
+            (tmp_path / 'second' / name).write_bytes((tmp_path / 'smoke' / name).read_bytes())
+    result = tmp_path / 'receipt.json'
+    if fault:
+        with pytest.raises(ValueError):
+            install.aggregate(tmp_path, result, 'debian:13', host='linux-x86_64')
+        assert not result.exists()
+    else:
+        install.aggregate(tmp_path, result, 'debian:13', host='linux-x86_64')
+        record = json.loads(result.read_text())
+        assert record['status'] == 'PASS'
+        assert record['scopes'] == {
+            scope: hashlib.sha256((tmp_path / scope / 'result.json').read_bytes()).hexdigest()
+            for scope in install.SCOPES}
+
+
 def api_run(run_id):
     return {'id': run_id, 'path': owner.QUALIFICATION, 'event': 'workflow_dispatch',
             'head_sha': REVISION, 'head_repository': {'full_name': REPO},
@@ -97,6 +141,7 @@ def test_stages_two_native_archives_with_installer_and_checksums(tmp_path, monke
             'revision': REVISION, 'run': int(command[3]), 'attempt': 1,
             'distribution': distribution, 'image': 'fixture@sha256:' + '1' * 64,
             'image_id': 'sha256:' + '2' * 64,
+            'scopes': {scope: '3' * 64 for scope in owner.release_install.SCOPES},
             **{key: receipt[key] for key in ('archive_sha256', 'seal_sha256', 'source_build_id')},
         }))
 

@@ -133,7 +133,7 @@ def verify_analysis_proof(root: Path, receipt: dict) -> None:
         headers = {row['output']: row['dependencies'] for row in rows}
         scoped = owner_changes(repo, owner, changed)
         selected = [] if scoped is None else selected_variants(rows, headers, scoped)
-        selected = partition_rows(selected, receipt.get('partition'))
+        selected = partition_rows(selected, receipt.get('partition'), seconds=receipt['policy']['partition_seconds'])
         ids = {row['identity'] for row in selected}
         expected_ids.update(ids)
         if any(type(row.get('selected')) is not bool or row['selected'] != (row['identity'] in ids)

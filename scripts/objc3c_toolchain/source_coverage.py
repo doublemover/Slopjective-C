@@ -23,6 +23,7 @@ from .sanitizer_policy import strict_environment, require_clean_diagnostic
 from .sdk_example import dependencies
 from scripts.objc3c_assurance.evidence import junit
 from scripts.objc3c_assurance.emitter_shards import CTEST_OUTPUT_LIMIT
+from .analysis_partition import balance_indices
 
 LIMIT = 64 * 1024**2
 FIRST_PARTY_PROFILE_LIMIT = 256 * 1024**2
@@ -41,11 +42,19 @@ def partition_catalogue(policy: dict, index: int, count: int) -> tuple[list[tupl
     if (not catalogue or len(catalogue) != len(set(catalogue)) or
             any(not name for _, name in catalogue)):
         raise ValueError('source coverage catalogue is empty or duplicated')
-    selected = catalogue[index::count]
+    seconds = policy.get('partition_seconds', {'default': 1})
+    keys = {f'{component}:{name}' for component, name in catalogue}
+    if (not isinstance(seconds, dict) or 'default' not in seconds or
+            seconds.keys() - (keys | {'default'}) or
+            any(type(value) is not int or not 1 <= value <= MAX_TEST_TIMEOUT for value in seconds.values())):
+        raise ValueError('source coverage policy has invalid partition costs')
+    durations = [seconds.get(f'{component}:{name}', seconds['default']) for component, name in catalogue]
+    bins = balance_indices(durations, count)
+    selected = [catalogue[item] for item in sorted(bins[index])]
     if not selected:
         raise ValueError('source coverage partition selected no suites')
     signature = __import__('hashlib').sha256(json.dumps(
-        catalogue, separators=(',', ':')).encode()).hexdigest()
+        {'catalogue': catalogue, 'bins': bins}, separators=(',', ':')).encode()).hexdigest()
     return selected, signature
 
 
@@ -330,7 +339,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None,
             'upstream-system-headers': 'Reported separately from first-party ownership, never added to its denominator.',
             'language-and-fuzzer-coverage': 'Separate claims; not inferred from implementation percentages.'}}
     frozen = report['inputs']
-    for path in [Path(__file__), policy_path, *sorted((repo / 'native/objc3c').rglob('*.cmake')),
+    for path in [Path(__file__), Path(__file__).with_name('analysis_partition.py'), policy_path,
+                 *sorted((repo / 'native/objc3c').rglob('*.cmake')),
                  *sorted((repo / 'native/objc3c').rglob('CMakeLists.txt')), compiler, *tools.values(), runtime]:
         frozen[str(path)] = digest(path)
     if identity_path is not None:

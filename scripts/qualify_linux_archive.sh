@@ -2,8 +2,10 @@
 # Run in a fresh Debian/Ubuntu host or container with only release files mounted.
 set -eu
 qualification_scope=${4:-full}
+smoke=1
 case "$qualification_scope" in
-  full|task-destinations|stdlib|match-results|defer-control-flow|native-features|cxx-class-packages) ;;
+  full|smoke|task-destinations|stdlib|match-results|defer-control-flow|native-features|cxx-class-packages) ;;
+  package-build|package-surface|package-modules|async|isolation|features|carriers) smoke=0 ;;
   *) printf 'Unknown Linux qualification scope: %s\n' "$qualification_scope" >&2; exit 2 ;;
 esac
 archive=$1
@@ -27,6 +29,8 @@ mv "$install_root" "$install_root-relocated"
 sh "$scratch/installer/install-linux.sh" --archive "$archive" --sha256 "$expected_sha" --root "$install_root-relocated"
 . "$install_root-relocated/activate.sh"
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
+# Only the smoke owner runs the privileged embedding and debugger checks.
+if [ "$smoke" = 1 ]; then
 mkdir "$scratch/client"
 cp -R "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/." "$scratch/client/"
 cd "$scratch/client"
@@ -71,57 +75,80 @@ cmake --build build --parallel 2
 ./build/embedding "$OBJC3C_SDK_ROOT"
 "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./build/embedding
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
+fi
 useradd --create-home --shell /bin/sh objc3-sdk-user
-runuser -u objc3-sdk-user -- sh -s -- "$install_root-relocated" "$qualification_scope" <<'SH'
+runuser -u objc3-sdk-user -- sh -s -- "$install_root-relocated" "$qualification_scope" "$smoke" <<'SH'
 set -eu
 . "$1/activate.sh"
 qualification_scope=$2
+smoke=$3
 sdk_user_work=$(mktemp -d)
 trap 'rm -rf -- "$sdk_user_work"' EXIT
 cd "$sdk_user_work"
 cp -R "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/." .
+if [ "$smoke" = 1 ]; then
 objc3c main.objc3 -O0 -g -o application
 env -u LD_LIBRARY_PATH ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" --output-dir ./managed
-if [ "$qualification_scope" = full ]; then
+fi
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = package-build ]; then
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/qualify.py" --output-dir ./module-evidence
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify.py" --output-dir ./package-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_binary_packages.py" --output-dir ./binary-package-evidence
+fi
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = package-surface ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_ownership_projections.py" --output-dir ./ownership-projection-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_public_surfaces.py" --output-dir ./public-surface-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_api_availability.py" --output-dir ./api-availability-evidence
+fi
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = package-modules ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_spi.py" --output-dir ./module-spi-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_names.py" --output-dir ./module-names-evidence
 fi
+case "$qualification_scope" in
+  smoke|package-build|package-surface|package-modules|async|isolation|features) ;;
+  *)
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_stdlib.py" --output-dir ./stdlib-evidence
-if [ "$qualification_scope" = full ] || [ "$qualification_scope" = match-results ]; then
+  ;;
+esac
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = match-results ] || [ "$qualification_scope" = carriers ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_match_results.py" --output-dir ./match-result-evidence
 fi
-if [ "$qualification_scope" = full ] || [ "$qualification_scope" = defer-control-flow ] || [ "$qualification_scope" = native-features ]; then
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = defer-control-flow ] || [ "$qualification_scope" = native-features ] || [ "$qualification_scope" = async ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_defer_control_flow.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output ./defer-control-flow-evidence
 fi
-if [ "$qualification_scope" = full ] || [ "$qualification_scope" = task-destinations ] || [ "$qualification_scope" = native-features ]; then
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = task-destinations ] || [ "$qualification_scope" = native-features ] || [ "$qualification_scope" = async ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_structured_runtime.py" --output-dir ./structured-runtime-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_task_coroutines.py" --output-dir ./task-coroutine-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_async_c_abi.py" --output-dir ./async-c-abi-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async.py" --output-dir ./native-async-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
 fi
-if [ "$qualification_scope" = full ] || [ "$qualification_scope" = native-features ]; then
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = native-features ] || [ "$qualification_scope" = features ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/run_linux_compiler_witnesses.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./compiler-witness-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_typed_keypath_packages.py" \
   --output-dir ./typed-keypath-package-evidence
+if [ "$qualification_scope" = features ]; then
+  set -- --feature captures --feature keypaths --feature async --feature spawn --feature strict-async
+else
+  set --
+fi
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/run_linux_feature_batch.py" \
   "$OBJC3C_SDK_ROOT" ./native-feature-evidence \
-  --fixtures "$OBJC3C_SDK_ROOT/share/objc3c/examples/linux-features"
+  --fixtures "$OBJC3C_SDK_ROOT/share/objc3c/examples/linux-features" "$@"
 for native_suite in guard_bindings optional_access recursive_carriers carrier_debugger; do
   python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_$native_suite.py" \
     --sdk-root "$OBJC3C_SDK_ROOT" --output "./$native_suite-evidence"
 done
 fi
-if [ "$qualification_scope" = full ]; then
+if [ "$qualification_scope" = isolation ]; then
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/run_linux_feature_batch.py" \
+  "$OBJC3C_SDK_ROOT" ./native-feature-evidence \
+  --fixtures "$OBJC3C_SDK_ROOT/share/objc3c/examples/linux-features" --feature isolation
+fi
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = carriers ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./carrier-call-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-runtime-carrier-calls.py" \
@@ -162,8 +189,10 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_pack
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-cpp-interfaces.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./cxx-interface-evidence
 fi
+if [ "$smoke" = 1 ]; then
 "$OBJC3C_SDK_ROOT/bin/lldb" --batch -o 'settings set target.disable-aslr false' \
   -o 'breakpoint set --name main' -o run -o 'expression -- cleanup_order + 42' -o continue ./application
+fi
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
 if [ "$qualification_scope" = full ]; then
   printf 'Unprivileged Linux SDK consumer: PASS\n'
@@ -177,8 +206,10 @@ elif [ "$qualification_scope" = defer-control-flow ]; then
   printf 'Unprivileged Linux deferred cleanup consumer: PASS\n'
 elif [ "$qualification_scope" = stdlib ]; then
   printf 'Unprivileged Linux native standard-library consumer: PASS\n'
-else
+elif [ "$qualification_scope" = task-destinations ]; then
   printf 'Unprivileged Linux task destination consumer: PASS\n'
+else
+  printf 'Unprivileged Linux %s consumer: PASS\n' "$qualification_scope"
 fi
 SH
 if [ "$qualification_scope" = full ]; then
@@ -193,6 +224,8 @@ elif [ "$qualification_scope" = defer-control-flow ]; then
   printf 'Fresh Linux deferred cleanup qualification: PASS\n'
 elif [ "$qualification_scope" = stdlib ]; then
   printf 'Fresh Linux native standard-library qualification: PASS\n'
-else
+elif [ "$qualification_scope" = task-destinations ]; then
   printf 'Fresh Linux task destination qualification: PASS\n'
+else
+  printf 'Fresh Linux %s qualification: PASS\n' "$qualification_scope"
 fi
