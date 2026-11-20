@@ -282,6 +282,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         destination = prefix / 'share/licenses/slopjective-c'
         destination.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(license_file, destination / 'LICENSE')
+    destination = prefix / 'share/licenses/libobjc2'
+    destination.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(repo / 'out/toolchains/libobjc2-v2.3/src/COPYING', destination / 'COPYING')
     example = prefix / 'share/objc3c/examples/managed'
     example.mkdir(parents=True, exist_ok=True)
     sources = example / 'src'

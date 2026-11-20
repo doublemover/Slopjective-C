@@ -13,8 +13,7 @@
 
 - Finish the ordinary SDK, instrumented, coverage, native analysis, and fresh
   install gates for the exact release revision.
-- Commit the approved distribution license and establish the project's private
-  reporting route.
+- Establish the project's private reporting route.
 - Stage the draft on `main` using both successful qualification run IDs.
   Verify the native draft download rehearsals before publishing.
 - Deploy and check the public site. Verify the release URLs and reconcile the
