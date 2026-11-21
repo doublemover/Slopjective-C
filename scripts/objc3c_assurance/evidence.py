@@ -396,14 +396,19 @@ def suite_results(root: Path, name: str) -> list[dict]:
         controls = read('controls/qualification.json')
         native = read('first-party/qualification.json')
         compiler = read('compiler/qualification.json')
-        from .emitter_shards import EMITTER_TESTS, emitter_partition
+        from .emitter_shards import emitter_partition
         if (native.get('emitter_partition') != emitter_partition(directory / 'first-party', native['suites'])):
             raise ValueError('emitter coverage partition proof changed')
+        policy = json.loads((Path(__file__).resolve().parents[2] /
+                             'toolchains/llvm/source-coverage.json').read_text())
+        catalogue = [(component, test) for component in ('frontend', 'runtime')
+                     for test in policy[component + '_tests']]
         compiler_units = compiler.get('executed_unit_binary_ids', {})
         compiler_suite_names = {row.get('name') for row in compiler.get('suites', [])}
         expected_compiler_suites = {'ObjC3-lit', *(Path(path).name for path in compiler_units)}
         if (len(controls.get('controls', [])) != 5 or
-                len(native.get('suites', [])) != 13 + len(EMITTER_TESTS) or
+                native.get('policy') != policy or
+                [(row.get('component'), row.get('name')) for row in native.get('suites', [])] != catalogue or
                 any(not any(value.get('state') == 'executed' for value in row.get('source_coverage', {}).values())
                     for row in native['suites']) or
                 not compiler_units or compiler_suite_names != expected_compiler_suites or

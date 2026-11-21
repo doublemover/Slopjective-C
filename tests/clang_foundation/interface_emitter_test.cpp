@@ -4710,7 +4710,8 @@ void TestOpaqueStandardLibrarySpecializations() {
         "NativeOpaqueStandard::BoxHash *consume_box_hash(NativeOpaqueStandard::BoxHash *value){return value;}\n";
     request.language=BaseLanguage::ObjectiveCxx;request.objc3=true;request.arc=true;
     request.objc_runtime="gnustep-2.2";request.target_triple=OBJC3_TEST_NATIVE_LINUX_TARGET;
-    request.arguments={std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    request.arguments=test::NativeToolArguments(
+        {std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR});
     request.source_directed_imports=true;request.interface_search_paths={module_root.string()};
     InterfaceModuleRequest module;module.canonical_name=first.identity.canonical_name;
     module.locked_identity=first.identity;module.initially_visible=false;
@@ -5207,6 +5208,26 @@ void TestCustomCoroutineBodies() {
     for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
     auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
     assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),HasCxxCoroutineBodyIdentity));
+    const std::string out_of_line_name="out_of_line_coroutine";
+    auto out_of_line=emit(source+"\nNativeCustomCoroutines::Task<int> "+
+        out_of_line_name+"(int value){co_return value;}\n",
+        "out-of-line-coroutine.mm",{"NativeCustomCoroutines",out_of_line_name});
+    for(const auto &d:out_of_line.diagnostics)
+      std::fprintf(stderr,"OUT-OF-LINE %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(out_of_line.success);
+    auto out_of_line_metadata=llvm::json::parse(out_of_line.sidecar_json);assert(out_of_line_metadata);
+    std::vector<llvm::StringRef> out_of_line_semantics;
+    for(const auto &v:*out_of_line_metadata->getAsObject()->getArray("required_semantics"))
+      out_of_line_semantics.push_back(*v.getAsString());
+    auto out_of_line_decoded=DecodeSemanticInterfaceSidecar(
+        out_of_line.sidecar_json,out_of_line.source_bytes,out_of_line_semantics);
+    assert(out_of_line_decoded);
+    auto out_of_line_row=std::find_if(out_of_line_decoded->declarations.begin(),
+        out_of_line_decoded->declarations.end(),[&](const auto &row) {
+          return row.qualified_name==out_of_line_name;
+        });
+    assert(out_of_line_row!=out_of_line_decoded->declarations.end());
+    assert(!HasNativeCxxAsyncImportIdentity(*out_of_line_row));
     auto missing=*decoded;std::erase(missing.required_semantics,kCxxCoroutineBodySemantic);
     auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
     auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxCoroutineBodyIdentity);

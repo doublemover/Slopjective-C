@@ -69,7 +69,11 @@ def passing_bundle(tmp_path, *, periodic=False, partition=None):
                                          if owner=='maintained-clang' else policy['translation_unit_timeout_seconds']),
             'dependency_origin': 'actual-ninja-compilation'})
     if partition is not None:
-        for row in inventory:row['selected'] &= bool(partition_rows([row], partition))
+        selected = {row['identity'] for owner in {row['owner'] for row in inventory}
+                    for row in partition_rows([row for row in inventory if row['owner'] == owner and row['selected']],
+                                              partition, seconds=policy['partition_seconds'])}
+        for row in inventory:
+            row['selected'] = row['identity'] in selected
     results = [{'identity': row['identity'], 'status': 'PASS', 'diagnostics': [],
                 'execution_reused': False, 'timeout_seconds': row['analysis_timeout_seconds']}
                for row in inventory if row['selected']]

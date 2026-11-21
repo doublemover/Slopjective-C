@@ -67,6 +67,20 @@ def test_successful_import_must_name_the_actual_selected_header(tmp_path, missin
     assert set(owner.import_evidence(depfile, tmp_path, header, module)) == {str(header), str(module)}
 
 
+def test_swift_multi_input_depfile_keeps_only_prerequisites(tmp_path):
+    header = tmp_path / 'API.h'
+    module = tmp_path / 'module.modulemap'
+    client = tmp_path / 'Consumer.swift'
+    overlay = tmp_path / 'Overlay.swift'
+    for path in (header, module, client, overlay):
+        path.write_text(path.name)
+    depfile = tmp_path / 'swift.d'
+    depfile.write_text(f'- : {client} {header}\n- : {overlay} {module} {header}\n')
+    assert set(owner.import_evidence(depfile, tmp_path, header, module)) == {
+        str(header), str(module), str(client), str(overlay),
+    }
+
+
 def test_foreign_environment_excludes_product_loader_and_importer_overrides(monkeypatch, tmp_path):
     for key in ('LD_LIBRARY_PATH', 'SDKROOT', 'SWIFT_EXEC', 'CPATH', 'LIBRARY_PATH'):
         monkeypatch.setenv(key, '/incorrect/product')

@@ -75,12 +75,15 @@ void Success(const CompileResult &R) {
 }
 void Reject(CompileRequest R, llvm::StringRef Message) {
   auto Result = Compile(R);
-  assert(!Result.success);
   if (!Has(Result, Message)) {
     std::cerr << "Missing expected diagnostic: " << Message.str() << '\n';
     for (const auto &D : Result.diagnostics)
       std::cerr << D.message << '\n';
   }
+  if (Result.success)
+    std::cerr << "Compilation unexpectedly succeeded while expecting rejection: "
+              << Message.str() << '\n';
+  assert(!Result.success);
   assert(Has(Result, Message));
 }
 std::vector<std::string> ASTArgs(bool Cxx, bool Arc) {
@@ -424,7 +427,7 @@ void group_scope_cpp_unsafe(MutableMessage *object) {
   group_scope_cpp([object]() __objc3_async { (void)object; }, 42);
 }
 )"),
-         "concurrent capture");
+         "cannot cross a concurrency boundary (structured group argument)");
   Reject(Make(R"(
 void group_scope_unknown(Work block) { group_scope(block, 42); }
 )"),

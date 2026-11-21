@@ -2,7 +2,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Res
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,777 @@
+@@ -0,0 +1,775 @@
 +//===--- SemaObjC3Resources.cpp - Native scalar resource ownership
 +//---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -362,32 +362,30 @@ new file mode 100644
 +      Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
 +  const bool DependentCallback=Close->isTypeDependent() || Close->isValueDependent() ||
 +      (Function && Function->isDependentContext());
-+  if(!DependentCallback || !Variable->getDeclContext()->isDependentContext()) {
-+    if (!Function || !Prototype || Function->getNumParams() != 1 ||
-+        Prototype->isVariadic() || Function->isDependentContext() ||
-+        (isa<CXXMethodDecl>(Function) &&
-+         !cast<CXXMethodDecl>(Function)->isStatic()) ||
-+        (!Prototype->getReturnType()->isVoidType() &&
-+         !Prototype->getReturnType()->isScalarType()) ||
-+        Prototype->getReturnType()->isObjCRetainableType()) {
-+      Reject(Close->getExprLoc(),
-+             "objc_cleanup must name a nondependent function with one parameter "
-+             "and an ordinary scalar or void result");
-+      return;
-+    }
-+    const auto &Effects = Prototype->getObjC3FunctionEffects();
-+    if (Effects.Async || Effects.Throws != ObjC3ThrowsKind::None) {
-+      Reject(Close->getExprLoc(),
-+             "objc_cleanup callback cannot be async or use checked throws");
-+      return;
-+    }
-+  }
 +  if((Variable->getDeclContext()->isDependentContext() &&
 +      (Type->isDependentType() || DependentCallback)) || Type->isUndeducedType()) {
 +    // Preserve a declarative recipe, not a guessed value/address invocation.
 +    // InstantiateAttrs rebuilds and validates the concrete call before use.
 +    Variable->addAttr(ObjCCleanupAttr::Create(S.Context,Close,false,nullptr,Attribute));
 +    Variable->markUsed(S.Context);
++    return;
++  }
++  if (!Function || !Prototype || Function->getNumParams() != 1 ||
++      Prototype->isVariadic() || Function->isDependentContext() ||
++      (isa<CXXMethodDecl>(Function) &&
++       !cast<CXXMethodDecl>(Function)->isStatic()) ||
++      (!Prototype->getReturnType()->isVoidType() &&
++       !Prototype->getReturnType()->isScalarType()) ||
++      Prototype->getReturnType()->isObjCRetainableType()) {
++    Reject(Close->getExprLoc(),
++           "objc_cleanup must name a nondependent function with one parameter "
++           "and an ordinary scalar or void result");
++    return;
++  }
++  const auto &Effects = Prototype->getObjC3FunctionEffects();
++  if (Effects.Async || Effects.Throws != ObjC3ThrowsKind::None) {
++    Reject(Close->getExprLoc(),
++           "objc_cleanup callback cannot be async or use checked throws");
 +    return;
 +  }
 +  if(Type->isDependentType()) {

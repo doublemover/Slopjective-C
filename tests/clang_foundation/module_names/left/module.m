@@ -67,3 +67,6 @@ int left_value(void) {
 int implementation_only(void) { return 7; }
 
 int debugger_marker(void) { return shared_global; }
+#ifdef __cplusplus
+int debugger_private_tls(void) { return private_tls; }
+#endif

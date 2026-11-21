@@ -17,6 +17,11 @@ else:
     from sdk_example import environment
 
 
+def named_int_values(text: str) -> list[int]:
+    """Return frame-variable integers without admitting LLDB expression temporaries."""
+    return list(map(int, re.findall(r'\(int\) [^$\s=]+ = (-?\d+)', text)))
+
+
 def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
             foundation: Path | None = None, fixture: Path | None = None) -> dict:
     sdk, output = sdk.resolve(strict=True), output.resolve()
@@ -28,6 +33,9 @@ def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
     receipt = output / 'qualification.json'
     receipt.unlink(missing_ok=True)
     manifest = json.loads((sdk / 'objc3-sdk.json').read_text())
+    # Linux AArch64 LLDB cannot resolve the executable's C++ TLS location
+    # directly. Evaluate a private accessor in the stopped provider instead.
+    direct_tls_lookup = manifest['target'].split('-', 1)[0] != 'aarch64'
     env = environment(sdk)
     env['LD_LIBRARY_PATH'] = str(foundation / 'lib') + os.pathsep + str(sdk / 'lib')
     commands, cases = [], []
@@ -103,16 +111,20 @@ def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
                                         '" --source-pattern-regexp "' + pattern + '"']
                         queries += ['run']
                         expected = []
+                        tls_expression_indices = []
                         variable = 'object' if frame_kind == 'function' else 'self'
-                        for index, (value, bias) in enumerate(((20, 1), (41, 2)), 1):
+                        for index, value in enumerate((20, 41), 1):
                             if frame_kind == 'method':
                                 queries += ['breakpoint disable ' + str(index)]
                             queries += ['frame variable ' + variable, 'expression -- shared_global',
                                         'expression -- shared_helper()', 'expression -- debugger_marker()']
                             expected += [value, 1, value]
                             if language.endswith('++'):
-                                queries += ['expression -- private_tls']
-                                expected += [bias]
+                                if direct_tls_lookup:
+                                    queries += ['frame variable private_tls']
+                                queries += ['expression -- debugger_private_tls()']
+                                tls_expression_indices.append(len(expected))
+                                expected.append(index)
                             queries += ['expression -- (int)[RuntimeTwin value]',
                                         'expression -- (int)[RuntimeTwin directValue]',
                                         'expression -- (int)[RuntimeChild childValue]',
@@ -127,12 +139,17 @@ def qualify(sdk: Path, output: Path, *, compiler: Path | None = None,
                         log = run(label + '-' + frame_kind + '-lldb', [*debugger, executable], directory)
                         text = log.read_text()
                         values = list(map(int, re.findall(r'\(int\) \$\d+ = (-?\d+)', text)))
+                        frame_tls_values = named_int_values(text)
+                        expected_frame_tls = [1, 2] if direct_tls_lookup and tls_expression_indices else []
                         source_type = '(RuntimeTwin *) object =' if frame_kind == 'function' else 'Class) self ='
                         if (values != expected or text.count(source_type) != 2 or
+                                frame_tls_values != expected_frame_tls or
                                 'exited with status = 0' not in text):
                             raise ValueError('private-name debugger selected another provider or lost its source type: ' + label + '-' + frame_kind)
                         cases.append({'language': language, 'standard': standard, 'ownership': ownership,
                             'frame_kind': frame_kind, 'values': values, 'source_types_preserved': True,
+                            'private_tls_values': [values[i] for i in tls_expression_indices],
+                            'private_tls_frame_values': frame_tls_values,
                             'continued_exit_code': 0, 'executable_sha256': packages.digest(executable),
                             'log_sha256': packages.digest(log)})
         report = {'schema': 'objc3c.module-names-collision-debugger.v1', 'status': 'PASS',

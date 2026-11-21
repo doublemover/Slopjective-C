@@ -44,9 +44,13 @@ def clean_installs(root: Path, *, host: str, revision: str, run: int, attempt: i
                     'revision': revision, 'run': run, 'attempt': attempt, 'distribution': distribution,
                     'archive_sha256': archive['sha256'], 'seal_sha256': archive['seal_sha256'],
                     'source_build_id': archive['source_build_id']}
+        scopes = row.get('scopes')
         if (any(row.get(key) != value for key, value in expected.items()) or
                 not release_install.IMAGE.fullmatch(row.get('image', '')) or
-                not release_install.IMAGE_ID.fullmatch(row.get('image_id', ''))):
+                not release_install.IMAGE_ID.fullmatch(row.get('image_id', '')) or
+                not isinstance(scopes, dict) or set(scopes) != set(release_install.SCOPES) or
+                not all(isinstance(value, str) and re.fullmatch('[a-f0-9]{64}', value)
+                        for value in scopes.values())):
             raise ValueError(f'{host} {distribution} installation receipt differs from the qualified archive')
         records.append(row)
     return records

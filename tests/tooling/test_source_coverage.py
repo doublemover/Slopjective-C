@@ -55,6 +55,18 @@ def test_eight_coverage_partitions_form_one_exact_disjoint_catalogue():
             partition_catalogue(policy, index, count)
 
 
+def test_coverage_keeps_expensive_cases_in_separate_partitions():
+    policy = {'frontend_tests': ['slow-cxx20', 'slow-cxx23', 'quick1', 'quick2'],
+              'runtime_tests': ['quick3', 'quick4'],
+              'partition_seconds': {'default': 30, 'frontend:slow-cxx20': 300, 'frontend:slow-cxx23': 300}}
+    first, signature = partition_catalogue(policy, 0, 2)
+    second, _ = partition_catalogue(policy, 1, 2)
+    assert first == [('frontend', 'slow-cxx20'), ('frontend', 'quick1'), ('runtime', 'quick3')]
+    assert second == [('frontend', 'slow-cxx23'), ('frontend', 'quick2'), ('runtime', 'quick4')]
+    policy['partition_seconds']['frontend:slow-cxx23'] = 600
+    assert partition_catalogue(policy, 0, 2)[1] != signature
+
+
 def test_instrumented_suite_timeouts_are_reviewed_and_bounded():
     policy = {'frontend_tests': ['ordinary', 'heavy'], 'runtime_tests': [],
               'test_timeouts_seconds': {'default': 120, 'frontend:heavy': 300}}

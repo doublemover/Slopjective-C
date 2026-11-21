@@ -12,7 +12,7 @@ index 3f0733757..e6b303498 100644
  list(APPEND libobjc_CXX_SRCS ${libobjcxx_CXX_SRCS})
  target_sources(objc PRIVATE ${libobjc_CXX_SRCS})
 diff --git a/arc.mm b/arc.mm
-index fbba14c03..86d2eb76b 100644
+index fbba14c03..323c53932 100644
 --- a/arc.mm
 +++ b/arc.mm
 @@ -91,12 +91,6 @@ extern "C"
@@ -69,7 +69,7 @@ index fbba14c03..86d2eb76b 100644
  static const long refcount_shift = 1;
  /**
   * We use the top bit of the reference count to indicate whether an object has
-@@ -317,13 +294,13 @@ static inline BOOL isPersistentObject(id obj)
+@@ -317,15 +294,20 @@ static inline BOOL isPersistentObject(id obj)
  	}
  	// Persistent objects are persistent.  Safe to access isa directly here
  	// because we've already handled the small object case separately.
@@ -84,8 +84,15 @@ index fbba14c03..86d2eb76b 100644
 +	Class cls = classForObject(obj);
  	if (UNLIKELY(objc_test_class_flag(cls, objc_class_flag_is_block)))
  	{
++		// Generic ARC retain preserves pointer identity. Stack promotion is
++		// explicit through objc_retainBlock or _Block_copy.
++		if (cls == static_cast<void*>(&_NSConcreteStackBlock)) {
++			return obj;
++		}
  		return Block_copy(obj);
-@@ -383,7 +360,7 @@ extern "C" OBJC_PUBLIC void objc_release_fast_np(id obj)
+ 	}
+ 	if (objc_test_class_flag(cls, objc_class_flag_fast_arc))
+@@ -383,7 +365,7 @@ extern "C" OBJC_PUBLIC void objc_release_fast_np(id obj)
  static inline void release(id obj)
  {
  	if (isPersistentObject(obj)) { return; }
@@ -94,7 +101,7 @@ index fbba14c03..86d2eb76b 100644
  	if (UNLIKELY(objc_test_class_flag(cls, objc_class_flag_is_block)))
  	{
  		if (cls == static_cast<void*>(&_NSConcreteStackBlock))
-@@ -401,64 +378,24 @@ static inline void release(id obj)
+@@ -401,64 +383,24 @@ static inline void release(id obj)
  	return ManualRetainReleaseMessage(obj, release, void(*)(id, SEL));
  }
  
@@ -173,7 +180,7 @@ index fbba14c03..86d2eb76b 100644
  }
  
  extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_np(void)
-@@ -498,58 +435,24 @@ extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_for_object_np(id
+@@ -498,58 +440,24 @@ extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_for_object_np(id
  
  extern "C" OBJC_PUBLIC void *objc_autoreleasePoolPush(void)
  {
@@ -245,7 +252,7 @@ index fbba14c03..86d2eb76b 100644
  }
  
  extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
-@@ -563,47 +466,19 @@ extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
+@@ -563,47 +471,19 @@ extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
  
  extern "C" OBJC_PUBLIC id objc_autoreleaseReturnValue(id obj)
  {
@@ -300,7 +307,7 @@ index fbba14c03..86d2eb76b 100644
  	}
  	return objc_retain(obj);
  }
-@@ -775,8 +650,9 @@ extern "C" void* block_load_weak(void *block);
+@@ -775,8 +655,9 @@ extern "C" void* block_load_weak(void *block);
  static BOOL setObjectHasWeakRefs(id obj)
  {
  	BOOL isGlobalObject = isPersistentObject(obj);
@@ -312,7 +319,7 @@ index fbba14c03..86d2eb76b 100644
  	{
  		uintptr_t *refCount = ((uintptr_t*)obj) - 1;
  		if (obj)
-@@ -889,7 +765,9 @@ extern "C" OBJC_PUBLIC id objc_storeWeak(id *addr, id obj)
+@@ -889,7 +770,9 @@ extern "C" OBJC_PUBLIC id objc_storeWeak(id *addr, id obj)
  extern "C" OBJC_PUBLIC BOOL objc_delete_weak_refs(id obj)
  {
  	LOCK_FOR_SCOPE(&weakRefLock);
@@ -323,7 +330,7 @@ index fbba14c03..86d2eb76b 100644
  	{
  		// Don't proceed if the object isn't deallocating.
  		uintptr_t *refCount = ((uintptr_t*)obj) - 1;
-@@ -1044,8 +922,10 @@ extern "C" OBJC_PUBLIC id objc_initWeak(id *addr, id obj)
+@@ -1044,8 +927,10 @@ extern "C" OBJC_PUBLIC id objc_initWeak(id *addr, id obj)
  		*addr = obj;
  		return obj;
  	}
@@ -862,10 +869,18 @@ index a6f164172..4b2a9c4d5 100644
  	struct objc_method *initializeSlot = skipMeta ? 0 :
  			objc_dtable_lookup(dtable, initializeSel->index);
 diff --git a/dwarf_eh.h b/dwarf_eh.h
-index e06a58557..131bf32ce 100644
+index e06a58557..e5f16e47c 100644
 --- a/dwarf_eh.h
 +++ b/dwarf_eh.h
-@@ -105,7 +105,7 @@ static uint64_t read_leb128(unsigned char** data, int *b)
+@@ -4,6 +4,7 @@
+  */
+ #include <assert.h>
+ #include <stdint.h>
++#include <string.h>
+ 
+ // _GNU_SOURCE must be defined for unwind.h to expose some of the functions
+ // that we want.  If it isn't, then we define it and undefine it to make sure
+@@ -105,7 +106,7 @@ static uint64_t read_leb128(unsigned char** data, int *b)
  		// Get the base 128 digit 
  		digit = (**data) & 0x7f;
  		// Add it to the current value
@@ -874,7 +889,7 @@ index e06a58557..131bf32ce 100644
  		// Increase the shift value
  		bit += 7;
  		// Proceed to the next octet
-@@ -131,10 +131,10 @@ static int64_t read_sleb128(unsigned char** data)
+@@ -131,10 +132,10 @@ static int64_t read_sleb128(unsigned char** data)
  	// Read as if it's signed
  	uint64_t uleb = read_leb128(data, &bits);
  	// If the most significant bit read is 1, then we need to sign extend it
@@ -886,6 +901,48 @@ index e06a58557..131bf32ce 100644
 +		uleb |= UINT64_MAX << bits;
  	}
  	return (int64_t)uleb;
+ }
+@@ -147,21 +148,21 @@ static uint64_t read_value(char encoding, unsigned char **data)
+ 	{
+ 		// Read fixed-length types
+ #define READ(dwarf, type) \
+-		case dwarf:\
+-			v = (uint64_t)(*(type*)(*data));\
+-			*data += sizeof(type);\
+-			break;
++		case dwarf: { \
++			type value; \
++			/* The LSDA table encodes bytes without C alignment. */ \
++			memcpy(&value, *data, sizeof(value)); \
++			v = (uint64_t)value; \
++			*data += sizeof(value); \
++			break; \
++		}
+ 		READ(DW_EH_PE_udata2, uint16_t)
+ 		READ(DW_EH_PE_udata4, uint32_t)
+ 		READ(DW_EH_PE_udata8, uint64_t)
+ 		READ(DW_EH_PE_sdata2, int16_t)
+ 		READ(DW_EH_PE_sdata4, int32_t)
+ 		READ(DW_EH_PE_sdata8, int64_t)
+-		case DW_EH_PE_absptr:
+-			v = (uint64_t)(*(intptr_t*)(*data));
+-			*data += sizeof(intptr_t);
+-			break;
+-		//READ(DW_EH_PE_absptr, intptr_t)
++		READ(DW_EH_PE_absptr, uintptr_t)
+ #undef READ
+ 		case DW_EH_PE_sleb128:
+ 			v = read_sleb128(data);
+@@ -199,7 +200,9 @@ static uint64_t resolve_indirect_value(struct _Unwind_Context *c, unsigned char
+ 	// be a GCC extensions, so not properly documented...
+ 	if (is_indirect(encoding))
+ 	{
+-		v = (uint64_t)(uintptr_t)*(void**)(uintptr_t)v;
++		uintptr_t pointer;
++		memcpy(&pointer, (const void *)(uintptr_t)v, sizeof(pointer));
++		v = (uint64_t)pointer;
+ 	}
+ 	return v;
  }
 diff --git a/eh_personality.c b/eh_personality.c
 index d638d9772..7f1fefdc6 100644

@@ -6,6 +6,14 @@ AST, ownership model, native CodeGen and linker driver. The Linux SDK uses the
 GNUstep 2.2 ABI and pinned libobjc2 runtime. The release workflow qualifies
 native x86-64 and AArch64 archives.
 
+## License
+
+Original Slopjective-C code is licensed under the
+[GNU General Public License, version 2 only](LICENSE) (`GPL-2.0-only`).
+Third-party code, including upstream code reproduced in patches, remains
+under its original license. LLVM and Clang use the Apache License 2.0 with
+LLVM Exceptions.
+
 ## Build and use
 
 Start with the [Linux release and install guide](docs/releases/linux.md) or the

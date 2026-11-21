@@ -157,11 +157,11 @@ def test_effective_cache_must_match_intended_configuration(tmp_path, value):
             'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'}})
 
 
-def test_linux_foundation_cache_forces_old_dtag_rpaths():
+def test_linux_foundation_cache_forces_old_dtags_and_build_ids():
     cache = (Path(__file__).resolve().parents[2] /
              'toolchains/llvm/cmake/ObjC3LLVMCache.cmake').read_text()
     for kind in ('EXE', 'SHARED', 'MODULE'):
-        assert (f'set(CMAKE_{kind}_LINKER_FLAGS "-Wl,--disable-new-dtags" '
+        assert (f'set(CMAKE_{kind}_LINKER_FLAGS "-Wl,--disable-new-dtags -Wl,--build-id=sha1" '
                 'CACHE STRING "" FORCE)') in cache
 
 

@@ -252,22 +252,31 @@ bool HasDeclarationCxxSpecialMemberSelection(const clang::NamedDecl *declaration
 bool HasDeclarationNativeCxxAsync(const clang::NamedDecl *declaration) {
   if(!declaration->getASTContext().getLangOpts().CPlusPlus ||
       llvm::isa<clang::NamespaceDecl>(declaration))return false;
-  struct Async:clang::DynamicRecursiveASTVisitor {
+  const bool published_body=HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Body:clang::DynamicRecursiveASTVisitor {
+      bool found=false;
+      bool VisitCoroutineBodyStmt(clang::CoroutineBodyStmt *) override {found=true;return true;}
+      bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
+        const auto *method=message->getMethodDecl();
+        const auto *type=method ? clang::getObjC3CallableFunctionType(method) : nullptr;
+        found|=type && type->getObjC3FunctionEffects().Async;return true;
+      }
+    } body;
+    body.TraverseStmt(const_cast<clang::Stmt *>(statement));return body.found;
+  });
+  if(published_body)return true;
+  struct Signature:clang::DynamicRecursiveASTVisitor {
     bool found=false;
-    bool VisitCoroutineBodyStmt(clang::CoroutineBodyStmt *) override {found=true;return true;}
+    bool TraverseStmt(clang::Stmt *) override {return true;}
     bool VisitObjCMethodDecl(clang::ObjCMethodDecl *method) override {
       const auto *type=clang::getObjC3CallableFunctionType(method);
       found|=type && type->getObjC3FunctionEffects().Async;return true;
     }
-    bool VisitObjCMessageExpr(clang::ObjCMessageExpr *message) override {
-      if(const auto *method=message->getMethodDecl())VisitObjCMethodDecl(const_cast<clang::ObjCMethodDecl *>(method));
-      return true;
-    }
     bool VisitFunctionProtoType(clang::FunctionProtoType *type) override {
       found|=type->getObjC3FunctionEffects().Async;return true;
     }
-  } async;
-  async.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return async.found;
+  } signature;
+  signature.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return signature.found;
 }
 
 bool HasDeclarationVirtualCall(const clang::NamedDecl *declaration) {

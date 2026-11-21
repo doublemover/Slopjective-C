@@ -20,9 +20,9 @@ set(CMAKE_JOB_POOL_LINK "objc3_link" CACHE STRING "" FORCE)
 # ahead of ambient LD_LIBRARY_PATH. GNU new dtags would emit DT_RUNPATH, whose
 # lower precedence cannot provide that fail-closed loader contract.
 if(UNIX AND NOT APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS "-Wl,--disable-new-dtags" CACHE STRING "" FORCE)
-  set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--disable-new-dtags" CACHE STRING "" FORCE)
-  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--disable-new-dtags" CACHE STRING "" FORCE)
+  set(CMAKE_EXE_LINKER_FLAGS "-Wl,--disable-new-dtags -Wl,--build-id=sha1" CACHE STRING "" FORCE)
+  set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--disable-new-dtags -Wl,--build-id=sha1" CACHE STRING "" FORCE)
+  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--disable-new-dtags -Wl,--build-id=sha1" CACHE STRING "" FORCE)
 endif()
 
 # The standalone debugger has no dependency on a second Python ABI.

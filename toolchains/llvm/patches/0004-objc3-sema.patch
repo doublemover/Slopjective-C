@@ -10085,6 +10085,20 @@ diff --git a/clang/lib/Sema/SemaLambda.cpp b/clang/lib/Sema/SemaLambda.cpp
    buildLambdaScopeReturnType(*this, LSI, Method, HasExplicitResultType);
  }
  
+@@ -1449,11 +1453,10 @@
+   bool ExplicitResultType;
+ 
+   SourceLocation TypeLoc, CallOperatorLoc;
+-  if (ParamInfo.getNumTypeObjects() == 0) {
++  unsigned Index;
++  if (!ParamInfo.isFunctionDeclarator(Index)) {
+     CallOperatorLoc = TypeLoc = Intro.Range.getEnd();
+   } else {
+-    unsigned Index;
+-    ParamInfo.isFunctionDeclarator(Index);
+     const auto &Object = ParamInfo.getTypeObject(Index);
+     TypeLoc =
+         Object.Loc.isValid() ? Object.Loc : ParamInfo.getSourceRange().getEnd();
 
 diff --git a/clang/lib/Sema/SemaObjC3Metaprogramming.cpp b/clang/lib/Sema/SemaObjC3Metaprogramming.cpp
 new file mode 100644

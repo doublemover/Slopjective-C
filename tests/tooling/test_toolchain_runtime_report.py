@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import struct
 from types import SimpleNamespace
 import sys
 
@@ -25,6 +26,11 @@ def test_cold_checkout_noise_cannot_contaminate_the_structured_report(tmp_path, 
     compiler.parent.mkdir(parents=True)
     elf = bytearray(64);elf[:6] = b'\x7fELF\x02\x01'
     elf[18:20] = host_identity()['elf_machine'].to_bytes(2, 'little')
+    struct.pack_into('<Q', elf, 32, 64)
+    struct.pack_into('<HH', elf, 54, 56, 1)
+    note = struct.pack('<III', 4, 20, 3) + b'GNU\0' + b'\x01' * 20
+    elf.extend(struct.pack('<IIQQQQQQ', 4, 0, 120, 0, 0, len(note), len(note), 4))
+    elf.extend(note)
     for tool in ('clang', 'clang++', 'ld.lld'):
         (compiler.parent / tool).write_bytes(elf)
 
@@ -56,7 +62,9 @@ def test_cold_checkout_noise_cannot_contaminate_the_structured_report(tmp_path, 
     assert data == json.loads(streams.out)
     assert data['status'] == 'passed'
     assert Path(data['stage']).joinpath('lib/libobjc.so').is_file()
+    assert data['runtime_build_id'] == '01' * 20
     configure = next(command for command in commands if command[:2] == ['cmake', '-S'])
     shared_flags = next(argument for argument in configure
                         if argument.startswith('-DCMAKE_SHARED_LINKER_FLAGS='))
     assert '-Wl,--disable-new-dtags' in shared_flags.split()
+    assert '-Wl,--build-id=sha1' in shared_flags.split()

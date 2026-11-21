@@ -1,6 +1,9 @@
 #include "standard_library_test_support.h"
 #include "clang_foundation/interface_module_resolver.h"
+#include "clang/Basic/Diagnostic.h"
 #include "llvm/ADT/ScopeExit.h"
+#include <algorithm>
+#include <iterator>
 #include <string_view>
 
 using namespace objc3::clang_foundation;
@@ -372,15 +375,16 @@ void Run(const fs::path &root,const char *standard,int ownership) {
  InterfaceImportInput external;external.source_path=external_path.string();external.locked_identity=external_built.interface_artifact->identity;
  const auto include=root/"provider"/BuildInterfaceIncludePath(external.locked_identity.canonical_name);fs::create_directories(include.parent_path());Write(include,external_built.interface_artifact->source_bytes);
  const auto source=root/"provider/module.mm";
- auto publish=[&](const std::string &text,bool owned=true){
-  Write(source,text);auto value=request(source,root/"provider.o");value.imported_interfaces={external};value.module_name="fixture.BlockBindings";value.package_identity="block-bindings-v1";
+ auto publish=[&](const std::string &text,const fs::path &object,bool owned=true){
+  Write(source,text);auto value=request(source,object);value.imported_interfaces={external};value.module_name="fixture.BlockBindings";value.package_identity="block-bindings-v1";
   value.emit_semantic_interface=true;value.module_owned_names=owned;if(owned)value.module_source_root=(root/"provider").string();
   value.interface_exports={"BindingOwner","BindingModule"};
   auto result=Compile(value);Success(result);assert(result.interface_artifact && result.interface_artifact->success);return *result.interface_artifact;
  };
- const auto artifact=publish(Source),replay=publish(artifact.source_bytes,false);
+ const auto artifact=publish(Source,root/"provider.o");
+ const auto replay=publish(artifact.source_bytes,root/"replay.o",false);
  assert(artifact.source_bytes==replay.source_bytes && artifact.identity.semantic_fingerprint==replay.identity.semantic_fingerprint);
- publish(Source);assert(fs::remove(source));
+ assert(fs::remove(source));
  const auto interface=root/"BlockBindings.objc3i";Write(interface,artifact.source_bytes);Write(interface.string()+".json",artifact.sidecar_json);
  InterfaceImportInput dependency;dependency.source_path=interface.string();dependency.locked_identity=artifact.identity;
  for(const char *name:{"a","b","c","d"}){
@@ -399,7 +403,7 @@ void Run(const fs::path &root,const char *standard,int ownership) {
   }
   Success(Compile(value));
  }
- for(const char *body:{
+ const char *rejected_consumers[]={
   "void rejected(unsigned choose,BindingUnsafe *object){BindingWork bad=^void(void) __objc3_async_frame {(void)object;};BindingWork safe=^void(void) __objc3_async_frame {};binding_start(BindingModule::choose_work(choose,bad,safe),nullptr);}",
   "void rejected(unsigned choose,BindingUnsafe *object){BindingWork bad=^void(void) __objc3_async_frame {(void)object;};BindingWork safe=^void(void) __objc3_async_frame {};binding_start(BindingModule::nested_work(choose,safe,bad),nullptr);}",
   "void rejected(BindingWork unknown){binding_start(BindingModule::project(unknown),nullptr);}",
@@ -422,9 +426,36 @@ void Run(const fs::path &root,const char *standard,int ownership) {
   "void factory_close(int);int factory_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();binding_start(BindingModule::scalar_alias_factory(descriptor),nullptr);}",
   "void rejected(BindingUnsafe *owner){binding_start(BindingModule::unsafe_factory(owner),nullptr);}",
   "void factory_close(int);int factory_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();binding_start(BindingModule::scalar_factory(descriptor),nullptr);}",
-  "void factory_close(int);int factory_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();int copied=descriptor;BindingWork inner=BindingModule::scalar_factory(copied);BindingWork outer=^void(void) __objc3_async_frame {__objc3_await inner();};binding_start(outer,nullptr);}"}) {
-  const auto input=root/"bad.mm";Write(input,body);auto value=request(input,root/"bad.o");value.imported_interfaces={external,dependency};auto result=Compile(value);assert(!result.success);
-  bool matched=false;for(const auto &diagnostic:result.diagnostics)matched|=diagnostic.message.find("non-Sendable type")!=std::string::npos || diagnostic.message.find("cannot prove Sendable captures")!=std::string::npos || diagnostic.message.find("cleanup-managed capture")!=std::string::npos;assert(matched);
+  "void factory_close(int);int factory_open(void);void rejected(void){int descriptor __attribute__((objc_resource(close=factory_close,invalid=-1)))=factory_open();int copied=descriptor;BindingWork inner=BindingModule::scalar_factory(copied);BindingWork outer=^void(void) __objc3_async_frame {__objc3_await inner();};binding_start(outer,nullptr);}"};
+ // Import the locked interfaces once. Give each case its own namespace and
+ // source line so an error in one consumer cannot satisfy another.
+ const auto input = root / "rejected-consumers.mm";
+ std::string rejected_source;
+ for (unsigned index = 0; index < std::size(rejected_consumers); ++index)
+  rejected_source += "namespace rejection_" + std::to_string(index) + " { " +
+                     rejected_consumers[index] + " }\n";
+ Write(input, rejected_source);
+ auto rejected = request(input, {});
+ rejected.emit = EmitKind::Syntax;
+ rejected.arguments.push_back("-ferror-limit=0");
+ rejected.imported_interfaces = {external, dependency};
+ const auto result = Compile(rejected);
+ assert(!result.success && result.interface_import_diagnostics.empty());
+ for (unsigned index = 0; index < std::size(rejected_consumers); ++index) {
+  const auto matched = std::ranges::any_of(result.diagnostics, [&](const auto &diagnostic) {
+   return diagnostic.severity == clang::DiagnosticsEngine::Error &&
+          diagnostic.spelling.file == input.string() &&
+          diagnostic.spelling.line == index + 1 &&
+          (diagnostic.message.find("non-Sendable type") != std::string::npos ||
+           diagnostic.message.find("cannot prove Sendable captures") != std::string::npos ||
+           diagnostic.message.find("cleanup-managed capture") != std::string::npos);
+  });
+  if (!matched) {
+   std::cerr << "Missing Block binding rejection for case " << index + 1 << ": "
+             << rejected_consumers[index] << '\n';
+   test::ReportFailure(result);
+  }
+  assert(matched);
  }
  const auto main=root/"main.mm";Write(main,Main);auto entry=request(main,root/"main.o");entry.imported_interfaces={external,dependency};Success(Compile(entry));
  LinkAndExecute(root,entry.output_path,true,{(root/"c.o").string(),(root/"d.o").string(),OBJC3_BLOCK_BINDING_RUNTIME_LIBRARY,"-pthread"});

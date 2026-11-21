@@ -43,6 +43,13 @@ prerequisites are missing. Use `--root /opt/objc3c` for a system installation.
 When the installer creates an installation root it makes it traversable by
 ordinary users. Administrators control access to an existing root.
 
+## License and source
+
+The draft bundle includes the [GPLv2 project license](../../LICENSE).
+Installed SDKs place the project license and bundled third-party notices
+under `share/licenses/`. The release manifest identifies the exact
+Slopjective-C source revision and the pinned LLVM revision used for each archive.
+
 ## Release owner checklist
 
 1. Finish native x86-64 and AArch64 qualification for the revision to ship.
@@ -54,10 +61,12 @@ ordinary users. Administrators control access to an existing root.
    receipts and image digests for each architecture. Qualification artifacts
    expire seven days after upload. For a new qualification attempt, use
    **Re-run all jobs** or dispatch the same revision again.
-3. Review the draft release notes, archive permissions, expected asset names,
-   approved project license, and published reporting route. Require passing
-   draft-download rehearsals on both architectures. A partial upload can
-   resume with the same version, revision, and qualification runs.
+3. Review the draft release notes, archive permissions, asset names, and
+   published reporting route. Confirm the terms for distributing the combined
+   SDK and provide the corresponding source required by the GPL for any
+   GPL-covered binaries. Require passing draft-download rehearsals on both
+   architectures. A partial upload can resume with the same version, revision,
+   and qualification runs.
 4. Reconcile the release receipts with the [tracked Linux acceptance work](../roadmap/linux_acceptance_followups.md).
    Review workload observations under [#8291](https://github.com/doublemover/Slopjective-C/issues/8291).
    Publish after the owner has reviewed the release. Open the public release

@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import shlex
+import sys
 
 from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import _without_dependency_flags, graph_records, loaded_graph, verify_symbols
@@ -205,7 +206,7 @@ def owner_changes(repo, owner, changed):
         'scripts/objc3c_implementation_assurance/',
         'tests/tooling/fixtures/implementation_analysis/', 'toolchains/llvm/')
     global_files = {'scripts/objc3c_toolchain/'+name+'.py' for name in (
-        'analysis_checkpoint', 'analysis_scheduling', 'binary_packages', 'build', 'compiler_instrumentation', 'core',
+        'analysis_checkpoint', 'analysis_partition', 'analysis_scheduling', 'binary_packages', 'build', 'compiler_instrumentation', 'core',
         'host', 'implementation_analysis', 'instrumentation_profiles', 'llvm_ir_execution',
         'llvm_tools', 'sanitizer_policy', 'sdk_example')}
     if any(path in global_files or path.startswith(global_prefixes) for path in relatives):
@@ -327,7 +328,8 @@ def tool_configuration(repo, tool_build, plan):
     return arguments, environment
 
 
-def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=(), partition_index=0, partition_count=1):
+def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=(),
+            partition_index=0, partition_count=1, fail_fast=False):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('implementation analysis requires fresh owned evidence')
@@ -541,11 +543,13 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 row['owner'] = label
                 row['analysis_timeout_seconds'] = translation_unit_timeout(policy, row, source)
                 row.update(identity=identity(row), dependencies=deps[row['output']])
-                row['selected'] = row in chosen and bool(partition_rows([row], partition))
                 report['inputs'].update({path: digest(Path(path)) for path in row['dependencies']})
                 report['inputs'].update(row['response_files'])
                 report['inputs'].update(row['build_launcher'])
-            chosen = partition_rows(chosen, partition)
+            chosen = partition_rows(chosen, partition, seconds=policy['partition_seconds'])
+            selected_ids = {row['identity'] for row in chosen}
+            for row in rows:
+                row['selected'] = row['identity'] in selected_ids
             report['inventory'].extend(rows)
             report['exclusions'].append({'owner': label, 'database_entries': len(json.loads(database.read_text())),
                 'selected_variants': len(rows), 'analyzed_variants': len(chosen),
@@ -574,6 +578,11 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                     report['results'].append(result);report['commands'].extend(commands);executor.save()
                     print('implementation analysis '+label+' '+result['identity'][:16]+': '+
                           result['status']+' ('+str(len(report['results']))+' completed)', flush=True)
+                    if fail_fast and result['status'] != 'PASS':
+                        for diagnostic in result.get('diagnostics', []):
+                            print(f"{diagnostic['path']}:{diagnostic['line']}: {diagnostic['message']} "
+                                  f"[{diagnostic['check']}]", file=sys.stderr, flush=True)
+                        raise ValueError(result.get('error') or 'implementation analysis action failed')
 
                 execute_jobs(prepared_jobs(), submit=lambda job: workers.submit(run_unit, job),
                              completed=completed, max_pending=2*jobs)
