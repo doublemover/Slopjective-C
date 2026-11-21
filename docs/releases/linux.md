@@ -47,8 +47,14 @@ ordinary users. Administrators control access to an existing root.
 
 The draft bundle includes the [GPLv2 project license](../../LICENSE).
 Installed SDKs place the project license and bundled third-party notices
-under `share/licenses/`. The release manifest identifies the exact
-Slopjective-C source revision and the pinned LLVM revision used for each archive.
+under `share/licenses/`. The draft includes separate source archives for
+Slopjective-C, LLVM, libobjc2, and robin-map. The Slopjective-C source archive
+contains the patches, toolchain manifests, and build scripts used for the SDK.
+Verify the source downloads with `SHA256SUMS` and check their revisions in
+`linux-release.json`. To rebuild, use a Git checkout of the listed
+Slopjective-C revision and follow the
+[maintainer workflow](../runbooks/objc3c_maintainer_workflows.md). The source
+preparation commands use Git metadata to verify the pinned dependencies.
 
 ## Release owner checklist
 
@@ -65,8 +71,8 @@ Slopjective-C source revision and the pinned LLVM revision used for each archive
    published reporting route. Confirm the terms for distributing the combined
    SDK and provide the corresponding source required by the GPL for any
    GPL-covered binaries. Require passing draft-download rehearsals on both
-   architectures. A partial upload can resume with the same version, revision,
-   and qualification runs.
+   architectures and a passing source downloads check. A partial upload can
+   resume with the same version, revision, and qualification runs.
 4. Reconcile the release receipts with the [tracked Linux acceptance work](../roadmap/linux_acceptance_followups.md).
    Review workload observations under [#8291](https://github.com/doublemover/Slopjective-C/issues/8291).
    Publish after the owner has reviewed the release. Open the public release

@@ -121,6 +121,14 @@ def test_stages_two_native_archives_with_installer_and_checksums(tmp_path, monke
     license_file = tmp_path / 'LICENSE'
     license_file.write_text('fixture license')
     monkeypatch.setattr(owner, 'distribution_license', lambda _: license_file)
+
+    def stage_sources(checkout, bundle, *, revision, tag, archives):
+        assert checkout == ROOT and revision == REVISION and archives.keys() == RUNS.keys()
+        file = bundle / f'slopjective-c-{tag}-source.tar.gz'
+        file.write_bytes(b'fixture source archive')
+        return [{'file': file.name, 'sha256': owner._file_hash(file)}]
+
+    monkeypatch.setattr(owner, 'stage_sources', stage_sources)
     hosts = {str(run): host for host, run in RUNS.items()}
     monkeypatch.setattr(owner.subprocess, 'check_output',
                         lambda args: json.dumps(api_run(int(args[-1].rsplit('/', 1)[1]))))
@@ -176,8 +184,30 @@ def test_stages_two_native_archives_with_installer_and_checksums(tmp_path, monke
     assert all(len(row['clean_installs']) == 2 for row in result['archives'].values())
     checksums = dict(line.split('  ')[::-1] for line in (output / 'SHA256SUMS').read_text().splitlines())
     assert set(checksums) == {p.name for p in output.iterdir()} - {'SHA256SUMS'}
+    assert checksums[result['sources'][0]['file']] == result['sources'][0]['sha256']
     for name, digest in checksums.items():
         assert hashlib.sha256((output / name).read_bytes()).hexdigest() == digest
+
+
+@pytest.mark.parametrize('fault', [None, 'missing-license', 'foreign-root', 'truncated'])
+def test_pinned_dependency_source_archive_requires_root_and_license(tmp_path, monkeypatch, fault):
+    buffer = io.BytesIO()
+    root = 'libobjc2-' + 'd' * 40
+    with tarfile.open(fileobj=buffer, mode='w:gz') as archive:
+        name = 'README' if fault == 'missing-license' else 'COPYING'
+        member = tarfile.TarInfo(f'{"other" if fault == "foreign-root" else root}/{name}')
+        payload = b'license contents'
+        member.size = len(payload)
+        archive.addfile(member, io.BytesIO(payload))
+    data = buffer.getvalue()
+    monkeypatch.setattr(owner, 'urlopen', lambda url, timeout: io.BytesIO(data[:-4] if fault == 'truncated' else data))
+    target = tmp_path / 'source.tar.gz'
+    if fault:
+        with pytest.raises(EOFError if fault == 'truncated' else ValueError):
+            owner.download_source('fixture', target, root=root, license_path='COPYING')
+    else:
+        owner.download_source('fixture', target, root=root, license_path='COPYING')
+        assert target.read_bytes() == data
 
 
 @pytest.mark.parametrize('changed', [False, True])

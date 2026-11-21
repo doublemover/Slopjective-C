@@ -3,6 +3,7 @@
 import argparse
 from compression import zstd
 import errno
+import gzip
 import json
 from pathlib import Path
 import re
@@ -10,9 +11,12 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+from urllib.request import urlopen
 
+from .core import ToolchainError, planned_development_identity
 from .package import SCHEMA, _digest, _file_hash, distribution_license
 from . import release_install
+from scripts.objc3c_toolchain_runtime.build_linux import runtime_profile
 
 
 HOSTS = {'linux-x86_64': 'x86_64-unknown-linux-gnu',
@@ -23,6 +27,7 @@ MANIFEST = 'objc3-sdk/objc3-sdk.json'
 ARCHIVE_LICENSE = 'objc3-sdk/share/licenses/slopjective-c/LICENSE'
 FOUNDATION = 'objc3-sdk/include/clang/Basic/ObjC3Foundation.h'
 QUALIFICATION = '.github/workflows/platform-host-evidence.yml'
+LLVM_MANIFEST = 'toolchains/llvm/manifest.json'
 
 
 def validate_run(run: dict, *, repo: str, revision: str, run_id: int) -> None:
@@ -116,6 +121,68 @@ def admit_archive(download: Path, *, host: str, checkout: Path) -> tuple[Path, d
     }
 
 
+def download_source(url: str, output: Path, *, root: str, license_path: str) -> None:
+    with urlopen(url, timeout=60) as response, output.open('xb') as stream:
+        shutil.copyfileobj(response, stream)
+    with gzip.open(output, 'rb') as contents, tarfile.open(fileobj=contents, mode='r|') as archive:
+        found = False
+        for member in archive:
+            if not member.name.startswith(root + '/') and member.name != root:
+                raise ValueError(f'{output.name} contains files outside the pinned source root')
+            if member.name == f'{root}/{license_path}':
+                if found or not member.isfile() or member.size == 0:
+                    raise ValueError(f'{output.name} has an invalid license file')
+                found = True
+        if not found:
+            raise ValueError(f'{output.name} is missing {license_path}')
+        # Read past the end of the tar entries to verify the gzip trailer.
+        while contents.read(1024 * 1024):
+            pass
+
+
+def stage_sources(checkout: Path, bundle: Path, *, revision: str, tag: str,
+                  archives: dict[str, dict]) -> list[dict]:
+    head = subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], text=True).strip()
+    if head != revision:
+        raise ValueError('source checkout differs from the release revision')
+    if subprocess.run(['git', '-C', str(checkout), 'diff', '--quiet', 'HEAD']).returncode:
+        raise ValueError('source checkout has tracked changes')
+    identity = planned_development_identity(checkout)
+    archive_keys = {'upstream_commit': 'upstream_commit', 'patch_digest': 'patch_digest',
+                    'source_build_id': 'build_id'}
+    if any(row[archive_key] != identity[source_key] for row in archives.values()
+           for archive_key, source_key in archive_keys.items()):
+        raise ValueError('native archives differ from the pinned compiler source stack')
+
+    project = bundle / f'slopjective-c-{tag}-source.tar.gz'
+    with project.open('xb') as stream:
+        subprocess.run(['git', '-C', str(checkout), 'archive', '--format=tar.gz',
+                        f'--prefix=Slopjective-C-{revision}/', revision], stdout=stream, check=True)
+    sources = [{'component': 'Slopjective-C', 'revision': revision, 'file': project.name}]
+    llvm = json.loads((checkout / LLVM_MANIFEST).read_bytes())['upstream']
+    dependencies = {('llvm-project', llvm['url'], llvm['commit'], 'llvm/LICENSE.TXT')}
+    for host in archives:
+        profile = runtime_profile(checkout, host)
+        dependencies.update({
+            ('libobjc2', profile['runtime_source'], profile['runtime_commit'], 'COPYING'),
+            ('robin-map', profile['robin_map_source'], profile['robin_map_commit'], 'LICENSE'),
+        })
+    for component, remote, commit, license_path in sorted(dependencies):
+        repository = re.fullmatch(r'https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\.git', remote)
+        if (not repository or repository[1].rsplit('/', 1)[1] != component or
+                not re.fullmatch(r'[0-9a-f]{40}', commit)):
+            raise ValueError(f'{component} has an invalid source pin')
+        url = f'https://codeload.github.com/{repository[1]}/tar.gz/{commit}'
+        root = f'{component}-{commit}'
+        destination = bundle / f'{root}-source.tar.gz'
+        download_source(url, destination, root=root, license_path=license_path)
+        sources.append({'component': component, 'revision': commit, 'file': destination.name, 'url': url})
+    for source in sources:
+        file = bundle / source['file']
+        source.update(sha256=_file_hash(file), bytes=file.stat().st_size)
+    return sources
+
+
 def stage(checkout: Path, *, repo: str, revision: str, tag: str,
           runs: dict[str, int], downloads: Path, output: Path) -> dict:
     if not re.fullmatch(r'[0-9a-f]{40}', revision):
@@ -189,6 +256,9 @@ def stage(checkout: Path, *, repo: str, revision: str, tag: str,
         for name, path in INSTALLERS.items():
             shutil.copyfile(checkout / path, bundle / name)
         shutil.copyfile(license_file, bundle / 'LICENSE')
+        report['sources'] = stage_sources(checkout, bundle, revision=revision, tag=tag,
+                                          archives=report['archives'])
+        digests.update((source['file'], source['sha256']) for source in report['sources'])
         (bundle / 'linux-release.json').write_text(json.dumps(report, indent=2) + '\n')
         checksums = [f'{digests.get(path.name) or _file_hash(path)}  {path.name}'
                      for path in sorted(bundle.iterdir())]
@@ -262,7 +332,8 @@ def main() -> None:
         if args.publish_draft:
             publish_draft(args.output, repo=args.repo, tag=args.tag, revision=args.revision,
                           notes=args.publish_draft)
-    except (ValueError, OSError, KeyError, tarfile.TarError, subprocess.SubprocessError) as error:
+    except (ValueError, OSError, EOFError, KeyError, ToolchainError, tarfile.TarError,
+            subprocess.SubprocessError) as error:
         parser.exit(1, f'{error}\n')
 
 
