@@ -115,6 +115,39 @@ export function validateNativeContainer(job) {
   }
 }
 
+const nativeOutcomes = {
+  PLAN_RESULT: "plan",
+  PRODUCER_RESULT: "product-producer",
+  CONSUMERS_RESULT: "product-consumers",
+  ASAN_PRODUCER_RESULT: "asan-foundation-producer",
+  INSTRUMENTED_CONSUMERS_RESULT: "instrumented-product-consumers",
+  FUZZ_RESULT: "independent-native",
+  COVERAGE_PRODUCER_RESULT: "coverage-producer",
+  COVERAGE_PARTITIONS_RESULT: "coverage-partitions",
+  CORE_RESULT: "core-aggregate",
+  COVERAGE_RESULT: "coverage-aggregate",
+};
+const releaseOutcomes = {
+  INSTALL_RESULT: "archive-install",
+  IMPLEMENTATION_ANALYSIS_RESULT: "implementation-analysis",
+};
+
+function validatesNativeOutcomes(step) {
+  if (!step?.run || step.if || step["continue-on-error"] ||
+      step.env?.INSTALL_REQUIRED !== "${{ inputs.archive_install }}") return false;
+  const required = step.run.match(/^results=\(([^)]+)\)$/m)?.[1].trim().split(/\s+/);
+  const release = step.run.match(/^if \[\[ "\$INSTALL_REQUIRED" == true \]\]; then\n +results\+=\(([^)]+)\)\nfi$/m)?.[1].trim().split(/\s+/);
+  return JSON.stringify(required) === JSON.stringify(Object.keys(nativeOutcomes)) &&
+    JSON.stringify(release) === JSON.stringify(Object.keys(releaseOutcomes)) &&
+    Object.entries({ ...nativeOutcomes, ...releaseOutcomes }).every(
+      ([name, job]) => step.env[name] === `\${{ needs.${job}.result }}`,
+    ) &&
+    step.run.includes('for name in "${results[@]}"; do') &&
+    step.run.includes('if [[ "${!name}" != success ]]; then') &&
+    step.run.includes("failed=1") &&
+    step.run.includes('[[ "$failed" == 0 ]]');
+}
+
 export function validateNativeGate(text) {
   const workflow = yaml.load(text);
   const events = workflow.on ?? {};
@@ -346,22 +379,9 @@ export function validateNativeGate(text) {
   const verifier = (gate?.steps ?? []).find((step) =>
     step.run?.includes("scripts.objc3c_assurance verify --sharded"),
   );
-  const resultVariables = [
-    "PRODUCER_RESULT",
-    "CONSUMERS_RESULT",
-    "ASAN_PRODUCER_RESULT",
-    "INSTRUMENTED_CONSUMERS_RESULT",
-    "FUZZ_RESULT",
-    "COVERAGE_PRODUCER_RESULT",
-    "COVERAGE_PARTITIONS_RESULT",
-    "CORE_RESULT",
-    "COVERAGE_RESULT",
-  ];
   if (
     !verifier ||
-    resultVariables.some(
-      (name) => verifier.env?.[name] === undefined || !verifier.run.includes(`\"$${name}\"`),
-    ) ||
+    !validatesNativeOutcomes(verifier) ||
     !(gate.steps ?? []).some(
       (step) =>
         step.uses?.startsWith("actions/download-artifact@") &&
@@ -448,10 +468,6 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
   const call = release.jobs?.build;
   const install = native.jobs?.["archive-install"];
   const nativeGate = native.jobs?.gate;
-  const installCheck = nativeGate?.steps?.find((step) => step.env?.INSTALL_RESULT);
-  const implementationCheck = nativeGate?.steps?.find(
-    (step) => step.env?.IMPLEMENTATION_ANALYSIS_RESULT,
-  );
   const implementationCall = native.jobs?.["implementation-analysis"];
   const sanitizerProducer = native.jobs?.["asan-foundation-producer"];
   const analysisFoundation = (sanitizerProducer?.steps ?? []).find(
@@ -501,12 +517,6 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
       JSON.stringify(["debian:13", "ubuntu:26.04"]) ||
     install.container?.image !== "${{ matrix.distribution }}" ||
     !nativeGate.needs?.includes("archive-install") ||
-    installCheck?.env?.INSTALL_REQUIRED !== "${{ inputs.archive_install }}" ||
-    installCheck.env.INSTALL_RESULT !== "${{ needs.archive-install.result }}" ||
-    !installCheck.run?.includes(
-      '[[ "$INSTALL_REQUIRED" == true && "$INSTALL_RESULT" != success ]]',
-    ) ||
-    !installCheck.run.includes("exit 1") ||
     implementationCall?.needs !== "asan-foundation-producer" ||
     implementationCall.if !==
       "inputs.archive_install && needs.asan-foundation-producer.outputs.analysis_archive_sha256 != ''" ||
@@ -530,13 +540,6 @@ export function validateNativeRelease(nativeText, releaseText, workflows = {}) {
     analysisArchive.with?.path !== "out/implementation-assurance/foundation-product/" ||
     analysisArchive.with?.["if-no-files-found"] !== "error" ||
     !nativeGate.needs?.includes("implementation-analysis") ||
-    implementationCheck?.env?.INSTALL_REQUIRED !== "${{ inputs.archive_install }}" ||
-    implementationCheck.env.IMPLEMENTATION_ANALYSIS_RESULT !==
-      "${{ needs.implementation-analysis.result }}" ||
-    !implementationCheck.run?.includes(
-      '[[ "$INSTALL_REQUIRED" == true && "$IMPLEMENTATION_ANALYSIS_RESULT" != success ]]',
-    ) ||
-    !implementationCheck.run.includes("exit 1") ||
     archive.length !== 1 ||
     archive[0].if ||
     !(install.steps ?? []).some(

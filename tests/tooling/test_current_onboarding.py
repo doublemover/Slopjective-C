@@ -19,7 +19,8 @@ def reader_tree(tmp_path):
     for path in (ROOT / 'docs').iterdir():
         if path.name not in ('tutorials', 'runbooks'):
             (tmp_path / 'docs' / path.name).symlink_to(path, target_is_directory=path.is_dir())
-    (tmp_path / 'README.md').symlink_to(ROOT / 'README.md')
+    for name in ('README.md', 'LICENSE'):
+        (tmp_path / name).symlink_to(ROOT / name)
     shutil.copyfile(ROOT / 'CONTRIBUTING.md', tmp_path / 'CONTRIBUTING.md')
     (tmp_path / 'docs/runbooks').mkdir()
     for name in ('objc3c_public_command_surface.md', 'objc3c_maintainer_workflows.md'):
